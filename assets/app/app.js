@@ -7,6 +7,7 @@ import {setModal} from '../common/app/views/Modal';
 import {bars, barsNode, barsSubset, density, densityNode, scatter, selVarColor} from './plots.js';
 import {elem, fadeOut} from './utils';
 
+
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
 //    Developers, see /template/index.html
@@ -165,6 +166,53 @@ export let panelWidth = {
     'left': '0',
     'right': '0'
 };
+
+
+//-------------------------------------------------
+// Initialize a websocket for this page
+//-------------------------------------------------
+export let wsLink = 'ws://' + window.location.host +
+               '/ws/connect/' + username + '/';
+console.log('streamSocket connection made: ' + wsLink);
+export let streamSocket = new WebSocket(wsLink);
+
+export let streamMsgCnt = 0;
+// Handle messages received.
+//
+streamSocket.onmessage = function(e) {
+   streamMsgCnt++;
+   console.log(streamMsgCnt + ') message received! '  + e);
+   // parse the data into JSON
+   let msg_obj = JSON.parse(e.data);
+   //console.log('data:' + JSON.stringify(msg_obj));
+   let msg_data = msg_obj['message'];
+
+  if(typeof msg_data.msg_type==undefined){
+    console.log('streamSocket.onmessage: Error, "msg_data.msg_type" not specified!');
+    return;
+  } else if(typeof msg_data.data==undefined){
+    console.log('streamSocket.onmessage: Error, "msg_data.data" type not specified!');
+    return;
+  }
+
+  if (msg_data.msg_type === 'GetSearchSolutionsResults'){
+    handleGetScoreSolutionResultsResponse(msg_data.data);
+    console.log('Got it! ' + JSON.stringify(msg_data));
+    estimateLadda.stop();
+  } else if (msg_data.msg_type == 'GetScoreSolutionResults'){
+    console.log('Got it! ' + JSON.stringify(msg_data));
+    handleGetScoreSolutionResultsResponse(msg_data.data);
+  } else {
+    console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
+    console.log(' -->' + JSON.stringify(msg_obj));
+  }
+};
+streamSocket.onclose = function(e) {
+      console.error('streamSocket closed unexpectedly');
+};
+//-------------------------------------------------
+
+
 
 let updateRightPanelWidth = () => {
     if (is_explore_mode) {
@@ -2563,6 +2611,11 @@ export async function estimate(btn) {
             let fittedId = "";
             allsearchId.push(searchId);
 
+          makeGetSearchSolutionsRequest(searchId);
+
+          return;
+          console.log('SHOULDN\'T BE HERE!!!!!');
+          console.log('SHOULDN\'T BE HERE!!!!!');
           let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults',
                                          {searchId: searchId});
             if (!res2.success){
@@ -3835,7 +3888,7 @@ export async function resultsplotinit(pid) {
 }
 
 export async function generatePredictions(pid, plotflag) {
-
+    console.log('   ------ generatePredictions ------');
     if (!('predictedValues' in allPipelineInfo[pid])){
         // Need to generate and store predicted values
         let finalFittedId, finalFittedDetailsUrl, produceDetailsUrl, finalProduceDetailsUrl, hold3;
@@ -4967,3 +5020,136 @@ function primitiveStepRemoveColumns (aux) {
     let step = {primitive:primitive, arguments:parguments, outputs:outputs, hyperparams:hyperparams, users:users};
     return {primitive:step};
 }
+
+
+/**
+---------------------------------------------
+Functions for GetSearchSolutionsResults
+---------------------------------------------
+*/
+export async function makeGetSearchSolutionsRequest(searchId){
+  console.log('makeGetSearchSolutionsRequest 1');
+
+  let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults',
+                                 {searchId: searchId});
+  console.log('makeGetSearchSolutionsRequest 2');
+
+    if (!res2.success){
+        alert('Failed to get GetSearchSolutionsResults: ' + res2.message);
+        estimateLadda.stop();
+        return;
+    }else if (res2.data.is_error){
+        alert('Error with GetSearchSolutionsResults: ' + res2.data.user_msg);
+        estimateLadda.stop();
+        return;
+    }
+    console.log('makeGetSearchSolutionsRequest 3');
+}
+
+/**
+  Handle a websocket sent GetScoreSolutionResultsResponse
+  wrapped in a StoredResponse object
+*/
+export async function handleGetScoreSolutionResultsResponse(response1){
+  if(typeof response1==undefined){
+    console.log('handleGetScoreSolutionResultsResponse: Error.  "response1" undefined');
+    return;
+  }
+  let resizeTriggered = false;
+
+  // ----------------------------------------
+  // (1) Pull the solutionId
+  // ----------------------------------------
+  console.log('(1) Pull the solutionId');
+
+  if(typeof response1.id==undefined){
+    console.log('handleGetScoreSolutionResultsResponse: Error.  "response1.id" undefined');
+    return;
+  }
+  if(typeof response1.response.solutionId==undefined){
+    console.log('handleGetScoreSolutionResultsResponse: Error.  "response1.response.solutionId" undefined');
+    return;
+  }
+  let solutionId = response1.response.solutionId;
+
+  // ----------------------------------------
+  // (2) Update the pipeline list on the UI
+  // ----------------------------------------
+  console.log('(2) Update the pipeline list on the UI');
+
+  onPipelinePrime(response1);
+
+  if(!resizeTriggered){
+      if (IS_D3M_DOMAIN){
+          byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
+      };
+      resizeTriggered = true;
+  }
+  if(selectedPipeline === undefined){
+      setSelectedPipeline(pipelineTable[0]['PipelineID']);
+  }
+
+  // ----------------------------------------
+  // (3) Run DescribeSolution
+  // ----------------------------------------
+  console.log('(3) Run DescribeSolution');
+
+  let response2 = await makeRequest(D3M_SVC_URL + '/DescribeSolution',
+                                {solutionId: solutionId});
+
+  if(!response2.success){
+    alert('PLEASE CONTINUE.  Debug: DescribeSolution failed. ' + response2.message);
+    return;
+  }
+
+  // Add pipeline descriptions to allPipelineInfo
+  // More overwriting than is necessary here.
+  allPipelineInfo[response1.id] = Object.assign(allPipelineInfo[response1.id], response1.data, response2.data);
+
+  console.log("pipeline description here:");
+  console.log(allPipelineInfo[response1.id].pipeline);
+
+  // ----------------------------------------
+  // (4) Ask for a solution to be scored
+  // ----------------------------------------
+  console.log('(4) Ask for a solution to be scored');
+  let response3 = await makeRequest(D3M_SVC_URL + '/ScoreSolution', CreateScoreDefinition(response1));
+  if (!response3.success){
+    alert('PLEASE CONTINUE.  Debug: ScoreSolution failed. ' + response3.message);
+    return
+  }else if (typeof response3.data.requestId != 'undefined'){
+      let scoreId = response3.data.requestId;
+
+      // response4 is not actually needed,
+      // GetScoreSolutionResultsResponse objects will be sent back via websockets
+      //
+      response4 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
+
+      //scoreDetailsUrl = res11.data.details_url;
+  }
+}  // end handleGetScoreSolutionResultsResponse
+
+/**
+  Handle a websocket sent handleGetScoreSolutionResultsResponse
+  wrapped in a StoredResponse object
+*/
+async function handleGetScoreSolutionResultsResponse(response1){
+  if(typeof response1==undefined){
+    console.log('handleGetScoreSolutionResultsResponse: Error.  "response1" undefined');
+    return;
+  }
+  if(typeof response1.is_finished == undefined){
+    console.log('handleGetScoreSolutionResultsResponse: Error.  "response1.data.is_finished" undefined');
+    return;
+  }
+  if(!response1.is_finished){
+    return;
+  }
+
+  let myscore = response1.response.scores[0].value.raw.double.toPrecision(3);
+
+    // Note: what's now the "res4DataId" needs to be sent to this function
+  //
+    let matchedPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(res4DataId, 10))
+
+} // end: handleGetScoreSolutionResultsResponse

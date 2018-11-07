@@ -71,8 +71,7 @@ def stream_and_store_results(raven_json_str, stored_request_id,
 
             msg_cnt += 1
 
-            stored_response_url = None
-            stored_resp = None
+            stored_resp = None  # to hold a StoredResponse object
 
             # -----------------------------------------
             # parse the response
@@ -125,15 +124,13 @@ def stream_and_store_results(raven_json_str, stored_request_id,
             # ---------------------------------------------
             if websocket_id:
                 stored_resp = stored_resp_info.result_obj
-                stored_response_url = stored_resp.get_callback_url()
 
                 ws_msg = WebsocketMessage.get_success_message(\
                                     grpc_call_name,
                                     'it worked',
                                     msg_cnt=msg_cnt,
-                                    data=msg_json_info.result_obj,
-                                    request_id=stored_request_id,
-                                    stored_response_url=stored_response_url)
+                                    data=stored_resp.as_dict())
+
                 print('ws_msg: %s' % ws_msg)
                 #print('ws_msg', ws_msg.as_dict())
 
