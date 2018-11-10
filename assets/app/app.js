@@ -496,7 +496,7 @@ const [arcInd1, arcInd2] = [arcInd(arcInd1Limits), arcInd(arcInd2Limits)];
 // milliseconds to wait before showing/hiding the pebble handles
 let hoverTimeout = 150;
 let hoverPebble;
-let selectedPebble;
+export let selectedPebble;
 
 export let byId = id => document.getElementById(id);
 // export let byId = id => {console.log(id); return document.getElementById(id);}
@@ -999,7 +999,7 @@ export function loadResult(my_disco) {
     // console.log("problem to be sent ", problem_sent.splice())
     let preprocess_id = 1
     let version = 1
-    addProblem(preprocess_id, version).then(api_res => console.log("ADD PROBLEM/RESULT API RESPONSE ", api_res))
+    // addProblem(preprocess_id, version).then(api_res => console.log("ADD PROBLEM/RESULT API RESPONSE ", api_res))
 }
 /**
    called on app start
@@ -1088,8 +1088,8 @@ function del(arr, idx, obj) {
 }
 
 /** needs doc */
-function zparamsReset(text) {
-    'zdv zcross ztime znom'.split(' ').forEach(x => del(zparams[x], -1, text));
+function zparamsReset(text, labels='zdv zcross ztime znom') {
+    labels.split(' ').forEach(x => del(zparams[x], -1, text));
 }
 
 export function setup_svg(svg) {
@@ -1375,8 +1375,10 @@ export function layout(layoutConstant, v2) {
                 line.attr("x1", p[0] + (lsourcePadding * lnormX))   // or r[0] if findboundary works
                     .attr("y1", p[1] + (lsourcePadding * lnormY))   // or r[1] if findboundary works
                     .attr("x2", q[0]- (ltargetPadding * lnormX))
-                    .attr("y2", q[1]- (ltargetPadding * lnormY));
-            };
+                    .attr("y2", q[1]- (ltargetPadding * lnormY))
+                    .style('opacity', 1);
+            }
+            else line.style('opacity', 0);
 
             // group members attract each other, repulse non-group members
             nodes.forEach(n => {
@@ -1430,8 +1432,10 @@ export function layout(layoutConstant, v2) {
                 line2.attr("x1", p[0] + (lsourcePadding * lnormX))
                     .attr("y1", p[1] + (lsourcePadding * lnormY))
                     .attr("x2", q[0]- (ltargetPadding * lnormX))
-                    .attr("y2", q[1]- (ltargetPadding * lnormY));
-            };
+                    .attr("y2", q[1]- (ltargetPadding * lnormY))
+                    .style('opacity', 0);
+            }
+            else line2.style('opacity', 0);
 
             // group members attract each other, repulse non-group members
             nodes.forEach(n => {
@@ -3185,95 +3189,91 @@ export function panelPlots() {
 /**
    converts color codes
 */
-export let hexToRgba = hex => {
+export let hexToRgba = (hex, alpha) => {
     let int = parseInt(hex.replace('#', ''), 16);
-    return `rgba(${[(int >> 16) & 255, (int >> 8) & 255, int & 255, '0.5'].join(',')})`;
+    return `rgba(${[(int >> 16) & 255, (int >> 8) & 255, int & 255, alpha || '0.5'].join(',')})`;
 };
 
 /**
    takes node and color and updates zparams
 */
 export function setColors(n, c) {
-    if (n.strokeWidth == '1') {
-        if (c == gr1Color){
-            var tempindex = zparams.zgroup1.indexOf(n.name);
-            if (tempindex > -1){
-                n.group1 = false;
-                del(zparams.zgroup1, tempindex);
-            } else {
-                n.group1 = true;
-                zparams.zgroup1.push(n.name);
-            };
-        } else if (c == gr2Color){
-            var tempindex = zparams.zgroup2.indexOf(n.name);
-            if (tempindex > -1){
-                n.group2 = false;
-                del(zparams.zgroup2, tempindex);
-            } else {
-                n.group2 = true;
-                zparams.zgroup2.push(n.name);
-            };
-        } else {
-        // adding time, cs, dv, nom to node with no stroke
-        n.strokeWidth = '4';
-        n.strokeColor = c;
-        n.nodeCol = taggedColor;
-        let push = ([color, key]) => {
-            if (color != c)
-                return;
-            zparams[key] = Array.isArray(zparams[key]) ? zparams[key] : [];
-            zparams[key].push(n.name);
-            if (key == 'znom') {
-                findNode(n.name).nature = "nominal";
-            }
-            if (key == 'zdv'){                                              // remove group memberships from dv's
-                if(n.group1){
-                    n.group1 = false;
-                    del(zparams.zgroup1, -1, n.name);
-                };
-                if(n.group2){
-                    n.group2 = false;
-                    del(zparams.zgroup2, -1, n.name);
-                };
-            }
-        };
-        [[dvColor, 'zdv'], [csColor, 'zcross'], [timeColor, 'ztime'], [nomColor, 'znom']].forEach(push);
-        }
-    } else if (n.strokeWidth == '4') {
-        if (c == n.strokeColor) { // deselecting time, cs, dv, nom
-            n.strokeWidth = '1';
-            n.strokeColor = selVarColor;
-            n.nodeCol = colors(n.id);
-            zparamsReset(n.name);
-            if (nomColor == c && zparams.znom.includes(n.name)) {
-                findNode(n.name).nature = findNode(n.name).defaultNature;
-            }
-        } else { // deselecting time, cs, dv, nom AND changing it to time, cs, dv, nom
-            zparamsReset(n.name);
-            if (nomColor == n.strokeColor && zparams.znom.includes(n.name)) {
-                findNode(n.name).nature = findNode(n.name).defaultNature;
-            }
-            n.strokeColor = c;
-            if (dvColor == c){
-                var dvname = n.name;
-                zparams.zdv.push(dvname);
-                if(n.group1){ // remove group memberships from dv's
-                    n.group1 = false;
-                    del(zparams.zgroup1, -1, dvname);
-                };
-                if(n.group2){
-                    n.group2 = false;
-                    del(zparams.zgroup2, -1, dvname);
-                };
-            }
-            else if (csColor == c) zparams.zcross.push(n.name);
-            else if (timeColor == c) zparams.ztime.push(n.name);
-            else if (nomColor == c) {
-                zparams.znom.push(n.name);
-                findNode(n.name).nature = "nominal";
-            }
-        }
+    // the order of the keys indicates precedence
+    let zmap = {
+        [csColor]: 'zcross',
+        [timeColor]: 'ztime',
+        [nomColor]: 'znom',
+        [dvColor]: 'zdv',
+        [gr1Color]: 'zgroup1',
+        [gr2Color]: 'zgroup2'
     }
+    let strokeWidths = {
+        [csColor]: 4,
+        [timeColor]: 4,
+        [nomColor]: 4,
+        [dvColor]: 4,
+        [gr1Color]: 1,
+        [gr2Color]: 1
+    }
+    let nodeColors = {
+        [csColor]: taggedColor,
+        [timeColor]: taggedColor,
+        [nomColor]: taggedColor,
+        [dvColor]: taggedColor,
+        [gr1Color]: colors(n.id),
+        [gr2Color]: colors(n.id)
+    }
+    let strokeColors = {
+        [csColor]: csColor,
+        [timeColor]: timeColor,
+        [nomColor]: nomColor,
+        [dvColor]: dvColor,
+        [gr1Color]: selVarColor,
+        [gr2Color]: selVarColor
+    }
+
+    // from the relevant zparams list: remove if included, add if not included
+    if (!Array.isArray(zparams[zmap[c]])) zparams[zmap[c]] = [];
+    let index = zparams[zmap[c]].indexOf(n.name);
+    if (index > -1) zparams[zmap[c]].splice(index, 1)
+    else zparams[zmap[c]].push(n.name)
+
+    test: {
+        let matchedColor;
+        for (let label of Object.keys(zmap))
+            if (zparams[zmap[label]].includes(n.name)) {
+                n.strokeWidth = strokeWidths[label];
+                n.nodeCol = nodeColors[label];
+                n.strokeColor = strokeColors[label];
+                break test;
+            }
+        // default node color
+        n.strokeWidth = 1;
+        n.nodeCol = n.baseCol;
+        n.strokeColor = selVarColor;
+    }
+
+    // if index was not found, then it was added
+    let isIncluded = index === -1;
+
+    if (c == gr1Color) {
+        [n.group1, n.group2] = [isIncluded, false]
+        del(zparams.zgroup2, -1, n.name)
+        del(zparams.zdv, -1, n.name)
+    }
+    if (c === gr2Color) {
+        [n.group1, n.group2] = [false, isIncluded]
+        del(zparams.zgroup1, -1, n.name)
+        del(zparams.zdv, -1, n.name)
+    }
+    if (c === dvColor) {
+        [n.group1, n.group2] = [false, false]
+        del(zparams.zgroup1, -1, n.name)
+        del(zparams.zgroup2, -1, n.name)
+    }
+
+    if (c === nomColor)
+        findNode(n.name).nature = isIncluded ? 'nominal' : findNode(n.name).defaultNature;
 }
 
 /** needs doc */
@@ -3858,7 +3858,6 @@ export function resultsplotgraph(pid){
         console.log(predvals);
         genconfdata(dvvalues, predvals);
     } else {
-        console.log("resid plot");
         let xdata = "Actual";
         let ydata = "Predicted";
         let mytitle = "Predicted V Actuals: Pipeline " + pid;
@@ -4828,7 +4827,6 @@ export function makeDataDiscovery(){
 
 }
 export function makeDiscoverySolutionPlot(){
-  console.log("resid plot");
   let xdata = "Actual";
   let ydata = "Predicted";
   let mytitle = "Predicted V Actuals: Pipeline ";

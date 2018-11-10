@@ -74,6 +74,7 @@ function leftpanel(mode) {
     if (mode === 'manipulate')
         return manipulate.leftpanel();
 
+    let summaryPebble = app.nodes.find(node => node.name === app.summary.name);
     let selectedDisco = app.disco.find(problem => problem.problem_id === app.selectedProblem);
     let transformVars = [...manipulate.getTransformVariables(manipulate.getProblemPipeline(app.selectedProblem) || [])];
 
@@ -155,10 +156,16 @@ function leftpanel(mode) {
                         items: app.valueKey.concat(transformVars),
                         colors: {
                             [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
-                            [app.hexToRgba(common.nomColor)]: app.zparams.znom,
-                            [app.hexToRgba(common.dvColor)]: app.is_explore_mode ? [] : app.zparams.zdv
+                            [app.hexToRgba(common.gr1Color, .2)]: app.zparams.zgroup1,
+                            [app.hexToRgba(common.gr2Color)]: app.zparams.zgroup2,
+                            [app.hexToRgba(common.taggedColor)]: app.zparams.znom,
+                            [app.hexToRgba(common.taggedColor)]: app.is_explore_mode ? [] : app.zparams.zdv
                         },
-                        classes: {'item-bordered': app.matchedVariables},
+                        classes: {
+                            'item-bordered': app.matchedVariables,
+                            'item-dependent': app.is_explore_mode ? [] : app.zparams.zdv,
+                            'item-nominal': app.zparams.znom
+                        },
                         callback: x => app.clickVar(x, nodes),
                         popup: variable => app.popoverContent(app.findNode(variable)),
                         attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}
@@ -867,7 +874,7 @@ class Body {
                 }, subset.manipulations[app.selectedProblem]
                     .filter(step => step.type === 'subset')
                     .map(step => m('div', step.id))
-                    .concat([`Size: ${problem.predictors.length}×${manipulate.totalSubsetRecords}`]))
+                    .concat([`${manipulate.totalSubsetRecords} Records`]))
             )
         ]);
     }

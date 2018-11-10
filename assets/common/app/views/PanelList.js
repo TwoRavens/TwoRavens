@@ -44,7 +44,7 @@ export default class PanelList {
                         'text-align': "center",
                         'background-color': viewColor[item] || varColor
                     },
-                    'class': viewClass[item],
+                    'class': (viewClass[item] || []).join(' '),
                     onclick: () => (callback || Function)(item)
                 },
 

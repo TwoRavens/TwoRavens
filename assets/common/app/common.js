@@ -85,11 +85,17 @@ export function scrollBarChanged() {
 
 // Merge arrays and objects up to one layer deep
 export function mergeAttributes(target, ...sources) {
+    if ('class' in target && Array.isArray(target['class'])) target['class'] = target['class'].join(' ');
     if (!sources.length) return target;
     const source = sources.shift();
 
     for (const key in source) {
-        if (Array.isArray(source[key]) && Array.isArray(target[key]))
+        // special case to collapse class lists into a space-delimited string
+        if (key === 'class') {
+            if (Array.isArray(source[key])) source[key] = source[key].join(' ');
+            target[key] += ` ${source[key]}`;
+        }
+        else if (Array.isArray(source[key]) && Array.isArray(target[key]))
             target[key].concat(source[key]);
 
         else if (typeof target[key] === 'object' && typeof source[key] === 'object')
@@ -97,6 +103,7 @@ export function mergeAttributes(target, ...sources) {
 
         else target[key] = source[key];
     }
+
     return mergeAttributes(target, ...sources);
 }
 

@@ -427,7 +427,13 @@ tr.item-lineout{
 }
 
 .item-bordered {
-    border: solid #000000;
+    border: solid black;
+}
+.item-dependent {
+    border: solid #28a4c9;
+}
+.item-nominal {
+    border: solid #ff6600;
 }
 .item-lineout{
     text-decoration:line-through;
