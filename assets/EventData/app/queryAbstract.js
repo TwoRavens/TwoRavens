@@ -10,6 +10,7 @@ window.callbackDeleteTransform = function (pipelineId, stepId, transformationNam
     let step = [...app.manipulations[pipelineId], ...Object.values(app.looseSteps)]
         .find(candidate => candidate.id === (Number(stepId) || stepId));
     step.transforms.splice(step.transforms.findIndex(transformation => transformation.name === transformationName), 1);
+    step.expansions.splice(step.expansions.findIndex(expansion => expansion.name === transformationName));
 
     if (!IS_EVENTDATA_DOMAIN) manipulate.setQueryUpdated(true);
     m.redraw();
@@ -306,12 +307,6 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
 // Convert the subset panel state to an abstract query branch
 function makeAbstractBranch(step, preferences, metadata, name) {
 
-    console.warn('#debug preferences');
-    console.log(preferences);
-
-    console.warn('#debug step');
-    console.log(step);
-
     if (step.type === 'transform' && preferences.type === 'transform') {
         if (!preferences.isValid) return {error: 'The specified transformation is not valid.'};
         if (step.transforms.some(transform => transform.name === preferences.transformName))
@@ -325,8 +320,13 @@ function makeAbstractBranch(step, preferences, metadata, name) {
     }
     if (step.type === 'transform' && preferences.type === 'expansion') {
         if (preferences.degreeInteractionError) return {error: 'The specified expansion is not valid.'};
-        // the preferences tree used to render the menu is sufficient for the abstract query
-        return Object.assign({}, preferences);
+
+        return {
+            degreeInteraction: preferences.degreeInteraction,
+            name: Object.keys(preferences.variables).join(','),
+            variables: preferences.variables,
+            numberTerms: preferences.numberTerms
+        }
     }
 
     // if an aggregation branch, then this adds the measure to the node id, so that when a node is deleted, it knows which tree to remove from

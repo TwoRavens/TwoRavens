@@ -39,11 +39,10 @@ export function buildPipeline(pipeline, variables = new Set()) {
             }, {})
         });
 
-        if (step.type === 'expansion' && step.expansions.length) {
-            pipeline = pipeline
-                .concat(step.expansions.reduce((acc, expansion) => acc.concat([buildExpansion(expansion)])), []);
-            let expanded = step.expansions.reduce((acc, expansion) => acc.concat(Object.keys(expansion.variablePreferences)), []);
-            pipeline.push({
+        if (step.type === 'transform' && step.expansions.length) {
+            compiled = step.expansions.reduce((acc, expansion) => [...acc, buildExpansion(expansion)], compiled);
+            let expanded = step.expansions.reduce((acc, expansion) => acc.concat(Object.keys(expansion.variables)), []);
+            compiled.push({
                 $project: [...new Set(expanded)].reduce((acc, variable) => {
                     acc[variable] = 0;
                     return acc;
@@ -210,11 +209,11 @@ const cartesian = (a, b, ...c) => (b ? cartesian(f(a, b), ...c) : a);
 
 export function expansionTerms(preferences) {
     // find all combinations of variables lte size k
-    return lte_k_combinations([...preferences.variables], preferences.degreeInteraction)
+    return lte_k_combinations(Object.keys(preferences.variables), preferences.degreeInteraction)
         .reduce((acc, comb) =>
             // some variables have multiple-term expansions, compute the cartesian products within each combination
             acc.concat(cartesian(...comb.map(variable => {
-                let varPrefs = preferences.variablePreferences[variable];
+                let varPrefs = preferences.variables[variable];
 
                 if (varPrefs.type === 'None') return [variable];
                 if (varPrefs.type === 'Dummy') return [`toString(${variable})`];
@@ -228,7 +227,7 @@ export function expansionTerms(preferences) {
 export function buildExpansion(preferences) {
     return {
         $addFields: expansionTerms(preferences).reduce((acc, term) => {
-            acc[term] = buildTransform(term, [...preferences.variables]);
+            acc[term] = buildTransform(term, new Set(Object.keys(preferences.variables)))['query'];
             return acc;
         }, {})
     }

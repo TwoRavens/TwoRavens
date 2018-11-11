@@ -48,15 +48,15 @@ export class TreeTransform {
                 show_op: false
             })),
             ...step.expansions.map((expansion, i) => {
-                let {variables, variablePreferences: prefs} = expansion;
+                let {variables, numberTerms} = expansion;
                 return {
                     id: 'Expansion ' + i,
-                    name: `Expansion ${i}: ${variables.size} variables`,
+                    name: `Expansion ${i}: ${numberTerms} terms`,
                     cancellable: editable,
                     show_op: false,
-                    children: [...variables].map(variable => ({
+                    children: Object.keys(variables).map(variable => ({
                         id: name + variable,
-                        name: `${variable}: ${prefs[variable].type}`,
+                        name: `${variable}: ${variables[variable].type}`,
                         cancellable: false,
                         show_op: false
                     }))

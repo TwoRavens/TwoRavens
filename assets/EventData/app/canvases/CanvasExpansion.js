@@ -15,18 +15,11 @@ export default class CanvasExpansion {
 
         if (preferences.degreeInteraction === undefined) preferences.degreeInteraction = 1;
 
-        preferences.variablePreferences = preferences.variablePreferences || {};
+        preferences.variables = preferences.variables || {};
 
-        preferences.variables = preferences.variables || new Set();
         preferences.select = variable => {
-            if (preferences.variables.has(variable)) preferences.variables.delete(variable);
-            else {
-                preferences.variables.add(variable);
-                preferences.variablePreferences[variable] = preferences.variablePreferences[variable] || {
-                    type: 'None',
-                    powers: '1 2 3'
-                }
-            }
+            if (variable in preferences.variables) delete preferences.variables[variable];
+            else preferences.variables[variable] = {type: 'None', powers: '1 2 3'}
         }
     }
 
@@ -73,6 +66,10 @@ export default class CanvasExpansion {
     view({attrs}) {
         let {preferences} = attrs;
 
+        let terms = queryMongo.expansionTerms(preferences);
+
+        preferences.numberTerms = terms.length;
+
         return m("#canvasExpansion", {style: {'height': '100%', 'width': '100%', 'padding-top': common.panelMargin}},
             m('div#termPreview', {
                     style: {
@@ -84,7 +81,7 @@ export default class CanvasExpansion {
                     }
                 },
                 m('h4', 'Term Preview'),
-                m.trust(queryMongo.expansionTerms(preferences).map((term, i) => `β${String(i).sub()}*${term.replace(/\^[\d.-]+/, snip => snip.substr(1).sup())}`).join(' + '))
+                m.trust(terms.map((term, i) => `β${String(i).sub()}*${term.replace(/\^[\d.-]+/, snip => snip.substr(1).sup())}`).join(' + '))
             ),
             m('br'),
             m('label#labelDegreeInteraction[style=width:10em;display:inline-block]', 'Interaction Degree'),
@@ -106,7 +103,7 @@ export default class CanvasExpansion {
                 },
                 value: preferences.degreeInteraction
             }),
-            [...preferences.variables].map(variable => this.variableMenu(variable, preferences.variablePreferences[variable]))
+            Object.keys(preferences.variables).map(variable => this.variableMenu(variable, preferences.variables[variable]))
         );
     }
 }

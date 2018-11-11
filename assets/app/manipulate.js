@@ -147,7 +147,7 @@ export function varList() {
     if (constraintMenu.type === 'transform' && constraintPreferences.usedTerms)
         selectedVariables = [...constraintPreferences.usedTerms.variables];
     else if (constraintMenu.type === 'expansion')
-        selectedVariables = [...(constraintPreferences.variables || [])];
+        selectedVariables = Object.keys(constraintPreferences.variables | {});
     else
         selectedVariables = (constraintMetadata || {}).columns || [];
 
@@ -860,6 +860,8 @@ export async function buildDatasetUrl(problem) {
 export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
     if (step.type !== 'transform') return out;
     step.transforms.forEach(transform => out.add(transform.name));
+    step.expansions.forEach(expansion => queryMongo.expansionTerms(expansion).forEach(term => out.add(term)));
+
     return out;
 }, new Set());
 
