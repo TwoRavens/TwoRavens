@@ -37,35 +37,51 @@ export function menu(compoundPipeline, pipelineId) {
 
     return [
         // stage button
-        constraintMenu && m(Button, {
-            id: 'btnStage',
-            style: {
-                right: `calc(${common.panelOpen['right'] ? '500' : '16'}px + ${common.panelMargin}*2)`,
-                bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px + ${app.peekInlineShown && app.peekData ? app.peekInlineHeight : '0px'})`,
-                position: 'fixed',
-                'z-index': 100,
-                'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
-            },
-            onclick: () => {
-                let name = ['transform', 'expansion'].includes(constraintMenu.type) ? ''
-                    : constraintMetadata.type + ': ' + constraintMetadata.columns[0];
-
-                let success = queryAbstract.addConstraint(
-                    pipelineId,
-                    constraintMenu.step,  // the step the user is currently editing
-                    constraintPreferences,  // the menu state for the constraint the user currently editing
-                    constraintMetadata,  // info used to draw the menu (variables, menu type),
-                    name
-                );
-
-                // clear the constraint menu
-                if (success) {
+        constraintMenu && [
+            m(Button, {
+                id: 'btnStageCancel',
+                style: {
+                    right: `calc(${common.panelOpen['right'] ? '500' : '16'}px + ${common.panelMargin}*2 + 70px)`,
+                    bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px + ${app.peekInlineShown && app.peekData ? app.peekInlineHeight : '0px'})`,
+                    position: 'fixed',
+                    'z-index': 100,
+                    'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
+                },
+                onclick: () => {
                     setConstraintMenu(undefined);
-                    setQueryUpdated(true);
                     common.setPanelOpen('right');
                 }
-            }
-        }, 'Stage'),
+            }, 'Cancel'),
+            m(Button, {
+                id: 'btnStage',
+                style: {
+                    right: `calc(${common.panelOpen['right'] ? '500' : '16'}px + ${common.panelMargin}*2)`,
+                    bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px + ${app.peekInlineShown && app.peekData ? app.peekInlineHeight : '0px'})`,
+                    position: 'fixed',
+                    'z-index': 100,
+                    'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
+                },
+                onclick: () => {
+                    let name = ['transform', 'expansion'].includes(constraintMenu.type) ? ''
+                        : constraintMetadata.type + ': ' + constraintMetadata.columns[0];
+
+                    let success = queryAbstract.addConstraint(
+                        pipelineId,
+                        constraintMenu.step,  // the step the user is currently editing
+                        constraintPreferences,  // the menu state for the constraint the user currently editing
+                        constraintMetadata,  // info used to draw the menu (variables, menu type),
+                        name
+                    );
+
+                    // clear the constraint menu
+                    if (success) {
+                        setConstraintMenu(undefined);
+                        setQueryUpdated(true);
+                        common.setPanelOpen('right');
+                    }
+                }
+            }, 'Stage')
+        ],
 
         m(Canvas, {
             attrsAll: {style: {height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`}}
@@ -89,7 +105,7 @@ function canvas(compoundPipeline) {
     let variables = queryMongo.buildPipeline(compoundPipeline, Object.keys(variablesInitial))['variables'];
 
     if (constraintMenu.type === 'transform') return m(CanvasTransform, {preferences: constraintPreferences, variables});
-    if (constraintMenu.type === 'expansion') return m(CanvasExpansion, {preferences: constraintPreferences, variables, metadata: constraintMetadata});
+    if (constraintMenu.type === 'expansion') return m(CanvasExpansion, {preferences: constraintPreferences, variables});
 
     if (!constraintData || !constraintMetadata) return;
 
@@ -136,11 +152,11 @@ export function leftpanel() {
 export function varList() {
 
     let variables = Object.keys(variablesInitial);
-    let selectedVariables = selectedVariables = (constraintMetadata || {}).columns || [];
+    let selectedVariables = (constraintMetadata || {}).columns || [];
 
     if (constraintMenu) {
         let partialPipeline = constraintMenu.pipeline.slice(0, constraintMenu.pipeline.indexOf(constraintMenu.step));
-        variables = [...queryMongo.buildPipeline(partialPipeline, Object.keys(variablesInitial))['variables']];
+        variables = [...queryMongo.buildPipeline(partialPipeline, variables)['variables']];
 
         if (constraintMenu.type === 'accumulator')
             variables = variables.filter(column => inferType(column) === 'discrete');
@@ -181,11 +197,11 @@ export function varList() {
             items: variables,
             colors: {[app.hexToRgba(common.selVarColor)]: selectedVariables},
             classes: {
-                'item-bordered': variables.filter(variable =>
-                    variableSearch !== '' && variable.toLowerCase().includes(variableSearch))
+                'item-bordered': variableSearch === '' ? []
+                    : variables.filter(variable => variable.toLowerCase().includes(variableSearch))
             },
             callback: ['transform', 'expansion'].includes(constraintMenu.type)
-                ? variable => constraintPreferences.select(variable) // the insert function is defined inside CanvasTransform or CanvasExpansion
+                ? variable => constraintPreferences.select(variable) // the select function is defined inside CanvasTransform or CanvasExpansion
                 : variable => setConstraintColumn(variable, constraintMenu.pipeline),
             popup: variable => app.popoverContent(variableMetadata[variable]),
             attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
@@ -243,7 +259,7 @@ export class PipelineFlowchart {
             let finalStep = pipeline.slice(-1)[0];
             if (finalStep.type === 'aggregate' && !finalStep.measuresAccum.length) return false;
             if (finalStep.type === 'subset' && !finalStep.abstractQuery.length) return false;
-            if (finalStep.type === 'transform' && !finalStep.transforms.length) return false;
+            if (finalStep.type === 'transform' && !(finalStep.transforms.length + finalStep.expansions.length)) return false;
             return true;
         };
 

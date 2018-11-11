@@ -24,7 +24,6 @@ export default class CanvasExpansion {
     }
 
     variableMenu(variable, varPreferences) {
-        varPreferences.powers = varPreferences.powers || '1 2 3';
 
         return m(`div#variable${variable}`, {
                 style: {

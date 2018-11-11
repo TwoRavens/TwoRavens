@@ -39,16 +39,16 @@ export function buildPipeline(pipeline, variables = new Set()) {
             }, {})
         });
 
-        if (step.type === 'transform' && step.expansions.length) {
-            compiled = step.expansions.reduce((acc, expansion) => [...acc, buildExpansion(expansion)], compiled);
-            let expanded = step.expansions.reduce((acc, expansion) => acc.concat(Object.keys(expansion.variables)), []);
-            compiled.push({
-                $project: [...new Set(expanded)].reduce((acc, variable) => {
-                    acc[variable] = 0;
+        if (step.type === 'transform' && step.expansions.length) compiled.push({
+            '$addFields': Object.assign(...step.expansions.map(expansion => {
+                let terms = expansionTerms(expansion);
+                variables = new Set([...terms, ...variables]);
+                return terms.reduce((acc, term) => {
+                    acc[term] = buildTransform(term, variables)['query'];
                     return acc;
                 }, {})
-            })
-        }
+            }))
+        });
 
         if (step.type === 'subset')
             compiled.push({'$match': buildSubset(step.abstractQuery, true)});
@@ -226,15 +226,6 @@ export function expansionTerms(preferences) {
                     .map(variable => variable.replace('^1', '')) // don't compute the first power
                     .join('*')) // multiply each variable together
                 .filter(variable => !startVariables.includes(variable))), []); // don't duplicate original variables
-}
-
-export function buildExpansion(preferences) {
-    return {
-        $addFields: expansionTerms(preferences).reduce((acc, term) => {
-            acc[term] = buildTransform(term, new Set(Object.keys(preferences.variables)))['query'];
-            return acc;
-        }, {})
-    }
 }
 
 // ~~~~ SUBSETS ~~~~
