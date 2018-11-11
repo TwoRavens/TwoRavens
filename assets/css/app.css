@@ -427,10 +427,11 @@ tr.item-lineout{
 }
 
 .item-bordered {
-    border: solid black;
+    border: solid black !important;
+    font-weight: bolder;
 }
 .item-dependent {
-    border: solid #28a4c9;
+    border: solid rgba(40, 164, 201, 0.8);
 }
 .item-nominal {
     border: solid #ff6600;

@@ -20,6 +20,8 @@ let usedTermDefaults = () => ({
 export default class CanvasTransform {
     oninit({attrs}) {
         let {preferences} = attrs;
+        // the transform step is overloaded, it also contains expansions. This is used to tell them apart
+        preferences.type = 'transform';
 
         setDefault(preferences, 'transformName', '');
         setDefault(preferences, 'transformEquation', '');
@@ -27,7 +29,7 @@ export default class CanvasTransform {
         setDefault(preferences, 'isValid', false);
         setDefault(preferences, 'cursorPosition', 0);
 
-        preferences.insert = (value, atCursor) => {
+        preferences.select = (value, atCursor) => {
 
             if (!atCursor && preferences.transformEquation.indexOf('@*') !== -1)
                 preferences.transformEquation = preferences.transformEquation.replace('@*', value + ', @*');
@@ -116,7 +118,7 @@ export default class CanvasTransform {
                     id: 'unaryFunctionsList',
                     items: [...query.unaryFunctions],
                     colors: {[common.selVarColor]: [...preferences.usedTerms.unaryFunctions]},
-                    callback: value => preferences.insert(value + '(@)')
+                    callback: value => preferences.select(value + '(@)')
                 })),
             m('div', {style},
                 m('h4', {'margin-top': 0}, 'Binary Functions'),
@@ -124,7 +126,7 @@ export default class CanvasTransform {
                     id: 'binaryFunctionsList',
                     items: [...query.binaryFunctions],
                     colors: {[common.selVarColor]: [...preferences.usedTerms.binaryFunctions]},
-                    callback: value => preferences.insert(value + '(@, @)')
+                    callback: value => preferences.select(value + '(@, @)')
                 })),
             m('div', {style},
                 m('h4', {'margin-top': 0}, 'Variadic Functions'),
@@ -132,7 +134,7 @@ export default class CanvasTransform {
                     id: 'variadicFunctionsList',
                     items: [...query.variadicFunctions],
                     colors: {[common.selVarColor]: [...preferences.usedTerms.variadicFunctions]},
-                    callback: value => preferences.insert(value + '(@*)')
+                    callback: value => preferences.select(value + '(@*)')
                 })),
             m('div', {style},
                 m('h4', {'margin-top': 0}, 'Unary Operators'),
@@ -142,7 +144,7 @@ export default class CanvasTransform {
                     colors: {
                         [common.selVarColor]: [...preferences.usedTerms.unaryOperators].map(key => key + ' ' + query.unaryOperators[key])
                     },
-                    callback: value => preferences.insert(' ' + value.split(' ')[0] + '@', true)
+                    callback: value => preferences.select(' ' + value.split(' ')[0] + '@', true)
                 })),
             m('div', {style},
                 m('h4', {'margin-top': 0}, 'Binary Operators'),
@@ -152,7 +154,7 @@ export default class CanvasTransform {
                     colors: {
                         [common.selVarColor]: [...preferences.usedTerms.binaryOperators].map(key => key + ' ' + query.binaryOperators[key])
                     },
-                    callback: value => preferences.insert(' ' + value.split(' ')[0] + ' ', true)
+                    callback: value => preferences.select(' ' + value.split(' ')[0] + ' ', true)
                 }))
         );
     }

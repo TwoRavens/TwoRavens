@@ -171,7 +171,7 @@ export default class CanvasContinuous {
                     ]
                 )
             ),
-            mode === 'aggregate' && m("label[for='discreteAggreg'][id='discreteAggregLab']", {
+            mode === 'aggregate' && m("label[for='discreteAggreg'][id='labelDiscreteAggreg']", {
                 style: {
                     "text-align": "left",
                     "width": "100%",
@@ -179,7 +179,7 @@ export default class CanvasContinuous {
                 }
             }, "Bin Count:"),
             mode === 'aggregate' && m('#discreteAggreg', m(TextField, {
-                id: 'labelAggregOption',
+                id: 'textFieldAggregOption',
                 class: preferences.error && ['is-invalid'],
                 attrsAll: {style: {width: '80px'}},
                 title: 'integer number of linearly spaced bins to aggregate into',

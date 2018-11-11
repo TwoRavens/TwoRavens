@@ -156,15 +156,15 @@ function leftpanel(mode) {
                         items: app.valueKey.concat(transformVars),
                         colors: {
                             [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
-                            [app.hexToRgba(common.gr1Color, .2)]: app.zparams.zgroup1,
+                            [app.hexToRgba(common.gr1Color, .25)]: app.zparams.zgroup1,
                             [app.hexToRgba(common.gr2Color)]: app.zparams.zgroup2,
                             [app.hexToRgba(common.taggedColor)]: app.zparams.znom,
                             [app.hexToRgba(common.taggedColor)]: app.is_explore_mode ? [] : app.zparams.zdv
                         },
                         classes: {
-                            'item-bordered': app.matchedVariables,
                             'item-dependent': app.is_explore_mode ? [] : app.zparams.zdv,
-                            'item-nominal': app.zparams.znom
+                            'item-nominal': app.zparams.znom,
+                            'item-bordered': app.matchedVariables
                         },
                         callback: x => app.clickVar(x, nodes),
                         popup: variable => app.popoverContent(app.findNode(variable)),
@@ -273,13 +273,11 @@ function leftpanel(mode) {
                         m('b', app.summary.name),
                         m('br'),
                         m('i', app.summary.labl)),
-                    m('table', app.summary.data.map(tr => m('tr', tr.map(
-                        td => m('td',
-                            {
-                                onmouseover: setBackgroundColor('aliceblue'),
-                                onmouseout: setBackgroundColor('f9f9f9')
-                            },
-                            td)))))]
+                    m(Table, {
+                        id: 'varSummaryTable',
+                        data: app.summary.data
+                    })
+                ]
             }
         ]
     }));

@@ -537,24 +537,28 @@ class EventJobUtil(object):
 
 
     @staticmethod
-    def export_dataset(database, collection, data):
+    def export_dataset(collection, data):
+
+        def quote(value):
+            return '"' + value + '"' if type(value) is str else value
+
         folderpath = os.path.join(settings.BASE_DIR, 'ravens_volume', 'manipulation_data', collection, 'TRAIN', 'tables')
 
         if not os.path.exists(folderpath):
             os.makedirs(folderpath)
 
-        extension = 1;
+        extension = 1
         while os.path.exists(os.path.join(folderpath, 'learningData' + str(extension) + '.csv')):
             extension += 1
         filepath = os.path.join(folderpath, 'learningData' + str(extension) + '.csv')
 
         with open(filepath, 'w') as outfile:
             writer = csv.writer(outfile, delimiter='\t')
-            columns = [i for i in data[0]]
+            columns = [quote(header) for header in data[0]]
 
             writer.writerow(columns)
             for document in data:
-                writer.writerow([document[key] if key in document else '' for key in columns])
+                writer.writerow([quote(document[key]) if key in document else '' for key in columns])
 
         return ok_resp(filepath)
 

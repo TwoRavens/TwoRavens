@@ -458,7 +458,6 @@ def api_get_data(request):
 
     if json_req_obj.get('export', False):
         success, results_obj_err = EventJobUtil.export_dataset(
-            settings.TWORAVENS_DB_NAME,
             settings.PREFIX + json_req_obj['collection_name'],
             results_obj_err)
 

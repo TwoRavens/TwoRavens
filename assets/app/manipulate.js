@@ -4,6 +4,7 @@ import CanvasContinuous from '../EventData/app/canvases/CanvasContinuous';
 import CanvasDate from '../EventData/app/canvases/CanvasDate';
 import CanvasDiscrete from '../EventData/app/canvases/CanvasDiscrete';
 import CanvasTransform from '../EventData/app/canvases/CanvasTransform';
+import CanvasExpansion from '../EventData/app/canvases/CanvasExpansion';
 
 import Flowchart from './views/Flowchart';
 
@@ -46,7 +47,7 @@ export function menu(compoundPipeline, pipelineId) {
                 'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
             },
             onclick: () => {
-                let name = constraintMenu.type === 'transform' ? ''
+                let name = ['transform', 'expansion'].includes(constraintMenu.type) ? ''
                     : constraintMetadata.type + ': ' + constraintMetadata.columns[0];
 
                 let success = queryAbstract.addConstraint(
@@ -88,6 +89,7 @@ function canvas(compoundPipeline) {
     let variables = queryMongo.buildPipeline(compoundPipeline, Object.keys(variablesInitial))['variables'];
 
     if (constraintMenu.type === 'transform') return m(CanvasTransform, {preferences: constraintPreferences, variables});
+    if (constraintMenu.type === 'expansion') return m(CanvasExpansion, {preferences: constraintPreferences, variables, metadata: constraintMetadata});
 
     if (!constraintData || !constraintMetadata) return;
 
@@ -141,6 +143,14 @@ export function varList() {
     if (constraintMenu.type === 'accumulator') variables = variables.filter(column => inferType(column) === 'discrete');
     if (constraintMenu.type === 'unit') variables = variables.filter(column => inferType(column) !== 'discrete');
 
+    let selectedVariables;
+    if (constraintMenu.type === 'transform' && constraintPreferences.usedTerms)
+        selectedVariables = [...constraintPreferences.usedTerms.variables];
+    else if (constraintMenu.type === 'expansion')
+        selectedVariables = [...(constraintPreferences.variables || [])];
+    else
+        selectedVariables = (constraintMetadata || {}).columns || [];
+
     return [
         constraintMenu.type === 'subset' && constraintMetadata.type !== 'date' && variableMetadata[constraintMetadata['columns'][0]]['types'].indexOf('string') === -1 && [
             m(ButtonRadio, {
@@ -158,15 +168,13 @@ export function varList() {
         m(PanelList, {
             id: 'varList',
             items: variables,
-            colors: constraintMenu.type === 'transform' && constraintPreferences.usedTerms
-                ? {[common.selVarColor]: [...constraintPreferences.usedTerms.variables]}
-                : {[app.hexToRgba(common.selVarColor)]: (constraintMetadata || {}).columns || []},
+            colors: {[app.hexToRgba(common.selVarColor)]: selectedVariables},
             classes: {
                 'item-bordered': variables.filter(variable =>
                     variableSearch !== '' && variable.toLowerCase().includes(variableSearch))
             },
-            callback: constraintMenu.type === 'transform'
-                ? variable => constraintPreferences.insert(variable)
+            callback: ['transform', 'expansion'].includes(constraintMenu.type)
+                ? variable => constraintPreferences.select(variable) // the insert function is defined inside CanvasTransform or CanvasExpansion
                 : variable => setConstraintColumn(variable, constraintMenu.pipeline),
             popup: variable => app.popoverContent(variableMetadata[variable]),
             attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
@@ -265,8 +273,16 @@ export class PipelineFlowchart {
                                 id: 'btnAddTransform',
                                 class: ['btn-sm'],
                                 style: {margin: '0.5em'},
+                                title: 'Construct a new variable from other variables',
                                 onclick: () => setConstraintMenu({type: 'transform', step, pipeline: compoundPipeline})
-                            }, plus, ' Transform')
+                            }, plus, ' Transform'),
+                            editable && m(Button, {
+                                id: 'btnAddExpansion',
+                                class: ['btn-sm'],
+                                style: {margin: '0.5em'},
+                                title: 'Basis expansions, variable codings, interaction terms',
+                                onclick: () => setConstraintMenu({type: 'expansion', step, pipeline: compoundPipeline})
+                            }, plus, ' Expansion')
                         )
                     }
 
@@ -364,7 +380,8 @@ export class PipelineFlowchart {
                     onclick: () => pipeline.push({
                         type: 'transform',
                         id: 'transform ' + pipeline.length,
-                        transforms: [] // transform name is used instead of nodeId
+                        transforms: [], // transform name is used instead of nodeId
+                        expansions: []
                     })
                 }, plus, ' Transform Step'),
                 m(Button, {
@@ -617,6 +634,10 @@ export let setConstraintType = (type, pipeline) => {
     Object.keys(constraintPreferences).forEach(key => delete constraintPreferences[key]);
     constraintData = undefined;
     if (pipeline) loadMenuManipulations(pipeline);
+};
+
+export let setExpansionType = (type) => {
+    constraintMetadata.type = type;
 };
 
 export let getData = async body => m.request({

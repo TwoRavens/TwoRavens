@@ -39,6 +39,18 @@ export function buildPipeline(pipeline, variables = new Set()) {
             }, {})
         });
 
+        if (step.type === 'expansion' && step.expansions.length) {
+            pipeline = pipeline
+                .concat(step.expansions.reduce((acc, expansion) => acc.concat([buildExpansion(expansion)])), []);
+            let expanded = step.expansions.reduce((acc, expansion) => acc.concat(Object.keys(expansion.variablePreferences)), []);
+            pipeline.push({
+                $project: [...new Set(expanded)].reduce((acc, variable) => {
+                    acc[variable] = 0;
+                    return acc;
+                }, {})
+            })
+        }
+
         if (step.type === 'subset')
             compiled.push({'$match': buildSubset(step.abstractQuery, true)});
 
@@ -60,6 +72,8 @@ export function buildPipeline(pipeline, variables = new Set()) {
     return {pipeline: compiled, variables, units, accumulators, labels};
 }
 
+
+// ~~~~ TRANSFORMS ~~~~
 export let unaryFunctions = new Set([
     'abs', 'ceil', 'exp', 'floor', 'ln', 'log10', 'sqrt', 'trunc', // math
     'and', 'not', 'or', // logic
@@ -163,6 +177,64 @@ export function buildTransform(text, variables) {
     return {query: parse(jsep(text)), usedTerms};
 }
 
+// ~~~~ EXPANSIONS ~~~~
+// used to compute interaction terms of degree k
+const k_combinations = (list, k) => {
+    if (k > list.length || k <= 0) return []; // no valid combinations of size k
+    if (k === list.length) return [list]; // one valid combination of size k
+    if (k === 1) return list.reduce((acc, cur) => [...acc, [cur]], []); // k combinations of size k
+
+    let combinations = [];
+
+    for (let i = 0; i <= list.length - k + 1; i++) {
+        let subcombinations = k_combinations(list.slice(i + 1), k - 1);
+        for (let j = 0; j < subcombinations.length; j++) {
+            combinations.push([list[i], ...subcombinations[j]])
+        }
+    }
+
+    return combinations
+};
+
+// used to compute interaction terms of degree lte k
+const lte_k_combinations = (set, k) =>
+    Array(k).fill(null).reduce((acc, _, idx) => [...acc, ...k_combinations(set, idx + 1)], []);
+
+// for completeness (unused)
+// const combinations = set =>
+//     set.reduce((acc, _, idx) => [...acc, ...k_combinations(set, idx + 1)], []);
+
+// https://stackoverflow.com/questions/12303989/cartesian-product-of-multiple-arrays-in-javascript
+const f = (a, b) => [].concat(...a.map(d => b.map(e => [].concat(d, e))));
+const cartesian = (a, b, ...c) => (b ? cartesian(f(a, b), ...c) : a);
+
+export function expansionTerms(preferences) {
+    // find all combinations of variables lte size k
+    return lte_k_combinations([...preferences.variables], preferences.degreeInteraction)
+        .reduce((acc, comb) =>
+            // some variables have multiple-term expansions, compute the cartesian products within each combination
+            acc.concat(cartesian(...comb.map(variable => {
+                let varPrefs = preferences.variablePreferences[variable];
+
+                if (varPrefs.type === 'None') return [variable];
+                if (varPrefs.type === 'Dummy') return [`toString(${variable})`];
+                if (varPrefs.type === 'Polynomial')
+                    return varPrefs.powers.trim().split(' ').map(power => variable + '^' + power);
+            }))
+                .map(term => Array.isArray(term) ? term : [term]) // fix a degenerate case for singleton groups
+                .map(term => term.join('*'))), []); // multiply each term together
+}
+
+export function buildExpansion(preferences) {
+    return {
+        $addFields: expansionTerms(preferences).reduce((acc, term) => {
+            acc[term] = buildTransform(term, [...preferences.variables]);
+            return acc;
+        }, {})
+    }
+}
+
+// ~~~~ SUBSETS ~~~~
 // Recursively traverse the tree in the right panel. For each node, call processNode
 export function buildSubset(tree, useStaged = true) {
     // Base case
@@ -286,7 +358,7 @@ function processRule(rule) {
         let operators = {'>=': '$gte', '>': '$gt', '<=': '$lte', '<': '$lt', '==': '$eq', '!=': '$ne'};
         let operatorRegex = new RegExp(`(${Object.keys(operators).join('|')})`);
 
-        let [variable, constraint, condition] = rule.name.split(operatorRegex).map(_=>_.trim());
+        let [variable, constraint, condition] = rule.name.split(operatorRegex).map(_ => _.trim());
         rule_query[variable] = {[operators[constraint]]: buildTransform(condition)['query']}
     }
 
@@ -375,6 +447,7 @@ function processRule(rule) {
     return rule_query;
 }
 
+// ~~~~ AGGREGATIONS ~~~~
 export function buildAggregation(unitMeasures, accumulations) {
     // unit of measure
     let unit = {};
@@ -585,10 +658,12 @@ export function buildAggregation(unitMeasures, accumulations) {
 
     let columnsUnit = columnsNonDyad.concat(dyadMeasureName ? [dyadMeasureName] : []);
 
-    let sortPipeline = columnsUnit.length ? [{$sort: columnsUnit.reduce((out, column) => {
-        out[column] = 1;
-        return out;
-    }, {})}] : [];
+    let sortPipeline = columnsUnit.length ? [{
+        $sort: columnsUnit.reduce((out, column) => {
+            out[column] = 1;
+            return out;
+        }, {})
+    }] : [];
 
     return {
         pipeline: [{"$group": Object.assign({"_id": unit}, event)}, ...reformatter, ...sortPipeline],
@@ -598,6 +673,7 @@ export function buildAggregation(unitMeasures, accumulations) {
     };
 }
 
+// ~~~~ MENUS ~~~~
 // given a menu, return pipeline steps for collecting data
 export function buildMenu(step) {
     let {metadata, preferences} = step;
@@ -720,7 +796,13 @@ export function buildMenu(step) {
                 }
             },
             {$match: {_id: {$ne: 'ignore'}}},
-            {$project: {_id: 0, Label: {$add: ['$_id', (metadata.max - metadata.min) / metadata.buckets / 2]}, Freq: 1}},
+            {
+                $project: {
+                    _id: 0,
+                    Label: {$add: ['$_id', (metadata.max - metadata.min) / metadata.buckets / 2]},
+                    Freq: 1
+                }
+            },
             {$sort: {Label: 1}}
         ];
     }

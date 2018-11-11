@@ -242,7 +242,8 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
     common.setPanelOpen('right');
 
     if (step.type === 'transform') {
-        step.transforms.push(abstractBranch);
+        if (preferences.type === 'transform') step.transforms.push(abstractBranch);
+        if (preferences.type === 'expansion') step.expansions.push(abstractBranch);
         m.redraw();
     }
 
@@ -305,7 +306,13 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
 // Convert the subset panel state to an abstract query branch
 function makeAbstractBranch(step, preferences, metadata, name) {
 
-    if (step.type === 'transform') {
+    console.warn('#debug preferences');
+    console.log(preferences);
+
+    console.warn('#debug step');
+    console.log(step);
+
+    if (step.type === 'transform' && preferences.type === 'transform') {
         if (!preferences.isValid) return {error: 'The specified transformation is not valid.'};
         if (step.transforms.some(transform => transform.name === preferences.transformName))
             return {error: 'The specified transform name has already been used.'};
@@ -315,6 +322,11 @@ function makeAbstractBranch(step, preferences, metadata, name) {
             name: preferences.transformName,
             equation: preferences.transformEquation
         }
+    }
+    if (step.type === 'transform' && preferences.type === 'expansion') {
+        if (preferences.degreeInteractionError) return {error: 'The specified expansion is not valid.'};
+        // the preferences tree used to render the menu is sufficient for the abstract query
+        return Object.assign({}, preferences);
     }
 
     // if an aggregation branch, then this adds the measure to the node id, so that when a node is deleted, it knows which tree to remove from

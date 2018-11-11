@@ -3238,14 +3238,14 @@ export function setColors(n, c) {
     if (index > -1) zparams[zmap[c]].splice(index, 1)
     else zparams[zmap[c]].push(n.name)
 
-    test: {
+    labelNodeAttrs: {
         let matchedColor;
         for (let label of Object.keys(zmap))
             if (zparams[zmap[label]].includes(n.name)) {
                 n.strokeWidth = strokeWidths[label];
                 n.nodeCol = nodeColors[label];
                 n.strokeColor = strokeColors[label];
-                break test;
+                break labelNodeAttrs;
             }
         // default node color
         n.strokeWidth = 1;
@@ -4694,6 +4694,9 @@ export function setSelectedProblem(problemId) {
     if (selectedProblem === problemId) return; // ignore if already set
 
     selectedProblem = problemId;
+
+    // if a constraint is being staged, delete it
+    manipulate.setConstraintMenu(undefined);
 
     // remove old staged problems
     disco = disco.filter(entry => entry.problem_id === selectedProblem || !entry.staged);

@@ -40,12 +40,29 @@ export class TreeVariables {
 
 export class TreeTransform {
     convertToJQTreeFormat(pipelineId, step, editable) {
-        return step.transforms.map(transform => ({
-            id: transform.name,
-            name: transform.name + ' = ' + transform.equation,
-            cancellable: editable,
-            show_op: false
-        }));
+        return [
+            ...step.transforms.map(transform => ({
+                id: transform.name,
+                name: transform.name + ' = ' + transform.equation,
+                cancellable: editable,
+                show_op: false
+            })),
+            ...step.expansions.map((expansion, i) => {
+                let {variables, variablePreferences: prefs} = expansion;
+                return {
+                    id: 'Expansion ' + i,
+                    name: `Expansion ${i}: ${variables.size} variables`,
+                    cancellable: editable,
+                    show_op: false,
+                    children: [...variables].map(variable => ({
+                        id: name + variable,
+                        name: `${variable}: ${prefs[variable].type}`,
+                        cancellable: false,
+                        show_op: false
+                    }))
+                }
+            })
+        ];
     }
 
     oncreate({attrs, dom}) {
@@ -63,7 +80,14 @@ export class TreeTransform {
                     $li.find('.jqtree-element').prepend(buttonDeleteTransform(pipelineId, step.id, node.id));
                 }
             }
-        })
+        });
+
+        transformTree.on(
+            'tree.click',
+            event => {
+                if (event.node.hasChildren()) transformTree.tree('toggle', event.node);
+            }
+        );
     }
 
     // when mithril updates this component, it redraws the tree with whatever the abstract query is
