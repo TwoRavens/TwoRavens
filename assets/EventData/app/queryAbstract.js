@@ -319,7 +319,8 @@ function makeAbstractBranch(step, preferences, metadata, name) {
         }
     }
     if (step.type === 'transform' && preferences.type === 'expansion') {
-        if (preferences.degreeInteractionError) return {error: 'The specified expansion is not valid.'};
+        if (preferences.degreeInteractionError) return {error: 'The interaction degree is not valid.'};
+        if (preferences.numberTerms === 0) return {error: 'The expansion supplies no additional terms.'};
 
         return {
             degreeInteraction: preferences.degreeInteraction,

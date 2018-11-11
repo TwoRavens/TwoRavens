@@ -208,8 +208,9 @@ const f = (a, b) => [].concat(...a.map(d => b.map(e => [].concat(d, e))));
 const cartesian = (a, b, ...c) => (b ? cartesian(f(a, b), ...c) : a);
 
 export function expansionTerms(preferences) {
+    let startVariables = Object.keys(preferences.variables);
     // find all combinations of variables lte size k
-    return lte_k_combinations(Object.keys(preferences.variables), preferences.degreeInteraction)
+    return lte_k_combinations(startVariables, preferences.degreeInteraction)
         .reduce((acc, comb) =>
             // some variables have multiple-term expansions, compute the cartesian products within each combination
             acc.concat(cartesian(...comb.map(variable => {
@@ -221,7 +222,10 @@ export function expansionTerms(preferences) {
                     return varPrefs.powers.trim().split(' ').map(power => variable + '^' + power);
             }))
                 .map(term => Array.isArray(term) ? term : [term]) // fix a degenerate case for singleton groups
-                .map(term => term.join('*'))), []); // multiply each term together
+                .map(term => term // build each term from a list of equations on each variable
+                    .map(variable => variable.replace('^1', '')) // don't compute the first power
+                    .join('*')) // multiply each variable together
+                .filter(variable => !startVariables.includes(variable))), []); // don't duplicate original variables
 }
 
 export function buildExpansion(preferences) {

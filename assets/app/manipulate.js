@@ -135,21 +135,32 @@ export function leftpanel() {
 
 export function varList() {
 
-    let variables = (constraintMenu
-        ? [...queryMongo.buildPipeline(constraintMenu.pipeline.slice(0, constraintMenu.pipeline.indexOf(constraintMenu.step)),
-            Object.keys(variablesInitial))['variables']]
-        : Object.keys(variablesInitial)).sort(variableSort);
+    let variables = Object.keys(variablesInitial);
+    let selectedVariables = selectedVariables = (constraintMetadata || {}).columns || [];
 
-    if (constraintMenu.type === 'accumulator') variables = variables.filter(column => inferType(column) === 'discrete');
-    if (constraintMenu.type === 'unit') variables = variables.filter(column => inferType(column) !== 'discrete');
+    if (constraintMenu) {
+        let partialPipeline = constraintMenu.pipeline.slice(0, constraintMenu.pipeline.indexOf(constraintMenu.step));
+        variables = [...queryMongo.buildPipeline(partialPipeline, Object.keys(variablesInitial))['variables']];
 
-    let selectedVariables;
-    if (constraintMenu.type === 'transform' && constraintPreferences.usedTerms)
-        selectedVariables = [...constraintPreferences.usedTerms.variables];
-    else if (constraintMenu.type === 'expansion')
-        selectedVariables = Object.keys(constraintPreferences.variables | {});
-    else
-        selectedVariables = (constraintMetadata || {}).columns || [];
+        if (constraintMenu.type === 'accumulator')
+            variables = variables.filter(column => inferType(column) === 'discrete');
+        if (constraintMenu.type === 'unit')
+            variables = variables.filter(column => inferType(column) !== 'discrete');
+
+        if (constraintMenu.type === 'transform' && constraintPreferences.usedTerms)
+            selectedVariables = [...constraintPreferences.usedTerms.variables];
+
+        if (constraintMenu.type === 'expansion') {
+            let problem = app.disco.find(problem => problem.problem_id === app.selectedProblem);
+            variables = [
+                ...problem.predictorsInitial || problem.predictors,
+                ...getTransformVariables(partialPipeline)
+            ];
+            selectedVariables = Object.keys(constraintPreferences.variables || {});
+        }
+    }
+
+    variables = variables.sort(variableSort);
 
     return [
         constraintMenu.type === 'subset' && constraintMetadata.type !== 'date' && variableMetadata[constraintMetadata['columns'][0]]['types'].indexOf('string') === -1 && [
@@ -636,17 +647,32 @@ export let setConstraintType = (type, pipeline) => {
     if (pipeline) loadMenuManipulations(pipeline);
 };
 
-export let setExpansionType = (type) => {
-    constraintMetadata.type = type;
-};
-
 export let getData = async body => m.request({
     url: subset.eventdataURL + 'get-data',
     method: 'POST',
     data: body
 }).then(response => {
     if (!response.success) throw response;
-    return response.data;
+
+    // parse Infinity, -Infinity, NaN from unambiguous string literals. Coding handled in python function 'json_comply'
+    let jsonParseLiteral = obj => {
+        if (obj === undefined || obj === null) return obj;
+        if (Array.isArray(obj)) return obj.map(jsonParseLiteral);
+
+        if (typeof obj === 'object') return Object.keys(obj).reduce((acc, key) => {
+            acc[key] = jsonParseLiteral(obj[key]);
+            return acc;
+        }, {});
+
+        if (typeof obj === 'string') {
+            if (obj === '***TWORAVENS_INFINITY***') return Infinity;
+            if (obj === '***TWORAVENS_NEGATIVE_INFINITY') return -Infinity;
+            if (obj === '***TWORAVENS_NAN***') return NaN;
+        }
+
+        return obj;
+    };
+    return jsonParseLiteral(response.data);
 });
 
 // download data to display a menu

@@ -13,7 +13,7 @@ export default class CanvasExpansion {
         preferences.type = 'expansion';
         preferences.isValid = true;
 
-        if (preferences.degreeInteraction === undefined) preferences.degreeInteraction = 1;
+        if (preferences.degreeInteraction === undefined) preferences.degreeInteraction = 2;
 
         preferences.variables = preferences.variables || {};
 
@@ -80,8 +80,8 @@ export default class CanvasExpansion {
                         'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)'
                     }
                 },
-                m('h4', 'Term Preview'),
-                m.trust(terms.map((term, i) => `β${String(i).sub()}*${term.replace(/\^[\d.-]+/, snip => snip.substr(1).sup())}`).join(' + '))
+                m('h4', 'New Expansion Terms'),
+                m.trust(terms.map((term, i) => `γ${String(i).sub()}*${term.replace(/\^[\d.-]+/, snip => snip.substr(1).sup())}`).join(' + '))
             ),
             m('br'),
             m('label#labelDegreeInteraction[style=width:10em;display:inline-block]', 'Interaction Degree'),

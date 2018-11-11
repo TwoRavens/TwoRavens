@@ -91,7 +91,7 @@ export default class CanvasTransform {
             }), ' = ',
             m(TextField, {
                 id: 'textFieldEquation',
-                placeholder: '1 + ' + variables[0],
+                placeholder: '1 + ' + variables.values().next().value,
                 value: preferences.transformEquation,
                 class: !preferences.transformEquation && ['is-invalid'],
                 oninput: value => {

@@ -11,7 +11,7 @@ from tworaven_apps.utils.view_helper import \
      get_json_error,
      get_json_success,
      get_common_view_info)
-from tworaven_apps.utils.json_helper import format_pretty_from_dict
+from tworaven_apps.utils.json_helper import format_pretty_from_dict, json_comply
 
 from tworaven_apps.eventdata_queries.event_job_util import EventJobUtil
 from tworaven_apps.eventdata_queries.forms import \
@@ -398,7 +398,7 @@ def api_get_eventdata(request):
         json_req_obj.get('distinct', None),
         json_req_obj.get('host', None))
 
-    return JsonResponse({'success': success, 'data': addquery_obj_err} if success else get_json_error(addquery_obj_err))
+    return JsonResponse({'success': success, 'data': json_comply(addquery_obj_err)} if success else get_json_error(addquery_obj_err))
 
 
 @csrf_exempt
@@ -461,7 +461,7 @@ def api_get_data(request):
             settings.PREFIX + json_req_obj['collection_name'],
             results_obj_err)
 
-    return JsonResponse({'success': success, 'data': results_obj_err} if success else get_json_error(results_obj_err))
+    return JsonResponse({'success': success, 'data': json_comply(results_obj_err)} if success else get_json_error(results_obj_err))
 
 
 @csrf_exempt
