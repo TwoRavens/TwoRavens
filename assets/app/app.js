@@ -73,7 +73,8 @@ export async function resetPeek(pipeline) {
     peekSkip = 0;
     peekIsExhausted = false;
     localStorage.setItem('peekTableHeaders' + peekId, JSON.stringify([]));
-    localStorage.setItem('peekTableData' + peekId, JSON.stringify([]));
+    localStorage.setItem('peekTableData' + peekId,
+        JSON.stringify([]));
 
     if (pipeline) await updatePeek(pipeline);
 }
@@ -97,7 +98,10 @@ export async function updatePeek(pipeline) {
             type: 'data',
             skip: peekSkip,
             limit: peekLimit,
-            variables
+            variables,
+            nominal: !is_manipulate_mode && nodes
+                .filter(node => node.nature === 'nominal')
+                .map(node => node.name)
         }
     };
 
@@ -120,7 +124,12 @@ export async function updatePeek(pipeline) {
     }
 
     data = data.map(record => Object.keys(record).reduce((out, entry) => {
-        out[entry] = typeof record[entry] === 'number' ? formatPrecision(record[entry]) : record[entry];
+        if (typeof record[entry] === 'number')
+            out[entry] = formatPrecision(record[entry])
+        else if (typeof record[entry] === 'string')
+            out[entry] = `"${record[entry]}"`;
+        else
+            out[entry] = record[entry];
         return out;
     }, {}));
 
@@ -1632,10 +1641,9 @@ export function layout(layoutConstant, v2) {
                 })
                 .on('click', function(d) {
                     setColors(d, dvColor);
-                    legend(dvColor);
-                    d.group1 = d.group2 = false;
                     selectedPebble = d.name;
                     restart();
+                    m.redraw();
                 });
         })
 
@@ -1679,9 +1687,9 @@ export function layout(layoutConstant, v2) {
                 .on('click', function (d) {
                     if (d.defaultNumchar == "character") return;
                     setColors(d, nomColor);
-                    legend(nomColor);
                     selectedPebble = d.name;
                     restart();
+                    m.redraw();
                 });
         });
 
@@ -1725,11 +1733,10 @@ export function layout(layoutConstant, v2) {
                     }, hoverTimeout)
                 })
                 .on('click', d => {
-                    //d.group1 = !d.group1;      // This might be easier, but currently set in setColors()
                     setColors(d, gr1Color);
-                    legend(gr1Color);
                     selectedPebble = d.name;
                     restart();
+                    m.redraw();
                 });
         });
 
@@ -1762,11 +1769,10 @@ export function layout(layoutConstant, v2) {
                     }, hoverTimeout)
                 })
                 .on('click', d => {
-                    //d.group1 = !d.group1;      // This might be easier, but currently set in setColors()
                     setColors(d, gr1Color);
-                    legend(gr1Color);
                     selectedPebble = d.name;
                     restart();
+                    m.redraw();
                 });
         });
 
@@ -1799,11 +1805,10 @@ export function layout(layoutConstant, v2) {
                     }, hoverTimeout)
                 })
                 .on('click', d => {
-                    //d.group2 = !d.group2;      // This might be easier, but currently set in setColors()
                     setColors(d, gr2Color);
-                    legend(gr2Color);
                     selectedPebble = d.name;
                     restart();
+                    m.redraw();
                 });
         });
 
@@ -1833,6 +1838,7 @@ export function layout(layoutConstant, v2) {
                 selectedPebble = d.name;
                 outsideClick = false;
                 restart();
+                m.redraw();
             })
             .on('contextmenu', function(d) {
                 // right click on node
@@ -2114,8 +2120,6 @@ function updateNode(id, nodes) {
             node.nodeCol = node.baseCol;
             node.strokeColor = selVarColor;
             node.strokeWidth = '1';
-
-            borderState();
         }
     } else {
         nodes.push(node);
@@ -3035,12 +3039,6 @@ export async function makeRequest(url, data) {
     return res;
 }
 
-/** needs doc */
-export function legend() {
-    borderState();
-    m.redraw();
-}
-
 /**
    programmatically deselect every selected variable
 */
@@ -3272,29 +3270,12 @@ export function setColors(n, c) {
         del(zparams.zgroup2, -1, n.name)
     }
 
-    if (c === nomColor)
+    if (c === nomColor) {
         findNode(n.name).nature = isIncluded ? 'nominal' : findNode(n.name).defaultNature;
+        resetPeek();
+    }
 }
 
-/** needs doc */
-export function borderState() {
-    let set = (id, param, attrs) => {
-        let el = byId(id);
-        if (!el) {
-            return;
-        }
-
-        zparams[param].length > 0 ?
-            Object.entries(attrs).forEach(([x, y]) => el.querySelector('.rectColor svg circle').setAttribute(x, y)) :
-            el.style['border-color'] = '#ccc';
-    };
-    set('dvButton', 'zdv', {stroke: dvColor});
-    set('csButton','zcross', {stroke: csColor});
-    set('timeButton','ztime', {stroke: timeColor});
-    set('nomButton','znom', {stroke: nomColor});
-    set('gr1Button','zgroup1', {stroke: gr1Color, fill: gr1Color, 'fill-opacity': 0.6, 'stroke-opacity': 0});
-    set('gr2Button','zgroup2', {stroke: gr2Color, fill: gr2Color, 'fill-opacity': 0.6, 'stroke-opacity': 0});
-}
 
 /** needs doc */
 export function subsetSelect(btn) {
@@ -4676,15 +4657,9 @@ export let discoveryClick = problemId => {
     let {target, predictors} = problem;
     erase('Discovery');
     [target, ...predictors].map(x => clickVar(x));
-    predictors.forEach(predictor => {
-        let node = nodes.find(node => node.name === predictor);
-        setColors(node, gr1Color);
-        legend();
-    });
-    let nodeTarget = findNode(target);
-    setColors(nodeTarget, dvColor);
-    // legend();
-    nodeTarget.group1 = nodeTarget.group2 = false;
+    predictors.forEach(predictor => setColors(nodes.find(node => node.name === predictor), gr1Color));
+    setColors(findNode(target), dvColor);
+    m.redraw();
     restart();
 };
 

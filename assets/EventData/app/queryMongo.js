@@ -809,7 +809,7 @@ export function buildMenu(step) {
         return [
             {
                 $project: (metadata.variables || []).reduce((out, entry) => {
-                    out[entry] = 1;
+                    out[entry] = (metadata.nominal || []).includes(entry) ? {'$toString': '$' + entry} : 1;
                     return out;
                 }, {_id: 0})
             },

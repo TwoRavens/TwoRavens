@@ -222,23 +222,23 @@ export function rightpanel() {
     if (!('name' in app.domainIdentifier)) return;
 
     return m(Panel, {
-        side: 'right',
-        label: 'Pipeline',
-        hover: true,
-        width: app.modelRightPanelWidths['Manipulate'],
-        attrsAll: {
-            onclick: () => app.setFocusedPanel('right'),
-            style: {
-                'z-index': 100 + (app.focusedPanel === 'right'),
-                // subtract header, spacer, spacer, scrollbar, table, and footer
-                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown && app.peekData ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
+            side: 'right',
+            label: 'Pipeline',
+            hover: true,
+            width: app.modelRightPanelWidths['Manipulate'],
+            attrsAll: {
+                onclick: () => app.setFocusedPanel('right'),
+                style: {
+                    'z-index': 100 + (app.focusedPanel === 'right'),
+                    // subtract header, spacer, spacer, scrollbar, table, and footer
+                    height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown && app.peekData ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
+                }
             }
-        }
-    }, m(PipelineFlowchart, {
-        compoundPipeline: getPipeline(),
-        pipelineId: app.configurations.name,
-        editable: true
-    }));
+        }, m(PipelineFlowchart, {
+            compoundPipeline: getPipeline(),
+            pipelineId: app.configurations.name,
+            editable: true
+        }));
 }
 
 export class PipelineFlowchart {
@@ -884,7 +884,10 @@ export async function buildDatasetUrl(problem) {
         type: 'menu',
         metadata: {
             type: 'data',
-            variables: [...problem.predictors, problem.target]
+            variables: [...problem.predictors, problem.target],
+            nominal: !app.is_manipulate_mode && app.nodes
+                .filter(node => node.nature === 'nominal')
+                .map(node => node.name)
         }
     };
 

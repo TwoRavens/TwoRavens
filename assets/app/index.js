@@ -41,6 +41,7 @@ import Body_EventData from '../EventData/app/Body_EventData';
 import Peek_EventData from '../common-eventdata/views/Peek';
 import '../EventData/css/app.css'
 import '../EventData/app/app';
+import ListTags from "../common/app/views/ListTags";
 
 export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -418,13 +419,32 @@ function rightpanel(mode) {
                     },
                     {
                         value: 'Problem Pipeline',
-                        contents: m(manipulate.PipelineFlowchart, {
-                            compoundPipeline: manipulate.getPipeline(app.selectedProblem),
-                            pipelineId: app.disco.find(prob => prob.problem_id === app.selectedProblem).problem_id,
-                            editable: true,
-                            aggregate: false
-                        })
-                    }
+                        contents: [
+                            m(manipulate.PipelineFlowchart, {
+                                compoundPipeline: manipulate.getPipeline(app.selectedProblem),
+                                pipelineId: app.disco.find(prob => prob.problem_id === app.selectedProblem).problem_id,
+                                editable: true,
+                                aggregate: false
+                            }),
+                            app.nodes.filter(node => node.nature === 'nominal').length !== 0 && m(Flowchart, {
+                                attrsAll: {style: {height: 'calc(100% - 87px)', overflow: 'auto'}},
+                                labelWidth: '5em',
+                                steps: [{
+                                    key: 'Nominal',
+                                    color: common.nomColor,
+                                    content: m('div', {style: {'text-align': 'left'}},
+                                        m(ListTags, {
+                                            tags: app.nodes
+                                                .filter(node => node.nature === 'nominal')
+                                                .map(node => node.name),
+                                            ondelete: name =>
+                                                app.setColors(app.nodes.find(node => node.name === name), app.nomColor)
+
+                                        }))
+                                }]
+                            })
+                        ]
+                    },
                 ]
             })
         },
@@ -839,7 +859,7 @@ class Body {
                 ]),
                 app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}),
 
-                (app.zparams.ztime.length + app.zparams.zcross.length + app.zparams.zdv.length + app.zparams.znom.length) && m(Subpanel2, {
+                ['zgroup1', 'zgroup2', 'ztime', 'zcross', 'zdv', 'znom'].reduce((acc, elem) => acc + app.zparams[elem].length, 0) > 0 && m(Subpanel2, {
                     id: 'legend', header: 'Legend', class: 'legend',
                     style: {
                         right: app.panelWidth['right'],
