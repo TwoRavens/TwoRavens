@@ -19,23 +19,23 @@ import PanelButton from './views/PanelButton';
 import Subpanel from './views/Subpanel';
 import Flowchart from './views/Flowchart';
 
-import * as common from '../common/app/common';
-import ButtonRadio from '../common/app/views/ButtonRadio';
-import Button from '../common/app/views/Button';
-import Dropdown from '../common/app/views/Dropdown';
-import Footer from '../common/app/views/Footer';
-import Header from '../common/app/views/Header';
-import MenuTabbed from '../common/app/views/MenuTabbed';
-import Modal from '../common/app/views/Modal';
-import Panel from '../common/app/views/Panel';
-import PanelList from '../common/app/views/PanelList';
-import Peek from '../common/app/views/Peek';
-import DataTable from '../common/app/views/DataTable';
-import Table from '../common/app/views/Table';
-import ListTags from "../common/app/views/ListTags";
-import TextField from '../common/app/views/TextField';
-import MenuHeaders from "../common/app/views/MenuHeaders";
-import Subpanel2 from '../common/app/views/Subpanel';
+import * as common from '../common/common';
+import ButtonRadio from '../common/views/ButtonRadio';
+import Button from '../common/views/Button';
+import Dropdown from '../common/views/Dropdown';
+import Footer from '../common/views/Footer';
+import Header from '../common/views/Header';
+import MenuTabbed from '../common/views/MenuTabbed';
+import Modal from '../common/views/Modal';
+import Panel from '../common/views/Panel';
+import PanelList from '../common/views/PanelList';
+import Peek from '../common/views/Peek';
+import DataTable from './views/DataTable';
+import Table from '../common/views/Table';
+import ListTags from "../common/views/ListTags";
+import TextField from '../common/views/TextField';
+import MenuHeaders from "../common/views/MenuHeaders";
+import Subpanel2 from '../common/views/Subpanel';
 
 // EVENTDATA
 import Body_EventData from './eventdata/Body_EventData';
@@ -73,7 +73,6 @@ function leftpanel(mode) {
     if (mode === 'manipulate')
         return manipulate.leftpanel();
 
-    let summaryPebble = app.nodes.find(node => node.name === app.summary.name);
     let selectedDisco = app.disco.find(problem => problem.problem_id === app.selectedProblem);
     let transformVars = [...manipulate.getTransformVariables(manipulate.getProblemPipeline(app.selectedProblem) || [])];
 
@@ -727,8 +726,6 @@ class Body {
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
 
-        let problem = app.selectedProblem && app.disco.find(prob => prob.problem_id === app.selectedProblem);
-
         return m('main', [
             m(Modal),
             this.header(app.currentMode),
@@ -820,7 +817,7 @@ class Body {
                                       'align-items': 'center',
                                       'background-color': app.hexToRgba(common[selected ? 'selVarColor' : 'varColor'])
                                   }
-                              }, [m('', {
+                              }, m('', {
                                   oninit() {
                                       this.node = app.findNode(x);
                                   },
@@ -845,7 +842,7 @@ class Body {
                                         m('b', x),
                                         m('p', predictors.join(', '))]
                                     : x)
-                                 ]);
+                                 );
                           }))
                        )],
                 m('svg#whitespace')),
@@ -862,7 +859,7 @@ class Body {
                     id: 'legend', header: 'Legend', class: 'legend',
                     style: {
                         right: app.panelWidth['right'],
-                        bottom: `calc(${common.panelMargin} + ${app.peekInlineShown ? app.peekInlineHeight + ' + 23px' : '0px'})`,
+                        bottom: `calc(2*${common.panelMargin} + ${app.peekInlineShown ? app.peekInlineHeight + ' + 23px' : '0px'})`,
                         position: 'absolute',
                         width: '150px'
                     }
@@ -905,49 +902,61 @@ class Body {
              {title: "Links", url: devlinks_url},
              {title: "Logout", url: logout_url}];
 
-        let _navBtn = (id, left, right, onclick, args, min) => m(
-            `button#${id}.btn.navbar-right`,
-            {onclick: onclick,
-             style: {'margin-left': left + 'em',
-                     'margin-right': right + 'em',
-                     'min-width': min}},
-            args);
-        let navBtn = (id, left, right, onclick, args, min) => _navBtn(
-            id + '.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
-            left, right, onclick, args, min);
-        let navBtnGroup = (id, onclick, args, min) => m(
-            `button#${id}.btn.navbar-left`,
-            {onclick: onclick,
-             style: {'min-width': min}},
-            args);
-        let navBtn1 = (id, onclick, args, title) => _navBtn(
-            `${id}.btn-default[title=${title}]`, 2, 0, onclick, args);
-
         return m(Header, {
-            style: mode === 'explore' ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}
-        }, [m('#dataField.field[style=text-align: center]', [
-            m('h4#dataName[style=display: inline-block; margin-right:2em; margin-top: 7px]',
-              {onclick: _ => this.cite = this.citeHidden = !this.citeHidden,
-               onmouseout: _ => this.citeHidden || (this.cite = false),
-               onmouseover: _ => this.cite = true},
-              'Dataset Name'),
+            image: '/static/images/TwoRavens.png',
+            aboutText: 'TwoRavens v0.1 "Dallas" -- ' +
+                'The Norse god Odin had two talking ravens as advisors, who would fly out into the world and report back all they observed. ' +
+                'In the Norse, their names were "Thought" and "Memory". ' +
+                'In our coming release, our thought-raven automatically advises on statistical model selection, ' +
+                'while our memory-raven accumulates previous statistical models from Dataverse, to provide cumulative guidance and meta-analysis.',
+            attrsInterface: {style: app.is_explore_mode ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}}
+        },
+            m('div', {style: {'flex-grow': 1}}),
+            m('h4#dataName[style=display: inline-block; margin: .25em 1em]', {
+                    onclick: _ => this.cite = this.citeHidden = !this.citeHidden,
+                    onmouseout: _ => this.citeHidden || (this.cite = false),
+                    onmouseover: _ => this.cite = true
+                },
+                'Dataset Name'),
+            m('div', {style: {'flex-grow': 1}}),
             m('#cite.panel.panel-default',
-              {style: `display: ${this.cite ? 'block' : 'none'}; position: absolute; right: 50%; width: 380px; text-align: left; z-index: 50`},
-              m('.panel-body')),
-            m('span',
-              m('.dropdown[style=float: right; padding-right: 1em]',
+                {style: `display: ${this.cite ? 'block' : 'none'}; margin-top: 2.5em; right: 50%; width: 380px; text-align: left; z-index: 50; position:absolute`},
+                m('.panel-body')),
+
+            m(Button, {
+                id: 'btnEndSession',
+                class: 'ladda-label ladda-button',
+                onclick: app.endsession,
+                style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
+            }, 'Mark Problem Finished'),
+
+            m(Button, {
+                id: 'btnReset',
+                class: 'ladda-label ladda-button',
+                title: 'Reset',
+                onclick: app.reset,
+                style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
+            }, glyph('repeat')),
+
+            m('div.btn-group[role=group][aria-label="..."][style=margin:.25em 1em;display:flex]',
+                m(Button, {id: 'btnTA2', onclick: _ => hopscotch.startTour(app.mytour, 0)}, 'Help Tour ', glyph('road')),
+                m(Button, {id: 'btnTA2', onclick: _ => app.helpmaterials('video')}, 'Video ', glyph('expand')),
+                m(Button, {id: 'btnTA2', onclick: _ => app.helpmaterials('manual')}, 'Manual ', glyph('book'))),
+
+            app.is_model_mode && m(Button, {
+                id: 'btnEstimate',
+                class: 'ladda-label ladda-button',
+                onclick: app.estimate,
+                style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
+            }, 'Solve This Problem'),
+            // mode !== 'model' ? null : navBtn('btnEstimate.btn-default', 1, 1, app.estimate, m("span.ladda-label", mode === 'explore' ? 'Explore' : 'Solve This Problem'), '150px'),
+
+            m('.dropdown[style=float: right; padding-right: 1em]',
                 m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
-                  [username, " ", glyph('triangle-bottom')]),
+                    [username, " ", glyph('triangle-bottom')]),
                 m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
-                  userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
-              mode !== 'model' ? null : navBtn('btnEstimate.btn-default', 2, 1, app.estimate, m("span.ladda-label", mode === 'explore' ? 'Explore' : 'Solve This Problem'), '150px'),
-              m('div.btn-group[role=group][aria-label="..."]', {style:{"float":"right", "margin-left": "2em"}},
-                navBtnGroup('btnTA2.btn-default', _ => hopscotch.startTour(app.mytour, 0), ['Help Tour ', glyph('road')]),
-                navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('video'), ['Video ', glyph('expand')]),
-                navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('manual'), ['Manual ', glyph('book')])),
-              navBtn1("btnReset", app.reset, glyph('repeat'), 'Reset'),
-              navBtn1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished'))
-        ])]);
+                    userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
+        );
     }
 
     peekTable() {

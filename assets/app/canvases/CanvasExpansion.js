@@ -1,8 +1,8 @@
 import m from 'mithril';
 
-import TextField from '../../common/app/views/TextField';
-import ButtonRadio from '../../common/app/views/ButtonRadio';
-import * as common from '../../common/app/common';
+import TextField from '../../common/views/TextField';
+import ButtonRadio from '../../common/views/ButtonRadio';
+import * as common from '../../common/common';
 
 import * as queryMongo from '../manipulations/queryMongo';
 

@@ -2,7 +2,7 @@ import m from 'mithril';
 
 import Panel from './views/Panel';
 import {when} from './views/PanelButton';
-import Dropdown from '../common/app/views/Dropdown';
+import Dropdown from '../common/views/Dropdown';
 import List from './views/PanelList';
 
 export function leftpanel(pipelines) {

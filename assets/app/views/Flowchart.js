@@ -1,5 +1,5 @@
 import m from 'mithril';
-import * as common from '../../common/app/common';
+import * as common from '../../common/common';
 
 export default class Flowchart {
     view(vnode) {

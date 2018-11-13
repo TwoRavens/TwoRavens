@@ -11,6 +11,7 @@ import * as queryAbstract from '../manipulations/queryAbstract';
 import * as queryMongo from '../manipulations/queryMongo';
 
 import * as common from '../../common-eventdata/common';
+import '../../common-eventdata/common.css';
 import Panel from '../../common-eventdata/views/Panel';
 import Header from '../../common-eventdata/views/Header';
 import Footer from '../../common-eventdata/views/Footer';
@@ -89,11 +90,11 @@ export default class Body_EventData {
         let attrsInterface = {style: {width: 'auto'}};
         let isHome = eventdata.selectedCanvas === eventdata.selectedCanvasHome;
 
-        return m(Header, {image: '/static/images/TwoRavens.png'},
+        return m(Header, {image: '/static/images/TwoRavens.png', aboutText: eventdata.aboutText},
 
             m('div', {style: {'flex-grow': 1}}),
-            m("h4", m("h4#datasetLabel", {style: {margin: '.25em 1em'}},
-                eventdata.selectedDataset ? eventdata.genericMetadata[eventdata.selectedDataset]['name'] : '')),
+            m("h4#datasetLabel", {style: {margin: '.25em 1em'}},
+                eventdata.selectedDataset ? eventdata.genericMetadata[eventdata.selectedDataset]['name'] : ''),
 
             m('div', {style: {'flex-grow': 1}}),
             eventdata.selectedDataset && !isHome && m("button#btnPeek.btn.btn-default", {

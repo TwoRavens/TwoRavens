@@ -1,7 +1,6 @@
 import m from 'mithril';
-import Table from './Table';
+import Table from '../../common/views/Table';
 
-import {selVarColor, mergeAttributes} from "../common";
 /*
 library(stargazer)
 data(cars)

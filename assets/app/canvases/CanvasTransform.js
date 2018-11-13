@@ -1,9 +1,9 @@
 import m from 'mithril';
 
-import TextField from "../../common/app/views/TextField";
-import PanelList from '../../common/app/views/PanelList';
+import TextField from "../../common/views/TextField";
+import PanelList from '../../common/views/PanelList';
 import * as query from '../manipulations/queryMongo';
-import * as common from '../../common/app/common';
+import * as common from '../../common/common';
 
 let setDefault = (obj, id, value) => obj[id] = obj[id] || value;
 let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', text);

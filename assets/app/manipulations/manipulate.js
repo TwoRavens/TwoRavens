@@ -8,13 +8,13 @@ import CanvasExpansion from '../canvases/CanvasExpansion';
 
 import Flowchart from '../views/Flowchart';
 
-import Button from '../../common/app/views/Button';
-import TextField from "../../common/app/views/TextField";
-import PanelList from "../../common/app/views/PanelList";
-import ButtonRadio from "../../common/app/views/ButtonRadio";
-import Panel from "../../common/app/views/Panel";
-import Canvas from "../../common/app/views/Canvas";
-import * as common from '../../common/app/common';
+import Button from '../../common/views/Button';
+import TextField from "../../common/views/TextField";
+import PanelList from "../../common/views/PanelList";
+import ButtonRadio from "../../common/views/ButtonRadio";
+import Panel from "../../common/views/Panel";
+import Canvas from "../../common/views/Canvas";
+import * as common from '../../common/common';
 
 import * as app from '../app';
 
