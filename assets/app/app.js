@@ -196,7 +196,7 @@ streamSocket.onmessage = function(e) {
   }
 
   if (msg_data.msg_type === 'GetSearchSolutionsResults'){
-    handleGetScoreSolutionResultsResponse(msg_data.data);
+    handleGetSearchSolutionResultsResponse(msg_data.data);
     console.log('Got it! ' + JSON.stringify(msg_data));
     estimateLadda.stop();
   } else if (msg_data.msg_type == 'GetScoreSolutionResults'){
@@ -2591,11 +2591,11 @@ export async function estimate(btn) {
             estimated = true;
         } else {
             setxTable(rookpipe.predictors);
-            let searchSolutionParmams = CreatePipelineDefinition(rookpipe.predictors,
+            let searchSolutionParams = CreatePipelineDefinition(rookpipe.predictors,
                                                                  rookpipe.depvar,
                                                                  4)
             let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
-                                        searchSolutionParmams);
+                                        searchSolutionParams);
             console.log(JSON.stringify(res));
             if (res===undefined){
               estimateLadda.stop();
@@ -2781,6 +2781,7 @@ export async function estimate(btn) {
                         }, 2700);
 
                         let finalFittedId, finalFittedDetailsUrl;
+                        // Is this ever true? Doesn't seem like it.... (rp 11/9)
                         if(fitFlag){
                             let fittingIntervalId = setInterval(async function() {
 
@@ -5047,12 +5048,12 @@ export async function makeGetSearchSolutionsRequest(searchId){
 }
 
 /**
-  Handle a websocket sent GetScoreSolutionResultsResponse
+  Handle a websocket sent GetSearchSolutionResultsResponse
   wrapped in a StoredResponse object
 */
-export async function handleGetScoreSolutionResultsResponse(response1){
+export async function handleGetSearchSolutionResultsResponse(response1){
   if(typeof response1==undefined){
-    console.log('handleGetScoreSolutionResultsResponse: Error.  "response1" undefined');
+    console.log('GetSearchSolutionResultsResponse: Error.  "response1" undefined');
     return;
   }
   let resizeTriggered = false;
@@ -5062,12 +5063,15 @@ export async function handleGetScoreSolutionResultsResponse(response1){
   // ----------------------------------------
   console.log('(1) Pull the solutionId');
 
+  // Note: the response.id becomes the Pipeline id
+  //
+  //
   if(typeof response1.id==undefined){
-    console.log('handleGetScoreSolutionResultsResponse: Error.  "response1.id" undefined');
+    console.log('GetSearchSolutionResultsResponse: Error.  "response1.id" undefined');
     return;
   }
   if(typeof response1.response.solutionId==undefined){
-    console.log('handleGetScoreSolutionResultsResponse: Error.  "response1.response.solutionId" undefined');
+    console.log('GetSearchSolutionResultsResponse: Error.  "response1.response.solutionId" undefined');
     return;
   }
   let solutionId = response1.response.solutionId;
@@ -5123,11 +5127,13 @@ export async function handleGetScoreSolutionResultsResponse(response1){
       // response4 is not actually needed,
       // GetScoreSolutionResultsResponse objects will be sent back via websockets
       //
-      response4 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
+      response4 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults',
+                          {requestId: scoreId,
+                           pipelineId: response1.id});
 
       //scoreDetailsUrl = res11.data.details_url;
   }
-}  // end handleGetScoreSolutionResultsResponse
+}  // end GetSearchSolutionResultsResponse
 
 /**
   Handle a websocket sent handleGetScoreSolutionResultsResponse

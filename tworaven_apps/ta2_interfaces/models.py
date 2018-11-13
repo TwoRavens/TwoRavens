@@ -21,6 +21,7 @@ STATUS_LIST = (STATUS_IN_PROGRESS,
 REQUEST_STATUS_CHOICES = [(x, x) for x in STATUS_LIST]
 RESPONSE_STATUS_CHOICES = [(x, x) for x in (STATUS_ERROR, STATUS_COMPLETE)]
 
+KEY_STORED_RESPONSE_ID = 'storedResponseId'
 
 class StoredRequest(TimeStampedModel):
     """For storing TA2 responses, especially streaming responses"""
@@ -226,6 +227,10 @@ class StoredResponse(TimeStampedModel):
     stored_request = models.ForeignKey(StoredRequest,
                                        on_delete=models.CASCADE)
 
+    pipeline_id = models.IntegerField(\
+                        default=None,
+                        help_text=('Not always used'))
+
     is_finished = models.BooleanField(default=False)
 
     sent_to_user = models.BooleanField(\
@@ -239,6 +244,13 @@ class StoredResponse(TimeStampedModel):
 
     response = jsonfield.JSONField(\
                     help_text='JSON received by the TA2',
+                    load_kwargs=dict(object_pairs_hook=OrderedDict))
+
+    additionalInfo = jsonfield.JSONField(\
+                    blank=True,
+                    help_text=('Extra JSON added to response.'
+                               ' For example, associated scoreIds.'
+                               ' {scoreIds: []}'),
                     load_kwargs=dict(object_pairs_hook=OrderedDict))
 
     hash_id = models.CharField(help_text='Used for urls (auto-generated)',
@@ -330,7 +342,7 @@ class StoredResponse(TimeStampedModel):
 
     def as_dict(self, short_version=False):
         """Return info as a dict"""
-        attr_names = ('id', 'hash_id',
+        attr_names = ('id', 'hash_id', 'pipeline_id',
                       'is_finished', 'is_error',
                       'status', 'sent_to_user',
                       DETAILS_URL)
@@ -352,6 +364,8 @@ class StoredResponse(TimeStampedModel):
 
         od['response'] = self.response
         od['stored_request'] = self.stored_request.as_dict(short_version=True)
+        if self.additionalInfo:
+            od['additionalInfo'] = self.additionalInfo
 
         return od
 
@@ -376,7 +390,7 @@ class StoredResponse(TimeStampedModel):
         return True
 
     @staticmethod
-    def add_response(stored_request_id, response):
+    def add_response(stored_request_id, response, pipeline_id=None):
         """Retrieve the StoredRequest, set the status and message"""
         try:
             stored_request = StoredRequest.objects.get(pk=stored_request_id)
@@ -385,6 +399,7 @@ class StoredResponse(TimeStampedModel):
 
         stored_response = StoredResponse(\
                             stored_request=stored_request,
+                            pipeline_id=pipeline_id,
                             response=response)
 
         stored_response.save()

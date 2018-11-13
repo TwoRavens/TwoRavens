@@ -10,7 +10,7 @@ from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json
 from tworaven_apps.ta2_interfaces.tasks import stream_and_store_results
 
 from tworaven_apps.ta2_interfaces.models import \
-    (StoredRequest, StoredResponse)
+    (StoredRequest, StoredResponse, KEY_STORED_RESPONSE_ID)
 
 import core_pb2
 
@@ -20,6 +20,9 @@ from google.protobuf.json_format import \
 def get_score_solutions_results(raven_json_str, user_obj, websocket_id=None):
     """
     Send a GetScoreSolutionResultsRequest to the GetScoreSolutionResults command
+    Expected input from raven_json_str:
+        {requestId: scoreId,
+         pipelineId: response1.id}
     """
     if user_obj is None:
         return err_resp("The user_obj cannot be None")
@@ -33,6 +36,8 @@ def get_score_solutions_results(raven_json_str, user_obj, websocket_id=None):
     raven_json_info = json_loads(raven_json_str)
     if not raven_json_info.success:
         return err_resp(raven_json_info.err_msg)
+
+
 
     # --------------------------------
     # convert the JSON string to a gRPC request

@@ -22,7 +22,7 @@ from google.protobuf.json_format import \
 
 
 
-@celery_app.task
+@celery_app.task(ignore_result=True)
 def stream_and_store_results(raven_json_str, stored_request_id,
                              grpc_req_obj_name, grpc_call_name, **kwargs):
     """Make the grpc call which has a streaming response
