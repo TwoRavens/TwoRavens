@@ -39,7 +39,6 @@ import Subpanel2 from '../common/views/Subpanel';
 
 // EVENTDATA
 import Body_EventData from './eventdata/Body_EventData';
-import Peek_EventData from '../common-eventdata/views/Peek';
 
 export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -1053,7 +1052,7 @@ class Body {
 
 if (IS_EVENTDATA_DOMAIN) {
     m.route(document.body, '/home', {
-        '/data': {render: () => m(Peek_EventData, {id: 'eventdata', image: '/static/images/TwoRavens.png'})},
+        '/data': {render: () => m(Peek, {id: 'eventdata', image: '/static/images/TwoRavens.png'})},
         '/:mode': Body_EventData
     });
 }

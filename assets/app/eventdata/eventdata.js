@@ -2,7 +2,7 @@ import * as fileSaver from 'file-saver';
 import m from 'mithril';
 
 import {mongoURL, manipulations, looseSteps, alignmentData, formattingData} from "../app";
-import * as common from '../../common-eventdata/common';
+import * as common from '../../common/common';
 
 import * as queryMongo from '../manipulations/queryMongo';
 import * as tour from "./tour";

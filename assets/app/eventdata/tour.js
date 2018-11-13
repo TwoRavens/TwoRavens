@@ -1,6 +1,6 @@
 import hopscotch from 'hopscotch';
 import '../../pkgs/hopscotch/hopscotch.style.css'
-import * as common from '../../common-eventdata/common';
+import * as common from '../../common/common';
 import m from 'mithril';
 
 import '../../../node_modules/ace-builds/src-min-noconflict/ace.js';

@@ -4,10 +4,10 @@ import * as eventdata from './eventdata';
 import {looseSteps} from "../app";
 
 import * as queryMongo from '../manipulations/queryMongo';
-import Table from '../../common-eventdata/views/Table';
-import TextField from '../../common-eventdata/views/TextField'
-import Button from "../../common-eventdata/views/Button";
-import ButtonRadio from '../../common-eventdata/views/ButtonRadio';
+import Table from '../../common/views/Table';
+import TextField from '../../common/views/TextField'
+import Button from "../../common/views/Button";
+import ButtonRadio from '../../common/views/ButtonRadio';
 
 export default class SaveQuery {
     oninit(vnode) {

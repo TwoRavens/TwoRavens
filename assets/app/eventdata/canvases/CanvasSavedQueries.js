@@ -1,8 +1,8 @@
 import m from 'mithril';
-import * as common from '../../../common-eventdata/common';
-import TextField from "../../../common-eventdata/views/TextField";
-import Table from "../../../common-eventdata/views/Table";
-import Button from "../../../common-eventdata/views/Button";
+import * as common from '../../../common/common';
+import TextField from "../../../common/views/TextField";
+import Table from "../../../common/views/Table";
+import Button from "../../../common/views/Button";
 
 import * as eventdata from "../eventdata";
 

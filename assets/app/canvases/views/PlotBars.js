@@ -1,6 +1,6 @@
 import m from 'mithril';
 import * as d3 from "d3";
-import * as common from '../../../common-eventdata/common';
+import * as common from '../../../common/common';
 
 import '../../../css/plotBars.css';
 

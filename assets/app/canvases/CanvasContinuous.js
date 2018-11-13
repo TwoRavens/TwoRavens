@@ -1,7 +1,7 @@
 import m from 'mithril';
 
-import {panelMargin} from "../../common-eventdata/common";
-import TextField from '../../common-eventdata/views/TextField';
+import {panelMargin} from "../../common/common";
+import TextField from '../../common/views/TextField';
 import PlotContinuous from './views/PlotContinuous';
 
 

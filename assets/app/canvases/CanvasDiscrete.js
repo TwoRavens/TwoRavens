@@ -1,7 +1,7 @@
-import * as common from '../../common-eventdata/common'
+import * as common from '../../common/common'
 import m from 'mithril';
 import PlotBars from "./views/PlotBars";
-import ButtonRadio from "../../common-eventdata/views/ButtonRadio";
+import ButtonRadio from "../../common/views/ButtonRadio";
 import {alignmentData, formattingData} from "../app";
 
 export default class CanvasDiscrete {

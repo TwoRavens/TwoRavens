@@ -1,10 +1,10 @@
 import m from 'mithril';
 import * as eventdata from '../eventdata';
 
-import * as common from '../../../common-eventdata/common';
-import Table from '../../../common-eventdata/views/Table';
-import ListTags from "../../../common-eventdata/views/ListTags";
-import Button from '../../../common-eventdata/views/Button';
+import * as common from '../../../common/common';
+import Table from '../../../common/views/Table';
+import ListTags from "../../../common/views/ListTags";
+import Button from '../../../common/views/Button';
 
 export default class CanvasDatasets {
     oninit() {

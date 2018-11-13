@@ -1,9 +1,9 @@
 import m from 'mithril'
 import vegaEmbed from 'vega-embed';
-import * as common from '../../../common-eventdata/common';
+import * as common from '../../../common/common';
 import * as eventdata from '../eventdata';
 
-import ButtonRadio from '../../../common-eventdata/views/ButtonRadio';
+import ButtonRadio from '../../../common/views/ButtonRadio';
 
 function melt(data, factors) {
     factors = new Set(factors);

@@ -1,8 +1,8 @@
 import m from 'mithril';
-import {grayColor, panelMargin} from '../../common-eventdata/common';
-import ButtonRadio from "../../common-eventdata/views/ButtonRadio";
-import Button from "../../common-eventdata/views/Button";
-import TextField from '../../common-eventdata/views/TextField';
+import {grayColor, panelMargin} from '../../common/common';
+import ButtonRadio from "../../common/views/ButtonRadio";
+import Button from "../../common/views/Button";
+import TextField from '../../common/views/TextField';
 
 import PlotDyad from './views/PlotDyad';
 import * as eventdata from "../eventdata/eventdata";

@@ -1,8 +1,8 @@
 import m from 'mithril';
 import * as d3 from "d3";
 
-import {panelMargin} from "../../common-eventdata/common";
-import TextField from "../../common-eventdata/views/TextField";
+import {panelMargin} from "../../common/common";
+import TextField from "../../common/views/TextField";
 
 // preferences contains:
 // latUpper
