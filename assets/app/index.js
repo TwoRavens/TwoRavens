@@ -13,8 +13,7 @@ import * as exp from './explore';
 import * as plots from './plots';
 import * as results from './results';
 
-import * as manipulate from './manipulate';
-import * as subset from '../EventData/app/app';
+import * as manipulate from './manipulations/manipulate';
 
 import PanelButton from './views/PanelButton';
 import Subpanel from './views/Subpanel';
@@ -33,15 +32,14 @@ import PanelList from '../common/app/views/PanelList';
 import Peek from '../common/app/views/Peek';
 import DataTable from '../common/app/views/DataTable';
 import Table from '../common/app/views/Table';
+import ListTags from "../common/app/views/ListTags";
 import TextField from '../common/app/views/TextField';
 import MenuHeaders from "../common/app/views/MenuHeaders";
 import Subpanel2 from '../common/app/views/Subpanel';
+
 // EVENTDATA
-import Body_EventData from '../EventData/app/Body_EventData';
+import Body_EventData from './eventdata/Body_EventData';
 import Peek_EventData from '../common-eventdata/views/Peek';
-import '../EventData/css/app.css'
-import '../EventData/app/app';
-import ListTags from "../common/app/views/ListTags";
 
 export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -108,7 +106,7 @@ function leftpanel(mode) {
         problem.subTask === 'taskSubtypeUndefined' ? '' : problem.subTask, // ignore taskSubtypeUndefined
         problem.metric,
         // the view manipulations button
-        (!!problem.subsetObs || !!problem.transform || (subset.manipulations[problem.problem_id] || []).length !== 0) && m(
+        (!!problem.subsetObs || !!problem.transform || (app.manipulations[problem.problem_id] || []).length !== 0) && m(
             'div[style=width:100%;text-align:center]', m(Button, {
                 disabled: problem.problem_id === app.selectedProblem && app.rightTab === 'Manipulate' && common.panelOpen['right'],
                 title: `view manipulations for ${problem.problem_id}`,
@@ -437,9 +435,10 @@ function rightpanel(mode) {
                                             tags: app.nodes
                                                 .filter(node => node.nature === 'nominal')
                                                 .map(node => node.name),
-                                            ondelete: name =>
-                                                app.setColors(app.nodes.find(node => node.name === name), app.nomColor)
-
+                                            ondelete: name => {
+                                                app.setColors(app.nodes.find(node => node.name === name), app.nomColor);
+                                                app.restart();
+                                            }
                                         }))
                                 }]
                             })
@@ -881,7 +880,7 @@ class Body {
                         m(".rectLabel[style=display:inline-block;vertical-align:text-bottom;margin-left:.5em]", btn[2])))
                 ),
 
-                (subset.manipulations[app.selectedProblem] || []).filter(step => step.type === 'subset').length !== 0 && m(Subpanel2, {
+                (app.manipulations[app.selectedProblem] || []).filter(step => step.type === 'subset').length !== 0 && m(Subpanel2, {
                     id: 'subsetSubpanel',
                     header: 'Subsets',
                     style: {
@@ -889,7 +888,7 @@ class Body {
                         top: common.panelMargin,
                         position: 'absolute'
                     }
-                }, subset.manipulations[app.selectedProblem]
+                }, app.manipulations[app.selectedProblem]
                     .filter(step => step.type === 'subset')
                     .map(step => m('div', step.id))
                     .concat([`${manipulate.totalSubsetRecords} Records`]))
@@ -993,7 +992,6 @@ class Body {
                 }
             }),
             m(Table, {
-                // headers: [...subset.tableHeaders, ...subset.tableHeadersEvent],
                 id: 'previewTable',
                 data: app.peekData || []
             })

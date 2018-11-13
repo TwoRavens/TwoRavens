@@ -3,18 +3,14 @@
 */
 import hopscotch from 'hopscotch';
 import m from 'mithril';
-import *  as dataTable from '../common/app/views/DataTable';
 import * as common from "../common/app/common";
 
-// this contains an object of abstract descriptions of pipelines of manipulations
-import {manipulations} from "../EventData/app/app";
-import * as manipulate from './manipulate';
-import * as queryMongo from '../EventData/app/queryMongo';
+import * as manipulate from './manipulations/manipulate';
 
 import {setModal} from '../common/app/views/Modal';
 
 import {bars, barsNode, barsSubset, density, densityNode, scatter, selVarColor} from './plots.js';
-import {elem, fadeOut} from './utils';
+import {elem} from './utils';
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -142,6 +138,19 @@ export async function updatePeek(pipeline) {
     peekIsLoading = false;
     m.redraw();
 };
+
+// ~~~~ MANIPULATIONS STATE ~~~~
+export let mongoURL = '/eventdata/api/';
+
+// this contains an object of abstract descriptions of pipelines of manipulations
+export let manipulations = {};
+// Holds steps that aren't part of a pipeline (for example, pending subset or aggregation in eventdata)
+export let looseSteps = {};
+
+export let formattingData = {};
+export let alignmentData = {};
+// ~~~~
+
 
 let solver_res = []
 export let setSolver_res = res => solver_res = res;
