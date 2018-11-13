@@ -1,0 +1,21 @@
+.bar {
+    fill: steelblue;
+    cursor: pointer;
+}
+.bar:hover {
+    stroke: #000000;
+}
+.bar-selected {
+    fill: #419641;
+    cursor: pointer;
+}
+.bar-selected:hover {
+    stroke: #000000;
+}
+.bar-some {
+    fill: url(#plotBarsStripes);
+    cursor: pointer;
+}
+.bar-some:hover {
+    stroke: #000000;
+}

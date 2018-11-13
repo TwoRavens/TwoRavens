@@ -12,7 +12,7 @@ from tworaven_apps.utils.basic_response import (ok_resp,
 
 class TemporaryFileMaker(object):
 
-    def __init__(self, query_json):
+    def __init__(self, filename, query_json):
         """generate temp file"""
 
         self.success_status = True
@@ -46,10 +46,13 @@ class TemporaryFileMaker(object):
         # Do something (like send it to Dataverse)
         # ---------------------------
         self.msgt('(3) show file contents')
+        file_path = dict(temp_file_path=temp_file_path)
+        file_uploader = DataverseFileUpload(filename, **file_path)
+        if file_uploader.has_error():
+            # do something; tell user
+            self.temp_obj = file_uploader.get_error_message()
 
-        temp_obj = DataverseFileUpload(temp_file_path)
-
-        succ, res_obj = temp_obj.return_status()
+        succ, res_obj = file_uploader.return_status()
         self.success_status = succ
         self.temp_obj = res_obj
 

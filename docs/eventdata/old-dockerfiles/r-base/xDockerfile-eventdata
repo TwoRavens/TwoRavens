@@ -1,0 +1,62 @@
+# 7.4.2018 - Zelig is a bit hosed.  will try to use the working
+#       tworavens/r-service-base from 4 months ago
+#
+
+
+FROM r-base:3.4.4
+MAINTAINER Raman Prasad (raman_prasad@harvard.edu)
+
+LABEL organization="Two Ravens" \
+      2ra.vn.version="0.0.7-beta" \
+      2ra.vn.release-date="2018-07-03" \
+      description="Image for the base of the Two Ravens R service. (event data specific)"
+
+# ----------------------------------------------------
+# This contains R and specific packages
+# needed to run the TwoRavens rook application
+#
+# - The Image from this Dockerfile is used as a base
+#   to copy in the Rook files and run the app in /rook
+#
+# ----------------------------------------------------
+
+# -------------------------------------
+# Install tools needed for R packages
+# -------------------------------------
+RUN apt-get update && \
+    apt-get -y install libxml2-dev && \
+    apt-get -y install libssh2-1-dev && \
+    apt-get -y install libssl-dev && \
+    apt-get -y install libcurl4-openssl-dev && \
+    apt-get -y install libsasl2-dev
+
+# -------------------------------------
+# Install R packages for TwoRavens
+# -------------------------------------
+RUN  R -e 'install.packages("Rcpp", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("VGAM", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("AER", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("dplyr", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("quantreg", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("geepack", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("maxLik", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("Rook", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("jsonlite", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("rjson", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("devtools", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("DescTools", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("nloptr", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("XML", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("rpart", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("cellranger", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("tidyverse", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("lubridate", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("data.table", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("Zelig", repos="http://cran.rstudio.org")'
+
+# -------------------------------------
+# another package...
+# -------------------------------------
+RUN R -e 'install.packages("mongolite", repos="http://cran.rstudio.org")'
+
+EXPOSE 8000

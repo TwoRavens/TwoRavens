@@ -37,7 +37,7 @@ class PanelList {
                           },
                           onmouseout: "$(this).popover('toggle');",
                           'data-container': 'body',
-                          'data-content': content ? content(v) : app.popoverContent(app.findNodeIndex(v, true)),
+                          'data-content': content ? content(v) : app.popoverContent(app.findNode(v)),
                           'data-html': 'true',
                           'data-original-title': title + ' for <b>' + v,
                           'data-placement': probDesc ? 'top' : 'right',
