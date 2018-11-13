@@ -1,6 +1,3 @@
-[submodule "assets/common-eventdata"]
-	path = assets/common-eventdata
-	url = https://github.com/TwoRavens/common.git
 [submodule "assets/common"]
 	path = assets/common
 	url = https://github.com/TwoRavens/common.git
