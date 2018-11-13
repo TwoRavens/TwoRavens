@@ -37,7 +37,7 @@ import CanvasCustom from "./canvases/CanvasCustom";
 import CanvasResults from "./canvases/CanvasResults";
 
 import SaveQuery from "./SaveQuery";
-import {TreeAggregate, TreeQuery, TreeVariables} from "../views/JQTrees";
+import {TreeAggregate, TreeSubset, TreeVariables} from "../views/JQTrees";
 
 export default class Body_EventData {
 
@@ -526,8 +526,8 @@ export default class Body_EventData {
                     {
                         value: 'Subsets',
                         contents: (manipulations.eventdata.length + (eventdata.selectedMode === 'subset' ? looseSteps['pendingSubset'].abstractQuery.length : 0)) ? [
-                            ...manipulations.eventdata.map(step => m(TreeQuery, {isQuery: true, step, editable: false})),
-                            m(TreeQuery, {step: looseSteps['pendingSubset'], editable: true})
+                            ...manipulations.eventdata.map(step => m(TreeSubset, {isQuery: true, step, pipelineId: 'eventdata', editable: false})),
+                            m(TreeSubset, {step: looseSteps['pendingSubset'], pipelineId: 'pendingSubset', editable: true})
                         ] : [
                             m('div[style=font-style:italic]', 'Match all records'),
                             looseSteps['pendingSubset'].abstractQuery.length !== 0 && m('div[style=font-style:italic]', 'Some pending constraints are hidden. Update from subset menu to apply them.')
@@ -543,10 +543,9 @@ export default class Body_EventData {
                         value: 'Unit Measures',
                         contents: looseSteps['eventdataAggregate'].measuresUnit.length
                             ? m(TreeAggregate, {
-                                pipelineId: looseSteps['eventdataAggregate'].id,
-                                stepId: '',
+                                pipelineId: 'looseStep',
+                                stepId: looseSteps['eventdataAggregate'].id,
                                 measure: 'unit',
-                                // id: looseSteps['eventdataAggregate'].id + 'unit',
                                 data: looseSteps['eventdataAggregate'].measuresUnit,
                                 editable: true
                             })
@@ -556,8 +555,8 @@ export default class Body_EventData {
                         value: 'Event Measures',
                         contents: looseSteps['eventdataAggregate'].measuresAccum.length
                             ? m(TreeAggregate, {
-                                pipelineId: looseSteps['eventdataAggregate'].id,
-                                stepId: '',
+                                pipelineId: 'looseStep',
+                                stepId: looseSteps['eventdataAggregate'].id,
                                 measure: 'accumulator',
                                 data: looseSteps['eventdataAggregate'].measuresAccum,
                                 editable: true

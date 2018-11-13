@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {TreeAggregate, TreeQuery, TreeTransform} from '../views/JQTrees';
+import {TreeAggregate, TreeSubset, TreeTransform} from '../views/JQTrees';
 import CanvasContinuous from '../canvases/CanvasContinuous';
 import CanvasDate from '../canvases/CanvasDate';
 import CanvasDiscrete from '../canvases/CanvasDiscrete';
@@ -317,7 +317,7 @@ export class PipelineFlowchart {
                         content = m('div', {style: {'text-align': 'left'}},
                             deleteButton,
                             m('h4[style=font-size:16px;margin-left:0.5em]', 'Subset'),
-                            m(TreeQuery, {pipelineId, step, editable, redraw, setRedraw}),
+                            m(TreeSubset, {pipelineId, step, editable, redraw, setRedraw}),
 
                             editable && [
                                 m(Button, {

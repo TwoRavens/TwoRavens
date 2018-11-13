@@ -11,7 +11,7 @@ import * as d3 from "d3";
 // })
 
 // If data is passed, the D3 plot will be reconstructed. Otherwise, the plot state will be preserved
-// Passed s must be sorted!
+// Passed data must be sorted!
 
 let getFreq = entry => entry.Freq;
 let getLabel = entry => entry.Label;

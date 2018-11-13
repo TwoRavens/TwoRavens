@@ -867,12 +867,12 @@ export let menuPostProcess = new Proxy({
             if (out.length === 0) return [entry];
             let tempDate = incrementMonth(out[out.length - 1]['Label']);
 
-            while (!isSameMonth(tempDate, entry['Date'])) {
+            while (!isSameMonth(tempDate, entry['Label'])) {
                 out.push({Freq: 0, Label: new Date(tempDate)});
                 tempDate = incrementMonth(tempDate);
             }
             out.push(entry);
-            return (out);
+            return out;
         }, []),
 
     'summary': data => data[0],

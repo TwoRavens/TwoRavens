@@ -113,11 +113,11 @@ export class TreeTransform {
     }
 }
 
-function buttonDeleteTransform(pipelineId, step, id) {
-    return `<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;margin-top:2px;height:18px' onclick='callbackDeleteTransform("${pipelineId}", "${step}", "${id}")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>`;
+function buttonDeleteTransform(pipelineId, stepId, id) {
+    return `<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;margin-top:2px;height:18px' onclick='callbackDeleteTransform("${pipelineId}", "${stepId}", "${id}")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>`;
 }
 
-export class TreeQuery {
+export class TreeSubset {
     selectAll(subsetTree, abstractQuery, state) {
         if (Array.isArray(abstractQuery)) abstractQuery.forEach(element => this.selectAll(subsetTree, element, state));
         if (typeof abstractQuery === 'object' && 'id' in abstractQuery) {
@@ -396,8 +396,10 @@ function buttonDeleteAggregation(pipelineId, stepId, nodeId) {
 // Edit tree (typically called from JQtree)
 
 window.callbackDeleteTransform = function (pipelineId, stepId, transformationName) {
-    let step = [...manipulations[pipelineId], ...Object.values(looseSteps)]
-        .find(candidate => candidate.id === (Number(stepId) || stepId));
+    let step = [
+        ...(manipulations[pipelineId] || []),
+        ...Object.values(looseSteps)
+    ].find(step => String(step.id) === String(stepId));
     step.transforms.splice(step.transforms.findIndex(transformation => transformation.name === transformationName), 1);
     step.expansions.splice(step.expansions.findIndex(expansion => expansion.name === transformationName));
 
@@ -408,9 +410,13 @@ window.callbackDeleteTransform = function (pipelineId, stepId, transformationNam
 window.callbackDeleteAggregation = function (pipelineId, stepId, nodeId) {
     let measureId = nodeId.split('-')[1];
 
-    let step = [...manipulations[pipelineId], ...Object.values(looseSteps)]
-        .find(step => step.id === stepId);
+    let step = [
+        ...(manipulations[pipelineId] || []),
+        ...Object.values(looseSteps)
+    ].find(step => String(step.id) === String(stepId));
 
+    console.log(Object.values(looseSteps));
+    console.log(stepId);
     let ruleTree = {
         'unit': step.measuresUnit,
         'accumulator': step.measuresAccum
@@ -422,7 +428,7 @@ window.callbackDeleteAggregation = function (pipelineId, stepId, nodeId) {
 
     // If deleting the last leaf in a branch, delete the branch
     if (typeof node.parent.id !== 'undefined' && node.parent.children.length === 1) {
-        callbackDeleteAggregation(node.parent.id);
+        callbackDeleteAggregation(pipelineId, stepId, node.parent.id);
     } else {
         aggregationTree.tree('removeNode', node);
 
@@ -442,7 +448,10 @@ window.callbackOperator = function (pipelineId, stepId, nodeId, operand) {
     }
 
     node.operation = operand;
-    let step = [...manipulations[pipelineId], ...Object.values(looseSteps)].find(step => step.id === (Number(stepId) || stepId));
+    let step = [
+        ...(manipulations[pipelineId] || []),
+        ...Object.values(looseSteps)
+    ].find(step => String(step.id) === String(stepId));
     step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
 
     if (!IS_EVENTDATA_DOMAIN) manipulate.setQueryUpdated(true);
@@ -460,11 +469,14 @@ window.callbackDelete = async function (pipelineId, stepId, nodeId) {
 
     // If deleting the last leaf in a branch, delete the branch
     if (typeof node.parent.id !== 'undefined' && node.parent.children.length === 1) {
-        callbackDelete(node.parent.id);
+        callbackDelete(pipelineId, stepId, node.parent.id);
     } else {
         subsetTree.tree('removeNode', node);
 
-        let step = [...manipulations[pipelineId], ...Object.values(looseSteps)].find(step => step.id === (Number(stepId) || stepId));
+        let step = [
+            ...(manipulations[pipelineId] || []),
+            ...Object.values(looseSteps)
+        ].find(step => String(step.id) === String(stepId));
         step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
 
         hideFirst(step.abstractQuery);
@@ -493,8 +505,6 @@ window.callbackDelete = async function (pipelineId, stepId, nodeId) {
 
 window.callbackNegate = function (pipelineId, stepId, nodeId, bool) {
 
-    console.log(`subsetTree${pipelineId}${stepId}`);
-
     let subsetTree = $(`[id='subsetTree${pipelineId}${stepId}']`);
     let node = subsetTree.tree('getNodeById', nodeId);
 
@@ -506,7 +516,10 @@ window.callbackNegate = function (pipelineId, stepId, nodeId, bool) {
 
     node.negate = bool;
 
-    let step = [...manipulations[pipelineId], ...Object.values(looseSteps)].find(step => step.id === (Number(stepId) || stepId));
+    let step = [
+        ...(manipulations[pipelineId] || []),
+        ...Object.values(looseSteps)
+    ].find(step => String(step.id) === String(stepId));
     step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
 
     if (!IS_EVENTDATA_DOMAIN) manipulate.setQueryUpdated(true);

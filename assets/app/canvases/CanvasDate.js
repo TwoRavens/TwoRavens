@@ -13,21 +13,13 @@ import PlotContinuous from './views/PlotContinuous';
 
 
 export function interpolate(data, date) {
-    let allDatesInt = [];
-    for (let entry of data) {
-        allDatesInt.push(entry['Label'])
-    }
-
+    let allDatesInt = data.map(entry => entry['Label']);
     let lower = allDatesInt[0];
     let upper = allDatesInt[allDatesInt.length - 1];
 
     for (let candidate in allDatesInt) {
-        if (allDatesInt[candidate] > lower && allDatesInt[candidate] < date) {
-            lower = allDatesInt[candidate];
-        }
-        if (allDatesInt[candidate] < upper && allDatesInt[candidate] > date) {
-            upper = allDatesInt[candidate];
-        }
+        if (allDatesInt[candidate] > lower && allDatesInt[candidate] < date) lower = allDatesInt[candidate];
+        if (allDatesInt[candidate] < upper && allDatesInt[candidate] > date) upper = allDatesInt[candidate];
     }
 
     let lowerFreq = data[0]['Freq'];
@@ -48,6 +40,7 @@ export function interpolate(data, date) {
 export default class CanvasDate {
     oncreate(vnode) {
         let {data, preferences, setRedraw} = vnode.attrs;
+
         let minDate = data[0]['Label'];
         let maxDate = data[data.length - 1]['Label'];
 
@@ -149,13 +142,13 @@ export default class CanvasDate {
 
             // Filter highlighted data by date picked
             let selectedDates = data.filter(function (row) {
-                return row.Date >= preferences['userLower'] && row.Date <= preferences['userUpper'];
+                return row.Label >= preferences['userLower'] && row.Label <= preferences['userUpper'];
             });
 
             if (preferences['userLower'] !== data[0]['Label']) {
                 let interpolatedMin = {
-                    "Date": preferences['userLower'],
-                    "Freq": interpolate(allDates, preferences['userLower'])
+                    Label: preferences['userLower'],
+                    Freq: interpolate(allDates, preferences['userLower'])
                 };
 
                 selectedDates.unshift(interpolatedMin);
@@ -164,8 +157,8 @@ export default class CanvasDate {
 
             if (preferences['userUpper'] !== data[data.length - 1]['Label']) {
                 let interpolatedMax = {
-                    "Date": preferences['userUpper'],
-                    "Freq": interpolate(allDates, preferences['userUpper'])
+                    Label: preferences['userUpper'],
+                    Freq: interpolate(allDates, preferences['userUpper'])
                 };
                 selectedDates.push(interpolatedMax);
                 allDates.push(interpolatedMax);
