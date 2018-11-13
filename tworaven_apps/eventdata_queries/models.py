@@ -34,6 +34,7 @@ TYPE_CHOICES = [(x, x) for x in TYPE_OPTIONS]
 STATUS_CHOICES = [(x, x) for x in STATUS_STATES]
 METHOD_CHOICES = (u'find', u'aggregate', u'count')  # the valid mongodb collection methods
 HOST_CHOICES = (u'TwoRavens', 'UTDallas')
+DATA_PARTITIONS = (u'TEST', u'TRAIN')
 
 # Create your models here.
 SEARCH_KEY_NAME = u'name'

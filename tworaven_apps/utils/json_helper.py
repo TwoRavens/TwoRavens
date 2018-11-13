@@ -98,3 +98,21 @@ def format_link_for_admin(source_url):
     lnk = '<a href="{0}" target="_blank">{0}</a>'.format(source_url)
 
     return mark_safe(lnk)
+
+
+def json_comply(obj):
+    """Replace invalid JSON elements (inf, -inf, nan) with unambiguous strings."""
+    if issubclass(dict, type(obj)):
+        return {key: json_comply(obj[key]) for key in obj}
+    elif issubclass(list, type(obj)):
+        return [json_comply(elem) for elem in obj]
+
+    elif type(obj) is float:
+        if obj == float('inf'):
+            return '***TWORAVENS_INFINITY***'
+        elif obj == float('-inf'):
+            return '***TWORAVENS_NEGATIVE_INFINITY***'
+        elif obj != obj:
+            return '***TWORAVENS_NAN***'
+
+    return obj

@@ -8,6 +8,7 @@ from tworaven_apps.eventdata_queries.models import \
      TYPE_OPTIONS, TYPE_CHOICES,
      METHOD_CHOICES, HOST_CHOICES)
 
+
 class EventDataSavedQueryForm(forms.ModelForm):
     """ form for event data queries"""
 
@@ -31,11 +32,10 @@ class EventDataSavedQueryForm(forms.ModelForm):
         if not isinstance(query_info, (list, dict)):
             user_msg = ('The query was invalid'
                         ' (not a list or object): %s') % \
-                        (query_info,)
+                       (query_info,)
             raise forms.ValidationError(user_msg)
 
         return query_info
-
 
     @staticmethod
     def get_duplicate_record_error_msg():
@@ -59,8 +59,8 @@ class EventDataSavedQueryForm(forms.ModelForm):
         if cnt > 0:
             # already exists, save will fail
             #
-            self._errors["query"] = self.error_class(\
-                            [self.get_duplicate_record_error_msg()])
+            self._errors["query"] = self.error_class( \
+                [self.get_duplicate_record_error_msg()])
             del self.cleaned_data["query"]
 
         else:
@@ -73,8 +73,8 @@ class EventDataSavedQueryForm(forms.ModelForm):
             if cnt2 > 0:
                 user_msg = ('You have already used this name.'
                             ' Please use a different name for this query.')
-                self._errors["name"] = self.error_class(\
-                                            [user_msg])
+                self._errors["name"] = self.error_class( \
+                    [user_msg])
                 del self.cleaned_data["name"]
 
         return self.cleaned_data
@@ -128,3 +128,40 @@ class EventDataGetMetadataForm(forms.Form):
 
     def clean_collections(self):
         return self.cleaned_data.get('collections')
+
+
+class EventDataGetManipulationForm(forms.Form):
+    """ check if query submission parameters are ok"""
+
+    collection_name = forms.CharField(required=True, widget=forms.Textarea)
+    method = forms.CharField(required=True, widget=forms.Textarea)
+    query = forms.CharField(required=True, widget=forms.Textarea)
+    distinct = forms.CharField(required=False, widget=forms.Textarea)
+    datafile = forms.CharField(required=False, widget=forms.Textarea)
+    reload = forms.BooleanField(required=False)
+    export = forms.BooleanField(required=False)
+
+    def clean_collection_name(self):
+        return self.cleaned_data.get('collection_name')
+
+    def clean_method(self):
+        method = self.cleaned_data.get('method')
+        if method in METHOD_CHOICES:
+            return method
+        else:
+            raise forms.ValidationError("The collection method is not among %s: %s" % (str(METHOD_CHOICES), method))
+
+    def clean_query(self):
+        return json.loads(self.cleaned_data.get('query'))
+
+    def clean_distinct(self):
+        return self.cleaned_data.get('distinct')
+
+    def clean_datafile(self):
+        return self.cleaned_data.get('datafile')
+
+    def clean_reload(self):
+        return self.cleaned_data.get('reload')
+
+    def clean_export(self):
+        return self.cleaned_data.get('export')

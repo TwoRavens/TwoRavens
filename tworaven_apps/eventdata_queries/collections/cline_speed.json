@@ -8,181 +8,181 @@
   "host": "TwoRavens",
   "subsets": {
     "Event Type": {
-      "type": "categorical",
+      "type": "discrete",
       "columns": [
         "EV_TYPE"
       ]
     },
     "Posthoc": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "posthoc"
       ]
     },
     "Link Type": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "LINK_TYPE"
       ]
     },
     "Location Type": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "LOC_TYPE"
       ]
     },
     "Political Expression Type": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "PE_TYPE"
       ]
     },
     "Reduced Political Expression Type": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "EXP_TYPE"
       ]
     },
     "Symbolic Event Type": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "SYM_TYPE"
       ]
     },
     "Advocated Violence": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "AD_VIOL"
       ]
     },
     "Advocated Tactics": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "AD_TACT"
       ]
     },
     "Attack Type": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "ATK_TYPE"
       ]
     },
     "Disruptive State Act Type Broad": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "DSA_TYPE"
       ]
     },
     "Disruptive State Act Type": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "STAT_ACT"
       ]
     },
     "Victim Effect": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "victim_effect"
       ]
     },
     "Weapon": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "weapon"
       ]
     },
     "Property Damaged": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "property_damaged"
       ]
     },
     "Property Owner": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "property_owner"
       ]
     },
     "Geopolitical Entity Type": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "GP_TYPE"
       ]
     },
     "Initiator Type Known": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "KNOW_INI"
       ]
     },
     "Initiator Type": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "INI_TYPE"
       ]
     },
     "Target Type": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "TAR_TYPE"
       ]
     },
     "Victim Type": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "VIC_TYPE"
       ]
     },
     "Non-government Initiator Type": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "NGOV_I1"
       ]
     },
     "Government Initiator Type": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "GOV_I1"
       ]
     },
     "Level of Government Initiator": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "G_LVL_I"
       ]
     },
     "Level of Government Target": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "G_LVL_T"
       ]
     },
     "Level of Government Victim": {
-      "type": "categorical",
+      "type": "discrete",
       "measureType": "accumulator",
       "columns": [
         "G_LVL_V"
@@ -240,7 +240,7 @@
       ]
     },
     "Location": {
-      "type": "categorical_grouped",
+      "type": "discrete_grouped",
       "group_by": "region",
       "columns": [
         "TwoRavens_country"

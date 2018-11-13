@@ -41,7 +41,7 @@
     },
     "Action": {
       "measureType": "accumulator",
-      "type": "categorical",
+      "type": "discrete",
       "formats": [
         "CAMEO",
         "root_code",
@@ -53,7 +53,7 @@
       ]
     },
     "Location": {
-      "type": "categorical_grouped",
+      "type": "discrete_grouped",
       "group_by": "region",
       "columns": [
         "TwoRavens_country"

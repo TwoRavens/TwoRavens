@@ -37,12 +37,32 @@ class MongoRetrieveUtil(BasicErrCheck):
     """
     Used for querying mongo
     """
-    def __init__(self, collection_name, query, method, host='TwoRavens'):
+    def __init__(self, database_name, collection_name, host='TwoRavens'):
         """
         dbname: name of the mongo database
         query: query to run
         method: function to use (find, aggregate, count)
         """
+
+        self.database_name = database_name
+        self.collection_name = collection_name
+        self.host = host
+
+        self.mongo_client = None
+
+        self.basic_check()
+
+    def basic_check(self):
+        """Run some basic checks"""
+        if not self.collection_name:
+            self.add_err_msg('No collection name specified.')
+            return
+
+        cli = self.get_mongo_client()
+
+
+    def run_query(self, query, method, distinct=None):
+        """run the query"""
 
         # replace extended query operators like $oid, $date and $numberLong with objects
         def reformat(query):
@@ -81,47 +101,26 @@ class MongoRetrieveUtil(BasicErrCheck):
         except Exception as e:
             self.add_err_msg("Error reformatting query: %s" % (str(e),))
 
-        self.collection_name = collection_name
-        self.query = query
-        self.method = method
-        self.host = host
-
-        self.mongo_client = None
-
-        self.basic_check()
-
-    def basic_check(self):
-        """Run some basic checks"""
-        if not self.collection_name:
-            self.add_err_msg('No collection name specified.')
-            return
-
-        if self.query is None:
+        if query is None:
             self.add_err_msg('No query specified.')
-            return
 
-        if self.method not in METHOD_CHOICES:
-            self.add_err_msg('%s is not a valid method.\nAvailable methods: %s' % (self.method, str(METHOD_CHOICES)))
+        if method not in METHOD_CHOICES:
+            self.add_err_msg('%s is not a valid method.\nAvailable methods: %s' % (method, str(METHOD_CHOICES)))
 
-        cli = self.get_mongo_client()
-
-
-    def run_query(self, distinct=None):
-        """run the query"""
         if self.has_error():
             return err_resp(self.get_error_message())
 
         if self.host == 'UTDallas':
             url = settings.EVENTDATA_PRODUCTION_SERVER_ADDRESS + settings.EVENTDATA_SERVER_API_KEY + '&datasource=' + self.collection_name
 
-            if self.method == 'count':
-                query = json.dumps([{'$match': self.query}, {'$count': "total"}])
+            if method == 'count':
+                query = json.dumps([{'$match': query}, {'$count': "total"}])
                 return ok_resp(requests.get(url + '&aggregate=' + query).json()['data'][0]['total'])
-            elif self.method == 'find':
+            elif method == 'find':
                 unique = '&unique=' + distinct if distinct else ''
-                return ok_resp(requests.get(url + '&query=' + json.dumps(self.query) + unique).json()['data'])
-            elif self.method == 'aggregate':
-                return ok_resp(requests.get(url + '&aggregate=' + json.dumps(self.query)).json()['data'])
+                return ok_resp(requests.get(url + '&query=' + json.dumps(query) + unique).json()['data'])
+            elif method == 'aggregate':
+                return ok_resp(requests.get(url + '&aggregate=' + json.dumps(query)).json()['data'])
 
         # ----------------------
         # get the client
@@ -131,18 +130,17 @@ class MongoRetrieveUtil(BasicErrCheck):
         # ----------------------
         # choose the database
         # ----------------------
-        if not settings.EVENTDATA_DB_NAME in mongo_client.database_names():
+        if not self.database_name in mongo_client.database_names():
             user_msg = ('The database "%s" was not found'
                         ' on the Mongo server.'
                         '\nAvailable databases: %s') % \
-                        (settings.EVENTDATA_DB_NAME,
+                        (self.database_name,
                          mongo_client.database_names())
             self.add_err_msg(user_msg)
             return err_resp(user_msg)
 
         # set the database
-        db = mongo_client[settings.EVENTDATA_DB_NAME]
-        #print('db chosen: ', settings.EVENTDATA_DB_NAME)
+        db = mongo_client[self.database_name]
 
         # ----------------------
         # choose the collection
@@ -152,7 +150,7 @@ class MongoRetrieveUtil(BasicErrCheck):
                         ' in database: "%s"'
                         '\nAvailable collections: %s') % \
                         (self.collection_name,
-                         settings.EVENTDATA_DB_NAME,
+                         self.database_name,
                          db.collection_names())
             self.add_err_msg(user_msg)
             return err_resp(user_msg)
@@ -160,28 +158,32 @@ class MongoRetrieveUtil(BasicErrCheck):
         # agg_query = [{"$match":{"$and":[{"$and":[{"INTERACTION":{"$not":{"$in":["12","13","20","27","28","35","37"]}}},{"TwoRavens_EVENT_DATE":{"$gte":{"$date":{"$numberLong":"1122304320000"}},"$lte":{"$date":{"$numberLong":"1428072507000"}}}}]},{}]}},{"$project":{"_id":0,"ISO":1,"EVENT_ID_CNTY":1,"EVENT_ID_NO_CNTY":1,"EVENT_DATE":1,"YEAR":1,"TIME_PRECISION":1,"EVENT_TYPE":1,"ACTOR1":1,"ASSOC_ACTOR_1":1,"INTER1":1,"ACTOR2":1,"ASSOC_ACTOR_2":1,"INTER2":1,"INTERACTION":1,"REGION":1,"COUNTRY":1,"ADMIN1":1,"ADMIN2":1,"ADMIN3":1,"LOCATION":1,"LATITUDE":1,"LONGITUDE":1,"GEO_PRECISION":1,"SOURCE":1,"SOURCE_SCALE":1,"NOTES":1,"FATALITIES":1,"TIMESTAMP":1}}]
         # agg_query = [{"$match":{"year": 1998, "target_root" : "RUS", "target_agent":"GOV"}}, {"$count": "year_1998"}]
 
-        if self.method == 'find':
-            cursor = db[self.collection_name].find(self.query)
-        if self.method == 'aggregate':
-            cursor = db[self.collection_name].aggregate(self.query)
-        if self.method == 'count':
-            return ok_resp(db[self.collection_name].count(self.query))
+        try:
+            if method == 'find':
+                cursor = db[self.collection_name].find(query)
+            if method == 'aggregate':
+                cursor = db[self.collection_name].aggregate(query)
+            if method == 'count':
+                return ok_resp(db[self.collection_name].count(query))
 
-        if distinct:
-            cursor = cursor.distinct(distinct)
+            if distinct:
+                cursor = cursor.distinct(distinct)
 
-        # serialize dates manually
-        def serialized(data):
-            if type(data) is datetime:
-                return str(data)[:10]
-            if issubclass(type(data), dict):
-                return {key: serialized(data[key]) for key in data}
-            if issubclass(type(data), list):
-                return [serialized(element) for element in data]
-            else:
-                return data
+            # serialize dates manually
+            def serialized(data):
+                if type(data) is datetime:
+                    return str(data)[:10]
+                if issubclass(type(data), dict):
+                    return {key: serialized(data[key]) for key in data}
+                if issubclass(type(data), list):
+                    return [serialized(element) for element in data]
+                else:
+                    return data
 
-        return ok_resp(serialized(list(cursor)))
+            return ok_resp(serialized(list(cursor)))
+
+        except Exception as err:
+            return err_resp(str(err))
 
 
     def get_mongo_client(self):
