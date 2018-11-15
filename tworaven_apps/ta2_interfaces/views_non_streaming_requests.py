@@ -18,11 +18,14 @@ from tworaven_apps.ta2_interfaces.req_search_solutions import \
 from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.utils.view_helper import \
     (get_request_body,
+     get_request_body_as_json,
+     get_authenticated_user,
      get_json_error,
      get_json_success)
 from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.utils.view_helper import get_session_key
-
+from tworaven_apps.ta2_interfaces.search_solutions_helper import \
+        SearchSolutionsHelper
 
 
 @csrf_exempt
@@ -66,6 +69,42 @@ def view_hello(request):
                                  data=json_format_info.result_obj)
 
     return JsonResponse(json_info, safe=False)
+
+
+@csrf_exempt
+def view_search_describe_fit_score_solutions(request):
+    """gRPC: Call from UI with params to
+    Search, Describe, Fit, and Score solutions"""
+
+    # ------------------------------------
+    # Retrieve the User
+    # ------------------------------------
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    user_obj = user_info.result_obj
+    websocket_id = user_obj.username  # websocket pushes currently based on username
+    user_id = user_obj.id
+
+    # ------------------------------------
+    # Parse the JSON request
+    # ------------------------------------
+    req_json_info = get_request_body_as_json(request)
+    if not req_json_info.success:
+        return JsonResponse(get_json_error(req_json_info.err_msg))
+
+    search_info = SearchSolutionsHelper.make_search_solutions_call(\
+                            req_json_info.result_obj,
+                            websocket_id,
+                            user_id)
+
+    if not search_info.success:
+        return JsonResponse(get_json_error(search_info.err_msg))
+
+    json_info = get_json_success('success!', data=search_info.result_obj)
+    return JsonResponse(json_info, safe=False)
+
 
 @csrf_exempt
 def view_search_solutions(request):

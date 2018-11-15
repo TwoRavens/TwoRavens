@@ -45,6 +45,10 @@ urlpatterns = (
          views_non_streaming_requests.view_hello,
          name='Hello'),
 
+    path(r'SearchDescribeFitScoreSolutions',
+         views_non_streaming_requests.view_search_describe_fit_score_solutions,
+         name='SearchDescribeFitScoreSolutions'),
+
     path(r'SearchSolutions',
          views_non_streaming_requests.view_search_solutions,
          name='SearchSolutions'),

@@ -7,7 +7,7 @@ from django.conf import settings
 
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.random_info import get_alphanumeric_string
-from tworaven_apps.utils.json_helper import json_loads
+from tworaven_apps.utils.json_helper import json_dumps, json_loads
 from tworaven_apps.utils.proto_util import message_to_json
 
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
@@ -28,12 +28,21 @@ def search_solutions(raven_json_str=None):
         err_msg = 'No data found for the SearchSolutionsRequest'
         return err_resp(err_msg)
 
-    # --------------------------------
-    # Make sure it's valid JSON
-    # --------------------------------
-    raven_json_info = json_loads(raven_json_str)
-    if not raven_json_info.success:
-        return err_resp(raven_json_info.err_msg)
+    # This is a dict or OrderedDict, make it a json string
+    #
+    if isinstance(raven_json_str, dict):
+        json_str_info = json_dumps(raven_json_str)
+        if not json_str_info.success:
+            return json_str_info
+        raven_json_str = json_str_info.result_obj
+
+    else:
+        # --------------------------------
+        # Make sure it's valid JSON
+        # --------------------------------
+        raven_json_info = json_loads(raven_json_str)
+        if not raven_json_info.success:
+            return err_resp(raven_json_info.err_msg)
 
     # --------------------------------
     # convert the JSON string to a gRPC request

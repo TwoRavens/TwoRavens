@@ -4,6 +4,7 @@ Utilities for views
 from collections import OrderedDict
 import json
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
+from tworaven_apps.utils.json_helper import json_loads
 
 
 def get_common_view_info(request):
@@ -62,18 +63,8 @@ def get_request_body_as_json(request):
     if not resp_info.success:
         return resp_info
 
-    try:
-        json_data = json.loads(resp_info.result_obj,
-                               object_pairs_hook=OrderedDict)
-    except json.decoder.JSONDecodeError as err_obj:
-        err_msg = ('Failed to convert request body to JSON: %s') % err_obj
-        return err_resp(err_msg)
-    except TypeError as err_obj:
-        err_msg = ('Failed to convert request body to JSON: %s') % err_obj
-        return err_resp(err_msg)
-
-    return ok_resp(json_data)
-
+    json_info = json_loads(resp_info.result_obj)
+    return json_info
 
 
 def get_json_error(err_msg, errors=None):

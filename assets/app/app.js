@@ -308,16 +308,24 @@ streamSocket.onmessage = function(e) {
     return;
   }
 
+  console.log('Got it! ' + JSON.stringify(msg_data));
+
   if (msg_data.msg_type === 'GetSearchSolutionsResults'){
+    console.log('GetSearchSolutionsResults recognized!');
+
     handleGetSearchSolutionResultsResponse(msg_data.data);
-    console.log('Got it! ' + JSON.stringify(msg_data));
     estimateLadda.stop();
+
+  } else if (msg_data.msg_type == 'DescribeSolution'){
+    console.log('DescribeSolution recognized!');
+
+    handleDescribeSolutionResponse(msg_data.data);
+
   } else if (msg_data.msg_type == 'GetScoreSolutionResults'){
-    console.log('Got it! ' + JSON.stringify(msg_data));
+    console.log('DescribeSolution recognized');
     handleGetScoreSolutionResultsResponse(msg_data.data);
   } else {
     console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
-    console.log(' -->' + JSON.stringify(msg_obj));
   }
 };
 streamSocket.onclose = function(e) {
@@ -2516,16 +2524,31 @@ function CreatePipelineDefinition(predictors, depvar, timeBound, aux) {
     return {userAgent: my_userAgent, version: my_version, timeBound: my_timeBound, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, template: my_template, inputs: [{dataset_uri: my_dataseturi}] };
 }
 
+
+
 function CreateFitDefinition(solutionId){
-    let my_solutionId = solutionId;
-    let my_dataseturi = 'file://' + datasetdocurl;
-    let my_inputs = [{dataset_uri: my_dataseturi}];
-    let my_exposeOutputs = [];   // eg. ["steps.3.produce"];  need to fix
-    let my_exposeValueTypes = ['CSV_URI'];
-    let my_users = [{id: 'TwoRavens', choosen: false, reason: ''}];
-    return {solutionId: my_solutionId, inputs: my_inputs, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes, users: my_users};
+
+    let fitDefn = getFitSolutionDefaultParameters();
+    fitDefn.solutionId = solutionId;
+    return fitDefn;
 }
 
+/**
+    Return the default parameters used for a FitSolution call.
+    This DOES NOT include the solutionID
+ */
+export function getFitSolutionDefaultParameters(){
+
+  let my_dataseturi = 'file://' + datasetdocurl;
+  let my_inputs = [{dataset_uri: my_dataseturi}];
+  let my_exposeOutputs = [];   // eg. ["steps.3.produce"];  need to fix
+  let my_exposeValueTypes = ['CSV_URI'];
+  let my_users = [{id: 'TwoRavens', choosen: false, reason: ''}];
+  return {inputs: my_inputs,
+          exposeOutputs: my_exposeOutputs,
+          exposeValueTypes: my_exposeValueTypes,
+          users: my_users};
+}
 
 // {
 //     "fittedSolutionId": "solutionId_yztf3r",
@@ -2567,8 +2590,13 @@ function CreateProduceDefinition(fsid){
     return {fittedSolutionId: my_fittedSolutionId, inputs: my_inputs, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes};
 }
 
+
+
+
 function CreateScoreDefinition(res){
-    let my_solutionId = res.data.response.solutionId;
+    //alert(JSON.stringify(res));
+    //let my_solutionId = res.data.response.solutionId;
+    let my_solutionId = res.response.solutionId;
     let my_dataseturi = 'file://' + datasetdocurl;
     let my_inputs = [{dataset_uri: my_dataseturi}];
     let my_performanceMetrics = [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ];  // need to generalize to case with multiple metrics.  only passes on first presently.;
@@ -2576,6 +2604,9 @@ function CreateScoreDefinition(res){
     let my_configuration = {method: 'HOLDOUT', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
     return {solutionId: my_solutionId, inputs: my_inputs, performanceMetrics: my_performanceMetrics, users: my_users, configuration: my_configuration};
 }
+
+
+
 
 export function downloadIncomplete() {
     if (PRODUCTION && zparams.zsessionid === '') {
@@ -2704,9 +2735,15 @@ export async function estimate(btn) {
             setxTable(rookpipe.predictors);
             let searchSolutionParams = CreatePipelineDefinition(rookpipe.predictors,
                                                                  rookpipe.depvar,
-                                                                 2)
-            let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
-                                        searchSolutionParams);
+                                                                 2);
+
+            let allParams = {searchSolutionParams: searchSolutionParams,
+                             fitSolutionDefaultParams: getFitSolutionDefaultParameters(),
+                             scoreSolutionDefaultParams: {}};
+
+            //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
+            let res = await makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions',
+                                        allParams);
             console.log(JSON.stringify(res));
             if (res===undefined){
               estimateLadda.stop();
@@ -2722,7 +2759,7 @@ export async function estimate(btn) {
             let fittedId = "";
             allsearchId.push(searchId);
 
-          makeGetSearchSolutionsRequest(searchId);
+          //makeGetSearchSolutionsRequest(searchId);
 
           return;
           console.log('SHOULDN\'T BE HERE!!!!!');
@@ -5218,6 +5255,12 @@ export async function handleGetSearchSolutionResultsResponse(response1){
       setSelectedPipeline(pipelineTable[0]['PipelineID']);
   }
 
+  // Add pipeline descriptions to allPipelineInfo
+  // More overwriting than is necessary here.
+  allPipelineInfo[response1.id] = Object.assign(allPipelineInfo[response1.id], response1.data);
+
+  return;
+
   // ----------------------------------------
   // (3) Run DescribeSolution
   // ----------------------------------------
@@ -5260,8 +5303,36 @@ export async function handleGetSearchSolutionResultsResponse(response1){
   }
 }  // end GetSearchSolutionResultsResponse
 
+
 /**
-  Handle a websocket sent handleGetScoreSolutionResultsResponse
+  Handle a describeSolutionResponse send via websockets
+*/
+async function handleDescribeSolutionResponse(response){
+
+  if(typeof response==undefined){
+    console.log('handleDescribeSolutionResponse: Error.  "response" undefined');
+    return;
+  }
+  if(typeof response.pipelineId==undefined){
+    console.log('handleDescribeSolutionResponse: Error.  "pipelineId" undefined');
+    return;
+  }
+  console.log('---- handleDescribeSolutionResponse -----');
+  console.log(JSON.stringify(response));
+
+  // -------------------------------
+  // Update pipeline info....
+  // -------------------------------
+  let pipelineId = response.pipelineId;
+  delete response.pipelineId;
+
+  allPipelineInfo[pipelineId] = Object.assign(allPipelineInfo[pipelineId], response);
+
+}
+
+
+/**
+  Handle a getScoreSolutionResultsResponse send via websocket
   wrapped in a StoredResponse object
 */
 async function handleGetScoreSolutionResultsResponse(response1){
@@ -5302,6 +5373,11 @@ problem_sent.length = 0;
 
 // takes as input problem in the form of a "discovered problem" (can also be user-defined), calls rooksolver, and returns result
 export async function callSolver (prob) {
+
+    // ---------------------------------------
+    return; // TEMP DISABLE callSolver
+    // ---------------------------------------
+
     let temp = JSON.stringify(prob);
     // console.log(temp);
     solver_res.length = 0;

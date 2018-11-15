@@ -35,11 +35,17 @@ from google.protobuf.json_format import \
     (Parse, ParseError)
 from tworavensproject.celery import celery_app
 
+KEY_SEARCH_SOLUTION_PARAMS = 'searchSolutionParams'
+KEY_FIT_SOLUTION_DEFAULT_PARAMS = 'fitSolutionDefaultParams'
+KEY_SCORE_SOLUTION_DEFAULT_PARAMS = 'scoreSolutionDefaultParams'
+REQUIRED_INPUT_KEYS = [(KEY_SEARCH_SOLUTION_PARAMS, 'SearchSolutions'),
+                       (KEY_FIT_SOLUTION_DEFAULT_PARAMS, 'FitSolution'),
+                       (KEY_SCORE_SOLUTION_DEFAULT_PARAMS, 'ScoreSolution')]
 
 class SearchSolutionsHelper(BasicErrCheck):
     """Server-side process for SearchSolutions calls to a TA2"""
 
-    def __init__(self, search_id, websocket_id, user_id):
+    def __init__(self, search_id, websocket_id, user_id, **kwargs):
         """Start the process with params for a SearchSolutions call"""
         assert user_id, "user_id must be set"
         assert search_id, "search_id must be set"
@@ -50,38 +56,67 @@ class SearchSolutionsHelper(BasicErrCheck):
         self.user_id = user_id  # string format; parsable as JSON
         self.user_object = None
 
+        self.all_search_params = kwargs.get('all_search_params', {})
+
         self.get_user()
         self.run_process()
 
+    @staticmethod
+    def check_params(all_params):
+        """Check that "all_params" has all of the required sections"""
+        if not isinstance(all_params, dict):
+            return err_resp('all_params must be a python dict')
+
+        for req_key, grpc_call in REQUIRED_INPUT_KEYS:
+
+            if not req_key in all_params:
+                user_msg = ('"all_params" must contain the key %s for'
+                            ' the %s parameters.') % \
+                            (req_key, grpc_call)
+                return err_resp(user_msg)
+
+        return ok_resp('looks good')
 
 
     @staticmethod
     @celery_app.task(ignore_result=True)
-    def kick_off_solution_results(search_id, websocket_id, user_id):
+    def kick_off_solution_results(search_id, websocket_id, user_id, **kwargs):
         assert search_id, "search_id must be set"
         assert websocket_id, "websocket_id must be set"
 
-        solutions_helper = SearchSolutionsHelper(search_id, websocket_id, user_id)
+        solutions_helper = SearchSolutionsHelper(search_id, websocket_id, user_id, **kwargs)
 
 
     @staticmethod
-    def make_search_solutions_call(search_params, websocket_id, user_id):
+    def make_search_solutions_call(all_params, websocket_id, user_id):
         """Return the result of a SearchSolutions call.
         If successful, an async process is kicked off"""
         if not websocket_id:
             return err_resp('websocket_id must be set')
 
+        print('make_search_solutions_call 1')
+
+        param_check = SearchSolutionsHelper.check_params(all_params)
+        if not param_check.success:
+            return param_check
+
+        print('make_search_solutions_call 2')
+
         # Run SearchSolutions against the TA2
         #
-        search_info = search_solutions(search_params)
+        search_info = search_solutions(all_params[KEY_SEARCH_SOLUTION_PARAMS])
         if not search_info.success:
             return search_info
+
+        print('make_search_solutions_call 2')
 
         search_info_json = json_loads(search_info.result_obj)
         if not search_info_json.success:
             return search_info_json
         search_info_data = search_info_json.result_obj
         print('search_info_data', json_dumps(search_info_data)[1])
+
+        print('make_search_solutions_call 3')
 
         if not KEY_SEARCH_ID in search_info_data:
             return err_resp('searchId not found in the SearchSolutionsResponse')
@@ -90,7 +125,9 @@ class SearchSolutionsHelper(BasicErrCheck):
 
         # Async task to run GetSearchSolutionsResults
         #
-        SearchSolutionsHelper.kick_off_solution_results.delay(search_id, websocket_id, user_id)
+        SearchSolutionsHelper.kick_off_solution_results.delay(\
+                        search_id, websocket_id, user_id,
+                        all_search_params=all_params)
 
         # Back to the UI, looking good
         #
