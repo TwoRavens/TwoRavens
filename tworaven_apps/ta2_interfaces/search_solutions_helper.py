@@ -81,7 +81,7 @@ class SearchSolutionsHelper(BasicErrCheck):
         if not search_info_json.success:
             return search_info_json
         search_info_data = search_info_json.result_obj
-        print('search_info_data', search_info_data)
+        print('search_info_data', json_dumps(search_info_data)[1])
 
         if not KEY_SEARCH_ID in search_info_data:
             return err_resp('searchId not found in the SearchSolutionsResponse')
