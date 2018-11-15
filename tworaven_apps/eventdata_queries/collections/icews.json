@@ -1,0 +1,124 @@
+{
+  "name": "ICEWS",
+  "key": "icews",
+  "description": "Event data consisting of coded interactions between socio-political actors (i.e., cooperative or hostile actions between individuals, groups, sectors and nation states).",
+  "interval": "1995 - Sep. 2016",
+  "codebook": "https://dataverse.harvard.edu/file.xhtml?fileId=2548466&version=RELEASED&version=.0",
+  "download": "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/TYHZAK",
+  "host": "TwoRavens",
+  "subsets": {
+    "Date": {
+      "type": "date",
+      "measureType": "unit",
+      "structure": "point",
+      "columns": [
+        "TwoRavens_Event Date"
+      ]
+    },
+    "Actor": {
+      "type": "dyad",
+      "measureType": "unit",
+      "tabs": {
+        "source": {
+          "full": "Source Name",
+          "filters": [
+            "Source Sectors Grouped",
+            "Source Country"
+          ]
+        },
+        "target": {
+          "full": "Target Name",
+          "filters": [
+            "Target Sectors Grouped",
+            "Target Country"
+          ]
+        }
+      },
+      "delimited": {
+        "Source Sectors Grouped": ",",
+        "Target Sectors Grouped": ","
+      }
+    },
+    "Action": {
+      "measureType": "accumulator",
+      "type": "discrete",
+      "formats": [
+        "CAMEO",
+        "root_code",
+        "penta_class",
+        "PLOVER"
+      ],
+      "columns": [
+        "CAMEO Code"
+      ]
+    },
+    "Location": {
+      "type": "discrete_grouped",
+      "group_by": "region",
+      "columns": [
+        "TwoRavens_country"
+      ]
+    },
+    "Coordinates": {
+      "type": "coordinates",
+      "columns": [
+        "Latitude",
+        "Longitude"
+      ]
+    }
+  },
+  "columns": [
+    "CAMEO Code",
+    "City",
+    "Country",
+    "District",
+    "Event Date",
+    "Event ID",
+    "Event Text",
+    "Intensity",
+    "Latitude",
+    "Longitude",
+    "Province",
+    "Publisher",
+    "Sentence Number",
+    "Source Country",
+    "Source Name",
+    "Source Sectors",
+    "Story ID",
+    "Target Country",
+    "Target Name",
+    "Target Sectors"
+  ],
+  "columns_constructed": [
+    "TwoRavens_Event Date",
+    "TwoRavens_country",
+    "TwoRavens_address",
+    "TwoRavens_city",
+    "TwoRavens_postal",
+    "TwoRavens_postal_ext",
+    "TwoRavens_region",
+    "TwoRavens_subregion"
+  ],
+  "alignments": {
+    "TwoRavens_Event Date": "date",
+    "Latitude": "latitude",
+    "Longitude": "longitude",
+    "CAMEO Code": "action",
+    "TwoRavens_country": "country"
+  },
+  "formats": {
+    "Source Sectors": "icews",
+    "Target Sectors": "icews",
+    "CAMEO Code": "CAMEO",
+    "TwoRavens_country": "ISO-3"
+  },
+  "citations": [
+    {
+      "author": "Boschee, Elizabeth; Lautenschlager, Jennifer; O'Brien, Sean; Shellman, Steve; Starz, James; Ward, Michael",
+      "year": "2015",
+      "title": "ICEWS Coded Event Data",
+      "url": "https://doi.org/10.7910/DVN/28075",
+      "version": "Harvard Dataverse, V22"
+    }
+  ]
+}

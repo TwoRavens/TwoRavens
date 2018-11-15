@@ -22,6 +22,7 @@ REQUEST_STATUS_CHOICES = [(x, x) for x in STATUS_LIST]
 RESPONSE_STATUS_CHOICES = [(x, x) for x in (STATUS_ERROR, STATUS_COMPLETE)]
 
 KEY_STORED_RESPONSE_ID = 'storedResponseId'
+KEY_SEARCH_ID = 'searchId'
 
 class StoredRequest(TimeStampedModel):
     """For storing TA2 responses, especially streaming responses"""
@@ -48,11 +49,9 @@ class StoredRequest(TimeStampedModel):
 
     is_finished = models.BooleanField(default=False)
 
-    pipeline_id = models.CharField(\
-                        'Pipeline ID',
-                        help_text='if applicable',
-                        max_length=255,
-                        blank=True)
+    pipeline_id = models.IntegerField(\
+                        default=-1,
+                        help_text=('Not always used'))
 
     request = jsonfield.JSONField(\
                     help_text='JSON sent by user',
@@ -112,56 +111,19 @@ class StoredRequest(TimeStampedModel):
 
         return callback_url
 
-    @staticmethod
-    def get_callback_url_via_id(stored_request_id):
-        """For returning the callback url with only the id"""
-        assert stored_request_id, 'A stored_request_id is required'
 
-        try:
-            stored_request = StoredRequest.objects.get(pk=stored_request_id)
-        except StoredRequest.DoesNotExist:
-            return err_resp('Failed to find Stored Request')
+    def set_error_status(self, user_message=None, is_finished=True):
+        """For the StoredRequest, set the status and message"""
 
-        return ok_resp(stored_request.get_callback_url())
-
-
-
-
-    @staticmethod
-    def set_error_status(stored_request_id, user_message=None, is_finished=True):
-        """Retrieve the StoredRequest, set the status and message"""
-        try:
-            stored_request = StoredRequest.objects.get(pk=stored_request_id)
-        except StoredRequest.DoesNotExist:
-            return err_resp('Failed to find Stored Request')
-
-        stored_request.status = STATUS_ERROR
-        stored_request.is_finished = is_finished
+        self.status = STATUS_ERROR
+        self.is_finished = is_finished
         if user_message:
-            stored_request.user_message = user_message
+            self.user_message = user_message
 
-        stored_request.save()
+        self.save()
 
-        return ok_resp(None)
+        return ok_resp(self)
 
-    @staticmethod
-    def set_finished_ok_status(stored_request_id, user_message=None):
-        """Retrieve the StoredRequest, set the status and message"""
-        try:
-            stored_request = StoredRequest.objects.get(pk=stored_request_id)
-        except StoredRequest.DoesNotExist:
-            return err_resp('Failed to find Stored Request')
-
-        stored_request.status = STATUS_COMPLETE
-        stored_request.is_finished = True
-        if user_message:
-            stored_request.user_message = user_message
-        else:
-            stored_request.user_message = "Call completed successfully."
-
-        stored_request.save()
-
-        return ok_resp(None)
 
     def has_error_occurred(self):
         """convenience method to check if status == STATUS_ERROR"""
@@ -228,7 +190,7 @@ class StoredResponse(TimeStampedModel):
                                        on_delete=models.CASCADE)
 
     pipeline_id = models.IntegerField(\
-                        default=None,
+                        default=-1,
                         help_text=('Not always used'))
 
     is_finished = models.BooleanField(default=False)
@@ -373,6 +335,9 @@ class StoredResponse(TimeStampedModel):
         """convenience method to check if status == STATUS_ERROR"""
         return self.status == STATUS_ERROR
 
+    def mark_as_sent_to_user(self):
+        """Mark the response as read"""
+        StoredResponse.mark_as_read(self)
 
     @staticmethod
     def mark_as_read(stored_response):
@@ -390,7 +355,7 @@ class StoredResponse(TimeStampedModel):
         return True
 
     @staticmethod
-    def add_response(stored_request_id, response, pipeline_id=None):
+    def add_response(stored_request_id, response):
         """Retrieve the StoredRequest, set the status and message"""
         try:
             stored_request = StoredRequest.objects.get(pk=stored_request_id)
@@ -399,9 +364,31 @@ class StoredResponse(TimeStampedModel):
 
         stored_response = StoredResponse(\
                             stored_request=stored_request,
-                            pipeline_id=pipeline_id,
                             response=response)
 
         stored_response.save()
 
         return ok_resp(stored_response)
+
+
+    def use_id_as_pipeline_id(self):
+        """Use the StoredResponse.id as the pipeline id"""
+        if not self.id:
+            return err_resp('The StoredResponse must be saved before using this method')
+
+        return self.set_pipeline_id(self.id)
+
+
+    def set_pipeline_id(self, pipeline_id):
+        """Set the pipeline id in the current StoredRequest and save it."""
+        if not pipeline_id:
+            return err_resp('pipeline_id not set')
+
+        if not str(pipeline_id).isdigit():
+            return err_resp('The pipeline_id must be a number, an integer.')
+
+        self.pipeline_id = pipeline_id
+
+        self.save()
+
+        return ok_resp(self)

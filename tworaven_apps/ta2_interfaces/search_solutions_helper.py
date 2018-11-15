@@ -3,27 +3,36 @@ process which involves multiple calls to TA2s, including
 both streaming and non-streaming calls.
 
 In addition, certain points in the process will send messages
-back to the UI via websockets."""
+back to the UI via websockets.
+
+Usage example:
+
+search_info = SearchSolutionsHelper.make_initial_call(search_params, websocket_id)
+if search_info.success:
+    return
+
+
+"""
 from django.conf import settings
 
 from tworaven_apps.ta2_interfaces.websocket_message import WebsocketMessage
-
 from tworaven_apps.raven_auth.models import User
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
-from tworaven_apps.utils.json_helper import json_loads
+from tworaven_apps.utils.json_helper import json_loads, json_dumps
+from tworaven_apps.utils.proto_util import message_to_json
 from tworaven_apps.ta2_interfaces.models import \
-        (StoredRequest, StoredResponse)
+        (StoredRequest, StoredResponse,
+         KEY_SEARCH_ID)
+from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
+from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
+from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 import core_pb2
-#from google.protobuf.json_format import \
-#    (Parse, ParseError)
-from tworaven_apps.ta2_interfaces.req_search_solutions import \
-        (search_solutions, end_search_solutions)
-        """stop_search_solutions, describe_solution,
-         score_solution, fit_solution,
-         produce_solution, solution_export,
-         update_problem, list_primitives)"""
-from tworavensproject.celery import celery_app
+import grpc
+from google.protobuf.json_format import \
+    (Parse, ParseError)
+
+
 
 
 class SearchSolutionsHelper(BasicErrCheck):
@@ -43,41 +52,6 @@ class SearchSolutionsHelper(BasicErrCheck):
         self.get_user()
         self.run_process()
 
-
-    @staticmethod
-    def make_initial_call(search_params, websocket_id):
-        """Return the result of a SearchSolutions call.
-        If successful, an async process is kicked off"""
-        if not websocket_id:
-            return err_resp('websocket_id must be set')
-
-        # Run SearchSolutions against the TA2
-        #
-        search_info = search_solutions(search_params)
-        if not search_info.success:
-            return search_info
-
-        try:
-            search_id = search_info.result_obj['data']['searchId']
-        except KeyError:
-            return err_resp('searchId not found in the SearchSolutionsResponse')
-
-        # Async task to run GetSearchSolutionsResults
-        #
-        second_kick_off_solution_results.delay(search_id, websocket_id)
-
-        # Back to the UI, looking good
-        #
-        return search_info.result_obj
-
-
-    @staticmethod
-    @celery_app.task(ignore_result=True)
-    def second_kick_off_solution_results(search_id, websocket_id):
-        assert search_id, "search_id must be set"
-        assert websocket_id, "websocket_id must be set"
-
-        solutions_helper = SearchSolutionsHelper(search_id, websocket_id)
 
     def get_user(self):
         """Fetch the user"""
@@ -105,9 +79,14 @@ class SearchSolutionsHelper(BasicErrCheck):
         # (1) make GRPC request object
         # -----------------------------------
         params_dict = dict(searchId=self.search_id)
-        params_str = json.dumps(params_dict)
+        params_info = json_dumps(params_dict)
+        if not params_info.success:
+            self.add_err_msg(params_info.err_msg)
+            return
+
         try:
-            grpc_req = Parse(params_str, core_pb2.GetSearchSolutionsResultsRequest())
+            grpc_req = Parse(params_info.result_obj,
+                             core_pb2.GetSearchSolutionsResultsRequest())
         except ParseError as err_obj:
             err_msg = ('GetSearchSolutionsResultsRequest: Failed to'
                        ' convert JSON to gRPC: %s') % (err_obj)
@@ -128,11 +107,16 @@ class SearchSolutionsHelper(BasicErrCheck):
         # --------------------------------
         # (3) Make the gRPC request
         # --------------------------------
+        core_stub, err_msg = TA2Connection.get_grpc_stub()
+        if err_msg:
+            return err_resp(err_msg)
+
         msg_cnt = 0
         grpc_call_name = 'GetSearchSolutionsResults'
         try:
             # -----------------------------------------
             # Iterate through the streaming responses
+            # Note: The StoredResponse.id becomes the pipeline id
             # -----------------------------------------
             for reply in core_stub.GetSearchSolutionsResults(\
                     grpc_req, timeout=settings.TA2_GRPC_LONG_TIMEOUT):
@@ -164,8 +148,6 @@ class SearchSolutionsHelper(BasicErrCheck):
                                 stored_request.id,
                                 response=msg_json_info.result_obj)
 
-                # over here........
-                stored_resp_info.add_pipeline_id(....)
                 # -----------------------------------------
                 # Make sure the response was saved (probably won't happen)
                 # -----------------------------------------
@@ -179,44 +161,44 @@ class SearchSolutionsHelper(BasicErrCheck):
                     ws_msg = WebsocketMessage.get_fail_message(\
                             grpc_call_name, user_msg, msg_cnt=msg_cnt)
 
-                    ws_msg.send_message(websocket_id)
+                    ws_msg.send_message(self.websocket_id)
 
                     # Wait for the next response...
                     continue
 
+                # ---------------------------------------------
+                # Looks good!  Get the StoredResponse
+                # - This id will be used as the pipeline id
+                # ---------------------------------------------
+                stored_response = stored_resp_info.result_obj
+                stored_response.use_id_as_pipeline_id()
 
                 # -----------------------------------------------
                 # send responses back to WebSocket
                 # ---------------------------------------------
-                stored_resp = stored_resp_info.result_obj
-
                 ws_msg = WebsocketMessage.get_success_message(\
                             grpc_call_name,
                             'it worked',
                             msg_cnt=msg_cnt,
-                            data=stored_resp.as_dict())
+                            data=stored_response.as_dict())
 
                 print('ws_msg: %s' % ws_msg)
                 #print('ws_msg', ws_msg.as_dict())
 
-                ws_msg.send_message(websocket_id)
+                ws_msg.send_message(self.websocket_id)
 
-                StoredResponse.mark_as_read(stored_resp)
+                stored_response.mark_as_sent_to_user()
                 # -----------------------------------------------
 
                 print('msg received #%d' % msg_cnt)
 
         except grpc.RpcError as err_obj:
-            StoredRequest.set_error_status(\
-                            stored_request_id,
-                            str(err_obj))
+            stored_request.set_error_status(str(err_obj))
             return
 
         except Exception as err_obj:
-            StoredRequest.set_error_status(\
-                            stored_request_id,
-                            str(err_obj))
+            stored_request.set_error_status(str(err_obj))
             return
 
 
-        StoredRequest.set_finished_ok_status(stored_request_id)
+        StoredRequestUtil.set_finished_ok_status(stored_request.id)

@@ -11,6 +11,7 @@ from tworaven_apps.ta2_interfaces.tasks import stream_and_store_results
 
 from tworaven_apps.ta2_interfaces.models import \
     (StoredRequest, StoredResponse, KEY_STORED_RESPONSE_ID)
+from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 
 import core_pb2
 
@@ -77,7 +78,7 @@ def get_score_solutions_results(raven_json_str, user_obj, websocket_id=None):
                         stored_request.id,
                         response=resp_info.result_obj)
 
-        StoredRequest.set_finished_ok_status(stored_request.id)
+        StoredRequestUtil.set_finished_ok_status(stored_request.id)
         # Return the stored **request** (not response)
         #
         return ok_resp(stored_request.as_dict())

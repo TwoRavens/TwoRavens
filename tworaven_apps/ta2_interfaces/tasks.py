@@ -7,10 +7,19 @@ from django.conf import settings
 
 from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.utils.proto_util import message_to_json
+from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
+
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.models import \
     (StoredRequest, StoredResponse)
+from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
+
 from tworaven_apps.ta2_interfaces.websocket_message import WebsocketMessage
+from tworaven_apps.ta2_interfaces.search_solutions_helper import \
+    SearchSolutionsHelper
+from tworaven_apps.ta2_interfaces.req_search_solutions import \
+        (search_solutions)
+from tworaven_apps.ta2_interfaces.models import KEY_SEARCH_ID
 from tworavensproject.celery import celery_app
 
 
@@ -23,6 +32,46 @@ from google.protobuf.json_format import \
 
 
 @celery_app.task(ignore_result=True)
+def kick_off_solution_results(search_id, websocket_id, user_id):
+    assert search_id, "search_id must be set"
+    assert websocket_id, "websocket_id must be set"
+
+    solutions_helper = SearchSolutionsHelper(search_id, websocket_id, user_id)
+
+
+def make_search_solutions_call(search_params, websocket_id, user_id):
+    """Return the result of a SearchSolutions call.
+    If successful, an async process is kicked off"""
+    if not websocket_id:
+        return err_resp('websocket_id must be set')
+
+    # Run SearchSolutions against the TA2
+    #
+    search_info = search_solutions(search_params)
+    if not search_info.success:
+        return search_info
+
+    search_info_json = json_loads(search_info.result_obj)
+    if not search_info_json.success:
+        return search_info_json
+    search_info_data = search_info_json.result_obj
+    print('search_info_data', search_info_data)
+
+    if not KEY_SEARCH_ID in search_info_data:
+        return err_resp('searchId not found in the SearchSolutionsResponse')
+
+    search_id = search_info_data['searchId']
+
+    # Async task to run GetSearchSolutionsResults
+    #
+    kick_off_solution_results.delay(search_id, websocket_id, user_id)
+
+    # Back to the UI, looking good
+    #
+    return ok_resp(search_info_data)
+
+
+@celery_app.task(ignore_result=True)
 def stream_and_store_results(raven_json_str, stored_request_id,
                              grpc_req_obj_name, grpc_call_name, **kwargs):
     """Make the grpc call which has a streaming response
@@ -32,7 +81,7 @@ def stream_and_store_results(raven_json_str, stored_request_id,
     """
     core_stub, err_msg = TA2Connection.get_grpc_stub()
     if err_msg:
-        StoredRequest.set_error_status(stored_request_id, err_msg)
+        StoredRequestUtil.set_error_status(stored_request_id, err_msg)
         return
 
     # optional: used to stream messages back to client via channels
@@ -54,7 +103,7 @@ def stream_and_store_results(raven_json_str, stored_request_id,
                     grpc_req_obj())
     except ParseError as err_obj:
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
-        StoredRequest.set_error_status(stored_request_id, err_msg)
+        StoredRequestUtil.set_error_status(stored_request_id, err_msg)
         return
 
 
@@ -142,16 +191,16 @@ def stream_and_store_results(raven_json_str, stored_request_id,
             print('msg received #%d' % msg_cnt)
 
     except grpc.RpcError as err_obj:
-        StoredRequest.set_error_status(\
+        StoredRequestUtil.set_error_status(\
                         stored_request_id,
                         str(err_obj))
         return
 
-    except Exception as err_obj:
-        StoredRequest.set_error_status(\
-                        stored_request_id,
-                        str(err_obj))
-        return
+    #except Exception as err_obj:
+    #    StoredRequestUtil.set_error_status(\
+    #                    stored_request_id,
+    #                    str(err_obj))
+    #    return
 
 
-    StoredRequest.set_finished_ok_status(stored_request_id)
+    StoredRequestUtil.set_finished_ok_status(stored_request_id)

@@ -15,6 +15,7 @@ class StoredResponseAdminInline(admin.TabularInline):
                        'response_as_json',
                        'created', 'modified', )
     fields = ('status',
+              'pipeline_id',
               'sent_to_user',
               'response_as_json')
     extra = 0
