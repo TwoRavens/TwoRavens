@@ -22,7 +22,9 @@ REQUEST_STATUS_CHOICES = [(x, x) for x in STATUS_LIST]
 RESPONSE_STATUS_CHOICES = [(x, x) for x in (STATUS_ERROR, STATUS_COMPLETE)]
 
 KEY_STORED_RESPONSE_ID = 'storedResponseId'
+KEY_PIPELINE_ID = 'pipelineId'
 KEY_SEARCH_ID = 'searchId'
+KEY_SOLUTION_ID = 'solutionId'
 
 class StoredRequest(TimeStampedModel):
     """For storing TA2 responses, especially streaming responses"""

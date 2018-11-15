@@ -19,8 +19,10 @@ if not KEY_DJANGO_SETTINGS_MODULE in os.environ:
 import django
 django.setup()
 
-from tworaven_apps.ta2_interfaces.tasks import \
-    (make_search_solutions_call, kick_off_solution_results)
+from tworaven_apps.ta2_interfaces.search_solutions_helper import \
+        SearchSolutionsHelper
+#from tworaven_apps.ta2_interfaces.tasks import \
+#    (make_search_solutions_call, kick_off_solution_results)
 
 def run_test():
     """brief test with TA2 running"""
@@ -28,7 +30,7 @@ def run_test():
 
     websocket_id = 'dev_admin'
     user_id = 1 # id of dev_admin
-    info = make_search_solutions_call(search_params, websocket_id, user_id)
+    info = SearchSolutionsHelper.make_search_solutions_call(search_params, websocket_id, user_id)
 
     if not info.success:
         print(info.err_msg)
