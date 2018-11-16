@@ -145,33 +145,41 @@
   console.log('connection made: ' + wsLink);
   var chatSocket = new WebSocket(wsLink);
 
+  let msgCnt = 0;
   chatSocket.onmessage = function(e) {
-     console.log('message received! '  + e);
-      var data = JSON.parse(e.data);
-      console.log('data:' + JSON.stringify(data));
-      var message = data['message'];
 
-      if (message['success']){
-        var header_msg = '<b>Msg #: </b>' + message['msg_cnt'] +
-          '<br /><b>timestamp: </b>' + message['timestamp'] +
-          '<br /><b>type: </b>' + message['msg_type'] +
-          '<br /><b>user_message: </b>' + message['user_message'];
+    console.log('message received! '  + e);
+    let init_data = JSON.parse(e.data);
+    console.log('data:' + JSON.stringify(init_data));
 
-        if (message['additional_info']){
-          header_msg += '<br /><b>additional_info: </b>' + JSON.stringify(message['additional_info']);
-        }
-        var user_msg = '<b>data: </b><br />' + formatOutputTextBox(message['data']);
+    if(typeof init_data.message==undefined){
+      console.log('streamSocket.onmessage: Error, "init_data.message" type not specified!');
+      return;
+    }
 
-        $("#streaming-response").prepend(cardWrap(header_msg, user_msg) + '<br />');
-      }else{
-        var header_msg = '<b>Msg #: </b>' + message['msg_cnt'] +
-          '<br /><b>timestamp: </b>' + message['timestamp'] +
-          '<br /><b>type: </b>' + message['msg_type'] +
-          '<br /><b>user_message: </b>' + message['user_message'];
+    let msg_data = init_data.message
 
-        $("#streaming-response").prepend(cardWrap(header_msg, 'Error encountered') + '<br />');
+    if(typeof msg_data.msg_type==undefined){
+      console.log('streamSocket.onmessage: Error, "msg_data.msg_type" type not specified!');
+      return;
+    }
 
-      }
+    console.log('----- Message type: ' + msg_data.msg_type + ' -----');
+    console.log('data:' + JSON.stringify(msg_data));
+
+    //return;
+    console.log('streamSocket.onmessage: Error, "data.message" not specified!');
+
+    msgCnt++;
+
+    var header_msg = '<b>Msg #: </b>' + msgCnt +
+          '<br /><b>Success: </b>' + msg_data.success +
+          '<br /><b>timestamp: </b>' + msg_data.timestamp +
+          '<br /><b>type: </b>' + msg_data.msg_type;
+
+    var user_msg = '<b>data: </b><br />' + formatOutputTextBox(msg_data);
+
+    $("#streaming-response").prepend(cardWrap(header_msg, user_msg) + '<br />');
 
       //document.querySelector('#streaming-response').value += (message + '\n');
   };

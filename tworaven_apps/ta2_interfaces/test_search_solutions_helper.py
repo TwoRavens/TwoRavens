@@ -1,6 +1,7 @@
-
+import json
 import os
 import sys
+from collections import OrderedDict
 from os.path import abspath, dirname
 
 # ----------------------------------------------------
@@ -29,7 +30,10 @@ from tworaven_apps.ta2_interfaces.search_solutions_helper import \
 
 def run_test():
     """brief test with TA2 running"""
-    search_params_baseball = """{"userAgent":"TwoRavens","version":"2018.7.7","timeBound":2,"priority":1,"allowedValueTypes":["DATASET_URI","CSV_URI"],"problem":{"problem":{"id":"185_bl_problem_TRAIN","version":"1.0","name":"NULL","description":"","taskType":"CLASSIFICATION","taskSubtype":"MULTICLASS","performanceMetrics":[{"metric":"F1_MACRO"}]},"inputs":[{"datasetId":"185_bl_dataset_TRAIN","targets":[{"resourceId":"0","columnIndex":17,"columnName":"Hall_of_Fame"}]}]},"template":{"inputs":[],"outputs":[],"steps":[]},"inputs":[{"dataset_uri":"file:///ravens_volume/test_data/185_baseball/TRAIN/dataset_TRAIN/datasetDoc.json"}]}"""
+    search_params_baseball = """{"searchSolutionParams":{"userAgent":"TwoRavens","version":"2018.7.7","timeBound":2,"priority":1,"allowedValueTypes":["DATASET_URI","CSV_URI"],"problem":{"problem":{"id":"185_bl_problem_TRAIN","version":"1.0","name":"NULL","description":"","taskType":"CLASSIFICATION","taskSubtype":"MULTICLASS","performanceMetrics":[{"metric":"F1_MACRO"}]},"inputs":[{"datasetId":"185_bl_dataset_TRAIN","targets":[{"resourceId":"0","columnIndex":17,"columnName":"Hall_of_Fame"}]}]},"template":{"inputs":[],"outputs":[],"steps":[]},"inputs":[{"dataset_uri":"file:///ravens_volume/test_data/185_baseball/TRAIN/dataset_TRAIN/datasetDoc.json"}]},"fitSolutionDefaultParams":{"inputs":[{"dataset_uri":"file:///ravens_volume/test_data/185_baseball/TRAIN/dataset_TRAIN/datasetDoc.json"}],"exposeOutputs":[],"exposeValueTypes":["CSV_URI"],"users":[{"id":"TwoRavens","choosen":false,"reason":""}]},"scoreSolutionDefaultParams":{}}"""
+
+    search_params_baseball = json.loads(search_params_baseball,
+                                        object_pairs_hook=OrderedDict)
 
     websocket_id = 'dev_admin'
     user_id = 1 # id of dev_admin

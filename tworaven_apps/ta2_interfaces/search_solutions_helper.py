@@ -13,6 +13,7 @@ if search_info.success:
 
 
 """
+import logging
 from django.conf import settings
 
 from tworaven_apps.ta2_interfaces.websocket_message import WebsocketMessage
@@ -23,27 +24,29 @@ from tworaven_apps.utils.json_helper import json_loads, json_dumps
 from tworaven_apps.utils.proto_util import message_to_json
 from tworaven_apps.ta2_interfaces.models import \
         (StoredRequest, StoredResponse,
-         KEY_PIPELINE_ID, KEY_SEARCH_ID, KEY_SOLUTION_ID)
+         KEY_PIPELINE_ID, KEY_SEARCH_ID, KEY_SOLUTION_ID,
+         KEY_SEARCH_SOLUTION_PARAMS, KEY_FIT_SOLUTION_DEFAULT_PARAMS,
+         KEY_SCORE_SOLUTION_DEFAULT_PARAMS,
+         REQUIRED_INPUT_KEYS)
 from tworaven_apps.ta2_interfaces.req_search_solutions import \
         (search_solutions, describe_solution)
 from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
+#
+from tworaven_apps.ta2_interfaces.fit_solutions_helper import FitSolutionsHelper
+#
 import core_pb2
 import grpc
 from google.protobuf.json_format import \
     (Parse, ParseError)
 from tworavensproject.celery import celery_app
 
-KEY_SEARCH_SOLUTION_PARAMS = 'searchSolutionParams'
-KEY_FIT_SOLUTION_DEFAULT_PARAMS = 'fitSolutionDefaultParams'
-KEY_SCORE_SOLUTION_DEFAULT_PARAMS = 'scoreSolutionDefaultParams'
-REQUIRED_INPUT_KEYS = [(KEY_SEARCH_SOLUTION_PARAMS, 'SearchSolutions'),
-                       (KEY_FIT_SOLUTION_DEFAULT_PARAMS, 'FitSolution'),
-                       (KEY_SCORE_SOLUTION_DEFAULT_PARAMS, 'ScoreSolution')]
+LOGGER = logging.getLogger(__name__)
 
 class SearchSolutionsHelper(BasicErrCheck):
     """Server-side process for SearchSolutions calls to a TA2"""
+    GRPC_GET_SEARCH_SOLUTIONS_RESULTS = 'GetSearchSolutionsResults'
 
     def __init__(self, search_id, websocket_id, user_id, **kwargs):
         """Start the process with params for a SearchSolutions call"""
@@ -60,6 +63,7 @@ class SearchSolutionsHelper(BasicErrCheck):
 
         self.get_user()
         self.run_process()
+
 
     @staticmethod
     def check_params(all_params):
@@ -152,6 +156,34 @@ class SearchSolutionsHelper(BasicErrCheck):
 
         self.run_get_search_solution_results()
 
+    def send_websocket_err_msg(self, grpc_call, user_msg='', pipeline_id=None):
+        """Send an error messsage over websockets"""
+        assert grpc_call, 'grpc_call is required'
+
+        if pipeline_id:
+            user_msg = '%s error; pipeline %s: %s' % \
+                           (grpc_call,
+                            pipeline_id,
+                            user_msg)
+        else:
+            user_msg = '%s error: %s' % \
+                           (grpc_call,
+                            user_msg)
+
+
+        # Send Websocket message
+        #
+        ws_msg = WebsocketMessage.get_fail_message(grpc_call, user_msg)
+        ws_msg.send_message(self.websocket_id)
+
+        # Log it
+        #
+        #LOGGER.info('SearchSolutionsHelper: %s', user_msg)
+
+        # Add error to class
+        #
+        self.add_err_msg(user_msg)
+
 
     def run_get_search_solution_results(self):
         """Run SearchSolutions against a TA2"""
@@ -162,7 +194,9 @@ class SearchSolutionsHelper(BasicErrCheck):
         params_dict = dict(searchId=self.search_id)
         params_info = json_dumps(params_dict)
         if not params_info.success:
-            self.add_err_msg(params_info.err_msg)
+            self.send_websocket_err_msg(\
+                    self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
+                    params_info.err_msg)
             return
 
         try:
@@ -171,7 +205,9 @@ class SearchSolutionsHelper(BasicErrCheck):
         except ParseError as err_obj:
             err_msg = ('GetSearchSolutionsResultsRequest: Failed to'
                        ' convert JSON to gRPC: %s') % (err_obj)
-            self.add_err_msg(err_msg)
+            self.send_websocket_err_msg(\
+                    self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
+                    params_info.err_msg)
             return
 
         # --------------------------------
@@ -215,10 +251,9 @@ class SearchSolutionsHelper(BasicErrCheck):
                 if not msg_json_info.success:
                     user_msg = 'Failed to convert response to JSON: %s' % \
                                msg_json_info.err_msg
-                    ws_msg = WebsocketMessage.get_fail_message(\
-                                grpc_call_name, user_msg, msg_cnt=msg_cnt)
-                    ws_msg.send_message(self.websocket_id)
-
+                    self.send_websocket_err_msg(\
+                                    self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
+                                    user_msg)
                     # Wait for next response....
                     continue
 
@@ -227,9 +262,11 @@ class SearchSolutionsHelper(BasicErrCheck):
                 if not KEY_SOLUTION_ID in result_json:
                     user_msg = '"%s" not found in response to JSON: %s' % \
                                (KEY_SOLUTION_ID, result_json)
-                    ws_msg = WebsocketMessage.get_fail_message(\
-                                grpc_call_name, user_msg, msg_cnt=msg_cnt)
-                    ws_msg.send_message(self.websocket_id)
+
+                    self.send_websocket_err_msg(\
+                                    self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
+                                    user_msg)
+
                     # Wait for next response....
                     continue
 
@@ -242,7 +279,7 @@ class SearchSolutionsHelper(BasicErrCheck):
                 # -----------------------------------------
                 stored_resp_info = StoredResponse.add_response(\
                                 stored_request.id,
-                                response=msg_json_info.result_obj)
+                                response=result_json)
 
                 # -----------------------------------------
                 # Make sure the response was saved (probably won't happen)
@@ -252,12 +289,12 @@ class SearchSolutionsHelper(BasicErrCheck):
                     # send a message to the user...
                     #
                     user_msg = 'Failed to store response from %s: %s' % \
-                                (grpc_call_name, msg_json_info.err_msg)
+                                (self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
+                                msg_json_info.err_msg)
 
-                    ws_msg = WebsocketMessage.get_fail_message(\
-                            grpc_call_name, user_msg, msg_cnt=msg_cnt)
-
-                    ws_msg.send_message(self.websocket_id)
+                    self.send_websocket_err_msg(\
+                                    self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
+                                    user_msg)
 
                     # Wait for the next response...
                     continue
@@ -273,7 +310,7 @@ class SearchSolutionsHelper(BasicErrCheck):
                 # send responses back to WebSocket
                 # ---------------------------------------------
                 ws_msg = WebsocketMessage.get_success_message(\
-                            grpc_call_name,
+                            self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
                             'it worked',
                             msg_cnt=msg_cnt,
                             data=stored_response.as_dict())
@@ -288,9 +325,20 @@ class SearchSolutionsHelper(BasicErrCheck):
                 # -----------------------------------------------
                 # continue the process describe/score/etc
                 # -----------------------------------------------
+
+                # DescribeSolution - run sync
+                #
                 self.run_describe_solution(stored_response.pipeline_id,
                                            solution_id,
                                            msg_cnt)
+
+
+                print('PRE run_fit_solution')
+                # FitSolution - run async
+                #
+                self.run_fit_solution(stored_response.pipeline_id,
+                                      solution_id)
+                print('POST run_fit_solution')
 
 
         except grpc.RpcError as err_obj:
@@ -304,9 +352,29 @@ class SearchSolutionsHelper(BasicErrCheck):
 
         StoredRequestUtil.set_finished_ok_status(stored_request.id)
 
+    def run_fit_solution(self, pipeline_id, solution_id):
+        """async: Run FitSolution and GetFitSolutionResults"""
+        # ----------------------------------
+        # Create the input
+        # ----------------------------------
+        fit_params = self.all_search_params[KEY_FIT_SOLUTION_DEFAULT_PARAMS]
+        fit_params[KEY_SOLUTION_ID] = solution_id
+        #fit_params.move_to_end(KEY_SOLUTION_ID, last=False)
+
+
+        # ----------------------------------
+        # Start the async process
+        # ----------------------------------
+        FitSolutionsHelper.make_fit_solutions_call.delay(\
+                                    pipeline_id,
+                                    self.websocket_id,
+                                    self.user_id,
+                                    fit_params)
+
+
 
     def run_describe_solution(self, pipeline_id, solution_id, msg_cnt=-1):
-        """Run a DescribeSolution call for each solution_id"""
+        """sync: Run a DescribeSolution call for each solution_id"""
 
         # ----------------------------------
         # Create the input

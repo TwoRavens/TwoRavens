@@ -308,22 +308,29 @@ streamSocket.onmessage = function(e) {
     return;
   }
 
-  console.log('Got it! ' + JSON.stringify(msg_data));
+  console.log('Got it! Message type: ' + msg_data.msg_type);
+  //JSON.stringify(msg_data));
 
   if (msg_data.msg_type === 'GetSearchSolutionsResults'){
-    console.log('GetSearchSolutionsResults recognized!');
+    console.log(msg_data.msg_type + ' recognized!');
 
     handleGetSearchSolutionResultsResponse(msg_data.data);
     estimateLadda.stop();
 
   } else if (msg_data.msg_type == 'DescribeSolution'){
-    console.log('DescribeSolution recognized!');
+    console.log(msg_data.msg_type + ' recognized!');
 
     handleDescribeSolutionResponse(msg_data.data);
 
   } else if (msg_data.msg_type == 'GetScoreSolutionResults'){
-    console.log('DescribeSolution recognized');
+    console.log(msg_data.msg_type + ' recognized!');
     handleGetScoreSolutionResultsResponse(msg_data.data);
+
+  } else if (msg_data.msg_type == 'GetProduceSolutionResults'){
+    console.log(msg_data.msg_type + ' recognized!');
+
+    handleGetProduceSolutionResultsResponse(msg_data.data);
+
   } else {
     console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
   }
@@ -5243,6 +5250,9 @@ export async function handleGetSearchSolutionResultsResponse(response1){
   // ----------------------------------------
   console.log('(2) Update the pipeline list on the UI');
 
+  // ----------------------------------------
+  // (2a) Update or Create the Pipeline
+  // ----------------------------------------
   onPipelinePrime(response1);
 
   if(!resizeTriggered){
@@ -5305,7 +5315,7 @@ export async function handleGetSearchSolutionResultsResponse(response1){
 
 
 /**
-  Handle a describeSolutionResponse send via websockets
+  Handle a describeSolutionResponse sent via websockets
 */
 async function handleDescribeSolutionResponse(response){
 
@@ -5330,6 +5340,45 @@ async function handleDescribeSolutionResponse(response){
 
 }
 
+/**
+  Handle a GetProduceSolutionResultsResponse sent via websockets
+  -> parse response, retrieve data, plot data
+*/
+async function handleGetProduceSolutionResultsResponse(response){
+
+    if(typeof response==undefined){
+      console.log('handleGetProduceSolutionResultsResponse: Error.  "response" undefined');
+      return;
+    }
+    if(typeof response.pipelineId==undefined){
+      console.log('handleGetProduceSolutionResultsResponse: Error.  "pipelineId" undefined');
+      return;
+    }
+    console.log('---- handleGetProduceSolutionResultsResponse -----');
+    console.log(JSON.stringify(response));
+
+    // Note: UI update logic moved from generatePredictions
+    if (!response.is_finished){
+      console.log('-- GetProduceSolutionResultsResponse not finished yet... (returning) --');
+      return;
+    } else if (response.is_error){
+      console.log('-- GetProduceSolutionResultsResponse has error --')
+      console.log('response: ' + JSON.stringify(response));
+      console.log('----------------------------------------------');
+      return;
+    }
+
+    let hold = response.exposedOutputs;
+    let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
+    let hold3 = hold2.csvUri;
+
+    let responseOutputData = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
+
+    allPipelineInfo[pid].predictedValues = responseOutputData;
+
+    resultsplotgraph(response.pipelineId);
+
+} // end: handleGetProduceSolutionResultsResponse
 
 /**
   Handle a getScoreSolutionResultsResponse send via websocket
