@@ -22,6 +22,10 @@ urlpatterns = (
         views.view_d3m_details_json_latest,
         name='view_d3m_details_json_latest'),
 
+    url(r'^d3m-config/json/eval/latest$',
+        views.view_d3m_details_json_eval_latest,
+        name='view_d3m_details_json_eval_latest'),
+
     url(r'^d3m-config/get-dataset-schema/json$',
         views.view_get_dataset_schema,
         name='view_get_dataset_schema'),
@@ -46,11 +50,5 @@ urlpatterns = (
         views.view_get_problem_data_info,
         name='view_get_problem_data_info'),
 
-    #url(r'^(?P<app_name_in_url>\w{5,25})$',
-    #    views.view_rook_route,
-    #    name='view_rook_route'),
 
-    #url(r'^web-pack$',
-    #    views_test.view_webpack_test,
-    #    name='view_webpack_test'),
 )

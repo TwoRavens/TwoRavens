@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.utils.safestring import mark_safe
 from model_utils.models import TimeStampedModel
 from tworaven_apps.utils.json_helper import format_json_for_admin
-from tworaven_apps.ta2_interfaces.models import STATUS_VAL_FAILED_PRECONDITION
+from tworaven_apps.ta2_interfaces.static_vals import STATUS_VAL_FAILED_PRECONDITION
 from tworaven_apps.utils.view_helper import get_session_key
 
 # Create your models here.

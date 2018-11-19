@@ -18,7 +18,11 @@ urlpatterns = [
 
     url(r'^config/', include('tworaven_apps.configurations.urls')),
 
+    url(r'^eventdata/', include('tworaven_apps.eventdata_queries.urls')),
+
     url(r'^d3m-service/', include('tworaven_apps.ta2_interfaces.urls')),
+
+    url(r'^ws-views/', include('tworaven_apps.websocket_views.urls')),
 
     #url(r'^data/', include('tworaven_apps.test_data.urls')),
 
@@ -26,13 +30,18 @@ urlpatterns = [
 
     url(r'^api/', include('tworaven_apps.api_docs.urls')),
 
-    url(r'^ta3-search/', include('tworaven_apps.ta3_search.urls')),
+    # social auth
+    #
+    url('oauth/', include('social_django.urls', namespace='social')),
 
     url(r'^', include('tworaven_apps.content_pages.urls')),
 
-] + static(settings.STATIC_URL,
-           #document_root=settings.STATIC_ROOT)
-           document_root=settings.TEST_DIRECT_STATIC)
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL,
+                          #document_root=settings.STATIC_ROOT)
+                          document_root=settings.TEST_DIRECT_STATIC)
 
 
 """

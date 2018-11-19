@@ -5,7 +5,7 @@
     "description": "EPA dataset that correlates counties in MN with radon level emissions.",
     "license": "CC0",
     "citation": "\n@data{10287_2009,\nauthor = {Andrew Gelman and John B. Carlin and Hal S. Stern and and Donald B. Rubin},\npublisher = {Harvard Dataverse},\ntitle = {Replication data for: Bayesian Data Analysis, Second Edition},\nyear = {2009},\ndoi = {1902.1/10287},\nurl = {http://hdl.handle.net/1902.1/10287}}\n",
-    "datasetSchemaVersion": "3.0",
+    "datasetSchemaVersion": "3.1.1",
     "redacted": false,
     "datasetVersion": "1.0"
   },

@@ -8,6 +8,35 @@ svg {
   user-select: none;
 }
 
+.is-invalid {
+    border-color: #dc3545 !important;
+}
+
+/* this prevents selections to content. Applied to body when dragging ui elements */
+.no-select {
+    -webkit-user-select: none;  /* Chrome all / Safari all */
+    -moz-user-select: none;     /* Firefox all */
+    -ms-user-select: none;      /* IE 10+ */
+    user-select: none;          /* Likely future */
+}
+
+div#subsetList.popover {
+    max-width: none;
+}
+
+div#subsetList .popover-content {
+    padding: 9px 0;
+}
+
+div#loading.loader {
+    border: 10px solid #f5f5f5;
+    border-top: 10px solid #419641;
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    animation: spin 2s linear infinite;
+}
+
 #subset {
   /*position: absolute;*/
   float:left;margin-right:.5em;
@@ -91,27 +120,15 @@ text.id {
     font-weight: bold;
 }
 
-.left {
-    width: 33.3%;
-    height: 100%; /*was 600px;*/
-    box-sizing: border-box; margin: 0;
-    overflow:scroll;
-}
-
 .navbar-default {
     height: 62px;
 }
 
 #main svg {
     width: 100%;
-    min-height: 200px;
+    /*min-height: 200px;*/
     height: 100%;
 }
-
-#main.svg-leftpanel svg, #main.svg-rightpanel svg {width: 100%;} /* This is size when left/right panel minimized. Was: calc(100% - 300px);}*/
-
-#main.svg-leftpanel.svg-rightpanel svg {width: 100%;}   /*  Was: calc(100% - 300px);} /*
-/* Above changes fix issue when screen gets very small, and right margin is fixed at 300px, obscuring central display, even while left tab is shrinking below 300px */
 
 #leftpanel {
     border: 1px solid #ADADAD;
@@ -125,7 +142,7 @@ text.id {
     z-index: 25;
 }
 
-#leftpanel #leftContentArea div {display:none;}
+/*#leftpanel #leftContentArea div {display:none;}*/
 #leftpanel #leftContentArea div.active {display:block;}
 #leftpanel.closepanel {width:1px;}
 #leftpanel.closepanel #leftpaneltitle, #leftpanel.closepanel div.btn-toolbar, #leftpanel.closepanel div.row-fluid.closepanel {display:none;}
@@ -177,18 +194,8 @@ div.sidepanel div.panelbar span {
 }
 
 #main {
-    border:1px solid #ADADAD;
     width: 100%;
-    height: calc(100% - 62px - 40px);
-    margin-top:62px;
-    position: fixed;
-    overflow: auto;
-}
-
-#canvas {
-    width: 100%;
-    height: calc(100% - 62px - 40px);
-    margin: 62px 0 0 0;
+    height: calc(100% - 62px - 42px);
     position: fixed;
     overflow: auto;
 }
@@ -228,7 +235,7 @@ div.sidepanel div.panelbar span {
     z-index:33;
     height:8%;
     width:14%;
-    right:200px; 
+    right:200px;
     top:14px;
     position:absolute;
 }
@@ -418,7 +425,14 @@ tr.item-lineout{
 }
 
 .item-bordered {
-    border: solid #000000;
+    border: solid black !important;
+    font-weight: bolder;
+}
+.item-dependent {
+    border: solid rgba(40, 164, 201, 0.8);
+}
+.item-nominal {
+    border: solid #ff6600;
 }
 .item-lineout{
     text-decoration:line-through;
@@ -490,4 +504,8 @@ div#scatterplot .axis path {fill: none; stroke: #BDBDBD; shape-rendering: crispE
     /* Position the tooltip */
     position: relative;
     z-index: 1;
+}
+
+.vega-actions a {
+    padding-right: 1em;
 }

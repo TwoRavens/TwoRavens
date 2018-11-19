@@ -1,0 +1,43 @@
+{
+    "solutionId": "solutionId_62usgm",
+    "inputs": [
+        {
+            "csvUri": "file://uri/to-a/csv"
+        },
+        {
+            "datasetUri": "file://uri/to-a/dataset"
+        }
+    ],
+    "performanceMetrics": [
+        {
+            "metric": "ACCURACY",
+            "k": 0,
+            "posLabel": ""
+        },
+        {
+            "metric": "F1_MICRO",
+            "k": 0,
+            "posLabel": ""
+        }
+    ],
+    "users": [
+        {
+            "id": "uuid of user",
+            "choosen": true,
+            "reason": "best solution"
+        },
+        {
+            "id": "uuid of user",
+            "choosen": false,
+            "reason": ""
+        }
+    ],
+    "configuration": {
+        "method": "EVALUATION_METHOD_UNDEFINED",
+        "folds": 0,
+        "trainTestRatio": 0,
+        "shuffle": false,
+        "randomSeed": 0,
+        "stratified": false
+    }
+}

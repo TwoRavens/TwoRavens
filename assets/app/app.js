@@ -1,40 +1,30 @@
+/*
+  Main TwoRavens mithril app
+*/
 import hopscotch from 'hopscotch';
 import m from 'mithril';
+import * as common from "../common/common";
 
-import {heightHeader} from "../common/app/common";
-import * as common from "../common/app/common";
-import {setModal} from '../common/app/views/Modal';
+import * as manipulate from './manipulations/manipulate';
 
-import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
-import {elem, fadeOut} from './utils';
-import {searchIndex} from "./views/Search";
+import {setModal} from '../common/views/Modal';
 
-// hostname default - the app will use it to obtain the variable metadata
-// (ddi) and pre-processed data info if the file id is supplied as an
-// argument (for ex., gui.html?dfId=17), but hostname isn't.
-// Edit it to suit your installation.
-// (NOTE that if the file id isn't supplied, the app will default to the
-// local files specified below!)
-// NEW: it is also possible now to supply complete urls for the ddi and
-// the tab-delimited data file; the parameters are ddiurl and dataurl.
-// These new parameters are optional. If they are not supplied, the app
-// will go the old route - will try to cook standard dataverse urls
-// for both the data and metadata, if the file id is supplied; or the
-// local files if nothing is supplied.
+import {bars, barsNode, barsSubset, density, densityNode, scatter, selVarColor} from './plots.js';
+import {elem} from './utils';
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
 //    Developers, see /template/index.html
 //-------------------------------------------------
 
-var transform_data ={  
+var transform_data ={
     "preprocess_id":0,
     "current_variable":"",
     "description" : "",
-    "transform_variable":[  
+    "transform_variable":[
        "any name (optional)"
     ],
-    "transform_type":{  
+    "transform_type":{
        "manual_transform":true,
        "functional_transform":false
     },
@@ -44,105 +34,214 @@ var transform_data ={
 export let marginTopCarousel = 0;
 export let marginLeftCarousel = 0;
 
-window.onresize = () => {
-    if (m.route.get() === '/data') {
-        return;
-    }
+// ~~~~~ PEEK ~~~~~
+// for the second-window data preview
+window.addEventListener('storage', (e) => {
+    if (e.key !== 'peekMore' + peekId || peekIsLoading) return;
+    if (localStorage.getItem('peekMore' + peekId) !== 'true' || peekIsExhausted) return;
+    localStorage.setItem('peekMore' + peekId, 'false');
+    updatePeek(manipulate.getPipeline(selectedProblem));
+});
 
-    let carousel = elem('#innercarousel');
-    let container = elem('#m0');
-    let whitespace = elem('#whitespace0');
+// for the draggable within-window data preview
+window.addEventListener('mousemove', (e) => peekMouseMove(e));  // please don't remove the anonymous wrapper
+window.addEventListener('mouseup', (e) => peekMouseUp(e));
 
-    marginTopCarousel = (carousel.offsetHeight - whitespace.getAttribute("height") - 16) / 2;
-    marginLeftCarousel = (carousel.offsetWidth - whitespace.getAttribute("width")) / 2;
-
-    container.style.marginTop = marginTopCarousel + 'px';
-    container.style.marginLeft = marginLeftCarousel + 'px';
-    container.style.height = `calc(100% + ${Math.abs(marginTopCarousel)}px)`;
+export let peekMouseMove = (e) => {
+    if (!peekInlineIsResizing) return;
+    let percent = (1 - e.clientY / byId(is_manipulate_mode ? 'canvas' : 'main').clientHeight) * 100;
+    peekInlineHeight = `calc(${Math.max(percent, 0)}% + ${common.heightFooter})`;
+    m.redraw();
 };
 
-let peekBatchSize = 100;
-let peekSkip = 0;
-let peekData = [];
+export let peekMouseUp = () => {
+    if (!peekInlineIsResizing) return;
+    peekInlineIsResizing = false;
+    document.body.classList.remove('no-select');
+}
 
-let peekAllDataReceived = false;
-let peekIsGetting = false;
+export let peekData;
+export let peekId = 'tworavens';
+
+let peekLimit = 100;  // how many records to load at a time
+let peekSkip = 0;  // how many records have already been loaded
+
+export let peekIsExhausted = false;  // if all data has been retrieved, this prevents attempting to load more records
+export let peekIsLoading = false;  // if a request is currently being made for more data, block additional requests
+
+export let peekInlineHeight = `calc(20% + ${common.heightFooter})`; // updated by the drag event listener
+export let setPeekInlineHeight = height => peekInlineHeight = height;
+
+// set when inline peek table is being resized/dragged
+export let peekInlineIsResizing = false;
+export let setPeekInlineIsResizing = state => peekInlineIsResizing = state;
+
+// true if within-page data preview is enabled
+export let peekInlineShown = false;
+export let setPeekInlineShown = state => peekInlineShown = state;
+
+export async function resetPeek(pipeline) {
+    peekData = undefined;
+    peekSkip = 0;
+    peekIsExhausted = false;
+    localStorage.setItem('peekTableHeaders' + peekId, JSON.stringify([]));
+    localStorage.setItem('peekTableData' + peekId,
+        JSON.stringify([]));
+
+    if (pipeline) await updatePeek(pipeline);
+}
+
+export async function updatePeek(pipeline) {
+
+    if (peekIsLoading || peekIsExhausted || pipeline === undefined)
+        return;
+
+    peekIsLoading = true;
+    let variables = [];
+
+    if (is_model_mode && selectedProblem) {
+        let problem = disco.find(entry => entry.problem_id === selectedProblem);
+        variables = [...problem.predictors, problem.target];
+    }
+
+    let previewMenu = {
+        type: 'menu',
+        metadata: {
+            type: 'data',
+            skip: peekSkip,
+            limit: peekLimit,
+            variables,
+            nominal: !is_manipulate_mode && nodes
+                .filter(node => node.nature === 'nominal')
+                .map(node => node.name)
+        }
+    };
+
+    let data = await manipulate.loadMenu(
+        manipulate.constraintMenu
+            ? pipeline.slice(0, pipeline.indexOf(stage => stage === manipulate.constraintMenu.step))
+            : pipeline,
+        previewMenu
+    );
+
+    peekSkip += data.length;
+}
+
 
 function onStorageEvent(e) {
-    
+
     if(e.key === 'transformData'){
         console.log('change in transform');
         transform_data =  JSON.parse(e.newValue);
 
     }
-    if (e.key !== 'peekMore' || peekIsGetting) return;
+    if (data.length + (peekData || []).length === 0)
+        alert('The pipeline at this stage matches no records. Delete constraints to match more records.');
 
-    if (localStorage.getItem('peekMore') === 'true' && !peekAllDataReceived) {
-        localStorage.setItem('peekMore', 'false');
-        peekIsGetting = true;
-        updatePeek();
+    if (data.length === 0) {
+        peekIsExhausted = true;
+        peekIsLoading = false;
+        return;
     }
+
+    data = data.map(record => Object.keys(record).reduce((out, entry) => {
+        if (typeof record[entry] === 'number')
+            out[entry] = formatPrecision(record[entry])
+        else if (typeof record[entry] === 'string')
+            out[entry] = `"${record[entry]}"`;
+        else
+            out[entry] = record[entry];
+        return out;
+    }, {}));
+
+    peekData = (peekData || []).concat(data);
+
+    localStorage.setItem('peekTableHeaders' + peekId, JSON.stringify(Object.keys(data[0])));
+    localStorage.setItem('peekTableData' + peekId, JSON.stringify(peekData));
+
+    // stop blocking new requests
+    peekIsLoading = false;
+    m.redraw();
+};
+
+// ~~~~ MANIPULATIONS STATE ~~~~
+export let mongoURL = '/eventdata/api/';
+
+// this contains an object of abstract descriptions of pipelines of manipulations
+export let manipulations = {};
+// Holds steps that aren't part of a pipeline (for example, pending subset or aggregation in eventdata)
+export let looseSteps = {};
+
+export let formattingData = {};
+export let alignmentData = {};
+// ~~~~
+
+
+let solver_res = []
+export let setSolver_res = res => solver_res = res;
+let solver_res_user = []
+let problem_sent = []
+let problem_sent_user = []
+let problems_in_preprocess = []
+
+
+export let exploreVariate = 'Univariate';
+export function setVariate(variate) {
+    exploreVariate = variate;
 }
-
-window.addEventListener('storage', onStorageEvent);
-
-function updatePeek() {
-    m.request(`rook-custom/rook-files/${configurations.name}/data/trainData.tsv`, {
-        deserialize: x => x.split('\n').map(y => y.split('\t'))
-    }).then(data => {
-        // simulate only loading some of the data... by just deleting all the other data
-        let headers = data[0].map(x => x.replace(/"/g, ''));
-        let newData = data.slice(peekSkip + 1, peekSkip + 1 + peekBatchSize);
-
-        // stop blocking new requests
-        peekIsGetting = false;
-
-        // start blocking new requests until peekReset() is called
-        if (newData.length === 0) peekAllDataReceived = true;
-
-        peekData = peekData.concat(newData);
-        peekSkip += newData.length;
-
-        localStorage.setItem('peekTableHeaders', JSON.stringify(headers));
-        localStorage.setItem('peekTableData', JSON.stringify(peekData));
-    });
-}
-
-function resetPeek() {
-    peekSkip = 0;
-    peekData = [];
-
-    peekAllDataReceived = false;
-    peekIsGetting = false;
-
-    // provoke a redraw from the peek menu
-    localStorage.removeItem('peekTableData');
-}
-
-resetPeek();
 
 export let task1_finished = false;
 export let task2_finished = false;
+export let problemDocExists = true;
 export let univariate_finished = false;
+export let resultsMetricDescription = 'Larger numbers are better fits';
 
-export let currentMode = 'model';
-let is_explore_mode = false;
-let is_results_mode = false;
+export let allsearchId = [];            // List of all the searchId's created on searches
+
+export let currentMode;
+export let is_model_mode = true;
+export let is_explore_mode = false;
+export let is_results_mode = false;
+export let is_manipulate_mode = false;
+
+let exportCount = 0;
 
 export function set_mode(mode) {
-    if (!mode) mode = 'model';
-    mode = mode.toLowerCase();
+    mode = mode ? mode.toLowerCase() : 'model';
 
-    if (currentMode !== mode) {
-        updateRightPanelWidth();
-        updateLeftPanelWidth();
-
-        currentMode = mode;
-        m.route.set('/' + mode.toLowerCase());
+    // remove empty steps when leaving manipulate mode
+    if ((domainIdentifier || {}).name in manipulations && is_manipulate_mode && mode !== 'manipulate') {
+        manipulations[domainIdentifier.name] = manipulations[domainIdentifier.name].filter(step => {
+            if (step.type === 'transform' && step.transforms.length === 0) return false;
+            if (step.type === 'subset' && step.abstractQuery.length === 0) return false;
+            if (step.type === 'aggregate' && step.measuresAccum.length === 0) return false;
+            return true;
+        });
     }
 
+    is_model_mode = mode === 'model'
     is_explore_mode = mode === 'explore';
     is_results_mode = mode === 'results';
+    is_manipulate_mode = mode === 'manipulate';
+
+    if (currentMode !== mode) {
+        if (mode === 'model' && manipulate.pendingHardManipulation)
+            manipulate.rebuildPreprocess();
+
+        currentMode = mode;
+        m.route.set('/' + mode);
+        restart && restart();
+        updateRightPanelWidth();
+        updateLeftPanelWidth();
+    }
+
+    // cause the peek table to redraw
+    resetPeek();
+
+    let ws = elem('#whitespace0');
+    if (ws) {
+        ws.style.display = is_explore_mode ? 'none' : 'block';
+    }
 }
 
 // for debugging - if not in PRODUCTION, prints args
@@ -173,22 +272,22 @@ export let leftTabHidden = 'Variables'; // stores the tab user was in before sum
 export let subset = false;
 export let summaryHold = false;
 
-export let rightTab = 'Task Type'; // current tab in right panel
+export let rightTab = 'Problem'; // current tab in right panel
 export let rightTabExplore = 'Univariate';
 
 export let modelLeftPanelWidths = {
     'Variables': '300px',
     'Discovery': 'auto',
-    'Summary': '300px'
+    'Summary': '300px',
+    'Subset': '300px'
 };
 
 export let modelRightPanelWidths = {
-    'Models': '300px',
-    'Task Type': '300px',
-    'Subtype': '300px',
-    'Metrics': '300px',
-    //     'Set Covar.': '900px',
-    'Results': '900px'
+    Problem: '300px',
+    Manipulate: '485px',
+    // 'Set Covar.': '900px',
+    Results: '900px',
+    Discovery:'900px'
 };
 
 export let exploreRightPanelWidths = {
@@ -206,21 +305,29 @@ export let panelWidth = {
 };
 
 let updateRightPanelWidth = () => {
+    if (is_explore_mode) {
+        return panelWidth.right = `calc(${common.panelMargin}*2 + 16px)`;
+    }
+
     if (common.panelOpen['right']) {
         let tempWidth = {
             'model': modelRightPanelWidths[rightTab],
             'explore': exploreRightPanelWidths[rightTabExplore]
         }[currentMode];
 
-        panelWidth['right'] = `calc(${common.panelMargin * 2}px + ${tempWidth})`;
+        panelWidth['right'] = `calc(${common.panelMargin}*2 + ${tempWidth})`;
     }
-    else panelWidth['right'] = `calc(${common.panelMargin * 2}px + 16px)`;
+    else panelWidth['right'] = `calc(${common.panelMargin}*2 + 16px)`;
 };
 let updateLeftPanelWidth = () => {
     if (common.panelOpen['left'])
-        panelWidth['left'] = `calc(${common.panelMargin * 2}px + ${modelLeftPanelWidths[leftTab]})`;
-    else panelWidth['left'] = `calc(${common.panelMargin * 2}px + 16px)`;
+        panelWidth['left'] = `calc(${common.panelMargin}*2 + ${modelLeftPanelWidths[leftTab]})`;
+    else panelWidth['left'] = `calc(${common.panelMargin}*2 + 16px)`;
 };
+
+// minor quality of life, the focused panel gets +1 to the z-index. Set whenever a panel is clicked
+export let focusedPanel = 'left';
+export let setFocusedPanel = side => focusedPanel = side;
 
 updateRightPanelWidth();
 updateLeftPanelWidth();
@@ -228,20 +335,10 @@ updateLeftPanelWidth();
 common.setPanelCallback('right', updateRightPanelWidth);
 common.setPanelCallback('left', updateLeftPanelWidth);
 
-// transformation toolbar options
-let t, typeTransform;
-export let transformList = 'log(d) exp(d) d^2 sqrt(d) interact(d,e)'.split(' ');
-let transformVar = '';
+export let preprocess = {}; // hold pre-processed data
+export let setPreprocess = data => preprocess = data;
 
-// var list for each space contain variables in original data
-// plus trans in that space
-let trans = [];
-let preprocess = {}; // hold pre-processed data
 let spaces = [];
-
-// layout function constants
-const layoutAdd = "add";
-const layoutMove = "move";
 
 // radius of circle
 export const RADIUS = 40;
@@ -256,6 +353,7 @@ export let myspace = 0;
 export let forcetoggle = ["true"];
 export let locktoggle = true;
 let priv = true;
+export let setPriv = state => priv = state;
 
 // swandive is our graceful fail for d3m
 // swandive set to true if task is in failset
@@ -264,6 +362,11 @@ let failset = ["TIME_SERIES_FORECASTING","GRAPH_MATCHING","LINK_PREDICTION","tim
 
 // object that contains all information about the returned pipelines
 export let allPipelineInfo = {};
+export let pipelineHeader = ['PipelineID', 'Score'];
+export let pipelineTable = [];
+
+export let discoveryHeader = ['problem_id', 'system', 'meaningful'];
+export let discoveryTable = [];
 
 export let logArray = [];
 export let zparams = {
@@ -290,12 +393,23 @@ export let zparams = {
     zusername: ''
 };
 
+// list of variable strings (same as Object.keys(preprocess))
+export let valueKey = [];
+export let setValueKey = keys => valueKey = keys;
+
+// list of discovered problem objects
 export let disco = [];
+export let setDisco = data => disco = data;
+
+// list of force diagram node objects
+export let allNodes = [];
+export let setAllNodes = data => allNodes = data;
 
 export let modelCount = 0;
-export let valueKey = [];
-export let allNodes = [];
+
+// list of result objects for one problem
 export let allResults = [];
+
 export let nodes = [];
 export let links = [];
 let mods = {};
@@ -303,7 +417,13 @@ let estimated = false;
 let rightClickLast = false;
 let selInteract = false;
 export let callHistory = []; // transform and subset calls
-let mytarget = '';
+
+// stores the target on page load
+export let mytargetdefault = '';
+
+// targeted variable name
+export let mytarget = '';
+export let setMytarget = target => mytarget = target;
 
 export let configurations = {};
 let datadocument = {};
@@ -363,11 +483,13 @@ export let d3mMetrics = {
 };
 
 export let d3mProblemDescription = {
+    id: "",
+    version: "",
+    name: "",
+    description: "",
     taskType: "taskTypeUndefined",
     taskSubtype: "taskSubtypeUndefined",
- //   outputType: [3,"DEFAULT"],
-    metric: "metricUndefined",
-    taskDescription: ""
+    performanceMetrics: [{metric: "metricUndefined"}]
 };
 
 /*
@@ -386,9 +508,11 @@ export let setD3mProblemDescription = (key, value) => {
         }[key];
 
         if (lookup === undefined) return;
-        makeRequest(
-            D3M_SVC_URL + "/SetProblemDoc",
-            {replaceProblemSchemaField: {[key]: lookup[d3mProblemDescription[key]][1]}, context: apiSession(zparams.zsessionid)});
+
+        // Eventually should do something here.  But currently this is wrong API call, and most TA2's don't support the correct API call.
+        //makeRequest(
+        //    D3M_SVC_URL + "/SetProblemDoc",
+        //    {replaceProblemSchemaField: {[key]: lookup[d3mProblemDescription[key]][1]}, context: apiSession(zparams.zsessionid)});
     }
     else hopscotch.startTour(lockTour);
 }
@@ -415,7 +539,7 @@ const [arcInd1, arcInd2] = [arcInd(arcInd1Limits), arcInd(arcInd2Limits)];
 // milliseconds to wait before showing/hiding the pebble handles
 let hoverTimeout = 150;
 let hoverPebble;
-let selectedPebble;
+export let selectedPebble;
 
 export let byId = id => document.getElementById(id);
 // export let byId = id => {console.log(id); return document.getElementById(id);}
@@ -430,13 +554,16 @@ function trigger(id, event) {
    page reload linked to btnReset
 */
 export const reset = async function reloadPage() {
-    let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
+    endAllSearches();
     byId("btnModel").click();
+    //clearInterval(interiorIntervalId);
+    //clearInterval(requestIntervalId);
     location.reload();
 };
 export let restart;
 
 let dataurl = '';
+let datasetdocurl = '';
 
 export let step = (target, placement, title, content) => ({
     target,
@@ -532,12 +659,18 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         return;
     }
 
+    let d3m_config_url = "/config/d3m-config/json/latest";
+    //let d3m_config_eval_url = "/config/d3m-config/json/eval/latest";
+
     // 1. Retrieve the configuration information
     let res = await m.request({
         method: "POST",
-        url: "/config/d3m-config/json/latest"
+        url: d3m_config_url
     });
+    console.log("this is config file:");
     console.log(res);
+    datasetdocurl = res.dataset_schema;
+
     // 2. Set 'configurations'
     configurations = JSON.parse(JSON.stringify(res)); // this is just copying res
     d3mRootPath = configurations.training_data_root.replace(/\/data/,'');
@@ -559,9 +692,12 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     localStorage.setItem('transformData',JSON.stringify(transform_data));// For Recode
 
     // 3. Read the problem schema and set 'd3mProblemDescription'
-    // ...and make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
+    // ...and make a call to Hello to check TA2 is up.  If we get this far, data are guaranteed to exist for the frontend
 
     res = await m.request("/config/d3m-config/get-problem-data-file-info");
+    console.log("result from problem data file info:");
+    console.log(res);
+
     // The result of this call is similar to below:
     // example:
     /*  {
@@ -602,34 +738,75 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
 
     // hardcoding this, once get-problem-data-file-info is revised this hardcode can go away and use the previous two LOC
-  //  zparams.zd3mdata = d3mData = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
-  //  zparams.zd3mtarget = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
+    //  zparams.zd3mdata = d3mData = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
+    //  zparams.zd3mtarget = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
 
     res = await m.request(d3mPS);
-    console.log("prob schema data: ", res);
+    // console.log("prob schema data: ", res);
+    if(typeof res.success=='undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
+        // This is a Task 2 assignment
+        // console.log("DID WE GET HERE?");
+        task1_finished = true;
+        byId("btnDiscovery").classList.remove("btn-success");
+        byId("btnDiscovery").classList.add("btn-default");
+        byId("btnSubmitDisc").classList.remove("btn-success");
+        byId("btnSubmitDisc").classList.add("btn-default");
+        byId("btnEstimate").classList.remove("btn-default");
+        byId("btnEstimate").classList.add("btn-success");
 
-    mytarget = res.inputs.data[0].targets[0].colName; // easier way to access target name?
-    if (typeof res.about.taskType !== 'undefined') {
-        d3mProblemDescription.taskType=res.about.taskType;
-    }
-    if (typeof res.about.taskSubType !== 'undefined') {
-        d3mProblemDescription.taskSubtype=res.about.taskSubType;
-    }
-    if (typeof res.inputs.performanceMetrics[0].metric !== 'undefined') {
-        d3mProblemDescription.metric = res.inputs.performanceMetrics[0].metric;
-    }
-    if (typeof res.descriptionFile !== 'undefined') {
-        d3mProblemDescription.taskDescription = res.descriptionFile;
-    }
- //   d3mProblemDescription.outputType = res.expectedOutputs.predictionsFile;
+    } else if (!res.success){                       // Task 1 is when res.success==false
+        // This is a Task 1 assignment: no problem doc.
+        task2_finished = true;
+        problemDocExists = false;
+    } else {
+        alert("Something Unusual happened reading problem schema.")
+    };
 
-    // making it case insensitive because the case seems to disagree all too often
-    if (failset.includes(d3mProblemDescription.taskType.toUpperCase())) {
-        if(IS_D3M_DOMAIN){
-          console.log('D3M WARNING: failset  task type found');
+    if(problemDocExists){
+        console.log("Task 2: Problem Doc Exists");
+
+        // Note: There is no res.success field in this return state
+        // if (!res.success){
+        //   alert('problem schema not available: ' + res.message);
+        //   return
+        // }
+
+        mytargetdefault = res.inputs.data[0].targets[0].colName; // easier way to access target name?
+        if (typeof res.about.problemID !== 'undefined') {
+            d3mProblemDescription.id=res.about.problemID;
         }
-        swandive = true;
-    }
+        if (typeof res.about.problemVersion !== 'undefined') {
+            d3mProblemDescription.version=res.about.problemVersion;
+        }
+        if (typeof res.about.problemName !== 'undefined') {
+            d3mProblemDescription.name=res.about.problemName;
+        }
+        if (typeof res.about.problemDescription !== 'undefined') {
+            d3mProblemDescription.description = res.about.problemDescription;
+        }
+        if (typeof res.about.taskType !== 'undefined') {
+            d3mProblemDescription.taskType=res.about.taskType;
+        }
+        if (typeof res.about.taskSubType !== 'undefined') {
+            d3mProblemDescription.taskSubtype=res.about.taskSubType;
+        }
+        if (typeof res.inputs.performanceMetrics[0].metric !== 'undefined') {
+            d3mProblemDescription.performanceMetrics = res.inputs.performanceMetrics;   // or? res.inputs.performanceMetrics[0].metric;
+        }
+
+        // making it case insensitive because the case seems to disagree all too often
+        if (failset.includes(d3mProblemDescription.taskType.toUpperCase())) {
+            if(IS_D3M_DOMAIN){
+              console.log('D3M WARNING: failset  task type found');
+            }
+            swandive = true;
+        }
+    }else{
+        console.log("Task 1: No Problem Doc");
+        d3mProblemDescription.id="Task1";
+        d3mProblemDescription.name="Task1";
+        d3mProblemDescription.description = "Discovered Problems";
+    };
 
     // 4. Read the data document and set 'datadocument'
     datadocument = await m.request(d3mDS);
@@ -688,8 +865,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     d3.select("#dataName").html(dataname);
     // put dataset name, from meta-data, into page title
     d3.select("title").html("TwoRavens " + dataname);
-    localStorage.setItem('peekHeader', "TwoRavens " + dataname);
-    
+
+    localStorage.setItem('peekHeader' + peekId, "TwoRavens " + dataname);
+
 
     // if swandive, we have to set valueKey here so that left panel can populate.
     if (swandive) {
@@ -726,16 +904,16 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
       }
     }
     // 7. Start the user session
-    // rpc StartSession(SessionRequest) returns (SessionResponse) {}
-    res = await makeRequest(D3M_SVC_URL + '/startsession', {user_agent: 'some agent', version: 'some version'});
+    // rpc rpc Hello (HelloRequest) returns (HelloResponse) {}
+    res = await makeRequest(D3M_SVC_URL + '/Hello', {});
     if (res) {
-      if (res.responseInfo.status.code != "OK"){
-        const user_err_msg = "Failed to StartSession with TA2! status code: " + res.responseInfo.status.code;
+      console.log(res)
+      if (res.success != true){
+        const user_err_msg = "Failed to make Hello connection with TA2! status code: " + res.message;
         setModal(user_err_msg, "Error Connecting to TA2", true, "Reset", false, location.reload);
-          //  end_ta3_search(false, user_err_msg);
         return;
       } else {
-            zparams.zsessionid = res.context.sessionId;
+            zparams.zsessionid = "no session id in this API version";   // remove this eventually
         }
     }
 
@@ -752,6 +930,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     let read = res => {
         priv = res.dataset.private || priv;
         Object.keys(res.variables).forEach(k => preprocess[k] = res.variables[k]);
+        if("problems" in res){Object.keys(res.problems).forEach(k => problems_in_preprocess[k] = res.problems[k].description.problem_id);} // storing all the problem id's present in preprocess
         return res;
     };
     try {
@@ -781,57 +960,40 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
     }
 
-    console.log("is this preprocess?")
-    console.log(res);
-    console.log(preprocess);
+
+    // console.log("is this preprocess?")
+    // console.log(res);
+    // console.log(preprocess);
 
     // 9. Build allNodes[] using preprocessed information
-    let vars = Object.keys(preprocess);
-    // temporary values for hold that correspond to histogram bins
-    hold = [.6, .2, .9, .8, .1, .3, .4];
-    for (let i = 0; i < vars.length; i++) {
-        // valueKey[i] = vars[i].attributes.name.nodeValue;
-        // lablArray[i] = varsXML[i].getElementsByTagName("labl").length == 0 ?
-        // "no label" :
-        // varsXML[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
-        // let datasetcount = d3.layout.histogram()
-        //     .bins(barnumber).frequency(false)
-        //     ([0, 0, 0, 0, 0]);
-        valueKey[i] = vars[i];
-        lablArray[i] = "no label";
-        // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
-        // such as setx values (if the user has selected them) and pebble coordinates
-        let obj = {
-            id: i,
-            reflexive: false,
-            name: valueKey[i],
-            labl: lablArray[i],
-            data: [5, 15, 20, 0, 5, 15, 20],
-            count: hold,
-            nodeCol: colors(i),
-            baseCol: colors(i),
-            strokeColor: selVarColor,
-            strokeWidth: "1",
-            subsetplot: false,
-            subsetrange: ["", ""],
-            setxplot: false,
-            setxvals: ["", ""],
-            grayout: false,
-            group1: false,
-            group2: false,
-            forefront: false
-        };
-        jQuery.extend(true, obj, preprocess[valueKey[i]]);
-        allNodes.push(obj);
-    }
+    // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
+    // such as setx values (if the user has selected them) and pebble coordinates
+    setValueKey(Object.keys(preprocess));
+    setAllNodes(valueKey.map((variable, i) => jQuery.extend(true, {
+        id: i,
+        reflexive: false,
+        name: variable,
+        labl: lablArray[i],
+        data: [5, 15, 20, 0, 5, 15, 20],
+        count: [.6, .2, .9, .8, .1, .3, .4],  // temporary values for hold that correspond to histogram bins
+        nodeCol: colors(i),
+        baseCol: colors(i),
+        strokeColor: selVarColor,
+        strokeWidth: "1",
+        subsetplot: false,
+        subsetrange: ["", ""],
+        setxplot: false,
+        setxvals: ["", ""],
+        grayout: false,
+        group1: false,
+        group2: false,
+        forefront: false
+    }, preprocess[variable])))
 
     // 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN)
     if(!swandive) {
-        let datavars = datadocument_columns;
-        datavars.forEach((v, i) => {
-            let myi = findNodeIndex(v.colName);
-            allNodes[myi] = Object.assign(allNodes[myi], {d3mDescription: v});
-        });
+        datadocument_columns.forEach(v => findNode(v.colName).d3mDescription = v);
+        console.log("all nodes:");
         console.log(allNodes);
     }
 
@@ -840,18 +1002,53 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     if(!swandive) {
         disco = discovery(res);
 
-        // Kick off discovery button as green for user guidance
-        byId("btnDiscovery").classList.remove("btn-default");
-        byId("btnDiscovery").classList.add("btn-success"); // Would be better to attach this as a class at creation, but don't see where it is created
+        // Set target variable for center panel if no problemDoc exists to set this
+        if(!problemDocExists){
+            mytarget = disco[0].target;
+        };
 
-        console.log(disco);
+        // Kick off discovery button as green for user guidance
+        if(!task1_finished){
+            byId("btnDiscovery").classList.remove("btn-default");
+            byId("btnDiscovery").classList.add("btn-success"); // Would be better to attach this as a class at creation, but don't see where it is created
+        };
+
+for(let i=0; i<disco.length; i++){
+  callSolver(disco[i]);
+}
+
+        // send the all problems to metadata and also perform app solver on theme
+
     }
 
     // 11. Call layout() and start up
     layout(false, true);
     IS_D3M_DOMAIN ? zPop() : dataDownload();
+
+    setTimeout(loadResult,10000);
+    problem_sent.length = 0;
 }
 
+
+
+export function loadResult(my_disco) {
+    (my_disco || disco).forEach((problem, i) => {
+
+        let prob_name = (problem.description || {}).problem_id || problem.problem_id;
+
+        if (problems_in_preprocess.includes(prob_name))
+            console.log("Problem already exists in preprocess", prob_name);
+        else problem_sent.push({
+            "description": problem,
+            "result": solver_res[i]
+        });
+    })
+
+    // console.log("problem to be sent ", problem_sent.splice())
+    let preprocess_id = 1
+    let version = 1
+    // addProblem(preprocess_id, version).then(api_res => console.log("ADD PROBLEM/RESULT API RESPONSE ", api_res))
+}
 /**
    called on app start
    @param {string} fileid
@@ -860,6 +1057,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
    @param {string} dataurl
    @param {string} apikey
 */
+
+
 export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     if (PRODUCTION && fileid === '') {
         let msg = 'Error: No fileid has been provided.';
@@ -876,7 +1075,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     cdb('--dataurl: ' + dataurl);
     cdb('--dataverseurl: ' + dataverseurl);
 
-    let tempWidth = d3.select('#main.left').style('width');
+    let tempWidth = d3.select('#main').style('width');
     width = tempWidth.substring(0, tempWidth.length - 2);
     height = window.innerHeight - 120; // hard code header, footer, and bottom margin
 
@@ -937,11 +1136,14 @@ function del(arr, idx, obj) {
 }
 
 /** needs doc */
-function zparamsReset(text) {
-    'zdv zcross ztime znom'.split(' ').forEach(x => del(zparams[x], -1, text));
+function zparamsReset(text, labels='zdv zcross ztime znom') {
+    labels.split(' ').forEach(x => del(zparams[x], -1, text));
 }
 
 export function setup_svg(svg) {
+    // clear old elements before setting up the force diagram
+    svg.html('');
+
     svg.append("svg:defs").append("svg:marker")
         .attr("id", "group1-arrow")
         .attr('viewBox', '0 -5 15 15')
@@ -1043,45 +1245,35 @@ export function setup_svg(svg) {
     return [line, line2, visbackground, vis2background, vis, vis2, drag_line, path, circle];
 }
 
-/** needs doc */
-export function layout(v, v2) {
+
+// layout function constants
+const layoutAdd = "add";
+const layoutMove = "move";
+
+export function layout(layoutConstant, v2) {
     var myValues = [];
     nodes = [];
     links = [];
 
     var [line, line2, visbackground, vis2background, vis, vis2, drag_line, path, circle] = setup_svg(svg);
 
-    if (v == layoutAdd || v == layoutMove) {
-        for (var j = 0; j < zparams.zvars.length; j++) {
-            var ii = findNodeIndex(zparams.zvars[j]);
-            if (allNodes[ii].grayout)
-                continue;
-            nodes.push(allNodes[ii]);
-            var selectMe = zparams.zvars[j].replace(/\W/g, "_");
-            selectMe = "#".concat(selectMe);
-            d3.select(selectMe).style('background-color', () => hexToRgba(nodes[j].strokeColor));
-        }
-
-        for (var j = 0; j < zparams.zedges.length; j++) {
-            var mysrc = nodeIndex(zparams.zedges[j][0]);
-            var mytgt = nodeIndex(zparams.zedges[j][1]);
-            links.push({
-                source: nodes[mysrc],
-                target: nodes[mytgt],
-                left: false,
-                right: true
-            });
-        }
+    if (layoutConstant == layoutAdd || layoutConstant == layoutMove) {
+        nodes = zparams.zvars.map(findNode).filter(node => !node.grayout)
+        links = zparams.zedges.map(edge => ({
+            source: findNodeIndex(edge[0]),
+            target: findNodeIndex(edge[1]),
+            left: false,
+            right: true
+        }));
     } else {
         if(IS_D3M_DOMAIN) {
-            //nodes = [findNode(mytarget)];               // Only add dependent variable on startup
-            nodes = allNodes.slice(1,allNodes.length);    // Add all but first variable on startup (assumes 0 position is d3m index variable)
-            for (let j = 0; j < nodes.length; j++) { //populate zvars array
-                if (nodes[j].name != mytarget) {
-                    nodes[j].group1 = true;
-                    zparams.zgroup1.push(nodes[j].name);  // write all names (except d3m index and the dependent variable) to zgroup1 array
-                };
-            };
+            mytarget = mytargetdefault;
+            nodes = allNodes.slice(1,allNodes.length);  // Add all but first variable on startup (assumes 0 position is d3m index variable)
+            nodes.forEach(node => node.group1 = node.name !== mytarget)
+            // update zparams
+            zparams.zvars = nodes.map(node => node.name);
+            zparams.zgroup1 = nodes.filter(node => node.name !== mytarget).map(node => node.name);
+
         } else if (allNodes.length > 2) {
             nodes = [allNodes[0], allNodes[1], allNodes[2]];
             links = [{
@@ -1113,7 +1305,7 @@ export function layout(v, v2) {
 
     panelPlots(); // after nodes is populated, add subset and (if !IS_D3M_DOMAIN) setx panels
 
-    var force = d3.layout.force()
+    let force = d3.layout.force()
         .nodes(nodes)
         .links(links)
         .size([width, height])
@@ -1136,14 +1328,16 @@ export function layout(v, v2) {
 
     // update force layout (called automatically each iteration)
     function tick() {
+        if (is_explore_mode) {
+            return;
+        }
+
         function findcoords(findnames,allnames,coords,lengthen){
             var fcoords = new Array(findnames.length);   // found coordinates
             var addlocation = 0;
-            if(findnames.length>0){
-                for (var j = 0; j < findnames.length; j++) {
-                    addlocation = allnames.indexOf(findnames[j]);
-                    fcoords[j] = coords[addlocation];
-                };
+            for (var j = 0; j < findnames.length; j++) {
+                addlocation = allnames.indexOf(findnames[j]);
+                fcoords[j] = coords[addlocation];
             };
 
             if(lengthen){
@@ -1186,6 +1380,7 @@ export function layout(v, v2) {
         };
 
         var coords = nodes.map(function(d) {  return [ d.x, d.y]; });
+
         var gr1coords = findcoords(zparams.zgroup1, zparams.zvars, coords, true);
         var gr2coords = findcoords(zparams.zgroup2, zparams.zvars, coords, true);
         var depcoords = findcoords(zparams.zdv, zparams.zvars, coords, false);
@@ -1228,8 +1423,10 @@ export function layout(v, v2) {
                 line.attr("x1", p[0] + (lsourcePadding * lnormX))   // or r[0] if findboundary works
                     .attr("y1", p[1] + (lsourcePadding * lnormY))   // or r[1] if findboundary works
                     .attr("x2", q[0]- (ltargetPadding * lnormX))
-                    .attr("y2", q[1]- (ltargetPadding * lnormY));
-            };
+                    .attr("y2", q[1]- (ltargetPadding * lnormY))
+                    .style('opacity', 1);
+            }
+            else line.style('opacity', 0);
 
             // group members attract each other, repulse non-group members
             nodes.forEach(n => {
@@ -1283,8 +1480,10 @@ export function layout(v, v2) {
                 line2.attr("x1", p[0] + (lsourcePadding * lnormX))
                     .attr("y1", p[1] + (lsourcePadding * lnormY))
                     .attr("x2", q[0]- (ltargetPadding * lnormX))
-                    .attr("y2", q[1]- (ltargetPadding * lnormY));
-            };
+                    .attr("y2", q[1]- (ltargetPadding * lnormY))
+                    .style('opacity', 0);
+            }
+            else line2.style('opacity', 0);
 
             // group members attract each other, repulse non-group members
             nodes.forEach(n => {
@@ -1337,6 +1536,34 @@ export function layout(v, v2) {
 
     // this is to detect a click in the whitespace, but not on a pebble
     let outsideClick = false;
+
+    let redrawPebble = pebble => {
+        // nullity check for when reintroducing variable from variable list
+        if (pebble === null) return;
+        let data = pebble.__data__;
+
+        let radius = setPebbleRadius(data);
+        if (data.plottype == 'continuous') densityNode(data, pebble, setPebbleRadius(data));
+        else if (data.plottype == 'bar') barsNode(data, pebble, setPebbleRadius(data));
+
+        d3.select(pebble.querySelector("[id^='pebbleLabel']")).style('font-size', radius * .175 + 7 + 'px')  // proportional scaling would be 14 / 40, but I added y-intercept at 7
+        d3.select(pebble.querySelector("[id^='dvArc']")).attr("d", arc3(radius))
+        d3.select(pebble.querySelector("[id^='nomArc']")).attr("d", arc4(radius))
+        d3.select(pebble.querySelector("[id^='grArc']")).attr("d", arc1(radius))
+        d3.select(pebble.querySelector("[id^='gr1indicator']")).attr("d", arcInd1(radius))
+        d3.select(pebble.querySelector("[id^='gr2indicator']")).attr("d", arcInd2(radius))
+
+        if (!data.forefront && data.name !== selectedPebble) {
+            fillThis(pebble.querySelector('[id^=grArc]'), 0, 100, 500);
+            fill(data, "grText", 0, 100, 500);
+            fillThis(pebble.querySelector('[id^=dvArc]'), 0, 100, 500);
+            fill(data, "dvText", 0, 100, 500);
+            fillThis(pebble.querySelector('[id^=nomArc]'), 0, 100, 500);
+            fill(data, "nomText", 0, 100, 500);
+            fill(data, "gr1indicator", 0, 100, 500);
+            fill(data, "gr2indicator", 0, 100, 500);
+        }
+    }
 
     // update graph (called when needed)
     restart = function($links) {
@@ -1401,6 +1628,9 @@ export function layout(v, v2) {
         // circle (node) group
         circle = circle.data(nodes, x => x.id);
 
+        // remove handles and make sure pebbles are properly sized when restart is called
+        circle[0].forEach(redrawPebble)
+
         // update existing nodes (reflexive & selected visual states)
         // d3.rgb is the function adjusting the color here
         circle.selectAll('circle')
@@ -1422,26 +1652,6 @@ export function layout(v, v2) {
 
         let append = (str, attr) => x => str + x[attr || 'id'];
 
-        let redrawPebbles = () => {
-            g[0].forEach((pebble) => {
-                // nullity check for when reintroducing variable from variable list
-                if (pebble === null) return;
-
-                let data = pebble.__data__;
-                let radius = setPebbleRadius(data);
-
-                if (data.plottype == 'continuous') densityNode(data, pebble, setPebbleRadius(data));
-                else if (data.plottype == 'bar') barsNode(data, pebble, setPebbleRadius(data));
-
-                d3.select(pebble.querySelector("[id^='pebbleLabel']")).style('font-size', radius * .175 + 7 + 'px')  // proportional scaling would be 14 / 40, but I added y-intercept at 7
-                d3.select(pebble.querySelector("[id^='dvArc']")).attr("d", arc3(radius))
-                d3.select(pebble.querySelector("[id^='nomArc']")).attr("d", arc4(radius))
-                d3.select(pebble.querySelector("[id^='grArc']")).attr("d", arc1(radius))
-                d3.select(pebble.querySelector("[id^='gr1indicator']")).attr("d", arcInd1(radius))
-                d3.select(pebble.querySelector("[id^='gr2indicator']")).attr("d", arcInd2(radius))
-            })
-        }
-
         g.append("path").each(function(d) {
             let radius = setPebbleRadius(d);
             d3.select(this)
@@ -1462,6 +1672,7 @@ export function layout(v, v2) {
                 })
                 .on('mouseout', function(d) {
                     d.forefront = false;
+                    if (d.name === selectedPebble) return;
                     setTimeout(() => {
                         fillThis(this, 0, 100, 500);
                         fill(d, 'dvText', 0, 100, 500);
@@ -1469,11 +1680,9 @@ export function layout(v, v2) {
                 })
                 .on('click', function(d) {
                     setColors(d, dvColor);
-                    legend(dvColor);
-                    d.group1 = d.group2 = false;
                     selectedPebble = d.name;
-                    redrawPebbles();
                     restart();
+                    m.redraw();
                 });
         })
 
@@ -1508,6 +1717,7 @@ export function layout(v, v2) {
                 .on('mouseout', function (d) {
                     if (d.defaultNumchar == "character") return;
                     d.forefront = false;
+                    if (d.name === selectedPebble) return;
                     setTimeout(() => {
                         fillThis(this, 0, 100, 500);
                         fill(d, "nomText", 0, 100, 500);
@@ -1516,10 +1726,9 @@ export function layout(v, v2) {
                 .on('click', function (d) {
                     if (d.defaultNumchar == "character") return;
                     setColors(d, nomColor);
-                    legend(nomColor);
                     selectedPebble = d.name;
-                    redrawPebbles();
                     restart();
+                    m.redraw();
                 });
         });
 
@@ -1554,6 +1763,7 @@ export function layout(v, v2) {
                 })
                 .on('mouseout', function (d) {
                     d.forefront = false;
+                    if (d.name === selectedPebble) return;
                     setTimeout(() => {
                         fill(d, "gr1indicator", 0, 100, 500);
                         fill(d, "gr2indicator", 0, 100, 500);
@@ -1562,12 +1772,10 @@ export function layout(v, v2) {
                     }, hoverTimeout)
                 })
                 .on('click', d => {
-                    //d.group1 = !d.group1;      // This might be easier, but currently set in setColors()
                     setColors(d, gr1Color);
-                    legend(gr1Color);
                     selectedPebble = d.name;
-                    redrawPebbles();
                     restart();
+                    m.redraw();
                 });
         });
 
@@ -1592,6 +1800,7 @@ export function layout(v, v2) {
                 })
                 .on('mouseout', function (d) {
                     d.forefront = false;
+                    if (d.name === selectedPebble) return;
                     setTimeout(() => {
                         fillThis(this, 0, 100, 500);
                         fill(d, "grArc", 0, 100, 500);
@@ -1599,12 +1808,10 @@ export function layout(v, v2) {
                     }, hoverTimeout)
                 })
                 .on('click', d => {
-                    //d.group1 = !d.group1;      // This might be easier, but currently set in setColors()
                     setColors(d, gr1Color);
-                    legend(gr1Color);
                     selectedPebble = d.name;
-                    redrawPebbles();
                     restart();
+                    m.redraw();
                 });
         });
 
@@ -1629,6 +1836,7 @@ export function layout(v, v2) {
                 })
                 .on('mouseout', function (d) {
                     d.forefront = false;
+                    if (d.name === selectedPebble) return;
                     setTimeout(() => {
                         fillThis(this, 0, 100, 500);
                         fill(d, "grArc", 0, 100, 500);
@@ -1636,12 +1844,10 @@ export function layout(v, v2) {
                     }, hoverTimeout)
                 })
                 .on('click', d => {
-                    //d.group2 = !d.group2;      // This might be easier, but currently set in setColors()
                     setColors(d, gr2Color);
-                    legend(gr2Color);
                     selectedPebble = d.name;
-                    redrawPebbles();
                     restart();
+                    m.redraw();
                 });
         });
 
@@ -1670,7 +1876,8 @@ export function layout(v, v2) {
             .on('click', function(d) {
                 selectedPebble = d.name;
                 outsideClick = false;
-                redrawPebbles();
+                restart();
+                m.redraw();
             })
             .on('contextmenu', function(d) {
                 // right click on node
@@ -1771,10 +1978,6 @@ export function layout(v, v2) {
                     setLeftTab('Summary');
                     varSummary(d);
 
-                    byId('transformations').setAttribute('style', 'display:block');
-                    byId("transSel").selectedIndex = d.id;
-                    transformVar = valueKey[d.id];
-
                     m.redraw();
 
                     if (!d.forefront) return;
@@ -1805,46 +2008,15 @@ export function layout(v, v2) {
                 setTimeout(() => {
                     hoverPebble = undefined;
 
-                    if (selectedPebble) varSummary(allNodes.filter((node) => node.name === selectedPebble)[0]);
+                    if (selectedPebble) varSummary(allNodes.find((node) => node.name === selectedPebble));
                     else setLeftTab(leftTabHidden);
-                    'csArc csText timeArc timeText dvArc dvText nomArc nomText grArc grText'.split(' ').map(x => fill(d, x, 0, 100, 500));
+
+                    if (selectedPebble !== d.name)
+                        'csArc csText timeArc timeText dvArc dvText nomArc nomText grArc grText'.split(' ').map(x => fill(d, x, 0, 100, 500));
+
                     m.redraw();
                 }, hoverTimeout)
             });
-
-        // the transformation variable list is silently updated as pebbles are added/removed
-        d3.select("#transSel")
-            .selectAll('li')
-            .remove();
-
-        d3.select("#transSel")
-            .selectAll('li')
-            .data(nodes.map(x => x.name)) // set to variables in model space as they're added
-            .enter()
-            .append("li")
-            .text(d => d);
-
-        if(!IS_D3M_DOMAIN) {
-            document.querySelectorAll('#transSel li').forEach(x => x.onclick(function(evt) {
-                // if 'interaction' is the selected function, don't show the function list again
-                let tInput = byId('tInput');
-                if (selInteract) {
-                    let n = tInput.value.concat(this.textContent);
-                    tInput.value = n;
-                    evt.stopPropagation();
-                    let t = transParse(n = n);
-                    if (!t) return;
-                    fadeOut(this.parentNode, 100);
-                    transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
-                    return;
-                }
-
-                tInput.value = this.textContent;
-                fadeOut(this.parentNode, 100);
-                fadeOut('#transList', 100);
-                evt.stopPropagation();
-            }));
-        };
 
         // remove old nodes
         circle.exit().remove();
@@ -1900,23 +2072,15 @@ export function layout(v, v2) {
         .on('mousedown', function() {mousedown(this);})
         .on('mouseup', function() {mouseup(this);});
 
-    d3.select(window)
-        .on('click', () => {
-            // all clicks will bubble here unless event.stopPropagation()
-            fadeOut('#transList', 100);
-            fadeOut('#transSel', 100);
-        });
-
     restart(); // initializes force.layout()
     fakeClick();
 
-    if(v2 & IS_D3M_DOMAIN) {
+    if(v2 && IS_D3M_DOMAIN) {
         var click_ev = document.createEvent("MouseEvents");
         // initialize the event
         click_ev.initEvent("click", true /* bubble */, true /* cancelable */);
         // trigger the event
-        let clickID = "dvArc"+findNodeIndex(mytarget);
-        byId(clickID).dispatchEvent(click_ev);
+        byId("dvArc" + findNodeIndex(mytarget)).dispatchEvent(click_ev);
 
         // The dispatched click sets the leftpanel. This switches the panel back on page load
         selectedPebble = undefined;
@@ -1930,56 +2094,80 @@ function find($nodes, name) {
         if ($nodes[i].name == name) return $nodes[i].id;
 }
 
-/**
- returns id
- */
-export function findNodeIndex(name, whole) {
-    for (let node of allNodes)
-        if (node.name === name) return whole ? node : node.id;
+// returns index of node in allNodes by node name
+export function findNodeIndex(name) {
+    return allNodes.findIndex(node => node.name === name)
 }
 
-/** needs doc */
-function nodeIndex(nodeName) {
-    for (let i in nodes)
-        if (nodes[i].name === nodeName) return i;
-}
-
-/** needs doc */
+// return node in allNodes by node name
 export function findNode(name) {
-    for (let n of allNodes)
-        if (n.name === name)
-            return n;
+    return allNodes.find(node => node.name === name);
 }
 
 /** needs doc */
-function updateNode(id) {
-    let node = findNode(id);
-    if (node.grayout)
+//
+function updateNode(id, nodes) {
+
+    let node = allNodes.find(node => node.name === id) || nodes.find(node => node.name === id);
+
+    if (node === undefined) {
+        let i = 0;
+        while (nodes.find(tempNode => tempNode.id === i)) i++;
+
+        node = {
+            id: i,
+            reflexive: false,
+            name: id,
+            labl: 'no label',
+            data: [5, 15, 20, 0, 5, 15, 20],
+            count: [.6, .2, .9, .8, .1, .3, .4],  // temporary values for hold that correspond to histogram bins
+            nodeCol: colors(i),
+            baseCol: colors(i),
+            strokeColor: selVarColor,
+            strokeWidth: "1",
+            subsetplot: false,
+            subsetrange: ["", ""],
+            setxplot: false,
+            setxvals: ["", ""],
+            grayout: false,
+            group1: false,
+            group2: false,
+            forefront: false
+        }
+    }
+
+    if (node.grayout) {
         return false;
+    }
 
     let name = node.name;
-    let names = () => nodes.map(n => n.name);
+    let names = _ => nodes.map(n => n.name);
     if (names().includes(name)) {
-        del(nodes, node.index);
-        links
-            .filter(l => l.source === node || l.target === node)
-            .forEach(l => del(links, -1, l));
-        zparamsReset(name);
+        del(nodes, node.index, is_explore_mode && node);
+        if (!is_explore_mode) {
+            links
+                .filter(l => l.source === node || l.target === node)
+                .forEach(l => del(links, -1, l));
+            zparamsReset(name);
 
-        // remove node name from group lists
-        node.group1 && del(zparams.zgroup1, -1, name);
-        node.group2 && del(zparams.zgroup2, -1, name);
-        node.group1 = node.group2 = false;
+            // remove node name from group lists
+            node.group1 && del(zparams.zgroup1, -1, name);
+            node.group2 && del(zparams.zgroup2, -1, name);
+            node.group1 = node.group2 = false;
 
-        // node reset - perhaps this will become a hard reset back to all original allNode values?
-        node.nodeCol = node.baseCol;
-        node.strokeColor = selVarColor;
-        node.strokeWidth = '1';
-
-        borderState();
+            // node reset - perhaps this will become a hard reset back to all original allNode values?
+            node.nodeCol = node.baseCol;
+            node.strokeColor = selVarColor;
+            node.strokeWidth = '1';
+        }
     } else {
         nodes.push(node);
     }
+
+    if (is_explore_mode) {
+        return false;
+    }
+
     zparams.zvars = names();
     return true;
 }
@@ -1987,8 +2175,18 @@ function updateNode(id) {
 /**
  every time a variable in leftpanel is clicked, nodes updates and background color changes
  */
-export function clickVar(elem) {
-    if (updateNode(elem)) {
+export function clickVar(elem, $nodes) {
+    if (is_explore_mode && $nodes && !$nodes.map(x => x.name).includes(elem)) {
+        let max = exploreVariate === 'Univariate' ? 1
+            : exploreVariate === 'Bivariate' ? 2
+            : exploreVariate === 'Trivariate' ? 3
+            : 5;
+        if ($nodes.length >= max) {
+            return;
+        }
+    }
+
+    if (updateNode(elem, $nodes || nodes)) {
         // panelPlots(); is this necessary?
         restart();
     }
@@ -2080,91 +2278,54 @@ export function zPop() {
 }
 
 // when selected, the key/value [mode]: [pipelineID] is set.
-export let selectedPipeline = {};
-export let setSelectedPipeline = (result) => {
-    selectedPipeline[currentMode] = result;
-    if (currentMode === 'model') {
-        // the 'find' function would have been nice here-- es6 only. Find pipeline with UID, then pass pipeline_id
-        let pipeline = pipelineTable.filter((row) => row[0] == result)[0];
-        resultsplotinit(pipeline[1]);
-    }
+export let selectedPipeline;
+export let setSelectedPipeline = result => {
+    selectedPipeline = result;
+    if (currentMode === 'model') resultsplotinit(result);
 }
 
-export let pipelineHeader = ['Hidden_UID', 'PipelineID', 'Metric', 'Score'];
-export let pipelineTable;
+export let selectedResultsMenu;
+export let setSelectedResultsMenu = result => selectedResultsMenu = result;
 
-function onPipelineCreate(PipelineCreateResult, rookpipe) {
-    // rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
-    estimateLadda.stop(); // stop spinner
-    console.log(PipelineCreateResult);
+export let selectedDiscoverySolutionMenu;
+export let setSelectedDiscoverySolutionMenu = result => selectedDiscoverySolutionMenu = result;
 
-    // change status of buttons for estimating problem and marking problem as finished
-    byId("btnEstimate").classList.remove("btn-success");
-    byId("btnEstimate").classList.add("btn-default");
-    byId("btnEndSession").classList.remove("btn-default");
-    byId("btnEndSession").classList.add("btn-success");
+// No longer used:
+// Update table when pipeline is fitted
+//function onPipelineCreate(PipelineCreateResult, id) {
+//    let myscore = PipelineCreateResult.data.response.scores[0].value.raw.double.toPrecision(3);   // Makes a number of assumptions about how values are returned, also need to attempt to deal w multiple scores
+//    let matchedPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(id, 10))
+//    matchedPipeline['Score'] = String(myscore);
+//}
 
-    let context = apiSession(zparams.zsessionid);
-    for (var i = 0; i<PipelineCreateResult.length; i++) {
-        if(PipelineCreateResult[i].pipelineId in allPipelineInfo) {
-            allPipelineInfo[PipelineCreateResult[i].pipelineId]=Object.assign(allPipelineInfo[PipelineCreateResult[i].pipelineId],PipelineCreateResult[i]);
-        } else {
-            allPipelineInfo[PipelineCreateResult[i].pipelineId]=PipelineCreateResult[i];
-        }
+// Update table when pipeline is solved
+function onPipelinePrime(PipelineCreateResult, rookpipe) {
+
+    // Need to deal with (exclude) pipelines that are reported, but failed.  For approach, see below.
+
+
+
+    if(PipelineCreateResult.id in allPipelineInfo) {
+        allPipelineInfo[PipelineCreateResult.id] = Object.assign(allPipelineInfo[PipelineCreateResult.id], PipelineCreateResult);
+    } else {
+        allPipelineInfo[PipelineCreateResult.id] = PipelineCreateResult;
+        pipelineTable.push({
+            'PipelineID': PipelineCreateResult.id,
+            'Score': "scoring"
+        });
     }
-    console.log(allPipelineInfo);
-    // to get all pipeline ids: Object.keys(allPipelineInfo)
 
-    pipelineTable = [];
-    for(var key in allPipelineInfo) {
-        console.log(key);
-        console.log(allPipelineInfo[key]);
-
-        if(key == "rookpipe"){   // happens when multiple CreatePipelines calls have been made
-            continue;
-        }
         // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
-        if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
-            continue;
-        }
-        if(allPipelineInfo[key].progressInfo == "RUNNING")  {
-            continue;
-        }
-
-        let myid = "";
-        let mymetric = "";
-        let myval = "";
-        console.log(key);
-        console.log(allPipelineInfo[key].progressInfo);
-        let myscores = [];
-        if(allPipelineInfo[key].progressInfo == "COMPLETED"){
-            myscores = allPipelineInfo[key].pipelineInfo.scores;
-            for(var i = 0; i < myscores.length; i++) {
-                //if(i==0) {myid=key;}
-                //   else myid="";
-                myid=key;
-                mymetric=myscores[i].metric;
-                myval=+myscores[i].value.toFixed(3);
-                pipelineTable.push([pipelineTable.length, myid, mymetric, myval])
-            }
-        } else { // if progressInfo is not "COMPLETED"
-            continue;
-        }
-    }
-
-    console.table(pipelineTable, [1, 2, 3]);
-
-    if (IS_D3M_DOMAIN){
-        byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
-    };
+        // if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
+        //     continue;
+        // }
+        // if(allPipelineInfo[key].progressInfo == "RUNNING")  {
+        //     continue;
+        // }
 
     //adding rookpipe to allPipelineInfo
     allPipelineInfo.rookpipe=rookpipe;                // This is setting rookpipe for the entire table, but when there are multiple CreatePipelines calls, this is only recording latest values
 
-    // this initializes the results windows using the first pipeline ID
-    if(!swandive) {
-        resultsplotinit(pipelineTable[0][1]);
-    }
     // VJD: these two functions are built and (I believe) functioning as intended. These exercise two core API calls that are currently unnecessary
     //exportpipeline(pipelineTable[1][1]);
     //listpipelines();
@@ -2227,6 +2388,175 @@ function CreatePipelineData(predictors, depvar, aux) {
         maxPipelines: 1
         };
     }
+}
+
+// Update of old CreatePipelineData function that creates problem definition for SearchSolutions call.
+function CreateProblemDefinition(depvar, aux) {
+
+    let targetFeatures = [{ 'resource_id': "0", 'feature_name': depvar[0] }];    // not presently being used in this function
+    let my_target = depvar[0];
+
+
+    if(typeof aux==="undefined") { //default behavior for creating pipeline data
+        let problem = {
+            id: d3mProblemDescription.id,
+            version: d3mProblemDescription.version,
+            name: d3mProblemDescription.name,
+            description: d3mProblemDescription.description,
+            taskType: d3mTaskType[d3mProblemDescription.taskType][1],
+            taskSubtype: d3mTaskSubtype[d3mProblemDescription.taskSubtype][1],
+            performanceMetrics: [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ]  // need to generalize to case with multiple metrics.  only passes on first presently.
+        };
+        let inputs =  [
+            {
+                datasetId: datadocument.about.datasetID,
+                targets: [
+                    {
+                        resourceId: '0',
+                        columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        columnName: my_target
+                    }
+                ]}];
+
+        return {problem: problem, inputs: inputs};
+    } else { //creating pipeline data for problem discovery using aux inputs from disco line
+
+        let problem = {
+            id: aux.problem_id,
+            version: '1.0',
+            name: aux.problem_id,
+            description: aux.description,
+            taskType: d3mTaskType[aux.task][1],
+            taskSubtype: 'TASK_SUBTYPE_UNDEFINED',
+            performanceMetrics: [{metric: d3mMetrics[aux.metric][1]}]  // need to generalize to case with multiple metrics.  only passes on first presently.
+        };
+        let inputs =  [
+            {
+                datasetId: datadocument.about.datasetID,
+                targets: [
+                    {
+                        resourceId: '0',
+                        columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        columnName: my_target
+                    }
+                ]}];
+        return {problem, inputs};
+
+    }
+}
+
+// Create a problem description that follows the Problem Schema, for the Task 1 output.
+function CreateProblemSchema(aux){
+    let my_target = aux.target;
+
+    let my_about = {
+        problemID: aux.problem_id,
+        problemName: aux.problem_id,
+        problemDescription: aux.description,
+        taskType: d3mTaskType[aux.task][1],
+        problemVersion: '1.0',
+        problemSchemaVersion: '3.1.1'
+    };
+    let my_inputs = {
+        data: [
+            {
+                datasetId: datadocument.about.datasetID,
+                targets: [
+                    {
+                        resourceId: '0',
+                        columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        columnName: my_target
+                    }
+                ]}],
+        dataSplits: {
+            method: 'holdOut',
+            testSize: 0.2,
+            stratified: true,
+            numRepeats: 0,
+            randomSeed: 123,
+            splitsFile: 'dataSplits.csv'
+            },
+        performanceMetrics: [{metric: d3mMetrics[aux.metric][1]}]
+    };
+
+    return {about: my_about, inputs: my_inputs, expectedOutputs: {predictionsFile: 'predictions.csv'}};
+}
+
+function CreatePipelineDefinition(predictors, depvar, timeBound, aux) {
+    let my_timeBound = 1;
+    if(typeof timeBound !== 'undefined'){
+        my_timeBound = timeBound;
+    }
+    let my_userAgent = TA3_GRPC_USER_AGENT;              // set on django server
+    let my_version = TA3TA2_API_VERSION;                 // set on django server
+    let my_allowedValueTypes = ['DATASET_URI', 'CSV_URI'];      // Get from elsewhere
+    let my_problem = CreateProblemDefinition(depvar, aux);
+    let my_template = makePipelineTemplate(aux);
+    //console.log(my_problem);
+    let my_dataseturi = 'file://' + datasetdocurl;
+    // console.log(my_dataseturi);
+    return {userAgent: my_userAgent, version: my_version, timeBound: my_timeBound, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, template: my_template, inputs: [{dataset_uri: my_dataseturi}] };
+}
+
+function CreateFitDefinition(solutionId){
+    let my_solutionId = solutionId;
+    let my_dataseturi = 'file://' + datasetdocurl;
+    let my_inputs = [{dataset_uri: my_dataseturi}];
+    let my_exposeOutputs = [];   // eg. ["steps.3.produce"];  need to fix
+    let my_exposeValueTypes = ['CSV_URI'];
+    let my_users = [{id: 'TwoRavens', choosen: false, reason: ''}];
+    return {solutionId: my_solutionId, inputs: my_inputs, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes, users: my_users};
+}
+
+
+// {
+//     "fittedSolutionId": "solutionId_yztf3r",
+//     "inputs": [
+//         {
+//             "csvUri": "file://uri/to-a/csv"
+//         },
+//         {
+//             "datasetUri": "file://uri/to-a/dataset"
+//         }
+//     ],
+//     "exposeOutputs": [
+//         "steps.1.steps.4.produce"
+//     ],
+//     "exposeValueTypes": [
+//         "PICKLE_URI",
+//         "PLASMA_ID"
+//     ],
+//     "users": [
+//         {
+//             "id": "uuid of user",
+//             "choosen": true,
+//             "reason": "best solution"
+//         },
+//         {
+//             "id": "uuid of user",
+//             "choosen": false,
+//             "reason": ""
+//         }
+//     ]
+// }
+
+function CreateProduceDefinition(fsid){
+    let my_fittedSolutionId = fsid;
+    let my_dataseturi = 'file://' + datasetdocurl;
+    let my_inputs = [{dataset_uri: my_dataseturi}];
+    let my_exposeOutputs = [];  // Not sure about this.
+    let my_exposeValueTypes = ['CSV_URI']; // Not sure about this.
+    return {fittedSolutionId: my_fittedSolutionId, inputs: my_inputs, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes};
+}
+
+function CreateScoreDefinition(res){
+    let my_solutionId = res.data.response.solutionId;
+    let my_dataseturi = 'file://' + datasetdocurl;
+    let my_inputs = [{dataset_uri: my_dataseturi}];
+    let my_performanceMetrics = [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ];  // need to generalize to case with multiple metrics.  only passes on first presently.;
+    let my_users = [{id: 'TwoRavens', choosen: false, reason: ""}];
+    let my_configuration = {method: 'HOLDOUT', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
+    return {solutionId: my_solutionId, inputs: my_inputs, performanceMetrics: my_performanceMetrics, users: my_users, configuration: my_configuration};
 }
 
 export function downloadIncomplete() {
@@ -2324,8 +2654,9 @@ export async function estimate(btn) {
         }
 
         estimateLadda.start(); // start spinner
-        let res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(valueKey, mytarget));
-        res && onPipelineCreate(res);
+        let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(valueKey, mytarget));
+        //res && onPipelineCreate(res);   // arguments were wrong, and this function no longer needed
+
     } else { // we are in IS_D3M_DOMAIN no swandive
         // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
         zPop();
@@ -2343,31 +2674,266 @@ export async function estimate(btn) {
         //console.log("zparams zgroup1");
         //console.log(zparams.zgroup1);      // Notice zgroup1 is being sent with correct characters
 
-        let rookpipe = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);
+        let rookpipe = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);        // parse the center panel data into a formula like construction
 
         // 3. And check they come back correctly formed:
         //console.log("pipeline app return (rookpipe)");
-        //console.log(rookpipe);            
+        //console.log(rookpipe);
 
         if (!rookpipe) {
             estimated = true;
         } else {
-
             setxTable(rookpipe.predictors);
-       //     let dvvals = res.dvvalues;
-        //    let dvvar = res.depvar[0];
-          let res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(rookpipe.predictors, rookpipe.depvar));
-         //   res = await makeRequest(ROOK_SVC_URL + 'createpipeline', zparams);
-            res && onPipelineCreate(res, rookpipe);
+            let searchSolutionParmams = CreatePipelineDefinition(rookpipe.predictors,
+                                                                 rookpipe.depvar,
+                                                                 2)
+            let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
+                                        searchSolutionParmams);
+            console.log(JSON.stringify(res));
+            if (res===undefined){
+              estimateLadda.stop();
+              return;
+            }else if(!res.success){
+              estimateLadda.stop();
+              alert('SearchSolutions request Failed! ' + res.message);
+              return;
+            }
+
+            let searchId = res.data.searchId;
+            let solutionId = "";
+            let fittedId = "";
+            allsearchId.push(searchId);
+
+          let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults',
+                                         {searchId: searchId});
+            if (!res2.success){
+                alert('Failed to get GetSearchSolutionsResults: ' + res2.message);
+                estimateLadda.stop();
+                return;
+            }else if (res2.data.is_error){
+                alert('Error with GetSearchSolutionsResults: ' + res2.data.user_msg);
+                estimateLadda.stop();
+                return;
+            }
+
+            let searchDetailsUrl = res2.data.details_url;
+            let fittedDetailsUrl = "";
+            let solutionDetailsUrl = "";
+
+            let searchFinished = false;
+            let fitFinished = false;
+            let res3, res4;
+            let oldCount = 0;
+            let newCount = 0;
+            let resizeTriggered = false;
+            let predPlotTriggered = false;
+
+            let fitFlag = false;
+
+            // Start polling for the searchDetailsUrl.  The response is a StoredRequest
+            //    e.g. /d3m-service/stored-request/{hash id}
+            //
+            let refreshIntervalId = setInterval(async function() {
+                res3 = await updateRequest(searchDetailsUrl);                // silent equivalent makeRequest() with no data argument.  Also, should check whether best to be synchronous here.
+                if (!res3.success){
+                  estimateLadda.stop();
+                  alert('Retrieving StoredRequest failed. ' + res3.message);
+                  return;
+                } else if (res3.data.is_error){
+                  estimateLadda.stop();
+                  alert('StoredRequest has an error. ' + res3.data.user_msg);
+                  return;
+                }
+
+                newCount = res3.data.responses.count;
+
+                // Check if new pipeline to add and inspect
+                if(newCount>oldCount){
+                    //for (var i = oldCount; i < newCount; i++) {       //  for statement if new items are pushed instead
+                    pipelineLoop: for (var i = 0; i < (newCount-oldCount); i++) {     //  instead, updates are at top of list
+                        //console.log(res3.data.responses.list[i].details_url);
+                        solutionDetailsUrl = res3.data.responses.list[i].details_url;
+                        res4 = await updateRequest(solutionDetailsUrl);
+                        if (!res4.success){
+                          alert('PLEASE CONTINUE. Debug: Detected StoredResponse error (unusual).\n' + res4.message);
+                          continue pipelineLoop; // continue to next iteration
+                        } else if (res4.data.is_error){
+                          alert('PLEASE CONTINUE. Debug: StoredResponse has an error (unusual)\n' + JSON.stringify(res4.data));
+                          continue pipelineLoop; // continue to next iteration
+                        }
+
+                        let res4DataId = res4.data.id;
+                        //console.log(res4);
+                        solutionId = res4.data.response.solutionId;
+                        onPipelinePrime(res4.data, rookpipe);
+
+                        // Once pipelineTable exist, can rebuild the window to start exploring results
+                        if(!resizeTriggered){
+                            if (IS_D3M_DOMAIN){
+                                byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
+                            };
+                            resizeTriggered = true;
+                        }
+
+                        if(selectedPipeline === undefined){
+                            setSelectedPipeline(pipelineTable[0]['PipelineID']);
+                        }
+
+                        let res10, res11, res77, res5, res6, res8;
+                        let scoreDetailsUrl;
+
+                        if(typeof solutionId != 'undefined'){         // Find out when this happens
+
+                            // [1] Get the template language description of the pipeline solution
+                            res77 = await makeRequest(D3M_SVC_URL + '/DescribeSolution',
+                                                      {solutionId: solutionId});
+
+                            if(!res77.success){
+                                alert('PLEASE CONTINUE.  Debug: DescribeSolution failed. ' + res77.message);
+                                continue pipelineLoop; // continue to next iteration
+                            }
+                            // Add pipeline descriptions to allPipelineInfo
+                            // More overwriting than is necessary here.
+                            allPipelineInfo[res4.data.id] = Object.assign(allPipelineInfo[res4.data.id], res4.data, res77.data);
+
+                            console.log("pipeline description here:")
+                            console.log(allPipelineInfo[res4.data.id].pipeline);
+
+                            // [2] Ask for a solution to be scored
+                            res10 = await makeRequest(D3M_SVC_URL + '/ScoreSolution', CreateScoreDefinition(res4));
+                            if(!res10.success){
+                                alert('PLEASE CONTINUE.  Debug: ScoreSolution failed. ' + res10.message);
+                                continue pipelineLoop; // continue to next iteration
+                            }else if(typeof res10.data.requestId != 'undefined'){
+                                let scoreId = res10.data.requestId;
+                                res11 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
+                                scoreDetailsUrl = res11.data.details_url;
+                            }else{
+                                alert('PLEASE CONTINUE.  Debug: ScoreSolution failed. ' + JSON.stringify(res10));
+                                continue pipelineLoop;
+                            };
+
+                            if(fitFlag){
+                                res5 = await makeRequest(D3M_SVC_URL + '/FitSolution',
+                                                         CreateFitDefinition(solutionId));
+                                if(!res5.success){
+                                     alert('PLEASE CONTINUE.  Debug: FitSolution failed. ' + res5.message);
+                                     continue pipelineLoop; // continue to next iteration
+                                }else if(typeof res5.data.requestId != 'undefined'){
+                                    fittedId = res5.data.requestId;
+                                    res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
+                                    fittedDetailsUrl = res6.data.details_url;
+                                }else{
+                                    alert('PLEASE CONTINUE.  Debug: FitSolution failed. ' + JSON.stringify(res5));
+                                    continue pipelineLoop;
+                                }
+                            };
+                        };
+
+                        // Possibly these belong elsewhere, like a callback function above.
+
+                        let scoringIntervalId = setInterval(async function() {
+                            let res12 = await updateRequest(scoreDetailsUrl);   // check
+                            if(!res12.success){
+                              alert('PLEASE CONTINUE.  Debug: Get stored request failed. ' + res12.message);
+                              clearInterval(scoringIntervalId);
+                              return; // continue to next iteration
+                            }
+                            if(typeof res12.data.is_finished != 'undefined'){
+                                if(res12.data.is_finished){
+                                    if(res12.data.responses.list.length > 0){   // need to understand why this comes back is.finished=true but also length=0
+                                        console.log('finished scoring');
+                                        let finalScoreUrl = res12.data.responses.list[0].details_url;
+                                        let res13 = await updateRequest(finalScoreUrl);
+                                        let myscore = res13.data.response.scores[0].value.raw.double.toPrecision(3);   // Makes a number of assumptions about how values are returned, also need to attempt to deal w multiple scores
+                                        let matchedPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(res4DataId, 10))
+                                        matchedPipeline['Score'] = String(myscore);
+                                        if(!predPlotTriggered){
+                                            console.log(pipelineTable);
+                                                byId("btnPredPlot").click();   // Was "btnResults" - changing to simplify user experience for testing.
+                                            predPlotTriggered = true;
+                                        };
+
+                                        //onPipelineCreate(res13, res4DataId);    // This function was getting shorter and shorter, and now just lives above.
+                                    } else {
+                                        console.log('finished scoring but broken');
+                                        let brokenPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(res4DataId, 10))
+                                        brokenPipeline['Score'] = 'no score';
+                                    };
+                                    pipelineTable = sortPipelineTable(pipelineTable);
+                                    clearInterval(scoringIntervalId);
+                                };
+                            };
+                        }, 2700);
+
+                        let finalFittedId, finalFittedDetailsUrl;
+                        if(fitFlag){
+                            let fittingIntervalId = setInterval(async function() {
+
+                                // Retrieve a StoredRequest object: /d3m-service/stored-request
+                                //
+                                let res7 = await updateRequest(fittedDetailsUrl);   // check
+
+                                if(!res7.success){  // was: (typeof res7.data.is_finished != 'undefined'){
+                                    clearInterval(fittingIntervalId);
+                                    console.log("ERROR res7.message: " + res7.message);
+                                    return;
+                                }
+
+                                if(typeof res7.data.is_finished != 'undefined'){
+                                    if(res7.data.is_error){
+                                      clearInterval(fittingIntervalId);
+                                      console.log("ERROR res7.data.is_error: " + JSON.stringify(res7.data));
+                                      return;
+                                    }else if(res7.data.is_finished){
+                                        finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
+                                        res8 = await updateRequest(finalFittedDetailsUrl);
+                                        if(!res8.success){
+                                          clearInterval(fittingIntervalId);
+                                          console.log("ERROR res8.message: " + JSON.stringify(res8));
+                                          return;
+                                        }
+                                        finalFittedId = res8.data.response.fittedSolutionId;
+                                        console.log("finalfittedId:" + finalFittedId);
+
+                                        // PUT finalFittedId SOMEWHERE IT CAN BE FOUND : maybe allPipelineInfo
+                                        clearInterval(fittingIntervalId);
+                                    };
+                                };
+                            }, 500);
+                        };
+
+                    };
+                    oldCount = newCount;
+                };
+
+                searchFinished = res3.data.is_finished;
+
+                // Check if search is finished
+                if(searchFinished){
+                    // stop spinner
+                    estimateLadda.stop();
+                    // change status of buttons for estimating problem and marking problem as finished
+                    byId("btnEstimate").classList.remove("btn-success");
+                    byId("btnEstimate").classList.add("btn-default");
+                    byId("btnEndSession").classList.remove("btn-default");
+                    byId("btnEndSession").classList.add("btn-success");
+                    // stop the interval process
+                    clearInterval(refreshIntervalId);
+                };
+            }, 1000);
+
         }
     }
     task2_finished = true;
 }
 
+
+// This appears not to be used:
 /** needs doc */
-export function ta2stuff() {
-    console.log(d3mProblemDescription);
-}
+//export function ta2stuff() {
+//    console.log(d3mProblemDescription);
+//}
 
 /** needs doc */
 async function dataDownload() {
@@ -2455,231 +3021,34 @@ function viz(mym) {
     m.redraw();
 }
 
-/**
-   parses the transformation input.
-   variable names are often nested inside one another, e.g., ethwar, war, wars, and so this is handled
-*/
-function transParse(n) {
-    var out2 = [];
-    var t2 = n;
-    var k2 = 0;
-    var subMe2 = "_transvar".concat(k2);
-    var indexed = [];
-
-    // out2 is all matched variables, indexed is an array, each element is an object that contains the matched variables starting index and finishing index.  e.g., n="wars+2", out2=[war, wars], indexed=[{0,2},{0,3}]
-    for (var i in valueKey) {
-        var m2 = n.match(valueKey[i]);
-        if (m2 != null)
-            out2.push(m2[0]);
-
-        var re = new RegExp(valueKey[i], "g");
-        var s = n.search(re);
-        if (s != -1)
-            indexed.push({from: s, to: s + valueKey[i].length});
-    }
-
-    // nested loop not good, but indexed is not likely to be very large.
-    // if a variable is nested, it is removed from out2
-    // notice, loop is backwards so that index changes don't affect the splice
-    cdb("indexed ", indexed);
-    for (var i = indexed.length - 1; i > -1; i--) {
-        for (var j = indexed.length - 1; j > -1; j--) {
-            if (i === j)
-                continue;
-            if ((indexed[i].from >= indexed[j].from) & (indexed[i].to <= indexed[j].to)) {
-                cdb(i, " is nested in ", j);
-                del(out2, i);
-            }
+export async function updateRequest(url) {
+    //console.log('url:', url);
+    //console.log('POST:', data);
+    let res;
+    try {
+        res = await m.request(url, {method: 'POST', data:{}});       // maybe change the POST and data
+        //console.log('response:', res);
+        if (Object.keys(res)[0] === 'warning') {
+            alert('Warning: ' + res.warning);
+            end_ta3_search(false, res.warning);
         }
+    } catch(err) {
+        end_ta3_search(false, err);
+        cdb(err);
+        alert(`Error: call to ${url} failed`);
     }
-
-    for (var i in out2) {
-        t2 = t2.replace(out2[i], subMe2); //something that'll never be a variable name
-        k2 = k2 + 1;
-        subMe2 = "_transvar".concat(k2);
-    }
-
-    if (out2.length > 0) {
-        out2.push(t2);
-        cdb("new out ", out2);
-        return (out2);
-    } else {
-        alert("No variable name found. Perhaps check your spelling?");
-        return null;
-    }
+    return res;
 }
 
-/**
-   n = name of column/node
-   t = selected transformation
-*/
-async function transform(n, t, typeTransform) {
-    if (downloadIncomplete()) {
-        return;
-    }
 
-    if (!typeTransform)
-        t = t.replace("+", "_plus_"); // can't send the plus operator
-
-    cdb('name of col: ' + n);
-    cdb('transformation: ' + t);
-
-    var btn = byId('btnEstimate');
-
-    // find the node by name
-    var myn = findNodeIndex(n[0], true);
-
-    if (typeof myn === "undefined") {
-        myn = findNodeIndex(n, true);
-    }
-
-    var outtypes = {
-        varnamesTypes: n,
-        interval: myn.interval,
-        numchar: myn.numchar,
-        nature: myn.nature,
-        binary: myn.binary
-    };
-
-    cdb(myn);
-    // if typeTransform but we already have the metadata
-    if (typeTransform) {
-        if (myn.nature == "nominal" & typeof myn.plotvalues !== "undefined") {
-            myn.plottype = "bar";
-            barsNode(myn);
-            panelPlots();
-            return;
-        } else if (myn.nature != "nominal" & typeof myn.plotx !== "undefined") {
-            myn.plottype = "continuous";
-            densityNode(myn);
-            panelPlots();
-            return;
-        }
-    }
-
-    estimateLadda.start(); // start spinner
-    let json = await makeRequest(
-        ROOK_SVC_URL + 'transformapp',
-        {zdataurl: dataurl,
-         zvars: myn.name,
-         zsessionid: zparams.zsessionid,
-         transform: t,
-         callHistory: callHistory,
-         typeTransform: typeTransform,
-         typeStuff: outtypes});
-    if (!json) {
-        return;
-    }
-
-    // Is this a typeTransform?
-    if (json.typeTransform[0]) {
-        // Yes. We're updating an existing node
-        d3.json(json.url, (err, data) => {
-            if (err)
-                return console.warn(err);
-            let node;
-            for (let key in data) {
-                node = findNodeIndex(key, true);
-		            if (!node)
-		                continue;
-                jQuery.extend(true, node, data[key]);
-                node.plottype === "continuous" ? densityNode(node) :
-                    node.plottype === "bar" ? barsNode(node) : null;
-            }
-            fakeClick();
-            panelPlots();
-            node && cdb(node);
-        });
-    } else {
-        /* No, we have a new node here--e.g. the transformed column
-           example response: {
-           "call":["t_year_2"],
-           "url":["data/preprocessSubset_BACCBC78-7DD9-4482-B31D-6EB01C3A0C95.txt"],
-           "trans":["year","_transvar0^2"],
-           "typeTransform":[false]
-           }
-        */
-        callHistory.push({
-            func: "transform",
-            zvars: n,
-            transform: t
-        });
-
-        var subseted = false;
-        var rCall = [];
-
-        rCall[0] = json.call;
-        var newVar = rCall[0][0];
-
-        trans.push(newVar);
-
-        // Read the preprocess file containing values
-        // for the transformed variable
-        //
-        d3.json(json.url, function(error, json) {
-            if (error) return console.warn(error);
-
-            var jsondata = getVariableData(json);
-
-            for (var key in jsondata) {
-                var myIndex = findNodeIndex(key);
-                if (typeof myIndex !== "undefined") {
-                    alert("Invalid transformation: this variable name already exists.");
-                    return;
-                }
-                // add transformed variable to the current space
-                var i = allNodes.length;  // get new index
-                var obj1 = {
-                    id: i,
-                    reflexive: false,
-                    name: key,
-                    labl: "transformlabel",
-                    data: [5, 15, 20, 0, 5, 15, 20],
-                    count: [.6, .2, .9, .8, .1, .3, .4],
-                    nodeCol: colors(i),
-                    baseCol: colors(i),
-                    strokeColor: selVarColor,
-                    strokeWidth: "1",
-                    subsetplot: false,
-                    subsetrange: ["", ""],
-                    setxplot: false,
-                    setxvals: ["", ""],
-                    grayout: false,
-                    defaultInterval: jsondata[key].interval,
-                    defaultNumchar: jsondata[key].numchar,
-                    defaultNature: jsondata[key].nature,
-                    defaultBinary: jsondata[key].binary
-                };
-
-                jQuery.extend(true, obj1, jsondata[key]);
-                allNodes.push(obj1);
-
-                valueKey.push(newVar);
-                nodes.push(allNodes[i]);
-                fakeClick();
-                panelPlots();
-
-                if (allNodes[i].plottype === "continuous") {
-                    densityNode(allNodes[i]);
-                } else if (allNodes[i].plottype === "bar") {
-                    barsNode(allNodes[i]);
-                }
-
-                m.redraw();
-            }
-        });
-
-        showLog('transform', rCall);
-    }
-}
 
 export async function makeRequest(url, data) {
-    console.log('url:', url);
-    console.log('POST:', data);
+    // console.log('url:', url);
+    // console.log('POST:', data);
     let res;
     try {
         res = await m.request(url, {method: 'POST', data: data});
-        console.log('response:', res);
+        // console.log('response:', res);
         if (Object.keys(res)[0] === 'warning') {
             alert('Warning: ' + res.warning);
             end_ta3_search(false, res.warning);
@@ -2704,49 +3073,37 @@ export async function makeRequest(url, data) {
     */
 
     if (!IS_D3M_DOMAIN){
-        estimateLadda.stop();    // estimateLadda is being stopped in onPipelineCreate in D3M
+        estimateLadda.stop();    // estimateLadda is being stopped somewhere else in D3M
     };
     return res;
-}
-
-/** needs doc */
-export function legend() {
-    borderState();
-    m.redraw();
 }
 
 /**
    programmatically deselect every selected variable
 */
-export function erase() {
-    setLeftTab('Variables');
-
-    valueKey.forEach(function(element){
-      if (zparams.zdv.concat(zparams.znom, zparams.zvars).includes(element))   // names start with varList now
-        clickVar(element);
-    });
+export function erase(disc) {
+    setLeftTab(disc == 'Discovery' ? 'Discovery' : 'Variables');
+    nodes.map(node => node.name).forEach(name => clickVar(name, nodes));
 }
 
-/** needs doc */
+// call with a tab name to change the left tab in model mode
 export let setLeftTab = (tab) => {
     leftTab = tab;
     updateLeftPanelWidth();
-
-    if (tab === "Discovery"){
-        probtable.length = 0;
-        for(let i = 0; i < disco.length; i++) {
-            let mypredictors = disco[i].predictors.join();
-            probtable.push([i, disco[i].target, mypredictors, disco[i].task, disco[i].metric]);
-        }
-
-        document.getElementById("discoveryInput").value=disco[0].description;
-    }
+    exploreVariate = tab === 'Discovery' ? 'Problem' : 'Univariate';
 };
 
+// formats data for the hidden summary tab in the leftpanel
 export let summary = {data: []};
 
-/** needs doc */
+// d is a node from allNodes or nodes
+// updates the summary variable, which is rendered in the hidden summary tab in the leftpanel;
 function varSummary(d) {
+    if (!d) {
+        summary = {data: []};
+        return;
+    }
+
     let t1 = 'Mean:, Median:, Most Freq:, Occurrences:, Median Freq:, Occurrences:, Least Freq:, Occurrences:, Std Dev:, Minimum:, Maximum:, Invalid:, Valid:, Uniques:, Herfindahl'.split(', ');
 
     d3.select('#tabSummary')
@@ -2778,32 +3135,33 @@ function varSummary(d) {
 
 }
 
-export let popoverContent = d => {
-    if(swandive)
-        return;
+export let popoverContent = node => {
+    if (swandive || !node) return;
+
     let text = '<table class="table table-sm table-striped" style="margin:-10px;"><tbody>';
     let [rint, prec] = [d3.format('r'), (val, int) => (+val).toPrecision(int).toString()];
     let div = (field, name, val) => {
-        if (field != 'NA') text += `<tr><th>${name}</th><td><p class="text-left" style="height:10px;">${val || field}</p></td></tr>`;
+        if ((field != 'NA' && ((field && !isNaN(field)) || (val && !isNaN(val)))))
+            text += `<tr><th>${name}</th><td><p class="text-left" style="height:10px;">${val || field}</p></td></tr>`;
     };
-    d.labl != '' && div(d.labl, 'Label');
-    div(d.mean, 'Mean', priv && d.meanCI ?
-        `${prec(d.mean, 2)} (${prec(d.meanCI.lowerBound, 2)} - ${prec(d.meanCI.upperBound, 2)})` :
-        prec(d.mean, 4));
-    div(d.median, 'Median', prec(d.median, 4));
-    div(d.mode, 'Most Freq');
-    div(d.freqmode, 'Occurrences',  rint(d.freqmode));
-    div(d.mid, 'Median Freq');
-    div(d.freqmid, 'Occurrences', rint(d.freqmid));
-    div(d.fewest, 'Least Freq');
-    div(d.freqfewest, 'Occurrences', rint(d.freqfewest));
-    div(d.sd, 'Stand Dev', prec(d.sd, 4));
-    div(d.max, 'Maximum', prec(d.max, 4));
-    div(d.min, 'Minimum', prec(d.min, 4));
-    div(d.invalid, 'Invalid', rint(d.invalid));
-    div(d.valid, 'Valid', rint(d.valid));
-    div(d.uniques, 'Uniques', rint(d.uniques));
-    div(d.herfindahl, 'Herfindahl', prec(d.herfindahl, 4));
+    node.labl != '' && div(node.labl, 'Label');
+    div(node.mean, 'Mean', priv && node.meanCI ?
+        `${prec(node.mean, 2)} (${prec(node.meanCI.lowerBound, 2)} - ${prec(node.meanCI.upperBound, 2)})` :
+        prec(node.mean, 4));
+    div(node.median, 'Median', prec(node.median, 4));
+    div(node.mode, 'Most Freq');
+    div(node.freqmode, 'Occurrences',  rint(node.freqmode));
+    div(node.mid, 'Median Freq');
+    div(node.freqmid, 'Occurrences', rint(node.freqmid));
+    div(node.fewest, 'Least Freq');
+    div(node.freqfewest, 'Occurrences', rint(node.freqfewest));
+    div(node.sd, 'Stand Dev', prec(node.sd, 4));
+    div(node.max, 'Maximum', prec(node.max, 4));
+    div(node.min, 'Minimum', prec(node.min, 4));
+    div(node.invalid, 'Invalid', rint(node.invalid));
+    div(node.valid, 'Valid', rint(node.valid));
+    div(node.uniques, 'Uniques', rint(node.uniques));
+    div(node.herfindahl, 'Herfindahl', prec(node.herfindahl, 4));
     return text + '</tbody></table>';
 }
 
@@ -2868,116 +3226,95 @@ export function panelPlots() {
 /**
    converts color codes
 */
-export let hexToRgba = hex => {
+export let hexToRgba = (hex, alpha) => {
     let int = parseInt(hex.replace('#', ''), 16);
-    return `rgba(${[(int >> 16) & 255, (int >> 8) & 255, int & 255, '0.5'].join(',')})`;
+    return `rgba(${[(int >> 16) & 255, (int >> 8) & 255, int & 255, alpha || '0.5'].join(',')})`;
 };
 
 /**
    takes node and color and updates zparams
 */
-function setColors(n, c) {
-    if (n.strokeWidth == '1') {
-        if (c == gr1Color){
-            var tempindex = zparams.zgroup1.indexOf(n.name);
-            if (tempindex > -1){
-                n.group1 = false;
-                del(zparams.zgroup1, tempindex);
-            } else {
-                n.group1 = true;
-                zparams.zgroup1.push(n.name);
-            };
-        } else if (c == gr2Color){
-            var tempindex = zparams.zgroup2.indexOf(n.name);
-            if (tempindex > -1){
-                n.group2 = false;
-                del(zparams.zgroup2, tempindex);
-            } else {
-                n.group2 = true;
-                zparams.zgroup2.push(n.name);
-            };
-        } else {
-        // adding time, cs, dv, nom to node with no stroke
-        n.strokeWidth = '4';
-        n.strokeColor = c;
-        n.nodeCol = taggedColor;
-        let push = ([color, key]) => {
-            if (color != c)
-                return;
-            zparams[key] = Array.isArray(zparams[key]) ? zparams[key] : [];
-            zparams[key].push(n.name);
-            if (key == 'znom') {
-                findNodeIndex(n.name, true).nature = "nominal";
-                transform(n.name, t = null, typeTransform = true);
+export function setColors(n, c) {
+    // the order of the keys indicates precedence
+    let zmap = {
+        [csColor]: 'zcross',
+        [timeColor]: 'ztime',
+        [nomColor]: 'znom',
+        [dvColor]: 'zdv',
+        [gr1Color]: 'zgroup1',
+        [gr2Color]: 'zgroup2'
+    }
+    let strokeWidths = {
+        [csColor]: 4,
+        [timeColor]: 4,
+        [nomColor]: 4,
+        [dvColor]: 4,
+        [gr1Color]: 1,
+        [gr2Color]: 1
+    }
+    let nodeColors = {
+        [csColor]: taggedColor,
+        [timeColor]: taggedColor,
+        [nomColor]: taggedColor,
+        [dvColor]: taggedColor,
+        [gr1Color]: colors(n.id),
+        [gr2Color]: colors(n.id)
+    }
+    let strokeColors = {
+        [csColor]: csColor,
+        [timeColor]: timeColor,
+        [nomColor]: nomColor,
+        [dvColor]: dvColor,
+        [gr1Color]: selVarColor,
+        [gr2Color]: selVarColor
+    }
+
+    // from the relevant zparams list: remove if included, add if not included
+    if (!Array.isArray(zparams[zmap[c]])) zparams[zmap[c]] = [];
+    let index = zparams[zmap[c]].indexOf(n.name);
+    if (index > -1) zparams[zmap[c]].splice(index, 1)
+    else zparams[zmap[c]].push(n.name)
+
+    labelNodeAttrs: {
+        let matchedColor;
+        for (let label of Object.keys(zmap))
+            if (zparams[zmap[label]].includes(n.name)) {
+                n.strokeWidth = strokeWidths[label];
+                n.nodeCol = nodeColors[label];
+                n.strokeColor = strokeColors[label];
+                break labelNodeAttrs;
             }
-            if (key == 'zdv'){                                              // remove group memberships from dv's
-                if(n.group1){
-                    n.group1 = false;
-                    del(zparams.zgroup1, -1, n.name);
-                };
-                if(n.group2){
-                    n.group2 = false;
-                    del(zparams.zgroup2, -1, n.name);
-                };
-            }
-        };
-        [[dvColor, 'zdv'], [csColor, 'zcross'], [timeColor, 'ztime'], [nomColor, 'znom']].forEach(push);
-        }
-    } else if (n.strokeWidth == '4') {
-        if (c == n.strokeColor) { // deselecting time, cs, dv, nom
-            n.strokeWidth = '1';
-            n.strokeColor = selVarColor;
-            n.nodeCol = colors(n.id);
-            zparamsReset(n.name);
-            if (nomColor == c && zparams.znom.includes(n.name)) {
-                findNodeIndex(n.name, true).nature = findNodeIndex(n.name, true).defaultNature;
-                transform(n.name, t = null, typeTransform = true);
-            }
-        } else { // deselecting time, cs, dv, nom AND changing it to time, cs, dv, nom
-            zparamsReset(n.name);
-            if (nomColor == n.strokeColor && zparams.znom.includes(n.name)) {
-                findNodeIndex(n.name, true).nature = findNodeIndex(n.name, true).defaultNature;
-                transform(n.name, t = null, typeTransform = true);
-            }
-            n.strokeColor = c;
-            if (dvColor == c){
-                var dvname = n.name;
-                zparams.zdv.push(dvname);
-                if(n.group1){ // remove group memberships from dv's
-                    ngroup1 = false;
-                    del(zparams.zgroup1, -1, dvname);
-                };
-                if(n.group2){
-                    ngroup2 = false;
-                    del(zparams.zgroup2, -1, dvname);
-                };
-            }
-            else if (csColor == c) zparams.zcross.push(n.name);
-            else if (timeColor == c) zparams.ztime.push(n.name);
-            else if (nomColor == c) {
-                zparams.znom.push(n.name);
-                findNodeIndex(n.name, true).nature = "nominal";
-                transform(n.name, t = null, typeTransform = true);
-            }
-        }
+        // default node color
+        n.strokeWidth = 1;
+        n.nodeCol = n.baseCol;
+        n.strokeColor = selVarColor;
+    }
+
+    // if index was not found, then it was added
+    let isIncluded = index === -1;
+
+    if (c == gr1Color) {
+        [n.group1, n.group2] = [isIncluded, false]
+        del(zparams.zgroup2, -1, n.name)
+        del(zparams.zdv, -1, n.name)
+    }
+    if (c === gr2Color) {
+        [n.group1, n.group2] = [false, isIncluded]
+        del(zparams.zgroup1, -1, n.name)
+        del(zparams.zdv, -1, n.name)
+    }
+    if (c === dvColor) {
+        [n.group1, n.group2] = [false, false]
+        del(zparams.zgroup1, -1, n.name)
+        del(zparams.zgroup2, -1, n.name)
+    }
+
+    if (c === nomColor) {
+        findNode(n.name).nature = isIncluded ? 'nominal' : findNode(n.name).defaultNature;
+        resetPeek();
     }
 }
 
-/** needs doc */
-export function borderState() {
-    let set = (id, param, attrs) => {
-        let el = byId(id);
-        zparams[param].length > 0 ?
-            Object.entries(attrs).forEach(([x, y]) => el.querySelector('.rectColor svg circle').setAttribute(x, y)) :
-            el.style['border-color'] = '#ccc';
-    };
-    set('dvButton', 'zdv', {stroke: dvColor});
-    set('csButton','zcross', {stroke: csColor});
-    set('timeButton','ztime', {stroke: timeColor});
-    set('nomButton','znom', {stroke: nomColor});
-    set('gr1Button','zgroup1', {stroke: gr1Color, fill: gr1Color, 'fill-opacity': 0.6, 'stroke-opacity': 0});
-    set('gr2Button','zgroup2', {stroke: gr2Color, fill: gr2Color, 'fill-opacity': 0.6, 'stroke-opacity': 0});
-}
 
 /** needs doc */
 export function subsetSelect(btn) {
@@ -3159,28 +3496,33 @@ export function fakeClick() {
    EndSession(SessionContext) returns (Response) {}
 */
 export async function endsession() {
-    let table = document.getElementById("setxRight").getElementsByTagName('table')[0];
-    if(typeof table === 'undefined') {
+    if(Object.keys(allPipelineInfo).length === 0) {
         alert("No pipelines exist. Cannot mark problem as complete.");
         return;
     }
 
-    let tableposition = selectedPipeline['model'] + 1;  // no pipeline selected become NaN
-    if(isNaN(tableposition)){
-        tableposition = 1;
+    if (!selectedPipeline) {
+        alert("No pipeline selected. Cannot mark problem as complete.");
+        return;
     }
-    let selected = table.rows[tableposition].cells[0].innerHTML;  // was "none"; as default
+
+    console.log("== this should be the selected solution ==");
+    console.log(allPipelineInfo[selectedPipeline]);
+    console.log(allPipelineInfo[selectedPipeline].response.solutionId);
+
+    let chosenSolutionId = allPipelineInfo[selectedPipeline].response.solutionId;
 
     // calling exportpipeline
-    let end = await exportpipeline(selected);
+    let end = await exportpipeline(chosenSolutionId);
 
    // makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
-    let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
-    let mystatus = res.status.code.toUpperCase();
-    if(mystatus == "OK") {
+    //let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
+    endAllSearches()
+    //let mystatus = res.status.code.toUpperCase();
+    //if(mystatus == "OK") {
         end_ta3_search(true, "Problem marked as complete.");
         setModal("Your selected pipeline has been submitted.", "Task Complete", true, false, false, location.reload);
-    }
+    //}
 }
 
 /**
@@ -3222,10 +3564,10 @@ export async function listpipelines() {
    rpc ExecutePipeline(PipelineExecuteRequest) returns (stream PipelineExecuteResult) {}
 */
 export async function executepipeline() {
-    let context = apiSession(zparams.zsessionid);
-    let tablerow = document.querySelector('#setxRight tr.item-select');
-    if(tablerow == null) {alert("Please select a pipeline to execute on."); return;}
-    let pipelineId=tablerow.firstChild.innerText;
+    if (!selectedPipeline) {
+        alert("Please select a pipeline to execute on.");
+        return;
+    }
 
     zPop();
     zparams.callHistory = callHistory;
@@ -3237,28 +3579,28 @@ export async function executepipeline() {
     for(let i =0; i<zparams.zvars.length; i++) {
         let mydata = [];
         mydata[0] = zparams.zvars[i];
-        let mymean = allNodes[findNodeIndex(zparams.zvars[i])].mean;
+        let mymean = findNode(zparams.zvars[i]).mean;
         if(zparams.zsetx[i][0]=="") {
             mydata[1]=mymean;
         } else if(zparams.zsetx[i][0]!=mymean){
             mydata[1]=zparams.zsetx[i][0];
         }
         if(zparams.zsetx[i][1]=="") {
-            mydata[2]=allNodes[findNodeIndex(zparams.zvars[i])].mean;
+            mydata[2]= findNode(zparams.zvars[i]).mean;
         } else if(zparams.zsetx[i][1]!=mymean){
             mydata[2]=zparams.zsetx[i][1];
         }
         data.push(mydata);
     }
 
-    let temp = {context, pipelineId, data};
-    temp = JSON.stringify(temp);
+    let context = apiSession(zparams.zsessionid);
+    let temp = JSON.stringify({context, selectedPipeline, data});
     console.log(temp);
-    let res = await makeRequest(D3M_SVC_URL + '/ExecutePipeline', {context, pipelineId, data});
+    let res = await makeRequest(D3M_SVC_URL + '/ExecutePipeline', {context, selectedPipeline, data});
     // I think we want to do this here, but will wait for ISI image to test against
-   // if(res.progressInfo=="COMPLETED") {
-        res && addPredictions(res);
-   // }
+    // if(res.progressInfo=="COMPLETED") {
+    res && addPredictions(res);
+    // }
 }
 
 function addPredictions(res) {
@@ -3375,16 +3717,141 @@ function setPebbleCharge(d){
 }
 
 /** needs doc */
-export function resultsplotinit(pid) {
+export async function resultsplotinit(pid) {
+    if (!('predictedValues' in allPipelineInfo[pid])){
+        generatePredictions(pid, true);                    // generate predicted values, and then plot
+    } else {
+        resultsplotgraph(pid);                             // predicted values already exist
+    };
+}
+
+export async function generatePredictions(pid, plotflag) {
+
+    if (!('predictedValues' in allPipelineInfo[pid])){
+        // Need to generate and store predicted values
+        let finalFittedId, finalFittedDetailsUrl, produceDetailsUrl, finalProduceDetailsUrl, hold3;
+        let res8, res55, res56, res58, res59;
+
+        let chosenSolutionId = allPipelineInfo[selectedPipeline].response.solutionId;
+        let res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(chosenSolutionId));
+        let fittedId = res5.data.requestId;
+        let res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
+        let fittedDetailsUrl = res6.data.details_url;
+        let fittingfinished = false;                     // Flag for whether we have a fitted solution available yet to produce predicted values from.
+        let fittingIntervalId = setInterval(async function() {
+
+            // First get fitted solution
+            if(!fittingfinished){
+                let res7 = await updateRequest(fittedDetailsUrl);
+                if(res7.success){  // was: (typeof res7.data.is_finished != 'undefined'){
+                    if(res7.data.is_finished){
+                        if(res7.data.is_error){
+                           console.log('fittedDetailsUrl request failed !!!!!!!!!!!!!!!')
+                           console.log('fittedDetailsUrl: '+ fittedDetailsUrl);
+                            console.log('res7 error: ' + JSON.stringify(res7));
+                            clearInterval(fittingIntervalId);
+                        }else{
+                            finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
+                            res8 = await updateRequest(finalFittedDetailsUrl);
+                            if(res8.success){
+                                if ((res8.data.is_finished)&&(res8.data.is_error)){
+                                  console.log('finalFittedDetailsUrl request failed !!!!!!!!!!!!!!!')
+                                  clearInterval(fittingIntervalId);
+                                }else if (res8.data.is_finished){
+                                    finalFittedId = res8.data.response.fittedSolutionId;
+                                    console.log(finalFittedId);
+
+                                    let produceSolutionParams = CreateProduceDefinition(finalFittedId);
+                                    res55 = await makeRequest(D3M_SVC_URL + '/ProduceSolution',
+                                                              produceSolutionParams);
+
+                                    if (res55.success){
+
+                                        let produceId = res55.data.requestId;
+                                        console.log("--Finished Fitting");
+
+                                        res56 = await makeRequest(D3M_SVC_URL + `/GetProduceSolutionResults`, {requestId: produceId});
+                                        if (res56.success){
+                                            // note, in this case "is_finished" will be false,
+                                            // for a streaming request
+                                            console.log("--Get GetProduceSolutionResults");
+                                            produceDetailsUrl = res56.data.details_url;
+                                            fittingfinished = true;
+                                        }else{
+                                          console.log('GetProduceSolutionResults request failed !!!!!!!!!!!!!!! ')
+                                          console.log('res56' + JSON.stringify(res56));
+                                          clearInterval(fittingIntervalId);
+                                        }
+                                    }else{
+                                      console.log('ProduceSolution request failed !!!!!!!!!!!!!!!');
+                                      console.log('produceSolutionParams' + JSON.stringify(produceSolutionParams));
+                                      console.log('res55' + JSON.stringify(res55));
+                                      clearInterval(fittingIntervalId);
+                                    }
+                                }
+                            } else {
+                                clearInterval(fittingIntervalId);
+                            };
+                        };
+                    };
+                } else {
+                    clearInterval();
+                };
+            };
+
+            // Then produce predicted values from fitted solution
+            if(fittingfinished){
+                let res57 = await updateRequest(produceDetailsUrl);
+                if(res57.success){  // was: (typeof res57.data.is_finished != 'undefined'){
+                    if(res57.data.is_finished){
+                        if(res57.data.is_error){
+                            clearInterval(fittingIntervalId)
+                        }else{
+                            finalProduceDetailsUrl = res57.data.responses.list[0].details_url;
+                            res58 = await updateRequest(finalProduceDetailsUrl);
+                            console.log("--Long Awaited Predictions:");
+                            let hold = res58.data.response.exposedOutputs;
+                            let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
+                            hold3 = hold2.csvUri;
+                            console.log(hold3);
+                            res59 = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
+                            console.log(res59);
+
+                            allPipelineInfo[pid].predictedValues = res59;
+                            clearInterval(fittingIntervalId);
+                            if(plotflag){
+                                resultsplotgraph(pid);
+                            };
+                        };
+                    };
+                };
+            };
+        }, 500);
+
+    } else {
+        // Predicted values already stored and ready for graphing
+        console.log("Skipping creating predicted values");
+        if(plotflag){
+            resultsplotgraph(pid);
+        };
+    };
+
+};
+
+export function resultsplotgraph(pid){
+    let pipelineInfo = allPipelineInfo[pid];
+    console.log("pid:");
     console.log(pid);
-    pid = allPipelineInfo[pid];
-    let mydv = allPipelineInfo.rookpipe.depvar[0];         // When there are multiple CreatePipelines calls, then this only has values from latest value
+    let mydv = allPipelineInfo.rookpipe.depvar[0];          // When there are multiple CreatePipelines calls, then this only has values from latest value
+    console.log(mydv);
     let dvvalues = allPipelineInfo.rookpipe.dvvalues;       // When there are multiple CreatePipelines calls, then this only has values from latest value
-    // let predfile = pid.pipelineInfo.predictResultData.file_1;
 
-    if (pid.pipelineInfo.predictResultData.success == false) return;
+    // Terminate plot if predicted values not available
+    if (!('predictedValues' in pipelineInfo)) return;
+    if (pipelineInfo.predictedValues.success == false) return;
 
-    let allPreds = pid.pipelineInfo.predictResultData.data;
+
+    let allPreds = pipelineInfo.predictedValues.data;
     console.log(Object.keys(allPreds[1]));
     let predvals = [];
 
@@ -3404,14 +3871,21 @@ export function resultsplotinit(pid) {
 
     // only do this for classification tasks
     if(d3mTaskType[d3mProblemDescription.taskType][1] == "CLASSIFICATION") {
+        console.log("class plot");
+        console.log("actual:");
+        console.log(dvvalues);
+        console.log("predicted:");
+        console.log(predvals);
         genconfdata(dvvalues, predvals);
     } else {
         let xdata = "Actual";
         let ydata = "Predicted";
-        bivariatePlot(dvvalues, predvals, xdata, ydata);
+        let mytitle = "Predicted V Actuals: Pipeline " + pid;
+        scatter(dvvalues, predvals, xdata, ydata, undefined, undefined, mytitle);
     }
 
     // add the list of predictors into setxLeftTopLeft
+
     d3.select("#setxLeftTopLeft").selectAll("p")
         .data(allPipelineInfo.rookpipe.predictors)                    // When there are multiple CreatePipelines calls, then this only has values from latest value
         .enter()
@@ -3466,7 +3940,7 @@ export function genconfdata (dvvalues, predvals) {
 
     // line up actuals and predicted, and increment mycounts at index where mypair has a match for the 'actual,predicted'
     for (let i = 0; i < dvvalues.length; i++) {
-        let temppair = dvvalues[i]+','+predvals[i];
+        let temppair = predvals[i]+','+dvvalues[i];
         let myindex = mypairs.indexOf(temppair);
         mycounts[myindex] += 1;
     }
@@ -3486,7 +3960,7 @@ export function confusionmatrix(matrixdata, classes) {
     d3.select("#setxLeftPlot").select("svg").remove();
 
     // adapted from this block: https://bl.ocks.org/arpitnarechania/dbf03d8ef7fffa446379d59db6354bac
-    let mainwidth = byId('main').clientWidth;
+    let mainwidth = byId('rightpanel').clientWidth; //byId('main').clientWidth;
     let mainheight = byId('main').clientHeight;
 
 
@@ -3498,24 +3972,25 @@ export function confusionmatrix(matrixdata, classes) {
     let condiv = document.createElement('div');
     condiv.id="confusioncontainer";
     condiv.style.display="inline-block";
-    condiv.style.width=+(mainwidth*.385)+'px';   // Need to not be hard coded
-    condiv.style.marginLeft='20px';
+    condiv.style.width=+(((mainwidth-50)*.7)-100)+'px';   // Need to not be hard coded
+    condiv.style.marginLeft='12px';
     condiv.style.height=+(mainheight)+'px';      // Need to not be hard coded
     condiv.style.float="left";
     byId('setxLeftPlot').appendChild(condiv);
 
     let legdiv = document.createElement('div');
     legdiv.id="confusionlegend";
-    legdiv.style.width=+(mainwidth*.05)+'px';    // Need to not be hard coded
+    legdiv.style.width=+(90)+'px';    // Need to not be hard coded
     legdiv.style.marginLeft='5px';               // Margin between confusion matrix container and legend container
     legdiv.style.height=+(mainheight)+'px';      // Need to not be hard coded
     legdiv.style.display="inline-block";
     byId('setxLeftPlot').appendChild(legdiv);
 
-    var margin = {top: 30, right: 35, bottom: 0, left: leftmarginguess};    // Left margin needs not to be hardcoded, but responsive to maximum label length
+    var margin = {top: 50, right: 35, bottom: 0, left: leftmarginguess};    // Left margin needs not to be hardcoded, but responsive to maximum label length
 
 
     function Matrix(options) {
+
         let width = options.width,
         height = options.height,
         data = options.data,
@@ -3523,7 +3998,8 @@ export function confusionmatrix(matrixdata, classes) {
         labelsData = options.labels,
         startColor = options.start_color,
         endColor = options.end_color,
-        xOffset = options.x_offset;
+        xOffset = options.x_offset,
+        pipelineId = options.pipelineId;
 
         let widthLegend = options.widthLegend;
 
@@ -3684,7 +4160,12 @@ export function confusionmatrix(matrixdata, classes) {
         svg.append("text")
         .attr("transform", "translate(" + (width / 2) + " ," + (0 - 10) + ")")
         .style("text-anchor", "middle")
-        .text("Predicted Class");
+        .text("Actual Class");
+
+        svg.append("text")
+        .attr("transform", "translate(" + (width / 2) + " ," + (0 - 30) + ")")
+        .style("text-anchor", "middle")
+        .text("Confusion Matrix: Pipeline " + pipelineId);
 
         svg.append("text")
         .attr("transform", "rotate(-90)")
@@ -3692,7 +4173,7 @@ export function confusionmatrix(matrixdata, classes) {
         .attr("x",0 - (height / 2))
         //.attr("dy", "1em")
         .style("text-anchor", "middle")
-        .text("Actual Class");
+        .text("Predicted Class");
 
         // this y is for the legend
         y = d3.scale.linear()
@@ -3775,209 +4256,42 @@ export function confusionmatrix(matrixdata, classes) {
            labels    : classes,
            start_color : '#ffffff',
            end_color : '#e67e22',
-           width : mainwidth * .33 + 25 - leftmarginguess,      // Width of confusion matrix table: Need to not be hard coded
+           width : ((mainwidth-50)*.7) - 100 - leftmarginguess -30,//     // Width of confusion matrix table: Beginning of this is #confusioncontainer.width, but this div doesn't always exist yet
            height : mainheight * .6,    // Need to not be hard coded
            widthLegend : mainwidth*.04,
-           x_offset : 30
+           x_offset : 30,
+           pipelineId : selectedPipeline  // Note: cueing from global, not from passed through pid, because of number of functions to pass through value.
            });
 
     // not rendering this table for right now, left all the code in place though. maybe we use it eventually
     // var table = tabulate(computedData, ["F1", "PRECISION","RECALL","ACCURACY"]);
 }
 
-/**
-   scatterplot function to go to plots.js to be reused
-*/
-export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
-    d3.select("#setxLeftPlot").html("");
-    d3.select("#setxLeftPlot").select("svg").remove();
 
-    x_Axis=x_Axis.map(Number);
-    y_Axis=y_Axis.map(Number);
+export function sortPipelineTable(pt){
+    let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSquaredErrorAvg", "meanAbsoluteError"];  // array of metrics to sort low to high
+    let reverse = (reverseSet.indexOf(d3mProblemDescription.performanceMetrics[0].metric) > -1) ? -1 : 1;
+    if (reverse == -1){
+        resultsMetricDescription = "Smaller numbers are better fits"
+    }
 
-    console.log(x_Axis);
-    console.log(y_Axis);
-
-    let mainwidth = byId('main').clientWidth;
-    let mainheight = byId('main').clientHeight;
-
-    // scatter plot
-    let data_plot = [];
-    var nanCount = 0;
-    for (var i = 0; i < x_Axis.length; i++) {
-        if (isNaN(x_Axis[i]) || isNaN(y_Axis[i])) {
-            nanCount++;
+    pt = pt.sort(function(a,b){
+        if (a['Score']===b['Score']){
+            return(0)
+        } else if (a['Score']=="scoring"){
+            return(100)
+        } else if (b['Score']=="scoring") {
+            return(-100)
+        } else if (a['Score']=="no score"){
+            return(1000)
+        } else if (b['Score']=="no score"){
+            return(-1000)
         } else {
-            var newNumber1 = x_Axis[i];
-            var newNumber2 = y_Axis[i];
-            data_plot.push({xaxis: newNumber1, yaxis: newNumber2, score: Math.random() * 100});
-
-        }
-    }
-
-
-    var margin = {top: 35, right: 35, bottom: 35, left: 35}
-    , width = mainwidth*.25- margin.left - margin.right
-    , height = mainwidth*.25 - margin.top - margin.bottom;
-    var padding = 100;
-
-    var min_x = d3.min(data_plot, function (d, i) {
-                       return data_plot[i].xaxis;
-                       });
-    var max_x = d3.max(data_plot, function (d, i) {
-                       return data_plot[i].xaxis;
-                       });
-    var avg_x = (max_x - min_x) / 10;
-    var min_y = d3.min(data_plot, function (d, i) {
-                       return data_plot[i].yaxis;
-                       });
-    var max_y = d3.max(data_plot, function (d, i) {
-                       return data_plot[i].yaxis;
-                       });
-    var avg_y = (max_y - min_y) / 10;
-
-    var xScale = d3.scale.linear()
-    .domain([min_x - avg_x, max_x + avg_x])
-    .range([0, width]);
-
-    var yScale = d3.scale.linear()
-    .domain([min_y - avg_y, max_y + avg_y])
-    .range([height, 0]);
-
-    var xAxis = d3.svg.axis()
-    .scale(xScale)
-    .orient('bottom')
-    .tickSize(-height);
-
-    var yAxis = d3.svg.axis()
-    .scale(yScale)
-    .orient('left')
-    .ticks(5)
-    .tickSize(-width);
-
-    var zoom = d3.behavior.zoom()
-    .x(xScale)
-    .y(yScale)
-    .scaleExtent([1, 10])
-    .on("zoom", zoomed);
-
-    var chart_scatter = d3.select('#setxLeftPlot')
-    .append('svg:svg')
-    .attr('width', width + margin.right + margin.left)
-    .attr('height', height + margin.top + margin.bottom);
-    // .call(zoom); dropping this for now, until the line zooms properly
-
-    var main1 = chart_scatter.append('g')
-    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
-    .attr('width', width+ margin.right + margin.left)
-    .attr('height', height + margin.top + margin.bottom)
-    .attr('class', 'main');
-
-    let gX = main1.append('g')
-    .attr('transform', 'translate(0,' + height + ')')
-    .attr('class', 'x axis')
-    .call(xAxis);
-
-    let gY = main1.append('g')
-    .attr('transform', 'translate(0,0)')
-    .attr('class', 'y axis')
-    .call(yAxis);
-
-    var clip = main1.append("defs").append("svg:clipPath")
-    .attr("id", "clip")
-    .append("svg:rect")
-    .attr("id", "clip-rect")
-    .attr("x", "0")
-    .attr("y", "0")
-    .attr('width', width)
-    .attr('height', height);
-
-    main1.append("g").attr("clip-path", "url(#clip)")
-    .selectAll("circle")
-    .data(data_plot)
-    .enter()
-    .append("circle")
-    .attr("cx", (d, i) => xScale(data_plot[i].xaxis))
-    .attr("cy", (d, i) => yScale(data_plot[i].yaxis))
-    .attr("r", 2)
-    .style("fill", "#B71C1C");
-
-
-    chart_scatter.append("text")
-    .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
-    .attr("transform", "translate(" + padding / 5 + "," + (height / 2) + ")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
-    .text(y_Axis_name)
-    .style("fill", "#424242")
-    .style("text-indent","20px")
-    .style("font-size","12px")
-    .style("font-weight","bold");
-
-    chart_scatter.append("text")
-    .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
-    .attr("transform", "translate(" + (width / 2) + "," + (height + (padding / 2)) + ")")  // centre below axis
-    .text(x_Axis_name)
-    .style("fill", "#424242")
-    .style("text-indent","20px")
-    .style("font-size","12px")
-    .style("font-weight","bold");
-
-
-    main1.append("line")
-    .attr("x1", xScale(min_x))
-    .attr("y1", yScale(min_x))
-    .attr("x2", xScale(max_x))
-    .attr("y2", yScale(max_x))
-    .attr("stroke-width", 2)
-    .attr("stroke", "black");
-
-    function zoomed() {
-        var panX = d3.event.translate[0];
-        var panY = d3.event.translate[1];
-        var scale = d3.event.scale;
-
-        panX = panX > 10 ? 10 : panX;
-        var maxX = -(scale - 1) * width - 10;
-        panX = panX < maxX ? maxX : panX;
-
-        panY = panY > 10 ? 10 : panY;
-        var maxY = -(scale - 1) * height - 10;
-        panY = panY < maxY ? maxY : panY;
-
-        zoom.translate([panX, panY]);
-
-
-        main1.select(".x.axis").call(xAxis);
-        main1.select(".y.axis").call(yAxis);
-        main1.selectAll("circle")
-        .attr("cx", function (d, i) {
-              console.log("circle x ",xScale(5));
-              return xScale(data_plot[i].xaxis);
-              })
-        .attr("cy", function (d, i) {
-              return yScale(data_plot[i].yaxis);
-              })
-        .attr("r", 2.5)
-        .style("fill", "#B71C1C");
-
-       // below doesn't work, so I'm just dropping the zoom
-        main1.select("line")
-        .attr("x1", function(d, i) {
-              return xScale(min_x);
-              })
-        .attr("y1", function(d, i) {
-              return xScale(min_x);
-              })
-        .attr("x2", function(d, i) {
-              return xScale(max_x);
-              })
-        .attr("y2", function(d, i) {
-              return yScale(max_x);
-              })
-        .attr("stroke-width", 2)
-        .attr("stroke", "black");
-    }
-    //  d3.select("#NAcount").text("There are " + nanCount + " number of NA values in the relation.");
-}
+            return (parseFloat(b['Score']) - parseFloat(a['Score'])) * reverse;
+        };
+    });
+    return pt;
+};
 
 /** needs doc */
 export function setxTable(features) {
@@ -4041,7 +4355,7 @@ export function setxTable(features) {
             xval = xval.split("x: ").pop();
             x1val = x1val.split("x1: ").pop();
             mydata.push({"Variables":features[i],"From":xval, "To":x1val});
-        } 
+        }
         catch(error)
         {
             continue;
@@ -4053,25 +4367,49 @@ export function setxTable(features) {
 }
 
 /**
-  rpc ExportPipeline(PipelineExportRequest) returns (Response) {}
+  rpc SolutionExport (SolutionExportRequest) returns (SolutionExportResponse) {}
 */
 
+// Example call:
+// {
+//     "fittedSolutionId": "solutionId_gtk2c2",
+//     "rank": 0.122
+// }
+
 export async function exportpipeline(pipelineId) {
-    let temp = {pipelineId, context: apiSession(zparams.zsessionid), pipelineExecUri: '<<EXECUTABLE_URI>>'};
+    exportCount++;
+    let finalFittedId, finalFittedDetailsUrl;
+    let res, res8;
 
-    let res = await makeRequest(
-        D3M_SVC_URL + '/exportpipeline',
-        {pipelineId, context: apiSession(zparams.zsessionid), pipelineExecUri: '<<EXECUTABLE_URI>>'});
+    let res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(pipelineId));
+    let fittedId = res5.data.requestId;
+    let res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
+    let fittedDetailsUrl = res6.data.details_url;
+    let fittingIntervalId = setInterval(async function() {
+        let res7 = await updateRequest(fittedDetailsUrl);   // check
+        if(typeof res7.data.is_finished != 'undefined'){
+            if(res7.data.is_finished){
+                finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
+                res8 = await updateRequest(finalFittedDetailsUrl);
+                finalFittedId = res8.data.response.fittedSolutionId;
+                console.log(finalFittedId);
+                let my_rank = 1.01 - 0.01*exportCount;   // ranks always get smaller each call
+                res = await makeRequest(D3M_SVC_URL + '/SolutionExport', {fittedSolutionId: finalFittedId, rank: my_rank});
 
-    // we need standardized status messages...
-    let mystatus = res.status;
-    if (typeof mystatus !== 'undefined') {
-    if(mystatus.code=="FAILED_PRECONDITION") {
-        console.log("TA2 has not written the executable.");    // was alert(), but testing on NIST infrastructure suggests these are getting written but triggering alert.
-    }
-    else {
-        console.log(`Executable for ${pipelineId} has been written`);
-    }}
+                // we need standardized status messages...
+                let mystatus = res.status;
+                console.log(res);
+                if (typeof mystatus !== 'undefined') {
+                if(mystatus.code=="FAILED_PRECONDITION") {
+                    console.log("TA2 has not written the executable.");    // was alert(), but testing on NIST infrastructure suggests these are getting written but triggering alert.
+                }
+                else {
+                    console.log(`Executable for solution ${pipelineId} with fittedsolution ${finalFittedId} has been written`);
+                }}
+                clearInterval(fittingIntervalId);
+            };
+        };
+    }, 500);
     return res;
 }
 
@@ -4114,7 +4452,7 @@ function apiSession(context) {
  *  Send a status message to the TA3 console
  */
 export function ta3_search_message(user_msg){
-
+  /*
   let ta3_search_message = {'message': user_msg}
 
   const end_search_url = 'ta3-search/send-reviewer-message';
@@ -4126,6 +4464,7 @@ export function ta3_search_message(user_msg){
   } catch (err) {
       console.log('ta3_search_message failed: ' + err);
   }
+  */
 }
 
 export function test_msg_ta3_search(){
@@ -4146,6 +4485,8 @@ export function test_msg_ta3_search(){
  */
 export function end_ta3_search(is_success, user_msg){
 
+  // 6/21/2018 - removed from eval
+  /*
   let end_search_msg = {'is_success': is_success,
                         'message': user_msg}
 
@@ -4158,7 +4499,7 @@ export function end_ta3_search(is_success, user_msg){
   } catch (err) {
       console.log('end_ta3_search failed: ' + err);
   }
-
+  */
 }
 
 /**
@@ -4212,20 +4553,6 @@ export function record_user_metadata(){
       }
 }
 
-export function showPredPlot (btn) {
-    if(document.getElementById("setxLeftGen").style.display=="none")
-        return;
-    document.getElementById("setxLeftPlot").style.display="block";
-    document.getElementById("setxLeftGen").style.display="none";
-}
-
-export function showGenPreds (btn) {
-    if(document.getElementById("setxLeftPlot").style.display=="none")
-        return;
-    document.getElementById("setxLeftPlot").style.display="none";
-    document.getElementById("setxLeftGen").style.display="block";
-}
-
 function singlePlot(pred) {
     d3.select('#setxLeftTopRight').selectAll('svg').remove();
     let i = findNodeIndex(pred);
@@ -4243,28 +4570,35 @@ function singlePlot(pred) {
 
 export function discovery(preprocess_file) {
 
-    // console.log("entering disco");
-    let extract = preprocess_file.dataset.discovery;
-    // console.log(extract);
-    let disco = [];
-    let names = [];
-    let vars = Object.keys(preprocess);
-    for (let i = 0; i < extract.length; i++) {
-        names[i] = "Problem" + (i + 1);
-        let current_target = extract[i]["target"];
-        let j = findNodeIndex(current_target);
-        let node = allNodes[j];
-        let current_predictors = extract[i]["predictors"];
-        let current_task = node.plottype === "bar" ? 'classification' : 'regression';
-        let current_rating = 3;
-        let current_description = current_target + " is predicted by " + current_predictors.join(" and ");
-        let current_metric = node.plottype === "bar" ? 'f1Macro' : 'meanSquaredError';
-        let current_disco = {target: current_target, predictors: current_predictors, task: current_task, rating: current_rating, description: current_description, metric: current_metric};
-        //jQuery.extend(true, current_disco, names);
-        disco[i] = current_disco;
-    };
+    let makeDescription = (prob) => {
+        if (prob.transform && prob.transform != 0)
+            return `The combination of ${prob.transform.split('=')[1]} is predicted by ${prob.predictors.join(" and ")}`;
+        if (prob.subset && prob.subsetObs != 0)
+            return `${prob.predictors} is predicted by ${prob.predictors.join(" and ")} whenever ${prob.subsetObs}`;
+        return `${prob.target} is predicted by ${prob.predictors.slice(0, -1).join(", ")} ${prob.predictors.length > 1 ? 'and ' : ''}${prob.predictors[prob.predictors.length - 1]}`;
+    }
+
+    return preprocess_file.dataset.discovery.map((prob, i) => ({
+        problem_id: "problem" + (i+1),
+        system: "auto",
+        description: makeDescription(prob),
+        target: prob.target,
+        predictors: prob.predictors,
+        transform: prob.transform,
+        subsetObs: prob.subsetObs,
+        subsetFeats: prob.subsetFeats,
+        metric: findNode(prob.target).plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
+        task: findNode(prob.target).plottype === "bar" ? 'classification' : 'regression',
+        subTask: Object.keys(d3mTaskSubtype)[0],
+        rating: 3,
+        meaningful: "no"
+    }))
+
     /* Problem Array of the Form:
-        [1: {target:"Home_runs",
+        [1: {problem_id: "problem 1",
+            system: "auto",
+            meaningful: "no",
+            target:"Home_runs",
             predictors:["Walks","RBIs"],
             task:"regression",
             rating:5,
@@ -4272,35 +4606,293 @@ export function discovery(preprocess_file) {
             metric: "meanSquaredError"
         },2:{...}]
     */
-    return disco;
 }
 
-// This stores discovery problems
-export let probtable = [];
+// creates a new problem from the force diagram problem space and adds to disco
+export async function addProblemFromForceDiagram() {
+    zPop();
+
+    let oldProblem = disco.find(prob => prob.problem_id === selectedProblem);
+    let newProblem = jQuery.extend(true, {
+            transform: 0,
+            subsetObs: 0,
+            subsetFeats: 0
+        },
+        oldProblem || {},
+        await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams),
+        {
+            problem_id: 'problem' + (disco.length + 1),
+            system: 'user',
+            meaningful: 'yes'
+        });
+
+    newProblem.target = newProblem.depvar[0];
+    newProblem.description = newProblem.target+" is predicted by "+newProblem.predictors;
+
+    let currentTaskType = d3mProblemDescription.taskType;
+    let currentMetric = d3mProblemDescription.performanceMetrics[0].metric;
+
+    if (findNode(newProblem.target).nature === "nominal") {
+        newProblem.task = currentTaskType === 'taskTypeUndefined' ? 'classification' : currentTaskType;
+        newProblem.metric = currentMetric === 'metricUndefined' ? 'f1Macro' : currentMetric;
+    } else {
+        newProblem.task = currentTaskType === 'taskTypeUndefined' ? 'regression' : currentTaskType;
+        newProblem.metric = currentMetric === 'metricUndefined' ? 'meanSquaredError' : currentMetric;
+    }
+
+    if ((oldProblem || {}).problem_id in manipulations)
+        manipulations[newProblem.problem_id]
+            = jQuery.extend(true, [], manipulations[oldProblem.problem_id]);
+
+    console.log("pushing new problem to discovered problems:");
+    console.log(newProblem);
+
+    disco.push(newProblem);
+    setSelectedProblem(newProblem.problem_id);
+    setLeftTab('Discovery');
+    await callSolver(newProblem);
+    loadResult([newProblem]);
+    // let addProblemAPI = app.addProblem(preprocess_id, version, problem_section);
+    // console.log("API RESPONSE: ",addProblemAPI );
+
+    m.redraw();
+}
+
+export function connectAllForceDiagram() {
+    let links = [];
+    if (is_explore_mode) {
+        for (let node of nodes) {
+            for (let node1 of nodes) {
+                if (node !== node1 && links.filter(l => l.target === node1 && l.source === node).length === 0) {
+                    links.push({left: false, right: false, target: node, source: node1});
+                }
+            }
+        }
+    } else {
+        let dvs = nodes.filter(n => zparams.zdv.includes(n.name));
+        let nolink = zparams.zdv.concat(zparams.zgroup1).concat(zparams.zgroup2);
+        let ivs = nodes.filter(n => !nolink.includes(n.name));
+
+        links = dvs.map(dv => ivs.map(iv => ({
+            left: true,
+            right: false,
+            target: iv,
+            source: dv
+        })));
+    }
+    restart([...links]);
+}
+
+
+// when a problem is clicked
+// let discoveryTimeout;
+export let discoveryClick = problemId => {
+    setSelectedProblem(problemId);
+    let problem = disco.find(problem => problem.problem_id === selectedProblem);
+    m.route.set('/model');
+
+    if (!problem) return;
+
+    let {target, predictors} = problem;
+    erase('Discovery');
+    [target, ...predictors].map(x => clickVar(x));
+    predictors.forEach(predictor => setColors(nodes.find(node => node.name === predictor), gr1Color));
+    setColors(findNode(target), dvColor);
+    m.redraw();
+    restart();
+};
+
 
 export let selectedProblem;
-export let setSelectedProblem = (problem) => selectedProblem = problem;
+export function setSelectedProblem(problemId) {
+    if (selectedProblem === problemId) return; // ignore if already set
+
+    selectedProblem = problemId;
+
+    // if a constraint is being staged, delete it
+    manipulate.setConstraintMenu(undefined);
+
+    // remove old staged problems
+    disco = disco.filter(entry => entry.problem_id === selectedProblem || !entry.staged);
+    if (selectedProblem === undefined) return;
+
+    let problem = disco.find(entry => entry.problem_id === selectedProblem);
+
+    if (!(problemId in manipulations)) {
+        let pipeline = [];
+
+        if (problem['subsetObs']) {
+            pipeline.push({
+                type: 'subset',
+                id: 'subset ' + pipeline.length,
+                abstractQuery: [{
+                    id: String(problemId) + '-' + String(0) + '-' + String(1),
+                    name: problem['subsetObs'],
+                    show_op: false,
+                    cancellable: true,
+                    subset: 'automated'
+                }],
+                nodeId: 2,
+                groupId: 1
+            })
+        }
+
+        if (problem['transform']) {
+            let [variable, transform] = problem['transform'].split('=').map(_ => _.trim());
+            pipeline.push({
+                type: 'transform',
+                transforms: [{
+                    name: variable,
+                    equation: transform
+                }],
+                id: 'transform ' + pipeline.length,
+            })
+            problem.predictors.push(variable);
+        }
+
+        manipulations[problemId] = pipeline;
+    }
+
+    let countMenu = {type: 'menu', metadata: {type: 'count'}};
+    let subsetMenu = [...manipulate.getPipeline(), ...manipulate.getProblemPipeline(selectedProblem) || []];
+    manipulate.loadMenu(subsetMenu, countMenu).then(count => {
+        manipulate.setTotalSubsetRecords(count);
+        m.redraw();
+    });
+
+    resetPeek();
+    modelSelectionResults(problem);
+}
+
+export function getProblemCopy(problemId) {
+    let problem = jQuery.extend(true, {}, disco.find(prob => prob.problem_id === problemId));  // deep copy of original
+
+    let offset = 1;
+    while (disco.find(prob => prob.problem_id === problemId + 'user' + offset)) offset = offset + 1;
+
+    Object.assign(problem, {
+        problem_id: problemId + 'user' + offset,
+        provenance: problemId,
+        system: 'user'
+    })
+
+    if (problemId in manipulations)
+        manipulations[problem.problem_id] = jQuery.extend(true, [], manipulations[problemId]);
+
+    return problem;
+}
+
+export let stargazer = ""
+export function modelSelectionResults(problem){
+    // solver_res = []
+    callSolver(problem);
+    setTimeout(console.log("callSolver response : ", solver_res),2000)
+    setTimeout(makeDataDiscovery,2000)
+    setTimeout(makeDiscoverySolutionPlot,2000)
+    setTimeout(makeDataDiscoveryTable,2000)
+
+}
+
+export function makeDataDiscovery(){
+    d3.select("#setPredictionDataLeft").html("");
+    d3.select("#setPredictionDataLeft").select("svg").remove();
+    let in_data = [
+        {"Variable":"Dependent Variable : ", "Data":solver_res[0]['dependent_variable']},
+        {"Variable":"Predictors : ", "Data":solver_res[0]['predictors']},
+        {"Variable":"Description : ", "Data":solver_res[0]['description']},
+        {"Variable":"Task : ", "Data":solver_res[0]['task']},
+        {"Variable":"Model : ", "Data":solver_res[0]['model_type']}
+    ]
+
+    function tabulate(data, columns) {
+		var table = d3.select('#setPredictionDataLeft').append('table')
+		var thead = table.append('thead')
+		var	tbody = table.append('tbody');
+
+		// append the header row
+		thead.append('tr')
+		  .selectAll('th')
+		  .data(columns).enter()
+		  .append('th')
+		    .text(function (column) { return column; })
+        .style('background-color','rgba(0, 0, 0, .2)')
+        ;
+
+		// create a row for each object in the data
+		var rows = tbody.selectAll('tr')
+		  .data(data)
+		  .enter()
+		  .append('tr');
+
+		// create a cell in each row for each column
+		var cells = rows.selectAll('td')
+		  .data(function (row) {
+		    return columns.map(function (column) {
+		      return {column: column, value: row[column]};
+		    });
+		  })
+		  .enter()
+		  .append('td')
+		    .text(function (d) { return d.value; })
+        .style('border-bottom','1px solid #ddd');
+
+	  return table;
+	}
+
+	// render the table(s)
+	tabulate(in_data, ['Variable', 'Data']); // 2 column table
+
+}
+export function makeDiscoverySolutionPlot(){
+  let xdata = "Actual";
+  let ydata = "Predicted";
+  let mytitle = "Predicted V Actuals: Pipeline ";
+  let dvvalues = solver_res[0]['predictor_values']['actualvalues']
+  let predvals = solver_res[0]['predictor_values']['fittedvalues']
+  scatter(dvvalues, predvals, xdata, ydata, undefined, undefined, mytitle);
+
+}
+export function makeDataDiscoveryTable(){
+  // console.log("Here we bring our table")
+  stargazer = solver_res[0]['stargazer']
+  // d3.select("#setDataTable").html("");
+}
 
 export let checkedDiscoveryProblems = new Set();
 export let setCheckedDiscoveryProblem = (status, problem) => {
     if (problem !== undefined) status ? checkedDiscoveryProblems.add(problem) : checkedDiscoveryProblems.delete(problem);
-    else checkedDiscoveryProblems = status ? new Set(probtable.map((problem) => problem[0])) : new Set();
-}
+    else checkedDiscoveryProblems = status ? new Set(disco.map(problem => problem.problem_id)) : new Set();
+};
 
 export async function submitDiscProb() {
     discoveryLadda.start();
+    console.log("This is disco");
+    console.log(disco);
+    let outputCSV = "problem_id, system, meaningful \n";
+
     for(let i = 0; i < disco.length; i++) {
-        if(!checkedDiscoveryProblems.has(i)) continue;
-        //createpipeline call
-        console.log(disco);
-        let aux = {"task":d3mTaskType[disco[i].task][1], "metrics":d3mMetrics[disco[i].metric][1], "description":disco[i].description};
-        console.log(aux);
-        // VJD: this is the code to ask TA2 for a single pipeline, to check viability. However, TA2s might not actually handle 'maxpipelines', making this take a very long time to run. Bypassing this for now
-      //  let res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(disco[i].predictors, [disco[i].target], aux)); // creating a single pipeline for a discovered problem, to check viability
-      //  if(res) { // have to check if the response went through ok, this just checks if res exists
-            let res = await makeRequest(D3M_SVC_URL + '/write-user-problem', CreatePipelineData(disco[i].predictors, [disco[i].target], aux));
-      //  }
+        if(checkedDiscoveryProblems.has(disco[i].problem_id)) { disco[i].meaningful = "yes"; }
+
+        // build up the required .csv file line by line
+        outputCSV = outputCSV + disco[i].problem_id + ", \"" + disco[i].system + "\", \"" + disco[i].meaningful + "\"\n";
+
+        if(disco[i].subsetObs ==0 && disco[i].transform==0){
+            // construct and write out the api call and problem description for each discovered problem
+            let problemApiCall = CreatePipelineDefinition(disco[i].predictors, [disco[i].target], 10, disco[i]);
+            let problemProblemSchema = CreateProblemSchema(disco[i]);
+            let filename_api = disco[i].problem_id + '/ss_api.json';
+            let filename_ps = disco[i].problem_id + '/schema.json';
+            let res1 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
+            let res2 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
+        } else {
+            console.log('omitting:');
+            console.log(disco[i]);
+        };
     }
+
+    // write the CSV file requested by NIST that describes properties of the solutions
+    console.log(outputCSV);
+    let res3 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: 'labels.csv', data: outputCSV});
 
     discoveryLadda.stop();
     // change status of buttons for estimating problem and marking problem as finished
@@ -4313,17 +4905,275 @@ export async function submitDiscProb() {
         byId("btnEstimate").classList.remove("btn-default");
         byId("btnEstimate").classList.add("btn-success");
     };
-    trigger("btnVariables", 'click');
+    //trigger("btnVariables", 'click');
+
+    if(!problemDocExists){
+        setModal("Your discovered problems have been submitted.", "Task Complete", true, false, false, location.reload);
+    };
+
 }
 
-export function saveDisc(btn) {
-    let table = document.getElementById("discoveryTable");
-    let newtext = document.getElementById("discoveryInput").value;
-    for (let i = 1, row; row = table.rows[i]; i++) { //skipping the header
-        if (row.className === 'item-select') {
-            disco[i-1].description = newtext;
-        }
+export function deleteFromDisc(discov){
+    var index = disco.indexOf(discov);
+    console.log("index of disco to be deleted", index)
+    if (index > -1) {
+        disco.splice(index, 1);
     }
+}
+
+export function saveDisc() {
+    let problem = disco.find(problem => problem.problem_id === selectedProblem);
+    problem.description = document.getElementById("discoveryInput").value;
+    console.log(problem);
+}
+
+export function deleteProblem(preproess_id, version, problem_id) {
+    console.log("Delete problem clicked")
+    setSelectedProblem(undefined);
+    m.request({
+        method: "POST",
+        url: "http://127.0.0.1:4354/preprocess/problem-section-delete",
+        data: {
+            "preprocessId" : preproess_id,
+            "version": version,
+            "problem_id" : problem_id
+        }
+    })
+        .then(function(result) {
+            console.log(result)
+        })
+
+}
+
+export async function endAllSearches() {
+    console.log("Attempting to End All Searches");
+    console.log(allsearchId);
+    console.log(allsearchId[0]);
+    let res = await makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId: allsearchId[0]} );
+    if(allsearchId.length > 1){
+        for(let i = 1; i < allsearchId.length; i++) {
+            res = await makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId: allsearchId[i]} );
+        };
+    };
+    //allsearchId = [];
+}
+
+export async function stopAllSearches() {
+    let res = await makeRequest(D3M_SVC_URL + '/StopSearchSolutions', {searchId: allsearchId[0]} );
+    if(allsearchId.length > 1){
+        for(let i = 1; i < allsearchId.length; i++) {
+            res = await makeRequest(D3M_SVC_URL + '/StopSearchSolutions', {searchId: allsearchId[i]} );
+        };
+    };
+}
+
+/**
+ *  Function takes as input the pipeline template information (currently aux) and returns a valid pipline template in json. This json is to be inserted into SearchSolutions. e.g., problem = {...}, template = {...}, inputs = [dataset_uri]
+ */
+function makePipelineTemplate (aux) {
+    console.log("this is aux for makePipelineTemplate:")
+    console.log(aux);
+    // aux.transform, aux.subsetFeats, aux.Obs are all by default 0. if not 0, which is set in preprocess, then steps should build the corresponding primitive call.
+
+    let inputs = [];
+    let outputs = [];
+    let steps = [];
+
+    if(typeof aux==="undefined") {    // This is how this is called by /SearchSolutions
+        return {inputs:inputs,outputs:outputs,steps:steps};
+
+    } else {                          // This is how this is called by Discovered Problems
+        let ph = placeholderStep(); // this writes the placeholder object
+        let rc = primitiveStepRemoveColumns(aux); // this writes the primitive object to remove columns
+
+        inputs = [{name:"dataset"}];
+        outputs = [{name:"dataset", data:"produce"}];
+        steps = [rc,ph];
+
+        return {inputs:inputs,outputs:outputs,steps:steps};
+    };
+
+    // example template: leave here for reference
+    /*
+"template": {
+    "inputs": [
+                {
+                    "name": "dataset"
+                }
+            ],
+    "outputs": [
+                {
+                    "name": "dataset",
+                    "data": "produce"
+                }
+            ],
+    "steps": [
+    {
+                    "primitive": {
+                    "primitive": {
+                        "id": "2eeff053-395a-497d-88db-7374c27812e6",
+                    "version": "0.2.0",
+                    "python_path": "d3m.primitives.datasets.RemoveColumns",
+                    "name": "Column remover",
+                    "digest": "85b946aa6123354fe51a288c3be56aaca82e76d4071c1edc13be6f9e0e100144"
+                        },
+                        "arguments": {
+                            "inputs": {
+                                "container": {
+                                    "data": "inputs.0"
+                                }
+                            }
+                        },
+                        "outputs": [
+                            {
+                                "id": "produce"
+                            }
+                        ],
+                        "hyperparams": {
+                        "columns": {
+  "value": {
+    "data": {
+      "raw": {
+        "list": {
+          "items": [
+            {
+              "int64": "2"
+            },
+            {
+              "int64": "3"
+            },
+            {
+              "int64": "4"
+            },
+            {
+              "int64": "5"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+                           },
+                        "users": []
+                }},{
+                    "placeholder": {
+                        "inputs": [{"data":"steps.0.produce"}],
+                        "outputs": [{"id":"produce"}]
+                    }
+                }]}
+                    */
+}
+
+// function builds a placeholder step for pipeline
+function placeholderStep () {
+    let step = {inputs:[{data:"steps.0.produce"}],outputs:[{id:"produce"}]};
+    return {placeholder:step};
+}
+
+// function builds a step in a pipeline to remove indices
+function primitiveStepRemoveColumns (aux) {
+    //let keep = aux.predictors;  // This was being assigned by reference, not by value, thus changing the global disco table.
+    let keep = [];
+    for(let i=0; i<aux.predictors.length; i++) {
+        keep[i] = aux.predictors[i];
+    };
+    typeof aux.target === 'string' ?  keep.push(aux.target): keep.concat(aux.target);
+
+    // looks like some TA2s need this, so we'll also keep it
+    keep.push("d3mIndex");
+
+    let indices = [];
+    for(let i=0; i<valueKey.length; i++) {
+        if(keep.indexOf(valueKey[i]) > -1) continue;
+        indices.push(i);
+    }
+
+    function buildItems (indices) {
+        let items = [];
+        for(let i = 0; i<indices.length; i++) {
+            items[i] = {int64: indices[i].toString()};
+        }
+        return items;
+    }
+
+    let id = "2eeff053-395a-497d-88db-7374c27812e6";
+    let version = "0.2.0";
+    let python_path = "d3m.primitives.datasets.RemoveColumns";
+    let name = "Column remover";
+    let digest = "85b946aa6123354fe51a288c3be56aaca82e76d4071c1edc13be6f9e0e100144";
+    let users = [];
+
+    let hpitems = {items:buildItems(indices)};
+    let hplist = {list:hpitems};
+    let hpraw = {raw:hplist};
+    let hpdata = {data:hpraw};
+    let hpvalue = {value:hpdata};
+    let hyperparams = {columns:hpvalue};
+
+    let primitive = {id:id, version:version, python_path:python_path, name:name, digest:digest}
+
+    let argdata = {data:"inputs.0"};
+    let argcontainer = {container:argdata};
+    let parguments = {inputs:argcontainer};
+
+    let outputs = [{id:"produce"}];
+
+    let step = {primitive:primitive, arguments:parguments, outputs:outputs, hyperparams:hyperparams, users:users};
+    return {primitive:step};
+}
+
+export async function addProblem(preprocess_id, version){
+    // return await m.request({
+    //     method: "POST",
+    //     url: "http://127.0.0.1:4354/preprocess/problem-section", // should be changed later
+    //     data: {
+    //         "preprocessId": preprocess_id,
+    //         "version": version,
+    //         "problems": problem_sent
+    //     }
+    // })
+problem_sent.length = 0;
+}
+
+
+// takes as input problem in the form of a "discovered problem" (can also be user-defined), calls rooksolver, and returns result
+export async function callSolver (prob) {
+    let temp = JSON.stringify(prob);
+    // console.log(temp);
+    solver_res.length = 0;
+    let zd3mdata = "";
+    if(prob.problem_id in manipulations && manipulations[prob.problem_id].length>0){
+      zd3mdata = await manipulate.buildDatasetUrl(prob);
+      console.log("zd3mdata from manipulation", zd3mdata);
+    }else
+     {
+      zd3mdata = zparams.zd3mdata;
+      console.log("zd3mdata default", zd3mdata);
+    }
+
+    let jsonout = {prob, zd3mdata};
+    let json = await makeRequest(ROOK_SVC_URL + 'solverapp', jsonout);
+    var promise1 = Promise.resolve(json);
+
+    promise1.then(function (value) {
+        // console.log(" THis is the solver app response",value);
+        solver_res.push(value)
+        return value;
+    });
+}
+
+// pretty precision formatting- null and undefined are NaN, attempt to parse strings to float
+// if valid number, returns a Number at less than or equal to precision (trailing decimal zeros are ignored)
+export function formatPrecision(value, precision=4) {
+    if (value === null) return NaN;
+    let numeric = value * 1;
+    if (isNaN(numeric)) return value;
+
+    // determine number of digits in value
+    let digits = Math.max(Math.floor(Math.log10(Math.abs(Number(String(numeric).replace(/[^0-9]/g, ''))))), 0) + 1;
+
+    return (digits <= precision || precision === 0) ? numeric : numeric.toPrecision(precision) * 1
 }
 
 export function callTransform(elem){

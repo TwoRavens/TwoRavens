@@ -21,7 +21,7 @@ import asyncio
 
 import core_pb2
 import core_pb2_grpc as core_pb2_grpc
-from tworaven_apps.ta2_interfaces.models import TEST_KEY_FILE_URI
+from tworaven_apps.ta2_interfaces.static_vals import TEST_KEY_FILE_URI
 from tworaven_apps.ta2_interfaces.ta2_util import get_predict_file_info_dict
 """
 import data_ext_pb2 as data_ext_pb2

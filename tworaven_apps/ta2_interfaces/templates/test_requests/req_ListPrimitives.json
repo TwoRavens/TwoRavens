@@ -1,0 +1,25 @@
+{
+  "primitives": [
+    {
+      "id": "id_grqc7n",
+      "version": "version_2",
+      "pythonPath": "/python_path/to/primitive",
+      "name": "ye_primitive_jr36de",
+      "digest": "r0ixpwf5dkmdo0"
+    },
+    {
+      "id": "id_5lb3tt",
+      "version": "version_4",
+      "pythonPath": "/python_path/to/primitive",
+      "name": "ye_primitive_xl1908",
+      "digest": "sk6h4cxhuiwimy"
+    },
+    {
+      "id": "id_fk2nur",
+      "version": "version_10",
+      "pythonPath": "/python_path/to/primitive",
+      "name": "ye_primitive_z411gc",
+      "digest": "x2kh0l7y0bnxcj"
+    }
+  ]
+}

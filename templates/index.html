@@ -59,24 +59,83 @@
           const TA2_SERVER = '{{ TA2_TEST_SERVER_URL }}';
           {% endif %}
           const TA3TA2_API_VERSION = '{{ TA3TA2_API_VERSION }}';
+          const TA3_GRPC_USER_AGENT = '{{ TA3_GRPC_USER_AGENT }}';
 
-
-          // look in base.html for a reference
           {% if user.is_authenticated %}
-            const username = "{{ user.username }}";
-            const logout_url = "{% url 'logout' %}";
-            const login_url = "{% url 'login' %}";
-            const settings_url = "{% url 'view_d3m_list' %}";     // not certain this should be exposed so readily
-            const workspaces_url = "{% url 'view_workspace_info' %}";
-            const devlinks_url = "{% url 'view_dev_raven_links' %}";
+          // --------------------------
+          // User is authenticated
+          // --------------------------
+          const isAuthenticated = true;
+          const username = "{{ user.username }}";
+          //
+          const workspaces_url = "{% url 'view_workspace_info' %}";
+          const devlinks_url = "{% url 'view_dev_raven_links' %}";
+          const settings_url = "{% url 'view_d3m_list' %}"; // D3M configs
+
           {% else %}
-            const username = "no logged in user";
-            const logout_url = "{% url 'logout' %}";
-            const login_url = "{% url 'login' %}";
-            const signup_url = "{% url 'signup' %}";
+          // --------------------------
+          // User is not authenticated
+          // --------------------------
+          const isAuthenticated = false;
+          const username = '';
+
+          const workspaces_url = '';
+          const devlinks_url = '';
+          const settings_url = ''; // D3M configs
           {% endif %}
+          // --------------------------
+          // Sign up / Log in / Log out
+          // --------------------------
+          const signup_url = "{% url 'signup' %}";  // sign up
+          const login_url = "{% url 'login' %}";
+          {% if ALLOW_SOCIAL_AUTH %}const login_github_url = "{% url 'social:begin' 'github' %}";{% endif %}
+          const logout_url = "{% url 'logout' %}";
 
+          // --------------------------
+          // CSRF cookie
+          // --------------------------
+          const csrf_cookie_name = "{{ CSRF_COOKIE_NAME }}";
 
+          // test url: just sends back your POSTed data
+          const test_csrf_url = "{% url 'view_test_csrf_required' %}";
+
+          {#% if DEBUG %#}
+          // --------------------------
+          // start: example/test function (only appears in DEBUG mode)
+          // --------------------------
+          function getCookie(key) {
+              var keyValue = document.cookie.match('(^|;) ?' + key + '=([^;]*)(;|$)');
+              return keyValue ? keyValue[2] : null;
+          }
+
+          // Request with custom header
+          const someTestData = {type: "cookie",
+                                flavor: "chocolate chip"};
+
+          function makeTestCall(){
+              $.ajax({
+                  type: "POST",
+                  contentType: "application/json",
+                  url: test_csrf_url,
+                  data: JSON.stringify(someTestData),
+                  dataType: 'json',
+                  headers: { 'X-CSRFToken': getCookie(csrf_cookie_name)},
+                  success: function(respData) {
+                      console.log("SUCCESS: ", respData);
+                  },
+                  error: function(e) {
+                      console.log("ERROR: ", e);
+                      alert(e);
+                  },
+                  done: function(e) {
+                      console.log('done...');
+                      }
+                });
+            }
+          // --------------------------
+          // end: example/test function
+          // --------------------------
+          {#% endif %#}
     </script>
   {% endblock %}
 

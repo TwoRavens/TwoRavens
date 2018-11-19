@@ -1,0 +1,42 @@
+{
+  "about": {
+    "problemID": "LL0_1100_popularkids_problem",
+    "problemName": "LL0_1100_popularkids_problem",
+    "problemDescription": "**Author**:   \n**Source**: Unknown - Date unknown  \n**Please cite**:   \n\nDatasets of Data And Story Library, project illustrating use of basic statistic methods, converted to arff format by Hakan Kjellerstrand.\nSource: TunedIT: http://tunedit.org/repo/DASL\n\nDASL file http://lib.stat.cmu.edu/DASL/Datafiles/PopularKids.html\n\nStudents' Goals\n,\n\nWhat Makes Kids Popular\n\nReference:   Chase, M. A., and Dummer, G. M. (1992), \"The Role of Sports as a Social Determinant for Children,\" Research Quarterly for Exercise and Sport, 63, 418-424\n\nAuthorization:   Contact authors\nDescription:        Subjects were students in grades 4-6 from three school districts in Ingham and Clinton Counties, Michigan.  Chase and Dummer stratified their sample, selecting students from urban, suburban, and rural school districts with approximately 1/3 of their sample coming from each district.  Students indicated whether good grades, athletic ability, or popularity was most important to them.  They also ranked four factors:  grades, sports, looks, and money, in order of their importance for popularity.  The questionnaire also asked for gender, grade level, and other demographic information.\nNumber of cases:   478\nVariable Names:\n\nGender:   Boy or girl\nGrade:   4, 5 or 6\nAge:   Age in years\nRace:   White, Other\nUrban/Rural:   Rural, Suburban, or Urban school district\nSchool:   Brentwood Elementary, Brentwood Middle, Ridge, Sand, Eureka, Brown, Main, Portage, Westdale Middle\nGoals:   Student's choice in the personal goals question where options were 1 = Make Good Grades,  2 = Be Popular,  3 = Be Good in Sports\nGrades:   Rank of \"make good grades\"  (1=most important for popularity, 4=least important)\nSports:   Rank of \"being good at sports\"  (1=most important for popularity, 4=least important)\nLooks:   Rank of \"being handsome or pretty\"  (1=most important for popularity, 4=least important)\nMoney:   Rank of \"having lots of money\"  (1=most important for popularity, 4=least important)",
+    "taskType": "classification",
+    "taskSubType": "multiClass",
+    "problemSchemaVersion": "3.1.1",
+    "problemVersion": "1.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "LL0_1100_popularkids_dataset",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "0",
+            "colIndex": 7,
+            "colName": "Goals"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.2,
+      "stratified": true,
+      "numRepeats": 0,
+      "randomSeed": 42,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "f1Macro"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

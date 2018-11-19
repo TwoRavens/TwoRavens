@@ -7,17 +7,20 @@ from django.http import JsonResponse, HttpResponse, Http404
 from django.contrib.auth.decorators import login_required
 
 from tworaven_apps.api_docs.forms import ClientTestForm
-from tworaven_apps.ta2_interfaces.models import KEY_GRPC_JSON
+from tworaven_apps.ta2_interfaces.static_vals import KEY_GRPC_JSON
 from tworaven_apps.ta2_interfaces.grpc_util import TA3TA2Util
 
 @login_required
 def view_test_form(request):
     """View test form"""
+
     info_dict = dict(KEY_GRPC_JSON=KEY_GRPC_JSON,
                      TA2_STATIC_TEST_MODE=settings.TA2_STATIC_TEST_MODE,
                      TA2_TEST_SERVER_URL=settings.TA2_TEST_SERVER_URL,
                      SETTINGS_MODULE=settings.SETTINGS_MODULE,
-                     TA3TA2_API_VERSION=TA3TA2Util.get_api_version())
+                     USERNAME=request.user.username,
+                     TA3TA2_API_VERSION=TA3TA2Util.get_api_version(),
+                     TA3_GRPC_USER_AGENT=settings.TA3_GRPC_USER_AGENT)
 
     if request.POST:
         client_form = ClientTestForm(request.POST)

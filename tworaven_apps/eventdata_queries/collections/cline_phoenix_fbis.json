@@ -1,0 +1,162 @@
+{
+  "name": "Cline - CIA Broadcast",
+  "key": "cline_phoenix_fbis",
+  "description": "Data sourced from the CIA Foreign Broadcast Information Service and collected by the Cline Center for Advanced Social Research.",
+  "interval": "1995 - 2004",
+  "codebook": "https://uofi.app.box.com/s/bmh9i39m6bf0vhnuebtf3ak3j6uxy2le",
+  "download": "https://uofi.box.com/s/03wg8jchwdr0gyq46p8adosrushnakvx",
+  "host": "TwoRavens",
+  "subsets": {
+    "Actor": {
+      "type": "dyad",
+      "measureType": "unit",
+      "tabs": {
+        "source": {
+          "full": "source",
+          "filters": [
+            "source_root",
+            "source_agent",
+            "source_others"
+          ],
+          "full_token": "..."
+        },
+        "target": {
+          "full": "target",
+          "filters": [
+            "target_root",
+            "target_agent",
+            "target_others"
+          ],
+          "full_token": "..."
+        }
+      },
+      "delimited": {
+        "source_others": ";",
+        "target_others": ";"
+      }
+    },
+    "Action": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "formats": [
+        "CAMEO",
+        "root_code",
+        "penta_class",
+        "PLOVER"
+      ],
+      "columns": [
+        "code"
+      ]
+    },
+    "Date": {
+      "type": "date",
+      "measureType": "unit",
+      "structure": "point",
+      "columns": [
+        "TwoRavens_story_date"
+      ]
+    },
+    "Location": {
+      "type": "discrete_grouped",
+      "group_by": "region",
+      "columns": [
+        "TwoRavens_country"
+      ]
+    },
+    "Coordinates": {
+      "type": "coordinates",
+      "columns": [
+        "lat",
+        "lon"
+      ]
+    }
+  },
+  "columns": [
+    "aid",
+    "code",
+    "countryname",
+    "day",
+    "eid",
+    "goldstein",
+    "lat",
+    "lon",
+    "month",
+    "placename",
+    "process",
+    "quad_class",
+    "root_code",
+    "source",
+    "source_agent",
+    "source_others",
+    "source_root",
+    "statename",
+    "story_date",
+    "target",
+    "target_agent",
+    "target_others",
+    "target_root",
+    "year"
+  ],
+  "columns_constructed": [
+    "TwoRavens_story_date",
+    "TwoRavens_country",
+    "TwoRavens_address",
+    "TwoRavens_city",
+    "TwoRavens_postal",
+    "TwoRavens_postal_ext",
+    "TwoRavens_region",
+    "TwoRavens_subregion"
+  ],
+  "alignments": {
+    "code": "action",
+    "quad_class": "action",
+    "root_code": "action",
+    "source_agent": "sector",
+    "source_root": "country",
+    "target_agent": "sector",
+    "target_root": "country",
+    "TwoRavens_story_date": "date",
+    "lat": "latitude",
+    "lon": "longitude",
+    "TwoRavens_country": "country"
+  },
+  "formats": {
+    "code": "CAMEO",
+    "quad_class": "penta_class",
+    "root_code": "root_code",
+    "source": "phoenix",
+    "source_agent": "phoenix",
+    "source_root": "ISO-3",
+    "source_others": "phoenix",
+    "target": "phoenix",
+    "target_agent": "phoenix",
+    "target_root": "ISO-3",
+    "target_others": "phoenix",
+    "TwoRavens_country": "ISO-3",
+    "goldstein": "goldstein",
+    "month": "%m",
+    "day": "%d",
+    "year": "%Y"
+  },
+  "citations": [
+    {
+      "author": "Althaus, Scott, Joseph Bajjalieh, John F. Carter, Buddy Peyton, and Dan A. Shalmon",
+      "year": "2017",
+      "title": "Cline Center Historical Phoenix Event Data",
+      "version": "v.1.0.0",
+      "note": "Distributed by Cline Center for Advanced Social Research",
+      "date": "June 30",
+      "url": "http://www.clinecenter.illinois.edu/data/event/phoenix/"
+    },
+    {
+      "author": "Althaus, Scott, Joseph Bajjalieh, John F. Carter, Buddy Peyton, and Dan A. Shalmon",
+      "year": "2017",
+      "description": "Cline Center Historical Phoenix Event Data Variable Descriptions",
+      "title": "Cline Center Historical Phoenix Event Data",
+      "version": "v.1.0.0",
+      "note": "Cline Center for Advanced Social Research",
+      "date": "June 30",
+      "url": "http://www.clinecenter.illinois.edu/data/event/phoenix/"
+    }
+  ]
+}

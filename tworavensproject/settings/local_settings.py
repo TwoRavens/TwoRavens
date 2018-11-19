@@ -10,9 +10,9 @@ from .base import *
 
 DEBUG = True
 
-SECRET_KEY = 'ye-local-laptop-secret-key'
-
-LOCAL_SETUP_DIR = join(BASE_DIR, 'test_setup_local')
+LOCAL_SETUP_DIR = os.environ.get(\
+                        'LOCAL_SETUP_DIR',
+                        join(BASE_DIR, 'test_setup_local'))
 if not isdir(LOCAL_SETUP_DIR):
     makedirs(LOCAL_SETUP_DIR)
 
@@ -78,3 +78,12 @@ TA2_STATIC_TEST_MODE = strtobool(os.environ.get('TA2_STATIC_TEST_MODE', 'True'))
 # Note: the test server can be run via: https://gitlab.datadrivendiscovery.org/tworavens/TwoRavens/blob/master/docs/dev_notes.md#run-local-ta2-test-server
 #
 TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:45042')
+
+
+# Delete saved model objects via fab commands
+#
+ALLOW_FAB_DELETE = True
+
+
+SOCIAL_AUTH_GITHUB_AUTH_EXTRA_ARGUMENTS = dict(\
+            redirect_uri='http://127.0.0.1:8080/oauth/complete/github/')

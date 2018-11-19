@@ -5,7 +5,7 @@
     "problemDescription": "This is a regression problem. The task is to predict the log radon levels given a data point, which is a house in a certain county in MN.",
     "taskType": "regression",
     "taskSubType": "univariate",
-    "problemSchemaVersion": "3.0",
+    "problemSchemaVersion": "3.1.1",
     "problemVersion": "1.0"
   },
   "inputs": {

@@ -10,19 +10,8 @@
 source("rookconfig.R")
 
 
-
-if(is_rapache_mode){
-    sink(file = stderr(), type = "output")
-    print("system time at source: ")
-    print(Sys.time())
-}
-
-if(is_rapache_mode) {
-    setwd("/var/www/html/dataexplore/rook")
-}
-
 if(!production){
-    packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "nloptr","XML", "Zelig", "rpart")
+    packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "nloptr","XML", "Zelig", "rpart","stargazer")
 
     # Find an available repository on CRAN
     availableRepos <- getCRANmirrors()
@@ -44,6 +33,7 @@ library(jsonlite)
 library(devtools)
 library(DescTools)
 library(rpart)
+library(stargazer)
 
 #if (!production) {
 #    if(!("Zelig" %in% rownames(installed.packages()))) {
@@ -80,45 +70,50 @@ if(production) {
   myInterface <- "0.0.0.0"
 }
 
-if(!is_rapache_mode){
-    status <- -1
-    if (as.integer(R.version[["svn rev"]]) > 72310) {
-        status <- .Call(tools:::C_startHTTPD, myInterface, myPort)
-    } else {
-        status <- .Call(tools:::startHTTPD, myInterface, myPort)
-    }
+# ---------------------------
+# start: Run Rook server
+# ---------------------------
+httpd_status <- -1  # variable for checking the status
 
-    if( status!=0 ){
-        print("WARNING: Error setting interface or port")
-        stop()
-    }   #else{
-    #    unlockBinding("httpdPort", environment(tools:::startDynamicHelp))
-    #    assign("httpdPort", myPort, environment(tools:::startDynamicHelp))
-    #}
-
-    R.server <- Rhttpd$new()
-
-    cat("Type:", typeof(R.server), "Class:", class(R.server))
-    #R.server$add(app = File$new(getwd()), name = "pic_dir")
-
-    #rookFilesDir = "/Users/ramanprasad/Documents/github-rp/TwoRavens//data/d3m/o_196seed/data"
-    #<- paste(getwd(), "/../data/d3m", sep="");
-    print("--- rookFilesDir")
-    #print(rookFilesDir)
-    #R.server$add(app = File$new(rookFilesDir), name = "rook-files")
-
-
-    print(R.server)
-
-    #if(!production){
-      R.server$start(listen=myInterface, port=myPort)
-      R.server$listenAddr <- myInterface
-      R.server$listenPort <- myPort
-    #}
+# Run C_startHTTPD or startHTTPD depending on R version
+#
+if (as.integer(R.version[["svn rev"]]) > 72310) {
+    httpd_status <- .Call(tools:::C_startHTTPD, myInterface, myPort)
+} else {
+    httpd_status <- .Call(tools:::startHTTPD, myInterface, myPort)
 }
 
+# Check the httpd service
+#
+if( httpd_status!=0 ){
+    print("WARNING: Error setting interface or port")
+    stop()
+}
 
+# Allow listening outside of the local host
+#
+unlockBinding("httpdPort", environment(tools:::startDynamicHelp))
+assign("httpdPort", myPort, environment(tools:::startDynamicHelp))
 
+# Start the http server
+#
+R.server <- Rhttpd$new()
+
+cat("Type:", typeof(R.server), "Class:", class(R.server))
+
+# Set the IP Address and Port
+#
+#R.server$start(listen=myInterface, port=myPort) # doesn't work with unlockBinding; redundant?
+R.server$listenAddr <- myInterface
+R.server$listenPort <- myPort
+
+# ---------------------------
+# end: Run Rook server
+# ---------------------------
+
+# -------------------------------------
+# start: Load modules for apps
+# -------------------------------------
 #source("rookselector.R")
 source("rooksubset.R")
 source("rooktransform.R")
@@ -130,39 +125,45 @@ source("rookpreprocess.R")
 source("rookpipeline.R")
 source("rookhealthcheck.R")
 source("rookexplore.R")
+source("rookplotdata.R")
 source("rooktree.R")
+source("rooksolver.R")
 
 if(addPrivacy){
     source("rookprivate.R")
 }
+# -------------------------------------
+# end: Load modules for apps
+# -------------------------------------
 
+# -------------------------------------
+# start: Add rook apps
+# -------------------------------------
+R.server$add(app = zelig.app, name = "zeligapp")
+R.server$add(app = subset.app, name="subsetapp")
+R.server$add(app = transform.app, name="transformapp")
+R.server$add(app = data.app, name="dataapp")
+#R.server$add(app = write.app, name="writeapp")  # jh - believe this is a legacy of early exploration of user-level metadata
+R.server$add(app = preprocess.app, name="preprocessapp")
+R.server$add(app = pipeline.app, name="pipelineapp")
+R.server$add(app = healthcheck.app, name="healthcheckapp")
+R.server$add(app = explore.app, name="exploreapp")
+R.server$add(app = plotdata.app, name="plotdataapp")
+R.server$add(app = tree.app, name="treeapp")
+R.server$add(app = solver.app, name="solverapp")
+# Serve files directly from rook
+R.server$add(app = File$new(PREPROCESS_OUTPUT_PATH), name = "rook-files")
 
-if(is_rapache_mode){
-    sink()
+if(addPrivacy){
+    R.server$add(app = privateStatistics.app, name="privateStatisticsapp")
+    R.server$add(app = privateAccuracies.app, name="privateAccuraciesapp")
 }
+#   R.server$add(app = selector.app, name="selectorapp")
+print(R.server)
+# -------------------------------------
+# end: Add rook apps
+# -------------------------------------
 
-if(!is_rapache_mode){
-    R.server$add(app = zelig.app, name = "zeligapp")
-    R.server$add(app = subset.app, name="subsetapp")
-    R.server$add(app = transform.app, name="transformapp")
-    R.server$add(app = data.app, name="dataapp")
-    #R.server$add(app = write.app, name="writeapp")  # jh - believe this is a legacy of early exploration of user-level metadata
-    R.server$add(app = preprocess.app, name="preprocessapp")
-    R.server$add(app = pipeline.app, name="pipelineapp")
-    R.server$add(app = healthcheck.app, name="healthcheckapp")
-    R.server$add(app = explore.app, name="exploreapp")
-    R.server$add(app = tree.app, name="treeapp")
-
-    # Serve files directly from rook
-    R.server$add(app = File$new(PRE_PATH), name = "rook-files")
-
-    if(addPrivacy){
-        R.server$add(app = privateStatistics.app, name="privateStatisticsapp")
-        R.server$add(app = privateAccuracies.app, name="privateAccuraciesapp")
-    }
-    #   R.server$add(app = selector.app, name="selectorapp")
-    print(R.server)
-}
 
 
 

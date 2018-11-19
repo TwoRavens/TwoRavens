@@ -1,0 +1,132 @@
+{
+  "progress": {
+    "state": "RUNNING",
+    "status": "TA2 status message here...",
+    "start": "2018-06-11T21:25:57.763708829Z"
+  },
+  "doneTicks": 1.0,
+  "allTicks": 10.0,
+  "solutionId": "solutionId_opczu7",
+  "scores": [
+    {
+      "scoringConfiguration": {
+        "method": "PREDICTION",
+        "folds": 0,
+        "trainTestRatio": 0.0,
+        "shuffle": false,
+        "randomSeed": 0,
+        "stratified": false
+      },
+      "scores": [
+        {
+          "metric": {
+            "metric": "R_SQUARED",
+            "k": 0,
+            "posLabel": ""
+          },
+          "targets": [
+            {
+              "targetIndex": 0,
+              "resourceId": "",
+              "columnIndex": 0,
+              "columnName": ""
+            }
+          ],
+          "value": {
+            "double": 382.0
+          },
+          "fold": 0
+        },
+        {
+          "metric": {
+            "metric": "MEAN_ABSOLUTE_ERROR",
+            "k": 0,
+            "posLabel": ""
+          },
+          "targets": [
+            {
+              "targetIndex": 0,
+              "resourceId": "",
+              "columnIndex": 0,
+              "columnName": ""
+            }
+          ],
+          "value": {
+            "double": 783.0
+          },
+          "fold": 0
+        },
+        {
+          "metric": {
+            "metric": "ROC_AUC",
+            "k": 0,
+            "posLabel": ""
+          },
+          "targets": [
+            {
+              "targetIndex": 0,
+              "resourceId": "",
+              "columnIndex": 0,
+              "columnName": ""
+            }
+          ],
+          "value": {
+            "double": 452.0
+          },
+          "fold": 0
+        }
+      ]
+    },
+    {
+      "scoringConfiguration": {
+        "method": "PREDICTION",
+        "folds": 0,
+        "trainTestRatio": 0.0,
+        "shuffle": false,
+        "randomSeed": 0,
+        "stratified": false
+      },
+      "scores": [
+        {
+          "metric": {
+            "metric": "MEAN_ABSOLUTE_ERROR",
+            "k": 0,
+            "posLabel": ""
+          },
+          "targets": [
+            {
+              "targetIndex": 0,
+              "resourceId": "",
+              "columnIndex": 0,
+              "columnName": ""
+            }
+          ],
+          "value": {
+            "double": 121.0
+          },
+          "fold": 0
+        },
+        {
+          "metric": {
+            "metric": "F1_MACRO",
+            "k": 0,
+            "posLabel": ""
+          },
+          "targets": [
+            {
+              "targetIndex": 0,
+              "resourceId": "",
+              "columnIndex": 0,
+              "columnName": ""
+            }
+          ],
+          "value": {
+            "double": 522.0
+          },
+          "fold": 0
+        }
+      ]
+    }
+  ],
+  "internalScore": 0.0
+}

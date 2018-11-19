@@ -3,7 +3,7 @@
     "datasetID": "uu4_ST_dataset_TEST",
     "datasetName": "NULL",
     "license": "CC-BY license",
-    "datasetSchemaVersion": "3.0",
+    "datasetSchemaVersion": "3.1.1",
     "redacted": true,
     "datasetVersion": "1.0"
   },

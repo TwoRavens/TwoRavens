@@ -1,88 +1,104 @@
 """URLs for the UI to initiate TA2 calls"""
-from django.conf.urls import url
+from django.urls import path, re_path
 from tworaven_apps.ta2_interfaces import (\
-        views,
+        views_user_problem,
         views_additional,
-        view_execute_pipeline,
-        views_user_problem)
+        views_streaming_requests,
+        views_saved_requests,
+        views_non_streaming_requests)
 
 urlpatterns = (
 
-    url(r'^get-problem-schema$',
-        views_additional.view_get_problem_schema,
-        name='get_problem_schema'),
+    path(r'store-problem-form',
+         views_user_problem.view_save_problem_form,
+         name='view_save_problem_form'),
 
-    url(r'^startsession/?$',
-        views.view_startsession,
-        name='StartSession'),
+    path(r'store-user-problem',
+         views_user_problem.view_store_basic_problem,
+         name='view_store_basic_problem'),
 
-    url(r'^endsession/?$',
-        views.view_endsession,
-        name='EndSession'),
+    path(r'store-ta2ta3-data',
+         views_user_problem.view_store_ta2ta3_data,
+         name='view_store_ta2ta3_data'),
 
-    url(r'^SetProblemDoc/?$',
-        views.view_set_problem_doc,
-        name='SetProblemDoc'),
+    path(r'get-problem-schema',
+         views_additional.view_get_problem_schema,
+         name='get_problem_schema'),
 
-    url(r'^CreatePipelines/?$',
-        views.view_create_pipeline,
-        name='CreatePipelines'),
+    path(r'debug-pipeline-steps',
+         views_additional.view_show_pipeline_steps,
+         name='view_show_pipeline_steps'),
 
-    url(r'^GetCreatePipelineResults/?$',
-        views.view_get_create_pipeline_results,
-        name='GetCreatePipelineResults'),
+    path(r'retrieve-output-data',
+         views_additional.view_retrieve_d3m_output_data,
+         name='view_retrieve_d3m_output_data'),
 
-    url(r'^listpipelines/?$',
-        views.view_list_pipelines,
-        name='ListPipelines'),
+    re_path((r'stored-request/(?P<hash_id>[\w]{40,200})$'),
+            views_saved_requests.view_stored_request,
+            name='view_stored_request'),
 
-    url(r'^DeletePipelines/?$',
-        views.view_delete_pipelines,
-        name='DeletePipelines'),
+    re_path((r'stored-response/(?P<hash_id>[\w]{40,200})$'),
+            views_saved_requests.view_stored_response,
+            name='view_stored_response'),
 
-    url(r'^CancelPipelines/?$',
-        views.view_cancel_pipelines,
-        name='CancelPipelines'),
+    path(r'Hello',
+         views_non_streaming_requests.view_hello,
+         name='Hello'),
 
-    url(r'^ExecutePipeline/?$',
-        view_execute_pipeline.view_execute_pipeline,
-        name='ExecutePipeline'),
+    path(r'SearchSolutions',
+         views_non_streaming_requests.view_search_solutions,
+         name='SearchSolutions'),
 
-    url(r'^ExecutePipelineDirect/?$',
-        view_execute_pipeline.view_execute_pipeline_direct,
-        name='ExecutePipelineDirect'),
+    path(r'GetSearchSolutionsResults',
+         views_streaming_requests.view_get_search_solutions,
+         name='GetSearchSolutionsResults'),
 
-    url(r'^ExecutePipelineProblemDoc/?$',
-        view_execute_pipeline.view_execute_pipeline_problem_doc,
-        name='ExecutePipelineProblemDoc'),
+    path(r'EndSearchSolutions',
+         views_non_streaming_requests.view_end_search_solutions,
+         name='EndSearchSolutions'),
 
-    url(r'^getexecutepipelineresults/?$',
-        views.view_get_execute_pipeline_results,
-        name='GetExecutePipelineResults'),
+    path(r'StopSearchSolutions',
+         views_non_streaming_requests.view_stop_search_solutions,
+         name='StopSearchSolutions'),
 
-    url(r'^exportpipeline/?$',
-        views.view_export_pipeline,
-        name='ExportPipeline'),
+    path(r'DescribeSolution',
+         views_non_streaming_requests.view_describe_solution,
+         name='DescribeSolution'),
 
-    url(r'^DescribeDataflow/?$',
-        views.view_describe_dataflow,
-        name='DescribeDataflow'),
+    path(r'ScoreSolution',
+         views_non_streaming_requests.view_score_solution,
+         name='ScoreSolution'),
 
-    url(r'^GetDataflowResults/?$',
-        views.view_get_dataflow_results,
-        name='GetDataflowResults'),
+    path(r'GetScoreSolutionResults',
+         views_streaming_requests.view_score_solutions,
+         name='GetScoreSolutionResults'),
 
-    url(r'^write-user-problem/?$',
-        views_user_problem.view_write_user_problem,
-        name='WriteUserProblem'),
+    path(r'FitSolution',
+         views_non_streaming_requests.view_fit_solution,
+         name='FitSolution'),
 
-    url(r'^format-retrieve-user-problem/?$',
-        views_user_problem.view_format_retrieve_user_problem,
-        name='TestWriteUserProblem'),
+    path(r'GetFitSolutionResults',
+         views_streaming_requests.view_fit_solution_results,
+         name='GetFitSolutionResults'),
 
-    url(r'^',
-        views.view_test_call,
-        name='view_test_call'),
+    path(r'ProduceSolution',
+         views_non_streaming_requests.view_produce_solution,
+         name='ProduceSolution'),
 
+    path(r'GetProduceSolutionResults',
+         views_streaming_requests.view_get_produce_solution_results,
+         name='GetProduceSolutionResults'),
+
+    path(r'SolutionExport',
+         views_non_streaming_requests.view_solution_export,
+         name='SolutionExport'),
+
+    path(r'UpdateProblem',
+         views_non_streaming_requests.view_update_problem,
+         name='UpdateProblem'),
+
+    path(r'ListPrimitives',
+         views_non_streaming_requests.view_list_primitives,
+         name='ListPrimitives'),
 
 )

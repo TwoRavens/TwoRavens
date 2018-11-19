@@ -5,9 +5,9 @@
 
 For the recommended and easiest route, try the [Vagrant install](https://github.com/TwoRavens/TwoRavens/blob/master/docs/vagrant_install.md), which will allow you to run TwoRavens within a virtual machine on Mac, Windows, or Linux.
 
-Note: the Vagrant install will also work natively on an Ubuntu 16.04 (Xenial) system. 
+Note: the Vagrant install will also work natively on an Ubuntu 16.04 (Xenial) system.
 
-The following is tested on a Mac (OS 10.12.6). 
+The following is tested on a Mac (OS 10.12.6).
 
 ## Get the repository
 
@@ -15,6 +15,8 @@ The following is tested on a Mac (OS 10.12.6).
 - Alternately, use the command line:
     ```
     git clone https://github.com/TwoRavens/TwoRavens.git
+    #git submodule init
+    #git submodule update
     ```
 
 ## Install Node.js
@@ -34,6 +36,13 @@ Mac:
    ```
    npm install
    ```
+
+- 6/27/2018
+  - if you get a python error, that you should use a version lower than 3.6, try:
+    ```
+    npm config set python [path to python 2]
+    ```
+    - e.g.: `npm config set python /usr/bin/python`
 
 ## Install Python/Django
 
@@ -68,6 +77,17 @@ Mac:
         ```
     4. Reference: http://virtualenvwrapper.readthedocs.org/en/latest/install.html#shell-startup-file
 
+  - For Ubuntu users:
+    1. Open a new terminal
+    2. Open your ```~/.bashrc``` for editing
+    3. Add these lines
+       ```
+       export WORKON_HOME=$HOME/.virtualenvs
+       export PROJECT_HOME=$HOME/Devel
+       VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
+       source ~/.local/bin/virtualenvwrapper.sh
+       ``` 
+    
 ### Make a virtualenv and install requirements
 
 - From the Terminal and within the TwoRavens repository.
@@ -154,8 +174,40 @@ The following command will start the Django webserver as well as webpack.
 
 - You will probably see an error!  Follow the step below and then go back to the url above and try again.
 
+# Run Redis/Celery
 
-## Install R / Run Rook
+## Redis
+
+**With docker:**
+
+
+```
+docker run --rm -p 6379:6379 -v /ravens_volume:/ravens_volume redis:4
+```
+
+**_Without_ docker**
+
+1. Install Redis
+      - example: https://medium.com/@petehouston/install-and-config-redis-on-mac-os-x-via-homebrew-eb8df9a4f298
+2. From a new Terminal and within the TwoRavens repository, run the following commands
+
+      ```
+      workon 2ravens
+      fab redis_run
+      ```
+
+## Celery
+
+1. Open a new Terminal
+1. `cd` within the TwoRavens repository directory
+1. Run the following commands:
+    ```
+    workon 2ravens
+    fab celery_run
+    ```
+
+
+# Install R / Run Rook
 
 Download and install R at https://www.r-project.org. If you followed the Vagrant install guide, you've already done this.
 
@@ -174,7 +226,7 @@ Then set your working directory to ~/TwoRavens/rook. On the Vagrant install, thi
   ```
   setwd("/home/ubuntu/TwoRavens/rook")
   ```
-  
+
 On Mac it will look more like:
 
   ```
@@ -196,7 +248,7 @@ Note that this may install many packages, depending on what already exists. If i
 - Try the app again:
   - Go to: http://127.0.0.1:8080/
   - Hit shift+refresh on the browser
-  
+
 As a shortcut to the above, assuming R is installed, from the command line, you can try:
   ```
   fab run_rook
@@ -206,38 +258,36 @@ As a shortcut to the above, assuming R is installed, from the command line, you 
 
 ### Run the server
 
+6/20 - This setup involves running several processes.  The manual method is as follows:
 
-1. Open a Terminal and ```cd``` into the TwoRavens directory
-2. Activate the virtual environment and run the server
-    ```
-    workon 2ravens
-    # the next line runs the django server AND starts webpack to monitor .js changes
-    fab run
-    ```
-3. Start an R interactive shell
-    1. Set your working directory to ~TwoRavens/rook, for example:
-        ```
-        setwd("/home/ubuntu/TwoRavens/rook")
-        ```
+#### _Without_ a TA2 (test mode)
 
-        Or:
-
-        ```
-        setwd("/Users/vjdorazio/Desktop/github/TwoRavens/rook")
-        ```
-        
-    1. Source rooksource.R to get the app up:
-        ```
-        source("rooksource.R")
-        ```
-        
-   Or, from a new terminal, try `fab run_rook`
-   
+1. Open 4 separate Terminals
+2. For each Terminal:
+    - ```cd``` into the TwoRavens directory
+    - ```workon 2ravens```
+3. Next are commands to run--one for each Terminal
+    i. Main app: ```fab run```
+    j. Rook: ```fab run_rook```
+    k. Redis: ```docker run --rm -p 6379:6379 redis:2.8```
+         - If you don't have docker:
+             - install redis (see above)
+             - redis: ```fab run_redis```
+    l. Celery: ```fab celery_run```
 4. Go to Two Ravens: http://127.0.0.1:8080/
-  - Go to the Django admin: http://127.0.0.1:8080/admin
-    - username: `dev_admin`
-    - password: [from create superuser step above](#create-a-django-superuser-optional)
+    - Go to the Django admin: http://127.0.0.1:8080/admin
+      - username: `dev_admin`
+      - password: [from create superuser step above](#create-a-django-superuser-optional)
 
+
+#### _With_ a TA2
+
+Read fully before going through the step.
+Use the instructions in `./ta2-notes/ta3_run.md`.
+
+If error due to /ravens_volume/test_data not found:
+    A symlink is needed from root to `ravens_volume`. Adjust path as necessary. On Ubuntu:
+    ```sudo ln -s /home/shoe/TwoRavens/ravens_volume /```
 
 ### Run the python shell (if needed)
 
@@ -270,13 +320,18 @@ These commands will:
 ### Preliminaries
 
   1. Open a Terminal
-  1. ```cd``` into the TwoRavens directory
-  2. Activate the virtual environment
+  2. ```cd``` into the TwoRavens directory
+  3. Activate the virtual environment
       ```
       workon 2ravens
       ```
 
 ### Commands
+
+- x Submodule updates
+    ```
+    #git submodule update
+    ```
 
 - Update requirements
     ```

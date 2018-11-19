@@ -21,21 +21,47 @@ from tworaven_apps.configurations.util_path_check import are_d3m_paths_valid,\
     get_bad_paths, get_bad_paths_for_admin
 
 KEY_DATASET_SCHEMA = 'dataset_schema'
-KEY_PROBLEM_SCHEMA = 'problem_schema'
 
-D3M_FILE_ATTRIBUTES = (KEY_DATASET_SCHEMA, KEY_PROBLEM_SCHEMA)
+KEY_PROBLEM_SCHEMA = 'problem_schema'
+KEY_PROBLEM_SCHEMA_URL = 'problem_schema_url'
+KEY_PROBLEM_ROOT = 'problem_root'
+
+KEY_PROBLEM_DATA_INFO = 'problem_data_info'
+
+KEY_TIMEOUT = 'timeout'
+KEY_CPUS = 'cpus'
+KEY_RAM = 'ram'
+
+
+D3M_FILE_ATTRIBUTES = [KEY_DATASET_SCHEMA, KEY_PROBLEM_SCHEMA]
 
 D3M_DIR_USER_PROBLEMS_ROOT = 'user_problems_root'
 D3M_DIR_TEMP_STORAGE_ROOT = 'temp_storage_root'
 
-D3M_DIR_ATTRIBUTES = ('training_data_root', 'problem_root',
+# /output - for testing only
+OPTIONAL_DIR_OUTPUT_ROOT = 'root_output_directory'
+
+
+D3M_DIR_ATTRIBUTES = ['training_data_root', KEY_PROBLEM_ROOT,
                       'pipeline_logs_root', 'executables_root',
-                      D3M_DIR_TEMP_STORAGE_ROOT, D3M_DIR_USER_PROBLEMS_ROOT)
-D3M_VALUE_ATTRIBUTES = ('timeout', 'cpus', 'ram')
-D3M_REQUIRED = D3M_FILE_ATTRIBUTES + ('training_data_root', 'problem_root')
+                      D3M_DIR_TEMP_STORAGE_ROOT, D3M_DIR_USER_PROBLEMS_ROOT]
+D3M_VALUE_ATTRIBUTES = [KEY_TIMEOUT, KEY_CPUS, KEY_RAM]
+D3M_REQUIRED = D3M_FILE_ATTRIBUTES + ['training_data_root', KEY_PROBLEM_ROOT]
+
+EVAL_ATTRIBUTES_TO_REMOVE = [KEY_PROBLEM_SCHEMA,
+                             KEY_PROBLEM_ROOT,
+                             KEY_PROBLEM_SCHEMA_URL] + \
+                            D3M_VALUE_ATTRIBUTES
+
+# 8/9/2018 - D3M config change
+#
+D3M_REQUIRED.remove(KEY_PROBLEM_SCHEMA)
+D3M_REQUIRED.remove(KEY_PROBLEM_ROOT)
 
 # environment variable name to store a d3m config filepath for startup
 CONFIG_JSON_PATH = 'CONFIG_JSON_PATH'
+D3M_ENV_INPUT_DIR = 'D3MINPUTDIR'
+D3M_SEARCH_CONFIG_NAME = 'search_config.json'
 
 class D3MConfiguration(TimeStampedModel):
     """
@@ -98,6 +124,11 @@ class D3MConfiguration(TimeStampedModel):
                         help_text=('Temporary storage root for performers'
                                    ' to use.'))
 
+    root_output_directory = models.TextField(\
+                        blank=True,
+                        help_text=(('Not an official field.  Used for testing'
+                                    ' to determine the "/output" directory')))
+
     timeout = models.IntegerField(\
                 default=-1,
                 help_text=('Allotted time for search, in minutes.'
@@ -120,7 +151,7 @@ class D3MConfiguration(TimeStampedModel):
         return self.name
 
     class Meta:
-        ordering = ('name', '-modified')
+        ordering = ('-is_default', 'name', '-modified')
         verbose_name = 'D3M Configuration'
         verbose_name_plural = 'D3M Configurations'
 
@@ -150,7 +181,7 @@ class D3MConfiguration(TimeStampedModel):
         od = OrderedDict()
         d3m_attributes = D3M_FILE_ATTRIBUTES + \
                          D3M_DIR_ATTRIBUTES + \
-                         D3M_VALUE_ATTRIBUTES
+                         [OPTIONAL_DIR_OUTPUT_ROOT,]
         for name in d3m_attributes:
             val = self.__dict__.get(name, '(not set)')
             if val and isinstance(val, str):
@@ -164,14 +195,15 @@ class D3MConfiguration(TimeStampedModel):
             self.save()
         return od
 
-    def to_dict(self):
+    def to_dict(self, as_eval_dict=False):
         """Return in an OrderedDict"""
         attrs = ['id', 'name', 'is_default',
                  'dataset_schema', 'problem_schema',
                  'training_data_root', 'problem_root',
-                 'executables_root', 'pipeline_logs_root',
+                 'pipeline_logs_root', 'executables_root',
                  'user_problems_root',
                  'temp_storage_root',
+                 OPTIONAL_DIR_OUTPUT_ROOT,
                  'timeout', 'cpus', 'ram']
         date_attrs = ['created', 'modified']
 
@@ -185,14 +217,24 @@ class D3MConfiguration(TimeStampedModel):
         od['dataset_schema_url'] = reverse('view_get_dataset_schema_by_id',
                                            kwargs=dict(d3m_config_id=self.id))
 
-        od['problem_schema_url'] = reverse('view_get_problem_schema_by_id',
+
+
+        od[KEY_PROBLEM_SCHEMA_URL] = reverse('view_get_problem_schema_by_id',
                                            kwargs=dict(d3m_config_id=self.id))
 
-        od['problem_data_info'] = reverse('view_get_problem_data_info_by_id',
+        od[KEY_PROBLEM_DATA_INFO] = reverse('view_get_problem_data_info_by_id',
                                           kwargs=dict(d3m_config_id=self.id))
 
         od['config_url'] = reverse('view_d3m_details_json',
                                    kwargs=dict(d3m_config_id=self.id))
+
+        # Last minute add: 8/10/2018
+        # - remove attributes for an eval search_config
+        #
+        if as_eval_dict:
+            for remove_key in EVAL_ATTRIBUTES_TO_REMOVE:
+                od.pop(remove_key, None)    # pop it!
+
 
         return od
 
@@ -244,7 +286,7 @@ class D3MConfiguration(TimeStampedModel):
         #
         d3m_config_attrs = D3M_FILE_ATTRIBUTES + \
                            D3M_DIR_ATTRIBUTES + \
-                           D3M_VALUE_ATTRIBUTES
+                           [OPTIONAL_DIR_OUTPUT_ROOT]
         for key in d3m_config_attrs:
             val = d3m_dict.get(key, '')
             d3m_config.__dict__[key] = val

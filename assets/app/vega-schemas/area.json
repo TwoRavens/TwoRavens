@@ -1,0 +1,16 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+  "description": "An area plot.",
+  "data": {"url": "tworavensData"},
+  "mark": "area",
+  "encoding": {
+    "x": {
+      "field": "tworavensX", "type": "quantitative",
+      "axis": {"title": "tworavensX"}
+    },
+    "y": {
+      "aggregate": "sum", "field": "tworavensY", "type": "quantitative",
+      "axis": {"title": "tworavensY"}
+    }
+  }
+}

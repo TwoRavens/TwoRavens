@@ -1,0 +1,21 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+  "description": "A table bubble.",
+  "data": { "url": "tworavensData"},
+  "mark": "circle",
+  "encoding": {
+    "y": {
+      "field": "tworavensY",
+      "type": "nominal"
+    },
+    "x": {
+      "field": "tworavensX",
+      "type": "nominal"
+    },
+    "size": {
+      "field": "tworavensZ",
+      "type": "quantitative",
+      "aggregate": "sum"
+    }
+  }
+}

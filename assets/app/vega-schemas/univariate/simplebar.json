@@ -1,0 +1,13 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+  "description": "A simple bar chart.",
+  "data": { "url": "tworavensData"},
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "tworavensX", "type": "ordinal"},
+    "y": {
+      "aggregate": "count",
+      "type": "quantitative"
+    }
+  }
+}

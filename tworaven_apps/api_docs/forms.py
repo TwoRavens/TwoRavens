@@ -8,7 +8,7 @@ class ClientTestForm(forms.Form):
     request_type = forms.ChoiceField(choices=('pre-init', 'pre-init'))
 
     content = forms.CharField(widget=forms.Textarea,
-                              initial='{"user_agent" : "user_agent"}',
+                              initial='{}',
                               help_text="Enter JSON info")
 
     def __init__(self, *args, **kwargs):

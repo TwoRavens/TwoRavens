@@ -167,7 +167,11 @@ y_test = d3mds.get_test_targets()
 f1 = metrics.f1_score(y_test, y_pred, average='macro')
 print('f1 score on test data', f1)
 
-
 # In[11]:
+# save scores.csv file
+df = pd.DataFrame(columns=['metric', 'value'])
+df.loc[len(df)] = ['f1Macro', f1]
+df.to_csv(os.path.join(solpath, 'scores.csv'))
+
 
 

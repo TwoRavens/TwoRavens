@@ -1,0 +1,20 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+  "description": "A faceted heatmap.",
+  "data": {"url": "tworavensData"},
+  "facet": {
+    "row": {
+      "field": "tworavensZ",
+      "type": "nominal"
+    }
+  },
+  "spec": {
+  "mark": "rect",
+  "encoding": {
+    "y": {"field": "tworavensY", "type": "nominal"},
+    "x": {"field": "tworavensX", "type": "nominal"},
+    "color": {"aggregate": "count", "field": "*", "type": "quantitative"}
+  }
+  }
+}
+

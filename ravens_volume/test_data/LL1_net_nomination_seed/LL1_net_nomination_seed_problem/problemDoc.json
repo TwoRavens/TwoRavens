@@ -1,0 +1,39 @@
+{
+  "about": {
+    "problemID": "LL1_net_nomination_seed_problem",
+    "problemName": "LL1 sample vertex nomination problem",
+    "problemDescription": "Data consists of one graph, G1, whose nodes contain two attributes, attr1 and attr2. Associated with each node is a classLabel that has to be learned and predicted.",
+    "taskType": "vertexNomination",
+    "problemVersion": "1.0",
+    "problemSchemaVersion": "3.1.1"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "LL1_net_nomination_seed_dataset",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "1",
+            "colIndex": 2,
+            "colName": "classLabel"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.8,
+      "numRepeats": 0,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "accuracy"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

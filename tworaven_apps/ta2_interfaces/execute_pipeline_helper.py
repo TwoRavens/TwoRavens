@@ -31,7 +31,7 @@ from tworaven_apps.utils.url_helper import \
     (format_file_uri_to_path,
      add_file_uri_to_path)
 from tworaven_apps.utils import random_info
-from tworaven_apps.ta2_interfaces.models import \
+from tworaven_apps.ta2_interfaces.static_vals import \
     (KEY_DATASET_URI, KEY_NEW_DATASET_URI)
 
 from tworaven_apps.configurations.utils import \
@@ -76,7 +76,7 @@ class ExecutePipelineHelper:
 
         if as_string:
             return json.dumps(self.info_dict)
-            
+
         return self.info_dict
 
     def prepare_files(self):

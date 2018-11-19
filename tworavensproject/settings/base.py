@@ -19,17 +19,31 @@ from django.urls import reverse_lazy
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = dirname(dirname(dirname(abspath(__file__))))
 
+# -----------------------------------------------------
 # Link to copy of the TA3TA2 API
 # https://gitlab.com/datadrivendiscovery/ta3ta2-api
-#
-TA3TA2_API_DIR = join(BASE_DIR, 'tworaven_apps', 'ta3ta2-api')
+# -----------------------------------------------------
+TA3TA2_API_DIR = join(BASE_DIR, 'submodules', 'ta3ta2-api')
 sys.path.append(TA3TA2_API_DIR)
+
+# -----------------------------------------------------
+# Link to copy of the raven-metadata-service
+# for the preprocess script
+#
+# https://github.com/TwoRavens/raven-metadata-service
+# -----------------------------------------------------
+#RAVEN_METADATA_SVC = join(BASE_DIR, 'submodules', 'raven-metadata-service')
+#RAVEN_PREPROCESS = join(RAVEN_METADATA_SVC, 'preprocess', 'code')
+#sys.path.append(RAVEN_PREPROCESS)
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '&1p0bkm1!)x49#g^fcqlwa8ds_p_r$x@c*+vrpveaq=dhr_rzu'
+SECRET_KEY = os.environ.get(\
+                'SECRET_KEY',
+                'please-set-a-secret-secret-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -49,6 +63,11 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'django.contrib.staticfiles',
 
+    'channels', # django channels
+
+    'tworaven_apps.websocket_views', # websocket support
+
+    'social_django',    # social auth
     'tworaven_apps.raven_auth', # user model
     'tworaven_apps.workspaces', # save session state
 
@@ -58,11 +77,23 @@ INSTALLED_APPS = [
     'tworaven_apps.rook_services', # sending UI calls to rook and back again
     'tworaven_apps.api_docs',
     'tworaven_apps.call_captures', # capture data sent from UI out to rook/TA2
-    'tworaven_apps.ta3_search', # ta3_search for NIST
+    'tworaven_apps.eventdata_queries', # eventdata API services
 
     # webpack!
     'webpack_loader',
 ]
+
+# Channels
+ASGI_APPLICATION = "tworavensproject.routing.application"
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -77,6 +108,8 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'tworavensproject.urls'
 
+LOGIN_URL = reverse_lazy('home')    #'/auth/login/'
+
 LOGIN_REDIRECT_URL = 'home'
 
 TEMPLATES = [
@@ -86,6 +119,10 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                # start: social auth
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
+                # end: social auth
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
@@ -108,6 +145,48 @@ DATABASES = {
     }
 }
 
+# -------------------------------
+# Start: Social Auth
+# - Added 8/2018
+# https://python-social-auth.readthedocs.io/en/latest/configuration/django.html
+# -------------------------------
+ALLOW_SOCIAL_AUTH = strtobool(os.environ.get('ALLOW_SOCIAL_AUTH', 'False'))
+
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.github.GithubOAuth2',
+    #'social_core.backends.google.GoogleOpenId',
+    #'social_core.backends.google.GoogleOAuth2',
+    #'social_core.backends.google.GoogleOAuth',
+    #'social_core.backends.twitter.TwitterOAuth',
+    #'social_core.backends.yahoo.YahooOpenId',
+    'django.contrib.auth.backends.ModelBackend',
+)
+SOCIAL_AUTH_URL_NAMESPACE = 'social'
+
+xSOCIAL_AUTH_PIPELINE = (
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.social_user',
+    'social_core.pipeline.user.get_username',
+    'social_core.pipeline.user.create_user',
+    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.load_extra_data',
+    'social_core.pipeline.user.user_details',
+    'social_core.pipeline.social_auth.associate_by_email',
+)
+
+SOCIAL_AUTH_GITHUB_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_KEY', 'not-set')
+SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET', 'not-set')
+
+SOCIAL_AUTH_GITHUB_AUTH_EXTRA_ARGUMENTS = dict()
+#SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ.get(\
+#                            'SOCIAL_AUTH_GOOGLE_OAUTH2_KEY', 'not-set')
+#SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.environ.get(\
+#                            'SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET', 'not-set')
+
+# -------------------------------
+# End: Social Auth
+# -------------------------------
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
@@ -118,6 +197,7 @@ AUTH_PASSWORD_VALIDATORS = [
     dict(NAME='django.contrib.auth.password_validation.CommonPasswordValidator'),
     dict(NAME='django.contrib.auth.password_validation.NumericPasswordValidator'),
 ]
+
 
 
 # Internationalization
@@ -140,7 +220,6 @@ CSRF_COOKIE_NAME = 'CSRF_2R'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
-LOGIN_URL = reverse_lazy('home')    #'/auth/login/'
 
 STATIC_URL = '/static/'
 
@@ -167,15 +246,63 @@ SESSION_SAVE_EVERY_REQUEST = True
 
 SERVER_SCHEME = 'http'  # or https
 
-## D3M - TA2 settings
-#
-# Test work...
+# ---------------------------
+# D3M - TA2 settings
+# ---------------------------
 TA2_STATIC_TEST_MODE = strtobool(os.environ.get('TA2_STATIC_TEST_MODE', 'True'))   # True: canned responses
 TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:45042')
-TA2_GPRC_USER_AGENT = os.environ.get('TA2_GPRC_USER_AGENT', 'tworavens')
+TA3_GRPC_USER_AGENT = os.environ.get('TA3_GRPC_USER_AGENT', 'TwoRavens')
 
+# for non-streaming responses
+TA2_GRPC_FAST_TIMEOUT = os.environ.get('TA2_GRPC_FAST_TIMEOUT', 15) # seconds
+TA2_GRPC_SHORT_TIMEOUT = os.environ.get('TA2_GRPC_SHORT_TIMEOUT', 60) # seconds
+
+# for streaming responses
+TA2_GRPC_LONG_TIMEOUT = os.environ.get('TA2_GRPC_LONG_TIMEOUT', 8 * 60)  # 8 minutes
 
 # D3M - gRPC file uris
-MAX_EMBEDDABLE_FILE_SIZE = .5 * 500000
+MAX_EMBEDDABLE_FILE_SIZE = 1 * 500000
 
 SWAGGER_HOST = '127.0.0.1:8080'
+
+# Delete saved model objects via fab commands
+#
+ALLOW_FAB_DELETE = False
+
+# ---------------------------
+# REDIS/CELERY SETTINGS
+# ---------------------------
+REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
+REDIS_PORT = os.environ.get('REDIS_PORT', 6379)
+
+CELERY_BROKER_URL = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)
+CELERY_RESULT_BACKEND = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)
+
+# ---------------------------
+# EventData: depositing Dataverse data
+# ---------------------------
+DATAVERSE_SERVER = os.environ.get('DATAVERSE_SERVER', 'https://demo.dataverse.org')
+DATAVERSE_API_KEY = os.environ.get('DATAVERSE_API_KEY', 'Get API Key from dataverse')
+DATASET_PERSISTENT_ID = os.environ.get('DATASET_PERSISTENT_ID', 'doi:10.5072/FK2/BGPZC3')
+
+# -------------------------
+# EventData: mongo related
+# -------------------------
+EVENTDATA_PRODUCTION_MODE = os.environ.get('EVENTDATA_PRODUCTION_MODE', "no") == "yes"
+
+EVENTDATA_MONGO_DB_ADDRESS = os.environ.get('EVENTDATA_MONGO_DB_ADDRESS', '127.0.0.1:27017')
+
+EVENTDATA_MONGO_USERNAME = os.environ.get('EVENTDATA_MONGO_USERNAME', '')
+EVENTDATA_MONGO_PASSWORD = os.environ.get('EVENTDATA_MONGO_PASSWORD', '')
+
+EVENTDATA_PHOENIX_SERVER_ADDRESS = 'http://149.165.156.33:5002/api/data?'
+EVENTDATA_PRODUCTION_SERVER_ADDRESS = os.environ.get('EVENTDATA_PRODUCTION_SERVER_ADDRESS', EVENTDATA_PHOENIX_SERVER_ADDRESS)
+
+# API KEY, Load from ENV variable.  If it doesn't exist, use the default
+EVENTDATA_DEFAULT_API_KEY = 'api_key=CD75737EF4CAC292EE17B85AAE4B6'
+EVENTDATA_SERVER_API_KEY = os.environ.get('EVENTDATA_SERVER_API_KEY', EVENTDATA_DEFAULT_API_KEY)
+EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
+
+# database for storing manipulations
+TWORAVENS_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'tworavens')
+PREFIX = 'tr_'  # mongo collection names may not start with a number
