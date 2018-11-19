@@ -8,9 +8,8 @@ from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json
 from tworaven_apps.ta2_interfaces.tasks import stream_and_store_results
-
 from tworaven_apps.ta2_interfaces.models import \
-    (StoredRequest, StoredResponse, KEY_STORED_RESPONSE_ID)
+    (StoredRequest, StoredResponse)
 from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 
 import core_pb2

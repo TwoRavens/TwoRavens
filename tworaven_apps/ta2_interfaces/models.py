@@ -21,22 +21,6 @@ STATUS_LIST = (STATUS_IN_PROGRESS,
 REQUEST_STATUS_CHOICES = [(x, x) for x in STATUS_LIST]
 RESPONSE_STATUS_CHOICES = [(x, x) for x in (STATUS_ERROR, STATUS_COMPLETE)]
 
-KEY_FITTED_SOLUTION_ID = 'fittedSolutionId'
-KEY_PIPELINE_ID = 'pipelineId'
-KEY_REQUEST_ID = 'requestId'
-KEY_SEARCH_ID = 'searchId'
-KEY_SOLUTION_ID = 'solutionId'
-KEY_STORED_RESPONSE_ID = 'storedResponseId'
-
-# ------------------------------------------
-# params sent from the UI
-# ------------------------------------------
-KEY_SEARCH_SOLUTION_PARAMS = 'searchSolutionParams'
-KEY_FIT_SOLUTION_DEFAULT_PARAMS = 'fitSolutionDefaultParams'
-KEY_SCORE_SOLUTION_DEFAULT_PARAMS = 'scoreSolutionDefaultParams'
-REQUIRED_INPUT_KEYS = [(KEY_SEARCH_SOLUTION_PARAMS, 'SearchSolutions'),
-                       (KEY_FIT_SOLUTION_DEFAULT_PARAMS, 'FitSolution'),
-                       (KEY_SCORE_SOLUTION_DEFAULT_PARAMS, 'ScoreSolution')]
 
 class StoredRequest(TimeStampedModel):
     """For storing TA2 responses, especially streaming responses"""

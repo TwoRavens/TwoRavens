@@ -19,10 +19,11 @@ from tworaven_apps.utils.proto_util import message_to_json
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 from tworaven_apps.ta2_interfaces.req_search_solutions import fit_solution
+from tworaven_apps.ta2_interfaces.static_vals import \
+        (KEY_FITTED_SOLUTION_ID, KEY_PIPELINE_ID,
+         KEY_REQUEST_ID, KEY_SEARCH_ID, KEY_SOLUTION_ID)
 from tworaven_apps.ta2_interfaces.models import \
-        (StoredRequest, StoredResponse,
-         KEY_REQUEST_ID, KEY_FITTED_SOLUTION_ID,
-         KEY_PIPELINE_ID, KEY_SEARCH_ID, KEY_SOLUTION_ID)
+        (StoredRequest, StoredResponse)
 import core_pb2
 import grpc
 from google.protobuf.json_format import \
@@ -341,6 +342,7 @@ class FitSolutionsHelper(BasicErrCheck):
                 #print('ws_msg', ws_msg.as_dict())
 
                 ws_msg.send_message(self.websocket_id)
+                stored_response.mark_as_sent_to_user()
 
         except grpc.RpcError as err_obj:
             stored_request.set_error_status(str(err_obj))

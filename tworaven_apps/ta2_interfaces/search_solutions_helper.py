@@ -22,12 +22,15 @@ from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.json_helper import json_loads, json_dumps
 from tworaven_apps.utils.proto_util import message_to_json
-from tworaven_apps.ta2_interfaces.models import \
-        (StoredRequest, StoredResponse,
-         KEY_PIPELINE_ID, KEY_SEARCH_ID, KEY_SOLUTION_ID,
+from tworaven_apps.ta2_interfaces.static_vals import \
+        (KEY_PIPELINE_ID, KEY_SEARCH_ID,
+         KEY_SOLUTION_ID,
          KEY_SEARCH_SOLUTION_PARAMS, KEY_FIT_SOLUTION_DEFAULT_PARAMS,
          KEY_SCORE_SOLUTION_DEFAULT_PARAMS,
          REQUIRED_INPUT_KEYS)
+from tworaven_apps.ta2_interfaces.models import \
+        (StoredRequest, StoredResponse)
+
 from tworaven_apps.ta2_interfaces.req_search_solutions import \
         (search_solutions, describe_solution)
 from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
