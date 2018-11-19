@@ -4,7 +4,6 @@ import CanvasContinuous from '../canvases/CanvasContinuous';
 import CanvasDate from '../canvases/CanvasDate';
 import CanvasDiscrete from '../canvases/CanvasDiscrete';
 import CanvasTransform from '../canvases/CanvasTransform';
-import CanvasExpansion from '../canvases/CanvasExpansion';
 
 import Flowchart from '../views/Flowchart';
 
@@ -62,7 +61,7 @@ export function menu(compoundPipeline, pipelineId) {
                     'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
                 },
                 onclick: () => {
-                    let name = ['transform', 'expansion'].includes(constraintMenu.type) ? ''
+                    let name = constraintMenu.type === 'transform' ? ''
                         : constraintMetadata.type + ': ' + constraintMetadata.columns[0];
 
                     let success = queryAbstract.addConstraint(
@@ -105,7 +104,6 @@ function canvas(compoundPipeline) {
     let variables = queryMongo.buildPipeline(compoundPipeline, Object.keys(variablesInitial))['variables'];
 
     if (constraintMenu.type === 'transform') return m(CanvasTransform, {preferences: constraintPreferences, variables});
-    if (constraintMenu.type === 'expansion') return m(CanvasExpansion, {preferences: constraintPreferences, variables});
 
     if (!constraintData || !constraintMetadata) return;
 
@@ -163,10 +161,10 @@ export function varList() {
         if (constraintMenu.type === 'unit')
             variables = variables.filter(column => inferType(column) !== 'discrete');
 
-        if (constraintMenu.type === 'transform' && constraintPreferences.usedTerms)
+        if (constraintMenu.type === 'transform' && constraintPreferences.type === 'Equation' && constraintPreferences.usedTerms)
             selectedVariables = [...constraintPreferences.usedTerms.variables];
 
-        if (constraintMenu.type === 'expansion') {
+        if (constraintMenu.type === 'transform' && constraintPreferences.type === 'Expansion') {
             let problem = app.disco.find(problem => problem.problem_id === app.selectedProblem);
             variables = [
                 ...problem.predictorsInitial || problem.predictors,
@@ -200,8 +198,8 @@ export function varList() {
                 'item-bordered': variableSearch === '' ? []
                     : variables.filter(variable => variable.toLowerCase().includes(variableSearch))
             },
-            callback: ['transform', 'expansion'].includes(constraintMenu.type)
-                ? variable => constraintPreferences.select(variable) // the select function is defined inside CanvasTransform or CanvasExpansion
+            callback: constraintMenu.type === 'transform'
+                ? variable => constraintPreferences.select(variable) // the select function is defined inside CanvasTransform
                 : variable => setConstraintColumn(variable, constraintMenu.pipeline),
             popup: variable => app.popoverContent(variableMetadata[variable]),
             attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
@@ -302,14 +300,7 @@ export class PipelineFlowchart {
                                 style: {margin: '0.5em'},
                                 title: 'Construct a new variable from other variables',
                                 onclick: () => setConstraintMenu({type: 'transform', step, pipeline: compoundPipeline})
-                            }, plus, ' Transform'),
-                            editable && m(Button, {
-                                id: 'btnAddExpansion',
-                                class: ['btn-sm'],
-                                style: {margin: '0.5em'},
-                                title: 'Basis expansions, variable codings, interaction terms',
-                                onclick: () => setConstraintMenu({type: 'expansion', step, pipeline: compoundPipeline})
-                            }, plus, ' Expansion')
+                            }, plus, ' Transform')
                         )
                     }
 
