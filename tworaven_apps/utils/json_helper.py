@@ -100,6 +100,32 @@ def format_link_for_admin(source_url):
     return mark_safe(lnk)
 
 
+def get_dict_value(result_dict, key_list):
+    """Using the key list, get an embedded value from
+    a dict"""
+    if not isinstance(result_dict, dict):
+        return err_resp('result_dict must be a dict')
+    if not isinstance(key_list, list):
+        return err_resp('result_dict must be a dict')
+    #
+    for key in key_list:
+        try:
+            if key == key_list[-1]:
+                return ok_resp(result_dict[key])  # return the value
+            else:
+                result_dict = result_dict[key]  # retrieve embedded dict
+        except KeyError as err_obj:
+            return err_resp('(get_dict_value) KeyError: %s' % err_obj)
+        except TypeError as err_obj:
+            return err_resp('(get_dict_value) TypeError: %s' % err_obj)
+    #
+    user_msg = ('(get_dict_value) Error.'
+                ' Failed to return value using key_list: %s') % \
+                (key_list)
+    #
+    return err_resp(user_msg)
+
+
 def json_comply(obj):
     """Replace invalid JSON elements (inf, -inf, nan) with unambiguous strings."""
     if issubclass(dict, type(obj)):

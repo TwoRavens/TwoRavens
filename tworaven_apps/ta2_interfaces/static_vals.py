@@ -17,6 +17,12 @@ KEY_NEW_DATASET_URI = 'new_dataset_uri'
 KEY_PIPELINE = 'pipeline'   # DescribeSolutionResponse
 KEY_PIPELINE_ID = 'pipelineId'
 
+# used within progress.state for GetFitSolutionResults and other results
+#
+KEY_PROGRESS = 'progress'
+KEY_PROGRESS_STATE = 'state'
+KEY_PROGRESS_COMPLETED = 'COMPLETED'
+
 KEY_REQUEST_ID = 'requestId'
 
 KEY_SEARCH_ID = 'searchId'
@@ -40,8 +46,11 @@ D3M_OUTPUT_DIR = '/output'
 KEY_SEARCH_SOLUTION_PARAMS = 'searchSolutionParams'
 KEY_FIT_SOLUTION_DEFAULT_PARAMS = 'fitSolutionDefaultParams'
 KEY_SCORE_SOLUTION_DEFAULT_PARAMS = 'scoreSolutionDefaultParams'
+KEY_PRODUCE_SOLUTION_DEFAULT_PARAMS = 'produceSolutionDefaultParams'
+
 REQUIRED_INPUT_KEYS = [(KEY_SEARCH_SOLUTION_PARAMS, 'SearchSolutions'),
                        (KEY_FIT_SOLUTION_DEFAULT_PARAMS, 'FitSolution'),
+                       (KEY_PRODUCE_SOLUTION_DEFAULT_PARAMS, 'ProduceSolution'),
                        (KEY_SCORE_SOLUTION_DEFAULT_PARAMS, 'ScoreSolution')]
 
 # ---------------------------------

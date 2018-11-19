@@ -25,7 +25,9 @@ from tworaven_apps.utils.proto_util import message_to_json
 from tworaven_apps.ta2_interfaces.static_vals import \
         (KEY_PIPELINE_ID, KEY_SEARCH_ID,
          KEY_SOLUTION_ID,
-         KEY_SEARCH_SOLUTION_PARAMS, KEY_FIT_SOLUTION_DEFAULT_PARAMS,
+         KEY_SEARCH_SOLUTION_PARAMS,
+         KEY_FIT_SOLUTION_DEFAULT_PARAMS,
+         KEY_PRODUCE_SOLUTION_DEFAULT_PARAMS,
          KEY_SCORE_SOLUTION_DEFAULT_PARAMS,
          REQUIRED_INPUT_KEYS)
 from tworaven_apps.ta2_interfaces.models import \
@@ -364,6 +366,8 @@ class SearchSolutionsHelper(BasicErrCheck):
         fit_params[KEY_SOLUTION_ID] = solution_id
         #fit_params.move_to_end(KEY_SOLUTION_ID, last=False)
 
+        produce_params = self.all_search_params[KEY_PRODUCE_SOLUTION_DEFAULT_PARAMS]
+
 
         # ----------------------------------
         # Start the async process
@@ -372,9 +376,8 @@ class SearchSolutionsHelper(BasicErrCheck):
                                     pipeline_id,
                                     self.websocket_id,
                                     self.user_id,
-                                    fit_params)
-
-
+                                    fit_params,
+                                    produce_params=produce_params)
 
     def run_describe_solution(self, pipeline_id, solution_id, msg_cnt=-1):
         """sync: Run a DescribeSolution call for each solution_id"""

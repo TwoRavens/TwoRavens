@@ -2589,14 +2589,26 @@ export function getFitSolutionDefaultParameters(){
 // }
 
 function CreateProduceDefinition(fsid){
-    let my_fittedSolutionId = fsid;
-    let my_dataseturi = 'file://' + datasetdocurl;
-    let my_inputs = [{dataset_uri: my_dataseturi}];
-    let my_exposeOutputs = [];  // Not sure about this.
-    let my_exposeValueTypes = ['CSV_URI']; // Not sure about this.
-    return {fittedSolutionId: my_fittedSolutionId, inputs: my_inputs, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes};
+
+    let produceDefn = getProduceSolutionDefaultParameters();
+    produceDefn.fittedSolutionId = fsid
+    return produceDefn;
 }
 
+/*
+  Return the default parameters used for a ProduceSolution call.
+  This DOES NOT include the fittedSolutionId
+*/
+export function getProduceSolutionDefaultParameters(){
+
+  let my_dataseturi = 'file://' + datasetdocurl;
+  let my_inputs = [{dataset_uri: my_dataseturi}];
+  let my_exposeOutputs = [];  // Not sure about this.
+  let my_exposeValueTypes = ['CSV_URI']; // Not sure about this.
+  return {inputs: my_inputs,
+          exposeOutputs: my_exposeOutputs,
+          exposeValueTypes: my_exposeValueTypes};
+}
 
 
 
@@ -2746,6 +2758,7 @@ export async function estimate(btn) {
 
             let allParams = {searchSolutionParams: searchSolutionParams,
                              fitSolutionDefaultParams: getFitSolutionDefaultParameters(),
+                             produceSolutionDefaultParams: getProduceSolutionDefaultParameters(),
                              scoreSolutionDefaultParams: {}};
 
             //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
