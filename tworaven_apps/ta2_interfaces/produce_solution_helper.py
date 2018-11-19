@@ -20,6 +20,7 @@ from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 from tworaven_apps.ta2_interfaces.req_search_solutions import produce_solution
 from tworaven_apps.ta2_interfaces.static_vals import \
         (KEY_FITTED_SOLUTION_ID, KEY_PIPELINE_ID,
+         KEY_PROGRESS, KEY_PROGRESS_STATE, KEY_PROGRESS_COMPLETED,
          KEY_REQUEST_ID, KEY_SEARCH_ID, KEY_SOLUTION_ID)
 from tworaven_apps.ta2_interfaces.models import \
         (StoredRequest, StoredResponse)
@@ -304,12 +305,25 @@ class ProduceSolutionHelper(BasicErrCheck):
 
                 # ---------------------------------------------
                 # Looks good!  Get the StoredResponse
-                # - send responses back to WebSocket
                 # ---------------------------------------------
                 LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 8')
 
                 stored_response = stored_resp_info.result_obj
                 stored_response.set_pipeline_id(self.pipeline_id)
+
+                # ---------------------------------------------
+                # If progress is complete,
+                #  send response back to WebSocket
+                # ---------------------------------------------
+                progress_val = get_dict_value(\
+                                result_json,
+                                [KEY_PROGRESS, KEY_PROGRESS_STATE])
+
+                if (not progress_val.success) or \
+                   (progress_val.result_obj != KEY_PROGRESS_COMPLETED):
+                    user_msg = 'GetProduceSolutionResultsResponse is not yet complete'
+                    LOGGER.info(user_msg)
+                    return
 
                 ws_msg = WebsocketMessage.get_success_message(\
                             self.GRPC_GET_PRODUCE_SOLUTION_RESULTS,

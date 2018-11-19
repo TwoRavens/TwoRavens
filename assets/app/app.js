@@ -290,7 +290,7 @@ console.log('streamSocket connection made: ' + wsLink);
 export let streamSocket = new WebSocket(wsLink);
 
 export let streamMsgCnt = 0;
-// Handle messages received.
+//  messages received.
 //
 streamSocket.onmessage = function(e) {
    streamMsgCnt++;
@@ -5275,7 +5275,7 @@ export async function handleGetSearchSolutionResultsResponse(response1){
       resizeTriggered = true;
   }
   if(selectedPipeline === undefined){
-      setSelectedPipeline(pipelineTable[0]['PipelineID']);
+     setSelectedPipeline(pipelineTable[0]['PipelineID']);
   }
 
   // Add pipeline descriptions to allPipelineInfo
@@ -5387,7 +5387,7 @@ async function handleGetProduceSolutionResultsResponse(response){
 
     let responseOutputData = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
 
-    allPipelineInfo[pid].predictedValues = responseOutputData;
+    allPipelineInfo[response.pipelineId].predictedValues = responseOutputData;
 
     resultsplotgraph(response.pipelineId);
 
