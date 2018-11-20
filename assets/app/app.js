@@ -179,6 +179,7 @@ export let is_model_mode = true;
 export let is_explore_mode = false;
 export let is_results_mode = false;
 export let is_manipulate_mode = false;
+export let ROOKPIPE_FROM_REQUEST;  // rookpipe needed within websocket handler functions
 
 let exportCount = 0;
 
@@ -300,10 +301,10 @@ streamSocket.onmessage = function(e) {
    //console.log('data:' + JSON.stringify(msg_obj));
    let msg_data = msg_obj['message'];
 
-  if(typeof msg_data.msg_type==undefined){
+  if(typeof msg_data.msg_type===undefined){
     console.log('streamSocket.onmessage: Error, "msg_data.msg_type" not specified!');
     return;
-  } else if(typeof msg_data.data==undefined){
+  } else if(typeof msg_data.data===undefined){
     console.log('streamSocket.onmessage: Error, "msg_data.data" type not specified!');
     return;
   }
@@ -2651,17 +2652,6 @@ export async function estimate(btn) {
         zparams.callHistory = callHistory;
         zparams.allVars = valueKey.slice(10, 25); // because the URL is too long...
 
-        /* UNUSED
-        var selectorurlcall = ROOK_SVC_URL + "selectorapp";
-        function selectorSuccess(btn, json) {
-            d3.select("#ticker")
-                .text("Suggested variables and percent improvement on RMSE: " + json.vars);
-            cdb("selectorSuccess: ", json);
-        }
-        function selectorFail(btn) {
-            alert("Selector Fail");
-        }
-        */
 
         estimateLadda.start(); // start spinner
         let json = await makeRequest(ROOK_SVC_URL + 'zeligapp', zparams);
@@ -2742,18 +2732,18 @@ export async function estimate(btn) {
         //console.log("zparams zgroup1");
         //console.log(zparams.zgroup1);      // Notice zgroup1 is being sent with correct characters
 
-        let rookpipe = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);        // parse the center panel data into a formula like construction
+        ROOKPIPE_FROM_REQUEST = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);        // parse the center panel data into a formula like construction
 
         // 3. And check they come back correctly formed:
         //console.log("pipeline app return (rookpipe)");
         //console.log(rookpipe);
 
-        if (!rookpipe) {
+        if (!ROOKPIPE_FROM_REQUEST) {
             estimated = true;
         } else {
-            setxTable(rookpipe.predictors);
-            let searchSolutionParams = CreatePipelineDefinition(rookpipe.predictors,
-                                                                 rookpipe.depvar,
+            setxTable(ROOKPIPE_FROM_REQUEST.predictors);
+            let searchSolutionParams = CreatePipelineDefinition(ROOKPIPE_FROM_REQUEST.predictors,
+                                                                 ROOKPIPE_FROM_REQUEST.depvar,
                                                                  2);
 
             let allParams = {searchSolutionParams: searchSolutionParams,
@@ -3807,7 +3797,8 @@ export async function resultsplotinit(pid) {
 }
 
 export async function generatePredictions(pid, plotflag) {
-    console.log('   ------ generatePredictions ------');
+    console.log('   ------ generatePredictions ...DISABLED... ------');
+    return
     if (!('predictedValues' in allPipelineInfo[pid])){
         // Need to generate and store predicted values
         let finalFittedId, finalFittedDetailsUrl, produceDetailsUrl, finalProduceDetailsUrl, hold3;
@@ -5234,7 +5225,7 @@ export async function makeGetSearchSolutionsRequest(searchId){
   wrapped in a StoredResponse object
 */
 export async function handleGetSearchSolutionResultsResponse(response1){
-  if(typeof response1==undefined){
+  if(typeof response1===undefined){
     console.log('GetSearchSolutionResultsResponse: Error.  "response1" undefined');
     return;
   }
@@ -5248,11 +5239,11 @@ export async function handleGetSearchSolutionResultsResponse(response1){
   // Note: the response.id becomes the Pipeline id
   //
   //
-  if(typeof response1.id==undefined){
+  if(typeof response1.id===undefined){
     console.log('GetSearchSolutionResultsResponse: Error.  "response1.id" undefined');
     return;
   }
-  if(typeof response1.response.solutionId==undefined){
+  if(typeof response1.response.solutionId===undefined){
     console.log('GetSearchSolutionResultsResponse: Error.  "response1.response.solutionId" undefined');
     return;
   }
@@ -5266,7 +5257,10 @@ export async function handleGetSearchSolutionResultsResponse(response1){
   // ----------------------------------------
   // (2a) Update or Create the Pipeline
   // ----------------------------------------
-  onPipelinePrime(response1);
+  if (!ROOKPIPE_FROM_REQUEST){
+    console.log('---------- ERROR: ROOKPIPE_FROM_REQUEST not set!!!');
+  }
+  onPipelinePrime(response1, ROOKPIPE_FROM_REQUEST) //, rookpipe - handleGetSearchSolutionResultsResponse
 
   if(!resizeTriggered){
       if (IS_D3M_DOMAIN){
@@ -5332,11 +5326,11 @@ export async function handleGetSearchSolutionResultsResponse(response1){
 */
 async function handleDescribeSolutionResponse(response){
 
-  if(typeof response==undefined){
+  if(typeof response===undefined){
     console.log('handleDescribeSolutionResponse: Error.  "response" undefined');
     return;
   }
-  if(typeof response.pipelineId==undefined){
+  if(typeof response.pipelineId===undefined){
     console.log('handleDescribeSolutionResponse: Error.  "pipelineId" undefined');
     return;
   }
@@ -5359,11 +5353,11 @@ async function handleDescribeSolutionResponse(response){
 */
 async function handleGetProduceSolutionResultsResponse(response){
 
-    if(typeof response==undefined){
+    if(typeof response===undefined){
       console.log('handleGetProduceSolutionResultsResponse: Error.  "response" undefined');
       return;
     }
-    if(typeof response.pipelineId==undefined){
+    if(typeof response.pipelineId===undefined){
       console.log('handleGetProduceSolutionResultsResponse: Error.  "pipelineId" undefined');
       return;
     }
@@ -5381,7 +5375,7 @@ async function handleGetProduceSolutionResultsResponse(response){
       return;
     }
 
-    let hold = response.exposedOutputs;
+    let hold = response.response.exposedOutputs;
     let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
     let hold3 = hold2.csvUri;
 
@@ -5398,11 +5392,11 @@ async function handleGetProduceSolutionResultsResponse(response){
   wrapped in a StoredResponse object
 */
 async function handleGetScoreSolutionResultsResponse(response1){
-  if(typeof response1==undefined){
+  if(typeof response1===undefined){
     console.log('handleGetScoreSolutionResultsResponse: Error.  "response1" undefined');
     return;
   }
-  if(typeof response1.is_finished == undefined){
+  if(typeof response1.is_finished === undefined){
     console.log('handleGetScoreSolutionResultsResponse: Error.  "response1.data.is_finished" undefined');
     return;
   }

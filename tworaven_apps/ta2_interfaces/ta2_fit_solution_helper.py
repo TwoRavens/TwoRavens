@@ -1,9 +1,8 @@
 """
 Used to assist with TA2 calls, specifically:
 
-(1) ProduceSolution (input: fittedSolutionId)
-(2) GetProduceSolutionResults
-    -> Results from the final call are passed back to the UI via websockets
+(1) FitSolution
+(2) GetFitSolutionResults (contains fitted_solution_id)
 """
 import logging
 from django.conf import settings
@@ -17,11 +16,13 @@ from tworaven_apps.utils.json_helper import \
 from tworaven_apps.utils.proto_util import message_to_json
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
-from tworaven_apps.ta2_interfaces.req_search_solutions import produce_solution
+from tworaven_apps.ta2_interfaces.req_search_solutions import fit_solution
+from tworaven_apps.ta2_interfaces.ta2_produce_solution_helper import ProduceSolutionHelper
 from tworaven_apps.ta2_interfaces.static_vals import \
         (KEY_FITTED_SOLUTION_ID, KEY_PIPELINE_ID,
          KEY_PROGRESS, KEY_PROGRESS_STATE, KEY_PROGRESS_COMPLETED,
-         KEY_REQUEST_ID, KEY_SEARCH_ID, KEY_SOLUTION_ID)
+         KEY_REQUEST_ID,
+         KEY_SEARCH_ID, KEY_SOLUTION_ID)
 from tworaven_apps.ta2_interfaces.models import \
         (StoredRequest, StoredResponse)
 import core_pb2
@@ -32,22 +33,23 @@ from tworavensproject.celery import celery_app
 
 LOGGER = logging.getLogger(__name__)
 
-class ProduceSolutionHelper(BasicErrCheck):
+class FitSolutionHelper(BasicErrCheck):
     """Helper class to run TA2 call sequence"""
-    GRCP_PRODUCE_SOLUTION = 'ProduceSolution'
-    GRPC_GET_PRODUCE_SOLUTION_RESULTS = 'GetProduceSolutionResults'
+    GRCP_FIT_SOLUTION = 'FitSolution'
+    GRPC_GET_FIT_SOLUTION_RESULTS = 'GetFitSolutionResults'
 
-    def __init__(self, pipeline_id, websocket_id, user_id, produce_params, **kwargs):
+    def __init__(self, pipeline_id, websocket_id, user_id, fit_params, **kwargs):
         """initial params"""
         self.pipeline_id = pipeline_id
         self.websocket_id = websocket_id
         self.user_id = user_id
         self.user_object = None
 
-        self.produce_params = produce_params
+        self.fit_params = fit_params
+        self.produce_params = kwargs.get('produce_params', None)
 
         self.get_user()
-        self.check_produce_params()
+        self.check_fit_params()
 
 
     def get_user(self):
@@ -61,77 +63,69 @@ class ProduceSolutionHelper(BasicErrCheck):
             self.add_err_msg('No user found for id: %s' % self.user_id)
 
 
-    def check_produce_params(self):
-        """Check that "produce_params" has all of the required sections
-          Except for 'fittedSolutionId', params set at:
+    def check_fit_params(self):
+        """Check that "fit_params" has all of the required sections
+          Except for 'solutionId', params set at:
             file: app.js
-            function: getProduceSolutionDefaultParameters
+            function: getFitSolutionDefaultParameters
         """
         if self.has_error():
             return False
 
-        if not isinstance(self.produce_params, dict):
-            self.add_err_msg('produce_params must be a python dict')
+        if not isinstance(self.fit_params, dict):
+            self.add_err_msg('fit params must be a python dict')
             return False
 
         # Iterate through the expectd keys
         #
-        expected_keys = [KEY_FITTED_SOLUTION_ID, 'inputs',
-                         'exposeOutputs', 'exposeValueTypes']
+        expected_keys = [KEY_SOLUTION_ID, 'inputs', 'exposeOutputs',
+                         'exposeValueTypes', 'users']
 
         for key in expected_keys:
-            if not key in self.produce_params:
-                user_msg = ('produce_params is missing key: %s') % \
+            if not key in self.fit_params:
+                user_msg = ('fit_params is missing key: %s') % \
                             (self.pipeline_id, key)
-                self.send_websocket_err_msg(self.GRCP_PRODUCE_SOLUTION, user_msg)
+                self.send_websocket_err_msg(self.GRCP_FIT_SOLUTION, user_msg)
                 return False
 
         return True
 
     @staticmethod
     @celery_app.task(ignore_result=True)
-    def make_produce_solution_call(pipeline_id, websocket_id, user_id, produce_params, **kwargs):
-        """Celery task to make TA2 calls for:
-         ProduceSolution and GetProduceSolutionResults"""
-        print('make_produce_solution_call 1')
+    def make_fit_solutions_call(pipeline_id, websocket_id, user_id, fit_params, **kwargs):
+        print('make_fit_solutions_call 1')
         assert pipeline_id, "pipeline_id must be set"
         assert websocket_id, "websocket_id must be set"
         assert user_id, "user_id must be set"
-        assert produce_params, "produce_params must be set"
-        print('make_produce_solution_call 2')
+        assert fit_params, "fit_params must be set"
+        fit_helper = FitSolutionHelper(pipeline_id, websocket_id,
+                                        user_id, fit_params, **kwargs)
 
-        produce_helper = ProduceSolutionHelper(\
-                                pipeline_id, websocket_id,
-                                user_id, produce_params, **kwargs)
-
-        if produce_helper.has_error():
-            user_msg = ('ProduceSolution failure for pipeline (%s): %s') % \
-                        (pipeline_id, produce_helper.get_error_message())
+        if fit_helper.has_error():
+            user_msg = ('FitSolution failure for pipeline (%s): %s') % \
+                        (pipeline_id, fit_helper.get_error_message())
 
             ws_msg = WebsocketMessage.get_fail_message(\
-                        ProduceSolutionHelper.GRCP_PRODUCE_SOLUTION, user_msg)
+                        FitSolutionHelper.GRCP_FIT_SOLUTION, user_msg)
 
             ws_msg.send_message(websocket_id)
-            LOGGER.info('ProduceSolutionHelper: %s', user_msg)
+            LOGGER.error(user_msg)
             return
 
-        LOGGER.info('ProduceSolutionHelper: OK!')
 
-        produce_helper.run_process()
+        fit_helper.run_process()
 
 
 
     def run_process(self):
-        """(1) Run ProduceSolution"""
-        LOGGER.info('ProduceSolutionHelper.run_process 1')
-
+        """(1) Run FitSolution"""
         if self.has_error():
             return
         # ----------------------------------
         # Create the input
         # ----------------------------------
-        LOGGER.info('ProduceSolutionHelper.run_process 2')
-        json_str_info = json_dumps(self.produce_params)
+        LOGGER.info('FitSolutionHelper.run_process 2')
+        json_str_info = json_dumps(self.fit_params)
         if not json_str_info.success:
             self.add_err_msg(json_str_info.err_msg)
             return
@@ -141,21 +135,18 @@ class ProduceSolutionHelper(BasicErrCheck):
         # ----------------------------------
         # Run FitSolution
         # ----------------------------------
-        LOGGER.info('ProduceSolutionHelper.run_process 3')
-        produce_info = produce_solution(json_str_input)
-        if not produce_info.success:
-            self.send_websocket_err_msg(self.GRCP_PRODUCE_SOLUTION,
-                                        produce_info.err_msg)
+        fit_info = fit_solution(json_str_input)
+        if not fit_info.success:
+            self.send_websocket_err_msg(self.GRCP_FIT_SOLUTION,
+                                        fit_info.err_msg)
             return
 
         # ----------------------------------
         # Parse the FitSolutionResponse
         # ----------------------------------
-        LOGGER.info('ProduceSolutionHelper.run_process 4')
-        response_info = json_loads(produce_info.result_obj)
+        response_info = json_loads(fit_info.result_obj)
         if not response_info.success:
-            self.send_websocket_err_msg(self.GRCP_PRODUCE_SOLUTION,
-                                        response_info.err_msg)
+            self.send_websocket_err_msg(self.GRCP_FIT_SOLUTION, response_info.err_msg)
             return
 
         result_json = response_info.result_obj
@@ -163,14 +154,13 @@ class ProduceSolutionHelper(BasicErrCheck):
         # ----------------------------------
         # Get the requestId
         # ----------------------------------
-        LOGGER.info('ProduceSolutionHelper.run_process 5')
         if not KEY_REQUEST_ID in result_json:
             user_msg = (' "%s" not found in response to JSON: %s') % \
                         (KEY_REQUEST_ID, result_json)
-            self.send_websocket_err_msg(self.GRCP_PRODUCE_SOLUTION, user_msg)
+            self.send_websocket_err_msg(self.GRCP_FIT_SOLUTION, user_msg)
             return
 
-        self.run_get_produce_solution_responses(result_json[KEY_REQUEST_ID])
+        self.run_get_fit_solution_responses(result_json[KEY_REQUEST_ID])
 
 
     def send_websocket_err_msg(self, grpc_call, user_msg=''):
@@ -191,7 +181,7 @@ class ProduceSolutionHelper(BasicErrCheck):
         # ----------------------------------
         # Log it
         # ----------------------------------
-        LOGGER.info('ProduceSolutionHelper: %s', user_msg)
+        LOGGER.info('FitSolutionHelper: %s', user_msg)
 
         # ----------------------------------
         # Add error message to class
@@ -199,18 +189,16 @@ class ProduceSolutionHelper(BasicErrCheck):
         self.add_err_msg(user_msg)
 
 
-    def run_get_produce_solution_responses(self, request_id):
-        """(2) Run GetProduceSolutionResults"""
-        LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 1')
+    def run_get_fit_solution_responses(self, request_id):
+        """(2) Run GetFitSolutionResults"""
         if self.has_error():
             return
 
         if not request_id:
-            self.send_websocket_err_msg(self.GRPC_GET_PRODUCE_SOLUTION_RESULTS,
+            self.send_websocket_err_msg(self.GRPC_GET_FIT_SOLUTION_RESULTS,
                                         'request_id must be set')
             return
 
-        LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 3')
         # -----------------------------------
         # (1) make GRPC request object
         # -----------------------------------
@@ -219,26 +207,24 @@ class ProduceSolutionHelper(BasicErrCheck):
 
         try:
             grpc_req = Parse(params_info.result_obj,
-                             core_pb2.GetProduceSolutionResultsRequest())
+                             core_pb2.GetFitSolutionResultsRequest())
         except ParseError as err_obj:
             err_msg = ('Failed to convert JSON to gRPC: %s') % (err_obj)
-            self.send_websocket_err_msg(self.GRPC_GET_PRODUCE_SOLUTION_RESULTS,
+            self.send_websocket_err_msg(self.GRPC_GET_FIT_SOLUTION_RESULTS,
                                         err_msg)
             return
 
-        LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 3')
         # --------------------------------
         # (2) Save the request to the db
         # --------------------------------
         stored_request = StoredRequest(\
                         user=self.user_object,
-                        request_type=self.GRPC_GET_PRODUCE_SOLUTION_RESULTS,
+                        request_type=self.GRPC_GET_FIT_SOLUTION_RESULTS,
                         pipeline_id=self.pipeline_id,
                         is_finished=False,
                         request=params_dict)
         stored_request.save()
 
-        LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 4')
         # --------------------------------
         # (3) Make the gRPC request
         # --------------------------------
@@ -248,16 +234,12 @@ class ProduceSolutionHelper(BasicErrCheck):
 
         msg_cnt = 0
         try:
-            LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 5')
-
             # -----------------------------------------
             # Iterate through the streaming responses
             # Note: The StoredResponse.id becomes the pipeline id
             # -----------------------------------------
-            for reply in core_stub.GetProduceSolutionResults(\
+            for reply in core_stub.GetFitSolutionResults(\
                     grpc_req, timeout=settings.TA2_GRPC_LONG_TIMEOUT):
-
-                LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 6')
 
                 msg_cnt += 1
 
@@ -274,14 +256,23 @@ class ProduceSolutionHelper(BasicErrCheck):
                                (err_obj,)
 
                     self.send_websocket_err_msg(\
-                            self.GRPC_GET_PRODUCE_SOLUTION_RESULTS,
+                            self.GRPC_GET_FIT_SOLUTION_RESULTS,
                             err_msg)
                     # Wait for next response....
                     continue
 
                 result_json = msg_json_info.result_obj
 
-                LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 7')
+                if not KEY_FITTED_SOLUTION_ID in result_json:
+                    user_msg = '"%s" not found in response to JSON: %s' % \
+                               (KEY_FITTED_SOLUTION_ID, result_json)
+                    self.send_websocket_err_msg(\
+                            self.GRPC_GET_FIT_SOLUTION_RESULTS,
+                            err_msg)
+                    # Wait for next response....
+                    continue
+
+                fitted_solution_id = result_json[KEY_FITTED_SOLUTION_ID]
 
                 # -----------------------------------------
                 # Looks good, save the response
@@ -299,15 +290,14 @@ class ProduceSolutionHelper(BasicErrCheck):
                     # send a message to the user...
                     #
                     self.send_websocket_err_msg(\
-                                    self.GRPC_GET_PRODUCE_SOLUTION_RESULTS,
+                                    self.GRPC_GET_FIT_SOLUTION_RESULTS,
                                     stored_resp_info.err_msg)
                     continue
 
                 # ---------------------------------------------
                 # Looks good!  Get the StoredResponse
+                # - send responses back to WebSocket
                 # ---------------------------------------------
-                LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 8')
-
                 stored_response = stored_resp_info.result_obj
                 stored_response.set_pipeline_id(self.pipeline_id)
 
@@ -321,27 +311,30 @@ class ProduceSolutionHelper(BasicErrCheck):
 
                 if (not progress_val.success) or \
                    (progress_val.result_obj != KEY_PROGRESS_COMPLETED):
-                    user_msg = 'GetProduceSolutionResultsResponse is not yet complete'
+                    user_msg = 'GetFitSolutionResultsResponse is not yet complete'
                     LOGGER.info(user_msg)
-                    return
+                    # wait for next message...
+                    continue
+
 
                 ws_msg = WebsocketMessage.get_success_message(\
-                            self.GRPC_GET_PRODUCE_SOLUTION_RESULTS,
-                            'it worked.',
+                            self.GRPC_GET_FIT_SOLUTION_RESULTS,
+                            'it worked',
                             msg_cnt=msg_cnt,
                             data=stored_response.as_dict())
 
-                LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 9')
-
-                print('ws_msg: %s' % ws_msg)
+                LOGGER.info('ws_msg: %s' % ws_msg)
                 #print('ws_msg', ws_msg.as_dict())
 
-                # ---------------------------------------------
-                # Should this be checked for completeness
-                # before sending it back?
-                # ---------------------------------------------
                 ws_msg.send_message(self.websocket_id)
                 stored_response.mark_as_sent_to_user()
+
+                # if GetFitSolutionResultsResponse is COMPLETE,
+                #  then trigger ProduceSolution
+                #
+                if fitted_solution_id:
+                    self.check_fit_progress(fitted_solution_id, result_json)
+
 
         except grpc.RpcError as err_obj:
             stored_request.set_error_status(str(err_obj))
@@ -353,3 +346,43 @@ class ProduceSolutionHelper(BasicErrCheck):
 
 
         StoredRequestUtil.set_finished_ok_status(stored_request.id)
+
+
+    def check_fit_progress(self, fitted_solution_id, result_json):
+        """if GetFitSolutionResultsResponse is COMPLETED,
+           then trigger ProduceSolution"""
+        assert isinstance(result_json, dict), 'result_json must be a dict'
+        assert fitted_solution_id, 'fitted_solution_id must be set'
+
+        # --------------------------------------------
+        # Check if the progress.state == 'COMPLETED'
+        # --------------------------------------------
+        progress_val = get_dict_value(\
+                        result_json,
+                        [KEY_PROGRESS, KEY_PROGRESS_STATE])
+
+        if (not progress_val.success) or \
+           (progress_val.result_obj != KEY_PROGRESS_COMPLETED):
+            user_msg = 'FitSolutionResultsResponse is not yet complete'
+            LOGGER.info(user_msg)
+            return
+
+        # --------------------------------------------
+        # Format ProduceSolution parameters
+        # --------------------------------------------
+        if not self.produce_params:
+            user_msg = 'No default params available for ProduceSolution'
+            self.send_websocket_err_msg(\
+                            self.GRPC_GET_FIT_SOLUTION_RESULTS,
+                            user_msg)
+            LOGGER.error(user_msg)
+            return
+
+        prod_params = dict(self.produce_params)
+        prod_params[KEY_FITTED_SOLUTION_ID] = fitted_solution_id
+
+        ProduceSolutionHelper.make_produce_solution_call.delay(\
+                                    self.pipeline_id,
+                                    self.websocket_id,
+                                    self.user_id,
+                                    prod_params)

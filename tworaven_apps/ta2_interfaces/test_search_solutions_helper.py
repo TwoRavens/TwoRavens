@@ -23,7 +23,7 @@ os.environ.setdefault('TA2_STATIC_TEST_MODE', '0')
 import django
 django.setup()
 
-from tworaven_apps.ta2_interfaces.search_solutions_helper import \
+from tworaven_apps.ta2_interfaces.ta2_search_solutions_helper import \
         SearchSolutionsHelper
 #from tworaven_apps.ta2_interfaces.tasks import \
 #    (make_search_solutions_call, kick_off_solution_results)

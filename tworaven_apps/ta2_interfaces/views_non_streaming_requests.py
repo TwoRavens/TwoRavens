@@ -24,7 +24,7 @@ from tworaven_apps.utils.view_helper import \
      get_json_success)
 from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.utils.view_helper import get_session_key
-from tworaven_apps.ta2_interfaces.search_solutions_helper import \
+from tworaven_apps.ta2_interfaces.ta2_search_solutions_helper import \
         SearchSolutionsHelper
 
 

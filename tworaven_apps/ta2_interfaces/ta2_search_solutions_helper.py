@@ -39,7 +39,7 @@ from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 #
-from tworaven_apps.ta2_interfaces.fit_solutions_helper import FitSolutionsHelper
+from tworaven_apps.ta2_interfaces.ta2_fit_solution_helper import FitSolutionHelper
 #
 import core_pb2
 import grpc
@@ -372,7 +372,7 @@ class SearchSolutionsHelper(BasicErrCheck):
         # ----------------------------------
         # Start the async process
         # ----------------------------------
-        FitSolutionsHelper.make_fit_solutions_call.delay(\
+        FitSolutionHelper.make_fit_solutions_call.delay(\
                                     pipeline_id,
                                     self.websocket_id,
                                     self.user_id,

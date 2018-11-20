@@ -25,12 +25,12 @@ from google.protobuf.json_format import \
 #
 # Import Task 'kick_off_solution_results'
 #
-from tworaven_apps.ta2_interfaces.search_solutions_helper import \
+from tworaven_apps.ta2_interfaces.ta2_search_solutions_helper import \
     SearchSolutionsHelper
 #
 # Import Task 'make_fit_solutions_call'
 #
-from tworaven_apps.ta2_interfaces.fit_solutions_helper import FitSolutionsHelper
+from tworaven_apps.ta2_interfaces.ta2_fit_solution_helper import FitSolutionHelper
 
 
 @celery_app.task(ignore_result=True)

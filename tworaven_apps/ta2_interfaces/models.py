@@ -11,7 +11,8 @@ import jsonfield
 from model_utils.models import TimeStampedModel
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.json_helper import json_dumps
-from tworaven_apps.ta2_interfaces.static_vals import CALLBACK_URL, DETAILS_URL
+from tworaven_apps.ta2_interfaces.static_vals import \
+    (CALLBACK_URL, DETAILS_URL, KEY_PIPELINE_ID)
 
 STATUS_IN_PROGRESS = 'IN_PROGRESS'
 STATUS_ERROR = 'ERROR'
@@ -315,6 +316,9 @@ class StoredResponse(TimeStampedModel):
                 od[DETAILS_URL] = self.get_callback_url()
             else:
                 od[key] = self.__dict__.get(key)
+                if key == 'pipeline_id':
+                    od[KEY_PIPELINE_ID] = self.__dict__.get(key)
+
         od['created'] = self.created.isoformat()
         od['modified'] = self.modified.isoformat()
 
