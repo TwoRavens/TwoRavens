@@ -148,27 +148,28 @@
   let msgCnt = 0;
   chatSocket.onmessage = function(e) {
 
+    console.log('--------------------------------------');
     console.log('message received! '  + e);
     let init_data = JSON.parse(e.data);
     console.log('data:' + JSON.stringify(init_data));
+    console.log('--------------------------------------');
 
-    if(typeof init_data.message==undefined){
+    if(typeof init_data.message===undefined){
       console.log('streamSocket.onmessage: Error, "init_data.message" type not specified!');
+      console.log('--- FAIL - return');
       return;
     }
 
     let msg_data = init_data.message
 
-    if(typeof msg_data.msg_type==undefined){
+    if(typeof msg_data.msg_type===undefined){
       console.log('streamSocket.onmessage: Error, "msg_data.msg_type" type not specified!');
+      console.log('--- FAIL - return');
       return;
     }
 
     console.log('----- Message type: ' + msg_data.msg_type + ' -----');
-    console.log('data:' + JSON.stringify(msg_data));
-
-    //return;
-    console.log('streamSocket.onmessage: Error, "data.message" not specified!');
+    // console.log('data:' + JSON.stringify(msg_data));
 
     msgCnt++;
 

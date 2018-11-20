@@ -306,6 +306,9 @@ streamSocket.onmessage = function(e) {
     return;
   } else if(typeof msg_data.data===undefined){
     console.log('streamSocket.onmessage: Error, "msg_data.data" type not specified!');
+    console.log('full data: ' + JSON.stringify(msg_data));
+    console.log('---------------------------------------------');
+
     return;
   }
 
@@ -318,16 +321,16 @@ streamSocket.onmessage = function(e) {
     handleGetSearchSolutionResultsResponse(msg_data.data);
     estimateLadda.stop();
 
-  } else if (msg_data.msg_type == 'DescribeSolution'){
+  } else if (msg_data.msg_type === 'DescribeSolution'){
     console.log(msg_data.msg_type + ' recognized!');
 
     handleDescribeSolutionResponse(msg_data.data);
 
-  } else if (msg_data.msg_type == 'GetScoreSolutionResults'){
+  } else if (msg_data.msg_type === 'GetScoreSolutionResults'){
     console.log(msg_data.msg_type + ' recognized!');
     handleGetScoreSolutionResultsResponse(msg_data.data);
 
-  } else if (msg_data.msg_type == 'GetProduceSolutionResults'){
+  } else if (msg_data.msg_type === 'GetProduceSolutionResults'){
     console.log(msg_data.msg_type + ' recognized!');
 
     handleGetProduceSolutionResultsResponse(msg_data.data);
@@ -2614,17 +2617,34 @@ export function getProduceSolutionDefaultParameters(){
 
 
 function CreateScoreDefinition(res){
-    //alert(JSON.stringify(res));
-    //let my_solutionId = res.data.response.solutionId;
-    let my_solutionId = res.response.solutionId;
-    let my_dataseturi = 'file://' + datasetdocurl;
-    let my_inputs = [{dataset_uri: my_dataseturi}];
-    let my_performanceMetrics = [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ];  // need to generalize to case with multiple metrics.  only passes on first presently.;
-    let my_users = [{id: 'TwoRavens', choosen: false, reason: ""}];
-    let my_configuration = {method: 'HOLDOUT', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
-    return {solutionId: my_solutionId, inputs: my_inputs, performanceMetrics: my_performanceMetrics, users: my_users, configuration: my_configuration};
+
+  if (typeof res.response.solutionId === undefined){
+      let errMsg = 'ERROR: CreateScoreDefinition. solutionId not set.'
+      console.log(errMsg);
+      return {errMsg: errMsg};
+  }
+
+  let createDefn = getScoreSolutionDefaultParameters();
+  createDefn.solutionId = res.response.solutionId;
+  return createDefn;
+
 }
 
+/*
+  Return the default parameters used for a ProduceSolution call.
+  This DOES NOT include the solutionId
+*/
+function getScoreSolutionDefaultParameters(){
+
+  let my_dataseturi = 'file://' + datasetdocurl;
+  let my_inputs = [{dataset_uri: my_dataseturi}];
+  let my_performanceMetrics = [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ];  // need to generalize to case with multiple metrics.  only passes on first presently.;
+  let my_users = [{id: 'TwoRavens', choosen: false, reason: ""}];
+  let my_configuration = {method: 'HOLDOUT', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
+
+  return {inputs: my_inputs, performanceMetrics: my_performanceMetrics, users: my_users, configuration: my_configuration};
+
+}
 
 
 
@@ -2749,7 +2769,7 @@ export async function estimate(btn) {
             let allParams = {searchSolutionParams: searchSolutionParams,
                              fitSolutionDefaultParams: getFitSolutionDefaultParameters(),
                              produceSolutionDefaultParams: getProduceSolutionDefaultParameters(),
-                             scoreSolutionDefaultParams: {}};
+                             scoreSolutionDefaultParams: getScoreSolutionDefaultParameters()};
 
             //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
             let res = await makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions',
@@ -5391,24 +5411,26 @@ async function handleGetProduceSolutionResultsResponse(response){
   Handle a getScoreSolutionResultsResponse send via websocket
   wrapped in a StoredResponse object
 */
-async function handleGetScoreSolutionResultsResponse(response1){
-  if(typeof response1===undefined){
-    console.log('handleGetScoreSolutionResultsResponse: Error.  "response1" undefined');
+async function handleGetScoreSolutionResultsResponse(response){
+  if(typeof response===undefined){
+    console.log('handleGetScoreSolutionResultsResponse: Error.  "response" undefined');
     return;
   }
-  if(typeof response1.is_finished === undefined){
-    console.log('handleGetScoreSolutionResultsResponse: Error.  "response1.data.is_finished" undefined');
+  if(typeof response.is_finished === undefined){
+    console.log('handleGetScoreSolutionResultsResponse: Error.  "response.data.is_finished" undefined');
     return;
   }
-  if(!response1.is_finished){
+  if(!response.is_finished){
     return;
   }
 
-  let myscore = response1.response.scores[0].value.raw.double.toPrecision(3);
+  let myscore = response.response.scores[0].value.raw.double.toPrecision(3);
 
-    // Note: what's now the "res4DataId" needs to be sent to this function
+  // Note: what's now the "res4DataId" needs to be sent to this function
   //
-    let matchedPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(res4DataId, 10))
+  let matchedPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(response.pipelineId, 10))
+
+  matchedPipeline['Score'] = String(myscore);
 
 } // end: handleGetScoreSolutionResultsResponse
 

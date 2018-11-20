@@ -123,14 +123,11 @@ class ProduceSolutionHelper(BasicErrCheck):
 
     def run_process(self):
         """(1) Run ProduceSolution"""
-        LOGGER.info('ProduceSolutionHelper.run_process 1')
-
         if self.has_error():
             return
         # ----------------------------------
         # Create the input
         # ----------------------------------
-        LOGGER.info('ProduceSolutionHelper.run_process 2')
         json_str_info = json_dumps(self.produce_params)
         if not json_str_info.success:
             self.add_err_msg(json_str_info.err_msg)
@@ -141,7 +138,6 @@ class ProduceSolutionHelper(BasicErrCheck):
         # ----------------------------------
         # Run FitSolution
         # ----------------------------------
-        LOGGER.info('ProduceSolutionHelper.run_process 3')
         produce_info = produce_solution(json_str_input)
         if not produce_info.success:
             self.send_websocket_err_msg(self.GRCP_PRODUCE_SOLUTION,
@@ -151,7 +147,6 @@ class ProduceSolutionHelper(BasicErrCheck):
         # ----------------------------------
         # Parse the FitSolutionResponse
         # ----------------------------------
-        LOGGER.info('ProduceSolutionHelper.run_process 4')
         response_info = json_loads(produce_info.result_obj)
         if not response_info.success:
             self.send_websocket_err_msg(self.GRCP_PRODUCE_SOLUTION,
@@ -163,7 +158,6 @@ class ProduceSolutionHelper(BasicErrCheck):
         # ----------------------------------
         # Get the requestId
         # ----------------------------------
-        LOGGER.info('ProduceSolutionHelper.run_process 5')
         if not KEY_REQUEST_ID in result_json:
             user_msg = (' "%s" not found in response to JSON: %s') % \
                         (KEY_REQUEST_ID, result_json)
@@ -201,7 +195,6 @@ class ProduceSolutionHelper(BasicErrCheck):
 
     def run_get_produce_solution_responses(self, request_id):
         """(2) Run GetProduceSolutionResults"""
-        LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 1')
         if self.has_error():
             return
 
@@ -210,7 +203,6 @@ class ProduceSolutionHelper(BasicErrCheck):
                                         'request_id must be set')
             return
 
-        LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 3')
         # -----------------------------------
         # (1) make GRPC request object
         # -----------------------------------
@@ -226,7 +218,6 @@ class ProduceSolutionHelper(BasicErrCheck):
                                         err_msg)
             return
 
-        LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 3')
         # --------------------------------
         # (2) Save the request to the db
         # --------------------------------
@@ -238,7 +229,6 @@ class ProduceSolutionHelper(BasicErrCheck):
                         request=params_dict)
         stored_request.save()
 
-        LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 4')
         # --------------------------------
         # (3) Make the gRPC request
         # --------------------------------
@@ -248,16 +238,12 @@ class ProduceSolutionHelper(BasicErrCheck):
 
         msg_cnt = 0
         try:
-            LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 5')
-
             # -----------------------------------------
             # Iterate through the streaming responses
             # Note: The StoredResponse.id becomes the pipeline id
             # -----------------------------------------
             for reply in core_stub.GetProduceSolutionResults(\
                     grpc_req, timeout=settings.TA2_GRPC_LONG_TIMEOUT):
-
-                LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 6')
 
                 msg_cnt += 1
 
@@ -280,8 +266,6 @@ class ProduceSolutionHelper(BasicErrCheck):
                     continue
 
                 result_json = msg_json_info.result_obj
-
-                LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 7')
 
                 # -----------------------------------------
                 # Looks good, save the response
@@ -306,8 +290,6 @@ class ProduceSolutionHelper(BasicErrCheck):
                 # ---------------------------------------------
                 # Looks good!  Get the StoredResponse
                 # ---------------------------------------------
-                LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 8')
-
                 stored_response = stored_resp_info.result_obj
                 stored_response.set_pipeline_id(self.pipeline_id)
 
@@ -331,8 +313,6 @@ class ProduceSolutionHelper(BasicErrCheck):
                             'it worked.',
                             msg_cnt=msg_cnt,
                             data=stored_response.as_dict())
-
-                LOGGER.info('ProduceSolutionHelper.run_get_produce_solution_responses 9')
 
                 print('ws_msg: %s' % ws_msg)
                 #print('ws_msg', ws_msg.as_dict())

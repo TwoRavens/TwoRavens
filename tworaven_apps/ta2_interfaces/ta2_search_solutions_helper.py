@@ -40,6 +40,7 @@ from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 #
 from tworaven_apps.ta2_interfaces.ta2_fit_solution_helper import FitSolutionHelper
+from tworaven_apps.ta2_interfaces.ta2_score_solution_helper import ScoreSolutionHelper
 #
 import core_pb2
 import grpc
@@ -338,12 +339,17 @@ class SearchSolutionsHelper(BasicErrCheck):
                                            msg_cnt)
 
 
-                print('PRE run_fit_solution')
                 # FitSolution - run async
                 #
+                print('PRE run_fit_solution')
                 self.run_fit_solution(stored_response.pipeline_id,
                                       solution_id)
                 print('POST run_fit_solution')
+
+                print('PRE run_score_solution')
+                self.run_score_solution(stored_response.pipeline_id,
+                                        solution_id)
+                print('POST run_score_solution')
 
 
         except grpc.RpcError as err_obj:
@@ -356,6 +362,25 @@ class SearchSolutionsHelper(BasicErrCheck):
 
 
         StoredRequestUtil.set_finished_ok_status(stored_request.id)
+
+
+    def run_score_solution(self, pipeline_id, solution_id):
+        """async: Run ScoreSolutionHelper"""
+        # ----------------------------------
+        # Create the input
+        # ----------------------------------
+        score_params = self.all_search_params[KEY_SCORE_SOLUTION_DEFAULT_PARAMS]
+        score_params[KEY_SOLUTION_ID] = solution_id
+
+        # ----------------------------------
+        # Start the async process
+        # ----------------------------------
+        print('---- run_score_solution -----')
+        ScoreSolutionHelper.make_score_solutions_call.delay(\
+                                    pipeline_id,
+                                    self.websocket_id,
+                                    self.user_id,
+                                    score_params)
 
     def run_fit_solution(self, pipeline_id, solution_id):
         """async: Run FitSolution and GetFitSolutionResults"""

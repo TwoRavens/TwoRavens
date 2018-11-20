@@ -23,14 +23,14 @@ from google.protobuf.json_format import \
     (Parse, ParseError)
 
 #
-# Import Task 'kick_off_solution_results'
+# Import Tasks to SearchSolutions/GetSearchSolutionsResults,
+#                 FitSolution/GetFitSolutionResults,
+#                 ScoreSolution/GetScoreSolutionResults
 #
 from tworaven_apps.ta2_interfaces.ta2_search_solutions_helper import \
     SearchSolutionsHelper
-#
-# Import Task 'make_fit_solutions_call'
-#
 from tworaven_apps.ta2_interfaces.ta2_fit_solution_helper import FitSolutionHelper
+from tworaven_apps.ta2_interfaces.ta2_score_solution_helper import ScoreSolutionHelper
 
 
 @celery_app.task(ignore_result=True)
