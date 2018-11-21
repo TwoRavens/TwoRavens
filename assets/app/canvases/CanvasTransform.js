@@ -4,8 +4,14 @@ import * as common from '../../common/common';
 import TextField from "../../common/views/TextField";
 import PanelList from '../../common/views/PanelList';
 import ButtonRadio from "../../common/views/ButtonRadio";
+import PlotBars from '../views/PlotBars';
 
 import * as queryMongo from '../manipulations/queryMongo';
+import hopscotch from "hopscotch";
+import Dropdown from "../../common/views/Dropdown";
+import Table from "../../common/views/Table";
+
+import {getData} from "../manipulations/manipulate";
 
 let setDefault = (obj, id, value) => obj[id] = obj[id] || value;
 let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', text);
@@ -32,14 +38,14 @@ export default class CanvasTransform {
             'Manual': {}
         });
 
-        // Delegate select function to child menu
-        setDefault(preferences, 'select', preferences.menus[preferences.type].select || Function)
+        // Delegate variable select function to child menu
+        preferences.select = (...values) => (preferences.menus[preferences.type].select || Function)(...values)
     }
 
 
     view({attrs}) {
-        let {preferences, variables} = attrs;
-        console.log(preferences);
+        let {preferences, pipeline, variables} = attrs;
+
         return m('div#canvasTransform', {style: {'height': '100%', 'width': '100%', 'padding-top': common.panelMargin}},
             m(ButtonRadio, {
                 id: 'canvasTypeButtonBar',
@@ -66,6 +72,7 @@ export default class CanvasTransform {
                     'Manual': MenuManual
                 }[preferences.type], {
                     preferences: preferences.menus[preferences.type],
+                    pipeline,
                     variables
                 })
             ))
@@ -115,7 +122,7 @@ class MenuEquation {
         let transformError;
 
         try {
-            let response = queryMongo.buildTransform(preferences.transformEquation, new Set(variables));
+            let response = queryMongo.buildEquation(preferences.transformEquation, new Set(variables));
             transformQuery = JSON.stringify(response.query);
             preferences.usedTerms = response.usedTerms;
             // make the leftpanel variable list update if in d3m. In d3m the leftpanel reads the preferences to highlight variables
@@ -310,23 +317,211 @@ class MenuExpansion {
                 },
                 value: preferences.degreeInteraction
             }),
-            Object.keys(preferences.variables).map(variable => this.variableMenu(variable, preferences.variables[variable]))
+            m('div#expansionVariables',
+                Object.keys(preferences.variables).map(variable => this.variableMenu(variable, preferences.variables[variable]))
+            )
         ]
     }
 }
 
 class MenuBinning {
-    oninit(vnode) {
+    oninit({attrs}) {
+        let {preferences} = attrs;
+
     }
 
-    view(vnode) {
+    view({attrs}) {
+        let {preferences} = attrs;
+
+        return [
+            m('div')
+        ]
     }
 }
 
 class MenuManual {
-    oninit(vnode) {
+    oninit({attrs}) {
+        let {preferences, pipeline} = attrs;
+        setDefault(preferences, 'variableNameError', true);
+        setDefault(preferences, 'variableName', '');
+        setDefault(preferences, 'variableType', 'Nominal');
+        setDefault(preferences, 'variableIndicator', undefined);
+        setDefault(preferences, 'indicatorKeys', []);
+        setDefault(preferences, 'userValues', []);
+
+        preferences.select = async variable => {
+            if (variable === preferences.variableIndicator) return;
+            preferences.variableIndicator = variable;
+
+            preferences.indicatorKeys = (await getData({
+                method: 'aggregate',
+                query: JSON.stringify(pipeline.concat([{$group: {_id: null, distinct: {$addToSet: "$" + preferences.variableIndicator}}}]))
+            }))[0]['distinct'];
+
+            preferences.userValues = Array(preferences.indicatorKeys.length).fill(undefined);
+        }
     }
 
-    view(vnode) {
+
+    view({attrs}) {
+        let {preferences} = attrs;
+
+        let userInput = i => {
+            if (preferences.variableType === 'Boolean') return m(ButtonRadio, {
+                attrsAll: {style: {'max-width': '10em'}},
+                sections: [{value: 'true'}, {value: 'false'}],
+                activeSection: String(!!preferences.userValues[i]),
+                onclick: response => preferences.userValues[i] = response === 'true'
+            });
+
+            if (['Nominal', 'Numchar'].includes(preferences.variableType)) return m(TextField, {
+                value: String(preferences.userValues[i] === undefined ? '' : preferences.userValues[i]),
+                oninput: response => preferences.userValues[i] = response
+            })
+        };
+
+        return [
+            m('label#labelVariableName[style=width:10em;display:inline-block]', 'Variable Name'),
+            m(TextField, {
+                id: 'textFieldVariableName',
+                class: preferences.variableNameError && ['is-invalid'],
+                style: {display: 'inline-block', width: 'calc(100% - 10em)'},
+                value: preferences.variableName,
+                oninput: name => {
+                    preferences.variableNameError = name.length === 0 || name.includes('-');
+                    preferences.variableName = name;
+                }
+            }),
+            m('br'),
+
+            m('label#labelVariableType[style=width:10em;display:inline-block]', 'Variable Type'),
+            m('[style=display:inline-block]', m(Dropdown, {
+                style: {display: 'inline-block'},
+                id: 'dropdownVariableType',
+                items: ['Boolean', 'Nominal', 'Numchar'],
+                activeItem: preferences.variableType,
+                onclickChild: child => preferences.variableType = child
+            })),
+            m('br'),
+
+            m('label#labelVariableDescription[style=width:10em;display:inline-block]', 'Variable Description'),
+            m(TextField, {
+                id: 'textFieldVariableDescription',
+                style: {display: 'inline-block', width: 'calc(100% - 10em)'},
+                oninput: description => preferences.variableDescription = description,
+                value: preferences.variableDescription
+            }),
+            m('br'),
+
+            preferences.indicatorKeys.length > 0 && m(Table, {
+                id: 'tableManualVariable',
+                headers: [preferences.variableIndicator, preferences.variableName],
+                data: preferences.indicatorKeys.map((key, i) => [
+                    key, userInput(i)
+                ])
+            })
+        ]
     }
 }
+
+
+export function tourStartEquation() {
+    hopscotch.endTour(false);
+    hopscotch.startTour(equationTour);
+}
+
+let equationTour = {
+    id: "equation-tour",
+    showPrevButton: true,
+    nextOnTargetClick: true,
+    steps: [
+        {
+            title: "Create an Equation",
+            content: "The equation editor is used to create a new variable defined by combinations of other variables.",
+            target: "btnEquation",
+            placement: "left"
+        },
+        {
+            title: "Variable Name",
+            content: "Enter the name of the new variable here. This variable be used in the next step of the pipeline.",
+            target: "textFieldName",
+            placement: "bottom"
+        },
+        {
+            title: "Equation",
+            content: "The equation may be typed in, or built by clicking on variables and function names below. Either a preview of the query, or guidance about syntax errors, is shown below.",
+            target: "textFieldEquation",
+            placement: "bottom"
+        },
+        {
+            title: "Functions",
+            content: "Unary functions take one argument. Binary functions take two arguments. Variadic functions take any number of arguments.",
+            target: "unaryFunctionsList",
+            placement: "left"
+        },
+        {
+            title: "Operators",
+            content: "Operators are similar to function calls, but provide a more natural syntax: add(1, 1) can be rewritten 1 + 1.",
+            target: "unaryOperatorsList",
+            placement: "left"
+        }
+    ]
+};
+
+
+export function tourStartExpansion() {
+    hopscotch.endTour(false);
+    hopscotch.startTour(expansionTour);
+}
+
+let expansionTour = {
+    id: "expansion-tour",
+    showPrevButton: true,
+    nextOnTargetClick: true,
+    steps: [
+        {
+            title: "Create an Expansion",
+            content: "The expansion builder is used for dummy coding, polynomial expansions, and interaction terms.",
+            target: "btnExpansion",
+            placement: "bottom"
+        },
+        {
+            title: "View new expansion terms",
+            content: "All expansion terms that will be added to the modeling space are listed here.",
+            target: "termPreview",
+            placement: "left"
+        },
+        {
+            title: "Degree of interaction",
+            content: "This is a limit on the degree of interaction terms. To ignore all interaction terms, set this to one. If three variables are selected and the interaction degree is 2, then the term a*b*c would not be included in the expansion.",
+            target: "textFieldDegreeInteraction",
+            placement: "bottom"
+        },
+        {
+            title: "Variables",
+            content: "Select variables in the left panel to add them here.",
+            target: "expansionVariables",
+            placement: "top"
+        }
+    ]
+};
+
+
+export function tourStartManual() {
+    hopscotch.endTour(false);
+    hopscotch.startTour(manualTour);
+}
+
+let manualTour = {
+    id: "manual-tour",
+    showPrevButton: true,
+    nextOnTargetClick: true,
+    steps: [
+        {
+            title: "Manually construct a new column.",
+            content: "Manually add the values for a new column.",
+            target: "btnManual",
+            placement: "bottom"
+        }
+    ]
+};
