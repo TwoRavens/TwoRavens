@@ -23,7 +23,8 @@ from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.json_helper import json_loads, json_dumps
 from tworaven_apps.utils.proto_util import message_to_json
 from tworaven_apps.ta2_interfaces.static_vals import \
-        (KEY_PIPELINE_ID, KEY_SEARCH_ID,
+        (ENDGetSearchSolutionsResults,
+         KEY_PIPELINE_ID, KEY_SEARCH_ID,
          KEY_SOLUTION_ID,
          KEY_SEARCH_SOLUTION_PARAMS,
          KEY_FIT_SOLUTION_DEFAULT_PARAMS,
@@ -246,8 +247,6 @@ class SearchSolutionsHelper(BasicErrCheck):
 
                 msg_cnt += 1
 
-                stored_resp = None  # to hold a StoredResponse object
-
                 # -----------------------------------------------
                 # Parse the response into JSON + store response
                 # -----------------------------------------------
@@ -350,6 +349,17 @@ class SearchSolutionsHelper(BasicErrCheck):
                 self.run_score_solution(stored_response.pipeline_id,
                                         solution_id)
                 print('POST run_score_solution')
+
+
+            # -----------------------------------------------
+            # All results arrived, send message to UI
+            # -----------------------------------------------
+            ws_msg = WebsocketMessage.get_success_message(\
+                        ENDGetSearchSolutionsResults,
+                        'it worked')
+
+            print('ws_msg: %s' % ws_msg)
+            ws_msg.send_message(self.websocket_id)
 
 
         except grpc.RpcError as err_obj:

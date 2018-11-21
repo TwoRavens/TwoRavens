@@ -37,7 +37,7 @@ class ProduceSolutionHelper(BasicErrCheck):
     GRCP_PRODUCE_SOLUTION = 'ProduceSolution'
     GRPC_GET_PRODUCE_SOLUTION_RESULTS = 'GetProduceSolutionResults'
 
-    def __init__(self, pipeline_id, websocket_id, user_id, produce_params, **kwargs):
+    def __init__(self, pipeline_id, websocket_id, user_id, produce_params):
         """initial params"""
         self.pipeline_id = pipeline_id
         self.websocket_id = websocket_id
@@ -81,7 +81,7 @@ class ProduceSolutionHelper(BasicErrCheck):
 
         for key in expected_keys:
             if not key in self.produce_params:
-                user_msg = ('produce_params is missing key: %s') % \
+                user_msg = ('produce_params for pipeline "%s" is missing key: %s') % \
                             (self.pipeline_id, key)
                 self.send_websocket_err_msg(self.GRCP_PRODUCE_SOLUTION, user_msg)
                 return False

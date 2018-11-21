@@ -1,4 +1,8 @@
+"""
+Static values used within ta2_interfaces.
 
+Many are keys sent from the UI
+"""
 # form name
 KEY_GRPC_JSON = 'grpcrequest'
 
@@ -43,6 +47,8 @@ D3M_OUTPUT_DIR = '/output'
 # ------------------------------------------
 # params sent from the UI
 # ------------------------------------------
+ENDGetSearchSolutionsResults = 'ENDGetSearchSolutionsResults'
+
 KEY_SEARCH_SOLUTION_PARAMS = 'searchSolutionParams'
 KEY_FIT_SOLUTION_DEFAULT_PARAMS = 'fitSolutionDefaultParams'
 KEY_SCORE_SOLUTION_DEFAULT_PARAMS = 'scoreSolutionDefaultParams'

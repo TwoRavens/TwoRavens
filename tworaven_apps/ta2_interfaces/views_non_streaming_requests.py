@@ -185,7 +185,7 @@ def view_end_search_solutions(request):
 
 @csrf_exempt
 def view_stop_search_solutions(request):
-    """gRPC: Call from UI with a GetSearchSolutionsResultsRequest"""
+    """gRPC: Call from UI with a StopSearchSolutions"""
     req_body_info = get_request_body(request)
     if not req_body_info.success:
         return JsonResponse(get_json_error(req_body_info.err_msg))
@@ -196,7 +196,7 @@ def view_stop_search_solutions(request):
     if ServiceCallEntry.record_d3m_call():
         call_entry = ServiceCallEntry.get_dm3_entry(\
                         request_obj=request,
-                        call_type='GetSearchSolutionsResults',
+                        call_type='StopSearchSolutions',
                         request_msg=req_body_info.result_obj)
 
     # Let's call the TA2!
