@@ -1,3 +1,6 @@
+# the mongoimport utility is in the mongo bin
+# links to these datasets are in the collection configs inside `eventdata_queries/collections`
+
 # ICEWS
 unzip all tab files first!
 for i in ~/Documents/icews/*.tab; do mongoimport -d event_data -c icews --type tsv --ignoreBlanks --columnsHaveTypes --fields "Event ID.string(),Event Date.string(),Source Name.string(),Source Sectors.string(),Source Country.string(),Event Text.string(),CAMEO Code.string(),Intensity.auto(),Target Name.string(),Target Sectors.string(),Target Country.string(),Story ID.string(),Sentence Number.string(),Publisher.string(),City.string(),District.string(),Province.string(),Country.string(),Latitude.auto(),Longitude.auto()" --file $i; done
@@ -22,3 +25,12 @@ mongoimport -d event_data -c acled_middle_east --type csv --ignoreBlanks --colum
 
 # ACLED Asia
 mongoimport -d event_data -c acled_asia --type csv --ignoreBlanks --columnsHaveTypes --fields "ISO.string(),EVENT_ID_CNTY.string(),EVENT_ID_NO_CNTY.string(),EVENT_DATE.string(),YEAR.int32(),TIME_PRECISION.string(),EVENT_TYPE.string(),ACTOR1.string(),ASSOC_ACTOR_1.string(),INTER1.string(),ACTOR2.string(),ASSOC_ACTOR_2.string(),INTER2.string(),INTERACTION.string(),REGION.string(),COUNTRY.string(),ADMIN1.string(),ADMIN2.string(),ADMIN3.string(),LOCATION.string(),LATITUDE.double(),LONGITUDE.double(),GEO_PRECISION.int32(),SOURCE.string(),SOURCE_SCALE.string(),NOTES.string(),FATALITIES.int32(),TIMESTAMP.int32()" --file ~/Documents/Asia_2015-2018_June12.csv
+
+
+# To check that the csv data is available, run in new CMD:
+# (connects to mongo server on default port, opens mongo prompt)
+#   `mongo`
+# Switch to event_data database
+#    `use event_data`
+# Return all data from the phoenix_events table (use `show collections` to list collections)
+#    `db.cline_speed.find({})`
