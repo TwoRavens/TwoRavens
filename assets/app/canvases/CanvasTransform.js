@@ -91,9 +91,6 @@ class MenuEquation {
         setDefault(preferences, 'cursorPosition', 0);
 
         preferences.select = (value, atCursor) => {
-
-            console.log(value);
-
             if (!atCursor && preferences.transformEquation.indexOf('@*') !== -1)
                 preferences.transformEquation = preferences.transformEquation.replace('@*', value + ', @*');
             else if (!atCursor && preferences.transformEquation.indexOf('@') !== -1)
@@ -230,7 +227,7 @@ class MenuExpansion {
 
         if (preferences.degreeInteraction === undefined) preferences.degreeInteraction = 2;
 
-        preferences.variables = preferences.variables || {};
+        setDefault(preferences, 'variables', {});
 
         preferences.select = variable => {
             if (variable in preferences.variables) delete preferences.variables[variable];

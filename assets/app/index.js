@@ -41,6 +41,7 @@ import Subpanel2 from '../common/views/Subpanel';
 import Body_EventData from './eventdata/Body_EventData';
 
 import Recode from './Recode';
+import {setConstraintMenu} from "./manipulations/manipulate";
 
 export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -92,7 +93,6 @@ function leftpanel(mode) {
         app.disco.some(prob => prob.subTask !== 'taskSubtypeUndefined') ? 'Subtask' : '',
         'Metric', 'Manipulations'
     ];
-
 
     let formatProblem = problem => [
         problem.problem_id, // this is masked as the UID
@@ -169,14 +169,31 @@ function leftpanel(mode) {
                         },
                         callback: x => app.clickVar(x, nodes),
                         popup: variable => app.popoverContent(app.findNode(variable)),
-                        attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}
+                        attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
+                        attrsAll: {style: {height: 'calc(100% - 90px)', overflow: 'auto'}}
                     }),
                     m(Button, {
-                        id: 'recode',
-                        class: 'btn btn-block',
-                        onclick: _ => window.open("#!/recode", "recode", "toolbar=yes,scrollbars=yes,resizable=yes,top=200,left=500,width=1000,height=600"),
-                        title: 'Customize variables.',
-                        style: ' width: 100%; display: block; text-align: center; margin-top:75%;'
+                        id: 'btnCreateVariable',
+                        style: {width: '100%', 'margin-top': '10px'},
+                        onclick: async () => {
+                            if (!app.selectedProblem) await app.addProblemFromForceDiagram();
+                            let problemPipeline = manipulate.getProblemPipeline(app.selectedProblem);
+                            if ((problemPipeline[problemPipeline.length - 1] || {}).type !== 'transform') {
+                                problemPipeline.push({
+                                    type: 'transform',
+                                    id: 'transform ' + problemPipeline.length,
+                                    transforms: [],
+                                    expansions: [],
+                                    manual: []
+                                })
+                            }
+                            app.setRightTab('Manipulate');
+                            manipulate.setConstraintMenu({
+                                type: 'transform',
+                                step: problemPipeline[problemPipeline.length - 1],
+                                pipeline: manipulate.getPipeline(app.selectedProblem)});
+                            common.setPanelOpen('right');
+                        }
                     }, 'Create New Variable'),
                 ]
             },
@@ -204,6 +221,8 @@ function leftpanel(mode) {
                                         if (targetNode.strokeColor !== app.dvColor)
                                             app.setColors(targetNode, app.dvColor);
                                         app.restart();
+                                        // the dependent variable force needs a kick
+                                        document.getElementById('whitespace0').click();
                                     },
                                     title: 'deselect problem',
                                     style: {

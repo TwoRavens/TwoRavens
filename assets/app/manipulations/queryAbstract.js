@@ -107,7 +107,7 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
     }
 
     if (step.type === 'transform') {
-        if (preferences.type === 'Transform') step.transforms.push(abstractBranch);
+        if (preferences.type === 'Equation') step.transforms.push(abstractBranch);
         if (preferences.type === 'Expansion') step.expansions.push(abstractBranch);
         if (preferences.type === 'Manual') step.manual.push(abstractBranch);
         m.redraw();
@@ -173,6 +173,11 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
 
 // Convert the subset panel state to an abstract query branch
 function makeAbstractBranch(step, preferences, metadata, name) {
+
+    console.log("TEST ABSTRACT");
+    console.log(step);
+    console.log(preferences);
+    console.log(metadata);
 
     if (step.type === 'transform' && preferences.type === 'Equation') {
         let menuPreferences = preferences.menus.Equation;

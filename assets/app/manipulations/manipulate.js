@@ -671,8 +671,6 @@ export let getData = async body => m.request({
     }, body)
 }).then(response => {
     if (!response.success) throw response;
-    console.log('SErver response')
-    console.log(response);
 
     // parse Infinity, -Infinity, NaN from unambiguous string literals. Coding handled in python function 'json_comply'
     let jsonParseLiteral = obj => {
