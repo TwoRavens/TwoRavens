@@ -304,12 +304,10 @@ export let panelWidth = {
     'right': '0'
 };
 
-let updateRightPanelWidth = () => {
-    if (is_explore_mode) {
-        return panelWidth.right = `calc(${common.panelMargin}*2 + 16px)`;
-    }
-
-    if (common.panelOpen['right']) {
+export let updateRightPanelWidth = () => {
+    if (is_explore_mode) panelWidth.right = `calc(${common.panelMargin}*2 + 16px)`;
+    else if (is_model_mode && !selectedProblem) panelWidth.right = common.panelMargin;
+    else if (common.panelOpen['right']) {
         let tempWidth = {
             'model': modelRightPanelWidths[rightTab],
             'explore': exploreRightPanelWidths[rightTabExplore]
@@ -4708,6 +4706,7 @@ export function setSelectedProblem(problemId) {
     if (selectedProblem === problemId) return; // ignore if already set
 
     selectedProblem = problemId;
+    updateRightPanelWidth();
 
     // if a constraint is being staged, delete it
     manipulate.setConstraintMenu(undefined);

@@ -299,6 +299,8 @@ function rightpanel(mode) {
     if (mode === 'explore') return;
     if (mode === 'manipulate') return manipulate.rightpanel();
 
+
+    let selectedProblem = app.disco.find(prob => prob.problem_id === app.selectedProblem);
     // mode == null (model mode)
 
     // only called if the pipeline flowchart is rendered
@@ -346,8 +348,6 @@ function rightpanel(mode) {
             {color: common.csColor, key: 'Outputs', summary: outputs, content: outputs}
         ];
     }
-
-    let selectedProblem = app.disco.find(prob => prob.problem_id === app.selectedProblem);
 
     let sections = [
         app.selectedProblem && {
@@ -591,7 +591,8 @@ function rightpanel(mode) {
             onclick: () => app.setFocusedPanel('right'),
             style: {
                 'z-index': 100 + (app.focusedPanel === 'right'),
-                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
+                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`,
+                display: selectedProblem ? 'block' : 'none'
             }
         }
     }, m(MenuTabbed, {
