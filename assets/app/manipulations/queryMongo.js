@@ -35,7 +35,7 @@ export function buildPipeline(pipeline, variables = new Set()) {
 
         if (step.type === 'transform' && step.transforms.length) compiled.push({
             '$addFields': step.transforms.reduce((out, transformation) => {
-                out[transformation.name] = buildTransform(transformation.equation, variables)['query'];
+                out[transformation.name] = buildEquation(transformation.equation, variables)['query'];
                 variables.add(transformation['name']);
                 return out;
             }, {})
@@ -46,11 +46,13 @@ export function buildPipeline(pipeline, variables = new Set()) {
                 let terms = expansionTerms(expansion);
                 variables = new Set([...terms, ...variables]);
                 return terms.reduce((acc, term) => {
-                    acc[term] = buildTransform(term, variables)['query'];
+                    acc[term] = buildEquation(term, variables)['query'];
                     return acc;
                 }, {})
             }))
         });
+
+        if (step.type === 'transform' && step.manual.length) compiled.push(buildManual(step.manual))
 
         if (step.type === 'subset')
             compiled.push({'$match': buildSubset(step.abstractQuery, true)});
@@ -115,7 +117,7 @@ export let dateStringFormats = {
 
 // return a mongo projection from a string that describes a transformation
 // let examples = ['2 + numhits * sqrt(numwalks / 3)', 'strikes % 3', '~wonGame'];
-export function buildTransform(text, variables) {
+export function buildEquation(text, variables) {
 
     let usedTerms = {
         variables: new Set(),
@@ -176,6 +178,22 @@ export function buildTransform(text, variables) {
     };
 
     return {query: parse(jsep(text)), usedTerms};
+}
+
+// ~~~~ MANUAL LABELING IN TRANSFORM ~~~~
+function buildManual(variables) {
+    return {
+        $addFields: variables.reduce((out, manual) => {
+            let {name, variableIndicator, lookups} = manual;
+            out[name] = {
+                $arrayElemAt: [
+                    Object.values(lookups),
+                    {$indexOfArray: [Object.keys(lookups), '$' + variableIndicator]}
+                ]
+            };
+            return out;
+        }, {})
+    }
 }
 
 // ~~~~ EXPANSIONS ~~~~
@@ -355,7 +373,7 @@ function processRule(rule) {
         let operatorRegex = new RegExp(`(${Object.keys(operators).join('|')})`);
 
         let [variable, constraint, condition] = rule.name.split(operatorRegex).map(_ => _.trim());
-        rule_query[variable] = {[operators[constraint]]: buildTransform(condition)['query']}
+        rule_query[variable] = {[operators[constraint]]: buildEquation(condition)['query']}
     }
 
     if (rule.subset === 'continuous') {

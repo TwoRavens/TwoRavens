@@ -64,6 +64,35 @@ export class TreeTransform {
                         show_op: false
                     }))
                 }
+            }),
+            ...step.manual.map((manual, i) => {
+                let {name, variableIndicator, lookups} = manual;
+                return {
+                    id: 'Manual ' + i,
+                    name: `Manual ${i}: ${name}`,
+                    cancellable: editable,
+                    show_op: false,
+                    children: [
+                        {
+                            id: 'Manual ' + i + ' indicator',
+                            name: 'Indicator: ' + variableIndicator,
+                            cancellable: false,
+                            show_op: false
+                        },
+                        {
+                            id: 'Manual ' + i + ' lookups',
+                            name: 'Labels: ' + Object.keys(lookups).length,
+                            cancellable: false,
+                            show_op: false,
+                            children: Object.keys(lookups).map((key, j) => ({
+                                id: 'Manual ' + i + ' lookups ' + j,
+                                name: `${key} → ${lookups[key]}`,
+                                cancellable: false,
+                                show_op: false
+                            }))
+                        }
+                    ]
+                }
             })
         ];
     }
@@ -402,6 +431,7 @@ window.callbackDeleteTransform = function (pipelineId, stepId, transformationNam
     ].find(step => String(step.id) === String(stepId));
     step.transforms.splice(step.transforms.findIndex(transformation => transformation.name === transformationName), 1);
     step.expansions.splice(step.expansions.findIndex(expansion => expansion.name === transformationName));
+    step.manual.splice(step.manual.findIndex(manual => manual.name === transformationName));
 
     if (!IS_EVENTDATA_DOMAIN) manipulate.setQueryUpdated(true);
     m.redraw();

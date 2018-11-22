@@ -107,8 +107,9 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
     }
 
     if (step.type === 'transform') {
-        if (preferences.type === 'transform') step.transforms.push(abstractBranch);
-        if (preferences.type === 'expansion') step.expansions.push(abstractBranch);
+        if (preferences.type === 'Transform') step.transforms.push(abstractBranch);
+        if (preferences.type === 'Expansion') step.expansions.push(abstractBranch);
+        if (preferences.type === 'Manual') step.manual.push(abstractBranch);
         m.redraw();
     }
 
@@ -173,26 +174,47 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
 // Convert the subset panel state to an abstract query branch
 function makeAbstractBranch(step, preferences, metadata, name) {
 
-    if (step.type === 'transform' && preferences.type === 'transform') {
-        if (!preferences.isValid) return {error: 'The specified transformation is not valid.'};
-        if (step.transforms.some(transform => transform.name === preferences.transformName))
+    if (step.type === 'transform' && preferences.type === 'Equation') {
+        let menuPreferences = preferences.menus.Equation;
+        if (!menuPreferences.isValid) return {error: 'The specified transformation is not valid.'};
+        if (step.transforms.some(transform => transform.name === menuPreferences.transformName))
             return {error: 'The specified transform name has already been used.'};
 
         // reads the CanvasTransform menu state, this branch gets added to the transform step
         return {
-            name: preferences.transformName,
-            equation: preferences.transformEquation
+            name: menuPreferences.transformName,
+            equation: menuPreferences.transformEquation
         }
     }
-    if (step.type === 'transform' && preferences.type === 'expansion') {
-        if (preferences.degreeInteractionError) return {error: 'The interaction degree is not valid.'};
-        if (preferences.numberTerms === 0) return {error: 'The expansion supplies no additional terms.'};
+    if (step.type === 'transform' && preferences.type === 'Expansion') {
+        let menuPreferences = preferences.menus.Expansion;
+        if (menuPreferences.degreeInteractionError) return {error: 'The interaction degree is not valid.'};
+        if (menuPreferences.numberTerms === 0) return {error: 'The expansion supplies no additional terms.'};
 
         return {
-            degreeInteraction: preferences.degreeInteraction,
-            name: Object.keys(preferences.variables).join(','),
-            variables: preferences.variables,
-            numberTerms: preferences.numberTerms
+            degreeInteraction: menuPreferences.degreeInteraction,
+            name: Object.keys(menuPreferences.variables).join(','),
+            variables: menuPreferences.variables,
+            numberTerms: menuPreferences.numberTerms
+        }
+    }
+    if (step.type === 'transform' && preferences.type === 'Manual') {
+        let menuPreferences = preferences.menus.Manual;
+        if (menuPreferences.variableNameError) return {error: 'The variable name is not valid.'};
+        if (!menuPreferences.variableIndicator) return {error: 'No indicator variable is selected.'};
+
+        return {
+            name: menuPreferences.variableName,
+            variableType: menuPreferences.variableType,
+            variableDescription: menuPreferences.variableDescription,
+            variableIndicator: menuPreferences.variableIndicator,
+            lookups: menuPreferences.indicatorKeys.reduce((out, key, i) => {
+                out[key] = {
+                    'Boolean': !!menuPreferences.userValues[i],
+                    'Numchar': parseFloat(menuPreferences.userValues[i]),
+                    'Nominal': menuPreferences.userValues[i]
+                }[menuPreferences.variableType]
+            }, {})
         }
     }
 

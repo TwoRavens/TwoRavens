@@ -101,9 +101,13 @@ function canvas(compoundPipeline) {
 
     if (!constraintMenu) return;
 
-    let variables = queryMongo.buildPipeline(compoundPipeline, Object.keys(variablesInitial))['variables'];
+    let {pipeline, variables} = queryMongo.buildPipeline(compoundPipeline, Object.keys(variablesInitial));
 
-    if (constraintMenu.type === 'transform') return m(CanvasTransform, {preferences: constraintPreferences, variables});
+    if (constraintMenu.type === 'transform') return m(CanvasTransform, {
+        preferences: constraintPreferences,
+        pipeline,
+        variables
+    });
 
     if (!constraintData || !constraintMetadata) return;
 
@@ -161,16 +165,19 @@ export function varList() {
         if (constraintMenu.type === 'unit')
             variables = variables.filter(column => inferType(column) !== 'discrete');
 
-        if (constraintMenu.type === 'transform' && constraintPreferences.type === 'Equation' && constraintPreferences.usedTerms)
-            selectedVariables = [...constraintPreferences.usedTerms.variables];
-
-        if (constraintMenu.type === 'transform' && constraintPreferences.type === 'Expansion') {
-            let problem = app.disco.find(problem => problem.problem_id === app.selectedProblem);
-            variables = [
-                ...problem.predictorsInitial || problem.predictors,
-                ...getTransformVariables(partialPipeline)
-            ];
-            selectedVariables = Object.keys(constraintPreferences.variables || {});
+        if (constraintMenu.type === 'transform') {
+            if (constraintPreferences.type === 'Equation' && constraintPreferences.menus.Equation.usedTerms)
+                selectedVariables = [...constraintPreferences.menus.Equation.usedTerms.variables];
+            if (constraintPreferences.type === 'Expansion') {
+                let problem = app.disco.find(problem => problem.problem_id === app.selectedProblem);
+                variables = [
+                    ...problem.predictorsInitial || problem.predictors,
+                    ...getTransformVariables(partialPipeline)
+                ];
+                selectedVariables = Object.keys(constraintPreferences.menus.Expansion.variables || {});
+            }
+            if (constraintPreferences.type === 'Manual')
+                selectedVariables = [constraintPreferences.menus.Manual.variableIndicator];
         }
     }
 
@@ -257,7 +264,7 @@ export class PipelineFlowchart {
             let finalStep = pipeline.slice(-1)[0];
             if (finalStep.type === 'aggregate' && !finalStep.measuresAccum.length) return false;
             if (finalStep.type === 'subset' && !finalStep.abstractQuery.length) return false;
-            if (finalStep.type === 'transform' && !(finalStep.transforms.length + finalStep.expansions.length)) return false;
+            if (finalStep.type === 'transform' && !(finalStep.transforms.length + finalStep.expansions.length + finalStep.manual.length)) return false;
             return true;
         };
 
@@ -399,7 +406,8 @@ export class PipelineFlowchart {
                         type: 'transform',
                         id: 'transform ' + pipeline.length,
                         transforms: [], // transform name is used instead of nodeId
-                        expansions: []
+                        expansions: [],
+                        manual: []
                     })
                 }, plus, ' Transform Step'),
                 m(Button, {
@@ -657,9 +665,14 @@ export let setConstraintType = (type, pipeline) => {
 export let getData = async body => m.request({
     url: app.mongoURL + 'get-data',
     method: 'POST',
-    data: body
+    data: Object.assign({
+        datafile: app.zparams.zd3mdata, // collection/dataset name
+        collection_name: app.configurations.name, // location of the dataset csv
+    }, body)
 }).then(response => {
     if (!response.success) throw response;
+    console.log('SErver response')
+    console.log(response);
 
     // parse Infinity, -Infinity, NaN from unambiguous string literals. Coding handled in python function 'json_comply'
     let jsonParseLiteral = obj => {
@@ -696,11 +709,6 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
 
     let promises = [];
 
-    // collection/dataset name
-    let dataset = app.configurations.name;
-    // location of the dataset csv
-    let datafile = app.zparams.zd3mdata;
-
     // record count request
     if (recount) {
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
@@ -710,8 +718,6 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
         console.log(compiled);
 
         promises.push(getData({
-            datafile: datafile,
-            collection_name: dataset,
             method: 'aggregate',
             query: compiled
         }).then(response => {
@@ -725,8 +731,6 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
 
     let data;
     promises.push(getData({
-        datafile: datafile,
-        collection_name: dataset,
         method: 'aggregate',
         query: compiled
     })
@@ -784,8 +788,6 @@ export let rebuildPreprocess = async () => {
         Object.keys(variablesInitial))['pipeline']);
 
     let dataPath = await getData({
-        datafile: app.zparams.zd3mdata,
-        collection_name: app.configurations.name,
         method: 'aggregate',
         query: compiled,
         export: true
@@ -885,8 +887,6 @@ export async function buildDatasetUrl(problem) {
     let compiled = queryMongo.buildPipeline([...getPipeline(problem.problem_id), problemStep], Object.keys(variablesInitial))['pipeline'];
 
     return await getData({
-        datafile: app.zparams.zd3mdata,  // location of the dataset csv
-        collection_name: app.configurations.name,
         method: 'aggregate',
         query: JSON.stringify(compiled),
         export: true
@@ -897,6 +897,7 @@ export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
     if (step.type !== 'transform') return out;
     step.transforms.forEach(transform => out.add(transform.name));
     step.expansions.forEach(expansion => queryMongo.expansionTerms(expansion).forEach(term => out.add(term)));
+    step.manual.forEach(manual => out.add(manual.variableName));
 
     return out;
 }, new Set());
