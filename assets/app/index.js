@@ -75,7 +75,6 @@ function leftpanel(mode) {
     if (mode === 'manipulate')
         return manipulate.leftpanel();
 
-    let selectedDisco = app.disco.find(problem => problem.problem_id === app.selectedProblem);
     let transformVars = [...manipulate.getTransformVariables(manipulate.getProblemPipeline(app.selectedProblem) || [])];
 
     let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
@@ -109,7 +108,7 @@ function leftpanel(mode) {
         // the view manipulations button
         (!!problem.subsetObs || !!problem.transform || (app.manipulations[problem.problem_id] || []).length !== 0) && m(
             'div[style=width:100%;text-align:center]', m(Button, {
-                disabled: problem.problem_id === app.selectedProblem && app.rightTab === 'Manipulate' && common.panelOpen['right'],
+                disabled: problem === app.selectedProblem && app.rightTab === 'Manipulate' && common.panelOpen['right'],
                 title: `view manipulations for ${problem.problem_id}`,
                 onclick: () => {
                     app.setRightTab('Manipulate');
@@ -233,9 +232,9 @@ function leftpanel(mode) {
                                         'line-height': '14px'
                                     }
                                 }, '×'),
-                                selectedDisco.pending && m(Button, {
+                                app.selectedProblem.pending && m(Button, {
                                     id: 'saveProblemBtn',
-                                    onclick: () => delete selectedDisco['pending'],
+                                    onclick: () => delete app.selectedProblem['pending'],
                                     title: 'save problem',
                                     style: {float: 'right', margin: '-.5em 1em 0 0'}
                                 }, 'Save Problem')
@@ -243,8 +242,8 @@ function leftpanel(mode) {
                             m(Table, {
                                 id: 'discoveryTableManipulations',
                                 headers: discoveryHeaders,
-                                data: [formatProblem(selectedDisco)],
-                                activeRow: app.selectedProblem,
+                                data: [formatProblem(app.selectedProblem)],
+                                activeRow: (app.selectedProblem || {}).problem_id,
                                 showUID: false,
                                 abbreviation: 40
                             }),
@@ -257,24 +256,24 @@ function leftpanel(mode) {
                                 ...app.disco.filter(prob => prob.system === 'user'),
                                 ...app.disco.filter(prob => prob.system !== 'user')
                             ].filter(prob => !prob.pending).map(formatProblem),
-                            activeRow: app.selectedProblem,
+                            activeRow: (app.selectedProblem || {}).problem_id,
                             onclick: app.discoveryClick,
                             showUID: false,
                             abbreviation: 40,
                             sortable: true
                         })),
                     m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
-                        value: selectedDisco === undefined ? '' : selectedDisco.description
+                        value: app.selectedProblem === undefined ? '' : app.selectedProblem.description
                     }),
                     m(Button, {
                         id: 'btnDelete',
-                        disabled: !selectedDisco || selectedDisco.system === 'auto',
+                        disabled: !app.selectedProblem || app.selectedProblem.system === 'auto',
                         style: 'float:right',
                         onclick: _ => {
                             setTimeout(_ => {
                                 let deleteProbleAPI = app.deleteProblem(problem_id, version, 'id_000003');
-                                console.log("have to delete this ", selectedDisco)
-                                app.deleteFromDisc(selectedDisco)
+                                console.log("have to delete this ", app.selectedProblem);
+                                app.deleteFromDisc(app.selectedProblem)
 
                             }, 500);
                         }, title: 'Delete the user created problem'
@@ -317,8 +316,6 @@ function rightpanel(mode) {
     if (mode === 'explore') return;
     if (mode === 'manipulate') return manipulate.rightpanel();
 
-
-    let selectedProblem = app.disco.find(prob => prob.problem_id === app.selectedProblem);
     // mode == null (model mode)
 
     // only called if the pipeline flowchart is rendered
@@ -382,15 +379,16 @@ function rightpanel(mode) {
                     m(Dropdown, {
                         id: 'taskType',
                         items: Object.keys(app.d3mTaskType),
-                        activeItem: selectedProblem.task,
+                        activeItem: app.selectedProblem.task,
                         onclickChild: child => {
-                            if (selectedProblem.system === 'auto') {
-                                selectedProblem = app.getProblemCopy(app.selectedProblem);
-                                selectedProblem.pending = true;
-                                app.disco.push(selectedProblem);
-                                app.setSelectedProblem(selectedProblem.problem_id);
+                            if (app.selectedProblem.system === 'auto') {
+                                let problemCopy = app.getProblemCopy(app.selectedProblem);
+                                problemCopy.pending = true;
+                                app.disco.push(problemCopy);
+                                app.setSelectedProblem(problemCopy);
+                                app.setLeftTab('Discovery');
                             }
-                            selectedProblem.task = child;
+                            app.selectedProblem.task = child;
                         },
                         style: {'margin-bottom': '1em'},
                         disabled: app.locktoggle
@@ -398,15 +396,16 @@ function rightpanel(mode) {
                     m(Dropdown, {
                         id: 'taskSubType',
                         items: Object.keys(app.d3mTaskSubtype),
-                        activeItem: selectedProblem.subTask,
+                        activeItem: app.selectedProblem.subTask,
                         onclickChild: child => {
-                            if (selectedProblem.system === 'auto') {
-                                selectedProblem = app.getProblemCopy(app.selectedProblem);
-                                selectedProblem.pending = true;
-                                app.disco.push(selectedProblem);
-                                app.setSelectedProblem(selectedProblem.problem_id);
+                            if (app.selectedProblem.system === 'auto') {
+                                let problemCopy = app.getProblemCopy(app.selectedProblem);
+                                problemCopy.pending = true;
+                                app.disco.push(problemCopy);
+                                app.setSelectedProblem(problemCopy);
+                                app.setLeftTab('Discovery');
                             }
-                            selectedProblem.subTask = child;
+                            app.selectedProblem.subTask = child;
                         },
                         style: {'margin-bottom': '1em'},
                         disabled: app.locktoggle
@@ -414,15 +413,16 @@ function rightpanel(mode) {
                     m(Dropdown, {
                         id: 'performanceMetrics',
                         items: Object.keys(app.d3mMetrics),
-                        activeItem: selectedProblem.metric,
+                        activeItem: app.selectedProblem.metric,
                         onclickChild: child => {
-                            if (selectedProblem.system === 'auto') {
-                                selectedProblem = app.getProblemCopy(app.selectedProblem);
-                                selectedProblem.pending = true;
-                                app.disco.push(selectedProblem);
-                                app.setSelectedProblem(selectedProblem.problem_id);
+                            if (app.selectedProblem.system === 'auto') {
+                                let problemCopy = app.getProblemCopy(app.selectedProblem);
+                                problemCopy.pending = true;
+                                app.disco.push(problemCopy);
+                                app.setSelectedProblem(problemCopy);
+                                app.setLeftTab('Discovery');
                             }
-                            selectedProblem.metric = child;
+                            app.selectedProblem.metric = child;
                         },
                         style: {'margin-bottom': '1em'},
                         disabled: app.locktoggle
@@ -450,7 +450,7 @@ function rightpanel(mode) {
                         contents: [
                             m(manipulate.PipelineFlowchart, {
                                 compoundPipeline: manipulate.getPipeline(app.selectedProblem),
-                                pipelineId: app.disco.find(prob => prob.problem_id === app.selectedProblem).problem_id,
+                                pipelineId: app.selectedProblem.problem_id,
                                 editable: true,
                                 aggregate: false
                             }),
@@ -570,7 +570,7 @@ function rightpanel(mode) {
                     m('#setPredictionDataLeft[style=display:block; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white; padding : 1em; margin-top: 1em]')
                 ),
                 m(`div#solutionTable[style=display:${app.selectedResultsMenu === 'Solution Table' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%, padding : 1em]`,
-                    selectedProblem && m(DataTable, {data: app.stargazer, variable: selectedProblem.target})
+                    app.selectedProblem && m(DataTable, {data: app.stargazer, variable: app.selectedProblem.target})
                 )
             ]
         }
@@ -610,7 +610,7 @@ function rightpanel(mode) {
             style: {
                 'z-index': 100 + (app.focusedPanel === 'right'),
                 height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`,
-                display: selectedProblem ? 'block' : 'none'
+                display: app.selectedProblem ? 'block' : 'none'
             }
         }
     }, m(MenuTabbed, {
@@ -675,9 +675,8 @@ class Body {
                 node && expnodes.push(node);
             });
             if (variate === "problem") {
-                let problem = app.disco.find(problem => problem.problem_id === app.selectedProblem);
                 return m('', [
-                    m('#plot', {style: 'display: block', oncreate: _ => exp.plot([], "", problem)})
+                    m('#plot', {style: 'display: block', oncreate: _ => exp.plot([], "", app.selectedProblem)})
                 ]);
             }
             if (!expnodes[0] && !expnodes[1]) {
@@ -770,9 +769,9 @@ class Body {
             leftpanel(app.currentMode),
             rightpanel(app.currentMode),
 
-            (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu(
+            (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate' && app.selectedProblem)) && manipulate.menu(
                 manipulate.getPipeline(app.selectedProblem), // the complete pipeline to build menus with
-                app.is_model_mode ? app.selectedProblem : app.configurations.name),  // the identifier for which pipeline to edit
+                app.is_model_mode ? app.selectedProblem.problem_id : app.configurations.name),  // the identifier for which pipeline to edit
             app.peekInlineShown && this.peekTable(),
 
             m(`#main`, {
@@ -787,7 +786,7 @@ class Body {
                         m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
                         m('br'),
                         exploreVars)
-                    //                        JSON.stringify(app.disco[app.selectedProblem]))
+                    //                        JSON.stringify(app.disco[app.selectedProblem.problem_id]))
                     : exploreVars ?
                         m('', {style},
                             m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
@@ -811,7 +810,7 @@ class Body {
                                 classes: 'btn-success',
                                 onclick: _ => {
                                     let variate = app.exploreVariate.toLowerCase();
-                                    let selected = discovery ? [app.selectedProblem] : nodesExplore.map(x => x.name);
+                                    let selected = discovery ? [app.selectedProblem.problem_id] : nodesExplore.map(x => x.name);
                                     let len = selected.length;
                                     if (variate === 'univariate' && len != 1
                                         || variate === 'problem' && len != 1
@@ -825,18 +824,15 @@ class Body {
                             }, 'go'),
                             m('br'),
                             m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
-                                (discovery ? app.disco : app.valueKey).map((x, i) => {
-                                    let {problem_id} = x;
-                                    let selected = discovery ? problem_id === app.selectedProblem : nodesExplore.map(x => x.name).includes(x);
-                                    let {predictors} = x;
-                                    if (x.predictors) {
-                                        x = x.target;
-                                    }
-                                    let node = app.findNode(x);
+                                (discovery ? app.disco : app.valueKey).map(problem => {
+                                    let selected = discovery ? problem === app.selectedProblem : nodesExplore.map(x => x.name).includes(problem);
+                                    if (problem.predictors) problem = problem.target;
+
+                                    let node = app.findNode(problem);
                                     let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
                                     let [n0, n1, n2] = nodesExplore;
                                     return m('span', {
-                                            onclick: _ => discovery ? app.setSelectedProblem(problem_id) : app.clickVar(x, nodesExplore),
+                                            onclick: _ => discovery ? app.setSelectedProblem(problem) : app.clickVar(problem, nodesExplore),
                                             onmouseover: function () {
                                                 $(this).popover('toggle');
                                                 $('body div.popover')
@@ -925,7 +921,7 @@ class Body {
                         m(".rectLabel[style=display:inline-block;vertical-align:text-bottom;margin-left:.5em]", btn[2])))
                 ),
 
-                (app.manipulations[app.selectedProblem] || []).filter(step => step.type === 'subset').length !== 0 && m(Subpanel2, {
+                (app.manipulations[(app.selectedProblem || {}).problem_id] || []).filter(step => step.type === 'subset').length !== 0 && m(Subpanel2, {
                     id: 'subsetSubpanel',
                     header: 'Subsets',
                     style: {
@@ -933,7 +929,7 @@ class Body {
                         top: common.panelMargin,
                         position: 'absolute'
                     }
-                }, app.manipulations[app.selectedProblem]
+                }, app.manipulations[app.selectedProblem.problem_id]
                     .filter(step => step.type === 'subset')
                     .map(step => m('div', step.id))
                     .concat([`${manipulate.totalSubsetRecords} Records`]))
@@ -1082,7 +1078,7 @@ class Body {
             m(Button, {
                 id: 'datasetConsoleLogUrl',
                 onclick: async () =>
-                    console.log(await manipulate.buildDatasetUrl(app.disco.find(prob => prob.problem_id === app.selectedProblem)))
+                    console.log(await manipulate.buildDatasetUrl(app.selectedProblem))
             }, 'LOG DATASET URL'),
             m('div.btn.btn-group', {style: 'float: right; padding: 0px'},
                 m(Button, {

@@ -99,10 +99,8 @@ export async function updatePeek(pipeline) {
     peekIsLoading = true;
     let variables = [];
 
-    if (is_model_mode && selectedProblem) {
-        let problem = disco.find(entry => entry.problem_id === selectedProblem);
-        variables = [...problem.predictors, problem.target];
-    }
+    if (is_model_mode && selectedProblem)
+        variables = [...selectedProblem.predictors, selectedProblem.target];
 
     let previewMenu = {
         type: 'menu',
@@ -997,24 +995,20 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         };
 
         // Kick off discovery button as green for user guidance
-        if(!task1_finished){
+        if (!task1_finished) {
             byId("btnDiscovery").classList.remove("btn-default");
             byId("btnDiscovery").classList.add("btn-success"); // Would be better to attach this as a class at creation, but don't see where it is created
-        };
-
-for(let i=0; i<disco.length; i++){
-  callSolver(disco[i]);
-}
+        }
 
         // send the all problems to metadata and also perform app solver on theme
-
+        disco.forEach(callSolver);
     }
 
     // 11. Call layout() and start up
     layout(false, true);
     IS_D3M_DOMAIN ? zPop() : dataDownload();
 
-    setTimeout(loadResult,10000);
+    setTimeout(loadResult, 10000);
     problem_sent.length = 0;
 }
 
@@ -4601,13 +4595,12 @@ export function discovery(preprocess_file) {
 export async function addProblemFromForceDiagram() {
     zPop();
 
-    let oldProblem = disco.find(prob => prob.problem_id === selectedProblem);
     let newProblem = jQuery.extend(true, {
             transform: 0,
             subsetObs: 0,
             subsetFeats: 0
         },
-        oldProblem || {},
+        selectedProblem || {},
         await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams),
         {
             problem_id: 'problem' + (disco.length + 1),
@@ -4637,7 +4630,7 @@ export async function addProblemFromForceDiagram() {
     console.log(newProblem);
 
     disco.push(newProblem);
-    setSelectedProblem(newProblem.problem_id);
+    setSelectedProblem(newProblem);
     setLeftTab('Discovery');
     await callSolver(newProblem);
     loadResult([newProblem]);
@@ -4673,16 +4666,14 @@ export function connectAllForceDiagram() {
 }
 
 
-// when a problem is clicked
-// let discoveryTimeout;
+// called when a problem is clicked in the discovery leftpanel table
 export let discoveryClick = problemId => {
-    setSelectedProblem(problemId);
-    let problem = disco.find(problem => problem.problem_id === selectedProblem);
+    setSelectedProblem(disco.find(problem => problem.problem_id === problemId));
     m.route.set('/model');
 
-    if (!problem) return;
+    if (!selectedProblem) return;
 
-    let {target, predictors} = problem;
+    let {target, predictors} = selectedProblem;
     erase('Discovery');
     [target, ...predictors].map(x => clickVar(x));
     predictors.forEach(predictor => setColors(nodes.find(node => node.name === predictor), gr1Color));
@@ -4692,23 +4683,21 @@ export let discoveryClick = problemId => {
 };
 
 
-export let selectedProblem;
-export function setSelectedProblem(problemId) {
-    if (selectedProblem === problemId) return; // ignore if already set
+export let selectedProblem; // the problem object
+export function setSelectedProblem(problem) {
+    if (selectedProblem === problem) return; // ignore if already set
 
-    selectedProblem = problemId;
+    selectedProblem = problem;
     updateRightPanelWidth();
 
     // if a constraint is being staged, delete it
     manipulate.setConstraintMenu(undefined);
 
     // remove old staged problems
-    disco = disco.filter(entry => entry.problem_id === selectedProblem || !entry.staged);
-    if (selectedProblem === undefined) return;
+    disco = disco.filter(entry => entry.problem_id === (problem || {}).problem_id || !entry.staged);
+    if (problem === undefined) return;
 
-    let problem = disco.find(entry => entry.problem_id === selectedProblem);
-
-    if (!(problemId in manipulations)) {
+    if (!(problem.problem_id in manipulations)) {
         let pipeline = [];
 
         if (problem['subsetObs']) {
@@ -4716,7 +4705,7 @@ export function setSelectedProblem(problemId) {
                 type: 'subset',
                 id: 'subset ' + pipeline.length,
                 abstractQuery: [{
-                    id: String(problemId) + '-' + String(0) + '-' + String(1),
+                    id: String(problem.problem_id) + '-' + String(0) + '-' + String(1),
                     name: problem['subsetObs'],
                     show_op: false,
                     cancellable: true,
@@ -4735,16 +4724,18 @@ export function setSelectedProblem(problemId) {
                     name: variable,
                     equation: transform
                 }],
+                expansions: [],
+                manual: [],
                 id: 'transform ' + pipeline.length,
             })
             problem.predictors.push(variable);
         }
 
-        manipulations[problemId] = pipeline;
+        manipulations[problem.problem_id] = pipeline;
     }
 
     let countMenu = {type: 'menu', metadata: {type: 'count'}};
-    let subsetMenu = [...manipulate.getPipeline(), ...manipulate.getProblemPipeline(selectedProblem) || []];
+    let subsetMenu = [...manipulate.getPipeline(), ...manipulate.getProblemPipeline(problem) || []];
     manipulate.loadMenu(subsetMenu, countMenu).then(count => {
         manipulate.setTotalSubsetRecords(count);
         m.redraw();
@@ -4754,20 +4745,22 @@ export function setSelectedProblem(problemId) {
     modelSelectionResults(problem);
 }
 
-export function getProblemCopy(problemId) {
-    let problem = jQuery.extend(true, {}, disco.find(prob => prob.problem_id === problemId));  // deep copy of original
+export function getProblemCopy(problem) {
+    let problemId = problem.problem_id;
+    problem = jQuery.extend(true, {}, problem);  // deep copy of original
 
     let offset = 1;
-    while (disco.find(prob => prob.problem_id === problemId + 'user' + offset)) offset = offset + 1;
+    while (disco.find(prob => prob.problem_id === problem.problem_id + 'user' + offset)) offset++;
+    let new_problem_id = problem.problem_id + 'user' + offset;
+
+    if (problem.problem_id in manipulations)
+        manipulations[new_problem_id] = jQuery.extend(true, [], manipulations[problem.problem_id]);
 
     Object.assign(problem, {
-        problem_id: problemId + 'user' + offset,
-        provenance: problemId,
+        problem_id: new_problem_id,
+        provenance: problem.problem_id,
         system: 'user'
     })
-
-    if (problemId in manipulations)
-        manipulations[problem.problem_id] = jQuery.extend(true, [], manipulations[problemId]);
 
     return problem;
 }
@@ -4913,9 +4906,7 @@ export function deleteFromDisc(discov){
 }
 
 export function saveDisc() {
-    let problem = disco.find(problem => problem.problem_id === selectedProblem);
-    problem.description = document.getElementById("discoveryInput").value;
-    console.log(problem);
+    selectedProblem.description = document.getElementById("discoveryInput").value;
 }
 
 export function deleteProblem(preproess_id, version, problem_id) {

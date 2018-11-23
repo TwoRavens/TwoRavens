@@ -169,9 +169,8 @@ export function varList() {
             if (constraintPreferences.type === 'Equation' && constraintPreferences.menus.Equation.usedTerms)
                 selectedVariables = [...constraintPreferences.menus.Equation.usedTerms.variables];
             if (constraintPreferences.type === 'Expansion') {
-                let problem = app.disco.find(problem => problem.problem_id === app.selectedProblem);
                 variables = [
-                    ...problem.predictorsInitial || problem.predictors,
+                    ...app.selectedProblem.predictorsInitial || app.selectedProblem.predictors,
                     ...getTransformVariables(partialPipeline)
                 ];
                 selectedVariables = Object.keys(constraintPreferences.menus.Expansion.variables || {});
@@ -477,35 +476,36 @@ export let setQueryUpdated = async state => {
 
     // if we have an edit to the problem manipulations
     if (!app.is_manipulate_mode) {
-        let problem = app.disco.find(prob => prob.problem_id === app.selectedProblem);
-        if (!problem) return;
+        if (!app.selectedProblem) return;
 
         // promote the problem to a user problem if it is a system problem
-        if (problem.system === 'auto') {
+        if (app.selectedProblem.system === 'auto') {
 
-            problem = app.getProblemCopy(app.selectedProblem);
+            let problemCopy = app.getProblemCopy(app.selectedProblem);
             // this will force the automatic pipeline to get rebuilt without user edits
-            delete app.manipulations[app.selectedProblem];
-            problem.predictorsInitial = [...problem.predictors]; // the predictor list will be edited to include transformed variables
-            app.disco.push(problem);
+            delete app.manipulations[app.selectedProblem.problem_id];
+            problemCopy.predictorsInitial = [...problemCopy.predictors]; // the predictor list will be edited to include transformed variables
+            app.disco.push(problemCopy);
 
             redraw = true;
 
-            app.setSelectedProblem(problem.problem_id);
+            app.setSelectedProblem(problemCopy);
+            app.setLeftTab('Discovery');
         }
 
-        if (!problem.predictorsInitial) problem.predictorsInitial = problem.predictors;
+        if (!app.selectedProblem.predictorsInitial)
+            app.selectedProblem.predictorsInitial = app.selectedProblem.predictors;
 
         let problemPipeline = getProblemPipeline(app.selectedProblem) || [];
 
         let transformVars = getTransformVariables(problemPipeline);
-        problem.transform = getTransformString(problemPipeline);
-        problem.predictors = [...new Set([...problem.predictorsInitial, ...transformVars])];
-        problem.pending = true;
+        app.selectedProblem.transform = getTransformString(problemPipeline);
+        app.selectedProblem.predictors = [...new Set([...app.selectedProblem.predictorsInitial, ...transformVars])];
+        app.selectedProblem.pending = true;
 
         // if the predictors changed, then redraw the force diagram
-        if (app.nodes.length !== problem.predictors.length || app.nodes.some(node => !problem.predictors.includes(node.name)))
-            app.discoveryClick(app.selectedProblem);
+        if (app.nodes.length !== app.selectedProblem.predictors.length || app.nodes.some(node => !app.selectedProblem.predictors.includes(node.name)))
+            app.discoveryClick(app.selectedProblem.problem_id);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
         loadMenu([...getPipeline(), ...problemPipeline], countMenu).then(count => {
@@ -517,17 +517,16 @@ export let setQueryUpdated = async state => {
 };
 
 // returns the fragment of a pipeline representing a problem
-export let getProblemPipeline = problemId => {
-    let problem = app.disco.find(prob => prob.problem_id === problemId);
+export let getProblemPipeline = problem => {
     if (!problem) return;
     if (!(problem.problem_id in app.manipulations)) app.manipulations[problem.problem_id] = [];
 
     return app.manipulations[problem.problem_id];
 };
 
-export let getPipeline = (problemId) => {
+export let getPipeline = (problem) => {
     if (!(app.configurations.name in app.manipulations)) app.manipulations[app.configurations.name] = [];
-    return [...app.manipulations[app.configurations.name], ...(getProblemPipeline(problemId) || [])];
+    return [...app.manipulations[app.configurations.name], ...(getProblemPipeline(problem) || [])];
 };
 
 // when set, the constraint menu will rebuild non-mithril elements (like plots) on the next redraw
