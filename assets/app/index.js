@@ -41,7 +41,6 @@ import Subpanel2 from '../common/views/Subpanel';
 import Body_EventData from './eventdata/Body_EventData';
 
 import Recode from './Recode';
-import {setConstraintMenu} from "./manipulations/manipulate";
 
 export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -764,7 +763,7 @@ class Body {
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
 
-        return m('main', [
+        return m('main',
             m(Modal),
             this.header(app.currentMode),
             this.footer(app.currentMode),
@@ -939,7 +938,7 @@ class Body {
                     .map(step => m('div', step.id))
                     .concat([`${manipulate.totalSubsetRecords} Records`]))
             )
-        ]);
+        );
     }
 
     header(mode) {

@@ -25,7 +25,6 @@ import * as eventdata from "../eventdata/eventdata";
 // don't show operator button on first element of any group
 export function hideFirst(data) {
     for (let child_id in data) {
-        // noinspection JSUnfilteredForInLoop
         let child = data[child_id];
         if ('children' in child) {
             child.children = hideFirst(child.children);
@@ -174,11 +173,6 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
 // Convert the subset panel state to an abstract query branch
 function makeAbstractBranch(step, preferences, metadata, name) {
 
-    console.log("TEST ABSTRACT");
-    console.log(step);
-    console.log(preferences);
-    console.log(metadata);
-
     if (step.type === 'transform' && preferences.type === 'Equation') {
         let menuPreferences = preferences.menus.Equation;
         if (!menuPreferences.isValid) return {error: 'The specified transformation is not valid.'};
@@ -208,18 +202,32 @@ function makeAbstractBranch(step, preferences, metadata, name) {
         if (menuPreferences.variableNameError) return {error: 'The variable name is not valid.'};
         if (!menuPreferences.variableIndicator) return {error: 'No indicator variable is selected.'};
 
+        // would have used an object, but object keys are only strings, so the indicator type is implicitly cast
+        let indicators = [];
+        let values = [];
+        menuPreferences.indicatorKeys.forEach((indicator, i) => {
+            if (menuPreferences.userValues[i] === undefined) return;
+            indicators.push(indicator);
+            values.push({
+                'Boolean': !!menuPreferences.userValues[i],
+                'Numchar': parseFloat(menuPreferences.userValues[i]),
+                'Nominal': menuPreferences.userValues[i]
+            }[menuPreferences.variableType])
+        });
+
+        menuPreferences.variableDefault = {
+            'Boolean': !!menuPreferences.variableDefault,
+            'Numchar': parseFloat(menuPreferences.variableDefault),
+            'Nominal': menuPreferences.variableDefault
+        }[menuPreferences.variableType];
+
         return {
-            name: menuPreferences.variableName,
-            variableType: menuPreferences.variableType,
+            name: menuPreferences.variableName, // name of labels variable
+            variableType: menuPreferences.variableType, // type of labels variable
             variableDescription: menuPreferences.variableDescription,
-            variableIndicator: menuPreferences.variableIndicator,
-            lookups: menuPreferences.indicatorKeys.reduce((out, key, i) => {
-                out[key] = {
-                    'Boolean': !!menuPreferences.userValues[i],
-                    'Numchar': parseFloat(menuPreferences.userValues[i]),
-                    'Nominal': menuPreferences.userValues[i]
-                }[menuPreferences.variableType]
-            }, {})
+            variableDefault: menuPreferences.variableDefault, // default value of labels variable
+            variableIndicator: menuPreferences.variableIndicator, // name of column of variable being labeled
+            indicators, values
         }
     }
 
@@ -420,7 +428,7 @@ function makeAbstractBranch(step, preferences, metadata, name) {
 
         // Add each selection to the parent node as another rule
         [...preferences['selections']]
-            .sort((a, b) => typeof a === 'number' ? a - b : a.localeCompare(b))
+            .sort((a, b) => typeof a === 'string' ? a.localeCompare(b) : a - b)
             .forEach(selection => subset['children'].push({
                 id: String(step.nodeId++) + measureId,
                 name: String(selection),

@@ -184,11 +184,11 @@ export function buildEquation(text, variables) {
 function buildManual(variables) {
     return {
         $addFields: variables.reduce((out, manual) => {
-            let {name, variableIndicator, lookups} = manual;
+            let {name, variableIndicator, variableDefault, indicators, values} = manual;
             out[name] = {
                 $arrayElemAt: [
-                    Object.values(lookups),
-                    {$indexOfArray: [Object.keys(lookups), '$' + variableIndicator]}
+                    [...values, variableDefault],  // indexOfArray is -1 when not found, which is the last element
+                    {$indexOfArray: [indicators, '$' + variableIndicator]}
                 ]
             };
             return out;

@@ -60,7 +60,7 @@ export function menu(compoundPipeline, pipelineId) {
                     'z-index': 100,
                     'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
                 },
-                onclick: () => {
+                onclick: async () => {
                     let name = constraintMenu.type === 'transform' ? ''
                         : constraintMetadata.type + ': ' + constraintMetadata.columns[0];
 
@@ -74,8 +74,8 @@ export function menu(compoundPipeline, pipelineId) {
 
                     // clear the constraint menu
                     if (success) {
-                        setConstraintMenu(undefined);
-                        setQueryUpdated(true);
+
+                        await Promise.all([setConstraintMenu(undefined), setQueryUpdated(true)])
                         common.setPanelOpen('right');
                     }
                 }
@@ -893,9 +893,10 @@ export async function buildDatasetUrl(problem) {
 
 export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
     if (step.type !== 'transform') return out;
+
     step.transforms.forEach(transform => out.add(transform.name));
     step.expansions.forEach(expansion => queryMongo.expansionTerms(expansion).forEach(term => out.add(term)));
-    step.manual.forEach(manual => out.add(manual.variableName));
+    step.manual.forEach(manual => out.add(manual.name));
 
     return out;
 }, new Set());

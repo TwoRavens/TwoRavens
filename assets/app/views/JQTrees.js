@@ -66,7 +66,7 @@ export class TreeTransform {
                 }
             }),
             ...step.manual.map((manual, i) => {
-                let {name, variableIndicator, lookups} = manual;
+                let {name, variableIndicator, variableDefault, indicators, values} = manual;
                 return {
                     id: 'Manual ' + i,
                     name: `Manual ${i}: ${name}`,
@@ -80,13 +80,19 @@ export class TreeTransform {
                             show_op: false
                         },
                         {
+                            id: 'Default value',
+                            name: 'Default: ' + variableDefault,
+                            cancellable: false,
+                            show_op: false
+                        },
+                        {
                             id: 'Manual ' + i + ' lookups',
-                            name: 'Labels: ' + Object.keys(lookups).length,
+                            name: 'Labels: ' + indicators.length,
                             cancellable: false,
                             show_op: false,
-                            children: Object.keys(lookups).map((key, j) => ({
+                            children: indicators.map((key, j) => ({
                                 id: 'Manual ' + i + ' lookups ' + j,
-                                name: `${key} → ${lookups[key]}`,
+                                name: `${key} → ${values[j]}`,
                                 cancellable: false,
                                 show_op: false
                             }))
@@ -101,8 +107,13 @@ export class TreeTransform {
         let transformTree = $(dom);
         let {pipelineId, step, editable} = attrs;
 
+        let temp = this.convertToJQTreeFormat(pipelineId, step, editable);
+
+        console.warn('#debug temp');
+        console.log(temp);
+
         transformTree.tree({
-            data: this.convertToJQTreeFormat(pipelineId, step, editable),
+            data: temp,
             saveState: true,
             dragAndDrop: false,
             autoOpen: false,

@@ -12,6 +12,7 @@ import Dropdown from "../../common/views/Dropdown";
 import Table from "../../common/views/Table";
 
 import {getData} from "../manipulations/manipulate";
+import {omniSort} from "../app";
 
 let setDefault = (obj, id, value) => obj[id] = obj[id] || value;
 let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', text);
@@ -339,12 +340,14 @@ class MenuBinning {
 class MenuManual {
     oninit({attrs}) {
         let {preferences, pipeline} = attrs;
-        setDefault(preferences, 'variableNameError', true);
-        setDefault(preferences, 'variableName', '');
-        setDefault(preferences, 'variableType', 'Nominal');
-        setDefault(preferences, 'variableIndicator', undefined);
-        setDefault(preferences, 'indicatorKeys', []);
-        setDefault(preferences, 'userValues', []);
+        setDefault(preferences, 'variableNameError', true); // true if variableName is invalid
+        setDefault(preferences, 'variableName', ''); // variable name of label
+        setDefault(preferences, 'variableType', 'Nominal'); // data type of label
+        setDefault(preferences, 'variableDefault', undefined); // default label
+
+        setDefault(preferences, 'variableIndicator', undefined); // variable name to match against
+        setDefault(preferences, 'indicatorKeys', []); // unique values in variableIndicator
+        setDefault(preferences, 'userValues', []); // labels provided by user
 
         preferences.select = async variable => {
             if (variable === preferences.variableIndicator) return;
@@ -353,12 +356,12 @@ class MenuManual {
             preferences.indicatorKeys = (await getData({
                 method: 'aggregate',
                 query: JSON.stringify(pipeline.concat([{$group: {_id: null, distinct: {$addToSet: "$" + preferences.variableIndicator}}}]))
-            }))[0]['distinct'];
+            }))[0]['distinct'].sort(omniSort);
 
             preferences.userValues = Array(preferences.indicatorKeys.length).fill(undefined);
+            m.redraw();
         }
     }
-
 
     view({attrs}) {
         let {preferences} = attrs;
@@ -367,11 +370,12 @@ class MenuManual {
             if (preferences.variableType === 'Boolean') return m(ButtonRadio, {
                 attrsAll: {style: {'max-width': '10em'}},
                 sections: [{value: 'true'}, {value: 'false'}],
-                activeSection: String(!!preferences.userValues[i]),
+                activeSection: String(!!preferences.userValues[i] || preferences.variableDefault),
                 onclick: response => preferences.userValues[i] = response === 'true'
             });
 
             if (['Nominal', 'Numchar'].includes(preferences.variableType)) return m(TextField, {
+                placeholder: preferences.variableDefault === undefined ? '' : preferences.variableDefault,
                 value: String(preferences.userValues[i] === undefined ? '' : preferences.userValues[i]),
                 oninput: response => preferences.userValues[i] = response
             })
@@ -407,6 +411,20 @@ class MenuManual {
                 style: {display: 'inline-block', width: 'calc(100% - 10em)'},
                 oninput: description => preferences.variableDescription = description,
                 value: preferences.variableDescription
+            }),
+            m('br'),
+
+            m('label#labelVariableDefault[style=width:10em;display:inline-block]', 'Variable Default'),
+            preferences.variableType === 'Boolean' && m(ButtonRadio, {
+                attrsAll: {style: {'max-width': '10em'}},
+                sections: [{value: 'true'}, {value: 'false'}],
+                activeSection: String(!!preferences.variableDefault),
+                onclick: response => preferences.variableDefault = response === 'true'
+            }),
+            ['Nominal', 'Numchar'].includes(preferences.variableType) && m(TextField, {
+                value: String(preferences.variableDefault === undefined ? '' : preferences.variableDefault),
+                style: {display: 'inline-block', width: 'calc(100% - 10em)'},
+                oninput: response => preferences.variableDefault = response
             }),
             m('br'),
 

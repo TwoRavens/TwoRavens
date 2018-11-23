@@ -125,16 +125,7 @@ export async function updatePeek(pipeline) {
     );
 
     peekSkip += data.length;
-}
 
-
-function onStorageEvent(e) {
-
-    if(e.key === 'transformData'){
-        console.log('change in transform');
-        transform_data =  JSON.parse(e.newValue);
-
-    }
     if (data.length + (peekData || []).length === 0)
         alert('The pipeline at this stage matches no records. Delete constraints to match more records.');
 
@@ -5176,6 +5167,15 @@ export function formatPrecision(value, precision=4) {
     return (digits <= precision || precision === 0) ? numeric : numeric.toPrecision(precision) * 1
 }
 
+export let omniSort = (a, b) => {
+    if (a === undefined && b !== undefined) return -1;
+    if (b === undefined && a !== undefined) return 1;
+    if (a === b) return 0;
+    if (typeof a === 'number') return a - b;
+    if (typeof a === 'string') return  a.localeCompare(b);
+    return (a < b) ? -1 : 1;
+};
+
 export function callTransform(elem){
     console.log("function called")
     let json =  makeRequest(
@@ -5190,4 +5190,3 @@ export function callTransform(elem){
 
          console.log(json)
 }
-
