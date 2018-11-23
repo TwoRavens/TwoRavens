@@ -106,7 +106,8 @@ function canvas(compoundPipeline) {
     if (constraintMenu.type === 'transform') return m(CanvasTransform, {
         preferences: constraintPreferences,
         pipeline,
-        variables
+        variables,
+        metadata: {variables: variableMetadata}
     });
 
     if (!constraintData || !constraintMetadata) return;
@@ -174,6 +175,10 @@ export function varList() {
                     ...getTransformVariables(partialPipeline)
                 ];
                 selectedVariables = Object.keys(constraintPreferences.menus.Expansion.variables || {});
+            }
+            if (constraintPreferences.type === 'Binning') {
+                selectedVariables = [constraintPreferences.menus.Binning.variableIndicator];
+                variables = variables.filter(variable => variableMetadata[variable].types.indexOf('string') === -1)
             }
             if (constraintPreferences.type === 'Manual')
                 selectedVariables = [constraintPreferences.menus.Manual.variableIndicator];
@@ -406,6 +411,7 @@ export class PipelineFlowchart {
                         id: 'transform ' + pipeline.length,
                         transforms: [], // transform name is used instead of nodeId
                         expansions: [],
+                        binnings: [],
                         manual: []
                     })
                 }, plus, ' Transform Step'),
@@ -895,6 +901,7 @@ export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
 
     step.transforms.forEach(transform => out.add(transform.name));
     step.expansions.forEach(expansion => queryMongo.expansionTerms(expansion).forEach(term => out.add(term)));
+    step.binnings.forEach(binning => out.add(binning.name));
     step.manual.forEach(manual => out.add(manual.name));
 
     return out;

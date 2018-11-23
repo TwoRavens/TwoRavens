@@ -182,6 +182,7 @@ function leftpanel(mode) {
                                     id: 'transform ' + problemPipeline.length,
                                     transforms: [],
                                     expansions: [],
+                                    binnings: [],
                                     manual: []
                                 })
                             }

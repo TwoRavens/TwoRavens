@@ -65,6 +65,38 @@ export class TreeTransform {
                     }))
                 }
             }),
+            ...step.binnings.map((binning, i) => {
+               let {name, variableIndicator, binningType, partitions} = binning;
+               return {
+                   id: 'Binning ' + i,
+                   name: `Binning ${i}: ${name}`,
+                   cancellable: editable,
+                   show_op: false,
+                   children: [
+                       {
+                           id: 'Binning ' + i + ' indicator',
+                           name: 'Indicator: ' + variableIndicator,
+                           cancellable: false, show_op: false
+                       },
+                       {
+                           id: 'Binning ' + i + ' type',
+                           name: 'Binning type: ' + binningType,
+                           cancellable: false, show_op: false
+                       },
+                       {
+                           id: 'Binning ' + i + ' partitions',
+                           name: 'Partitions: ' + partitions.length,
+                           cancellable: false, show_op: false,
+                           children: partitions.map((partition, j) => ({
+                               id: 'Binnning ' + i + ' partition ' + j,
+                               name: partition,
+                               cancellable: false, show_op: false
+                           }))
+                       }
+
+                   ]
+               }
+            }),
             ...step.manual.map((manual, i) => {
                 let {name, variableIndicator, variableDefault, indicators, values} = manual;
                 return {
@@ -76,25 +108,21 @@ export class TreeTransform {
                         {
                             id: 'Manual ' + i + ' indicator',
                             name: 'Indicator: ' + variableIndicator,
-                            cancellable: false,
-                            show_op: false
+                            cancellable: false, show_op: false
                         },
                         {
                             id: 'Default value',
                             name: 'Default: ' + variableDefault,
-                            cancellable: false,
-                            show_op: false
+                            cancellable: false, show_op: false
                         },
                         {
                             id: 'Manual ' + i + ' lookups',
                             name: 'Labels: ' + indicators.length,
-                            cancellable: false,
-                            show_op: false,
+                            cancellable: false, show_op: false,
                             children: indicators.map((key, j) => ({
                                 id: 'Manual ' + i + ' lookups ' + j,
                                 name: `${key} → ${values[j]}`,
-                                cancellable: false,
-                                show_op: false
+                                cancellable: false, show_op: false
                             }))
                         }
                     ]
@@ -108,9 +136,6 @@ export class TreeTransform {
         let {pipelineId, step, editable} = attrs;
 
         let temp = this.convertToJQTreeFormat(pipelineId, step, editable);
-
-        console.warn('#debug temp');
-        console.log(temp);
 
         transformTree.tree({
             data: temp,

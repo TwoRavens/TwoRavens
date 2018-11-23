@@ -4725,6 +4725,7 @@ export function setSelectedProblem(problem) {
                     equation: transform
                 }],
                 expansions: [],
+                binnings: [],
                 manual: [],
                 id: 'transform ' + pipeline.length,
             })

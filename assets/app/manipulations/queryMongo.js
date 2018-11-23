@@ -11,7 +11,8 @@ import {alignmentData} from "../app";
 // transform step: add new fields/columns/variables:
 // {
 //     transforms: [{name: 'newName', equation: 'plaintext formula'}, ...],
-//     expansions: [{name: 'var1,var2', variables: {var1: {type: 'polynomial', powers: '1 2 3'}, var2: {type: 'none'}}, interactionDegree: 2}, ...]
+//     expansions: [{name: 'var1,var2', variables: {var1: {type: 'polynomial', powers: '1 2 3'}, var2: {type: 'none'}}, interactionDegree: 2}, ...],
+//     binning: [...], manual: [...]
 // }
 
 // subset step: filter rows based on constraints
@@ -52,10 +53,16 @@ export function buildPipeline(pipeline, variables = new Set()) {
             }))
         });
 
-        if (step.type === 'transform' && step.manual.length) compiled.push(buildManual(step.manual))
+        if (step.type === 'transform' && step.binnings.length) {
+            step.binnings.map(bin => variables.add(bin.name));
+            compiled.push(buildBinning(step.binnings));
+        }
+        if (step.type === 'transform' && step.manual.length) {
+            step.manual.map(labeling => variables.add(labeling.name));
+            compiled.push(buildManual(step.manual));
+        }
 
-        if (step.type === 'subset')
-            compiled.push({'$match': buildSubset(step.abstractQuery, true)});
+        if (step.type === 'subset') compiled.push({'$match': buildSubset(step.abstractQuery, true)});
 
         if (step.type === 'aggregate') {
             let aggPrepped = buildAggregation(step.measuresUnit, step.measuresAccum);
@@ -178,6 +185,24 @@ export function buildEquation(text, variables) {
     };
 
     return {query: parse(jsep(text)), usedTerms};
+}
+
+// ~~~~ BINNING IN TRANSFORM ~~~~
+function buildBinning(binnings) { // takes a list of binning descriptors
+    return {
+        $addFields: binnings.reduce((out, binning) => {
+            let {name, variableIndicator, partitions} = binning;
+            out[name] = {
+                $switch: {
+                    branches: partitions.map((partition, i) => ({
+                        case: {$lte: ['$' + variableIndicator, partition]}, then: i
+                    })),
+                    default: partitions.length
+                }
+            };
+            return out;
+        }, {})
+    }
 }
 
 // ~~~~ MANUAL LABELING IN TRANSFORM ~~~~

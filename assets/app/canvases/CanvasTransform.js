@@ -4,12 +4,13 @@ import * as common from '../../common/common';
 import TextField from "../../common/views/TextField";
 import PanelList from '../../common/views/PanelList';
 import ButtonRadio from "../../common/views/ButtonRadio";
-import PlotBars from '../views/PlotBars';
 
 import * as queryMongo from '../manipulations/queryMongo';
 import hopscotch from "hopscotch";
 import Dropdown from "../../common/views/Dropdown";
 import Table from "../../common/views/Table";
+
+import PlotContinuous from './views/PlotContinuous';
 
 import {getData} from "../manipulations/manipulate";
 import {omniSort} from "../app";
@@ -45,7 +46,7 @@ export default class CanvasTransform {
 
 
     view({attrs}) {
-        let {preferences, pipeline, variables} = attrs;
+        let {preferences, pipeline, variables, metadata} = attrs;
 
         return m('div#canvasTransform', {style: {'height': '100%', 'width': '100%', 'padding-top': common.panelMargin}},
             m(ButtonRadio, {
@@ -59,24 +60,18 @@ export default class CanvasTransform {
                 activeSection: preferences.type,
                 onclick: type => preferences.type = type
             }),
-            m('div', {
-                    style: {
-                        margin: '1em',
-                        padding: '1em',
-                        background: common.menuColor,
-                        border: common.borderColor
-                    }
-                }, m({
-                    'Equation': MenuEquation,
-                    'Expansion': MenuExpansion,
-                    'Binning': MenuBinning,
-                    'Manual': MenuManual
-                }[preferences.type], {
-                    preferences: preferences.menus[preferences.type],
-                    pipeline,
-                    variables
-                })
-            ))
+            m({
+                'Equation': MenuEquation,
+                'Expansion': MenuExpansion,
+                'Binning': MenuBinning,
+                'Manual': MenuManual
+            }[preferences.type], {
+                preferences: preferences.menus[preferences.type],
+                pipeline,
+                variables,
+                metadata
+            })
+        )
     }
 }
 
@@ -140,7 +135,7 @@ class MenuEquation {
         if (preferences.transformName === '' || preferences.transformName.match(/[ -]/) || preferences.transformEquation === '')
             preferences.isValid = false;
 
-        return [
+        return m('div', {style: {margin: '1em', padding: '1em', background: common.menuColor, border: common.borderColor}},
             m(TextField, {
                 id: 'textFieldName',
                 placeholder: 'Transformation Name',
@@ -217,7 +212,7 @@ class MenuEquation {
                     },
                     callback: value => preferences.select(' ' + value.split(' ')[0] + ' ', true)
                 }))
-        ]
+        )
     }
 }
 
@@ -282,7 +277,7 @@ class MenuExpansion {
 
         preferences.numberTerms = terms.length;
 
-        return [
+        return m('div', {style: {margin: '1em', padding: '1em', background: common.menuColor, border: common.borderColor}},
             m('div#termPreview', {
                     style: {
                         background: common.menuColor,
@@ -318,22 +313,189 @@ class MenuExpansion {
             m('div#expansionVariables',
                 Object.keys(preferences.variables).map(variable => this.variableMenu(variable, preferences.variables[variable]))
             )
-        ]
+        )
     }
 }
 
 class MenuBinning {
     oninit({attrs}) {
-        let {preferences} = attrs;
+        let {preferences, pipeline, metadata} = attrs;
 
+        setDefault(preferences, 'variableName', ''); // binned variable name
+        setDefault(preferences, 'variableNameError', true); // true if variableName is invalid
+
+        setDefault(preferences, 'variableIndicator', undefined); // variable name to match against
+        setDefault(preferences, 'binningType', 'Equidistance');
+
+        setDefault(preferences, 'binCountError', false); // true if binCount is invalid
+        setDefault(preferences, 'binCount', 10);
+
+        setDefault(preferences, 'quantilesError', false);
+        setDefault(preferences, 'quantiles', [25, 50, 75].join(' '));
+
+        setDefault(preferences, 'customError', true);
+        setDefault(preferences, 'custom', '');
+
+        setDefault(preferences, 'partitions', []); // where to split the data
+
+
+        preferences.select = async variable => {
+
+            let query = JSON.stringify([...pipeline, ...queryMongo.buildMenu({
+                type: 'menu',
+                metadata: {
+                    type: 'continuous',
+                    buckets: 200,
+                    max: metadata.variables[variable].max,
+                    min: metadata.variables[variable].min,
+                    columns: [variable]
+                }
+            })]);
+
+            preferences.buckets = await getData({method: 'aggregate', query});
+            preferences.variableIndicator = variable;
+
+            m.redraw();
+        }
     }
 
     view({attrs}) {
         let {preferences} = attrs;
 
-        return [
-            m('div')
-        ]
+        if (preferences.buckets) {
+            // partitions should be empty if in invalid state
+            preferences.partitions = [];
+
+            if (preferences.binningType === 'Equidistance' && !preferences.binCountError) {
+                //find max, min, then linear spacing
+                let min = preferences.buckets[0].Label;
+                let max = preferences.buckets[preferences.buckets.length - 1].Label;
+
+                preferences.partitions = Array(parseInt(preferences.binCount) - 1).fill(undefined)
+                    .map((_, i) => min + (max - min) / preferences.binCount * (i + 1))
+            }
+
+            // assumes that quantiles are sorted
+            let getSupport = quantiles => {
+                let globalCount = preferences.buckets.reduce((sum, entry) => sum + entry.Freq, 0);
+
+                let currentBin = 0;
+                let currentSum = 0;
+
+                let support = [];
+                preferences.buckets.forEach(entry => {
+                    currentSum = currentSum + entry['Freq'];
+                    if (currentSum / globalCount - quantiles[currentBin] > 0) {
+                        currentBin++;
+                        support.push(entry['Label']);
+                    }
+                });
+                return support;
+            };
+
+            if (preferences.binningType === 'Equimass' && !preferences.binCountError) {
+                let quantiles = Array(parseInt(preferences.binCount) - 1).fill(undefined)
+                    .map((_, i) => (i + 1) / parseInt(preferences.binCount));
+                preferences.partitions = getSupport(quantiles);
+            }
+
+            if (preferences.binningType === 'Quantiles' && !preferences.quantilesError) {
+                let quantiles = preferences.quantiles
+                    .trim().split(' ')
+                    .map(val => parseInt(val)) // don't pass map index as radix
+                    .sort(omniSort);
+                preferences.partitions = getSupport(quantiles.map(quant => quant / 100));
+            }
+
+            if (preferences.binningType === 'Custom' && !preferences.customError) {
+                preferences.partitions = preferences.custom
+                    .trim().split(' ')
+                    .map(val => parseInt(val)) // don't pass map index as radix
+                    .sort(omniSort);
+            }
+        }
+
+        return m('div', {style: {margin: '1em', padding: '1em', background: common.menuColor, border: common.borderColor, height: 'calc(100% - 62px)'}},
+            m('label#labelVariableName[style=width:10em;display:inline-block]', 'Variable Name'),
+            m(TextField, {
+                id: 'textFieldVariableName',
+                class: preferences.variableNameError && ['is-invalid'],
+                style: {display: 'inline-block', width: 'calc(100% - 10em)'},
+                value: preferences.variableName,
+                oninput: name => {
+                    preferences.variableNameError = name.length === 0 || name.includes('-');
+                    preferences.variableName = name;
+                }
+            }),
+            m('label#labelVariableDescription[style=width:10em;display:inline-block]', 'Variable Description'),
+            m(TextField, {
+                id: 'textFieldVariableDescription',
+                style: {display: 'inline-block', width: 'calc(100% - 10em)'},
+                oninput: description => preferences.variableDescription = description,
+                value: preferences.variableDescription
+            }),
+            m('label#labelBinningType[style=width:10em;display:inline-block]', 'Binning Type'),
+            m(ButtonRadio, {
+                attrsAll: {style: {'max-width': '40em'}},
+                sections: [{value: 'Equidistance'}, {value: 'Equimass'}, {value: 'Quantiles'}, {value: 'Custom'}],
+                activeSection: preferences.binningType,
+                onclick: type => preferences.binningType = type
+            }),
+            m('br'),
+
+            ['Equidistance', 'Equimass'].includes(preferences.binningType) && [
+                m('label#labelBinCount[style=width:10em;display:inline-block]', 'Bin Count'),
+                m(TextField, {
+                    id: 'textFieldBinCount',
+                    class: preferences.binCountError && ['is-invalid'],
+                    style: {display: 'inline-block', width: 'calc(100% - 10em)'},
+                    oninput: count => {
+                        if (count.length === 0) {
+                            preferences.binCount = '';
+                            preferences.binCountError = true;
+                        }
+                        if (parseInt(count.replace(/\D/g, '')) > 0) {
+                            preferences.binCount = parseInt(count.replace(/\D/g, ''));
+                            preferences.binCountError = false;
+                        }
+                    },
+                    value: preferences.binCount
+                }),
+            ],
+
+            preferences.binningType === 'Quantiles' && [
+                m('label#labelQuantilePartitions[style=width:10em;display:inline-block]', 'Quantile Partitions'),
+                m(TextField, {
+                    id: 'textFieldQuantilePartitions',
+                    class: preferences.quantilesError && ['is-invalid'],
+                    style: {display: 'inline-block', width: 'calc(100% - 10em)'},
+                    oninput: quantiles => {
+                        preferences.quantiles = quantiles;
+                        preferences.quantilesError = quantiles.length === 0 || quantiles.replace(' ', '').search(/[^\d ]/) !== -1;
+                    },
+                    value: preferences.quantiles
+                })
+            ],
+
+            preferences.binningType === 'Custom' && [
+                m('label#labelCustomPartitions[style=width:10em;display:inline-block]', 'Custom Partitions'),
+                m(TextField, {
+                    id: 'textFieldCustomPartitions',
+                    style: {display: 'inline-block', width: 'calc(100% - 10em)'},
+                    oninput: support => {
+                        preferences.custom = support;
+                        preferences.customError = support.length === 0 || support.replace(' ', '').search(/[^\d ]/) !== -1;
+                    },
+                    value: preferences.custom
+                })
+            ],
+            preferences.buckets && m('[style=height:calc(100% - 165px)]', m(PlotContinuous, {
+                id: 'plotOriginal',
+                data: {[common.d3Color]: preferences.buckets},
+                disableBrushes: true,
+                lines: preferences.partitions
+            }))
+        )
     }
 }
 
@@ -381,7 +543,7 @@ class MenuManual {
             })
         };
 
-        return [
+        return m('div', {style: {margin: '1em', padding: '1em', background: common.menuColor, border: common.borderColor}},
             m('label#labelVariableName[style=width:10em;display:inline-block]', 'Variable Name'),
             m(TextField, {
                 id: 'textFieldVariableName',
@@ -435,7 +597,7 @@ class MenuManual {
                     key, userInput(i)
                 ])
             })
-        ]
+        )
     }
 }
 

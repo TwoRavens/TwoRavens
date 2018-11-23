@@ -2,6 +2,7 @@ import m from "mithril";
 
 // scope creep
 import * as eventdata from "../eventdata/eventdata";
+import {menu} from "./manipulate";
 
 // constraint trees used for subset and aggregate
 
@@ -108,6 +109,7 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
     if (step.type === 'transform') {
         if (preferences.type === 'Equation') step.transforms.push(abstractBranch);
         if (preferences.type === 'Expansion') step.expansions.push(abstractBranch);
+        if (preferences.type === 'Binning') step.binnings.push(abstractBranch);
         if (preferences.type === 'Manual') step.manual.push(abstractBranch);
         m.redraw();
     }
@@ -195,6 +197,19 @@ function makeAbstractBranch(step, preferences, metadata, name) {
             name: Object.keys(menuPreferences.variables).join(','),
             variables: menuPreferences.variables,
             numberTerms: menuPreferences.numberTerms
+        }
+    }
+    if (step.type === 'transform' && preferences.type === 'Binning') {
+        let menuPreferences = preferences.menus.Binning;
+        if (menuPreferences.variableNameError) return {error: 'The variable name is not valid.'};
+        if (!menuPreferences.variableIndicator) return {error: 'No indicator variable is selected.'};
+        if (menuPreferences.partitions.length === 0) return {error: 'No partitions are selected.'};
+
+        return {
+            name: menuPreferences.variableName,
+            variableIndicator: menuPreferences.variableIndicator,
+            binningType: menuPreferences.binningType,
+            partitions: menuPreferences.partitions
         }
     }
     if (step.type === 'transform' && preferences.type === 'Manual') {

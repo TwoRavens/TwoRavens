@@ -7,7 +7,9 @@ import * as d3 from "d3";
 //         'gray': [ {'Label': new Date(), 'Freq': 22}, ...],
 //         'blue': [ {'Label': new Date(), 'Freq': 12}, ...]
 //     },
-//     callbackHandles: (handles) => console.log("From: " + handles[0] + " To: " + handles[1])
+//     callbackHandles: (handles) => console.log("From: " + handles[0] + " To: " + handles[1]),
+//     disableBrushes: false,
+//     lines: [ X values to draw lines at ]
 // })
 
 // If data is passed, the D3 plot will be reconstructed. Otherwise, the plot state will be preserved
@@ -26,10 +28,10 @@ export default class PlotContinuous {
     }
 
     plot(vnode) {
-        let {data, callbackHandles, labelY} = vnode.attrs;
+        let {data, callbackHandles, labelY, disableBrushes, lines} = vnode.attrs;
         if (data === undefined) return;
 
-        // Set calendar ranges
+        // Set Y ranges
         let min = d3.min(Object.keys(data).map(color => d3.min(data[color], getLabel)));
         let max = d3.max(Object.keys(data).map(color => d3.max(data[color], getLabel)));
         let freqmax = d3.max(Object.keys(data).map(color => d3.max(data[color], getFreq)));
@@ -39,14 +41,20 @@ export default class PlotContinuous {
 
         let bound = SVG.node().getBoundingClientRect();
 
+
         let margin = {top: 25, right: 20, bottom: 180, left: 80};
         let margin2 = {top: 430, right: 20, bottom: 80, left: 80};
         let width = +bound.width - margin.left - margin.right;
         let height = +bound.height - margin.top - margin.bottom;
         let height2 = +bound.height - margin2.top - margin2.bottom;
 
+        if (disableBrushes) {
+            margin = {top: 25, right: 20, bottom: 80, left: 80};
+            height = +bound.height - margin.top - margin.bottom;
+        }
 
-        // The  range needs to be transformed to image width. Range defined here, domain defined below
+
+        // The range needs to be transformed to image width. Range defined here, domain defined below
         // Range of X:
         let x, x2;
         if (typeof min === 'object') {
@@ -108,13 +116,13 @@ export default class PlotContinuous {
             .attr("class", "focus")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-        let context = SVG.append("g")
+        let context = !disableBrushes && SVG.append("g")
             .attr("class", "context")
             .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
 
         // Invoked on initialization and interaction
         function brushed() {
-            if (d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") return; // ignore brush-by-zoom
+            if (disableBrushes || d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") return; // ignore brush-by-zoom
             let s = d3.event.selection || x2.range();
 
             x.domain(s.map(x2.invert, x2));
@@ -127,11 +135,11 @@ export default class PlotContinuous {
                 .scale(width / (s[1] - s[0]))
                 .translate(-s[0], 0));
 
-            callbackHandles(s.map(x2.invert));
+            (callbackHandles || Function)(s.map(x2.invert));
         }
 
         function zoomed() {
-            if (d3.event.sourceEvent && d3.event.sourceEvent.type === "brush") return; // ignore zoom-by-brush
+            if (disableBrushes || d3.event.sourceEvent && d3.event.sourceEvent.type === "brush") return; // ignore zoom-by-brush
             let t = d3.event.transform;
             x.domain(t.rescaleX(x2).domain());
             focus.select(".area").attr("d", area);
@@ -139,7 +147,7 @@ export default class PlotContinuous {
                 .selectAll("text")
                 .attr("transform", "rotate(45)")
                 .style("text-anchor", "start");
-            context.select(".brush").call(brush.move, x.range().map(t.invertX, t));
+            !disableBrushes && context.select(".brush").call(brush.move, x.range().map(t.invertX, t));
         }
 
         // Draw data on focus portion of svg (focus) with the area variable attribute
@@ -151,13 +159,39 @@ export default class PlotContinuous {
                 .style("clip-path", "url(#clip)")
                 .attr('d', area);
 
-            context.append("path")
+            !disableBrushes && context.append("path")
                 .datum(data[color])
                 .style("fill", color)
-                .attr("class", "area")
+                .attr("class", "area" + i)
                 .style("clip-path", "url(#clip)")
                 .attr("d", area2);
         });
+
+        if (lines) {
+            focus.selectAll('line')
+                .data(lines)
+                .enter()
+                .append('line')
+                .attr("x1", x)
+                .attr("y1", 0)
+                .attr("x2", x)
+                .attr("y2", height)
+                .style("stroke-width", 2)
+                .style("stroke", "rgb(4, 23, 52)")
+                .style("stroke-dasharray", 3);
+
+            !disableBrushes && context.selectAll('line')
+                .data(lines)
+                .enter()
+                .append('line')
+                .attr("x1", x2)
+                .attr("y1", 0)
+                .attr("x2", x2)
+                .attr("y2", height2)
+                .style("stroke-width", 2)
+                .style("stroke", "rgb(4, 23, 52)")
+                .style("stroke-dasharray", 3);
+        }
 
         // Add x and y axes to focus group
         focus.append("g")
@@ -173,7 +207,7 @@ export default class PlotContinuous {
             .call(yAxis);
 
         // Add x axis to context group
-        context.append("g")
+        !disableBrushes && context.append("g")
             .attr("class", "ContextX axis axis--x")
             .attr("transform", "translate(0," + height2 + ")")
             .call(xAxis2)
@@ -182,7 +216,7 @@ export default class PlotContinuous {
             .style("text-anchor", "start");
 
         // Add brushes to context group
-        context.append("g")
+        !disableBrushes && context.append("g")
             .attr("class", "brush")
             .call(brush)
             .call(brush.move, x.range());
@@ -194,7 +228,7 @@ export default class PlotContinuous {
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
             .call(zoom);
 
-        SVG.append("context");
+        !disableBrushes && SVG.append("context");
 
         SVG.append("text")
             .attr("transform", "rotate(-90)")
