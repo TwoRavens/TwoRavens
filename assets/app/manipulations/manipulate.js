@@ -74,8 +74,8 @@ export function menu(compoundPipeline, pipelineId) {
 
                     // clear the constraint menu
                     if (success) {
-
-                        await Promise.all([setConstraintMenu(undefined), setQueryUpdated(true)])
+                        setConstraintMenu(undefined);
+                        setQueryUpdated(true);
                         common.setPanelOpen('right');
                     }
                 }
