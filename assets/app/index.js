@@ -40,8 +40,6 @@ import Subpanel2 from '../common/views/Subpanel';
 // EVENTDATA
 import Body_EventData from './eventdata/Body_EventData';
 
-import Recode from './Recode';
-
 export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
 export let link = (url) => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
@@ -1109,7 +1107,6 @@ if (IS_EVENTDATA_DOMAIN) {
 else {
     m.route(document.body, '/model', {
         '/explore/:variate/:vars...': Body,
-        '/recode': Recode,
         '/data': {render: () => m(Peek, {id: app.peekId, image: '/static/images/TwoRavens.png'})},
         '/:mode': Body,
 
