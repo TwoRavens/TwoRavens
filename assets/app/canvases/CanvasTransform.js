@@ -1,12 +1,12 @@
 import m from 'mithril';
-
-import * as common from '../../common/common';
-import TextField from "../../common/views/TextField";
-import PanelList from '../../common/views/PanelList';
-import ButtonRadio from "../../common/views/ButtonRadio";
+import hopscotch from "hopscotch";
 
 import * as queryMongo from '../manipulations/queryMongo';
-import hopscotch from "hopscotch";
+
+import * as common from '../../common/common';
+import PanelList from '../../common/views/PanelList';
+import TextField from "../../common/views/TextField";
+import ButtonRadio from "../../common/views/ButtonRadio";
 import Dropdown from "../../common/views/Dropdown";
 import Table from "../../common/views/Table";
 

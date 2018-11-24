@@ -45,25 +45,10 @@ export let italicize = (value) => m('div', {style: {'font-style': 'italic', disp
 export let link = (url) => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
 
 
-let state = {
-    pipelines: [],
-    async get_pipelines() {
-        this.pipelines = await app.listpipelines();
-        m.redraw();
-    }
-};
-
-
 // adding problem_id and version for Preprocess API part
 let problem_id = 1;
 let version = 1;
 let nodesExplore = [];
-
-function setBackgroundColor(color) {
-    return function () {
-        this.style['background-color'] = color;
-    };
-}
 
 function leftpanel(mode) {
 
@@ -211,7 +196,7 @@ function leftpanel(mode) {
                                 'Current Problem',
                                 m(`div#deselectProblem`, {
                                     onclick: () => {
-                                        app.erase('Discovery');
+                                        app.erase();
                                         app.setSelectedProblem(undefined);
                                         app.layout();
                                         let targetNode = app.findNode(app.mytarget);
@@ -823,15 +808,16 @@ class Body {
                             }, 'go'),
                             m('br'),
                             m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
-                                (discovery ? app.disco : app.valueKey).map(problem => {
-                                    let selected = discovery ? problem === app.selectedProblem : nodesExplore.map(x => x.name).includes(problem);
-                                    if (problem.predictors) problem = problem.target;
+                                (discovery ? app.disco : app.valueKey).map(x => { // entry could either be a problem or a variable name
+                                    let selected = discovery ? x === app.selectedProblem : nodesExplore.map(y => y.name).includes(x);
 
-                                    let node = app.findNode(problem);
+                                    let targetName = x.target || x;
+                                    let targetNode = app.findNode(targetName);
+
                                     let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
                                     let [n0, n1, n2] = nodesExplore;
                                     return m('span', {
-                                            onclick: _ => discovery ? app.setSelectedProblem(problem) : app.clickVar(problem, nodesExplore),
+                                            onclick: _ => discovery ? app.setSelectedProblem(x) : app.clickVar(x, nodesExplore),
                                             onmouseover: function () {
                                                 $(this).popover('toggle');
                                                 $('body div.popover')
@@ -841,7 +827,7 @@ class Body {
                                             },
                                             onmouseout: "$(this).popover('toggle');",
                                             'data-container': 'body',
-                                            'data-content': node.labl || '<i>none provided</i>',
+                                            'data-content': targetNode.labl || '<i>none provided</i>',
                                             'data-html': 'true',
                                             'data-original-title': 'Description',
                                             'data-placement': 'top',
@@ -864,7 +850,7 @@ class Body {
                                                 this.node = app.findNode(x);
                                             },
                                             oncreate(vnode) {
-                                                let plot = this.node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
+                                                let plot = (this.node || {}).plottype === 'continuous' ? plots.densityNode : plots.barsNode;
                                                 plot(this.node, vnode.dom, 110, true);
                                             },
                                             onupdate(vnode) {
@@ -881,9 +867,9 @@ class Body {
                                             show && n0 && n0.name === x ? `${x} (x)`
                                                 : show && n1 && n1.name === x ? `${x} (y)`
                                                 : show && n2 && n2.name === x ? `${x} (z)`
-                                                    : predictors ? [
+                                                    : x.predictors ? [
                                                             m('b', x),
-                                                            m('p', predictors.join(', '))]
+                                                            m('p', x.predictors.join(', '))]
                                                         : x)
                                     );
                                 }))

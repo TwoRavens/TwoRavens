@@ -310,7 +310,11 @@ export class PipelineFlowchart {
                                 class: ['btn-sm'],
                                 style: {margin: '0.5em'},
                                 title: 'Construct a new variable from other variables',
-                                onclick: () => setConstraintMenu({type: 'transform', step, pipeline: compoundPipeline})
+                                onclick: () => {
+                                    setConstraintMenu({type: 'transform', step, pipeline: compoundPipeline});
+                                    app.setLeftTab('Variables');
+                                    common.setPanelOpen('left');
+                                }
                             }, plus, ' Transform')
                         )
                     }
@@ -326,7 +330,11 @@ export class PipelineFlowchart {
                                     id: 'btnAddConstraint',
                                     class: ['btn-sm'],
                                     style: {margin: '0.5em'},
-                                    onclick: () => setConstraintMenu({type: 'subset', step, pipeline: compoundPipeline})
+                                    onclick: () => {
+                                        setConstraintMenu({type: 'subset', step, pipeline: compoundPipeline});
+                                        app.setLeftTab('Variables');
+                                        common.setPanelOpen('left');
+                                    }
                                 }, plus, ' Constraint'),
                                 m(Button, {
                                     id: 'btnAddGroup',
@@ -377,17 +385,21 @@ export class PipelineFlowchart {
                                     id: 'btnAddUnitMeasure',
                                     class: ['btn-sm'],
                                     style: {margin: '0.5em'},
-                                    onclick: () => setConstraintMenu({type: 'unit', step, pipeline: compoundPipeline})
+                                    onclick: () => {
+                                        setConstraintMenu({type: 'unit', step, pipeline: compoundPipeline});
+                                        app.setLeftTab('Variables');
+                                        common.setPanelOpen('left');
+                                    }
                                 }, plus, ' Unit Measure'),
                                 m(Button, {
                                     id: 'btnAddAccumulator',
                                     class: ['btn-sm' + (step.measuresAccum.length ? '' : ' is-invalid')],
                                     style: {margin: '0.5em'},
-                                    onclick: () => setConstraintMenu({
-                                        type: 'accumulator',
-                                        step,
-                                        pipeline: compoundPipeline
-                                    })
+                                    onclick: () => {
+                                        setConstraintMenu({type: 'accumulator', step, pipeline: compoundPipeline});
+                                        app.setLeftTab('Variables');
+                                        common.setPanelOpen('left');
+                                    }
                                 }, plus, ' Accumulator')
                             ]
                         )
@@ -550,11 +562,6 @@ export let constraintMenu;
 // WARNING: this is a fragile function
 export let setConstraintMenu = async (menu) => {
     let updateVariableMetadata = !constraintMenu || (menu || {}).step !== constraintMenu.step;
-
-    if (!app.is_manipulate_mode) {
-        app.setLeftTab('Variables');
-        common.setPanelOpen('left');
-    }
 
     Object.keys(constraintPreferences).forEach(key => delete constraintPreferences[key]);
 

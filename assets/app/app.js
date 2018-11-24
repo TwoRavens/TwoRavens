@@ -2088,7 +2088,7 @@ export function findNode(name) {
 //
 function updateNode(id, nodes) {
 
-    let node = allNodes.find(node => node.name === id) || nodes.find(node => node.name === id);
+    let node = (nodes || allNodes).find(node => node.name === id);
 
     if (node === undefined) {
         let i = 0;
@@ -2116,9 +2116,7 @@ function updateNode(id, nodes) {
         }
     }
 
-    if (node.grayout) {
-        return false;
-    }
+    if (node.grayout) return false;
 
     let name = node.name;
     let names = _ => nodes.map(n => n.name);
@@ -2140,13 +2138,9 @@ function updateNode(id, nodes) {
             node.strokeColor = selVarColor;
             node.strokeWidth = '1';
         }
-    } else {
-        nodes.push(node);
-    }
+    } else nodes.push(node);
 
-    if (is_explore_mode) {
-        return false;
-    }
+    if (is_explore_mode) return false;
 
     zparams.zvars = names();
     return true;
@@ -2162,6 +2156,7 @@ export function clickVar(elem, $nodes) {
             : exploreVariate === 'Trivariate' ? 3
             : 5;
         if ($nodes.length >= max) {
+            alert('Please deselect another variable first.')
             return;
         }
     }
@@ -3061,8 +3056,7 @@ export async function makeRequest(url, data) {
 /**
    programmatically deselect every selected variable
 */
-export function erase(disc) {
-    setLeftTab(disc == 'Discovery' ? 'Discovery' : 'Variables');
+export function erase() {
     nodes.map(node => node.name).forEach(name => clickVar(name, nodes));
 }
 
@@ -4666,12 +4660,11 @@ export function connectAllForceDiagram() {
 // called when a problem is clicked in the discovery leftpanel table
 export let discoveryClick = problemId => {
     setSelectedProblem(disco.find(problem => problem.problem_id === problemId));
-    m.route.set('/model');
 
     if (!selectedProblem) return;
 
     let {target, predictors} = selectedProblem;
-    erase('Discovery');
+    erase();
     [target, ...predictors].map(x => clickVar(x));
     predictors.forEach(predictor => setColors(nodes.find(node => node.name === predictor), gr1Color));
     setColors(findNode(target), dvColor);

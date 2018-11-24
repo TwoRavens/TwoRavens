@@ -1523,25 +1523,25 @@ export async function explore() {
 }
 
 let getPlotType = (pt,pn) => {
-    
+
     // returns true if uniques is equal to, one less than, or two less than the number of valid observations
         function uniqueValids (pn) {
             return pn.uniques===pn.valid ? true :
                 pn.uniques===pn.valid-1 ? true :
                 pn.uniques===pn.valid-2 ? true : false;
         }
-    
+
         if(pn.length>3) return['scattermatrix','aaa'];
         let myCons = [];
         let vt = "";
-    
+
         for (var i=0; i<pn.length; i++) {
             myCons[i] = pn[i].plottype === 'continuous' ? true : false;
             pn[i].plottype === 'continuous' ? vt=vt+'q' : vt=vt+'n';
         }
-    
+
         if(pt != "") return [pt,vt];
-    
+
         if(pn.length==2) {
             // check uniqueValids. if so, make difference from mean the default plot
             let uvs = [uniqueValids(pn[0]), uniqueValids(pn[1])];
@@ -1550,7 +1550,7 @@ let getPlotType = (pt,pn) => {
                 return ['averagediff', 'nq'];
             else if (uvs[0] === false && uvs[1] === true)
                 return ['averagediff', 'qn'];
-            
+
             return myCons[0] && myCons[1] ? ['scatter','qq'] :
                 myCons[0] && !myCons[1] ? ['box', 'qn'] :
                 !myCons[0] && myCons[1] ? ['box', 'nq'] :
@@ -1582,7 +1582,7 @@ export async function plot(plotNodes, plottype="", problem={}) {
 
     app.zPop();
     console.log('zpop:', app.zparams);
-    
+
     function getNames(arr) {
         let myarr = [];
         for (var i=0; i<arr.length; i++) {
@@ -1591,14 +1591,14 @@ export async function plot(plotNodes, plottype="", problem={}) {
         }
         return myarr;
     }
-    
+
     // function returns whether to flip a plot. for example, if plot expects 'nq' and users gives 'qn', flip should return true. this may have to be generalized for 3+ dimension plots
     let plotflip = (pt) => {
         return  pt[0] === "box" && pt[1] === "qn" ? true :
                 pt[0] === "facetbox" && pt[1] === "qnn" ? true :
                 pt[0] === "averagediff" && pt[1] === "nq" ? true : false;
     };
-    
+
     // function to fill in the contents of the vega schema.
     let fillVega = (data,flip,schema) => {
         let stringified = JSON.stringify(schema);
@@ -1610,13 +1610,13 @@ export async function plot(plotNodes, plottype="", problem={}) {
             stringified = stringified.replace(/"y2"/g, '"x2"');
             stringified = stringified.replace(/"t"/g, '"y"');
             stringified = stringified.replace(/"t2"/g, '"y2"');
-            
+
             let temp = data.vars[0];
             data.vars[0] = data.vars[1];
             data.vars[1] = temp;
         }
-        
-        
+
+
         if(data["vars"].length>1) {
             stringified = stringified.replace(/tworavensY/g, data.vars[1]);
         }
@@ -1656,13 +1656,13 @@ export async function plot(plotNodes, plottype="", problem={}) {
         console.log(stringified);
         return JSON.parse(stringified);
     };
-    
+
     let myx = [];
     let myy = {};
     let mypn = [];
     let vegajson = {};
     let jsonarr = [];
-    
+
     if(plotNodes.length===0) {
         myy = app.findNode(problem.target);
         for (var i=0; i<problem["predictors"].length; i++) {
@@ -1672,9 +1672,9 @@ export async function plot(plotNodes, plottype="", problem={}) {
         myx[0] = "oneshot"; // necessary to work out the looping
         mypn=plotNodes;
     }
-    
+
     for(var i=0; i<myx.length; i++) {
-        if(plotNodes.length===0) { // note only drawing bivariate plots 
+        if(plotNodes.length===0) { // note only drawing bivariate plots
             mypn=[myx[i],myy];
         }
         plottype = i>0 ? "" : plottype;
@@ -1735,7 +1735,7 @@ export async function plot(plotNodes, plottype="", problem={}) {
         let flip = plotflip(plottype);
         jsonarr[i] = fillVega(json,flip,schema);
     }
-    
+
     if(jsonarr.length===1) {
         vegajson = jsonarr[0];
     } else {
@@ -1753,7 +1753,7 @@ export async function plot(plotNodes, plottype="", problem={}) {
 
 export function thumbsty(plotNodes, thumb) {
     let plottype = getPlotType("",plotNodes); // VJD: this is executing a lot
-    
+
     return approps[plottype[1]].indexOf(thumb) > -1 ?{border: "2px solid #0F0", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"} : {border: "2px solid #F00", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"};
 }
 
