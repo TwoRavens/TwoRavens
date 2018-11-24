@@ -1129,6 +1129,7 @@ export function loadResult(my_disco) {
             "description": problem,
             "result": solver_res[i]
         });
+        // console.log("problem to be sent ", problem_sent);
     })
 
     // console.log("problem to be sent ", problem_sent.splice())
@@ -4836,7 +4837,6 @@ function primitiveStepRemoveColumns (aux) {
     return {primitive:step};
 }
 
-
 /**
   Handle a websocket sent GetSearchSolutionResultsResponse
   wrapped in a StoredResponse object
@@ -5028,8 +5028,6 @@ async function handleENDGetSearchSolutionsResults(){
   // stop the interval process
 }
 
-
-
 export async function addProblem(preprocess_id, version){
     // return await m.request({
     //     method: "POST",
@@ -5040,7 +5038,7 @@ export async function addProblem(preprocess_id, version){
     //         "problems": problem_sent
     //     }
     // })
-problem_sent.length = 0;
+    problem_sent.length = 0;
 }
 
 
@@ -5048,7 +5046,6 @@ problem_sent.length = 0;
 export async function callSolver(prob) {
     let hasManipulation = prob.problem_id in manipulations && manipulations[prob.problem_id].length > 0;
     let hasNominal = [prob.target, ...prob.predictors].some(variable => zparams.znom.includes(variable));
-
     let zd3mdata = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : zparams.zd3mdata;
 
     // MIKE: shouldn't solverapp return a list? even a singleton list would be fine

@@ -2,6 +2,7 @@
 ##  rooksolver.r
 ##
 library(stargazer)
+library(ranger)
 
 send <- function(res) {
   res <- jsonlite:::toJSON(res)
@@ -15,7 +16,15 @@ send <- function(res) {
   response$finish()
 }
 
+
+#  to check if the variable is binary
+  is_binary <- function(v) {
+    x <- unique(v)
+    length(x) - sum(is.na(x)) == 2L
+  }
+
 solver.app <- function(env) {
+
   print(env)
   production <- FALSE
   result <- list()
@@ -67,27 +76,48 @@ solver.app <- function(env) {
 
         ## data
         d <- mydata[,vars]
-
+        
         ## listwise deleting
         d <- na.omit(d)
         print(colnames(d))
+
+        # Perform binary check
+        isBinary<- is_binary(d[target])
+        print("is Binary : ")
+        print(isBinary)
         if(task=="regression")
         {
         fit <- lm(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d)
         model_type <- "Linear Model"
       }else if(task=="classification"){
+        if(isBinary){
         fit <- glm(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d, family="binomial")
         model_type <- "Generalized Linear Model"
+        }
+        else{
+          fit <- ranger(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d, classification=TRUE)
+          model_type <- "Random Forest Model"
+          print("Random forrest to come")
+          print(fit)
+        }
       }
+        if(class(fit)== "ranger"){
+        stargazer_lm <- paste("")
+        jsonfit <- jsonlite::serializeJSON(fit)
 
+        fittedvalues <- c()
+        actualvalues <- d[,target]
+        }
+        else
+        {
         stargazer_lm <- paste(stargazer(fit, type="html"), collapse="")
         jsonfit <- jsonlite::serializeJSON(fit)
 
         fittedvalues <- fit$fitted.values
         actualvalues <- d[,target]
-
-        if (class(fit)=="lm" || class(fit)=="glm") {
-            return(send(list(data=d, description=description, dependent_variable=target, predictors=predictors,  task=task, model_type = model_type, stargazer= stargazer_lm, predictor_values=list(fittedvalues=fittedvalues, actualvalues=actualvalues))))
+        }
+        if (class(fit)=="lm" || class(fit)=="glm" || class(fit)== "ranger") {
+            return(send(list(jsonfit=jsonfit, data=d, description=description, dependent_variable=target, predictors=predictors,  task=task, model_type = model_type, stargazer= stargazer_lm, predictor_values=list(fittedvalues=fittedvalues, actualvalues=actualvalues))))
         } else {
             return(send(list(warning="No model estimated.")))
         }
