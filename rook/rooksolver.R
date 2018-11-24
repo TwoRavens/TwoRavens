@@ -24,7 +24,6 @@ send <- function(res) {
   }
 
 solver.app <- function(env) {
-
   print(env)
   production <- FALSE
   result <- list()
@@ -83,7 +82,7 @@ solver.app <- function(env) {
 
         # Perform binary check
         isBinary<- is_binary(d[target])
-        print("is Binary : ")
+        print("is_binary : ")
         print(isBinary)
         if(task=="regression")
         {
@@ -97,14 +96,11 @@ solver.app <- function(env) {
         else{
           fit <- ranger(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d, classification=TRUE)
           model_type <- "Random Forest Model"
-          print("Random forrest to come")
-          print(fit)
         }
       }
         if(class(fit)== "ranger"){
         stargazer_lm <- paste("")
         jsonfit <- jsonlite::serializeJSON(fit)
-
         fittedvalues <- c()
         actualvalues <- d[,target]
         }
@@ -117,7 +113,7 @@ solver.app <- function(env) {
         actualvalues <- d[,target]
         }
         if (class(fit)=="lm" || class(fit)=="glm" || class(fit)== "ranger") {
-            return(send(list(jsonfit=jsonfit, data=d, description=description, dependent_variable=target, predictors=predictors,  task=task, model_type = model_type, stargazer= stargazer_lm, predictor_values=list(fittedvalues=fittedvalues, actualvalues=actualvalues))))
+            return(send(list(data=d, description=description, dependent_variable=target, predictors=predictors,  task=task, model_type = model_type, stargazer= stargazer_lm, predictor_values=list(fittedvalues=fittedvalues, actualvalues=actualvalues))))
         } else {
             return(send(list(warning="No model estimated.")))
         }
