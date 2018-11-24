@@ -95,32 +95,28 @@ solver.app <- function(env) {
         print(colnames(d))
 
         # Perform binary check
-        isBinary <- is_binary(d[target])
+        isBinary<- is_binary(d[target])
         print("is_binary : ")
         print(isBinary)
-        if (task == "regression" || task == "OLS") {
-            fit <- lm(formula(paste(target, "~", paste(predictors, collapse = "+"))), data = d)
-            model_type <- "OLS Regression Model"
-        } else if (task == "classification" ||
-            task == "LogisticRegression" ||
-            task == "RandomForest") {
-            if (isBinary || task == "LogisticRegression") {
-                fit <- glm(formula(paste(target, "~", paste(predictors, collapse = "+"))), data = d, family = "binomial")
-                # We predict
-                model_type <- "Logistic Regression Model"
-            }
-            else {
-                fit <- ranger(formula(paste(target, "~", paste(predictors, collapse = "+"))), data = d, classification = TRUE)
-                predict <- predict(fit, data = d)
-                fitted_values <- predict$predictions
-                model_type <- "Random Forest Model"
-            }
+        if(task=="regression")
+        {
+        fit <- lm(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d)
+        model_type <- "Linear Model"
+      }else if(task=="classification"){
+        if(isBinary){
+        fit <- glm(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d, family="binomial")
+        model_type <- "Generalized Linear Model"
         }
-        if (class(fit) == "ranger") {
-            stargazer_lm <- paste("")
-            jsonfit <- jsonlite::serializeJSON(fit)
-            fittedvalues <- fitted_values
-            actualvalues <- d[, target]
+        else{
+          fit <- ranger(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d, classification=TRUE)
+          model_type <- "Random Forest Model"
+        }
+      }
+        if(class(fit)== "ranger"){
+        stargazer_lm <- paste("")
+        jsonfit <- jsonlite::serializeJSON(fit)
+        fittedvalues <- c()
+        actualvalues <- d[,target]
         }
         else {
             stargazer_lm <- paste(stargazer(fit, type = "html"), collapse = "")
@@ -129,11 +125,9 @@ solver.app <- function(env) {
             fittedvalues <- fit$fitted.values
             actualvalues <- d[, target]
         }
-        if (class(fit) == "lm" ||
-            class(fit) == "glm" ||
-            class(fit) == "ranger") {
-            return(send(list(description = description, dependent_variable = target, predictors = predictors, task = task, model_type = model_type, stargazer = stargazer_lm,
-            predictor_values = list(fittedvalues = fittedvalues, actualvalues = actualvalues))))
+
+        if (class(fit)=="lm" || class(fit)=="glm" || class(fit)== "ranger") {
+            return(send(list(data=d, description=description, dependent_variable=target, predictors=predictors,  task=task, model_type = model_type, stargazer= stargazer_lm, predictor_values=list(fittedvalues=fittedvalues, actualvalues=actualvalues))))
         } else {
             return(send(list(warning = "No model estimated.")))
         }
