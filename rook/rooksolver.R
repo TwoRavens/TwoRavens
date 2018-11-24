@@ -23,6 +23,13 @@ is_binary <- function(v) {
     length(x) - sum(is.na(x)) == 2L
 }
 
+
+#  to check if the variable is binary
+  is_binary <- function(v) {
+    x <- unique(v)
+    length(x) - sum(is.na(x)) == 2L
+  }
+
 solver.app <- function(env) {
     print(paste("--- solver.app ---", sep=""))
 

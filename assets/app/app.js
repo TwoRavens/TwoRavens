@@ -4701,7 +4701,6 @@ function primitiveStepRemoveColumns (aux) {
 }
 
 
-
 /**
   Handle a websocket sent GetSearchSolutionResultsResponse
   wrapped in a StoredResponse object
@@ -4987,6 +4986,7 @@ export function loadResult(my_disco) {
     // addProblem(preprocess_id, version).then(api_res => console.log("ADD PROBLEM/RESULT API RESPONSE ", api_res))
 }
 
+// API call to add problem to preproces file
 export async function addProblem(preprocess_id, version){
     // return await m.request({
     //     method: "POST",
