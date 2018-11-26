@@ -34,6 +34,7 @@
     "latex-parser": "^0.6.2",
     "mithril": "^1.1.6",
     "npm": "^6.4.0",
+    "randomatic": "^3.0.0",
     "vega": "^4.2.0",
     "vega-embed": "^3.19.2",
     "vega-lite": "^2.6.0"
