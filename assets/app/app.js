@@ -5003,7 +5003,7 @@ problem_sent.length = 0;
 export async function callSolver (prob) {
 
     // ---------------------------------------
-    return; // TEMP DISABLE callSolver
+    //return; // TEMP DISABLE callSolver
     // ---------------------------------------
 
     let temp = JSON.stringify(prob);
