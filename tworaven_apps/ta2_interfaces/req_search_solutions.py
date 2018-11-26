@@ -10,8 +10,12 @@ from tworaven_apps.utils.random_info import get_alphanumeric_string
 from tworaven_apps.utils.json_helper import json_dumps, json_loads
 from tworaven_apps.utils.proto_util import message_to_json
 
+from tworaven_apps.ta2_interfaces.models import StoredResponse
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json
+from tworaven_apps.ta2_interfaces.static_vals import \
+    (GRPC_GET_FIT_SOLUTION_RESULTS,
+     KEY_PIPELINE_ID, KEY_RANK, KEY_FITTED_SOLUTION_ID)
 
 import core_pb2
 #import core_pb2_grpc
@@ -406,6 +410,68 @@ def produce_solution(raven_json_str=None):
     # Convert the reply to JSON and send it back
     # --------------------------------
     return ok_resp(message_to_json(reply))
+
+
+def solution_export_with_saved_response(raven_json):
+    """
+    Send a SolutionExportRequest to the SolutionExport command
+    example input: {"piplineId ": 3990, "rank": 3}
+        piplineId - SavedResponse.pipeline_id, used to get the fittedSolutionId
+        rank - Used for a call to a TA2
+    """
+    if not isinstance(raven_json, dict):
+        err_msg = ('"raven_json" for the SolutionExportRequest must'
+                   ' be a dict')
+        return err_resp(err_msg)
+
+    if not KEY_PIPELINE_ID in raven_json:
+        err_msg = ('The key "%s" must be included for the'
+                   ' SolutionExportRequest--in order to find'
+                   ' the SavedResponse') % (KEY_PIPELINE_ID,)
+        return err_resp(err_msg)
+
+    if not KEY_RANK in raven_json:
+        err_msg = ('The key "%s" must be included for the'
+                   ' SolutionExportRequest') % (KEY_RANK,)
+        return err_resp(err_msg)
+
+    # Filtering params
+    # - decision here not to use 'sent_to_user' which would id the right
+    #   entry but may be changed in the future
+    #
+    params = dict(pipeline_id=raven_json[KEY_PIPELINE_ID],
+                  stored_request__request_type=GRPC_GET_FIT_SOLUTION_RESULTS,
+                  is_finished=True)
+
+    # Go through the results, looking for one with a fittedSolutionId
+    #
+    fitted_solution_id = None
+    for saved_resp in StoredResponse.objects.filter(**params):
+        info = saved_resp.get_value_by_key(KEY_FITTED_SOLUTION_ID)
+        if info.success:
+            fitted_solution_id = info.result_obj
+            break
+
+    # Nothing found
+    #
+    if not fitted_solution_id:
+        user_msg = ('A StoredResponse containing a "%s"'
+                    ' was not found for %s "%s".') % \
+                    (KEY_FITTED_SOLUTION_ID, KEY_PIPELINE_ID, raven_json[KEY_PIPELINE_ID])
+        return err_resp(user_msg)
+
+    # Got it, prepare info for the TA2 call
+    #
+    params = {KEY_FITTED_SOLUTION_ID: fitted_solution_id,
+              KEY_RANK: raven_json[KEY_RANK]}
+
+    json_info = json_dumps(params)
+    if not json_info.success:
+        user_msg = ('Failed to convert params dict to JSON to string: %s') % \
+                    (json_info.err_msg,)
+        return err_resp(user_msg)
+
+    return solution_export(json_info.result_obj)
 
 
 

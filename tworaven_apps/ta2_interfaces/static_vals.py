@@ -4,6 +4,10 @@ Static values used within ta2_interfaces.
 Many are keys sent from the UI
 """
 # form name
+
+GRPC_GET_FIT_SOLUTION_RESULTS = 'GetFitSolutionResults'
+
+
 KEY_GRPC_JSON = 'grpcrequest'
 
 STATUS_VAL_OK = 'OK'
@@ -27,6 +31,7 @@ KEY_PROGRESS = 'progress'
 KEY_PROGRESS_STATE = 'state'
 KEY_PROGRESS_COMPLETED = 'COMPLETED'
 
+KEY_RANK = 'rank'
 KEY_REQUEST_ID = 'requestId'
 
 KEY_SEARCH_ID = 'searchId'

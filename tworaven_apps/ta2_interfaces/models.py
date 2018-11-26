@@ -12,7 +12,8 @@ from model_utils.models import TimeStampedModel
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.json_helper import json_dumps
 from tworaven_apps.ta2_interfaces.static_vals import \
-    (CALLBACK_URL, DETAILS_URL, KEY_PIPELINE_ID)
+    (CALLBACK_URL, DETAILS_URL,
+     KEY_FITTED_SOLUTION_ID, KEY_PIPELINE_ID)
 
 STATUS_IN_PROGRESS = 'IN_PROGRESS'
 STATUS_ERROR = 'ERROR'
@@ -397,3 +398,13 @@ class StoredResponse(TimeStampedModel):
         self.save()
 
         return ok_resp(self)
+
+    def get_value_by_key(self, key):
+        """Used for pulling a value from the response"""
+        if not self.response:
+            return err_resp('No response available')
+
+        if not key in self.response:
+            return err_resp('Key not found in response')
+
+        return ok_resp(self.response[key])

@@ -2369,7 +2369,7 @@ function onPipelinePrime(PipelineCreateResult, rookpipe) {
     allPipelineInfo.rookpipe=rookpipe;                // This is setting rookpipe for the entire table, but when there are multiple CreatePipelines calls, this is only recording latest values
 
     // VJD: these two functions are built and (I believe) functioning as intended. These exercise two core API calls that are currently unnecessary
-    //exportpipeline(pipelineTable[1][1]);
+    //eline(pipelineTable[1][1]);
     //listpipelines();
 
     // VJD: this is a third core API call that is currently unnecessary
@@ -4054,40 +4054,25 @@ export function setxTable(features) {
 //     "rank": 0.122
 // }
 
+
 export async function exportpipeline(pipelineId) {
     exportCount++;
-    let finalFittedId, finalFittedDetailsUrl;
-    let res, res8;
+    let res;
+    let my_rank = 1.01 - 0.01 * exportCount;   // ranks always gets smaller each call
 
-    let res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(pipelineId));
-    let fittedId = res5.data.requestId;
-    let res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
-    let fittedDetailsUrl = res6.data.details_url;
-    let fittingIntervalId = setInterval(async function() {
-        let res7 = await updateRequest(fittedDetailsUrl);   // check
-        if(typeof res7.data.is_finished != 'undefined'){
-            if(res7.data.is_finished){
-                finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
-                res8 = await updateRequest(finalFittedDetailsUrl);
-                finalFittedId = res8.data.response.fittedSolutionId;
-                console.log(finalFittedId);
-                let my_rank = 1.01 - 0.01*exportCount;   // ranks always get smaller each call
-                res = await makeRequest(D3M_SVC_URL + '/SolutionExport', {fittedSolutionId: finalFittedId, rank: my_rank});
+    let params = {pipelineId: pipelineId, rank: my_rank};
+    res = await makeRequest(D3M_SVC_URL + '/SolutionExport2', params);
 
-                // we need standardized status messages...
-                let mystatus = res.status;
-                console.log(res);
-                if (typeof mystatus !== 'undefined') {
-                if(mystatus.code=="FAILED_PRECONDITION") {
-                    console.log("TA2 has not written the executable.");    // was alert(), but testing on NIST infrastructure suggests these are getting written but triggering alert.
-                }
-                else {
-                    console.log(`Executable for solution ${pipelineId} with fittedsolution ${finalFittedId} has been written`);
-                }}
-                clearInterval(fittingIntervalId);
-            };
-        };
-    }, 500);
+    // we need standardized status messages...
+    let mystatus = res.status;
+    console.log(res);
+    if (typeof mystatus !== 'undefined') {
+        if(mystatus.code=="FAILED_PRECONDITION") {
+            console.log("TA2 has not written the executable.");    // was alert(), but testing on NIST infrastructure suggests these are getting written but triggering alert.
+        }else{
+            console.log(`Executable for solution ${pipelineId} with fittedsolution ${finalFittedId} has been written`);
+        }
+    }
     return res;
 }
 

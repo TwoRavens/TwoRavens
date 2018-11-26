@@ -19,7 +19,8 @@ from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 from tworaven_apps.ta2_interfaces.req_search_solutions import fit_solution
 from tworaven_apps.ta2_interfaces.ta2_produce_solution_helper import ProduceSolutionHelper
 from tworaven_apps.ta2_interfaces.static_vals import \
-        (KEY_FITTED_SOLUTION_ID, KEY_PIPELINE_ID,
+        (GRPC_GET_FIT_SOLUTION_RESULTS,
+         KEY_FITTED_SOLUTION_ID, KEY_PIPELINE_ID,
          KEY_PROGRESS, KEY_PROGRESS_STATE, KEY_PROGRESS_COMPLETED,
          KEY_REQUEST_ID,
          KEY_SEARCH_ID, KEY_SOLUTION_ID)
@@ -36,7 +37,6 @@ LOGGER = logging.getLogger(__name__)
 class FitSolutionHelper(BasicErrCheck):
     """Helper class to run TA2 call sequence"""
     GRCP_FIT_SOLUTION = 'FitSolution'
-    GRPC_GET_FIT_SOLUTION_RESULTS = 'GetFitSolutionResults'
 
     def __init__(self, pipeline_id, websocket_id, user_id, fit_params, **kwargs):
         """initial params"""
@@ -195,7 +195,7 @@ class FitSolutionHelper(BasicErrCheck):
             return
 
         if not request_id:
-            self.send_websocket_err_msg(self.GRPC_GET_FIT_SOLUTION_RESULTS,
+            self.send_websocket_err_msg(GRPC_GET_FIT_SOLUTION_RESULTS,
                                         'request_id must be set')
             return
 
@@ -210,7 +210,7 @@ class FitSolutionHelper(BasicErrCheck):
                              core_pb2.GetFitSolutionResultsRequest())
         except ParseError as err_obj:
             err_msg = ('Failed to convert JSON to gRPC: %s') % (err_obj)
-            self.send_websocket_err_msg(self.GRPC_GET_FIT_SOLUTION_RESULTS,
+            self.send_websocket_err_msg(GRPC_GET_FIT_SOLUTION_RESULTS,
                                         err_msg)
             return
 
@@ -219,7 +219,7 @@ class FitSolutionHelper(BasicErrCheck):
         # --------------------------------
         stored_request = StoredRequest(\
                         user=self.user_object,
-                        request_type=self.GRPC_GET_FIT_SOLUTION_RESULTS,
+                        request_type=GRPC_GET_FIT_SOLUTION_RESULTS,
                         pipeline_id=self.pipeline_id,
                         is_finished=False,
                         request=params_dict)
@@ -256,7 +256,7 @@ class FitSolutionHelper(BasicErrCheck):
                                (err_obj,)
 
                     self.send_websocket_err_msg(\
-                            self.GRPC_GET_FIT_SOLUTION_RESULTS,
+                            GRPC_GET_FIT_SOLUTION_RESULTS,
                             err_msg)
                     # Wait for next response....
                     continue
@@ -267,7 +267,7 @@ class FitSolutionHelper(BasicErrCheck):
                     user_msg = '"%s" not found in response to JSON: %s' % \
                                (KEY_FITTED_SOLUTION_ID, result_json)
                     self.send_websocket_err_msg(\
-                            self.GRPC_GET_FIT_SOLUTION_RESULTS,
+                            GRPC_GET_FIT_SOLUTION_RESULTS,
                             err_msg)
                     # Wait for next response....
                     continue
@@ -290,7 +290,7 @@ class FitSolutionHelper(BasicErrCheck):
                     # send a message to the user...
                     #
                     self.send_websocket_err_msg(\
-                                    self.GRPC_GET_FIT_SOLUTION_RESULTS,
+                                    GRPC_GET_FIT_SOLUTION_RESULTS,
                                     stored_resp_info.err_msg)
                     continue
 
@@ -318,7 +318,7 @@ class FitSolutionHelper(BasicErrCheck):
 
 
                 ws_msg = WebsocketMessage.get_success_message(\
-                            self.GRPC_GET_FIT_SOLUTION_RESULTS,
+                            GRPC_GET_FIT_SOLUTION_RESULTS,
                             'it worked',
                             msg_cnt=msg_cnt,
                             data=stored_response.as_dict())
@@ -373,7 +373,7 @@ class FitSolutionHelper(BasicErrCheck):
         if not self.produce_params:
             user_msg = 'No default params available for ProduceSolution'
             self.send_websocket_err_msg(\
-                            self.GRPC_GET_FIT_SOLUTION_RESULTS,
+                            GRPC_GET_FIT_SOLUTION_RESULTS,
                             user_msg)
             LOGGER.error(user_msg)
             return

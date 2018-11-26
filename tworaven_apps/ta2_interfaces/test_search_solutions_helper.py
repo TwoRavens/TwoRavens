@@ -25,6 +25,10 @@ django.setup()
 
 from tworaven_apps.ta2_interfaces.ta2_search_solutions_helper import \
         SearchSolutionsHelper
+from tworaven_apps.ta2_interfaces.req_search_solutions import \
+        (solution_export_with_saved_response,)
+from tworaven_apps.ta2_interfaces.static_vals import \
+        (KEY_PIPELINE_ID, KEY_RANK)
 #from tworaven_apps.ta2_interfaces.tasks import \
 #    (make_search_solutions_call, kick_off_solution_results)
 
@@ -48,7 +52,13 @@ def run_test():
 
     #search_id = info.result_obj
 
-
+def run_test2():
+    params = {KEY_PIPELINE_ID: 3975, KEY_RANK: 0.6}
+    resp = solution_export_with_saved_response(params)
+    if resp.success:
+        print('it worked: %s' % resp.result_obj)
+    else:
+        print('Error: %s' % resp.err_msg)
 
 if __name__ == '__main__':
-    run_test()
+    run_test2()
