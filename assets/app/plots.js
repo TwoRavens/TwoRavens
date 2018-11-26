@@ -1142,7 +1142,7 @@ export function densityNode(node, obj, radius, explore) {
         .attr("y", -45)
         .attr("id", () => myname)
         .style("width", width)
-        .style("height", height)
+        // .style("height", height) // MIKE: I commented this because the plots were getting cut off in explore mode
         .append("g")
         .attr("transform", "translate(" + left + "," + top + ")");
 

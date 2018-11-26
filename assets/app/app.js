@@ -18,6 +18,22 @@ import {elem} from './utils';
 //    Developers, see /template/index.html
 //-------------------------------------------------
 
+var transform_data ={
+    "preprocess_id":0,
+    "current_variable":"",
+    "description" : "",
+    "transform_variable":[
+       "any name (optional)"
+    ],
+    "transform_type":{
+       "manual_transform":true,
+       "functional_transform":false
+    },
+    "transform_data":""
+ }
+
+export let marginTopCarousel = 0;
+export let marginLeftCarousel = 0;
 
 // ~~~~~ PEEK ~~~~~
 // for the second-window data preview
@@ -84,10 +100,8 @@ export async function updatePeek(pipeline) {
     peekIsLoading = true;
     let variables = [];
 
-    if (is_model_mode && selectedProblem) {
-        let problem = disco.find(entry => entry.problem_id === selectedProblem);
-        variables = [...problem.predictors, problem.target];
-    }
+    if (is_model_mode && selectedProblem)
+        variables = [...selectedProblem.predictors, selectedProblem.target];
 
     let previewMenu = {
         type: 'menu',
@@ -153,7 +167,11 @@ export let alignmentData = {};
 // ~~~~
 
 
-let solver_res = []
+// when set, solver will be called if results menu is active
+export let solverPending = false;
+export let setSolverPending = state => solverPending = state;
+
+export let solver_res = []
 export let setSolver_res = res => solver_res = res;
 let solver_res_user = []
 let problem_sent = []
@@ -189,9 +207,10 @@ export function set_mode(mode) {
     // remove empty steps when leaving manipulate mode
     if ((domainIdentifier || {}).name in manipulations && is_manipulate_mode && mode !== 'manipulate') {
         manipulations[domainIdentifier.name] = manipulations[domainIdentifier.name].filter(step => {
-            if (step.type === 'transform' && step.transforms.length === 0) return false;
             if (step.type === 'subset' && step.abstractQuery.length === 0) return false;
             if (step.type === 'aggregate' && step.measuresAccum.length === 0) return false;
+            if (step.type === 'transform' && ['transforms', 'expansions', 'binnings', 'manual']
+                .reduce((sum, val) => sum + step[val].length, 0) === 0) return false;
             return true;
         });
     }
@@ -356,12 +375,10 @@ streamSocket.onclose = function(e) {
 
 
 
-let updateRightPanelWidth = () => {
-    if (is_explore_mode) {
-        return panelWidth.right = `calc(${common.panelMargin}*2 + 16px)`;
-    }
-
-    if (common.panelOpen['right']) {
+export let updateRightPanelWidth = () => {
+    if (is_explore_mode) panelWidth.right = `calc(${common.panelMargin}*2 + 16px)`;
+    else if (is_model_mode && !selectedProblem) panelWidth.right = common.panelMargin;
+    else if (common.panelOpen['right']) {
         let tempWidth = {
             'model': modelRightPanelWidths[rightTab],
             'explore': exploreRightPanelWidths[rightTabExplore]
@@ -403,7 +420,11 @@ let ind2 = [(RADIUS+30) * Math.cos(1.1), -1*(RADIUS+30) * Math.sin(1.1), 5];
 export let myspace = 0;
 
 export let forcetoggle = ["true"];
-export let locktoggle = true;
+
+// when set, a problem's Task, Subtask and Metric may not be edited
+export let lockToggle = true;
+export let setLockToggle = state => lockToggle = state;
+
 let priv = true;
 export let setPriv = state => priv = state;
 
@@ -549,7 +570,7 @@ export let d3mProblemDescription = {
  * rpc SetProblemDoc(SetProblemDocRequest) returns (Response) {}
  */
 export let setD3mProblemDescription = (key, value) => {
-    if (!locktoggle) {
+    if (!lockToggle) {
         d3mProblemDescription[key] = value;
 
         let lookup = {
@@ -914,7 +935,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     d3.select("#dataName").html(dataname);
     // put dataset name, from meta-data, into page title
     d3.select("title").html("TwoRavens " + dataname);
+
     localStorage.setItem('peekHeader' + peekId, "TwoRavens " + dataname);
+
 
     // if swandive, we have to set valueKey here so that left panel can populate.
     if (swandive) {
@@ -1055,24 +1078,21 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         };
 
         // Kick off discovery button as green for user guidance
-        if(!task1_finished){
+        if (!task1_finished) {
             byId("btnDiscovery").classList.remove("btn-default");
             byId("btnDiscovery").classList.add("btn-success"); // Would be better to attach this as a class at creation, but don't see where it is created
-        };
-
-for(let i=0; i<disco.length; i++){
-  callSolver(disco[i]);
-}
+        }
 
         // send the all problems to metadata and also perform app solver on theme
-
+        // MIKE: is it necessary to solve all problems on page load? Can this be deferred until the user attempts to view results?
+        // disco.forEach(callSolver);
     }
 
     // 11. Call layout() and start up
     layout(false, true);
     IS_D3M_DOMAIN ? zPop() : dataDownload();
 
-    setTimeout(loadResult,10000);
+    setTimeout(loadResult, 10000);
     problem_sent.length = 0;
 }
 
@@ -2155,7 +2175,7 @@ export function findNode(name) {
 //
 function updateNode(id, nodes) {
 
-    let node = allNodes.find(node => node.name === id) || nodes.find(node => node.name === id);
+    let node = (nodes || allNodes).find(node => node.name === id);
 
     if (node === undefined) {
         let i = 0;
@@ -2183,9 +2203,7 @@ function updateNode(id, nodes) {
         }
     }
 
-    if (node.grayout) {
-        return false;
-    }
+    if (node.grayout) return false;
 
     let name = node.name;
     let names = _ => nodes.map(n => n.name);
@@ -2207,13 +2225,9 @@ function updateNode(id, nodes) {
             node.strokeColor = selVarColor;
             node.strokeWidth = '1';
         }
-    } else {
-        nodes.push(node);
-    }
+    } else nodes.push(node);
 
-    if (is_explore_mode) {
-        return false;
-    }
+    if (is_explore_mode) return false;
 
     zparams.zvars = names();
     return true;
@@ -2229,6 +2243,7 @@ export function clickVar(elem, $nodes) {
             : exploreVariate === 'Trivariate' ? 3
             : 5;
         if ($nodes.length >= max) {
+            alert('Please deselect another variable first.')
             return;
         }
     }
@@ -2297,9 +2312,6 @@ export function helpmaterials(type) {
     }
     console.log(type);
 }
-
-/** needs doc */
-export let lockDescription = (state) => locktoggle = state;
 
 /** needs doc */
 export function zPop() {
@@ -2948,8 +2960,7 @@ export async function makeRequest(url, data) {
 /**
    programmatically deselect every selected variable
 */
-export function erase(disc) {
-    setLeftTab(disc == 'Discovery' ? 'Discovery' : 'Variables');
+export function erase() {
     nodes.map(node => node.name).forEach(name => clickVar(name, nodes));
 }
 
@@ -4280,13 +4291,12 @@ export function discovery(preprocess_file) {
 export async function addProblemFromForceDiagram() {
     zPop();
 
-    let oldProblem = disco.find(prob => prob.problem_id === selectedProblem);
     let newProblem = jQuery.extend(true, {
             transform: 0,
             subsetObs: 0,
             subsetFeats: 0
         },
-        oldProblem || {},
+        selectedProblem || {},
         await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams),
         {
             problem_id: 'problem' + (disco.length + 1),
@@ -4308,17 +4318,16 @@ export async function addProblemFromForceDiagram() {
         newProblem.metric = currentMetric === 'metricUndefined' ? 'meanSquaredError' : currentMetric;
     }
 
-    if ((oldProblem || {}).problem_id in manipulations)
+    if ((selectedProblem || {}).problem_id in manipulations)
         manipulations[newProblem.problem_id]
-            = jQuery.extend(true, [], manipulations[oldProblem.problem_id]);
+            = jQuery.extend(true, [], manipulations[selectedProblem.problem_id]);
 
     console.log("pushing new problem to discovered problems:");
     console.log(newProblem);
 
     disco.push(newProblem);
-    setSelectedProblem(newProblem.problem_id);
+    setSelectedProblem(newProblem);
     setLeftTab('Discovery');
-    await callSolver(newProblem);
     loadResult([newProblem]);
     // let addProblemAPI = app.addProblem(preprocess_id, version, problem_section);
     // console.log("API RESPONSE: ",addProblemAPI );
@@ -4352,17 +4361,14 @@ export function connectAllForceDiagram() {
 }
 
 
-// when a problem is clicked
-// let discoveryTimeout;
+// called when a problem is clicked in the discovery leftpanel table
 export let discoveryClick = problemId => {
-    setSelectedProblem(problemId);
-    let problem = disco.find(problem => problem.problem_id === selectedProblem);
-    m.route.set('/model');
+    setSelectedProblem(disco.find(problem => problem.problem_id === problemId));
 
-    if (!problem) return;
+    if (!selectedProblem) return;
 
-    let {target, predictors} = problem;
-    erase('Discovery');
+    let {target, predictors} = selectedProblem;
+    erase();
     [target, ...predictors].map(x => clickVar(x));
     predictors.forEach(predictor => setColors(nodes.find(node => node.name === predictor), gr1Color));
     setColors(findNode(target), dvColor);
@@ -4371,22 +4377,21 @@ export let discoveryClick = problemId => {
 };
 
 
-export let selectedProblem;
-export function setSelectedProblem(problemId) {
-    if (selectedProblem === problemId) return; // ignore if already set
+export let selectedProblem; // the problem object
+export function setSelectedProblem(problem) {
+    if (selectedProblem === problem) return; // ignore if already set
 
-    selectedProblem = problemId;
+    selectedProblem = problem;
+    updateRightPanelWidth();
 
     // if a constraint is being staged, delete it
     manipulate.setConstraintMenu(undefined);
 
     // remove old staged problems
-    disco = disco.filter(entry => entry.problem_id === selectedProblem || !entry.staged);
-    if (selectedProblem === undefined) return;
+    disco = disco.filter(entry => entry.problem_id === (problem || {}).problem_id || !entry.staged);
+    if (problem === undefined) return;
 
-    let problem = disco.find(entry => entry.problem_id === selectedProblem);
-
-    if (!(problemId in manipulations)) {
+    if (!(problem.problem_id in manipulations)) {
         let pipeline = [];
 
         if (problem['subsetObs']) {
@@ -4394,7 +4399,7 @@ export function setSelectedProblem(problemId) {
                 type: 'subset',
                 id: 'subset ' + pipeline.length,
                 abstractQuery: [{
-                    id: String(problemId) + '-' + String(0) + '-' + String(1),
+                    id: String(problem.problem_id) + '-' + String(0) + '-' + String(1),
                     name: problem['subsetObs'],
                     show_op: false,
                     cancellable: true,
@@ -4413,52 +4418,59 @@ export function setSelectedProblem(problemId) {
                     name: variable,
                     equation: transform
                 }],
+                expansions: [],
+                binnings: [],
+                manual: [],
                 id: 'transform ' + pipeline.length,
             })
             problem.predictors.push(variable);
         }
 
-        manipulations[problemId] = pipeline;
+        manipulations[problem.problem_id] = pipeline;
     }
 
     let countMenu = {type: 'menu', metadata: {type: 'count'}};
-    let subsetMenu = [...manipulate.getPipeline(), ...manipulate.getProblemPipeline(selectedProblem) || []];
+    let subsetMenu = [...manipulate.getPipeline(), ...manipulate.getProblemPipeline(problem) || []];
     manipulate.loadMenu(subsetMenu, countMenu).then(count => {
         manipulate.setTotalSubsetRecords(count);
         m.redraw();
     });
 
     resetPeek();
-    modelSelectionResults(problem);
+
+    // will trigger the call to solver, if a menu that needs that info is shown
+    if (selectedProblem) setSolverPending(true);
 }
 
-export function getProblemCopy(problemId) {
-    let problem = jQuery.extend(true, {}, disco.find(prob => prob.problem_id === problemId));  // deep copy of original
+export function getProblemCopy(problem) {
+    let problemId = problem.problem_id;
+    problem = jQuery.extend(true, {}, problem);  // deep copy of original
 
     let offset = 1;
-    while (disco.find(prob => prob.problem_id === problemId + 'user' + offset)) offset = offset + 1;
+    while (disco.find(prob => prob.problem_id === problem.problem_id + 'user' + offset)) offset++;
+    let new_problem_id = problem.problem_id + 'user' + offset;
+
+    if (problem.problem_id in manipulations)
+        manipulations[new_problem_id] = jQuery.extend(true, [], manipulations[problem.problem_id]);
 
     Object.assign(problem, {
-        problem_id: problemId + 'user' + offset,
-        provenance: problemId,
+        problem_id: new_problem_id,
+        provenance: problem.problem_id,
         system: 'user'
     })
-
-    if (problemId in manipulations)
-        manipulations[problem.problem_id] = jQuery.extend(true, [], manipulations[problemId]);
 
     return problem;
 }
 
 export let stargazer = ""
 export function modelSelectionResults(problem){
-    // solver_res = []
-    callSolver(problem);
-    setTimeout(console.log("callSolver response : ", solver_res),2000)
-    setTimeout(makeDataDiscovery,2000)
-    setTimeout(makeDiscoverySolutionPlot,2000)
-    setTimeout(makeDataDiscoveryTable,2000)
-
+    setSolverPending(false);
+    callSolver(problem).then(() => {
+        console.log("callSolver response : ", solver_res)
+        makeDataDiscovery()
+        makeDiscoverySolutionPlot()
+        makeDataDiscoveryTable()
+    });
 }
 
 export function makeDataDiscovery(){
@@ -4511,13 +4523,14 @@ export function makeDataDiscovery(){
 	tabulate(in_data, ['Variable', 'Data']); // 2 column table
 
 }
-export function makeDiscoverySolutionPlot(){
-  let xdata = "Actual";
-  let ydata = "Predicted";
-  let mytitle = "Predicted V Actuals: Pipeline ";
-  let dvvalues = solver_res[0]['predictor_values']['actualvalues']
-  let predvals = solver_res[0]['predictor_values']['fittedvalues']
-  scatter(dvvalues, predvals, xdata, ydata, undefined, undefined, mytitle);
+export function makeDiscoverySolutionPlot() {
+    console.log(solver_res);
+    let xdata = "Actual";
+    let ydata = "Predicted";
+    let mytitle = "Predicted V Actuals: Pipeline ";
+    let dvvalues = solver_res[0]['predictor_values']['actualvalues']
+    let predvals = solver_res[0]['predictor_values']['fittedvalues']
+    scatter(dvvalues, predvals, xdata, ydata, undefined, undefined, mytitle);
 
 }
 export function makeDataDiscoveryTable(){
@@ -4590,9 +4603,7 @@ export function deleteFromDisc(discov){
 }
 
 export function saveDisc() {
-    let problem = disco.find(problem => problem.problem_id === selectedProblem);
-    problem.description = document.getElementById("discoveryInput").value;
-    console.log(problem);
+    selectedProblem.description = document.getElementById("discoveryInput").value;
 }
 
 export function deleteProblem(preproess_id, version, problem_id) {
@@ -4999,35 +5010,15 @@ problem_sent.length = 0;
 }
 
 
-// takes as input problem in the form of a "discovered problem" (can also be user-defined), calls rooksolver, and returns result
-export async function callSolver (prob) {
+// takes as input problem in the form of a "discovered problem" (can also be user-defined), calls rooksolver, and stores result
+export async function callSolver(prob) {
+    let hasManipulation = prob.problem_id in manipulations && manipulations[prob.problem_id].length > 0;
+    let hasNominal = [prob.target, ...prob.predictors].some(variable => zparams.znom.includes(variable));
 
-    // ---------------------------------------
-    //return; // TEMP DISABLE callSolver
-    // ---------------------------------------
+    let zd3mdata = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : zparams.zd3mdata;
 
-    let temp = JSON.stringify(prob);
-    // console.log(temp);
-    solver_res.length = 0;
-    let zd3mdata = "";
-    if(prob.problem_id in manipulations && manipulations[prob.problem_id].length>0){
-      zd3mdata = await manipulate.buildDatasetUrl(prob);
-      console.log("zd3mdata from manipulation", zd3mdata);
-    }else
-     {
-      zd3mdata = zparams.zd3mdata;
-      console.log("zd3mdata default", zd3mdata);
-    }
-
-    let jsonout = {prob, zd3mdata};
-    let json = await makeRequest(ROOK_SVC_URL + 'solverapp', jsonout);
-    var promise1 = Promise.resolve(json);
-
-    promise1.then(function (value) {
-        // console.log(" THis is the solver app response",value);
-        solver_res.push(value)
-        return value;
-    });
+    // MIKE: shouldn't solverapp return a list? even a singleton list would be fine
+    solver_res = [await makeRequest(ROOK_SVC_URL + 'solverapp', {prob, zd3mdata})];
 }
 
 // pretty precision formatting- null and undefined are NaN, attempt to parse strings to float
@@ -5041,4 +5032,28 @@ export function formatPrecision(value, precision=4) {
     let digits = Math.max(Math.floor(Math.log10(Math.abs(Number(String(numeric).replace(/[^0-9]/g, ''))))), 0) + 1;
 
     return (digits <= precision || precision === 0) ? numeric : numeric.toPrecision(precision) * 1
+}
+
+export let omniSort = (a, b) => {
+    if (a === undefined && b !== undefined) return -1;
+    if (b === undefined && a !== undefined) return 1;
+    if (a === b) return 0;
+    if (typeof a === 'number') return a - b;
+    if (typeof a === 'string') return  a.localeCompare(b);
+    return (a < b) ? -1 : 1;
+};
+
+export function callTransform(elem){
+    console.log("function called")
+    let json =  makeRequest(
+        ROOK_SVC_URL + 'transformapp',
+        {zdataurl: dataurl,
+         zvars: elem,
+         zsessionid: zparams.zsessionid,
+         transform: t,
+         callHistory: callHistory,
+         typeTransform: typeTransform,
+         typeStuff: outtypes});
+
+         console.log(json)
 }

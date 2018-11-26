@@ -3,6 +3,7 @@ import m from 'mithril';
 import PlotBars from "./views/PlotBars";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import {alignmentData, formattingData} from "../app";
+import TextField from "../../common/views/TextField";
 
 export default class CanvasDiscrete {
     view(vnode) {
@@ -78,6 +79,11 @@ export default class CanvasDiscrete {
             };
         };
 
+        let typedLookup = data.reduce((out, entry) => {
+            out[entry[metadata.columns[0]]] = entry[metadata.columns[0]];
+            return out;
+        }, {});
+
         let createPlot = (format, dataView, selections) => {
             let maxCharacters = 0;
 
@@ -125,11 +131,7 @@ export default class CanvasDiscrete {
                         margin: {top: 10, right: 30, bottom: 50, left: maxCharacters * 6 + 20},
                         data: plotData,
                         callbackBar: (bar) => {
-                            if (!isNaN(parseFloat(bar.key))) {
-                                let foundRecord = data.find(record => String(record[metadata.columns[0]]) === bar.key);
-                                if (foundRecord && foundRecord[metadata.columns[0]] !== undefined)
-                                    bar.key = foundRecord[metadata.columns[0]];
-                            }
+                            bar.key = typedLookup[bar.key] || bar.key;
 
                             let target_state = bar.class === 'bar-some' || bar.class === 'bar';
 
@@ -150,7 +152,34 @@ export default class CanvasDiscrete {
             );
         };
 
-        return m("#canvasDiscrete", {style: {height: '100%', 'padding-top': common.panelMargin, width: `calc(100% + ${common.panelMargin})`}},
+        return m("#canvasDiscrete", {
+                style: {
+                    height: '100%',
+                    'padding-top': common.panelMargin,
+                    width: `calc(100% + ${common.panelMargin})`
+                }
+            },
+
+            m(ButtonRadio, {
+                id: 'btnRadioAllNone',
+                title: 'select all or none',
+                sections: [{value: 'all'}, {value: 'none'}],
+                activeSection: {0: 'none', [data.length]: 'all'}[preferences.selections.size] || 'intermediate',
+                onclick: state => {
+                    if (state === 'none')
+                        preferences.selections = new Set();
+                    if (state === 'all')
+                        preferences.selections = data.reduce((out, entry) => out.add(entry[metadata.columns[0]]), new Set())
+                },
+                attrsAll: {style: {width: '10em'}}
+            }),
+            m(TextField, {
+                placeholder: 'Enter variable values',
+                style: {display: 'inline', width: 'calc(100% - 12em)', 'margin-left': '2em'},
+                value: [...preferences.selections].join(' ') + ' ',
+                oninput: value => preferences.selections = new Set(value.split(' ').map(value => typedLookup[value] || value))
+            }),
+
             mode === 'aggregate' && 'formats' in metadata && metadata['formats'].length > 1 && m(ButtonRadio, {
                 id: 'aggregationFormat',
                 onclick: (format) => preferences['aggregation'] = format,
