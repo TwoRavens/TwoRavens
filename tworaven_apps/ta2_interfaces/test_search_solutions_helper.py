@@ -61,4 +61,4 @@ def run_test2():
         print('Error: %s' % resp.err_msg)
 
 if __name__ == '__main__':
-    run_test2()
+    run_test()
