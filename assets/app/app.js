@@ -334,6 +334,11 @@ streamSocket.onmessage = function(e) {
 
     handleGetProduceSolutionResultsResponse(msg_data.data);
 
+  } else if (msg_data.msg_type === 'GetFitSolutionResults'){
+    console.log(msg_data.msg_type + ' recognized!');
+
+    console.log('No handler: Currently not using GetFitSolutionResultsResponse...');
+
   } else if (msg_data.msg_type === 'ENDGetSearchSolutionsResults'){
     console.log(msg_data.msg_type + ' recognized!');
 
