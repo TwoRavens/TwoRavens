@@ -1545,7 +1545,7 @@ let getPlotType = (pt,pn) => {
         if(pn.length==2) {
             // check uniqueValids. if so, make difference from mean the default plot
             let uvs = [uniqueValids(pn[0]), uniqueValids(pn[1])];
-            console.log(uvs);
+            // console.log(uvs);
             if(uvs[0] === true && uvs[1] === false)
                 return ['averagediff', 'nq'];
             else if (uvs[0] === false && uvs[1] === true)

@@ -14,7 +14,7 @@ class PanelList {
                       m(`p#${v.replace(/\W/g, '_')}`, {
                           class: probDesc ?
                               (app.d3mProblemDescription[probDesc] === v ? 'item-select' :
-                               app.locktoggle ? 'item-default item-lineout' :
+                               app.lockToggle ? 'item-default item-lineout' :
                                'item-default') : '',
                           style: {
                               'background-color': probDesc ? '' :

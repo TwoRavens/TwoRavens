@@ -166,7 +166,11 @@ export let alignmentData = {};
 // ~~~~
 
 
-let solver_res = []
+// when set, solver will be called if results menu is active
+export let solverPending = false;
+export let setSolverPending = state => solverPending = state;
+
+export let solver_res = []
 export let setSolver_res = res => solver_res = res;
 let solver_res_user = []
 let problem_sent = []
@@ -201,9 +205,10 @@ export function set_mode(mode) {
     // remove empty steps when leaving manipulate mode
     if ((domainIdentifier || {}).name in manipulations && is_manipulate_mode && mode !== 'manipulate') {
         manipulations[domainIdentifier.name] = manipulations[domainIdentifier.name].filter(step => {
-            if (step.type === 'transform' && step.transforms.length === 0) return false;
             if (step.type === 'subset' && step.abstractQuery.length === 0) return false;
             if (step.type === 'aggregate' && step.measuresAccum.length === 0) return false;
+            if (step.type === 'transform' && ['transforms', 'expansions', 'binnings', 'manual']
+                .reduce((sum, val) => sum + step[val].length, 0) === 0) return false;
             return true;
         });
     }
@@ -338,7 +343,11 @@ let ind2 = [(RADIUS+30) * Math.cos(1.1), -1*(RADIUS+30) * Math.sin(1.1), 5];
 export let myspace = 0;
 
 export let forcetoggle = ["true"];
-export let locktoggle = true;
+
+// when set, a problem's Task, Subtask and Metric may not be edited
+export let lockToggle = true;
+export let setLockToggle = state => lockToggle = state;
+
 let priv = true;
 export let setPriv = state => priv = state;
 
@@ -484,7 +493,7 @@ export let d3mProblemDescription = {
  * rpc SetProblemDoc(SetProblemDocRequest) returns (Response) {}
  */
 export let setD3mProblemDescription = (key, value) => {
-    if (!locktoggle) {
+    if (!lockToggle) {
         d3mProblemDescription[key] = value;
 
         let lookup = {
@@ -998,7 +1007,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
 
         // send the all problems to metadata and also perform app solver on theme
-        disco.forEach(callSolver);
+        // MIKE: is it necessary to solve all problems on page load? Can this be deferred until the user attempts to view results?
+        // disco.forEach(callSolver);
     }
 
     // 11. Call layout() and start up
@@ -2225,9 +2235,6 @@ export function helpmaterials(type) {
     }
     console.log(type);
 }
-
-/** needs doc */
-export let lockDescription = (state) => locktoggle = state;
 
 /** needs doc */
 export function zPop() {
@@ -4613,9 +4620,9 @@ export async function addProblemFromForceDiagram() {
         newProblem.metric = currentMetric === 'metricUndefined' ? 'meanSquaredError' : currentMetric;
     }
 
-    if ((oldProblem || {}).problem_id in manipulations)
+    if ((selectedProblem || {}).problem_id in manipulations)
         manipulations[newProblem.problem_id]
-            = jQuery.extend(true, [], manipulations[oldProblem.problem_id]);
+            = jQuery.extend(true, [], manipulations[selectedProblem.problem_id]);
 
     console.log("pushing new problem to discovered problems:");
     console.log(newProblem);
@@ -4623,7 +4630,6 @@ export async function addProblemFromForceDiagram() {
     disco.push(newProblem);
     setSelectedProblem(newProblem);
     setLeftTab('Discovery');
-    await callSolver(newProblem);
     loadResult([newProblem]);
     // let addProblemAPI = app.addProblem(preprocess_id, version, problem_section);
     // console.log("API RESPONSE: ",addProblemAPI );
@@ -4733,7 +4739,9 @@ export function setSelectedProblem(problem) {
     });
 
     resetPeek();
-    modelSelectionResults(problem);
+
+    // will trigger the call to solver, if a menu that needs that info is shown
+    if (selectedProblem) setSolverPending(true);
 }
 
 export function getProblemCopy(problem) {
@@ -4758,13 +4766,13 @@ export function getProblemCopy(problem) {
 
 export let stargazer = ""
 export function modelSelectionResults(problem){
-    // solver_res = []
-    callSolver(problem);
-    setTimeout(console.log("callSolver response : ", solver_res),2000)
-    setTimeout(makeDataDiscovery,2000)
-    setTimeout(makeDiscoverySolutionPlot,2000)
-    setTimeout(makeDataDiscoveryTable,2000)
-
+    setSolverPending(false);
+    callSolver(problem).then(() => {
+        console.log("callSolver response : ", solver_res)
+        makeDataDiscovery()
+        makeDiscoverySolutionPlot()
+        makeDataDiscoveryTable()
+    });
 }
 
 export function makeDataDiscovery(){
@@ -5110,30 +5118,15 @@ problem_sent.length = 0;
 }
 
 
-// takes as input problem in the form of a "discovered problem" (can also be user-defined), calls rooksolver, and returns result
-export async function callSolver (prob) {
-    let temp = JSON.stringify(prob);
-    // console.log(temp);
-    solver_res.length = 0;
-    let zd3mdata = "";
-    if(prob.problem_id in manipulations && manipulations[prob.problem_id].length>0){
-      zd3mdata = await manipulate.buildDatasetUrl(prob);
-      console.log("zd3mdata from manipulation", zd3mdata);
-    }else
-     {
-      zd3mdata = zparams.zd3mdata;
-      console.log("zd3mdata default", zd3mdata);
-    }
+// takes as input problem in the form of a "discovered problem" (can also be user-defined), calls rooksolver, and stores result
+export async function callSolver(prob) {
+    let hasManipulation = prob.problem_id in manipulations && manipulations[prob.problem_id].length > 0;
+    let hasNominal = [prob.target, ...prob.predictors].some(variable => zparams.znom.includes(variable));
 
-    let jsonout = {prob, zd3mdata};
-    let json = await makeRequest(ROOK_SVC_URL + 'solverapp', jsonout);
-    var promise1 = Promise.resolve(json);
+    let zd3mdata = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : zparams.zd3mdata;
 
-    promise1.then(function (value) {
-        // console.log(" THis is the solver app response",value);
-        solver_res.push(value)
-        return value;
-    });
+    // MIKE: shouldn't solverapp return a list? even a singleton list would be fine
+    solver_res = [await makeRequest(ROOK_SVC_URL + 'solverapp', {prob, zd3mdata})];
 }
 
 // pretty precision formatting- null and undefined are NaN, attempt to parse strings to float

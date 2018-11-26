@@ -174,7 +174,8 @@ function leftpanel(mode) {
                                 type: 'transform',
                                 step: problemPipeline[problemPipeline.length - 1],
                                 pipeline: manipulate.getPipeline(app.selectedProblem)});
-                            common.setPanelOpen('right');
+                            common.setPanelOpen('left');
+                            app.setLeftTab('Variables');
                         }
                     }, 'Create New Variable'),
                 ]
@@ -302,6 +303,9 @@ function rightpanel(mode) {
 
     // mode == null (model mode)
 
+    // reload the results if on the results tab and there are pending changes
+    if (app.rightTab === 'Results' && app.solverPending) app.modelSelectionResults(app.selectedProblem);
+
     // only called if the pipeline flowchart is rendered
     function pipelineFlowchartPrep(pipeline) {
         let steps = pipeline.steps.map((pipeStep, i) => ({
@@ -354,11 +358,11 @@ function rightpanel(mode) {
             idSuffix: 'Type',
             contents: [
                 m(`button#btnLock.btn.btn-default`, {
-                    class: app.locktoggle ? 'active' : '',
-                    onclick: () => app.lockDescription(!app.locktoggle),
+                    class: app.lockToggle ? 'active' : '',
+                    onclick: () => app.setLockToggle(!app.lockToggle),
                     title: 'Lock selection of problem description',
                     style: 'float: right',
-                }, glyph(app.locktoggle ? 'lock' : 'pencil', true)),
+                }, glyph(app.lockToggle ? 'lock' : 'pencil', true)),
                 m('', {style: 'float: left'},
                     m(Dropdown, {
                         id: 'taskType',
@@ -373,9 +377,11 @@ function rightpanel(mode) {
                                 app.setLeftTab('Discovery');
                             }
                             app.selectedProblem.task = child;
+                            // will trigger the call to solver, if a menu that needs that info is shown
+                            if (app.selectedProblem) app.setSolverPending(true);
                         },
                         style: {'margin-bottom': '1em'},
-                        disabled: app.locktoggle
+                        disabled: app.lockToggle
                     }),
                     m(Dropdown, {
                         id: 'taskSubType',
@@ -390,9 +396,11 @@ function rightpanel(mode) {
                                 app.setLeftTab('Discovery');
                             }
                             app.selectedProblem.subTask = child;
+                            // will trigger the call to solver, if a menu that needs that info is shown
+                            if (app.selectedProblem) app.setSolverPending(true);
                         },
                         style: {'margin-bottom': '1em'},
-                        disabled: app.locktoggle
+                        disabled: app.lockToggle
                     }),
                     m(Dropdown, {
                         id: 'performanceMetrics',
@@ -407,9 +415,11 @@ function rightpanel(mode) {
                                 app.setLeftTab('Discovery');
                             }
                             app.selectedProblem.metric = child;
+                            // will trigger the call to solver, if a menu that needs that info is shown
+                            if (app.selectedProblem) app.setSolverPending(true);
                         },
                         style: {'margin-bottom': '1em'},
-                        disabled: app.locktoggle
+                        disabled: app.lockToggle
                     })
                 )
             ]
@@ -777,18 +787,17 @@ class Body {
                             m('br'),
                             exploreVars)
                         : m('', {style},
-                            m(ButtonRadio,
-                                {
-                                    id: 'exploreButtonBar',
-                                    attrsAll: {style: {width: '400px'}},
-                                    attrsButtons: {class: ['btn-sm']},
-                                    onclick: x => {
-                                        nodesExplore = [];
-                                        app.setVariate(x)
-                                    },
-                                    activeSection: app.exploreVariate,
-                                    sections: discovery ? [{value: 'Problem'}] : [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]
-                                }),
+                            m(ButtonRadio, {
+                                id: 'exploreButtonBar',
+                                attrsAll: {style: {width: '400px'}},
+                                attrsButtons: {class: ['btn-sm']},
+                                onclick: x => {
+                                    nodesExplore = [];
+                                    app.setVariate(x)
+                                },
+                                activeSection: app.exploreVariate,
+                                sections: discovery ? [{value: 'Problem'}] : [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]
+                            }),
                             m(PanelButton, {
                                 id: 'exploreGo',
                                 classes: 'btn-success',
@@ -810,13 +819,11 @@ class Body {
                             m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
                                 (discovery ? app.disco : app.valueKey).map(x => { // entry could either be a problem or a variable name
                                     let selected = discovery ? x === app.selectedProblem : nodesExplore.map(y => y.name).includes(x);
-
                                     let targetName = x.target || x;
-                                    let targetNode = app.findNode(targetName);
 
                                     let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
                                     let [n0, n1, n2] = nodesExplore;
-                                    return m('span', {
+                                    return m('span#exploreNodeBox', {
                                             onclick: _ => discovery ? app.setSelectedProblem(x) : app.clickVar(x, nodesExplore),
                                             onmouseover: function () {
                                                 $(this).popover('toggle');
@@ -827,7 +834,7 @@ class Body {
                                             },
                                             onmouseout: "$(this).popover('toggle');",
                                             'data-container': 'body',
-                                            'data-content': targetNode.labl || '<i>none provided</i>',
+                                            'data-content': app.findNode(targetName).labl || '<i>none provided</i>',
                                             'data-html': 'true',
                                             'data-original-title': 'Description',
                                             'data-placement': 'top',
@@ -845,7 +852,7 @@ class Body {
                                                 'align-items': 'center',
                                                 'background-color': app.hexToRgba(common[selected ? 'selVarColor' : 'varColor'])
                                             }
-                                        }, m('', {
+                                        }, m('#exploreNodePlot', {
                                             oninit() {
                                                 this.node = app.findNode(x);
                                             },
@@ -863,7 +870,7 @@ class Body {
                                             },
                                             style: 'height: 65%'
                                         }),
-                                        m('', {style: 'margin: 1em'},
+                                        m('#exploreNodeLabel', {style: 'margin: 1em'},
                                             show && n0 && n0.name === x ? `${x} (x)`
                                                 : show && n1 && n1.name === x ? `${x} (y)`
                                                 : show && n2 && n2.name === x ? `${x} (z)`

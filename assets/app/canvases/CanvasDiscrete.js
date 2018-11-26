@@ -174,8 +174,9 @@ export default class CanvasDiscrete {
                 attrsAll: {style: {width: '10em'}}
             }),
             m(TextField, {
+                placeholder: 'Enter variable values',
                 style: {display: 'inline', width: 'calc(100% - 12em)', 'margin-left': '2em'},
-                value: [...preferences.selections].join(' '),
+                value: [...preferences.selections].join(' ') + ' ',
                 oninput: value => preferences.selections = new Set(value.split(' ').map(value => typedLookup[value] || value))
             }),
 
