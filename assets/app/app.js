@@ -12,6 +12,7 @@ import {setModal} from '../common/views/Modal';
 import {bars, barsNode, barsSubset, density, densityNode, scatter, selVarColor} from './plots.js';
 import {elem} from './utils';
 
+
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
 //    Developers, see /template/index.html
@@ -196,6 +197,7 @@ export let is_model_mode = true;
 export let is_explore_mode = false;
 export let is_results_mode = false;
 export let is_manipulate_mode = false;
+export let ROOKPIPE_FROM_REQUEST;  // rookpipe needed within websocket handler functions
 
 let exportCount = 0;
 
@@ -297,6 +299,81 @@ export let panelWidth = {
     'left': '0',
     'right': '0'
 };
+
+
+//-------------------------------------------------
+// Initialize a websocket for this page
+//-------------------------------------------------
+export let wsLink = 'ws://' + window.location.host +
+               '/ws/connect/' + username + '/';
+console.log('streamSocket connection made: ' + wsLink);
+export let streamSocket = new WebSocket(wsLink);
+
+export let streamMsgCnt = 0;
+//  messages received.
+//
+streamSocket.onmessage = function(e) {
+   streamMsgCnt++;
+   console.log(streamMsgCnt + ') message received! '  + e);
+   // parse the data into JSON
+   let msg_obj = JSON.parse(e.data);
+   //console.log('data:' + JSON.stringify(msg_obj));
+   let msg_data = msg_obj['message'];
+
+  if(typeof msg_data.msg_type===undefined){
+    console.log('streamSocket.onmessage: Error, "msg_data.msg_type" not specified!');
+    return;
+  } else if(typeof msg_data.data===undefined){
+    console.log('streamSocket.onmessage: Error, "msg_data.data" type not specified!');
+    console.log('full data: ' + JSON.stringify(msg_data));
+    console.log('---------------------------------------------');
+
+    return;
+  }
+
+  console.log('Got it! Message type: ' + msg_data.msg_type);
+  //JSON.stringify(msg_data));
+
+  if (msg_data.msg_type === 'GetSearchSolutionsResults'){
+    console.log(msg_data.msg_type + ' recognized!');
+
+    handleGetSearchSolutionResultsResponse(msg_data.data);
+
+  } else if (msg_data.msg_type === 'DescribeSolution'){
+    console.log(msg_data.msg_type + ' recognized!');
+
+    handleDescribeSolutionResponse(msg_data.data);
+
+  } else if (msg_data.msg_type === 'GetScoreSolutionResults'){
+    console.log(msg_data.msg_type + ' recognized!');
+    handleGetScoreSolutionResultsResponse(msg_data.data);
+
+  } else if (msg_data.msg_type === 'GetProduceSolutionResults'){
+    console.log(msg_data.msg_type + ' recognized!');
+
+    handleGetProduceSolutionResultsResponse(msg_data.data);
+
+  } else if (msg_data.msg_type === 'GetFitSolutionResults'){
+    console.log(msg_data.msg_type + ' recognized!');
+
+    console.log('No handler: Currently not using GetFitSolutionResultsResponse...');
+
+  } else if (msg_data.msg_type === 'ENDGetSearchSolutionsResults'){
+    console.log(msg_data.msg_type + ' recognized!');
+
+    handleENDGetSearchSolutionsResults();
+
+
+  } else {
+    console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
+  }
+};
+streamSocket.onclose = function(e) {
+      console.error('streamSocket closed unexpectedly');
+};
+//-------------------------------------------------
+
+
 
 export let updateRightPanelWidth = () => {
     if (is_explore_mode) panelWidth.right = `calc(${common.panelMargin}*2 + 16px)`;
@@ -2309,7 +2386,7 @@ function onPipelinePrime(PipelineCreateResult, rookpipe) {
     allPipelineInfo.rookpipe=rookpipe;                // This is setting rookpipe for the entire table, but when there are multiple CreatePipelines calls, this is only recording latest values
 
     // VJD: these two functions are built and (I believe) functioning as intended. These exercise two core API calls that are currently unnecessary
-    //exportpipeline(pipelineTable[1][1]);
+    //eline(pipelineTable[1][1]);
     //listpipelines();
 
     // VJD: this is a third core API call that is currently unnecessary
@@ -2480,16 +2557,31 @@ function CreatePipelineDefinition(predictors, depvar, timeBound, aux) {
     return {userAgent: my_userAgent, version: my_version, timeBound: my_timeBound, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, template: my_template, inputs: [{dataset_uri: my_dataseturi}] };
 }
 
+
+
 function CreateFitDefinition(solutionId){
-    let my_solutionId = solutionId;
-    let my_dataseturi = 'file://' + datasetdocurl;
-    let my_inputs = [{dataset_uri: my_dataseturi}];
-    let my_exposeOutputs = [];   // eg. ["steps.3.produce"];  need to fix
-    let my_exposeValueTypes = ['CSV_URI'];
-    let my_users = [{id: 'TwoRavens', choosen: false, reason: ''}];
-    return {solutionId: my_solutionId, inputs: my_inputs, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes, users: my_users};
+
+    let fitDefn = getFitSolutionDefaultParameters();
+    fitDefn.solutionId = solutionId;
+    return fitDefn;
 }
 
+/**
+    Return the default parameters used for a FitSolution call.
+    This DOES NOT include the solutionID
+ */
+export function getFitSolutionDefaultParameters(){
+
+  let my_dataseturi = 'file://' + datasetdocurl;
+  let my_inputs = [{dataset_uri: my_dataseturi}];
+  let my_exposeOutputs = [];   // eg. ["steps.3.produce"];  need to fix
+  let my_exposeValueTypes = ['CSV_URI'];
+  let my_users = [{id: 'TwoRavens', choosen: false, reason: ''}];
+  return {inputs: my_inputs,
+          exposeOutputs: my_exposeOutputs,
+          exposeValueTypes: my_exposeValueTypes,
+          users: my_users};
+}
 
 // {
 //     "fittedSolutionId": "solutionId_yztf3r",
@@ -2523,23 +2615,60 @@ function CreateFitDefinition(solutionId){
 // }
 
 function CreateProduceDefinition(fsid){
-    let my_fittedSolutionId = fsid;
-    let my_dataseturi = 'file://' + datasetdocurl;
-    let my_inputs = [{dataset_uri: my_dataseturi}];
-    let my_exposeOutputs = [];  // Not sure about this.
-    let my_exposeValueTypes = ['CSV_URI']; // Not sure about this.
-    return {fittedSolutionId: my_fittedSolutionId, inputs: my_inputs, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes};
+
+    let produceDefn = getProduceSolutionDefaultParameters();
+    produceDefn.fittedSolutionId = fsid
+    return produceDefn;
 }
 
-function CreateScoreDefinition(res){
-    let my_solutionId = res.data.response.solutionId;
-    let my_dataseturi = 'file://' + datasetdocurl;
-    let my_inputs = [{dataset_uri: my_dataseturi}];
-    let my_performanceMetrics = [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ];  // need to generalize to case with multiple metrics.  only passes on first presently.;
-    let my_users = [{id: 'TwoRavens', choosen: false, reason: ""}];
-    let my_configuration = {method: 'HOLDOUT', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
-    return {solutionId: my_solutionId, inputs: my_inputs, performanceMetrics: my_performanceMetrics, users: my_users, configuration: my_configuration};
+/*
+  Return the default parameters used for a ProduceSolution call.
+  This DOES NOT include the fittedSolutionId
+*/
+export function getProduceSolutionDefaultParameters(){
+
+  let my_dataseturi = 'file://' + datasetdocurl;
+  let my_inputs = [{dataset_uri: my_dataseturi}];
+  let my_exposeOutputs = [];  // Not sure about this.
+  let my_exposeValueTypes = ['CSV_URI']; // Not sure about this.
+  return {inputs: my_inputs,
+          exposeOutputs: my_exposeOutputs,
+          exposeValueTypes: my_exposeValueTypes};
 }
+
+
+
+function CreateScoreDefinition(res){
+
+  if (typeof res.response.solutionId === undefined){
+      let errMsg = 'ERROR: CreateScoreDefinition. solutionId not set.'
+      console.log(errMsg);
+      return {errMsg: errMsg};
+  }
+
+  let createDefn = getScoreSolutionDefaultParameters();
+  createDefn.solutionId = res.response.solutionId;
+  return createDefn;
+
+}
+
+/*
+  Return the default parameters used for a ProduceSolution call.
+  This DOES NOT include the solutionId
+*/
+function getScoreSolutionDefaultParameters(){
+
+  let my_dataseturi = 'file://' + datasetdocurl;
+  let my_inputs = [{dataset_uri: my_dataseturi}];
+  let my_performanceMetrics = [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ];  // need to generalize to case with multiple metrics.  only passes on first presently.;
+  let my_users = [{id: 'TwoRavens', choosen: false, reason: ""}];
+  let my_configuration = {method: 'HOLDOUT', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
+
+  return {inputs: my_inputs, performanceMetrics: my_performanceMetrics, users: my_users, configuration: my_configuration};
+
+}
+
+
 
 export function downloadIncomplete() {
     if (PRODUCTION && zparams.zsessionid === '') {
@@ -2565,17 +2694,6 @@ export async function estimate(btn) {
         zparams.callHistory = callHistory;
         zparams.allVars = valueKey.slice(10, 25); // because the URL is too long...
 
-        /* UNUSED
-        var selectorurlcall = ROOK_SVC_URL + "selectorapp";
-        function selectorSuccess(btn, json) {
-            d3.select("#ticker")
-                .text("Suggested variables and percent improvement on RMSE: " + json.vars);
-            cdb("selectorSuccess: ", json);
-        }
-        function selectorFail(btn) {
-            alert("Selector Fail");
-        }
-        */
 
         estimateLadda.start(); // start spinner
         let json = await makeRequest(ROOK_SVC_URL + 'zeligapp', zparams);
@@ -2636,7 +2754,9 @@ export async function estimate(btn) {
         }
 
         estimateLadda.start(); // start spinner
-        let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(valueKey, mytarget));
+
+        alert('estimate() function. Check app.js error with swandive (err: 003)');
+        //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(valueKey, mytarget));
         //res && onPipelineCreate(res);   // arguments were wrong, and this function no longer needed
 
     } else { // we are in IS_D3M_DOMAIN no swandive
@@ -2648,267 +2768,44 @@ export async function estimate(btn) {
 
         estimateLadda.start(); // start spinner
 
-        // 1. Some diagnostic tests to add special characters to the pipelineapp call:
-        //zparams.zgroup1.unshift("blah+");
-        //zparams.zgroup1.unshift("Alice-was_beg!n^ing t* get/ ve#y tired of s(tt)ng by her si$\+er on th= bank & of having nothing to do:");
+        ROOKPIPE_FROM_REQUEST = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);        // parse the center panel data into a formula like construction
 
-        // 2. Note how they go out in call:
-        //console.log("zparams zgroup1");
-        //console.log(zparams.zgroup1);      // Notice zgroup1 is being sent with correct characters
-
-        let rookpipe = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);        // parse the center panel data into a formula like construction
-
-        // 3. And check they come back correctly formed:
-        //console.log("pipeline app return (rookpipe)");
-        //console.log(rookpipe);
-
-        if (!rookpipe) {
+        if (!ROOKPIPE_FROM_REQUEST) {
             estimated = true;
+            estimateLadda.stop(); // start spinner
         } else {
-            setxTable(rookpipe.predictors);
-            let searchSolutionParmams = CreatePipelineDefinition(rookpipe.predictors,
-                                                                 rookpipe.depvar,
-                                                                 2)
-            let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
-                                        searchSolutionParmams);
+            setxTable(ROOKPIPE_FROM_REQUEST.predictors);
+            let searchSolutionParams = CreatePipelineDefinition(ROOKPIPE_FROM_REQUEST.predictors,
+                                                                 ROOKPIPE_FROM_REQUEST.depvar,
+                                                                 2);
+
+            let allParams = {searchSolutionParams: searchSolutionParams,
+                             fitSolutionDefaultParams: getFitSolutionDefaultParameters(),
+                             produceSolutionDefaultParams: getProduceSolutionDefaultParameters(),
+                             scoreSolutionDefaultParams: getScoreSolutionDefaultParameters()};
+
+            //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
+            let res = await makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions',
+                                        allParams);
             console.log(JSON.stringify(res));
             if (res===undefined){
-              estimateLadda.stop();
+              handleENDGetSearchSolutionsResults();
+              alert('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
+
               return;
             }else if(!res.success){
-              estimateLadda.stop();
-              alert('SearchSolutions request Failed! ' + res.message);
+              handleENDGetSearchSolutionsResults();
+              alert('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
               return;
             }
 
             let searchId = res.data.searchId;
-            let solutionId = "";
-            let fittedId = "";
             allsearchId.push(searchId);
-
-          let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults',
-                                         {searchId: searchId});
-            if (!res2.success){
-                alert('Failed to get GetSearchSolutionsResults: ' + res2.message);
-                estimateLadda.stop();
-                return;
-            }else if (res2.data.is_error){
-                alert('Error with GetSearchSolutionsResults: ' + res2.data.user_msg);
-                estimateLadda.stop();
-                return;
-            }
-
-            let searchDetailsUrl = res2.data.details_url;
-            let fittedDetailsUrl = "";
-            let solutionDetailsUrl = "";
-
-            let searchFinished = false;
-            let fitFinished = false;
-            let res3, res4;
-            let oldCount = 0;
-            let newCount = 0;
-            let resizeTriggered = false;
-            let predPlotTriggered = false;
-
-            let fitFlag = false;
-
-            // Start polling for the searchDetailsUrl.  The response is a StoredRequest
-            //    e.g. /d3m-service/stored-request/{hash id}
-            //
-            let refreshIntervalId = setInterval(async function() {
-                res3 = await updateRequest(searchDetailsUrl);                // silent equivalent makeRequest() with no data argument.  Also, should check whether best to be synchronous here.
-                if (!res3.success){
-                  estimateLadda.stop();
-                  alert('Retrieving StoredRequest failed. ' + res3.message);
-                  return;
-                } else if (res3.data.is_error){
-                  estimateLadda.stop();
-                  alert('StoredRequest has an error. ' + res3.data.user_msg);
-                  return;
-                }
-
-                newCount = res3.data.responses.count;
-
-                // Check if new pipeline to add and inspect
-                if(newCount>oldCount){
-                    //for (var i = oldCount; i < newCount; i++) {       //  for statement if new items are pushed instead
-                    pipelineLoop: for (var i = 0; i < (newCount-oldCount); i++) {     //  instead, updates are at top of list
-                        //console.log(res3.data.responses.list[i].details_url);
-                        solutionDetailsUrl = res3.data.responses.list[i].details_url;
-                        res4 = await updateRequest(solutionDetailsUrl);
-                        if (!res4.success){
-                          alert('PLEASE CONTINUE. Debug: Detected StoredResponse error (unusual).\n' + res4.message);
-                          continue pipelineLoop; // continue to next iteration
-                        } else if (res4.data.is_error){
-                          alert('PLEASE CONTINUE. Debug: StoredResponse has an error (unusual)\n' + JSON.stringify(res4.data));
-                          continue pipelineLoop; // continue to next iteration
-                        }
-
-                        let res4DataId = res4.data.id;
-                        //console.log(res4);
-                        solutionId = res4.data.response.solutionId;
-                        onPipelinePrime(res4.data, rookpipe);
-
-                        // Once pipelineTable exist, can rebuild the window to start exploring results
-                        if(!resizeTriggered){
-                            if (IS_D3M_DOMAIN){
-                                byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
-                            };
-                            resizeTriggered = true;
-                        }
-
-                        if(selectedPipeline === undefined){
-                            setSelectedPipeline(pipelineTable[0]['PipelineID']);
-                        }
-
-                        let res10, res11, res77, res5, res6, res8;
-                        let scoreDetailsUrl;
-
-                        if(typeof solutionId != 'undefined'){         // Find out when this happens
-
-                            // [1] Get the template language description of the pipeline solution
-                            res77 = await makeRequest(D3M_SVC_URL + '/DescribeSolution',
-                                                      {solutionId: solutionId});
-
-                            if(!res77.success){
-                                alert('PLEASE CONTINUE.  Debug: DescribeSolution failed. ' + res77.message);
-                                continue pipelineLoop; // continue to next iteration
-                            }
-                            // Add pipeline descriptions to allPipelineInfo
-                            // More overwriting than is necessary here.
-                            allPipelineInfo[res4.data.id] = Object.assign(allPipelineInfo[res4.data.id], res4.data, res77.data);
-
-                            console.log("pipeline description here:")
-                            console.log(allPipelineInfo[res4.data.id].pipeline);
-
-                            // [2] Ask for a solution to be scored
-                            res10 = await makeRequest(D3M_SVC_URL + '/ScoreSolution', CreateScoreDefinition(res4));
-                            if(!res10.success){
-                                alert('PLEASE CONTINUE.  Debug: ScoreSolution failed. ' + res10.message);
-                                continue pipelineLoop; // continue to next iteration
-                            }else if(typeof res10.data.requestId != 'undefined'){
-                                let scoreId = res10.data.requestId;
-                                res11 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
-                                scoreDetailsUrl = res11.data.details_url;
-                            }else{
-                                alert('PLEASE CONTINUE.  Debug: ScoreSolution failed. ' + JSON.stringify(res10));
-                                continue pipelineLoop;
-                            };
-
-                            if(fitFlag){
-                                res5 = await makeRequest(D3M_SVC_URL + '/FitSolution',
-                                                         CreateFitDefinition(solutionId));
-                                if(!res5.success){
-                                     alert('PLEASE CONTINUE.  Debug: FitSolution failed. ' + res5.message);
-                                     continue pipelineLoop; // continue to next iteration
-                                }else if(typeof res5.data.requestId != 'undefined'){
-                                    fittedId = res5.data.requestId;
-                                    res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
-                                    fittedDetailsUrl = res6.data.details_url;
-                                }else{
-                                    alert('PLEASE CONTINUE.  Debug: FitSolution failed. ' + JSON.stringify(res5));
-                                    continue pipelineLoop;
-                                }
-                            };
-                        };
-
-                        // Possibly these belong elsewhere, like a callback function above.
-
-                        let scoringIntervalId = setInterval(async function() {
-                            let res12 = await updateRequest(scoreDetailsUrl);   // check
-                            if(!res12.success){
-                              alert('PLEASE CONTINUE.  Debug: Get stored request failed. ' + res12.message);
-                              clearInterval(scoringIntervalId);
-                              return; // continue to next iteration
-                            }
-                            if(typeof res12.data.is_finished != 'undefined'){
-                                if(res12.data.is_finished){
-                                    if(res12.data.responses.list.length > 0){   // need to understand why this comes back is.finished=true but also length=0
-                                        console.log('finished scoring');
-                                        let finalScoreUrl = res12.data.responses.list[0].details_url;
-                                        let res13 = await updateRequest(finalScoreUrl);
-                                        let myscore = res13.data.response.scores[0].value.raw.double.toPrecision(3);   // Makes a number of assumptions about how values are returned, also need to attempt to deal w multiple scores
-                                        let matchedPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(res4DataId, 10))
-                                        matchedPipeline['Score'] = String(myscore);
-                                        if(!predPlotTriggered){
-                                            console.log(pipelineTable);
-                                                byId("btnPredPlot").click();   // Was "btnResults" - changing to simplify user experience for testing.
-                                            predPlotTriggered = true;
-                                        };
-
-                                        //onPipelineCreate(res13, res4DataId);    // This function was getting shorter and shorter, and now just lives above.
-                                    } else {
-                                        console.log('finished scoring but broken');
-                                        let brokenPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(res4DataId, 10))
-                                        brokenPipeline['Score'] = 'no score';
-                                    };
-                                    pipelineTable = sortPipelineTable(pipelineTable);
-                                    clearInterval(scoringIntervalId);
-                                };
-                            };
-                        }, 2700);
-
-                        let finalFittedId, finalFittedDetailsUrl;
-                        if(fitFlag){
-                            let fittingIntervalId = setInterval(async function() {
-
-                                // Retrieve a StoredRequest object: /d3m-service/stored-request
-                                //
-                                let res7 = await updateRequest(fittedDetailsUrl);   // check
-
-                                if(!res7.success){  // was: (typeof res7.data.is_finished != 'undefined'){
-                                    clearInterval(fittingIntervalId);
-                                    console.log("ERROR res7.message: " + res7.message);
-                                    return;
-                                }
-
-                                if(typeof res7.data.is_finished != 'undefined'){
-                                    if(res7.data.is_error){
-                                      clearInterval(fittingIntervalId);
-                                      console.log("ERROR res7.data.is_error: " + JSON.stringify(res7.data));
-                                      return;
-                                    }else if(res7.data.is_finished){
-                                        finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
-                                        res8 = await updateRequest(finalFittedDetailsUrl);
-                                        if(!res8.success){
-                                          clearInterval(fittingIntervalId);
-                                          console.log("ERROR res8.message: " + JSON.stringify(res8));
-                                          return;
-                                        }
-                                        finalFittedId = res8.data.response.fittedSolutionId;
-                                        console.log("finalfittedId:" + finalFittedId);
-
-                                        // PUT finalFittedId SOMEWHERE IT CAN BE FOUND : maybe allPipelineInfo
-                                        clearInterval(fittingIntervalId);
-                                    };
-                                };
-                            }, 500);
-                        };
-
-                    };
-                    oldCount = newCount;
-                };
-
-                searchFinished = res3.data.is_finished;
-
-                // Check if search is finished
-                if(searchFinished){
-                    // stop spinner
-                    estimateLadda.stop();
-                    // change status of buttons for estimating problem and marking problem as finished
-                    byId("btnEstimate").classList.remove("btn-success");
-                    byId("btnEstimate").classList.add("btn-default");
-                    byId("btnEndSession").classList.remove("btn-default");
-                    byId("btnEndSession").classList.add("btn-success");
-                    // stop the interval process
-                    clearInterval(refreshIntervalId);
-                };
-            }, 1000);
-
         }
     }
-    task2_finished = true;
 }
+
+
 
 
 // This appears not to be used:
@@ -3506,83 +3403,7 @@ export async function endsession() {
     //}
 }
 
-/**
-    rpc DeletePipelines(PipelineDeleteRequest) returns (PipelineListResult) {}
-    pipes is an array of pipeline IDs
-*/
-export function deletepipelines(pipes) {
-    let res = makeRequest(D3M_SVC_URL + '/DeletePipelines', {context: apiSession(zparams.zsessionid), deletePipelineIds: pipes});
-    if (!res) {
-        return;
-    }
-}
 
-/**
-    rpc DeletePipelines(PipelineDeleteRequest) returns (PipelineListResult) {}
-    pipes is an array of pipeline IDs
-*/
-export function cancelpipelines(pipes) {
-    let res = makeRequest(D3M_SVC_URL + '/CancelPipelines', {context: apiSession(zparams.zsessionid), cancelPipelineIds: pipes});
-    if (!res) {
-        return;
-    }
-}
-
-/**
-   rpc ListPipelines(PipelineListRequest) returns (PipelineListResult) {}
-   pipes is an array of pipeline IDs
-*/
-export async function listpipelines() {
-    let res = await makeRequest(D3M_SVC_URL + '/listpipelines', {context: apiSession(zparams.zsessionid)});
-    if (!res) {
-        return [];
-    }
-    let pipes = res.pipelineIds;
-    return pipes;
-}
-
-/**
-   rpc ExecutePipeline(PipelineExecuteRequest) returns (stream PipelineExecuteResult) {}
-*/
-export async function executepipeline() {
-    if (!selectedPipeline) {
-        alert("Please select a pipeline to execute on.");
-        return;
-    }
-
-    zPop();
-    zparams.callHistory = callHistory;
-
-    let data = [];
-
-    //this will just set zparams.zsetx to the mean, which is default for setx plots
-    //note that if setxplot is modified, it will NOT == "" because zparams.zsetx is modified when the setx plot slider is moved for the first time
-    for(let i =0; i<zparams.zvars.length; i++) {
-        let mydata = [];
-        mydata[0] = zparams.zvars[i];
-        let mymean = findNode(zparams.zvars[i]).mean;
-        if(zparams.zsetx[i][0]=="") {
-            mydata[1]=mymean;
-        } else if(zparams.zsetx[i][0]!=mymean){
-            mydata[1]=zparams.zsetx[i][0];
-        }
-        if(zparams.zsetx[i][1]=="") {
-            mydata[2]= findNode(zparams.zvars[i]).mean;
-        } else if(zparams.zsetx[i][1]!=mymean){
-            mydata[2]=zparams.zsetx[i][1];
-        }
-        data.push(mydata);
-    }
-
-    let context = apiSession(zparams.zsessionid);
-    let temp = JSON.stringify({context, selectedPipeline, data});
-    console.log(temp);
-    let res = await makeRequest(D3M_SVC_URL + '/ExecutePipeline', {context, selectedPipeline, data});
-    // I think we want to do this here, but will wait for ISI image to test against
-    // if(res.progressInfo=="COMPLETED") {
-    res && addPredictions(res);
-    // }
-}
 
 function addPredictions(res) {
     function tabulate(data, columns) {
@@ -3700,124 +3521,14 @@ function setPebbleCharge(d){
 /** needs doc */
 export async function resultsplotinit(pid) {
     if (!('predictedValues' in allPipelineInfo[pid])){
-        generatePredictions(pid, true);                    // generate predicted values, and then plot
+        // The FitSolution/ProduceSolution sequences are now
+        // run server side....
+        //generatePredictions(pid, true);                    // generate predicted values, and then plot
+
     } else {
         resultsplotgraph(pid);                             // predicted values already exist
     };
 }
-
-export async function generatePredictions(pid, plotflag) {
-
-    if (!('predictedValues' in allPipelineInfo[pid])){
-        // Need to generate and store predicted values
-        let finalFittedId, finalFittedDetailsUrl, produceDetailsUrl, finalProduceDetailsUrl, hold3;
-        let res8, res55, res56, res58, res59;
-
-        let chosenSolutionId = allPipelineInfo[selectedPipeline].response.solutionId;
-        let res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(chosenSolutionId));
-        let fittedId = res5.data.requestId;
-        let res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
-        let fittedDetailsUrl = res6.data.details_url;
-        let fittingfinished = false;                     // Flag for whether we have a fitted solution available yet to produce predicted values from.
-        let fittingIntervalId = setInterval(async function() {
-
-            // First get fitted solution
-            if(!fittingfinished){
-                let res7 = await updateRequest(fittedDetailsUrl);
-                if(res7.success){  // was: (typeof res7.data.is_finished != 'undefined'){
-                    if(res7.data.is_finished){
-                        if(res7.data.is_error){
-                           console.log('fittedDetailsUrl request failed !!!!!!!!!!!!!!!')
-                           console.log('fittedDetailsUrl: '+ fittedDetailsUrl);
-                            console.log('res7 error: ' + JSON.stringify(res7));
-                            clearInterval(fittingIntervalId);
-                        }else{
-                            finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
-                            res8 = await updateRequest(finalFittedDetailsUrl);
-                            if(res8.success){
-                                if ((res8.data.is_finished)&&(res8.data.is_error)){
-                                  console.log('finalFittedDetailsUrl request failed !!!!!!!!!!!!!!!')
-                                  clearInterval(fittingIntervalId);
-                                }else if (res8.data.is_finished){
-                                    finalFittedId = res8.data.response.fittedSolutionId;
-                                    console.log(finalFittedId);
-
-                                    let produceSolutionParams = CreateProduceDefinition(finalFittedId);
-                                    res55 = await makeRequest(D3M_SVC_URL + '/ProduceSolution',
-                                                              produceSolutionParams);
-
-                                    if (res55.success){
-
-                                        let produceId = res55.data.requestId;
-                                        console.log("--Finished Fitting");
-
-                                        res56 = await makeRequest(D3M_SVC_URL + `/GetProduceSolutionResults`, {requestId: produceId});
-                                        if (res56.success){
-                                            // note, in this case "is_finished" will be false,
-                                            // for a streaming request
-                                            console.log("--Get GetProduceSolutionResults");
-                                            produceDetailsUrl = res56.data.details_url;
-                                            fittingfinished = true;
-                                        }else{
-                                          console.log('GetProduceSolutionResults request failed !!!!!!!!!!!!!!! ')
-                                          console.log('res56' + JSON.stringify(res56));
-                                          clearInterval(fittingIntervalId);
-                                        }
-                                    }else{
-                                      console.log('ProduceSolution request failed !!!!!!!!!!!!!!!');
-                                      console.log('produceSolutionParams' + JSON.stringify(produceSolutionParams));
-                                      console.log('res55' + JSON.stringify(res55));
-                                      clearInterval(fittingIntervalId);
-                                    }
-                                }
-                            } else {
-                                clearInterval(fittingIntervalId);
-                            };
-                        };
-                    };
-                } else {
-                    clearInterval();
-                };
-            };
-
-            // Then produce predicted values from fitted solution
-            if(fittingfinished){
-                let res57 = await updateRequest(produceDetailsUrl);
-                if(res57.success){  // was: (typeof res57.data.is_finished != 'undefined'){
-                    if(res57.data.is_finished){
-                        if(res57.data.is_error){
-                            clearInterval(fittingIntervalId)
-                        }else{
-                            finalProduceDetailsUrl = res57.data.responses.list[0].details_url;
-                            res58 = await updateRequest(finalProduceDetailsUrl);
-                            console.log("--Long Awaited Predictions:");
-                            let hold = res58.data.response.exposedOutputs;
-                            let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
-                            hold3 = hold2.csvUri;
-                            console.log(hold3);
-                            res59 = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
-                            console.log(res59);
-
-                            allPipelineInfo[pid].predictedValues = res59;
-                            clearInterval(fittingIntervalId);
-                            if(plotflag){
-                                resultsplotgraph(pid);
-                            };
-                        };
-                    };
-                };
-            };
-        }, 500);
-
-    } else {
-        // Predicted values already stored and ready for graphing
-        console.log("Skipping creating predicted values");
-        if(plotflag){
-            resultsplotgraph(pid);
-        };
-    };
-
-};
 
 export function resultsplotgraph(pid){
     let pipelineInfo = allPipelineInfo[pid];
@@ -4248,7 +3959,9 @@ export function confusionmatrix(matrixdata, classes) {
     // var table = tabulate(computedData, ["F1", "PRECISION","RECALL","ACCURACY"]);
 }
 
-
+/**
+  Sort the Pipeline table, putting the higest score at the top
+ */
 export function sortPipelineTable(pt){
     let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSquaredErrorAvg", "meanAbsoluteError"];  // array of metrics to sort low to high
     let reverse = (reverseSet.indexOf(d3mProblemDescription.performanceMetrics[0].metric) > -1) ? -1 : 1;
@@ -4357,40 +4070,25 @@ export function setxTable(features) {
 //     "rank": 0.122
 // }
 
+
 export async function exportpipeline(pipelineId) {
     exportCount++;
-    let finalFittedId, finalFittedDetailsUrl;
-    let res, res8;
+    let res;
+    let my_rank = 1.01 - 0.01 * exportCount;   // ranks always gets smaller each call
 
-    let res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(pipelineId));
-    let fittedId = res5.data.requestId;
-    let res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
-    let fittedDetailsUrl = res6.data.details_url;
-    let fittingIntervalId = setInterval(async function() {
-        let res7 = await updateRequest(fittedDetailsUrl);   // check
-        if(typeof res7.data.is_finished != 'undefined'){
-            if(res7.data.is_finished){
-                finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
-                res8 = await updateRequest(finalFittedDetailsUrl);
-                finalFittedId = res8.data.response.fittedSolutionId;
-                console.log(finalFittedId);
-                let my_rank = 1.01 - 0.01*exportCount;   // ranks always get smaller each call
-                res = await makeRequest(D3M_SVC_URL + '/SolutionExport', {fittedSolutionId: finalFittedId, rank: my_rank});
+    let params = {pipelineId: pipelineId, rank: my_rank};
+    res = await makeRequest(D3M_SVC_URL + '/SolutionExport2', params);
 
-                // we need standardized status messages...
-                let mystatus = res.status;
-                console.log(res);
-                if (typeof mystatus !== 'undefined') {
-                if(mystatus.code=="FAILED_PRECONDITION") {
-                    console.log("TA2 has not written the executable.");    // was alert(), but testing on NIST infrastructure suggests these are getting written but triggering alert.
-                }
-                else {
-                    console.log(`Executable for solution ${pipelineId} with fittedsolution ${finalFittedId} has been written`);
-                }}
-                clearInterval(fittingIntervalId);
-            };
-        };
-    }, 500);
+    // we need standardized status messages...
+    let mystatus = res.status;
+    console.log(res);
+    if (typeof mystatus !== 'undefined') {
+        if(mystatus.code=="FAILED_PRECONDITION") {
+            console.log("TA2 has not written the executable.");    // was alert(), but testing on NIST infrastructure suggests these are getting written but triggering alert.
+        }else{
+            console.log(`Executable for solution ${pipelineId} with fittedsolution ${finalFittedId} has been written`);
+        }
+    }
     return res;
 }
 
@@ -5103,6 +4801,200 @@ function primitiveStepRemoveColumns (aux) {
     let step = {primitive:primitive, arguments:parguments, outputs:outputs, hyperparams:hyperparams, users:users};
     return {primitive:step};
 }
+
+
+/**
+  Handle a websocket sent GetSearchSolutionResultsResponse
+  wrapped in a StoredResponse object
+*/
+export async function handleGetSearchSolutionResultsResponse(response1){
+  if(typeof response1===undefined){
+    console.log('GetSearchSolutionResultsResponse: Error.  "response1" undefined');
+    return;
+  }
+  let resizeTriggered = false;
+
+  // ----------------------------------------
+  // (1) Pull the solutionId
+  // ----------------------------------------
+  console.log('(1) Pull the solutionId');
+
+  // Note: the response.id becomes the Pipeline id
+  //
+  //
+  if(typeof response1.id===undefined){
+    console.log('GetSearchSolutionResultsResponse: Error.  "response1.id" undefined');
+    return;
+  }
+  if(typeof response1.response.solutionId===undefined){
+    console.log('GetSearchSolutionResultsResponse: Error.  "response1.response.solutionId" undefined');
+    return;
+  }
+  let solutionId = response1.response.solutionId;
+
+  // ----------------------------------------
+  // (2) Update the pipeline list on the UI
+  // ----------------------------------------
+  console.log('(2) Update the pipeline list on the UI');
+
+  // ----------------------------------------
+  // (2a) Update or Create the Pipeline
+  // ----------------------------------------
+  if (!ROOKPIPE_FROM_REQUEST){
+    console.log('---------- ERROR: ROOKPIPE_FROM_REQUEST not set!!!');
+  }
+  onPipelinePrime(response1, ROOKPIPE_FROM_REQUEST) //, rookpipe - handleGetSearchSolutionResultsResponse
+
+  if(!resizeTriggered){
+      if (IS_D3M_DOMAIN){
+          byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
+      };
+      resizeTriggered = true;
+  }
+  if(selectedPipeline === undefined){
+     setSelectedPipeline(pipelineTable[0]['PipelineID']);
+  }
+
+  // Add pipeline descriptions to allPipelineInfo
+  // More overwriting than is necessary here.
+  allPipelineInfo[response1.id] = Object.assign(allPipelineInfo[response1.id], response1.data);
+
+}  // end GetSearchSolutionResultsResponse
+
+
+/**
+  Handle a describeSolutionResponse sent via websockets
+*/
+async function handleDescribeSolutionResponse(response){
+
+  if(typeof response===undefined){
+    console.log('handleDescribeSolutionResponse: Error.  "response" undefined');
+    return;
+  }
+  if(typeof response.pipelineId===undefined){
+    console.log('handleDescribeSolutionResponse: Error.  "pipelineId" undefined');
+    return;
+  }
+  console.log('---- handleDescribeSolutionResponse -----');
+  console.log(JSON.stringify(response));
+
+  // -------------------------------
+  // Update pipeline info....
+  // -------------------------------
+  let pipelineId = response.pipelineId;
+  delete response.pipelineId;
+
+  allPipelineInfo[pipelineId] = Object.assign(allPipelineInfo[pipelineId], response);
+
+} // end: handleDescribeSolutionResponse
+
+/**
+  Handle a GetProduceSolutionResultsResponse sent via websockets
+  -> parse response, retrieve data, plot data
+*/
+async function handleGetProduceSolutionResultsResponse(response){
+
+    if(typeof response===undefined){
+      console.log('handleGetProduceSolutionResultsResponse: Error.  "response" undefined');
+      return;
+    }
+    if(typeof response.pipelineId===undefined){
+      console.log('handleGetProduceSolutionResultsResponse: Error.  "pipelineId" undefined');
+      return;
+    }
+    console.log('---- handleGetProduceSolutionResultsResponse -----');
+    console.log(JSON.stringify(response));
+
+    // Note: UI update logic moved from generatePredictions
+    if (!response.is_finished){
+      console.log('-- GetProduceSolutionResultsResponse not finished yet... (returning) --');
+      return;
+    } else if (response.is_error){
+      console.log('-- GetProduceSolutionResultsResponse has error --')
+      console.log('response: ' + JSON.stringify(response));
+      console.log('----------------------------------------------');
+      return;
+    }
+
+    let hold = response.response.exposedOutputs;
+    let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
+    let hold3 = hold2.csvUri;
+
+    let responseOutputData = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
+
+    allPipelineInfo[response.pipelineId].predictedValues = responseOutputData;
+
+    resultsplotgraph(response.pipelineId);
+
+} // end: handleGetProduceSolutionResultsResponse
+
+/**
+  Handle a getScoreSolutionResultsResponse send via websocket
+  wrapped in a StoredResponse object
+*/
+async function handleGetScoreSolutionResultsResponse(response){
+  if(typeof response===undefined){
+    console.log('handleGetScoreSolutionResultsResponse: Error.  "response" undefined');
+    return;
+  }
+  if(typeof response.is_finished === undefined){
+    console.log('handleGetScoreSolutionResultsResponse: Error.  "response.data.is_finished" undefined');
+    return;
+  }
+  if(!response.is_finished){
+    return;
+  }
+
+  let myscore;
+
+  try{
+    // This is very specific, the potential responses may vary greatly
+    //
+    myscore = response.response.scores[0].value.raw.double.toPrecision(3);
+  }catch(error) {
+    console.log(JSON.stringify(response));
+    alert('Error in "handleGetScoreSolutionResultsResponse": ' + error);
+    console.error(error);
+    return;
+  }
+  // Note: what's now the "res4DataId" needs to be sent to this function
+  //
+  let matchedPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(response.pipelineId, 10))
+
+  if (matchedPipeline===undefined){
+    console.log('handleGetScoreSolutionResultsResponse: Error.  Pipeline not found for id: ' + response.pipelineId);
+  }else{
+    // set the score
+    matchedPipeline['Score'] = String(myscore);
+
+    // sort the pipeline table by score
+    pipelineTable = sortPipelineTable(pipelineTable);
+
+    // Click the "Prediction Summary" button
+    byId("btnPredPlot").click();
+  }
+} // end: handleGetScoreSolutionResultsResponse
+
+
+/*
+  Triggered at the end of GetSearchSolutionsResults
+*/
+async function handleENDGetSearchSolutionsResults(){
+
+  // stop spinner
+  estimateLadda.stop();
+  // change status of buttons for estimating problem and marking problem as finished
+  byId("btnEstimate").classList.remove("btn-success");
+  byId("btnEstimate").classList.add("btn-default");
+  byId("btnEndSession").classList.remove("btn-default");
+  byId("btnEndSession").classList.add("btn-success");
+
+  task2_finished = true; // should this go here?
+
+  // stop the interval process
+}
+
+
 
 export async function addProblem(preprocess_id, version){
     // return await m.request({

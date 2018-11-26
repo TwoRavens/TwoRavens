@@ -8,9 +8,9 @@ from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json
 from tworaven_apps.ta2_interfaces.tasks import stream_and_store_results
-
 from tworaven_apps.ta2_interfaces.models import \
     (StoredRequest, StoredResponse)
+from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 
 import core_pb2
 
@@ -20,6 +20,9 @@ from google.protobuf.json_format import \
 def get_score_solutions_results(raven_json_str, user_obj, websocket_id=None):
     """
     Send a GetScoreSolutionResultsRequest to the GetScoreSolutionResults command
+    Expected input from raven_json_str:
+        {requestId: scoreId,
+         pipelineId: response1.id}
     """
     if user_obj is None:
         return err_resp("The user_obj cannot be None")
@@ -33,6 +36,8 @@ def get_score_solutions_results(raven_json_str, user_obj, websocket_id=None):
     raven_json_info = json_loads(raven_json_str)
     if not raven_json_info.success:
         return err_resp(raven_json_info.err_msg)
+
+
 
     # --------------------------------
     # convert the JSON string to a gRPC request
@@ -72,7 +77,7 @@ def get_score_solutions_results(raven_json_str, user_obj, websocket_id=None):
                         stored_request.id,
                         response=resp_info.result_obj)
 
-        StoredRequest.set_finished_ok_status(stored_request.id)
+        StoredRequestUtil.set_finished_ok_status(stored_request.id)
         # Return the stored **request** (not response)
         #
         return ok_resp(stored_request.as_dict())
