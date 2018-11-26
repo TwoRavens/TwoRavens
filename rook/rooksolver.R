@@ -87,11 +87,11 @@ solver.app <- function(env) {
         if(task=="regression")
         {
         fit <- lm(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d)
-        model_type <- "Linear Model"
+        model_type <- "OLS Regression Model"
       }else if(task=="classification"){
         if(isBinary){
         fit <- glm(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d, family="binomial")
-        model_type <- "Generalized Linear Model"
+        model_type <- "Logistic Regression Model"
         }
         else{
           fit <- ranger(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d, classification=TRUE)
