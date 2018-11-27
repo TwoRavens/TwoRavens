@@ -11,7 +11,7 @@ source("rookconfig.R")
 
 
 if(!production){
-    packageList<-c("Rcpp","VGAM", "dplyr", "Amelia", "Rook", "jsonlite","rjson", "devtools", "DescTools", "nloptr", "XML", "rpart", "stargazer")
+    packageList<-c("Rcpp","VGAM", "dplyr", "Amelia", "Rook", "jsonlite","rjson", "devtools", "DescTools", "nloptr", "XML", "rpart", "stargazer", "ranger")
 
     # Find an available repository on CRAN
     availableRepos <- getCRANmirrors()
@@ -34,6 +34,7 @@ library(devtools)
 library(DescTools)
 library(rpart)
 library(stargazer)
+library(ranger)
 
 source(paste(getwd(),"/preprocess/preprocess.R",sep="")) # load preprocess function
 
