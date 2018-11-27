@@ -2957,11 +2957,19 @@ export async function makeRequest(url, data) {
     return res;
 }
 
-/**
-   programmatically deselect every selected variable
-*/
-export function erase() {
-    nodes.map(node => node.name).forEach(name => clickVar(name, nodes));
+// programmatically deselect every selected variable
+export let erase = () => nodes.map(node => node.name).forEach(name => clickVar(name, nodes));
+
+// programmatically reset force diagram/selectedvars to initial state at page load
+export function unerase() {
+    erase();
+    layout();
+    let targetNode = findNode(mytarget);
+    if (targetNode.strokeColor !== dvColor)
+        setColors(targetNode, dvColor);
+    restart();
+    // the dependent variable force needs a kick
+    fakeClick();
 }
 
 // call with a tab name to change the left tab in model mode

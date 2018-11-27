@@ -197,15 +197,8 @@ function leftpanel(mode) {
                                 'Current Problem',
                                 m(`div#deselectProblem`, {
                                     onclick: () => {
-                                        app.erase();
                                         app.setSelectedProblem(undefined);
-                                        app.layout();
-                                        let targetNode = app.findNode(app.mytarget);
-                                        if (targetNode.strokeColor !== app.dvColor)
-                                            app.setColors(targetNode, app.dvColor);
-                                        app.restart();
-                                        // the dependent variable force needs a kick
-                                        document.getElementById('whitespace0').click();
+                                        app.unerase();
                                     },
                                     title: 'deselect problem',
                                     style: {
@@ -887,7 +880,7 @@ class Body {
                     spaceBtn('btnJoin', app.connectAllForceDiagram, 'Make all possible connections between nodes', 'link'),
                     spaceBtn('btnDisconnect', () => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
                     spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
-                    spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')
+                    spaceBtn('btnEraser', app.nodes.length ? app.erase : app.unerase, app.nodes.length ? 'Wipe all variables from the modeling space' : 'Restore modeling space', app.nodes.length ? 'magnet' : 'refresh')
                 ]),
                 app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}),
 
