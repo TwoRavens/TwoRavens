@@ -186,6 +186,41 @@ class MongoRetrieveUtil(BasicErrCheck):
             return err_resp(str(err))
 
 
+    def get_mongo_url(self):
+        """Using the Django settings,
+        retrieve/construct the mongo connection string"""
+
+        # Is the full connection string available?
+        #
+        if settings.MONGO_CONNECTION_STRING:
+            return settings.MONGO_CONNECTION_STRING
+
+        # Format the username and password, if available...
+        #
+        username = quote_plus(settings.EVENTDATA_MONGO_USERNAME)
+        password = quote_plus(settings.EVENTDATA_MONGO_PASSWORD)
+
+        # If no username/password, use address only
+        #  (e.g. localhost)
+        #
+        if not username and not password:
+            #
+            # No username
+            #
+            mongo_url = 'mongodb://%s/' % settings.EVENTDATA_MONGO_DB_ADDRESS
+            #
+        else:
+            #
+            # Format mongo url with username/password
+            #
+            mongo_url = 'mongodb://%s:%s@%s/' % \
+                             (username,
+                              password,
+                              settings.EVENTDATA_MONGO_DB_ADDRESS)
+
+        return mongo_url
+
+
     def get_mongo_client(self):
         """
         Return a mongo client; initiate one if needed
@@ -193,19 +228,14 @@ class MongoRetrieveUtil(BasicErrCheck):
         if self.mongo_client:
             return self.mongo_client
 
-        username = quote_plus(settings.EVENTDATA_MONGO_USERNAME)
-        password = quote_plus(settings.EVENTDATA_MONGO_PASSWORD)
+        # Retrieve the Mongo url
+        #
+        mongo_url = self.get_mongo_url()
+        #print('mongo_url', mongo_url)
 
-        if not username and not password:
-            mongo_url = 'mongodb://%s/' % settings.EVENTDATA_MONGO_DB_ADDRESS
-        else:
-            mongo_url = 'mongodb://%s:%s@%s/' % \
-                                 (username,
-                                  password,
-                                  settings.EVENTDATA_MONGO_DB_ADDRESS)
-
+        # Connect!
+        #
         try:
-            print('mongo_url', mongo_url)
             self.mongo_client = MongoClient(mongo_url)
         except ConfigurationError as err_obj:
             #
@@ -223,6 +253,8 @@ class MongoRetrieveUtil(BasicErrCheck):
         #print(self.mongo_client.database_names())
 
         return self.mongo_client
+
+
 """
 export EVENTDATA_MONGO_PASSWORD=some-pass
 
