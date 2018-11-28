@@ -3,15 +3,16 @@ Used to query a mongo database using a direct connection
 """
 import bson
 import json
+import logging
 import requests
 from dateutil import parser
 from datetime import datetime
 from pprint import pprint
 from urllib.parse import quote_plus
-
+from bson.objectid import ObjectId
 from pymongo import MongoClient
 from pymongo.errors import \
-    (ConfigurationError, ConnectionFailure)
+    (ConfigurationError, ConnectionFailure, OperationFailure)
 
 from django.conf import settings
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
@@ -20,6 +21,8 @@ from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp,
                                                 err_resp_with_data)
 from tworaven_apps.eventdata_queries.models import METHOD_CHOICES
+
+LOGGER = logging.getLogger(__name__)
 
 
 QUERY_THRESHOLD_SIZE = 1 * (1024 * 1024 * 1024) # 1GB
@@ -137,6 +140,7 @@ class MongoRetrieveUtil(BasicErrCheck):
                         (self.database_name,
                          mongo_client.database_names())
             self.add_err_msg(user_msg)
+            LOGGER.error(user_msg)
             return err_resp(user_msg)
 
         # set the database
@@ -152,6 +156,7 @@ class MongoRetrieveUtil(BasicErrCheck):
                         (self.collection_name,
                          self.database_name,
                          db.collection_names())
+            LOGGER.error(user_msg)
             self.add_err_msg(user_msg)
             return err_resp(user_msg)
 
@@ -220,6 +225,9 @@ class MongoRetrieveUtil(BasicErrCheck):
 
         return mongo_url
 
+    def get_mongo_db(self, db_name):
+        pass
+        #retrieve_util.get_mongo_client()[database]
 
     def get_mongo_client(self):
         """
@@ -241,15 +249,29 @@ class MongoRetrieveUtil(BasicErrCheck):
             #
             # Failed configuration, e.g. could be credentials, etc
             #
-            self.add_err_msg('Failed to connect to Mongo (configuration): %s' % err_obj)
+            user_msg = ('Failed to connect to Mongo'
+                        ' (configuration): %s') % err_obj
+            LOGGER.error(user_msg)
+            self.add_err_msg(user_msg)
             return
         except ConnectionFailure as err_obj:
             #
             # Failed connection
             #
-            self.add_err_msg('Failed to connect to Mongo: %s' % err_obj)
+            user_msg = ('Failed to connect to Mongo'
+                        ' (configuration): %s') % err_obj
+            LOGGER.error(user_msg)
+            self.add_err_msg(user_msg)
             return
-
+        except OperationFailure as err_obj:
+            #
+            # Failed connection
+            #
+            user_msg = ('Failed to connect to Mongo'
+                        ' (configuration): %s') % err_obj
+            LOGGER.error(user_msg)
+            self.add_err_msg(user_msg)
+            return
         #print(self.mongo_client.database_names())
 
         return self.mongo_client
