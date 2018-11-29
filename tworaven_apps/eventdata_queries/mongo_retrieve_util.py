@@ -12,8 +12,9 @@ from urllib.parse import quote_plus
 from bson.objectid import ObjectId
 from pymongo import MongoClient
 from pymongo.errors import \
-    (ConfigurationError, ConnectionFailure, OperationFailure)
-
+    (ConfigurationError, ConnectionFailure, InvalidName,
+     OperationFailure, PyMongoError,
+     ServerSelectionTimeoutError)
 from django.conf import settings
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 
@@ -40,13 +41,12 @@ class MongoRetrieveUtil(BasicErrCheck):
     """
     Used for querying mongo
     """
-    def __init__(self, database_name, collection_name, host='TwoRavens'):
+    def __init__(self, database_name, collection_name=None, host='TwoRavens'):
         """
         dbname: name of the mongo database
         query: query to run
         method: function to use (find, aggregate, count)
         """
-
         self.database_name = database_name
         self.collection_name = collection_name
         self.host = host
@@ -57,15 +57,18 @@ class MongoRetrieveUtil(BasicErrCheck):
 
     def basic_check(self):
         """Run some basic checks"""
-        if not self.collection_name:
-            self.add_err_msg('No collection name specified.')
-            return
+        #if not self.collection_name:
+        #    self.add_err_msg('No collection name specified.')
+        #    return
 
         cli = self.get_mongo_client()
-
+        if not cli.success:
+            self.add_err_msg(cli.err_msg)
 
     def run_query(self, query, method, distinct=None):
         """run the query"""
+        if self.has_error():
+            return err_resp(self.get_error_message())
 
         # replace extended query operators like $oid, $date and $numberLong with objects
         def reformat(query):
@@ -128,7 +131,12 @@ class MongoRetrieveUtil(BasicErrCheck):
         # ----------------------
         # get the client
         # ----------------------
-        mongo_client = self.get_mongo_client()
+        mongo_client_info = self.get_mongo_client()
+        if not mongo_client_info.success:
+            LOGGER.error(mongo_client_info.err_msg)
+            return err_resp(mongo_client_info.err_msg)
+
+        mongo_client = mongo_client_info.result_obj
 
         # ----------------------
         # choose the database
@@ -226,56 +234,77 @@ class MongoRetrieveUtil(BasicErrCheck):
         return mongo_url
 
     def get_mongo_db(self, db_name):
-        pass
-        #retrieve_util.get_mongo_client()[database]
+        """Return a Mongo db client for a specific database"""
+        if self.has_error():
+            return err_resp(self.get_error_message())
 
-    def get_mongo_client(self):
+        if not db_name:
+            return err_resp('"db_name" must be specified')
+
+        client_info = self.get_mongo_client()
+        if not client_info.success:
+            return err_resp(client_info.err_msg) # a big redundant/easier to read
+
+        try:
+            db = client_info.result_obj[db_name]
+        except InvalidName as err_obj:
+            #
+            return err_resp(self.get_conn_error_msg(err_obj))
+        except PyMongoError as err_obj:
+            #
+            return err_resp(self.get_conn_error_msg(err_obj))
+
+        return ok_resp(db)
+
+
+    def get_mongo_client(self, conn_timeout_ms=1000):
         """
         Return a mongo client; initiate one if needed
         """
+        if self.has_error():
+            return err_resp(self.get_error_message())
+
         if self.mongo_client:
-            return self.mongo_client
+            return ok_resp(self.mongo_client)
 
         # Retrieve the Mongo url
         #
         mongo_url = self.get_mongo_url()
-        #print('mongo_url', mongo_url)
 
         # Connect!
         #
         try:
-            self.mongo_client = MongoClient(mongo_url)
+            self.mongo_client = MongoClient(\
+                    mongo_url,
+                    serverSelectionTimeoutMS=conn_timeout_ms)
+            self.mongo_client.server_info() # too prompt connection errors
         except ConfigurationError as err_obj:
             #
-            # Failed configuration, e.g. could be credentials, etc
-            #
-            user_msg = ('Failed to connect to Mongo'
-                        ' (configuration): %s') % err_obj
-            LOGGER.error(user_msg)
-            self.add_err_msg(user_msg)
-            return
+            return err_resp(self.get_conn_error_msg(err_obj))
         except ConnectionFailure as err_obj:
             #
-            # Failed connection
-            #
-            user_msg = ('Failed to connect to Mongo'
-                        ' (configuration): %s') % err_obj
-            LOGGER.error(user_msg)
-            self.add_err_msg(user_msg)
-            return
+            return err_resp(self.get_conn_error_msg(err_obj))
         except OperationFailure as err_obj:
             #
-            # Failed connection
+            return err_resp(self.get_conn_error_msg(err_obj))
+        except ServerSelectionTimeoutError as err_obj:
             #
-            user_msg = ('Failed to connect to Mongo'
-                        ' (configuration): %s') % err_obj
-            LOGGER.error(user_msg)
-            self.add_err_msg(user_msg)
-            return
+            return err_resp(self.get_conn_error_msg(err_obj))
+        except PyMongoError as err_obj:
+            #
+            return err_resp(self.get_conn_error_msg(err_obj))
         #print(self.mongo_client.database_names())
 
-        return self.mongo_client
+        return ok_resp(self.mongo_client)
 
+
+    def get_conn_error_msg(self, err_obj):
+        """Format and log a server connection error"""
+        user_msg = ('Error: Failed to connect to Mongo'
+                    ' (configuration): %s') % err_obj
+        LOGGER.error(user_msg)
+        self.add_err_msg(user_msg)
+        return user_msg
 
 """
 export EVENTDATA_MONGO_PASSWORD=some-pass
@@ -284,4 +313,8 @@ python manage.py shell
 
 from tworaven_apps.eventdata_queries.mongo_retrieve_util import MongoRetrieveUtil
 mr = MongoRetrieveUtil('icews')
+
+from tworaven_apps.eventdata_queries.mongo_retrieve_util import MongoRetrieveUtil
+mr = MongoRetrieveUtil('test-it')
+db = mr.get_mongo_db('hello')
 """

@@ -16,8 +16,7 @@ from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp_with_data)
 from tworaven_apps.eventdata_queries.models import \
     (EventDataSavedQuery, ArchiveQueryJob, UserNotification,
-     SEARCH_PARAMETERS, SEARCH_KEY_NAME, SEARCH_KEY_DESCRIPTION,
-     IN_PROCESS, ERROR, COMPLETE, DATA_PARTITIONS)
+     SEARCH_PARAMETERS, SEARCH_KEY_NAME, SEARCH_KEY_DESCRIPTION, IN_PROCESS, ERROR, COMPLETE, DATA_PARTITIONS)
 from tworaven_apps.eventdata_queries.dataverse.temporary_file_maker import TemporaryFileMaker
 from tworaven_apps.eventdata_queries.dataverse.dataverse_publish_dataset import DataversePublishDataset
 from tworaven_apps.eventdata_queries.dataverse.dataverse_list_files_dataset import ListFilesInDataset
@@ -513,7 +512,12 @@ class EventJobUtil(object):
             return value
 
         retrieve_util = MongoRetrieveUtil(database, collection)
-        db = retrieve_util.get_mongo_client()[database]
+
+        db_info = retrieve_util.get_mongo_db(database)
+        if not db_info.success:
+            return err_resp(db_info.err_msg)
+
+        db = db_info.result_obj
 
         # upload dataset if it does not exist
         if settings.PREFIX + collection in db.list_collection_names():
@@ -538,7 +542,9 @@ class EventJobUtil(object):
 
     @staticmethod
     def export_dataset(collection, data):
-
+        """Export the dataset
+        TODO: Change this to /ravens_volume based on settings, not BASE_DIR
+        """
         def quote(value):
             return '"' + value + '"' if type(value) is str else value
 
@@ -561,4 +567,3 @@ class EventJobUtil(object):
                 writer.writerow([quote(document[key]) if key in document else '' for key in columns])
 
         return ok_resp(filepath)
-

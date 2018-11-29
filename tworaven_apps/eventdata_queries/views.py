@@ -421,11 +421,8 @@ def api_get_metadata(request):
 
 @csrf_exempt
 def api_get_data(request):
-    """ general api to access TwoRavens data"""
-
+    """Retrieve data MongoDB"""
     success, json_req_obj = get_request_body_as_json(request)
-
-    print(json.dumps(json_req_obj))
 
     if not success:
         return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
