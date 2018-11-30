@@ -494,20 +494,6 @@ class EventJobUtil(object):
         retrieve_util = MongoRetrieveUtil(database, collection, host)
         success, data = retrieve_util.run_query(query, method, distinct)
 
-        print('-' * 40)
-        print('type(data)', type(data))
-        #print('data[0]', data[0])
-        cols = [col_name for col_name in data[0]]
-        if len(cols) > 0:
-            print('hello:', cols)
-            print('data[0]:', json.dumps((data[1])))
-            #for document in data:
-            #    [ unicode(x.strip()) if x is not None else '' for x in row ]
-
-            #    one_row = [document[key] if key in document else '' for key in cols]
-            #    print('one_row', one_row)
-            #    break
-        print('-' * 40)
         return ok_resp(data) if success else err_resp(data)
 
 

@@ -48,8 +48,8 @@ def get_request_body(request):
     # Make sure user is authenticated
     # ----------------------------------
     auth_user_info = get_authenticated_user(request)
-    if not auth_user_info.success:
-        return err_resp(auth_user_info.err_msg)
+    #if not auth_user_info.success:
+    #    return err_resp(auth_user_info.err_msg)
 
     if not request.body:
         return err_resp('request.body not found')
