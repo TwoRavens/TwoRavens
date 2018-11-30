@@ -312,4 +312,4 @@ EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
 
 # database for storing manipulations
 TWORAVENS_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'tworavens')
-PREFIX = 'tr_'  # mongo collection names may not start with a number
+MONGO_COLLECTION_PREFIX = 'tr_'  # mongo collection names may not start with a number

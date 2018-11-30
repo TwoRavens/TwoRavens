@@ -10,6 +10,7 @@ from datetime import datetime
 from pprint import pprint
 from urllib.parse import quote_plus
 from bson.objectid import ObjectId
+from bson.int64 import Int64
 from pymongo import MongoClient
 from pymongo.errors import \
     (ConfigurationError, ConnectionFailure, InvalidName,
@@ -66,12 +67,18 @@ class MongoRetrieveUtil(BasicErrCheck):
             self.add_err_msg(cli.err_msg)
 
     def run_query(self, query, method, distinct=None):
-        """run the query"""
+        """Run the query.  This needs fixes!
+        e.g. "host" is not defined, etc
+        """
         if self.has_error():
             return err_resp(self.get_error_message())
 
         # replace extended query operators like $oid, $date and $numberLong with objects
         def reformat(query):
+            # ---------------------------
+            # temp var setting to avoid error:
+            host = None
+            # ---------------------------
             if issubclass(type(query), list):
                 for stage in query:
                     reformat(stage)
@@ -82,18 +89,20 @@ class MongoRetrieveUtil(BasicErrCheck):
                     if issubclass(type(query[key]), list):
                         for stage in query[key]:
                             reformat(stage)
-                        return;
+                        return
                     if not issubclass(type(query[key]), dict):
-                        continue;
+                        continue
 
                     # Convert strict oid tags into ObjectIds to allow id comparisons
                     if '$oid' in query[key]:
                         query[key] = ObjectId(query[key]['$oid'])
                     # Convert date strings to datetime objects
                     elif '$date' in query[key]:
-                        if type(query[key]['$date']) is dict and host == 'UTDallas':
+                        if isinstance(query[key]['$date'], dict) \
+                            and host == 'UTDallas':
                             query[key] = '$date(%s)' % (query[key]['$date'],) # attempt to work with this: https://github.com/Sayeedsalam/spec-event-data-server/blob/920c6b83f121587cfeedbb34516a1b8213ec6092/app_v2.py#L125
-                        if type(query[key]['$date']) is dict and '$numberLong' in query[key]['$date']:
+                        if type(query[key]['$date']) is dict \
+                            and '$numberLong' in query[key]['$date']:
                             query[key] = datetime.fromtimestamp(Int64(query[key]['$numberLong']))
                         else:
                             query[key] = parser.parse(query[key]['$date'])
@@ -129,55 +138,37 @@ class MongoRetrieveUtil(BasicErrCheck):
                 return ok_resp(requests.get(url + '&aggregate=' + json.dumps(query)).json()['data'])
 
         # ----------------------
-        # get the client
+        # get the mongo database
         # ----------------------
-        mongo_client_info = self.get_mongo_client()
-        if not mongo_client_info.success:
-            LOGGER.error(mongo_client_info.err_msg)
-            return err_resp(mongo_client_info.err_msg)
+        db_info = self.get_mongo_db(self.database_name)
+        if not db_info.success:
+            LOGGER.error(db_info.err_msg)
+            return err_resp(db_info.err_msg)
 
-        mongo_client = mongo_client_info.result_obj
-
-        # ----------------------
-        # choose the database
-        # ----------------------
-        if not self.database_name in mongo_client.database_names():
-            user_msg = ('The database "%s" was not found'
-                        ' on the Mongo server.'
-                        '\nAvailable databases: %s') % \
-                        (self.database_name,
-                         mongo_client.database_names())
-            self.add_err_msg(user_msg)
-            LOGGER.error(user_msg)
-            return err_resp(user_msg)
-
-        # set the database
-        db = mongo_client[self.database_name]
+        mongo_db = db_info.result_obj
 
         # ----------------------
         # choose the collection
         # ----------------------
-        if not self.collection_name in db.collection_names():
+        if not self.collection_name in mongo_db.collection_names():
             user_msg = ('The collection "%s" was not found'
                         ' in database: "%s"'
                         '\nAvailable collections: %s') % \
                         (self.collection_name,
                          self.database_name,
-                         db.collection_names())
+                         mongo_db.collection_names())
             LOGGER.error(user_msg)
             self.add_err_msg(user_msg)
             return err_resp(user_msg)
 
-        # agg_query = [{"$match":{"$and":[{"$and":[{"INTERACTION":{"$not":{"$in":["12","13","20","27","28","35","37"]}}},{"TwoRavens_EVENT_DATE":{"$gte":{"$date":{"$numberLong":"1122304320000"}},"$lte":{"$date":{"$numberLong":"1428072507000"}}}}]},{}]}},{"$project":{"_id":0,"ISO":1,"EVENT_ID_CNTY":1,"EVENT_ID_NO_CNTY":1,"EVENT_DATE":1,"YEAR":1,"TIME_PRECISION":1,"EVENT_TYPE":1,"ACTOR1":1,"ASSOC_ACTOR_1":1,"INTER1":1,"ACTOR2":1,"ASSOC_ACTOR_2":1,"INTER2":1,"INTERACTION":1,"REGION":1,"COUNTRY":1,"ADMIN1":1,"ADMIN2":1,"ADMIN3":1,"LOCATION":1,"LATITUDE":1,"LONGITUDE":1,"GEO_PRECISION":1,"SOURCE":1,"SOURCE_SCALE":1,"NOTES":1,"FATALITIES":1,"TIMESTAMP":1}}]
-        # agg_query = [{"$match":{"year": 1998, "target_root" : "RUS", "target_agent":"GOV"}}, {"$count": "year_1998"}]
-
         try:
             if method == 'find':
-                cursor = db[self.collection_name].find(query)
+                cursor = mongo_db[self.collection_name].find(query)
             if method == 'aggregate':
-                cursor = db[self.collection_name].aggregate(query)
+                cursor = mongo_db[self.collection_name].aggregate(query)
             if method == 'count':
-                return ok_resp(db[self.collection_name].count(query))
+                # Return value immediately
+                return ok_resp(mongo_db[self.collection_name].count(query))
 
             if distinct:
                 cursor = cursor.distinct(distinct)
@@ -195,8 +186,10 @@ class MongoRetrieveUtil(BasicErrCheck):
 
             return ok_resp(serialized(list(cursor)))
 
-        except Exception as err:
-            return err_resp(str(err))
+        except PyMongoError as err_obj:
+            return err_resp(str(err_obj))
+        except Exception as err_obj:
+            return err_resp(str(err_obj))
 
 
     def get_mongo_url(self):
@@ -233,8 +226,10 @@ class MongoRetrieveUtil(BasicErrCheck):
 
         return mongo_url
 
-    def get_mongo_db(self, db_name):
-        """Return a Mongo db client for a specific database"""
+    def get_mongo_db(self, db_name, existing_only=False):
+        """Return a Mongo db client for a specific database
+        existing_only -  if True, only return an existing database
+        """
         if self.has_error():
             return err_resp(self.get_error_message())
 
@@ -245,8 +240,22 @@ class MongoRetrieveUtil(BasicErrCheck):
         if not client_info.success:
             return err_resp(client_info.err_msg) # a big redundant/easier to read
 
+        # Mongo client
+        mongo_client = client_info.result_obj
+
+        # Flag to only return existing databases
+        #
+        if existing_only:
+            if not db_name in mongo_client.database_names():
+                user_msg = ('The database "%s" was not found'
+                            ' on the Mongo server.'
+                            '\nAvailable databases: %s') % \
+                            (db_name,
+                             mongo_client.database_names())
+                return err_resp(user_msg)
+
         try:
-            db = client_info.result_obj[db_name]
+            db = mongo_client[db_name]
         except InvalidName as err_obj:
             #
             return err_resp(self.get_conn_error_msg(err_obj))

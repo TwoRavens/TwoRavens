@@ -11,6 +11,7 @@ from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
      get_json_error,
      get_json_success)
+from tworaven_apps.utils.mongo_util import infer_type
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp,
                                                 err_resp_with_data)
@@ -375,7 +376,7 @@ class EventJobUtil(object):
 
     @staticmethod
     def upload_query_result(event_obj):
-        """ upload query result to dataverse"""
+        """upload query result to dataverse"""
         collection_name = event_obj.as_dict()['collection_name']
         query_obj = event_obj.as_dict()['query']
         query_id = event_obj.as_dict()['id']
@@ -477,7 +478,7 @@ class EventJobUtil(object):
 
     @staticmethod
     def get_data(database, collection, method, query, distinct=None, host=None):
-        """ return data from mongo"""
+        """Return data from a Mongo query"""
 
         if method == 'distinct' and not distinct:
             return err_resp("the distinct method requires a 'keys' argument")
@@ -489,30 +490,8 @@ class EventJobUtil(object):
 
     @staticmethod
     def import_dataset(database, collection, datafile, reload=False):
-        """upload dataset to mongo"""
-
-        def type_infer(value):
-            if value.lower() in ['', 'nan', 'null', 'na']:
-                return None
-            try:
-                return int(value)
-            except ValueError:
-                pass
-
-            try:
-                return float(value)
-            except ValueError:
-                pass
-
-            try:
-                return parser.parse(value)
-            except ValueError:
-                pass
-
-            return value
-
+        """Key method to load a Datafile (csv) into Mongo as a new collection"""
         retrieve_util = MongoRetrieveUtil(database, collection)
-
         db_info = retrieve_util.get_mongo_db(database)
         if not db_info.success:
             return err_resp(db_info.err_msg)
@@ -520,11 +499,12 @@ class EventJobUtil(object):
         db = db_info.result_obj
 
         # upload dataset if it does not exist
-        if settings.PREFIX + collection in db.list_collection_names():
+        #
+        if settings.MONGO_COLLECTION_PREFIX + collection in db.list_collection_names():
             if reload:
-                db[settings.PREFIX + collection].drop()
+                db[settings.MONGO_COLLECTION_PREFIX + collection].drop()
             else:
-                return ok_resp(settings.PREFIX + collection)
+                return ok_resp(settings.MONGO_COLLECTION_PREFIX + collection)
 
         if not os.path.exists(datafile):
             return err_resp(collection + ' not found')
@@ -533,11 +513,11 @@ class EventJobUtil(object):
             csv_reader = csv.reader(csv_file, delimiter=',')
             columns = next(csv_reader)
             for observation in csv_reader:
-                db[settings.PREFIX + collection].insert_one({
-                    col: type_infer(val) for col, val in zip(columns, observation)
+                db[settings.MONGO_COLLECTION_PREFIX + collection].insert_one({
+                    col: infer_type(val) for col, val in zip(columns, observation)
                 })
 
-        return ok_resp({'collection': settings.PREFIX + collection})
+        return ok_resp({'collection': settings.MONGO_COLLECTION_PREFIX + collection})
 
 
     @staticmethod
