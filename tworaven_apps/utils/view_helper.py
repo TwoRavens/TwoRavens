@@ -44,9 +44,19 @@ def get_request_body(request):
     if not request:
         return err_resp('request is None')
 
+    # ----------------------------------
+    # Make sure user is authenticated
+    # ----------------------------------
+    auth_user_info = get_authenticated_user(request)
+    if not auth_user_info.success:
+        return err_resp(auth_user_info.err_msg)
+
     if not request.body:
         return err_resp('request.body not found')
 
+    # ----------------------------------
+    # Return body, decoded as utf-8
+    # ----------------------------------
     return ok_resp(request.body.decode('utf-8'))
 
 
@@ -59,11 +69,18 @@ def get_request_body_as_json(request):
     if not request:
         return err_resp('request is None')
 
+    # ----------------------------------
+    # Make sure user is authenticated
+    # ----------------------------------
     resp_info = get_request_body(request)
     if not resp_info.success:
         return resp_info
 
+    # ----------------------------------
+    # Return body loaded as JSON
+    # ----------------------------------
     json_info = json_loads(resp_info.result_obj)
+
     return json_info
 
 

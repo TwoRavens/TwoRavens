@@ -39,7 +39,7 @@ class ProblemWriterTest(TestCase):
                                  data,
                                  **dict(write_directory=self.test_dir.name))
 
-        self.assertTrue(not bpw.has_error)
+        self.assertTrue(not bpw.has_error())
         self.assertTrue(bpw.error_message is None)
 
         self.assertTrue(bpw.new_filepath.endswith(fname))
@@ -61,7 +61,7 @@ class ProblemWriterTest(TestCase):
                                  data,
                                  **dict(write_directory=self.test_dir.name))
 
-        self.assertTrue(bpw.has_error)
+        self.assertTrue(bpw.has_error())
         self.assertTrue(bpw.error_message)
         self.assertTrue(bpw.error_message.find(ERR_MSG_UNEXPECTED_DIRECTORY) > -1)
 
@@ -79,7 +79,7 @@ class ProblemWriterTest(TestCase):
                                  data,
                                  **dict(write_directory=self.test_dir.name))
 
-        self.assertTrue(bpw.has_error)
+        self.assertTrue(bpw.has_error())
         self.assertTrue(bpw.error_message)
         print('error_message:', bpw.error_message)
         self.assertTrue(bpw.error_message.find(ERR_MSG_NO_FILENAME) > -1)
@@ -97,7 +97,7 @@ class ProblemWriterTest(TestCase):
                                  data,
                                  **dict(write_directory=self.test_dir.name))
 
-        self.assertTrue(bpw.has_error)
+        self.assertTrue(bpw.has_error())
         self.assertTrue(bpw.error_message)
         print('error_message:', bpw.error_message)
         self.assertTrue(bpw.error_message.find(ERR_MSG_NO_DATA) > -1)

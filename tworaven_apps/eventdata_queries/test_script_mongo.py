@@ -55,7 +55,34 @@ def run_test():
 
     print(mr.list_databases())
 
+def run_test2():
+    from tworaven_apps.eventdata_queries.event_job_util import EventJobUtil
+    info = {\
+        "d3mIndex": 0,
+    	"Player": "HANK,_AARON",
+    	"Number_seasons": 23,
+    	"Games_played": 3298,
+    	"At_bats": 12364,
+    	"Runs": 2174,
+    	"Hits": 3771,
+    	"Doubles": 624,
+    	"Triples": 98,
+    	"Home_runs": 755,
+    	"RBIs": 2297,
+    	"Walks": 1402,
+    	"Strikeouts": 1383,
+    	"Batting_average": 0.305,
+    	"On_base_pct": 0.377,
+    	"Slugging_pct": 0.555,
+    	"Fielding_ave": 0.98,
+    	"Position": "Outfield",
+        "Hall_of_Fame": 1}
+    collection = 'my_collection'
 
+    info = EventJobUtil.export_dataset(collection, [info])
+    print(info)
+    if info.success:
+        print(info.result_obj)
 
 if __name__ == '__main__':
-    run_test()
+    run_test2()

@@ -1,7 +1,7 @@
 import os
 import csv
 import json
-import pandas as pd
+import logging
 from django.conf import settings
 from collections import OrderedDict
 from dateutil import parser
@@ -11,13 +11,16 @@ from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
      get_json_error,
      get_json_success)
-from tworaven_apps.utils.mongo_util import infer_type
+from tworaven_apps.utils.mongo_util import infer_type, quote_val
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp,
                                                 err_resp_with_data)
 from tworaven_apps.eventdata_queries.models import \
     (EventDataSavedQuery, ArchiveQueryJob, UserNotification,
-     SEARCH_PARAMETERS, SEARCH_KEY_NAME, SEARCH_KEY_DESCRIPTION, IN_PROCESS, ERROR, COMPLETE, DATA_PARTITIONS)
+     SEARCH_PARAMETERS, SEARCH_KEY_NAME,
+     SEARCH_KEY_DESCRIPTION,
+     IN_PROCESS, ERROR, COMPLETE,
+     DATA_PARTITIONS)
 from tworaven_apps.eventdata_queries.dataverse.temporary_file_maker import TemporaryFileMaker
 from tworaven_apps.eventdata_queries.dataverse.dataverse_publish_dataset import DataversePublishDataset
 from tworaven_apps.eventdata_queries.dataverse.dataverse_list_files_dataset import ListFilesInDataset
@@ -25,6 +28,9 @@ from tworaven_apps.eventdata_queries.dataverse.get_dataset_file_info import GetD
 from tworaven_apps.eventdata_queries.mongo_retrieve_util import MongoRetrieveUtil
 from tworaven_apps.eventdata_queries.generate_readme import GenerateReadMe
 from tworaven_apps.eventdata_queries.dataverse.routine_dataverse_check import RoutineDataverseCheck
+from tworaven_apps.ta2_interfaces.basic_problem_writer import \
+    (BasicProblemWriter,)
+
 from tworaven_apps.raven_auth.models import User
 
 from bson.json_util import (loads, dumps)
@@ -34,6 +40,8 @@ from bson.objectid import ObjectId
 from bson.int64 import Int64
 from datetime import datetime
 from dateutil import parser
+
+LOGGER = logging.getLogger(__name__)
 
 
 class EventJobUtil(object):
@@ -485,6 +493,21 @@ class EventJobUtil(object):
 
         retrieve_util = MongoRetrieveUtil(database, collection, host)
         success, data = retrieve_util.run_query(query, method, distinct)
+
+        print('-' * 40)
+        print('type(data)', type(data))
+        #print('data[0]', data[0])
+        cols = [col_name for col_name in data[0]]
+        if len(cols) > 0:
+            print('hello:', cols)
+            print('data[0]:', json.dumps((data[1])))
+            #for document in data:
+            #    [ unicode(x.strip()) if x is not None else '' for x in row ]
+
+            #    one_row = [document[key] if key in document else '' for key in cols]
+            #    print('one_row', one_row)
+            #    break
+        print('-' * 40)
         return ok_resp(data) if success else err_resp(data)
 
 
@@ -522,28 +545,23 @@ class EventJobUtil(object):
 
     @staticmethod
     def export_dataset(collection, data):
-        """Export the dataset
-        TODO: Change this to /ravens_volume based on settings, not BASE_DIR
-        """
-        def quote(value):
-            return '"' + value + '"' if type(value) is str else value
+        """Export the dataset using the 'BasicProblemWriter' """
+        if not isinstance(data, list):
+            user_msg = 'export_dataset failed.  "data" must be a list'
+            LOGGER.error(user_msg)
+            return err_resp(user_msg)
 
-        folderpath = os.path.join(settings.BASE_DIR, 'ravens_volume', 'manipulation_data', collection, 'TRAIN', 'tables')
+        filename = os.path.join('manipulation_data',
+                                collection,
+                                'TRAIN',
+                                'tables',
+                                'learningData.csv')
 
-        if not os.path.exists(folderpath):
-            os.makedirs(folderpath)
+        params = {BasicProblemWriter.IS_CSV_DATA: True,
+                  BasicProblemWriter.INCREMENT_FILENAME: True}
 
-        extension = 1
-        while os.path.exists(os.path.join(folderpath, 'learningData' + str(extension) + '.csv')):
-            extension += 1
-        filepath = os.path.join(folderpath, 'learningData' + str(extension) + '.csv')
+        bpw = BasicProblemWriter(filename, data, **params)
+        if bpw.has_error():
+            return err_resp(bpw.get_error_message())
 
-        with open(filepath, 'w') as outfile:
-            writer = csv.writer(outfile, delimiter='\t')
-            columns = [quote(header) for header in data[0]]
-
-            writer.writerow(columns)
-            for document in data:
-                writer.writerow([quote(document[key]) if key in document else '' for key in columns])
-
-        return ok_resp(filepath)
+        return ok_resp(bpw.new_filepath)
