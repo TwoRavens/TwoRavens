@@ -292,6 +292,11 @@ DATASET_PERSISTENT_ID = os.environ.get('DATASET_PERSISTENT_ID', 'doi:10.5072/FK2
 # -----------------------------------------
 MONGO_CONNECTION_STRING = os.environ.get('MONGO_CONNECTION_STRING', '')
 
+
+# database for storing manipulations
+TWORAVENS_MONGO_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'tworavens')
+MONGO_COLLECTION_PREFIX = 'tr_'  # mongo collection names may not start with a number
+
 # -------------------------
 # EventData: mongo related
 # -------------------------
@@ -309,7 +314,3 @@ EVENTDATA_PRODUCTION_SERVER_ADDRESS = os.environ.get('EVENTDATA_PRODUCTION_SERVE
 EVENTDATA_DEFAULT_API_KEY = 'api_key=CD75737EF4CAC292EE17B85AAE4B6'
 EVENTDATA_SERVER_API_KEY = os.environ.get('EVENTDATA_SERVER_API_KEY', EVENTDATA_DEFAULT_API_KEY)
 EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
-
-# database for storing manipulations
-TWORAVENS_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'tworavens')
-MONGO_COLLECTION_PREFIX = 'tr_'  # mongo collection names may not start with a number

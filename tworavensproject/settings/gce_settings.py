@@ -1,6 +1,7 @@
 #
 # For deployment on 2ravens.org
 #
+import os
 from .dev_container2 import *
 
 # -----------------------------------
@@ -18,3 +19,8 @@ DATABASES = {
 }
 
 SWAGGER_HOST = '2ravens.org'
+
+# -----------------------------------
+# Note: SECRET_KEY and MONGO_CONNECTION_STRING
+#  are loaded from tworavens-web-secrets.yml
+# -----------------------------------
