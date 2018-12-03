@@ -543,7 +543,6 @@ class EventJobUtil(object):
 
         return ok_resp(bpw.new_filepath)
 
-
     @staticmethod
     def export_problem(user_obj, data, metadata):
         """Export the problem in a D3M-compatible format"""

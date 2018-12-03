@@ -78,7 +78,6 @@ solver.app <- function(env) {
 
     vars <- c(target, predictors)
 
-
     separator <- if (endsWith(dataurl, 'csv'))',' else '\t'
     print(paste("Pre Reading table, separator: ", separator, sep=""))
 
