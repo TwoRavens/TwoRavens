@@ -40,7 +40,7 @@ channels_redis==2.3.1
 
 # pymongo
 #
-pymongo==3.7.0
+pymongo==3.7.2
 
 # mySQL
 #

@@ -421,11 +421,8 @@ def api_get_metadata(request):
 
 @csrf_exempt
 def api_get_data(request):
-    """ general api to access TwoRavens data"""
-
+    """Retrieve data MongoDB"""
     success, json_req_obj = get_request_body_as_json(request)
-
-    print(json.dumps(json_req_obj))
 
     if not success:
         return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
@@ -448,7 +445,7 @@ def api_get_data(request):
     # apply the manipulations
     success, results_obj_err = EventJobUtil.get_data(
         settings.TWORAVENS_DB_NAME,
-        settings.PREFIX + json_req_obj['collection_name'],
+        settings.MONGO_COLLECTION_PREFIX + json_req_obj['collection_name'],
         json_req_obj['method'],
         json.loads(json_req_obj['query']),
         distinct=json_req_obj.get('distinct', None))
@@ -458,7 +455,7 @@ def api_get_data(request):
 
     if json_req_obj.get('export', False):
         success, results_obj_err = EventJobUtil.export_dataset(
-            settings.PREFIX + json_req_obj['collection_name'],
+            settings.MONGO_COLLECTION_PREFIX + json_req_obj['collection_name'],
             results_obj_err)
 
     return JsonResponse({'success': success, 'data': json_comply(results_obj_err)} if success else get_json_error(results_obj_err))

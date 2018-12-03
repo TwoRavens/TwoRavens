@@ -285,6 +285,13 @@ DATAVERSE_SERVER = os.environ.get('DATAVERSE_SERVER', 'https://demo.dataverse.or
 DATAVERSE_API_KEY = os.environ.get('DATAVERSE_API_KEY', 'Get API Key from dataverse')
 DATASET_PERSISTENT_ID = os.environ.get('DATASET_PERSISTENT_ID', 'doi:10.5072/FK2/BGPZC3')
 
+# -----------------------------------------
+# Mongo connection string
+# - Takes precedence over other Mongo creds,
+#   including the settings with "EVENTDATA_"
+# -----------------------------------------
+MONGO_CONNECTION_STRING = os.environ.get('MONGO_CONNECTION_STRING', '')
+
 # -------------------------
 # EventData: mongo related
 # -------------------------
@@ -305,4 +312,4 @@ EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
 
 # database for storing manipulations
 TWORAVENS_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'tworavens')
-PREFIX = 'tr_'  # mongo collection names may not start with a number
+MONGO_COLLECTION_PREFIX = 'tr_'  # mongo collection names may not start with a number
