@@ -45,6 +45,8 @@ RUN  R -e 'install.packages("Rcpp", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("tidyverse", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("lubridate", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("data.table", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("stargazer", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("Zelig", repos="http://cran.rstudio.org")'
-    
+
+
 EXPOSE 8000
