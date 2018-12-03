@@ -4569,8 +4569,9 @@ export function makeDiscoverySolutionPlot() {
 
 }
 export function makeDataDiscoveryTable(){
-  // console.log("Here we bring our table")
+//   console.log("Here we bring our table")
   stargazer = solver_res[0]['stargazer']
+//   console.log("Stargazer : ", stargazer)
   // d3.select("#setDataTable").html("");
 }
 

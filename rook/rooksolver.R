@@ -85,18 +85,36 @@ solver.app <- function(env) {
         isBinary<- is_binary(d[target])
         print("is_binary : ")
         print(isBinary)
-        if(task=="regression")
+        if(task=="regression" || task=="OLS")
         {
         fit <- lm(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d)
         model_type <- "OLS Regression Model"
-      }else if(task=="classification"){
-        if(isBinary){
+      }else if(task=="classification" || task=="LogisticRegression" || task=="RandomForest"){
+        if(isBinary || task=="LogisticRegression"){
         fit <- glm(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d, family="binomial")
+        # We predict 
+        predict <- predict(fit, type = 'response')
+        # confusion matrix data
+        r_table <- table(d[,target], predict > 0.5)
+        my_table <- toJSON(as.data.frame(r_table))
+        target_classes<- unique(d[,target])
         model_type <- "Logistic Regression Model"
+        print("confusion Matrix")
+          print(r_table)
+          print("confusion Matrix Classes")
+          print(target_classes)
         }
         else{
           fit <- ranger(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d, classification=TRUE)
+          predict <- predict(fit, data=d)
+          r_table <- table(d[,target], predict$predictions)
+          my_table <- toJSON(setNames(as.data.frame(r_table),c("row","column","value")))
+          target_classes <- unique(d[,target])
           model_type <- "Random Forest Model"
+          print("confusion Matrix")
+          print(my_table)
+          print("confusion Matrix Classes")
+          print(target_classes)
         }
       }
         if(class(fit)== "ranger"){
@@ -104,17 +122,21 @@ solver.app <- function(env) {
         jsonfit <- jsonlite::serializeJSON(fit)
         fittedvalues <- c()
         actualvalues <- d[,target]
+        classes <- target_classes
+        confusionmatrix <- my_table
         }
         else
         {
         stargazer_lm <- paste(stargazer(fit, type="html"), collapse="")
         jsonfit <- jsonlite::serializeJSON(fit)
-
+        confusionmatrix <- NULL
         fittedvalues <- fit$fitted.values
         actualvalues <- d[,target]
+        classes <- NULL
         }
         if (class(fit)=="lm" || class(fit)=="glm" || class(fit)== "ranger") {
-            return(send(list(data=d, description=description, dependent_variable=target, predictors=predictors,  task=task, model_type = model_type, stargazer= stargazer_lm, predictor_values=list(fittedvalues=fittedvalues, actualvalues=actualvalues))))
+            return(send(list(data=d, description=description, dependent_variable=target, predictors=predictors,  task=task, model_type = model_type, stargazer= stargazer_lm, confusionmatrix = confusionmatrix, 
+            classes= classes,predictor_values=list(fittedvalues=fittedvalues, actualvalues=actualvalues))))
         } else {
             return(send(list(warning="No model estimated.")))
         }
