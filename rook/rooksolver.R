@@ -68,9 +68,10 @@ solver.app <- function(env) {
 
     vars<-c(target,predictors)
 
-    mydata <- read.csv(dataurl)
+    separator <- if (endsWith(dataurl, 'csv')) ',' else '\t'
+    mydata <- read.table(dataurl, sep=separator, header=TRUE, fileEncoding='UTF-8')
 
-        tryCatch({
+    tryCatch({
         modeldata <<- list()
 
         ## data
