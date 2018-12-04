@@ -1,4 +1,4 @@
-FROM r-base:3.4.1
+FROM r-base:3.5.1
 MAINTAINER Raman Prasad (raman_prasad@harvard.edu)
 
 LABEL organization="Two Ravens" \
@@ -19,6 +19,7 @@ LABEL organization="Two Ravens" \
 # Install tools needed for R packages
 # -------------------------------------
 RUN apt-get update && \
+    apt-get -y install apt-utils && \
     apt-get -y install libxml2-dev && \
     apt-get -y install libssh2-1-dev && \
     apt-get -y install libssl-dev && \
