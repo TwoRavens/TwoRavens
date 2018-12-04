@@ -17,7 +17,7 @@ DEBUG = False
 # -----------------------------------
 # use Google Cloud MySQL
 # -----------------------------------
-DATABASES = {
+xDATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': os.environ.get('DB_NAME', 'd3m_gce_ravendb'),
