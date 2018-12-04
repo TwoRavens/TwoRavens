@@ -48,4 +48,4 @@ CSRF_COOKIE_NAME = '2ravens_metadata_gce_csrf'
 # -----------------------------------
 
 # for testing
-TA2_STATIC_TEST_MODE = True
+#TA2_STATIC_TEST_MODE = True
