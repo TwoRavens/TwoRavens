@@ -1,0 +1,53 @@
+[
+{
+    "model": "configurations.appconfiguration",
+    "pk": 1,
+    "fields": {
+        "created": "2017-09-01T22:10:52.681Z",
+        "modified": "2017-11-20T16:23:16.865Z",
+        "name": "Default Mode Dev configuration",
+        "is_active": false,
+        "production": false,
+        "app_domain": "DATAVERSE_DOMAIN",
+        "d3m_svc_url": "/d3m-service",
+        "privacy_mode": false,
+        "rook_svc_url": "/rook-custom/",
+        "dataverse_url": "https://beta.dataverse.org",
+        "description": "Basic dev configuration.  Rook calls are routed through Django."
+    }
+},
+{
+    "model": "configurations.appconfiguration",
+    "pk": 2,
+    "fields": {
+        "created": "2017-09-01T22:15:48.937Z",
+        "modified": "2017-11-20T16:23:07.596Z",
+        "name": "D3M Dev configuration",
+        "is_active": true,
+        "production": false,
+        "app_domain": "D3M_DOMAIN",
+        "d3m_svc_url": "/d3m-service",
+        "privacy_mode": false,
+        "rook_svc_url": "/rook-custom/",
+        "dataverse_url": "https://beta.dataverse.org",
+        "description": "Rook calls routed through Django"
+    }
+},
+{
+    "model": "configurations.appconfiguration",
+    "pk": 3,
+    "fields": {
+        "created": "2017-09-05T19:20:31.198Z",
+        "modified": "2017-11-20T16:23:11.924Z",
+        "name": "D3M Deploy configuration (Docker)",
+        "is_active": false,
+        "production": false,
+        "app_domain": "D3M_DOMAIN",
+        "d3m_svc_url": "/d3m-service",
+        "privacy_mode": false,
+        "rook_svc_url": "/rook-custom/",
+        "dataverse_url": "https://beta.dataverse.org",
+        "description": "Basic dev configuration within docker compose.  Both Rook and Django calls are routed through nginx which is running on port 80"
+    }
+}
+]

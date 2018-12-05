@@ -10,6 +10,8 @@ from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.utils.view_helper import \
     (get_session_key, get_authenticated_user)
 
+from tworaven_apps.ta2_interfaces.static_vals import \
+    (GRPC_GET_FIT_SOLUTION_RESULTS,)
 from tworaven_apps.ta2_interfaces.req_stream_search_solutions import \
  (get_search_solutions_results)
 from tworaven_apps.ta2_interfaces.req_stream_score_solutions import \
@@ -43,9 +45,15 @@ def view_get_search_solutions(request):
 
     # Let's call the TA2!
     #
+
+    # trying username for now, may change this in the future
+    #
+    websocket_id = user_info.result_obj.username
+
     search_info = get_search_solutions_results(\
                                     req_body_info.result_obj,
-                                    user_info.result_obj)
+                                    user_info.result_obj,
+                                    websocket_id=websocket_id)
 
     #print('search_info', search_info)
     if not search_info.success:
@@ -86,11 +94,18 @@ def view_score_solutions(request):
                         call_type='GetScoreSolutionResults',
                         request_msg=req_body_info.result_obj)
 
+
     # Let's call the TA2!
     #
+
+    # websocket id: trying username for now, may change this in the future
+    #
+    websocket_id = user_info.result_obj.username
+
     search_info = get_score_solutions_results(\
                                     req_body_info.result_obj,
-                                    user_info.result_obj)
+                                    user_info.result_obj,
+                                    websocket_id=websocket_id)
 
     #print('search_info', search_info)
     if not search_info.success:
@@ -127,14 +142,20 @@ def view_fit_solution_results(request):
     if ServiceCallEntry.record_d3m_call():
         call_entry = ServiceCallEntry.get_dm3_entry(\
                         request_obj=request,
-                        call_type='GetFitSolutionResults',
+                        call_type=GRPC_GET_FIT_SOLUTION_RESULTS,
                         request_msg=req_body_info.result_obj)
 
     # Let's call the TA2!
     #
+
+    # websocket id: trying username for now, may change this in the future
+    #
+    websocket_id = user_info.result_obj.username
+
     search_info = get_fit_solution_results(\
                                     req_body_info.result_obj,
-                                    user_info.result_obj)
+                                    user_info.result_obj,
+                                    websocket_id=websocket_id)
 
     #print('search_info', search_info)
     if not search_info.success:
@@ -177,9 +198,15 @@ def view_get_produce_solution_results(request):
 
     # Let's call the TA2!
     #
+
+    # websocket id: trying username for now, may change this in the future
+    #
+    websocket_id = user_info.result_obj.username
+
     search_info = get_produce_solution_results(\
                                     req_body_info.result_obj,
-                                    user_info.result_obj)
+                                    user_info.result_obj,
+                                    websocket_id=websocket_id)
 
     #print('search_info', search_info)
     if not search_info.success:

@@ -32,7 +32,7 @@ def view_save_problem_form(request):
             bpw = BasicProblemWriter(content[PROBLEM_REQ_FILENAME],
                                      content[PROBLEM_REQ_DATA])
 
-            if bpw.has_error:
+            if bpw.has_error():
                 return JsonResponse(get_json_error(bpw.error_message))
 
 
@@ -99,8 +99,8 @@ def view_store_basic_problem(request):
     """
     req_info = get_request_body_as_json(request)
     if not req_info.success:
-        user_msg = ('The request did not contain problem data')
-        return JsonResponse(get_json_error(user_msg))
+        #user_msg = ('The request did not contain problem data')
+        return JsonResponse(get_json_error(req_info.err_msg))
 
     req_json = req_info.result_obj
 
@@ -115,7 +115,7 @@ def view_store_basic_problem(request):
     bpw = BasicProblemWriter(req_json[PROBLEM_REQ_FILENAME],
                              req_json[PROBLEM_REQ_DATA])
 
-    if bpw.has_error:
+    if bpw.has_error():
         return JsonResponse(get_json_error(bpw.error_message))
 
 

@@ -3,11 +3,11 @@
 #
 #-r ../submodules/raven-metadata-service/requirements/10_preprocess.txt
 
-Django==2.0.5
+Django==2.1.3
 django-model-utils==3.0.0
 django-webpack-loader==0.5.0
 jsonfield==2.0.2
-requests==2.18.4
+requests==2.20.0
 
 # fabric for dev: to run npm and test server with one command
 #
@@ -33,14 +33,20 @@ Jinja2==2.10
 #
 pandas==0.22.0
 
+# django channels/daphne
+#  note on http2: https://github.com/django/daphne#http2-support
+#
+Twisted[tls,http2]==18.9.0
+channels==2.1.5
+channels_redis==2.3.1
+
 # pymongo
 #
-pymongo==3.7.0
+pymongo==3.7.2
 
 # mySQL
 #
 mysqlclient==1.3.13
-
 
 # python social auth
 #

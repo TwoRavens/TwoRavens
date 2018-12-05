@@ -11,7 +11,7 @@ source("rookconfig.R")
 
 
 if(!production){
-    packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "nloptr","XML", "Zelig", "rpart")
+    packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "nloptr","XML", "Zelig", "rpart","stargazer")
 
     # Find an available repository on CRAN
     availableRepos <- getCRANmirrors()
@@ -33,6 +33,7 @@ library(jsonlite)
 library(devtools)
 library(DescTools)
 library(rpart)
+library(stargazer)
 
 #if (!production) {
 #    if(!("Zelig" %in% rownames(installed.packages()))) {
@@ -126,6 +127,7 @@ source("rookhealthcheck.R")
 source("rookexplore.R")
 source("rookplotdata.R")
 source("rooktree.R")
+source("rooksolver.R")
 
 if(addPrivacy){
     source("rookprivate.R")
@@ -148,7 +150,7 @@ R.server$add(app = healthcheck.app, name="healthcheckapp")
 R.server$add(app = explore.app, name="exploreapp")
 R.server$add(app = plotdata.app, name="plotdataapp")
 R.server$add(app = tree.app, name="treeapp")
-
+R.server$add(app = solver.app, name="solverapp")
 # Serve files directly from rook
 R.server$add(app = File$new(PREPROCESS_OUTPUT_PATH), name = "rook-files")
 

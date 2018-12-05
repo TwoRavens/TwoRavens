@@ -1,0 +1,432 @@
+{
+  "name": "Cline - Speed",
+  "key": "cline_speed",
+  "description": "Data sourced from The Social, Political and Economic Event Database Project and made available by the Cline Center for Advanced Social Research.",
+  "interval": "1979 - 2015",
+  "codebook": "https://uofi.app.box.com/s/z8le27b1l8qwjdzm80g5izpnzq92hnlb",
+  "download": "https://uofi.box.com/s/70cm8q6wusywxx7jxen8ron09nzndz8r",
+  "host": "TwoRavens",
+  "subsets": {
+    "Event Type": {
+      "type": "discrete",
+      "columns": [
+        "EV_TYPE"
+      ]
+    },
+    "Posthoc": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "posthoc"
+      ]
+    },
+    "Link Type": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "LINK_TYPE"
+      ]
+    },
+    "Location Type": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "LOC_TYPE"
+      ]
+    },
+    "Political Expression Type": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "PE_TYPE"
+      ]
+    },
+    "Reduced Political Expression Type": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "EXP_TYPE"
+      ]
+    },
+    "Symbolic Event Type": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "SYM_TYPE"
+      ]
+    },
+    "Advocated Violence": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "AD_VIOL"
+      ]
+    },
+    "Advocated Tactics": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "AD_TACT"
+      ]
+    },
+    "Attack Type": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "ATK_TYPE"
+      ]
+    },
+    "Disruptive State Act Type Broad": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "DSA_TYPE"
+      ]
+    },
+    "Disruptive State Act Type": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "STAT_ACT"
+      ]
+    },
+    "Victim Effect": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "victim_effect"
+      ]
+    },
+    "Weapon": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "weapon"
+      ]
+    },
+    "Property Damaged": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "property_damaged"
+      ]
+    },
+    "Property Owner": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "property_owner"
+      ]
+    },
+    "Geopolitical Entity Type": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "GP_TYPE"
+      ]
+    },
+    "Initiator Type Known": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "KNOW_INI"
+      ]
+    },
+    "Initiator Type": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "INI_TYPE"
+      ]
+    },
+    "Target Type": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "TAR_TYPE"
+      ]
+    },
+    "Victim Type": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "VIC_TYPE"
+      ]
+    },
+    "Non-government Initiator Type": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "NGOV_I1"
+      ]
+    },
+    "Government Initiator Type": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "GOV_I1"
+      ]
+    },
+    "Level of Government Initiator": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "G_LVL_I"
+      ]
+    },
+    "Level of Government Target": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "G_LVL_T"
+      ]
+    },
+    "Level of Government Victim": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "G_LVL_V"
+      ]
+    },
+    "Code Date": {
+      "type": "date",
+      "measureType": "unit",
+      "structure": "point",
+      "columns": [
+        "TwoRavens_CODE_DATE"
+      ]
+    },
+    "Publish Date": {
+      "type": "date",
+      "measureType": "unit",
+      "structure": "point",
+      "columns": [
+        "TwoRavens_PUB_DATE"
+      ]
+    },
+    "Date": {
+      "type": "date",
+      "measureType": "unit",
+      "structure": "point",
+      "columns": [
+        "TwoRavens_AVERAGE_DATE"
+      ]
+    },
+    "Earliest/Latest Date": {
+      "type": "date",
+      "measureType": "unit",
+      "structure": "interval",
+      "columns": [
+        "TwoRavens_JUL_END_DATE",
+        "TwoRavens_JUL_START_DATE"
+      ]
+    },
+    "Precise Date": {
+      "type": "date",
+      "measureType": "unit",
+      "structure": "interval",
+      "columns": [
+        "TwoRavens_JUL_PED",
+        "TwoRavens_JUL_PSD"
+      ]
+    },
+    "Estimated Date": {
+      "type": "date",
+      "measureType": "unit",
+      "structure": "interval",
+      "columns": [
+        "TwoRavens_JUL_EED",
+        "TwoRavens_JUL_LED"
+      ]
+    },
+    "Location": {
+      "type": "discrete_grouped",
+      "group_by": "region",
+      "columns": [
+        "TwoRavens_country"
+      ]
+    },
+    "Coordinates": {
+      "type": "coordinates",
+      "columns": [
+        "GP7",
+        "GP8"
+      ]
+    }
+  },
+  "columns": [
+    "cowcode",
+    "month",
+    "year",
+    "eventid",
+    "country",
+    "INI_IGRP1",
+    "TAR_IGRP1",
+    "VIC_IGRP1",
+    "INI_SGRP1",
+    "TAR_SGRP1",
+    "VIC_SGRP1",
+    "INI_PGRP1",
+    "TAR_PGRP1",
+    "VIC_PGRP1",
+    "KNOW_INI",
+    "AMBIG_INI",
+    "INI_TYPE",
+    "NGOV_I1",
+    "GOV_I1",
+    "TAR_TYPE",
+    "HUMAN_T1",
+    "GOV_T1",
+    "G_LVL_I",
+    "G_LVL_T",
+    "G_LVL_V",
+    "HUMAN_V1",
+    "GOV_V1",
+    "VIC_TYPE",
+    "DATE_TYP",
+    "day",
+    "JUL_PSD",
+    "JUL_PED",
+    "JUL_EED",
+    "JUL_LED",
+    "JUL_START_DATE",
+    "JUL_END_DATE",
+    "DAY_SPAN",
+    "N_INJURD",
+    "TAR_GPOL",
+    "GP_TYPE",
+    "aid",
+    "PUB_MON",
+    "PUB_DATE",
+    "PUB_YEAR",
+    "recap",
+    "NEWS_SOURCE",
+    "CODE_YEAR",
+    "CODE_MONTH",
+    "CODE_DAY",
+    "event",
+    "posthoc",
+    "EV_TYPE",
+    "linked",
+    "LINK_TYPE",
+    "FROM_EID",
+    "TO_EID",
+    "pinpoint",
+    "GP3",
+    "GP4",
+    "GP7",
+    "GP8",
+    "LOC_TYPE",
+    "PE_TYPE",
+    "SYM_TYPE",
+    "AD_VIOL",
+    "AD_TACT",
+    "EXP_TYPE",
+    "ATK_TYPE",
+    "DSA_TYPE",
+    "STAT_ACT",
+    "N_OF_INI_P",
+    "N_OF_INI_A",
+    "WEAP_GRD",
+    "N_KILLED_P",
+    "N_KILLED_A",
+    "E_LENGTH",
+    "N_INJURD_D",
+    "DAM_PROP",
+    "arrests",
+    "PER_ATK_I",
+    "PER_ATK_E",
+    "PUB_ORDER",
+    "retribution",
+    "POL_EXPRESS",
+    "INTANG_REP",
+    "MASS_EXPRESS",
+    "POL_VIOL",
+    "STAT_VIOL",
+    "ST_REPRESS",
+    "AMBIG_WGT",
+    "SC_ANIMOSITY",
+    "ANTI_GOV_SENTMNTS",
+    "CLASS_CONFLICT",
+    "POL_DESIRES",
+    "RETAIN_POWER",
+    "ECO_SCARCITY",
+    "PERS_SECURITY",
+    "QUASI_EVENT",
+    "coup",
+    "COUP_FAILED",
+    "region",
+    "ctry_bias",
+    "victim_effect",
+    "weapon",
+    "property_damaged",
+    "property_owner"
+  ],
+  "columns_constructed": [
+    "TwoRavens_CODE_DATE",
+    "TwoRavens_PUB_DATE",
+    "TwoRavens_AVERAGE_DATE",
+    "TwoRavens_JUL_END_DATE",
+    "TwoRavens_JUL_START_DATE",
+    "TwoRavens_JUL_PED",
+    "TwoRavens_JUL_PSD",
+    "TwoRavens_JUL_EED",
+    "TwoRavens_JUL_LED",
+    "TwoRavens_country",
+    "TwoRavens_address",
+    "TwoRavens_city",
+    "TwoRavens_postal",
+    "TwoRavens_postal_ext",
+    "TwoRavens_region",
+    "TwoRavens_subregion"
+  ],
+  "alignments": {
+    "TwoRavens_AVERAGE_DATE": "date",
+    "GP7": "latitude",
+    "GP8": "longitude",
+    "TwoRavens_country": "country"
+  },
+  "formats": {
+    "cowcode": "cowcode",
+    "AD_TACT": "SPEED_ad_tact",
+    "AD_VIOL": "SPEED_ad_viol",
+    "ATK_TYPE": "SPEED_atk_type",
+    "DSA_TYPE": "SPEED_dsa_type",
+    "STAT_ACT": "SPEED_stat_act",
+    "EV_TYPE": "SPEED_ev_type",
+    "EXP_TYPE": "SPEED_exp_type",
+    "SYM_TYPE": "SPEED_sym_type",
+    "G_LVL_I": "SPEED_g_lvl",
+    "G_LVL_T": "SPEED_g_lvl",
+    "G_LVL_V": "SPEED_g_lvl",
+    "GOV_I1": "SPEED_gov_i1",
+    "GP_TYPE": "SPEED_gp_type",
+    "INI_TYPE": "SPEED_ini_type",
+    "KNOW_INI": "SPEED_know_ini",
+    "LINK_TYPE": "SPEED_link_type",
+    "LOC_TYPE": "SPEED_loc_type",
+    "NGOV_I1": "SPEED_ngov_i1",
+    "PE_TYPE": "SPEED_pe_type",
+    "posthoc": "SPEED_posthoc",
+    "property_damaged": "SPEED_property_damaged",
+    "property_owner": "SPEED_property_owner",
+    "STAT_TYPE": "SPEED_stat_type",
+    "TAR_TYPE": "SPEED_tar_type",
+    "VIC_TYPE": "SPEED_vic_type",
+    "victim_effect": "SPEED_victim_effect",
+    "weapon": "SPEED_weapon",
+    "TwoRavens_country": "ISO-3",
+    "month": "%m",
+    "day": "%d",
+    "year": "%Y"
+  },
+  "citations": [
+    {
+      "year": "2018",
+      "title": "The Social, Political and Economic Event Database Project (SPEED)",
+      "note": "Distributed by Cline Center for Advanced Social Research",
+      "date": "June 16",
+      "url": "https://clinecenter.illinois.edu/project/human-loop-event-data-projects/SPEED"
+    }
+  ]
+}

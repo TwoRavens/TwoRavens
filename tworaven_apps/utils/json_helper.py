@@ -46,22 +46,22 @@ def json_dumps(data_dict, indent=None):
 
 def format_pretty_from_dict(info_dict, indent=4):
     """Load a string into JSON"""
-
-    try:
-        return True, json.dumps(info_dict, indent=indent)
-    except TypeError as ex_obj:
-        return False, '(Invalid JSON) ' + ex_obj
+    return json_dumps(info_dict, indent)
+    #try:
+    #    return ok_resp(json.dumps(info_dict, indent=indent))
+    #except TypeError as ex_obj:
+    #    return err_resp('(Invalid JSON) %s' % ex_obj)
 
 
 def format_pretty(json_string, indent=4):
-    """Load a string into JSON"""
+    """Load a string and return it as a formatted JSON string"""
 
-    try:
-        d = json.loads(json_string)
-    except TypeError:
-        return False, '(Invalid JSON) ' + json_string
+    json_info = json_loads(json_string)
+    if not json_info.success:
+        return err_resp(json_info.err_msg)
 
-    return True, json.dumps(d, indent=indent)
+    return json_dumps(json_info.result_obj, indent)
+
 
 
 def format_jsonfield_for_admin(json_dict, indent=4):
@@ -98,3 +98,47 @@ def format_link_for_admin(source_url):
     lnk = '<a href="{0}" target="_blank">{0}</a>'.format(source_url)
 
     return mark_safe(lnk)
+
+
+def get_dict_value(result_dict, key_list):
+    """Using the key list, get an embedded value from
+    a dict"""
+    if not isinstance(result_dict, dict):
+        return err_resp('result_dict must be a dict')
+    if not isinstance(key_list, list):
+        return err_resp('result_dict must be a dict')
+    #
+    for key in key_list:
+        try:
+            if key == key_list[-1]:
+                return ok_resp(result_dict[key])  # return the value
+            else:
+                result_dict = result_dict[key]  # retrieve embedded dict
+        except KeyError as err_obj:
+            return err_resp('(get_dict_value) KeyError: %s' % err_obj)
+        except TypeError as err_obj:
+            return err_resp('(get_dict_value) TypeError: %s' % err_obj)
+    #
+    user_msg = ('(get_dict_value) Error.'
+                ' Failed to return value using key_list: %s') % \
+                (key_list)
+    #
+    return err_resp(user_msg)
+
+
+def json_comply(obj):
+    """Replace invalid JSON elements (inf, -inf, nan) with unambiguous strings."""
+    if issubclass(dict, type(obj)):
+        return {key: json_comply(obj[key]) for key in obj}
+    elif issubclass(list, type(obj)):
+        return [json_comply(elem) for elem in obj]
+
+    elif type(obj) is float:
+        if obj == float('inf'):
+            return '***TWORAVENS_INFINITY***'
+        elif obj == float('-inf'):
+            return '***TWORAVENS_NEGATIVE_INFINITY***'
+        elif obj != obj:
+            return '***TWORAVENS_NAN***'
+
+    return obj
