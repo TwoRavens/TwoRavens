@@ -70,7 +70,9 @@ function leftpanel(mode) {
         'problem_id',
         m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
         app.disco.some(prob => prob.system === 'user') ? 'User' : '',
-        'Target', 'Predictors', 'Task',
+        'Target', 'Predictors',
+        app.disco.some(prob => prob.model[prob.task] && prob.model[prob.task] !== 'modelUndefined') ? 'Model' : '',
+        'Task',
         app.disco.some(prob => prob.subTask !== 'taskSubtypeUndefined') ? 'Subtask' : '',
         'Metric', 'Manipulations'
     ];
@@ -85,6 +87,7 @@ function leftpanel(mode) {
         problem.system === 'user' && m('div[title="user created problem"]', glyph('user')),
         problem.target,
         problem.predictors.join(', '),
+        problem.model[problem.task] || '',
         problem.task,
         problem.subTask === 'taskSubtypeUndefined' ? '' : problem.subTask, // ignore taskSubtypeUndefined
         problem.metric,
@@ -413,7 +416,26 @@ function rightpanel(mode) {
                         },
                         style: {'margin-bottom': '1em'},
                         disabled: app.lockToggle
-                    })
+                    }),
+                    app.twoRavensModelTypes[app.selectedProblem.task] && m(Dropdown, {
+                        id: 'modelType',
+                        items: app.twoRavensModelTypes[app.selectedProblem.task],
+                        activeItem: app.selectedProblem.model[app.selectedProblem.task] || app.twoRavensModelTypes[app.selectedProblem.task][0],
+                        onclickChild: child => {
+                            if (app.selectedProblem.system === 'auto') {
+                                let problemCopy = app.getProblemCopy(app.selectedProblem);
+                                problemCopy.pending = true;
+                                app.disco.push(problemCopy);
+                                app.setSelectedProblem(problemCopy);
+                                app.setLeftTab('Discovery');
+                            }
+                            app.selectedProblem.model[app.selectedProblem.task] = child;
+                            // will trigger the call to solver, if a menu that needs that info is shown
+                            if (app.selectedProblem) app.setSolverPending(true);
+                        },
+                        style: {'margin-bottom': '1em'},
+                        disabled: app.lockToggle
+                    }),
                 )
             ]
         },

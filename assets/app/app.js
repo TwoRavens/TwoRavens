@@ -565,6 +565,12 @@ export let d3mProblemDescription = {
     performanceMetrics: [{metric: "metricUndefined"}]
 };
 
+export let twoRavensModelTypes = {
+    regression: ['modelUndefined', 'Linear', 'Logistic', 'Negative Binomial', 'Poisson'],
+    classification: ['modelUndefined'],
+    clustering: ['modelUndefined', 'KMeans']
+};
+
 /*
  * call to django to update the problem definition in the problem document
  * rpc SetProblemDoc(SetProblemDocRequest) returns (Response) {}
@@ -4282,6 +4288,7 @@ export function discovery(preprocess_file) {
         metric: findNode(prob.target).plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
         task: findNode(prob.target).plottype === "bar" ? 'classification' : 'regression',
         subTask: Object.keys(d3mTaskSubtype)[0],
+        model: {},
         rating: 3,
         meaningful: "no"
     }))
