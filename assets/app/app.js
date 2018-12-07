@@ -4288,7 +4288,7 @@ export function discovery(preprocess_file) {
         metric: findNode(prob.target).plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
         task: findNode(prob.target).plottype === "bar" ? 'classification' : 'regression',
         subTask: Object.keys(d3mTaskSubtype)[0],
-        model: {},
+        model: 'modelUndefined',
         rating: 3,
         meaningful: "no"
     }))

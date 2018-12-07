@@ -71,7 +71,7 @@ function leftpanel(mode) {
         m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
         app.disco.some(prob => prob.system === 'user') ? 'User' : '',
         'Target', 'Predictors',
-        app.disco.some(prob => prob.model[prob.task] && prob.model[prob.task] !== 'modelUndefined') ? 'Model' : '',
+        app.disco.some(prob => prob.model !== 'modelUndefined') ? 'Model' : '',
         'Task',
         app.disco.some(prob => prob.subTask !== 'taskSubtypeUndefined') ? 'Subtask' : '',
         'Metric', 'Manipulations'
@@ -87,7 +87,7 @@ function leftpanel(mode) {
         problem.system === 'user' && m('div[title="user created problem"]', glyph('user')),
         problem.target,
         problem.predictors.join(', '),
-        problem.model[problem.task] || '',
+        problem.model === 'modelUndefined' ? '' : problem.model,
         problem.task,
         problem.subTask === 'taskSubtypeUndefined' ? '' : problem.subTask, // ignore taskSubtypeUndefined
         problem.metric,
@@ -373,6 +373,7 @@ function rightpanel(mode) {
                                 app.setLeftTab('Discovery');
                             }
                             app.selectedProblem.task = child;
+                            app.selectedProblem.model = 'modelUndefined';
                             // will trigger the call to solver, if a menu that needs that info is shown
                             if (app.selectedProblem) app.setSolverPending(true);
                         },
@@ -420,7 +421,7 @@ function rightpanel(mode) {
                     app.twoRavensModelTypes[app.selectedProblem.task] && m(Dropdown, {
                         id: 'modelType',
                         items: app.twoRavensModelTypes[app.selectedProblem.task],
-                        activeItem: app.selectedProblem.model[app.selectedProblem.task] || app.twoRavensModelTypes[app.selectedProblem.task][0],
+                        activeItem: app.selectedProblem.model,
                         onclickChild: child => {
                             if (app.selectedProblem.system === 'auto') {
                                 let problemCopy = app.getProblemCopy(app.selectedProblem);
@@ -429,7 +430,7 @@ function rightpanel(mode) {
                                 app.setSelectedProblem(problemCopy);
                                 app.setLeftTab('Discovery');
                             }
-                            app.selectedProblem.model[app.selectedProblem.task] = child;
+                            app.selectedProblem.model = child;
                             // will trigger the call to solver, if a menu that needs that info is shown
                             if (app.selectedProblem) app.setSolverPending(true);
                         },
