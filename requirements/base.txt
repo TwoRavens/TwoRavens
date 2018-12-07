@@ -33,14 +33,16 @@ Jinja2==2.10
 #
 pandas==0.22.0
 
-# django channels
+# django channels/daphne
+#  note on http2: https://github.com/django/daphne#http2-support
 #
+Twisted[tls,http2]==18.9.0
 channels==2.1.5
 channels_redis==2.3.1
 
 # pymongo
 #
-pymongo==3.7.0
+pymongo==3.7.2
 
 # mySQL
 #

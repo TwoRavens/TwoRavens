@@ -421,11 +421,8 @@ def api_get_metadata(request):
 
 @csrf_exempt
 def api_get_data(request):
-    """ general api to access TwoRavens data"""
-
+    """Retrieve data MongoDB"""
     success, json_req_obj = get_request_body_as_json(request)
-
-    print(json.dumps(json_req_obj))
 
     if not success:
         return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
@@ -440,15 +437,15 @@ def api_get_data(request):
 
     # ensure the dataset is present
     EventJobUtil.import_dataset(
-        settings.TWORAVENS_DB_NAME,
+        settings.TWORAVENS_MONGO_DB_NAME,
         json_req_obj['collection_name'],
         datafile=json_req_obj.get('datafile', None),
         reload=json_req_obj.get('reload', None))
 
     # apply the manipulations
     success, results_obj_err = EventJobUtil.get_data(
-        settings.TWORAVENS_DB_NAME,
-        settings.PREFIX + json_req_obj['collection_name'],
+        settings.TWORAVENS_MONGO_DB_NAME,
+        settings.MONGO_COLLECTION_PREFIX + json_req_obj['collection_name'],
         json_req_obj['method'],
         json.loads(json_req_obj['query']),
         distinct=json_req_obj.get('distinct', None))
@@ -458,7 +455,7 @@ def api_get_data(request):
 
     if json_req_obj.get('export', False):
         success, results_obj_err = EventJobUtil.export_dataset(
-            settings.PREFIX + json_req_obj['collection_name'],
+            settings.MONGO_COLLECTION_PREFIX + json_req_obj['collection_name'],
             results_obj_err)
 
     return JsonResponse({'success': success, 'data': json_comply(results_obj_err)} if success else get_json_error(results_obj_err))
@@ -466,4 +463,4 @@ def api_get_data(request):
 
 @csrf_exempt
 def api_import_dataset(collection):
-    return EventJobUtil.import_dataset(settings.TWORAVENS_DB_NAME, collection)
+    return EventJobUtil.import_dataset(settings.TWORAVENS_MONGO_DB_NAME, collection)

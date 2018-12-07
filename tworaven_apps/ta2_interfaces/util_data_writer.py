@@ -91,7 +91,7 @@ class UtilDataWriter(BasicErrCheck):
                                  self.csv_data,
                                  **params)
 
-        if bpw.has_error:
+        if bpw.has_error():
             self.add_error_message(bpw.error_message)
             return
 

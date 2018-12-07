@@ -2683,6 +2683,11 @@ export function downloadIncomplete() {
 */
 export async function estimate(btn) {
     if (!IS_D3M_DOMAIN){
+        let userUsg = 'This code path is no longer used.  (Formerly, it used Zelig.)';
+        console.log(userMsg);
+        alert(userMsg);
+        return;
+
         if (downloadIncomplete()) {
             return;
         }

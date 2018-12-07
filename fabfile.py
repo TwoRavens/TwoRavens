@@ -613,15 +613,19 @@ def redis_restart():
 @task
 def celery_run(ta2_external=False):
     """Clear redis and Start celery"""
+    from tworaven_apps.utils.random_info import get_alphanumeric_string
     redis_clear()
 
     #celery_cmd = ('export TA2_STATIC_TEST_MODE=False;'
     #              'celery -A tworavensproject worker -l info')
+    export_line = ''
     if ta2_external:
-        celery_cmd = ('export TA2_STATIC_TEST_MODE=False;'
-                      'celery -A tworavensproject worker -l info')
-    else:
-        celery_cmd = ('celery -A tworavensproject worker -l info')
+        export_line = 'export TA2_STATIC_TEST_MODE=False;'
+
+    celery_cmd = ('%s'
+                  'celery -A tworavensproject worker'
+                  ' -l info -n worker_%s@%%h') % \
+                  (export_line, get_alphanumeric_string(6),)
 
     local(celery_cmd)
 
