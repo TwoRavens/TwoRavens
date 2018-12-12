@@ -2196,7 +2196,7 @@ export function findNode(name) {
 //
 function updateNode(id, nodes) {
 
-    let node = (nodes || allNodes).find(node => node.name === id);
+    let node = allNodes.find(node => node.name === id) || nodes.find(node => node.name === id);
 
     if (node === undefined) {
         let i = 0;
@@ -3977,17 +3977,17 @@ export function confusionmatrix(matrixdata, classes) {
     computedData.push({"F1":f1, "PRECISION":precision,"RECALL":recall,"ACCURACY":accuracy});
 
     Matrix({
-           container : '#confusioncontainer',
-           data      : matrixdata,
-           labels    : classes,
-           start_color : '#ffffff',
-           end_color : '#e67e22',
-           width : ((mainwidth-50)*.7) - 100 - leftmarginguess -30,//     // Width of confusion matrix table: Beginning of this is #confusioncontainer.width, but this div doesn't always exist yet
-           height : mainheight * .6,    // Need to not be hard coded
-           widthLegend : mainwidth*.08,
-           x_offset : 30,
-           pipelineId : selectedPipeline  // Note: cueing from global, not from passed through pid, because of number of functions to pass through value.
-           });
+        container: '#confusioncontainer',
+        data: matrixdata,
+        labels: classes,
+        start_color: '#ffffff',
+        end_color: '#e67e22',
+        width: ((mainwidth - 50) * .7) - 100 - leftmarginguess - 30,//     // Width of confusion matrix table: Beginning of this is #confusioncontainer.width, but this div doesn't always exist yet
+        height: mainheight * .6,    // Need to not be hard coded
+        widthLegend: mainwidth * .04,
+        x_offset: 30,
+        pipelineId: selectedPipeline  // Note: cueing from global, not from passed through pid, because of number of functions to pass through value.
+    });
 
     // not rendering this table for right now, left all the code in place though. maybe we use it eventually
     // var table = tabulate(computedData, ["F1", "PRECISION","RECALL","ACCURACY"]);
