@@ -298,6 +298,7 @@ class BasicProblemWriter(BasicErrCheck):
         #
         with open(fullpath, 'w', newline='') as output_file:
             dict_writer = csv.DictWriter(output_file,
+                                         quoting=csv.QUOTE_NONNUMERIC,
                                          fieldnames=columns,
                                          #delimiter='\t',
                                          extrasaction='ignore')

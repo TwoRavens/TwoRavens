@@ -39,6 +39,8 @@ import Subpanel2 from '../common/views/Subpanel';
 
 // EVENTDATA
 import Body_EventData from './eventdata/Body_EventData';
+import ConfusionMatrix from "./views/ConfusionMatrix";
+
 
 export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -348,6 +350,13 @@ function rightpanel(mode) {
         ];
     }
 
+    let confusionData;
+    if (common.panelOpen['right'] && app.selectedProblem && app.solver_res[0] && app.solver_res[0].task[0] === 'classification')
+        confusionData = app.generateConfusionData(
+            app.solver_res[0]['predictor_values']['actualvalues'],
+            app.solver_res[0]['predictor_values']['fittedvalues'], app.confusionFactor);
+
+
     let sections = [
         app.selectedProblem && {
             value: 'Problem',
@@ -526,6 +535,31 @@ function rightpanel(mode) {
                 m(`div#predictionSummary[style=display:${app.selectedResultsMenu === 'Prediction Summary' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%]`,
                     m('#setxLeftPlot[style=float:left; background-color:white; overflow:auto;]'),
                     m('#setxLeft[style=display:none; float: left; overflow: auto; background-color: white]'),
+
+                    confusionData && [
+                        m('div[style=margin-top:.5em]',
+                            m('label#confusionFactorLabel', 'Confusion Matrix Factor: '),
+                            m('[style=display:inline-block]', m(Dropdown, {
+                                id: 'confusionFactorDropdown',
+                                items: ['undefined', ...confusionData.allClasses],
+                                activeItem: app.confusionFactor,
+                                onclickChild: app.setConfusionFactor,
+                                style: {'margin-left': '1em'}
+                            }))),
+                        confusionData.data.length === 2 && m(Table, {
+                            id: 'resultsPerformanceTable',
+                            headers: ['metric', 'score'],
+                            data: app.generatePerformanceData(confusionData.data),
+                            attrsAll: {style: {width: 'auto'}}
+                        }),
+                        m(ConfusionMatrix, Object.assign({}, confusionData, {
+                            id: 'resultsConfusionMatrixContainer',
+                            pipelineId: app.selectedProblem.problem_id,
+                            startColor: '#ffffff', endColor: '#e67e22',
+                            margin: {left: 10, right: 10, top: 50, bottom: 10},
+                            attrsAll: {style: {height: '350px'}}
+                        }))
+                    ]
                 ),
                 m(`#setxLeftGen[style=display:${app.selectedResultsMenu === 'Generate New Predictions' ? 'block' : 'none'}; float: left; width: 70%; height:calc(100% - 30px); overflow: auto; background-color: white]`,
                     m('#setxLeftTop[style=display:block; float: left; width: 100%; height:50%; overflow: auto; background-color: white]',

@@ -178,6 +178,9 @@ let problem_sent = []
 let problem_sent_user = []
 let problems_in_preprocess = []
 
+// determines which variable is selected for additional analysis in the classification results menu
+export let confusionFactor;
+export let setConfusionFactor = factor => confusionFactor = factor === 'undefined' ? undefined : factor;
 
 export let exploreVariate = 'Univariate';
 export function setVariate(variate) {
@@ -3596,14 +3599,7 @@ export function resultsplotgraph(pid){
     }
 
     // only do this for classification tasks
-    if(d3mTaskType[d3mProblemDescription.taskType][1] == "CLASSIFICATION") {
-        console.log("class plot");
-        console.log("actual:");
-        console.log(dvvalues);
-        console.log("predicted:");
-        console.log(predvals);
-        genconfdata(dvvalues, predvals);
-    } else {
+    if(d3mTaskType[d3mProblemDescription.taskType][1] != "CLASSIFICATION") {
         let xdata = "Actual";
         let ydata = "Predicted";
         let mytitle = "Predicted V Actuals: Pipeline " + pid;
@@ -3631,366 +3627,56 @@ export function resultsplotgraph(pid){
         });
 }
 
-/** needs doc */
-export function genconfdata (dvvalues, predvals) {
+/* Generates confusion table data and labels, given the expected and predicted values*/
+/* if a factor is passed, the resultant table will be 2x2 with respect to the factor */
+export function generateConfusionData(Y_true, Y_pred, factor=undefined) {
+    let allClasses = [...new Set([...Y_true, ...Y_pred])].sort();
+
+    if (factor !== undefined) {
+        Y_true = Y_true.map(obs => factor === obs ? factor : 'not ' + factor);
+        Y_pred = Y_pred.map(obs => factor === obs ? factor : 'not ' + factor);
+    }
 
     // dvvalues are generally numeric
-    dvvalues = dvvalues.map(String);
+    Y_true = Y_true.map(String);
 
     // predvals are generally strings
-    predvals = predvals.map(String);
-
-    let mycounts = [];
-    let mypairs = [];
+    Y_pred = Y_pred.map(String);
 
     // combine actuals and predicted, and get all unique elements
-    let myuniques = dvvalues.concat(predvals);
-    myuniques= [...new Set(myuniques)];                 //equivalent to: myuniques = Array.from(new Set(myuniques));
-    //was:
-    //  function onlyUnique(value, index, self) {
-    //    return self.indexOf(value) === index;
-    //  }
-    //  myuniques = myuniques.filter(onlyUnique);
-    myuniques = myuniques.sort();
+    let classes = [...new Set([...Y_true, ...Y_pred])].sort();
 
-    // create two arrays: mycounts initialized to 0, mypairs have elements set to all possible pairs of uniques
-    // looked into solutions other than nested fors, but Internet suggest performance is just fine this way
-    for(let i = 0; i < myuniques.length; i++) {
-        let tempcount = [];
-        let temppair = [];
-        for(let j = 0; j < myuniques.length; j++) {
-            mycounts.push(0);
-            mypairs.push(myuniques[i]+','+myuniques[j]);
-        }
-    }
+    // create a matrix of zeros
+    let data = Array.from({length: classes.length}, () => new Array(classes.length).fill(0));
 
-    // line up actuals and predicted, and increment mycounts at index where mypair has a match for the 'actual,predicted'
-    for (let i = 0; i < dvvalues.length; i++) {
-        let temppair = predvals[i]+','+dvvalues[i];
-        let myindex = mypairs.indexOf(temppair);
-        mycounts[myindex] += 1;
-    }
+    // increment the data matrix at the class coordinates of true and pred
+    Y_true.forEach((_, i) => data[classes.indexOf(Y_true[i])][classes.indexOf(Y_pred[i])]++);
 
-    let confdata = [], size = myuniques.length;
-    // another loop... this builds the array of arrays from the flat array mycounts for input to confusionsmatrix function
-    while (mycounts.length > 0)
-        confdata.push(mycounts.splice(0, size));
-
-    confusionmatrix(confdata, myuniques);
+    return {data, classes, allClasses};
 }
 
-/** needs doc */
-export function confusionmatrix(matrixdata, classes) {
+/* generate an object containing accuracy, recall, precision, F1, given a 2x2 confusion data matrix */
+export function generatePerformanceData(confusionData2x2) {
 
-    d3.select("#setxLeftPlot").html("");
-    d3.select("#setxLeftPlot").select("svg").remove();
-
-    // adapted from this block: https://bl.ocks.org/arpitnarechania/dbf03d8ef7fffa446379d59db6354bac
-    let mainwidth = byId('rightpanel').clientWidth; //byId('main').clientWidth;
-    let mainheight = byId('main').clientHeight;
-
-
-    let longest = classes.reduce(function (a, b) { return a.length > b.length ? a : b; });
-    //console.log(longest);
-    let leftmarginguess = Math.max(longest.length * 8, 25);  // More correct answer is to make a span, put string inside span, then use jquery to get pixel width of span.
-
-
-    let condiv = document.createElement('div');
-    condiv.id="confusioncontainer";
-    condiv.style.display="inline-block";
-    condiv.style.width=+(((mainwidth-50)*.7)-100)+'px';   // Need to not be hard coded
-    condiv.style.marginLeft='12px';
-    condiv.style.height=+(mainheight)+'px';      // Need to not be hard coded
-    condiv.style.float="left";
-    byId('setxLeftPlot').appendChild(condiv);
-
-    let legdiv = document.createElement('div');
-    legdiv.id="confusionlegend";
-    legdiv.style.width=+(90)+'px';    // Need to not be hard coded
-    legdiv.style.marginLeft='5px';               // Margin between confusion matrix container and legend container
-    legdiv.style.height=+(mainheight)+'px';      // Need to not be hard coded
-    legdiv.style.display="inline-block";
-    byId('setxLeftPlot').appendChild(legdiv);
-
-    var margin = {top: 50, right: 35, bottom: leftmarginguess, left: leftmarginguess};    // Left margin needs not to be hardcoded, but responsive to maximum label length
-
-
-    function Matrix(options) {
-
-        let width = options.width,
-        height = options.height,
-        data = options.data,
-        container = options.container,
-        labelsData = options.labels,
-        startColor = options.start_color,
-        endColor = options.end_color,
-        xOffset = options.x_offset,
-        pipelineId = options.pipelineId;
-
-        let widthLegend = options.widthLegend;
-
-        if(!data){
-            throw new Error('Please pass data');
-        }
-
-        if(!Array.isArray(data) || !data.length || !Array.isArray(data[0])){
-            throw new Error('It should be a 2-D array');
-        }
-
-        let maxValue = d3.max(data, function(layer) { return d3.max(layer, function(d) { return d; }); });
-        let minValue = d3.min(data, function(layer) { return d3.min(layer, function(d) { return d; }); });
-
-        let numrows = data.length;
-        let numcols = data[0].length;
-
-        let svg = d3.select(container).append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-        let background = svg.append("rect")
-        .style("stroke", "black")
-        .style("stroke-width", "2px")
-        .attr("width", width)
-        .attr("height", height);
-
-        let x = d3.scale.ordinal()
-        .domain(d3.range(numcols))
-        .rangeBands([0, width]);
-
-        let y = d3.scale.ordinal()
-        .domain(d3.range(numrows))
-        .rangeBands([0, height]);
-
-        let colorMap = d3.scale.linear()
-        .domain([minValue,maxValue])
-        .range([startColor, endColor]);
-
-        let row = svg.selectAll(".row")
-        .data(data)
-        .enter().append("g")
-        .attr("class", "row")
-        .attr("transform", function(d, i) { return "translate(0," + y(i) + ")"; });
-
-        let cell = row.selectAll(".cell")
-        .data(function(d) { return d; })
-        .enter().append("g")
-        .attr("class", "cell")
-        .attr("transform", function(d, i) { return "translate(" + x(i) + ", 0)"; });
-
-        cell.append('rect')
-        .attr("width", x.rangeBand())
-        .attr("height", y.rangeBand())
-        .style("stroke-width", 0);
-
-        if(numcols < 20){
-          cell.append("text")
-          .attr("dy", ".32em")
-          .attr("x", x.rangeBand() / 2)
-          .attr("y", y.rangeBand() / 2)
-          .attr("text-anchor", "middle")
-          .style("fill", function(d, i) { return d >= maxValue/2 ? 'white' : 'black'; })
-          .text(function(d, i) { return d; });
-        };
-
-        row.selectAll(".cell")
-        .data(function(d, i) { return data[i]; })
-        .style("fill", colorMap);
-
-        // this portion of the code isn't as robust to sizing. column labels not rendering in the right place
-        let labels = svg.append('g')
-        .attr('class', "labels");
-
-        let columnLabels = labels.selectAll(".column-label")
-        .data(labelsData)
-        .enter().append("g")
-        .attr("class", "column-label")
-        .attr("transform", function(d, i) {
-             // let temp = "translate(" + x(i) + "," + (height+20) + ")"; // this in particular looks to be the cause
-            //  console.log(temp);
-              return "translate(" + x(i) + "," + (height + xOffset) + ")"; });
-
-        columnLabels.append("line")
-        .style("stroke", "black")
-        .style("stroke-width", "1px")
-        .attr("x1", x.rangeBand() / 2)
-        .attr("x2", x.rangeBand() / 2)
-        .attr("y1", 5 -xOffset)
-        .attr("y2", -xOffset);
-
-        console.log(x.rangeBand);
-
-        columnLabels.append("text")
-        .attr("x", x.rangeBand()/2)
-        .attr("y", -10)
-        //.attr("dy", "0.5em")
-        .attr("text-anchor", "start")
-        .attr("transform", "rotate(60," + x.rangeBand()/2 + ",-10)")
-        .text(function(d, i) { return d; });
-
-        let rowLabels = labels.selectAll(".row-label")
-        .data(labelsData)
-        .enter().append("g")
-        .attr("class", "row-label")
-        .attr("transform", function(d, i) { return "translate(" + 0 + "," + y(i) + ")"; });
-
-        rowLabels.append("line")
-        .style("stroke", "black")
-        .style("stroke-width", "1px")
-        .attr("x1", 0)
-        .attr("x2", -5)
-        .attr("y1", y.rangeBand() / 2)
-        .attr("y2", y.rangeBand() / 2);
-
-        rowLabels.append("text")
-        .attr("x", -8)
-        .attr("y", y.rangeBand() / 2)
-        .attr("dy", ".32em")
-        .attr("text-anchor", "end")
-        .text(function(d, i) { return d; });
-
-        let key = d3.select("#confusionlegend")  // Legend
-        .append("svg")
-        .attr("width", widthLegend)
-        .attr("height", height + margin.top + margin.bottom);
-
-        let legend = key
-        .append("defs")
-        .append("svg:linearGradient")
-        .attr("id", "gradient")
-        .attr("x1", "100%")
-        .attr("y1", "0%")
-        .attr("x2", "100%")
-        .attr("y2", "100%")
-        .attr("spreadMethod", "pad");
-
-        legend
-        .append("stop")
-        .attr("offset", "0%")
-        .attr("stop-color", endColor)
-        .attr("stop-opacity", 1);
-
-        legend
-        .append("stop")
-        .attr("offset", "100%")
-        .attr("stop-color", startColor)
-        .attr("stop-opacity", 1);
-
-        key.append("rect")       // gradient image in legend
-        .attr("width", widthLegend/4-10)
-        .attr("height", height)
-        .style("fill", "url(#gradient)")
-        .attr("transform", "translate(0," + margin.top + ")");
-
-        svg.append("text")
-        .attr("transform", "translate(" + (width / 2) + " ," + (0 - 10) + ")")
-        .style("text-anchor", "middle")
-        .text("Actual Class");
-
-        svg.append("text")
-        .attr("transform", "translate(" + (width / 2) + " ," + (0 - 30) + ")")
-        .style("text-anchor", "middle")
-        .text("Confusion Matrix: Pipeline " + pipelineId);
-
-        svg.append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("y", (width + 15) )
-        .attr("x",0 - (height / 2))
-        //.attr("dy", "1em")
-        .style("text-anchor", "middle")
-        .text("Predicted Class");
-
-        // this y is for the legend
-        y = d3.scale.linear()
-        .range([height, 0])
-        .domain([minValue, maxValue]);
-
-        let yAxis = d3.svg.axis()
-        .scale(y)
-        .orient("right");
-
-        key
-            .append("g")
-            .attr("class", "y axis")
-            .attr("transform", "translate(15," + margin.top + ")")    // first number is separation between legend scale and legend key
-            .call(yAxis);
-    }
-
-    // The table generation function. Used for the table of performance measures, not the confusion matrix
-    function tabulate(data, columns) {
-        var table = d3.select("#setxLeftPlot").append("table")
-        .attr("style", "margin-left: " + margin.left +"px"),
-        thead = table.append("thead"),
-        tbody = table.append("tbody");
-
-        // append the header row
-        thead.append("tr")
-        .selectAll("th")
-        .data(columns)
-        .enter()
-        .append("th")
-        .text(function(column) { return column; });
-
-        // create a row for each object in the data
-        var rows = tbody.selectAll("tr")
-        .data(data)
-        .enter()
-        .append("tr");
-
-        // create a cell in each row for each column
-        var cells = rows.selectAll("td")
-        .data(function(row) {
-              return columns.map(function(column) {
-                                 return {column: column, value: row[column]};
-                                 });
-              })
-        .enter()
-        .append("td")
-        .attr("style", "font-family: Courier") // sets the font style
-        .html(function(d) { return d.value; });
-
-        return table;
-    }
-
-    // this code is all for producing a table with performance measures
-    //var confusionMatrix = [[169, 10],[7, 46]];
-    var tp = matrixdata[0][0];
-    var fn = matrixdata[0][1];
-    var fp = matrixdata[1][0];
-    var tn = matrixdata[1][1];
+    var tp = confusionData2x2[0][0];
+    var fn = confusionData2x2[0][1];
+    var fp = confusionData2x2[1][0];
+    var tn = confusionData2x2[1][1];
 
     var p = tp + fn;
     var n = fp + tn;
 
-    var accuracy = (tp+tn)/(p+n);
-    var f1 = 2*tp/(2*tp+fp+fn);
-    var precision = tp/(tp+fp);
-    var recall = tp/(tp+fn);
+    var accuracy = (tp + tn) / (p + n);
+    var f1 = 2 * tp / (2 * tp + fp + fn);
+    var precision = tp / (tp + fp);
+    var recall = tp / (tp + fn);
 
-    accuracy = Math.round(accuracy * 100) / 100;
-    f1 = Math.round(f1 * 100) / 100;
-    precision = Math.round(precision * 100) / 100;
-    recall = Math.round(recall * 100) / 100;
-
-    var computedData = [];
-    computedData.push({"F1":f1, "PRECISION":precision,"RECALL":recall,"ACCURACY":accuracy});
-
-    Matrix({
-        container: '#confusioncontainer',
-        data: matrixdata,
-        labels: classes,
-        start_color: '#ffffff',
-        end_color: '#e67e22',
-        width: ((mainwidth - 50) * .7) - 100 - leftmarginguess - 30,//     // Width of confusion matrix table: Beginning of this is #confusioncontainer.width, but this div doesn't always exist yet
-        height: mainheight * .6,    // Need to not be hard coded
-        widthLegend: mainwidth * .04,
-        x_offset: 30,
-        pipelineId: selectedPipeline  // Note: cueing from global, not from passed through pid, because of number of functions to pass through value.
-    });
-
-    // not rendering this table for right now, left all the code in place though. maybe we use it eventually
-    // var table = tabulate(computedData, ["F1", "PRECISION","RECALL","ACCURACY"]);
+    return {
+        "f1": Math.round(f1 * 100) / 100,
+        "precision": Math.round(precision * 100) / 100,
+        "recall": Math.round(recall * 100) / 100,
+        "accuracy": Math.round(accuracy * 100) / 100
+    }
 }
 
 /**
@@ -4559,21 +4245,17 @@ export function makeDataDiscovery(){
 	tabulate(in_data, ['Variable', 'Data']); // 2 column table
 
 }
-export function makeDiscoverySolutionPlot(){
-  let xdata = "Actual";
-  let ydata = "Predicted";
-  let mytitle = "Predicted V Actuals: Pipeline ";
-  let dvvalues = solver_res[0]['predictor_values']['actualvalues']
-  let predvals = solver_res[0]['predictor_values']['fittedvalues']
-  let task = solver_res[0]['task']
-  if(task == "regression"){
-      console.log("scatter")
-  scatter(dvvalues, predvals, xdata, ydata, undefined, undefined, mytitle);
-  }
-  else{
-      console.log("confusion matrix")
-    genconfdata(dvvalues,predvals);
-  }
+export function makeDiscoverySolutionPlot() {
+    let xdata = "Actual";
+    let ydata = "Predicted";
+    let mytitle = "Predicted V Actuals: Pipeline ";
+    let dvvalues = solver_res[0]['predictor_values']['actualvalues']
+    let predvals = solver_res[0]['predictor_values']['fittedvalues']
+    let task = solver_res[0]['task']
+    if (task == "regression") {
+        console.log("scatter")
+        scatter(dvvalues, predvals, xdata, ydata, undefined, undefined, mytitle);
+    }
 }
 export function makeDataDiscoveryTable(){
 //   console.log("Here we bring our table")
@@ -4898,8 +4580,7 @@ export async function handleGetSearchSolutionResultsResponse(response1){
   }
 
   // Add pipeline descriptions to allPipelineInfo
-  // More overwriting than is necessary here.
-  allPipelineInfo[response1.id] = Object.assign(allPipelineInfo[response1.id], response1.data);
+  Object.assign(allPipelineInfo[response1.id], response1.data);
 
 }  // end GetSearchSolutionResultsResponse
 
@@ -4926,7 +4607,7 @@ async function handleDescribeSolutionResponse(response){
   let pipelineId = response.pipelineId;
   delete response.pipelineId;
 
-  allPipelineInfo[pipelineId] = Object.assign(allPipelineInfo[pipelineId], response);
+  Object.assign(allPipelineInfo[pipelineId], response);
 
 } // end: handleDescribeSolutionResponse
 
