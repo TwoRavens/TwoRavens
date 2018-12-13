@@ -571,7 +571,6 @@ function rightpanel(mode) {
                 ]
             }),
                 app.resultsProblem && m(`div#problemDescription[style=display:${app.selectedResultsMenu === 'Problem Description' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%]`,
-
                     m(Table, {
                         headers: ['Variable', 'Data'],
                         data: [
