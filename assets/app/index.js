@@ -555,20 +555,20 @@ function rightpanel(mode) {
 
                 showPredictionSummary && app.solver_res[0].task[0] === 'regression' && m('#resultsScatter', {
                     plot({state, attrs, dom}) {
-                        state.cacheX = attrs.dataX;
-                        state.cacheY = attrs.dataY;
-                        plots.scatter(state.cacheX, state.cacheY, "Actual", "Predicted", dom, undefined,
+                        state.dataX = app.solver_res[0]['predictor_values']['actualvalues'];
+                        state.dataY = app.solver_res[0]['predictor_values']['fittedvalues'];
+                        plots.scatter(state.dataX, state.dataY, "Actual", "Predicted", dom, {width: dom.offsetWidth, height: dom.offsetHeight},
                             "Predicted vs. Actuals: Pipeline " + app.selectedProblem.problem_id)
                     },
                     oncreate(vnode) {
                         vnode.attrs.plot(vnode)
                     },
                     onupdate(vnode) {
-                        let {state, attrs} = vnode;
-                        (state.cacheX !== attrs.dataX || state.cacheY !== attrs.dataY) && vnode.attrs.plot(vnode)
+                        if (vnode.state.dataX !== app.solver_res[0]['predictor_values']['actualvalues']
+                            || vnode.state.dataY !== app.solver_res[0]['predictor_values']['fittedvalues']) return;
+                        vnode.attrs.plot(vnode)
                     },
-                    dataX: app.solver_res[0]['predictor_values']['actualvalues'],
-                    dataY: app.solver_res[0]['predictor_values']['fittedvalues']
+                    style: {width: '100%', height: 'calc(100% - 30px)'}
                 }),
 
                 confusionData && [
@@ -656,11 +656,19 @@ function rightpanel(mode) {
                         ['Model', app.solver_res[0].model_type[0]]
                     ],
                     nest: true,
-                    attrsAll: {style: {margin: '1em', width: 'calc(100% - 2em)'}}
+                    attrsAll: {
+                        style: {
+                            width: 'calc(100% - 2em)',
+                            overflow: 'auto',
+                            border: '1px solid #ddd',
+                            margin: '1em',
+                            'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)'
+                        }
+                    }
                 })
                 // m('#setPredictionDataLeft[style=display:block; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white; padding : 1em; margin-top: 1em]')
             ),
-            m(`div#solutionTable[style=display:${app.selectedResultsMenu === 'Solution Table' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%; padding: 1em]`,
+            m(`div#solutionTable[style=display:${app.selectedResultsMenu === 'Solution Table' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%;]`,
                 app.selectedProblem && app.solver_res.length > 0 && m(DataTable, {data: app.solver_res[0].stargazer, variable: app.selectedProblem.target})
             )
         )]
