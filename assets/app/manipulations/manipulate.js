@@ -188,14 +188,6 @@ export function varList() {
     variables = variables.sort(variableSort);
 
     return [
-        constraintMenu.type === 'subset' && constraintMetadata.type !== 'date' && variableMetadata[constraintMetadata['columns'][0]]['types'].indexOf('string') === -1 && [
-            m(ButtonRadio, {
-                id: 'subsetTypeButtonBar',
-                onclick: type => setConstraintType(type, constraintMenu.pipeline),
-                activeSection: constraintMetadata.type,
-                sections: ['continuous', 'discrete'].map(type => ({value: type}))
-            })
-        ],
         m(TextField, {
             id: 'searchVar',
             placeholder: 'Search variables',
@@ -216,11 +208,20 @@ export function varList() {
             attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
             attrsAll: {
                 style: {
-                    height: 'calc(100% - 116px)',
+                    height: 'calc(100% - 80px)',
                     overflow: 'auto'
                 }
             }
-        })
+        }),
+        constraintMenu.type === 'subset' && constraintMetadata.type !== 'date'
+        && !variableMetadata[constraintMetadata['columns'][0]]['types'].includes('string') && [
+            m(ButtonRadio, {
+                id: 'subsetTypeButtonBar',
+                onclick: type => setConstraintType(type, constraintMenu.pipeline),
+                activeSection: constraintMetadata.type,
+                sections: ['continuous', 'discrete'].map(type => ({value: type}))
+            })
+        ]
     ]
 }
 

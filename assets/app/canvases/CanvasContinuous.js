@@ -3,6 +3,7 @@ import m from 'mithril';
 import {panelMargin} from "../../common/common";
 import TextField from '../../common/views/TextField';
 import PlotContinuous from './views/PlotContinuous';
+import * as d3 from "d3";
 
 
 export function interpolate(data, label) {
@@ -148,9 +149,19 @@ export default class CanvasContinuous {
                                 "margin-top": "10px"
                             }
                         }, "From:"),
-                        m(`input#fromLabel.form-control[type='text']`, {
-                            onblur: function () {
+                        m(TextField, {
+                            id: 'fromLabel',
+                            type: 'text',
+                            class: 'form-control',
+                            onblur: value => {
                                 setRedraw(true);
+                                value = isNaN(parseFloat(value)) ? value : Math.min(Math.max(parseFloat(value), preferences['minLabel']), preferences['maxLabel']);
+
+                                if (value > preferences['userUpper']) {
+                                    preferences['userLower'] = preferences['userUpper'];
+                                    preferences['userUpper'] = value;
+                                }
+                                else preferences['userLower'] = value;
                             },
                             value: preferences['userLower']
                         }),
@@ -163,8 +174,20 @@ export default class CanvasContinuous {
                                 "margin-top": "10px"
                             }
                         }, "To:"),
-                        m(`input#toLabel.form-control[type='text']`, {
-                            onblur: () => setRedraw(true),
+                        m(TextField, {
+                            id: 'toLabel',
+                            type: 'text',
+                            class: 'form-control',
+                            onblur: value => {
+                                setRedraw(true);
+                                value = isNaN(parseFloat(value)) ? value : Math.min(Math.max(parseFloat(value), preferences['minLabel']), preferences['maxLabel']);
+
+                                if (value < preferences['userLower']) {
+                                    preferences['userUpper'] = preferences['userLower'];
+                                    preferences['userLower'] = value;
+                                }
+                                else preferences['userUpper'] = value;
+                            },
                             value: preferences['userUpper']
                         })
                     ]

@@ -50,7 +50,10 @@ window.addEventListener('mouseup', (e) => peekMouseUp(e));
 
 export let peekMouseMove = (e) => {
     if (!peekInlineIsResizing) return;
-    let percent = (1 - e.clientY / byId(is_manipulate_mode ? 'canvas' : 'main').clientHeight) * 100;
+
+    let menuId = is_manipulate_mode || (rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'canvas' : 'main';
+    let percent = (1 - e.clientY / byId(menuId).clientHeight) * 100;
+
     peekInlineHeight = `calc(${Math.max(percent, 0)}% + ${common.heightFooter})`;
     m.redraw();
 };

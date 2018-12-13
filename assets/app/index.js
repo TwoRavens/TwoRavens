@@ -129,61 +129,61 @@ function leftpanel(mode) {
             {
                 value: 'Variables',
                 title: 'Click variable name to add or remove the variable pebble from the modeling space.',
-                contents: app.is_model_mode && app.rightTab === 'Manipulate' && manipulate.constraintMenu ? [
-                    m('h5', 'Constraint Type'),
-                    manipulate.varList()
-                ] : [
-                    m(TextField, {
-                        id: 'searchVar',
-                        placeholder: 'Search variables and labels',
-                        oninput: app.searchVariables
-                    }),
-                    m(PanelList, {
-                        id: 'varList',
-                        items: app.valueKey.concat(transformVars),
-                        colors: {
-                            [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
-                            [app.hexToRgba(common.gr1Color, .25)]: app.zparams.zgroup1,
-                            [app.hexToRgba(common.gr2Color)]: app.zparams.zgroup2,
-                            [app.hexToRgba(common.taggedColor)]: app.zparams.znom,
-                            [app.hexToRgba(common.taggedColor)]: app.is_explore_mode ? [] : app.zparams.zdv
-                        },
-                        classes: {
-                            'item-dependent': app.is_explore_mode ? [] : app.zparams.zdv,
-                            'item-nominal': app.zparams.znom,
-                            'item-bordered': app.matchedVariables
-                        },
-                        callback: x => app.clickVar(x, nodes),
-                        popup: variable => app.popoverContent(app.findNode(variable)),
-                        attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
-                        attrsAll: {style: {height: 'calc(100% - 90px)', overflow: 'auto'}}
-                    }),
-                    m(Button, {
-                        id: 'btnCreateVariable',
-                        style: {width: '100%', 'margin-top': '10px'},
-                        onclick: async () => {
-                            if (!app.selectedProblem) await app.addProblemFromForceDiagram();
-                            let problemPipeline = manipulate.getProblemPipeline(app.selectedProblem);
-                            if ((problemPipeline[problemPipeline.length - 1] || {}).type !== 'transform') {
-                                problemPipeline.push({
+                contents: app.is_model_mode && app.rightTab === 'Manipulate' && manipulate.constraintMenu
+                    ? manipulate.varList()
+                    : [
+                        m(TextField, {
+                            id: 'searchVar',
+                            placeholder: 'Search variables and labels',
+                            oninput: app.searchVariables
+                        }),
+                        m(PanelList, {
+                            id: 'varList',
+                            items: app.valueKey.concat(transformVars),
+                            colors: {
+                                [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
+                                [app.hexToRgba(common.gr1Color, .25)]: app.zparams.zgroup1,
+                                [app.hexToRgba(common.gr2Color)]: app.zparams.zgroup2,
+                                [app.hexToRgba(common.taggedColor)]: app.zparams.znom,
+                                [app.hexToRgba(common.taggedColor)]: app.is_explore_mode ? [] : app.zparams.zdv
+                            },
+                            classes: {
+                                'item-dependent': app.is_explore_mode ? [] : app.zparams.zdv,
+                                'item-nominal': app.zparams.znom,
+                                'item-bordered': app.matchedVariables
+                            },
+                            callback: x => app.clickVar(x, nodes),
+                            popup: variable => app.popoverContent(app.findNode(variable)),
+                            attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
+                            attrsAll: {style: {height: 'calc(100% - 90px)', overflow: 'auto'}}
+                        }),
+                        m(Button, {
+                            id: 'btnCreateVariable',
+                            style: {width: '100%', 'margin-top': '10px'},
+                            onclick: async () => {
+                                if (!app.selectedProblem) await app.addProblemFromForceDiagram();
+                                let problemPipeline = manipulate.getProblemPipeline(app.selectedProblem);
+                                if ((problemPipeline[problemPipeline.length - 1] || {}).type !== 'transform') {
+                                    problemPipeline.push({
+                                        type: 'transform',
+                                        id: 'transform ' + problemPipeline.length,
+                                        transforms: [],
+                                        expansions: [],
+                                        binnings: [],
+                                        manual: []
+                                    })
+                                }
+                                app.setRightTab('Manipulate');
+                                manipulate.setConstraintMenu({
                                     type: 'transform',
-                                    id: 'transform ' + problemPipeline.length,
-                                    transforms: [],
-                                    expansions: [],
-                                    binnings: [],
-                                    manual: []
-                                })
+                                    step: problemPipeline[problemPipeline.length - 1],
+                                    pipeline: manipulate.getPipeline(app.selectedProblem)
+                                });
+                                common.setPanelOpen('left');
+                                app.setLeftTab('Variables');
                             }
-                            app.setRightTab('Manipulate');
-                            manipulate.setConstraintMenu({
-                                type: 'transform',
-                                step: problemPipeline[problemPipeline.length - 1],
-                                pipeline: manipulate.getPipeline(app.selectedProblem)});
-                            common.setPanelOpen('left');
-                            app.setLeftTab('Variables');
-                        }
-                    }, 'Create New Variable'),
-                ]
+                        }, 'Create New Variable'),
+                    ]
             },
             {
                 value: 'Discovery',
@@ -1140,6 +1140,7 @@ class Body {
                     'z-index': 1000
                 },
                 onmousedown: (e) => {
+                    console.log(e);
                     app.setPeekInlineIsResizing(true);
                     document.body.classList.add('no-select');
                     app.peekMouseMove(e);
