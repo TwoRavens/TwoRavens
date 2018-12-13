@@ -3,6 +3,7 @@ import m from 'mithril';
 import {panelMargin} from "../../common/common";
 import TextField from '../../common/views/TextField';
 import PlotContinuous from './views/PlotContinuous';
+import * as d3 from "d3";
 
 
 export function interpolate(data, label) {
