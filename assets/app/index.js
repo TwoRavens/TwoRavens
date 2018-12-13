@@ -40,7 +40,7 @@ import Subpanel2 from '../common/views/Subpanel';
 // EVENTDATA
 import Body_EventData from './eventdata/Body_EventData';
 import ConfusionMatrix from "./views/ConfusionMatrix";
-
+import {solver_res} from "./app";
 
 export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -301,8 +301,161 @@ function rightpanel(mode) {
 
     // mode == null (model mode)
 
+    let sections = [];
+
+    // PROBLEM TAB
+    app.selectedProblem && sections.push({
+        value: 'Problem',
+        idSuffix: 'Type',
+        contents: [
+            m(`button#btnLock.btn.btn-default`, {
+                class: app.lockToggle ? 'active' : '',
+                onclick: () => app.setLockToggle(!app.lockToggle),
+                title: 'Lock selection of problem description',
+                style: 'float: right',
+            }, glyph(app.lockToggle ? 'lock' : 'pencil', true)),
+            m('', {style: 'float: left'},
+                m(Dropdown, {
+                    id: 'taskType',
+                    items: Object.keys(app.d3mTaskType),
+                    activeItem: app.selectedProblem.task,
+                    onclickChild: child => {
+                        if (app.selectedProblem.system === 'auto') {
+                            let problemCopy = app.getProblemCopy(app.selectedProblem);
+                            problemCopy.pending = true;
+                            app.disco.push(problemCopy);
+                            app.setSelectedProblem(problemCopy);
+                            app.setLeftTab('Discovery');
+                        }
+                        app.selectedProblem.task = child;
+                        app.selectedProblem.model = 'modelUndefined';
+                        // will trigger the call to solver, if a menu that needs that info is shown
+                        if (app.selectedProblem) app.setSolverPending(true);
+                    },
+                    style: {'margin-bottom': '1em'},
+                    disabled: app.lockToggle
+                }),
+                m(Dropdown, {
+                    id: 'taskSubType',
+                    items: Object.keys(app.d3mTaskSubtype),
+                    activeItem: app.selectedProblem.subTask,
+                    onclickChild: child => {
+                        if (app.selectedProblem.system === 'auto') {
+                            let problemCopy = app.getProblemCopy(app.selectedProblem);
+                            problemCopy.pending = true;
+                            app.disco.push(problemCopy);
+                            app.setSelectedProblem(problemCopy);
+                            app.setLeftTab('Discovery');
+                        }
+                        app.selectedProblem.subTask = child;
+                        // will trigger the call to solver, if a menu that needs that info is shown
+                        if (app.selectedProblem) app.setSolverPending(true);
+                    },
+                    style: {'margin-bottom': '1em'},
+                    disabled: app.lockToggle
+                }),
+                m(Dropdown, {
+                    id: 'performanceMetrics',
+                    items: Object.keys(app.d3mMetrics),
+                    activeItem: app.selectedProblem.metric,
+                    onclickChild: child => {
+                        if (app.selectedProblem.system === 'auto') {
+                            let problemCopy = app.getProblemCopy(app.selectedProblem);
+                            problemCopy.pending = true;
+                            app.disco.push(problemCopy);
+                            app.setSelectedProblem(problemCopy);
+                            app.setLeftTab('Discovery');
+                        }
+                        app.selectedProblem.metric = child;
+                        // will trigger the call to solver, if a menu that needs that info is shown
+                        if (app.selectedProblem) app.setSolverPending(true);
+                    },
+                    style: {'margin-bottom': '1em'},
+                    disabled: app.lockToggle
+                }),
+                app.twoRavensModelTypes[app.selectedProblem.task] && m(Dropdown, {
+                    id: 'modelType',
+                    items: app.twoRavensModelTypes[app.selectedProblem.task],
+                    activeItem: app.selectedProblem.model,
+                    onclickChild: child => {
+                        if (app.selectedProblem.system === 'auto') {
+                            let problemCopy = app.getProblemCopy(app.selectedProblem);
+                            problemCopy.pending = true;
+                            app.disco.push(problemCopy);
+                            app.setSelectedProblem(problemCopy);
+                            app.setLeftTab('Discovery');
+                        }
+                        app.selectedProblem.model = child;
+                        // will trigger the call to solver, if a menu that needs that info is shown
+                        if (app.selectedProblem) app.setSolverPending(true);
+                    },
+                    style: {'margin-bottom': '1em'},
+                    disabled: app.lockToggle
+                }),
+            )
+        ]
+    });
+
+    // MANIPULATE TAB
+    app.selectedProblem && sections.push({
+        value: 'Manipulate',
+        title: 'Apply transformations and subsets to a problem',
+        contents: m(MenuHeaders, {
+            id: 'aggregateMenu',
+            attrsAll: {style: {height: '100%', overflow: 'auto'}},
+            sections: [
+                manipulate.getPipeline().length !== 0 && {
+                    value: 'Dataset Pipeline',
+                    contents: m(manipulate.PipelineFlowchart, {
+                        compoundPipeline: manipulate.getPipeline(),
+                        pipelineId: app.configurations.name,
+                        editable: false
+                    })
+                },
+                {
+                    value: 'Problem Pipeline',
+                    contents: [
+                        m(manipulate.PipelineFlowchart, {
+                            compoundPipeline: manipulate.getPipeline(app.selectedProblem),
+                            pipelineId: app.selectedProblem.problem_id,
+                            editable: true,
+                            aggregate: false
+                        }),
+                        app.nodes.filter(node => node.nature === 'nominal').length !== 0 && m(Flowchart, {
+                            attrsAll: {style: {height: 'calc(100% - 87px)', overflow: 'auto'}},
+                            labelWidth: '5em',
+                            steps: [{
+                                key: 'Nominal',
+                                color: common.nomColor,
+                                content: m('div', {style: {'text-align': 'left'}},
+                                    m(ListTags, {
+                                        tags: app.nodes
+                                            .filter(node => node.nature === 'nominal')
+                                            .map(node => node.name),
+                                        ondelete: name => {
+                                            app.setColors(app.nodes.find(node => node.name === name), app.nomColor);
+                                            app.restart();
+                                        }
+                                    }))
+                            }]
+                        })
+                    ]
+                },
+            ]
+        })
+    });
+
+    // RESULTS TAB
     // reload the results if on the results tab and there are pending changes
-    if (app.rightTab === 'Results' && app.solverPending) app.modelSelectionResults(app.selectedProblem);
+    if (app.rightTab === 'Results' && app.solverPending) app.callSolver(app.selectedProblem);
+
+    let confusionData;
+    let showPredictionSummary = (app.selectedProblem && common.panelOpen['right'] && app.rightTab === 'Results'
+                                 && app.selectedResultsMenu === 'Prediction Summary' && app.solver_res[0] !== undefined);
+    if (showPredictionSummary && app.solver_res[0].task[0] === 'classification')
+        confusionData = app.generateConfusionData(
+            app.solver_res[0]['predictor_values']['actualvalues'],
+            app.solver_res[0]['predictor_values']['fittedvalues'], app.confusionFactor);
 
     // only called if the pipeline flowchart is rendered
     function pipelineFlowchartPrep(pipeline) {
@@ -350,274 +503,168 @@ function rightpanel(mode) {
         ];
     }
 
-    let confusionData;
-    if (common.panelOpen['right'] && app.selectedProblem && app.solver_res[0] && app.solver_res[0].task[0] === 'classification')
-        confusionData = app.generateConfusionData(
-            app.solver_res[0]['predictor_values']['actualvalues'],
-            app.solver_res[0]['predictor_values']['fittedvalues'], app.confusionFactor);
+    sections.push({
+        value: 'Results',
+        display: !app.swandive || IS_D3M_DOMAIN ? 'block' : 'none',
+        idSuffix: 'Setx',
+        contents: [
+            app.solver_res.length === 0 && m('#loading.loader', {
+                style: {
+                    margin: 'auto',
+                    position: 'relative',
+                    top: '40%',
+                    transform: 'translateY(-50%)'
+                }
+            }),
 
+            m('resultsContent', {style: {display: app.solver_res.length === 0 ? 'none' : 'block', height: '100% '}},
+            m('#setxRight[style=float: right; width: 23%; height: 100%; overflow:auto; margin-right: 1px]',
+                app.selectedPipeline && [
+                    bold('Score Metric: '), app.d3mProblemDescription.performanceMetrics[0].metric, m('br'),
+                    app.resultsMetricDescription
+                ],
+                app.pipelineTable.length !== 0 && m(Table, {
+                    id: 'pipelineTable',
+                    headers: app.pipelineHeader,
+                    data: app.pipelineTable,
+                    activeRow: app.selectedPipeline,
+                    onclick: app.setSelectedPipeline,
+                    abbreviation: 20,
+                    tableTags: m('colgroup',
+                        m('col', {span: 1}),
+                        m('col', {span: 1, width: '30%'}))
+                })),
 
-    let sections = [
-        app.selectedProblem && {
-            value: 'Problem',
-            idSuffix: 'Type',
-            contents: [
-                m(`button#btnLock.btn.btn-default`, {
-                    class: app.lockToggle ? 'active' : '',
-                    onclick: () => app.setLockToggle(!app.lockToggle),
-                    title: 'Lock selection of problem description',
-                    style: 'float: right',
-                }, glyph(app.lockToggle ? 'lock' : 'pencil', true)),
-                m('', {style: 'float: left'},
-                    m(Dropdown, {
-                        id: 'taskType',
-                        items: Object.keys(app.d3mTaskType),
-                        activeItem: app.selectedProblem.task,
-                        onclickChild: child => {
-                            if (app.selectedProblem.system === 'auto') {
-                                let problemCopy = app.getProblemCopy(app.selectedProblem);
-                                problemCopy.pending = true;
-                                app.disco.push(problemCopy);
-                                app.setSelectedProblem(problemCopy);
-                                app.setLeftTab('Discovery');
-                            }
-                            app.selectedProblem.task = child;
-                            app.selectedProblem.model = 'modelUndefined';
-                            // will trigger the call to solver, if a menu that needs that info is shown
-                            if (app.selectedProblem) app.setSolverPending(true);
-                        },
-                        style: {'margin-bottom': '1em'},
-                        disabled: app.lockToggle
-                    }),
-                    m(Dropdown, {
-                        id: 'taskSubType',
-                        items: Object.keys(app.d3mTaskSubtype),
-                        activeItem: app.selectedProblem.subTask,
-                        onclickChild: child => {
-                            if (app.selectedProblem.system === 'auto') {
-                                let problemCopy = app.getProblemCopy(app.selectedProblem);
-                                problemCopy.pending = true;
-                                app.disco.push(problemCopy);
-                                app.setSelectedProblem(problemCopy);
-                                app.setLeftTab('Discovery');
-                            }
-                            app.selectedProblem.subTask = child;
-                            // will trigger the call to solver, if a menu that needs that info is shown
-                            if (app.selectedProblem) app.setSolverPending(true);
-                        },
-                        style: {'margin-bottom': '1em'},
-                        disabled: app.lockToggle
-                    }),
-                    m(Dropdown, {
-                        id: 'performanceMetrics',
-                        items: Object.keys(app.d3mMetrics),
-                        activeItem: app.selectedProblem.metric,
-                        onclickChild: child => {
-                            if (app.selectedProblem.system === 'auto') {
-                                let problemCopy = app.getProblemCopy(app.selectedProblem);
-                                problemCopy.pending = true;
-                                app.disco.push(problemCopy);
-                                app.setSelectedProblem(problemCopy);
-                                app.setLeftTab('Discovery');
-                            }
-                            app.selectedProblem.metric = child;
-                            // will trigger the call to solver, if a menu that needs that info is shown
-                            if (app.selectedProblem) app.setSolverPending(true);
-                        },
-                        style: {'margin-bottom': '1em'},
-                        disabled: app.lockToggle
-                    }),
-                    app.twoRavensModelTypes[app.selectedProblem.task] && m(Dropdown, {
-                        id: 'modelType',
-                        items: app.twoRavensModelTypes[app.selectedProblem.task],
-                        activeItem: app.selectedProblem.model,
-                        onclickChild: child => {
-                            if (app.selectedProblem.system === 'auto') {
-                                let problemCopy = app.getProblemCopy(app.selectedProblem);
-                                problemCopy.pending = true;
-                                app.disco.push(problemCopy);
-                                app.setSelectedProblem(problemCopy);
-                                app.setLeftTab('Discovery');
-                            }
-                            app.selectedProblem.model = child;
-                            // will trigger the call to solver, if a menu that needs that info is shown
-                            if (app.selectedProblem) app.setSolverPending(true);
-                        },
-                        style: {'margin-bottom': '1em'},
-                        disabled: app.lockToggle
-                    }),
-                )
-            ]
-        },
-        app.selectedProblem && {
-            value: 'Manipulate',
-            title: 'Apply transformations and subsets to a problem',
-            contents: m(MenuHeaders, {
-                id: 'aggregateMenu',
-                attrsAll: {style: {height: '100%', overflow: 'auto'}},
+            m(ButtonRadio, {
+                id: 'resultsButtonBar',
+                attrsAll: {style: {width: 'auto'}},
+                attrsButtons: {class: ['btn-sm'], style: {width: 'auto'}},
+                onclick: app.setSelectedResultsMenu,
+                activeSection: app.selectedResultsMenu,
                 sections: [
-                    manipulate.getPipeline().length !== 0 && {
-                        value: 'Dataset Pipeline',
-                        contents: m(manipulate.PipelineFlowchart, {
-                            compoundPipeline: manipulate.getPipeline(),
-                            pipelineId: app.configurations.name,
-                            editable: false
-                        })
-                    },
-                    {
-                        value: 'Problem Pipeline',
-                        contents: [
-                            m(manipulate.PipelineFlowchart, {
-                                compoundPipeline: manipulate.getPipeline(app.selectedProblem),
-                                pipelineId: app.selectedProblem.problem_id,
-                                editable: true,
-                                aggregate: false
-                            }),
-                            app.nodes.filter(node => node.nature === 'nominal').length !== 0 && m(Flowchart, {
-                                attrsAll: {style: {height: 'calc(100% - 87px)', overflow: 'auto'}},
-                                labelWidth: '5em',
-                                steps: [{
-                                    key: 'Nominal',
-                                    color: common.nomColor,
-                                    content: m('div', {style: {'text-align': 'left'}},
-                                        m(ListTags, {
-                                            tags: app.nodes
-                                                .filter(node => node.nature === 'nominal')
-                                                .map(node => node.name),
-                                            ondelete: name => {
-                                                app.setColors(app.nodes.find(node => node.name === name), app.nomColor);
-                                                app.restart();
-                                            }
-                                        }))
-                                }]
-                            })
-                        ]
-                    },
+                    {value: 'Prediction Summary', id: 'btnPredPlot'},
+                    {value: 'Generate New Predictions', id: 'btnGenPreds'},
+                    {value: 'Visualize Pipeline', id: 'btnVisPipe'},
+                    {value: 'Prediction Description', id: 'btnPredData'},
+                    {value: 'Solution Table', id: 'btnSolTable'}
                 ]
-            })
-        },
-        {
-            value: 'Results',
-            display: !app.swandive || IS_D3M_DOMAIN ? 'block' : 'none',
-            idSuffix: 'Setx',
-            contents: [
-                m('#setxRight[style=float: right; width: 23%; height: 100%; overflow:auto; margin-right: 1px]',
-                    app.selectedPipeline && [
-                        bold('Score Metric: '), app.d3mProblemDescription.performanceMetrics[0].metric, m('br'),
-                        app.resultsMetricDescription
-                    ],
-                    app.pipelineTable.length !== 0 && m(Table, {
-                        id: 'pipelineTable',
-                        headers: app.pipelineHeader,
-                        data: app.pipelineTable,
-                        activeRow: app.selectedPipeline,
-                        onclick: app.setSelectedPipeline,
-                        abbreviation: 20,
-                        tableTags: m('colgroup',
-                            m('col', {span: 1}),
-                            m('col', {span: 1, width: '30%'}))
-                    })),
+            }),
+            m(`div#predictionSummary[style=display:${app.selectedResultsMenu === 'Prediction Summary' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%]`,
+                m('#setxLeftPlot[style=float:left; background-color:white; overflow:auto;]'),
+                m('#setxLeft[style=display:none; float: left; overflow: auto; background-color: white]'),
 
-                m(ButtonRadio, {
-                    id: 'resultsButtonBar',
-                    attrsAll: {style: {width: 'auto'}},
-                    attrsButtons: {class: ['btn-sm'], style: {width: 'auto'}},
-                    onclick: app.setSelectedResultsMenu,
-                    activeSection: app.selectedResultsMenu,
-                    sections: [
-                        {value: 'Prediction Summary', id: 'btnPredPlot'},
-                        {value: 'Generate New Predictions', id: 'btnGenPreds'},
-                        {value: 'Visualize Pipeline', id: 'btnVisPipe'},
-                        {value: 'Prediction Description', id: 'btnPredData'},
-                        {value: 'Solution Table', id: 'btnSolTable'}
-                    ]
+                showPredictionSummary && app.solver_res[0].task[0] === 'regression' && m('#resultsScatter', {
+                    plot({state, attrs, dom}) {
+                        state.cacheX = attrs.dataX;
+                        state.cacheY = attrs.dataY;
+                        plots.scatter(state.cacheX, state.cacheY, "Actual", "Predicted", dom, undefined,
+                            "Predicted vs. Actuals: Pipeline " + app.selectedProblem.problem_id)
+                    },
+                    oncreate(vnode) {
+                        vnode.attrs.plot(vnode)
+                    },
+                    onupdate(vnode) {
+                        let {state, attrs} = vnode;
+                        (state.cacheX !== attrs.dataX || state.cacheY !== attrs.dataY) && vnode.attrs.plot(vnode)
+                    },
+                    dataX: app.solver_res[0]['predictor_values']['actualvalues'],
+                    dataY: app.solver_res[0]['predictor_values']['fittedvalues']
                 }),
-                m(`div#predictionSummary[style=display:${app.selectedResultsMenu === 'Prediction Summary' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%]`,
-                    m('#setxLeftPlot[style=float:left; background-color:white; overflow:auto;]'),
-                    m('#setxLeft[style=display:none; float: left; overflow: auto; background-color: white]'),
 
-                    confusionData && [
-                        m('div[style=margin-top:.5em]',
-                            m('label#confusionFactorLabel', 'Confusion Matrix Factor: '),
-                            m('[style=display:inline-block]', m(Dropdown, {
-                                id: 'confusionFactorDropdown',
-                                items: ['undefined', ...confusionData.allClasses],
-                                activeItem: app.confusionFactor,
-                                onclickChild: app.setConfusionFactor,
-                                style: {'margin-left': '1em'}
-                            }))),
-                        confusionData.data.length === 2 && m(Table, {
-                            id: 'resultsPerformanceTable',
-                            headers: ['metric', 'score'],
-                            data: app.generatePerformanceData(confusionData.data),
-                            attrsAll: {style: {width: 'auto'}}
-                        }),
-                        m(ConfusionMatrix, Object.assign({}, confusionData, {
-                            id: 'resultsConfusionMatrixContainer',
-                            pipelineId: app.selectedProblem.problem_id,
-                            startColor: '#ffffff', endColor: '#e67e22',
-                            margin: {left: 10, right: 10, top: 50, bottom: 10},
-                            attrsAll: {style: {height: '350px'}}
-                        }))
-                    ]
-                ),
-                m(`#setxLeftGen[style=display:${app.selectedResultsMenu === 'Generate New Predictions' ? 'block' : 'none'}; float: left; width: 70%; height:calc(100% - 30px); overflow: auto; background-color: white]`,
-                    m('#setxLeftTop[style=display:block; float: left; width: 100%; height:50%; overflow: auto; background-color: white]',
-                        m('#setxLeftTopLeft[style=display:block; float: left; width: 30%; height:100%; overflow: auto; background-color: white]'),
-                        m('#setxLeftTopRight[style=display:block; float: left; width: 70%; height:100%; overflow: auto; background-color: white]')),
-                    m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]'),
-                    m('#setxLeftBottomRightTop[style=display:block; float: left; width: 30%; height:10%; overflow: auto; background-color: white]',
-                        m(PanelButton, {
-                            id: 'btnExecutePipe',
-                            classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
-                            onclick: app.executepipeline,
-                            style: {
-                                display: app.selectedPipeline === undefined ? 'none' : 'block',
-                                float: 'left',
-                                'margin-right': '10px'
-                            },
-                            title: 'Execute pipeline'
-                        }, m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))),
-                    m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]')),
-                app.selectedResultsMenu === 'Visualize Pipeline' && app.selectedPipeline in app.allPipelineInfo && m('div', {
+                confusionData && [
+                    m('div[style=margin-top:.5em]',
+                        m('label#confusionFactorLabel', 'Confusion Matrix Factor: '),
+                        m('[style=display:inline-block]', m(Dropdown, {
+                            id: 'confusionFactorDropdown',
+                            items: ['undefined', ...confusionData.allClasses],
+                            activeItem: app.confusionFactor,
+                            onclickChild: app.setConfusionFactor,
+                            style: {'margin-left': '1em'}
+                        }))),
+                    confusionData.data.length === 2 && m(Table, {
+                        id: 'resultsPerformanceTable',
+                        headers: ['metric', 'score'],
+                        data: app.generatePerformanceData(confusionData.data),
+                        attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
+                    }),
+                    confusionData.data.length < 100 ? m(ConfusionMatrix, Object.assign({}, confusionData, {
+                        id: 'resultsConfusionMatrixContainer',
+                        pipelineId: app.selectedProblem.problem_id,
+                        startColor: '#ffffff', endColor: '#e67e22',
+                        margin: {left: 10, right: 10, top: 50, bottom: 10},
+                        attrsAll: {style: {height: '600px'}}
+                    })) : 'Too many classes for confusion matrix!'
+                ]
+            ),
+            m(`#setxLeftGen[style=display:${app.selectedResultsMenu === 'Generate New Predictions' ? 'block' : 'none'}; float: left; width: 70%; height:calc(100% - 30px); overflow: auto; background-color: white]`,
+                m('#setxLeftTop[style=display:block; float: left; width: 100%; height:50%; overflow: auto; background-color: white]',
+                    m('#setxLeftTopLeft[style=display:block; float: left; width: 30%; height:100%; overflow: auto; background-color: white]'),
+                    m('#setxLeftTopRight[style=display:block; float: left; width: 70%; height:100%; overflow: auto; background-color: white]')),
+                m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]'),
+                m('#setxLeftBottomRightTop[style=display:block; float: left; width: 30%; height:10%; overflow: auto; background-color: white]',
+                    m(PanelButton, {
+                        id: 'btnExecutePipe',
+                        classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
+                        onclick: app.executepipeline,
                         style: {
-                            width: '70%',
-                            height: 'calc(100% - 30px)',
-                            overflow: 'auto'
+                            display: app.selectedPipeline === undefined ? 'none' : 'block',
+                            float: 'left',
+                            'margin-right': '10px'
+                        },
+                        title: 'Execute pipeline'
+                    }, m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))),
+                m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]')),
+            app.selectedResultsMenu === 'Visualize Pipeline' && app.selectedPipeline in app.allPipelineInfo && m('div', {
+                    style: {
+                        width: '70%',
+                        height: 'calc(100% - 30px)',
+                        overflow: 'auto'
+                    }
+                },
+                m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Overview: '),
+                m(Table, {
+                    id: 'pipelineOverviewTable',
+                    data: Object.keys(app.allPipelineInfo[app.selectedPipeline].pipeline).reduce((out, entry) => {
+                        if (['inputs', 'steps', 'outputs'].indexOf(entry) === -1)
+                            out[entry] = app.allPipelineInfo[app.selectedPipeline].pipeline[entry];
+                        return out;
+                    }, {}),
+                    attrsAll: {
+                        style: {
+                            margin: '1em',
+                            width: 'calc(100% - 2em)',
+                            border: common.borderColor,
+                            'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
                         }
                     },
-                    m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Overview: '),
-                    m(Table, {
-                        id: 'pipelineOverviewTable',
-                        data: Object.keys(app.allPipelineInfo[app.selectedPipeline].pipeline).reduce((out, entry) => {
-                            if (['inputs', 'steps', 'outputs'].indexOf(entry) === -1)
-                                out[entry] = app.allPipelineInfo[app.selectedPipeline].pipeline[entry];
-                            return out;
-                        }, {}),
-                        attrsAll: {
-                            style: {
-                                margin: '1em',
-                                width: 'calc(100% - 2em)',
-                                border: common.borderColor,
-                                'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
-                            }
-                        },
-                        nest: true
-                    }),
-                    m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Steps: '),
-                    m(Flowchart, {
-                        labelWidth: '5em',
-                        steps: pipelineFlowchartPrep(app.allPipelineInfo[app.selectedPipeline].pipeline)
-                    })
-                ),
-                m(`div#predictionData[style=display:${app.selectedResultsMenu === 'Prediction Description' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%]`,
-                    m('#setPredictionDataLeft[style=display:block; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white; padding : 1em; margin-top: 1em]')
-                ),
-                m(`div#solutionTable[style=display:${app.selectedResultsMenu === 'Solution Table' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%, padding : 1em]`,
-                    app.selectedProblem && m(DataTable, {data: app.stargazer, variable: app.selectedProblem.target})
-                )
-            ]
-        }
+                    nest: true
+                }),
+                m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Steps: '),
+                m(Flowchart, {
+                    labelWidth: '5em',
+                    steps: pipelineFlowchartPrep(app.allPipelineInfo[app.selectedPipeline].pipeline)
+                })
+            ),
+            m(`div#predictionData[style=display:${app.selectedResultsMenu === 'Prediction Description' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%]`,
+                app.solver_res.length > 0 && m(Table, {
+                    headers: ['Variable', 'Data'],
+                    data: [
+                        ['Dependent Variable', app.solver_res[0].dependent_variable[0]],
+                        ['Predictors', app.solver_res[0].predictors],
+                        ['Description', app.solver_res[0].description[0]],
+                        ['Task', app.solver_res[0].task[0]],
+                        ['Model', app.solver_res[0].model_type[0]]
+                    ],
+                    nest: true,
+                    attrsAll: {style: {margin: '1em', width: 'calc(100% - 2em)'}}
+                })
+                // m('#setPredictionDataLeft[style=display:block; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white; padding : 1em; margin-top: 1em]')
+            ),
+            m(`div#solutionTable[style=display:${app.selectedResultsMenu === 'Solution Table' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%; padding: 1em]`,
+                app.selectedProblem && app.solver_res.length > 0 && m(DataTable, {data: app.solver_res[0].stargazer, variable: app.selectedProblem.target})
+            )
+        )]
+    });
         // },{
         // value: 'Discovery',
         //  idSuffix: 'disc',
@@ -642,27 +689,29 @@ function rightpanel(mode) {
         //          m('#setPredictionSolutionPlot[style=display:block; float: left; width: 100%; height:100%; overflow: auto; background-color: black]')
         //    )
         //  ]}
-    ];
 
     return m(Panel, {
-        side: 'right',
-        label: 'Model Selection',
-        hover: true,
-        width: app.modelRightPanelWidths[app.rightTab],
-        attrsAll: {
-            onclick: () => app.setFocusedPanel('right'),
-            style: {
-                'z-index': 100 + (app.focusedPanel === 'right'),
-                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
+            side: 'right',
+            label: 'Model Selection',
+            hover: true,
+            width: app.modelRightPanelWidths[app.rightTab],
+            attrsAll: {
+                onclick: () => app.setFocusedPanel('right'),
+                style: {
+                    'z-index': 100 + (app.focusedPanel === 'right'),
+                    height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`,
+                    display: app.selectedProblem ? 'block' : 'none'
+                }
             }
-        }
-    }, m(MenuTabbed, {
-        id: 'rightpanelMenu',
-        currentTab: app.rightTab,
-        callback: app.setRightTab,
-        sections: sections,
-        attrsAll: {style: {height: 'calc(100% - 39px)'}}
-    }));
+        },
+        m(MenuTabbed, {
+            id: 'rightpanelMenu',
+            currentTab: app.rightTab,
+            callback: app.setRightTab,
+            sections,
+            attrsAll: {style: {height: 'calc(100% - 39px)'}}
+        })
+    );
 }
 
 export let glyph = (icon, unstyled) =>

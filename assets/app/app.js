@@ -1105,10 +1105,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             byId("btnDiscovery").classList.remove("btn-default");
             byId("btnDiscovery").classList.add("btn-success"); // Would be better to attach this as a class at creation, but don't see where it is created
         }
-
-        // send the all problems to metadata and also perform app solver on theme
-        // MIKE: is it necessary to solve all problems on page load? Can this be deferred until the user attempts to view results?
-        // disco.forEach(callSolver);
     }
 
     // 11. Call layout() and start up
@@ -2367,7 +2363,7 @@ export let setSelectedPipeline = result => {
     if (currentMode === 'model') resultsplotinit(result);
 }
 
-export let selectedResultsMenu;
+export let selectedResultsMenu = 'Prediction Summary';
 export let setSelectedResultsMenu = result => selectedResultsMenu = result;
 
 export let selectedDiscoverySolutionMenu;
@@ -3630,13 +3626,6 @@ export function resultsplotgraph(pid){
 /* Generates confusion table data and labels, given the expected and predicted values*/
 /* if a factor is passed, the resultant table will be 2x2 with respect to the factor */
 export function generateConfusionData(Y_true, Y_pred, factor=undefined) {
-    let allClasses = [...new Set([...Y_true, ...Y_pred])].sort();
-
-    if (factor !== undefined) {
-        Y_true = Y_true.map(obs => factor === obs ? factor : 'not ' + factor);
-        Y_pred = Y_pred.map(obs => factor === obs ? factor : 'not ' + factor);
-    }
-
     // dvvalues are generally numeric
     Y_true = Y_true.map(String);
 
@@ -3645,12 +3634,22 @@ export function generateConfusionData(Y_true, Y_pred, factor=undefined) {
 
     // combine actuals and predicted, and get all unique elements
     let classes = [...new Set([...Y_true, ...Y_pred])].sort();
+    let allClasses = classes;
+
+    if (factor !== undefined) {
+        factor = String(factor);
+        Y_true = Y_true.map(obs => factor === obs ? factor : 'not ' + factor);
+        Y_pred = Y_pred.map(obs => factor === obs ? factor : 'not ' + factor);
+        classes = [...new Set([...Y_true, ...Y_pred])].sort()
+    }
 
     // create a matrix of zeros
     let data = Array.from({length: classes.length}, () => new Array(classes.length).fill(0));
 
+    // linearize the coordinate assignment stage
+    let indexOf = classes.reduce((out, clss, i) => {out[clss] = i; return out}, {})
     // increment the data matrix at the class coordinates of true and pred
-    Y_true.forEach((_, i) => data[classes.indexOf(Y_true[i])][classes.indexOf(Y_pred[i])]++);
+    Y_true.forEach((_, i) => data[indexOf[Y_true[i]]][indexOf[Y_pred[i]]]++);
 
     return {data, classes, allClasses};
 }
@@ -4160,7 +4159,9 @@ export function setSelectedProblem(problem) {
     resetPeek();
 
     // will trigger the call to solver, if a menu that needs that info is shown
-    if (selectedProblem) setSolverPending(true);
+    setSolverPending(true);
+    solver_res.length = 0;
+    confusionFactor = undefined;
 }
 
 export function getProblemCopy(problem) {
@@ -4181,87 +4182,6 @@ export function getProblemCopy(problem) {
     })
 
     return problem;
-}
-
-export let stargazer = ""
-export function modelSelectionResults(problem){
-    setSolverPending(false);
-    callSolver(problem).then(() => {
-        console.log("callSolver response : ", solver_res)
-        makeDataDiscovery()
-        makeDiscoverySolutionPlot()
-        makeDataDiscoveryTable()
-    });
-}
-
-export function makeDataDiscovery(){
-    console.log("make discovery")
-    d3.select("#setPredictionDataLeft").html("");
-    d3.select("#setPredictionDataLeft").select("svg").remove();
-    let in_data = [
-        {"Variable":"Dependent Variable : ", "Data":solver_res[0]['dependent_variable']},
-        {"Variable":"Predictors : ", "Data":solver_res[0]['predictors']},
-        {"Variable":"Description : ", "Data":solver_res[0]['description']},
-        {"Variable":"Task : ", "Data":solver_res[0]['task']},
-        {"Variable":"Model : ", "Data":solver_res[0]['model_type']}
-    ]
-
-    function tabulate(data, columns) {
-		var table = d3.select('#setPredictionDataLeft').append('table')
-		var thead = table.append('thead')
-		var	tbody = table.append('tbody');
-
-		// append the header row
-		thead.append('tr')
-		  .selectAll('th')
-		  .data(columns).enter()
-		  .append('th')
-		    .text(function (column) { return column; })
-        .style('background-color','rgba(0, 0, 0, .2)')
-        ;
-
-		// create a row for each object in the data
-		var rows = tbody.selectAll('tr')
-		  .data(data)
-		  .enter()
-		  .append('tr');
-
-		// create a cell in each row for each column
-		var cells = rows.selectAll('td')
-		  .data(function (row) {
-		    return columns.map(function (column) {
-		      return {column: column, value: row[column]};
-		    });
-		  })
-		  .enter()
-		  .append('td')
-		    .text(function (d) { return d.value; })
-        .style('border-bottom','1px solid #ddd');
-
-	  return table;
-	}
-
-	// render the table(s)
-	tabulate(in_data, ['Variable', 'Data']); // 2 column table
-
-}
-export function makeDiscoverySolutionPlot() {
-    let xdata = "Actual";
-    let ydata = "Predicted";
-    let mytitle = "Predicted V Actuals: Pipeline ";
-    let dvvalues = solver_res[0]['predictor_values']['actualvalues']
-    let predvals = solver_res[0]['predictor_values']['fittedvalues']
-    let task = solver_res[0]['task']
-    if (task == "regression") {
-        console.log("scatter")
-        scatter(dvvalues, predvals, xdata, ydata, undefined, undefined, mytitle);
-    }
-}
-export function makeDataDiscoveryTable(){
-//   console.log("Here we bring our table")
-  stargazer = solver_res[0]['stargazer']
-//   console.log("Stargazer : ", stargazer)
-  // d3.select("#setDataTable").html("");
 }
 
 export let checkedDiscoveryProblems = new Set();
@@ -4733,13 +4653,32 @@ export async function addProblem(preprocess_id, version){
 
 // takes as input problem in the form of a "discovered problem" (can also be user-defined), calls rooksolver, and stores result
 export async function callSolver(prob) {
+    setSolverPending(false);
     let hasManipulation = prob.problem_id in manipulations && manipulations[prob.problem_id].length > 0;
     let hasNominal = [prob.target, ...prob.predictors].some(variable => zparams.znom.includes(variable));
     let zd3mdata = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : zparams.zd3mdata;
 
     // MIKE: shouldn't solverapp return a list? even a singleton list would be fine
     solver_res = [await makeRequest(ROOK_SVC_URL + 'solverapp', {prob, zd3mdata})];
+    console.log("callSolver response:", solver_res)
+    m.redraw();
 }
+
+export function callTransform(elem){
+    console.log("function called")
+    let json =  makeRequest(
+        ROOK_SVC_URL + 'transformapp',
+        {zdataurl: dataurl,
+            zvars: elem,
+            zsessionid: zparams.zsessionid,
+            transform: t,
+            callHistory: callHistory,
+            typeTransform: typeTransform,
+            typeStuff: outtypes});
+
+    console.log(json)
+}
+
 
 // pretty precision formatting- null and undefined are NaN, attempt to parse strings to float
 // if valid number, returns a Number at less than or equal to precision (trailing decimal zeros are ignored)
@@ -4762,18 +4701,3 @@ export let omniSort = (a, b) => {
     if (typeof a === 'string') return  a.localeCompare(b);
     return (a < b) ? -1 : 1;
 };
-
-export function callTransform(elem){
-    console.log("function called")
-    let json =  makeRequest(
-        ROOK_SVC_URL + 'transformapp',
-        {zdataurl: dataurl,
-         zvars: elem,
-         zsessionid: zparams.zsessionid,
-         transform: t,
-         callHistory: callHistory,
-         typeTransform: typeTransform,
-         typeStuff: outtypes});
-
-         console.log(json)
-}

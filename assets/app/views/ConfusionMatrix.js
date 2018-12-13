@@ -4,8 +4,17 @@ import {mergeAttributes} from "../../common/common";
 // adapted from this block: https://bl.ocks.org/arpitnarechania/dbf03d8ef7fffa446379d59db6354bac
 
 export default class ConfusionMatrix {
+    oninit() {
+        this.classes = undefined;
+    }
+
     onupdate(vnode) {
-        this.plot(vnode)
+        (!this.classes || vnode.attrs.classes.length !== this.classes.size ||
+         !vnode.attrs.classes.every(clss => this.classes.has(clss))) && this.plot(vnode)
+
+        // this is more aggressive about updates, but O(n^2) in a hot code path
+        // (!this.data || this.data.length === vnode.attrs.data.length &&
+        //  vnode.attrs.data.some((row, i) => row.some((cell, j) => cell !== this.data[i][j]))) && this.plot(vnode)
     }
 
     oncreate(vnode) {
@@ -18,6 +27,8 @@ export default class ConfusionMatrix {
             data, classes, pipelineId,
             margin, startColor, endColor
         } = attrs;
+
+        this.classes = new Set(classes);
 
         if (data === undefined) return;
 
@@ -181,7 +192,7 @@ export default class ConfusionMatrix {
             .attr("x1", x.rangeBand() / 2)
             .attr("x2", x.rangeBand() / 2)
             .attr("y1", 5 - 20)
-            .attr("y2", - 20);
+            .attr("y2", -20);
 
         columnLabels.append("text")
             .attr("x", x.rangeBand() / 2)
@@ -189,7 +200,7 @@ export default class ConfusionMatrix {
             //.attr("dy", "0.5em")
             .attr("text-anchor", "start")
             .attr("transform", "rotate(60," + x.rangeBand() / 2 + ",-10)")
-            .text(_=>_);
+            .text(_ => _);
 
         let rowLabels = labels.selectAll(".row-label")
             .data(classes)
@@ -229,7 +240,7 @@ export default class ConfusionMatrix {
         svg.append("text")
             .attr("transform", "rotate(-90)")
 
-            .attr("x", 0 -(height - margin.bottom - margin.top) / 2)
+            .attr("x", 0 - (height - margin.bottom - margin.top) / 2)
             .attr("y", -10 - widthLabels)
             //.attr("dy", "1em")
             .style("text-anchor", "middle")
@@ -238,12 +249,12 @@ export default class ConfusionMatrix {
 
     view({attrs}) {
         return m('div',
-            mergeAttributes(attrs.attrsAll || {}, {
+            mergeAttributes({
                 style: {
                     width: '100%', height: '100%', // the svg fills all area is given
                     overflow: 'hidden' // prevents the scroll bar from causing the graphs to split lines
                 }
-            })
+            }, attrs.attrsAll || {})
         );
     }
 }

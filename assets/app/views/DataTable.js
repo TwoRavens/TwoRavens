@@ -79,7 +79,7 @@ let xtable = String.raw`
    </table>
 `;
 
-export default {
+export default class DataTable {
     view(vnode) {
         let html = document.createElement('html');
         html.innerHTML = vnode.attrs.data;
