@@ -169,6 +169,10 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
         }
         else step.measuresAccum.push(abstractBranch);
     }
+
+    if (step.type === 'imputation')
+        step.imputations.push(abstractBranch);
+
     return true;
 }
 
@@ -243,6 +247,32 @@ function makeAbstractBranch(step, preferences, metadata, name) {
             variableDefault: menuPreferences.variableDefault, // default value of labels variable
             variableIndicator: menuPreferences.variableIndicator, // name of column of variable being labeled
             indicators, values
+        }
+    }
+
+    if (step.type === 'imputation') {
+        let branch = {
+            id: String(step.imputationId++),
+            imputationMode: preferences.imputationMode,
+            nullValue: preferences.nullValueType === 'numeric'
+                ? parseFloat(preferences.nullValue) : preferences.nullValue,
+            nullValueType: preferences.nullValueType
+        };
+
+        if (preferences.imputationMode === 'Delete') return Object.assign(branch, {
+            variables: preferences.selectedVariables
+        });
+
+        if (preferences.imputationMode === 'Replace') {
+            Object.assign(branch, {
+                replacementValues: preferences.getReplacementValue(preferences),
+                replacementMode: preferences.replacementMode
+            });
+
+            if (preferences.replacementMode === 'Custom')
+                branch.customValueType = preferences.customValueType;
+
+            return branch;
         }
     }
 

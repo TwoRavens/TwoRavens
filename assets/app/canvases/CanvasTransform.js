@@ -15,7 +15,7 @@ import PlotContinuous from './views/PlotContinuous';
 import {getData} from "../manipulations/manipulate";
 import {omniSort} from "../app";
 
-let setDefault = (obj, id, value) => obj[id] = obj[id] || value;
+let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
 let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', text);
 
 let usedTermDefaults = () => ({

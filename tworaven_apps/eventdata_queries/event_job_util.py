@@ -4,17 +4,11 @@ import json
 import logging
 from django.conf import settings
 from collections import OrderedDict
-from dateutil import parser
 
-from django.http import HttpResponse, JsonResponse
-from tworaven_apps.utils.view_helper import \
-    (get_request_body_as_json,
-     get_json_error,
-     get_json_success)
-from tworaven_apps.utils.mongo_util import infer_type, quote_val
+from tworaven_apps.utils.view_helper import get_json_error
+from tworaven_apps.utils.mongo_util import infer_type
 from tworaven_apps.utils.basic_response import (ok_resp,
-                                                err_resp,
-                                                err_resp_with_data)
+                                                err_resp)
 from tworaven_apps.eventdata_queries.models import \
     (EventDataSavedQuery, ArchiveQueryJob, UserNotification,
      SEARCH_PARAMETERS, SEARCH_KEY_NAME,
@@ -28,8 +22,7 @@ from tworaven_apps.eventdata_queries.dataverse.get_dataset_file_info import GetD
 from tworaven_apps.eventdata_queries.mongo_retrieve_util import MongoRetrieveUtil
 from tworaven_apps.eventdata_queries.generate_readme import GenerateReadMe
 from tworaven_apps.eventdata_queries.dataverse.routine_dataverse_check import RoutineDataverseCheck
-from tworaven_apps.ta2_interfaces.basic_problem_writer import \
-    (BasicProblemWriter,)
+from tworaven_apps.ta2_interfaces.basic_problem_writer import BasicProblemWriter
 
 from tworaven_apps.raven_auth.models import User
 

@@ -1140,7 +1140,6 @@ class Body {
                     'z-index': 1000
                 },
                 onmousedown: (e) => {
-                    console.log(e);
                     app.setPeekInlineIsResizing(true);
                     document.body.classList.add('no-select');
                     app.peekMouseMove(e);

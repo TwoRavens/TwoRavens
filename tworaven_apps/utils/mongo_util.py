@@ -3,6 +3,7 @@ Convenience methods related to MongoDB
 """
 from dateutil import parser
 
+
 def quote_val(value):
     """Double quote a string value, if it's a string"""
     quote_char = '"'
@@ -13,15 +14,13 @@ def quote_val(value):
                 # Yes, already quoted
                 return value
         # Nope, quote it
-        return  quote_char + value + quote_char
+        return quote_char + value + quote_char
 
     return value
 
 
 def infer_type(value):
     """Used when loading data into a Mongo collection"""
-    if value.lower() in ['', 'nan', 'null', 'na']:
-        return None
 
     try:
         return int(value)

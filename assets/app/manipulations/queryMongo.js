@@ -62,6 +62,9 @@ export function buildPipeline(pipeline, variables = new Set()) {
             compiled.push(buildManual(step.manual));
         }
 
+        if (step.type === 'imputation' && step.imputations.length)
+            compiled = compiled.concat(buildImputation(step.imputations));
+
         if (step.type === 'subset') compiled.push({'$match': buildSubset(step.abstractQuery, true)});
 
         if (step.type === 'aggregate') {
@@ -271,6 +274,32 @@ export function expansionTerms(preferences) {
                     .map(variable => variable.replace('^1', '')) // don't compute the first power
                     .join('*')) // multiply each variable together
                 .filter(variable => !startVariables.includes(variable))), []); // don't duplicate original variables
+}
+
+
+// ~~~~ IMPUTATION ~~~~
+export function buildImputation(imputations) {
+    return imputations.map(imputation => {
+        if (imputation.imputationMode === 'Delete') return {
+            $match: [...imputation.variables].reduce((out, variable) => {
+                out[variable] = {$ne: imputation.nullValue};
+                return out;
+            }, {})
+        };
+
+        if (imputation.imputationMode === 'Replace') return {
+            $addFields: Object.keys(imputation.replacementValues).reduce((out, variable) => {
+                out[variable] = {
+                    $cond: {
+                        if: {$eq: ['$' + variable, imputation.nullValue]},
+                        then: imputation.replacementValues[variable],
+                        else: '$' + variable
+                    }
+                };
+                return out;
+            }, {})
+        };
+    })
 }
 
 // ~~~~ SUBSETS ~~~~

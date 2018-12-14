@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {TreeAggregate, TreeSubset, TreeTransform} from '../views/JQTrees';
+import {TreeAggregate, TreeSubset, TreeTransform, TreeImputation} from '../views/JQTrees';
 import CanvasContinuous from '../canvases/CanvasContinuous';
 import CanvasDate from '../canvases/CanvasDate';
 import CanvasDiscrete from '../canvases/CanvasDiscrete';
@@ -20,6 +20,7 @@ import * as app from '../app';
 import * as queryAbstract from './queryAbstract';
 import * as queryMongo from "./queryMongo";
 import hopscotch from 'hopscotch';
+import CanvasImputation from "../canvases/CanvasImputation";
 
 // dataset name from app.configurations.name
 // variable names from the keys of the initial preprocess variables object
@@ -110,6 +111,13 @@ function canvas(compoundPipeline) {
         metadata: {variables: variableMetadata}
     });
 
+    if (constraintMenu.type === 'imputation') return m(CanvasImputation, {
+        preferences: constraintPreferences,
+        pipeline,
+        variables,
+        metadata: {variables: variableMetadata}
+    });
+
     if (!constraintData || !constraintMetadata) return;
 
     return m({
@@ -166,6 +174,9 @@ export function varList() {
         if (constraintMenu.type === 'unit')
             variables = variables.filter(column => inferType(column) !== 'discrete');
 
+        if (constraintMenu.type === 'imputation')
+            selectedVariables = [...(constraintPreferences.selectedVariables || [])];
+
         if (constraintMenu.type === 'transform') {
             if (constraintPreferences.type === 'Equation' && constraintPreferences.menus.Equation.usedTerms)
                 selectedVariables = [...constraintPreferences.menus.Equation.usedTerms.variables];
@@ -201,7 +212,7 @@ export function varList() {
                 'item-bordered': variableSearch === '' ? []
                     : variables.filter(variable => variable.toLowerCase().includes(variableSearch))
             },
-            callback: constraintMenu.type === 'transform'
+            callback: ['transform', 'imputation'].includes(constraintMenu.type)
                 ? variable => constraintPreferences.select(variable) // the select function is defined inside CanvasTransform
                 : variable => setConstraintColumn(variable, constraintMenu.pipeline),
             popup: variable => app.popoverContent(variableMetadata[variable]),
@@ -220,6 +231,15 @@ export function varList() {
                 onclick: type => setConstraintType(type, constraintMenu.pipeline),
                 activeSection: constraintMetadata.type,
                 sections: ['continuous', 'discrete'].map(type => ({value: type}))
+            })
+        ],
+
+        constraintMenu.type === 'imputation' && constraintPreferences.selectedVariables && [
+            m(ButtonRadio, {
+                id: 'imputationSelectAllNone',
+                onclick: value => constraintPreferences.selectAll(value === 'all'),
+                activeSection: {0: 'none', [variables.length]: 'all'}[constraintPreferences.selectedVariables.size] || 'intermediate',
+                sections: ['all', 'none'].map(type => ({value: type}))
             })
         ]
     ]
@@ -406,6 +426,31 @@ export class PipelineFlowchart {
                         )
                     }
 
+                    if (step.type === 'imputation') {
+                        content = m('div', {style: {'text-align': 'left'}},
+                            deleteButton,
+                            m('h4[style=font-size:16px;margin-left:0.5em]', 'Imputation'),
+
+                            step.imputations.length !== 0 && m(TreeImputation, {
+                                pipelineId,
+                                step,
+                                editable
+                            }),
+
+                            // Enable to only show button if last element: pipeline.length - 1 === i &&
+                            editable && m(Button, {
+                                id: 'btnAddImputation',
+                                class: ['btn-sm'],
+                                style: {margin: '0.5em'},
+                                onclick: () => {
+                                    setConstraintMenu({type: 'imputation', step, pipeline: compoundPipeline});
+                                    app.setLeftTab('Variables');
+                                    common.setPanelOpen('left');
+                                }
+                            }, plus, ' Imputation')
+                        )
+                    }
+
                     return {
                         key: 'Step ' + i,
                         color: currentStepNumber === i ? common.selVarColor : common.grayColor,
@@ -454,7 +499,19 @@ export class PipelineFlowchart {
                         measuresAccum: [],
                         nodeId: 1 // both trees share the same nodeId counter
                     })
-                }, plus, ' Aggregate Step')
+                }, plus, ' Aggregate Step'),
+                m(Button, {
+                    id: 'btnAddImputation',
+                    title: 'manage missing data',
+                    disabled: !isEnabled(),
+                    style: {margin: '0.5em'},
+                    onclick: () => pipeline.push({
+                        type: 'imputation',
+                        id: 'imputation ' + pipeline.length,
+                        imputations: [],
+                        imputationId: 1
+                    })
+                }, plus, ' Imputation Step')
             ]
         ]
     }
@@ -562,26 +619,28 @@ export let constraintMenu;
 //     },
 // };
 
-// WARNING: this is a fragile function
 export let setConstraintMenu = async (menu) => {
-    let updateVariableMetadata = !constraintMenu || (menu || {}).step !== constraintMenu.step;
 
+    // reset the constraintPreferences without breaking any object references
     Object.keys(constraintPreferences).forEach(key => delete constraintPreferences[key]);
 
+    // simple case where the constraint menu is removed
     if (menu === undefined) {
         constraintMenu = menu;
         app.resetPeek();
         return;
     }
 
+    // ensure a version of the variables on page load is cached
     if (!variablesInitial) setVariablesInitial(app.preprocess);
 
+    // get the variables present at the new menu's position in the pipeline
     let variables = [...queryMongo.buildPipeline(
         menu.pipeline.slice(0, menu.pipeline.indexOf(menu.step)),
-        Object.keys(variablesInitial))['variables']];  // get the variables present at this point in the pipeline
+        Object.keys(variablesInitial))['variables']];
 
-    // variable metadata
-    if (updateVariableMetadata) {
+    // update variable metadata
+    if (!constraintMenu || (menu || {}).step !== constraintMenu.step) {
         let summaryStep = {
             type: 'menu',
             metadata: {
@@ -600,24 +659,30 @@ export let setConstraintMenu = async (menu) => {
         }
     }
 
+    // finally set the constraintMenu, given that the variable metadata update was successful
     constraintMenu = menu;
     common.setPanelOpen('right', false);
 
+    // special cases for constraint types
     if (constraintMenu.step.type === 'aggregate') constraintMetadata.measureType = menu.type;
     if (constraintMenu.step.type === 'transform') {
         m.redraw();
         return;
     }
 
+    // reduce the variable list when viewing aggregate menus
     if (constraintMenu.type === 'accumulator') variables = variables.filter(column => inferType(column) === 'discrete');
     if (constraintMenu.type === 'unit') variables = variables.filter(column => inferType(column) !== 'discrete');
 
-    // select a random variable none selected yet, or previously selected variable no longer available
+    // select a random variable if none selected yet, or previously selected variable no longer available
     let variable = !constraintMetadata.columns || variables.indexOf(constraintMetadata.columns[0]) === -1
         ? variables[Math.floor(Math.random() * variables.length)]
         : constraintMetadata.columns[0];
 
+    // select the variable- also infers the best menu type (continuous, discrete, date)
     setConstraintColumn(variable);
+
+    // load the data to draw the menu for said variable- mithril is redrawn upon completion
     loadMenuManipulations(menu.pipeline);
 };
 
@@ -662,7 +727,7 @@ export let setConstraintType = (type, pipeline) => {
         constraintMetadata.min = varMeta.min;
         constraintMetadata.buckets = Math.min(Math.max(10, Math.floor(varMeta.valid / 10)), 100);
 
-        if (varMeta.types.indexOf('string') !== -1) {
+        if (varMeta.types.includes('string')) {
             alert(`A density plot cannot be drawn for the nominal variable ${column}. Switching to discrete.`);
             constraintMetadata.type = 'discrete';
         }
@@ -769,7 +834,7 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
 };
 
 
-// manipulations mode is for global dataset edits
+// collect the relevant data for the current constraint menu state
 let loadMenuManipulations = async (pipeline) => {
     // make sure basic properties are present
     if (!constraintMetadata || !['type', 'columns'].every(attr => attr in constraintMetadata)) return;
