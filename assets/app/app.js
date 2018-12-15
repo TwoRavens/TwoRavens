@@ -3082,9 +3082,6 @@ export let popoverContent = node => {
 /** needs doc */
 export function panelPlots() {
 
-    if(IS_D3M_DOMAIN) {
-        //byId('btnSubset').classList.add('noshow');
-    }
     // build arrays from nodes in main
     let vars = [];
     let ids = [];
@@ -3969,20 +3966,24 @@ function singlePlot(pred) {
         }
 }
 
-export function discovery(preprocess_file) {
+function makeProblemDescription(problem) {
+    if (problem.descriptionUser) return problem.descriptionUser;
 
-    let makeDescription = (prob) => {
-        if (prob.transform && prob.transform != 0)
-            return `The combination of ${prob.transform.split('=')[1]} is predicted by ${prob.predictors.join(" and ")}`;
-        if (prob.subset && prob.subsetObs != 0)
-            return `${prob.predictors} is predicted by ${prob.predictors.join(" and ")} whenever ${prob.subsetObs}`;
-        return `${prob.target} is predicted by ${prob.predictors.slice(0, -1).join(", ")} ${prob.predictors.length > 1 ? 'and ' : ''}${prob.predictors[prob.predictors.length - 1]}`;
-    }
+    // TODO: generate better descriptions based on the manipulations pipeline
+    if (problem.transform && problem.transform != 0)
+        return `The combination of ${problem.transform.split('=')[1]} is predicted by ${problem.predictors.join(" and ")}`;
+    if (problem.subset && problem.subsetObs != 0)
+        return `${problem.predictors} is predicted by ${problem.predictors.join(" and ")} whenever ${problem.subsetObs}`;
+    return `${problem.target} is predicted by ${problem.predictors.slice(0, -1).join(", ")} ${problem.predictors.length > 1 ? 'and ' : ''}${problem.predictors[problem.predictors.length - 1]}`;
+}
+
+export function discovery(preprocess_file) {
 
     return preprocess_file.dataset.discovery.map((prob, i) => ({
         problem_id: "problem" + (i+1),
         system: "auto",
-        description: makeDescription(prob),
+        descriptionUser: undefined,
+        get description() {return makeProblemDescription(this)},
         target: prob.target,
         predictors: prob.predictors,
         transform: prob.transform,
@@ -4100,7 +4101,25 @@ export let discoveryClick = problemId => {
 };
 
 
-export let selectedProblem; // the problem object
+export let selectedProblem
+//     {
+//     problem_id: 'selectedProblem',
+//     system: 'user',
+//     get description() {return makeProblemDescription(this)},
+//
+//     get target() {return zparams.zdv},
+//     set target(value) {zparams.zdv = value},
+//
+//     get predictors() {return zparams.zgroup1},
+//     set predictors(value) {zparams.zgroup1 = value},
+//
+//     metric: 'meanSquaredError',
+//     task: 'regression',
+//     subTask: 'modelUndefined',
+//     rating: 3,
+//     meaningful: 'no'
+// }
+
 export function setSelectedProblem(problem) {
     if (selectedProblem === problem) return; // ignore if already set
 

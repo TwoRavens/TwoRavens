@@ -292,7 +292,7 @@ class BasicProblemWriter(BasicErrCheck):
                               ' expected "file_data" to contains rows of dict'))
             return False
 
-        columns = [k for k, v in self.file_data[0].items()]
+        columns = list(self.file_data[0].keys())
 
         # Write to a .csv file, using tab delimiter
         #

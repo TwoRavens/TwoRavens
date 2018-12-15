@@ -40,7 +40,6 @@ import Subpanel2 from '../common/views/Subpanel';
 // EVENTDATA
 import Body_EventData from './eventdata/Body_EventData';
 import ConfusionMatrix from "./views/ConfusionMatrix";
-import {solver_res} from "./app";
 
 export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -449,6 +448,13 @@ function rightpanel(mode) {
     // reload the results if on the results tab and there are pending changes
     if (app.rightTab === 'Results' && app.solverPending) app.callSolver(app.selectedProblem);
 
+    let plotScatter = ({state, attrs, dom}) => {
+        state.dataX = app.solver_res[0]['predictor_values']['actualvalues'];
+        state.dataY = app.solver_res[0]['predictor_values']['fittedvalues'];
+        plots.scatter(state.dataX, state.dataY, "Actual", "Predicted", dom, {width: dom.offsetWidth, height: dom.offsetHeight},
+            "Predicted vs. Actuals: Pipeline " + app.selectedProblem.problem_id)
+    };
+
     let confusionData;
     let showPredictionSummary = (app.selectedProblem && common.panelOpen['right'] && app.rightTab === 'Results'
                                  && app.selectedResultsMenu === 'Prediction Summary' && app.solver_res[0] !== undefined);
@@ -517,7 +523,7 @@ function rightpanel(mode) {
                 }
             }),
 
-            m('resultsContent', {style: {display: app.solver_res.length === 0 ? 'none' : 'block', height: '100% '}},
+            m('#resultsContent', {style: {display: app.solver_res.length === 0 ? 'none' : 'block', height: '100% '}},
             m('#setxRight[style=float: right; width: 23%; height: 100%; overflow:auto; margin-right: 1px]',
                 app.selectedPipeline && [
                     bold('Score Metric: '), app.d3mProblemDescription.performanceMetrics[0].metric, m('br'),
@@ -554,19 +560,13 @@ function rightpanel(mode) {
                 m('#setxLeft[style=display:none; float: left; overflow: auto; background-color: white]'),
 
                 showPredictionSummary && app.solver_res[0].task[0] === 'regression' && m('#resultsScatter', {
-                    plot({state, attrs, dom}) {
-                        state.dataX = app.solver_res[0]['predictor_values']['actualvalues'];
-                        state.dataY = app.solver_res[0]['predictor_values']['fittedvalues'];
-                        plots.scatter(state.dataX, state.dataY, "Actual", "Predicted", dom, {width: dom.offsetWidth, height: dom.offsetHeight},
-                            "Predicted vs. Actuals: Pipeline " + app.selectedProblem.problem_id)
-                    },
                     oncreate(vnode) {
-                        vnode.attrs.plot(vnode)
+                        plotScatter(vnode)
                     },
                     onupdate(vnode) {
                         if (vnode.state.dataX !== app.solver_res[0]['predictor_values']['actualvalues']
                             || vnode.state.dataY !== app.solver_res[0]['predictor_values']['fittedvalues']) return;
-                        vnode.attrs.plot(vnode)
+                        plotScatter(vnode)
                     },
                     style: {width: '100%', height: 'calc(100% - 30px)'}
                 }),

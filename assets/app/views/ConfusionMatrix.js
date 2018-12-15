@@ -50,7 +50,7 @@ export default class ConfusionMatrix {
         let heightLabels = 15 + 7 * longestLabel * .86602; // # of pixels the column labels need
 
         // set the dimensions and margins of the graph
-        let bound = container.node().getBoundingClientRect();
+        let bound = dom.getBoundingClientRect();
         let width = bound.width - widthLegend;
         let height = bound.height;
 

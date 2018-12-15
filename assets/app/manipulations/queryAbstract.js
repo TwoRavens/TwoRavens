@@ -2,7 +2,6 @@ import m from "mithril";
 
 // scope creep
 import * as eventdata from "../eventdata/eventdata";
-import {menu} from "./manipulate";
 
 // constraint trees used for subset and aggregate
 

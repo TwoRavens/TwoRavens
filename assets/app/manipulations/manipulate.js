@@ -962,7 +962,7 @@ export async function buildDatasetUrl(problem) {
         }
     };
 
-    let compiled = queryMongo.buildPipeline([...getPipeline(problem.problem_id), problemStep], Object.keys(variablesInitial))['pipeline'];
+    let compiled = queryMongo.buildPipeline([...getPipeline(problem), problemStep], Object.keys(variablesInitial))['pipeline'];
 
     return await getData({
         method: 'aggregate',
