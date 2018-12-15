@@ -4368,6 +4368,26 @@ export let defaultProblem;
 export let resultsProblem;
 export let selectedProblem;
 
+export let selectedProblem
+//     {
+//     problem_id: 'selectedProblem',
+//     system: 'user',
+//     get description() {return makeProblemDescription(this)},
+//
+//     get target() {return zparams.zdv},
+//     set target(value) {zparams.zdv = value},
+//
+//     get predictors() {return zparams.zgroup1},
+//     set predictors(value) {zparams.zgroup1 = value},
+//
+//     metric: 'meanSquaredError',
+//     task: 'regression',
+//     subTask: 'modelUndefined',
+//     rating: 3,
+//     meaningful: 'no'
+// }
+
+>>>>>>> fix bug in buildDatasetUrl
 export function setSelectedProblem(problem) {
     console.log('-- setSelectedProblem --')
     if (typeof problem === 'string') problem = disco.find(prob => prob.problemID === problem);
