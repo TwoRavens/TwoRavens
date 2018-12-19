@@ -92,7 +92,7 @@ function leftpanel(mode) {
             title: `mark ${problem.problemID} as meaningful`
         }),
         problem.system === 'user' && m('div[title="user created problem"]', glyph('user')),
-        problem.target,
+        problem.target.join(', '),
         problem.predictors.join(', '),
         problem.model === 'modelUndefined' || !problem.model ? '' : problem.model,
         problem.task,
@@ -1277,6 +1277,34 @@ class Body {
 }
 
 
+let myNodes = [];
+let colors = d3.scale.category20();
+
+m.request('rook-custom/rook-files/185_baseball/preprocess/preprocess.json').then(data => {
+
+    myNodes = Object.keys(data.variables).map((variable, i) => Object.assign({
+        id: i,
+        reflexive: false,
+        name: variable,
+        labl: 'test',
+        data: [5, 15, 20, 0, 5, 15, 20],
+        count: [.6, .2, .9, .8, .1, .3, .4],  // temporary values for hold that correspond to histogram bins
+        nodeCol: colors(i),
+        baseCol: colors(i),
+        strokeColor: selVarColor,
+        strokeWidth: "1",
+        subsetplot: false,
+        subsetrange: ["", ""],
+        setxplot: false,
+        setxvals: ["", ""],
+        grayout: false,
+        group1: false,
+        group2: false,
+        forefront: false
+    }, data.variables[variable]))
+});
+
+
 if (IS_EVENTDATA_DOMAIN) {
     m.route(document.body, '/home', {
         '/data': {render: () => m(Peek, {id: 'eventdata', image: '/static/images/TwoRavens.png'})},
@@ -1323,6 +1351,42 @@ else {
             ]
         },
         '/explore/:variate/:vars...': Body,
+        '/model': {
+            render: () => m('div', {style: {width: '100%', height: '500px'}}, m(ForceDiagram, {
+                selectedNode: undefined,
+                groups: [
+                    {
+                        name: "Predictors",
+                        color: gr1Color,
+                        nodes: []
+                    },
+                    {
+                        name: "Targets",
+                        color: gr2Color,
+                        nodes: []
+                    }
+                ],
+
+                nodes: myNodes,
+
+                groupLinks: [
+                    {
+                        source: 'Predictors',
+                        target: 'Targets',
+                        left: false,
+                        right: true
+                    }
+                ],
+                nodeLinks: [
+                    // {
+                    //     source: '',
+                    //     target: ,
+                    //     left: false,
+                    //     right: true
+                    // }
+                ]
+            }))
+        },
         '/data': {render: () => m(Peek, {id: app.peekId, image: '/static/images/TwoRavens.png'})},
         '/:mode': Body,
 

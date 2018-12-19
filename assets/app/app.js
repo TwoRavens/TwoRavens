@@ -105,7 +105,7 @@ export async function updatePeek(pipeline) {
     let variables = [];
 
     if (is_model_mode && selectedProblem)
-        variables = [...selectedProblem.predictors, selectedProblem.target];
+        variables = [...selectedProblem.predictors, ...selectedProblem.target];
 
     let previewMenu = {
         type: 'menu',
@@ -563,10 +563,10 @@ let selInteract = false;
 export let callHistory = []; // transform and subset calls
 
 // stores the target on page load
-export let mytargetdefault = '';
+export let mytargetdefault = [];
 
 // targeted variable name
-export let mytarget = '';
+export let mytarget = [];
 export let setMytarget = target => mytarget = target;
 
 export let configurations = {};
@@ -981,11 +981,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         // }
         console.log('problemDoc res: ', res);
 
-        mytargetdefault = res.inputs.data[0].targets[0].colName; // easier way to access target name?
+        // easier way to access target name?
+        mytargetdefault = (res.inputs.data[0].targets || []).map(targ => targ.colName);
 
-        if (typeof res.inputs.data[0].targets[0] !== 'undefined') {
-            d3mProblemDescription.firstTarget=res.inputs.data[0].targets[0];
-        }
         if (typeof res.about.problemID !== 'undefined') {
             d3mProblemDescription.id=res.about.problemID;
         }
@@ -1570,10 +1568,10 @@ export function layout(layoutConstant, v2) {
         if(IS_D3M_DOMAIN) {
             mytarget = mytargetdefault;
             nodes = allNodes.slice(1,allNodes.length);  // Add all but first variable on startup (assumes 0 position is d3m index variable)
-            nodes.forEach(node => node.group1 = node.name !== mytarget)
+            nodes.forEach(node => node.group1 = !mytarget.includes(node.name))
             // update zparams
             zparams.zvars = nodes.map(node => node.name);
-            zparams.zgroup1 = nodes.filter(node => node.name !== mytarget).map(node => node.name);
+            zparams.zgroup1 = nodes.filter(node => !mytarget.includes(node.name)).map(node => node.name);
 
         } else if (allNodes.length > 2) {
             nodes = [allNodes[0], allNodes[1], allNodes[2]];
@@ -1680,6 +1678,8 @@ export function layout(layoutConstant, v2) {
             return (coords);
         };
 
+        console.warn('#debug nodes');
+        console.log(nodes[0].x);
         var coords = nodes.map(function(d) {  return [ d.x, d.y]; });
 
         var gr1coords = findcoords(zparams.zgroup1, zparams.zvars, coords, true);
@@ -2384,7 +2384,7 @@ export function layout(layoutConstant, v2) {
         // initialize the event
         click_ev.initEvent("click", true /* bubble */, true /* cancelable */);
         // trigger the event
-        byId("dvArc" + findNodeIndex(mytarget)).dispatchEvent(click_ev);
+        byId("dvArc" + findNodeIndex(mytarget[0])).dispatchEvent(click_ev);
 
         // The dispatched click sets the leftpanel. This switches the panel back on page load
         selectedPebble = undefined;
@@ -3077,10 +3077,12 @@ export async function estimate() {
         zPop();
         zparams.callHistory = callHistory;
 
-        let myvki = valueKey.indexOf(mytarget);
-        if(myvki != -1) {
-            del(valueKey, myvki);
-        }
+        // TODO: This needs testing
+        valueKey.filter(key => mytarget.includes(key)).map(key => del(valueKey, valueKey.indexOf(key)))
+        // let myvki = valueKey.indexOf(mytarget);
+        // if(myvki != -1) {
+        //     del(valueKey, myvki);
+        // }
 
         estimateLadda.start(); // start spinner
 
@@ -3157,14 +3159,6 @@ export async function estimate() {
     }
 }
 
-
-
-
-// This appears not to be used:
-/** needs doc */
-//export function ta2stuff() {
-//    console.log(d3mProblemDescription);
-//}
 
 /** needs doc */
 async function dataDownload() {
@@ -3494,11 +3488,20 @@ export function setColors(n, c) {
         [gr2Color]: selVarColor
     }
 
+    console.warn('#debug zmap[c]');
+    console.log(zmap[c]);
+
+    console.warn('#debug n.name');
+    console.log(n.name);
+
     // from the relevant zparams list: remove if included, add if not included
     if (!Array.isArray(zparams[zmap[c]])) zparams[zmap[c]] = [];
     let index = zparams[zmap[c]].indexOf(n.name);
     if (index > -1) zparams[zmap[c]].splice(index, 1)
     else zparams[zmap[c]].push(n.name);
+
+    console.warn('#debug zparams.zdv');
+    console.log(zparams.zdv);
 
     labelNodeAttrs: {
         let matchedColor;
@@ -4307,13 +4310,13 @@ export async function addProblemFromForceDiagram() {
             meaningful: 'yes'
         });
 
-    newProblem.target = newProblem.depvar[0];
+    newProblem.target = newProblem.depvar;
     newProblem.description = newProblem.target+" is predicted by "+newProblem.predictors;
 
     let currentTaskType = d3mProblemDescription.taskType;
     let currentMetric = d3mProblemDescription.performanceMetrics[0].metric;
 
-    if (findNode(newProblem.target).nature === "nominal") {
+    if (findNode(newProblem.target[0]).nature === "nominal") {
         newProblem.task = currentTaskType === 'taskTypeUndefined' ? 'classification' : currentTaskType;
         newProblem.metric = currentMetric === 'metricUndefined' ? 'f1Macro' : currentMetric;
     } else {
@@ -4368,26 +4371,6 @@ export let defaultProblem;
 export let resultsProblem;
 export let selectedProblem;
 
-export let selectedProblem
-//     {
-//     problem_id: 'selectedProblem',
-//     system: 'user',
-//     get description() {return makeProblemDescription(this)},
-//
-//     get target() {return zparams.zdv},
-//     set target(value) {zparams.zdv = value},
-//
-//     get predictors() {return zparams.zgroup1},
-//     set predictors(value) {zparams.zgroup1 = value},
-//
-//     metric: 'meanSquaredError',
-//     task: 'regression',
-//     subTask: 'modelUndefined',
-//     rating: 3,
-//     meaningful: 'no'
-// }
-
->>>>>>> fix bug in buildDatasetUrl
 export function setSelectedProblem(problem) {
     console.log('-- setSelectedProblem --')
     if (typeof problem === 'string') problem = disco.find(prob => prob.problemID === problem);
