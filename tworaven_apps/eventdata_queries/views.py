@@ -1,29 +1,24 @@
 import json
-from collections import OrderedDict
 
 from django.conf import settings
 from django.shortcuts import render
 from django.db import IntegrityError
 from django.http import \
-    (JsonResponse, HttpResponse,
-     Http404, HttpResponseRedirect,
-     QueryDict)
-from django.template.loader import render_to_string
+    (JsonResponse, HttpResponse)
 from django.views.decorators.csrf import csrf_exempt
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
      get_json_error,
      get_json_success,
      get_common_view_info)
-from tworaven_apps.utils.json_helper import format_pretty_from_dict
-from tworaven_apps.utils.basic_response import (ok_resp,
-                                                err_resp,
-                                                err_resp_with_data)
+from tworaven_apps.utils.json_helper import format_pretty_from_dict, json_comply
+
 from tworaven_apps.eventdata_queries.event_job_util import EventJobUtil
 from tworaven_apps.eventdata_queries.forms import \
-            (EventDataSavedQueryForm,
-             EventDataGetDataForm,
-             EventDataGetMetadataForm)
+    (EventDataSavedQueryForm,
+     EventDataGetDataForm,
+     EventDataGetMetadataForm,
+     EventDataGetManipulationForm)
 from tworaven_apps.eventdata_queries.models import \
     (EventDataSavedQuery,
      SEARCH_PARAMETERS, SEARCH_KEY_NAME, SEARCH_KEY_DESCRIPTION)
@@ -33,8 +28,8 @@ def view_eventdata_api_info(request):
     """List some API info, for developers"""
     if not request.user.is_authenticated:
         pass
-        #user_msg = 'You must be logged in.'
-        #return HttpResponse(user_msg)
+        # user_msg = 'You must be logged in.'
+        # return HttpResponse(user_msg)
 
     info = get_common_view_info(request)
 
@@ -43,8 +38,7 @@ def view_eventdata_api_info(request):
     #
     sample_saved_query = None
     if request.user.is_authenticated:
-        sample_saved_query = EventDataSavedQuery.objects.filter(\
-                                user=request.user).first()
+        sample_saved_query = EventDataSavedQuery.objects.filter(user=request.user).first()
     info['sample_saved_query'] = sample_saved_query
     info['SEARCH_PARAMETERS'] = SEARCH_PARAMETERS
     info['SEARCH_KEY_NAME'] = SEARCH_KEY_NAME
@@ -103,9 +97,7 @@ def api_add_event_data_query(request):
         user_msg = EventDataSavedQueryForm.get_duplicate_record_error_msg()
         return JsonResponse(get_json_error(user_msg))
 
-    ok_info = get_json_success(\
-                'Query saved!',
-                data=saved_query.as_dict())
+    ok_info = get_json_success('Query saved!', data=saved_query.as_dict())
 
     return JsonResponse(ok_info)
 
@@ -135,6 +127,7 @@ def api_get_event_data_queries(request):
 
     return JsonResponse(user_msg)
 
+
 @csrf_exempt
 def api_delete_event_data_query(request, query_id=None):
     """Delete a EventDataSavedQuery.
@@ -149,9 +142,7 @@ def api_delete_event_data_query(request, query_id=None):
         user_msg = 'You must specify a query_id in the url.'
         return JsonResponse(get_json_error(user_msg))
 
-    query_info = EventJobUtil.get_by_id_and_user(\
-                                query_id,
-                                request.user)
+    query_info = EventJobUtil.get_by_id_and_user(query_id, request.user)
 
     if not query_info.success:
         return JsonResponse(get_json_error(query_info.err_msg))
@@ -179,10 +170,7 @@ def api_retrieve_event_data_query(request, query_id=None):
         user_msg = 'You must specify a query_id in the url.'
         return JsonResponse(get_json_error(user_msg))
 
-
-    query_info = EventJobUtil.get_by_id_and_user(\
-                                query_id,
-                                request.user)
+    query_info = EventJobUtil.get_by_id_and_user(query_id, request.user)
 
     if not query_info.success:
         return JsonResponse(get_json_error(query_info.err_msg))
@@ -196,7 +184,6 @@ def api_retrieve_event_data_query(request, query_id=None):
             return JsonResponse(get_json_error(fmt_info.err_msg))
 
         return HttpResponse('<pre>%s</pre>' % fmt_info.result_obj)
-
 
     return JsonResponse(user_info)
 
@@ -236,7 +223,6 @@ def api_search_event_data_queries(request):
 
         return HttpResponse('<pre>%s</pre>' % fmt_info.result_obj)
 
-
     return JsonResponse(user_info)
 
 
@@ -253,6 +239,7 @@ def api_upload_to_dataverse(request, query_id):
         user_msg = dict(error=get_json_error(res_obj))
         return JsonResponse(user_msg)
     """
+
 
 @csrf_exempt
 def api_publish_dataset(request, dataset_id):
@@ -329,6 +316,7 @@ def api_get_files_list(request, version_id):
 
         return JsonResponse(usr_msg)
 
+
 @csrf_exempt
 def api_get_archive_list(request):
     """ get list"""
@@ -389,8 +377,8 @@ def api_get_files_list(request, version_id):
 
 
 @csrf_exempt
-def api_get_data(request):
-    """ get data from query"""
+def api_get_eventdata(request):
+    """ general api to get event data"""
 
     success, json_req_obj = get_request_body_as_json(request)
 
@@ -403,13 +391,14 @@ def api_get_data(request):
         return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
 
     success, addquery_obj_err = EventJobUtil.get_data(
-        json_req_obj['host'],
+        settings.EVENTDATA_DB_NAME,
         json_req_obj['collection_name'],
         json_req_obj['method'],
         json.loads(json_req_obj['query']),
-        json_req_obj.get('distinct', None))
+        json_req_obj.get('distinct', None),
+        json_req_obj.get('host', None))
 
-    return JsonResponse({'success': success, 'data': addquery_obj_err} if success else get_json_error(addquery_obj_err))
+    return JsonResponse({'success': success, 'data': json_comply(addquery_obj_err)} if success else get_json_error(addquery_obj_err))
 
 
 @csrf_exempt
@@ -425,5 +414,56 @@ def api_get_metadata(request):
     form = EventDataGetMetadataForm(json_req_obj)
     if not form.is_valid():
         return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
-    return JsonResponse(
-        {name: EventJobUtil.get_metadata(name, json_req_obj[name]) for name in ['collections', 'formats', 'alignments'] if name in json_req_obj})
+
+    return JsonResponse({name: EventJobUtil.get_metadata(name, json_req_obj[name])
+                         for name in ['collections', 'formats', 'alignments'] if name in json_req_obj})
+
+
+@csrf_exempt
+def api_get_data(request):
+    """ general api to access TwoRavens data"""
+
+    success, json_req_obj = get_request_body_as_json(request)
+
+    print(json.dumps(json_req_obj))
+
+    if not success:
+        return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
+
+    # check if data is valid
+    try:
+        form = EventDataGetManipulationForm(json_req_obj)
+        if not form.is_valid():
+            return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
+    except json.decoder.JSONDecodeError as err:
+        return JsonResponse({"success": False, "message": str(err)})
+
+    # ensure the dataset is present
+    EventJobUtil.import_dataset(
+        settings.TWORAVENS_DB_NAME,
+        json_req_obj['collection_name'],
+        datafile=json_req_obj.get('datafile', None),
+        reload=json_req_obj.get('reload', None))
+
+    # apply the manipulations
+    success, results_obj_err = EventJobUtil.get_data(
+        settings.TWORAVENS_DB_NAME,
+        settings.PREFIX + json_req_obj['collection_name'],
+        json_req_obj['method'],
+        json.loads(json_req_obj['query']),
+        distinct=json_req_obj.get('distinct', None))
+
+    if not success:
+        return JsonResponse(get_json_error(results_obj_err))
+
+    if json_req_obj.get('export', False):
+        success, results_obj_err = EventJobUtil.export_dataset(
+            settings.PREFIX + json_req_obj['collection_name'],
+            results_obj_err)
+
+    return JsonResponse({'success': success, 'data': json_comply(results_obj_err)} if success else get_json_error(results_obj_err))
+
+
+@csrf_exempt
+def api_import_dataset(collection):
+    return EventJobUtil.import_dataset(settings.TWORAVENS_DB_NAME, collection)

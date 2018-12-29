@@ -12,6 +12,14 @@ svg {
     border-color: #dc3545 !important;
 }
 
+/* this prevents selections to content. Applied to body when dragging ui elements */
+.no-select {
+    -webkit-user-select: none;  /* Chrome all / Safari all */
+    -moz-user-select: none;     /* Firefox all */
+    -ms-user-select: none;      /* IE 10+ */
+    user-select: none;          /* Likely future */
+}
+
 div#subsetList.popover {
     max-width: none;
 }
@@ -118,7 +126,7 @@ text.id {
 
 #main svg {
     width: 100%;
-    min-height: 200px;
+    /*min-height: 200px;*/
     height: 100%;
 }
 
@@ -186,10 +194,8 @@ div.sidepanel div.panelbar span {
 }
 
 #main {
-    border:1px solid #ADADAD;
     width: 100%;
-    height: calc(100% - 62px - 40px);
-    margin-top:62px;
+    height: calc(100% - 62px - 42px);
     position: fixed;
     overflow: auto;
 }
@@ -419,7 +425,14 @@ tr.item-lineout{
 }
 
 .item-bordered {
-    border: solid #000000;
+    border: solid black !important;
+    font-weight: bolder;
+}
+.item-dependent {
+    border: solid rgba(40, 164, 201, 0.8);
+}
+.item-nominal {
+    border: solid #ff6600;
 }
 .item-lineout{
     text-decoration:line-through;

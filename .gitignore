@@ -47,6 +47,7 @@ data/d3m/o_196seed/data/.Rapp.history
 setup/r-setup/RINSTALL.*.LOG
 
 ravens_volume/test_output/*
+ravens_volume/manipulation_data/*
 ravens_volume/config_*.json
 ravens_volume/32_wikiqa
 rook/rook-files/o_185/data/trainDatamerged.tsv
