@@ -157,7 +157,7 @@ def fillData(dataset, datasetAlign, datasetCountry):
 			conv = dateLoc[modern]
 			if "TwoRavens_start date" not in doc.keys() or "TwoRavens_end date" not in doc.keys():
 				historic = tempAlign.loc[tempAlign["ISO-3"] == modern, "cState"].values[0]
-			if doc["TwoRavens_start date"].date() >= conv["start"] and doc["TwoRavens_end date"].date() <= conv["end"]:
+			elif doc["TwoRavens_start date"].date() >= conv["start"] and doc["TwoRavens_end date"].date() <= conv["end"]:
 				historic = conv["COW"]
 			else:
 				historic = tempAlign.loc[tempAlign["ISO-3"] == modern, "cState"].values[0]
