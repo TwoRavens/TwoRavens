@@ -635,6 +635,79 @@ result.loc[result["ISO-3"] == "III", "ISO-2"] = "II"
 #any error correction
 result.loc[result["ISO-3"] == "SDN", "UN M.49"] = 729
 
+'''
+results from supplementing
+Terrier:
+BQ = Bonaire, Sint Eustatius and Saba (Carribean Netherlands)
+CS = Czechoslovakia
+ICEWS: {'Sint Maarten', 'Micronesia', 'Holy See', 'Bavaria', 'Bonaire', 'Reunion', 'Saint Barthelemy', 'Occupied Palestinian Territory', 'Saint Helena', 'Cook Island', 'Democratic Republic of Congo', "Cote d'Ivoire", 'Falkland Islands', 'Isle Of Man'}
+cline_phoenix_swb: BES = Bonaire, Sint Eustatius and Saba (Carribean Netherlands)
+'''
+carribNeth = {"ICEWS": "Bonaire, Sint Eustatius and Saba (Carribean Netherlands)", "ISO-3": "BES", "UN M.49": 535, "region": "Caribbean", "cState": "BES", "cCode": 204, "cName": "Bonaire, Sint Eustatius and Saba (Carribean Netherlands)", "gwcode": -1, "gtdcode": -1, "ISO-2": "BQ"}
+result = result.append(carribNeth, ignore_index=True)
+
+czeTemp = result.loc[result["cState"] == "CZE"].copy()
+czeTemp["ISO-2"] = "CS"
+result = result.append(czeTemp, ignore_index=True)
+
+stMartTemp = result.loc[result["cState"] == "MAF"].copy()
+stMartTemp["ICEWS"] = 'Sint Maarten'
+result = result.append(stMartTemp, ignore_index=True)
+
+microTemp = result.loc[result["cState"] == "FSM"].copy()
+microTemp["ICEWS"] = 'Micronesia'
+result = result.append(microTemp, ignore_index=True)
+
+holySeeTemp = result.loc[result["cState"] == "VAT"].copy()
+holySeeTemp["ICEWS"] = 'Holy See'
+result = result.append(holySeeTemp, ignore_index=True)
+
+bavTemp = result.loc[result["cState"] == "BAV"].copy()
+bavTemp["ICEWS"] = 'Bavaria'
+result = result.append(bavTemp, ignore_index=True)
+
+bonTemp = result.loc[result["cState"] == "ANT"].copy()
+bonTemp["ICEWS"] = 'Bonaire'	#part of the Netherland Antilles
+result = result.append(bonTemp, ignore_index=True)
+
+reuTemp = result.loc[result["cState"] == "REU"].copy()
+reuTemp["ICEWS"] = 'Reunion'
+result = result.append(reuTemp, ignore_index=True)
+
+blmTemp = result.loc[result["cState"] == "BLM"].copy()
+blmTemp["ICEWS"] = 'Saint Barthelemy'
+result = result.append(blmTemp, ignore_index=True)
+
+pseTemp = result.loc[result["cState"] == "PSE"].copy()
+pseTemp["ICEWS"] = 'Occupied Palestinian Territory'
+result = result.append(pseTemp, ignore_index=True)
+
+shnTemp = result.loc[result["cState"] == "SHN"].copy()
+shnTemp["ICEWS"] = 'Saint Helena'
+result = result.append(shnTemp, ignore_index=True)
+
+cokTemp = result.loc[result["cState"] == "COK"].copy()
+cokTemp["ICEWS"] = 'Cook Island'
+result = result.append(cokTemp, ignore_index=True)
+
+#~ drcTemp = result.loc[result["ICEWS"] == "Democratic Republic of the Congo"].copy()
+drcTemp = result.loc[result["cState"] == "DRC"].copy()
+drcTemp["ICEWS"] = 'Democratic Republic of Congo'
+result = result.append(drcTemp, ignore_index=True)
+
+cdiTemp = result.loc[result["cState"] == "CDI"].copy()
+cdiTemp["ICEWS"] = "Cote d'Ivoire"
+result = result.append(cdiTemp, ignore_index=True)
+
+flkTemp = result.loc[result["cState"] == "FLK"].copy()
+flkTemp["ICEWS"] = 'Falkland Islands'
+result = result.append(flkTemp, ignore_index=True)
+
+imnTemp = result.loc[result["cState"] == "IMN"].copy()
+imnTemp["ICEWS"] = 'Isle Of Man'
+result = result.append(imnTemp, ignore_index=True)
+
+
 #clean up columns
 result[["UN M.49", "cCode", "gwcode", "gtdcode"]] = result[["UN M.49", "cCode", "gwcode", "gtdcode"]].apply(pd.to_numeric, downcast="integer")
 #save to file

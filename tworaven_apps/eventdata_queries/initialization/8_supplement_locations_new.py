@@ -113,19 +113,112 @@ def fillData(dataset, datasetAlign, datasetCountry):
 	print(len(coords))
 	with open("notadded" + dataset, "w") as out1:
 		for item in notAdded: out1.write("%s\n" % item)
-	with open("coords" + dataset, "w") as out2:
-		for item in coords: out2.write("%s	%s	%s\n" % x for x in item)
-	with open("docID" + dataset, "w") as out3:
-		for item in docIDs: out3.write("%s\n" % item)
+	#~ with open("coords" + dataset, "w") as out2:
+		#~ for item in coords: out2.write("%s	%s	%s\n" % str(x) for x in item)
+	#~ with open("docID" + dataset, "w") as out3:
+		#~ for item in docIDs: out3.write("%s\n" % item)
 
-for collection in ["terrier"]:
+for collection in []: #["terrier"]:
 	print("processing ", collection)
 	if collection == "ged":
-		fillData("ged", "gwcode", "country_id")
+		fillData("ged", "gwcode", "country_id")		#must add conversion to int() for doc[country_id]
 	elif collection == "gtd":
 		fillData("gtd", "gtdcode", "country")
 	elif collection == "terrier":
 		fillData("terrier", "ISO-2", "country_code")
+
+locQuery = {"TwoRavens_country_src": {"$exists": 0}}
+#only use this for GED - can have multiple countries in src/tgt
+def fillLoc(dataset, datasetAlign, datasetCountryA, datasetCountryB):
+	def getLocs(doc, val):
+		ctryModern = alignment.loc[alignment[datasetAlign] == val, "ISO-3"].values[0]
+		if ctryModern in dateLoc.keys():
+			conv = dateLoc[ctryModern]
+			if doc["TwoRavens_start date"].date() >= conv["start"] and doc["TwoRavens_end date"].date() <= conv["end"]:
+				ctryHistoric = conv["COW"]
+			else:
+				ctryHistoric = alignment.loc[alignment["ISO-3"] == ctryModern, "cState"].values[0]
+		else:
+			ctryHistoric = alignment.loc[alignment["ISO-3"] == ctryModern, "cState"].values[0]
+		return (ctryModern, ctryHistoric)
+		
+	for doc in db[dataset].find(locQuery):
+		#~ print(doc)
+		multA = False
+		multB = False
+		if datasetCountryA not in doc.keys() or doc[datasetCountryA] is None or doc[datasetCountryA] == "":
+			ctryAModern = ""
+			ctryAHistoric = ""
+		else:
+			#~ print(alignment[datasetAlign].to_string())
+			#~ print(type(alignment[datasetAlign].iloc[0]))
+			#~ print(doc[datasetCountryA])
+			#~ print(type(doc[datasetCountryA]))
+			#~ print(alignment[datasetAlign] == doc[datasetCountryA])
+			ctryA = doc[datasetCountryA].split(",")
+			if len(ctryA) == 1:
+				ctryAModern, ctryAHistoric = getLocs(doc, int(ctryA[0]))
+			else:
+				multA = True
+				ctryAList = []
+				for cty in ctryA:
+					ctryAList.append(getLocs(doc, int(cty)))
+
+		if datasetCountryB not in doc.keys() or doc[datasetCountryB] is None or doc[datasetCountryB] == "":
+			ctryBModern = ""
+			ctryBHistoric = ""
+		else:
+			ctryB = doc[datasetCountryA].split(",")
+			if len(ctryB) == 1:
+				ctryBModern, ctryBHistoric = getLocs(doc, int(ctryB[0]))
+			else:
+				multB = True
+				ctryBList = []
+				for cty in ctryB:
+					ctryBList.append(getLocs(doc, int(cty)))
+			ctryBModern = alignment.loc[alignment[datasetAlign] == int(doc[datasetCountryB]), "ISO-3"].values[0]
+
+		if not multA and not multB:
+			db[dataset].update_one(
+				{'_id': doc['_id']},
+				{'$set': {"TwoRavens_country_src": ctryAModern, "TwoRavens_country_historic_src": ctryAHistoric,
+							"TwoRavens_country_tgt": ctryBModern, "TwoRavens_country_historic_tgt": ctryBHistoric}})
+		else:
+			if multA and multB:
+				for sideA in ctryAList:
+					for sideB in ctryBList:
+						tempDoc = doc
+						tempDoc.pop("_id")
+						tempDoc["TwoRavens_country_src"] = sideA[0]
+						tempDoc["TwoRavens_country_historic_src"] = sideA[1]
+						tempDoc["TwoRavens_country_tgt"] = sideB[0]
+						tempDoc["TwoRavens_country_historic_tgt"] = sideB[1]
+						db[dataset].insert_one(tempDoc)
+				db[dataset].delete_one({"_id": doc["_id"]})
+			elif multA:
+				for sideA in ctryAList:
+					tempDoc = doc
+					tempDoc.pop("_id")
+					tempDoc["TwoRavens_country_src"] = sideA[0]
+					tempDoc["TwoRavens_country_historic_src"] = sideA[1]
+					tempDoc["TwoRavens_country_tgt"] = ctryBModern
+					tempDoc["TwoRavens_country_historic_tgt"] = ctryBHistoric
+					db[dataset].insert_one(tempDoc)
+				db[dataset].delete_one({"_id": doc["_id"]})
+			elif multB:
+				for sideB in ctryBlist:
+					tempDoc = doc
+					tempDoc.pop("_id")
+					tempDoc["TwoRavens_country_src"] = ctryAModern
+					tempDoc["TwoRavens_country_historic_src"] = ctryAHistoric
+					tempDoc["TwoRavens_country_tgt"] = sideB[0]
+					tempDoc["TwoRavens_country_historic_tgt"] = sideB[1]
+					db[dataset].insert_one(tempDoc)
+				db[dataset].delete_one({"_id": doc["_id"]})
+		
+for collection in ["ged"]:
+	if collection == "ged":
+		fillLoc("ged", "gwcode", "gwnoa", "gwnob")
 
 '''
 frame = pd.read_json(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'alignments', 'country2.json')))
