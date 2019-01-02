@@ -619,8 +619,7 @@ function rightpanel(mode) {
             onclick: () => app.setFocusedPanel('right'),
             style: {
                 'z-index': 100 + (app.focusedPanel === 'right'),
-                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`,
-                display: app.selectedProblem ? 'block' : 'none'
+                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
             }
         }
     }, m(MenuTabbed, {
