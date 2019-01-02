@@ -33,8 +33,8 @@ class GetDataSetFileInfo(object):
         # Print the response
         # -------------------
         print('-' * 40)
-        print(r.json())
-        print(r.status_code)
+        # print(r.json())
+        # print(r.status_code)
         self.status_code = r.status_code
         if r.status_code == 200:
             self.res = r.json()
@@ -42,10 +42,12 @@ class GetDataSetFileInfo(object):
             self.res = None
 
     def return_status(self):
-        if self.res is not None:
-            return ok_resp(self.res)
-        else:
+        if self.res is None:
             return err_resp(self.res)
+        else:
+            # print("The response we are looking for ", self.res)
+            return ok_resp(self.res)
+
 
     def get_dataset_id(self):
         """ return dataset Id from the Info"""
@@ -53,17 +55,25 @@ class GetDataSetFileInfo(object):
             dataset_id = self.res['data']['id']
             print("dataset ID ", dataset_id)
             return ok_resp(dataset_id)
-        else :
+        else:
             return err_resp(self.res)
 
     def get_version_id(self):
         """ return version ID"""
         if self.status_code == 200:
+            # print("The dataset file info :  ", self.res)
             version_id = self.res['data']['latestVersion']['id']
-            print("version ID", version_id)
+            # print("version ID", version_id)
             return ok_resp(version_id)
-        else :
+        else:
             return err_resp(self.res)
 
-
-
+    def get_version_number(self):
+        """return latest version number"""
+        if self.status_code == 200:
+            # print("The dataset file info for version number :  ", self.res)
+            version_number = self.res['data']['latestVersion']['versionNumber']
+            print("version number", version_number)
+            return ok_resp(version_number)
+        else:
+            return err_resp(self.res)

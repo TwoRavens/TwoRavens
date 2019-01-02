@@ -39,7 +39,7 @@ TA2_IMAGE_INFO = [
 
     # ISI: not using D3MPORT
     (TA2_ISI,
-     'registry.datadrivendiscovery.org/ta2-submissions-summer/ta2-isi/ta3ta2-image:latest',
+     'registry.datadrivendiscovery.org/kyao/ta2-isi/ta3ta2-image:latest',
      '-p 45042:45042 --memory 10g -e D3MRAM=10Gi -e D3MCPU=1'),
 
     # STANFORD: not using D3MPORT

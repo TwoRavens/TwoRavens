@@ -45,6 +45,10 @@ urlpatterns = (
          views_non_streaming_requests.view_hello,
          name='Hello'),
 
+    path(r'SearchDescribeFitScoreSolutions',
+         views_non_streaming_requests.view_search_describe_fit_score_solutions,
+         name='SearchDescribeFitScoreSolutions'),
+
     path(r'SearchSolutions',
          views_non_streaming_requests.view_search_solutions,
          name='SearchSolutions'),
@@ -89,9 +93,13 @@ urlpatterns = (
          views_streaming_requests.view_get_produce_solution_results,
          name='GetProduceSolutionResults'),
 
-    path(r'SolutionExport',
-         views_non_streaming_requests.view_solution_export,
-         name='SolutionExport'),
+    #path(r'SolutionExport',
+    #     views_non_streaming_requests.view_solution_export,
+    #     name='SolutionExport'),
+
+    path(r'SolutionExport2',
+         views_non_streaming_requests.view_solution_export2,
+         name='SolutionExport2'),
 
     path(r'UpdateProblem',
          views_non_streaming_requests.view_update_problem,

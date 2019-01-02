@@ -13,16 +13,20 @@ from tworaven_apps.ta2_interfaces.req_search_solutions import \
         (search_solutions, end_search_solutions,
          stop_search_solutions, describe_solution,
          score_solution, fit_solution,
-         produce_solution, solution_export,
+         produce_solution,
+         solution_export, solution_export_with_saved_response,
          update_problem, list_primitives)
 from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.utils.view_helper import \
     (get_request_body,
+     get_request_body_as_json,
+     get_authenticated_user,
      get_json_error,
      get_json_success)
 from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.utils.view_helper import get_session_key
-
+from tworaven_apps.ta2_interfaces.ta2_search_solutions_helper import \
+        SearchSolutionsHelper
 
 
 @csrf_exempt
@@ -66,6 +70,42 @@ def view_hello(request):
                                  data=json_format_info.result_obj)
 
     return JsonResponse(json_info, safe=False)
+
+
+@csrf_exempt
+def view_search_describe_fit_score_solutions(request):
+    """gRPC: Call from UI with params to
+    Search, Describe, Fit, and Score solutions"""
+
+    # ------------------------------------
+    # Retrieve the User
+    # ------------------------------------
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    user_obj = user_info.result_obj
+    websocket_id = user_obj.username  # websocket pushes currently based on username
+    user_id = user_obj.id
+
+    # ------------------------------------
+    # Parse the JSON request
+    # ------------------------------------
+    req_json_info = get_request_body_as_json(request)
+    if not req_json_info.success:
+        return JsonResponse(get_json_error(req_json_info.err_msg))
+
+    search_info = SearchSolutionsHelper.make_search_solutions_call(\
+                            req_json_info.result_obj,
+                            websocket_id,
+                            user_id)
+
+    if not search_info.success:
+        return JsonResponse(get_json_error(search_info.err_msg))
+
+    json_info = get_json_success('success!', data=search_info.result_obj)
+    return JsonResponse(json_info, safe=False)
+
 
 @csrf_exempt
 def view_search_solutions(request):
@@ -146,7 +186,7 @@ def view_end_search_solutions(request):
 
 @csrf_exempt
 def view_stop_search_solutions(request):
-    """gRPC: Call from UI with a GetSearchSolutionsResultsRequest"""
+    """gRPC: Call from UI with a StopSearchSolutions"""
     req_body_info = get_request_body(request)
     if not req_body_info.success:
         return JsonResponse(get_json_error(req_body_info.err_msg))
@@ -157,7 +197,7 @@ def view_stop_search_solutions(request):
     if ServiceCallEntry.record_d3m_call():
         call_entry = ServiceCallEntry.get_dm3_entry(\
                         request_obj=request,
-                        call_type='GetSearchSolutionsResults',
+                        call_type='StopSearchSolutions',
                         request_msg=req_body_info.result_obj)
 
     # Let's call the TA2!
@@ -332,7 +372,7 @@ def view_produce_solution(request):
 
     return JsonResponse(json_info, safe=False)
 
-
+'''
 @csrf_exempt
 def view_solution_export(request):
     """gRPC: Call from UI with a SolutionExportRequest"""
@@ -352,6 +392,48 @@ def view_solution_export(request):
     # Let's call the TA2!
     #
     search_info = solution_export(req_body_info.result_obj)
+    #print('search_info', search_info)
+    if not search_info.success:
+        return JsonResponse(get_json_error(search_info.err_msg))
+
+    # Convert JSON str to python dict - err catch here
+    #
+    json_format_info = json_loads(search_info.result_obj)
+    if not json_format_info.success:
+        return JsonResponse(get_json_error(json_format_info.err_msg))
+
+    # Save D3M log
+    #
+    if call_entry:
+        call_entry.save_d3m_response(json_format_info.result_obj)
+
+    json_info = get_json_success('success!', data=json_format_info.result_obj)
+
+    return JsonResponse(json_info, safe=False)
+'''
+
+
+
+@csrf_exempt
+def view_solution_export2(request):
+    """gRPC: Call from UI with a SolutionExportRequest;
+    In this case, use a SavedResponse"""
+    req_body_info = get_request_body(request)
+    if not req_body_info.success:
+        return JsonResponse(get_json_error(req_body_info.err_msg))
+
+    # Begin to log D3M call
+    #
+    call_entry = None
+    if ServiceCallEntry.record_d3m_call():
+        call_entry = ServiceCallEntry.get_dm3_entry(\
+                        request_obj=request,
+                        call_type='SolutionExport2',
+                        request_msg=req_body_info.result_obj)
+
+    # Let's call the TA2!
+    #
+    search_info = solution_export_with_saved_response(req_body_info.result_obj)
     #print('search_info', search_info)
     if not search_info.success:
         return JsonResponse(get_json_error(search_info.err_msg))

@@ -15,7 +15,8 @@ from tworaven_apps.eventdata_queries.dataverse.get_dataset_file_info import GetD
 class ListFilesInDataset(object):
 
     def __init__(self,version_id):
-        """ get list of files in dataset"""
+        """ get list of files in dataset
+            api used: GET http://$SERVER/api/datasets/$id/versions/$versionId/files?key=$apiKey """
         """ to get the JSON representation of the dataset"""
         self.status_code = None
         self.res = None
@@ -44,8 +45,8 @@ class ListFilesInDataset(object):
         # Print the response
         # -------------------
         print('-' * 40)
-        print(r.json())
-        print(r.status_code)
+        # print(r.json())
+        # print(r.status_code)
         self.status_code = r.status_code
         if r.status_code == 200:
             self.res = r.json()
@@ -53,7 +54,9 @@ class ListFilesInDataset(object):
             self.res = None
 
     def return_status(self):
-        if self.res is not None:
-            return ok_resp(self.res)
-        else:
+        if self.res is None:
             return err_resp(self.res)
+        else:
+            # print("the list of files : ", self.res)
+            return ok_resp(self.res)
+

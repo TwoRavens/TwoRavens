@@ -14,7 +14,7 @@ class PanelList {
                       m(`p#${v.replace(/\W/g, '_')}`, {
                           class: probDesc ?
                               (app.d3mProblemDescription[probDesc] === v ? 'item-select' :
-                               app.locktoggle ? 'item-default item-lineout' :
+                               app.lockToggle ? 'item-default item-lineout' :
                                'item-default') : '',
                           style: {
                               'background-color': probDesc ? '' :
@@ -37,7 +37,7 @@ class PanelList {
                           },
                           onmouseout: "$(this).popover('toggle');",
                           'data-container': 'body',
-                          'data-content': content ? content(v) : app.popoverContent(app.findNodeIndex(v, true)),
+                          'data-content': content ? content(v) : app.popoverContent(app.findNode(v)),
                           'data-html': 'true',
                           'data-original-title': title + ' for <b>' + v,
                           'data-placement': probDesc ? 'top' : 'right',

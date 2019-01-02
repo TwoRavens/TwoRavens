@@ -3,7 +3,6 @@ from django.conf import settings
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import REDIRECT_FIELD_NAME
-from django.utils.deprecation import RemovedInDjango21Warning
 from tworaven_apps.configurations.models import AppConfiguration
 
 

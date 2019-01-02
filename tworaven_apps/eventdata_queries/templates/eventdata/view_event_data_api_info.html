@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_js %}
+<script src="{% static "pkgs/bootstrap4/jquery-3.2.1.min.js" %}"></script>
+
+<script>
+// --------------------------
+// CSRF cookie
+// --------------------------
+const csrf_cookie_name = "{{ CSRF_COOKIE_NAME }}";
+
+function getCookie(key) {
+    var keyValue = document.cookie.match('(^|;) ?' + key + '=([^;]*)(;|$)');
+    return keyValue ? keyValue[2] : null;
+}
+
+{% if sample_saved_query %}
+// Request with custom header
+const someTestData = { {{SEARCH_KEY_NAME}}: "{{ sample_saved_query.name }}",};
+
+{% else %}
+const someTestData = { {{ SEARCH_KEY_NAME }}: "",
+                       {{ SEARCH_KEY_DESCRIPTION }}: ""};
+
+{% endif %}
+
+function makeTestSearch(){
+    $.ajax({
+        type: "POST",
+        contentType: "application/json",
+        url: '{% url "api_search_event_data_queries" %}',
+        data: JSON.stringify(someTestData),
+        dataType: 'json',
+        //headers: { 'X-CSRFToken': getCookie(csrf_cookie_name)},
+        success: function(respData) {
+            console.log("SUCCESS: ", respData);
+            alert(JSON.stringify(respData));
+        },
+        error: function(e) {
+            console.log("ERROR: ", e);
+            alert(JSON.stringify(respData));
+        },
+        done: function(e) {
+            console.log('done...');
+            }
+      });
+  }
+// --------------------------
+// end: example/test function
+// --------------------------
+</script>
+{% endblock %}
+  {% block main_content %}
+  <div class="row">
+    <div class="col-12 col-md-6">
+      {% include "content_pages/snippet_return_to_links.html" %}
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-12 col-md-6">
+      <h3>EventData API Notes</h3>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 col-md-6">
+
+      {% if user.is_authenticated %}
+      <div class="alert alert-info" role="alert">
+        Welcome, {{ user.username }}.
+      </div>
+      {% endif %}
+
+      <!-- gRPC related -->
+      <div class="card">
+        <div class="card-header"><b>Save a Query</b></div>
+        <div class="card-body">
+            <ul>
+              <li><b>Endpoint:</b> <code>{% url 'api_add_event_data_query' %}</code></li>
+              <li><b>Method</b>: POST, JSON data expected</li>
+              <li><b>Notes</b>:
+                <ul>
+                  <li>If not logged in, returns a `403` forbidden error</li>
+                  <li>An individual user cannot use the same <code>name</code> twice
+                    for a saved query.  See the details returned in the error messages.</li>
+                    <li>An individual user cannot save a query more than once that has the same:
+                     <code>query</code>,  <code>collection</code>, and  <code>collection_name</code>.
+                     See the details returned in the error messages.</li>
+
+                  <li>Saved under the name of the logged in user</li>
+                  <li>Any extra fields sent in the request are ignored.  e.g. the older "username" will not trigger an error, simply be ignored.</li>
+                </ul>
+              </li>
+              <li><b>Example</b>:
+                <br />
+                <pre><code>
+    {
+       "name": "User entered query name",
+       "description": "In this query I am ...."
+       "query": [ "... mongo query, either list or dict ..." ],
+       "collection_name": "acled_africa",
+       "collection_type": "subset",
+       "result_count": 161939,
+    }
+            </code></pre>
+              </li>
+            </ul>
+        </div>
+      </div>
+      <a name="list-user-queries"></a>
+
+      <br />
+      <div class="card">
+        <div class="card-header"><b>List a User's Queries</b>
+        </div>
+        <div class="card-body">
+          <li><b>Endpoint:</b>
+              <code>{% url 'api_get_event_data_queries' %}</code></li>
+          <li><b>Test:</b>
+              <a href="{% url 'api_get_event_data_queries' %}?pretty">{% url 'api_get_event_data_queries' %}</a></li>
+
+          <li><b>Method</b>: GET</li>
+          <li><b>Notes</b>:
+            <ul>
+              <li>If not logged in, returns a `403` forbidden error</li>
+              <li>Returns queries saved by the logged in user</li>
+            </ul>
+          </li>
+          <li><b>Example 1</b>:
+            <br />
+            <pre><code>
+  {
+    "success": true,
+    "message": "list retrieved",
+    "data": {
+        "count": 4,
+        "query_list": [
+            {
+                "id": 4,
+                "name": "q12",
+                "description": "adfg",
+                "result_count": 161939,
+                "collection_name": "acled_africa",
+                "collection_type": "subset",
+                "hash_id": "992d7264200e3c73220bf430cdc0cef5d5a1469eebbd727aa358b98b",
+                "created": "2018-08-23T21:39:28.067790+00:00",
+                "modified": "2018-08-23T21:39:28.077061+00:00",
+                "username": "dev_admin",
+                "detail_url": "/eventdata/api/get/4"
+            },
+            ...etc...
+        ]
+    }
+  }
+        </code></pre>
+          </li>
+          <li><b>Example 2</b>:
+            <br />
+            <pre><code>
+  {
+     "success":false,
+     "message":"No saved queries found."
+  }
+            </code></pre>
+          </li>
+        </ul>
+    </div>
+  </div>
+
+</div><!-- end: column -->
+
+
+<!-- start: column -->
+<div class="col-12 col-md-6">
+      <!-- D3M config info -->
+      <div class="card">
+        <div class="card-header"><b>Retrieve a single query for the logged in user</b></div>
+        <div class="card-body">
+          <ul>
+            <li><b>Endpoint:</b>
+                <code>{% url 'api_retrieve_event_data_query_base' %}{query_id}</code></li>
+            <li><b>Method</b>: GET</li>
+            {% if sample_saved_query %}
+            <li><b>Example:</b>
+                <a href="{% url 'api_retrieve_event_data_query' sample_saved_query.id %}?pretty">{% url 'api_retrieve_event_data_query' sample_saved_query.id %}</a>
+                  &nbsp; &nbsp; (live example)
+            </li>
+            {% else %}
+            <li><b>Example:</b>
+              <code>{% url 'api_retrieve_event_data_query_base' %}34</code>
+              &nbsp; &nbsp; (non-working)
+            </li>
+            {% endif %}
+            <li><b>Notes</b>:
+              <ul>
+                <li>If not logged in, returns a `403` forbidden error</li>
+                <li>The query must be one saved by the logged in user</li>
+              </ul>
+            </li>
+            <li><b>Examples</b>:
+                Same output as <a href="#list-user-queries"><b>List a User's Queries</b></a>
+          </ul>
+        </div>
+      </div>
+      <br />
+
+      <div class="card">
+        <div class="card-header"><b>Search a user's queries</b></div>
+        <div class="card-body">
+          <ul>
+            <li><b>Endpoint:</b>
+                <code>{% url 'api_search_event_data_queries' %}</code></li>
+            <li><b>Method</b>: POST</li>
+            <li><b>Example:</b>
+
+                <a href="#" onclick="javascript:makeTestSearch()">Run a search</a>
+                  &nbsp; &nbsp; (live example)
+            </li>
+            <li><b>Notes</b>:
+              <ul>
+                <li>If not logged in, returns a `403` forbidden error</li>
+                <li>Search parameters:
+                    {% for param in SEARCH_PARAMETERS %}
+                    <code><b>{{ param }}</b></code>{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </li>
+                <li>Only queries are shown for the logged in user</li>
+              </ul>
+            </li>
+            <li><b>Examples</b>:
+                Same output as <a href="#list-user-queries"><b>List a User's Queries</b></a>
+            </li>
+
+          </ul>
+        </div>
+      </div>
+      <br />
+      <div class="card">
+        <div class="card-header"><b>Delete a saved query</b></div>
+        <div class="card-body">
+          <ul>
+            <li><b>Endpoint:</b>
+                <br />exampe query
+                <code>{% url 'api_delete_event_data_query_base' %}{query_id}</code>
+            </li>
+            <li><b>Method</b>: GET</li>
+            <li><b>Notes</b>:
+              <ul>
+                <li>If not logged in, returns a `403` forbidden error</li>
+                <li>The query must have been saved by the logged in user
+                  or it will not be deleted.  A 'no query found' message
+                  will be given.
+                </li>
+              </ul></li>
+              <li><b>Example 1</b>:
+                <br />
+                <pre><code>
+  {
+     "success":false,
+     "message": "Query deleted."
+  }
+                </code></pre>
+              </li>
+
+            <li><b>Example 2</b>:
+              <br />
+              <pre><code>
+  {
+     "success":false,
+     "message": "A query was not found for the given query id and user."
+  }
+              </code></pre>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+    </div><!-- end: column -->
+{% endblock %}

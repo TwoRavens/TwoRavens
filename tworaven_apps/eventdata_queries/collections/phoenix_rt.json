@@ -1,0 +1,146 @@
+{
+  "name": "UTDallas - Real Time Phoenix Data",
+  "key": "phoenix_rt",
+  "description": "A real-time Phoenix-coded event dataset constructed at The University of Texas at Dallas.",
+  "interval": "Oct. 2017 - present",
+  "download": "http://eventdata.utdallas.edu/data.html",
+  "host": "UTDallas",
+  "subsets": {
+    "Actor": {
+      "type": "dyad",
+      "measureType": "unit",
+      "tabs": {
+        "source": {
+          "full": "source",
+          "filters": [
+            "src_agent",
+            "src_other_agent",
+            "src_actor"
+          ],
+          "full_token": "..."
+        },
+        "target": {
+          "format": "phoenix",
+          "full": "target",
+          "filters": [
+            "tgt_agent",
+            "tgt_other_agent",
+            "tgt_actor"
+          ],
+          "full_token": "..."
+        }
+      },
+      "delimited": {
+        "src_other_agent": ";",
+        "tgt_other_agent": ";"
+      }
+    },
+    "Action": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "formats": [
+        "CAMEO",
+        "root_code",
+        "penta_class",
+        "PLOVER"
+      ],
+      "columns": [
+        "code"
+      ]
+    },
+    "Date": {
+      "type": "date",
+      "measureType": "unit",
+      "structure": "point",
+      "columns": [
+        "date8_val"
+      ]
+    },
+    "Location": {
+      "type": "discrete_grouped",
+      "group_by": "region",
+      "columns": [
+        "country_code"
+      ]
+    },
+    "Coordinates": {
+      "type": "coordinates",
+      "columns": [
+        "latitude",
+        "longitude"
+      ]
+    }
+  },
+  "columns": [
+    "code",
+    "country_code",
+    "date8",
+    "day",
+    "geoname",
+    "goldstein",
+    "id",
+    "latitude",
+    "longitude",
+    "month",
+    "quad_class",
+    "root_code",
+    "source_text",
+    "source",
+    "src_actor",
+    "src_agent",
+    "src_other_agent",
+    "target",
+    "tgt_actor",
+    "tgt_agent",
+    "tgt_other_agent",
+    "url",
+    "year"
+  ],
+  "columns_constructed": [
+    "date8_val"
+  ],
+  "alignments": {
+    "code": "action",
+    "quad_class": "action",
+    "root_code": "action",
+    "latitude": "latitude",
+    "longitude": "longitude",
+    "date8_val": "date",
+    "source": "sector",
+    "src_actor": "country",
+    "src_agent": "sector",
+    "src_other_agent": "sector",
+    "target": "sector",
+    "tgt_actor": "country",
+    "tgt_agent": "sector",
+    "tgt_other_agent": "sector",
+    "country_code": "country"
+  },
+  "formats": {
+    "code": "CAMEO",
+    "quad_class": "penta_class",
+    "root_code": "root_code",
+    "source": "phoenix",
+    "src_actor": "ISO-3",
+    "src_agent": "phoenix",
+    "src_other_agent": "phoenix",
+    "target": "phoenix",
+    "tgt_actor": "ISO-3",
+    "tgt_agent": "phoenix",
+    "tgt_other_agent": "phoenix",
+    "country_code": "ISO-3",
+    "goldstein": "goldstein",
+    "month": "%m",
+    "day": "%d",
+    "year": "%Y"
+  },
+  "citations": [
+    {
+      "title": "Phoenix real time event data",
+      "author": "Brandt, Patrick T.; “D’Orazio, Vito; Holmes, Jennifer; Khan, Latifur; Ng, Vincent",
+      "year": "2018",
+      "note": "University of Texas Dallas",
+      "url": "http://eventdata.utdallas.edu"
+    }
+  ]
+}

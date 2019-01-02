@@ -63,6 +63,10 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'django.contrib.staticfiles',
 
+    'channels', # django channels
+
+    'tworaven_apps.websocket_views', # websocket support
+
     'social_django',    # social auth
     'tworaven_apps.raven_auth', # user model
     'tworaven_apps.workspaces', # save session state
@@ -78,6 +82,18 @@ INSTALLED_APPS = [
     # webpack!
     'webpack_loader',
 ]
+
+# Channels
+ASGI_APPLICATION = "tworavensproject.routing.application"
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -268,6 +284,18 @@ CELERY_RESULT_BACKEND = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)
 DATAVERSE_SERVER = os.environ.get('DATAVERSE_SERVER', 'https://demo.dataverse.org')
 DATAVERSE_API_KEY = os.environ.get('DATAVERSE_API_KEY', 'Get API Key from dataverse')
 DATASET_PERSISTENT_ID = os.environ.get('DATASET_PERSISTENT_ID', 'doi:10.5072/FK2/BGPZC3')
+
+# -----------------------------------------
+# Mongo connection string
+# - Takes precedence over other Mongo creds,
+#   including the settings with "EVENTDATA_"
+# -----------------------------------------
+MONGO_CONNECTION_STRING = os.environ.get('MONGO_CONNECTION_STRING', '')
+
+
+# database for storing manipulations
+TWORAVENS_MONGO_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'tworavens')
+MONGO_COLLECTION_PREFIX = 'tr_'  # mongo collection names may not start with a number
 
 # -------------------------
 # EventData: mongo related

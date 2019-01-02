@@ -129,6 +129,13 @@ class AppConfiguration(TimeStampedModel):
         return self.app_domain == EVENTDATA_DOMAIN
 
 
+    def print_vals(self):
+        """Print the config values to the screen"""
+        for k, val in self.__dict__.items():
+            if not k.startswith('_'):
+                print('     > %s: %s' % (k, val))
+
+
     def convert_to_dict(self):
         """Get in dict format for use in .js"""
         js_dict = {}
