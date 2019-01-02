@@ -70,7 +70,9 @@ function leftpanel(mode) {
         'problem_id',
         m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
         app.disco.some(prob => prob.system === 'user') ? 'User' : '',
-        'Target', 'Predictors', 'Task',
+        'Target', 'Predictors',
+        app.disco.some(prob => prob.model !== 'modelUndefined') ? 'Model' : '',
+        'Task',
         app.disco.some(prob => prob.subTask !== 'taskSubtypeUndefined') ? 'Subtask' : '',
         'Metric', 'Manipulations'
     ];
@@ -85,6 +87,7 @@ function leftpanel(mode) {
         problem.system === 'user' && m('div[title="user created problem"]', glyph('user')),
         problem.target,
         problem.predictors.join(', '),
+        problem.model === 'modelUndefined' ? '' : problem.model,
         problem.task,
         problem.subTask === 'taskSubtypeUndefined' ? '' : problem.subTask, // ignore taskSubtypeUndefined
         problem.metric,
@@ -197,15 +200,8 @@ function leftpanel(mode) {
                                 'Current Problem',
                                 m(`div#deselectProblem`, {
                                     onclick: () => {
-                                        app.erase();
                                         app.setSelectedProblem(undefined);
-                                        app.layout();
-                                        let targetNode = app.findNode(app.mytarget);
-                                        if (targetNode.strokeColor !== app.dvColor)
-                                            app.setColors(targetNode, app.dvColor);
-                                        app.restart();
-                                        // the dependent variable force needs a kick
-                                        document.getElementById('whitespace0').click();
+                                        app.unerase();
                                     },
                                     title: 'deselect problem',
                                     style: {
@@ -377,6 +373,7 @@ function rightpanel(mode) {
                                 app.setLeftTab('Discovery');
                             }
                             app.selectedProblem.task = child;
+                            app.selectedProblem.model = 'modelUndefined';
                             // will trigger the call to solver, if a menu that needs that info is shown
                             if (app.selectedProblem) app.setSolverPending(true);
                         },
@@ -420,7 +417,26 @@ function rightpanel(mode) {
                         },
                         style: {'margin-bottom': '1em'},
                         disabled: app.lockToggle
-                    })
+                    }),
+                    app.twoRavensModelTypes[app.selectedProblem.task] && m(Dropdown, {
+                        id: 'modelType',
+                        items: app.twoRavensModelTypes[app.selectedProblem.task],
+                        activeItem: app.selectedProblem.model,
+                        onclickChild: child => {
+                            if (app.selectedProblem.system === 'auto') {
+                                let problemCopy = app.getProblemCopy(app.selectedProblem);
+                                problemCopy.pending = true;
+                                app.disco.push(problemCopy);
+                                app.setSelectedProblem(problemCopy);
+                                app.setLeftTab('Discovery');
+                            }
+                            app.selectedProblem.model = child;
+                            // will trigger the call to solver, if a menu that needs that info is shown
+                            if (app.selectedProblem) app.setSolverPending(true);
+                        },
+                        style: {'margin-bottom': '1em'},
+                        disabled: app.lockToggle
+                    }),
                 )
             ]
         },
@@ -603,8 +619,7 @@ function rightpanel(mode) {
             onclick: () => app.setFocusedPanel('right'),
             style: {
                 'z-index': 100 + (app.focusedPanel === 'right'),
-                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`,
-                display: app.selectedProblem ? 'block' : 'none'
+                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
             }
         }
     }, m(MenuTabbed, {
@@ -887,7 +902,7 @@ class Body {
                     spaceBtn('btnJoin', app.connectAllForceDiagram, 'Make all possible connections between nodes', 'link'),
                     spaceBtn('btnDisconnect', () => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
                     spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
-                    spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')
+                    spaceBtn('btnEraser', app.nodes.length ? app.erase : app.unerase, app.nodes.length ? 'Wipe all variables from the modeling space' : 'Restore modeling space', app.nodes.length ? 'magnet' : 'refresh')
                 ]),
                 app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}),
 

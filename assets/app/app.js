@@ -565,6 +565,12 @@ export let d3mProblemDescription = {
     performanceMetrics: [{metric: "metricUndefined"}]
 };
 
+export let twoRavensModelTypes = {
+    regression: ['modelUndefined', 'Linear', 'Logistic', 'Negative Binomial', 'Poisson'],
+    classification: ['modelUndefined'],
+    clustering: ['modelUndefined', 'KMeans']
+};
+
 /*
  * call to django to update the problem definition in the problem document
  * rpc SetProblemDoc(SetProblemDocRequest) returns (Response) {}
@@ -2962,11 +2968,19 @@ export async function makeRequest(url, data) {
     return res;
 }
 
-/**
-   programmatically deselect every selected variable
-*/
-export function erase() {
-    nodes.map(node => node.name).forEach(name => clickVar(name, nodes));
+// programmatically deselect every selected variable
+export let erase = () => nodes.map(node => node.name).forEach(name => clickVar(name, nodes));
+
+// programmatically reset force diagram/selectedvars to initial state at page load
+export function unerase() {
+    erase();
+    layout();
+    let targetNode = findNode(mytarget);
+    if (targetNode.strokeColor !== dvColor)
+        setColors(targetNode, dvColor);
+    restart();
+    // the dependent variable force needs a kick
+    fakeClick();
 }
 
 // call with a tab name to change the left tab in model mode
@@ -4274,6 +4288,7 @@ export function discovery(preprocess_file) {
         metric: findNode(prob.target).plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
         task: findNode(prob.target).plottype === "bar" ? 'classification' : 'regression',
         subTask: Object.keys(d3mTaskSubtype)[0],
+        model: 'modelUndefined',
         rating: 3,
         meaningful: "no"
     }))

@@ -27,6 +27,12 @@ Mac:
     ```
     brew install node
     ```
+Ubuntu:
+  - Instructions from here: https://github.com/nodesource/distributions/blob/master/README.md
+  ```
+  curl -sL https://deb.nodesource.com/setup_11.x | sudo -E bash -
+  sudo apt-get install -y nodejs
+  ```
 
 #### Install the NPM libraries for TwoRavens
 
@@ -87,6 +93,11 @@ Mac:
        VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
        source ~/.local/bin/virtualenvwrapper.sh
        ``` 
+    4. You may need to install virtualenv:
+       ```
+       sudo apt install virtualenv
+       ```
+    5. Start new terminals to reload .bashrc
     
 ### Make a virtualenv and install requirements
 
@@ -99,6 +110,8 @@ Mac:
     # note: within the virtualenv, pip defaults to pip3
     ```
 
+- Ubuntu note: If you get the error `OSError: mysql_config not found`, then run  
+  `sudo apt-get install libmysqlclient-dev`
 - Mac note: If you run into Xcode (or other errors) when running the install, google it.  
   - Sometimes the [Xcode license agreement hasn't been accepted](http://stackoverflow.com/questions/26197347/agreeing-to-the-xcode-ios-license-requires-admin-privileges-please-re-run-as-r/26197363#26197363)
 
@@ -220,6 +233,12 @@ Then, in the R shell:
   ```
   install.packages(c("VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "XML", "Zelig", "rappdirs", "sourcetools", "processx", "rex", "evaluate", "highr", "brglm", "ROCR", "praise", "commonmark", "hunspell", "knitr", "rprojroot", "rpart"))
   ```
+  
+  On Ubuntu, some packages need additional commands:  
+  Rcpp: `install.packages('Rcpp')`  
+  devtools: `sudo apt-get install libcurl4-openssl-dev libssl-dev`    
+  Zelig: `install.packages('Zelig')`   
+  XML: `sudo apt-get install libxml2-dev`  
 
 Then set your working directory to ~/TwoRavens/rook. On the Vagrant install, this is:
 
