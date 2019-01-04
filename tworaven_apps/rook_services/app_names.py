@@ -13,8 +13,7 @@ HEALTH_CHECK_APP = 'HEALTH_CHECK_APP'
 # example: ('ZELIG_APP', 'zeligapp', 'zeligapp')
 #
 #                   standard     frontend   backend
-ROOK_APP_NAMES = [('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models
-                  ('DATA_APP', 'dataapp', 'dataapp'),       # session id?
+ROOK_APP_NAMES = [('DATA_APP', 'dataapp', 'dataapp'),       # session id?
                   ('SUBSET_APP', 'subsetapp', 'subsetapp'), # subset file
                   ('TRANSFORM_APP', 'transformapp', 'transformapp'), # transfor file
                   ('PREPROCESS_APP', 'preprocessapp', 'preprocessapp'), # preprocess
@@ -24,6 +23,7 @@ ROOK_APP_NAMES = [('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models
                   ('PLOTDATA_APP', 'plotdataapp', 'plotdataapp'),
                   ('TREE_APP', 'treeapp', 'treeapp'),
                   (HEALTH_CHECK_APP, 'healthcheckapp', 'healthcheckapp'), # healthcheckapp
+                  #('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models                                    
                  ]
 
 ROOK_APP_NAMES += [\
