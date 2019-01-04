@@ -62,7 +62,7 @@ def ta2_hello():
     # --------------------------------
     try:
         reply = core_stub.Hello(req,
-                                timeout=settings.TA2_GRPC_SHORT_TIMEOUT)
+                                timeout=settings.TA2_GRPC_FAST_TIMEOUT)
     except Exception as ex:
         return err_resp(str(ex))
 

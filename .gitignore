@@ -61,3 +61,4 @@ ravens_volume/2ravens_local_setup
 
 # IDE
 .idea/
+rook/preprocess/.Rapp.history

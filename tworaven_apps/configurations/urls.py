@@ -3,9 +3,6 @@ from tworaven_apps.configurations import views
 
 urlpatterns = (
 
-    #url(r'^{0}'.format(ZELIG_APP),
-    #    views.view_zelig_route,
-    #    name='view_zelig_route'),
     url(r'^d3m-config/list$',
         views.view_d3m_list,
         name='view_d3m_list'),

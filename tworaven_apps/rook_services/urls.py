@@ -3,9 +3,6 @@ from tworaven_apps.rook_services import views, views_files, views_test
 
 urlpatterns = (
 
-    #url(r'^{0}'.format(ZELIG_APP),
-    #    views.view_zelig_route,
-    #    name='view_zelig_route'),
     url(r'^rp-test$',
         views.view_rp_test,
         name='view_rp_test'),

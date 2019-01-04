@@ -254,7 +254,7 @@ TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:45042')
 TA3_GRPC_USER_AGENT = os.environ.get('TA3_GRPC_USER_AGENT', 'TwoRavens')
 
 # for non-streaming responses
-TA2_GRPC_FAST_TIMEOUT = os.environ.get('TA2_GRPC_FAST_TIMEOUT', 15) # seconds
+TA2_GRPC_FAST_TIMEOUT = os.environ.get('TA2_GRPC_FAST_TIMEOUT', 10) # seconds
 TA2_GRPC_SHORT_TIMEOUT = os.environ.get('TA2_GRPC_SHORT_TIMEOUT', 60) # seconds
 
 # for streaming responses
