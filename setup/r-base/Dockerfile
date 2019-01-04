@@ -2,8 +2,8 @@ FROM r-base:3.5.1
 MAINTAINER Raman Prasad (raman_prasad@harvard.edu)
 
 LABEL organization="Two Ravens" \
-      2ra.vn.version="0.0.6-beta" \
-      2ra.vn.release-date="2018-01-11" \
+      2ra.vn.version="0.1-alpha" \
+      2ra.vn.release-date="2019-01-4" \
       description="Image for the base of the Two Ravens R service."
 
 # ----------------------------------------------------
@@ -30,11 +30,8 @@ RUN apt-get update && \
 # -------------------------------------
 RUN  R -e 'install.packages("Rcpp", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("VGAM", repos="http://cran.rstudio.org")' && \
-    R -e 'install.packages("AER", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("dplyr", repos="http://cran.rstudio.org")' && \
-    R -e 'install.packages("quantreg", repos="http://cran.rstudio.org")' && \
-    R -e 'install.packages("geepack", repos="http://cran.rstudio.org")' && \
-    R -e 'install.packages("maxLik", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("Amelia", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("Rook", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("jsonlite", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("rjson", repos="http://cran.rstudio.org")' && \
@@ -46,8 +43,7 @@ RUN  R -e 'install.packages("Rcpp", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("tidyverse", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("lubridate", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("data.table", repos="http://cran.rstudio.org")' && \
-    R -e 'install.packages("stargazer", repos="http://cran.rstudio.org")' && \
-    R -e 'install.packages("Zelig", repos="http://cran.rstudio.org")'
+    R -e 'install.packages("stargazer", repos="http://cran.rstudio.org")'
 
 
 EXPOSE 8000
