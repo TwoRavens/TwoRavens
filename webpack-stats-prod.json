@@ -1,1 +1,1 @@
-{"status":"done","chunks":{"main":[{"name":"tworavens_app-40b50b0f72d73d91540c.js","path":"/Users/ramanprasad/Documents/github-rp/TwoRavens/assets/dist/tworavens_app-40b50b0f72d73d91540c.js"},{"name":"tworavens_styles-40b50b0f72d73d91540c.css","path":"/Users/ramanprasad/Documents/github-rp/TwoRavens/assets/dist/tworavens_styles-40b50b0f72d73d91540c.css"}]}}
+{"status":"error","error":"ModuleNotFoundError","message":"Module not found: Error: Can't resolve '../common/common' in '/Users/ramanprasad/Documents/github-rp/TwoRavens/assets/app'"}
