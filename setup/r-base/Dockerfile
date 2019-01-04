@@ -2,8 +2,8 @@ FROM r-base:3.5.1
 MAINTAINER Raman Prasad (raman_prasad@harvard.edu)
 
 LABEL organization="Two Ravens" \
-      2ra.vn.version="0.0.6-beta" \
-      2ra.vn.release-date="2018-01-11" \
+      2ra.vn.version="0.1-alpha" \
+      2ra.vn.release-date="2019-01-4" \
       description="Image for the base of the Two Ravens R service."
 
 # ----------------------------------------------------
