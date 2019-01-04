@@ -3711,7 +3711,7 @@ export function confusionmatrix(matrixdata, classes) {
     legdiv.style.display="inline-block";
     byId('setxLeftPlot').appendChild(legdiv);
 
-    var margin = {top: 50, right: 35, bottom: 0, left: leftmarginguess};    // Left margin needs not to be hardcoded, but responsive to maximum label length
+    var margin = {top: 50, right: 35, bottom: leftmarginguess, left: leftmarginguess};    // Left margin needs not to be hardcoded, but responsive to maximum label length
 
 
     function Matrix(options) {
@@ -3849,7 +3849,7 @@ export function confusionmatrix(matrixdata, classes) {
         .attr("text-anchor", "end")
         .text(function(d, i) { return d; });
 
-        let key = d3.select("#confusionlegend")
+        let key = d3.select("#confusionlegend")  // Legend
         .append("svg")
         .attr("width", widthLegend)
         .attr("height", height + margin.top + margin.bottom);
@@ -3876,8 +3876,8 @@ export function confusionmatrix(matrixdata, classes) {
         .attr("stop-color", startColor)
         .attr("stop-opacity", 1);
 
-        key.append("rect")
-        .attr("width", widthLegend/2-10)
+        key.append("rect")       // gradient image in legend
+        .attr("width", widthLegend/4-10)
         .attr("height", height)
         .style("fill", "url(#gradient)")
         .attr("transform", "translate(0," + margin.top + ")");
@@ -3912,7 +3912,7 @@ export function confusionmatrix(matrixdata, classes) {
         key
             .append("g")
             .attr("class", "y axis")
-            .attr("transform", "translate(25," + margin.top + ")")    // first number is separation between legend scale and legend key
+            .attr("transform", "translate(15," + margin.top + ")")    // first number is separation between legend scale and legend key
             .call(yAxis);
     }
 
@@ -3983,7 +3983,7 @@ export function confusionmatrix(matrixdata, classes) {
            end_color : '#e67e22',
            width : ((mainwidth-50)*.7) - 100 - leftmarginguess -30,//     // Width of confusion matrix table: Beginning of this is #confusioncontainer.width, but this div doesn't always exist yet
            height : mainheight * .6,    // Need to not be hard coded
-           widthLegend : mainwidth*.04,
+           widthLegend : mainwidth*.08,
            x_offset : 30,
            pipelineId : selectedPipeline  // Note: cueing from global, not from passed through pid, because of number of functions to pass through value.
            });
