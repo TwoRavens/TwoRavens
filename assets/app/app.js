@@ -7,7 +7,7 @@ import * as common from "../common/common";
 
 import * as manipulate from './manipulations/manipulate';
 
-import {setModal} from '../common/views/Modal';
+import {setModal, locationReload} from '../common/views/Modal';
 
 import {bars, barsNode, barsSubset, density, densityNode, scatter, selVarColor} from './plots.js';
 import {elem} from './utils';
@@ -986,10 +986,24 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
       console.log(res)
       if (res.success != true){
         const user_err_msg = "Failed to make Hello connection with TA2! status code: " + res.message;
-        setModal(user_err_msg, "Error Connecting to TA2", true, "Reset", false, location.reload);
+        setModal(user_err_msg, "Error Connecting to TA2", true, "Reset", false, locationReload);
         return;
       } else {
             zparams.zsessionid = "no session id in this API version";   // remove this eventually
+
+            // ----------------------------------------------
+            // Format and show the TA2 name in the footer
+            // ----------------------------------------------
+            let ta2Version;
+            if(typeof res.data.version !== 'undefined'){
+              ta2Version = res.data.version;
+            }
+            let ta2Name = res.data.userAgent;
+            if (ta2Version){
+              ta2Name += ' (API: ' + ta2Version + ')';
+            }
+            $('#ta2-server-name').html('TA2: ' + ta2Name);
+
         }
     }
 
@@ -3418,7 +3432,7 @@ export async function endsession() {
     //let mystatus = res.status.code.toUpperCase();
     //if(mystatus == "OK") {
         end_ta3_search(true, "Problem marked as complete.");
-        setModal("Your selected pipeline has been submitted.", "Task Complete", true, false, false, location.reload);
+        setModal("Your selected pipeline has been submitted.", "Task Complete", true, false, false, locationReload);
     //}
 }
 
@@ -4609,7 +4623,7 @@ export async function submitDiscProb() {
     //trigger("btnVariables", 'click');
 
     if(!problemDocExists){
-        setModal("Your discovered problems have been submitted.", "Task Complete", true, false, false, location.reload);
+        setModal("Your discovered problems have been submitted.", "Task Complete", true, false, false, locationReload);
     };
 
 }
