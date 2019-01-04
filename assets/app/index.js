@@ -1074,14 +1074,14 @@ class Body {
                 // attrsButtons: {class: ['btn-sm']}, // if you'd like small buttons (btn-sm should be applied to individual buttons, not the entire component)
                 attrsButtons: {style: {width: 'auto'}}
             }),
-            m("a#logID[href=somelink][target=_blank]", "Replication"),
-            m("span[style=color:#337ab7]", " | "),
+            m("a#logID[href=somelink][target=_blank]", "\u00A0 \u00A0 Replication"),
+            m("span[style=color:#337ab7]", "\u00A0 | \u00A0"),
             // dev links...
             m("a[href='/dev-raven-links'][target=_blank]", "raven-links"),
-            m("span[style=color:#337ab7]", " | "),
-            m("span[style=color:#337ab7]", `TA2: ${TA2_SERVER}`),
-            m("span[style=color:#337ab7]", " | "),
-            m("span[style=color:#337ab7]", `TA3TA2 api: ${TA3TA2_API_VERSION}`),
+            m("span[style=color:#337ab7]", "\u00A0 | \u00A0"),
+            m("span[style=color:#337ab7]#ta2-server-name", `TA2: ${TA2_SERVER}`),
+            m("span[style=color:#337ab7]", "\u00A0 | \u00A0"),
+            m("span[style=color:#337ab7]", `TA3 API: ${TA3TA2_API_VERSION} \u00A0 \u00A0`),
             m(Button, {
                 id: 'datasetConsoleLogUrl',
                 onclick: async () =>
