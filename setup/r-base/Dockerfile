@@ -30,11 +30,8 @@ RUN apt-get update && \
 # -------------------------------------
 RUN  R -e 'install.packages("Rcpp", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("VGAM", repos="http://cran.rstudio.org")' && \
-    R -e 'install.packages("AER", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("dplyr", repos="http://cran.rstudio.org")' && \
-    R -e 'install.packages("quantreg", repos="http://cran.rstudio.org")' && \
-    R -e 'install.packages("geepack", repos="http://cran.rstudio.org")' && \
-    R -e 'install.packages("maxLik", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("Amelia", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("Rook", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("jsonlite", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("rjson", repos="http://cran.rstudio.org")' && \

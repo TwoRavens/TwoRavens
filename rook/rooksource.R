@@ -11,7 +11,7 @@ source("rookconfig.R")
 
 
 if(!production){
-    packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook", "jsonlite","rjson", "devtools", "DescTools", "nloptr", "XML", "rpart", "stargazer")
+    packageList<-c("Rcpp","VGAM", "dplyr", "Amelia", "Rook", "jsonlite","rjson", "devtools", "DescTools", "nloptr", "XML", "rpart", "stargazer")
 
     # Find an available repository on CRAN
     availableRepos <- getCRANmirrors()
