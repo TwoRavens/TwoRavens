@@ -125,7 +125,8 @@ class MongoRetrieveUtil(BasicErrCheck):
         # ----------------------
         # get the client
         # ----------------------
-        mongo_client = self.get_mongo_client()
+        #~ mongo_client = self.get_mongo_client()
+        mongo_client = MongoClient(host='localhost', port=27017)
 
         # ----------------------
         # choose the database
@@ -187,6 +188,7 @@ class MongoRetrieveUtil(BasicErrCheck):
 
 
     def get_mongo_client(self):
+        return MongoClient(host='localhost', port=27017)
         """
         Return a mongo client; initiate one if needed
         """
