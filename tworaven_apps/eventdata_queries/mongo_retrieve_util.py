@@ -191,8 +191,8 @@ class MongoRetrieveUtil(BasicErrCheck):
         except Exception as err_obj:
             return err_resp(str(err_obj))
 
-
-    def get_mongo_url(self):
+    @staticmethod
+    def get_mongo_url():
         """Using the Django settings,
         retrieve/construct the mongo connection string"""
 
