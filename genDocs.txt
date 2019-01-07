@@ -1,0 +1,6 @@
+cd eventdata_docs
+jsdoc ../assets/app/eventdata/*.js eventdata.md
+cd ..
+jsdoc assets/app/*.js README.md
+copy contents of out folder to base dir
+manually edit .html files nav bars
