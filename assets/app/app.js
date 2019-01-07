@@ -280,8 +280,8 @@ export let rightTabExplore = 'Univariate';
 export let modelLeftPanelWidths = {
     'Variables': '300px',
     'Discovery': 'auto',
-    'Summary': '300px',
-    'Subset': '300px'
+    'Augment': '300px',
+    'Summary': '300px'
 };
 
 export let modelRightPanelWidths = {
@@ -470,6 +470,19 @@ export let zparams = {
     zdatacite: '...',
     zcrosstab: [],
     zusername: ''
+};
+
+
+export let augmentFind = () => alert('Augment Find');
+export let augmentIndex = () => alert('Augment Index');
+
+export let augmentState = {
+    keywords: '',
+    restrictions: {
+        fromDate: '',
+        toDate: '',
+        source: '',
+    }
 };
 
 // list of variable strings (same as Object.keys(preprocess))
