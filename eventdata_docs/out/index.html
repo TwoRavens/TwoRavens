@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Home</title>
+    <title>TwoRavens: Event Data</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Home</h1>
+    <h1 class="page-title">Event Data</h1>
 
     
 
@@ -43,7 +43,7 @@
 
 
     <section>
-        <article><h1>Eventdata</h1><p>This version of TwoRavens is used to subset and aggregate event data. Events are classified by their time, location, actors, and actions. We currently offer twelve datasets with event data; however, some of these datasets lack one of the aforementioned categories of data. Below we list changes, standardizations, and constructions we have made to the datasets to allow cross-dataset analysis.</p>
+        <article><p>This version of TwoRavens is used to subset and aggregate event data. Events are classified by their time, location, actors, and actions. We currently offer twelve datasets with event data; however, some of these datasets lack one of the aforementioned categories of data. Below we list changes, standardizations, and constructions we have made to the datasets to allow cross-dataset analysis.</p>
 <h2>Subsets</h2><p>Event data datasets generally classify events by date, location, actors, and actions. If a dataset is missing one of these categories, it is not included in the menus for subsetting. All edits to datasets are prefixed with &quot;TwoRavens_&quot; with the exception of actors; this allows users to download the dataset and drop all columns prefixed with &quot;TwoRavens_&quot; to restore the original dataset.</p>
 <h3>Date</h3><p>We standardize date fields to a timestamp. All dates fields are converted and prefixed with &quot;TwoRavens_&quot;. The three important fields used in EventData are: &quot;TwoRavens_start date&quot;, &quot;TwoRavens_end date&quot;, and &quot;TwoRavens_date info&quot;. &quot;TwoRavens_start date&quot; and &quot;TwoRavens_end date&quot; correspond to the start and end of the event; all times are aligned to midnight of each date. &quot;TwoRavens_date info&quot; is used to represent the accuracy of the start and end date; a &quot;0&quot; represents an exact start and end date, a &quot;1&quot; represents the exact day is missing, a &quot;2&quot; represents the exact month is missing, and a &quot;3&quot; represents both the day and month are missing. Missing dates are aligned to the earliest date available: a missing day will be aligned to the first day of that month, and a missing month will be aligned to the first day of that year.</p>
 <h3>Location</h3><p>We standardize location fields to two fields: &quot;TwoRavens_country&quot; and &quot;TwoRavens_country_historic&quot;. The former is using the ISO-3 standard to represent the modern day country; the latter is using the Correlates of War (COW) standard to represent the historical state of the event. For datasets using alternate country codes, we use a translation table to convert to COW codes. If an alternate code is not in the original COW code list or if the COW code is referring to a modern-day region, we have created a substitute (historical regions and states are discussed further below). We try to pick substitute codes that are close to their counterpart. The following is a list of substitutes:</p>
