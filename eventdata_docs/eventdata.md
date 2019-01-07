@@ -120,7 +120,7 @@ For other standardizations (Gleditsch and Ward number (GW codes) and GTD current
 #### Process
 The standardization process begins with extracting the field in the dataset with location information. If coordinate data is present, this is used to reverse geolocate the following fields: "TwoRavens_address", "TwoRavens_city", "TwoRavens_country", "TwoRavens_postal", "TwoRavens_postal_ext", "TwoRavens_region", "TwoRavens_subregion". If a physical location name is present, this is used to geolocate the previous fields. Only "TwoRavens_country" is used in EventData; this is in ISO-3 format. We then map the ISO-3 code with the event date to COW to fill the "TwoRavens_country_historic" field.
 
-The full table of alignments can be found in [here](../tworavens_apps/eventdata_queries/alignments/country_cow_aligned.json). All references below refer to the column names in the JSON file.
+The full table of alignments can be found in [here](../tworaven_apps/eventdata_queries/alignments/country_cow_aligned.json). All references below refer to the column names in the JSON file.
 
 Below is a list of the corresponding fields of datasets that have been standardized:
 - acled_africa: field is "ISO", in UN M.49 format

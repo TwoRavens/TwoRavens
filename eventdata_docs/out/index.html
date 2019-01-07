@@ -697,7 +697,7 @@
 <h4>Notes and other standardizations</h4><p>Note that the Soviet Union and the resulting Commonwealth of Independent States are not in COW; they are mapped to Russia (RUS).</p>
 <p>For other standardizations (Gleditsch and Ward number (GW codes) and GTD currently), I have mapped them to the COW codes. If there are codes in these standardizations that are not in COW and are not in the datasets themselves, I have not included them (to do later).</p>
 <h4>Process</h4><p>The standardization process begins with extracting the field in the dataset with location information. If coordinate data is present, this is used to reverse geolocate the following fields: &quot;TwoRavens_address&quot;, &quot;TwoRavens_city&quot;, &quot;TwoRavens_country&quot;, &quot;TwoRavens_postal&quot;, &quot;TwoRavens_postal_ext&quot;, &quot;TwoRavens_region&quot;, &quot;TwoRavens_subregion&quot;. If a physical location name is present, this is used to geolocate the previous fields. Only &quot;TwoRavens_country&quot; is used in EventData; this is in ISO-3 format. We then map the ISO-3 code with the event date to COW to fill the &quot;TwoRavens_country_historic&quot; field.</p>
-<p>The full table of alignments can be found in <a href="../tworavens_apps/eventdata_queries/alignments/country_cow_aligned.json">here</a>. All references below refer to the column names in the JSON file.</p>
+<p>The full table of alignments can be found in <a href="../../tworaven_apps/eventdata_queries/alignments/country_cow_aligned.json">here</a>. All references below refer to the column names in the JSON file.</p>
 <p>Below is a list of the corresponding fields of datasets that have been standardized:</p>
 <ul>
 <li>acled_africa: field is &quot;ISO&quot;, in UN M.49 format</li>
