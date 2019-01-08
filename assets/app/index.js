@@ -37,6 +37,9 @@ import TextField from '../common/views/TextField';
 import MenuHeaders from "../common/views/MenuHeaders";
 import Subpanel2 from '../common/views/Subpanel';
 
+import Schema from "./views/Schema";
+import {inputSchema} from "./datamart/inputSchema";
+
 // EVENTDATA
 import Body_EventData from './eventdata/Body_EventData';
 import ConfusionMatrix from "./views/ConfusionMatrix";
@@ -285,42 +288,12 @@ function leftpanel(mode) {
                                 'justify-content': 'space-between'
                             }
                         },
-                        m(Button, {
-                            onclick: app.augmentFind
-                        }, 'Find Data'),
-                        m(Button, {
-                            onclick: app.augmentIndex
-                        }, 'Index Data')),
-                    m('div#keywordAugmentation[style=width:100%]',
-                        m('label[style=width:6em]', 'Keywords:'),
-                        m(TextField, {
-                            style: {
-                                width: 'calc(100% - 6em)',
-                                display: 'inline-block'
-                            },
-                            value: app.augmentState.keywords,
-                            oninput: keywords => app.augmentState.keywords = keywords,
-                            onblur: keywords => app.augmentState.keywords = keywords
-                        })
-                    ),
-                    m(Subpanel2, {
-                        id: 'augmentationRestrictions',
-                        header: 'Restrictions',
-                        style: {width: '100%'}
-                    }, Object.keys(app.augmentState.restrictions).map(restriction =>
-                        m('div#restrictionAugmentation[style=width:100%]',
-                            m('label[style=width:6em]', `${restriction}:`),
-                            m(TextField, {
-                                style: {
-                                    width: 'calc(100% - 6em)',
-                                    display: 'inline-block'
-                                },
-                                value: app.augmentState.restrictions[restriction],
-                                oninput: value => app.augmentState.restrictions[restriction] = value,
-                                onblur: value => app.augmentState.restrictions[restriction] = value
-                            })
-                        )
-                    ))
+                        m(Button, {onclick: app.augmentFind}, 'Find Data'),
+                        m(Button, {onclick: app.augmentIndex}, 'Index Data')),
+                    m(`div[style=background:${common.menuColor}]`, m(Schema, {
+                        data: app.augmentState,
+                        schema: inputSchema
+                    }))
                 )
             },
             {

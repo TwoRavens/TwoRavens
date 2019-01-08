@@ -280,7 +280,7 @@ export let rightTabExplore = 'Univariate';
 export let modelLeftPanelWidths = {
     'Variables': '300px',
     'Discovery': 'auto',
-    'Augment': '300px',
+    'Augment': '600px',
     'Summary': '300px'
 };
 
@@ -473,15 +473,12 @@ export let zparams = {
 };
 
 
-export let augmentFind = () => alert('Augment Find');
+export let augmentFind = () => console.log(augmentState);
 export let augmentIndex = () => alert('Augment Index');
 
 export let augmentState = {
-    keywords: '',
-    restrictions: {
-        fromDate: '',
-        toDate: '',
-        source: '',
+    dataset: {
+        keywords: []
     }
 };
 
