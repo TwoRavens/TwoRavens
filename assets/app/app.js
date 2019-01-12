@@ -472,15 +472,13 @@ export let zparams = {
     zusername: ''
 };
 
-
-export let augmentFind = () => console.log(augmentState);
-export let augmentIndex = () => alert('Augment Index');
-
 export let augmentState = {
     dataset: {
         keywords: []
     }
 };
+
+export let augmentResults = [];
 
 // list of variable strings (same as Object.keys(preprocess))
 export let valueKey = [];

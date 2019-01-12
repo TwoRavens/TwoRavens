@@ -37,8 +37,7 @@ import TextField from '../common/views/TextField';
 import MenuHeaders from "../common/views/MenuHeaders";
 import Subpanel2 from '../common/views/Subpanel';
 
-import Schema from "./views/Schema";
-import {inputSchema} from "./datamart/inputSchema";
+import Datamart from "../common/TwoRavens/Datamart";
 
 // EVENTDATA
 import Body_EventData from './eventdata/Body_EventData';
@@ -279,22 +278,10 @@ function leftpanel(mode) {
             },
             {
                 value: 'Augment',
-                contents: m('div', {style: {width: '100%'}},
-                    m('div#buttonBar', {
-                            style: {
-                                margin: '.5em',
-                                width: 'calc(100% - 1em)',
-                                display: 'flex',
-                                'justify-content': 'space-between'
-                            }
-                        },
-                        m(Button, {onclick: app.augmentFind}, 'Find Data'),
-                        m(Button, {onclick: app.augmentIndex}, 'Index Data')),
-                    m(`div[style=background:${common.menuColor}]`, m(Schema, {
-                        data: app.augmentState,
-                        schema: inputSchema
-                    }))
-                )
+                contents: m(Datamart, {
+                    augmentState: app.augmentState,
+                    augmentResults: app.augmentResults
+                })
             },
             {
                 value: 'Summary',
