@@ -1,10 +1,7 @@
 import m from 'mithril';
 import {mergeAttributes} from "../../common/common";
-import {
-    allNodes, dvColor,
-    forcetoggle,
-    gr1Color, gr2Color, is_explore_mode, leftTab,
-    nomColor,
+import {dvColor, gr1Color, gr2Color, nomColor,
+    is_explore_mode,
     RADIUS, record_user_metadata, setColors, setLeftTab, setPebbleRadius,
     zparams
 } from "../app";
@@ -21,7 +18,7 @@ const arc = (start, end) => (radius) => d3.svg.arc()
     .startAngle(start)
     .endAngle(end);
 export const [arc0, arc1, arc2, arc3, arc4] = [arc(0, 3.2), arc(0, 1), arc(1.1, 2.2), arc(2.3, 3.3), arc(4.3, 5.3)];
-const arcInd = (arclimits) => (radius) => d3.svg.arc()
+const arcInd = arclimits => radius => d3.svg.arc()
     .innerRadius(radius + 22)
     .outerRadius(radius + 37)
     .startAngle(arclimits[0])
@@ -33,7 +30,13 @@ const [arcInd1, arcInd2] = [arcInd(arcInd1Limits), arcInd(arcInd2Limits)];
 // milliseconds to wait before showing/hiding the pebble handles
 let hoverTimeout = 150;
 let hoverPebble;
-export let selectedPebble;
+
+let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
+    .attr('fill-opacity', op).attr('display', op ? '' : 'none')
+    .delay(d1)
+    .duration(d2);
+let fill = (d, id, op, d1, d2) => $fill('#' + id + d.id, op, d1, d2);
+let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
 
 /**
  Define each pebble charge.
@@ -58,15 +61,32 @@ export default class ForceDiagram {
 
     onupdate(vnode) {
 
-        let {nodes, nodeLinks, groups, groupLinks} = vnode.attrs;
+        // overall structure
+        let {
+            nodes, nodeLinks,
+            groups, groupLinks,
+            nodeLabels, events
+        } = vnode.attrs;
+
+        // features
+        let {selectedNode, setSelectedNode} = vnode.attrs;
+
+        // options
+        let {forcetoggle} = vnode.attrs;
+
+        // callbacks
+        let circleEvents = (events || {}).circle || {};
+        let edgeEvents = (events || {}).edge || {};
+
+        let {width, height} = vnode.dom.getBoundingClientRect();
 
         // nodes.id is pegged to allNodes, i.e. the order in which variables are read in
         // nodes.index is floating and depends on updates to nodes.  a variables index changes when new variables are added.
         this.circle.call(this.force.drag);
-        if (forcetoggle[0] === "true") {
-            console.log("STARTING FORCE")
+        if (forcetoggle) {
             this.force.gravity(0.1);
             this.force.charge(d => setPebbleCharge(d));
+            this.force.size([width, height]);
             this.force.start();
             this.force.linkStrength(1);
             k = 4; // strength parameter for group attraction/repulsion
@@ -102,13 +122,7 @@ export default class ForceDiagram {
             .classed('selected', x => null)
             .style('marker-start', marker('left'))
             .style('marker-end', marker('right'))
-            .on('mousedown', function (d) { // do we ever need to select a link? make it delete..
-                var obj = JSON.stringify(d);
-                for (var j = 0; j < nodeLinks.length; j++) {
-                    if (obj === JSON.stringify(nodeLinks[j]))
-                        del(nodeLinks, j);
-                }
-            });
+            .on('mousedown', edgeEvents.mousedown);
 
         // remove old links
         this.path.exit().remove();
@@ -117,7 +131,33 @@ export default class ForceDiagram {
         this.circle = this.circle.data(nodes, x => x.id);
 
         // remove handles and make sure pebbles are properly sized on redraw
-        this.circle[0].forEach(this.redrawPebble);
+        this.circle[0].forEach(pebble => {
+            // nullity check for when reintroducing variable from variable list
+            if (pebble === null) return;
+            let data = pebble.__data__;
+
+            let radius = setPebbleRadius(data);
+            if (data.plottype === 'continuous') densityNode(data, pebble, setPebbleRadius(data));
+            else if (data.plottype === 'bar') barsNode(data, pebble, setPebbleRadius(data));
+
+            d3.select(pebble.querySelector("[id^='pebbleLabel']")).style('font-size', radius * .175 + 7 + 'px');  // proportional scaling would be 14 / 40, but I added y-intercept at 7
+            d3.select(pebble.querySelector("[id^='dvArc']")).attr("d", arc3(radius));
+            d3.select(pebble.querySelector("[id^='nomArc']")).attr("d", arc4(radius));
+            d3.select(pebble.querySelector("[id^='grArc']")).attr("d", arc1(radius));
+            d3.select(pebble.querySelector("[id^='gr1indicator']")).attr("d", arcInd1(radius));
+            d3.select(pebble.querySelector("[id^='gr2indicator']")).attr("d", arcInd2(radius));
+
+            if (!data.forefront && data.name !== selectedNode) {
+                fillThis(pebble.querySelector('[id^=grArc]'), 0, 100, 500);
+                fill(data, "grText", 0, 100, 500);
+                fillThis(pebble.querySelector('[id^=dvArc]'), 0, 100, 500);
+                fill(data, "dvText", 0, 100, 500);
+                fillThis(pebble.querySelector('[id^=nomArc]'), 0, 100, 500);
+                fill(data, "nomText", 0, 100, 500);
+                fill(data, "gr1indicator", 0, 100, 500);
+                fill(data, "gr2indicator", 0, 100, 500);
+            }
+        });
 
         // update existing nodes (reflexive & selected visual states)
         // d3.rgb is the function adjusting the color here
@@ -160,7 +200,7 @@ export default class ForceDiagram {
                 })
                 .on('mouseout', function (d) {
                     d.forefront = false;
-                    if (d.name === selectedPebble) return;
+                    if (d.name === selectedNode) return;
                     setTimeout(() => {
                         fillThis(this, 0, 100, 500);
                         fill(d, 'dvText', 0, 100, 500);
@@ -168,7 +208,7 @@ export default class ForceDiagram {
                 })
                 .on('click', function (d) {
                     setColors(d, dvColor);
-                    selectedPebble = d.name;
+                    setSelectedNode(d.name);
                     m.redraw();
                 });
         });
@@ -204,16 +244,16 @@ export default class ForceDiagram {
                 .on('mouseout', function (d) {
                     if (d.defaultNumchar === "character") return;
                     d.forefront = false;
-                    if (d.name === selectedPebble) return;
+                    if (d.name === selectedNode) return;
                     setTimeout(() => {
                         fillThis(this, 0, 100, 500);
                         fill(d, "nomText", 0, 100, 500);
                     }, hoverTimeout)
                 })
                 .on('click', function (d) {
-                    if (d.defaultNumchar == "character") return;
+                    if (d.defaultNumchar === "character") return;
                     setColors(d, nomColor);
-                    selectedPebble = d.name;
+                    setSelectedNode(d.name);
                     m.redraw();
                 });
         });
@@ -249,7 +289,7 @@ export default class ForceDiagram {
                 })
                 .on('mouseout', function (d) {
                     d.forefront = false;
-                    if (d.name === selectedPebble) return;
+                    if (d.name === selectedNode) return;
                     setTimeout(() => {
                         fill(d, "gr1indicator", 0, 100, 500);
                         fill(d, "gr2indicator", 0, 100, 500);
@@ -259,7 +299,7 @@ export default class ForceDiagram {
                 })
                 .on('click', d => {
                     setColors(d, gr1Color);
-                    selectedPebble = d.name;
+                    setSelectedNode(d.name);
                     m.redraw();
                 });
         });
@@ -285,7 +325,7 @@ export default class ForceDiagram {
                 })
                 .on('mouseout', function (d) {
                     d.forefront = false;
-                    if (d.name === selectedPebble) return;
+                    if (d.name === selectedNode) return;
                     setTimeout(() => {
                         fillThis(this, 0, 100, 500);
                         fill(d, "grArc", 0, 100, 500);
@@ -294,7 +334,7 @@ export default class ForceDiagram {
                 })
                 .on('click', d => {
                     setColors(d, gr1Color);
-                    selectedPebble = d.name;
+                    setSelectedNode(d.name);
                     m.redraw();
                 });
         });
@@ -320,7 +360,7 @@ export default class ForceDiagram {
                 })
                 .on('mouseout', function (d) {
                     d.forefront = false;
-                    if (d.name === selectedPebble) return;
+                    if (d.name === selectedNode) return;
                     setTimeout(() => {
                         fillThis(this, 0, 100, 500);
                         fill(d, "grArc", 0, 100, 500);
@@ -329,7 +369,7 @@ export default class ForceDiagram {
                 })
                 .on('click', d => {
                     setColors(d, gr2Color);
-                    selectedPebble = d.name;
+                    setSelectedNode(d.name);
                     m.redraw();
                 });
         });
@@ -351,95 +391,8 @@ export default class ForceDiagram {
             .style('opacity', "0.5")
             .style('stroke', d => d3.rgb(d.strokeColor).toString())
             .classed('reflexive', d => d.reflexive)
-            // TODO should this be used?
-            .on('dblclick', function (_) {
-                d3.event.stopPropagation(); // stop click from bubbling
-                summaryHold = true;
-            })
-            .on('click', function (d) {
-                selectedPebble = d.name;
-                outsideClick = false;
-                m.redraw();
-            })
-            .on('contextmenu', function (d) {
-                // right click on node
-                d3.event.preventDefault();
-                d3.event.stopPropagation();
-
-                rightClickLast = true;
-                mousedown_node = d;
-                selected_node = mousedown_node === selected_node ? null : mousedown_node;
-                selected_link = null;
-
-                // reposition drag line
-                drag_line
-                    .style('marker-end', is_explore_mode ? 'url(#end-marker)' : 'url(#end-arrow)')
-                    .classed('hidden', false)
-                    .attr('d', 'M' + mousedown_node.x + ',' + mousedown_node.y + 'L' + mousedown_node.x + ',' +
-                        mousedown_node.y);
-
-                svg.on('mousemove', mousemove);
-                m.redraw()
-            })
-            .on('mouseup', function (d) {
-                d3.event.stopPropagation();
-
-                if (rightClickLast) {
-                    rightClickLast = false;
-                    return;
-                }
-                if (!mousedown_node) return;
-
-                // needed by FF
-                drag_line
-                    .classed('hidden', true)
-                    .style('marker-end', '');
-
-                // check for drag-to-self
-                mouseup_node = d;
-                if (mouseup_node === mousedown_node) {
-                    resetMouseVars();
-                    return;
-                }
-
-                // unenlarge target node
-                d3.select(this).attr('transform', '');
-
-                // add link to graph (update if exists)
-                // NB: links are strictly source < target; arrows separately specified by booleans
-                var source, target, direction;
-                if (mousedown_node.id < mouseup_node.id) {
-                    source = mousedown_node;
-                    target = mouseup_node;
-                    direction = 'right';
-                } else {
-                    source = mouseup_node;
-                    target = mousedown_node;
-                    direction = 'left';
-                }
-
-                let link = nodeLinks.filter(x => x.source == source && x.target == target)[0];
-                if (link) {
-                    link[direction] = true;
-                } else {
-                    link = {
-                        source: source,
-                        target: target,
-                        left: false,
-                        right: false
-                    };
-                    link[direction] = true;
-                    nodeLinks.push(link);
-                }
-
-                // select new link
-                selected_link = link;
-                selected_node = null;
-                svg.on('mousemove', null);
-
-                resetMouseVars();
-                m.redraw()
-            });
+            .on('contextmenu', circleEvents.contextmenu)
+            .on('click', circleEvents.click);
 
         // show node names
         g.append('svg:text')
@@ -448,58 +401,6 @@ export default class ForceDiagram {
             .attr('y', 15)
             .attr('class', 'id')
             .text(d => d.name);
-
-        // show summary stats on mouseover
-        // SVG doesn't support text wrapping, use html instead
-        g.selectAll("circle.node")
-            .on("mouseover", d => {
-
-                d.forefront = true;
-
-                setTimeout(() => {
-                    if (leftTab !== 'Summary') leftTabHidden = leftTab;
-                    setLeftTab('Summary');
-                    varSummary(d);
-
-                    m.redraw();
-
-                    if (!d.forefront) return;
-                    hoverPebble = d.name;
-
-                    fill(d, "dvArc", .1, 0, 100);
-                    fill(d, "dvText", .5, 0, 100);
-                    fill(d, "grArc", .1, 0, 100);
-                    fill(d, "grText", .5, 0, 100);
-
-                    //fill(d, "gr1indicator", .1, 0, 100);
-                    //fill(d, "gr1indicatorText", .1, 0, 100);
-                    //fill(d, "gr2indicator", .1, 0, 100);
-                    //fill(d, "gr2indicatorText", .1, 0, 100);
-
-                    if (d.defaultNumchar === "numeric") {
-                        fill(d, "nomArc", .1, 0, 100);
-                        fill(d, "nomText", .5, 0, 100);
-                    }
-                    fill(d, "csArc", .1, 0, 100);
-                    fill(d, "csText", .5, 0, 100);
-                    fill(d, "timeArc", .1, 0, 100);
-                    fill(d, "timeText", .5, 0, 100);
-                }, hoverTimeout)
-            })
-            .on('mouseout', d => {
-                d.forefront = false;
-                setTimeout(() => {
-                    hoverPebble = undefined;
-
-                    if (selectedPebble) varSummary(allNodes.find((node) => node.name === selectedPebble));
-                    else setLeftTab(leftTabHidden);
-
-                    if (selectedPebble !== d.name)
-                        'csArc csText timeArc timeText dvArc dvText nomArc nomText grArc grText'.split(' ').map(x => fill(d, x, 0, 100, 500));
-
-                    m.redraw();
-                }, hoverTimeout)
-            });
 
         // remove old nodes
         this.circle.exit().remove();
@@ -511,7 +412,9 @@ export default class ForceDiagram {
     };
 
     oncreate(vnode) {
-        let {nodes, groups, nodeLinks, groupLinks} = vnode.attrs;
+        let {nodes, groups, nodeLinks, groupLinks, events} = vnode.attrs;
+
+        let svgEvents = (events || {}).svg || {};
 
         let svg = d3.select(vnode.dom);
         let {width, height} = vnode.dom.getBoundingClientRect();
@@ -521,33 +424,6 @@ export default class ForceDiagram {
         console.log(height);
 
         var [drag_line] = this.setup_svg(svg, width, height);
-
-        // mouse event vars
-        var selected_node = null,
-            selected_link = null,
-            mousedown_link = null,
-            mousedown_node = null,
-            mouseup_node = null;
-
-        function resetMouseVars() {
-            mousedown_node = null;
-            mouseup_node = null;
-            mousedown_link = null;
-        }
-
-        // this is to detect a click in the whitespace, but not on a pebble
-        let outsideClick = false;
-
-        function mousedown(d) {
-            selectedPebble = undefined;
-            // prevent I-bar on drag
-            d3.event.preventDefault();
-            // because :active only works in WebKit?
-            svg.classed('active', true);
-            if (d3.event.ctrlKey || mousedown_node || mousedown_link) return;
-            outsideClick = true;
-            m.redraw()
-        }
 
         let tick = () => {
 
@@ -579,7 +455,7 @@ export default class ForceDiagram {
                         fcoords.push([fcoords[0][0], fcoords[0][1] - delta]);
                     }
                 }
-                return (fcoords);
+                return fcoords;
             }
 
             // d3.geom.hull returns null for two points, and fails if three points are in a line,
@@ -653,8 +529,7 @@ export default class ForceDiagram {
                         .attr("x2", q[0] - (ltargetPadding * lnormX))
                         .attr("y2", q[1] - (ltargetPadding * lnormY))
                         .style('opacity', 1);
-                }
-                else this.line.style('opacity', 0);
+                } else this.line.style('opacity', 0);
 
                 // group members attract each other, repulse non-group members
                 nodes.forEach(n => {
@@ -717,8 +592,7 @@ export default class ForceDiagram {
                         .attr("x2", q[0] - (ltargetPadding * lnormX))
                         .attr("y2", q[1] - (ltargetPadding * lnormY))
                         .style('opacity', 0);
-                }
-                else this.line2.style('opacity', 0);
+                } else this.line2.style('opacity', 0);
 
                 // group members attract each other, repulse non-group members
                 nodes.forEach(n => {
@@ -786,86 +660,12 @@ export default class ForceDiagram {
             .charge(-800)
             .on('tick', tick);
 
-        function mousemove(d) {
-            if (!mousedown_node)
-                return;
-            // update drag line
-            drag_line.attr('d', 'M' + mousedown_node.x + ',' + mousedown_node.y + 'L' + d3.mouse(this)[0] + ',' +
-                d3.mouse(this)[1]);
-        }
-
-        function mouseup(d) {
-            if (mousedown_node) {
-                drag_line
-                    .classed('hidden', true)
-                    .style('marker-end', '');
-            }
-            if (outsideClick) {
-                outsideClick = false;
-                if (leftTabHidden) {
-                    setLeftTab(leftTabHidden);
-                    leftTabHidden = undefined;
-                    m.redraw();
-                }
-            }
-            // because :active only works in WebKit?
-            svg.classed('active', false);
-            // clear mouse event vars
-            resetMouseVars();
-        }
-
-        // app starts here
         svg
-            .on('mousedown', function () {
-                mousedown(this);
-            })
-            .on('mouseup', function () {
-                mouseup(this);
-            });
+            .on('mousedown', svgEvents.mousedown)
+            .on('mouseup', svgEvents.mouseup);
 
         this.onupdate(vnode); // initializes force.layout()
-
-        // if (v2 && IS_D3M_DOMAIN) {
-        //     var click_ev = document.createEvent("MouseEvents");
-        //     // initialize the event
-        //     click_ev.initEvent("click", true /* bubble */, true /* cancelable */);
-        //     // trigger the event
-        //     byId("dvArc" + findNodeIndex(mytarget[0])).dispatchEvent(click_ev);
-        //
-        //     // The dispatched click sets the leftpanel. This switches the panel back on page load
-        //     selectedPebble = undefined;
-        //     mouseup();
-        // }
     }
-
-
-    redrawPebble(pebble) {
-        // nullity check for when reintroducing variable from variable list
-        if (pebble === null) return;
-        let data = pebble.__data__;
-
-        let radius = setPebbleRadius(data);
-        if (data.plottype === 'continuous') densityNode(data, pebble, setPebbleRadius(data));
-        else if (data.plottype === 'bar') barsNode(data, pebble, setPebbleRadius(data));
-
-        d3.select(pebble.querySelector("[id^='pebbleLabel']")).style('font-size', radius * .175 + 7 + 'px');  // proportional scaling would be 14 / 40, but I added y-intercept at 7
-        d3.select(pebble.querySelector("[id^='dvArc']")).attr("d", arc3(radius));
-        d3.select(pebble.querySelector("[id^='nomArc']")).attr("d", arc4(radius));
-        d3.select(pebble.querySelector("[id^='grArc']")).attr("d", arc1(radius));
-        d3.select(pebble.querySelector("[id^='gr1indicator']")).attr("d", arcInd1(radius));
-        d3.select(pebble.querySelector("[id^='gr2indicator']")).attr("d", arcInd2(radius));
-
-        if (!data.forefront && data.name !== selectedPebble) {
-            fillThis(pebble.querySelector('[id^=grArc]'), 0, 100, 500);
-            fill(data, "grText", 0, 100, 500);
-            fillThis(pebble.querySelector('[id^=dvArc]'), 0, 100, 500);
-            fill(data, "dvText", 0, 100, 500);
-            fillThis(pebble.querySelector('[id^=nomArc]'), 0, 100, 500);
-            fill(data, "nomText", 0, 100, 500);
-            fill(data, "gr1indicator", 0, 100, 500);
-            fill(data, "gr2indicator", 0, 100, 500);
-        }
-    };
 
     setup_svg(svg, width, height) {
         // clear old elements before setting up the force diagram

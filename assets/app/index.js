@@ -1065,7 +1065,46 @@ class Body {
                                     );
                                 }))
                         )],
-                    m('svg#whitespace')),
+
+                    m(ForceDiagram, Object.assign({}, app.forceDiagramEvents, {
+                        selectedNode: undefined,
+
+                        groups: [
+                            {
+                                name: "Predictors",
+                                color: gr1Color,
+                                nodes: []
+                            },
+                            {
+                                name: "Targets",
+                                color: gr2Color,
+                                nodes: []
+                            }
+                        ],
+
+                        nodes: app.nodes,
+
+                        groupLinks: [
+                            {
+                                source: 'Predictors',
+                                target: 'Targets',
+                                left: false,
+                                right: true
+                            }
+                        ],
+                        nodeLinks: [
+                            // {
+                            //     source: '',
+                            //     target: ,
+                            //     left: false,
+                            //     right: true
+                            // }
+                        ],
+
+                        forcetoggle: app.forcetoggle
+                    }))
+                ),
+                    // m('svg#whitespace')),
                 app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}}, [
                     spaceBtn('btnAdd', app.addProblemFromForceDiagram, 'add model to problems', 'plus'),
                     spaceBtn('btnJoin', app.connectAllForceDiagram, 'Make all possible connections between nodes', 'link'),
@@ -1277,34 +1316,6 @@ class Body {
 }
 
 
-let myNodes = [];
-let colors = d3.scale.category20();
-
-m.request('rook-custom/rook-files/185_baseball/preprocess/preprocess.json').then(data => {
-
-    myNodes = Object.keys(data.variables).map((variable, i) => Object.assign({
-        id: i,
-        reflexive: false,
-        name: variable,
-        labl: 'test',
-        data: [5, 15, 20, 0, 5, 15, 20],
-        count: [.6, .2, .9, .8, .1, .3, .4],  // temporary values for hold that correspond to histogram bins
-        nodeCol: colors(i),
-        baseCol: colors(i),
-        strokeColor: selVarColor,
-        strokeWidth: "1",
-        subsetplot: false,
-        subsetrange: ["", ""],
-        setxplot: false,
-        setxvals: ["", ""],
-        grayout: false,
-        group1: false,
-        group2: false,
-        forefront: false
-    }, data.variables[variable]))
-});
-
-
 if (IS_EVENTDATA_DOMAIN) {
     m.route(document.body, '/home', {
         '/data': {render: () => m(Peek, {id: 'eventdata', image: '/static/images/TwoRavens.png'})},
@@ -1351,42 +1362,6 @@ else {
             ]
         },
         '/explore/:variate/:vars...': Body,
-        '/model': {
-            render: () => m('div', {style: {width: '100%', height: '500px'}}, m(ForceDiagram, {
-                selectedNode: undefined,
-                groups: [
-                    {
-                        name: "Predictors",
-                        color: gr1Color,
-                        nodes: []
-                    },
-                    {
-                        name: "Targets",
-                        color: gr2Color,
-                        nodes: []
-                    }
-                ],
-
-                nodes: myNodes,
-
-                groupLinks: [
-                    {
-                        source: 'Predictors',
-                        target: 'Targets',
-                        left: false,
-                        right: true
-                    }
-                ],
-                nodeLinks: [
-                    // {
-                    //     source: '',
-                    //     target: ,
-                    //     left: false,
-                    //     right: true
-                    // }
-                ]
-            }))
-        },
         '/data': {render: () => m(Peek, {id: app.peekId, image: '/static/images/TwoRavens.png'})},
         '/:mode': Body,
 
