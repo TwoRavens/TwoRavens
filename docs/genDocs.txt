@@ -1,0 +1,23 @@
+Install jsdocs: npm install -g jsdoc
+
+To generate documentation:
+1. for each separate page of docs you want, make a seperate directory for the generated HTML files
+2. change to that directory, and run jsdoc to make documentation into that folder: jsdoc <path to js files> <path to markdown>
+2.a. if you just want to convert markdown to html, create an empty .js file and run the jsdoc command
+3. repeat steps 1-2 for each separate page
+4. cd to TwoRavens root, and remove all .html files
+5. run jsdoc on the base README.md and general TwoRavens js files: jsdoc assets/app/*.js README.md
+6. copy everything from the out folder to root
+7. for each page generated, edit the index.html files to link to each other in the nav bars and add any customizations
+
+Current steps for event data documentation
+cd eventdata_docs
+jsdoc ../assets/app/eventdata/*.js eventdata.md
+cd ..
+jsdoc assets/app/*.js README.md
+manually edit .html files nav bars
+edits:
+	- page titles
+	- removed event data article header1
+	- verify hrefs
+copy contents of out folder to base dir
