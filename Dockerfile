@@ -1,5 +1,5 @@
 # Note: This only runs the Django app, not the rook services
-FROM python:3.6.4
+FROM python:3.6.8
 MAINTAINER Raman Prasad (raman_prasad@harvard.edu)
 
 LABEL organization="Two Ravens" \
