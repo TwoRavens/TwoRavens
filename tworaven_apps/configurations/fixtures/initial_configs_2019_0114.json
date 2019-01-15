@@ -21,7 +21,7 @@
     "pk": 2,
     "fields": {
         "created": "2017-09-01T22:15:48.937Z",
-        "modified": "2018-11-28T20:38:56.715Z",
+        "modified": "2018-03-26T20:42:12.841Z",
         "name": "D3M Dev configuration",
         "is_active": true,
         "production": false,
@@ -55,7 +55,7 @@
     "pk": 4,
     "fields": {
         "created": "2018-03-26T20:41:33.443Z",
-        "modified": "2018-11-27T14:02:43.167Z",
+        "modified": "2018-03-26T20:52:36.839Z",
         "name": "EventData DEV",
         "is_active": false,
         "production": false,
@@ -82,23 +82,6 @@
         "rook_svc_url": "/custom/",
         "dataverse_url": "https://beta.harvard.edu",
         "description": "Run event data in production.  The Rook service url will be relative to the deployed server: \"/custom/\""
-    }
-},
-{
-    "model": "configurations.appconfiguration",
-    "pk": 6,
-    "fields": {
-        "created": "2019-01-15T15:01:29.860Z",
-        "modified": "2019-01-15T15:01:29.995Z",
-        "name": "Datamart Only Domain",
-        "is_active": false,
-        "production": false,
-        "app_domain": "DATAMART_ONLY_DOMAIN",
-        "d3m_svc_url": "/d3m-service",
-        "privacy_mode": false,
-        "rook_svc_url": "/rook-custom/",
-        "dataverse_url": "https://dataverse.harvard.edu",
-        "description": "Use this mode when Datamart is being used *without* a TA2."
     }
 }
 ]
