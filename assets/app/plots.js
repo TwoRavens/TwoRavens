@@ -1,5 +1,7 @@
 import {elem} from './utils';
 
+import {alertLog, alertWarn, alertError} from "./app";
+
 import vegaEmbed from 'vega-embed';
 import * as scatterPE from './vega-schemas/scatterPE';
 
@@ -10,7 +12,7 @@ export let selVarColor = '#fa8072'; // d3.rgb("salmon");
 export function density(node, div, priv) {
     div = {setxLeft: '#setxLeft', setxLeftTopRight: '#setxLeftTopRight', Summary: '#tabSummary', explore: '#plot'}[div];
 
-    if (!div) return alert("Error: incorrect div selected for plots: " + div);
+    if (!div) return alertError("Error: incorrect div selected for plots: " + div);
 
     let [xVals, yVals] = [node.plotx, node.ploty];
     if (priv && node.plotCI) {
@@ -398,7 +400,7 @@ export function bars(node, div, priv) {
     else if (div == "Summary") mydiv = "#tabSummary";
     else if (div == "setxLeftTopRight") mydiv = "#setxLeftTopRight";
     else {
-        return alert("Error: incorrect div selected for plots");
+        return alertError("Error: incorrect div selected for plots");
     }
 
     var tempWidth = d3.select(mydiv).style("width");
@@ -1240,13 +1242,11 @@ export function barsNode(node, obj, radius, explore) {
 
 // Function takes as input an array of x values, array of y values, x axis name, y axis name, and a div id, and renders a scatterplot there
 export function scatter(x_Axis, y_Axis, x_Axis_name, y_Axis_name, id, dim, title) {
-    if(typeof id === 'undefined') id = '#setxLeftPlot';
-    if(typeof dim === 'undefined') dim = {width: 400, height: 300};
-    if(typeof title === 'undefined') title='Scatterplot';
-    let data = [];
-    for(let i = 0; i<x_Axis.length; i++) {
-        data[i] = {[x_Axis_name]:x_Axis[i], [y_Axis_name]:y_Axis[i]};
-    }
+    if (id === undefined) id = '#setxLeftPlot';
+    if (dim === undefined) dim = {width: 400, height: 300};
+    if (title === undefined) title = 'Scatterplot';
+
+    let data = x_Axis.map((_, i) => ({[x_Axis_name]: x_Axis[i], [y_Axis_name]: y_Axis[i]}));
     data = JSON.stringify(data);
     let stringified = JSON.stringify(scatterPE);
     stringified = stringified.replace(/tworavensY/g, y_Axis_name);

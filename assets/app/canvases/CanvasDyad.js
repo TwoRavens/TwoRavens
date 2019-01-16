@@ -6,7 +6,7 @@ import TextField from '../../common/views/TextField';
 
 import PlotDyad from './views/PlotDyad';
 import * as eventdata from "../eventdata/eventdata";
-import {formattingData} from "../app";
+import {alertError, formattingData} from "../app";
 
 // Width of the dyad selection panel
 let selectionWidth = '400px';
@@ -374,7 +374,7 @@ export default class CanvasDyad {
                                 .filter(node => node['tab'] === preferences['current_tab']);
 
                             if (filteredNodes.length === 1) {
-                                alert('There must be at least one "' + preferences['current_tab'] + '" node.');
+                                alertError('There must be at least one "' + preferences['current_tab'] + '" node.');
                                 return;
                             }
                             let deleteNode = preferences['tabs'][preferences['current_tab']]['node'];

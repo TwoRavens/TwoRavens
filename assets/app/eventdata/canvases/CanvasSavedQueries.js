@@ -5,6 +5,7 @@ import Table from "../../../common/views/Table";
 import Button from "../../../common/views/Button";
 
 import * as eventdata from "../eventdata";
+import {alertError} from "../../app";
 
 let searchLag = 500;
 
@@ -51,7 +52,7 @@ export default class CanvasSavedQueries {
         });
         if (response.success && response.data.id === this.result)
             preferences['query'] = response.data.query;
-        else alert(response.message);
+        else alertError(response.message);
     }
 
     view(vnode) {

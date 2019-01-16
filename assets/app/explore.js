@@ -885,7 +885,7 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
         var count = 0;
 
         if (k < n) {
-            alert("error enter vaild size");
+            app.alertError("error: enter valid size");
         } else {
             while (k > 0) {
                 temp.push({pos: count, val: k});
@@ -1729,7 +1729,7 @@ export async function plot(plotNodes, plottype="", problem={}) {
             plottype[0] === "facetbox" ? facetbox:
             plottype[0] === "facetheatmap" ? facetheatmap:
             plottype[0] === "groupedbarnqq" ? groupedbarnqq:
-            alert("invalid plot type");
+            app.alertError("invalid plot type");
     //    console.log(schema);
 
         let flip = plotflip(plottype);

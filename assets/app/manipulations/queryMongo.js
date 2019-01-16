@@ -966,3 +966,64 @@ export function comparableSort(a, b) {
     if (a['Label'] === b['Label']) return 0;
     return (a['Label'] < b['Label']) ? -1 : 1;
 }
+
+// D3M datasetDoc.json apply changes to a doc based on a mongo pipeline
+// written to follow schema version 3.1:
+// https://gitlab.datadrivendiscovery.org/MIT-LL/d3m_data_supply/blob/shared/schemas/datasetSchema.json
+export let translateDatasetDoc = (pipeline, doc) => {
+    let typeInferences = {
+        'integer': new Set(['toInt', 'ceil', 'floor', 'trunc']),
+        'boolean': new Set(['toBool', 'and', 'not', 'or', 'eq', 'gt', 'gte', 'lt', 'lte', 'ne']),
+        'string': new Set(['toString', 'trim', 'toLower', 'toUpper', 'concat']),
+        'real': new Set(['toDouble', 'abs', 'exp', 'ln', 'log10', 'sqrt', 'divide', 'log', 'mod', 'pow',
+            'subtract', 'add', 'multiply', 'max', 'min', 'avg', 'stdDevPop', 'stdDevSamp'])
+    };
+
+    doc = Object.assign({}, doc, {dataResources: [...doc.dataResources]});
+
+    // assuming that there is only one tabular dataResource
+    let resource = Object.assign({}, doc.dataResources.find(resource => resource.resType === 'table'));
+
+    pipeline.reduce((columns, step) => {
+
+        let outColumns = columns.map(column => Object.assign({}, column));
+
+        let mutateField = data => field => {
+            let target = outColumns.find(column => column.colName === field);
+            if (!target) {
+                target = {};
+                outColumns.push(target)
+            }
+            target.colName = field;
+            if (typeof data[field] === 'object')
+                target.colType = Object.keys(typeInferences).find(type => typeInferences[type].has(Object.keys(data[field])[0].substr(1)));
+            else if (typeof data[field] === 'string' && data[field][0] === '$')
+                return Object.assign(target, columns.find(column => column.colName === data[field].substr(1)));
+            else target.colType = {'number': 'real', 'string': 'string', 'boolean': 'boolean'}[typeof data[field]]; // javascript type: D3M type
+            target.role = target.role || ['suggestedTarget'];
+        };
+
+        if ('$addFields' in step) Object.keys(step.$addFields).forEach(mutateField(step.$addFields));
+
+        if ('$project' in step) {
+            // set of columns to mask
+            if (Object.values(step.$project).every(value => ['number', 'bool'].includes(typeof value) && !value))
+                return outColumns.filter(column => !(column.colName in step.$project));
+
+            Object.keys(step.$project).forEach(field => {
+                if (['number', 'bool'].includes(typeof step.$project[field]) && !step.$project[field])
+                    delete outColumns[outColumns.indexOf(column => column.colName === field)];
+                else mutateField(step.$project)(field)
+            });
+            return outColumns.filter(_=>_);
+        }
+
+        if ('$facet' in step) throw '$facet D3M datasetDoc.json translation not implemented';
+        if ('$group' in step) throw '$group D3M datasetDoc.json translation not implemented';
+        if ('$redact' in step) throw '$redact D3M datasetDoc.json translation not implemented';
+        if ('$replaceRoot' in step) throw '$replaceRoot D3M datasetDoc.json translation not implemented';
+        if ('$unwind' in step) throw '$unwind D3M datasetDoc.json translation not implemented';
+
+        return columns;
+    }, Object.assign({}, resource.columns))
+};

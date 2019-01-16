@@ -9,7 +9,7 @@ export default class ConfusionMatrix {
     }
 
     onupdate(vnode) {
-        (!this.classes || vnode.attrs.classes.length !== this.classes.size ||
+        (vnode.attrs.id !== this.id || !this.classes || vnode.attrs.classes.length !== this.classes.size ||
          !vnode.attrs.classes.every(clss => this.classes.has(clss))) && this.plot(vnode)
 
         // this is more aggressive about updates, but O(n^2) in a hot code path
@@ -24,9 +24,11 @@ export default class ConfusionMatrix {
     plot({dom, attrs}) {
 
         let {
-            data, classes, pipelineId,
+            id, data, classes, title,
             margin, startColor, endColor
         } = attrs;
+
+        this.id = id;
 
         this.classes = new Set(classes);
 
@@ -51,7 +53,7 @@ export default class ConfusionMatrix {
 
         // set the dimensions and margins of the graph
         let bound = dom.getBoundingClientRect();
-        let width = bound.width - widthLegend;
+        let width = bound.width - widthLegend - 20;
         let height = bound.height;
 
         let numrows = data.length;
@@ -235,7 +237,7 @@ export default class ConfusionMatrix {
         svg.append("text")
             .attr("transform", "translate(" + ((width + widthLegend) / 2) + " ," + (0 - 30) + ")")
             .style("text-anchor", "middle")
-            .text("Confusion Matrix: Pipeline " + pipelineId);
+            .text(title);
 
         svg.append("text")
             .attr("transform", "rotate(-90)")
@@ -250,6 +252,7 @@ export default class ConfusionMatrix {
     view({attrs}) {
         return m('div',
             mergeAttributes({
+                id: attrs.id,
                 style: {
                     width: '100%', height: '100%', // the svg fills all area is given
                     overflow: 'hidden' // prevents the scroll bar from causing the graphs to split lines

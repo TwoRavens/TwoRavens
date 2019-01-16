@@ -6,7 +6,7 @@ from tworaven_apps.eventdata_queries.models import \
     (EventDataSavedQuery, ArchiveQueryJob,
      AGGREGATE, SUBSET,
      TYPE_OPTIONS, TYPE_CHOICES,
-     METHOD_CHOICES, HOST_CHOICES)
+     METHOD_CHOICES, EXPORT_CHOICES, HOST_CHOICES)
 
 
 class EventDataSavedQueryForm(forms.ModelForm):
@@ -139,7 +139,9 @@ class EventDataGetManipulationForm(forms.Form):
     distinct = forms.CharField(required=False, widget=forms.Textarea)
     datafile = forms.CharField(required=False, widget=forms.Textarea)
     reload = forms.BooleanField(required=False)
-    export = forms.BooleanField(required=False)
+
+    export = forms.CharField(required=False, widget=forms.Textarea)
+    datasetDoc = forms.CharField(required=False, widget=forms.Textarea)
 
     def clean_collection_name(self):
         return self.cleaned_data.get('collection_name')
@@ -164,4 +166,11 @@ class EventDataGetManipulationForm(forms.Form):
         return self.cleaned_data.get('reload')
 
     def clean_export(self):
-        return self.cleaned_data.get('export')
+        if not self.cleaned_data['export']:
+            return
+        export = self.cleaned_data['export']
+        if export not in EXPORT_CHOICES:
+            raise forms.ValidationError("The export choice is not among %s: %s" % (str(EXPORT_CHOICES), export))
+        if export == 'problem' and not self.cleaned_data.get('datasetDoc'):
+            raise forms.ValidationError('The export choice "problem" must have a datasetDoc')
+        return export

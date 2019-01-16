@@ -424,17 +424,22 @@ def api_get_data(request):
     """Retrieve data MongoDB"""
     success, json_req_obj = get_request_body_as_json(request)
 
+    print(json_req_obj)
+    print(success)
+
     if not success:
         return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
 
     # check if data is valid
     try:
         form = EventDataGetManipulationForm(json_req_obj)
+        print(form.errors)
         if not form.is_valid():
             return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
     except json.decoder.JSONDecodeError as err:
         return JsonResponse({"success": False, "message": str(err)})
 
+    print('C')
     # ensure the dataset is present
     EventJobUtil.import_dataset(
         settings.TWORAVENS_MONGO_DB_NAME,
@@ -453,12 +458,19 @@ def api_get_data(request):
     if not success:
         return JsonResponse(get_json_error(results_obj_err))
 
-    if json_req_obj.get('export', False):
+    if json_req_obj.get('export') == 'dataset':
         success, results_obj_err = EventJobUtil.export_dataset(
             settings.MONGO_COLLECTION_PREFIX + json_req_obj['collection_name'],
             results_obj_err)
 
-    return JsonResponse({'success': success, 'data': json_comply(results_obj_err)} if success else get_json_error(results_obj_err))
+    if json_req_obj.get('export') == 'problem':
+        success, results_obj_err = EventJobUtil.export_problem(
+            settings.MONGO_COLLECTION_PREFIX + json_req_obj['collection_name'],
+            results_obj_err,
+            json_req_obj['datasetDoc'])
+
+    return JsonResponse(
+        {'success': success, 'data': json_comply(results_obj_err)} if success else get_json_error(results_obj_err))
 
 
 @csrf_exempt

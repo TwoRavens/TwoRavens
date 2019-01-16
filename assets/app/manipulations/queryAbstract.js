@@ -2,6 +2,7 @@ import m from "mithril";
 
 // scope creep
 import * as eventdata from "../eventdata/eventdata";
+import {alertError, alertLog} from "../app";
 
 // constraint trees used for subset and aggregate
 
@@ -95,13 +96,13 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
 
     // Don't add an empty constraint
     if (Object.keys(abstractBranch).length === 0) {
-        alert("No options have been selected. Please make a selection.");
+        alertError("No options have been selected. Please make a selection.");
         return false;
     }
 
     // Don't add an invalid constraint
     if ('error' in abstractBranch) {
-        alert(abstractBranch.error);
+        alertError(abstractBranch.error);
         return false;
     }
 
@@ -158,7 +159,7 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
             accumulator.formatTarget === abstractBranch.formatTarget);
 
         if (duplicate !== -1) {
-            alert('Combined new selections with an existing event measure.');
+            alertLog('Combined new selections with an existing event measure.');
             let colNames = new Set(step.measuresAccum[duplicate].children.map(child => child.name));
 
             step.measuresAccum[duplicate].children = [

@@ -2,6 +2,8 @@ import os
 import csv
 import json
 import logging
+import shutil
+
 from django.conf import settings
 from collections import OrderedDict
 
@@ -26,13 +28,8 @@ from tworaven_apps.ta2_interfaces.basic_problem_writer import BasicProblemWriter
 
 from tworaven_apps.raven_auth.models import User
 
-from bson.json_util import (loads, dumps)
-
-# query reformatting
-from bson.objectid import ObjectId
-from bson.int64 import Int64
-from datetime import datetime
-from dateutil import parser
+from tworaven_apps.configurations.utils import \
+    (get_latest_d3m_config,)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -544,3 +541,52 @@ class EventJobUtil(object):
             return err_resp(bpw.get_error_message())
 
         return ok_resp(bpw.new_filepath)
+
+
+    @staticmethod
+    def export_problem(collection, data, metadata):
+        """Export the problem using the 'BasicProblemWriter' """
+
+        if not isinstance(data, list):
+            user_msg = 'export_dataset failed.  "data" must be a list'
+            LOGGER.error(user_msg)
+            return err_resp(user_msg)
+
+        d3m_config = get_latest_d3m_config()
+        if not d3m_config:
+            user_msg = 'export_problem failed. no d3m config'
+            LOGGER.error(user_msg)
+            return err_resp(user_msg)
+
+        extension = 0
+        while os.path.exists(os.path.join(d3m_config.temp_storage_root, collection + str(extension))):
+            extension += 1
+
+        # TODO this is obviously impure, but ideally this is replaced with a D3M primitive anyways
+        collection_folderpath = os.path.join('ravens_volume', 'test_data', collection)
+        temp_folderpath = os.path.join(d3m_config.temp_storage_root, collection + str(extension))
+
+        metadata_filepath = d3m_config.dataset_schema.replace('/ravens_volume/test_data/' + collection, temp_folderpath)
+        data_filepath = os.path.join(os.path.dirname(metadata_filepath), 'tables', 'learningData.csv')
+
+        shutil.copy(collection_folderpath, temp_folderpath)
+
+        with open(d3m_config.dataset_schema, 'w') as metadata_file:
+            json.dump(metadata_file, metadata)
+
+        try:
+            os.remove(data_filepath)
+        except FileNotFoundError:
+            pass
+
+        params = {BasicProblemWriter.IS_CSV_DATA: True,
+                  BasicProblemWriter.INCREMENT_FILENAME: False}
+
+        bpw = BasicProblemWriter(data_filepath, data, **params)
+        if bpw.has_error():
+            return err_resp(bpw.get_error_message())
+
+        return ok_resp({
+            'problem_folder': temp_folderpath,
+            'data_file': data_filepath
+        })

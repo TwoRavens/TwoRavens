@@ -21,8 +21,11 @@ import * as queryAbstract from './queryAbstract';
 import * as queryMongo from "./queryMongo";
 import hopscotch from 'hopscotch';
 import CanvasImputation from "../canvases/CanvasImputation";
+import {datadocument} from "../app";
+import {alertError} from "../app";
+import {alertLog} from "../app";
 
-// dataset name from app.configurations.name
+// dataset name from app.datadocument.about.datasetID
 // variable names from the keys of the initial preprocess variables object
 
 
@@ -266,7 +269,7 @@ export function rightpanel() {
             }
         }, m(PipelineFlowchart, {
             compoundPipeline: getPipeline(),
-            pipelineId: app.configurations.name,
+            pipelineId: app.datadocument.about.datasetID,
             editable: true
         }));
 }
@@ -544,7 +547,7 @@ export let setQueryUpdated = async state => {
         if (!pendingHardManipulation && state) {
             hopscotch.startTour(datasetChangedTour, 0);
             Object.keys(app.manipulations)
-                .filter(key => key !== app.configurations.name)
+                .filter(key => key !== app.datadocument.about.datasetID)
                 .forEach(key => delete app.manipulations[key])
         }
         pendingHardManipulation = state;
@@ -603,8 +606,8 @@ export let getProblemPipeline = problem => {
 };
 
 export let getPipeline = (problem) => {
-    if (!(app.configurations.name in app.manipulations)) app.manipulations[app.configurations.name] = [];
-    return [...app.manipulations[app.configurations.name], ...(getProblemPipeline(problem) || [])];
+    if (!(app.datadocument.about.datasetID in app.manipulations)) app.manipulations[app.datadocument.about.datasetID] = [];
+    return [...app.manipulations[app.datadocument.about.datasetID], ...(getProblemPipeline(problem) || [])];
 };
 
 // when set, the constraint menu will rebuild non-mithril elements (like plots) on the next redraw
@@ -651,7 +654,7 @@ export let setConstraintMenu = async (menu) => {
         let candidatevariableData = await loadMenu(menu.pipeline.slice(0, menu.pipeline.indexOf(menu.step)), summaryStep, {recount: true});
         if (candidatevariableData) variableMetadata = candidatevariableData;
         else {
-            alert('The pipeline at this stage matches no records. Delete constraints to match more records.');
+            alertError('The pipeline at this stage matches no records. Delete constraints to match more records.');
             constraintMenu = undefined;
             app.resetPeek();
             m.redraw();
@@ -728,12 +731,12 @@ export let setConstraintType = (type, pipeline) => {
         constraintMetadata.buckets = Math.min(Math.max(10, Math.floor(varMeta.valid / 10)), 100);
 
         if (varMeta.types.includes('string')) {
-            alert(`A density plot cannot be drawn for the nominal variable ${column}. Switching to discrete.`);
+            alertLog(`A density plot cannot be drawn for the nominal variable ${column}. Switching to discrete.`);
             constraintMetadata.type = 'discrete';
         }
 
         if (varMeta.max === varMeta.min) {
-            alert(`The max and min are the same in ${column}. Switching to discrete.`);
+            alertLog(`The max and min are the same in ${column}. Switching to discrete.`);
             constraintMetadata.type = 'discrete';
         }
     }
@@ -746,8 +749,8 @@ export let getData = async body => m.request({
     url: app.mongoURL + 'get-data',
     method: 'POST',
     data: Object.assign({
-        datafile: app.zparams.zd3mdata, // collection/dataset name
-        collection_name: app.configurations.name, // location of the dataset csv
+        datafile: app.zparams.zd3mdata, // location of the dataset csv
+        collection_name: app.datadocument.about.datasetID // collection/dataset name
     }, body)
 }).then(response => {
     if (!response.success) throw response;
@@ -817,9 +820,9 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
 
     let success = true;
     let onError = err => {
-        if (err === 'no records matched') alert("No records match your subset. Plots will not be updated.");
+        if (err === 'no records matched') alertError("No records match your subset. Plots will not be updated.");
         else console.error(err);
-        alert(err.message);
+        alertError(err.message);
         success = false;
     };
 
@@ -868,7 +871,7 @@ export let rebuildPreprocess = async () => {
     let dataPath = await getData({
         method: 'aggregate',
         query: compiled,
-        export: true
+        export: 'dataset'
     });
 
     let targetPath = dataPath.split('/').slice(0, dataPath.split('/').length - 1).join('/') + '/preprocess.json';
@@ -889,7 +892,7 @@ export let rebuildPreprocess = async () => {
 
     if (!response) {
         console.log('preprocess failed');
-        alert('preprocess failed. ending user session.');
+        alertError('preprocess failed. ending user session.');
         app.endsession();
         return;
     }
@@ -967,7 +970,33 @@ export async function buildDatasetUrl(problem) {
     return await getData({
         method: 'aggregate',
         query: JSON.stringify(compiled),
-        export: true
+        export: 'dataset'
+    });
+}
+
+export async function buildProblemUrl(problem) {
+    let abstractPipeline = [
+        ...getPipeline(problem),
+        {
+            type: 'menu',
+            metadata: {
+                type: 'data',
+                variables: [...problem.predictors, problem.target],
+                nominal: !app.is_manipulate_mode && app.nodes
+                    .filter(node => node.nature === 'nominal')
+                    .map(node => node.name)
+            }
+        }
+    ];
+
+    let compiled = queryMongo.buildPipeline(abstractPipeline, Object.keys(variablesInitial))['pipeline'];
+    let metadata = queryMongo.translateDatasetDoc(compiled, datadocument);
+
+    return await getData({
+        method: 'aggregate',
+        query: JSON.stringify(compiled),
+        export: 'problem',
+        datasetDoc: JSON.stringify(metadata)
     });
 }
 

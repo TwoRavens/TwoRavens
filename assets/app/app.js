@@ -129,7 +129,7 @@ export async function updatePeek(pipeline) {
     peekSkip += data.length;
 
     if (data.length + (peekData || []).length === 0)
-        alert('The pipeline at this stage matches no records. Delete constraints to match more records.');
+        alertError('The pipeline at this stage matches no records. Delete constraints to match more records.');
 
     if (data.length === 0) {
         peekIsExhausted = true;
@@ -175,10 +175,7 @@ export let solverPending = false;
 export let setSolverPending = state => solverPending = state;
 
 export let solver_res = []
-export let setSolver_res = res => solver_res = res;
-let solver_res_user = []
 let problem_sent = []
-let problem_sent_user = []
 let problems_in_preprocess = []
 
 // determines which variable is selected for additional analysis in the classification results menu
@@ -441,11 +438,35 @@ let failset = ["TIME_SERIES_FORECASTING","GRAPH_MATCHING","LINK_PREDICTION","tim
 
 // object that contains all information about the returned pipelines
 export let allPipelineInfo = {};
-export let pipelineHeader = ['PipelineID', 'Score'];
+export let ravenPipelineInfo = {};
 export let pipelineTable = [];
 
-export let discoveryHeader = ['problem_id', 'system', 'meaningful'];
 export let discoveryTable = [];
+
+
+// replacement for javascript's blocking 'alert' function, draws a popup similar to 'alert'
+export let alertLog = (value, shown) => {
+    alerts.push({type: 'log', time: new Date(), description: value});
+    alertsShown = shown !== false; // Default is 'true'
+};
+export let alertWarn = (value, shown) => {
+    alerts.push({type: 'warn', time: new Date(), description: value});
+    alertsShown = shown !== false; // Default is 'true'
+    console.trace('warning: ', value);
+};
+export let alertError = (value, shown) => {
+    alerts.push({type: 'error', time: new Date(), description: value});
+    alertsShown = shown !== false; // Default is 'true'
+    console.trace('error: ', value);
+};
+
+// alerts popup internals
+export let alerts = [];
+export let alertsLastViewed = new Date();
+
+export let alertsShown = false;
+export let setAlertsShown = state => alertsShown = state;
+
 
 export let logArray = [];
 export let zparams = {
@@ -513,7 +534,7 @@ export let mytarget = '';
 export let setMytarget = target => mytarget = target;
 
 export let configurations = {};
-let datadocument = {};
+export let datadocument = {};
 
 export let domainIdentifier = null; // available throughout apps js; used for saving workspace
 
@@ -824,7 +845,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     if ((IS_D3M_DOMAIN)&&(d3mData == null)){
         const d3m_path_err = 'NO VALID d3mData path!! ' + JSON.stringify(res)
         console.log(d3m_path_err);
-        alert('debug (be more graceful): ' + d3m_path_err);
+        alertError('debug (be more graceful): ' + d3m_path_err);
     }
 
     // hardcoding this, once get-problem-data-file-info is revised this hardcode can go away and use the previous two LOC
@@ -849,7 +870,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         task2_finished = true;
         problemDocExists = false;
     } else {
-        alert("Something Unusual happened reading problem schema.")
+        alertLog("Something Unusual happened reading problem schema.")
     };
 
     if(problemDocExists){
@@ -857,7 +878,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
         // Note: There is no res.success field in this return state
         // if (!res.success){
-        //   alert('problem schema not available: ' + res.message);
+        //   alertError('problem schema not available: ' + res.message);
         //   return
         // }
 
@@ -903,16 +924,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // if no columns in the datadocument, go to swandive
     // 4a. Set datadocument columns!
-    let datadocument_columns;
-    let col_idx;
-    for (col_idx = 0; col_idx < datadocument.dataResources.length; col_idx++) {
-        if(datadocument.dataResources[col_idx].columns) {
-            datadocument_columns = datadocument.dataResources[col_idx].columns;
-            console.log('columns found in datadocument.dataResources[' + col_idx + '].columns');
-            break
-        }
-    }
-    if (typeof datadocument_columns === "undefined") {
+
+    let datadocument_columns = (datadocument.dataResources.find(resource => resource.columns) || {}).columns;
+    if (datadocument_columns === undefined) {
         console.log('D3M WARNING: datadocument.dataResources[x].columns is undefined.');
         swandive = true;
     }
@@ -951,7 +965,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         byId('cite').children[0].textContent = zparams.zdatacite;
     }
     // drop file extension
-    let dataname = IS_D3M_DOMAIN ? zparams.zdata : zparams.zdata.replace(/\.(.*)/, '');
+    let dataname = IS_D3M_DOMAIN ? zparams.zdata : datadocument.about.datasetID;
     d3.select("#dataName").html(dataname);
     // put dataset name, from meta-data, into page title
     d3.select("title").html("TwoRavens " + dataname);
@@ -961,13 +975,13 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // if swandive, we have to set valueKey here so that left panel can populate.
     if (swandive) {
-        alert('Exceptional data detected.  Please check the logs for "D3M WARNING"');
+        alertWarn('Exceptional data detected.  Please check the logs for "D3M WARNING"');
         //    let mydataRes = datadocument.dataResources;
         //  for (let i = 0; i < mydataRes.length; i++) {
         //       valueKey.push(mydataRes[i].resFormat[0]);
         //  }
         // end session if neither trainData nor trainTargets?
-        // valueKey.length === 0 && alert("no trainData or trainTargest in data description file. valueKey length is 0");
+        // valueKey.length === 0 && alertWarn("no trainData or trainTargest in data description file. valueKey length is 0");
         // perhaps allow users to unlock and select things?
         byId('btnLock').classList.add('noshow');
         byId('btnForce').classList.add('noshow');
@@ -1054,12 +1068,11 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
         console.log('json_input: ', json_input);
         console.log('url: ', url);
-        let data = new FormData();
         try {
             res = read(await m.request({method: 'POST', url: url, data: json_input}));
         } catch(_) {
             console.log('preprocess failed');
-            alert('preprocess failed. ending user session.');
+            alertError('preprocess failed. ending user session.');
             endsession();
         }
     }
@@ -1092,7 +1105,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         group1: false,
         group2: false,
         forefront: false
-    }, preprocess[variable])))
+    }, preprocess[variable])));
 
     // 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN)
     if(!swandive) {
@@ -1126,27 +1139,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     problem_sent.length = 0;
 }
 
-
-
-export function loadResult(my_disco) {
-    (my_disco || disco).forEach((problem, i) => {
-
-        let prob_name = (problem.description || {}).problem_id || problem.problem_id;
-
-        if (problems_in_preprocess.includes(prob_name))
-            console.log("Problem already exists in preprocess", prob_name);
-        else problem_sent.push({
-            "description": problem,
-            "result": solver_res[i]
-        });
-        // console.log("problem to be sent ", problem_sent);
-    })
-
-    // console.log("problem to be sent ", problem_sent.splice())
-    let preprocess_id = 1
-    let version = 1
-    // addProblem(preprocess_id, version).then(api_res => console.log("ADD PROBLEM/RESULT API RESPONSE ", api_res))
-}
 /**
    called on app start
    @param {string} fileid
@@ -1160,7 +1152,7 @@ export function loadResult(my_disco) {
 export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     if (PRODUCTION && fileid === '') {
         let msg = 'Error: No fileid has been provided.';
-        alert(msg);
+        alertError(msg);
         throw new Error(msg);
     }
 
@@ -1396,7 +1388,7 @@ export function layout(layoutConstant, v2) {
         } else if (allNodes.length === 1) {
             nodes = [allNodes[0]];
         } else {
-            alert("There are zero variables in the metadata.");
+            alertError("There are zero variables in the metadata.");
             return;
         }
     }
@@ -2274,7 +2266,7 @@ export function clickVar(elem, $nodes) {
             : exploreVariate === 'Trivariate' ? 3
             : 5;
         if ($nodes.length >= max) {
-            alert('Please deselect another variable first.')
+            alertLog('Please deselect another variable first.')
             return;
         }
     }
@@ -2368,41 +2360,93 @@ export function zPop() {
 }
 
 // when selected, the key/value [mode]: [pipelineID] is set.
-export let selectedPipeline;
-export let setSelectedPipeline = result => {
-    selectedPipeline = result;
-    if (currentMode === 'model') resultsplotinit(result);
-}
+export let selectedPipelines = new Set([]);
+export let setSelectedPipeline = pipelineID => {
+    pipelineID = String(pipelineID);
+
+    if (modelComparison) selectedPipelines.has(pipelineID)
+        ? selectedPipelines.delete(pipelineID)
+        : selectedPipelines.add(pipelineID);
+    else selectedPipelines = new Set([pipelineID]);
+
+    // ensures results menu is in a valid state
+    setSelectedResultsMenu(selectedResultsMenu);
+
+    if ('predictedValues' in (allPipelineInfo[pipelineID] || {}))
+        resultsplotgraph(pipelineID)
+};
+
+// read-only abstraction layer for retrieving useful pipeline data
+export let pipelineAdapter = new Proxy({}, {
+    ownKeys() {return [...Object.keys(ravenPipelineInfo), ...Object.keys(allPipelineInfo)]},
+    getOwnPropertyDescriptor() {return {enumerable: true, configurable: true};},
+    has(_, key) {return key in ravenPipelineInfo || key in allPipelineInfo},
+
+    get(obj, pipelineID) {
+        if (pipelineID in ravenPipelineInfo) return {
+            get actualValues() {
+                return ravenPipelineInfo[pipelineID].predictor_values.actualvalues;
+            },
+            get fittedValues() {
+                return ravenPipelineInfo[pipelineID].predictor_values.fittedvalues;
+            },
+            get score() {
+                return 'no score'; // NOTE: I'm considering D3M more important, I don't want to mix a ravens R^2 score with whatever d3m is using in the pipelineTable
+            },
+            get target() {return ravenPipelineInfo[pipelineID].dependent_variable[0]},
+            get predictors() {return ravenPipelineInfo[pipelineID].predictors},
+            get description() {return ravenPipelineInfo[pipelineID].description[0]},
+            get task() {return ravenPipelineInfo[pipelineID].task[0]},
+            get model() {return ravenPipelineInfo[pipelineID].model_type[0]}
+        };
+
+        if (pipelineID in allPipelineInfo) return {
+            get actualValues() {
+                return allPipelineInfo.rookpipe.dvvalues;
+            },
+            get fittedValues() {
+                if ((allPipelineInfo[pipelineID].predictedValues || {}).success)
+                    return allPipelineInfo[pipelineID].predictedValues.data
+                        .map(item => item[allPipelineInfo.rookpipe.depvar])
+            },
+            get score() {return allPipelineInfo[pipelineID].score},
+
+            get target() {return (allPipelineInfo.rookpipe || {}).depvar},
+            get predictors() {return (allPipelineInfo.rookpipe || {}).predictors},
+            get description() {
+                return (allPipelineInfo[pipelineID].pipeline || {}).description},
+            get task() {return allPipelineInfo[pipelineID].status},
+            get model() {return `${allPipelineInfo[pipelineID].steps.length} steps`}
+        };
+
+        // no need to perform null check while accessing pipeline attributes
+        return {};
+    }
+})
 
 export let selectedResultsMenu = 'Prediction Summary';
-export let setSelectedResultsMenu = result => selectedResultsMenu = result;
+export let setSelectedResultsMenu = result => {
+    if (modelComparison) selectedResultsMenu = 'Prediction Summary';
+    let isValid = state => {
+        let selectedPipeline = [...selectedPipelines][0] || '';
+        if (selectedPipeline.includes('raven') && ['Generate New Predictions', 'Visualize Pipeline'].includes(state)) return false;
+        if (!selectedPipeline.includes('raven') && ['Solution Table'].includes(state)) return false;
+        return true;
+    };
 
-export let selectedDiscoverySolutionMenu;
-export let setSelectedDiscoverySolutionMenu = result => selectedDiscoverySolutionMenu = result;
-
-// No longer used:
-// Update table when pipeline is fitted
-//function onPipelineCreate(PipelineCreateResult, id) {
-//    let myscore = PipelineCreateResult.data.response.scores[0].value.raw.double.toPrecision(3);   // Makes a number of assumptions about how values are returned, also need to attempt to deal w multiple scores
-//    let matchedPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(id, 10))
-//    matchedPipeline['Score'] = String(myscore);
-//}
+    if (isValid(result)) selectedResultsMenu = result;
+    if (!isValid(selectedResultsMenu)) selectedResultsMenu = 'Prediction Summary';
+};
 
 // Update table when pipeline is solved
 function onPipelinePrime(PipelineCreateResult, rookpipe) {
 
     // Need to deal with (exclude) pipelines that are reported, but failed.  For approach, see below.
-
-
-
-    if(PipelineCreateResult.id in allPipelineInfo) {
-        allPipelineInfo[PipelineCreateResult.id] = Object.assign(allPipelineInfo[PipelineCreateResult.id], PipelineCreateResult);
-    } else {
+    if (PipelineCreateResult.id in allPipelineInfo)
+        Object.assign(allPipelineInfo[PipelineCreateResult.id], PipelineCreateResult);
+    else {
         allPipelineInfo[PipelineCreateResult.id] = PipelineCreateResult;
-        pipelineTable.push({
-            'PipelineID': PipelineCreateResult.id,
-            'Score': "scoring"
-        });
+        allPipelineInfo[PipelineCreateResult.id].score = 'scoring';
     }
 
         // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
@@ -2703,7 +2747,7 @@ function getScoreSolutionDefaultParameters(){
 
 export function downloadIncomplete() {
     if (PRODUCTION && zparams.zsessionid === '') {
-        alert('Warning: Data download is not complete. Try again soon.');
+        alertWarn('Warning: Data download is not complete. Try again soon.');
         return true;
     }
     return false;
@@ -2712,25 +2756,24 @@ export function downloadIncomplete() {
 /**
     called by clicking 'Solve This Problem' in model mode
 */
-export async function estimate(btn) {
+export async function estimate() {
     if (!IS_D3M_DOMAIN){
         // let userUsg = 'This code path is no longer used.  (Formerly, it used Zelig.)';
         // console.log(userMsg);
         // alert(userMsg);
         // return;
-
+        //
         // if (downloadIncomplete()) {
         //     return;
         // }
-
         // zPop();
         // // write links to file & run R CMD
         // // package the output as JSON
         // // add call history and package the zparams object as JSON
         // zparams.callHistory = callHistory;
         // zparams.allVars = valueKey.slice(10, 25); // because the URL is too long...
-
-
+        //
+        //
         // estimateLadda.start(); // start spinner
         // let json = await makeRequest(ROOK_SVC_URL + 'zeligapp', zparams);
         // if (!json) {
@@ -2738,7 +2781,7 @@ export async function estimate(btn) {
         // } else {
         //     allResults.push(json);
         //     if (!estimated) byId("tabResults").removeChild(byId("resultsHolder"));
-
+        //
         //     estimated = true;
         //     d3.select("#tabResults")
         //         .style("display", "block");
@@ -2746,19 +2789,19 @@ export async function estimate(btn) {
         //         .style("display", "block");
         //     d3.select("#modelView")
         //         .style("display", "block");
-
+        //
         //     // programmatic click on Results button
         //     trigger("btnSetx", "click"); // Was "btnResults" - changing to simplify user experience for testing.
-
+        //
         //     let model = "Model".concat(modelCount = modelCount + 1);
-
+        //
         //     function modCol() {
         //         d3.select("#modelView")
         //             .selectAll("p")
         //             .style('background-color', hexToRgba(varColor));
         //     }
         //     modCol();
-
+        //
         //     d3.select("#modelView")
         //         .insert("p", ":first-child") // top stack for results
         //         .attr("id", model)
@@ -2774,10 +2817,10 @@ export async function estimate(btn) {
         //                 .style('background-color', hexToRgba(selVarColor));
         //             viz(this.id);
         //         });
-
+        //
         //     let rCall = [json.call];
         //     showLog('estimate', rCall);
-
+        //
         //     viz(model);
         // }
     } else if (swandive) { // IS_D3M_DOMAIN and swandive is true
@@ -2791,7 +2834,7 @@ export async function estimate(btn) {
 
         estimateLadda.start(); // start spinner
 
-        alert('estimate() function. Check app.js error with swandive (err: 003)');
+        alertError('estimate() function. Check app.js error with swandive (err: 003)');
         //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(valueKey, mytarget));
         //res && onPipelineCreate(res);   // arguments were wrong, and this function no longer needed
 
@@ -2815,6 +2858,26 @@ export async function estimate(btn) {
                                                                  ROOKPIPE_FROM_REQUEST.depvar,
                                                                  2);
 
+            let hasManipulation = selectedProblem.problem_id in manipulations && manipulations[selectedProblem.problem_id].length > 0;
+            let hasNominal = [selectedProblem.target, ...selectedProblem.predictors]
+                .some(variable => zparams.znom.includes(variable));
+
+            let needsProblemCopy = hasManipulation || hasNominal;
+
+            let zd3mdata = zparams.zd3mdata;
+            if (needsProblemCopy) {
+                // TODO: problem_path is not getting used in D3M
+                let {problem_path, data_file} = await manipulate.buildProblemUrl(selectedProblem);
+                zd3mdata = data_file;
+            }
+
+            makeRequest(ROOK_SVC_URL + 'solverapp', {prob: selectedProblem, zd3mdata})
+                .then(response => {
+                    let ravenID = 'raven ' + ravenPipelineID++;
+                    ravenPipelineInfo[ravenID] = response;
+                    if (selectedPipelines.size === 0) setSelectedPipeline(ravenID);
+                });
+
             let allParams = {searchSolutionParams: searchSolutionParams,
                              fitSolutionDefaultParams: getFitSolutionDefaultParameters(),
                              produceSolutionDefaultParams: getProduceSolutionDefaultParameters(),
@@ -2826,12 +2889,12 @@ export async function estimate(btn) {
             console.log(JSON.stringify(res));
             if (res===undefined){
               handleENDGetSearchSolutionsResults();
-              alert('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
+              alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
 
               return;
             }else if(!res.success){
               handleENDGetSearchSolutionsResults();
-              alert('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
+              alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
               return;
             }
 
@@ -2944,13 +3007,13 @@ export async function updateRequest(url) {
         res = await m.request(url, {method: 'POST', data:{}});       // maybe change the POST and data
         //console.log('response:', res);
         if (Object.keys(res)[0] === 'warning') {
-            alert('Warning: ' + res.warning);
+            alertWarn('Warning: ' + res.warning);
             end_ta3_search(false, res.warning);
         }
     } catch(err) {
         end_ta3_search(false, err);
         cdb(err);
-        alert(`Error: call to ${url} failed`);
+        alertError(`Error: call to ${url} failed`);
     }
     return res;
 }
@@ -2965,13 +3028,13 @@ export async function makeRequest(url, data) {
         res = await m.request(url, {method: 'POST', data: data});
         // console.log('response:', res);
         if (Object.keys(res)[0] === 'warning') {
-            alert('Warning: ' + res.warning);
+            alertWarn('Warning: ' + res.warning);
             end_ta3_search(false, res.warning);
         }
     } catch(err) {
         end_ta3_search(false, err);
         cdb(err);
-        alert(`Error: call to ${url} failed`);
+        alertError(`Error: call to ${url} failed`);
     }
 
    /*
@@ -3085,7 +3148,7 @@ export let popoverContent = node => {
     div(node.uniques, 'Uniques', rint(node.uniques));
     div(node.herfindahl, 'Herfindahl', prec(node.herfindahl, 4));
     return text + '</tbody></table>';
-}
+};
 
 /** needs doc */
 export function panelPlots() {
@@ -3264,7 +3327,7 @@ export function subsetSelect(btn) {
     }
 
     if (subsetEmpty == true) {
-        alert("Warning: No new subset selected.");
+        alertWarn("Warning: No new subset selected.");
         return;
     }
 
@@ -3416,20 +3479,28 @@ export function fakeClick() {
 */
 export async function endsession() {
     if(Object.keys(allPipelineInfo).length === 0) {
-        alert("No pipelines exist. Cannot mark problem as complete.");
+        alertError("No pipelines exist. Cannot mark problem as complete.");
         return;
     }
 
-    if (!selectedPipeline) {
-        alert("No pipeline selected. Cannot mark problem as complete.");
+    if (selectedPipelines.size === 0) {
+        alertWarn("No pipelines exist. Cannot mark problem as complete");
+        return;
+    }
+    if (selectedPipelines.size > 1) {
+        alertWarn("More than one pipeline selected. Please select one TA2 pipeline");
+        return;
+    }
+    if ([...selectedPipelines].filter(pipelineID => pipelineID.includes('raven')).length !== 0) {
+        alertWarn("Cannot select a TwoRavens pipeline. Please select a different pipeline");
         return;
     }
 
     console.log("== this should be the selected solution ==");
-    console.log(allPipelineInfo[selectedPipeline]);
-    console.log(allPipelineInfo[selectedPipeline].response.solutionId);
+    console.log(allPipelineInfo[[...selectedPipelines][0]]);
+    console.log(allPipelineInfo[[...selectedPipelines][0]].response.solutionId);
 
-    let chosenSolutionId = allPipelineInfo[selectedPipeline].response.solutionId;
+    let chosenSolutionId = allPipelineInfo[[...selectedPipelines][0]].response.solutionId;
 
     // calling exportpipeline
     let end = await exportpipeline(chosenSolutionId);
@@ -3559,24 +3630,12 @@ function setPebbleCharge(d){
     }
 }
 
-/** needs doc */
-export async function resultsplotinit(pid) {
-    if (!('predictedValues' in allPipelineInfo[pid])){
-        // The FitSolution/ProduceSolution sequences are now
-        // run server side....
-        //generatePredictions(pid, true);                    // generate predicted values, and then plot
-
-    } else {
-        resultsplotgraph(pid);                             // predicted values already exist
-    };
-}
-
 export function resultsplotgraph(pid){
     let pipelineInfo = allPipelineInfo[pid];
-    console.log("pid:");
-    console.log(pid);
+    // console.log("pid:");
+    // console.log(pid);
     let mydv = allPipelineInfo.rookpipe.depvar[0];          // When there are multiple CreatePipelines calls, then this only has values from latest value
-    console.log(mydv);
+    // console.log(mydv);
     let dvvalues = allPipelineInfo.rookpipe.dvvalues;       // When there are multiple CreatePipelines calls, then this only has values from latest value
 
     // Terminate plot if predicted values not available
@@ -3585,7 +3644,6 @@ export function resultsplotgraph(pid){
 
 
     let allPreds = pipelineInfo.predictedValues.data;
-    console.log(Object.keys(allPreds[1]));
     let predvals = [];
 
     let mydvI = Object.keys(allPreds[1]).indexOf(mydv);
@@ -3598,7 +3656,7 @@ export function resultsplotgraph(pid){
             predvals.push(allPreds[i]["preds"]);
         }
     } else {
-        alert("DV does not match. No Results window.");
+        alertError("DV does not match. No Results window.");
         return;
     }
 
@@ -3634,6 +3692,8 @@ export function resultsplotgraph(pid){
 /* Generates confusion table data and labels, given the expected and predicted values*/
 /* if a factor is passed, the resultant table will be 2x2 with respect to the factor */
 export function generateConfusionData(Y_true, Y_pred, factor=undefined) {
+    if (!Y_true || ! Y_pred) return;
+
     // dvvalues are generally numeric
     Y_true = Y_true.map(String);
 
@@ -3686,33 +3746,19 @@ export function generatePerformanceData(confusionData2x2) {
     }
 }
 
-/**
-  Sort the Pipeline table, putting the higest score at the top
- */
-export function sortPipelineTable(pt){
-    let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSquaredErrorAvg", "meanAbsoluteError"];  // array of metrics to sort low to high
-    let reverse = (reverseSet.indexOf(d3mProblemDescription.performanceMetrics[0].metric) > -1) ? -1 : 1;
-    if (reverse == -1){
-        resultsMetricDescription = "Smaller numbers are better fits"
-    }
+export let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSquaredErrorAvg", "meanAbsoluteError"];  // array of metrics to sort low to high
 
-    pt = pt.sort(function(a,b){
-        if (a['Score']===b['Score']){
-            return(0)
-        } else if (a['Score']=="scoring"){
-            return(100)
-        } else if (b['Score']=="scoring") {
-            return(-100)
-        } else if (a['Score']=="no score"){
-            return(1000)
-        } else if (b['Score']=="no score"){
-            return(-1000)
-        } else {
-            return (parseFloat(b['Score']) - parseFloat(a['Score'])) * reverse;
-        };
-    });
-    return pt;
-};
+/**
+ Sort the Pipeline table, putting the highest score at the top
+ */
+export function sortPipelineTable(a, b) {
+    if (a === b) return 0;
+    if (a === "scoring") return 100;
+    if (b === "scoring") return -100;
+    if (a === "no score") return 1000;
+    if (b === "no score") return -1000;
+    return (parseFloat(b) - parseFloat(a)) * (reverseSet.includes(d3mProblemDescription.performanceMetrics[0].metric) ? -1 : 1);
+}
 
 /** needs doc */
 export function setxTable(features) {
@@ -4131,6 +4177,7 @@ export let selectedProblem
 export function setSelectedProblem(problem) {
     if (selectedProblem === problem) return; // ignore if already set
 
+
     selectedProblem = problem;
     updateRightPanelWidth();
 
@@ -4190,12 +4237,11 @@ export function setSelectedProblem(problem) {
 
     // will trigger the call to solver, if a menu that needs that info is shown
     setSolverPending(true);
-    solver_res.length = 0;
+    ravenPipelineInfo = {};
     confusionFactor = undefined;
 }
 
 export function getProblemCopy(problem) {
-    let problemId = problem.problem_id;
     problem = jQuery.extend(true, {}, problem);  // deep copy of original
 
     let offset = 1;
@@ -4213,6 +4259,15 @@ export function getProblemCopy(problem) {
 
     return problem;
 }
+
+// When enabled, multiple pipelineTable pipelineIDs may be selected at once
+export let modelComparison = false;
+export let setModelComparison = state => {
+    if (!state) selectedPipelines = new Set([...selectedPipelines].slice(undefined, 1));
+    modelComparison = state;
+
+    setSelectedResultsMenu('Prediction Summary');
+};
 
 export let checkedDiscoveryProblems = new Set();
 export let setCheckedDiscoveryProblem = (status, problem) => {
@@ -4243,7 +4298,7 @@ export async function submitDiscProb() {
         } else {
             console.log('omitting:');
             console.log(disco[i]);
-        };
+        }
     }
 
     // write the CSV file requested by NIST that describes properties of the solutions
@@ -4275,10 +4330,6 @@ export function deleteFromDisc(discov){
     if (index > -1) {
         disco.splice(index, 1);
     }
-}
-
-export function saveDisc() {
-    selectedProblem.description = document.getElementById("discoveryInput").value;
 }
 
 export function deleteProblem(preproess_id, version, problem_id) {
@@ -4481,57 +4532,49 @@ function primitiveStepRemoveColumns (aux) {
   Handle a websocket sent GetSearchSolutionResultsResponse
   wrapped in a StoredResponse object
 */
-export async function handleGetSearchSolutionResultsResponse(response1){
-  if(typeof response1===undefined){
-    console.log('GetSearchSolutionResultsResponse: Error.  "response1" undefined');
-    return;
-  }
-  let resizeTriggered = false;
+export async function handleGetSearchSolutionResultsResponse(response1) {
+    if (typeof response1 === undefined) {
+        console.log('GetSearchSolutionResultsResponse: Error.  "response1" undefined');
+        return;
+    }
 
-  // ----------------------------------------
-  // (1) Pull the solutionId
-  // ----------------------------------------
-  console.log('(1) Pull the solutionId');
+    // ----------------------------------------
+    // (1) Pull the solutionId
+    // ----------------------------------------
+    console.log('(1) Pull the solutionId');
 
-  // Note: the response.id becomes the Pipeline id
-  //
-  //
-  if(typeof response1.id===undefined){
-    console.log('GetSearchSolutionResultsResponse: Error.  "response1.id" undefined');
-    return;
-  }
-  if(typeof response1.response.solutionId===undefined){
-    console.log('GetSearchSolutionResultsResponse: Error.  "response1.response.solutionId" undefined');
-    return;
-  }
-  let solutionId = response1.response.solutionId;
+    // Note: the response.id becomes the Pipeline id
+    //
+    //
+    if (typeof response1.id === undefined) {
+        console.log('GetSearchSolutionResultsResponse: Error.  "response1.id" undefined');
+        return;
+    }
+    if (typeof response1.response.solutionId === undefined) {
+        console.log('GetSearchSolutionResultsResponse: Error.  "response1.response.solutionId" undefined');
+        return;
+    }
+    // let solutionId = response1.response.solutionId;
 
-  // ----------------------------------------
-  // (2) Update the pipeline list on the UI
-  // ----------------------------------------
-  console.log('(2) Update the pipeline list on the UI');
+    // ----------------------------------------
+    // (2) Update the pipeline list on the UI
+    // ----------------------------------------
+    console.log('(2) Update the pipeline list on the UI');
 
-  // ----------------------------------------
-  // (2a) Update or Create the Pipeline
-  // ----------------------------------------
-  if (!ROOKPIPE_FROM_REQUEST){
-    console.log('---------- ERROR: ROOKPIPE_FROM_REQUEST not set!!!');
-  }
-  onPipelinePrime(response1, ROOKPIPE_FROM_REQUEST) //, rookpipe - handleGetSearchSolutionResultsResponse
+    // ----------------------------------------
+    // (2a) Update or Create the Pipeline
+    // ----------------------------------------
+    if (!ROOKPIPE_FROM_REQUEST) {
+        console.log('---------- ERROR: ROOKPIPE_FROM_REQUEST not set!!!');
+    }
+    onPipelinePrime(response1, ROOKPIPE_FROM_REQUEST) //, rookpipe - handleGetSearchSolutionResultsResponse
 
-  if(!resizeTriggered){
-      if (IS_D3M_DOMAIN){
-          byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
-      };
-      resizeTriggered = true;
-  }
-  if(selectedPipeline === undefined){
-     setSelectedPipeline(pipelineTable[0]['PipelineID']);
-  }
+    if (IS_D3M_DOMAIN) setRightTab('Results');
+    if (selectedPipelines.size === 0) setSelectedPipeline(response1.id);
 
-  // Add pipeline descriptions to allPipelineInfo
-  Object.assign(allPipelineInfo[response1.id], response1.data);
-
+    // Add pipeline descriptions to allPipelineInfo
+    Object.assign(allPipelineInfo[response1.id], response1.data);
+    m.redraw();
 }  // end GetSearchSolutionResultsResponse
 
 
@@ -4597,55 +4640,38 @@ async function handleGetProduceSolutionResultsResponse(response){
 
     allPipelineInfo[response.pipelineId].predictedValues = responseOutputData;
 
-    resultsplotgraph(response.pipelineId);
-
 } // end: handleGetProduceSolutionResultsResponse
 
 /**
   Handle a getScoreSolutionResultsResponse send via websocket
   wrapped in a StoredResponse object
 */
-async function handleGetScoreSolutionResultsResponse(response){
-  if(typeof response===undefined){
-    console.log('handleGetScoreSolutionResultsResponse: Error.  "response" undefined');
-    return;
-  }
-  if(typeof response.is_finished === undefined){
-    console.log('handleGetScoreSolutionResultsResponse: Error.  "response.data.is_finished" undefined');
-    return;
-  }
-  if(!response.is_finished){
-    return;
-  }
+async function handleGetScoreSolutionResultsResponse(response) {
+    if (response === undefined) {
+        console.log('handleGetScoreSolutionResultsResponse: Error.  "response" undefined');
+        return;
+    }
+    if (response.is_finished === undefined) {
+        console.log('handleGetScoreSolutionResultsResponse: Error.  "response.data.is_finished" undefined');
+        return;
+    }
+    if (!response.is_finished) return;
 
-  let myscore;
+    let myscore;
 
-  try{
-    // This is very specific, the potential responses may vary greatly
+    try {
+        // This is very specific, the potential responses may vary greatly
+        //
+        myscore = response.response.scores[0].value.raw.double.toPrecision(3);
+    } catch (error) {
+        console.log(JSON.stringify(response));
+        alertError('Error in "handleGetScoreSolutionResultsResponse": ' + error);
+        return;
+    }
+    // Note: what's now the "res4DataId" needs to be sent to this function
     //
-    myscore = response.response.scores[0].value.raw.double.toPrecision(3);
-  }catch(error) {
-    console.log(JSON.stringify(response));
-    alert('Error in "handleGetScoreSolutionResultsResponse": ' + error);
-    console.error(error);
-    return;
-  }
-  // Note: what's now the "res4DataId" needs to be sent to this function
-  //
-  let matchedPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(response.pipelineId, 10))
-
-  if (matchedPipeline===undefined){
-    console.log('handleGetScoreSolutionResultsResponse: Error.  Pipeline not found for id: ' + response.pipelineId);
-  }else{
-    // set the score
-    matchedPipeline['Score'] = String(myscore);
-
-    // sort the pipeline table by score
-    pipelineTable = sortPipelineTable(pipelineTable);
-
-    // Click the "Prediction Summary" button
-    byId("btnPredPlot").click();
-  }
+    allPipelineInfo[response.pipeline_id].score = myscore;
+    m.redraw();
 } // end: handleGetScoreSolutionResultsResponse
 
 
@@ -4667,6 +4693,26 @@ async function handleENDGetSearchSolutionsResults(){
   // stop the interval process
 }
 
+export function loadResult(my_disco) {
+    (my_disco || disco).forEach((problem, i) => {
+
+        let prob_name = (problem.description || {}).problem_id || problem.problem_id;
+
+        if (problems_in_preprocess.includes(prob_name))
+            console.log("Problem already exists in preprocess", prob_name);
+        else problem_sent.push({
+            "description": problem,
+            "result": solver_res[i]
+        });
+        // console.log("problem to be sent ", problem_sent);
+    })
+
+    // console.log("problem to be sent ", problem_sent.splice())
+    let preprocess_id = 1
+    let version = 1
+    // addProblem(preprocess_id, version).then(api_res => console.log("ADD PROBLEM/RESULT API RESPONSE ", api_res))
+}
+
 export async function addProblem(preprocess_id, version){
     // return await m.request({
     //     method: "POST",
@@ -4680,6 +4726,7 @@ export async function addProblem(preprocess_id, version){
     problem_sent.length = 0;
 }
 
+let ravenPipelineID = 0;
 
 // takes as input problem in the form of a "discovered problem" (can also be user-defined), calls rooksolver, and stores result
 export async function callSolver(prob) {
@@ -4687,10 +4734,11 @@ export async function callSolver(prob) {
     let hasManipulation = prob.problem_id in manipulations && manipulations[prob.problem_id].length > 0;
     let hasNominal = [prob.target, ...prob.predictors].some(variable => zparams.znom.includes(variable));
     let zd3mdata = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : zparams.zd3mdata;
+    let ravenID = 'raven ' + ravenPipelineID++;
 
-    // MIKE: shouldn't solverapp return a list? even a singleton list would be fine
-    solver_res = [await makeRequest(ROOK_SVC_URL + 'solverapp', {prob, zd3mdata})];
-    console.log("callSolver response:", solver_res)
+    ravenPipelineInfo[ravenID] = await makeRequest(ROOK_SVC_URL + 'solverapp', {prob, zd3mdata});
+    if (selectedPipelines.size === 0) setSelectedPipeline(ravenID);
+    console.log("callSolver response:", ravenPipelineInfo[ravenID]);
     m.redraw();
 }
 

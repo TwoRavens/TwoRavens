@@ -1,7 +1,7 @@
 import * as fileSaver from 'file-saver';
 import m from 'mithril';
 
-import {mongoURL, manipulations, looseSteps, alignmentData, formattingData} from "../app";
+import {mongoURL, manipulations, looseSteps, alignmentData, formattingData, alertError} from "../app";
 import * as common from '../../common/common';
 
 import * as queryMongo from '../manipulations/queryMongo';
@@ -435,7 +435,7 @@ export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={})
 
     let success = true;
     let onError = err => {
-        if (err === 'no records matched') alert("No records match your subset. Plots will not be updated.");
+        if (err === 'no records matched') alertError("No records match your subset. Plots will not be updated.");
         else console.error(err);
         success = false;
     };

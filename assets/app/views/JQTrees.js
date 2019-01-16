@@ -9,7 +9,7 @@ import * as queryAbstract from '../manipulations/queryAbstract';
 import * as manipulate from "../manipulations/manipulate";
 
 import * as eventdata from "../eventdata/eventdata";
-import {looseSteps, manipulations} from "../app";
+import {alertError, looseSteps, manipulations} from "../app";
 import {hideFirst} from "../manipulations/queryAbstract";
 
 
@@ -308,7 +308,7 @@ export class TreeSubset {
                 if (IS_EVENTDATA_DOMAIN) {
                     let tempQuery = queryMongo.buildSubset([event.node]);
                     if ($.isEmptyObject(tempQuery)) {
-                        alert("\"" + event.node.name + "\" is too specific to parse into a query.");
+                        alertError("\"" + event.node.name + "\" is too specific to parse into a query.");
                     } else {
                         eventdata.canvasPreferences['Custom'] = eventdata.canvasPreferences['Custom'] || {};
                         eventdata.canvasPreferences['Custom']['text'] = JSON.stringify(tempQuery, null, '\t');
