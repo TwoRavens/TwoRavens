@@ -52,8 +52,8 @@ export let italicize = value => m('div', {style: {'font-style': 'italic', displa
 export let link = url => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
 
 
-// adding problem_id and version for Preprocess API part
-let problem_id = 1;
+// adding problemID and version for Preprocess API part
+let problemID = 1;
 let version = 1;
 let nodesExplore = [];
 
@@ -74,7 +74,7 @@ function leftpanel(mode) {
     });
 
     let discoveryHeaders = [
-        'problem_id',
+        'problemID',
         m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
         app.disco.some(prob => prob.system === 'user') ? 'User' : '',
         'Target', 'Predictors',
@@ -85,11 +85,11 @@ function leftpanel(mode) {
     ];
 
     let formatProblem = problem => [
-        problem.problem_id, // this is masked as the UID
+        problem.problemID, // this is masked as the UID
         m('input[type=checkbox][style=width:100%]', {
-            onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
-            checked: app.checkedDiscoveryProblems.has(problem.problem_id),
-            title: `mark ${problem.problem_id} as meaningful`
+            onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problemID)),
+            checked: app.checkedDiscoveryProblems.has(problem.problemID),
+            title: `mark ${problem.problemID} as meaningful`
         }),
         problem.system === 'user' && m('div[title="user created problem"]', glyph('user')),
         problem.target,
@@ -99,10 +99,10 @@ function leftpanel(mode) {
         problem.subTask === 'taskSubtypeUndefined' ? '' : problem.subTask, // ignore taskSubtypeUndefined
         problem.metric,
         // the view manipulations button
-        (!!problem.subsetObs || !!problem.transform || (app.manipulations[problem.problem_id] || []).length !== 0) && m(
+        (!!problem.subsetObs || !!problem.transform || (app.manipulations[problem.problemID] || []).length !== 0) && m(
             'div[style=width:100%;text-align:center]', m(Button, {
                 disabled: problem === app.selectedProblem && app.rightTab === 'Manipulate' && common.panelOpen['right'],
-                title: `view manipulations for ${problem.problem_id}`,
+                title: `view manipulations for ${problem.problemID}`,
                 onclick: () => {
                     app.setRightTab('Manipulate');
                     common.setPanelOpen('right');
@@ -231,7 +231,7 @@ function leftpanel(mode) {
                                 id: 'discoveryTableManipulations',
                                 headers: discoveryHeaders,
                                 data: [formatProblem(app.selectedProblem)],
-                                activeRow: (app.selectedProblem || {}).problem_id,
+                                activeRow: (app.selectedProblem || {}).problemID,
                                 showUID: false,
                                 abbreviation: 40
                             }),
@@ -244,7 +244,7 @@ function leftpanel(mode) {
                                 ...app.disco.filter(prob => prob.system === 'user'),
                                 ...app.disco.filter(prob => prob.system !== 'user')
                             ].filter(prob => !prob.pending).map(formatProblem),
-                            activeRow: (app.selectedProblem || {}).problem_id,
+                            activeRow: (app.selectedProblem || {}).problemID,
                             onclick: app.discoveryClick,
                             showUID: false,
                             abbreviation: 40,
@@ -262,7 +262,7 @@ function leftpanel(mode) {
                         id: 'btnDelete',
                         disabled: !app.selectedProblem || app.selectedProblem.system === 'auto',
                         style: 'float:right',
-                        onclick: () => setTimeout(() => app.deleteProblem(problem_id, version, 'id_000003'), 500),
+                        onclick: () => setTimeout(() => app.deleteProblem(problemID, version, 'id_000003'), 500),
                         title: 'Delete the user created problem'
                     }, 'Delete Problem'),
                     m(PanelButton, {
@@ -423,7 +423,7 @@ function rightpanel(mode) {
                     contents: [
                         m(manipulate.PipelineFlowchart, {
                             compoundPipeline: manipulate.getPipeline(app.selectedProblem),
-                            pipelineId: app.selectedProblem.problem_id,
+                            pipelineId: app.selectedProblem.problemID,
                             editable: true,
                             aggregate: false
                         }),
@@ -468,7 +468,7 @@ function rightpanel(mode) {
         }, []);
 
         let stringified = JSON.stringify(scatterMultiGroup)
-            .replace(/tworavensTitle/g, "Actuals vs. Predicted: Pipeline " + app.selectedProblem.problem_id)
+            .replace(/tworavensTitle/g, "Actuals vs. Predicted: Pipeline " + app.selectedProblem.problemID)
             .replace("url", "values")
             .replace('"tworavensData"', JSON.stringify(data))
             .replace(/tworavensX/g, "Actuals")
@@ -648,7 +648,21 @@ function rightpanel(mode) {
                 m('#setxLeftTop[style=display:block; float: left; width: 100%; height:50%; overflow: auto; background-color: white]',
                     m('#setxLeftTopLeft[style=display:block; float: left; width: 30%; height:100%; overflow: auto; background-color: white]'),
                     m('#setxLeftTopRight[style=display:block; float: left; width: 70%; height:100%; overflow: auto; background-color: white]')),
-                m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]'),
+                m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]',
+                    // m(PanelList, {
+                    //     id: 'setxLeftBottomLeftList',
+                    //     items: app.pipelineAdapter[firstSelectedPipelineID].predictors,
+                    //     colors: {
+                    //         [app.hexToRgba(common.selVarColor)]: [...(this.selectedPredictors || new Set())]
+                    //     },
+                    //     callback: variable => {
+                    //         this.selectedPredictors = this.selectedPredictors || new Set();
+                    //         this.selectedPredictors.has(variable)
+                    //             ? this.selectedPredictors.delete(variable)
+                    //             : this.selectedPredictors.add(variable);
+                    //     }
+                    // })
+                ),
                 m('#setxLeftBottomRightTop[style=display:block; float: left; width: 30%; height:10%; overflow: auto; background-color: white]',
                     // m(PanelButton, {
                     //     id: 'btnExecutePipe',
@@ -956,7 +970,7 @@ class Body {
 
             (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate' && app.selectedProblem)) && manipulate.menu(
                 manipulate.getPipeline(app.selectedProblem), // the complete pipeline to build menus with
-                app.is_model_mode ? app.selectedProblem.problem_id : app.datadocument.about.datasetID),  // the identifier for which pipeline to edit
+                app.is_model_mode ? app.selectedProblem.problemID : app.datadocument.about.datasetID),  // the identifier for which pipeline to edit
             app.peekInlineShown && this.peekTable(),
 
             m(`#main`, {
@@ -971,7 +985,7 @@ class Body {
                         m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
                         m('br'),
                         exploreVars)
-                    //                        JSON.stringify(app.disco[app.selectedProblem.problem_id]))
+                    //                        JSON.stringify(app.disco[app.selectedProblem.problemID]))
                     : exploreVars ?
                         m('', {style},
                             m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
@@ -994,7 +1008,7 @@ class Body {
                                 classes: 'btn-success',
                                 onclick: _ => {
                                     let variate = app.exploreVariate.toLowerCase();
-                                    let selected = discovery ? [app.selectedProblem.problem_id] : nodesExplore.map(x => x.name);
+                                    let selected = discovery ? [app.selectedProblem.problemID] : nodesExplore.map(x => x.name);
                                     let len = selected.length;
                                     if (variate === 'univariate' && len != 1
                                         || variate === 'problem' && len != 1
@@ -1104,7 +1118,7 @@ class Body {
                         m(".rectLabel[style=display:inline-block;vertical-align:text-bottom;margin-left:.5em]", btn[2])))
                 ),
 
-                (app.manipulations[(app.selectedProblem || {}).problem_id] || []).filter(step => step.type === 'subset').length !== 0 && m(Subpanel2, {
+                (app.manipulations[(app.selectedProblem || {}).problemID] || []).filter(step => step.type === 'subset').length !== 0 && m(Subpanel2, {
                     id: 'subsetSubpanel',
                     header: 'Subsets',
                     style: {
@@ -1112,7 +1126,7 @@ class Body {
                         top: common.panelMargin,
                         position: 'absolute'
                     }
-                }, app.manipulations[app.selectedProblem.problem_id]
+                }, app.manipulations[app.selectedProblem.problemID]
                     .filter(step => step.type === 'subset')
                     .map(step => m('div', step.id))
                     .concat([`${manipulate.totalSubsetRecords} Records`]))
@@ -1150,7 +1164,7 @@ class Body {
                 {style: `display: ${this.cite ? 'block' : 'none'}; margin-top: 2.5em; right: 50%; width: 380px; text-align: left; z-index: 50; position:absolute`},
                 m('.panel-body', IS_D3M_DOMAIN && m(Table, {data: app.datadocument['about']}))),
 
-            m(Button, {
+            Object.keys(app.allPipelineInfo).length > 0 && m(Button, {
                 id: 'btnEndSession',
                 class: 'ladda-label ladda-button',
                 onclick: app.endsession,

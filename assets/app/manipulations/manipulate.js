@@ -24,6 +24,7 @@ import CanvasImputation from "../canvases/CanvasImputation";
 import {datadocument} from "../app";
 import {alertError} from "../app";
 import {alertLog} from "../app";
+import {selectedProblem} from "../app";
 
 // dataset name from app.datadocument.about.datasetID
 // variable names from the keys of the initial preprocess variables object
@@ -562,7 +563,7 @@ export let setQueryUpdated = async state => {
 
             let problemCopy = app.getProblemCopy(app.selectedProblem);
             // this will force the automatic pipeline to get rebuilt without user edits
-            delete app.manipulations[app.selectedProblem.problem_id];
+            delete app.manipulations[app.selectedProblem.problemID];
             problemCopy.predictorsInitial = [...problemCopy.predictors]; // the predictor list will be edited to include transformed variables
             app.disco.push(problemCopy);
 
@@ -584,7 +585,7 @@ export let setQueryUpdated = async state => {
 
         // if the predictors changed, then redraw the force diagram
         if (app.nodes.length !== app.selectedProblem.predictors.length || app.nodes.some(node => !app.selectedProblem.predictors.includes(node.name)))
-            app.discoveryClick(app.selectedProblem.problem_id);
+            app.discoveryClick(app.selectedProblem.problemID);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
         loadMenu([...getPipeline(), ...problemPipeline], countMenu).then(count => {
@@ -600,9 +601,9 @@ export let setQueryUpdated = async state => {
 // returns the fragment of a pipeline representing a problem
 export let getProblemPipeline = problem => {
     if (!problem) return;
-    if (!(problem.problem_id in app.manipulations)) app.manipulations[problem.problem_id] = [];
+    if (!(problem.problemID in app.manipulations)) app.manipulations[problem.problemID] = [];
 
-    return app.manipulations[problem.problem_id];
+    return app.manipulations[problem.problemID];
 };
 
 export let getPipeline = (problem) => {
@@ -981,7 +982,7 @@ export async function buildProblemUrl(problem) {
             type: 'menu',
             metadata: {
                 type: 'data',
-                variables: [...problem.predictors, problem.target],
+                variables: ['d3mIndex', ...problem.predictors, problem.target],
                 nominal: !app.is_manipulate_mode && app.nodes
                     .filter(node => node.nature === 'nominal')
                     .map(node => node.name)
@@ -990,13 +991,16 @@ export async function buildProblemUrl(problem) {
     ];
 
     let compiled = queryMongo.buildPipeline(abstractPipeline, Object.keys(variablesInitial))['pipeline'];
-    let metadata = queryMongo.translateDatasetDoc(compiled, datadocument);
+
+    console.warn("#debug compiled");
+    console.log(compiled);
+    let metadata = queryMongo.translateDatasetDoc(compiled, datadocument, selectedProblem);
 
     return await getData({
         method: 'aggregate',
         query: JSON.stringify(compiled),
         export: 'problem',
-        datasetDoc: JSON.stringify(metadata)
+        metadata: JSON.stringify(metadata)
     });
 }
 

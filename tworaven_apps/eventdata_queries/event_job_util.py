@@ -534,7 +534,8 @@ class EventJobUtil(object):
                                 'learningData.csv')
 
         params = {BasicProblemWriter.IS_CSV_DATA: True,
-                  BasicProblemWriter.INCREMENT_FILENAME: True}
+                  BasicProblemWriter.INCREMENT_FILENAME: True,
+                  BasicProblemWriter.QUOTING: csv.QUOTE_NONNUMERIC}
 
         bpw = BasicProblemWriter(filename, data, **params)
         if bpw.has_error():
@@ -544,11 +545,16 @@ class EventJobUtil(object):
 
 
     @staticmethod
-    def export_problem(collection, data, metadata):
-        """Export the problem using the 'BasicProblemWriter' """
+    def export_problem(data, metadata):
+        """Export the problem in a D3M-compatible format"""
 
         if not isinstance(data, list):
-            user_msg = 'export_dataset failed.  "data" must be a list'
+            user_msg = 'export_problem failed.  "data" must be a list'
+            LOGGER.error(user_msg)
+            return err_resp(user_msg)
+
+        if not data:
+            user_msg = 'export_problem failed.  "data" must be non-empty'
             LOGGER.error(user_msg)
             return err_resp(user_msg)
 
@@ -558,35 +564,41 @@ class EventJobUtil(object):
             LOGGER.error(user_msg)
             return err_resp(user_msg)
 
+        manipulations_folderpath = os.path.join(d3m_config.temp_storage_root, 'manipulations')
+
         extension = 0
-        while os.path.exists(os.path.join(d3m_config.temp_storage_root, collection + str(extension))):
+        while os.path.exists(os.path.join(manipulations_folderpath, str(extension))):
             extension += 1
 
-        # TODO this is obviously impure, but ideally this is replaced with a D3M primitive anyways
-        collection_folderpath = os.path.join('ravens_volume', 'test_data', collection)
-        temp_folderpath = os.path.join(d3m_config.temp_storage_root, collection + str(extension))
+        # directory that contains entire dataset
+        temp_dataset_folderpath = os.path.join(manipulations_folderpath, str(extension))
+        dataset_folderpath = os.path.join(*d3m_config.dataset_schema.split('/')[:4])
 
-        metadata_filepath = d3m_config.dataset_schema.replace('/ravens_volume/test_data/' + collection, temp_folderpath)
-        data_filepath = os.path.join(os.path.dirname(metadata_filepath), 'tables', 'learningData.csv')
+        # paths to datasetDoc and .csv
+        temp_metadata_filepath = os.path.join(temp_dataset_folderpath, *d3m_config.dataset_schema.split('/')[4:])
+        temp_data_filepath = os.path.join(os.path.dirname(temp_metadata_filepath), 'tables', 'learningData.csv')
 
-        shutil.copy(collection_folderpath, temp_folderpath)
+        shutil.copytree(dataset_folderpath, temp_dataset_folderpath)
 
-        with open(d3m_config.dataset_schema, 'w') as metadata_file:
-            json.dump(metadata_file, metadata)
+        # the BasicProblemWriter doesn't write to write_directory, and this doesn't seem trivial to change
+        columns = list(data[0].keys())
 
-        try:
-            os.remove(data_filepath)
-        except FileNotFoundError:
-            pass
+        with open(temp_data_filepath, 'w', newline='') as output_file:
+            dict_writer = csv.DictWriter(output_file,
+                                         fieldnames=columns,
+                                         extrasaction='ignore')
+            dict_writer.writeheader()
+            dict_writer.writerows(data)
 
-        params = {BasicProblemWriter.IS_CSV_DATA: True,
-                  BasicProblemWriter.INCREMENT_FILENAME: False}
+        resource = next(res for res in metadata['dataResources'] if res['resType'] == 'table')
+        column_lookup = {struct['colName']: struct for struct in resource['columns']}
+        resource['columns'] = [{**column_lookup[name], 'colIndex': i} for i, name in enumerate(columns)]
 
-        bpw = BasicProblemWriter(data_filepath, data, **params)
-        if bpw.has_error():
-            return err_resp(bpw.get_error_message())
+        with open(temp_metadata_filepath, 'w') as metadata_file:
+            json.dump(metadata, metadata_file)
+
 
         return ok_resp({
-            'problem_folder': temp_folderpath,
-            'data_file': data_filepath
+            'data_path': temp_data_filepath,
+            'metadata_path': temp_metadata_filepath
         })

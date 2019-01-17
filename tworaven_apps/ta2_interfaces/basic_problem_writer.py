@@ -37,6 +37,7 @@ class BasicProblemWriter(BasicErrCheck):
 
     IS_CSV_DATA = 'IS_CSV_DATA' # use a csv write to write the data
     INCREMENT_FILENAME = 'INCREMENT_FILENAME' # add '', '_0002' to filename
+    QUOTING = 'QUOTING'
 
     def __init__(self, filename, data, **kwargs):
         """
@@ -49,6 +50,7 @@ class BasicProblemWriter(BasicErrCheck):
 
         self.is_csv_data = kwargs.get(self.IS_CSV_DATA, False)
         self.increment_filename = kwargs.get(self.INCREMENT_FILENAME, False)
+        self.quoting = kwargs.get(self.QUOTING, csv.QUOTE_MINIMAL)
 
         # alternate write directory, if not, uses dirs in the d3m config
         #
@@ -298,7 +300,7 @@ class BasicProblemWriter(BasicErrCheck):
         #
         with open(fullpath, 'w', newline='') as output_file:
             dict_writer = csv.DictWriter(output_file,
-                                         quoting=csv.QUOTE_NONNUMERIC,
+                                         quoting=self.quoting,
                                          fieldnames=columns,
                                          #delimiter='\t',
                                          extrasaction='ignore')

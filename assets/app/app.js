@@ -678,6 +678,7 @@ export let restart;
 
 let dataurl = '';
 let datasetdocurl = '';
+let datasetDocProblemUrl = {};
 
 export let step = (target, placement, title, content) => ({
     target,
@@ -2636,7 +2637,7 @@ function CreatePipelineDefinition(predictors, depvar, timeBound, aux) {
 
 function CreateFitDefinition(solutionId){
 
-    let fitDefn = getFitSolutionDefaultParameters();
+    let fitDefn = getFitSolutionDefaultParameters(datasetdocurl);
     fitDefn.solutionId = solutionId;
     return fitDefn;
 }
@@ -2645,17 +2646,19 @@ function CreateFitDefinition(solutionId){
     Return the default parameters used for a FitSolution call.
     This DOES NOT include the solutionID
  */
-export function getFitSolutionDefaultParameters(){
+export function getFitSolutionDefaultParameters(datasetDocUrl){
 
-  let my_dataseturi = 'file://' + datasetdocurl;
+  let my_dataseturi = 'file://' + datasetDocUrl;
   let my_inputs = [{dataset_uri: my_dataseturi}];
   let my_exposeOutputs = [];   // eg. ["steps.3.produce"];  need to fix
   let my_exposeValueTypes = ['CSV_URI'];
   let my_users = [{id: 'TwoRavens', choosen: false, reason: ''}];
-  return {inputs: my_inputs,
-          exposeOutputs: my_exposeOutputs,
-          exposeValueTypes: my_exposeValueTypes,
-          users: my_users};
+  return {
+      inputs: my_inputs,
+      exposeOutputs: my_exposeOutputs,
+      exposeValueTypes: my_exposeValueTypes,
+      users: my_users
+  };
 }
 
 // {
@@ -2700,9 +2703,9 @@ function CreateProduceDefinition(fsid){
   Return the default parameters used for a ProduceSolution call.
   This DOES NOT include the fittedSolutionId
 */
-export function getProduceSolutionDefaultParameters(){
+export function getProduceSolutionDefaultParameters(datasetDocUrl){
 
-  let my_dataseturi = 'file://' + datasetdocurl;
+  let my_dataseturi = 'file://' + datasetDocUrl;
   let my_inputs = [{dataset_uri: my_dataseturi}];
   let my_exposeOutputs = [];  // Not sure about this.
   let my_exposeValueTypes = ['CSV_URI']; // Not sure about this.
@@ -2731,9 +2734,9 @@ function CreateScoreDefinition(res){
   Return the default parameters used for a ProduceSolution call.
   This DOES NOT include the solutionId
 */
-function getScoreSolutionDefaultParameters(){
+function getScoreSolutionDefaultParameters(datasetDocUrl){
 
-  let my_dataseturi = 'file://' + datasetdocurl;
+  let my_dataseturi = 'file://' + datasetDocUrl;
   let my_inputs = [{dataset_uri: my_dataseturi}];
   let my_performanceMetrics = [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ];  // need to generalize to case with multiple metrics.  only passes on first presently.;
   let my_users = [{id: 'TwoRavens', choosen: false, reason: ""}];
@@ -2851,41 +2854,42 @@ export async function estimate() {
 
         if (!ROOKPIPE_FROM_REQUEST) {
             estimated = true;
-            estimateLadda.stop(); // start spinner
+            estimateLadda.stop();
         } else {
             setxTable(ROOKPIPE_FROM_REQUEST.predictors);
             let searchSolutionParams = CreatePipelineDefinition(ROOKPIPE_FROM_REQUEST.predictors,
-                                                                 ROOKPIPE_FROM_REQUEST.depvar,
-                                                                 2);
+                ROOKPIPE_FROM_REQUEST.depvar,2);
 
-            let hasManipulation = selectedProblem.problem_id in manipulations && manipulations[selectedProblem.problem_id].length > 0;
+            let hasManipulation = selectedProblem.problemID in manipulations && manipulations[selectedProblem.problemID].length > 0;
             let hasNominal = [selectedProblem.target, ...selectedProblem.predictors]
                 .some(variable => zparams.znom.includes(variable));
 
             let needsProblemCopy = hasManipulation || hasNominal;
 
-            let zd3mdata = zparams.zd3mdata;
+            let datasetPath = zparams.zd3mdata;
+            // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
             if (needsProblemCopy) {
-                // TODO: problem_path is not getting used in D3M
-                let {problem_path, data_file} = await manipulate.buildProblemUrl(selectedProblem);
-                zd3mdata = data_file;
-            }
+                let {data_path, metadata_path} = await manipulate.buildProblemUrl(selectedProblem);
+                datasetDocProblemUrl[selectedProblem.problemID] = metadata_path;
+                datasetPath = data_path;
+            } else delete datasetDocProblemUrl[selectedProblem.problemID];
 
-            makeRequest(ROOK_SVC_URL + 'solverapp', {prob: selectedProblem, zd3mdata})
+            makeRequest(ROOK_SVC_URL + 'solverapp', {prob: selectedProblem, dataset_path: datasetPath})
                 .then(response => {
                     let ravenID = 'raven ' + ravenPipelineID++;
                     ravenPipelineInfo[ravenID] = response;
                     if (selectedPipelines.size === 0) setSelectedPipeline(ravenID);
                 });
 
-            let allParams = {searchSolutionParams: searchSolutionParams,
-                             fitSolutionDefaultParams: getFitSolutionDefaultParameters(),
-                             produceSolutionDefaultParams: getProduceSolutionDefaultParameters(),
-                             scoreSolutionDefaultParams: getScoreSolutionDefaultParameters()};
+            let allParams = {
+                searchSolutionParams: searchSolutionParams,
+                fitSolutionDefaultParams: getFitSolutionDefaultParameters(datasetDocProblemUrl[selectedProblem.problemID] || datasetdocurl),
+                produceSolutionDefaultParams: getProduceSolutionDefaultParameters(datasetDocProblemUrl[selectedProblem.problemID] || datasetdocurl),
+                scoreSolutionDefaultParams: getScoreSolutionDefaultParameters(datasetDocProblemUrl[selectedProblem.problemID] || datasetdocurl)
+            };
 
             //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
-            let res = await makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions',
-                                        allParams);
+            let res = await makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', allParams);
             console.log(JSON.stringify(res));
             if (res===undefined){
               handleENDGetSearchSolutionsResults();
@@ -4034,7 +4038,7 @@ function makeProblemDescription(problem) {
 export function discovery(preprocess_file) {
 
     return preprocess_file.dataset.discovery.map((prob, i) => ({
-        problem_id: "problem" + (i+1),
+        problemID: "problem" + (i+1),
         system: "auto",
         descriptionUser: undefined,
         get description() {return makeProblemDescription(this)},
@@ -4050,19 +4054,6 @@ export function discovery(preprocess_file) {
         rating: 3,
         meaningful: "no"
     }))
-
-    /* Problem Array of the Form:
-        [1: {problem_id: "problem 1",
-            system: "auto",
-            meaningful: "no",
-            target:"Home_runs",
-            predictors:["Walks","RBIs"],
-            task:"regression",
-            rating:5,
-            description: "Home_runs is predicted by Walks and RBIs",
-            metric: "meanSquaredError"
-        },2:{...}]
-    */
 }
 
 // creates a new problem from the force diagram problem space and adds to disco
@@ -4077,7 +4068,7 @@ export async function addProblemFromForceDiagram() {
         selectedProblem || {},
         await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams),
         {
-            problem_id: 'problem' + (disco.length + 1),
+            problemID: 'problem' + (disco.length + 1),
             system: 'user',
             meaningful: 'yes'
         });
@@ -4096,9 +4087,9 @@ export async function addProblemFromForceDiagram() {
         newProblem.metric = currentMetric === 'metricUndefined' ? 'meanSquaredError' : currentMetric;
     }
 
-    if ((selectedProblem || {}).problem_id in manipulations)
-        manipulations[newProblem.problem_id]
-            = jQuery.extend(true, [], manipulations[selectedProblem.problem_id]);
+    if ((selectedProblem || {}).problemID in manipulations)
+        manipulations[newProblem.problemID]
+            = jQuery.extend(true, [], manipulations[selectedProblem.problemID]);
 
     console.log("pushing new problem to discovered problems:");
     console.log(newProblem);
@@ -4140,8 +4131,8 @@ export function connectAllForceDiagram() {
 
 
 // called when a problem is clicked in the discovery leftpanel table
-export let discoveryClick = problemId => {
-    setSelectedProblem(disco.find(problem => problem.problem_id === problemId));
+export let discoveryClick = problemID => {
+    setSelectedProblem(disco.find(problem => problem.problemID === problemID));
 
     if (!selectedProblem) return;
 
@@ -4155,9 +4146,10 @@ export let discoveryClick = problemId => {
 };
 
 
-export let selectedProblem
+export let resultsProblem;
+export let selectedProblem;
 //     {
-//     problem_id: 'selectedProblem',
+//     problemID: 'selectedProblem',
 //     system: 'user',
 //     get description() {return makeProblemDescription(this)},
 //
@@ -4185,10 +4177,10 @@ export function setSelectedProblem(problem) {
     manipulate.setConstraintMenu(undefined);
 
     // remove old staged problems
-    disco = disco.filter(entry => entry.problem_id === (problem || {}).problem_id || !entry.staged);
+    disco = disco.filter(entry => entry.problemID === (problem || {}).problemID || !entry.staged);
     if (problem === undefined) return;
 
-    if (!(problem.problem_id in manipulations)) {
+    if (!(problem.problemID in manipulations)) {
         let pipeline = [];
 
         if (problem['subsetObs']) {
@@ -4196,7 +4188,7 @@ export function setSelectedProblem(problem) {
                 type: 'subset',
                 id: 'subset ' + pipeline.length,
                 abstractQuery: [{
-                    id: String(problem.problem_id) + '-' + String(0) + '-' + String(1),
+                    id: String(problem.problemID) + '-' + String(0) + '-' + String(1),
                     name: problem['subsetObs'],
                     show_op: false,
                     cancellable: true,
@@ -4223,7 +4215,7 @@ export function setSelectedProblem(problem) {
             problem.predictors.push(variable);
         }
 
-        manipulations[problem.problem_id] = pipeline;
+        manipulations[problem.problemID] = pipeline;
     }
 
     let countMenu = {type: 'menu', metadata: {type: 'count'}};
@@ -4245,17 +4237,17 @@ export function getProblemCopy(problem) {
     problem = jQuery.extend(true, {}, problem);  // deep copy of original
 
     let offset = 1;
-    while (disco.find(prob => prob.problem_id === problem.problem_id + 'user' + offset)) offset++;
-    let new_problem_id = problem.problem_id + 'user' + offset;
+    while (disco.find(prob => prob.problemID === problem.problemID + 'user' + offset)) offset++;
+    let newProblemID = problem.problemID + 'user' + offset;
 
-    if (problem.problem_id in manipulations)
-        manipulations[new_problem_id] = jQuery.extend(true, [], manipulations[problem.problem_id]);
+    if (problem.problemID in manipulations)
+        manipulations[newProblemID] = jQuery.extend(true, [], manipulations[problem.problemID]);
 
     Object.assign(problem, {
-        problem_id: new_problem_id,
-        provenance: problem.problem_id,
+        problemID: newProblemID,
+        provenance: problem.problemID,
         system: 'user'
-    })
+    });
 
     return problem;
 }
@@ -4272,27 +4264,27 @@ export let setModelComparison = state => {
 export let checkedDiscoveryProblems = new Set();
 export let setCheckedDiscoveryProblem = (status, problem) => {
     if (problem !== undefined) status ? checkedDiscoveryProblems.add(problem) : checkedDiscoveryProblems.delete(problem);
-    else checkedDiscoveryProblems = status ? new Set(disco.map(problem => problem.problem_id)) : new Set();
+    else checkedDiscoveryProblems = status ? new Set(disco.map(problem => problem.problemID)) : new Set();
 };
 
 export async function submitDiscProb() {
     discoveryLadda.start();
     console.log("This is disco");
     console.log(disco);
-    let outputCSV = "problem_id, system, meaningful \n";
+    let outputCSV = "problemID, system, meaningful \n";
 
     for(let i = 0; i < disco.length; i++) {
-        if(checkedDiscoveryProblems.has(disco[i].problem_id)) { disco[i].meaningful = "yes"; }
+        if(checkedDiscoveryProblems.has(disco[i].problemID)) { disco[i].meaningful = "yes"; }
 
         // build up the required .csv file line by line
-        outputCSV = outputCSV + disco[i].problem_id + ", \"" + disco[i].system + "\", \"" + disco[i].meaningful + "\"\n";
+        outputCSV = outputCSV + disco[i].problemID + ", \"" + disco[i].system + "\", \"" + disco[i].meaningful + "\"\n";
 
         if(disco[i].subsetObs ==0 && disco[i].transform==0){
             // construct and write out the api call and problem description for each discovered problem
             let problemApiCall = CreatePipelineDefinition(disco[i].predictors, [disco[i].target], 10, disco[i]);
             let problemProblemSchema = CreateProblemSchema(disco[i]);
-            let filename_api = disco[i].problem_id + '/ss_api.json';
-            let filename_ps = disco[i].problem_id + '/schema.json';
+            let filename_api = disco[i].problemID + '/ss_api.json';
+            let filename_ps = disco[i].problemID + '/schema.json';
             let res1 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
             let res2 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
         } else {
@@ -4332,17 +4324,13 @@ export function deleteFromDisc(discov){
     }
 }
 
-export function deleteProblem(preproess_id, version, problem_id) {
+export function deleteProblem(preprocessID, version, problemID) {
     console.log("Delete problem clicked")
     setSelectedProblem(undefined);
     m.request({
         method: "POST",
         url: "http://127.0.0.1:4354/preprocess/problem-section-delete",
-        data: {
-            "preprocessId" : preproess_id,
-            "version": version,
-            "problem_id" : problem_id
-        }
+        data: {preprocessID, version, problemID}
     })
         .then(function(result) {
             console.log(result)
@@ -4696,7 +4684,7 @@ async function handleENDGetSearchSolutionsResults(){
 export function loadResult(my_disco) {
     (my_disco || disco).forEach((problem, i) => {
 
-        let prob_name = (problem.description || {}).problem_id || problem.problem_id;
+        let prob_name = (problem.description || {}).problemID || problem.problemID;
 
         if (problems_in_preprocess.includes(prob_name))
             console.log("Problem already exists in preprocess", prob_name);
@@ -4731,12 +4719,12 @@ let ravenPipelineID = 0;
 // takes as input problem in the form of a "discovered problem" (can also be user-defined), calls rooksolver, and stores result
 export async function callSolver(prob) {
     setSolverPending(false);
-    let hasManipulation = prob.problem_id in manipulations && manipulations[prob.problem_id].length > 0;
+    let hasManipulation = prob.problemID in manipulations && manipulations[prob.problemID].length > 0;
     let hasNominal = [prob.target, ...prob.predictors].some(variable => zparams.znom.includes(variable));
-    let zd3mdata = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : zparams.zd3mdata;
+    let datasetPath = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : zparams.zd3mdata;
     let ravenID = 'raven ' + ravenPipelineID++;
 
-    ravenPipelineInfo[ravenID] = await makeRequest(ROOK_SVC_URL + 'solverapp', {prob, zd3mdata});
+    ravenPipelineInfo[ravenID] = await makeRequest(ROOK_SVC_URL + 'solverapp', {prob, dataset_path: datasetPath});
     if (selectedPipelines.size === 0) setSelectedPipeline(ravenID);
     console.log("callSolver response:", ravenPipelineInfo[ravenID]);
     m.redraw();

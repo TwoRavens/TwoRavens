@@ -140,8 +140,8 @@ class EventDataGetManipulationForm(forms.Form):
     datafile = forms.CharField(required=False, widget=forms.Textarea)
     reload = forms.BooleanField(required=False)
 
+    metadata = forms.CharField(required=False, widget=forms.Textarea)
     export = forms.CharField(required=False, widget=forms.Textarea)
-    datasetDoc = forms.CharField(required=False, widget=forms.Textarea)
 
     def clean_collection_name(self):
         return self.cleaned_data.get('collection_name')
@@ -165,12 +165,17 @@ class EventDataGetManipulationForm(forms.Form):
     def clean_reload(self):
         return self.cleaned_data.get('reload')
 
+    def clean_metadata(self):
+        return self.cleaned_data.get('metadata')
+
     def clean_export(self):
         if not self.cleaned_data['export']:
             return
         export = self.cleaned_data['export']
         if export not in EXPORT_CHOICES:
             raise forms.ValidationError("The export choice is not among %s: %s" % (str(EXPORT_CHOICES), export))
-        if export == 'problem' and not self.cleaned_data.get('datasetDoc'):
-            raise forms.ValidationError('The export choice "problem" must have a datasetDoc')
+        if export == 'problem' and not self.cleaned_data.get('metadata'):
+            print('Cleaned data')
+            print(self.cleaned_data)
+            raise forms.ValidationError('The export choice "problem" must have metadata')
         return export

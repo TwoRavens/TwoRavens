@@ -42,7 +42,7 @@ solver.app <- function(env) {
     print("everything: ")
     print(everything)
 
-    dataurl <- everything$zd3mdata
+    dataurl <- everything$dataset_path
     if (is.null(dataurl)) {
         return(send(list(warning = "No data url.")))
     }

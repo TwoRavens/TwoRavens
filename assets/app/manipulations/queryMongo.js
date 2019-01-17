@@ -74,8 +74,7 @@ export function buildPipeline(pipeline, variables = new Set()) {
             units = new Set(aggPrepped['units']);
             accumulators = new Set(aggPrepped['accumulators']);
             labels = aggPrepped['labels'];
-        }
-        else [units, accumulators, labels] = [undefined, undefined, undefined];
+        } else [units, accumulators, labels] = [undefined, undefined, undefined];
 
         if (step.type === 'menu')
             compiled.push(...buildMenu(step))
@@ -330,8 +329,7 @@ function processNode(node) {
     } else if (node.type === 'query' && 'children' in node && node.children.length !== 0) {
         // Recursively process query
         return processGroup(node);
-    }
-    else {
+    } else {
         // Explicitly process rules
         return processRule(node);
     }
@@ -576,10 +574,7 @@ export function buildAggregation(unitMeasures, accumulations) {
                             }
                         }
                     };
-                }
-
-
-                else if (data['measure'] === 'Quarterly') {
+                } else if (data['measure'] === 'Quarterly') {
                     // function takes a mongodb subquery and returns the subquery casted to a string
                     let toString = (query) => ({$substr: [query, 0, -1]});
                     unit[data['column']] = {
@@ -649,8 +644,7 @@ export function buildAggregation(unitMeasures, accumulations) {
                         if (!(equivalency[data['formatTarget']] in bins)) bins[equivalency[data['formatTarget']]] = new Set();
                         bins[equivalency[data['formatTarget']]].add(equivalency[data['formatSource']])
                     }
-                }
-                else for (let selection of selections) bins[selection] = new Set([selection]);
+                } else for (let selection of selections) bins[selection] = new Set([selection]);
 
                 for (let bin of Object.keys(bins)) {
                     columnsAccum.push(data['column'] + '-' + bin);
@@ -710,8 +704,7 @@ export function buildAggregation(unitMeasures, accumulations) {
             {$unwind: "$combine"},
             {$replaceRoot: {newRoot: "$combine"}}
         ]);
-    }
-    else if (columnsNonDyad.length) {
+    } else if (columnsNonDyad.length) {
         reformatter = reformatter.concat([
             {
                 $addFields: Object.assign(columnsNonDyad.reduce((addFields, column) => {
@@ -970,7 +963,7 @@ export function comparableSort(a, b) {
 // D3M datasetDoc.json apply changes to a doc based on a mongo pipeline
 // written to follow schema version 3.1:
 // https://gitlab.datadrivendiscovery.org/MIT-LL/d3m_data_supply/blob/shared/schemas/datasetSchema.json
-export let translateDatasetDoc = (pipeline, doc) => {
+export let translateDatasetDoc = (pipeline, doc, problem) => {
     let typeInferences = {
         'integer': new Set(['toInt', 'ceil', 'floor', 'trunc']),
         'boolean': new Set(['toBool', 'and', 'not', 'or', 'eq', 'gt', 'gte', 'lt', 'lte', 'ne']),
@@ -982,9 +975,9 @@ export let translateDatasetDoc = (pipeline, doc) => {
     doc = Object.assign({}, doc, {dataResources: [...doc.dataResources]});
 
     // assuming that there is only one tabular dataResource
-    let resource = Object.assign({}, doc.dataResources.find(resource => resource.resType === 'table'));
+    let tableResourceIndex = doc.dataResources.findIndex(resource => resource.resType === 'table');
 
-    pipeline.reduce((columns, step) => {
+    doc.dataResources[tableResourceIndex].columns = pipeline.reduce((columns, step) => {
 
         let outColumns = columns.map(column => Object.assign({}, column));
 
@@ -1010,12 +1003,14 @@ export let translateDatasetDoc = (pipeline, doc) => {
             if (Object.values(step.$project).every(value => ['number', 'bool'].includes(typeof value) && !value))
                 return outColumns.filter(column => !(column.colName in step.$project));
 
+            outColumns = outColumns.filter(column => column.colName in step.$project);
             Object.keys(step.$project).forEach(field => {
-                if (['number', 'bool'].includes(typeof step.$project[field]) && !step.$project[field])
+                if (!step.$project[field])
                     delete outColumns[outColumns.indexOf(column => column.colName === field)];
-                else mutateField(step.$project)(field)
+                else if (![true, 1].includes(step.$project[field])) // no modifications necessary if just trivial projection inclusion
+                    mutateField(step.$project)(field)
             });
-            return outColumns.filter(_=>_);
+            return outColumns.filter(_ => _);
         }
 
         if ('$facet' in step) throw '$facet D3M datasetDoc.json translation not implemented';
@@ -1025,5 +1020,12 @@ export let translateDatasetDoc = (pipeline, doc) => {
         if ('$unwind' in step) throw '$unwind D3M datasetDoc.json translation not implemented';
 
         return columns;
-    }, Object.assign({}, resource.columns))
+    }, doc.dataResources[tableResourceIndex].columns)
+        .map(struct => Object.assign(struct, { // relabel roles to reflect the proper target
+            role: [
+                struct.colName === problem.target ? 'suggestedTarget'
+                    : struct.colName === 'd3mIndex' ? 'index' : 'attribute'
+            ]
+        }));
+    return doc;
 };
