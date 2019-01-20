@@ -5,12 +5,14 @@ import hopscotch from 'hopscotch';
 import m from 'mithril';
 import * as common from "../common/common";
 
+import * as queryMongo from './manipulations/queryMongo';
 import * as manipulate from './manipulations/manipulate';
 
 import {setModal, locationReload} from '../common/views/Modal';
 
 import {bars, barsNode, barsSubset, density, densityNode, scatter, selVarColor} from './plots.js';
 import {elem} from './utils';
+import {getTransformVariables} from "./manipulations/manipulate";
 
 
 //-------------------------------------------------
@@ -294,7 +296,11 @@ export let exploreRightPanelWidths = {
     'Bivariate': '75%'
 };
 
-export let setRightTab = (tab) => { rightTab = tab; updateRightPanelWidth() };
+export let setRightTab = tab => {
+    rightTab = tab;
+    updateRightPanelWidth();
+    setFocusedPanel('right')
+};
 export let setRightTabExplore = (tab) => { rightTabExplore = tab; updateRightPanelWidth() };
 
 // panelWidth is meant to be read only
@@ -1121,9 +1127,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         disco = discovery(res);
 
         // Set target variable for center panel if no problemDoc exists to set this
-        if(!problemDocExists){
+        if (!problemDocExists)
             mytarget = disco[0].target;
-        };
 
         // Kick off discovery button as green for user guidance
         if (!task1_finished) {
@@ -1135,6 +1140,23 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // 11. Call layout() and start up
     layout(false, true);
     IS_D3M_DOMAIN ? zPop() : dataDownload();
+
+    manipulations['defaultProblem'] = [];
+    defaultProblem = {
+        problemID: 'defaultProblem',
+        system: 'auto',
+        description: 'default dataset configuration from datasetDoc.json',
+        target: zparams.zdv[0],
+        predictors: [...zparams.zgroup1],
+        get pipeline() {return manipulations['defaultProblem']},
+        metric: 'meanSquaredError',
+        model: 'modelUndefined',
+        task: 'regression',
+        subTask: 'taskSubtypeUndefined',
+        meaningful: false
+    };
+    disco.unshift(defaultProblem);
+    setSelectedProblem(getProblemCopy(defaultProblem));
 
     setTimeout(loadResult, 10000);
     problem_sent.length = 0;
@@ -1771,6 +1793,7 @@ export function layout(layoutConstant, v2) {
                 })
                 .on('click', function(d) {
                     setColors(d, dvColor);
+                    (selectedProblem || {}).target = zparams.zdv[0];
                     selectedPebble = d.name;
                     restart();
                     m.redraw();
@@ -1864,6 +1887,7 @@ export function layout(layoutConstant, v2) {
                 })
                 .on('click', d => {
                     setColors(d, gr1Color);
+                    selectedProblem.predictors = [...zparams.zgroup1],
                     selectedPebble = d.name;
                     restart();
                     m.redraw();
@@ -1900,6 +1924,7 @@ export function layout(layoutConstant, v2) {
                 })
                 .on('click', d => {
                     setColors(d, gr1Color);
+                    selectedProblem.predictors = [...zparams.zgroup1]
                     selectedPebble = d.name;
                     restart();
                     m.redraw();
@@ -2274,7 +2299,7 @@ export function clickVar(elem, $nodes) {
 
     if (updateNode(elem, $nodes || nodes)) {
         // panelPlots(); is this necessary?
-        restart();
+        restart && restart();
     }
 }
 
@@ -2417,7 +2442,7 @@ export let pipelineAdapter = new Proxy({}, {
             get description() {
                 return (allPipelineInfo[pipelineID].pipeline || {}).description},
             get task() {return allPipelineInfo[pipelineID].status},
-            get model() {return `${allPipelineInfo[pipelineID].steps.length} steps`}
+            get model() {return `${(allPipelineInfo[pipelineID].steps || []).length} steps`}
         };
 
         // no need to perform null check while accessing pipeline attributes
@@ -2425,18 +2450,19 @@ export let pipelineAdapter = new Proxy({}, {
     }
 })
 
-export let selectedResultsMenu = 'Prediction Summary';
-export let setSelectedResultsMenu = result => {
-    if (modelComparison) selectedResultsMenu = 'Prediction Summary';
+export let selectedResultsMenu = 'Problem Description';
+export let setSelectedResultsMenu = menu => {
     let isValid = state => {
+        if (modelComparison) return ['Problem Description', 'Prediction Summary'].includes(state);
+
         let selectedPipeline = [...selectedPipelines][0] || '';
         if (selectedPipeline.includes('raven') && ['Generate New Predictions', 'Visualize Pipeline'].includes(state)) return false;
         if (!selectedPipeline.includes('raven') && ['Solution Table'].includes(state)) return false;
         return true;
     };
 
-    if (isValid(result)) selectedResultsMenu = result;
-    if (!isValid(selectedResultsMenu)) selectedResultsMenu = 'Prediction Summary';
+    if (isValid(menu)) selectedResultsMenu = menu;
+    if (!isValid(selectedResultsMenu)) selectedResultsMenu = 'Problem Description';
 };
 
 // Update table when pipeline is solved
@@ -2760,6 +2786,9 @@ export function downloadIncomplete() {
     called by clicking 'Solve This Problem' in model mode
 */
 export async function estimate() {
+    resultsProblem = getProblemCopy(selectedProblem);
+    disco.unshift(resultsProblem);
+
     if (!IS_D3M_DOMAIN){
         // let userUsg = 'This code path is no longer used.  (Formerly, it used Zelig.)';
         // console.log(userMsg);
@@ -2860,8 +2889,8 @@ export async function estimate() {
             let searchSolutionParams = CreatePipelineDefinition(ROOKPIPE_FROM_REQUEST.predictors,
                 ROOKPIPE_FROM_REQUEST.depvar,2);
 
-            let hasManipulation = selectedProblem.problemID in manipulations && manipulations[selectedProblem.problemID].length > 0;
-            let hasNominal = [selectedProblem.target, ...selectedProblem.predictors]
+            let hasManipulation = resultsProblem.problemID in manipulations && manipulations[resultsProblem.problemID].length > 0;
+            let hasNominal = [resultsProblem.target, ...resultsProblem.predictors]
                 .some(variable => zparams.znom.includes(variable));
 
             let needsProblemCopy = hasManipulation || hasNominal;
@@ -2869,12 +2898,12 @@ export async function estimate() {
             let datasetPath = zparams.zd3mdata;
             // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
             if (needsProblemCopy) {
-                let {data_path, metadata_path} = await manipulate.buildProblemUrl(selectedProblem);
-                datasetDocProblemUrl[selectedProblem.problemID] = metadata_path;
+                let {data_path, metadata_path} = await manipulate.buildProblemUrl(resultsProblem);
+                datasetDocProblemUrl[resultsProblem.problemID] = metadata_path;
                 datasetPath = data_path;
-            } else delete datasetDocProblemUrl[selectedProblem.problemID];
+            } else delete datasetDocProblemUrl[resultsProblem.problemID];
 
-            makeRequest(ROOK_SVC_URL + 'solverapp', {prob: selectedProblem, dataset_path: datasetPath})
+            makeRequest(ROOK_SVC_URL + 'solverapp', {prob: resultsProblem, dataset_path: datasetPath})
                 .then(response => {
                     let ravenID = 'raven ' + ravenPipelineID++;
                     ravenPipelineInfo[ravenID] = response;
@@ -2883,9 +2912,9 @@ export async function estimate() {
 
             let allParams = {
                 searchSolutionParams: searchSolutionParams,
-                fitSolutionDefaultParams: getFitSolutionDefaultParameters(datasetDocProblemUrl[selectedProblem.problemID] || datasetdocurl),
-                produceSolutionDefaultParams: getProduceSolutionDefaultParameters(datasetDocProblemUrl[selectedProblem.problemID] || datasetdocurl),
-                scoreSolutionDefaultParams: getScoreSolutionDefaultParameters(datasetDocProblemUrl[selectedProblem.problemID] || datasetdocurl)
+                fitSolutionDefaultParams: getFitSolutionDefaultParameters(datasetDocProblemUrl[resultsProblem.problemID] || datasetdocurl),
+                produceSolutionDefaultParams: getProduceSolutionDefaultParameters(datasetDocProblemUrl[resultsProblem.problemID] || datasetdocurl),
+                scoreSolutionDefaultParams: getScoreSolutionDefaultParameters(datasetDocProblemUrl[resultsProblem.problemID] || datasetdocurl)
             };
 
             //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
@@ -3054,32 +3083,21 @@ export async function makeRequest(url, data) {
     }
     */
 
-    if (!IS_D3M_DOMAIN){
-        estimateLadda.stop();    // estimateLadda is being stopped somewhere else in D3M
-    };
+    if (!IS_D3M_DOMAIN) estimateLadda.stop();    // estimateLadda is being stopped somewhere else in D3M
     return res;
 }
 
 // programmatically deselect every selected variable
-export let erase = () => nodes.map(node => node.name).forEach(name => clickVar(name, nodes));
-
-// programmatically reset force diagram/selectedvars to initial state at page load
-export function unerase() {
-    erase();
-    layout();
-    let targetNode = findNode(mytarget);
-    if (targetNode.strokeColor !== dvColor)
-        setColors(targetNode, dvColor);
-    restart();
-    // the dependent variable force needs a kick
-    fakeClick();
-}
+export let erase = () => nodes
+    .map(node => node.name)
+    .forEach(name => clickVar(name, nodes));
 
 // call with a tab name to change the left tab in model mode
 export let setLeftTab = (tab) => {
     leftTab = tab;
     updateLeftPanelWidth();
     exploreVariate = tab === 'Discovery' ? 'Problem' : 'Univariate';
+    setFocusedPanel('left');
 };
 
 // formats data for the hidden summary tab in the leftpanel
@@ -3221,6 +3239,7 @@ export let hexToRgba = (hex, alpha) => {
    takes node and color and updates zparams
 */
 export function setColors(n, c) {
+
     // the order of the keys indicates precedence
     let zmap = {
         [csColor]: 'zcross',
@@ -3259,7 +3278,7 @@ export function setColors(n, c) {
     if (!Array.isArray(zparams[zmap[c]])) zparams[zmap[c]] = [];
     let index = zparams[zmap[c]].indexOf(n.name);
     if (index > -1) zparams[zmap[c]].splice(index, 1)
-    else zparams[zmap[c]].push(n.name)
+    else zparams[zmap[c]].push(n.name);
 
     labelNodeAttrs: {
         let matchedColor;
@@ -3805,6 +3824,7 @@ export function setxTable(features) {
     let mydata = [];
     for(let i = 0; i<features.length; i++) {
         let myi = findNodeIndex(features[i]); //i+1;                                // This was set as (i+1), but should be allnodes position, not features position
+        if (myi === -1) continue;
 
         if(allNodes[myi].valid==0) {
             let xval=0;
@@ -4037,23 +4057,67 @@ function makeProblemDescription(problem) {
 
 export function discovery(preprocess_file) {
 
-    return preprocess_file.dataset.discovery.map((prob, i) => ({
-        problemID: "problem" + (i+1),
-        system: "auto",
-        descriptionUser: undefined,
-        get description() {return makeProblemDescription(this)},
-        target: prob.target,
-        predictors: prob.predictors,
-        transform: prob.transform,
-        subsetObs: prob.subsetObs,
-        subsetFeats: prob.subsetFeats,
-        metric: findNode(prob.target).plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
-        task: findNode(prob.target).plottype === "bar" ? 'classification' : 'regression',
-        subTask: Object.keys(d3mTaskSubtype)[0],
-        model: 'modelUndefined',
-        rating: 3,
-        meaningful: "no"
-    }))
+    return preprocess_file.dataset.discovery.map((prob, i) => {
+        let problemID = "problem" + (i+1);
+        let pipeline = [];
+
+        if (prob.subsetObs) {
+            pipeline.push({
+                type: 'subset',
+                id: 'subset ' + pipeline.length,
+                abstractQuery: [{
+                    id: problemID + '-' + String(0) + '-' + String(1),
+                    name: prob.subsetObs,
+                    show_op: false,
+                    cancellable: true,
+                    subset: 'automated'
+                }],
+                nodeId: 2,
+                groupId: 1
+            })
+        }
+
+        if (prob.transform) {
+            let [variable, transform] = prob.transform.split('=').map(_ => _.trim());
+            pipeline.push({
+                type: 'transform',
+                transforms: [{
+                    name: variable,
+                    equation: transform
+                }],
+                expansions: [],
+                binnings: [],
+                manual: [],
+                id: 'transform ' + pipeline.length,
+            })
+        }
+
+        manipulations[problemID] = pipeline;
+
+        return {
+            problemID,
+            system: "auto",
+
+            descriptionUser: undefined,
+            get description() {return makeProblemDescription(this)},
+            set description(value) {this.descriptionUser = value;},
+
+            target: prob.target,
+            predictorsInitial: prob.predictors,
+            predictors: [...prob.predictors, ...getTransformVariables(manipulations[problemID])],
+
+            get pipeline() {
+                if (!(this.problemID in manipulations)) manipulations[this.problemID] = [];
+                return manipulations[this.problemID]
+            },
+            metric: findNode(prob.target).plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
+            task: findNode(prob.target).plottype === "bar" ? 'classification' : 'regression',
+            subTask: 'taskSubtypeUndefined',
+            model: 'modelUndefined',
+            rating: 3,
+            meaningful: false
+        }
+    })
 }
 
 // creates a new problem from the force diagram problem space and adds to disco
@@ -4130,45 +4194,13 @@ export function connectAllForceDiagram() {
 }
 
 
-// called when a problem is clicked in the discovery leftpanel table
-export let discoveryClick = problemID => {
-    setSelectedProblem(disco.find(problem => problem.problemID === problemID));
-
-    if (!selectedProblem) return;
-
-    let {target, predictors} = selectedProblem;
-    erase();
-    [target, ...predictors].map(x => clickVar(x));
-    predictors.forEach(predictor => setColors(nodes.find(node => node.name === predictor), gr1Color));
-    setColors(findNode(target), dvColor);
-    m.redraw();
-    restart();
-};
-
-
+export let defaultProblem;
 export let resultsProblem;
 export let selectedProblem;
-//     {
-//     problemID: 'selectedProblem',
-//     system: 'user',
-//     get description() {return makeProblemDescription(this)},
-//
-//     get target() {return zparams.zdv},
-//     set target(value) {zparams.zdv = value},
-//
-//     get predictors() {return zparams.zgroup1},
-//     set predictors(value) {zparams.zgroup1 = value},
-//
-//     metric: 'meanSquaredError',
-//     task: 'regression',
-//     subTask: 'modelUndefined',
-//     rating: 3,
-//     meaningful: 'no'
-// }
 
 export function setSelectedProblem(problem) {
-    if (selectedProblem === problem) return; // ignore if already set
-
+    if (typeof problem === 'string') problem = disco.find(prob => prob.problemID === problem);
+    if (!problem || selectedProblem === problem) return;
 
     selectedProblem = problem;
     updateRightPanelWidth();
@@ -4176,50 +4208,8 @@ export function setSelectedProblem(problem) {
     // if a constraint is being staged, delete it
     manipulate.setConstraintMenu(undefined);
 
-    // remove old staged problems
-    disco = disco.filter(entry => entry.problemID === (problem || {}).problemID || !entry.staged);
-    if (problem === undefined) return;
-
-    if (!(problem.problemID in manipulations)) {
-        let pipeline = [];
-
-        if (problem['subsetObs']) {
-            pipeline.push({
-                type: 'subset',
-                id: 'subset ' + pipeline.length,
-                abstractQuery: [{
-                    id: String(problem.problemID) + '-' + String(0) + '-' + String(1),
-                    name: problem['subsetObs'],
-                    show_op: false,
-                    cancellable: true,
-                    subset: 'automated'
-                }],
-                nodeId: 2,
-                groupId: 1
-            })
-        }
-
-        if (problem['transform']) {
-            let [variable, transform] = problem['transform'].split('=').map(_ => _.trim());
-            pipeline.push({
-                type: 'transform',
-                transforms: [{
-                    name: variable,
-                    equation: transform
-                }],
-                expansions: [],
-                binnings: [],
-                manual: [],
-                id: 'transform ' + pipeline.length,
-            })
-            problem.predictors.push(variable);
-        }
-
-        manipulations[problem.problemID] = pipeline;
-    }
-
     let countMenu = {type: 'menu', metadata: {type: 'count'}};
-    let subsetMenu = [...manipulate.getPipeline(), ...manipulate.getProblemPipeline(problem) || []];
+    let subsetMenu = [...manipulate.getPipeline(), ...problem.pipeline];
     manipulate.loadMenu(subsetMenu, countMenu).then(count => {
         manipulate.setTotalSubsetRecords(count);
         m.redraw();
@@ -4229,23 +4219,36 @@ export function setSelectedProblem(problem) {
 
     // will trigger the call to solver, if a menu that needs that info is shown
     setSolverPending(true);
-    ravenPipelineInfo = {};
     confusionFactor = undefined;
+    redrawForce(problem);
 }
 
-export function getProblemCopy(problem) {
-    problem = jQuery.extend(true, {}, problem);  // deep copy of original
+export let redrawForce = problem => {
+    if (!problem) return;
+    let {target, predictors} = selectedProblem;
+    erase();
+    [target, ...predictors].map(x => updateNode(x, nodes));
+    predictors.forEach(predictor => setColors(nodes.find(node => node.name === predictor), gr1Color));
+    setColors(findNode(target), dvColor);
+    problem.target = target;
+    restart();
+    restart(); // two calls are necessary here, for now (pebble sizing is finicky)
+    m.redraw();
+};
+
+export function getProblemCopy(problemSource) {
+    let problem = jQuery.extend(true, {}, problemSource);  // deep copy of original
+    Object.defineProperties(problem, Object.getOwnPropertyDescriptors(problemSource)); // keep getters
 
     let offset = 1;
     while (disco.find(prob => prob.problemID === problem.problemID + 'user' + offset)) offset++;
     let newProblemID = problem.problemID + 'user' + offset;
 
-    if (problem.problemID in manipulations)
-        manipulations[newProblemID] = jQuery.extend(true, [], manipulations[problem.problemID]);
+    manipulations[newProblemID] = jQuery.extend(true, [], manipulations[problem.problemID] || []);
 
     Object.assign(problem, {
         problemID: newProblemID,
-        provenance: problem.problemID,
+        provenanceID: problem.problemID,
         system: 'user'
     });
 
@@ -4261,10 +4264,16 @@ export let setModelComparison = state => {
     setSelectedResultsMenu('Prediction Summary');
 };
 
-export let checkedDiscoveryProblems = new Set();
-export let setCheckedDiscoveryProblem = (status, problem) => {
-    if (problem !== undefined) status ? checkedDiscoveryProblems.add(problem) : checkedDiscoveryProblems.delete(problem);
-    else checkedDiscoveryProblems = status ? new Set(disco.map(problem => problem.problemID)) : new Set();
+export let setCheckedDiscoveryProblem = (status, problemID) => {
+    if (problemID) {
+        let problem = selectedProblem.problemID === problemID ? selectedProblem :
+            disco.find(prob => prob.problemID === problemID);
+        problem.meaningful = status;
+    }
+    else {
+        disco.map(prob => prob.meaningful = status);
+        selectedProblem.meaningful = status;
+    }
 };
 
 export async function submitDiscProb() {
@@ -4274,10 +4283,9 @@ export async function submitDiscProb() {
     let outputCSV = "problemID, system, meaningful \n";
 
     for(let i = 0; i < disco.length; i++) {
-        if(checkedDiscoveryProblems.has(disco[i].problemID)) { disco[i].meaningful = "yes"; }
 
         // build up the required .csv file line by line
-        outputCSV = outputCSV + disco[i].problemID + ", \"" + disco[i].system + "\", \"" + disco[i].meaningful + "\"\n";
+        outputCSV = outputCSV + disco[i].problemID + ", \"" + disco[i].system + "\", \"" + (disco[i].meaningful ? 'yes' : 'no') + "\"\n";
 
         if(disco[i].subsetObs ==0 && disco[i].transform==0){
             // construct and write out the api call and problem description for each discovered problem
@@ -4545,12 +4553,7 @@ export async function handleGetSearchSolutionResultsResponse(response1) {
     // let solutionId = response1.response.solutionId;
 
     // ----------------------------------------
-    // (2) Update the pipeline list on the UI
-    // ----------------------------------------
-    console.log('(2) Update the pipeline list on the UI');
-
-    // ----------------------------------------
-    // (2a) Update or Create the Pipeline
+    // (2) Update or Create the Pipeline
     // ----------------------------------------
     if (!ROOKPIPE_FROM_REQUEST) {
         console.log('---------- ERROR: ROOKPIPE_FROM_REQUEST not set!!!');

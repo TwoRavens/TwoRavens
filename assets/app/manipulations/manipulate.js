@@ -556,45 +556,24 @@ export let setQueryUpdated = async state => {
 
     // if we have an edit to the problem manipulations
     if (!app.is_manipulate_mode) {
-        if (!app.selectedProblem) return;
 
-        // promote the problem to a user problem if it is a system problem
-        if (app.selectedProblem.system === 'auto') {
-
-            let problemCopy = app.getProblemCopy(app.selectedProblem);
-            // this will force the automatic pipeline to get rebuilt without user edits
-            delete app.manipulations[app.selectedProblem.problemID];
-            problemCopy.predictorsInitial = [...problemCopy.predictors]; // the predictor list will be edited to include transformed variables
-            app.disco.push(problemCopy);
-
-            redraw = true;
-
-            app.setSelectedProblem(problemCopy);
-            app.setLeftTab('Discovery');
-        }
-
-        if (!app.selectedProblem.predictorsInitial)
-            app.selectedProblem.predictorsInitial = app.selectedProblem.predictors;
-
-        let problemPipeline = getProblemPipeline(app.selectedProblem) || [];
-
-        let transformVars = getTransformVariables(problemPipeline);
-        app.selectedProblem.transform = getTransformString(problemPipeline);
-        app.selectedProblem.predictors = [...new Set([...app.selectedProblem.predictorsInitial, ...transformVars])];
-        app.selectedProblem.pending = true;
+        app.selectedProblem.predictors = [
+            ...app.selectedProblem.predictorsInitial,
+            ...getTransformVariables(app.selectedProblem.pipeline)
+        ];
 
         // if the predictors changed, then redraw the force diagram
         if (app.nodes.length !== app.selectedProblem.predictors.length || app.nodes.some(node => !app.selectedProblem.predictors.includes(node.name)))
-            app.discoveryClick(app.selectedProblem.problemID);
+            app.redrawForce(app.selectedProblem);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
-        loadMenu([...getPipeline(), ...problemPipeline], countMenu).then(count => {
+        loadMenu([...getPipeline(), ...app.selectedProblem.pipeline], countMenu).then(count => {
             setTotalSubsetRecords(count);
             m.redraw();
         });
         app.resetPeek();
         // will trigger the call to solver, if a menu that needs that info is shown
-        if (app.selectedProblem) app.setSolverPending(true);
+        app.setSolverPending(true);
     }
 };
 
@@ -996,6 +975,9 @@ export async function buildProblemUrl(problem) {
     console.log(compiled);
     let metadata = queryMongo.translateDatasetDoc(compiled, datadocument, selectedProblem);
 
+    console.warn("#debug metadata");
+    console.log(metadata);
+
     return await getData({
         method: 'aggregate',
         query: JSON.stringify(compiled),
@@ -1014,8 +996,3 @@ export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
 
     return out;
 }, new Set());
-
-export let getTransformString = pipeline => pipeline
-    .filter(step => step.type === 'transform')
-    .map(step => step.transforms.map(transform => `${transform.name} = ${transform.equation}`).join(', '))
-    .join(', ');

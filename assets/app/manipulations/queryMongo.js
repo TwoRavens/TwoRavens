@@ -976,6 +976,7 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
 
     // assuming that there is only one tabular dataResource
     let tableResourceIndex = doc.dataResources.findIndex(resource => resource.resType === 'table');
+    let allCols = [...doc.dataResources[tableResourceIndex].columns];
 
     doc.dataResources[tableResourceIndex].columns = pipeline.reduce((columns, step) => {
 
@@ -991,9 +992,12 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
             if (typeof data[field] === 'object')
                 target.colType = Object.keys(typeInferences).find(type => typeInferences[type].has(Object.keys(data[field])[0].substr(1)));
             else if (typeof data[field] === 'string' && data[field][0] === '$')
-                return Object.assign(target, columns.find(column => column.colName === data[field].substr(1)));
+                Object.assign(target, allCols.find(column => column.colName === data[field].substr(1)), {colName: field});
             else target.colType = {'number': 'real', 'string': 'string', 'boolean': 'boolean'}[typeof data[field]]; // javascript type: D3M type
             target.role = target.role || ['suggestedTarget'];
+
+            // prepended mutations are found first when looking up types
+            allCols.unshift(target);
         };
 
         if ('$addFields' in step) Object.keys(step.$addFields).forEach(mutateField(step.$addFields));
@@ -1019,7 +1023,7 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
         if ('$replaceRoot' in step) throw '$replaceRoot D3M datasetDoc.json translation not implemented';
         if ('$unwind' in step) throw '$unwind D3M datasetDoc.json translation not implemented';
 
-        return columns;
+        return outColumns;
     }, doc.dataResources[tableResourceIndex].columns)
         .map(struct => Object.assign(struct, { // relabel roles to reflect the proper target
             role: [
