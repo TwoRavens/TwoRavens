@@ -62,3 +62,7 @@ ravens_volume/2ravens_local_setup
 # IDE
 .idea/
 rook/preprocess/.Rapp.history
+
+# files related to eventdata preprocessing
+tworaven_apps/eventdata_queries/initialization/*.csv
+tworaven_apps/eventdata_queries/initialization/arcgis_filtered/

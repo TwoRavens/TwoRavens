@@ -13,11 +13,11 @@
 		"tabs": {
 			"source": {
 				"full": "TwoRavens_country_src",
-				"filters": []
+				"filters": ["TwoRavens_country_src"]
 			},
 			"target": {
 				"full": "TwoRavens_country_tgt",
-				"filters": []
+				"filters": ["TwoRavens_country_tgt"]
 			}
 		}
 	},

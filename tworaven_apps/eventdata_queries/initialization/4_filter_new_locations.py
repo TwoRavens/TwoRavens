@@ -11,9 +11,9 @@ all_headers = ['Latitude', 'Longitude', 'Country', 'Region', 'Subregion', 'City'
 
 processed = set()
 
-for identifier in db.arcgis.aggregate([{"$group": {'_id': {header: '$' + header for header in all_headers}}}]):
-    print(','.join([identifier['_id'][header] for header in all_headers if header in identifier['_id']]))
-    processed.add(','.join([identifier['_id'][header] for header in all_headers if header in identifier['_id']]))
+#~ for identifier in db.arcgis.aggregate([{"$group": {'_id': {header: '$' + header for header in all_headers}}}]):
+    #~ print(','.join([identifier['_id'][header] for header in all_headers if header in identifier['_id']]))
+    #~ processed.add(','.join([identifier['_id'][header] for header in all_headers if header in identifier['_id']]))
 
 for file in glob.glob('./locations_*.csv'):
     print(file)

@@ -19,55 +19,39 @@ Updated process for MID/GED/GTD/Terrier datasets:
 For datasets that do not have an aggregated field (eg Terrier's actor fields), to create one by merging existing fields, use:
 db.<collection>.aggregate([{$addFields: {"TwoRavens_source_actor": {$concat: ["$<field1>", "$<field2>", ...]}, "TwoRavens_target_actor": {$concat: ["$<field3>", "$<field4>", ...]}}}, {$out: "<collection>"}])
 
-
-1. If on windows, use Ubuntu on a virtualbox to prevent this error:
+LOCAL SETUP STEPS:
+0. If on windows, use Ubuntu on a virtualbox to prevent this error:
       Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at http://localhost:8000/custom/eventdataapp. (Reason: CORS header ‘Access-Control-Allow-Origin’ missing).
 
-2. Install mongodb. Queries are tested to work on version 3.6, but 4.0 should not break compatibility.
-    Ubuntu: DO NOT do the obvious `sudo apt-get install mongo`, that package is unofficial. Use this link:
+1. Install mongodb. Queries are tested to work on version 3.6, but 4.0 should not break compatibility.
+    NOTE: for Ubuntu DO NOT do the obvious `sudo apt-get install mongo`, that package is unofficial. Use this link:
     https://docs.mongodb.com/manual/administration/install-community/
-    OS X: install via Brew
-    https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/
 
-3. Start a mongo server. Server port is 27017 by default
+2. Start a mongo server. Server port is 27017 by default
      run `mongod` or if that doesn't work, `sudo service mongod start`
      If you get an error about `/data/db`, then create the folder `/data/db` in the root directory.
-     For a custom config file:
-     `mongod --config /usr/local/etc/mongod.conf`
 
-4. There is a sequence of scripts to run in `tworaven_apps/eventdata_queries/initialization/`.
-    For many of the scripts, mongod must be running, and pymongo must be installed in your python interpreter. Python 3 features were used.
-    To just bootstrap a local dev environment, the arcgis scripts for rich location data doesn't have to be run.
-        The data for constructing location columns is either computed via arcgis, or loaded from a mongoexport database dump. The dump is not in this repository.
+3. Create a new database using the mongoimport utility in the mongo bin (via cmd from ~/TwoRavens/)
+     Import statements are in ./1_mongoimports.txt
+     3a. To check that the csv data is available, run in new CMD:
+         (connects to mongo server on default port, opens mongo prompt)
+           mongo
+      b. Switch to event_scrape database
+           use event_data
+      c. Return all data from the phoenix_events table
+           db.cline_speed.find({})
 
+4. Construct date and location columns. Follow the filename steps in this folder.
+     Note that mongod must be running, and pymongo must be installed in your python interpreter. Python 3 features were used.
+     Note the data for constructing location columns is stored in a mongoexport file that is not in this repository.
      If you are just doing a local setup, then skip scripts 3-7 and just run 8.
      Scripts 3-6 are for constructing arcgis locations, and 7 is for applying them to your datasets.
      Step 8 will fill in missing country fields from steps 3-7, but is sufficient alone to be able to run a local setup.
-    If you are going to be updating the production database, then the richer ArcGIS location data needs to be in the database before running `install_remote.txt`
 
 5. Run 'fab run_eventdata_dev' to get Django running. Requests for data pass through endpoints in `/tworavens_apps/eventdata_queries/`
 
-6. If you still have problems with CORS, try to permit CORS on your browser. This doesn't seem to work on Windows
+6. If you still have problems, try to permit CORS on your browser. This doesn't seem to work on Windows
      7a. Google Chrome: start with terminal argument
             google-chrome --disable-web-security
       b. Mozilla Firefox: in about:config settings
             security.fileuri.strict_origin_policy - set to False
-
-
-To get eventdata running after initial setup:
-`fab run_eventdata_dev`
-`mongod`
-
-
-Example snippet on mongo shell usage:
-```
-> show collections
-cline_phoenix_fbis
-cline_phoenix_nyt
-> db.cline_phoenix_nyt.find().count()
-1092211
-> db.cline_phoenix_fbis.find().count(0
-... )
-817955
->
-```
