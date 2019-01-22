@@ -28,7 +28,7 @@ def get_identifiers(meta):
 for file in glob.glob(path_files):
     with open(file, 'r') as infile:
         for location in json.load(infile)['features']:
-            locations.arcgis2.update_one(
+            locations.arcgis3.update_one(
                 get_identifiers(location),
                 {'$set': {**purify(location), **get_identifiers(location)}},
                 upsert=True)

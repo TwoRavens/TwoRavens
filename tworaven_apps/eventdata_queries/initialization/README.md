@@ -1,3 +1,24 @@
+Updated process for MID/GED/GTD/Terrier datasets:
+0. verify that all columns in the dataset consist of atomic data. if not, split the data entry so it is atomic
+1. construct the date columns (see 2_construct_dates.py and date_standardization.py)
+	resulting columns:	TwoRavens_start date
+						TwoRavens_end date
+						TwoRavens_date info
+2. construct the location columns (see scripts 3-8, and refer to the ones wiht *new.py)
+	minimum resulting columns:	TwoRavens_country
+								TwoRavens_country_historic (if date present and original regional data present)
+3. construct actor columns if countries used as source/targets
+	minimum resulting columns:	TwoRavens_country_src
+								TwoRavens_country_tgt
+								TwoRavens_country_historic_src
+								TwoRavens_country_historic_tgt
+4. export the database: mongodump -d event_data -c <COLLECTION> --archive=<PATH TO DUMP FILE> --gzip
+5. scp the dump files to the remote server: scp <PATH TO DUMP FILE> <SERVER>:<PATH TO DUMP>
+6. restore the dump files: mongorestore --archive=<PATH TO ARCHIVE> --gzip --nsFrom "<ORIGINAL DB.*" --nsTo "<NEW DB>.*"
+
+For datasets that do not have an aggregated field (eg Terrier's actor fields), to create one by merging existing fields, use:
+db.<collection>.aggregate([{$addFields: {"TwoRavens_source_actor": {$concat: ["$<field1>", "$<field2>", ...]}, "TwoRavens_target_actor": {$concat: ["$<field3>", "$<field4>", ...]}}}, {$out: "<collection>"}])
+
 LOCAL SETUP STEPS:
 0. If on windows, use Ubuntu on a virtualbox to prevent this error:
       Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at http://localhost:8000/custom/eventdataapp. (Reason: CORS header ‘Access-Control-Allow-Origin’ missing).

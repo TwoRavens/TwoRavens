@@ -108,6 +108,24 @@ def acled_locations():
         for location in locations:
             outfile.write(location + '\n')
 
+def acled_locations2():
+	print("processing acled")
+	for collection in ['acled_africa', 'acled_middle_east', 'acled_asia']:
+		print(collection)
+		with open("locations_" + collection + ".csv", "w") as outfile:
+			outfile.write("Latitude,Longitude\n")
+			for doc in db[collection].aggregate([
+				{
+					"$group": {
+						"_id": {
+							"Latitude": "$LATITUDE",
+							"Longitude": "$LONGITUDE"
+						}
+					}
+				}
+			]):
+				outfile.write(','.join([str(doc['_id'][out]) for out in ['Latitude', 'Longitude']]) + "\n")
+
 def ged_locations():
 	print("processing ged")
 	with open("locations_ged.csv", "w") as outfile:
@@ -160,7 +178,8 @@ def terrier_locations():
 
 icews_locations()
 cline_locations()
-acled_locations()
+#~ acled_locations()
+acled_locations2()	#this geolocates with lat/long
 ged_locations()
 gtd_locations()
 terrier_locations()

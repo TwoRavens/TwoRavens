@@ -12,12 +12,12 @@
 		"type": "dyad",
 		"tabs": {
 			"source": {
-				"full": "src_agent",
-				"filters": []
+				"full": "TwoRavens_source_actor",
+				"filters": ["src_actor", "src_agent", "src_other_agent"]
 			},
 			"target": {
-				"full": "tgt_agent",
-				"filters": []
+				"full": "TwoRavens_target_actor",
+				"filters": ["tgt_actor", "tgt_agent", "tgt_other_agent"]
 			}
 		}
 	},
@@ -88,7 +88,9 @@
     "TwoRavens_postal_ext",
     "TwoRavens_region",
     "TwoRavens_subregion",
-    "TwoRavens_country_historic"
+    "TwoRavens_country_historic",
+    "TwoRavens_source_actor",
+    "TwoRavens_target_actor"
   ],
   "alignments": {
 	  "TwoRavens_start date": "date",
@@ -98,7 +100,17 @@
   },
   "formats": {
 	  "TwoRavens_country": "ISO-3",
-	  "code": "CAMEO"
+	  "code": "CAMEO",
+	  "quad_class": "penta_class",
+	  "root_code": "root_code",
+	  "TwoRavens_source_actor": "phoenix",
+	  "src_actor": "ISO-3",
+	  "src_agent": "phoenix",
+	  "src_other_agent": "phoenix",
+	  "TwoRavens_target_actor": "phoenix",
+	  "tgt_actor": "ISO-3",
+	  "tgt_agent": "phoenix",
+	  "tgt_other_agent": "phoenix"
   },
   "citations": [
   {

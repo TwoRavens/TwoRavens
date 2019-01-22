@@ -216,9 +216,31 @@ def fillLoc(dataset, datasetAlign, datasetCountryA, datasetCountryB):
 					db[dataset].insert_one(tempDoc)
 				db[dataset].delete_one({"_id": doc["_id"]})
 		
-for collection in ["ged"]:
+for collection in []:#["ged"]:
 	if collection == "ged":
 		fillLoc("ged", "gwcode", "gwnoa", "gwnob")
+
+for collection in ["acled_africa", "acled_asia", "acled_middle_east"]:
+	print(collection)
+	missing = set()
+	for doc in db[collection].find({"TwoRavens_country": {"$exists": 0}}):
+		try:
+			modern = alignment.loc[alignment["ICEWS"] == doc["COUNTRY"], "ISO-3"].values[0]
+			if modern is not None:
+				db[collection].update_one(
+					{'_id': doc['_id']},
+					{'$set': {"TwoRavens_country": modern}})
+			else:
+				missing.add(doc["COUNTRY"])
+		except:
+			if doc["COUNTRY"] == "Palestine":
+				db[collection].update_one(
+					{'_id': doc['_id']},
+					{'$set': {"TwoRavens_country": "PSE"}})
+			else:
+				missing.add(doc["COUNTRY"])
+	print(missing)
+	print()
 
 '''
 frame = pd.read_json(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'alignments', 'country2.json')))

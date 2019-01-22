@@ -60,3 +60,7 @@ ravens_volume/2ravens_local_setup
 
 # IDE
 .idea/
+
+# files related to preprocessing
+tworaven_apps/eventdata_queries/initialization/*.csv
+tworaven_apps/eventdata_queries/initialization/arcgis_filtered/

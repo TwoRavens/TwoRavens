@@ -61,7 +61,7 @@ def date_acled():
             db[collection].update(
                 {'_id': document['_id']},
                 {'$set': {
-                    'TwoRavens_EVENT_DATE': datetime.datetime.strptime(document['EVENT_DATE'], '%d-%B-%Y') ,
+                    'TwoRavens_EVENT_DATE': datetime.datetime.strptime(document['EVENT_DATE'], '%m/%d/%Y') ,
                     'TwoRavens_TIMESTAMP': datetime.datetime.fromtimestamp(document['TIMESTAMP'])
                 }
             })

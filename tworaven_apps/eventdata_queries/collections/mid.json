@@ -13,11 +13,11 @@
 		"tabs": {
 			"source": {
 				"full": "src-actor",
-				"filters": []
+				"filters": ["src-actor"]
 			},
 			"target": {
 				"full": "tgt-actor",
-				"filters": []
+				"filters": ["tgt-actor"]
 			}
 		}
 	},
@@ -26,6 +26,13 @@
 		"measureType": "unit",
 		"structure": "point",
 		"columns": ["TwoRavens_start date"]
+	},
+	"Action": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": [
+			"Action"
+		]
 	}
   },
   "columns": [
@@ -62,7 +69,8 @@
   },
   "formats": {
 	  "src-actor": "cowcode",
-	  "tgt-actor": "cowcode"
+	  "tgt-actor": "cowcode",
+	  "Action": "mid_action"
   },
   "citations": [
   {
