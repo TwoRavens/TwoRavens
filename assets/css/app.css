@@ -509,3 +509,13 @@ div#scatterplot .axis path {fill: none; stroke: #BDBDBD; shape-rendering: crispE
 .vega-actions a {
     padding-right: 1em;
 }
+
+
+.footer-info{
+  color: #337ab7;
+}
+.footer-info-break{
+  margin-left: .5em;
+  margin-right: .5em;
+  color: #337ab7;
+}
