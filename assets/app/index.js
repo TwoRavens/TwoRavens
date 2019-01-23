@@ -279,7 +279,9 @@ function leftpanel(mode) {
                 value: 'Augment',
                 contents: m(Datamart, {
                     augmentState: app.augmentState,
-                    augmentResults: app.augmentResults
+                    augmentResults: app.augmentResults,
+                    endpoint: app.datamartURL,
+                    labelWidth: '10em'
                 })
             },
             {
@@ -1252,14 +1254,6 @@ class Body {
                 onclick: () => app.setAlertsShown(true)
             }, glyph2('alert', {style: {color: app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}})),
 
-            m(Button, {
-                onclick: () => app.alertLog(m(Table, {
-                    data: app.allPipelineInfo
-                }))
-            }, 'Log allpipelineinfo'),
-            /*m(Button, {
-                onclick: () => app.setPreprocessTab()
-            }, 'Preprocess Log'),*/
             m('div.btn.btn-group', {style: 'float: right; padding: 0px'},
                 m(Button, {
                     class: app.peekInlineShown && ['active'],
@@ -1290,7 +1284,9 @@ else {
         '/datamart': {
             render: () => m(Datamart, {
                 augmentState: app.augmentState,
-                augmentResults: app.augmentResults
+                augmentResults: app.augmentResults,
+                endpoint: app.datamartURL,
+                labelWidth: '10em'
             })
         },
         '/explore/:variate/:vars...': Body,

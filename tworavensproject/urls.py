@@ -24,6 +24,8 @@ urlpatterns = [
 
     url(r'^ws-views/', include('tworaven_apps.websocket_views.urls')),
 
+    url(r'^datamart/', include('tworaven_apps.datamart_endpoints.urls')),
+
     #url(r'^data/', include('tworaven_apps.test_data.urls')),
 
     #url(r'^ravens_volume/', include('tworaven_apps.test_data.urls')),

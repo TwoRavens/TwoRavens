@@ -161,6 +161,7 @@ export async function updatePeek(pipeline) {
 
 // ~~~~ MANIPULATIONS STATE ~~~~
 export let mongoURL = '/eventdata/api/';
+export let datamartURL = '/datamart/api/';
 
 // this contains an object of abstract descriptions of pipelines of manipulations
 export let manipulations = {};
@@ -508,12 +509,18 @@ export let zparams = {
     zusername: ''
 };
 
+// export let augmentState = {
+//     dataset: {
+//         keywords: []
+//     }
+// };
+
+
 export let augmentState = {
     dataset: {
-        keywords: []
+        about: 'coffee'
     }
 };
-
 export let augmentResults = [];
 
 // list of variable strings (same as Object.keys(preprocess))

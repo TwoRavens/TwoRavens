@@ -79,6 +79,7 @@ INSTALLED_APPS = [
     'tworaven_apps.api_docs',
     'tworaven_apps.call_captures', # capture data sent from UI out to rook/TA2
     'tworaven_apps.eventdata_queries', # eventdata API services
+    'tworaven_apps.datamart_endpoints',
 
     # webpack!
     'webpack_loader',
