@@ -42,9 +42,9 @@ after_success:
   # Temp push, to test new k8s deploy
   # -------------------------------------
   - if [ "$TRAVIS_BRANCH" == "468-dm" ]; then
-    docker build -t tworavens/ravens-main:develop .;
+    docker build -t tworavens/ravens-main:dm .;
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-    docker push tworavens/ravens-main:develop;
+    docker push tworavens/ravens-main:dm;
     fi
   - if [ "$TRAVIS_BRANCH" == "EventData_generalization" ]; then
     cd setup/nginx/;
