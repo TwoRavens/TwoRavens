@@ -1,3 +1,5 @@
+# _1/15/2019 - these instructions are outdated_
+
 # Vagrant install
 
 This is the only tested method to run TwoRavens on Windows, but works on anything with support for Vagrant. To get started:

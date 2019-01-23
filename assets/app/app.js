@@ -276,7 +276,16 @@ export let summaryHold = false;
 export let rightTab = 'Problem'; // current tab in right panel
 export let rightTabExplore = 'Univariate';
 
+export let preprocessTabName = 'Preprocess Log'
+
+export let isPreprocessTab = () => {
+    return leftTab === preprocessTabName;
+}
+export let setPreprocessTab = () =>{
+    isPreprocessTab() ? setLeftTab('Variables') : setLeftTab(preprocessTabName);
+}
 export let modelLeftPanelWidths = {
+    preprocessTabName: '500px',
     'Variables': '300px',
     'Discovery': 'auto',
     'Augment': '600px',

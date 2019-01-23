@@ -49,6 +49,7 @@ import vegaEmbed from "vega-embed";
 import {selectedProblem} from "./app";
 import {zparams} from "./app";
 import {resultsProblem} from "./app";
+import PreprocessInfo from "./PreprocessInfo";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -134,6 +135,13 @@ function leftpanel(mode) {
         currentTab: app.leftTab,
         callback: app.setLeftTab,
         sections: [
+            {
+                value: app.preprocessTabName,
+                id: 'preprocessInfoTab',
+                display: 'none',
+                title: 'Data Log',
+                contents: m(PreprocessInfo,{})
+            },
             {
                 value: 'Variables',
                 title: 'Click variable name to add or remove the variable pebble from the modeling space.',
@@ -1231,14 +1239,13 @@ class Body {
                 // attrsButtons: {class: ['btn-sm']}, // if you'd like small buttons (btn-sm should be applied to individual buttons, not the entire component)
                 attrsButtons: {style: {width: 'auto'}}
             }),
-            m("a#logID[href=somelink][target=_blank]", "\u00A0 \u00A0 Replication"),
-            m("span[style=color:#337ab7]", "\u00A0 | \u00A0"),
-            // dev links...
-            m("a[href='/dev-raven-links'][target=_blank]", "raven-links"),
-            m("span[style=color:#337ab7]", "\u00A0 | \u00A0"),
-            m("span[style=color:#337ab7]#ta2-server-name", `TA2: ${TA2_SERVER}`),
-            m("span[style=color:#337ab7]", "\u00A0 | \u00A0"),
-            m("span[style=color:#337ab7]", `TA3 API: ${TA3TA2_API_VERSION} \u00A0 \u00A0`),
+            m("span", {"class": "footer-info-break"}, "|"),
+            m("a", {"href" : "/dev-raven-links", "target": "=_blank"}, "raven-links"),
+            m("span", {"class": "footer-info-break"}, "|"),
+            m("span", {"class": "footer-info", "id": "ta2-server-name"}, `TA2: ${TA2_SERVER}`),
+            m("span", {"class": "footer-info-break"}, "|"),
+            m("span", {"style": "color:#337ab7"}, `TA3 API: ${TA3TA2_API_VERSION}`),
+            m("span", {"class": "footer-info-break"}, "|"),
             m(Button, {
                 style: {'margin-left': '1em'},
                 title: 'alerts',
@@ -1250,6 +1257,9 @@ class Body {
                     data: app.allPipelineInfo
                 }))
             }, 'Log allpipelineinfo'),
+            m(Button, {
+                onclick: () => app.setPreprocessTab()
+            }, 'Preprocess Log'),
             m('div.btn.btn-group', {style: 'float: right; padding: 0px'},
                 m(Button, {
                     class: app.peekInlineShown && ['active'],

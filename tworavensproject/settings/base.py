@@ -69,6 +69,7 @@ INSTALLED_APPS = [
 
     'social_django',    # social auth
     'tworaven_apps.raven_auth', # user model
+    'tworaven_apps.user_workspaces', # save session state
     'tworaven_apps.workspaces', # save session state
 
     'tworaven_apps.configurations', # UI domain/mode configuration
