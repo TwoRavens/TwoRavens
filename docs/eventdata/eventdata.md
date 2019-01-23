@@ -9,13 +9,13 @@ We standardize date fields to a timestamp. All dates fields are converted and pr
 ### Location
 We standardize location fields to two fields: "TwoRavens_country" and "TwoRavens_country_historic". The former is using the ISO-3 standard to represent the modern day country; the latter is using the Correlates of War (COW) standard to represent the historical state of the event. For datasets using alternate country codes, we use a translation table to convert to COW codes. If an alternate code is not in the original COW code list or if the COW code is referring to a modern-day region, we have created a substitute (historical regions and states are discussed further below). We try to pick substitute codes that are close to their counterpart. The following is a list of substitutes:
 
-#### Substite ISO-3
+#### Substitute ISO-3
 | StateName COW | COWcode | ISO-3 | UN M.49 | Notes |                                      |
 |---------------|---------|-------|---------|-------|--------------------------------------|
 | Yugoslavia    | YUG     | 345   | MNE     | 499   | defaulted to Montenegro              |
 | Kosovo        | KOS     | 347   | XKX     | 412   | is listed as an alternate ISO-3 code |
 
-#### Substitue COW
+#### Substitute COW
 | StateName                                    | COW | COWcode | ISO-3 | Notes                                                                  |
 |----------------------------------------------|-----|---------|-------|------------------------------------------------------------------------|
 | Puerto Rico                                  | PRI | 3       | PRI   | US territory                                                           |
