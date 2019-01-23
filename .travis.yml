@@ -41,11 +41,11 @@ after_success:
   # -------------------------------------
   # Temp push, to test new k8s deploy
   # -------------------------------------
-  #- if [ "$TRAVIS_BRANCH" == "436-daphne-server" ]; then
-  #  docker build -t tworavens/ravens-main:develop .;
-  #  docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-  #  docker push tworavens/ravens-main:develop;
-  #  fi
+  - if [ "$TRAVIS_BRANCH" == "468-dm" ]; then
+    docker build -t tworavens/ravens-main:develop .;
+    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+    docker push tworavens/ravens-main:develop;
+    fi
   - if [ "$TRAVIS_BRANCH" == "EventData_generalization" ]; then
     cd setup/nginx/;
     docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-nginx:latest .;

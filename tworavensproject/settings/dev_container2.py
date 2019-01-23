@@ -29,3 +29,10 @@ SESSION_COOKIE_NAME = os.environ.get('RAVENS_SESSION_COOKIE_NAME',
                                      'tworavens_deploy')
 
 SWAGGER_HOST = '127.0.0.1:80'
+
+# -----------------------------------
+# staticfiles served via nginx
+# -----------------------------------
+STATIC_ROOT = join('/ravens_volume', 'staticfiles', 'static')
+if not os.path.isdir(STATIC_ROOT):
+    os.makedirs(STATIC_ROOT)
