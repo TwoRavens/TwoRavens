@@ -1,6 +1,10 @@
 Install jsdocs: npm install -g jsdoc
 
-To generate documentation:
+To auto generate documentation:
+1. edit genDocs.py to contain the paths to the JS/MD files as well as the desired output folders
+2. run the script
+
+To generate documentation manually:
 1. for each separate page of docs you want, make a seperate directory for the generated HTML files
 2. change to that directory, and run jsdoc to make documentation into that folder: jsdoc <path to js files> <path to markdown>
 2.a. if you just want to convert markdown to html, create an empty .js file and run the jsdoc command

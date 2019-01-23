@@ -10,11 +10,11 @@ import glob
 # this is the structure of the docs: make sure it is in order!
 # page title, js paths, md path (only one allowed), output folder
 groups = {
-			"Two Ravens": ["./assets/app/*.js", "./README.md", "root_out"],	#this must be here (root of docs)
-			"Event Data": ["./assets/app/eventdata/*.js", "./eventdata_docs/eventdata.md", "eventdata_docs_out"],
-			"D3M": ["./arch_docs/empty.js", "./docs/D3M.md", "D3M_out"],
-			"Metadata Service": ["./arch_docs/empty.js", "./docs/metadata_service.md", "metadata_service_out"],
-			"Architecture": ["./arch_docs/empty.js", "./arch_docs/architecture.md", "arch_docs_out"]
+			"Two Ravens":		["./assets/app/*.js", 			"./README.md",						"doc_out/root_out"],	#this line be here (root of docs)
+			"Event Data":		["./assets/app/eventdata/*.js",	"./docs/eventdata/eventdata.md",	"doc_out/eventdata_docs_out"],
+			"D3M":				["./assets/app/empty.js",		"./docs/D3M.md",					"doc_out/D3M_out"],
+			"Metadata Service":	["./assets/app/empty.js",		"./docs/metadata_service.md",		"doc_out/metadata_service_out"],
+			"Architecture":		["./assets/app/empty.js",		"./docs/eventdata/architecture.md",	"doc_out/arch_docs_out"]
 		}
 # this specifies the order of pages in the navigation panel
 order = ["Two Ravens", "Event Data", "D3M", "Metadata Service", "Architecture"]
@@ -28,7 +28,7 @@ for gr in groups:
 # perform doc gen
 for gr in groups:
 	print("generating docs for", gr)
-	subprocess.run(["mkdir", groups[gr][-1]])
+	#~ subprocess.run(["mkdir", groups[gr][-1]])
 	#~ subprocess.run(["jsdoc", "-d", groups[gr][-1]] + groups[gr][0:-1])
 	subprocess.run(" ".join(["jsdoc", "-d", groups[gr][-1]] + groups[gr][0:-1]), shell=True)
 	if gr == "Two Ravens":
@@ -41,7 +41,7 @@ for gr in groups:
 		for navGr in order:
 			if navGr == gr:
 				continue
-			navStr += "<h2><a href=\"" + groups[navGr][-1] + "\/index.html\">" + navGr + "<\/a><\/h2>"
+			navStr += "<h2><a href=\"" + groups[navGr][-1].replace("/", "\/") + "\/index.html\">" + navGr + "<\/a><\/h2>"
 		subprocess.run("sed -i -E".split() + ['s/<h2><a href=\"index.html\">Home<\/a><\/h2>/' + navStr + '/g', groups[gr][-1] + "/index.html"])
 	else:
 		subprocess.run("sed -i -E".split() + ['s/<title>JSDoc: Home<\/title>/<title>Two Ravens: ' + gr + '<\/title>/g', groups[gr][-1] + "/index.html"])
@@ -52,9 +52,9 @@ for gr in groups:
 			if navGr == gr:
 				navStr += "<h2><a href=\"index.html\">" + navGr + "<\/a><\/h2>"
 			elif navGr == "Two Ravens":
-				navStr += "<h2><a href=\"..\/" + groups[navGr][-1] + "\/index.html\">Home<\/a><\/h2>"
+				navStr += "<h2><a href=\"..\/" + groups[navGr][-1].replace("/", "\/") + "\/index.html\">Home<\/a><\/h2>"
 			else:
-				navStr += "<h2><a href=\"..\/" + groups[navGr][-1] + "\/index.html\">" + navGr + "<\/a><\/h2>"
+				navStr += "<h2><a href=\"..\/" + groups[navGr][-1].replace("/", "\/") + "\/index.html\">" + navGr + "<\/a><\/h2>"
 		subprocess.run("sed -i -E".split() + ['s/<h2><a href=\"index.html\">Home<\/a><\/h2>/' + navStr + '/g', groups[gr][-1] + "/index.html"])
 
 print("removing old root docs")
@@ -72,7 +72,7 @@ print("all old files removed")
 print("moving new files")
 for f in glob.glob(groups["Two Ravens"][-1] + "/*"):
 	print(f)
-	fName = "./" + f.split("/")[1]
+	fName = "./" + f.split("/")[-1]
 	if os.path.isdir(f):
 		shutil.copytree(f, fName)
 	else:
