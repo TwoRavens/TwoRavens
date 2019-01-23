@@ -49,12 +49,16 @@ for gr in groups:
 		#~ navStr = "<h2><a href=\"..\/" + groups["Two Ravens"][-1] + "\/index.html\">Home<\/a><\/h2>"
 		navStr = ""
 		for navGr in order:
+			depth = len(groups[navGr][-1].split("/"))
+			backStr = ""
+			for x in range(depth):
+				backStr += "..\/"
 			if navGr == gr:
 				navStr += "<h2><a href=\"index.html\">" + navGr + "<\/a><\/h2>"
 			elif navGr == "Two Ravens":
-				navStr += "<h2><a href=\"..\/" + groups[navGr][-1].replace("/", "\/") + "\/index.html\">Home<\/a><\/h2>"
+				navStr += "<h2><a href=\"" + backStr +"\/index.html\">Home<\/a><\/h2>"
 			else:
-				navStr += "<h2><a href=\"..\/" + groups[navGr][-1].replace("/", "\/") + "\/index.html\">" + navGr + "<\/a><\/h2>"
+				navStr += "<h2><a href=\"" + backStr + groups[navGr][-1].replace("/", "\/") + "\/index.html\">" + navGr + "<\/a><\/h2>"
 		subprocess.run("sed -i -E".split() + ['s/<h2><a href=\"index.html\">Home<\/a><\/h2>/' + navStr + '/g', groups[gr][-1] + "/index.html"])
 
 print("removing old root docs")
