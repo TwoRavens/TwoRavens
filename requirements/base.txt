@@ -8,6 +8,7 @@ django-model-utils==3.0.0
 django-webpack-loader==0.6.0
 jsonfield==2.0.2
 requests==2.20.0
+django-storages-1.7.1
 
 # fabric for dev: to run npm and test server with one command
 #

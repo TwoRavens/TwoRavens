@@ -2,7 +2,9 @@
 Constants used to track the app names and url between the frontend and rook
 """
 
+SOLA_JSON_KEY = 'solaJSON'
 HEALTH_CHECK_APP = 'HEALTH_CHECK_APP'
+PREPROCESS_ROOK_APP_NAME = 'preprocessapp'
 
 # Used for tracking rook routing.
 #
@@ -23,7 +25,7 @@ ROOK_APP_NAMES = [('DATA_APP', 'dataapp', 'dataapp'),       # session id?
                   ('PLOTDATA_APP', 'plotdataapp', 'plotdataapp'),
                   ('TREE_APP', 'treeapp', 'treeapp'),
                   (HEALTH_CHECK_APP, 'healthcheckapp', 'healthcheckapp'), # healthcheckapp
-                  #('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models                                    
+                  #('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models
                  ]
 
 ROOK_APP_NAMES += [\
