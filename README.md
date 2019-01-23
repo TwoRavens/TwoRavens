@@ -17,7 +17,7 @@ https://beta.dataverse.org/dataexplore/gui.html?dfId=37&
    [![Example Page](assets/images/example2Rpage.png)](https://beta.dataverse.org/dataexplore/gui.html?dfId=37&)
 
 ### Event Data
-This is a part of the broader TwoRavens project featuring tools for subsetting and aggregating event data. More information can be found [here](doc_out/eventdata_docs/index.html).
+This is a part of the broader TwoRavens project featuring tools for subsetting and aggregating event data. More information can be found [here](doc_out/eventdata_docs_out/index.html).
 
 ### Architecture
-More information about the architecture of TwoRavens is available [here](doc_out/arch_docs/index.html).
+More information about the architecture of TwoRavens is available [here](doc_out/arch_docs_out/index.html).
