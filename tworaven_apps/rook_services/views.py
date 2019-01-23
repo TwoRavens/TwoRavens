@@ -101,7 +101,7 @@ def view_rook_route(request, app_name_in_url):
                         outgoing_url=rook_svc_url,
                         request_msg=raven_data_text)
 
-    print('app_data: %s' % app_data)
+    #print('app_data: %s' % app_data)
 
     # Call R services
     #

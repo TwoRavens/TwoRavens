@@ -322,7 +322,7 @@ export let panelWidth = {
 //-------------------------------------------------
 // Initialize a websocket for this page
 //-------------------------------------------------
-export let wsLink = 'ws://' + window.location.host +
+export let wsLink = WEBSOCKET_PREFIX + window.location.host +
                '/ws/connect/' + username + '/';
 console.log('streamSocket connection made: ' + wsLink);
 export let streamSocket = new WebSocket(wsLink);

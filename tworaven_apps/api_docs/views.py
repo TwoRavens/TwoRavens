@@ -20,7 +20,8 @@ def view_test_form(request):
                      SETTINGS_MODULE=settings.SETTINGS_MODULE,
                      USERNAME=request.user.username,
                      TA3TA2_API_VERSION=TA3TA2Util.get_api_version(),
-                     TA3_GRPC_USER_AGENT=settings.TA3_GRPC_USER_AGENT)
+                     TA3_GRPC_USER_AGENT=settings.TA3_GRPC_USER_AGENT,
+                     WEBSOCKET_PREFIX=settings.WEBSOCKET_PREFIX)
 
     if request.POST:
         client_form = ClientTestForm(request.POST)

@@ -95,6 +95,12 @@ CHANNEL_LAYERS = {
     },
 }
 
+# WEBSOCKET PREFIX
+# specify whether over a regular (ws://)
+# or secure connection (ws://)
+WEBSOCKET_PREFIX = os.environ.get('WEBSOCKET_PREFIX', 'ws://')
+assert WEBSOCKET_PREFIX in ('ws://', 'wss://'), \
+    "Django settings error: 'WEBSOCKET_PREFIX' must be set to 'ws://' or 'wss://'"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
