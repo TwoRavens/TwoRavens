@@ -95,6 +95,12 @@ CHANNEL_LAYERS = {
     },
 }
 
+# WEBSOCKET PREFIX
+# specify whether over a regular (ws://)
+# or secure connection (ws://)
+WEBSOCKET_PREFIX = os.environ.get('WEBSOCKET_PREFIX', 'ws://')
+assert WEBSOCKET_PREFIX in ('ws://', 'wss://'), \
+    "Django settings error: 'WEBSOCKET_PREFIX' must be set to 'ws://' or 'wss://'"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -295,7 +301,7 @@ MONGO_CONNECTION_STRING = os.environ.get('MONGO_CONNECTION_STRING', '')
 
 
 # database for storing manipulations
-TWORAVENS_MONGO_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'tworavens')
+TWORAVENS_MONGO_DB_NAME = os.environ.get('TWORAVENS_MONGO_DB_NAME', 'tworavens')
 MONGO_COLLECTION_PREFIX = 'tr_'  # mongo collection names may not start with a number
 
 # -------------------------
