@@ -1257,9 +1257,9 @@ class Body {
                     data: app.allPipelineInfo
                 }))
             }, 'Log allpipelineinfo'),
-            m(Button, {
+            /*m(Button, {
                 onclick: () => app.setPreprocessTab()
-            }, 'Preprocess Log'),
+            }, 'Preprocess Log'),*/
             m('div.btn.btn-group', {style: 'float: right; padding: 0px'},
                 m(Button, {
                     class: app.peekInlineShown && ['active'],
