@@ -55,8 +55,9 @@ def view_pebbles_home(request):
                  TA3_GRPC_USER_AGENT=settings.TA3_GRPC_USER_AGENT, TA3TA2_API_VERSION=TA3TA2Util.get_api_version(),
                  WEBSOCKET_PREFIX=settings.WEBSOCKET_PREFIX)
 
-    print('-' * 40)
-    print(dinfo['app_config'])
+    #print('-' * 40)
+    #print(dinfo['app_config'])
+    
     return render(request,
                   'index.html',
                   dinfo)
