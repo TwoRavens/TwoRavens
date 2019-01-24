@@ -2742,7 +2742,8 @@ export function getProduceSolutionDefaultParameters(datasetDocUrl){
 
   let my_dataseturi = 'file://' + datasetDocUrl;
   let my_inputs = [{dataset_uri: my_dataseturi}];
-  let my_exposeOutputs = [];  // Not sure about this.
+  //let my_exposeOutputs = [];  // Not sure about this.
+  let my_exposeOutputs = ['outputs.0'];
   let my_exposeValueTypes = ['CSV_URI']; // Not sure about this.
   return {inputs: my_inputs,
           exposeOutputs: my_exposeOutputs,
