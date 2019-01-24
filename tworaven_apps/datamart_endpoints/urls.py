@@ -2,6 +2,9 @@ from django.conf.urls import url
 from tworaven_apps.datamart_endpoints import views
 
 urlpatterns = (
+    url(r'^api/upload',
+        views.api_upload,
+        name='api_upload'),
 
     url(r'^api/search',
         views.api_search,
@@ -11,8 +14,8 @@ urlpatterns = (
         views.api_materialize,
         name='api_materialize'),
 
-    url(r'^api/join',
-        views.api_join,
-        name='api_join'),
+    url(r'^api/augment',
+        views.api_augment,
+        name='api_augment'),
 
 )

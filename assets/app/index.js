@@ -42,13 +42,9 @@ import Datamart from "../common/TwoRavens/Datamart";
 
 // EVENTDATA
 import Body_EventData from './eventdata/Body_EventData';
-import ConfusionMatrix from "./views/ConfusionMatrix";
+import ConfusionMatrix from "./views/ConfusionMatrix"
 
-import * as scatterMultiGroup from "./vega-schemas/scatterMultiGroup";
 import vegaEmbed from "vega-embed";
-import {selectedProblem} from "./app";
-import {zparams} from "./app";
-import {resultsProblem} from "./app";
 import PreprocessInfo from "./PreprocessInfo";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
@@ -170,8 +166,8 @@ function leftpanel(mode) {
                             },
                             callback: x => {
                                 app.clickVar(x, nodes);
-                                app.selectedProblem.predictors = [...zparams.zgroup1];
-                                app.selectedProblem.target = zparams.zdv[0];
+                                app.selectedProblem.predictors = [...app.zparams.zgroup1];
+                                app.selectedProblem.target = app.zparams.zdv[0];
                             },
                             popup: variable => app.popoverContent(app.findNode(variable)),
                             attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
@@ -280,6 +276,8 @@ function leftpanel(mode) {
                 contents: m(Datamart, {
                     augmentState: app.augmentState,
                     augmentResults: app.augmentResults,
+                    indexState: app.augmentIndexState,
+                    dataPath: app.zparams.zd3mdata,
                     endpoint: app.datamartURL,
                     labelWidth: '10em'
                 })
@@ -432,25 +430,25 @@ function rightpanel(mode) {
     if (!IS_D3M_DOMAIN && app.rightTab === 'Results' && app.solverPending) app.callSolver(app.selectedProblem);
 
     let plotScatter = ({state, attrs, dom}) => {
-        let data = [...app.selectedPipelines].reduce((out, pipelineID, i) =>{
-            let Y = app.pipelineAdapter[pipelineID].fittedValues;
-            let X = app.pipelineAdapter[pipelineID].actualValues;
-            if (!X || !Y) return out;
-            return out.concat(X.map((_, i) => ({
-                tworavensX: X[i], tworavensY: Y[i],
-                tworavensLabel: pipelineID, tworavensGroup: pipelineID
-            })))
-        }, []);
+        let xData = {};
+        let yData = {};
 
-        let stringified = JSON.stringify(scatterMultiGroup)
-            .replace(/tworavensTitle/g, "Actuals vs. Predicted: Pipeline " + app.selectedProblem.problemID)
-            .replace("url", "values")
-            .replace('"tworavensData"', JSON.stringify(data))
-            .replace(/tworavensX/g, "Actuals")
-            .replace(/tworavensY/g, "Predicted")
-            .replace(/tworavensGroup/g, "pipeline");
+        [...app.selectedPipelines].forEach((pipelineID) => {
+            let xDataGroup = app.pipelineAdapter[pipelineID].actualValues;
+            let yDataGroup = app.pipelineAdapter[pipelineID].fittedValues;
 
-        vegaEmbed(dom, JSON.parse(stringified), {width: dom.offsetWidth, height: dom.offsetHeight});
+            if (xDataGroup && yDataGroup) {
+                Object.assign(xData, {[pipelineID]: xDataGroup});
+                Object.assign(yData, {[pipelineID]: yDataGroup})
+            }
+        });
+
+        vegaEmbed(dom, plots.vegaScatter(
+            xData, yData,
+            "Actuals", "Predicted",
+            "Actuals vs. Predicted: Pipeline " + app.resultsProblem.problemID,
+            "pipeline"
+        ), {actions: false, width: dom.offsetWidth, height: dom.offsetHeight});
     };
 
     let firstSelectedPipelineID = app.selectedPipelines.values().next().value;
@@ -573,16 +571,16 @@ function rightpanel(mode) {
                     {value: 'Solution Table', id: 'btnSolTable', attrsInterface: {disabled: app.modelComparison || !String(firstSelectedPipelineID).includes('raven')}}
                 ]
             }),
-                resultsProblem && m(`div#problemDescription[style=display:${app.selectedResultsMenu === 'Problem Description' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%]`,
+                app.resultsProblem && m(`div#problemDescription[style=display:${app.selectedResultsMenu === 'Problem Description' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%]`,
 
                     m(Table, {
                         headers: ['Variable', 'Data'],
                         data: [
-                            ['Dependent Variable', resultsProblem.target],
-                            ['Predictors', resultsProblem.predictors],
-                            ['Description', resultsProblem.description],
-                            ['Task', resultsProblem.task],
-                            ['Model', resultsProblem.model]
+                            ['Dependent Variable', app.resultsProblem.target],
+                            ['Predictors', app.resultsProblem.predictors],
+                            ['Description', app.resultsProblem.description],
+                            ['Task', app.resultsProblem.task],
+                            ['Model', app.resultsProblem.model]
                         ],
                         nest: true,
                         attrsAll: {
@@ -1254,6 +1252,10 @@ class Body {
                 onclick: () => app.setAlertsShown(true)
             }, glyph2('alert', {style: {color: app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}})),
 
+            m(Button, {
+                onclick: () => Object.keys(app.pipelineAdapter)
+                    .forEach(pipelineID => console.log(pipelineID, app.pipelineAdapter[pipelineID].fittedValues))
+            }, 'Log fitted values'),
             m('div.btn.btn-group', {style: 'float: right; padding: 0px'},
                 m(Button, {
                     class: app.peekInlineShown && ['active'],
@@ -1285,6 +1287,8 @@ else {
             render: () => m(Datamart, {
                 augmentState: app.augmentState,
                 augmentResults: app.augmentResults,
+                indexState: app.augmentIndexState,
+                dataPath: app.zparams.zd3mdata,
                 endpoint: app.datamartURL,
                 labelWidth: '10em'
             })

@@ -2,22 +2,34 @@ from django import forms
 import json
 
 
+class DatamartUploadForm(forms.Form):
+    """ check if search parameters are ok"""
+
+    data = forms.CharField(required=True, widget=forms.Textarea)
+
+    def clean_data(self):
+        return self.cleaned_data.get('title')
+
+
 class DatamartSearchForm(forms.Form):
     """ check if search parameters are ok"""
 
     query = forms.CharField(required=True, widget=forms.Textarea)
+    data_path = forms.CharField(required=False, widget=forms.Textarea)
 
     def clean_query(self):
         return json.loads(self.cleaned_data.get('query'))
 
+    def clean_path(self):
+        return self.cleaned_data.get('query')
 
-class DatamartJoinForm(forms.Form):
-    """ check if join parameters are ok"""
 
-    query = forms.CharField(required=True, widget=forms.Textarea)
+class DatamartAugmentForm(forms.Form):
+    """ check if augment parameters are ok"""
+    index = forms.CharField(required=True, widget=forms.Textarea)
 
-    def clean_query(self):
-        return json.loads(self.cleaned_data.get('query'))
+    def clean_index(self):
+        return self.cleaned_data.get('index')
 
 
 class DatamartMaterializeForm(forms.Form):

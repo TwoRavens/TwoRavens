@@ -1240,6 +1240,7 @@ export function barsNode(node, obj, radius, explore) {
 }
 
 
+// does not do grouping
 // Function takes as input an array of x values, array of y values, x axis name, y axis name, and a div id, and renders a scatterplot there
 export function scatter(x_Axis, y_Axis, x_Axis_name, y_Axis_name, id, dim, title) {
     if (id === undefined) id = '#setxLeftPlot';
@@ -1257,6 +1258,77 @@ export function scatter(x_Axis, y_Axis, x_Axis_name, y_Axis_name, id, dim, title
 
     let vegajson = JSON.parse(stringified);
     vegaEmbed(id, vegajson, dim);
+}
+
+// handles plotting multiple groups at the same time
+// xData of the form: {'group1': [...], 'group2': [...]}
+export let vegaScatter = (xData, yData, xName, yName, title, legendName) => {
+    console.warn("#debug xData");
+    console.log(xData);
+
+    console.warn("#debug yData");
+    console.log(yData);
+
+    return ({
+        "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+        "description": "A scatterplot.",
+        "title": title,
+        "data": {
+            "values": Object.keys(xData).reduce((out, groupName) =>
+                out.concat(xData[groupName].map((_, i) => ({
+                    [xName]: xData[groupName][i],
+                    [yName]: yData[groupName][i],
+                    [legendName]: groupName,
+                    'tworavensLabel': groupName
+                }))), [])
+        },
+        "autosize": {
+            "type": "fit",
+            "contains": "padding"
+        },
+
+        "layer": [
+            {
+                "mark": "point",
+                "encoding": {
+                    "x": {"field": xName, "type": "quantitative", "axis": {"title": xName}},
+                    "y": {"field": yName, "type": "quantitative", "axis": {"title": yName}},
+                    "color": {"field": legendName, "type": "nominal"},
+                    "tooltip": {"field": "tworavensLabel", "type": "nominal"}
+                }
+            },
+
+            {
+                "mark": {
+                    "type": "rule",
+                    "style": "boxWhisker"
+                },
+                "encoding": {
+                    "color": {"field": legendName, "type": "nominal"},
+                    "x": {
+                        "field": xName,
+                        "type": "quantitative",
+                        "aggregate": "min"
+                    },
+                    "x2": {
+                        "field": xName,
+                        "type": "quantitative",
+                        "aggregate": "max"
+                    },
+                    "y": {
+                        "field": yName,
+                        "type": "quantitative",
+                        "aggregate": "min"
+                    },
+                    "y2": {
+                        "field": yName,
+                        "type": "quantitative",
+                        "aggregate": "max"
+                    }
+                }
+            }
+        ]
+    });
 }
 
 

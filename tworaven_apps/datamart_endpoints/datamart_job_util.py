@@ -11,11 +11,31 @@ LOGGER = logging.getLogger(__name__)
 
 
 class DatamartJobUtil(object):
+
     @staticmethod
-    def datamart_search(query):
-        response = requests.post(DATAMART_URL + '/new/search_data', files={
-            'query': ('filename.csv', query)
-        }, verify=False).json()
+    def datamart_upload(data):
+        response = requests.post(
+            DATAMART_URL + '/new/upload_data',
+            files={
+                'file': ('config.json', data)
+            }, verify=False).json()
+
+        print(response)
+        if response['code'] != '0000':
+            return err_resp(response['message'])
+
+        return ok_resp(response['data'])
+
+    @staticmethod
+    def datamart_search(query, data_path=None):
+        payload = {'query': ('query.json', query)}
+
+        if data_path and os.path.exists(data_path):
+            payload['file'] = open(data_path, 'r')
+
+        response = requests.post(
+            DATAMART_URL + '/new/search_data',
+            files=payload, verify=False).json()
 
         if response['code'] != "0000":
             return err_resp(response['message'])
@@ -31,7 +51,8 @@ class DatamartJobUtil(object):
             LOGGER.error(user_msg)
             return err_resp(user_msg)
 
-        response = requests.get(DATAMART_URL + '/new/materialize_data', params={'index': index},
+        response = requests.get(DATAMART_URL + '/new/materialize_data',
+                                params={'index': index},
                                 verify=False).json()
 
         if response['code'] != "0000":
@@ -56,12 +77,11 @@ class DatamartJobUtil(object):
         })
 
     @staticmethod
-    def datamart_join():
-        response = requests.post(DATAMART_URL + '/augment/default_join', data={},
-                                 verify=False).json()
+    def datamart_augment(index):
 
-        print('join response')
-        print(response)
+        response = requests.get(DATAMART_URL + '/new/augment_data', params={
+            'index': index
+        }, verify=False).json()
 
         if response['code'] != "0000":
             return err_resp(response['message'])

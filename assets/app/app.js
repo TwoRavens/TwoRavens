@@ -5,12 +5,11 @@ import hopscotch from 'hopscotch';
 import m from 'mithril';
 import * as common from "../common/common";
 
-import * as queryMongo from './manipulations/queryMongo';
 import * as manipulate from './manipulations/manipulate';
 
 import {setModal, locationReload} from '../common/views/Modal';
 
-import {bars, barsNode, barsSubset, density, densityNode, scatter, selVarColor} from './plots.js';
+import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
 import {elem} from './utils';
 import {getTransformVariables} from "./manipulations/manipulate";
 
@@ -157,7 +156,7 @@ export async function updatePeek(pipeline) {
     // stop blocking new requests
     peekIsLoading = false;
     m.redraw();
-};
+}
 
 // ~~~~ MANIPULATIONS STATE ~~~~
 export let mongoURL = '/eventdata/api/';
@@ -518,10 +517,16 @@ export let zparams = {
 
 export let augmentState = {
     dataset: {
-        about: 'coffee'
+        about: '',
+        keywords: []
     }
 };
 export let augmentResults = [];
+export let augmentIndexState = {
+    title: '',
+    description: '',
+    url: ''
+};
 
 // list of variable strings (same as Object.keys(preprocess))
 export let valueKey = [];
@@ -2414,8 +2419,8 @@ export let setSelectedPipeline = pipelineID => {
     // ensures results menu is in a valid state
     setSelectedResultsMenu(selectedResultsMenu);
 
-    if ('predictedValues' in (allPipelineInfo[pipelineID] || {}))
-        resultsplotgraph(pipelineID)
+    // if ('predictedValues' in (allPipelineInfo[pipelineID] || {}))
+    //     resultsplotgraph(pipelineID)
 };
 
 // read-only abstraction layer for retrieving useful pipeline data
@@ -2449,7 +2454,7 @@ export let pipelineAdapter = new Proxy({}, {
             get fittedValues() {
                 if ((allPipelineInfo[pipelineID].predictedValues || {}).success)
                     return allPipelineInfo[pipelineID].predictedValues.data
-                        .map(item => item[allPipelineInfo.rookpipe.depvar])
+                        .map(item => parseFloat(item[allPipelineInfo.rookpipe.depvar]))
             },
             get score() {return allPipelineInfo[pipelineID].score},
 
@@ -3670,65 +3675,6 @@ function setPebbleCharge(d){
     }
 }
 
-export function resultsplotgraph(pid){
-    let pipelineInfo = allPipelineInfo[pid];
-    // console.log("pid:");
-    // console.log(pid);
-    let mydv = allPipelineInfo.rookpipe.depvar[0];          // When there are multiple CreatePipelines calls, then this only has values from latest value
-    // console.log(mydv);
-    let dvvalues = allPipelineInfo.rookpipe.dvvalues;       // When there are multiple CreatePipelines calls, then this only has values from latest value
-
-    // Terminate plot if predicted values not available
-    if (!('predictedValues' in pipelineInfo)) return;
-    if (pipelineInfo.predictedValues.success == false) return;
-
-
-    let allPreds = pipelineInfo.predictedValues.data;
-    let predvals = [];
-
-    let mydvI = Object.keys(allPreds[1]).indexOf(mydv);
-    if (mydvI > -1) {
-        for (let i = 0; i < allPreds.length; i++) {
-            predvals.push(allPreds[i][mydv]);
-        }
-    } else if (Object.keys(allPreds[1]).indexOf("preds") > -1) {
-        for (let i = 0; i < allPreds.length; i++) {
-            predvals.push(allPreds[i]["preds"]);
-        }
-    } else {
-        alertError("DV does not match. No Results window.");
-        return;
-    }
-
-    // only do this for classification tasks
-    if(d3mTaskType[d3mProblemDescription.taskType][1] != "CLASSIFICATION") {
-        let xdata = "Actual";
-        let ydata = "Predicted";
-        let mytitle = "Predicted V Actuals: Pipeline " + pid;
-        scatter(dvvalues, predvals, xdata, ydata, undefined, undefined, mytitle);
-    }
-
-    // add the list of predictors into setxLeftTopLeft
-
-    d3.select("#setxLeftTopLeft").selectAll("p")
-        .data(allPipelineInfo.rookpipe.predictors)                    // When there are multiple CreatePipelines calls, then this only has values from latest value
-        .enter()
-        .append("p")
-        .text(function (d) { return d; })
-        .attr('id',function(d) { return "sx_"+d; })
-        .attr('class',"item-default")
-        .on("click", function() {
-        if(this.className=="item-select") {
-            return;
-        } else {
-            d3.select("#setxLeftTopLeft").select("p.item-select")
-            .attr('class', 'item-default');
-            d3.select(this).attr('class',"item-select");
-            singlePlot(this.id.slice(3)); // drops that sx_
-        }
-        });
-}
-
 /* Generates confusion table data and labels, given the expected and predicted values*/
 /* if a factor is passed, the resultant table will be 2x2 with respect to the factor */
 export function generateConfusionData(Y_true, Y_pred, factor=undefined) {
@@ -4575,7 +4521,7 @@ export async function handleGetSearchSolutionResultsResponse(response1) {
     if (!ROOKPIPE_FROM_REQUEST) {
         console.log('---------- ERROR: ROOKPIPE_FROM_REQUEST not set!!!');
     }
-    onPipelinePrime(response1, ROOKPIPE_FROM_REQUEST) //, rookpipe - handleGetSearchSolutionResultsResponse
+    onPipelinePrime(response1, ROOKPIPE_FROM_REQUEST)  //, rookpipe - handleGetSearchSolutionResultsResponse
 
     if (IS_D3M_DOMAIN) setRightTab('Results');
     if (selectedPipelines.size === 0) setSelectedPipeline(response1.id);
