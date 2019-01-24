@@ -2897,7 +2897,7 @@ export async function estimate() {
         } else {
             setxTable(ROOKPIPE_FROM_REQUEST.predictors);
             let searchSolutionParams = CreatePipelineDefinition(ROOKPIPE_FROM_REQUEST.predictors,
-                ROOKPIPE_FROM_REQUEST.depvar,2);
+                ROOKPIPE_FROM_REQUEST.depvar,10);
 
             let hasManipulation = resultsProblem.problemID in manipulations && manipulations[resultsProblem.problemID].length > 0;
             let hasNominal = [resultsProblem.target, ...resultsProblem.predictors]
