@@ -41,7 +41,7 @@ after_success:
   # -------------------------------------
   # Temp push, to test new k8s deploy
   # -------------------------------------
-  - if [ "$TRAVIS_BRANCH" == "call-solver" ]; then
+  - if [ "$TRAVIS_BRANCH" == "zzzcall-solver" ]; then
     docker build -t tworavens/ravens-main:dm-demo .;
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
     docker push tworavens/ravens-main:dm-demo;
