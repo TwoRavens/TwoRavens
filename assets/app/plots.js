@@ -1263,11 +1263,6 @@ export function scatter(x_Axis, y_Axis, x_Axis_name, y_Axis_name, id, dim, title
 // handles plotting multiple groups at the same time
 // xData of the form: {'group1': [...], 'group2': [...]}
 export let vegaScatter = (xData, yData, xName, yName, title, legendName) => {
-    console.warn("#debug xData");
-    console.log(xData);
-
-    console.warn("#debug yData");
-    console.log(yData);
 
     return ({
         "$schema": "https://vega.github.io/schema/vega-lite/v2.json",

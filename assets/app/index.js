@@ -231,7 +231,7 @@ function leftpanel(mode) {
                                 showUID: false,
                                 abbreviation: 40
                             }),
-                            m('h4', 'All Problems (highlighted problem is being solved)')
+                            m('h4', 'All Problems - Results Problem Highlighted')
                         ],
                         app.selectedProblem && m(Table, {
                             id: 'discoveryTable',
@@ -1038,11 +1038,11 @@ class Body {
                                             },
                                             oncreate(vnode) {
                                                 let plot = (this.node || {}).plottype === 'continuous' ? plots.densityNode : plots.barsNode;
-                                                plot(this.node, vnode.dom, 110, true);
+                                                this.node && plot(this.node, vnode.dom, 110, true);
                                             },
                                             onupdate(vnode) {
-                                                let node = app.findNode(x);
-                                                if (node != this.node) {
+                                                let node = app.findNode(typeof x === 'object' ? x.target : x);
+                                                if (node && node !== this.node) {
                                                     let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
                                                     plot(node, vnode.dom, 110, true);
                                                     this.node = node;
@@ -1071,7 +1071,7 @@ class Body {
                 ]),
                 app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}),
 
-                ['zgroup1', 'zgroup2', 'ztime', 'zcross', 'zdv', 'znom'].reduce((acc, elem) => acc + app.zparams[elem].length, 0) > 0 && m(Subpanel2, {
+                app.currentMode !== 'explore' && ['zgroup1', 'zgroup2', 'ztime', 'zcross', 'zdv', 'znom'].reduce((acc, elem) => acc + app.zparams[elem].length, 0) > 0 && m(Subpanel2, {
                     id: 'legend', header: 'Legend', class: 'legend',
                     style: {
                         right: app.panelWidth['right'],
@@ -1196,7 +1196,7 @@ class Body {
                 },
                 onscroll: () => {
                     // don't apply infinite scrolling when list is empty
-                    if (app.peekData.length === 0) return;
+                    if ((app.peekData || []).length === 0) return;
 
                     let container = document.querySelector('#previewTable');
                     let scrollHeight = container.scrollHeight - container.scrollTop;
@@ -1252,10 +1252,6 @@ class Body {
                 onclick: () => app.setAlertsShown(true)
             }, glyph2('alert', {style: {color: app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}})),
 
-            m(Button, {
-                onclick: () => Object.keys(app.pipelineAdapter)
-                    .forEach(pipelineID => console.log(pipelineID, app.pipelineAdapter[pipelineID].fittedValues))
-            }, 'Log fitted values'),
             m('div.btn.btn-group', {style: 'float: right; padding: 0px'},
                 m(Button, {
                     class: app.peekInlineShown && ['active'],

@@ -111,12 +111,10 @@ class MenuEquation {
             'box-shadow': '0px 5px 5px rgba(0,0,0,.1)'
         };
 
-        let transformQuery;
         let transformError;
 
         try {
             let response = queryMongo.buildEquation(preferences.transformEquation, new Set(variables));
-            transformQuery = JSON.stringify(response.query);
             preferences.usedTerms = response.usedTerms;
             // make the leftpanel variable list update if in d3m. In d3m the leftpanel reads the preferences to highlight variables
             if (!preferences.isValid) {
@@ -164,8 +162,7 @@ class MenuEquation {
             preferences.transformName.match(/[ -]/) && warn('spaces and dashes are not permitted in the variable name'),
 
             preferences.transformEquation && [
-                transformQuery && m('div#transformQuery', {style: {width: '100%'}}, transformQuery),
-                !transformQuery && m('div#transformError', {style: {width: '100%'}}, warn(transformError))
+                !transformError && m('div#transformError', {style: {width: '100%'}}, warn(transformError))
             ], m('br'),
 
             m('div', {style},

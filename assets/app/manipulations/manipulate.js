@@ -21,10 +21,7 @@ import * as queryAbstract from './queryAbstract';
 import * as queryMongo from "./queryMongo";
 import hopscotch from 'hopscotch';
 import CanvasImputation from "../canvases/CanvasImputation";
-import {datadocument} from "../app";
-import {alertError} from "../app";
-import {alertLog} from "../app";
-import {selectedProblem} from "../app";
+import {alertLog, alertError} from "../app";
 
 // dataset name from app.datadocument.about.datasetID
 // variable names from the keys of the initial preprocess variables object
@@ -970,13 +967,7 @@ export async function buildProblemUrl(problem) {
     ];
 
     let compiled = queryMongo.buildPipeline(abstractPipeline, Object.keys(variablesInitial))['pipeline'];
-
-    console.warn("#debug compiled");
-    console.log(compiled);
-    let metadata = queryMongo.translateDatasetDoc(compiled, datadocument, selectedProblem);
-
-    console.warn("#debug metadata");
-    console.log(metadata);
+    let metadata = queryMongo.translateDatasetDoc(compiled, app.datadocument, app.selectedProblem);
 
     return await getData({
         method: 'aggregate',

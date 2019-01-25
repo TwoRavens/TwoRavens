@@ -44,7 +44,20 @@ import * as facetheatmap from './vega-schemas/trivariate/facetheatmap';
 import * as groupedbarnqq from './vega-schemas/trivariate/groupedbarnqq';
 const $private = false;
 
-let approps = {qq: ["scatter","line","area","binnedscatter","binnedtableheat","horizon","scattermatrix","scattermeansd","step"], nn: ["stackedbar","tableheat",], nq: ["box","interactivebarmean"], qn:["aggbar","box","strip","trellishist"], qqq:["bubbleqqq","scatterqqq","scattermatrix"], qnn:["horizgroupbar","facetbox"],qqn:["scattertri","trellisscatterqqn","dotdashqqn"],qnq:["bubbletri"],nqn:["groupedbartri","facetbox"],nqq:["groupedbarnqq"],nnq:["heatmapnnq","tablebubblennq"],nnn:["stackedbarnnn","facetheatmap"]};
+let approps = {
+    qq: ["scatter", "line", "area", "binnedscatter", "binnedtableheat", "horizon", "scattermatrix", "scattermeansd", "step"],
+    nn: ["stackedbar", "tableheat",],
+    nq: ["box", "interactivebarmean"],
+    qn: ["aggbar", "box", "strip", "trellishist"],
+    qqq: ["bubbleqqq", "scatterqqq", "scattermatrix"],
+    qnn: ["horizgroupbar", "facetbox"],
+    qqn: ["scattertri", "trellisscatterqqn", "dotdashqqn"],
+    qnq: ["bubbletri"],
+    nqn: ["groupedbartri", "facetbox"],
+    nqq: ["groupedbarnqq"],
+    nnq: ["heatmapnnq", "tablebubblennq"],
+    nnn: ["stackedbarnnn", "facetheatmap"]
+};
 
 function heatmap(x_Axis_name, y_Axis_name) {
     let heatchart = elem('#heatchart');
@@ -1525,48 +1538,48 @@ export async function explore() {
 let getPlotType = (pt,pn) => {
 
     // returns true if uniques is equal to, one less than, or two less than the number of valid observations
-        function uniqueValids (pn) {
-            return pn.uniques===pn.valid ? true :
-                pn.uniques===pn.valid-1 ? true :
-                pn.uniques===pn.valid-2 ? true : false;
-        }
+    function uniqueValids(pn) {
+        return pn.uniques === pn.valid ? true :
+            pn.uniques === pn.valid - 1 ? true :
+                pn.uniques === pn.valid - 2 ? true : false;
+    }
 
-        if(pn.length>3) return['scattermatrix','aaa'];
-        let myCons = [];
-        let vt = "";
+    if (pn.length > 3) return ['scattermatrix', 'aaa'];
+    let myCons = [];
+    let vt = "";
 
-        for (var i=0; i<pn.length; i++) {
-            myCons[i] = pn[i].plottype === 'continuous' ? true : false;
-            pn[i].plottype === 'continuous' ? vt=vt+'q' : vt=vt+'n';
-        }
+    for (let i = 0; i < pn.length; i++) {
+        myCons[i] = pn[i].plottype === 'continuous' ? true : false;
+        pn[i].plottype === 'continuous' ? vt = vt + 'q' : vt = vt + 'n';
+    }
 
-        if(pt != "") return [pt,vt];
+    if (pt != "") return [pt, vt];
 
-        if(pn.length==2) {
-            // check uniqueValids. if so, make difference from mean the default plot
-            let uvs = [uniqueValids(pn[0]), uniqueValids(pn[1])];
-            // console.log(uvs);
-            if(uvs[0] === true && uvs[1] === false)
-                return ['averagediff', 'nq'];
-            else if (uvs[0] === false && uvs[1] === true)
-                return ['averagediff', 'qn'];
+    if (pn.length == 2) {
+        // check uniqueValids. if so, make difference from mean the default plot
+        let uvs = [uniqueValids(pn[0]), uniqueValids(pn[1])];
+        // console.log(uvs);
+        if (uvs[0] === true && uvs[1] === false)
+            return ['averagediff', 'nq'];
+        else if (uvs[0] === false && uvs[1] === true)
+            return ['averagediff', 'qn'];
 
-            return myCons[0] && myCons[1] ? ['scatter','qq'] :
-                myCons[0] && !myCons[1] ? ['box', 'qn'] :
+        return myCons[0] && myCons[1] ? ['scatter', 'qq'] :
+            myCons[0] && !myCons[1] ? ['box', 'qn'] :
                 !myCons[0] && myCons[1] ? ['box', 'nq'] :
-                ['stackedbar','nn'];
-        }
-        if(pn.length==3) {
-            return myCons[0] && myCons[1] && myCons[2] ? ['bubbleqqq','qqq'] :
-                myCons[0] && !myCons[1] && !myCons[2] ? ['horizgroupbar','qnn'] :
-                myCons[0] && myCons[1] && !myCons[2] ? ['scattertri','qqn'] :
-                myCons[0] && !myCons[1] && myCons[2] ? ['bubbletri','qnq'] :
-                !myCons[0] && myCons[1] && !myCons[2] ? ['groupedbartri','nqn'] :
-                !myCons[0] && myCons[1] && myCons[2] ? ['groupedbarnqq','nqq'] :
-                !myCons[0] && !myCons[1] && myCons[2] ? ['heatmapnnq','nnq'] :
-                !myCons[0] && !myCons[1] && !myCons[2] ? ['stackedbarnnn','nnn'] :
-                ['scattermatrix','aaa'];
-        }
+                    ['stackedbar', 'nn'];
+    }
+    if (pn.length == 3) {
+        return myCons[0] && myCons[1] && myCons[2] ? ['bubbleqqq', 'qqq'] :
+            myCons[0] && !myCons[1] && !myCons[2] ? ['horizgroupbar', 'qnn'] :
+                myCons[0] && myCons[1] && !myCons[2] ? ['scattertri', 'qqn'] :
+                    myCons[0] && !myCons[1] && myCons[2] ? ['bubbletri', 'qnq'] :
+                        !myCons[0] && myCons[1] && !myCons[2] ? ['groupedbartri', 'nqn'] :
+                            !myCons[0] && myCons[1] && myCons[2] ? ['groupedbarnqq', 'nqq'] :
+                                !myCons[0] && !myCons[1] && myCons[2] ? ['heatmapnnq', 'nnq'] :
+                                    !myCons[0] && !myCons[1] && !myCons[2] ? ['stackedbarnnn', 'nnn'] :
+                                        ['scattermatrix', 'aaa'];
+    }
 }
 
 export async function plot(plotNodes, plottype="", problem={}) {
@@ -1752,9 +1765,15 @@ export async function plot(plotNodes, plottype="", problem={}) {
 }
 
 export function thumbsty(plotNodes, thumb) {
-    let plottype = getPlotType("",plotNodes); // VJD: this is executing a lot
 
-    return approps[plottype[1]].indexOf(thumb) > -1 ?{border: "2px solid #0F0", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"} : {border: "2px solid #F00", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"};
+    if (!approps) return {};
+
+    let plottype = getPlotType("",plotNodes);
+    if (!plottype) return {};
+
+    return approps[plottype[1]].indexOf(thumb) > -1
+        ? {border: "2px solid #0F0", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}
+        : {border: "2px solid #F00", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"};
 }
 
 export let exploreVar = '';

@@ -232,7 +232,7 @@ export default class ConfusionMatrix {
         svg.append("text")
             .attr("transform", "translate(" + ((width + widthLegend) / 2) + " ," + (0 - 10) + ")")
             .style("text-anchor", "middle")
-            .text("Actual Class");
+            .text("Predicted Class");
 
         svg.append("text")
             .attr("transform", "translate(" + ((width + widthLegend) / 2) + " ," + (0 - 30) + ")")
@@ -246,7 +246,7 @@ export default class ConfusionMatrix {
             .attr("y", -10 - widthLabels)
             //.attr("dy", "1em")
             .style("text-anchor", "middle")
-            .text("Predicted Class");
+            .text("Actual Class");
     }
 
     view({attrs}) {

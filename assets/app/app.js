@@ -140,9 +140,11 @@ export async function updatePeek(pipeline) {
 
     data = data.map(record => Object.keys(record).reduce((out, entry) => {
         if (typeof record[entry] === 'number')
-            out[entry] = formatPrecision(record[entry])
+            out[entry] = formatPrecision(record[entry]);
         else if (typeof record[entry] === 'string')
             out[entry] = `"${record[entry]}"`;
+        else if (typeof record[entry] === 'boolean')
+            out[entry] =  m('div', {style: {'font-style': 'italic', display: 'inline'}}, String(record[entry]));
         else
             out[entry] = record[entry];
         return out;
@@ -1172,7 +1174,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         get pipeline() {return manipulations['defaultProblem']},
         metric: 'meanSquaredError',
         model: 'modelUndefined',
-        task: 'regression',
+        task: findNode(zparams.zdv[0]).plottype === "bar" ? 'classification' : 'regression',
         subTask: 'taskSubtypeUndefined',
         meaningful: false
     };
@@ -2907,7 +2909,7 @@ export async function estimate() {
             estimated = true;
             estimateLadda.stop();
         } else {
-            setxTable(ROOKPIPE_FROM_REQUEST.predictors);
+            ROOKPIPE_FROM_REQUEST.predictors && setxTable(ROOKPIPE_FROM_REQUEST.predictors);
             let searchSolutionParams = CreatePipelineDefinition(ROOKPIPE_FROM_REQUEST.predictors,
                 ROOKPIPE_FROM_REQUEST.depvar,10);
 
@@ -3785,7 +3787,7 @@ export function setxTable(features) {
     }
 
     let mydata = [];
-    for(let i = 0; i<features.length; i++) {
+    for (let i = 0; i < features.length; i++) {
         let myi = findNodeIndex(features[i]); //i+1;                                // This was set as (i+1), but should be allnodes position, not features position
         if (myi === -1) continue;
 
@@ -4021,7 +4023,7 @@ function makeProblemDescription(problem) {
 export function discovery(preprocess_file) {
 
     return preprocess_file.dataset.discovery.map((prob, i) => {
-        let problemID = "problem" + (i+1);
+        let problemID = generateProblemID();
         let pipeline = [];
 
         if (prob.subsetObs) {
@@ -4095,7 +4097,7 @@ export async function addProblemFromForceDiagram() {
         selectedProblem || {},
         await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams),
         {
-            problemID: 'problem' + (disco.length + 1),
+            problemID: generateProblemID(),
             system: 'user',
             meaningful: 'yes'
         });
@@ -4166,6 +4168,13 @@ export function setSelectedProblem(problem) {
     if (!problem || selectedProblem === problem) return;
 
     selectedProblem = problem;
+
+    stopAllSearches().then(() => {
+        allPipelineInfo = {};
+        ravenPipelineInfo = {};
+        estimateLadda.stop();
+    });
+
     updateRightPanelWidth();
 
     // if a constraint is being staged, delete it
@@ -4203,9 +4212,7 @@ export function getProblemCopy(problemSource) {
     let problem = jQuery.extend(true, {}, problemSource);  // deep copy of original
     Object.defineProperties(problem, Object.getOwnPropertyDescriptors(problemSource)); // keep getters
 
-    let offset = 1;
-    while (disco.find(prob => prob.problemID === problem.problemID + 'user' + offset)) offset++;
-    let newProblemID = problem.problemID + 'user' + offset;
+    let newProblemID = generateProblemID();
 
     manipulations[newProblemID] = jQuery.extend(true, [], manipulations[problem.problemID] || []);
 
@@ -4724,6 +4731,9 @@ export function formatPrecision(value, precision=4) {
 
     return (digits <= precision || precision === 0) ? numeric : numeric.toPrecision(precision) * 1
 }
+
+let problemCount = 0;
+let generateProblemID = () => 'problem ' + problemCount++;
 
 export let omniSort = (a, b) => {
     if (a === undefined && b !== undefined) return -1;

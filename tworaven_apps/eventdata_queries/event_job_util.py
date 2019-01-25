@@ -572,13 +572,15 @@ class EventJobUtil(object):
 
         # directory that contains entire dataset
         temp_dataset_folderpath = os.path.join(manipulations_folderpath, str(extension))
-        dataset_folderpath = os.path.join(*d3m_config.dataset_schema.split('/')[:4])
 
         # paths to datasetDoc and .csv
-        temp_metadata_filepath = os.path.join(temp_dataset_folderpath, *d3m_config.dataset_schema.split('/')[4:])
-        temp_data_filepath = os.path.join(os.path.dirname(temp_metadata_filepath), 'tables', 'learningData.csv')
+        temp_metadata_filepath = os.path.join(temp_dataset_folderpath, 'datasetDoc.json')
+        temp_data_filepath = os.path.join(temp_dataset_folderpath, 'tables', 'learningData.csv')
 
-        shutil.copytree(dataset_folderpath, temp_dataset_folderpath)
+        try:
+            os.makedirs(os.path.join(temp_dataset_folderpath, 'tables'))
+        except OSError:
+            pass
 
         # the BasicProblemWriter doesn't write to write_directory, and this doesn't seem trivial to change
         columns = list(data[0].keys())
@@ -596,7 +598,6 @@ class EventJobUtil(object):
 
         with open(temp_metadata_filepath, 'w') as metadata_file:
             json.dump(metadata, metadata_file)
-
 
         return ok_resp({
             'data_path': temp_data_filepath,
