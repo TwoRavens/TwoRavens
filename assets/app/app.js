@@ -195,7 +195,6 @@ export let task1_finished = false;
 export let task2_finished = false;
 export let problemDocExists = true;
 export let univariate_finished = false;
-export let resultsMetricDescription = 'Larger numbers are better fits';
 
 export let allsearchId = [];            // List of all the searchId's created on searches
 
@@ -456,9 +455,6 @@ let failset = ["TIME_SERIES_FORECASTING","GRAPH_MATCHING","LINK_PREDICTION","tim
 // object that contains all information about the returned pipelines
 export let allPipelineInfo = {};
 export let ravenPipelineInfo = {};
-export let pipelineTable = [];
-
-export let discoveryTable = [];
 
 
 // replacement for javascript's blocking 'alert' function, draws a popup similar to 'alert'
