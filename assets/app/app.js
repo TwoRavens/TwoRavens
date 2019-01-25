@@ -2699,7 +2699,9 @@ export function getFitSolutionDefaultParameters(datasetDocUrl){
 
   let my_dataseturi = 'file://' + datasetDocUrl;
   let my_inputs = [{dataset_uri: my_dataseturi}];
-  let my_exposeOutputs = [];   // eg. ["steps.3.produce"];  need to fix
+  //let my_exposeOutputs = [];   // eg. ["steps.3.produce"];  need to fix
+  let my_exposeOutputs = ['outputs.0'];
+
   let my_exposeValueTypes = ['CSV_URI'];
   let my_users = [{id: 'TwoRavens', choosen: false, reason: ''}];
   return {
