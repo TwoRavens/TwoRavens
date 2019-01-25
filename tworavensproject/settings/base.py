@@ -26,6 +26,9 @@ BASE_DIR = dirname(dirname(dirname(abspath(__file__))))
 TA3TA2_API_DIR = join(BASE_DIR, 'submodules', 'ta3ta2-api')
 sys.path.append(TA3TA2_API_DIR)
 
+TWORAVENS_COMMON_DIR = join(BASE_DIR, 'assets', 'common')
+sys.path.append(TWORAVENS_COMMON_DIR)
+
 # -----------------------------------------------------
 # Link to copy of the raven-metadata-service
 # for the preprocess script
@@ -79,7 +82,7 @@ INSTALLED_APPS = [
     'tworaven_apps.api_docs',
     'tworaven_apps.call_captures', # capture data sent from UI out to rook/TA2
     'tworaven_apps.eventdata_queries', # eventdata API services
-    'tworaven_apps.datamart_endpoints',
+    'tworaven_common_apps.datamart_endpoints',
 
     # webpack!
     'webpack_loader',
