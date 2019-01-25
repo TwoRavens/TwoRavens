@@ -1,4 +1,4 @@
-# _1/15/2019 - these instructions are outdated_
+# note! out of date (1/25/2019) 
 
 # Vagrant install
 
