@@ -30,6 +30,10 @@
 	"Action": {
 		"type": "discrete",
 		"measureType": "accumulator",
+		"formats": [
+			"Action",
+			"HostLev"
+		],
 		"columns": [
 			"Action"
 		]
@@ -65,7 +69,8 @@
     "TwoRavens_date info"
   ],
   "alignments": {
-	  "TwoRavens_start date": "date"
+	  "TwoRavens_start date": "date",
+	  "Action": "mid_action_conv"
   },
   "formats": {
 	  "src-actor": "cowcode",
