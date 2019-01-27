@@ -1,0 +1,174 @@
+{
+  "name": "Global Terrorism Database (GTD)",
+  "key": "gtd",
+  "description": "The Global Terrorism Database (GTD) is an open-source database including information on terrorist events around the world from 1970 through 2017 (with annual updates planned for the future).",
+  "interval": "1970 - 2017",
+  "codebook": "https://www.start.umd.edu/gtd/downloads/Codebook.pdf",
+  "download": "https://www.start.umd.edu/gtd/contact/",
+  "host": "TwoRavens",
+  "subsets": {
+	  "Date": {
+		"type": "date",
+		"measureType": "unit",
+		"structure": "point",
+		"columns": ["TwoRavens_start date"]
+	},
+	"Location": {
+		"type": "discrete_grouped",
+		"group_by": "region",
+		"columns": ["TwoRavens_country"]
+	},
+	"Coordinates": {
+		"type": "coordinates",
+		"columns": [
+			"latitude",
+			"longitude"
+		]
+	},
+	"Attack Type 1": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["attacktype1"]
+	},
+	"Attack Type 2": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["attacktype2"]
+	},
+	"Attack Type 3": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["attacktype3"]
+	},
+	"Successful Attack": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["success"]
+	},
+	"Suicide Attack": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["suicide"]
+	},
+	"Weapon Subtype": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"formats": ["gtd_subweapons", "gtd_weapons"],
+		"columns": ["weapsubtype1"]
+	}
+  },
+  "columns": [
+    "eventid",
+	"iyear",
+	"imonth",
+	"iday",
+	"extended",
+	"country",
+	"country_txt",
+	"region",
+	"region_txt",
+	"provstate",
+	"city",
+	"latitude",
+	"longitude",
+	"specificity",
+	"vicinity",
+	"location",
+	"summary",
+	"crit1",
+	"crit2",
+	"crit3",
+	"doubtterr",
+	"alternative",
+	"alternative_txt",
+	"multiple",
+	"success",
+	"suicide",
+	"attacktype1",
+	"attacktype1_txt",
+	"targtype1",
+	"targtype1_txt",
+	"targsubtype1",
+	"targsubtype1_txt",
+	"corp1",
+	"target1",
+	"natlty1",
+	"natlty1_txt",
+	"gname",
+	"guncertain1",
+	"individual",
+	"nperps",
+	"nperpcap",
+	"claimed",
+	"weaptype1",
+	"weaptype1_txt",
+	"weapsubtype1",
+	"weapsubtype1_txt",
+	"nkill",
+	"nkillus",
+	"nkillter",
+	"nwound",
+	"nwoundus",
+	"nwoundte",
+	"property",
+	"propextent",
+	"propextent_txt",
+	"propvalue",
+	"propcomment",
+	"ishostkid",
+	"ransom",
+	"addnotes",
+	"scite1",
+	"scite2",
+	"dbsource",
+	"INT_LOG",
+	"INT_IDEO",
+	"INT_MISC",
+	"INT_ANY"
+  ],
+  "columns_constructed": [
+    "TwoRavens_start date",
+    "TwoRavens_end date",
+    "TwoRavens_date info",
+    "TwoRavens_country",
+    "TwoRavens_address",
+    "TwoRavens_city",
+    "TwoRavens_postal",
+    "TwoRavens_postal_ext",
+    "TwoRavens_region",
+    "TwoRavens_subregion",
+    "TwoRavens_country_historic"
+  ],
+  "alignments": {
+	  "TwoRavens_start date": "date",
+	  "latitude": "latitude",
+	  "longitude": "longitude",
+	  "TwoRavens_country": "country",
+	  "weaptype1": "gtd_weapon_align",
+	  "weapsubtype1": "gtd_weapon_align"
+  },
+  "formats": {
+	  "TwoRavens_country": "ISO-3",
+	  "attacktype1": "gtd_attack_types",
+	  "attacktype2": "gtd_attack_types",
+	  "attacktype3": "gtd_attack_types",
+	  "success": "gtd_bool",
+	  "suicide": "gtd_bool",
+	  "weaptype1": "gtd_weapons",
+	  "weapsubtype1": "gtd_subweapons"
+  },
+  "citations": [
+  {
+	  "year": "2018",
+	  "title": "Global Terrorism Database Dataset",
+	  "url": "https://www.start.umd.edu/gtd",
+	  "note": "National Consortium for the Study of Terrorism and Responses to Terrorism (START)"
+  },
+  {
+	  "year": "2018",
+	  "title": "Global Terrorism Database Codebook",
+	  "url": "https://www.start.umd.edu/gtd",
+	  "note": "National Consortium for the Study of Terrorism and Responses to Terrorism (START)"
+  }
+  ]
+}
