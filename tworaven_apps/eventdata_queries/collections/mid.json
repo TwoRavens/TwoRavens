@@ -31,12 +31,11 @@
 		"type": "discrete",
 		"measureType": "accumulator",
 		"formats": [
-			"Action",
-			"HostLev"
+			"mid_action",
+			"mid_hostLev"
 		],
 		"columns": [
-			"Action",
-			"HostLev"
+			"Action"
 		]
 	}
   },
