@@ -523,7 +523,8 @@ export let augmentResults = [];
 export let augmentIndexState = {
     title: '',
     description: '',
-    url: ''
+    url: '',
+    keywords: []
 };
 
 // list of variable strings (same as Object.keys(preprocess))
