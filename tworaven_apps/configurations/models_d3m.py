@@ -60,7 +60,6 @@ D3M_REQUIRED.remove(KEY_PROBLEM_ROOT)
 
 # environment variable name to store a d3m config filepath for startup
 CONFIG_JSON_PATH = 'CONFIG_JSON_PATH'
-D3M_ENV_INPUT_DIR = 'D3MINPUTDIR'
 D3M_SEARCH_CONFIG_NAME = 'search_config.json'
 
 class D3MConfiguration(TimeStampedModel):

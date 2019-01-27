@@ -122,44 +122,42 @@ def make_d3m_config():
 
 @task
 def load_d3m_config_from_env():
-    """6/27/2018 update
+    """1/27/2018 update
     - Look for an environment variable named "D3MINPUTDIR"
         - This is the data directory which should include a file named
             "search_config.json"
         - Load "search_config.json" as the D3M config
     - If "D3MINPUTDIR" doesn't exist, display error message and keep running
     """
+    from django.conf import settings
     from django.core import management
     from tworaven_apps.configurations.models_d3m import \
-        (D3M_ENV_INPUT_DIR, D3M_SEARCH_CONFIG_NAME)
+        (D3M_SEARCH_CONFIG_NAME,)
 
     print('-' * 40)
-    print('> Attempt to load D3M config based on env variable: "%s"' % \
-          D3M_ENV_INPUT_DIR)
+    print('> Attempt to load D3M config data')
     print('-' * 40)
 
-    d3m_data_dir = os.environ.get(D3M_ENV_INPUT_DIR, None)
-    if not d3m_data_dir:
-        print('Environment variable "%s" not set.' % D3M_ENV_INPUT_DIR)
+    if not settings.D3MINPUTDIR:
+        print('Environment variable "D3MINPUTDIR" not set.')
         return
 
-    d3m_data_dir = d3m_data_dir.strip()
+    d3m_data_dir = settings.D3MINPUTDIR.strip()
     if not os.path.isdir(d3m_data_dir):
         print('This data directory doesn\'t exist (or is not reachable): %s' % \
               d3m_data_dir)
         return
 
+    print('(1) Attempt to load 2018 config "%s"' % D3M_SEARCH_CONFIG_NAME)
     config_file = os.path.join(d3m_data_dir, D3M_SEARCH_CONFIG_NAME)
-    if not os.path.isfile(config_file):
+    if os.path.isfile(config_file):
         print('This config file doesn\'t exist (or is not reachable): %s' % \
               config_file)
+        try:
+            management.call_command('load_config', d3m_data_dir)
+        except management.base.CommandError as err_obj:
+            print('> Failed to load D3M config.\n%s' % err_obj)
         return
-
-    try:
-        management.call_command('load_config', d3m_data_dir)
-    except management.base.CommandError as err_obj:
-        print('> Failed to load D3M config.\n%s' % err_obj)
-
 
 @task
 def load_d3m_config(config_data_dir):
