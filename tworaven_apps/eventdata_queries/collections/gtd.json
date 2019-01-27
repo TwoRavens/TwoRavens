@@ -50,11 +50,11 @@
 		"measureType": "accumulator",
 		"columns": ["suicide"]
 	},
-	"Weapon Type": {
+	"Weapon Subtype": {
 		"type": "discrete",
 		"measureType": "accumulator",
-		"formats": ["Weapon Type", "Weapon Sub-type"],
-		"columns": ["weaptype1"]
+		"formats": ["gtd_subweapons", "gtd_weapons"],
+		"columns": ["weapsubtype1"]
 	}
   },
   "columns": [
@@ -144,7 +144,8 @@
 	  "latitude": "latitude",
 	  "longitude": "longitude",
 	  "TwoRavens_country": "country",
-	  "weaptype1": "gtd_weapon_align"
+	  "weaptype1": "gtd_weapon_align",
+	  "weapsubtype1": "gtd_weapon_align"
   },
   "formats": {
 	  "TwoRavens_country": "ISO-3",

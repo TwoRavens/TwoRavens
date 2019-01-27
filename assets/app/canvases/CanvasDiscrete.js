@@ -2,7 +2,7 @@ import * as common from '../../common/common'
 import m from 'mithril';
 import PlotBars from "./views/PlotBars";
 import ButtonRadio from "../../common/views/ButtonRadio";
-import {alignmentData, formattingData} from "../app";
+import {alignmentData, formattingData, omniSort} from "../app";
 import TextField from "../../common/views/TextField";
 
 // the text that separates any two observations in the manual selection text field
@@ -13,16 +13,16 @@ export default class CanvasDiscrete {
         let {mode, data, metadata, preferences, formats, alignments} = vnode.attrs;
 
         let masterColumn = metadata['columns'][0];
-        let format = (formats || {})[masterColumn] || masterColumn;
+        let masterFormat = (formats || {})[masterColumn] || masterColumn;
         let alignment = (alignments || {})[masterColumn];
 
         let allData = {};
 
         // used for aggregation
         preferences['alignment'] = alignment;
-        preferences['aggregation'] = preferences['aggregation'] || format; // the format to accumulate to
+        preferences['aggregation'] = preferences['aggregation'] || masterFormat; // the format to accumulate to
 
-        preferences['format'] = preferences['format'] || format;
+        preferences['format'] = preferences['format'] || masterFormat;
         preferences['selections'] = preferences['selections'] || new Set();
 
         preferences['selections_temp'] = preferences['selections_temp'] || '';
@@ -30,48 +30,50 @@ export default class CanvasDiscrete {
         if (data.length === 0) return 'No data from "' + masterColumn + '" is matched.';
         let allSelected = {};
 
-        let flattenedData = data.reduce((out, entry) => {
-            if (metadata.columns[0] in entry) out[entry[metadata.columns[0]]] = entry['total'];
-            return out;
-        }, {});
-
         if (alignment) {
+
+            let flattenedData = data.reduce((out, entry) => {
+                if (masterColumn in entry) out.set(entry[masterColumn], entry['total']);
+                return out;
+            }, new Map());
+
             metadata['formats'].forEach(format => {
-                allData[format] = {};
-                allSelected[format] = {};
+                allData[format] = new Map();
+                allSelected[format] = new Map();
             });
             alignmentData[alignment].forEach(equivalency => {
                 metadata['formats'].forEach(format => {
-                    let isSet = preferences['selections'].has(equivalency[format]);
-                    if (equivalency[format] in allSelected[format])
-                        allSelected[format][equivalency[format]].push(isSet);
+                    let isSet = preferences['selections'].has(equivalency[masterFormat]);
+                    if (allSelected[format].has(equivalency[format]))
+                        allSelected[format].get(equivalency[format]).push(isSet);
                     else
-                        allSelected[format][equivalency[format]] = [isSet];
+                        allSelected[format].set(equivalency[format], [isSet]);
 
-                    allData[format][equivalency[format]] =
-                        (allData[format][equivalency[format]] || 0) +     // preserve the existing value, or 0 if new
-                        (flattenedData[equivalency[format]] || 0)   // add the equivalent sum from the data, or 0 if no data matched
-
+                    allData[format].set(equivalency[format],
+                        (allData[format].get(equivalency[format]) || 0) +     // preserve the existing value, or 0 if new
+                        (flattenedData.get(equivalency[masterFormat]) || 0))  // add the equivalent sum from the data, or 0 if no data matched
                 })
             })
-        } else if (format) {
-            allData[format] = {};
-            allSelected[format] = {};
-            if (format in formattingData) Object.keys(formattingData[format]).forEach(key => {
-                allSelected[format][key] = [preferences['selections'].has(key)];
-                allData[format][key] = flattenedData[key] || 0;
-            });
+        } else {
+            allData[masterFormat] = new Map();
+            allSelected[masterFormat] = new Map();
 
-            else data.forEach(point => {
-                allSelected[format][point[format]] = [preferences['selections'].has(point[format])];
-                allData[format][point[format]] = flattenedData[point[format]] || 0;
-            })
+            data.forEach(point => {
+                let isSet = preferences['selections'].has(point[masterColumn]);
+                if (allSelected[masterFormat].has(point[masterColumn]))
+                    allSelected[masterFormat].get(point[masterColumn]).push(isSet);
+                else
+                    allSelected[masterFormat].set(point[masterColumn], [isSet]);
+
+                allData[masterFormat].set(point[masterColumn],
+                    (allData[masterFormat].get(point[masterColumn]) || 0) + point.total);
+            });
         }
 
         // change the size of the graph based on the number of available plots
         let getShape = (format) => {
-            if (Math.min(Object.keys(allData[format]).filter(key => allData[format][key]).length) > 25) return {
-                "height": 20 * Object.keys(allData[format]).filter(key => allData[format][key]).length + 'px',
+            if ([...allData[format].keys()].filter(key => allData[format].get(key)).length > 50) return {
+                "height": 20 * [...allData[format].keys()].filter(key => allData[format].get(key)).length + 'px',
                 "width": "calc(100% - 10px)"
             };
             if (Object.keys(allData).length === 1 || mode === 'aggregation') return {
@@ -84,21 +86,16 @@ export default class CanvasDiscrete {
             };
         };
 
-        let typedLookup = data.reduce((out, entry) => {
-            out[entry[metadata.columns[0]]] = entry[metadata.columns[0]];
-            return out;
-        }, {});
-
         let createPlot = (format, dataView, selections) => {
             let maxCharacters = 0;
 
             // resize left margin to keep labels within svg. If greater than 25 keys, then ignore zero-value keys
-            let keepZeros = Object.keys(dataView).length <= 25;
-            let keepKeys = Object.keys(dataView)
-                .filter(key => key !== 'undefined' && (keepZeros || dataView[key] !== 0));
-            keepKeys.forEach(entry => maxCharacters = Math.max(entry.length, maxCharacters));
+            let keepZeros = dataView.size <= 25;
+            let keepKeys = [...dataView.keys()]
+                .filter(key => key !== undefined && (keepZeros || dataView.get(key) !== 0));
+            keepKeys.forEach(entry => maxCharacters = Math.max(String(entry).length, maxCharacters));
 
-            let total = keepKeys.map(key => dataView[key]).reduce((total, value) => total + value);
+            let total = keepKeys.map(key => dataView.get(key)).reduce((total, value) => total + value, 0);
 
             let plotData = keepKeys
                 .map(key => {
@@ -108,14 +105,14 @@ export default class CanvasDiscrete {
 
                     return {
                         key: key,
-                        value: dataView[key] / total,
-                        'class': selections[key].every(_ => _)
+                        value: dataView.get(key) / total,
+                        'class': selections.get(key).every(_ => _)
                             ? 'bar-selected'
-                            : selections[key].some(_ => _)
+                            : selections.get(key).some(_ => _)
                                 ? 'bar-some' : 'bar',
-                        title: dataView[key] + ' ' + (title || 'Records')
+                        title: dataView.get(key) + ' ' + (title || 'Records')
                     }
-                });
+                }).sort((a, b) => omniSort(a.key, b.key));
 
             return m(".graph-config", {
                     style: common.mergeAttributes({
@@ -136,8 +133,6 @@ export default class CanvasDiscrete {
                         margin: {top: 10, right: 30, bottom: 50, left: maxCharacters * 6 + 20},
                         data: plotData,
                         callbackBar: (bar) => {
-                            bar.key = typedLookup[bar.key];
-
                             let target_state = bar.class === 'bar-some' || bar.class === 'bar';
 
                             if (alignment) {
@@ -157,6 +152,14 @@ export default class CanvasDiscrete {
                     })
                 )
             );
+        };
+
+        let setSelectedFromText = text => {
+            preferences['selections_temp'] = text;
+            let potentialMap = [...allData[masterFormat].keys()]
+                .reduce((out, key) => Object.assign(out, {[key]: key}), {});
+            preferences['selections'] = new Set(text.split(delimiter)
+                .filter(value => value in potentialMap).map(value => potentialMap[value]));
         };
 
         return m("#canvasDiscrete", {
@@ -184,16 +187,13 @@ export default class CanvasDiscrete {
                 placeholder: 'Enter variable values',
                 style: {display: 'inline', width: 'calc(100% - 12em)', 'margin-left': '2em'},
                 value: preferences['selections_temp'],
-                oninput: value => {
-                    preferences['selections_temp'] = value;
-                    preferences['selections'] = new Set(value.split(delimiter)
-                        .map(value => typedLookup[value]).filter(value => value in typedLookup))
-                }
+                oninput: setSelectedFromText,
+                onblur: setSelectedFromText
             }),
 
             mode === 'aggregate' && 'formats' in metadata && metadata['formats'].length > 1 && m(ButtonRadio, {
                 id: 'aggregationFormat',
-                onclick: (format) => preferences['aggregation'] = format,
+                onclick: format => preferences['aggregation'] = format,
                 activeSection: preferences['aggregation'],
                 sections: metadata['formats'].map(format => ({value: format})),
                 attrsAll: {"style": {"width": "auto", 'margin': '1em'}}
@@ -207,7 +207,7 @@ export default class CanvasDiscrete {
                 },
                 Object.keys(allData)
                     .filter(format => mode !== 'aggregate' || format === preferences['aggregation']) // only render one plot in aggregation mode
-                    .sort((a, b) => Object.keys(allData[a]).length - Object.keys(allData[b]).length)
+                    .sort((a, b) => allData[a].size - allData[b].size)
                     .map(format => createPlot(format, allData[format], allSelected[format]))
             )
         );
