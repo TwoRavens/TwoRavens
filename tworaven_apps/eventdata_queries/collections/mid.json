@@ -35,7 +35,8 @@
 			"HostLev"
 		],
 		"columns": [
-			"Action"
+			"Action",
+			"HostLev"
 		]
 	}
   },
@@ -70,12 +71,16 @@
   ],
   "alignments": {
 	  "TwoRavens_start date": "date",
-	  "Action": "mid_action_conv"
+	  "src-actor": "country",
+	  "tgt-actor": "country",
+	  "Action": "mid_action_conv",
+	  "HostLev": "mid_action_conv"
   },
   "formats": {
 	  "src-actor": "cowcode",
 	  "tgt-actor": "cowcode",
-	  "Action": "mid_action"
+	  "Action": "mid_action",
+	  "HostLev": "mid_hostLev"
   },
   "citations": [
   {

@@ -24,6 +24,37 @@
 			"latitude",
 			"longitude"
 		]
+	},
+	"Attack Type 1": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["attacktype1"]
+	},
+	"Attack Type 2": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["attacktype2"]
+	},
+	"Attack Type 3": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["attacktype3"]
+	},
+	"Successful Attack": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["success"]
+	},
+	"Suicide Attack": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["suicide"]
+	},
+	"Weapon Type": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"formats": ["Weapon Type", "Weapon Sub-type"],
+		"columns": ["weaptype1"]
 	}
   },
   "columns": [
@@ -112,10 +143,18 @@
 	  "TwoRavens_start date": "date",
 	  "latitude": "latitude",
 	  "longitude": "longitude",
-	  "TwoRavens_country": "country"
+	  "TwoRavens_country": "country",
+	  "weaptype1": "gtd_weapon_align"
   },
   "formats": {
-	  "TwoRavens_country": "ISO-3"
+	  "TwoRavens_country": "ISO-3",
+	  "attacktype1": "gtd_attack_types",
+	  "attacktype2": "gtd_attack_types",
+	  "attacktype3": "gtd_attack_types",
+	  "success": "gtd_bool",
+	  "suicide": "gtd_bool",
+	  "weaptype1": "gtd_weapons",
+	  "weapsubtype1": "gtd_subweapons"
   },
   "citations": [
   {
