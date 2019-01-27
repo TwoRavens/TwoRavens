@@ -2594,7 +2594,7 @@ function CreateProblemDefinition(depvar, aux) {
                 targets: [
                     {
                         resourceId: '0',
-                        columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        columnIndex: valueKey.indexOf(my_target),  // Adjusted to match dataset doc
                         columnName: my_target
                     }
                 ]}];
@@ -2617,7 +2617,8 @@ function CreateProblemDefinition(depvar, aux) {
                 targets: [
                     {
                         resourceId: '0',
-                        columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        // columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        columnIndex: valueKey.indexOf(my_target),  // Adjusted to match dataset doc
                         columnName: my_target
                     }
                 ]}];
@@ -2645,7 +2646,7 @@ function CreateProblemSchema(aux){
                 targets: [
                     {
                         resourceId: '0',
-                        columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        columnIndex: valueKey.indexOf(my_target),  // Adjusted to match dataset doc
                         columnName: my_target
                     }
                 ]}],
