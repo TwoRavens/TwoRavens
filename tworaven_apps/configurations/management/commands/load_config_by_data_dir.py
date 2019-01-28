@@ -36,7 +36,10 @@ class Command(BaseCommand):
                                     ' Please check that the path is correct.') %\
                                     data_dir)
 
-            loader_info = EnvConfigLoader.make_config_from_directory(data_dir)
+            loader_info = EnvConfigLoader.make_config_from_directory(\
+                                data_dir,
+                                delete_if_exists=True,
+                                is_default_config=True)
             if not loader_info.success:
                 raise CommandError('Failed: %s' % loader_info.err_msg)
 

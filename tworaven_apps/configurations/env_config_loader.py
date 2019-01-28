@@ -36,6 +36,8 @@ class EnvConfigLoader(BasicErrCheck):
         """Make that config
         env_config_vals - may be a dict or SimpleNamespace
 
+        is_default_config - Set this as the default config
+
         For augmented datasets, add these extra arguments:
         (1) orig_dataset_id="orig name or dataset id"
         (2) is_user_config=True
@@ -188,7 +190,7 @@ class EnvConfigLoader(BasicErrCheck):
         d3m_config = D3MConfiguration.objects.filter(name=name).first()
         if d3m_config:
             if self.delete_if_exists:
-                print('Found config with same name:' %  d3m_config)
+                print('Found config with same name: %s' %  d3m_config)
                 print('Deleting it....')
                 d3m_config.delete()
             else:
@@ -278,7 +280,7 @@ class EnvConfigLoader(BasicErrCheck):
                 print('Error: %s' % attempt_info.err_msg)
 
     @staticmethod
-    def make_config_from_directory(fullpath):
+    def make_config_from_directory(fullpath, **kwargs):
         """Make a directory from an existing path"""
         if not isdir(fullpath):
             return err_resp('Diretory not found: %s' % fullpath)
@@ -309,7 +311,7 @@ class EnvConfigLoader(BasicErrCheck):
         info.D3MCPU = 'some-cpu'
         info.D3MRAM = 'some-RAM'
 
-        loader = EnvConfigLoader(info)
+        loader = EnvConfigLoader(info, **kwargs)
         if loader.has_error():
             return err_resp(loader.get_error_message())
         else:
