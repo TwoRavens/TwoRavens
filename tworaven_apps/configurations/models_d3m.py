@@ -19,7 +19,8 @@ from tworaven_apps.utils.url_helper import add_trailing_slash,\
 
 from tworaven_apps.configurations.util_path_check import are_d3m_paths_valid,\
     get_bad_paths, get_bad_paths_for_admin
-
+from tworaven_apps.configurations.static_vals import \
+    (KEY_D3MINPUTDIR, )
 KEY_DATASET_SCHEMA = 'dataset_schema'
 
 KEY_PROBLEM_SCHEMA = 'problem_schema'
@@ -85,6 +86,10 @@ class D3MConfiguration(TimeStampedModel):
                     default=False,
                     help_text='There can be either one default or no defaults')
 
+    d3m_input_dir = models.TextField(KEY_D3MINPUTDIR,
+                                     blank=True,
+                                     help_text='Added in 2019 config.')
+
     dataset_schema = models.TextField(\
                         help_text='Input: Path to the dataset schema')
 
@@ -92,6 +97,8 @@ class D3MConfiguration(TimeStampedModel):
                         help_text='Input: Path to the problem schema')
 
     training_data_root = models.TextField(\
+                        'input_root',
+                        blank=True,
                         help_text=('Input: Path to the root directory of the'
                                    ' dataset described by dataset_schema'))
 
@@ -99,6 +106,11 @@ class D3MConfiguration(TimeStampedModel):
                     blank=True,
                     help_text=('Path to the root directory of the'
                                ' problem.'))
+
+    root_output_directory = models.TextField(\
+                        blank=True,
+                        help_text=(('Not an official field.  Used for testing'
+                                    ' to determine the "/output" directory')))
 
     executables_root = models.TextField(\
                         blank=True,
@@ -122,11 +134,6 @@ class D3MConfiguration(TimeStampedModel):
                         blank=True,
                         help_text=('Temporary storage root for performers'
                                    ' to use.'))
-
-    root_output_directory = models.TextField(\
-                        blank=True,
-                        help_text=(('Not an official field.  Used for testing'
-                                    ' to determine the "/output" directory')))
 
     timeout = models.IntegerField(\
                 default=-1,
@@ -197,6 +204,7 @@ class D3MConfiguration(TimeStampedModel):
     def to_dict(self, as_eval_dict=False):
         """Return in an OrderedDict"""
         attrs = ['id', 'name', 'is_default',
+                 'd3m_input_dir',
                  'dataset_schema', 'problem_schema',
                  'training_data_root', 'problem_root',
                  'pipeline_logs_root', 'executables_root',
