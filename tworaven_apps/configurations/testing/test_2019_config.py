@@ -38,8 +38,7 @@ class MakeConfigTest(TestCase):
         baseball_output_dir = join(\
                             settings.BASE_DIR,
                             'ravens_volume',
-                            'test_output',
-                            '185_baseball')
+                            'test_output',)
 
         config_env = dict(\
                         D3MRUN='ta2ta3',
