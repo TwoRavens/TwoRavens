@@ -182,18 +182,20 @@ def load_d3m_config_from_env():
         print('Success! New config [id:%s] %s' % \
                 (d3m_config.id, d3m_config.name))
 
+
 @task
 def load_d3m_config(config_data_dir):
-    """Load D3M config file, saving it as the default D3MConfiguration object.  Pass the config file path: fab load_d3m_config:(path to data dir)"""
+    """1/28/19 Create a new config. Pass the input directory path: fab load_d3m_config:(path to data dir)"""
+
     from django.core import management
 
     try:
-        management.call_command('load_config', config_data_dir)
+        management.call_command('load_config_by_data_dir', config_data_dir)
         return True
     except management.base.CommandError as err_obj:
         print('> Failed to load D3M config.\n%s' % err_obj)
         return False
-
+    
 
 @task
 def stop_ta2_server():

@@ -44,6 +44,7 @@ class EnvConfigLoader(BasicErrCheck):
             '"env_config_vals" must be a dict or a SimpleNamespace'
 
         self.delete_if_exists = kwargs.get('delete_if_exists', False)
+        self.is_default_config = kwargs.get('is_default_config', False)
 
         self.problem_doc = None
         self.d3m_config = None
@@ -74,7 +75,7 @@ class EnvConfigLoader(BasicErrCheck):
             else:
                 config_info[attr] = None
 
-        return EnvConfigLoader(config_info)
+        return EnvConfigLoader(config_info, is_default_config=True)
 
 
     def run_make_config(self):
@@ -166,7 +167,7 @@ class EnvConfigLoader(BasicErrCheck):
 
         # If created from paths, make it the default!
         #
-        config_info = dict(is_default=True)
+        config_info = dict(is_default=self.is_default_config)
 
         try:
             name = self.problem_doc['about']['problemID']
@@ -190,7 +191,7 @@ class EnvConfigLoader(BasicErrCheck):
                 print('Deleting it....')
                 d3m_config.delete()
             else:
-                user_msg = 'Config with same id:name exists: %s:%s' % \
+                user_msg = 'Config with same id (%s) and name (%s) exists.' % \
                         (d3m_config.id, d3m_config.name)
                 self.add_err_msg(user_msg)
                 return
