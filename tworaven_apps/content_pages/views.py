@@ -31,8 +31,8 @@ def view_pebbles_home(request):
     #
     if app_config.is_d3m_domain():
         # (1) Is there a valid D3M config?
-        d3m_config = get_latest_d3m_user_config_by_request(request)
-        if not d3m_config:
+        d3m_config_info = get_latest_d3m_user_config_by_request(request)
+        if not d3m_config_info.success:
             return HttpResponseRedirect(\
                     reverse('view_d3m_config_error'))
 
@@ -112,8 +112,8 @@ def view_d3m_config_error(request):
 
     # and (b) not D3M config info is in the db
     #
-    d3m_config = get_latest_d3m_user_config_by_request(request)
-    if d3m_config:
+    d3m_config_info = get_latest_d3m_user_config_by_request(request)
+    if d3m_config_info.success:
         return HttpResponseRedirect(reverse('home'))
 
     dinfo = dict(title='D3M configuration error')

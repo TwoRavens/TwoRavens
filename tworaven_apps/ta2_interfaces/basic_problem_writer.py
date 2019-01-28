@@ -22,10 +22,8 @@ from django.template.loader import render_to_string
 from tworaven_apps.utils import random_info
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.configurations.models_d3m import KEY_PROBLEM_SCHEMA
-from tworaven_apps.configurations.utils import \
-    (get_latest_d3m_config,
-     get_d3m_filepath)
-
+from tworavens_apps.user_workspaces.utils import \
+    (get_latest_d3m_user_config,)
 
 OUTPUT_PROBLEMS_DIR = '/output/problems' # temp use while eval specs worked on
 ERR_MSG_UNEXPECTED_DIRECTORY = 'Unexpected base directory'
@@ -39,12 +37,13 @@ class BasicProblemWriter(BasicErrCheck):
     INCREMENT_FILENAME = 'INCREMENT_FILENAME' # add '', '_0002' to filename
     QUOTING = 'QUOTING'
 
-    def __init__(self, filename, data, **kwargs):
+    def __init__(self, user_obj, filename, data, **kwargs):
         """
         filename - may also include a directory, but not fullpath
         file_data - data to write
         write_directory - optional base directory if no directory in the config
         """
+        self.user_obj = user_obj
         self.filename = filename
         self.file_data = data
 
@@ -95,7 +94,13 @@ class BasicProblemWriter(BasicErrCheck):
 
         # (2) Try the "user_problems_root" directory
         #
-        d3m_config = get_latest_d3m_config()
+        d3m_config_info = get_latest_d3m_user_config(self.user_obj)
+        if not d3m_config_info.success:
+            self.add_error_message(('Failed to find a D3M config file'))
+            return
+
+
+        d3m_config = d3m_config_info.result_obj
         if d3m_config and d3m_config.user_problems_root:
             user_problems_root = d3m_config.user_problems_root
             success_dirmake2, output_dir2 = self.make_directory(user_problems_root)
@@ -108,8 +113,7 @@ class BasicProblemWriter(BasicErrCheck):
 
         # (3) Try the "temp_storage_root" directory
         #
-        d3m_config = get_latest_d3m_config()
-        if d3m_config and d3m_config.temp_storage_root:
+        if d3m_config.temp_storage_root:
             temp_storage_root = join(d3m_config.temp_storage_root, 'problems')
             success, output_dir3 = self.make_directory(temp_storage_root)
             if success:

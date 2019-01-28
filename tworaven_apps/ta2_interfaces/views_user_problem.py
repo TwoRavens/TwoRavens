@@ -16,7 +16,8 @@ from tworaven_apps.utils.view_helper import \
     (get_request_body,
      get_json_error,
      get_json_success)
-
+from tworaven_apps.utils.view_helper import \
+    (get_authenticated_user,)
 
 
 @login_required
@@ -70,6 +71,11 @@ def view_store_ta2ta3_data(request):
 
     req_json = req_info.result_obj
 
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+    user_obj = user_info.result_obj
+
     if not PROBLEM_REQ_DATA in req_json:
         user_msg = ('The request did not a "%s" value') % PROBLEM_REQ_DATA
         return JsonResponse(get_json_error(user_msg))
@@ -78,7 +84,8 @@ def view_store_ta2ta3_data(request):
     if PROBLEM_REQ_FILENAME in req_json:
         filename = req_json[PROBLEM_REQ_FILENAME]
 
-    udw = UtilDataWriter(req_json[PROBLEM_REQ_DATA],
+    udw = UtilDataWriter(user_obj,
+                         req_json[PROBLEM_REQ_DATA],
                          filename)
 
     if udw.has_error():
@@ -141,7 +148,12 @@ def view_write_user_problem(request):
 
     problem_updates = dict_info_or_err
 
-    problem_helper = UserProblemHelper(problem_updates)
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+
+    problem_helper = UserProblemHelper(user_info.result_obj, problem_updates)
     if problem_helper.has_error:
         return JsonResponse(\
                 dict(success=False,
@@ -161,12 +173,16 @@ def view_format_retrieve_user_problem(request):
     """
     success, dict_info_or_err = get_request_body_as_json(request)
     if not success:
-        return JsonResponse(dict(success=False,
-                                 message=dict_info_or_err))
+        return JsonResponse(get_json_error(dict_info_or_err))
 
     problem_updates = dict_info_or_err
 
-    problem_helper = UserProblemHelper(problem_updates,
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    problem_helper = UserProblemHelper(user_info.result_obj,
+                                       problem_updates,
                                        save_schema_to_file=False)
 
     if problem_helper.has_error:

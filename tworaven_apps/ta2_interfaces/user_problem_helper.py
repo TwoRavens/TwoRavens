@@ -11,8 +11,9 @@ from django.template.loader import render_to_string
 from tworaven_apps.utils import random_info
 from tworaven_apps.configurations.models_d3m import KEY_PROBLEM_SCHEMA
 from tworaven_apps.configurations.utils import \
-    (get_latest_d3m_config,
-     get_d3m_filepath)
+    (get_d3m_filepath,)
+from tworaven_apps.user_workspaces.utils import \
+    (get_latest_d3m_user_config,)
 
 KEY_FILE_PREFIX = 'file_prefix'
 KEY_TASK = 'task'
@@ -21,8 +22,9 @@ KEY_PROBLEM_DESCRIPTION = 'problemDescription'
 
 class UserProblemHelper(object):
     """Create and write a new user problem"""
-    def __init__(self, problem_updates, **kwargs):
+    def __init__(self, user_obj, problem_updates, **kwargs):
         """problem_updates is a dict sent from the UI"""
+        self.user_obj = user_obj
         self.problem_updates = problem_updates
         self.save_schema_to_file = kwargs.get('save_schema_to_file', True)
         # -----------
@@ -75,7 +77,7 @@ class UserProblemHelper(object):
 
         # (1) get the original problem schema
         #
-        success, prob_schema_or_err = UserProblemHelper.get_current_problem_schema()
+        success, prob_schema_or_err = UserProblemHelper.get_current_problem_schema(self.user_obj)
         if not success:
             self.add_error_message(prob_schema_or_err)
             return False
@@ -258,15 +260,17 @@ class UserProblemHelper(object):
 
 
     @staticmethod
-    def write_to_user_problems_root(problem_info_string, file_prefix='user_prob'):
+    def write_to_user_problems_root(user_obj, problem_info_string, file_prefix='user_prob'):
         """Write a JSON string as a new file to the
            "user_problems_root" directory"""
         if not problem_info_string:
             return False, '"problem_info" not specified (UserProblemHelper)'
 
-        d3m_config = get_latest_d3m_config()
-        if d3m_config is None:
+        d3m_config_info = get_latest_d3m_user_config(user_obj)
+        if not d3m_config_info.success:
             return False, 'D3M config not found (UserProblemHelper)'
+        else:
+            d3m_config = d3m_config_info.result_obj
 
         user_problems_root = d3m_config.user_problems_root
         if not isdir(user_problems_root):
@@ -316,14 +320,16 @@ class UserProblemHelper(object):
 
 
     @staticmethod
-    def get_current_problem_schema():
+    def get_current_problem_schema(user_obj):
         """Return the D3M problem schema as an OrderedDict"""
-        d3m_config = get_latest_d3m_config()
-        if d3m_config is None:
+        d3m_config_info = get_latest_d3m_user_config(user_obj)
+        if not d3m_config_info.success:
             return False, ('D3M config not found.  Make sure a default'
                            ' config is set. (UserProblemHelper)')
 
-        filepath, err_msg_or_None = get_d3m_filepath(d3m_config, KEY_PROBLEM_SCHEMA)
+        filepath, err_msg_or_None = get_d3m_filepath(\
+                            d3m_config_info.result_obj,
+                            KEY_PROBLEM_SCHEMA)
         if err_msg_or_None:
             return False, err_msg_or_None
 
