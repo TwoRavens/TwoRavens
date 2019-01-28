@@ -42,7 +42,7 @@ after_success:
   # -------------------------------------
   # Temp push, to test new k8s deploy
   # -------------------------------------
-  - if [ "$TRAVIS_BRANCH" == "develop" ]; then
+  - if [ "$TRAVIS_BRANCH" == "xdevelop" ]; then
     docker build -t tworavens/ravens-main:dm-demo .;
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
     docker push tworavens/ravens-main:dm-demo;
