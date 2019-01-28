@@ -25,8 +25,8 @@ class ProblemWriterTest(TestCase):
         # test client
         self.client = Client()
 
-        user_obj = User.objects.get_or_create(username='dev_admin')[0]
-        self.client.force_login(user_obj)
+        self.user_obj = User.objects.get_or_create(username='dev_admin')[0]
+        self.client.force_login(self.user_obj)
 
     def test_010_testwrite(self):
         """(10) test success"""
@@ -35,7 +35,8 @@ class ProblemWriterTest(TestCase):
         fname = 'dir1/dir2/test_file1.json'
         data = dict(pet="dog")
 
-        bpw = BasicProblemWriter(fname,
+        bpw = BasicProblemWriter(self.user_obj,
+                                 fname,
                                  data,
                                  **dict(write_directory=self.test_dir.name))
 
@@ -57,7 +58,8 @@ class ProblemWriterTest(TestCase):
         fname = '../dir-traverse/../test_file1.json'
         data = dict(pet="dog")
 
-        bpw = BasicProblemWriter(fname,
+        bpw = BasicProblemWriter(self.user_obj,
+                                 fname,
                                  data,
                                  **dict(write_directory=self.test_dir.name))
 
@@ -75,7 +77,8 @@ class ProblemWriterTest(TestCase):
         fname = ''
         data = dict(pet="dog")
 
-        bpw = BasicProblemWriter(fname,
+        bpw = BasicProblemWriter(self.user_obj,
+                                 fname,
                                  data,
                                  **dict(write_directory=self.test_dir.name))
 
@@ -93,7 +96,8 @@ class ProblemWriterTest(TestCase):
         fname = 'dog_data.json'
         data = ''
 
-        bpw = BasicProblemWriter(fname,
+        bpw = BasicProblemWriter(self.user_obj,
+                                 fname,
                                  data,
                                  **dict(write_directory=self.test_dir.name))
 
