@@ -87,7 +87,9 @@ class EnvConfigLoader(BasicErrCheck):
             else:
                 config_info[attr] = None
 
-        return EnvConfigLoader(config_info, is_default_config=True)
+        return EnvConfigLoader(config_info,
+                               is_default_config=True,
+                               delete_if_exists=True)
 
 
     def run_make_config(self):
