@@ -1,6 +1,4 @@
 from django.contrib import admin
-
-from django.contrib import admin
 from tworaven_apps.user_workspaces.models import \
     (UserWorkspace,)
 

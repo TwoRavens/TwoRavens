@@ -1,5 +1,5 @@
 from django.db import models
-
+from collections import OrderedDict
 from model_utils.models import TimeStampedModel
 import jsonfield
 
@@ -28,4 +28,13 @@ class UserWorkspace(TimeStampedModel):
         return '%s - %s...' % (self.user, self.d3m_config)
 
     class Meta:
-        ordering = ('-is_active', 'modified', 'user')
+        ordering = ('user', '-id', '-is_active')
+
+
+    def to_dict(self):
+        """Convert to dict for API calls"""
+        info_dict = self.d3m_config.to_dict()
+        info_dict['user_workspace_id'] = self.id
+        info_dict.move_to_end('user_workspace_id', last=False)
+
+        return info_dict
