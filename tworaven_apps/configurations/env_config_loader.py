@@ -23,6 +23,8 @@ from tworaven_apps.configurations.static_vals import \
      D3M_OUTPUT_SUBDIRECTORIES,
      KEY_D3M_DIR_TEMP,
      KEY_D3M_USER_PROBLEMS_ROOT,
+     KEY_D3MLOCALDIR,
+     KEY_D3MSTATICDIR,
      KEY_TA2TA3)
 
 
@@ -155,10 +157,19 @@ class EnvConfigLoader(BasicErrCheck):
             #
             if attr in D3M_DIRECTORY_VARIABLES:
                 if not isdir(attr_val):
-                    user_msg = 'Directory not found for variable %s: %s' % \
-                            (attr, attr_val)
-                    self.add_err_msg(user_msg)
-                    return False
+                    if attr in [KEY_D3MSTATICDIR, KEY_D3MLOCALDIR]:
+                        try:
+                            os.makedirs(attr_val, exist_ok=True)
+                        except OSError:
+                            user_msg = ('Failed to find or create directory'
+                                        ' for %s at %s') % \
+                                        (attr, attr_val)
+                            return False
+                    else:
+                        user_msg = 'Directory not found for variable %s: %s' % \
+                                (attr, attr_val)
+                        self.add_err_msg(user_msg)
+                        return False
 
         return True
 

@@ -16,12 +16,16 @@ D3M_VARIABLE_LIST = (\
                 'D3MRAM',
                 'D3MTIMEOUT')
 
+KEY_D3MLOCALDIR = 'D3MLOCALDIR'
+KEY_D3MSTATICDIR = 'D3MSTATICDIR'
+
 D3M_DIRECTORY_VARIABLES = (\
                 'D3MINPUTDIR',
                 #'D3MPROBLEMPATH',
                 'D3MOUTPUTDIR',
                 'D3MLOCALDIR',
                 'D3MSTATICDIR',)
+
 
 KEY_D3M_DIR_ADDITIONAL_INPUTS = 'additional_inputs'
 KEY_D3M_DIR_TEMP = join(KEY_D3M_DIR_ADDITIONAL_INPUTS, 'raven_temp_storage_root')
