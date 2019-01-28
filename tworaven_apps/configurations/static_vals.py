@@ -3,6 +3,7 @@ from os.path import join
 # For the winter 2019 config
 #   Based on 1/2019 version of https://datadrivendiscovery.org/wiki/display/work/Evaluation+Workflow
 #
+KEY_TA2TA3 = 'ta2ta3'
 KEY_D3MINPUTDIR = 'D3MINPUTDIR'
 D3M_VARIABLE_LIST = (\
                 'D3MRUN',

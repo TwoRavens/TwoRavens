@@ -14,7 +14,9 @@ from django.template.loader import render_to_string
 from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
 from tworaven_apps.configurations.static_vals import \
-    (D3M_VARIABLE_LIST, KEY_D3MINPUTDIR)
+    (D3M_VARIABLE_LIST,
+     KEY_D3MINPUTDIR,
+     KEY_TA2TA3)
 
 class MakeConfigTest(TestCase):
 
@@ -41,7 +43,7 @@ class MakeConfigTest(TestCase):
                             'test_output',)
 
         config_env = dict(\
-                        D3MRUN='ta2ta3',
+                        D3MRUN=KEY_TA2TA3,
                         D3MINPUTDIR=baseball_dir,
                         D3MPROBLEMPATH=join(baseball_dir,
                                             '185_baseball_problem',
@@ -50,8 +52,8 @@ class MakeConfigTest(TestCase):
                         D3MLOCALDIR=baseball_output_dir,
                         D3MSTATICDIR=baseball_output_dir,
                         D3MTIMEOUT='%d' % (60*10),
-                        D3MCPU='some-cpu',
-                        D3MRAM='some-RAM')
+                        D3MCPU='1',
+                        D3MRAM='1Gi')
 
         # update settings variables
         #

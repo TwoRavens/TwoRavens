@@ -280,6 +280,16 @@ class D3MConfiguration(TimeStampedModel):
 
         return od
 
+    def get_docker_env_settings(self):
+        """Used for local TA2 tests and setting env variables"""
+        if not self.env_values:
+            return None
+
+        pairs = ['-e %s=%s' % (key, val)
+                 for key, val in self.env_values.items()]
+
+        return ' '.join(pairs)
+
 
     def are_d3m_paths_valid(self):
         """Check the paths"""

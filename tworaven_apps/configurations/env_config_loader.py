@@ -22,7 +22,8 @@ from tworaven_apps.configurations.static_vals import \
      D3M_DIRECTORY_VARIABLES,
      D3M_OUTPUT_SUBDIRECTORIES,
      KEY_D3M_DIR_TEMP,
-     KEY_D3M_USER_PROBLEMS_ROOT)
+     KEY_D3M_USER_PROBLEMS_ROOT,
+     KEY_TA2TA3)
 
 
 class EnvConfigLoader(BasicErrCheck):
@@ -287,7 +288,7 @@ class EnvConfigLoader(BasicErrCheck):
 
         info = SimpleNamespace()
 
-        info.D3MRUN = 'ta3ta2'
+        info.D3MRUN = KEY_TA2TA3 # ?
         info.D3MINPUTDIR = fullpath
         info.D3MPROBLEMPATH = join(fullpath,
                                    'TRAIN',
@@ -308,8 +309,8 @@ class EnvConfigLoader(BasicErrCheck):
         os.makedirs(info.D3MSTATICDIR, exist_ok=True)
 
         info.D3MTIMEOUT = '%d' % (60*10)
-        info.D3MCPU = 'some-cpu'
-        info.D3MRAM = 'some-RAM'
+        info.D3MCPU = '1'
+        info.D3MRAM = '1Gi'
 
         loader = EnvConfigLoader(info, **kwargs)
         if loader.has_error():
