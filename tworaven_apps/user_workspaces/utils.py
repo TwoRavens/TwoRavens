@@ -50,7 +50,7 @@ def get_latest_d3m_user_config(user, create_if_not_found=True):
         params['d3m_config'] = d3m_config
         new_workspace = UserWorkspace(**params)
         new_workspace.save()
-        return ok_resp(latest_workspace.d3m_config)
+        return ok_resp(new_workspace.d3m_config)
 
     return err_resp('No workspace found for the User and default config')
 
