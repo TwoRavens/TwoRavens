@@ -98,5 +98,7 @@ class MakeConfigTest(TestCase):
         # Delete config and try again
         #
         d3m_config.delete()
-        config_loader2 = EnvConfigLoader.run_loader_from_settings()
+        config_loader2 = EnvConfigLoader.run_loader_from_env()
         self.assertEqual(config_loader.has_error(), False)
+        d3m_config2 = config_loader2.get_d3m_config()
+        print(d3m_config2.get_json_string(indent=4))
