@@ -5,14 +5,16 @@ Conforming to the 1/12/19 version of:
     - https://datadrivendiscovery.org/wiki/pages/viewpage.action?pageId=11276800
 """
 import os
-from os.path import dirname, isdir, isfile, join
+from os.path import basename, dirname, isdir, isfile, join
 from types import SimpleNamespace
 
 from django.conf import settings
 
+from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.utils.json_helper import json_loads
-
+from tworaven_apps.utils.basic_response import (ok_resp,
+                                                err_resp)
 from tworaven_apps.configurations.models_d3m import \
     (D3MConfiguration)
 from tworaven_apps.configurations.static_vals import \
@@ -97,7 +99,8 @@ class EnvConfigLoader(BasicErrCheck):
 
         if not isfile(self.env_config.D3MPROBLEMPATH):
             user_msg = ('D3MPROBLEMPATH file non-existent or'
-                        ' can\'t be reached') % self.env_config.D3MPROBLEMPATH
+                        ' can\'t be reached: %s') % \
+                        self.env_config.D3MPROBLEMPATH
             self.add_err_msg(user_msg)
             return False
 
@@ -114,7 +117,7 @@ class EnvConfigLoader(BasicErrCheck):
 
 
     def verify_variable_existence(self):
-        """Iterate through env variables and make sure they exist.
+        """Iterate through variables and make sure they exist.
         If it's a directory, make sure it exists.
         """
         if self.has_error():
@@ -124,14 +127,14 @@ class EnvConfigLoader(BasicErrCheck):
 
             # Is it in settings?
             #
-            if not hasattr(settings, attr):
+            if not hasattr(self.env_config, attr):
                 user_msg = 'Variable must be in settings: %s' % attr
                 self.add_err_msg(user_msg)
                 return False
 
             # Is a value set?
             #
-            attr_val = getattr(settings, attr)
+            attr_val = getattr(self.env_config, attr)
             if not attr_val:
                 user_msg = 'Environment variable must be set: %s' % attr
                 self.add_err_msg(user_msg)
@@ -171,6 +174,8 @@ class EnvConfigLoader(BasicErrCheck):
             config_info['name'] = name
             # problem_schema
             config_info['problem_schema'] = self.env_config.D3MPROBLEMPATH
+            config_info['problem_root'] = dirname(self.env_config.D3MPROBLEMPATH)
+
         except KeyError:
             user_msg = ('about.Problem ID not found in problem doc: %s') % \
                     self.env_config.D3MPROBLEMPATH
@@ -195,7 +200,16 @@ class EnvConfigLoader(BasicErrCheck):
             # don't rely on D3MINPUTDIR
             #
             config_info['training_data_root'] = \
-                join(dirname(dirname(self.env_config.D3MINPUTDIR)), 'dataset_TRAIN')
+                join(dirname(dirname(self.env_config.D3MPROBLEMPATH)),
+                     'dataset_TRAIN')
+
+            config_info['dataset_schema'] = \
+                join(dirname(dirname(self.env_config.D3MPROBLEMPATH)),
+                     'dataset_TRAIN',
+                     'datasetDoc.json')
+
+        #    "dataset_schema": "/baseball/data/dataSchema.json",
+
 
         config_info['root_output_directory'] = self.env_config.D3MOUTPUTDIR
         config_info['d3m_input_dir'] = self.env_config.D3MINPUTDIR
@@ -229,3 +243,61 @@ class EnvConfigLoader(BasicErrCheck):
             "Make sure .has_error() is False before using this method!"
 
         return self.d3m_config
+
+    @staticmethod
+    def make_d3m_test_configs_env_based(base_data_dir=None):
+        """Iterate over test data directories to make D3M configs"""
+        if base_data_dir is None:
+            base_data_dir = join(settings.BASE_DIR,
+                                 'ravens_volume',
+                                 'test_data')
+        cnt = 0
+        for dname in os.listdir(base_data_dir):
+            if not dname[0].isdigit():
+                continue
+            cnt += 1
+            fullpath = join(base_data_dir, dname)
+            msgt('(%d) Make config: %s' % (cnt, fullpath))
+            attempt_info = EnvConfigLoader.make_config_from_directory(fullpath)
+            if attempt_info.success:
+                print('It worked!  Created: %s' % attempt_info.result_obj)
+            else:
+                print('Error: %s' % attempt_info.err_msg)
+
+    @staticmethod
+    def make_config_from_directory(fullpath):
+        """Make a directory from an existing path"""
+        if not isdir(fullpath):
+            return err_resp('Diretory not found: %s' % fullpath)
+
+        info = SimpleNamespace()
+
+        info.D3MRUN = 'ta3ta2'
+        info.D3MINPUTDIR = fullpath
+        info.D3MPROBLEMPATH = join(fullpath,
+                                   'TRAIN',
+                                   'problem_TRAIN',
+                                   'problemDoc.json')
+
+        # Create these output directories
+        #
+        info.D3MOUTPUTDIR = join(dirname(dirname(fullpath)),
+                                 'test_output',
+                                 basename(fullpath))
+        os.makedirs(info.D3MOUTPUTDIR, exist_ok=True)
+
+        info.D3MLOCALDIR = join(info.D3MOUTPUTDIR, 'local_dir')
+        os.makedirs(info.D3MLOCALDIR, exist_ok=True)
+
+        info.D3MSTATICDIR = join(info.D3MOUTPUTDIR, 'static_dir')
+        os.makedirs(info.D3MSTATICDIR, exist_ok=True)
+
+        info.D3MTIMEOUT = '%d' % (60*10)
+        info.D3MCPU = 'some-cpu'
+        info.D3MRAM = 'some-RAM'
+
+        loader = EnvConfigLoader(info)
+        if loader.has_error():
+            return err_resp(loader.get_error_message())
+        else:
+            return ok_resp(loader.get_d3m_config())

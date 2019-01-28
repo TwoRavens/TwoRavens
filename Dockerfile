@@ -71,7 +71,7 @@ VOLUME /ravens_volume
 #
 #   - collect_static - django collect static files
 #
-#   - make_d3m_config_files - makes test config files accessible via env variables
+#   - make_d3m_configs_from_files - makes test config files accessible via env variables
 #                             (not used for eval)
 #   - make_d3m_config - WARNING: for testing. Loads D3M info based on the test data
 #
@@ -82,7 +82,7 @@ RUN fab init_db && \
     fab load_docker_ui_config && \
     fab collect_static
 
-#    fab make_d3m_config_files && \
+#    fab make_d3m_configs_from_files && \
 
 # -------------------------------------
 # Expose port for web communication

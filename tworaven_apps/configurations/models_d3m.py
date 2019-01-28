@@ -260,13 +260,15 @@ class D3MConfiguration(TimeStampedModel):
         """Check the paths"""
         return are_d3m_paths_valid(self)
 
+    #@mark_safe
     def are_paths_valid(self):
         """Check the paths, show in admin"""
         if not self.are_d3m_paths_valid():
-            return "<span class='deletelink'>invalid paths</a>"
+            return False
+            #return "<span class='deletelink'>invalid paths</a>"
         else:
             return True
-    are_paths_valid.allow_tags = True
+    #are_paths_valid.allow_tags = True
 
     def get_bad_paths_for_admin(self):
         """Formatted for the admin with <br />'s separating the path list"""

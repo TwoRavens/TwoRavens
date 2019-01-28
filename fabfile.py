@@ -58,13 +58,25 @@ def restart():
     stop()
     run()
 
+
 @task
-def make_d3m_config_files():
-    """Make configs in /ravens_volume and loads them to db"""
+def make_d3m_config_files_2018():
+    """2018 (old) Make configs in /ravens_volume and loads them to db"""
     clear_d3m_configs()
 
     from tworaven_apps.configurations.util_config_maker import TestConfigMaker
     TestConfigMaker.make_deploy_config_files()
+
+
+
+@task
+def make_d3m_configs_from_files():
+    """Make configs from /ravens_volume and loads them to db"""
+    clear_d3m_configs()
+
+    from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
+    loader = EnvConfigLoader.make_d3m_test_configs_env_based()
+
 
 @task
 def clear_d3m_configs():
@@ -122,7 +134,7 @@ def make_d3m_config():
 
 @task
 def load_d3m_config_from_env():
-    """1/27/2018 update
+    """1/27/2019 update. Load from env variables.
     - Look for an environment variable named "D3MINPUTDIR"
         - This is the data directory which should include a file named
             "search_config.json"
@@ -135,7 +147,7 @@ def load_d3m_config_from_env():
         (D3M_SEARCH_CONFIG_NAME,)
 
     print('-' * 40)
-    print('> Attempt to load D3M config data')
+    print('> Attempt to load D3M config data from environment')
     print('-' * 40)
 
     if not settings.D3MINPUTDIR:
@@ -158,6 +170,18 @@ def load_d3m_config_from_env():
         except management.base.CommandError as err_obj:
             print('> Failed to load D3M config.\n%s' % err_obj)
         return
+
+    print('(2) Attempt to load 2019 config from environment variables')
+
+
+    from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
+    loader = EnvConfigLoader.run_loader_from_env()
+    if loader.has_error():
+        print('Failed: %s' % loader.get_error_message())
+    else:
+        d3m_config = loader.get_d3m_config()
+        print('Success! New config [id:%s] %s' % \
+                (d3m_config.id, d3m_config.name))
 
 @task
 def load_d3m_config(config_data_dir):
