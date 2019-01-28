@@ -124,10 +124,9 @@ def clear_test_data():
         print('  -> No preprocess D3M test output directory')
 
 
-
-@task
 def make_d3m_config():
-    """Adds D3M configs to database--but DOESN'T create config files"""
+    """NO LONGER USED
+    Adds D3M configs to database--but DOESN'T create config files"""
     from tworaven_apps.configurations.util_config_maker import TestConfigMaker
 
     TestConfigMaker.make_configs()

@@ -213,7 +213,7 @@ class D3MConfiguration(TimeStampedModel):
 
     def to_dict(self, as_eval_dict=False):
         """Return in an OrderedDict"""
-        attrs = ['id', 'name', 'is_default',
+        attrs = ['id', 'name', 'is_default', 'description',
                  'd3m_input_dir',
                  'dataset_schema', 'problem_schema',
                  'training_data_root', 'problem_root',
