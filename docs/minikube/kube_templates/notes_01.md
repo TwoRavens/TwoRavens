@@ -72,7 +72,7 @@ kubectl exec ravens-ta3 --container ta3-main -- /bin/bash ta3_search /ravens_vol
 kubectl exec -it ravens-ta3 -c ta3-main -- /bin/bash
 
 # Make some test configs...
-fab make_d3m_config_files
+fab make_d3m_configs_from_files
 
 # Copy test data to the shared volume
 cp -r ravens_volume/. /ravens_volume

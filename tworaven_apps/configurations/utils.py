@@ -11,13 +11,16 @@ from tworaven_apps.configurations.models_d3m import D3MConfiguration,\
 def get_latest_d3m_config():
     """
     - See if there's a config with "is_default=True"
+    - NEW: Exclude "is_user_config"
     - Look for the most recently modified config
     - No configs? Return None
     """
 
     # Is there a default?
     #
-    d3m_config = D3MConfiguration.objects.filter(is_default=True).first()
+    params = dict(is_default=True,
+                  is_user_config=False)
+    d3m_config = D3MConfiguration.objects.filter(**params).first()
     if not d3m_config:
         return None
         # nope, get the most recently modified config

@@ -817,7 +817,14 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // 2. Set 'configurations'
     configurations = JSON.parse(JSON.stringify(res)); // this is just copying res
-    d3mRootPath = configurations.training_data_root.replace(/\/data/,'');
+    if (configurations.d3m_input_dir){
+      // 2019 config
+      d3mRootPath = configurations.d3m_input_dir;
+    }else{
+      // 2018 config
+      d3mRootPath = configurations.training_data_root.replace(/\/data/,'');
+    }
+
     d3mDataName = configurations.name;
 
     // scopes at app.js level; used for saving workspace

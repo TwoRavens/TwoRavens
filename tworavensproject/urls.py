@@ -26,6 +26,8 @@ urlpatterns = [
 
     url(r'^datamart/', include('tworaven_common_apps.datamart_endpoints.urls')),
 
+    url(r'^user-workspaces/', include('tworaven_apps.user_workspaces.urls')),
+
     #url(r'^data/', include('tworaven_apps.test_data.urls')),
 
     #url(r'^ravens_volume/', include('tworaven_apps.test_data.urls')),
