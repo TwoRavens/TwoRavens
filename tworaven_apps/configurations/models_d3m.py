@@ -78,9 +78,27 @@ class D3MConfiguration(TimeStampedModel):
     "temp_storage_root": "/temp"
     }
     """
-    name = models.CharField(max_length=255,
-                            help_text='for internal use',
+    name = models.CharField('Dataset Id',
+                            max_length=255,
+                            help_text='This is same as dataset_id for now',
                             unique=True)
+
+    # -------------------------------
+    # Next 2 fields a temp hack to get UserWorkspace going
+    # -------------------------------
+    #dataset_id = models.CharField(\
+    #                        max_length=255,
+    #                        help_text='from the problem doc')
+
+    orig_dataset_id = models.CharField(\
+                            max_length=255,
+                            default="default: not set",
+                            help_text='from the problem doc')
+
+    is_user_config = models.BooleanField(\
+                    default=False,
+                    help_text='If true, must be used through a UserWorkspace')
+    # -------------------------------
 
     description = models.CharField(\
                             max_length=255,
@@ -179,6 +197,11 @@ class D3MConfiguration(TimeStampedModel):
 
         self.slug = slugify(self.name)
 
+        # A user config CANNOT be the default
+        #
+        if self.is_user_config:
+            self.is_default = True
+
         # If this is the default, set everything else to non-default
         if self.is_default:
             D3MConfiguration.objects.filter(\
@@ -213,7 +236,9 @@ class D3MConfiguration(TimeStampedModel):
 
     def to_dict(self, as_eval_dict=False):
         """Return in an OrderedDict"""
-        attrs = ['id', 'name', 'is_default', 'description',
+        attrs = ['id', 'name', 'is_default',
+                 'is_user_config', 'orig_dataset_id',
+                 'description',
                  'd3m_input_dir',
                  'dataset_schema', 'problem_schema',
                  'training_data_root', 'problem_root',

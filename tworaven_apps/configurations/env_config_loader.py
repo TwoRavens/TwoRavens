@@ -35,6 +35,10 @@ class EnvConfigLoader(BasicErrCheck):
     def __init__(self, env_config_vals, **kwargs):
         """Make that config
         env_config_vals - may be a dict or SimpleNamespace
+
+        For augmented datasets, add these extra arguments:
+        (1) orig_dataset_id="orig name or dataset id"
+        (2) is_user_config=True
         """
         self.env_config = env_config_vals
         if isinstance(self.env_config, dict):
@@ -45,6 +49,9 @@ class EnvConfigLoader(BasicErrCheck):
 
         self.delete_if_exists = kwargs.get('delete_if_exists', False)
         self.is_default_config = kwargs.get('is_default_config', False)
+
+        self.orig_dataset_id = kwargs.get('orig_dataset_id', None)
+        self.is_user_config = kwargs.get('is_user_config', False)
 
         self.problem_doc = None
         self.d3m_config = None
@@ -171,12 +178,6 @@ class EnvConfigLoader(BasicErrCheck):
 
         try:
             name = self.problem_doc['about']['problemID']
-            # name
-            config_info['name'] = name
-            # problem_schema
-            config_info['problem_schema'] = self.env_config.D3MPROBLEMPATH
-            config_info['problem_root'] = dirname(self.env_config.D3MPROBLEMPATH)
-
         except KeyError:
             user_msg = ('about.Problem ID not found in problem doc: %s') % \
                     self.env_config.D3MPROBLEMPATH
@@ -195,6 +196,17 @@ class EnvConfigLoader(BasicErrCheck):
                         (d3m_config.id, d3m_config.name)
                 self.add_err_msg(user_msg)
                 return
+
+        config_info['name'] = name
+        config_info['orig_dataset_id'] = \
+                        self.orig_dataset_id if self.orig_dataset_id else name
+        config_info['is_user_config'] = self.is_user_config
+
+
+        # problem_schema
+        config_info['problem_schema'] = self.env_config.D3MPROBLEMPATH
+        config_info['problem_root'] = dirname(self.env_config.D3MPROBLEMPATH)
+
 
         if self.env_config.D3MPROBLEMPATH.find('problem_TRAIN'):
             # go up 2 directories + 'dataset_TRAIN'
