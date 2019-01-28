@@ -26,6 +26,7 @@ class D3MConfigurationAdmin(admin.ModelAdmin):
                     'is_default',
                     'dataset_schema',
                     'problem_schema',
+                    'd3m_input_dir',
                     'training_data_root',
                     'modified',
                     'created',)

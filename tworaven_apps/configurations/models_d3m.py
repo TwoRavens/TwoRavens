@@ -82,6 +82,11 @@ class D3MConfiguration(TimeStampedModel):
                             help_text='for internal use',
                             unique=True)
 
+    description = models.CharField(\
+                            max_length=255,
+                            help_text='For internal use',
+                            blank=True)
+
     is_default = models.BooleanField(\
                     default=False,
                     help_text='There can be either one default or no defaults')
@@ -135,9 +140,9 @@ class D3MConfiguration(TimeStampedModel):
                         help_text=('Temporary storage root for performers'
                                    ' to use.'))
 
-    timeout = models.IntegerField(\
+    timeout = models.BigIntegerField(\
                 default=-1,
-                help_text=('Allotted time for search, in minutes.'
+                help_text=('Allotted time for search, in seconds.'
                            ' No timeout if negative.'))
 
     cpus = models.CharField(\

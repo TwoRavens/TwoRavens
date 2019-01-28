@@ -8,7 +8,7 @@ import os
 from os.path import dirname, isdir, isfile, join
 from django.conf import settings
 
-from tworaven_apps.utils.basic_response import BasicErrCheck
+from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.utils.json_helper import json_loads
 
 from tworaven_apps.configurations.models_d3m import \
@@ -31,6 +31,7 @@ class EnvConfigLoader(BasicErrCheck):
         self.delete_if_exists = kwargs.get('delete_if_exists', False)
 
         self.problem_doc = None
+        self.d3m_config = None
 
         self.run_make_config()
 
@@ -59,7 +60,8 @@ class EnvConfigLoader(BasicErrCheck):
             self.add_err_msg(user_msg)
             return False
 
-        pdoc_info = json_loads(settings.D3MPROBLEMPATH)
+        json_content = open(settings.D3MPROBLEMPATH, 'r').read()
+        pdoc_info = json_loads(json_content)
         if not pdoc_info.success:
             user_msg = ('D3MPROBLEMPATH file not JSON.  %s\nError: %s') % \
                         (settings.D3MPROBLEMPATH, pdoc_info.err_msg)
@@ -135,7 +137,7 @@ class EnvConfigLoader(BasicErrCheck):
             return
 
         # If it exists, delete it
-        d3m_config = D3MConfiguration.objects.get(name=name).first()
+        d3m_config = D3MConfiguration.objects.filter(name=name).first()
         if d3m_config:
             if self.delete_if_exists:
                 print('Found config with same name:' %  d3m_config)
@@ -155,10 +157,10 @@ class EnvConfigLoader(BasicErrCheck):
                 join(dirname(dirname(settings.D3MINPUTDIR)), 'dataset_TRAIN')
 
         config_info['root_output_directory'] = settings.D3MOUTPUTDIR
-
-        config_info['timeout'] = settings.D3MRAM
-        config_info['cpus'] = settings.D3MCPU
+        config_info['d3m_input_dir'] = settings.D3MINPUTDIR
         config_info['ram'] = settings.D3MRAM
+        config_info['cpus'] = settings.D3MCPU
+        config_info['timeout'] = settings.D3MTIMEOUT
 
         new_config = D3MConfiguration(**config_info)
         new_config.save()
@@ -176,3 +178,12 @@ class EnvConfigLoader(BasicErrCheck):
 
         # save updated config
         new_config.save()
+
+        self.d3m_config = new_config
+
+    def get_d3m_config(self):
+        """Return a pointer to the D3MConfiguration"""
+        assert not self.has_error(), \
+            "Make sure .has_error() is False before using this method!"
+
+        return self.d3m_config

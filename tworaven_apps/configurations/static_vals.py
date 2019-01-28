@@ -1,6 +1,5 @@
 from os.path import join
-from tworaven_apps.configurations.models_d3m import \
-    (D3M_DIR_USER_PROBLEMS_ROOT)
+
 # For the winter 2019 config
 #   Based on 1/2019 version of https://datadrivendiscovery.org/wiki/display/work/Evaluation+Workflow
 #
@@ -24,8 +23,8 @@ D3M_DIRECTORY_VARIABLES = (\
                 'D3MSTATICDIR',)
 
 KEY_D3M_DIR_ADDITIONAL_INPUTS = 'additional_inputs'
-KEY_D3M_DIR_TEMP = join(KEY_D3M_DIR_ADDITIONAL_INPUTS, 'raven_temp')
-KEY_D3M_USER_PROBLEMS_ROOT = D3M_DIR_USER_PROBLEMS_ROOT
+KEY_D3M_DIR_TEMP = join(KEY_D3M_DIR_ADDITIONAL_INPUTS, 'raven_temp_storage_root')
+KEY_D3M_USER_PROBLEMS_ROOT = 'user_problems_root'
 
 D3M_OUTPUT_SUBDIRECTORIES = (\
         'pipelines_ranked', # a directory with ranked pipelines to be evaluated,
