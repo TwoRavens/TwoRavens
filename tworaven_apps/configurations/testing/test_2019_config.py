@@ -52,13 +52,13 @@ class MakeConfigTest(TestCase):
                         D3MSTATICDIR=baseball_output_dir,
                         D3MTIMEOUT='%d' % (60*10),
                         D3MCPU='some-cpu',
-                        D3MRAM='some-RAM',
-                        )
-        # update env variables
+                        D3MRAM='some-RAM')
+
+        # update settings variables
         #
         for env_name, env_val in config_env.items():
-            os.environ[env_name] = env_val
             setattr(settings, env_name, env_val)
+
         """
         ekeys = list(os.environ.keys())
         ekeys.sort()
@@ -66,7 +66,7 @@ class MakeConfigTest(TestCase):
             print('%s: %s' % (k, os.environ[k]))
         """
 
-        config_loader = EnvConfigLoader()
+        config_loader = EnvConfigLoader.run_loader_from_settings()
         if config_loader.has_error():
             print(config_loader.get_error_message())
         else:
@@ -77,3 +77,25 @@ class MakeConfigTest(TestCase):
         d3m_config = config_loader.get_d3m_config()
 
         print(d3m_config.get_json_string(indent=4))
+
+        # -----------------------------------------
+        # update env variables
+        # -----------------------------------------
+        for env_name, env_val in config_env.items():
+            os.environ[env_name] = env_val
+
+        config_loader2 = EnvConfigLoader.run_loader_from_settings()
+        if config_loader2.has_error():
+            print(config_loader2.get_error_message())
+        else:
+            print('ok!', config_loader2.get_d3m_config())
+
+        # Error b/c config just made with the same name
+        #
+        self.assertEqual(config_loader2.has_error(), True)
+
+        # Delete config and try again
+        #
+        d3m_config.delete()
+        config_loader2 = EnvConfigLoader.run_loader_from_settings()
+        self.assertEqual(config_loader.has_error(), False)

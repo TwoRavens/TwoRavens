@@ -6,7 +6,7 @@ https://datadrivendiscovery.org/wiki/pages/viewpage.action?spaceKey=gov&title=Da
 from collections import OrderedDict
 from datetime import datetime as dt
 import json
-
+import jsonfield
 from django.db import models
 from django.urls import reverse
 from django.template.defaultfilters import slugify
@@ -155,6 +155,11 @@ class D3MConfiguration(TimeStampedModel):
                 blank=True,
                 help_text=('Amount of RAM available for search.'))
 
+    env_values = jsonfield.JSONField(\
+                blank=True,
+                help_text='D3M env values for running Docker TA2s',
+                load_kwargs=dict(object_pairs_hook=OrderedDict))
+
     slug = models.SlugField(blank=True,
                             help_text='auto-filled on save')
 
@@ -216,7 +221,7 @@ class D3MConfiguration(TimeStampedModel):
                  'user_problems_root',
                  'temp_storage_root',
                  OPTIONAL_DIR_OUTPUT_ROOT,
-                 'timeout', 'cpus', 'ram']
+                 'timeout', 'cpus', 'ram', 'env_values']
         date_attrs = ['created', 'modified']
 
         od = OrderedDict()
