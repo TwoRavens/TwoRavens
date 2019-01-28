@@ -8,7 +8,8 @@ from tworaven_apps.configurations.utils import get_latest_d3m_config
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
 from tworaven_common_apps.datamart_endpoints.models import (DATAMART_ISI_URL,
-                                                            DATAMART_NYU_URL)
+                                                            DATAMART_NYU_URL,
+                                                            cached_response, cached_response_baseball)
 
 import requests
 import logging
@@ -36,6 +37,8 @@ class DatamartJobUtilISI(object):
 
     @staticmethod
     def datamart_search(query, data_path=None):
+        # return ok_resp(json.loads(cached_response_baseball))
+
         payload = {'query': ('query.json', query)}
 
         if data_path and os.path.exists(data_path):
@@ -48,6 +51,14 @@ class DatamartJobUtilISI(object):
         if response['code'] != "0000":
             return err_resp(response['message'])
 
+        # these fields are unnecessarily long
+        for dataset in response['data']:
+            for variable in dataset['metadata']['variables']:
+                if 'semantic_type' in variable:
+                    del variable['semantic_type']
+                if 'named_entity' in variable:
+                    del variable['named_entity']
+
         return ok_resp(response['data'])
 
     @staticmethod
@@ -58,20 +69,23 @@ class DatamartJobUtilISI(object):
             user_msg = 'datamart_materialize failed. no d3m config'
             LOGGER.error(user_msg)
             return err_resp(user_msg)
-
-        datamart_id = search_result['_source']['datamart_id']
-        response = requests.get(DATAMART_ISI_URL + '/new/materialize_data',
-                                params={'datamart_id': datamart_id},
-                                verify=False).json()
-
-        if response['code'] != "0000":
-            return err_resp(response['message'])
-
+        datamart_id = search_result['datamart_id']
         materialize_folderpath = os.path.join(d3m_config.temp_storage_root, 'materialize', str(datamart_id))
+
+        if os.path.exists(materialize_folderpath):
+            response = None
+        else:
+            response = requests.get(DATAMART_ISI_URL + '/new/materialize_data',
+                                    params={'datamart_id': datamart_id},
+                                    verify=False).json()
+
+            if response['code'] != "0000":
+                return err_resp(response['message'])
+
         return ok_resp(DatamartJobUtilISI.save(materialize_folderpath, response))
 
     @staticmethod
-    def datamart_augment(data_path, datamart_id):
+    def datamart_augment(data_path, search_result, left_columns, right_columns):
 
         d3m_config = get_latest_d3m_config()
         if not d3m_config:
@@ -79,13 +93,14 @@ class DatamartJobUtilISI(object):
             LOGGER.error(user_msg)
             return err_resp(user_msg)
 
-        # TODO: column specification
+        datamart_id = search_result['datamart_id']
+
         response = requests.post(DATAMART_ISI_URL + '/new/join_data',
                                  files={'left_data': open(data_path, 'r')},
-                                 params={
+                                 data={
                                      'right_data': datamart_id,
-                                     'left_columns': [],
-                                     'right_columns': []
+                                     'left_columns': [left_columns],
+                                     'right_columns': [right_columns]
                                  },
                                  verify=False).json()
 
@@ -99,22 +114,38 @@ class DatamartJobUtilISI(object):
     def save(folderpath, response):
         data_filepath = os.path.join(folderpath, 'tables', 'learningData.csv')
 
+        if os.path.exists(folderpath):
+            data = []
+            with open(data_filepath, 'r') as datafile:
+                for i in range(100):
+                    try:
+                        data.append(next(datafile))
+                    except StopIteration:
+                        pass
+
+            return {
+                'data_path': data_filepath,
+                'metadata_path': None,
+                'data_preview': ''.join(data),
+                'metadata': None
+            }
+
         try:
             os.makedirs(os.path.dirname(data_filepath))
         except OSError:
             pass
 
-        data_split = response['data'].split('\n')
+        data_split = [i + '\n' for i in response['data'].split('\n')]
 
         with open(data_filepath, 'w') as datafile:
             datafile.writelines(data_split)
 
-        return ok_resp({
+        return {
             'data_path': data_filepath,
             'metadata_path': None,
-            'data_preview': [line.split(',') for line in data_split[:100]],
+            'data_preview': '\n'.join(data_split[:100]),
             'metadata': None
-        })
+        }
 
 
 # based on documentation here:
@@ -165,13 +196,13 @@ class DatamartJobUtilNYU(object):
             d3m_config['temp_storage_root'],
             'materialize', str(search_result['id']))
 
-        if not os.path.exists(materialize_folderpath):
+        if os.path.exists(materialize_folderpath):
+            response = None
+        else:
             response = requests.get(DATAMART_NYU_URL + '/download/' + str(search_result['id']),
                                     params={'format': 'd3m'}, stream=True)
             if response.status_code != 200:
                 return err_resp('NYU Datamart internal server error')
-        else:
-            response = None
 
         return ok_resp(DatamartJobUtilNYU.save(materialize_folderpath, response))
 

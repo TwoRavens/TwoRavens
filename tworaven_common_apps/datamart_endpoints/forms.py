@@ -38,6 +38,8 @@ class DatamartAugmentForm(forms.Form):
     source = forms.CharField(required=True, widget=forms.Textarea)
     data_path = forms.CharField(required=True, widget=forms.Textarea)
     search_result = forms.CharField(required=True, widget=forms.Textarea)
+    left_columns = forms.CharField(required=False, widget=forms.Textarea)
+    right_columns = forms.CharField(required=False, widget=forms.Textarea)
 
     def clean_source(self):
         source = self.cleaned_data.get('source')
@@ -51,12 +53,18 @@ class DatamartAugmentForm(forms.Form):
     def clean_search_result(self):
         return json.loads(self.cleaned_data.get('search_result'))
 
+    def clean_left_columns(self):
+        return json.loads(self.cleaned_data.get('left_columns'))
+
+    def clean_right_columns(self):
+        return json.loads(self.cleaned_data.get('right_columns'))
+
 
 class DatamartMaterializeForm(forms.Form):
     """ check if materialize parameters are ok"""
 
     source = forms.CharField(required=True, widget=forms.Textarea)
-    search_result = forms.IntegerField(required=True)
+    search_result = forms.CharField(required=True)
 
     def clean_source(self):
         source = self.cleaned_data.get('source')

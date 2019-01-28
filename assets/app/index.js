@@ -38,7 +38,7 @@ import TextField from '../common/views/TextField';
 import MenuHeaders from "../common/views/MenuHeaders";
 import Subpanel2 from '../common/views/Subpanel';
 
-import Datamart from "../common/TwoRavens/Datamart";
+import Datamart, {ModalDatamart} from "../common/TwoRavens/Datamart";
 
 // EVENTDATA
 import Body_EventData from './eventdata/Body_EventData';
@@ -274,13 +274,9 @@ function leftpanel(mode) {
             {
                 value: 'Augment',
                 contents: m(Datamart, {
-                    datamartQuery: app.datamartQuery,
-                    datamartResults: app.datamartResults,
-                    datamartIndex: app.datamartIndex,
-                    datamartDatasets: app.datamartDatasets,
+                    preferences: app.datamartPreferences,
                     dataPath: app.zparams.zd3mdata,
                     endpoint: app.datamartURL,
-                    visualizeData: app.setDatamartModalContents,
                     labelWidth: '10em'
                 })
             },
@@ -940,11 +936,11 @@ class Body {
                         m('col', {span: 1}))
                 })
             ]),
-
-            app.datamartModalContents && m(ModalVanilla, {
-                id: 'datamartModal',
-                setDisplay: () => app.setDatamartModalContents(undefined)
-            }, app.datamartModalContents),
+            m(ModalDatamart, {
+                preferences: app.datamartPreferences,
+                endpoint: app.datamartURL,
+                dataPath: app.zparams.zd3mdata
+            }),
 
             this.header(app.currentMode),
             this.footer(app.currentMode),
@@ -1259,7 +1255,6 @@ class Body {
                 title: 'alerts',
                 onclick: () => app.setAlertsShown(true)
             }, glyph2('alert', {style: {color: app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}})),
-
             m('div.btn.btn-group', {style: 'float: right; padding: 0px'},
                 m(Button, {
                     class: app.peekInlineShown && ['active'],
@@ -1290,19 +1285,16 @@ else {
         '/datamart': {
             render: () => [
                 m(Datamart, {
-                    datamartQuery: app.datamartQuery,
-                    datamartResults: app.datamartResults,
-                    datamartIndex: app.datamartIndex,
-                    datamartDatasets: app.datamartDatasets,
+                    preferences: app.datamartPreferences,
                     dataPath: app.zparams.zd3mdata,
                     endpoint: app.datamartURL,
-                    visualizeData: app.setDatamartModalContents,
                     labelWidth: '10em'
                 }),
-                app.datamartModalContents && m(ModalVanilla, {
-                    id: 'datamartModal',
-                    setDisplay: () => app.setDatamartModalContents(undefined)
-                }, app.datamartModalContents)
+                m(ModalDatamart, {
+                    preferences: app.datamartPreferences,
+                    endpoint: app.datamartURL,
+                    dataPath: app.zparams.zd3mdata
+                })
             ]
         },
         '/explore/:variate/:vars...': Body,

@@ -506,29 +506,33 @@ export let zparams = {
     zusername: ''
 };
 
-export let datamartQuery = {
-    dataset: {
-        about: '',
-        keywords: []
-    }
+// menu state within datamart component
+export let datamartPreferences = {
+    // default state for query
+    query: {
+        dataset: {
+            about: '',
+            keywords: []
+        }
+    },
+    // default state for submitting a new dataset
+    index: {
+        title: '',
+        description: '',
+        url: '',
+        keywords: [],
+        provenance: 'TwoRavens'
+    },
+    // search results
+    results: {
+        ISI: [],
+        NYU: []
+    },
+    // one of 'augment', 'preview', 'metadata', undefined
+    modalShown: undefined,
+    // stores paths to data and metadata, as well as a data preview and metadata (datasetDoc.json) for materialized datasets
+    cached: {}
 };
-export let datamartResults = {
-    ISI: [],
-    NYU: []
-};
-export let datamartIndex = {
-    title: '',
-    description: '',
-    url: '',
-    keywords: []
-};
-
-// stores paths to data and metadata, as well as a data preview and metadata (datasetDoc.json) for materialized datasets
-export let datamartDatasets = {};
-
-export let datamartModalContents;
-export let setDatamartModalContents = contents => datamartModalContents = contents;
-
 
 // list of variable strings (same as Object.keys(preprocess))
 export let valueKey = [];
@@ -2584,10 +2588,6 @@ function CreatePipelineData(predictors, depvar, aux) {
 // Update of old CreatePipelineData function that creates problem definition for SearchSolutions call.
 function CreateProblemDefinition(depvar, aux) {
 
-    let targetFeatures = [{ 'resource_id': "0", 'feature_name': depvar[0] }];    // not presently being used in this function
-    let my_target = depvar[0];
-
-
     if(typeof aux==="undefined") { //default behavior for creating pipeline data
         let problem = {
             id: d3mProblemDescription.id,
@@ -2604,8 +2604,8 @@ function CreateProblemDefinition(depvar, aux) {
                 targets: [
                     {
                         resourceId: '0',
-                        columnIndex: valueKey.indexOf(my_target),  // Adjusted to match dataset doc
-                        columnName: my_target
+                        columnIndex: valueKey.indexOf(depvar[0]),  // Adjusted to match dataset doc
+                        columnName: depvar[0]
                     }
                 ]}];
 

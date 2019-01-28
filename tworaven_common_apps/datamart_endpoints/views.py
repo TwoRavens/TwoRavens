@@ -7,11 +7,14 @@ from tworaven_apps.utils.view_helper import \
 from tworaven_common_apps.datamart_endpoints.datamart_job_util import (DatamartJobUtilISI,
                                                                        DatamartJobUtilNYU)
 from tworaven_common_apps.datamart_endpoints.forms import (DatamartSearchForm,
-                                                    DatamartAugmentForm,
-                                                    DatamartMaterializeForm,
-                                                    DatamartUploadForm)
+                                                           DatamartAugmentForm,
+                                                           DatamartMaterializeForm,
+                                                           DatamartUploadForm)
 from django.http import \
     (JsonResponse, HttpResponse)
+
+import json
+
 
 # Create your views here.
 
@@ -40,9 +43,9 @@ def api_upload(request):
         "data": results_obj_err
     })
 
+
 @csrf_exempt
 def api_search(request):
-
     success, json_req_obj = get_request_body_as_json(request)
 
     if not success:
@@ -66,6 +69,7 @@ def api_search(request):
         "data": results_obj_err
     })
 
+
 @csrf_exempt
 def api_augment(request):
     success, json_req_obj = get_request_body_as_json(request)
@@ -78,19 +82,23 @@ def api_augment(request):
     if not form.is_valid():
         return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
 
-    DatamartJobUtil = {
-        'ISI': DatamartJobUtilISI,
-        'NYU': DatamartJobUtilNYU
-    }[json_req_obj['source']]
+    if json_req_obj['source'] == 'ISI':
+        success, results_obj_err = DatamartJobUtilISI.datamart_augment(
+            json_req_obj['data_path'],
+            json.loads(json_req_obj['search_result']),
+            json.loads(json_req_obj['left_columns']),
+            json.loads(json_req_obj['right_columns']))
 
-    success, results_obj_err = DatamartJobUtil.datamart_augment(
-        json_req_obj['data_path'],
-        json_req_obj['search_result'])
+    if json_req_obj['source'] == 'NYU':
+        success, results_obj_err = DatamartJobUtilISI.datamart_augment(
+            json_req_obj['data_path'],
+            json_req_obj['search_result'])
 
     return JsonResponse({
         "success": success,
         "data": results_obj_err
     })
+
 
 @csrf_exempt
 def api_materialize(request):
@@ -110,7 +118,7 @@ def api_materialize(request):
     }[json_req_obj['source']]
 
     success, results_obj_err = DatamartJobUtil.datamart_materialize(
-        json_req_obj['search_result'])
+        json.loads(json_req_obj['search_result']))
 
     return JsonResponse({
         "success": success,
