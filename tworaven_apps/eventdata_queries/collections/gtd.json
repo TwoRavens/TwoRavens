@@ -50,11 +50,49 @@
 		"measureType": "accumulator",
 		"columns": ["suicide"]
 	},
-	"Weapon Subtype": {
+	"Weapon Type 1": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["weaptype1"]
+	},
+	"Weapon Subtype 1": {
 		"type": "discrete",
 		"measureType": "accumulator",
 		"formats": ["gtd_subweapons", "gtd_weapons"],
 		"columns": ["weapsubtype1"]
+	},
+	"Weapon Type 2": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["weaptype2"]
+	},
+	"Weapon Subtype 2": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"formats": ["gtd_subweapons", "gtd_weapons"],
+		"columns": ["weapsubtype2"]
+	},
+	"Weapon Type 3": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["weaptype3"]
+	},
+	"Weapon Subtype 3": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"formats": ["gtd_subweapons", "gtd_weapons"],
+		"columns": ["weapsubtype3"]
+	},
+	"Weapon Type 4": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["weaptype4"]
+	},
+	"Weapon Subtype 4": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"formats": ["gtd_subweapons", "gtd_weapons"],
+		"columns": ["weapsubtype4"]
 	}
   },
   "columns": [
@@ -144,8 +182,10 @@
 	  "latitude": "latitude",
 	  "longitude": "longitude",
 	  "TwoRavens_country": "country",
-	  "weaptype1": "gtd_weapon_align",
-	  "weapsubtype1": "gtd_weapon_align"
+	  "weapsubtype1": "gtd_weapon_align",
+	  "weapsubtype2": "gtd_weapon_align",
+	  "weapsubtype3": "gtd_weapon_align",
+	  "weapsubtype4": "gtd_weapon_align"
   },
   "formats": {
 	  "TwoRavens_country": "ISO-3",
@@ -155,7 +195,13 @@
 	  "success": "gtd_bool",
 	  "suicide": "gtd_bool",
 	  "weaptype1": "gtd_weapons",
-	  "weapsubtype1": "gtd_subweapons"
+	  "weapsubtype1": "gtd_subweapons",
+	  "weaptype2": "gtd_weapons",
+	  "weapsubtype2": "gtd_subweapons",
+	  "weaptype3": "gtd_weapons",
+	  "weapsubtype3": "gtd_subweapons",
+	  "weaptype4": "gtd_weapons",
+	  "weapsubtype4": "gtd_subweapons"
   },
   "citations": [
   {

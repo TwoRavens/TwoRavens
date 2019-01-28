@@ -37,6 +37,11 @@
 		"columns": [
 			"Action"
 		]
+	},
+	"Fatalities": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["Fatality"]
 	}
   },
   "columns": [
@@ -79,7 +84,8 @@
 	  "src-actor": "cowcode",
 	  "tgt-actor": "cowcode",
 	  "Action": "mid_action",
-	  "HostLev": "mid_hostLev"
+	  "HostLev": "mid_hostLev",
+	  "Fatality": "mid_fatality"
   },
   "citations": [
   {
