@@ -506,26 +506,29 @@ export let zparams = {
     zusername: ''
 };
 
-// export let augmentState = {
-//     dataset: {
-//         keywords: []
-//     }
-// };
-
-
-export let augmentState = {
+export let datamartQuery = {
     dataset: {
         about: '',
         keywords: []
     }
 };
-export let augmentResults = [];
-export let augmentIndexState = {
+export let datamartResults = {
+    ISI: [],
+    NYU: []
+};
+export let datamartIndex = {
     title: '',
     description: '',
     url: '',
     keywords: []
 };
+
+// stores paths to data and metadata, as well as a data preview and metadata (datasetDoc.json) for materialized datasets
+export let datamartDatasets = {};
+
+export let datamartModalContents;
+export let setDatamartModalContents = contents => datamartModalContents = contents;
+
 
 // list of variable strings (same as Object.keys(preprocess))
 export let valueKey = [];
