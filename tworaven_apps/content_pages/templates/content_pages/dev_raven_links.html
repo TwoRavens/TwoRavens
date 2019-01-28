@@ -92,6 +92,12 @@
         <div class="card-header"><b>D3M config info</b></div>
         <div class="card-body">
           <ul>
+            <li><b>Current User Workspaces</b>
+              <ul>
+                <li>Workspaces configs: <a href="{% url 'view_latest_user_configs' %}?pretty">view</a></li>
+                <li>Reset workspaces configs: <a href="{% url 'view_reset_user_configs' %}?pretty">view</a></li>
+              </ul>
+
             <li><a href="{% url 'view_d3m_list' %}">
                   D3M configs in the database</a>
                   <p>Includes API endpoints to retrieve JSON config info,

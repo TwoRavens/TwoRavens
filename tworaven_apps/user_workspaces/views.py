@@ -23,6 +23,8 @@ from tworaven_apps.configurations.models_d3m import D3MConfiguration
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
 
+
+
 def view_latest_user_configs(request):
     """Return a list of configs based on the default problem and the user"""
     # Get the user

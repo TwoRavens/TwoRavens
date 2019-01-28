@@ -19,6 +19,41 @@ from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
 
 
+def get_latest_d3m_user_config_by_request(request):
+    """Return the config attached to the latest UserWorkspace"""
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    user = user_info.result_obj
+    return get_latest_d3m_user_config(user)
+
+def get_latest_d3m_user_config(user, create_if_not_found=True):
+    if not isinstance(user, User):
+        return err_resp('user must be a "User" object, not: "%s"' % user)
+
+    d3m_config = get_latest_d3m_config()
+    if not d3m_config:
+        return err_resp('No default D3MConfiguration set.')
+
+    params = dict(user=user,
+                  orig_dataset_id=d3m_config.orig_dataset_id,
+                  is_active=True)
+
+    latest_workspace = UserWorkspace.objects.filter(**params).first()
+    if latest_workspace:
+        return ok_resp(latest_workspace)
+
+    if create_if_not_found:
+        params['d3m_config'] = d3m_config
+        new_workspace = UserWorkspace(**params)
+        new_workspace.save()
+        return ok_resp(latest_workspace)
+
+    return err_resp('No workspace found for the User and default config')
+
+
+
 def get_user_workspaces_as_dict(user, create_if_not_found=True):
     """Get UserWorkspace list based on the active D3M config, as dicts"""
     ws_info = get_user_workspaces(user, create_if_not_found)
