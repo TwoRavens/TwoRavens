@@ -22,7 +22,7 @@ from django.template.loader import render_to_string
 from tworaven_apps.utils import random_info
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.configurations.models_d3m import KEY_PROBLEM_SCHEMA
-from tworavens_apps.user_workspaces.utils import \
+from tworaven_apps.user_workspaces.utils import \
     (get_latest_d3m_user_config,)
 
 OUTPUT_PROBLEMS_DIR = '/output/problems' # temp use while eval specs worked on
