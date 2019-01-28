@@ -17,7 +17,8 @@ from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
      get_json_error,
      get_json_success)
-
+from tworaven_apps.utils.view_helper import \
+    (get_authenticated_user,)
 
 @csrf_exempt
 @cache_page(settings.PAGE_CACHE_TIME)
@@ -49,7 +50,12 @@ def view_retrieve_d3m_output_data(request):
         user_msg = ('No key found: "%s"' % KEY_DATA_POINTER)
         return JsonResponse(get_json_error(user_msg))
 
-    embed_util = FileEmbedUtil(req_info[KEY_DATA_POINTER])
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    embed_util = FileEmbedUtil(req_info[KEY_DATA_POINTER],
+                               user=user_info.result_obj)
     if embed_util.has_error:
         return JsonResponse(get_json_error(embed_util.error_message))
 

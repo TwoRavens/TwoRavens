@@ -20,7 +20,7 @@ from tworaven_apps.utils.view_helper import \
 
 
 def get_latest_d3m_user_config_by_request(request):
-    """Return the config attached to the latest UserWorkspace"""
+    """Find the lastest UserWorkspace and return the attached d3m_config"""
     user_info = get_authenticated_user(request)
     if not user_info.success:
         return JsonResponse(get_json_error(user_info.err_msg))
@@ -28,7 +28,9 @@ def get_latest_d3m_user_config_by_request(request):
     user = user_info.result_obj
     return get_latest_d3m_user_config(user)
 
+
 def get_latest_d3m_user_config(user, create_if_not_found=True):
+    """Find the lastest UserWorkspace and return the attached d3m_config"""
     if not isinstance(user, User):
         return err_resp('user must be a "User" object, not: "%s"' % user)
 
@@ -42,13 +44,13 @@ def get_latest_d3m_user_config(user, create_if_not_found=True):
 
     latest_workspace = UserWorkspace.objects.filter(**params).first()
     if latest_workspace:
-        return ok_resp(latest_workspace)
+        return ok_resp(latest_workspace.d3m_config)
 
     if create_if_not_found:
         params['d3m_config'] = d3m_config
         new_workspace = UserWorkspace(**params)
         new_workspace.save()
-        return ok_resp(latest_workspace)
+        return ok_resp(latest_workspace.d3m_config)
 
     return err_resp('No workspace found for the User and default config')
 
