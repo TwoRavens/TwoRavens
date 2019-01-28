@@ -274,11 +274,13 @@ function leftpanel(mode) {
             {
                 value: 'Augment',
                 contents: m(Datamart, {
-                    augmentState: app.augmentState,
-                    augmentResults: app.augmentResults,
-                    indexState: app.augmentIndexState,
+                    datamartQuery: app.datamartQuery,
+                    datamartResults: app.datamartResults,
+                    datamartIndex: app.datamartIndex,
+                    datamartDatasets: app.datamartDatasets,
                     dataPath: app.zparams.zd3mdata,
                     endpoint: app.datamartURL,
+                    visualizeData: app.setDatamartModalContents,
                     labelWidth: '10em'
                 })
             },
@@ -938,6 +940,12 @@ class Body {
                         m('col', {span: 1}))
                 })
             ]),
+
+            app.datamartModalContents && m(ModalVanilla, {
+                id: 'datamartModal',
+                setDisplay: () => app.setDatamartModalContents(undefined)
+            }, app.datamartModalContents),
+
             this.header(app.currentMode),
             this.footer(app.currentMode),
             leftpanel(app.currentMode),
@@ -1280,14 +1288,22 @@ if (IS_EVENTDATA_DOMAIN) {
 else {
     m.route(document.body, '/model', {
         '/datamart': {
-            render: () => m(Datamart, {
-                augmentState: app.augmentState,
-                augmentResults: app.augmentResults,
-                indexState: app.augmentIndexState,
-                dataPath: app.zparams.zd3mdata,
-                endpoint: app.datamartURL,
-                labelWidth: '10em'
-            })
+            render: () => [
+                m(Datamart, {
+                    datamartQuery: app.datamartQuery,
+                    datamartResults: app.datamartResults,
+                    datamartIndex: app.datamartIndex,
+                    datamartDatasets: app.datamartDatasets,
+                    dataPath: app.zparams.zd3mdata,
+                    endpoint: app.datamartURL,
+                    visualizeData: app.setDatamartModalContents,
+                    labelWidth: '10em'
+                }),
+                app.datamartModalContents && m(ModalVanilla, {
+                    id: 'datamartModal',
+                    setDisplay: () => app.setDatamartModalContents(undefined)
+                }, app.datamartModalContents)
+            ]
         },
         '/explore/:variate/:vars...': Body,
         '/data': {render: () => m(Peek, {id: app.peekId, image: '/static/images/TwoRavens.png'})},
