@@ -23,7 +23,7 @@ def get_latest_d3m_user_config_by_request(request):
     """Find the lastest UserWorkspace and return the attached d3m_config"""
     user_info = get_authenticated_user(request)
     if not user_info.success:
-        return JsonResponse(get_json_error(user_info.err_msg))
+        return err_resp(user_info.err_msg)
 
     user = user_info.result_obj
     return get_latest_d3m_user_config(user)
