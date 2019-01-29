@@ -533,7 +533,8 @@ export let datamartPreferences = {
     // one of 'augment', 'preview', 'metadata', undefined
     modalShown: undefined,
     // stores paths to data and metadata, as well as a data preview and metadata (datasetDoc.json) for materialized datasets
-    cached:;
+    cached: {}
+};
 
 // list of variable strings (same as Object.keys(preprocess))
 export let valueKey = [];
