@@ -162,14 +162,15 @@ def load_d3m_config_from_env():
     print('(1) Attempt to load 2018 config "%s"' % D3M_SEARCH_CONFIG_NAME)
     config_file = os.path.join(d3m_data_dir, D3M_SEARCH_CONFIG_NAME)
     if os.path.isfile(config_file):
-        print('This config file doesn\'t exist (or is not reachable): %s' % \
-              config_file)
+
         try:
             management.call_command('load_config', d3m_data_dir)
         except management.base.CommandError as err_obj:
             print('> Failed to load D3M config.\n%s' % err_obj)
         return
-
+    else:
+        print('This config file doesn\'t exist (or is not reachable): %s' % \
+              config_file)
     print('(2) Attempt to load 2019 config from environment variables')
 
 
@@ -195,7 +196,7 @@ def load_d3m_config(config_data_dir):
     except management.base.CommandError as err_obj:
         print('> Failed to load D3M config.\n%s' % err_obj)
         return False
-    
+
 
 @task
 def stop_ta2_server():

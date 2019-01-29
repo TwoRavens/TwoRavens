@@ -282,9 +282,9 @@ class EnvConfigLoader(BasicErrCheck):
                                  'test_data')
         cnt = 0
         for dname in os.listdir(base_data_dir):
-            if not dname[0].isdigit():
-                if dname not in ['TR1_Greed_Versus_Grievance']:
-                    continue
+            #if not dname[0].isdigit():
+            #    if dname not in ['TR1_Greed_Versus_Grievance']:
+            #        continue
             cnt += 1
             fullpath = join(base_data_dir, dname)
             msgt('(%d) Make config: %s' % (cnt, fullpath))
