@@ -38,15 +38,11 @@ after_success:
     docker build -t tworavens/ravens-main:develop .;
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
     docker push tworavens/ravens-main:develop;
-    #
-    docker tag tworavens/ravens-main:develop tworavens/ravens-main:dm-demo;
-    docker push tworavens/ravens-main:dm-demo;
-    #
     fi
   # -------------------------------------
   # Temp push, to test new k8s deploy
   # -------------------------------------
-  - if [ "$TRAVIS_BRANCH" == "xdevelop" ]; then
+  - if [ "$TRAVIS_BRANCH" == "develop" ]; then
     docker build -t tworavens/ravens-main:dm-demo .;
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
     docker push tworavens/ravens-main:dm-demo;
