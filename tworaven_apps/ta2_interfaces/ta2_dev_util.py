@@ -11,6 +11,7 @@ from tworaven_apps.utils.basic_response import ok_resp, err_resp
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.configurations.models_d3m import \
     (D3M_SEARCH_CONFIG_NAME,)
+from tworaven_apps.configurations.utils import get_latest_d3m_config
 
 
 RAVENS_DIR = '/ravens_volume/test_data'
@@ -29,7 +30,8 @@ TA2_NAMES = (TA2_FeatureLabs,
 TA2_IMAGE_INFO = [
     # Feature Labs: may not be using D3MPORT
     (TA2_FeatureLabs,
-     'registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable',
+     #'registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable',
+     'registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:ta3ta2-api-2018.7.7-eval-2018',
      '-p 45042:45042 -e D3MPORT=45042'),
 
     # Brown: may not be using D3MPORT
@@ -139,6 +141,7 @@ class TA2Helper(BasicErrCheck):
         return ok_resp(ta2_helper.get_ta2_run_command())
 
 
+
     def get_ta2_run_command(self):
         """Return the Docker run command"""
         if self.has_error():
@@ -148,6 +151,17 @@ class TA2Helper(BasicErrCheck):
         if not ta2_info:
             return
 
+        # The new config has already been sent, so get env variables related to it
+        d3m_config = get_latest_d3m_config()
+        if not d3m_config:
+            print('d3m_config not found! (get_ta2_run_command)')
+            return
+
+        env_str = d3m_config.get_docker_env_settings()
+        if env_str is None:
+            env_str = ''
+
+
         image_name = ta2_info[1]
         additional_options = ta2_info[2]
 
@@ -155,6 +169,20 @@ class TA2Helper(BasicErrCheck):
         print('OUTPUT', self.data_output_dir)
 
         docker_cmd = ('docker run --rm'
+                      ' --name ta2_server'
+                      ' {4}'
+                      ' {2}'
+                      ' -v {0}:/input'
+                      ' -v {1}:/output'
+                      ' -v /ravens_volume:/ravens_volume'
+                      ' {3}'
+                      '').format(self.data_input_dir,
+                                 self.data_output_dir,
+                                 additional_options,
+                                 image_name,
+                                 env_str)
+
+        xdocker_cmd = ('docker run --rm'
                       ' --name ta2_server'
                       ' -e D3MTIMEOUT=60'
                       ' -e D3MINPUTDIR=/input'
@@ -178,7 +206,7 @@ class TA2Helper(BasicErrCheck):
             return
 
         try:
-            management.call_command('load_config', self.data_input_dir)
+            management.call_command('load_config_by_data_dir', self.data_input_dir)
         except management.base.CommandError as err_obj:
             user_msg = '> Failed to load D3M config.\n%s' % err_obj
             self.add_err_msg(user_msg)

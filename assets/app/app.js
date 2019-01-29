@@ -9,8 +9,9 @@ import * as manipulate from './manipulations/manipulate';
 
 import {setModal, locationReload} from '../common/views/Modal';
 
-import {bars, barsNode, barsSubset, density, densityNode, scatter, selVarColor} from './plots.js';
+import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
 import {elem} from './utils';
+import {getTransformVariables} from "./manipulations/manipulate";
 
 
 //-------------------------------------------------
@@ -50,7 +51,10 @@ window.addEventListener('mouseup', (e) => peekMouseUp(e));
 
 export let peekMouseMove = (e) => {
     if (!peekInlineIsResizing) return;
-    let percent = (1 - e.clientY / byId(is_manipulate_mode ? 'canvas' : 'main').clientHeight) * 100;
+
+    let menuId = is_manipulate_mode || (rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'canvas' : 'main';
+    let percent = (1 - e.clientY / byId(menuId).clientHeight) * 100;
+
     peekInlineHeight = `calc(${Math.max(percent, 0)}% + ${common.heightFooter})`;
     m.redraw();
 };
@@ -126,7 +130,7 @@ export async function updatePeek(pipeline) {
     peekSkip += data.length;
 
     if (data.length + (peekData || []).length === 0)
-        alert('The pipeline at this stage matches no records. Delete constraints to match more records.');
+        alertError('The pipeline at this stage matches no records. Delete constraints to match more records.');
 
     if (data.length === 0) {
         peekIsExhausted = true;
@@ -136,9 +140,11 @@ export async function updatePeek(pipeline) {
 
     data = data.map(record => Object.keys(record).reduce((out, entry) => {
         if (typeof record[entry] === 'number')
-            out[entry] = formatPrecision(record[entry])
+            out[entry] = formatPrecision(record[entry]);
         else if (typeof record[entry] === 'string')
             out[entry] = `"${record[entry]}"`;
+        else if (typeof record[entry] === 'boolean')
+            out[entry] =  m('div', {style: {'font-style': 'italic', display: 'inline'}}, String(record[entry]));
         else
             out[entry] = record[entry];
         return out;
@@ -152,10 +158,11 @@ export async function updatePeek(pipeline) {
     // stop blocking new requests
     peekIsLoading = false;
     m.redraw();
-};
+}
 
 // ~~~~ MANIPULATIONS STATE ~~~~
 export let mongoURL = '/eventdata/api/';
+export let datamartURL = '/datamart/api/';
 
 // this contains an object of abstract descriptions of pipelines of manipulations
 export let manipulations = {};
@@ -172,12 +179,12 @@ export let solverPending = false;
 export let setSolverPending = state => solverPending = state;
 
 export let solver_res = []
-export let setSolver_res = res => solver_res = res;
-let solver_res_user = []
 let problem_sent = []
-let problem_sent_user = []
 let problems_in_preprocess = []
 
+// determines which variable is selected for additional analysis in the classification results menu
+export let confusionFactor;
+export let setConfusionFactor = factor => confusionFactor = factor === 'undefined' ? undefined : factor;
 
 export let exploreVariate = 'Univariate';
 export function setVariate(variate) {
@@ -188,7 +195,6 @@ export let task1_finished = false;
 export let task2_finished = false;
 export let problemDocExists = true;
 export let univariate_finished = false;
-export let resultsMetricDescription = 'Larger numbers are better fits';
 
 export let allsearchId = [];            // List of all the searchId's created on searches
 
@@ -271,11 +277,20 @@ export let summaryHold = false;
 export let rightTab = 'Problem'; // current tab in right panel
 export let rightTabExplore = 'Univariate';
 
+export let preprocessTabName = 'Preprocess Log'
+
+export let isPreprocessTab = () => {
+    return leftTab === preprocessTabName;
+}
+export let setPreprocessTab = () =>{
+    isPreprocessTab() ? setLeftTab('Variables') : setLeftTab(preprocessTabName);
+}
 export let modelLeftPanelWidths = {
+    preprocessTabName: '500px',
     'Variables': '300px',
     'Discovery': 'auto',
-    'Summary': '300px',
-    'Subset': '300px'
+    'Augment': '600px',
+    'Summary': '300px'
 };
 
 export let modelRightPanelWidths = {
@@ -291,7 +306,11 @@ export let exploreRightPanelWidths = {
     'Bivariate': '75%'
 };
 
-export let setRightTab = (tab) => { rightTab = tab; updateRightPanelWidth() };
+export let setRightTab = tab => {
+    rightTab = tab;
+    updateRightPanelWidth();
+    setFocusedPanel('right')
+};
 export let setRightTabExplore = (tab) => { rightTabExplore = tab; updateRightPanelWidth() };
 
 // panelWidth is meant to be read only
@@ -304,7 +323,7 @@ export let panelWidth = {
 //-------------------------------------------------
 // Initialize a websocket for this page
 //-------------------------------------------------
-export let wsLink = 'ws://' + window.location.host +
+export let wsLink = WEBSOCKET_PREFIX + window.location.host +
                '/ws/connect/' + username + '/';
 console.log('streamSocket connection made: ' + wsLink);
 export let streamSocket = new WebSocket(wsLink);
@@ -435,11 +454,32 @@ let failset = ["TIME_SERIES_FORECASTING","GRAPH_MATCHING","LINK_PREDICTION","tim
 
 // object that contains all information about the returned pipelines
 export let allPipelineInfo = {};
-export let pipelineHeader = ['PipelineID', 'Score'];
-export let pipelineTable = [];
+export let ravenPipelineInfo = {};
 
-export let discoveryHeader = ['problem_id', 'system', 'meaningful'];
-export let discoveryTable = [];
+
+// replacement for javascript's blocking 'alert' function, draws a popup similar to 'alert'
+export let alertLog = (value, shown) => {
+    alerts.push({type: 'log', time: new Date(), description: value});
+    alertsShown = shown !== false; // Default is 'true'
+};
+export let alertWarn = (value, shown) => {
+    alerts.push({type: 'warn', time: new Date(), description: value});
+    alertsShown = shown !== false; // Default is 'true'
+    console.trace('warning: ', value);
+};
+export let alertError = (value, shown) => {
+    alerts.push({type: 'error', time: new Date(), description: value});
+    alertsShown = shown !== false; // Default is 'true'
+    console.trace('error: ', value);
+};
+
+// alerts popup internals
+export let alerts = [];
+export let alertsLastViewed = new Date();
+
+export let alertsShown = false;
+export let setAlertsShown = state => alertsShown = state;
+
 
 export let logArray = [];
 export let zparams = {
@@ -464,6 +504,34 @@ export let zparams = {
     zdatacite: '...',
     zcrosstab: [],
     zusername: ''
+};
+
+// menu state within datamart component
+export let datamartPreferences = {
+    // default state for query
+    query: {
+        dataset: {
+            about: '',
+            keywords: []
+        }
+    },
+    // default state for submitting a new dataset
+    index: {
+        title: '',
+        description: '',
+        url: '',
+        keywords: [],
+        provenance: 'TwoRavens'
+    },
+    // search results
+    results: {
+        ISI: [],
+        NYU: []
+    },
+    // one of 'augment', 'preview', 'metadata', undefined
+    modalShown: undefined,
+    // stores paths to data and metadata, as well as a data preview and metadata (datasetDoc.json) for materialized datasets
+    cached: {}
 };
 
 // list of variable strings (same as Object.keys(preprocess))
@@ -499,7 +567,7 @@ export let mytarget = '';
 export let setMytarget = target => mytarget = target;
 
 export let configurations = {};
-let datadocument = {};
+export let datadocument = {};
 
 export let domainIdentifier = null; // available throughout apps js; used for saving workspace
 
@@ -643,6 +711,7 @@ export let restart;
 
 let dataurl = '';
 let datasetdocurl = '';
+let datasetDocProblemUrl = {};
 
 export let step = (target, placement, title, content) => ({
     target,
@@ -752,7 +821,14 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // 2. Set 'configurations'
     configurations = JSON.parse(JSON.stringify(res)); // this is just copying res
-    d3mRootPath = configurations.training_data_root.replace(/\/data/,'');
+    if (configurations.d3m_input_dir){
+      // 2019 config
+      d3mRootPath = configurations.d3m_input_dir;
+    }else{
+      // 2018 config
+      d3mRootPath = configurations.training_data_root.replace(/\/data/,'');
+    }
+
     d3mDataName = configurations.name;
 
     // scopes at app.js level; used for saving workspace
@@ -810,7 +886,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     if ((IS_D3M_DOMAIN)&&(d3mData == null)){
         const d3m_path_err = 'NO VALID d3mData path!! ' + JSON.stringify(res)
         console.log(d3m_path_err);
-        alert('debug (be more graceful): ' + d3m_path_err);
+        alertError('debug (be more graceful): ' + d3m_path_err);
     }
 
     // hardcoding this, once get-problem-data-file-info is revised this hardcode can go away and use the previous two LOC
@@ -835,7 +911,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         task2_finished = true;
         problemDocExists = false;
     } else {
-        alert("Something Unusual happened reading problem schema.")
+        alertLog("Something Unusual happened reading problem schema.")
     };
 
     if(problemDocExists){
@@ -843,7 +919,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
         // Note: There is no res.success field in this return state
         // if (!res.success){
-        //   alert('problem schema not available: ' + res.message);
+        //   alertError('problem schema not available: ' + res.message);
         //   return
         // }
 
@@ -889,16 +965,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // if no columns in the datadocument, go to swandive
     // 4a. Set datadocument columns!
-    let datadocument_columns;
-    let col_idx;
-    for (col_idx = 0; col_idx < datadocument.dataResources.length; col_idx++) {
-        if(datadocument.dataResources[col_idx].columns) {
-            datadocument_columns = datadocument.dataResources[col_idx].columns;
-            console.log('columns found in datadocument.dataResources[' + col_idx + '].columns');
-            break
-        }
-    }
-    if (typeof datadocument_columns === "undefined") {
+
+    let datadocument_columns = (datadocument.dataResources.find(resource => resource.columns) || {}).columns;
+    if (datadocument_columns === undefined) {
         console.log('D3M WARNING: datadocument.dataResources[x].columns is undefined.');
         swandive = true;
     }
@@ -937,7 +1006,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         byId('cite').children[0].textContent = zparams.zdatacite;
     }
     // drop file extension
-    let dataname = IS_D3M_DOMAIN ? zparams.zdata : zparams.zdata.replace(/\.(.*)/, '');
+    let dataname = IS_D3M_DOMAIN ? zparams.zdata : datadocument.about.datasetID;
     d3.select("#dataName").html(dataname);
     // put dataset name, from meta-data, into page title
     d3.select("title").html("TwoRavens " + dataname);
@@ -947,13 +1016,13 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // if swandive, we have to set valueKey here so that left panel can populate.
     if (swandive) {
-        alert('Exceptional data detected.  Please check the logs for "D3M WARNING"');
+        alertWarn('Exceptional data detected.  Please check the logs for "D3M WARNING"');
         //    let mydataRes = datadocument.dataResources;
         //  for (let i = 0; i < mydataRes.length; i++) {
         //       valueKey.push(mydataRes[i].resFormat[0]);
         //  }
         // end session if neither trainData nor trainTargets?
-        // valueKey.length === 0 && alert("no trainData or trainTargest in data description file. valueKey length is 0");
+        // valueKey.length === 0 && alertWarn("no trainData or trainTargest in data description file. valueKey length is 0");
         // perhaps allow users to unlock and select things?
         byId('btnLock').classList.add('noshow');
         byId('btnForce').classList.add('noshow');
@@ -1040,12 +1109,11 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
         console.log('json_input: ', json_input);
         console.log('url: ', url);
-        let data = new FormData();
         try {
             res = read(await m.request({method: 'POST', url: url, data: json_input}));
         } catch(_) {
             console.log('preprocess failed');
-            alert('preprocess failed. ending user session.');
+            alertError('preprocess failed. ending user session.');
             endsession();
         }
     }
@@ -1078,7 +1146,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         group1: false,
         group2: false,
         forefront: false
-    }, preprocess[variable])))
+    }, preprocess[variable])));
 
     // 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN)
     if(!swandive) {
@@ -1093,49 +1161,41 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         disco = discovery(res);
 
         // Set target variable for center panel if no problemDoc exists to set this
-        if(!problemDocExists){
+        if (!problemDocExists)
             mytarget = disco[0].target;
-        };
 
         // Kick off discovery button as green for user guidance
         if (!task1_finished) {
             byId("btnDiscovery").classList.remove("btn-default");
             byId("btnDiscovery").classList.add("btn-success"); // Would be better to attach this as a class at creation, but don't see where it is created
         }
-
-        // send the all problems to metadata and also perform app solver on theme
-        // MIKE: is it necessary to solve all problems on page load? Can this be deferred until the user attempts to view results?
-        // disco.forEach(callSolver);
     }
 
     // 11. Call layout() and start up
     layout(false, true);
     IS_D3M_DOMAIN ? zPop() : dataDownload();
 
+    manipulations['defaultProblem'] = [];
+    defaultProblem = {
+        problemID: 'defaultProblem',
+        system: 'auto',
+        description: 'default dataset configuration from datasetDoc.json',
+        target: zparams.zdv[0],
+        predictors: [...zparams.zgroup1],
+        get pipeline() {return manipulations['defaultProblem']},
+        metric: 'meanSquaredError',
+        model: 'modelUndefined',
+        task: findNode(zparams.zdv[0]).plottype === "bar" ? 'classification' : 'regression',
+        subTask: 'taskSubtypeUndefined',
+        meaningful: false
+    };
+    disco.unshift(defaultProblem);
+    setSelectedProblem(getProblemCopy(defaultProblem));
+
     setTimeout(loadResult, 10000);
     problem_sent.length = 0;
 }
 
-
-
-export function loadResult(my_disco) {
-    (my_disco || disco).forEach((problem, i) => {
-
-        let prob_name = (problem.description || {}).problem_id || problem.problem_id;
-
-        if (problems_in_preprocess.includes(prob_name))
-            console.log("Problem already exists in preprocess", prob_name);
-        else problem_sent.push({
-            "description": problem,
-            "result": solver_res[i]
-        });
-    })
-
-    // console.log("problem to be sent ", problem_sent.splice())
-    let preprocess_id = 1
-    let version = 1
-    // addProblem(preprocess_id, version).then(api_res => console.log("ADD PROBLEM/RESULT API RESPONSE ", api_res))
-}
 /**
    called on app start
    @param {string} fileid
@@ -1149,7 +1209,7 @@ export function loadResult(my_disco) {
 export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     if (PRODUCTION && fileid === '') {
         let msg = 'Error: No fileid has been provided.';
-        alert(msg);
+        alertError(msg);
         throw new Error(msg);
     }
 
@@ -1385,7 +1445,7 @@ export function layout(layoutConstant, v2) {
         } else if (allNodes.length === 1) {
             nodes = [allNodes[0]];
         } else {
-            alert("There are zero variables in the metadata.");
+            alertError("There are zero variables in the metadata.");
             return;
         }
     }
@@ -1767,6 +1827,7 @@ export function layout(layoutConstant, v2) {
                 })
                 .on('click', function(d) {
                     setColors(d, dvColor);
+                    (selectedProblem || {}).target = zparams.zdv[0];
                     selectedPebble = d.name;
                     restart();
                     m.redraw();
@@ -1860,6 +1921,7 @@ export function layout(layoutConstant, v2) {
                 })
                 .on('click', d => {
                     setColors(d, gr1Color);
+                    selectedProblem.predictors = [...zparams.zgroup1],
                     selectedPebble = d.name;
                     restart();
                     m.redraw();
@@ -1896,6 +1958,7 @@ export function layout(layoutConstant, v2) {
                 })
                 .on('click', d => {
                     setColors(d, gr1Color);
+                    selectedProblem.predictors = [...zparams.zgroup1]
                     selectedPebble = d.name;
                     restart();
                     m.redraw();
@@ -2195,7 +2258,7 @@ export function findNode(name) {
 //
 function updateNode(id, nodes) {
 
-    let node = (nodes || allNodes).find(node => node.name === id);
+    let node = allNodes.find(node => node.name === id) || nodes.find(node => node.name === id);
 
     if (node === undefined) {
         let i = 0;
@@ -2263,14 +2326,14 @@ export function clickVar(elem, $nodes) {
             : exploreVariate === 'Trivariate' ? 3
             : 5;
         if ($nodes.length >= max) {
-            alert('Please deselect another variable first.')
+            alertLog('Please deselect another variable first.')
             return;
         }
     }
 
     if (updateNode(elem, $nodes || nodes)) {
         // panelPlots(); is this necessary?
-        restart();
+        restart && restart();
     }
 }
 
@@ -2357,41 +2420,94 @@ export function zPop() {
 }
 
 // when selected, the key/value [mode]: [pipelineID] is set.
-export let selectedPipeline;
-export let setSelectedPipeline = result => {
-    selectedPipeline = result;
-    if (currentMode === 'model') resultsplotinit(result);
-}
+export let selectedPipelines = new Set([]);
+export let setSelectedPipeline = pipelineID => {
+    pipelineID = String(pipelineID);
 
-export let selectedResultsMenu;
-export let setSelectedResultsMenu = result => selectedResultsMenu = result;
+    if (modelComparison) selectedPipelines.has(pipelineID)
+        ? selectedPipelines.delete(pipelineID)
+        : selectedPipelines.add(pipelineID);
+    else selectedPipelines = new Set([pipelineID]);
 
-export let selectedDiscoverySolutionMenu;
-export let setSelectedDiscoverySolutionMenu = result => selectedDiscoverySolutionMenu = result;
+    // ensures results menu is in a valid state
+    setSelectedResultsMenu(selectedResultsMenu);
 
-// No longer used:
-// Update table when pipeline is fitted
-//function onPipelineCreate(PipelineCreateResult, id) {
-//    let myscore = PipelineCreateResult.data.response.scores[0].value.raw.double.toPrecision(3);   // Makes a number of assumptions about how values are returned, also need to attempt to deal w multiple scores
-//    let matchedPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(id, 10))
-//    matchedPipeline['Score'] = String(myscore);
-//}
+    // if ('predictedValues' in (allPipelineInfo[pipelineID] || {}))
+    //     resultsplotgraph(pipelineID)
+};
+
+// read-only abstraction layer for retrieving useful pipeline data
+export let pipelineAdapter = new Proxy({}, {
+    ownKeys() {return [...Object.keys(ravenPipelineInfo), ...Object.keys(allPipelineInfo)]},
+    getOwnPropertyDescriptor() {return {enumerable: true, configurable: true};},
+    has(_, key) {return key in ravenPipelineInfo || key in allPipelineInfo},
+
+    get(obj, pipelineID) {
+        if (pipelineID in ravenPipelineInfo) return {
+            get actualValues() {
+                return ravenPipelineInfo[pipelineID].predictor_values.actualvalues;
+            },
+            get fittedValues() {
+                return ravenPipelineInfo[pipelineID].predictor_values.fittedvalues;
+            },
+            get score() {
+                return 'no score'; // NOTE: I'm considering D3M more important, I don't want to mix a ravens R^2 score with whatever d3m is using in the pipelineTable
+            },
+            get target() {return ravenPipelineInfo[pipelineID].dependent_variable[0]},
+            get predictors() {return ravenPipelineInfo[pipelineID].predictors},
+            get description() {return ravenPipelineInfo[pipelineID].description[0]},
+            get task() {return ravenPipelineInfo[pipelineID].task[0]},
+            get model() {return ravenPipelineInfo[pipelineID].model_type[0]}
+        };
+
+        if (pipelineID in allPipelineInfo) return {
+            get actualValues() {
+                return allPipelineInfo.rookpipe.dvvalues;
+            },
+            get fittedValues() {
+                if ((allPipelineInfo[pipelineID].predictedValues || {}).success)
+                    return allPipelineInfo[pipelineID].predictedValues.data
+                        .map(item => parseFloat(item[allPipelineInfo.rookpipe.depvar]))
+            },
+            get score() {return allPipelineInfo[pipelineID].score},
+
+            get target() {return (allPipelineInfo.rookpipe || {}).depvar},
+            get predictors() {return (allPipelineInfo.rookpipe || {}).predictors},
+            get description() {
+                return (allPipelineInfo[pipelineID].pipeline || {}).description},
+            get task() {return allPipelineInfo[pipelineID].status},
+            get model() {return `${(allPipelineInfo[pipelineID].steps || []).length} steps`}
+        };
+
+        // no need to perform null check while accessing pipeline attributes
+        return {};
+    }
+})
+
+export let selectedResultsMenu = 'Problem Description';
+export let setSelectedResultsMenu = menu => {
+    let isValid = state => {
+        if (modelComparison) return ['Problem Description', 'Prediction Summary'].includes(state);
+
+        let selectedPipeline = [...selectedPipelines][0] || '';
+        if (selectedPipeline.includes('raven') && ['Generate New Predictions', 'Visualize Pipeline'].includes(state)) return false;
+        if (!selectedPipeline.includes('raven') && ['Solution Table'].includes(state)) return false;
+        return true;
+    };
+
+    if (isValid(menu)) selectedResultsMenu = menu;
+    if (!isValid(selectedResultsMenu)) selectedResultsMenu = 'Problem Description';
+};
 
 // Update table when pipeline is solved
 function onPipelinePrime(PipelineCreateResult, rookpipe) {
 
     // Need to deal with (exclude) pipelines that are reported, but failed.  For approach, see below.
-
-
-
-    if(PipelineCreateResult.id in allPipelineInfo) {
-        allPipelineInfo[PipelineCreateResult.id] = Object.assign(allPipelineInfo[PipelineCreateResult.id], PipelineCreateResult);
-    } else {
+    if (PipelineCreateResult.id in allPipelineInfo)
+        Object.assign(allPipelineInfo[PipelineCreateResult.id], PipelineCreateResult);
+    else {
         allPipelineInfo[PipelineCreateResult.id] = PipelineCreateResult;
-        pipelineTable.push({
-            'PipelineID': PipelineCreateResult.id,
-            'Score': "scoring"
-        });
+        allPipelineInfo[PipelineCreateResult.id].score = 'scoring';
     }
 
         // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
@@ -2472,10 +2588,6 @@ function CreatePipelineData(predictors, depvar, aux) {
 // Update of old CreatePipelineData function that creates problem definition for SearchSolutions call.
 function CreateProblemDefinition(depvar, aux) {
 
-    let targetFeatures = [{ 'resource_id': "0", 'feature_name': depvar[0] }];    // not presently being used in this function
-    let my_target = depvar[0];
-
-
     if(typeof aux==="undefined") { //default behavior for creating pipeline data
         let problem = {
             id: d3mProblemDescription.id,
@@ -2492,8 +2604,8 @@ function CreateProblemDefinition(depvar, aux) {
                 targets: [
                     {
                         resourceId: '0',
-                        columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
-                        columnName: my_target
+                        columnIndex: valueKey.indexOf(depvar[0]),  // Adjusted to match dataset doc
+                        columnName: depvar[0]
                     }
                 ]}];
 
@@ -2515,7 +2627,8 @@ function CreateProblemDefinition(depvar, aux) {
                 targets: [
                     {
                         resourceId: '0',
-                        columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        // columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        columnIndex: valueKey.indexOf(my_target),  // Adjusted to match dataset doc
                         columnName: my_target
                     }
                 ]}];
@@ -2543,7 +2656,7 @@ function CreateProblemSchema(aux){
                 targets: [
                     {
                         resourceId: '0',
-                        columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        columnIndex: valueKey.indexOf(my_target),  // Adjusted to match dataset doc
                         columnName: my_target
                     }
                 ]}],
@@ -2581,7 +2694,7 @@ function CreatePipelineDefinition(predictors, depvar, timeBound, aux) {
 
 function CreateFitDefinition(solutionId){
 
-    let fitDefn = getFitSolutionDefaultParameters();
+    let fitDefn = getFitSolutionDefaultParameters(datasetdocurl);
     fitDefn.solutionId = solutionId;
     return fitDefn;
 }
@@ -2590,17 +2703,21 @@ function CreateFitDefinition(solutionId){
     Return the default parameters used for a FitSolution call.
     This DOES NOT include the solutionID
  */
-export function getFitSolutionDefaultParameters(){
+export function getFitSolutionDefaultParameters(datasetDocUrl){
 
-  let my_dataseturi = 'file://' + datasetdocurl;
+  let my_dataseturi = 'file://' + datasetDocUrl;
   let my_inputs = [{dataset_uri: my_dataseturi}];
-  let my_exposeOutputs = [];   // eg. ["steps.3.produce"];  need to fix
+  //let my_exposeOutputs = [];   // eg. ["steps.3.produce"];  need to fix
+  let my_exposeOutputs = ['outputs.0'];
+
   let my_exposeValueTypes = ['CSV_URI'];
   let my_users = [{id: 'TwoRavens', choosen: false, reason: ''}];
-  return {inputs: my_inputs,
-          exposeOutputs: my_exposeOutputs,
-          exposeValueTypes: my_exposeValueTypes,
-          users: my_users};
+  return {
+      inputs: my_inputs,
+      exposeOutputs: my_exposeOutputs,
+      exposeValueTypes: my_exposeValueTypes,
+      users: my_users
+  };
 }
 
 // {
@@ -2645,11 +2762,12 @@ function CreateProduceDefinition(fsid){
   Return the default parameters used for a ProduceSolution call.
   This DOES NOT include the fittedSolutionId
 */
-export function getProduceSolutionDefaultParameters(){
+export function getProduceSolutionDefaultParameters(datasetDocUrl){
 
-  let my_dataseturi = 'file://' + datasetdocurl;
+  let my_dataseturi = 'file://' + datasetDocUrl;
   let my_inputs = [{dataset_uri: my_dataseturi}];
-  let my_exposeOutputs = [];  // Not sure about this.
+  //let my_exposeOutputs = [];  // Not sure about this.
+  let my_exposeOutputs = ['outputs.0'];
   let my_exposeValueTypes = ['CSV_URI']; // Not sure about this.
   return {inputs: my_inputs,
           exposeOutputs: my_exposeOutputs,
@@ -2676,9 +2794,9 @@ function CreateScoreDefinition(res){
   Return the default parameters used for a ProduceSolution call.
   This DOES NOT include the solutionId
 */
-function getScoreSolutionDefaultParameters(){
+function getScoreSolutionDefaultParameters(datasetDocUrl){
 
-  let my_dataseturi = 'file://' + datasetdocurl;
+  let my_dataseturi = 'file://' + datasetDocUrl;
   let my_inputs = [{dataset_uri: my_dataseturi}];
   let my_performanceMetrics = [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ];  // need to generalize to case with multiple metrics.  only passes on first presently.;
   let my_users = [{id: 'TwoRavens', choosen: false, reason: ""}];
@@ -2692,7 +2810,7 @@ function getScoreSolutionDefaultParameters(){
 
 export function downloadIncomplete() {
     if (PRODUCTION && zparams.zsessionid === '') {
-        alert('Warning: Data download is not complete. Try again soon.');
+        alertWarn('Warning: Data download is not complete. Try again soon.');
         return true;
     }
     return false;
@@ -2701,25 +2819,27 @@ export function downloadIncomplete() {
 /**
     called by clicking 'Solve This Problem' in model mode
 */
-export async function estimate(btn) {
+export async function estimate() {
+    resultsProblem = getProblemCopy(selectedProblem);
+    disco.unshift(resultsProblem);
+
     if (!IS_D3M_DOMAIN){
         // let userUsg = 'This code path is no longer used.  (Formerly, it used Zelig.)';
         // console.log(userMsg);
         // alert(userMsg);
         // return;
-
+        //
         // if (downloadIncomplete()) {
         //     return;
         // }
-
         // zPop();
         // // write links to file & run R CMD
         // // package the output as JSON
         // // add call history and package the zparams object as JSON
         // zparams.callHistory = callHistory;
         // zparams.allVars = valueKey.slice(10, 25); // because the URL is too long...
-
-
+        //
+        //
         // estimateLadda.start(); // start spinner
         // let json = await makeRequest(ROOK_SVC_URL + 'zeligapp', zparams);
         // if (!json) {
@@ -2727,7 +2847,7 @@ export async function estimate(btn) {
         // } else {
         //     allResults.push(json);
         //     if (!estimated) byId("tabResults").removeChild(byId("resultsHolder"));
-
+        //
         //     estimated = true;
         //     d3.select("#tabResults")
         //         .style("display", "block");
@@ -2735,19 +2855,19 @@ export async function estimate(btn) {
         //         .style("display", "block");
         //     d3.select("#modelView")
         //         .style("display", "block");
-
+        //
         //     // programmatic click on Results button
         //     trigger("btnSetx", "click"); // Was "btnResults" - changing to simplify user experience for testing.
-
+        //
         //     let model = "Model".concat(modelCount = modelCount + 1);
-
+        //
         //     function modCol() {
         //         d3.select("#modelView")
         //             .selectAll("p")
         //             .style('background-color', hexToRgba(varColor));
         //     }
         //     modCol();
-
+        //
         //     d3.select("#modelView")
         //         .insert("p", ":first-child") // top stack for results
         //         .attr("id", model)
@@ -2763,10 +2883,10 @@ export async function estimate(btn) {
         //                 .style('background-color', hexToRgba(selVarColor));
         //             viz(this.id);
         //         });
-
+        //
         //     let rCall = [json.call];
         //     showLog('estimate', rCall);
-
+        //
         //     viz(model);
         // }
     } else if (swandive) { // IS_D3M_DOMAIN and swandive is true
@@ -2780,7 +2900,7 @@ export async function estimate(btn) {
 
         estimateLadda.start(); // start spinner
 
-        alert('estimate() function. Check app.js error with swandive (err: 003)');
+        alertError('estimate() function. Check app.js error with swandive (err: 003)');
         //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(valueKey, mytarget));
         //res && onPipelineCreate(res);   // arguments were wrong, and this function no longer needed
 
@@ -2797,30 +2917,51 @@ export async function estimate(btn) {
 
         if (!ROOKPIPE_FROM_REQUEST) {
             estimated = true;
-            estimateLadda.stop(); // start spinner
+            estimateLadda.stop();
         } else {
-            setxTable(ROOKPIPE_FROM_REQUEST.predictors);
+            ROOKPIPE_FROM_REQUEST.predictors && setxTable(ROOKPIPE_FROM_REQUEST.predictors);
             let searchSolutionParams = CreatePipelineDefinition(ROOKPIPE_FROM_REQUEST.predictors,
-                                                                 ROOKPIPE_FROM_REQUEST.depvar,
-                                                                 2);
+                ROOKPIPE_FROM_REQUEST.depvar,10);
 
-            let allParams = {searchSolutionParams: searchSolutionParams,
-                             fitSolutionDefaultParams: getFitSolutionDefaultParameters(),
-                             produceSolutionDefaultParams: getProduceSolutionDefaultParameters(),
-                             scoreSolutionDefaultParams: getScoreSolutionDefaultParameters()};
+            let hasManipulation = resultsProblem.problemID in manipulations && manipulations[resultsProblem.problemID].length > 0;
+            let hasNominal = [resultsProblem.target, ...resultsProblem.predictors]
+                .some(variable => zparams.znom.includes(variable));
+
+            let needsProblemCopy = hasManipulation || hasNominal;
+
+            let datasetPath = zparams.zd3mdata;
+            // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
+            if (needsProblemCopy) {
+                let {data_path, metadata_path} = await manipulate.buildProblemUrl(resultsProblem);
+                datasetDocProblemUrl[resultsProblem.problemID] = metadata_path;
+                datasetPath = data_path;
+            } else delete datasetDocProblemUrl[resultsProblem.problemID];
+
+            makeRequest(ROOK_SVC_URL + 'solverapp', {prob: resultsProblem, dataset_path: datasetPath})
+                .then(response => {
+                    let ravenID = 'raven ' + ravenPipelineID++;
+                    ravenPipelineInfo[ravenID] = response;
+                    if (selectedPipelines.size === 0) setSelectedPipeline(ravenID);
+                });
+
+            let allParams = {
+                searchSolutionParams: searchSolutionParams,
+                fitSolutionDefaultParams: getFitSolutionDefaultParameters(datasetDocProblemUrl[resultsProblem.problemID] || datasetdocurl),
+                produceSolutionDefaultParams: getProduceSolutionDefaultParameters(datasetDocProblemUrl[resultsProblem.problemID] || datasetdocurl),
+                scoreSolutionDefaultParams: getScoreSolutionDefaultParameters(datasetDocProblemUrl[resultsProblem.problemID] || datasetdocurl)
+            };
 
             //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
-            let res = await makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions',
-                                        allParams);
+            let res = await makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', allParams);
             console.log(JSON.stringify(res));
             if (res===undefined){
               handleENDGetSearchSolutionsResults();
-              alert('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
+              alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
 
               return;
             }else if(!res.success){
               handleENDGetSearchSolutionsResults();
-              alert('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
+              alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
               return;
             }
 
@@ -2933,13 +3074,13 @@ export async function updateRequest(url) {
         res = await m.request(url, {method: 'POST', data:{}});       // maybe change the POST and data
         //console.log('response:', res);
         if (Object.keys(res)[0] === 'warning') {
-            alert('Warning: ' + res.warning);
+            alertWarn('Warning: ' + res.warning);
             end_ta3_search(false, res.warning);
         }
     } catch(err) {
         end_ta3_search(false, err);
         cdb(err);
-        alert(`Error: call to ${url} failed`);
+        alertError(`Error: call to ${url} failed`);
     }
     return res;
 }
@@ -2954,13 +3095,13 @@ export async function makeRequest(url, data) {
         res = await m.request(url, {method: 'POST', data: data});
         // console.log('response:', res);
         if (Object.keys(res)[0] === 'warning') {
-            alert('Warning: ' + res.warning);
+            alertWarn('Warning: ' + res.warning);
             end_ta3_search(false, res.warning);
         }
     } catch(err) {
         end_ta3_search(false, err);
         cdb(err);
-        alert(`Error: call to ${url} failed`);
+        alertError(`Error: call to ${url} failed`);
     }
 
    /*
@@ -2976,32 +3117,21 @@ export async function makeRequest(url, data) {
     }
     */
 
-    if (!IS_D3M_DOMAIN){
-        estimateLadda.stop();    // estimateLadda is being stopped somewhere else in D3M
-    };
+    if (!IS_D3M_DOMAIN) estimateLadda.stop();    // estimateLadda is being stopped somewhere else in D3M
     return res;
 }
 
 // programmatically deselect every selected variable
-export let erase = () => nodes.map(node => node.name).forEach(name => clickVar(name, nodes));
-
-// programmatically reset force diagram/selectedvars to initial state at page load
-export function unerase() {
-    erase();
-    layout();
-    let targetNode = findNode(mytarget);
-    if (targetNode.strokeColor !== dvColor)
-        setColors(targetNode, dvColor);
-    restart();
-    // the dependent variable force needs a kick
-    fakeClick();
-}
+export let erase = () => nodes
+    .map(node => node.name)
+    .forEach(name => clickVar(name, nodes));
 
 // call with a tab name to change the left tab in model mode
 export let setLeftTab = (tab) => {
     leftTab = tab;
     updateLeftPanelWidth();
     exploreVariate = tab === 'Discovery' ? 'Problem' : 'Univariate';
+    setFocusedPanel('left');
 };
 
 // formats data for the hidden summary tab in the leftpanel
@@ -3074,14 +3204,11 @@ export let popoverContent = node => {
     div(node.uniques, 'Uniques', rint(node.uniques));
     div(node.herfindahl, 'Herfindahl', prec(node.herfindahl, 4));
     return text + '</tbody></table>';
-}
+};
 
 /** needs doc */
 export function panelPlots() {
 
-    if(IS_D3M_DOMAIN) {
-        //byId('btnSubset').classList.add('noshow');
-    }
     // build arrays from nodes in main
     let vars = [];
     let ids = [];
@@ -3146,6 +3273,7 @@ export let hexToRgba = (hex, alpha) => {
    takes node and color and updates zparams
 */
 export function setColors(n, c) {
+
     // the order of the keys indicates precedence
     let zmap = {
         [csColor]: 'zcross',
@@ -3184,7 +3312,7 @@ export function setColors(n, c) {
     if (!Array.isArray(zparams[zmap[c]])) zparams[zmap[c]] = [];
     let index = zparams[zmap[c]].indexOf(n.name);
     if (index > -1) zparams[zmap[c]].splice(index, 1)
-    else zparams[zmap[c]].push(n.name)
+    else zparams[zmap[c]].push(n.name);
 
     labelNodeAttrs: {
         let matchedColor;
@@ -3256,7 +3384,7 @@ export function subsetSelect(btn) {
     }
 
     if (subsetEmpty == true) {
-        alert("Warning: No new subset selected.");
+        alertWarn("Warning: No new subset selected.");
         return;
     }
 
@@ -3408,20 +3536,28 @@ export function fakeClick() {
 */
 export async function endsession() {
     if(Object.keys(allPipelineInfo).length === 0) {
-        alert("No pipelines exist. Cannot mark problem as complete.");
+        alertError("No pipelines exist. Cannot mark problem as complete.");
         return;
     }
 
-    if (!selectedPipeline) {
-        alert("No pipeline selected. Cannot mark problem as complete.");
+    if (selectedPipelines.size === 0) {
+        alertWarn("No pipelines exist. Cannot mark problem as complete");
+        return;
+    }
+    if (selectedPipelines.size > 1) {
+        alertWarn("More than one pipeline selected. Please select one TA2 pipeline");
+        return;
+    }
+    if ([...selectedPipelines].filter(pipelineID => pipelineID.includes('raven')).length !== 0) {
+        alertWarn("Cannot select a TwoRavens pipeline. Please select a different pipeline");
         return;
     }
 
     console.log("== this should be the selected solution ==");
-    console.log(allPipelineInfo[selectedPipeline]);
-    console.log(allPipelineInfo[selectedPipeline].response.solutionId);
+    console.log(allPipelineInfo[[...selectedPipelines][0]]);
+    console.log(allPipelineInfo[[...selectedPipelines][0]].response.solutionId);
 
-    let chosenSolutionId = allPipelineInfo[selectedPipeline].response.solutionId;
+    let chosenSolutionId = allPipelineInfo[[...selectedPipelines][0]].response.solutionId;
 
     // calling exportpipeline
     let end = await exportpipeline(chosenSolutionId);
@@ -3551,474 +3687,76 @@ function setPebbleCharge(d){
     }
 }
 
-/** needs doc */
-export async function resultsplotinit(pid) {
-    if (!('predictedValues' in allPipelineInfo[pid])){
-        // The FitSolution/ProduceSolution sequences are now
-        // run server side....
-        //generatePredictions(pid, true);                    // generate predicted values, and then plot
-
-    } else {
-        resultsplotgraph(pid);                             // predicted values already exist
-    };
-}
-
-export function resultsplotgraph(pid){
-    let pipelineInfo = allPipelineInfo[pid];
-    console.log("pid:");
-    console.log(pid);
-    let mydv = allPipelineInfo.rookpipe.depvar[0];          // When there are multiple CreatePipelines calls, then this only has values from latest value
-    console.log(mydv);
-    let dvvalues = allPipelineInfo.rookpipe.dvvalues;       // When there are multiple CreatePipelines calls, then this only has values from latest value
-
-    // Terminate plot if predicted values not available
-    if (!('predictedValues' in pipelineInfo)) return;
-    if (pipelineInfo.predictedValues.success == false) return;
-
-
-    let allPreds = pipelineInfo.predictedValues.data;
-    console.log(Object.keys(allPreds[1]));
-    let predvals = [];
-
-    let mydvI = Object.keys(allPreds[1]).indexOf(mydv);
-    if (mydvI > -1) {
-        for (let i = 0; i < allPreds.length; i++) {
-            predvals.push(allPreds[i][mydv]);
-        }
-    } else if (Object.keys(allPreds[1]).indexOf("preds") > -1) {
-        for (let i = 0; i < allPreds.length; i++) {
-            predvals.push(allPreds[i]["preds"]);
-        }
-    } else {
-        alert("DV does not match. No Results window.");
-        return;
-    }
-
-    // only do this for classification tasks
-    if(d3mTaskType[d3mProblemDescription.taskType][1] == "CLASSIFICATION") {
-        console.log("class plot");
-        console.log("actual:");
-        console.log(dvvalues);
-        console.log("predicted:");
-        console.log(predvals);
-        genconfdata(dvvalues, predvals);
-    } else {
-        let xdata = "Actual";
-        let ydata = "Predicted";
-        let mytitle = "Predicted V Actuals: Pipeline " + pid;
-        scatter(dvvalues, predvals, xdata, ydata, undefined, undefined, mytitle);
-    }
-
-    // add the list of predictors into setxLeftTopLeft
-
-    d3.select("#setxLeftTopLeft").selectAll("p")
-        .data(allPipelineInfo.rookpipe.predictors)                    // When there are multiple CreatePipelines calls, then this only has values from latest value
-        .enter()
-        .append("p")
-        .text(function (d) { return d; })
-        .attr('id',function(d) { return "sx_"+d; })
-        .attr('class',"item-default")
-        .on("click", function() {
-        if(this.className=="item-select") {
-            return;
-        } else {
-            d3.select("#setxLeftTopLeft").select("p.item-select")
-            .attr('class', 'item-default');
-            d3.select(this).attr('class',"item-select");
-            singlePlot(this.id.slice(3)); // drops that sx_
-        }
-        });
-}
-
-/** needs doc */
-export function genconfdata (dvvalues, predvals) {
+/* Generates confusion table data and labels, given the expected and predicted values*/
+/* if a factor is passed, the resultant table will be 2x2 with respect to the factor */
+export function generateConfusionData(Y_true, Y_pred, factor=undefined) {
+    if (!Y_true || ! Y_pred) return;
 
     // dvvalues are generally numeric
-    dvvalues = dvvalues.map(String);
+    Y_true = Y_true.map(String);
 
     // predvals are generally strings
-    predvals = predvals.map(String);
-
-    let mycounts = [];
-    let mypairs = [];
+    Y_pred = Y_pred.map(String);
 
     // combine actuals and predicted, and get all unique elements
-    let myuniques = dvvalues.concat(predvals);
-    myuniques= [...new Set(myuniques)];                 //equivalent to: myuniques = Array.from(new Set(myuniques));
-    //was:
-    //  function onlyUnique(value, index, self) {
-    //    return self.indexOf(value) === index;
-    //  }
-    //  myuniques = myuniques.filter(onlyUnique);
-    myuniques = myuniques.sort();
+    let classes = [...new Set([...Y_true, ...Y_pred])].sort();
+    let allClasses = classes;
 
-    // create two arrays: mycounts initialized to 0, mypairs have elements set to all possible pairs of uniques
-    // looked into solutions other than nested fors, but Internet suggest performance is just fine this way
-    for(let i = 0; i < myuniques.length; i++) {
-        let tempcount = [];
-        let temppair = [];
-        for(let j = 0; j < myuniques.length; j++) {
-            mycounts.push(0);
-            mypairs.push(myuniques[i]+','+myuniques[j]);
-        }
+    if (factor !== undefined) {
+        factor = String(factor);
+        Y_true = Y_true.map(obs => factor === obs ? factor : 'not ' + factor);
+        Y_pred = Y_pred.map(obs => factor === obs ? factor : 'not ' + factor);
+        classes = [...new Set([...Y_true, ...Y_pred])].sort()
     }
 
-    // line up actuals and predicted, and increment mycounts at index where mypair has a match for the 'actual,predicted'
-    for (let i = 0; i < dvvalues.length; i++) {
-        let temppair = predvals[i]+','+dvvalues[i];
-        let myindex = mypairs.indexOf(temppair);
-        mycounts[myindex] += 1;
-    }
+    // create a matrix of zeros
+    let data = Array.from({length: classes.length}, () => new Array(classes.length).fill(0));
 
-    let confdata = [], size = myuniques.length;
-    // another loop... this builds the array of arrays from the flat array mycounts for input to confusionsmatrix function
-    while (mycounts.length > 0)
-        confdata.push(mycounts.splice(0, size));
+    // linearize the coordinate assignment stage
+    let indexOf = classes.reduce((out, clss, i) => {out[clss] = i; return out}, {})
+    // increment the data matrix at the class coordinates of true and pred
+    Y_true.forEach((_, i) => data[indexOf[Y_true[i]]][indexOf[Y_pred[i]]]++);
 
-    confusionmatrix(confdata, myuniques);
+    return {data, classes, allClasses};
 }
 
-/** needs doc */
-export function confusionmatrix(matrixdata, classes) {
+/* generate an object containing accuracy, recall, precision, F1, given a 2x2 confusion data matrix */
+export function generatePerformanceData(confusionData2x2) {
 
-    d3.select("#setxLeftPlot").html("");
-    d3.select("#setxLeftPlot").select("svg").remove();
-
-    // adapted from this block: https://bl.ocks.org/arpitnarechania/dbf03d8ef7fffa446379d59db6354bac
-    let mainwidth = byId('rightpanel').clientWidth; //byId('main').clientWidth;
-    let mainheight = byId('main').clientHeight;
-
-
-    let longest = classes.reduce(function (a, b) { return a.length > b.length ? a : b; });
-    //console.log(longest);
-    let leftmarginguess = Math.max(longest.length * 8, 25);  // More correct answer is to make a span, put string inside span, then use jquery to get pixel width of span.
-
-
-    let condiv = document.createElement('div');
-    condiv.id="confusioncontainer";
-    condiv.style.display="inline-block";
-    condiv.style.width=+(((mainwidth-50)*.7)-100)+'px';   // Need to not be hard coded
-    condiv.style.marginLeft='12px';
-    condiv.style.height=+(mainheight)+'px';      // Need to not be hard coded
-    condiv.style.float="left";
-    byId('setxLeftPlot').appendChild(condiv);
-
-    let legdiv = document.createElement('div');
-    legdiv.id="confusionlegend";
-    legdiv.style.width=+(90)+'px';    // Need to not be hard coded
-    legdiv.style.marginLeft='5px';               // Margin between confusion matrix container and legend container
-    legdiv.style.height=+(mainheight)+'px';      // Need to not be hard coded
-    legdiv.style.display="inline-block";
-    byId('setxLeftPlot').appendChild(legdiv);
-
-    var margin = {top: 50, right: 35, bottom: 0, left: leftmarginguess};    // Left margin needs not to be hardcoded, but responsive to maximum label length
-
-
-    function Matrix(options) {
-
-        let width = options.width,
-        height = options.height,
-        data = options.data,
-        container = options.container,
-        labelsData = options.labels,
-        startColor = options.start_color,
-        endColor = options.end_color,
-        xOffset = options.x_offset,
-        pipelineId = options.pipelineId;
-
-        let widthLegend = options.widthLegend;
-
-        if(!data){
-            throw new Error('Please pass data');
-        }
-
-        if(!Array.isArray(data) || !data.length || !Array.isArray(data[0])){
-            throw new Error('It should be a 2-D array');
-        }
-
-        let maxValue = d3.max(data, function(layer) { return d3.max(layer, function(d) { return d; }); });
-        let minValue = d3.min(data, function(layer) { return d3.min(layer, function(d) { return d; }); });
-
-        let numrows = data.length;
-        let numcols = data[0].length;
-
-        let svg = d3.select(container).append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-        let background = svg.append("rect")
-        .style("stroke", "black")
-        .style("stroke-width", "2px")
-        .attr("width", width)
-        .attr("height", height);
-
-        let x = d3.scale.ordinal()
-        .domain(d3.range(numcols))
-        .rangeBands([0, width]);
-
-        let y = d3.scale.ordinal()
-        .domain(d3.range(numrows))
-        .rangeBands([0, height]);
-
-        let colorMap = d3.scale.linear()
-        .domain([minValue,maxValue])
-        .range([startColor, endColor]);
-
-        let row = svg.selectAll(".row")
-        .data(data)
-        .enter().append("g")
-        .attr("class", "row")
-        .attr("transform", function(d, i) { return "translate(0," + y(i) + ")"; });
-
-        let cell = row.selectAll(".cell")
-        .data(function(d) { return d; })
-        .enter().append("g")
-        .attr("class", "cell")
-        .attr("transform", function(d, i) { return "translate(" + x(i) + ", 0)"; });
-
-        cell.append('rect')
-        .attr("width", x.rangeBand())
-        .attr("height", y.rangeBand())
-        .style("stroke-width", 0);
-
-        if(numcols < 20){
-          cell.append("text")
-          .attr("dy", ".32em")
-          .attr("x", x.rangeBand() / 2)
-          .attr("y", y.rangeBand() / 2)
-          .attr("text-anchor", "middle")
-          .style("fill", function(d, i) { return d >= maxValue/2 ? 'white' : 'black'; })
-          .text(function(d, i) { return d; });
-        };
-
-        row.selectAll(".cell")
-        .data(function(d, i) { return data[i]; })
-        .style("fill", colorMap);
-
-        // this portion of the code isn't as robust to sizing. column labels not rendering in the right place
-        let labels = svg.append('g')
-        .attr('class', "labels");
-
-        let columnLabels = labels.selectAll(".column-label")
-        .data(labelsData)
-        .enter().append("g")
-        .attr("class", "column-label")
-        .attr("transform", function(d, i) {
-             // let temp = "translate(" + x(i) + "," + (height+20) + ")"; // this in particular looks to be the cause
-            //  console.log(temp);
-              return "translate(" + x(i) + "," + (height + xOffset) + ")"; });
-
-        columnLabels.append("line")
-        .style("stroke", "black")
-        .style("stroke-width", "1px")
-        .attr("x1", x.rangeBand() / 2)
-        .attr("x2", x.rangeBand() / 2)
-        .attr("y1", 5 -xOffset)
-        .attr("y2", -xOffset);
-
-        console.log(x.rangeBand);
-
-        columnLabels.append("text")
-        .attr("x", x.rangeBand()/2)
-        .attr("y", -10)
-        //.attr("dy", "0.5em")
-        .attr("text-anchor", "start")
-        .attr("transform", "rotate(60," + x.rangeBand()/2 + ",-10)")
-        .text(function(d, i) { return d; });
-
-        let rowLabels = labels.selectAll(".row-label")
-        .data(labelsData)
-        .enter().append("g")
-        .attr("class", "row-label")
-        .attr("transform", function(d, i) { return "translate(" + 0 + "," + y(i) + ")"; });
-
-        rowLabels.append("line")
-        .style("stroke", "black")
-        .style("stroke-width", "1px")
-        .attr("x1", 0)
-        .attr("x2", -5)
-        .attr("y1", y.rangeBand() / 2)
-        .attr("y2", y.rangeBand() / 2);
-
-        rowLabels.append("text")
-        .attr("x", -8)
-        .attr("y", y.rangeBand() / 2)
-        .attr("dy", ".32em")
-        .attr("text-anchor", "end")
-        .text(function(d, i) { return d; });
-
-        let key = d3.select("#confusionlegend")
-        .append("svg")
-        .attr("width", widthLegend)
-        .attr("height", height + margin.top + margin.bottom);
-
-        let legend = key
-        .append("defs")
-        .append("svg:linearGradient")
-        .attr("id", "gradient")
-        .attr("x1", "100%")
-        .attr("y1", "0%")
-        .attr("x2", "100%")
-        .attr("y2", "100%")
-        .attr("spreadMethod", "pad");
-
-        legend
-        .append("stop")
-        .attr("offset", "0%")
-        .attr("stop-color", endColor)
-        .attr("stop-opacity", 1);
-
-        legend
-        .append("stop")
-        .attr("offset", "100%")
-        .attr("stop-color", startColor)
-        .attr("stop-opacity", 1);
-
-        key.append("rect")
-        .attr("width", widthLegend/2-10)
-        .attr("height", height)
-        .style("fill", "url(#gradient)")
-        .attr("transform", "translate(0," + margin.top + ")");
-
-        svg.append("text")
-        .attr("transform", "translate(" + (width / 2) + " ," + (0 - 10) + ")")
-        .style("text-anchor", "middle")
-        .text("Actual Class");
-
-        svg.append("text")
-        .attr("transform", "translate(" + (width / 2) + " ," + (0 - 30) + ")")
-        .style("text-anchor", "middle")
-        .text("Confusion Matrix: Pipeline " + pipelineId);
-
-        svg.append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("y", (width + 15) )
-        .attr("x",0 - (height / 2))
-        //.attr("dy", "1em")
-        .style("text-anchor", "middle")
-        .text("Predicted Class");
-
-        // this y is for the legend
-        y = d3.scale.linear()
-        .range([height, 0])
-        .domain([minValue, maxValue]);
-
-        let yAxis = d3.svg.axis()
-        .scale(y)
-        .orient("right");
-
-        key
-            .append("g")
-            .attr("class", "y axis")
-            .attr("transform", "translate(25," + margin.top + ")")    // first number is separation between legend scale and legend key
-            .call(yAxis);
-    }
-
-    // The table generation function. Used for the table of performance measures, not the confusion matrix
-    function tabulate(data, columns) {
-        var table = d3.select("#setxLeftPlot").append("table")
-        .attr("style", "margin-left: " + margin.left +"px"),
-        thead = table.append("thead"),
-        tbody = table.append("tbody");
-
-        // append the header row
-        thead.append("tr")
-        .selectAll("th")
-        .data(columns)
-        .enter()
-        .append("th")
-        .text(function(column) { return column; });
-
-        // create a row for each object in the data
-        var rows = tbody.selectAll("tr")
-        .data(data)
-        .enter()
-        .append("tr");
-
-        // create a cell in each row for each column
-        var cells = rows.selectAll("td")
-        .data(function(row) {
-              return columns.map(function(column) {
-                                 return {column: column, value: row[column]};
-                                 });
-              })
-        .enter()
-        .append("td")
-        .attr("style", "font-family: Courier") // sets the font style
-        .html(function(d) { return d.value; });
-
-        return table;
-    }
-
-    // this code is all for producing a table with performance measures
-    //var confusionMatrix = [[169, 10],[7, 46]];
-    var tp = matrixdata[0][0];
-    var fn = matrixdata[0][1];
-    var fp = matrixdata[1][0];
-    var tn = matrixdata[1][1];
+    var tp = confusionData2x2[0][0];
+    var fn = confusionData2x2[0][1];
+    var fp = confusionData2x2[1][0];
+    var tn = confusionData2x2[1][1];
 
     var p = tp + fn;
     var n = fp + tn;
 
-    var accuracy = (tp+tn)/(p+n);
-    var f1 = 2*tp/(2*tp+fp+fn);
-    var precision = tp/(tp+fp);
-    var recall = tp/(tp+fn);
+    var accuracy = (tp + tn) / (p + n);
+    var f1 = 2 * tp / (2 * tp + fp + fn);
+    var precision = tp / (tp + fp);
+    var recall = tp / (tp + fn);
 
-    accuracy = Math.round(accuracy * 100) / 100;
-    f1 = Math.round(f1 * 100) / 100;
-    precision = Math.round(precision * 100) / 100;
-    recall = Math.round(recall * 100) / 100;
-
-    var computedData = [];
-    computedData.push({"F1":f1, "PRECISION":precision,"RECALL":recall,"ACCURACY":accuracy});
-
-    Matrix({
-           container : '#confusioncontainer',
-           data      : matrixdata,
-           labels    : classes,
-           start_color : '#ffffff',
-           end_color : '#e67e22',
-           width : ((mainwidth-50)*.7) - 100 - leftmarginguess -30,//     // Width of confusion matrix table: Beginning of this is #confusioncontainer.width, but this div doesn't always exist yet
-           height : mainheight * .6,    // Need to not be hard coded
-           widthLegend : mainwidth*.04,
-           x_offset : 30,
-           pipelineId : selectedPipeline  // Note: cueing from global, not from passed through pid, because of number of functions to pass through value.
-           });
-
-    // not rendering this table for right now, left all the code in place though. maybe we use it eventually
-    // var table = tabulate(computedData, ["F1", "PRECISION","RECALL","ACCURACY"]);
+    return {
+        "f1": Math.round(f1 * 100) / 100,
+        "precision": Math.round(precision * 100) / 100,
+        "recall": Math.round(recall * 100) / 100,
+        "accuracy": Math.round(accuracy * 100) / 100
+    }
 }
 
-/**
-  Sort the Pipeline table, putting the higest score at the top
- */
-export function sortPipelineTable(pt){
-    let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSquaredErrorAvg", "meanAbsoluteError"];  // array of metrics to sort low to high
-    let reverse = (reverseSet.indexOf(d3mProblemDescription.performanceMetrics[0].metric) > -1) ? -1 : 1;
-    if (reverse == -1){
-        resultsMetricDescription = "Smaller numbers are better fits"
-    }
+export let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSquaredErrorAvg", "meanAbsoluteError"];  // array of metrics to sort low to high
 
-    pt = pt.sort(function(a,b){
-        if (a['Score']===b['Score']){
-            return(0)
-        } else if (a['Score']=="scoring"){
-            return(100)
-        } else if (b['Score']=="scoring") {
-            return(-100)
-        } else if (a['Score']=="no score"){
-            return(1000)
-        } else if (b['Score']=="no score"){
-            return(-1000)
-        } else {
-            return (parseFloat(b['Score']) - parseFloat(a['Score'])) * reverse;
-        };
-    });
-    return pt;
-};
+/**
+ Sort the Pipeline table, putting the highest score at the top
+ */
+export function sortPipelineTable(a, b) {
+    if (a === b) return 0;
+    if (a === "scoring") return 100;
+    if (b === "scoring") return -100;
+    if (a === "no score") return 1000;
+    if (b === "no score") return -1000;
+    return (parseFloat(b) - parseFloat(a)) * (reverseSet.includes(d3mProblemDescription.performanceMetrics[0].metric) ? -1 : 1);
+}
 
 /** needs doc */
 export function setxTable(features) {
@@ -4059,8 +3797,9 @@ export function setxTable(features) {
     }
 
     let mydata = [];
-    for(let i = 0; i<features.length; i++) {
+    for (let i = 0; i < features.length; i++) {
         let myi = findNodeIndex(features[i]); //i+1;                                // This was set as (i+1), but should be allnodes position, not features position
+        if (myi === -1) continue;
 
         if(allNodes[myi].valid==0) {
             let xval=0;
@@ -4280,45 +4019,80 @@ function singlePlot(pred) {
         }
 }
 
+function makeProblemDescription(problem) {
+    if (problem.descriptionUser) return problem.descriptionUser;
+
+    // TODO: generate better descriptions based on the manipulations pipeline
+    if (problem.transform && problem.transform != 0)
+        return `The combination of ${problem.transform.split('=')[1]} is predicted by ${problem.predictors.join(" and ")}`;
+    if (problem.subset && problem.subsetObs != 0)
+        return `${problem.predictors} is predicted by ${problem.predictors.join(" and ")} whenever ${problem.subsetObs}`;
+    return `${problem.target} is predicted by ${problem.predictors.slice(0, -1).join(", ")} ${problem.predictors.length > 1 ? 'and ' : ''}${problem.predictors[problem.predictors.length - 1]}`;
+}
+
 export function discovery(preprocess_file) {
 
-    let makeDescription = (prob) => {
-        if (prob.transform && prob.transform != 0)
-            return `The combination of ${prob.transform.split('=')[1]} is predicted by ${prob.predictors.join(" and ")}`;
-        if (prob.subset && prob.subsetObs != 0)
-            return `${prob.predictors} is predicted by ${prob.predictors.join(" and ")} whenever ${prob.subsetObs}`;
-        return `${prob.target} is predicted by ${prob.predictors.slice(0, -1).join(", ")} ${prob.predictors.length > 1 ? 'and ' : ''}${prob.predictors[prob.predictors.length - 1]}`;
-    }
+    return preprocess_file.dataset.discovery.map((prob, i) => {
+        let problemID = generateProblemID();
+        let pipeline = [];
 
-    return preprocess_file.dataset.discovery.map((prob, i) => ({
-        problem_id: "problem" + (i+1),
-        system: "auto",
-        description: makeDescription(prob),
-        target: prob.target,
-        predictors: prob.predictors,
-        transform: prob.transform,
-        subsetObs: prob.subsetObs,
-        subsetFeats: prob.subsetFeats,
-        metric: findNode(prob.target).plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
-        task: findNode(prob.target).plottype === "bar" ? 'classification' : 'regression',
-        subTask: Object.keys(d3mTaskSubtype)[0],
-        model: 'modelUndefined',
-        rating: 3,
-        meaningful: "no"
-    }))
+        if (prob.subsetObs) {
+            pipeline.push({
+                type: 'subset',
+                id: 'subset ' + pipeline.length,
+                abstractQuery: [{
+                    id: problemID + '-' + String(0) + '-' + String(1),
+                    name: prob.subsetObs,
+                    show_op: false,
+                    cancellable: true,
+                    subset: 'automated'
+                }],
+                nodeId: 2,
+                groupId: 1
+            })
+        }
 
-    /* Problem Array of the Form:
-        [1: {problem_id: "problem 1",
+        if (prob.transform) {
+            let [variable, transform] = prob.transform.split('=').map(_ => _.trim());
+            pipeline.push({
+                type: 'transform',
+                transforms: [{
+                    name: variable,
+                    equation: transform
+                }],
+                expansions: [],
+                binnings: [],
+                manual: [],
+                id: 'transform ' + pipeline.length,
+            })
+        }
+
+        manipulations[problemID] = pipeline;
+
+        return {
+            problemID,
             system: "auto",
-            meaningful: "no",
-            target:"Home_runs",
-            predictors:["Walks","RBIs"],
-            task:"regression",
-            rating:5,
-            description: "Home_runs is predicted by Walks and RBIs",
-            metric: "meanSquaredError"
-        },2:{...}]
-    */
+
+            descriptionUser: undefined,
+            get description() {return makeProblemDescription(this)},
+            set description(value) {this.descriptionUser = value;},
+
+            target: prob.target,
+            predictorsInitial: prob.predictors,
+            predictors: [...prob.predictors, ...getTransformVariables(manipulations[problemID])],
+
+            get pipeline() {
+                if (!(this.problemID in manipulations)) manipulations[this.problemID] = [];
+                return manipulations[this.problemID]
+            },
+            metric: findNode(prob.target).plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
+            task: findNode(prob.target).plottype === "bar" ? 'classification' : 'regression',
+            subTask: 'taskSubtypeUndefined',
+            model: 'modelUndefined',
+            rating: 3,
+            meaningful: false
+        }
+    })
 }
 
 // creates a new problem from the force diagram problem space and adds to disco
@@ -4333,7 +4107,7 @@ export async function addProblemFromForceDiagram() {
         selectedProblem || {},
         await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams),
         {
-            problem_id: 'problem' + (disco.length + 1),
+            problemID: generateProblemID(),
             system: 'user',
             meaningful: 'yes'
         });
@@ -4352,9 +4126,9 @@ export async function addProblemFromForceDiagram() {
         newProblem.metric = currentMetric === 'metricUndefined' ? 'meanSquaredError' : currentMetric;
     }
 
-    if ((selectedProblem || {}).problem_id in manipulations)
-        manipulations[newProblem.problem_id]
-            = jQuery.extend(true, [], manipulations[selectedProblem.problem_id]);
+    if ((selectedProblem || {}).problemID in manipulations)
+        manipulations[newProblem.problemID]
+            = jQuery.extend(true, [], manipulations[selectedProblem.problemID]);
 
     console.log("pushing new problem to discovered problems:");
     console.log(newProblem);
@@ -4395,76 +4169,29 @@ export function connectAllForceDiagram() {
 }
 
 
-// called when a problem is clicked in the discovery leftpanel table
-export let discoveryClick = problemId => {
-    setSelectedProblem(disco.find(problem => problem.problem_id === problemId));
+export let defaultProblem;
+export let resultsProblem;
+export let selectedProblem;
 
-    if (!selectedProblem) return;
-
-    let {target, predictors} = selectedProblem;
-    erase();
-    [target, ...predictors].map(x => clickVar(x));
-    predictors.forEach(predictor => setColors(nodes.find(node => node.name === predictor), gr1Color));
-    setColors(findNode(target), dvColor);
-    m.redraw();
-    restart();
-};
-
-
-export let selectedProblem; // the problem object
 export function setSelectedProblem(problem) {
-    if (selectedProblem === problem) return; // ignore if already set
+    if (typeof problem === 'string') problem = disco.find(prob => prob.problemID === problem);
+    if (!problem || selectedProblem === problem) return;
 
     selectedProblem = problem;
+
+    stopAllSearches().then(() => {
+        allPipelineInfo = {};
+        ravenPipelineInfo = {};
+        estimateLadda.stop();
+    });
+
     updateRightPanelWidth();
 
     // if a constraint is being staged, delete it
     manipulate.setConstraintMenu(undefined);
 
-    // remove old staged problems
-    disco = disco.filter(entry => entry.problem_id === (problem || {}).problem_id || !entry.staged);
-    if (problem === undefined) return;
-
-    if (!(problem.problem_id in manipulations)) {
-        let pipeline = [];
-
-        if (problem['subsetObs']) {
-            pipeline.push({
-                type: 'subset',
-                id: 'subset ' + pipeline.length,
-                abstractQuery: [{
-                    id: String(problem.problem_id) + '-' + String(0) + '-' + String(1),
-                    name: problem['subsetObs'],
-                    show_op: false,
-                    cancellable: true,
-                    subset: 'automated'
-                }],
-                nodeId: 2,
-                groupId: 1
-            })
-        }
-
-        if (problem['transform']) {
-            let [variable, transform] = problem['transform'].split('=').map(_ => _.trim());
-            pipeline.push({
-                type: 'transform',
-                transforms: [{
-                    name: variable,
-                    equation: transform
-                }],
-                expansions: [],
-                binnings: [],
-                manual: [],
-                id: 'transform ' + pipeline.length,
-            })
-            problem.predictors.push(variable);
-        }
-
-        manipulations[problem.problem_id] = pipeline;
-    }
-
     let countMenu = {type: 'menu', metadata: {type: 'count'}};
-    let subsetMenu = [...manipulate.getPipeline(), ...manipulate.getProblemPipeline(problem) || []];
+    let subsetMenu = [...manipulate.getPipeline(), ...problem.pipeline];
     manipulate.loadMenu(subsetMenu, countMenu).then(count => {
         manipulate.setTotalSubsetRecords(count);
         m.redraw();
@@ -4473,136 +4200,85 @@ export function setSelectedProblem(problem) {
     resetPeek();
 
     // will trigger the call to solver, if a menu that needs that info is shown
-    if (selectedProblem) setSolverPending(true);
+    setSolverPending(true);
+    confusionFactor = undefined;
+    redrawForce(problem);
 }
 
-export function getProblemCopy(problem) {
-    let problemId = problem.problem_id;
-    problem = jQuery.extend(true, {}, problem);  // deep copy of original
+export let redrawForce = problem => {
+    if (!problem) return;
+    let {target, predictors} = selectedProblem;
+    erase();
+    [target, ...predictors].map(x => updateNode(x, nodes));
+    predictors.forEach(predictor => setColors(nodes.find(node => node.name === predictor), gr1Color));
+    setColors(findNode(target), dvColor);
+    problem.target = target;
+    restart();
+    restart(); // two calls are necessary here, for now (pebble sizing is finicky)
+    m.redraw();
+};
 
-    let offset = 1;
-    while (disco.find(prob => prob.problem_id === problem.problem_id + 'user' + offset)) offset++;
-    let new_problem_id = problem.problem_id + 'user' + offset;
+export function getProblemCopy(problemSource) {
+    let problem = jQuery.extend(true, {}, problemSource);  // deep copy of original
+    Object.defineProperties(problem, Object.getOwnPropertyDescriptors(problemSource)); // keep getters
 
-    if (problem.problem_id in manipulations)
-        manipulations[new_problem_id] = jQuery.extend(true, [], manipulations[problem.problem_id]);
+    let newProblemID = generateProblemID();
+
+    manipulations[newProblemID] = jQuery.extend(true, [], manipulations[problem.problemID] || []);
 
     Object.assign(problem, {
-        problem_id: new_problem_id,
-        provenance: problem.problem_id,
+        problemID: newProblemID,
+        provenanceID: problem.problemID,
         system: 'user'
-    })
+    });
 
     return problem;
 }
 
-export let stargazer = ""
-export function modelSelectionResults(problem){
-    setSolverPending(false);
-    callSolver(problem).then(() => {
-        console.log("callSolver response : ", solver_res)
-        makeDataDiscovery()
-        makeDiscoverySolutionPlot()
-        makeDataDiscoveryTable()
-    });
-}
+// When enabled, multiple pipelineTable pipelineIDs may be selected at once
+export let modelComparison = false;
+export let setModelComparison = state => {
+    if (!state) selectedPipelines = new Set([...selectedPipelines].slice(undefined, 1));
+    modelComparison = state;
 
-export function makeDataDiscovery(){
-    d3.select("#setPredictionDataLeft").html("");
-    d3.select("#setPredictionDataLeft").select("svg").remove();
-    let in_data = [
-        {"Variable":"Dependent Variable : ", "Data":solver_res[0]['dependent_variable']},
-        {"Variable":"Predictors : ", "Data":solver_res[0]['predictors']},
-        {"Variable":"Description : ", "Data":solver_res[0]['description']},
-        {"Variable":"Task : ", "Data":solver_res[0]['task']},
-        {"Variable":"Model : ", "Data":solver_res[0]['model_type']}
-    ]
+    setSelectedResultsMenu('Prediction Summary');
+};
 
-    function tabulate(data, columns) {
-		var table = d3.select('#setPredictionDataLeft').append('table')
-		var thead = table.append('thead')
-		var	tbody = table.append('tbody');
-
-		// append the header row
-		thead.append('tr')
-		  .selectAll('th')
-		  .data(columns).enter()
-		  .append('th')
-		    .text(function (column) { return column; })
-        .style('background-color','rgba(0, 0, 0, .2)')
-        ;
-
-		// create a row for each object in the data
-		var rows = tbody.selectAll('tr')
-		  .data(data)
-		  .enter()
-		  .append('tr');
-
-		// create a cell in each row for each column
-		var cells = rows.selectAll('td')
-		  .data(function (row) {
-		    return columns.map(function (column) {
-		      return {column: column, value: row[column]};
-		    });
-		  })
-		  .enter()
-		  .append('td')
-		    .text(function (d) { return d.value; })
-        .style('border-bottom','1px solid #ddd');
-
-	  return table;
-	}
-
-	// render the table(s)
-	tabulate(in_data, ['Variable', 'Data']); // 2 column table
-
-}
-export function makeDiscoverySolutionPlot() {
-    console.log(solver_res);
-    let xdata = "Actual";
-    let ydata = "Predicted";
-    let mytitle = "Predicted V Actuals: Pipeline ";
-    let dvvalues = solver_res[0]['predictor_values']['actualvalues']
-    let predvals = solver_res[0]['predictor_values']['fittedvalues']
-    scatter(dvvalues, predvals, xdata, ydata, undefined, undefined, mytitle);
-
-}
-export function makeDataDiscoveryTable(){
-  // console.log("Here we bring our table")
-  stargazer = solver_res[0]['stargazer']
-  // d3.select("#setDataTable").html("");
-}
-
-export let checkedDiscoveryProblems = new Set();
-export let setCheckedDiscoveryProblem = (status, problem) => {
-    if (problem !== undefined) status ? checkedDiscoveryProblems.add(problem) : checkedDiscoveryProblems.delete(problem);
-    else checkedDiscoveryProblems = status ? new Set(disco.map(problem => problem.problem_id)) : new Set();
+export let setCheckedDiscoveryProblem = (status, problemID) => {
+    if (problemID) {
+        let problem = selectedProblem.problemID === problemID ? selectedProblem :
+            disco.find(prob => prob.problemID === problemID);
+        problem.meaningful = status;
+    }
+    else {
+        disco.map(prob => prob.meaningful = status);
+        selectedProblem.meaningful = status;
+    }
 };
 
 export async function submitDiscProb() {
     discoveryLadda.start();
     console.log("This is disco");
     console.log(disco);
-    let outputCSV = "problem_id, system, meaningful \n";
+    let outputCSV = "problemID, system, meaningful \n";
 
     for(let i = 0; i < disco.length; i++) {
-        if(checkedDiscoveryProblems.has(disco[i].problem_id)) { disco[i].meaningful = "yes"; }
 
         // build up the required .csv file line by line
-        outputCSV = outputCSV + disco[i].problem_id + ", \"" + disco[i].system + "\", \"" + disco[i].meaningful + "\"\n";
+        outputCSV = outputCSV + disco[i].problemID + ", \"" + disco[i].system + "\", \"" + (disco[i].meaningful ? 'yes' : 'no') + "\"\n";
 
         if(disco[i].subsetObs ==0 && disco[i].transform==0){
             // construct and write out the api call and problem description for each discovered problem
             let problemApiCall = CreatePipelineDefinition(disco[i].predictors, [disco[i].target], 10, disco[i]);
             let problemProblemSchema = CreateProblemSchema(disco[i]);
-            let filename_api = disco[i].problem_id + '/ss_api.json';
-            let filename_ps = disco[i].problem_id + '/schema.json';
+            let filename_api = disco[i].problemID + '/ss_api.json';
+            let filename_ps = disco[i].problemID + '/schema.json';
             let res1 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
             let res2 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
         } else {
             console.log('omitting:');
             console.log(disco[i]);
-        };
+        }
     }
 
     // write the CSV file requested by NIST that describes properties of the solutions
@@ -4636,21 +4312,13 @@ export function deleteFromDisc(discov){
     }
 }
 
-export function saveDisc() {
-    selectedProblem.description = document.getElementById("discoveryInput").value;
-}
-
-export function deleteProblem(preproess_id, version, problem_id) {
+export function deleteProblem(preprocessID, version, problemID) {
     console.log("Delete problem clicked")
     setSelectedProblem(undefined);
     m.request({
         method: "POST",
         url: "http://127.0.0.1:4354/preprocess/problem-section-delete",
-        data: {
-            "preprocessId" : preproess_id,
-            "version": version,
-            "problem_id" : problem_id
-        }
+        data: {preprocessID, version, problemID}
     })
         .then(function(result) {
             console.log(result)
@@ -4836,63 +4504,48 @@ function primitiveStepRemoveColumns (aux) {
     return {primitive:step};
 }
 
-
 /**
   Handle a websocket sent GetSearchSolutionResultsResponse
   wrapped in a StoredResponse object
 */
-export async function handleGetSearchSolutionResultsResponse(response1){
-  if(typeof response1===undefined){
-    console.log('GetSearchSolutionResultsResponse: Error.  "response1" undefined');
-    return;
-  }
-  let resizeTriggered = false;
+export async function handleGetSearchSolutionResultsResponse(response1) {
+    if (typeof response1 === undefined) {
+        console.log('GetSearchSolutionResultsResponse: Error.  "response1" undefined');
+        return;
+    }
 
-  // ----------------------------------------
-  // (1) Pull the solutionId
-  // ----------------------------------------
-  console.log('(1) Pull the solutionId');
+    // ----------------------------------------
+    // (1) Pull the solutionId
+    // ----------------------------------------
+    console.log('(1) Pull the solutionId');
 
-  // Note: the response.id becomes the Pipeline id
-  //
-  //
-  if(typeof response1.id===undefined){
-    console.log('GetSearchSolutionResultsResponse: Error.  "response1.id" undefined');
-    return;
-  }
-  if(typeof response1.response.solutionId===undefined){
-    console.log('GetSearchSolutionResultsResponse: Error.  "response1.response.solutionId" undefined');
-    return;
-  }
-  let solutionId = response1.response.solutionId;
+    // Note: the response.id becomes the Pipeline id
+    //
+    //
+    if (typeof response1.id === undefined) {
+        console.log('GetSearchSolutionResultsResponse: Error.  "response1.id" undefined');
+        return;
+    }
+    if (typeof response1.response.solutionId === undefined) {
+        console.log('GetSearchSolutionResultsResponse: Error.  "response1.response.solutionId" undefined');
+        return;
+    }
+    // let solutionId = response1.response.solutionId;
 
-  // ----------------------------------------
-  // (2) Update the pipeline list on the UI
-  // ----------------------------------------
-  console.log('(2) Update the pipeline list on the UI');
+    // ----------------------------------------
+    // (2) Update or Create the Pipeline
+    // ----------------------------------------
+    if (!ROOKPIPE_FROM_REQUEST) {
+        console.log('---------- ERROR: ROOKPIPE_FROM_REQUEST not set!!!');
+    }
+    onPipelinePrime(response1, ROOKPIPE_FROM_REQUEST)  //, rookpipe - handleGetSearchSolutionResultsResponse
 
-  // ----------------------------------------
-  // (2a) Update or Create the Pipeline
-  // ----------------------------------------
-  if (!ROOKPIPE_FROM_REQUEST){
-    console.log('---------- ERROR: ROOKPIPE_FROM_REQUEST not set!!!');
-  }
-  onPipelinePrime(response1, ROOKPIPE_FROM_REQUEST) //, rookpipe - handleGetSearchSolutionResultsResponse
+    if (IS_D3M_DOMAIN) setRightTab('Results');
+    if (selectedPipelines.size === 0) setSelectedPipeline(response1.id);
 
-  if(!resizeTriggered){
-      if (IS_D3M_DOMAIN){
-          byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
-      };
-      resizeTriggered = true;
-  }
-  if(selectedPipeline === undefined){
-     setSelectedPipeline(pipelineTable[0]['PipelineID']);
-  }
-
-  // Add pipeline descriptions to allPipelineInfo
-  // More overwriting than is necessary here.
-  allPipelineInfo[response1.id] = Object.assign(allPipelineInfo[response1.id], response1.data);
-
+    // Add pipeline descriptions to allPipelineInfo
+    Object.assign(allPipelineInfo[response1.id], response1.data);
+    m.redraw();
 }  // end GetSearchSolutionResultsResponse
 
 
@@ -4918,7 +4571,7 @@ async function handleDescribeSolutionResponse(response){
   let pipelineId = response.pipelineId;
   delete response.pipelineId;
 
-  allPipelineInfo[pipelineId] = Object.assign(allPipelineInfo[pipelineId], response);
+  Object.assign(allPipelineInfo[pipelineId], response);
 
 } // end: handleDescribeSolutionResponse
 
@@ -4958,55 +4611,38 @@ async function handleGetProduceSolutionResultsResponse(response){
 
     allPipelineInfo[response.pipelineId].predictedValues = responseOutputData;
 
-    resultsplotgraph(response.pipelineId);
-
 } // end: handleGetProduceSolutionResultsResponse
 
 /**
   Handle a getScoreSolutionResultsResponse send via websocket
   wrapped in a StoredResponse object
 */
-async function handleGetScoreSolutionResultsResponse(response){
-  if(typeof response===undefined){
-    console.log('handleGetScoreSolutionResultsResponse: Error.  "response" undefined');
-    return;
-  }
-  if(typeof response.is_finished === undefined){
-    console.log('handleGetScoreSolutionResultsResponse: Error.  "response.data.is_finished" undefined');
-    return;
-  }
-  if(!response.is_finished){
-    return;
-  }
+async function handleGetScoreSolutionResultsResponse(response) {
+    if (response === undefined) {
+        console.log('handleGetScoreSolutionResultsResponse: Error.  "response" undefined');
+        return;
+    }
+    if (response.is_finished === undefined) {
+        console.log('handleGetScoreSolutionResultsResponse: Error.  "response.data.is_finished" undefined');
+        return;
+    }
+    if (!response.is_finished) return;
 
-  let myscore;
+    let myscore;
 
-  try{
-    // This is very specific, the potential responses may vary greatly
+    try {
+        // This is very specific, the potential responses may vary greatly
+        //
+        myscore = response.response.scores[0].value.raw.double.toPrecision(3);
+    } catch (error) {
+        console.log(JSON.stringify(response));
+        alertError('Error in "handleGetScoreSolutionResultsResponse": ' + error);
+        return;
+    }
+    // Note: what's now the "res4DataId" needs to be sent to this function
     //
-    myscore = response.response.scores[0].value.raw.double.toPrecision(3);
-  }catch(error) {
-    console.log(JSON.stringify(response));
-    alert('Error in "handleGetScoreSolutionResultsResponse": ' + error);
-    console.error(error);
-    return;
-  }
-  // Note: what's now the "res4DataId" needs to be sent to this function
-  //
-  let matchedPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(response.pipelineId, 10))
-
-  if (matchedPipeline===undefined){
-    console.log('handleGetScoreSolutionResultsResponse: Error.  Pipeline not found for id: ' + response.pipelineId);
-  }else{
-    // set the score
-    matchedPipeline['Score'] = String(myscore);
-
-    // sort the pipeline table by score
-    pipelineTable = sortPipelineTable(pipelineTable);
-
-    // Click the "Prediction Summary" button
-    byId("btnPredPlot").click();
-  }
+    allPipelineInfo[response.pipeline_id].score = myscore;
+    m.redraw();
 } // end: handleGetScoreSolutionResultsResponse
 
 
@@ -5028,7 +4664,25 @@ async function handleENDGetSearchSolutionsResults(){
   // stop the interval process
 }
 
+export function loadResult(my_disco) {
+    (my_disco || disco).forEach((problem, i) => {
 
+        let prob_name = (problem.description || {}).problemID || problem.problemID;
+
+        if (problems_in_preprocess.includes(prob_name))
+            console.log("Problem already exists in preprocess", prob_name);
+        else problem_sent.push({
+            "description": problem,
+            "result": solver_res[i]
+        });
+        // console.log("problem to be sent ", problem_sent);
+    })
+
+    // console.log("problem to be sent ", problem_sent.splice())
+    let preprocess_id = 1
+    let version = 1
+    // addProblem(preprocess_id, version).then(api_res => console.log("ADD PROBLEM/RESULT API RESPONSE ", api_res))
+}
 
 export async function addProblem(preprocess_id, version){
     // return await m.request({
@@ -5040,20 +4694,40 @@ export async function addProblem(preprocess_id, version){
     //         "problems": problem_sent
     //     }
     // })
-problem_sent.length = 0;
+    problem_sent.length = 0;
 }
 
+let ravenPipelineID = 0;
 
 // takes as input problem in the form of a "discovered problem" (can also be user-defined), calls rooksolver, and stores result
 export async function callSolver(prob) {
-    let hasManipulation = prob.problem_id in manipulations && manipulations[prob.problem_id].length > 0;
+    setSolverPending(false);
+    let hasManipulation = prob.problemID in manipulations && manipulations[prob.problemID].length > 0;
     let hasNominal = [prob.target, ...prob.predictors].some(variable => zparams.znom.includes(variable));
+    let datasetPath = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : zparams.zd3mdata;
+    let ravenID = 'raven ' + ravenPipelineID++;
 
-    let zd3mdata = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : zparams.zd3mdata;
-
-    // MIKE: shouldn't solverapp return a list? even a singleton list would be fine
-    solver_res = [await makeRequest(ROOK_SVC_URL + 'solverapp', {prob, zd3mdata})];
+    ravenPipelineInfo[ravenID] = await makeRequest(ROOK_SVC_URL + 'solverapp', {prob, dataset_path: datasetPath});
+    if (selectedPipelines.size === 0) setSelectedPipeline(ravenID);
+    console.log("callSolver response:", ravenPipelineInfo[ravenID]);
+    m.redraw();
 }
+
+export function callTransform(elem){
+    console.log("function called")
+    let json =  makeRequest(
+        ROOK_SVC_URL + 'transformapp',
+        {zdataurl: dataurl,
+            zvars: elem,
+            zsessionid: zparams.zsessionid,
+            transform: t,
+            callHistory: callHistory,
+            typeTransform: typeTransform,
+            typeStuff: outtypes});
+
+    console.log(json)
+}
+
 
 // pretty precision formatting- null and undefined are NaN, attempt to parse strings to float
 // if valid number, returns a Number at less than or equal to precision (trailing decimal zeros are ignored)
@@ -5068,6 +4742,9 @@ export function formatPrecision(value, precision=4) {
     return (digits <= precision || precision === 0) ? numeric : numeric.toPrecision(precision) * 1
 }
 
+let problemCount = 0;
+let generateProblemID = () => 'problem ' + problemCount++;
+
 export let omniSort = (a, b) => {
     if (a === undefined && b !== undefined) return -1;
     if (b === undefined && a !== undefined) return 1;
@@ -5076,18 +4753,3 @@ export let omniSort = (a, b) => {
     if (typeof a === 'string') return  a.localeCompare(b);
     return (a < b) ? -1 : 1;
 };
-
-export function callTransform(elem){
-    console.log("function called")
-    let json =  makeRequest(
-        ROOK_SVC_URL + 'transformapp',
-        {zdataurl: dataurl,
-         zvars: elem,
-         zsessionid: zparams.zsessionid,
-         transform: t,
-         callHistory: callHistory,
-         typeTransform: typeTransform,
-         typeStuff: outtypes});
-
-         console.log(json)
-}

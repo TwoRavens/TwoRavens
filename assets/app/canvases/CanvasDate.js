@@ -10,6 +10,7 @@ import '../../../node_modules/jquery-ui-dist/jquery-ui.theme.min.css'
 import {panelMargin} from "../../common/common";
 import ButtonRadio from '../../common/views/ButtonRadio';
 import PlotContinuous from './views/PlotContinuous';
+import TextField from '../../common/views/TextField';
 
 
 export function interpolate(data, date) {
@@ -200,9 +201,14 @@ export default class CanvasDate {
                                 "margin-top": "10px"
                             }
                         }, "From:"),
-                        m(`input#fromDate.form-control[type='text']`, {
-                            onblur: function () {
+                        m(TextField, {
+                            id: 'fromDate',
+                            type: 'text',
+                            class: 'form-control',
+                            onblur: value => {
                                 setRedraw(true);
+                                let parts = value.split(/[- ]/);
+                                preferences['userLower'] = new Date(parts[0], parts[1] - 1, parts[2]);
                             },
                             value: d3.timeFormat("%Y-%m-%d")(preferences['userLower'])
                         }),
@@ -215,8 +221,15 @@ export default class CanvasDate {
                                 "margin-top": "10px"
                             }
                         }, "To:"),
-                        m(`input#toDate.form-control[type='text']`, {
-                            onblur: () => setRedraw(true),
+                        m(TextField, {
+                            id: 'toDate',
+                            type: 'text',
+                            class: 'form-control',
+                            onblur: value => {
+                                setRedraw(true);
+                                let parts = value.split(/[- ]/);
+                                preferences['userUpper'] = new Date(parts[0], parts[1] - 1, parts[2]);
+                            },
                             value: d3.timeFormat("%Y-%m-%d")(preferences['userUpper'])
                         })
                     ]

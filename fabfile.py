@@ -58,13 +58,25 @@ def restart():
     stop()
     run()
 
+
 @task
-def make_d3m_config_files():
-    """Make configs in /ravens_volume and loads them to db"""
+def make_d3m_config_files_2018():
+    """2018 (old) Make configs in /ravens_volume and loads them to db"""
     clear_d3m_configs()
 
     from tworaven_apps.configurations.util_config_maker import TestConfigMaker
     TestConfigMaker.make_deploy_config_files()
+
+
+
+@task
+def make_d3m_configs_from_files():
+    """Make configs from /ravens_volume and loads them to db"""
+    clear_d3m_configs()
+
+    from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
+    loader = EnvConfigLoader.make_d3m_test_configs_env_based()
+
 
 @task
 def clear_d3m_configs():
@@ -112,67 +124,78 @@ def clear_test_data():
         print('  -> No preprocess D3M test output directory')
 
 
-
-@task
 def make_d3m_config():
-    """Adds D3M configs to database--but DOESN'T create config files"""
+    """NO LONGER USED
+    Adds D3M configs to database--but DOESN'T create config files"""
     from tworaven_apps.configurations.util_config_maker import TestConfigMaker
 
     TestConfigMaker.make_configs()
 
 @task
 def load_d3m_config_from_env():
-    """6/27/2018 update
+    """1/27/2019 update. Load from env variables.
     - Look for an environment variable named "D3MINPUTDIR"
         - This is the data directory which should include a file named
             "search_config.json"
         - Load "search_config.json" as the D3M config
     - If "D3MINPUTDIR" doesn't exist, display error message and keep running
     """
+    from django.conf import settings
     from django.core import management
     from tworaven_apps.configurations.models_d3m import \
-        (D3M_ENV_INPUT_DIR, D3M_SEARCH_CONFIG_NAME)
+        (D3M_SEARCH_CONFIG_NAME,)
 
     print('-' * 40)
-    print('> Attempt to load D3M config based on env variable: "%s"' % \
-          D3M_ENV_INPUT_DIR)
+    print('> Attempt to load D3M config data from environment')
     print('-' * 40)
 
-    d3m_data_dir = os.environ.get(D3M_ENV_INPUT_DIR, None)
-    if not d3m_data_dir:
-        print('Environment variable "%s" not set.' % D3M_ENV_INPUT_DIR)
+    if not settings.D3MINPUTDIR:
+        print('Environment variable "D3MINPUTDIR" not set.')
         return
 
-    d3m_data_dir = d3m_data_dir.strip()
+    d3m_data_dir = settings.D3MINPUTDIR.strip()
     if not os.path.isdir(d3m_data_dir):
         print('This data directory doesn\'t exist (or is not reachable): %s' % \
               d3m_data_dir)
         return
 
+    print('(1) Attempt to load 2018 config "%s"' % D3M_SEARCH_CONFIG_NAME)
     config_file = os.path.join(d3m_data_dir, D3M_SEARCH_CONFIG_NAME)
-    if not os.path.isfile(config_file):
+    if os.path.isfile(config_file):
         print('This config file doesn\'t exist (or is not reachable): %s' % \
               config_file)
+        try:
+            management.call_command('load_config', d3m_data_dir)
+        except management.base.CommandError as err_obj:
+            print('> Failed to load D3M config.\n%s' % err_obj)
         return
 
-    try:
-        management.call_command('load_config', d3m_data_dir)
-    except management.base.CommandError as err_obj:
-        print('> Failed to load D3M config.\n%s' % err_obj)
+    print('(2) Attempt to load 2019 config from environment variables')
+
+
+    from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
+    loader = EnvConfigLoader.run_loader_from_env()
+    if loader.has_error():
+        print('Failed: %s' % loader.get_error_message())
+    else:
+        d3m_config = loader.get_d3m_config()
+        print('Success! New config [id:%s] %s' % \
+                (d3m_config.id, d3m_config.name))
 
 
 @task
 def load_d3m_config(config_data_dir):
-    """Load D3M config file, saving it as the default D3MConfiguration object.  Pass the config file path: fab load_d3m_config:(path to data dir)"""
+    """1/28/19 Create a new config. Pass the input directory path: fab load_d3m_config:(path to data dir)"""
+
     from django.core import management
 
     try:
-        management.call_command('load_config', config_data_dir)
+        management.call_command('load_config_by_data_dir', config_data_dir)
         return True
     except management.base.CommandError as err_obj:
         print('> Failed to load D3M config.\n%s' % err_obj)
         return False
-
+    
 
 @task
 def stop_ta2_server():

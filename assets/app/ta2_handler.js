@@ -4,6 +4,7 @@ Steps for GetSearchSolutionsResults
 
 
 */
+import {alertError} from "./app";
 
 export async function makeGetSearchSolutionsRequest(searchId){
   console.log('makeGetSearchSolutionsRequest 1');
@@ -13,11 +14,11 @@ export async function makeGetSearchSolutionsRequest(searchId){
   console.log('makeGetSearchSolutionsRequest 2');
 
     if (!res2.success){
-        alert('Failed to get GetSearchSolutionsResults: ' + res2.message);
+        alertError('Failed to get GetSearchSolutionsResults: ' + res2.message);
         estimateLadda.stop();
         return;
     }else if (res2.data.is_error){
-        alert('Error with GetSearchSolutionsResults: ' + res2.data.user_msg);
+        alertError('Error with GetSearchSolutionsResults: ' + res2.data.user_msg);
         estimateLadda.stop();
         return;
     }

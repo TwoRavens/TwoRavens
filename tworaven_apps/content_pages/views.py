@@ -12,9 +12,11 @@ from tworaven_apps.utils.view_helper import \
      get_json_success)
 
 from tworaven_apps.configurations.models import AppConfiguration
-from tworaven_apps.configurations.utils import get_latest_d3m_config
 from tworaven_apps.utils.view_helper import get_session_key
 from tworaven_apps.ta2_interfaces.grpc_util import TA3TA2Util
+from tworaven_apps.user_workspaces.utils import \
+    (get_latest_d3m_user_config_by_request,)
+
 
 def view_pebbles_home(request):
     """Serve up the workspace, the current home page.
@@ -29,8 +31,8 @@ def view_pebbles_home(request):
     #
     if app_config.is_d3m_domain():
         # (1) Is there a valid D3M config?
-        d3m_config = get_latest_d3m_config()
-        if not d3m_config:
+        d3m_config_info = get_latest_d3m_user_config_by_request(request)
+        if not d3m_config_info.success:
             return HttpResponseRedirect(\
                     reverse('view_d3m_config_error'))
 
@@ -52,7 +54,11 @@ def view_pebbles_home(request):
                  app_config=app_config.convert_to_dict(),
                  TA2_STATIC_TEST_MODE=settings.TA2_STATIC_TEST_MODE,
                  TA2_TEST_SERVER_URL=settings.TA2_TEST_SERVER_URL,
-                 TA3_GRPC_USER_AGENT=settings.TA3_GRPC_USER_AGENT, TA3TA2_API_VERSION=TA3TA2Util.get_api_version())
+                 TA3_GRPC_USER_AGENT=settings.TA3_GRPC_USER_AGENT, TA3TA2_API_VERSION=TA3TA2Util.get_api_version(),
+                 WEBSOCKET_PREFIX=settings.WEBSOCKET_PREFIX)
+
+    #print('-' * 40)
+    #print(dinfo['app_config'])
 
     return render(request,
                   'index.html',
@@ -106,8 +112,8 @@ def view_d3m_config_error(request):
 
     # and (b) not D3M config info is in the db
     #
-    d3m_config = get_latest_d3m_config()
-    if d3m_config:
+    d3m_config_info = get_latest_d3m_user_config_by_request(request)
+    if d3m_config_info.success:
         return HttpResponseRedirect(reverse('home'))
 
     dinfo = dict(title='D3M configuration error')

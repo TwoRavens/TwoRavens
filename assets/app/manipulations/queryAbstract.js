@@ -2,7 +2,7 @@ import m from "mithril";
 
 // scope creep
 import * as eventdata from "../eventdata/eventdata";
-import {menu} from "./manipulate";
+import {alertError, alertLog} from "../app";
 
 // constraint trees used for subset and aggregate
 
@@ -96,13 +96,13 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
 
     // Don't add an empty constraint
     if (Object.keys(abstractBranch).length === 0) {
-        alert("No options have been selected. Please make a selection.");
+        alertError("No options have been selected. Please make a selection.");
         return false;
     }
 
     // Don't add an invalid constraint
     if ('error' in abstractBranch) {
-        alert(abstractBranch.error);
+        alertError(abstractBranch.error);
         return false;
     }
 
@@ -159,7 +159,7 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
             accumulator.formatTarget === abstractBranch.formatTarget);
 
         if (duplicate !== -1) {
-            alert('Combined new selections with an existing event measure.');
+            alertLog('Combined new selections with an existing event measure.');
             let colNames = new Set(step.measuresAccum[duplicate].children.map(child => child.name));
 
             step.measuresAccum[duplicate].children = [
@@ -169,6 +169,10 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
         }
         else step.measuresAccum.push(abstractBranch);
     }
+
+    if (step.type === 'imputation')
+        step.imputations.push(abstractBranch);
+
     return true;
 }
 
@@ -243,6 +247,32 @@ function makeAbstractBranch(step, preferences, metadata, name) {
             variableDefault: menuPreferences.variableDefault, // default value of labels variable
             variableIndicator: menuPreferences.variableIndicator, // name of column of variable being labeled
             indicators, values
+        }
+    }
+
+    if (step.type === 'imputation') {
+        let branch = {
+            id: String(step.imputationId++),
+            imputationMode: preferences.imputationMode,
+            nullValue: preferences.nullValueType === 'numeric'
+                ? parseFloat(preferences.nullValue) : preferences.nullValue,
+            nullValueType: preferences.nullValueType
+        };
+
+        if (preferences.imputationMode === 'Delete') return Object.assign(branch, {
+            variables: preferences.selectedVariables
+        });
+
+        if (preferences.imputationMode === 'Replace') {
+            Object.assign(branch, {
+                replacementValues: preferences.getReplacementValue(preferences),
+                replacementMode: preferences.replacementMode
+            });
+
+            if (preferences.replacementMode === 'Custom')
+                branch.customValueType = preferences.customValueType;
+
+            return branch;
         }
     }
 

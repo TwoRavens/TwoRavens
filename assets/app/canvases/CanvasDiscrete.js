@@ -5,6 +5,9 @@ import ButtonRadio from "../../common/views/ButtonRadio";
 import {alignmentData, formattingData} from "../app";
 import TextField from "../../common/views/TextField";
 
+// the text that separates any two observations in the manual selection text field
+let delimiter = ' ';
+
 export default class CanvasDiscrete {
     view(vnode) {
         let {mode, data, metadata, preferences, formats, alignments} = vnode.attrs;
@@ -21,6 +24,8 @@ export default class CanvasDiscrete {
 
         preferences['format'] = preferences['format'] || format;
         preferences['selections'] = preferences['selections'] || new Set();
+
+        preferences['selections_temp'] = preferences['selections_temp'] || '';
 
         if (data.length === 0) return 'No data from "' + masterColumn + '" is matched.';
         let allSelected = {};
@@ -131,7 +136,7 @@ export default class CanvasDiscrete {
                         margin: {top: 10, right: 30, bottom: 50, left: maxCharacters * 6 + 20},
                         data: plotData,
                         callbackBar: (bar) => {
-                            bar.key = typedLookup[bar.key] || bar.key;
+                            bar.key = typedLookup[bar.key];
 
                             let target_state = bar.class === 'bar-some' || bar.class === 'bar';
 
@@ -144,6 +149,8 @@ export default class CanvasDiscrete {
                             } else target_state
                                 ? preferences['selections'].add(bar.key)
                                 : preferences['selections'].delete(bar.key);
+
+                            preferences['selections_temp'] = [...preferences['selections']].join(delimiter)
                         },
                         orient: 'vertical',
                         yLabel: 'Density'
@@ -176,8 +183,12 @@ export default class CanvasDiscrete {
             m(TextField, {
                 placeholder: 'Enter variable values',
                 style: {display: 'inline', width: 'calc(100% - 12em)', 'margin-left': '2em'},
-                value: [...preferences.selections].join(' ') + ' ',
-                oninput: value => preferences.selections = new Set(value.split(' ').map(value => typedLookup[value] || value))
+                value: preferences['selections_temp'],
+                oninput: value => {
+                    preferences['selections_temp'] = value;
+                    preferences['selections'] = new Set(value.split(delimiter)
+                        .map(value => typedLookup[value]).filter(value => value in typedLookup))
+                }
             }),
 
             mode === 'aggregate' && 'formats' in metadata && metadata['formats'].length > 1 && m(ButtonRadio, {

@@ -12,7 +12,8 @@ from tworaven_apps.utils.view_helper import \
      get_json_success,
      get_common_view_info)
 from tworaven_apps.utils.json_helper import format_pretty_from_dict, json_comply
-
+from tworaven_apps.utils.view_helper import \
+    (get_authenticated_user,)
 from tworaven_apps.eventdata_queries.event_job_util import EventJobUtil
 from tworaven_apps.eventdata_queries.forms import \
     (EventDataSavedQueryForm,
@@ -427,6 +428,12 @@ def api_get_data(request):
     if not success:
         return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
 
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    user_obj = user_info.result_obj
+
     # check if data is valid
     try:
         form = EventDataGetManipulationForm(json_req_obj)
@@ -453,12 +460,21 @@ def api_get_data(request):
     if not success:
         return JsonResponse(get_json_error(results_obj_err))
 
-    if json_req_obj.get('export', False):
-        success, results_obj_err = EventJobUtil.export_dataset(
+    if json_req_obj.get('export') == 'dataset':
+        success, results_obj_err = EventJobUtil.export_dataset(\
+            user_obj,
             settings.MONGO_COLLECTION_PREFIX + json_req_obj['collection_name'],
             results_obj_err)
 
-    return JsonResponse({'success': success, 'data': json_comply(results_obj_err)} if success else get_json_error(results_obj_err))
+    if json_req_obj.get('export') == 'problem':
+        success, results_obj_err = EventJobUtil.export_problem(\
+            user_obj,
+            results_obj_err,
+            json.loads(json_req_obj['metadata']))
+
+    return JsonResponse(\
+        {'success': success,
+         'data': json_comply(results_obj_err)} if success else get_json_error(results_obj_err))
 
 
 @csrf_exempt

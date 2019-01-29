@@ -24,8 +24,10 @@ class D3MConfigurationAdmin(admin.ModelAdmin):
     list_editable = ('is_default',)
     list_display = ('name',
                     'is_default',
+                    'is_user_config',
                     'dataset_schema',
                     'problem_schema',
+                    'd3m_input_dir',
                     'training_data_root',
                     'modified',
                     'created',)

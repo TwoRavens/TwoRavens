@@ -27,6 +27,7 @@ import Footer from '../common/views/Footer';
 import Header from '../common/views/Header';
 import MenuTabbed from '../common/views/MenuTabbed';
 import Modal from '../common/views/Modal';
+import ModalVanilla from "../common/views/ModalVanilla";
 import Panel from '../common/views/Panel';
 import PanelList from '../common/views/PanelList';
 import Peek from '../common/views/Peek';
@@ -37,16 +38,22 @@ import TextField from '../common/views/TextField';
 import MenuHeaders from "../common/views/MenuHeaders";
 import Subpanel2 from '../common/views/Subpanel';
 
+import Datamart, {ModalDatamart} from "../common/TwoRavens/Datamart";
+
 // EVENTDATA
 import Body_EventData from './eventdata/Body_EventData';
+import ConfusionMatrix from "./views/ConfusionMatrix"
 
-export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
-export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
-export let link = (url) => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
+import vegaEmbed from "vega-embed";
+import PreprocessInfo from "./PreprocessInfo";
+
+export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
+export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
+export let link = url => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
 
 
-// adding problem_id and version for Preprocess API part
-let problem_id = 1;
+// adding problemID and version for Preprocess API part
+let problemID = 1;
 let version = 1;
 let nodesExplore = [];
 
@@ -60,42 +67,42 @@ function leftpanel(mode) {
 
     let transformVars = [...manipulate.getTransformVariables(manipulate.getProblemPipeline(app.selectedProblem) || [])];
 
+    let allMeaningful = app.disco.every(prob => prob.meaningful);
     let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
-        onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked)),
-        checked: app.disco.length === app.checkedDiscoveryProblems.size,
-        title: `mark ${app.disco.length === app.checkedDiscoveryProblems.size ? 'no' : 'all'} problems as meaningful`
+        onclick: m.withAttr("checked", app.setCheckedDiscoveryProblem),
+        checked: allMeaningful,
+        title: `mark ${allMeaningful ? 'no' : 'all'} problems as meaningful`
     });
 
-    let discoveryHeaders = [
-        'problem_id',
+    let discoveryHeaders = app.selectedProblem && [
+        'problemID',
         m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
-        app.disco.some(prob => prob.system === 'user') ? 'User' : '',
-        'Target', 'Predictors',
-        app.disco.some(prob => prob.model !== 'modelUndefined') ? 'Model' : '',
+        'User', 'Target', 'Predictors',
+        [...app.disco, app.selectedProblem].some(prob => prob.model !== 'modelUndefined') ? 'Model' : '',
         'Task',
-        app.disco.some(prob => prob.subTask !== 'taskSubtypeUndefined') ? 'Subtask' : '',
+        [...app.disco, app.selectedProblem].some(prob => prob.subTask !== 'taskSubtypeUndefined') ? 'Subtask' : '',
         'Metric', 'Manipulations'
     ];
 
     let formatProblem = problem => [
-        problem.problem_id, // this is masked as the UID
+        problem.problemID, // this is masked as the UID
         m('input[type=checkbox][style=width:100%]', {
-            onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
-            checked: app.checkedDiscoveryProblems.has(problem.problem_id),
-            title: `mark ${problem.problem_id} as meaningful`
+            onclick: m.withAttr("checked", checked => app.setCheckedDiscoveryProblem(checked, problem.problemID)),
+            checked: problem.meaningful,
+            title: `mark ${problem.problemID} as meaningful`
         }),
         problem.system === 'user' && m('div[title="user created problem"]', glyph('user')),
         problem.target,
         problem.predictors.join(', '),
-        problem.model === 'modelUndefined' ? '' : problem.model,
+        problem.model === 'modelUndefined' || !problem.model ? '' : problem.model,
         problem.task,
         problem.subTask === 'taskSubtypeUndefined' ? '' : problem.subTask, // ignore taskSubtypeUndefined
         problem.metric,
         // the view manipulations button
-        (!!problem.subsetObs || !!problem.transform || (app.manipulations[problem.problem_id] || []).length !== 0) && m(
+        (!!problem.subsetObs || !!problem.transform || (app.manipulations[problem.problemID] || []).length !== 0) && m(
             'div[style=width:100%;text-align:center]', m(Button, {
                 disabled: problem === app.selectedProblem && app.rightTab === 'Manipulate' && common.panelOpen['right'],
-                title: `view manipulations for ${problem.problem_id}`,
+                title: `view manipulations for ${problem.problemID}`,
                 onclick: () => {
                     app.setRightTab('Manipulate');
                     common.setPanelOpen('right');
@@ -125,63 +132,74 @@ function leftpanel(mode) {
         callback: app.setLeftTab,
         sections: [
             {
+                value: app.preprocessTabName,
+                id: 'preprocessInfoTab',
+                display: 'none',
+                title: 'Data Log',
+                contents: m(PreprocessInfo,{})
+            },
+            {
                 value: 'Variables',
                 title: 'Click variable name to add or remove the variable pebble from the modeling space.',
-                contents: app.is_model_mode && app.rightTab === 'Manipulate' && manipulate.constraintMenu ? [
-                    m('h5', 'Constraint Type'),
-                    manipulate.varList()
-                ] : [
-                    m(TextField, {
-                        id: 'searchVar',
-                        placeholder: 'Search variables and labels',
-                        oninput: app.searchVariables
-                    }),
-                    m(PanelList, {
-                        id: 'varList',
-                        items: app.valueKey.concat(transformVars),
-                        colors: {
-                            [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
-                            [app.hexToRgba(common.gr1Color, .25)]: app.zparams.zgroup1,
-                            [app.hexToRgba(common.gr2Color)]: app.zparams.zgroup2,
-                            [app.hexToRgba(common.taggedColor)]: app.zparams.znom,
-                            [app.hexToRgba(common.taggedColor)]: app.is_explore_mode ? [] : app.zparams.zdv
-                        },
-                        classes: {
-                            'item-dependent': app.is_explore_mode ? [] : app.zparams.zdv,
-                            'item-nominal': app.zparams.znom,
-                            'item-bordered': app.matchedVariables
-                        },
-                        callback: x => app.clickVar(x, nodes),
-                        popup: variable => app.popoverContent(app.findNode(variable)),
-                        attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
-                        attrsAll: {style: {height: 'calc(100% - 90px)', overflow: 'auto'}}
-                    }),
-                    m(Button, {
-                        id: 'btnCreateVariable',
-                        style: {width: '100%', 'margin-top': '10px'},
-                        onclick: async () => {
-                            if (!app.selectedProblem) await app.addProblemFromForceDiagram();
-                            let problemPipeline = manipulate.getProblemPipeline(app.selectedProblem);
-                            if ((problemPipeline[problemPipeline.length - 1] || {}).type !== 'transform') {
-                                problemPipeline.push({
+                contents: app.is_model_mode && app.rightTab === 'Manipulate' && manipulate.constraintMenu
+                    ? manipulate.varList()
+                    : [
+                        m(TextField, {
+                            id: 'searchVar',
+                            placeholder: 'Search variables and labels',
+                            oninput: app.searchVariables
+                        }),
+                        m(PanelList, {
+                            id: 'varList',
+                            items: app.valueKey.concat(transformVars),
+                            colors: {
+                                [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
+                                [app.hexToRgba(common.gr1Color, .25)]: app.zparams.zgroup1,
+                                [app.hexToRgba(common.gr2Color)]: app.zparams.zgroup2,
+                                [app.hexToRgba(common.taggedColor)]: app.zparams.znom,
+                                [app.hexToRgba(common.taggedColor)]: app.is_explore_mode ? [] : app.zparams.zdv
+                            },
+                            classes: {
+                                'item-dependent': app.is_explore_mode ? [] : app.zparams.zdv,
+                                'item-nominal': app.zparams.znom,
+                                'item-bordered': app.matchedVariables
+                            },
+                            callback: x => {
+                                app.clickVar(x, nodes);
+                                app.selectedProblem.predictors = [...app.zparams.zgroup1];
+                                app.selectedProblem.target = app.zparams.zdv[0];
+                            },
+                            popup: variable => app.popoverContent(app.findNode(variable)),
+                            attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
+                            attrsAll: {style: {height: 'calc(100% - 90px)', overflow: 'auto'}}
+                        }),
+                        m(Button, {
+                            id: 'btnCreateVariable',
+                            style: {width: '100%', 'margin-top': '10px'},
+                            onclick: async () => {
+                                if (!app.selectedProblem) await app.addProblemFromForceDiagram();
+                                let problemPipeline = manipulate.getProblemPipeline(app.selectedProblem);
+                                if ((problemPipeline[problemPipeline.length - 1] || {}).type !== 'transform') {
+                                    problemPipeline.push({
+                                        type: 'transform',
+                                        id: 'transform ' + problemPipeline.length,
+                                        transforms: [],
+                                        expansions: [],
+                                        binnings: [],
+                                        manual: []
+                                    })
+                                }
+                                app.setRightTab('Manipulate');
+                                manipulate.setConstraintMenu({
                                     type: 'transform',
-                                    id: 'transform ' + problemPipeline.length,
-                                    transforms: [],
-                                    expansions: [],
-                                    binnings: [],
-                                    manual: []
-                                })
+                                    step: problemPipeline[problemPipeline.length - 1],
+                                    pipeline: manipulate.getPipeline(app.selectedProblem)
+                                });
+                                common.setPanelOpen('left');
+                                app.setLeftTab('Variables');
                             }
-                            app.setRightTab('Manipulate');
-                            manipulate.setConstraintMenu({
-                                type: 'transform',
-                                step: problemPipeline[problemPipeline.length - 1],
-                                pipeline: manipulate.getPipeline(app.selectedProblem)});
-                            common.setPanelOpen('left');
-                            app.setLeftTab('Variables');
-                        }
-                    }, 'Create New Variable'),
-                ]
+                        }, 'Create New Variable'),
+                    ]
             },
             {
                 value: 'Discovery',
@@ -195,27 +213,12 @@ function leftpanel(mode) {
                                 'max-width': (window.innerWidth - 90) + 'px'
                             }
                         },
-                        app.selectedProblem !== undefined && [
+                        app.selectedProblem && [
                             m('h4', [
                                 'Current Problem',
-                                m(`div#deselectProblem`, {
-                                    onclick: () => {
-                                        app.setSelectedProblem(undefined);
-                                        app.unerase();
-                                    },
-                                    title: 'deselect problem',
-                                    style: {
-                                        display: 'inline-block',
-                                        'margin-right': '1em',
-                                        transform: 'scale(1.5, 1.5)',
-                                        float: 'right',
-                                        'font-weight': 'bold',
-                                        'line-height': '14px'
-                                    }
-                                }, '×'),
-                                app.selectedProblem.pending && m(Button, {
+                                m(Button, {
                                     id: 'saveProblemBtn',
-                                    onclick: () => delete app.selectedProblem['pending'],
+                                    onclick: () => app.disco.unshift(app.getProblemCopy(app.selectedProblem)),
                                     title: 'save problem',
                                     style: {float: 'right', margin: '-.5em 1em 0 0'}
                                 }, 'Save Problem')
@@ -224,46 +227,41 @@ function leftpanel(mode) {
                                 id: 'discoveryTableManipulations',
                                 headers: discoveryHeaders,
                                 data: [formatProblem(app.selectedProblem)],
-                                activeRow: (app.selectedProblem || {}).problem_id,
+                                activeRow: app.selectedProblem.problemID,
                                 showUID: false,
                                 abbreviation: 40
                             }),
-                            m('h4', 'All Problems')
+                            m('h4', 'All Problems - Results Problem Highlighted')
                         ],
-                        m(Table, {
+                        app.selectedProblem && m(Table, {
                             id: 'discoveryTable',
                             headers: discoveryHeaders,
                             data: [ // I would sort system via (a, b) => a.system === b.system ? 0 : a.system === 'user' ? -1 : 1, but javascript sort isn't stable
                                 ...app.disco.filter(prob => prob.system === 'user'),
                                 ...app.disco.filter(prob => prob.system !== 'user')
-                            ].filter(prob => !prob.pending).map(formatProblem),
-                            activeRow: (app.selectedProblem || {}).problem_id,
-                            onclick: app.discoveryClick,
+                            ].map(formatProblem),
+                            activeRow: (app.resultsProblem || {}).problemID,
+                            onclick: problemID => app.setSelectedProblem(
+                                app.getProblemCopy(app.disco.find(prob => prob.problemID === problemID))),
                             showUID: false,
                             abbreviation: 40,
                             sortable: true
                         })),
-                    m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
-                        value: app.selectedProblem === undefined ? '' : app.selectedProblem.description
+                    m(TextField, {
+                        id: 'discoveryInput',
+                        textarea: true,
+                        style: {width: '100%', height: 'calc(20% - 50px)', overflow: 'auto'},
+                        value: (app.selectedProblem || {}).description || '',
+                        oninput: value => app.selectedProblem.description = value,
+                        onblur: value => app.selectedProblem.description = value
                     }),
                     m(Button, {
                         id: 'btnDelete',
                         disabled: !app.selectedProblem || app.selectedProblem.system === 'auto',
                         style: 'float:right',
-                        onclick: _ => {
-                            setTimeout(_ => {
-                                let deleteProbleAPI = app.deleteProblem(problem_id, version, 'id_000003');
-                                console.log("have to delete this ", app.selectedProblem);
-                                app.deleteFromDisc(app.selectedProblem)
-
-                            }, 500);
-                        }, title: 'Delete the user created problem'
-                    }, 'Delete Problem.'),
-                    m(PanelButton, {
-                        id: 'btnSave',
-                        onclick: app.saveDisc,
-                        title: 'Saves your revised problem description.'
-                    }, 'Save Desc.'),
+                        onclick: () => setTimeout(() => app.deleteProblem(problemID, version, 'id_000003'), 500),
+                        title: 'Delete the user created problem'
+                    }, 'Delete Problem'),
                     m(PanelButton, {
                         id: 'btnSubmitDisc',
                         classes: 'btn-success',
@@ -272,6 +270,15 @@ function leftpanel(mode) {
                         title: 'Submit all checked discovered problems.'
                     }, 'Submit Disc. Probs.')
                 ]
+            },
+            {
+                value: 'Augment',
+                contents: m(Datamart, {
+                    preferences: app.datamartPreferences,
+                    dataPath: app.zparams.zd3mdata,
+                    endpoint: app.datamartURL,
+                    labelWidth: '10em'
+                })
             },
             {
                 value: 'Summary',
@@ -299,8 +306,161 @@ function rightpanel(mode) {
 
     // mode == null (model mode)
 
+    let sections = [];
+
+    // PROBLEM TAB
+    app.selectedProblem && sections.push({
+        value: 'Problem',
+        idSuffix: 'Type',
+        contents: [
+            m(`button#btnLock.btn.btn-default`, {
+                class: app.lockToggle ? 'active' : '',
+                onclick: () => app.setLockToggle(!app.lockToggle),
+                title: 'Lock selection of problem description',
+                style: 'float: right',
+            }, glyph(app.lockToggle ? 'lock' : 'pencil', true)),
+            m('', {style: 'float: left'},
+                m(Dropdown, {
+                    id: 'taskType',
+                    items: Object.keys(app.d3mTaskType),
+                    activeItem: app.selectedProblem.task,
+                    onclickChild: child => {
+                        app.selectedProblem.task = child;
+                        app.selectedProblem.model = 'modelUndefined';
+                        // will trigger the call to solver, if a menu that needs that info is shown
+                        if (app.selectedProblem) app.setSolverPending(true);
+                    },
+                    style: {'margin-bottom': '1em'},
+                    disabled: app.lockToggle
+                }),
+                m(Dropdown, {
+                    id: 'taskSubType',
+                    items: Object.keys(app.d3mTaskSubtype),
+                    activeItem: app.selectedProblem.subTask,
+                    onclickChild: child => {
+                        app.selectedProblem.subTask = child;
+                        // will trigger the call to solver, if a menu that needs that info is shown
+                        if (app.selectedProblem) app.setSolverPending(true);
+                    },
+                    style: {'margin-bottom': '1em'},
+                    disabled: app.lockToggle
+                }),
+                m(Dropdown, {
+                    id: 'performanceMetrics',
+                    items: Object.keys(app.d3mMetrics),
+                    activeItem: app.selectedProblem.metric,
+                    onclickChild: child => {
+                        app.selectedProblem.metric = child;
+                        // will trigger the call to solver, if a menu that needs that info is shown
+                        if (app.selectedProblem) app.setSolverPending(true);
+                    },
+                    style: {'margin-bottom': '1em'},
+                    disabled: app.lockToggle
+                }),
+                app.twoRavensModelTypes[app.selectedProblem.task] && m(Dropdown, {
+                    id: 'modelType',
+                    items: app.twoRavensModelTypes[app.selectedProblem.task],
+                    activeItem: app.selectedProblem.model,
+                    onclickChild: child => {
+                        app.selectedProblem.model = child;
+                        // will trigger the call to solver, if a menu that needs that info is shown
+                        if (app.selectedProblem) app.setSolverPending(true);
+                    },
+                    style: {'margin-bottom': '1em'},
+                    disabled: app.lockToggle
+                }),
+            )
+        ]
+    });
+
+    // MANIPULATE TAB
+    app.selectedProblem && sections.push({
+        value: 'Manipulate',
+        title: 'Apply transformations and subsets to a problem',
+        contents: m(MenuHeaders, {
+            id: 'aggregateMenu',
+            attrsAll: {style: {height: '100%', overflow: 'auto'}},
+            sections: [
+                manipulate.getPipeline().length !== 0 && {
+                    value: 'Dataset Pipeline',
+                    contents: m(manipulate.PipelineFlowchart, {
+                        compoundPipeline: manipulate.getPipeline(),
+                        pipelineId: app.datadocument.about.datasetID,
+                        editable: false
+                    })
+                },
+                {
+                    value: 'Problem Pipeline',
+                    contents: [
+                        m(manipulate.PipelineFlowchart, {
+                            compoundPipeline: manipulate.getPipeline(app.selectedProblem),
+                            pipelineId: app.selectedProblem.problemID,
+                            editable: true,
+                            aggregate: false
+                        }),
+                        app.nodes.filter(node => node.nature === 'nominal').length !== 0 && m(Flowchart, {
+                            attrsAll: {style: {height: 'calc(100% - 87px)', overflow: 'auto'}},
+                            labelWidth: '5em',
+                            steps: [{
+                                key: 'Nominal',
+                                color: common.nomColor,
+                                content: m('div', {style: {'text-align': 'left'}},
+                                    m(ListTags, {
+                                        tags: app.nodes
+                                            .filter(node => node.nature === 'nominal')
+                                            .map(node => node.name),
+                                        ondelete: name => {
+                                            app.setColors(app.nodes.find(node => node.name === name), app.nomColor);
+                                            app.restart();
+                                        }
+                                    }))
+                            }]
+                        })
+                    ]
+                },
+            ]
+        })
+    });
+
+    // RESULTS TAB
     // reload the results if on the results tab and there are pending changes
-    if (app.rightTab === 'Results' && app.solverPending) app.modelSelectionResults(app.selectedProblem);
+    // Automatic reloading only when running in TwoRavens mode
+    if (!IS_D3M_DOMAIN && app.rightTab === 'Results' && app.solverPending) app.callSolver(app.selectedProblem);
+
+    let plotScatter = ({state, attrs, dom}) => {
+        let xData = {};
+        let yData = {};
+
+        [...app.selectedPipelines].forEach((pipelineID) => {
+            let xDataGroup = app.pipelineAdapter[pipelineID].actualValues;
+            let yDataGroup = app.pipelineAdapter[pipelineID].fittedValues;
+
+            if (xDataGroup && yDataGroup) {
+                Object.assign(xData, {[pipelineID]: xDataGroup});
+                Object.assign(yData, {[pipelineID]: yDataGroup})
+            }
+        });
+
+        vegaEmbed(dom, plots.vegaScatter(
+            xData, yData,
+            "Actuals", "Predicted",
+            "Actuals vs. Predicted: Pipeline " + app.resultsProblem.problemID,
+            "pipeline"
+        ), {actions: false, width: dom.offsetWidth, height: dom.offsetHeight});
+    };
+
+    let firstSelectedPipelineID = app.selectedPipelines.values().next().value;
+
+    let confusionData = [];
+    let showPredictionSummary = (app.selectedProblem && common.panelOpen['right'] && app.rightTab === 'Results'
+                                 && app.selectedResultsMenu === 'Prediction Summary' && firstSelectedPipelineID in app.pipelineAdapter);
+    if (showPredictionSummary && app.selectedProblem.task === 'classification')
+        confusionData = [...app.selectedPipelines]
+            .map(pipelineID => Object.assign({pipelineID}, app.generateConfusionData(
+                app.pipelineAdapter[pipelineID].actualValues,
+                app.pipelineAdapter[pipelineID].fittedValues, app.confusionFactor) || {}))
+            .filter(instance => 'data' in instance)
+            .sort((a, b) => app.sortPipelineTable(app.pipelineAdapter[a.pipelineID].score, app.pipelineAdapter[b.pipelineID].score));
 
     // only called if the pipeline flowchart is rendered
     function pipelineFlowchartPrep(pipeline) {
@@ -348,291 +508,262 @@ function rightpanel(mode) {
         ];
     }
 
-    let sections = [
-        app.selectedProblem && {
-            value: 'Problem',
-            idSuffix: 'Type',
-            contents: [
-                m(`button#btnLock.btn.btn-default`, {
-                    class: app.lockToggle ? 'active' : '',
-                    onclick: () => app.setLockToggle(!app.lockToggle),
-                    title: 'Lock selection of problem description',
-                    style: 'float: right',
-                }, glyph(app.lockToggle ? 'lock' : 'pencil', true)),
-                m('', {style: 'float: left'},
-                    m(Dropdown, {
-                        id: 'taskType',
-                        items: Object.keys(app.d3mTaskType),
-                        activeItem: app.selectedProblem.task,
-                        onclickChild: child => {
-                            if (app.selectedProblem.system === 'auto') {
-                                let problemCopy = app.getProblemCopy(app.selectedProblem);
-                                problemCopy.pending = true;
-                                app.disco.push(problemCopy);
-                                app.setSelectedProblem(problemCopy);
-                                app.setLeftTab('Discovery');
-                            }
-                            app.selectedProblem.task = child;
-                            app.selectedProblem.model = 'modelUndefined';
-                            // will trigger the call to solver, if a menu that needs that info is shown
-                            if (app.selectedProblem) app.setSolverPending(true);
-                        },
-                        style: {'margin-bottom': '1em'},
-                        disabled: app.lockToggle
-                    }),
-                    m(Dropdown, {
-                        id: 'taskSubType',
-                        items: Object.keys(app.d3mTaskSubtype),
-                        activeItem: app.selectedProblem.subTask,
-                        onclickChild: child => {
-                            if (app.selectedProblem.system === 'auto') {
-                                let problemCopy = app.getProblemCopy(app.selectedProblem);
-                                problemCopy.pending = true;
-                                app.disco.push(problemCopy);
-                                app.setSelectedProblem(problemCopy);
-                                app.setLeftTab('Discovery');
-                            }
-                            app.selectedProblem.subTask = child;
-                            // will trigger the call to solver, if a menu that needs that info is shown
-                            if (app.selectedProblem) app.setSolverPending(true);
-                        },
-                        style: {'margin-bottom': '1em'},
-                        disabled: app.lockToggle
-                    }),
-                    m(Dropdown, {
-                        id: 'performanceMetrics',
-                        items: Object.keys(app.d3mMetrics),
-                        activeItem: app.selectedProblem.metric,
-                        onclickChild: child => {
-                            if (app.selectedProblem.system === 'auto') {
-                                let problemCopy = app.getProblemCopy(app.selectedProblem);
-                                problemCopy.pending = true;
-                                app.disco.push(problemCopy);
-                                app.setSelectedProblem(problemCopy);
-                                app.setLeftTab('Discovery');
-                            }
-                            app.selectedProblem.metric = child;
-                            // will trigger the call to solver, if a menu that needs that info is shown
-                            if (app.selectedProblem) app.setSolverPending(true);
-                        },
-                        style: {'margin-bottom': '1em'},
-                        disabled: app.lockToggle
-                    }),
-                    app.twoRavensModelTypes[app.selectedProblem.task] && m(Dropdown, {
-                        id: 'modelType',
-                        items: app.twoRavensModelTypes[app.selectedProblem.task],
-                        activeItem: app.selectedProblem.model,
-                        onclickChild: child => {
-                            if (app.selectedProblem.system === 'auto') {
-                                let problemCopy = app.getProblemCopy(app.selectedProblem);
-                                problemCopy.pending = true;
-                                app.disco.push(problemCopy);
-                                app.setSelectedProblem(problemCopy);
-                                app.setLeftTab('Discovery');
-                            }
-                            app.selectedProblem.model = child;
-                            // will trigger the call to solver, if a menu that needs that info is shown
-                            if (app.selectedProblem) app.setSolverPending(true);
-                        },
-                        style: {'margin-bottom': '1em'},
-                        disabled: app.lockToggle
-                    }),
-                )
-            ]
-        },
-        app.selectedProblem && {
-            value: 'Manipulate',
-            title: 'Apply transformations and subsets to a problem',
-            contents: m(MenuHeaders, {
-                id: 'aggregateMenu',
-                attrsAll: {style: {height: '100%', overflow: 'auto'}},
-                sections: [
-                    manipulate.getPipeline().length !== 0 && {
-                        value: 'Dataset Pipeline',
-                        contents: m(manipulate.PipelineFlowchart, {
-                            compoundPipeline: manipulate.getPipeline(),
-                            pipelineId: app.configurations.name,
-                            editable: false
-                        })
-                    },
-                    {
-                        value: 'Problem Pipeline',
-                        contents: [
-                            m(manipulate.PipelineFlowchart, {
-                                compoundPipeline: manipulate.getPipeline(app.selectedProblem),
-                                pipelineId: app.selectedProblem.problem_id,
-                                editable: true,
-                                aggregate: false
-                            }),
-                            app.nodes.filter(node => node.nature === 'nominal').length !== 0 && m(Flowchart, {
-                                attrsAll: {style: {height: 'calc(100% - 87px)', overflow: 'auto'}},
-                                labelWidth: '5em',
-                                steps: [{
-                                    key: 'Nominal',
-                                    color: common.nomColor,
-                                    content: m('div', {style: {'text-align': 'left'}},
-                                        m(ListTags, {
-                                            tags: app.nodes
-                                                .filter(node => node.nature === 'nominal')
-                                                .map(node => node.name),
-                                            ondelete: name => {
-                                                app.setColors(app.nodes.find(node => node.name === name), app.nomColor);
-                                                app.restart();
-                                            }
-                                        }))
-                                }]
-                            })
-                        ]
-                    },
-                ]
-            })
-        },
-        {
-            value: 'Results',
-            display: !app.swandive || IS_D3M_DOMAIN ? 'block' : 'none',
-            idSuffix: 'Setx',
-            contents: [
-                m('#setxRight[style=float: right; width: 23%; height: 100%; overflow:auto; margin-right: 1px]',
-                    app.selectedPipeline && [
-                        bold('Score Metric: '), app.d3mProblemDescription.performanceMetrics[0].metric, m('br'),
-                        app.resultsMetricDescription
-                    ],
-                    app.pipelineTable.length !== 0 && m(Table, {
-                        id: 'pipelineTable',
-                        headers: app.pipelineHeader,
-                        data: app.pipelineTable,
-                        activeRow: app.selectedPipeline,
-                        onclick: app.setSelectedPipeline,
-                        abbreviation: 20,
-                        tableTags: m('colgroup',
-                            m('col', {span: 1}),
-                            m('col', {span: 1, width: '30%'}))
-                    })),
+    sections.push({
+        value: 'Results',
+        display: !app.swandive || IS_D3M_DOMAIN ? 'block' : 'none',
+        idSuffix: 'Setx',
+        contents: [
+            Object.keys(app.pipelineAdapter).length === 0 && m('#loading.loader', {
+                style: {
+                    margin: 'auto',
+                    position: 'relative',
+                    top: '40%',
+                    transform: 'translateY(-50%)'
+                }
+            }),
 
-                m(ButtonRadio, {
-                    id: 'resultsButtonBar',
-                    attrsAll: {style: {width: 'auto'}},
-                    attrsButtons: {class: ['btn-sm'], style: {width: 'auto'}},
-                    onclick: app.setSelectedResultsMenu,
-                    activeSection: app.selectedResultsMenu,
-                    sections: [
-                        {value: 'Prediction Summary', id: 'btnPredPlot'},
-                        {value: 'Generate New Predictions', id: 'btnGenPreds'},
-                        {value: 'Visualize Pipeline', id: 'btnVisPipe'},
-                        {value: 'Prediction Description', id: 'btnPredData'},
-                        {value: 'Solution Table', id: 'btnSolTable'}
-                    ]
-                }),
+            m('#resultsContent', {style: {display: Object.keys(app.pipelineAdapter).length === 0 ? 'none' : 'block', height: '100% '}},
+            m('#setxRight[style=float: right; width: 23%; height: 100%; overflow:auto; margin-right: 1px]',
+                m('div#modelComparisonOption',
+                    m('input#modelComparisonCheck[type=checkbox]', {
+                        onclick: m.withAttr("checked", app.setModelComparison),
+                        checked: app.modelComparison,
+                        style: {margin: '.25em'}
+                    }),
+                    m('label#modelComparisonLabel', {
+                        title: 'select multiple models to compare',
+                        style: {display: 'inline-block'}
+                    }, 'Model Comparison')
+                ),
+                app.selectedPipelines.size > 0 && [
+                    bold('Score Metric: '), app.d3mProblemDescription.performanceMetrics[0].metric, m('br'),
+                    (app.reverseSet.includes(app.d3mProblemDescription.performanceMetrics[0].metric)
+                        ? 'Smaller' : 'Larger') + ' numbers are better fits'
+                ],
+                m(Table, {
+                    id: 'pipelineTable',
+                    headers: ['PipelineID', 'Score'],
+                    data: Object.keys(app.pipelineAdapter)
+                        .filter(pipelineID => pipelineID !== 'rookpipe')
+                        .map(pipelineID => [pipelineID, app.pipelineAdapter[pipelineID].score]),
+                    sortHeader: 'Score',
+                    sortFunction: app.sortPipelineTable,
+                    activeRow: app.selectedPipelines,
+                    onclick: app.setSelectedPipeline,
+                    tableTags: m('colgroup',
+                        m('col', {span: 1}),
+                        m('col', {span: 1, width: '30%'}))
+                })),
+
+            m(ButtonRadio, {
+                id: 'resultsButtonBar',
+                attrsAll: {style: {width: 'auto'}},
+                attrsButtons: {class: ['btn-sm'], style: {width: 'auto'}},
+                onclick: app.setSelectedResultsMenu,
+                activeSection: app.selectedResultsMenu,
+                sections: [
+                    {value: 'Problem Description', id: 'btnPredData'},
+                    {value: 'Prediction Summary', id: 'btnPredPlot'},
+                    {value: 'Generate New Predictions', id: 'btnGenPreds', attrsInterface: {disabled: app.modelComparison || String(firstSelectedPipelineID).includes('raven')}},
+                    {value: 'Visualize Pipeline', id: 'btnVisPipe', attrsInterface: {disabled: app.modelComparison || String(firstSelectedPipelineID).includes('raven')}},
+                    {value: 'Solution Table', id: 'btnSolTable', attrsInterface: {disabled: app.modelComparison || !String(firstSelectedPipelineID).includes('raven')}}
+                ]
+            }),
+                app.resultsProblem && m(`div#problemDescription[style=display:${app.selectedResultsMenu === 'Problem Description' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%]`,
+
+                    m(Table, {
+                        headers: ['Variable', 'Data'],
+                        data: [
+                            ['Dependent Variable', app.resultsProblem.target],
+                            ['Predictors', app.resultsProblem.predictors],
+                            ['Description', app.resultsProblem.description],
+                            ['Task', app.resultsProblem.task],
+                            ['Model', app.resultsProblem.model]
+                        ],
+                        nest: true,
+                        attrsAll: {
+                            style: {
+                                width: 'calc(100% - 2em)',
+                                overflow: 'auto',
+                                border: '1px solid #ddd',
+                                margin: '1em',
+                                'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)'
+                            }
+                        }
+                    })
+                        // m('#setPredictionDataLeft[style=display:block; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white; padding : 1em; margin-top: 1em]')
+                ),
                 m(`div#predictionSummary[style=display:${app.selectedResultsMenu === 'Prediction Summary' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%]`,
                     m('#setxLeftPlot[style=float:left; background-color:white; overflow:auto;]'),
                     m('#setxLeft[style=display:none; float: left; overflow: auto; background-color: white]'),
+
+                    showPredictionSummary && app.selectedProblem.task === 'regression' && [...app.selectedPipelines].some(pipeID => app.pipelineAdapter[pipeID].fittedValues) && m('#resultsScatter', {
+                        oncreate(vnode) {
+                            plotScatter(vnode)
+                        },
+                        onupdate(vnode) {
+                            this.pipelinesShown = this.pipelinesShown || [];
+                            if (this.pipelinesShown.length !== app.selectedPipelines.size || this.pipelinesShown.some(a => !app.selectedPipelines.has(a))) {
+                                this.pipelinesShown = [...app.selectedPipelines];
+                                plotScatter(vnode);
+                            }
+                        },
+                        style: {width: '100%', height: 'calc(100% - 30px)'}
+                    }),
+
+                    confusionData.map((confusionInstance, i) => [
+                        i === 0 && m('div[style=margin-top:.5em]',
+                            m('label#confusionFactorLabel', 'Confusion Matrix Factor: '),
+                            m('[style=display:inline-block]', m(Dropdown, {
+                                id: 'confusionFactorDropdown',
+                                items: ['undefined', ...confusionInstance.allClasses],
+                                activeItem: app.confusionFactor,
+                                onclickChild: app.setConfusionFactor,
+                                style: {'margin-left': '1em'}
+                            }))),
+                        confusionInstance.data.length === 2 && m(Table, {
+                            id: 'resultsPerformanceTable',
+                            headers: ['metric', 'score'],
+                            data: app.generatePerformanceData(confusionInstance.data),
+                            attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
+                        }),
+                        confusionInstance.data.length < 100 ? m(ConfusionMatrix, Object.assign({}, confusionInstance, {
+                            id: 'resultsConfusionMatrixContainer' + confusionInstance.pipelineID,
+                            title: "Confusion Matrix: Pipeline " + confusionInstance.pipelineID,
+                            startColor: '#ffffff', endColor: '#e67e22',
+                            margin: {left: 10, right: 10, top: 50, bottom: 10},
+                            attrsAll: {
+                                style: {height: '600px'},
+                            }
+                        })) : 'Too many classes for confusion matrix!'
+                    ])
                 ),
                 m(`#setxLeftGen[style=display:${app.selectedResultsMenu === 'Generate New Predictions' ? 'block' : 'none'}; float: left; width: 70%; height:calc(100% - 30px); overflow: auto; background-color: white]`,
                     m('#setxLeftTop[style=display:block; float: left; width: 100%; height:50%; overflow: auto; background-color: white]',
                         m('#setxLeftTopLeft[style=display:block; float: left; width: 30%; height:100%; overflow: auto; background-color: white]'),
                         m('#setxLeftTopRight[style=display:block; float: left; width: 70%; height:100%; overflow: auto; background-color: white]')),
-                    m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]'),
+                    m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]',
+                        // m(PanelList, {
+                        //     id: 'setxLeftBottomLeftList',
+                        //     items: app.pipelineAdapter[firstSelectedPipelineID].predictors,
+                        //     colors: {
+                        //         [app.hexToRgba(common.selVarColor)]: [...(this.selectedPredictors || new Set())]
+                        //     },
+                        //     callback: variable => {
+                        //         this.selectedPredictors = this.selectedPredictors || new Set();
+                        //         this.selectedPredictors.has(variable)
+                        //             ? this.selectedPredictors.delete(variable)
+                        //             : this.selectedPredictors.add(variable);
+                        //     }
+                        // })
+                    ),
                     m('#setxLeftBottomRightTop[style=display:block; float: left; width: 30%; height:10%; overflow: auto; background-color: white]',
-                        m(PanelButton, {
-                            id: 'btnExecutePipe',
-                            classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
-                            onclick: app.executepipeline,
-                            style: {
-                                display: app.selectedPipeline === undefined ? 'none' : 'block',
-                                float: 'left',
-                                'margin-right': '10px'
-                            },
-                            title: 'Execute pipeline'
-                        }, m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))),
+                        // m(PanelButton, {
+                        //     id: 'btnExecutePipe',
+                        //     classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
+                        //     onclick: app.executepipeline,
+                        //     style: {
+                        //         display: app.selectedPipelines.size === 0 ? 'none' : 'block',
+                        //         float: 'left',
+                        //         'margin-right': '10px'
+                        //     },
+                        //     title: 'Execute pipeline'
+                        // }, m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))
+                    ),
                     m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]')),
-                app.selectedResultsMenu === 'Visualize Pipeline' && app.selectedPipeline in app.allPipelineInfo && m('div', {
+                app.selectedResultsMenu === 'Visualize Pipeline' && app.selectedPipelines.size === 1 && [...app.selectedPipelines].some(pipeID => pipeID in app.allPipelineInfo) && m('div', {
+                    style: {
+                        width: '70%',
+                        height: 'calc(100% - 30px)',
+                        overflow: 'auto'
+                    }
+                },
+                m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Overview: '),
+                m(Table, {
+                    id: 'pipelineOverviewTable',
+                    data: Object.keys(app.allPipelineInfo[[...app.selectedPipelines][0]].pipeline).reduce((out, entry) => {
+                        if (['inputs', 'steps', 'outputs'].indexOf(entry) === -1)
+                            out[entry] = app.allPipelineInfo[[...app.selectedPipelines][0]].pipeline[entry];
+                        return out;
+                    }, {}),
+                    attrsAll: {
                         style: {
-                            width: '70%',
-                            height: 'calc(100% - 30px)',
-                            overflow: 'auto'
+                            margin: '1em',
+                            width: 'calc(100% - 2em)',
+                            border: common.borderColor,
+                            'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
                         }
                     },
-                    m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Overview: '),
-                    m(Table, {
-                        id: 'pipelineOverviewTable',
-                        data: Object.keys(app.allPipelineInfo[app.selectedPipeline].pipeline).reduce((out, entry) => {
-                            if (['inputs', 'steps', 'outputs'].indexOf(entry) === -1)
-                                out[entry] = app.allPipelineInfo[app.selectedPipeline].pipeline[entry];
-                            return out;
-                        }, {}),
-                        attrsAll: {
-                            style: {
-                                margin: '1em',
-                                width: 'calc(100% - 2em)',
-                                border: common.borderColor,
-                                'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
-                            }
-                        },
-                        nest: true
-                    }),
-                    m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Steps: '),
-                    m(Flowchart, {
-                        labelWidth: '5em',
-                        steps: pipelineFlowchartPrep(app.allPipelineInfo[app.selectedPipeline].pipeline)
+                    nest: true
+                }),
+                m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Steps: '),
+                m(Flowchart, {
+                    labelWidth: '5em',
+                    steps: pipelineFlowchartPrep(app.allPipelineInfo[[...app.selectedPipelines][0]].pipeline)
+                })),
+                m(`div#solutionTable[style=display:${app.selectedResultsMenu === 'Solution Table' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%;]`,
+                    app.selectedProblem && firstSelectedPipelineID in app.ravenPipelineInfo && m(DataTable, {
+                        data: app.ravenPipelineInfo[firstSelectedPipelineID].stargazer,
+                        variable: app.pipelineAdapter[firstSelectedPipelineID].target
                     })
-                ),
-                m(`div#predictionData[style=display:${app.selectedResultsMenu === 'Prediction Description' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%]`,
-                    m('#setPredictionDataLeft[style=display:block; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white; padding : 1em; margin-top: 1em]')
-                ),
-                m(`div#solutionTable[style=display:${app.selectedResultsMenu === 'Solution Table' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%, padding : 1em]`,
-                    app.selectedProblem && m(DataTable, {data: app.stargazer, variable: app.selectedProblem.target})
                 )
-            ]
-        }
-        // },{
-        // value: 'Discovery',
-        //  idSuffix: 'disc',
-        //  contents: [
-        //    m(ButtonRadio, {
-        //        id: 'discoveryButtonBar',
-        //        attrsAll: {style: {'margin-left':'5%',width: 'auto'}},
-        //        attrsButtons: {class: ['btn-sm'], style: { padding:'0.5em',width:'auto'}},
-        //        onclick: app.setSelectedDiscoverySolutionMenu,
-        //        activeSection: app.selectedDiscoverySolutionMenu,
-        //        sections: [
-        //            {value: 'Prediction Data', id: 'btnPredData'},
-        //            {value: 'Solution Plot', id: 'btnSolPlot'}
-        //        ]
-        //    }),
-        //     m('div', {style: {'font-weight': 'bold', 'margin': '1em', 'height': '100%', 'float':'right', 'width': '50%' }},
-        //    m(DataTable, {data: app.stargazer})),
-        //    m(`div#predictionData[style=display:${app.selectedDiscoverySolutionMenu === 'Prediction Data' ? 'block' : 'none'};height:"90%"; overflow: auto; width: 50%, 'float':'left']`,
-        //      m('#setPredictionDataLeft[style=display:block; float: left; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white]')
-        //    ),
-        //    m(`div#solutionPlot[style=display:${app.selectedDiscoverySolutionMenu === 'Solution Plot' ? 'block' : 'none'};height:"90%"; overflow: auto; width: 50%, 'float':'left']`,
-        //          m('#setPredictionSolutionPlot[style=display:block; float: left; width: 100%; height:100%; overflow: auto; background-color: black]')
-        //    )
-        //  ]}
-    ];
+            )]
+    });
+    // },{
+    // value: 'Discovery',
+    //  idSuffix: 'disc',
+    //  contents: [
+    //    m(ButtonRadio, {
+    //        id: 'discoveryButtonBar',
+    //        attrsAll: {style: {'margin-left':'5%',width: 'auto'}},
+    //        attrsButtons: {class: ['btn-sm'], style: { padding:'0.5em',width:'auto'}},
+    //        onclick: app.setSelectedDiscoverySolutionMenu,
+    //        activeSection: app.selectedDiscoverySolutionMenu,
+    //        sections: [
+    //            {value: 'Prediction Data', id: 'btnPredData'},
+    //            {value: 'Solution Plot', id: 'btnSolPlot'}
+    //        ]
+    //    }),
+    //     m('div', {style: {'font-weight': 'bold', 'margin': '1em', 'height': '100%', 'float':'right', 'width': '50%' }},
+    //    m(DataTable, {data: app.stargazer})),
+    //    m(`div#predictionData[style=display:${app.selectedDiscoverySolutionMenu === 'Prediction Data' ? 'block' : 'none'};height:"90%"; overflow: auto; width: 50%, 'float':'left']`,
+    //      m('#setPredictionDataLeft[style=display:block; float: left; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white]')
+    //    ),
+    //    m(`div#solutionPlot[style=display:${app.selectedDiscoverySolutionMenu === 'Solution Plot' ? 'block' : 'none'};height:"90%"; overflow: auto; width: 50%, 'float':'left']`,
+    //          m('#setPredictionSolutionPlot[style=display:block; float: left; width: 100%; height:100%; overflow: auto; background-color: black]')
+    //    )
+    //  ]}
 
     return m(Panel, {
-        side: 'right',
-        label: 'Model Selection',
-        hover: true,
-        width: app.modelRightPanelWidths[app.rightTab],
-        attrsAll: {
-            onclick: () => app.setFocusedPanel('right'),
-            style: {
-                'z-index': 100 + (app.focusedPanel === 'right'),
-                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
+            side: 'right',
+            label: 'Model Selection',
+            hover: true,
+            width: app.modelRightPanelWidths[app.rightTab],
+            attrsAll: {
+                onclick: () => app.setFocusedPanel('right'),
+                style: {
+                    'z-index': 100 + (app.focusedPanel === 'right'),
+                    height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`,
+                    display: app.selectedProblem ? 'block' : 'none'
+                }
             }
-        }
-    }, m(MenuTabbed, {
-        id: 'rightpanelMenu',
-        currentTab: app.rightTab,
-        callback: app.setRightTab,
-        sections: sections,
-        attrsAll: {style: {height: 'calc(100% - 39px)'}}
-    }));
+        },
+        m(MenuTabbed, {
+            id: 'rightpanelMenu',
+            currentTab: app.rightTab,
+            callback: app.setRightTab,
+            sections,
+            attrsAll: {style: {height: 'calc(100% - 39px)'}}
+        })
+    );
 }
 
 export let glyph = (icon, unstyled) =>
     m(`span.glyphicon.glyphicon-${icon}` + (unstyled ? '' : '[style=color: #818181; font-size: 1em; pointer-events: none]'));
+
+export let glyph2 = (icon, attrs) => m(`span.glyphicon.glyphicon-${icon}`, common.mergeAttributes({
+    style: {color: '#818181', 'font-size': '1em', 'pointer-events': 'none'}
+}, attrs));
 
 class Body {
     oninit() {
@@ -773,6 +904,44 @@ class Body {
 
         return m('main',
             m(Modal),
+            app.alertsShown && m(ModalVanilla, {
+                id: 'alertsModal',
+                setDisplay: () => {
+                    app.alertsLastViewed.setTime(new Date().getTime());
+                    app.setAlertsShown(false)
+                }
+            },[
+                m('h4[style=width:3em;display:inline-block]', 'Alerts'),
+                m(Button, {
+                    title: 'Clear Alerts',
+                    style: {display: 'inline-block', 'margin-right': '0.75em'},
+                    onclick: () => app.alerts.length = 0,
+                    disabled: app.alerts.length === 0
+                }, glyph2('ok')),
+                app.alerts.length === 0 && italicize('No alerts recorded.'),
+                app.alerts.length > 0 && m(Table, {
+                    data: [...app.alerts].reverse().map(alert => [
+                        alert.time > app.alertsLastViewed && glyph2('asterisk'),
+                        m(`div[style=background:${app.hexToRgba({
+                            'log': common.menuColor,
+                            'warn': common.warnColor,
+                            'error': common.errorColor
+                        }[alert.type], .5)}]`, alert.time.toLocaleTimeString().replace(/([\d]+:[\d]{2})(:[\d]{2})(.*)/, "$1$3")),
+                        alert.description
+                    ]),
+                    attrsAll: {style: {'margin-top': '1em'}},
+                    tableTags: m('colgroup',
+                        m('col', {span: 1, width: '10px'}),
+                        m('col', {span: 1, width: '75px'}),
+                        m('col', {span: 1}))
+                })
+            ]),
+            m(ModalDatamart, {
+                preferences: app.datamartPreferences,
+                endpoint: app.datamartURL,
+                dataPath: app.zparams.zd3mdata
+            }),
+
             this.header(app.currentMode),
             this.footer(app.currentMode),
             leftpanel(app.currentMode),
@@ -780,7 +949,7 @@ class Body {
 
             (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate' && app.selectedProblem)) && manipulate.menu(
                 manipulate.getPipeline(app.selectedProblem), // the complete pipeline to build menus with
-                app.is_model_mode ? app.selectedProblem.problem_id : app.configurations.name),  // the identifier for which pipeline to edit
+                app.is_model_mode ? app.selectedProblem.problemID : app.datadocument.about.datasetID),  // the identifier for which pipeline to edit
             app.peekInlineShown && this.peekTable(),
 
             m(`#main`, {
@@ -795,7 +964,7 @@ class Body {
                         m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
                         m('br'),
                         exploreVars)
-                    //                        JSON.stringify(app.disco[app.selectedProblem.problem_id]))
+                    //                        JSON.stringify(app.disco[app.selectedProblem.problemID]))
                     : exploreVars ?
                         m('', {style},
                             m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
@@ -818,7 +987,7 @@ class Body {
                                 classes: 'btn-success',
                                 onclick: _ => {
                                     let variate = app.exploreVariate.toLowerCase();
-                                    let selected = discovery ? [app.selectedProblem.problem_id] : nodesExplore.map(x => x.name);
+                                    let selected = discovery ? [app.selectedProblem.problemID] : nodesExplore.map(x => x.name);
                                     let len = selected.length;
                                     if (variate === 'univariate' && len != 1
                                         || variate === 'problem' && len != 1
@@ -873,11 +1042,11 @@ class Body {
                                             },
                                             oncreate(vnode) {
                                                 let plot = (this.node || {}).plottype === 'continuous' ? plots.densityNode : plots.barsNode;
-                                                plot(this.node, vnode.dom, 110, true);
+                                                this.node && plot(this.node, vnode.dom, 110, true);
                                             },
                                             onupdate(vnode) {
-                                                let node = app.findNode(x);
-                                                if (node != this.node) {
+                                                let node = app.findNode(typeof x === 'object' ? x.target : x);
+                                                if (node && node !== this.node) {
                                                     let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
                                                     plot(node, vnode.dom, 110, true);
                                                     this.node = node;
@@ -902,11 +1071,11 @@ class Body {
                     spaceBtn('btnJoin', app.connectAllForceDiagram, 'Make all possible connections between nodes', 'link'),
                     spaceBtn('btnDisconnect', () => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
                     spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
-                    spaceBtn('btnEraser', app.nodes.length ? app.erase : app.unerase, app.nodes.length ? 'Wipe all variables from the modeling space' : 'Restore modeling space', app.nodes.length ? 'magnet' : 'refresh')
+                    spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')
                 ]),
                 app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}),
 
-                ['zgroup1', 'zgroup2', 'ztime', 'zcross', 'zdv', 'znom'].reduce((acc, elem) => acc + app.zparams[elem].length, 0) > 0 && m(Subpanel2, {
+                app.currentMode !== 'explore' && ['zgroup1', 'zgroup2', 'ztime', 'zcross', 'zdv', 'znom'].reduce((acc, elem) => acc + app.zparams[elem].length, 0) > 0 && m(Subpanel2, {
                     id: 'legend', header: 'Legend', class: 'legend',
                     style: {
                         right: app.panelWidth['right'],
@@ -928,7 +1097,7 @@ class Body {
                         m(".rectLabel[style=display:inline-block;vertical-align:text-bottom;margin-left:.5em]", btn[2])))
                 ),
 
-                (app.manipulations[(app.selectedProblem || {}).problem_id] || []).filter(step => step.type === 'subset').length !== 0 && m(Subpanel2, {
+                (app.manipulations[(app.selectedProblem || {}).problemID] || []).filter(step => step.type === 'subset').length !== 0 && m(Subpanel2, {
                     id: 'subsetSubpanel',
                     header: 'Subsets',
                     style: {
@@ -936,7 +1105,7 @@ class Body {
                         top: common.panelMargin,
                         position: 'absolute'
                     }
-                }, app.manipulations[app.selectedProblem.problem_id]
+                }, app.manipulations[app.selectedProblem.problemID]
                     .filter(step => step.type === 'subset')
                     .map(step => m('div', step.id))
                     .concat([`${manipulate.totalSubsetRecords} Records`]))
@@ -972,9 +1141,9 @@ class Body {
             m('div', {style: {'flex-grow': 1}}),
             m('#cite.panel.panel-default',
                 {style: `display: ${this.cite ? 'block' : 'none'}; margin-top: 2.5em; right: 50%; width: 380px; text-align: left; z-index: 50; position:absolute`},
-                m('.panel-body')),
+                m('.panel-body', IS_D3M_DOMAIN && m(Table, {data: app.datadocument['about']}))),
 
-            m(Button, {
+            Object.keys(app.allPipelineInfo).length > 0 && m(Button, {
                 id: 'btnEndSession',
                 class: 'ladda-label ladda-button',
                 onclick: app.endsession,
@@ -997,9 +1166,9 @@ class Body {
                 m(Button, {id: 'btnTA2', onclick: _ => app.helpmaterials('video')}, 'Video ', glyph('expand')),
                 m(Button, {id: 'btnTA2', onclick: _ => app.helpmaterials('manual')}, 'Manual ', glyph('book'))),
 
-            app.is_model_mode && m(Button, {
+            IS_D3M_DOMAIN && app.is_model_mode && m(Button, {
                 id: 'btnEstimate',
-                class: 'ladda-label ladda-button',
+                class: 'ladda-button',
                 onclick: app.estimate,
                 style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
             }, 'Solve This Problem'),
@@ -1031,7 +1200,7 @@ class Body {
                 },
                 onscroll: () => {
                     // don't apply infinite scrolling when list is empty
-                    if (app.peekData.length === 0) return;
+                    if ((app.peekData || []).length === 0) return;
 
                     let container = document.querySelector('#previewTable');
                     let scrollHeight = container.scrollHeight - container.scrollTop;
@@ -1069,24 +1238,23 @@ class Body {
                 attrsAll: {style: {margin: '2px', width: 'auto'}, class: 'navbar-left'},
                 onclick: app.set_mode,
                 activeSection: mode || 'model',
-                sections: [{value: 'Model'}, {value: 'Explore'}, {value: 'Manipulate'}],
+                sections: [{value: 'Model'}, {value: 'Explore'}], // {value: 'Manipulate'} disabled
 
                 // attrsButtons: {class: ['btn-sm']}, // if you'd like small buttons (btn-sm should be applied to individual buttons, not the entire component)
                 attrsButtons: {style: {width: 'auto'}}
             }),
-            m("a#logID[href=somelink][target=_blank]", "\u00A0 \u00A0 Replication"),
-            m("span[style=color:#337ab7]", "\u00A0 | \u00A0"),
-            // dev links...
-            m("a[href='/dev-raven-links'][target=_blank]", "raven-links"),
-            m("span[style=color:#337ab7]", "\u00A0 | \u00A0"),
-            m("span[style=color:#337ab7]#ta2-server-name", `TA2: ${TA2_SERVER}`),
-            m("span[style=color:#337ab7]", "\u00A0 | \u00A0"),
-            m("span[style=color:#337ab7]", `TA3 API: ${TA3TA2_API_VERSION} \u00A0 \u00A0`),
+            m("span", {"class": "footer-info-break"}, "|"),
+            m("a", {"href" : "/dev-raven-links", "target": "=_blank"}, "raven-links"),
+            m("span", {"class": "footer-info-break"}, "|"),
+            m("span", {"class": "footer-info", "id": "ta2-server-name"}, `TA2: ${TA2_SERVER}`),
+            m("span", {"class": "footer-info-break"}, "|"),
+            m("span", {"style": "color:#337ab7"}, `TA3 API: ${TA3TA2_API_VERSION}`),
+            m("span", {"class": "footer-info-break"}, "|"),
             m(Button, {
-                id: 'datasetConsoleLogUrl',
-                onclick: async () =>
-                    console.log(await manipulate.buildDatasetUrl(app.selectedProblem))
-            }, 'LOG DATASET URL'),
+                style: {'margin-left': '1em'},
+                title: 'alerts',
+                onclick: () => app.setAlertsShown(true)
+            }, glyph2('alert', {style: {color: app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}})),
             m('div.btn.btn-group', {style: 'float: right; padding: 0px'},
                 m(Button, {
                     class: app.peekInlineShown && ['active'],
@@ -1114,6 +1282,21 @@ if (IS_EVENTDATA_DOMAIN) {
 }
 else {
     m.route(document.body, '/model', {
+        '/datamart': {
+            render: () => [
+                m(Datamart, {
+                    preferences: app.datamartPreferences,
+                    dataPath: app.zparams.zd3mdata,
+                    endpoint: app.datamartURL,
+                    labelWidth: '10em'
+                }),
+                m(ModalDatamart, {
+                    preferences: app.datamartPreferences,
+                    endpoint: app.datamartURL,
+                    dataPath: app.zparams.zd3mdata
+                })
+            ]
+        },
         '/explore/:variate/:vars...': Body,
         '/data': {render: () => m(Peek, {id: app.peekId, image: '/static/images/TwoRavens.png'})},
         '/:mode': Body,
