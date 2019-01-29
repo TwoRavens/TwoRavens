@@ -1,6 +1,6 @@
 import m from 'mithril';
 
-import {glyph} from "../index";
+import {glyph, glyph2, italicize} from "../index";
 
 import * as eventdata from './eventdata';
 import * as tour from "./tour";
@@ -39,6 +39,7 @@ import CanvasResults from "./canvases/CanvasResults";
 
 import SaveQuery from "./SaveQuery";
 import {TreeAggregate, TreeSubset, TreeVariables} from "../views/JQTrees";
+import * as app from "../app";
 
 export default class Body_EventData {
 
@@ -201,6 +202,13 @@ export default class Body_EventData {
         return m(Footer,
             tourBar,
             m("#recordBar", {style: {display: "inline-block", float: 'right'}}, [
+                m(Button, {
+                    class: 'btn-sm',
+                    style: {'margin': '4px 6px 0em 6px'},
+                    title: 'alerts',
+                    onclick: () => app.setAlertsShown(true)
+                }, glyph2('alert', {style: {color: app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}})),
+
 
                 eventdata.selectedMode !== 'home' && m(Button, {
                     class: 'btn-sm',
@@ -759,6 +767,40 @@ export default class Body_EventData {
                     common.setPanelOpen('right');
                 }
             }, 'Stage'),
+
+            app.alertsShown && m(ModalVanilla, {
+                id: 'alertsModal',
+                setDisplay: () => {
+                    app.alertsLastViewed.setTime(new Date().getTime());
+                    app.setAlertsShown(false)
+                }
+            },[
+                m('h4[style=width:3em;display:inline-block]', 'Alerts'),
+                m(Button, {
+                    title: 'Clear Alerts',
+                    style: {display: 'inline-block', 'margin-right': '0.75em'},
+                    onclick: () => app.alerts.length = 0,
+                    disabled: app.alerts.length === 0
+                }, glyph2('ok')),
+                app.alerts.length === 0 && italicize('No alerts recorded.'),
+                app.alerts.length > 0 && m(Table, {
+                    data: [...app.alerts].reverse().map(alert => [
+                        alert.time > app.alertsLastViewed && glyph2('asterisk'),
+                        m(`div[style=background:${app.hexToRgba({
+                            'log': common.menuColor,
+                            'warn': common.warnColor,
+                            'error': common.errorColor
+                        }[alert.type], .5)}]`, alert.time.toLocaleTimeString().replace(/([\d]+:[\d]{2})(:[\d]{2})(.*)/, "$1$3")),
+                        alert.description
+                    ]),
+                    attrsAll: {style: {'margin-top': '1em'}},
+                    tableTags: m('colgroup',
+                        m('col', {span: 1, width: '10px'}),
+                        m('col', {span: 1, width: '75px'}),
+                        m('col', {span: 1}))
+                })
+            ]),
+
             m(Canvas, {
                 attrsAll: {
                     style: mode === 'aggregate'
