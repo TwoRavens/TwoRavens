@@ -79,8 +79,7 @@ class TA2Helper(BasicErrCheck):
         """List the problem set choices"""
         # pull config files from ravens volume
         config_choices = [x for x in os.listdir(RAVENS_DIR)
-                          if isdir(join(RAVENS_DIR, x)) and \
-                             isfile(join(RAVENS_DIR, x, D3M_SEARCH_CONFIG_NAME))]
+                          if isdir(join(RAVENS_DIR, x))]
 
         config_choices.sort()
         # pair each data directory with a number:
