@@ -2950,6 +2950,8 @@ export async function estimate() {
 
             makeRequest(ROOK_SVC_URL + 'solverapp', {prob: resultsProblem, dataset_path: datasetPath})
                 .then(response => {
+                    if ('warning' in response)
+                        return;
                     let ravenID = 'raven ' + ravenPipelineID++;
                     ravenPipelineInfo[ravenID] = response;
                     if (selectedPipelines.size === 0) setSelectedPipeline(ravenID);
