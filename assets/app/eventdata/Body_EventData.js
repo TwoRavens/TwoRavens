@@ -640,6 +640,7 @@ export default class Body_EventData {
                 mode: eventdata.selectedMode,
                 subsetName: eventdata.selectedSubsetName,
                 data: eventdata.subsetData[eventdata.selectedSubsetName],
+                pipeline: manipulations.eventdata,
                 preferences: eventdata.subsetPreferences[eventdata.selectedSubsetName],
                 metadata: eventdata.genericMetadata[eventdata.selectedDataset]['subsets'][eventdata.selectedSubsetName],
                 formats: eventdata.genericMetadata[eventdata.selectedDataset]['formats'],

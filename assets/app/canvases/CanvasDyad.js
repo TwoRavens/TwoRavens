@@ -83,6 +83,7 @@ export default class CanvasDyad {
         let failedUpdateMonadListing = () => {
             console.warn("Network Issue: Update to monad listing failed");
             this.waitForQuery--;
+            m.redraw();
         };
 
         this.waitForQuery++;
