@@ -224,13 +224,13 @@ class TA2Helper(BasicErrCheck):
             self.add_err_msg(user_msg)
             return
 
-        config_file = join(self.data_input_dir,
-                           D3M_SEARCH_CONFIG_NAME)
+        #config_file = join(self.data_input_dir,
+        #                   D3M_SEARCH_CONFIG_NAME)
 
-        if not isfile(config_file):
-            user_msg = 'ERROR: config file not found: %s' % config_file
-            self.add_err_msg(user_msg)
-            return
+        #if not isfile(config_file):
+        #    user_msg = 'ERROR: config file not found: %s' % config_file
+        #    self.add_err_msg(user_msg)
+        #    return
 
         if not isdir(self.data_output_dir):
             os.makedirs(self.data_output_dir)
