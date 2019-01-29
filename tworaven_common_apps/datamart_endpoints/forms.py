@@ -54,10 +54,10 @@ class DatamartAugmentForm(forms.Form):
         return json.loads(self.cleaned_data.get('search_result'))
 
     def clean_left_columns(self):
-        return json.loads(self.cleaned_data.get('left_columns'))
+        return json.loads(self.cleaned_data.get('left_columns') or '{}')
 
     def clean_right_columns(self):
-        return json.loads(self.cleaned_data.get('right_columns'))
+        return json.loads(self.cleaned_data.get('right_columns') or '{}')
 
 
 class DatamartMaterializeForm(forms.Form):

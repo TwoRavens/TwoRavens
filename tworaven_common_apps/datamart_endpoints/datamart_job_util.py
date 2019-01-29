@@ -193,7 +193,7 @@ class DatamartJobUtilNYU(object):
             return err_resp(user_msg)
 
         materialize_folderpath = os.path.join(
-            d3m_config['temp_storage_root'],
+            d3m_config.temp_storage_root,
             'materialize', str(search_result['id']))
 
         if os.path.exists(materialize_folderpath):
@@ -201,6 +201,7 @@ class DatamartJobUtilNYU(object):
         else:
             response = requests.get(DATAMART_NYU_URL + '/download/' + str(search_result['id']),
                                     params={'format': 'd3m'}, stream=True)
+
             if response.status_code != 200:
                 return err_resp('NYU Datamart internal server error')
 
@@ -215,15 +216,16 @@ class DatamartJobUtilNYU(object):
             LOGGER.error(user_msg)
             return err_resp(user_msg)
 
+        print(search_result)
         response = requests.post(DATAMART_NYU_URL + '/augment', files={
-            'data': dataset_path,
-            'task': ('task.json', search_result, 'application/json')
+            'data': open(dataset_path, 'rb'),
+            'task': ('task.json', json.dumps(search_result), 'application/json')
         }, stream=True)
 
         if response.status_code != 200:
             return err_resp('NYU Datamart internal server error')
 
-        augment_folderpath = os.path.join(d3m_config['temp_storage_root'], 'augment', str(id))
+        augment_folderpath = os.path.join(d3m_config.temp_storage_root, 'augment', str(search_result['id']))
         return ok_resp(DatamartJobUtilNYU.save(augment_folderpath, response))
 
     @staticmethod
@@ -233,14 +235,22 @@ class DatamartJobUtilNYU(object):
             with zipfile.ZipFile(BytesIO(response.content), 'r') as data_zip:
                 data_zip.extractall(folderpath)
 
-        metadata_path = os.path.join(folderpath, 'datasetDoc.json')
-        data_path = DatamartJobUtilNYU.get_data_paths(metadata_path)[0]
+        metadata_filepath = os.path.join(folderpath, 'datasetDoc.json')
+        data_filepath = os.path.join(folderpath, 'tables', 'learningData.csv')
+
+        data = []
+        with open(data_filepath, 'r') as datafile:
+            for i in range(100):
+                try:
+                    data.append(next(datafile))
+                except StopIteration:
+                    pass
 
         return {
-            'data_path': data_path,
-            'metadata_path': metadata_path,
-            'data_preview': pd.read_csv(data_path, nrows=PREVIEW_SIZE),
-            'metadata': json.load(open(metadata_path))
+            'data_path': data_filepath,
+            'metadata_path': metadata_filepath,
+            'data_preview': ''.join(data),
+            'metadata': json.load(open(metadata_filepath))
         }
 
     @staticmethod

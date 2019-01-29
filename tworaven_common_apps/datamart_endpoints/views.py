@@ -90,7 +90,7 @@ def api_augment(request):
             json.loads(json_req_obj['right_columns']))
 
     if json_req_obj['source'] == 'NYU':
-        success, results_obj_err = DatamartJobUtilISI.datamart_augment(
+        success, results_obj_err = DatamartJobUtilNYU.datamart_augment(
             json_req_obj['data_path'],
             json_req_obj['search_result'])
 
