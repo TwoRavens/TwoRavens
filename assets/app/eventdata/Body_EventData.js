@@ -527,8 +527,13 @@ export default class Body_EventData {
                     {
                         value: 'Subsets',
                         contents: (manipulations.eventdata.length + (eventdata.selectedMode === 'subset' ? looseSteps['pendingSubset'].abstractQuery.length : 0)) ? [
-                            ...manipulations.eventdata.map(step => m(TreeSubset, {isQuery: true, step, pipelineId: 'eventdata', editable: false})),
-                            m(TreeSubset, {step: looseSteps['pendingSubset'], pipelineId: 'pendingSubset', editable: true})
+                            ...manipulations.eventdata.map(step => m(TreeSubset, {
+                                redraw: eventdata.isLoading, setRedraw: _ => _, // this is cheeky, when redraw: true, the tree is rebuilt internally. When a new query is loading, the tree needs to get rebuilt (no longer within a pending step)
+                                isQuery: true, step,
+                                pipelineId: 'eventdata', editable: false})),
+                            m(TreeSubset, {
+                                redraw: eventdata.isLoading, setRedraw: _ => _,
+                                step: looseSteps['pendingSubset'], pipelineId: 'pendingSubset', editable: true})
                         ] : [
                             m('div[style=font-style:italic]', 'Match all records'),
                             looseSteps['pendingSubset'].abstractQuery.length !== 0 && m('div[style=font-style:italic]', 'Some pending constraints are hidden. Update from subset menu to apply them.')
