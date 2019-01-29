@@ -4,6 +4,8 @@
     "datasetName": "Greed_Versus_Grievance",
     "description": "Condensed replication data for Fearon and Laitin greed versus grievance analysis",
     "citation": "",
+    "license": "CC-BY license",
+    "redacted": false,
     "datasetSchemaVersion": "3.0"
   },
   "dataResources": [
