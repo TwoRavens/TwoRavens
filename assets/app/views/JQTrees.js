@@ -225,7 +225,7 @@ export class TreeSubset {
                     let canChange = node.type !== 'query' && !node.editable;
                     $li.find('.jqtree-element').prepend(buttonOperator(pipelineId, step.id, node.id, node.operation, canChange));
                 }
-                if (node.type === 'query' || (editable && !('cancellable' in node)) || node['cancellable'] === true)) {
+                if (node.type === 'query' || (editable && !('cancellable' in node)) || node['cancellable'] === true) {
                     $li.find('.jqtree-element').append(buttonDelete(pipelineId, step.id, node.id));
                 }
                 // Set a left margin on the first element of a leaf
