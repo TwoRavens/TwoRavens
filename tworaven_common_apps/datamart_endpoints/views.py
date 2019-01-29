@@ -36,6 +36,8 @@ def api_upload(request):
         'NYU': DatamartJobUtilNYU
     }[json_req_obj['source']]
 
+    print('api upload called')
+
     success, results_obj_err = DatamartJobUtil.datamart_upload(json_req_obj['data'])
 
     return JsonResponse({

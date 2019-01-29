@@ -25,10 +25,25 @@ class DatamartJobUtilISI(object):
     @staticmethod
     def datamart_upload(data):
         response = requests.post(
-            DATAMART_ISI_URL + '/new/upload_data',
-            files={
-                'file': ('index.json', data)
-            }, verify=False).json()
+            DATAMART_ISI_URL + '/new/get_metadata_single_file',
+            data=data, verify=False)
+
+        if response.status_code != 200:
+            return err_resp('Datamart responded with: ' + response.reason)
+
+        response = response.json()
+
+        if response['code'] != '0000':
+            return err_resp(response['message'])
+
+        response = requests.post(
+            DATAMART_ISI_URL + '/new/upload_metadata_list',
+            data=response['data'], verify=False)
+
+        if response.status_code != 200:
+            return err_resp('Datamart responded with: ' + response.reason)
+
+        response = response.json()
 
         if response['code'] != '0000':
             return err_resp(response['message'])

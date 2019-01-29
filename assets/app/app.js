@@ -519,8 +519,10 @@ export let datamartPreferences = {
     index: {
         title: '',
         description: '',
-        url: '',
         keywords: [],
+        materialization_arguments: {
+            url: ''
+        },
         provenance: 'TwoRavens'
     },
     // search results
@@ -531,8 +533,7 @@ export let datamartPreferences = {
     // one of 'augment', 'preview', 'metadata', undefined
     modalShown: undefined,
     // stores paths to data and metadata, as well as a data preview and metadata (datasetDoc.json) for materialized datasets
-    cached: {}
-};
+    cached:;
 
 // list of variable strings (same as Object.keys(preprocess))
 export let valueKey = [];
@@ -2687,7 +2688,16 @@ function CreatePipelineDefinition(predictors, depvar, timeBound, aux) {
     //console.log(my_problem);
     let my_dataseturi = 'file://' + datasetdocurl;
     // console.log(my_dataseturi);
-    return {userAgent: my_userAgent, version: my_version, timeBound: my_timeBound, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, template: my_template, inputs: [{dataset_uri: my_dataseturi}] };
+    return {
+        userAgent: my_userAgent,
+        version: my_version,
+        timeBound: my_timeBound,
+        priority: 1,
+        allowedValueTypes: my_allowedValueTypes,
+        problem: my_problem,
+        template: my_template,
+        inputs: [{dataset_uri: my_dataseturi}]
+    };
 }
 
 
