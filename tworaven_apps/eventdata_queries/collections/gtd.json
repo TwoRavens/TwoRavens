@@ -93,6 +93,54 @@
 		"measureType": "accumulator",
 		"formats": ["gtd_subweapons", "gtd_weapons"],
 		"columns": ["weapsubtype4"]
+	},
+	"Primary Target/Victim Type": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["targtype1"]
+	},
+	"Primary Target/Victim Subtype": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"formats": ["gtd_targets", "gtd_subtargets"],
+		"columns": ["targsubtype1"]
+	},
+	"Nationality of Primary Target": {
+		"type": "discrete_grouped",
+		"group_by": "region",
+		"columns": ["TwoRavens_natlty1"]
+	},
+	"Secondary Target/Victim Type": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["targtype2"]
+	},
+	"Secondary Target/Victim Subtype": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"formats": ["gtd_targets", "gtd_subtargets"],
+		"columns": ["targsubtype2"]
+	},
+	"Nationality of Secondary Target": {
+		"type": "discrete_grouped",
+		"group_by": "region",
+		"columns": ["TwoRavens_natlty2"]
+	},
+	"Tertiary Target/Victim Type": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["targtype3"]
+	},
+	"Tertiary Target/Victim Subtype": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"formats": ["gtd_targets", "gtd_subtargets"],
+		"columns": ["targsubtype3"]
+	},
+	"Nationality of Tertiary Target": {
+		"type": "discrete_grouped",
+		"group_by": "region",
+		"columns": ["TwoRavens_natlty3"]
 	}
   },
   "columns": [
@@ -175,7 +223,10 @@
     "TwoRavens_postal_ext",
     "TwoRavens_region",
     "TwoRavens_subregion",
-    "TwoRavens_country_historic"
+    "TwoRavens_country_historic",
+    "TwoRavens_natlty1",
+    "TwoRavens_natlty2",
+    "TwoRavens_natlty3"
   ],
   "alignments": {
 	  "TwoRavens_start date": "date",
@@ -185,7 +236,11 @@
 	  "weapsubtype1": "gtd_weapon_align",
 	  "weapsubtype2": "gtd_weapon_align",
 	  "weapsubtype3": "gtd_weapon_align",
-	  "weapsubtype4": "gtd_weapon_align"
+	  "weapsubtype4": "gtd_weapon_align",
+	  "targsubtype1": "gtd_target_align",
+	  "TwoRavens_natlty1": "country",
+	  "TwoRavens_natlty2": "country",
+	  "TwoRavens_natlty3": "country"
   },
   "formats": {
 	  "TwoRavens_country": "ISO-3",
@@ -201,7 +256,12 @@
 	  "weaptype3": "gtd_weapons",
 	  "weapsubtype3": "gtd_subweapons",
 	  "weaptype4": "gtd_weapons",
-	  "weapsubtype4": "gtd_subweapons"
+	  "weapsubtype4": "gtd_subweapons",
+	  "targtype1": "gtd_targets",
+	  "targsubtype1": "gtd_subtargets",
+	  "TwoRavens_natlty1": "ISO-3",
+	  "TwoRavens_natlty2": "ISO-3",
+	  "TwoRavens_natlty3": "ISO-3"
   },
   "citations": [
   {

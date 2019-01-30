@@ -220,7 +220,7 @@ for collection in []:#["ged"]:
 	if collection == "ged":
 		fillLoc("ged", "gwcode", "gwnoa", "gwnob")
 
-for collection in ["acled_africa", "acled_asia", "acled_middle_east"]:
+for collection in []:#["acled_africa", "acled_asia", "acled_middle_east"]:
 	print(collection)
 	missing = set()
 	for doc in db[collection].find({"TwoRavens_country": {"$exists": 0}}):
@@ -242,6 +242,27 @@ for collection in ["acled_africa", "acled_asia", "acled_middle_east"]:
 	print(missing)
 	print()
 
+#convert nationality fields
+for collection in ["gtd"]:
+	print(collection)
+	for nat_query in ["TwoRavens_natlty1", "TwoRavens_natlty2", "TwoRavens_natlty3"]:
+		missingAlign = set()
+		missingDoc = set()
+		docTarg = nat_query.split("_")[-1]
+		print(docTarg)
+		for doc in db[collection].find({nat_query: {"$exists": 0}}):
+			try:
+				modern = alignment.loc[alignment["gtdcode"] == doc[docTarg], "ISO-3"].values[0]
+				if modern is not None:
+					db[collection].update_one(
+						{'_id': doc['_id']},
+						{'$set': {nat_query: modern}})
+				else:
+					missingAlign.add(doc["natlty1"])
+			except:
+				missingDoc.add(doc["_id"])
+		print(missingAlign)
+		print(len(missingDoc))
 '''
 frame = pd.read_json(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'alignments', 'country2.json')))
 frame = frame.fillna("-1")

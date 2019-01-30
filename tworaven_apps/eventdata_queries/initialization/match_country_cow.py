@@ -591,6 +591,15 @@ result = result.append(drcTemp, ignore_index=True)
 #International
 internationalTemp = {"ICEWS": "International", "ISO-3": "III", "UN M.49": 1, "region": "International", "cState": "III", "cCode": 1, "cName": "International", "gwcode": 1, "gtdcode": 422}
 result = result.append(internationalTemp, ignore_index=True)
+#Multinational
+multinationalTemp = {"ICEWS": "Multinational", "ISO-3": "MTN", "UN M.49": 0, "region": "Multinational", "cState": "MTN", "cCode": 0, "cName": "Multinational", "gwcode": 0, "gtdcode": 999}
+result = result.append(multinationalTemp, ignore_index=True)
+#Asian
+asianTemp = {"ICEWS": "Asian", "ISO-3": "ASN", "region": "Asia", "cState": "ASN", "cCode": 1000, "cName": "Asia", "gwcode": 334, "gtdcode": 334}
+result = result.append(asianTemp, ignore_index=True)
+#Corsica
+corsicaTemp = {"ICEWS": "Corsica", "ISO-3": "CRS", "region": "Southern Europe", "cState": "CRS", "cCode": 175, "cName": "Corsica", "gtdcode": 238}
+result = result.append(corsicaTemp, ignore_index=True)
 #Northern Ireland
 ukTemp = result.loc[result["cState"] == "UKG"].copy()
 ukTemp["gtdcode"] = "233"
@@ -602,6 +611,10 @@ result = result.append(ukTemp, ignore_index=True)
 sovietTemp = result.loc[result["cState"] == "RUS"].copy()
 sovietTemp["gtdcode"] = "359"
 result = result.append(sovietTemp, ignore_index=True)
+#Commonwealth of Independent States
+cisTemp = result.loc[result["cState"] == "RUS"].copy()
+cisTemp["gtdcode"] = "351"
+result = result.append(cisTemp, ignore_index=True)
 #New Hebrides
 newHebridesTemp = result.loc[result["cState"] == "VAN"].copy()
 newHebridesTemp["gtdcode"] = "532"
@@ -614,6 +627,17 @@ result = result.append(rhodesiaTemp, ignore_index=True)
 serbiaTemp = result.loc[result["cState"] == "SRB"].copy()
 serbiaTemp["gtdcode"] = "175"
 result = result.append(serbiaTemp, ignore_index=True)
+#Sinhalese
+sinhaleseTemp = result.loc[result["cState"] == "SRI"].copy()
+sinhaleseTemp["gtdcode"] = "520"
+result = result.append(sinhaleseTemp, ignore_index=True)
+
+#missing codes from inspection
+#Marshall Islands=126, US Virgin Islands=225, Tuvalu=212, Saba=169
+result.loc[result["cState"] == "MSI", "gtdcode"] = "126"
+result.loc[result["cState"] == "VIR", "gtdcode"] = "225"
+result.loc[result["cState"] == "TUV", "gtdcode"] = "212"
+#~ result.loc[result["cState"] == "BES", "gtdcode"] = "169"
 
 result = result.reset_index(drop=True)
 print(result.to_string())
@@ -643,7 +667,7 @@ CS = Czechoslovakia
 ICEWS: {'Sint Maarten', 'Micronesia', 'Holy See', 'Bavaria', 'Bonaire', 'Reunion', 'Saint Barthelemy', 'Occupied Palestinian Territory', 'Saint Helena', 'Cook Island', 'Democratic Republic of Congo', "Cote d'Ivoire", 'Falkland Islands', 'Isle Of Man'}
 cline_phoenix_swb: BES = Bonaire, Sint Eustatius and Saba (Carribean Netherlands)
 '''
-carribNeth = {"ICEWS": "Bonaire, Sint Eustatius and Saba (Carribean Netherlands)", "ISO-3": "BES", "UN M.49": 535, "region": "Caribbean", "cState": "BES", "cCode": 204, "cName": "Bonaire, Sint Eustatius and Saba (Carribean Netherlands)", "gwcode": -1, "gtdcode": -1, "ISO-2": "BQ"}
+carribNeth = {"ICEWS": "Bonaire, Sint Eustatius and Saba (Carribean Netherlands)", "ISO-3": "BES", "UN M.49": 535, "region": "Caribbean", "cState": "BES", "cCode": 204, "cName": "Bonaire, Sint Eustatius and Saba (Carribean Netherlands)", "gwcode": -1, "gtdcode": 169, "ISO-2": "BQ"}
 result = result.append(carribNeth, ignore_index=True)
 
 czeTemp = result.loc[result["cState"] == "CZE"].copy()

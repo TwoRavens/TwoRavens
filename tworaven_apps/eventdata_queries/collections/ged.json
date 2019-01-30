@@ -38,6 +38,11 @@
 			"latitude",
 			"longitude"
 		]
+	},
+	"Type of Violence": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["type_of_violence"]
 	}
   },
   "columns": [
@@ -102,7 +107,8 @@
 	  "TwoRavens_country": "country"
   },
   "formats": {
-	  "TwoRavens_country": "ISO-3"
+	  "TwoRavens_country": "ISO-3",
+	  "type_of_violence": "ged_violence"
   },
   "citations": [
   {
