@@ -15,9 +15,12 @@
     <li>Load test data based on environment variables:
         <pre><code>fab load_d3m_config_from_env</code></pre>
     </li>
-    <li>OR load create/load data based on local files in the "/ravens_volume" directory:
+    <li>OR
+      <p>(1) load create/load data based on local files in the "/ravens_volume" directory:
+      </p>
       <pre><code>fab make_d3m_configs_from_files</code></pre>
-      Use this when using docker images that access "/ravens_volume"
+      <p>AND (2) Set a config to "is_default" in the admin: <a href="{% url 'admin:configurations_d3mconfiguration_changelist' %}" target="_blank">Config admin</a>
+      <p>Use this when using docker images that access "/ravens_volume"</p>
     </li>
 
   </ul>
@@ -45,6 +48,7 @@
           -->
           <li>Load test data based on local files in the TwoRavens/ravens_volume directory:
             <pre><code>fab make_d3m_config</code></pre>
+
           </li>
 
       </ul></li>

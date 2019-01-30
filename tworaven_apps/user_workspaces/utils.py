@@ -18,6 +18,31 @@ from tworaven_apps.configurations.models_d3m import D3MConfiguration
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
 
+def get_default_workspace_params(**kwargs):
+    """Make sure workspace is active"""
+    params = dict(is_active=True)
+
+    for key, val, in kwargs.items():
+        params[key] = val
+    return params
+
+
+def get_user_workspace_config(user, user_workspace_id):
+    """Retrieve a specific UserWorkspace"""
+
+    params = dict(user=user,
+                  id=user_workspace_id)
+    params = get_default_workspace_params(**params)
+
+    try:
+        user_ws = UserWorkspace.objects.get(**params)
+    except UserWorkspace.DoesNotExist:
+        user_msg = 'No workspaces found for user: %s and id: %d' % \
+                    (user.username)
+        return err_resp(user_msg)
+
+    return ok_resp(user_ws)
+
 
 def get_latest_d3m_user_config_by_request(request):
     """Find the lastest UserWorkspace and return the attached d3m_config"""
@@ -39,8 +64,10 @@ def get_latest_d3m_user_config(user, create_if_not_found=True):
         return err_resp('No default D3MConfiguration set.')
 
     params = dict(user=user,
-                  orig_dataset_id=d3m_config.orig_dataset_id,
-                  is_active=True)
+                  is_current_workspace=True,
+                  orig_dataset_id=d3m_config.orig_dataset_id)
+
+    params = get_default_workspace_params(**params)
 
     latest_workspace = UserWorkspace.objects.filter(**params).first()
     if latest_workspace:
@@ -48,6 +75,7 @@ def get_latest_d3m_user_config(user, create_if_not_found=True):
 
     if create_if_not_found:
         params['d3m_config'] = d3m_config
+        params['is_current_workspace'] = True
         new_workspace = UserWorkspace(**params)
         new_workspace.save()
         return ok_resp(new_workspace.d3m_config)
@@ -78,14 +106,20 @@ def get_user_workspaces(user, create_if_not_found=True):
         return err_resp('No default D3MConfiguration set.')
 
     params = dict(user=user,
-                  orig_dataset_id=d3m_config.orig_dataset_id,
-                  is_active=True)
+                  orig_dataset_id=d3m_config.orig_dataset_id)
+
+    params = get_default_workspace_params(**params)
 
     workspaces = UserWorkspace.objects.filter(**params)
 
-    if workspaces.count() == 0:
+    # Make sure the list has a current workspace
+    #
+    has_current_workspace = [ws for ws in workspaces if ws.is_current_workspace]
+
+    if (not has_current_workspace) or (workspaces.count() == 0):
         if create_if_not_found:
             params['d3m_config'] = d3m_config
+            params['is_current_workspace'] = True
             new_workspace = UserWorkspace(**params)
             new_workspace.save()
             return ok_resp([new_workspace])

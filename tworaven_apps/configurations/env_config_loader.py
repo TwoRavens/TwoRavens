@@ -21,6 +21,7 @@ from tworaven_apps.configurations.static_vals import \
     (D3M_VARIABLE_LIST,
      D3M_DIRECTORY_VARIABLES,
      D3M_OUTPUT_SUBDIRECTORIES,
+     KEY_D3M_DIR_ADDITIONAL_INPUTS,
      KEY_D3M_DIR_TEMP,
      KEY_D3M_USER_PROBLEMS_ROOT,
      KEY_D3MLOCALDIR,
@@ -258,8 +259,11 @@ class EnvConfigLoader(BasicErrCheck):
             if new_dirname == KEY_D3M_DIR_TEMP:
                 new_config.temp_storage_root = new_dir_fullpath
 
-            if new_dirname == KEY_D3M_USER_PROBLEMS_ROOT:
+            elif new_dirname == KEY_D3M_USER_PROBLEMS_ROOT:
                 new_config.user_problems_root = new_dir_fullpath
+
+            elif new_dirname == KEY_D3M_DIR_ADDITIONAL_INPUTS:
+                new_config.additional_inputs = new_dir_fullpath
 
         # save updated config
         new_config.save()

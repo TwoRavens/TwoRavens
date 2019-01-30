@@ -18,7 +18,8 @@ from tworaven_apps.user_workspaces.models import \
 from tworaven_apps.user_workspaces.utils import \
     (get_user_workspaces,
      get_user_workspaces_as_dict,
-     delete_user_workspaces)
+     delete_user_workspaces,
+     get_user_workspace_config)
 from tworaven_apps.configurations.models_d3m import D3MConfiguration
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
@@ -34,15 +35,13 @@ def view_user_workspace_config(request, user_workspace_id):
 
     user = user_info.result_obj
 
-    try:
-        ws = UserWorkspace.objects.get(id=user_workspace_id,
-                                       user=user)
-    except UserWorkspace.DoesNotExist:
+    ws_info = get_user_workspace_config(user, user_workspace_id)
+    if not ws_info.success:
         user_msg = 'No workspaces found for user: %s and id: %d' % \
                     (user.username)
         return JsonResponse(get_json_error(user_msg))
 
-    ws_dict = ws.to_dict()
+    ws_dict = ws_info.result_obj.to_dict()
 
     json_msg = get_json_success('Workspace found.',
                                 data=ws_dict)
