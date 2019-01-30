@@ -1284,12 +1284,34 @@ else {
     m.route(document.body, '/model', {
         '/datamart': {
             render: () => [
-                m(Datamart, {
-                    preferences: app.datamartPreferences,
-                    dataPath: app.zparams.zd3mdata,
-                    endpoint: app.datamartURL,
-                    labelWidth: '10em'
-                }),
+                m(Header, {
+                    image: '/static/images/TwoRavens.png',
+                    aboutText: 'TwoRavens, ISI',
+                }, [
+                    m('img#ISILogo', {
+                        src: '/static/images/formal_viterbi_card_black_on_white.jpg',
+                        style: {
+                            'max-width': '140px',
+                            'max-height': '62px'
+                        }
+                    }),
+                    m('div', {style: {'flex-grow': 1}}),
+                    m('img#datamartLogo', {
+                        src: '/static/images/datamart_logo.png',
+                        style: {
+                            'max-width': '140px',
+                            'max-height': '62px'
+                        }
+                    }),
+                    m('div', {style: {'flex-grow': 1}}),
+                ]),
+                m('div', {style: {margin: 'auto', 'margin-top': '1em', 'max-width': '1000px'}},
+                    m(Datamart, {
+                        preferences: app.datamartPreferences,
+                        dataPath: app.zparams.zd3mdata,
+                        endpoint: app.datamartURL,
+                        labelWidth: '10em'
+                    })),
                 m(ModalDatamart, {
                     preferences: app.datamartPreferences,
                     endpoint: app.datamartURL,
