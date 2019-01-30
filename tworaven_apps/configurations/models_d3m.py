@@ -158,6 +158,10 @@ class D3MConfiguration(TimeStampedModel):
                         help_text=('Temporary storage root for performers'
                                    ' to use.'))
 
+    #additional_inputs = models.TextField(\
+    #                    blank=True,
+    #                    help_text=('Additional inputs directory'))
+
     timeout = models.BigIntegerField(\
                 default=-1,
                 help_text=('Allotted time for search, in seconds.'

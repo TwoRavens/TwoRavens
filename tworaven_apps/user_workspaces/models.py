@@ -1,5 +1,8 @@
-from django.db import models
 from collections import OrderedDict
+
+from django.db import models
+from django.urls import reverse
+
 from model_utils.models import TimeStampedModel
 import jsonfield
 
@@ -30,6 +33,17 @@ class UserWorkspace(TimeStampedModel):
     class Meta:
         ordering = ('user', '-id', '-is_active')
 
+
+    def get_absolute_url(self):
+        """url for info in JSON format"""
+        if not self.id:
+            return 'UserWorkspace not yet saved'
+
+        ws_url = '%s?pretty' % \
+                reverse('view_user_workspace_config',
+                        kwargs=dict(user_workspace_id=self.id))
+
+        return ws_url
 
     def to_dict(self):
         """Convert to dict for API calls"""
