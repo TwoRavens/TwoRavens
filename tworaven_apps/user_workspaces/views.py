@@ -1,7 +1,7 @@
 from django.shortcuts import render
 
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
-#from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt
 #from django.contrib.auth.decorators import login_required
 from django.conf import settings
 
@@ -24,9 +24,11 @@ from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
 
 
-
+@csrf_exempt
 def view_latest_user_configs(request):
     """Return a list of configs based on the default problem and the user"""
+    #return JsonResponse(get_json_error('just checking...'))
+
     # Get the user
     #
     user_info = get_authenticated_user(request)
@@ -52,7 +54,7 @@ def view_latest_user_configs(request):
 
     return JsonResponse(json_msg)
 
-
+@csrf_exempt
 def view_reset_user_configs(request):
     """Delete UserWorkspace objects based on the User and base Config"""
     # Get the user
