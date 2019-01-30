@@ -811,6 +811,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // ---------------------------------------
     // 1. Retrieve the configuration information
+    //  dev view: http://127.0.0.1:8080/user-workspaces/d3m-configs/json/latest?pretty
     // ---------------------------------------
     let d3m_config_url = '/user-workspaces/d3m-configs/json/latest';
 
@@ -829,8 +830,22 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
       setModal('No configurations in list!', "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
     }
 
+    // ------------------------------------
+    // Find the current workspace in the list
+    // ------------------------------------
+    let configurations;
+    for (const one_config of config_result.data) {
+        if (one_config.is_current_workspace){
+          configurations = one_config;
+          break;
+        }
+    }
+    if (!configurations){
+        setModal('No current workspace config in list!', "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
+    }
+
     // Take the 1st configuration from the list -- for now...
-    let configurations = config_result.data[0]
+    //let configurations = config_result.data[0]
 
     console.log("this is the config file:");
     console.log(configurations);

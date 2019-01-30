@@ -20,7 +20,7 @@ from tworaven_apps.utils.url_helper import add_trailing_slash,\
 from tworaven_apps.configurations.util_path_check import are_d3m_paths_valid,\
     get_bad_paths, get_bad_paths_for_admin
 from tworaven_apps.configurations.static_vals import \
-    (KEY_D3MINPUTDIR, )
+    (KEY_D3MINPUTDIR, KEY_D3M_DIR_ADDITIONAL_INPUTS)
 KEY_DATASET_SCHEMA = 'dataset_schema'
 
 KEY_PROBLEM_SCHEMA = 'problem_schema'
@@ -158,6 +158,10 @@ class D3MConfiguration(TimeStampedModel):
                         help_text=('Temporary storage root for performers'
                                    ' to use.'))
 
+    additional_inputs = models.TextField(\
+                        blank=True,
+                        help_text=('Additional inputs directory'))
+
     timeout = models.BigIntegerField(\
                 default=-1,
                 help_text=('Allotted time for search, in seconds.'
@@ -244,6 +248,7 @@ class D3MConfiguration(TimeStampedModel):
                  'training_data_root', 'problem_root',
                  'pipeline_logs_root', 'executables_root',
                  'user_problems_root',
+                 'additional_inputs',
                  'temp_storage_root',
                  OPTIONAL_DIR_OUTPUT_ROOT,
                  'timeout', 'cpus', 'ram', 'env_values']
