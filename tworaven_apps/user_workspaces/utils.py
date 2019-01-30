@@ -37,8 +37,8 @@ def get_user_workspace_config(user, user_workspace_id):
     try:
         user_ws = UserWorkspace.objects.get(**params)
     except UserWorkspace.DoesNotExist:
-        user_msg = 'No workspaces found for user: %s and id: %d' % \
-                    (user.username)
+        user_msg = 'No workspaces found for user: %s and id: %s' % \
+                    (user.username, user_workspace_id)
         return err_resp(user_msg)
 
     return ok_resp(user_ws)

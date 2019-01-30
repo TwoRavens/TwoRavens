@@ -57,11 +57,10 @@ class UserWorkspace(TimeStampedModel):
             if not self.id:
                 super(UserWorkspace, self).save(*args, **kwargs)
 
-            # Make sure other workspaces are not current
+            # Make sure all other workspaces are not current
             #
-            qs = UserWorkspace.objects.exclude(id=self.id\
-                        ).filter(d3m_config=self.d3m_config,
-                                 orig_dataset_id=self.orig_dataset_id)
+            qs = UserWorkspace.objects.exclude(id=self.id)
+            #.filter(orig_dataset_id=self.orig_dataset_id)
             qs.update(is_current_workspace=False)
 
         super(UserWorkspace, self).save(*args, **kwargs)
