@@ -23,22 +23,13 @@ PREVIEW_SIZE = 100
 class DatamartJobUtilISI(object):
 
     @staticmethod
-    def datamart_upload(data):
-        response = requests.post(
-            DATAMART_ISI_URL + '/new/get_metadata_single_file',
-            data=data, verify=False)
-
-        if response.status_code != 200:
-            return err_resp('Datamart responded with: ' + response.reason)
-
-        response = response.json()
-
-        if response['code'] != '0000':
-            return err_resp(response['message'])
+    def datamart_scrape(url):
 
         response = requests.post(
-            DATAMART_ISI_URL + '/new/upload_metadata_list',
-            data=response['data'], verify=False)
+            DATAMART_ISI_URL + '/new/get_metadata_extract_links',
+            data=json.dumps({'url': url}),
+            headers={'Content-type': 'application/json'},
+            verify=False)
 
         if response.status_code != 200:
             return err_resp('Datamart responded with: ' + response.reason)
@@ -51,17 +42,57 @@ class DatamartJobUtilISI(object):
         return ok_resp(response['data'])
 
     @staticmethod
-    def datamart_search(query, data_path=None):
+    def datamart_get_metadata(data):
+        response = requests.post(
+            DATAMART_ISI_URL + '/new/get_metadata_single_file',
+            data=data,
+            headers={'Content-type': 'application/json'},
+            verify=False)
+
+        if response.status_code != 200:
+            return err_resp('Datamart responded with: ' + response.reason)
+
+        response = response.json()
+
+        if response['code'] != '0000':
+            return err_resp(response['message'])
+
+        return ok_resp(response['data'])
+
+    @staticmethod
+    def datamart_upload(indices):
+        response = requests.post(
+            DATAMART_ISI_URL + '/new/upload_metadata_list',
+            data=indices,
+            headers={'Content-type': 'application/json'},
+            verify=False)
+
+        if response.status_code != 200:
+            return err_resp('Datamart responded with: ' + response.reason)
+
+        response = response.json()
+
+        if response['code'] != '0000':
+            return err_resp(response['message'])
+
+        return ok_resp(response['data'])
+
+    @staticmethod
+    def datamart_search(query, data_path=None, limit=None):
         # return ok_resp(json.loads(cached_response_baseball))
 
-        payload = {'query': ('query.json', query)}
-
+        files = {'query': ('query.json', query)}
         if data_path and os.path.exists(data_path):
-            payload['file'] = open(data_path, 'r')
+            files['file'] = open(data_path, 'r')
+
+        params = {'return_named_entity': False}
+        if limit:
+            params['max_return_docs'] = limit
 
         response = requests.post(
             DATAMART_ISI_URL + '/new/search_data',
-            files=payload, verify=False).json()
+            params=params,
+            files=files, verify=False).json()
 
         if response['code'] != "0000":
             return err_resp(response['message'])
@@ -71,10 +102,8 @@ class DatamartJobUtilISI(object):
             for variable in dataset['metadata']['variables']:
                 if 'semantic_type' in variable:
                     del variable['semantic_type']
-                if 'named_entity' in variable:
-                    del variable['named_entity']
 
-        return ok_resp(response['data'])
+        return ok_resp(response['data'][:limit])
 
     @staticmethod
     def datamart_materialize(search_result):
@@ -182,7 +211,7 @@ class DatamartJobUtilNYU(object):
         return ok_resp(response['data'])
 
     @staticmethod
-    def datamart_search(query, data_path=None):
+    def datamart_search(query, data_path=None, limit=False):
         payload = {'query': ('query.json', query)}
 
         if data_path and os.path.exists(data_path):
