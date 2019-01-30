@@ -809,20 +809,37 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         return;
     }
 
-    let d3m_config_url = "/config/d3m-config/json/latest";
-    //let d3m_config_eval_url = "/config/d3m-config/json/eval/latest";
-
+    // ---------------------------------------
     // 1. Retrieve the configuration information
-    let res = await m.request({
+    // ---------------------------------------
+    let d3m_config_url = '/user-workspaces/d3m-configs/json/latest';
+
+    let config_result = await m.request({
         method: "POST",
         url: d3m_config_url
     });
-    console.log("this is config file:");
-    console.log(res);
-    datasetdocurl = res.dataset_schema;
 
+    console.log(JSON.stringify(config_result));
+
+    if (!config_result.success){
+      setModal(config_result.message, "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
+    }
+
+    if (!config_result.data){
+      setModal('No configurations in list!', "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
+    }
+
+    // Take the 1st configuration from the list -- for now...
+    let configurations = config_result.data[0]
+
+    console.log("this is the config file:");
+    console.log(configurations);
+
+    // ---------------------------------------
     // 2. Set 'configurations'
-    configurations = JSON.parse(JSON.stringify(res)); // this is just copying res
+    // ---------------------------------------
+    datasetdocurl = configurations.dataset_schema;
+
     if (configurations.d3m_input_dir){
       // 2019 config
       d3mRootPath = configurations.d3m_input_dir;
@@ -839,18 +856,30 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
                         description: 'D3M config file'};
                         //id: configurations.id};
 
-    d3mPS = "/config/d3m-config/get-problem-schema/json";
-    d3mDS = "/config/d3m-config/get-dataset-schema/json";
-    console.log("Configurations: ", configurations);
+    // url example: /config/d3m-config/get-problem-schema/json/39
+    //
+    d3mPS = configurations.problem_schema_url;
+
+    // url example: /config/d3m-config/get-dataset-schema/json/39
+    //
+    d3mDS = configurations.dataset_schema_url;
+
+    // need to change?
+    //
     d3mPreprocess = pURL = `rook-custom/rook-files/${d3mDataName}/preprocess/preprocess.json`;
     console.log(d3mPreprocess);
 
+    // ---------------------------------------
     // 3. Read the problem schema and set 'd3mProblemDescription'
     // ...and make a call to Hello to check TA2 is up.  If we get this far, data are guaranteed to exist for the frontend
+    // ---------------------------------------
 
-    res = await m.request("/config/d3m-config/get-problem-data-file-info");
+    //url example: /config/d3m-config/get-problem-data-file-info/39
+    //
+    let problem_info_result = await m.request(configurations.problem_data_info);
+
     console.log("result from problem data file info:");
-    console.log(res);
+    console.log(problem_info_result);
 
     // The result of this call is similar to below:
     // example:
@@ -874,10 +903,10 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // Loop through the response above and
     // pick the first "path" where "exists" is true
     //
-    // Note: if data files have "exists" as false, stay as default which is null
+    // Note: if data files have "exists" as false, stay at default which is null
     //
-    let set_d3m_data_path = (field, val) => res.data[field].exists ? res.data[field].path :
-        res.data[field + '.gz'].exists ? res.data[field + '.gz'].path :
+    let set_d3m_data_path = (field, val) => problem_info_result.data[field].exists ? problem_info_result.data[field].path :
+        problem_info_result.data[field + '.gz'].exists ? problem_info_result.data[field + '.gz'].path :
         val;
 
     zparams.zd3mdata = d3mData = set_d3m_data_path('learningData.csv', d3mData);
@@ -886,16 +915,15 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // If this is the D3M domain; d3mData MUST be set to an actual value
     //
     if ((IS_D3M_DOMAIN)&&(d3mData == null)){
-        const d3m_path_err = 'NO VALID d3mData path!! ' + JSON.stringify(res)
+        const d3m_path_err = 'NO VALID d3mData path!! ' + JSON.stringify(problem_info_result)
         console.log(d3m_path_err);
         alertError('debug (be more graceful): ' + d3m_path_err);
     }
 
-    // hardcoding this, once get-problem-data-file-info is revised this hardcode can go away and use the previous two LOC
-    //  zparams.zd3mdata = d3mData = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
-    //  zparams.zd3mtarget = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
-
-    res = await m.request(d3mPS);
+    // ---------------------------------------
+    // Retrieve the problem schema....
+    // ---------------------------------------
+    let res = await m.request(d3mPS);
     // console.log("prob schema data: ", res);
     if(typeof res.success=='undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
         // This is a Task 2 assignment
