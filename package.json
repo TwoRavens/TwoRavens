@@ -16,7 +16,6 @@
   "author": "",
   "license": "BSD-3-Clause",
   "dependencies": {
-    "ace-builds": "^1.4.1",
     "bootstrap": "^3.3.7",
     "d3": "^4.11.0",
     "deep-extend": "^0.5.1",
@@ -40,6 +39,7 @@
     "vega-lite": "^2.6.0"
   },
   "devDependencies": {
+    "ace-builds": "^1.4.2",
     "babel": "^6.23.0",
     "babel-core": "^6.24.1",
     "babel-loader": "^7.1.2",

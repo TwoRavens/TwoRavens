@@ -402,7 +402,7 @@ function processRule(rule) {
                     rule_query_inner['$lte'] = {'$date': child.toDate.toISOString().slice(0, 10)}
                 }
             }
-            rule_query[column] = {$or: [rule_query_inner, {column: {$exists: 0}}]};
+            rule_query.$or = [{[column]: rule_query_inner}, {[column]: {$exists: 0}}];
         } else if (rule.structure === 'interval') {
             let or = [];
             for (let column of rule.children.map(child => child.column)) {

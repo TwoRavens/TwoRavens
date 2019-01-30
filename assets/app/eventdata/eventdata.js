@@ -57,7 +57,10 @@ export let setSelectedDataset = (key) => {
 
         // this modifies the abstract query, preferences, selected vars to be compatible with the new dataset
         alignmentLog = realignQuery(looseSteps['pendingSubset'], previousSelectedDataset, selectedDataset);
-        preferencesLog = realignPreferences(previousSelectedDataset, selectedDataset);
+        // TODO: LOL fixed -Mike
+        try {
+            preferencesLog = realignPreferences(previousSelectedDataset, selectedDataset);
+        } catch (e) {console.error("Some preferences failed re-alignment.")}
         variablesLog = realignVariables(previousSelectedDataset, selectedDataset);
 
         manipulations.eventdata.map(step => {

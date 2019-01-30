@@ -225,7 +225,7 @@ export class TreeSubset {
                     let canChange = node.type !== 'query' && !node.editable;
                     $li.find('.jqtree-element').prepend(buttonOperator(pipelineId, step.id, node.id, node.operation, canChange));
                 }
-                if (editable && !('cancellable' in node) || (node['cancellable'] === true)) {
+                if (node.type === 'query' || (editable && !('cancellable' in node)) || node['cancellable'] === true) {
                     $li.find('.jqtree-element').append(buttonDelete(pipelineId, step.id, node.id));
                 }
                 // Set a left margin on the first element of a leaf
@@ -338,6 +338,8 @@ export class TreeSubset {
                 name: 'Query ' + step.id,
                 id: step.id + '-root',
                 children: step.abstractQuery,
+                cancellable: true,
+                editable: true,
                 type: 'query'
             }]
             : step.abstractQuery;
@@ -347,7 +349,7 @@ export class TreeSubset {
             this.isQuery = isQuery;
             this.selectAll(subsetTree, data, this.isQuery);
 
-            data[0].children.forEach(child => disableEditRecursive(child));
+            data[0].children.forEach(disableEditRecursive);
             m.redraw();
         }
         else subsetTree.tree('setState', state);

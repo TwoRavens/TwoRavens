@@ -4,23 +4,22 @@ import * as queryMongo from '../../manipulations/queryMongo';
 import * as tour from '../tour';
 import {panelMargin} from '../../../common/common';
 
-import '../../../../node_modules/ace-builds/src-min-noconflict/ace.js';
-
+import 'ace-builds';
+import 'ace-builds/webpack-resolver';
 
 export default class CanvasCustom {
     oncreate(vnode) {
         let {preferences} = vnode.attrs;
         // The editor menu for the custom subsets
-        this.editor = ace.edit("subsetCustomEditor");
-
+        this.editor = ace.edit("subsetCustomEditor", {mode: "ace/mode/json", fontSize: 16});
         this.editor.$blockScrolling = Infinity;
-        this.editor.session.setMode("ace/mode/json");
 
         this.editor.setOptions({
             highlightActiveLine: false,
             highlightGutterLine: false
         });
-        this.editor.setValue(preferences['text'] || '')
+        this.editor.setValue(preferences['text'] || '');
+        this.editor.on('change', () => preferences['text'] = this.editor.getValue());
 
         // editor.renderer.$cursorLayer.element.style.opacity = 0;
         // editor.textInput.getElement().disabled = true;

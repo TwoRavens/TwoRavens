@@ -1,6 +1,6 @@
 import m from 'mithril';
 
-import {glyph} from "../index";
+import {glyph, glyph2, italicize} from "../index";
 
 import * as eventdata from './eventdata';
 import * as tour from "./tour";
@@ -39,6 +39,7 @@ import CanvasResults from "./canvases/CanvasResults";
 
 import SaveQuery from "./SaveQuery";
 import {TreeAggregate, TreeSubset, TreeVariables} from "../views/JQTrees";
+import * as app from "../app";
 
 export default class Body_EventData {
 
@@ -201,6 +202,13 @@ export default class Body_EventData {
         return m(Footer,
             tourBar,
             m("#recordBar", {style: {display: "inline-block", float: 'right'}}, [
+                m(Button, {
+                    class: 'btn-sm',
+                    style: {'margin': '4px 6px 0em 6px'},
+                    title: 'alerts',
+                    onclick: () => app.setAlertsShown(true)
+                }, glyph2('alert', {style: {color: app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}})),
+
 
                 eventdata.selectedMode !== 'home' && m(Button, {
                     class: 'btn-sm',
@@ -527,8 +535,13 @@ export default class Body_EventData {
                     {
                         value: 'Subsets',
                         contents: (manipulations.eventdata.length + (eventdata.selectedMode === 'subset' ? looseSteps['pendingSubset'].abstractQuery.length : 0)) ? [
-                            ...manipulations.eventdata.map(step => m(TreeSubset, {isQuery: true, step, pipelineId: 'eventdata', editable: false})),
-                            m(TreeSubset, {step: looseSteps['pendingSubset'], pipelineId: 'pendingSubset', editable: true})
+                            ...manipulations.eventdata.map(step => m(TreeSubset, {
+                                redraw: eventdata.isLoading, setRedraw: _ => _, // this is cheeky, when redraw: true, the tree is rebuilt internally. When a new query is loading, the tree needs to get rebuilt (no longer within a pending step)
+                                isQuery: true, step,
+                                pipelineId: 'eventdata', editable: false})),
+                            m(TreeSubset, {
+                                redraw: eventdata.isLoading, setRedraw: _ => _,
+                                step: looseSteps['pendingSubset'], pipelineId: 'pendingSubset', editable: true})
                         ] : [
                             m('div[style=font-style:italic]', 'Match all records'),
                             looseSteps['pendingSubset'].abstractQuery.length !== 0 && m('div[style=font-style:italic]', 'Some pending constraints are hidden. Update from subset menu to apply them.')
@@ -640,6 +653,7 @@ export default class Body_EventData {
                 mode: eventdata.selectedMode,
                 subsetName: eventdata.selectedSubsetName,
                 data: eventdata.subsetData[eventdata.selectedSubsetName],
+                pipeline: manipulations.eventdata,
                 preferences: eventdata.subsetPreferences[eventdata.selectedSubsetName],
                 metadata: eventdata.genericMetadata[eventdata.selectedDataset]['subsets'][eventdata.selectedSubsetName],
                 formats: eventdata.genericMetadata[eventdata.selectedDataset]['formats'],
@@ -753,6 +767,40 @@ export default class Body_EventData {
                     common.setPanelOpen('right');
                 }
             }, 'Stage'),
+
+            app.alertsShown && m(ModalVanilla, {
+                id: 'alertsModal',
+                setDisplay: () => {
+                    app.alertsLastViewed.setTime(new Date().getTime());
+                    app.setAlertsShown(false)
+                }
+            },[
+                m('h4[style=width:3em;display:inline-block]', 'Alerts'),
+                m(Button, {
+                    title: 'Clear Alerts',
+                    style: {display: 'inline-block', 'margin-right': '0.75em'},
+                    onclick: () => app.alerts.length = 0,
+                    disabled: app.alerts.length === 0
+                }, glyph2('ok')),
+                app.alerts.length === 0 && italicize('No alerts recorded.'),
+                app.alerts.length > 0 && m(Table, {
+                    data: [...app.alerts].reverse().map(alert => [
+                        alert.time > app.alertsLastViewed && glyph2('asterisk'),
+                        m(`div[style=background:${app.hexToRgba({
+                            'log': common.menuColor,
+                            'warn': common.warnColor,
+                            'error': common.errorColor
+                        }[alert.type], .5)}]`, alert.time.toLocaleTimeString().replace(/([\d]+:[\d]{2})(:[\d]{2})(.*)/, "$1$3")),
+                        alert.description
+                    ]),
+                    attrsAll: {style: {'margin-top': '1em'}},
+                    tableTags: m('colgroup',
+                        m('col', {span: 1, width: '10px'}),
+                        m('col', {span: 1, width: '75px'}),
+                        m('col', {span: 1}))
+                })
+            ]),
+
             m(Canvas, {
                 attrsAll: {
                     style: mode === 'aggregate'
