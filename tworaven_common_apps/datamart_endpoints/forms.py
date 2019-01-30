@@ -5,20 +5,51 @@ from tworaven_common_apps.datamart_endpoints.models import DATAMART_SOURCES
 
 
 class DatamartUploadForm(forms.Form):
-    """ check if search parameters are ok"""
 
     data = forms.CharField(required=True, widget=forms.Textarea)
 
     def clean_data(self):
-        return self.cleaned_data.get('title')
+        return self.cleaned_data.get('data')
+
+
+class DatamartCustomForm(forms.Form):
+
+    custom = forms.CharField(required=True, widget=forms.Textarea)
+    source = forms.CharField(required=True, widget=forms.Textarea)
+
+    def clean_data(self):
+        return json.loads(self.cleaned_data.get('custom'))
+
+    def clean_source(self):
+        return self.cleaned_data.get('source')
+
+
+class DatamartScrapeForm(forms.Form):
+
+    url = forms.CharField(required=True, widget=forms.Textarea)
+
+    def clean_link(self):
+        return self.cleaned_data.get('url')
+
+
+class DatamartIndexForm(forms.Form):
+
+    indices = forms.CharField(required=True, widget=forms.Textarea)
+    source = forms.CharField(required=True, widget=forms.Textarea)
+
+    def clean_indices(self):
+        return json.loads(self.cleaned_data.get('indices'))
+
+    def clean_source(self):
+        return self.cleaned_data.get('source')
 
 
 class DatamartSearchForm(forms.Form):
-    """ check if search parameters are ok"""
 
     source = forms.CharField(required=True, widget=forms.Textarea)
     query = forms.CharField(required=True, widget=forms.Textarea)
     data_path = forms.CharField(required=False, widget=forms.Textarea)
+    limit = forms.IntegerField(required=False)
 
     def clean_source(self):
         source = self.cleaned_data.get('source')
@@ -29,12 +60,14 @@ class DatamartSearchForm(forms.Form):
     def clean_query(self):
         return json.loads(self.cleaned_data.get('query'))
 
-    def clean_path(self):
-        return self.cleaned_data.get('query')
+    def clean_data_path(self):
+        return self.cleaned_data.get('data_path')
+
+    def clean_limit(self):
+        return self.cleaned_data.get('limit')
 
 
 class DatamartAugmentForm(forms.Form):
-    """ check if augment parameters are ok"""
     source = forms.CharField(required=True, widget=forms.Textarea)
     data_path = forms.CharField(required=True, widget=forms.Textarea)
     search_result = forms.CharField(required=True, widget=forms.Textarea)
@@ -61,7 +94,6 @@ class DatamartAugmentForm(forms.Form):
 
 
 class DatamartMaterializeForm(forms.Form):
-    """ check if materialize parameters are ok"""
 
     source = forms.CharField(required=True, widget=forms.Textarea)
     search_result = forms.CharField(required=True)

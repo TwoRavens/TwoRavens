@@ -473,12 +473,13 @@ function rightpanel(mode) {
             //     'byudml': common.dvColor,
             //     'sklearn_wrap': common.csColor
             // }[pipeStep.primitive.python_path.split('.')[2]] || common.grayColor,
+            // the table is overkill, but we could certainly add more info here
             summary: m(Table, {
                 id: 'pipelineFlowchartSummary' + i,
                 abbreviation: 40,
                 data: {
                     'Name': pipeStep['primitive']['primitive'].name,
-                    'Method': pipeStep['primitive']['primitive']['pythonPath'].split('.').slice(-1)[0]
+                    // 'Method': pipeStep['primitive']['primitive']['pythonPath'].split('.').slice(-1)[0]
                 },
                 attrsAll: {style: {'margin-bottom': 0, padding: '1em'}}
             }),
