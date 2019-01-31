@@ -204,13 +204,14 @@ class D3MConfiguration(TimeStampedModel):
         # A user config CANNOT be the default
         #
         if self.is_user_config:
-            self.is_default = True
+            self.is_default = False
 
         # If this is the default, set everything else to non-default
         if self.is_default:
-            D3MConfiguration.objects.filter(\
-                            is_default=True\
-                            ).update(is_default=False)
+            qs = D3MConfiguration.objects.filter(is_default=True)
+            if self.id:
+                qs = qs.exclude(id=self.id)
+            qs.update(is_default=False)
 
         super(D3MConfiguration, self).save(*args, **kwargs)
 

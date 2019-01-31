@@ -70,6 +70,7 @@ class NewDatasetUtil(BasicErrCheck):
         self.new_source_file = None
         self.rook_params = None
         self.new_d3m_config = None
+        self.new_workspace = None
 
         self.run_construct_dataset()
 
@@ -113,6 +114,7 @@ class NewDatasetUtil(BasicErrCheck):
         else:
             print('no rook params')
         print('\nnew_d3m_config', self.new_d3m_config)
+        print('\nnew_workspace', self.new_workspace)
 
 
     def run_construct_dataset(self):
@@ -147,21 +149,27 @@ class NewDatasetUtil(BasicErrCheck):
             return
 
         params = dict(orig_dataset_id=self.d3m_config.name,
+                      is_default_config=False,  # don't want it as default for everyone
                       is_user_config=True)
 
-        ecl = EnvConfigLoader.make_config_from_directory(\
+        print('create_new_config 1')
+        ecl_info = EnvConfigLoader.make_config_from_directory(\
                                     self.dataset_root_dir, **params)
 
-        if not ecl.success:
+        print('create_new_config 2: ', ecl_info)
+
+        if not ecl_info.success:
             self.add_err_msg('Error creating config: %s' % \
-                             ecl.err_msg)
+                             ecl_info.err_msg)
             return
 
-        self.new_d3m_config = ecl.result_obj
+        self.new_d3m_config = ecl_info.result_obj
+        print('create_new_config 3; new_d3m_config ', self.new_d3m_config)
 
         # -------------------------
         # Create new UserWorkspace
         # ---------------------------
+        print('create_new_config 4')
         ws_info = create_new_user_workspace(\
                                     self.user_workspace.user,
                                     self.new_d3m_config)
@@ -169,6 +177,8 @@ class NewDatasetUtil(BasicErrCheck):
             self.add_err_msg('Error creating workspace: %s' % \
                              ws_info.err_msg)
             return
+
+        print('create_new_config 5')
 
         self.new_workspace = ws_info.result_obj
 
@@ -191,7 +201,7 @@ class NewDatasetUtil(BasicErrCheck):
         if self.has_error():
             return False
 
-        d3m_config = get_latest_d3m_config()
+        d3m_config = self.user_workspace.d3m_config #et_latest_d3m_config()
         if not d3m_config:
             user_msg = 'Latest D3M configuration not found. (construct_folders)'
             self.add_err_msg(user_msg)
@@ -393,16 +403,16 @@ class NewDatasetUtil(BasicErrCheck):
     def create_problem_data_docs(self):
         """Send params to rook app"""
         if self.has_error():
-            return
+            return False
 
         self.rook_params = self.get_makedoc_rook_params()
         if not self.rook_params:
-            return
+            return False
 
         md_util = MakeDatadocsUtil(rook_params=self.rook_params)
         if md_util.has_error():
             self.add_err_msg('Rook error. %s' % md_util.get_error_message())
-            return
+            return False
 
         # -----------------------------
         # write datasetDoc
@@ -411,13 +421,13 @@ class NewDatasetUtil(BasicErrCheck):
         if not doc_info.success:
             self.add_err_msg('Rook datasetDoc error. %s' % \
                              doc_info.err_msg)
-            return
+            return False
 
         dataset_doc_path = join(self.dataset_dir, 'datasetDoc.json')
         finfo = write_file(dataset_doc_path, doc_info.result_obj)
         if not finfo.success:
             self.add_err_msg(finfo.err_msg)
-            return
+            return False
 
         # -----------------------------
         # write problemDoc
@@ -426,10 +436,12 @@ class NewDatasetUtil(BasicErrCheck):
         if not doc_info2.success:
             self.add_err_msg('Rook problemDoc error. %s' % \
                              doc_info2.err_msg)
-            return
+            return False
 
         problem_doc_path = join(self.problem_dir, 'problemDoc.json')
         finfo2 = write_file(problem_doc_path, doc_info2.result_obj)
         if not finfo2.success:
             self.add_err_msg(finfo2.err_msg)
-            return
+            return False
+
+        return True

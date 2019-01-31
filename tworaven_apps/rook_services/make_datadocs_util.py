@@ -78,24 +78,31 @@ class MakeDatadocsUtil(BasicErrCheck):
         assert not self.has_error(),\
             'Make sure "has_error()" is False before calling this method'
 
-        print('-' * 40)
-        print('-' * 40)
-        print(self.mkdoc_data)
-        print('-' * 40)
-        print(type(self.mkdoc_data))
+        print('type(self.mkdoc_data) (get_mkdoc_data_as_json)', type(self.mkdoc_data))
 
         if kwargs.get('problemDoc', None) is True:
 
             if not 'problemDoc' in self.mkdoc_data:
                 return err_resp('Error: "problemDoc" not found in rook data')
-            core_data = self.mkdoc_data['problemDoc']
+            core_data_info = json_loads(self.mkdoc_data['problemDoc'][0])
+            if not core_data_info.success:
+                return err_resp(('Failed to convert problemDoc to'
+                                 ' python dict.  It\'s not JSON. %s') %\
+                                 (core_data_info.err_msg))
+            core_data = core_data_info.result_obj
+
 
         elif kwargs.get('datasetDoc', None) is True:
 
             if not 'datasetDoc' in self.mkdoc_data:
                 return err_resp('Error: "datasetDoc" not found in rook data')
             core_data = self.mkdoc_data['datasetDoc']
-
+            core_data_info = json_loads(self.mkdoc_data['datasetDoc'][0])
+            if not core_data_info.success:
+                return err_resp(('Failed to convert datasetDoc to'
+                                 ' python dict.  It\'s not JSON. %s') %\
+                                 (core_data_info.err_msg))
+            core_data = core_data_info.result_obj
         else:
             core_data = self.mkdoc_data
 
@@ -174,8 +181,8 @@ class MakeDatadocsUtil(BasicErrCheck):
 
         rook_svc_url = self.rook_app_info.get_rook_server_url()
 
-        print('rook_svc_url:', rook_svc_url)
-        print('call_data:', call_data)
+        #print('rook_svc_url:', rook_svc_url)
+        #print('call_data:', call_data)
 
         # Call R services
         #
