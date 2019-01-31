@@ -14,9 +14,9 @@ from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.utils.json_helper import json_loads, json_dumps
 from tworaven_apps.utils.file_util import \
-    (create_directory, move_file)
-from tworaven_apps.utils.basic_response import (ok_resp,
-                                                err_resp)
+    (create_directory, move_file, write_file)
+from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
+from tworaven_apps.rook_services.make_datadocs_util import MakeDatadocsUtil
 from tworaven_apps.configurations.utils import \
     (get_latest_d3m_config,
      get_config_file_contents)
@@ -60,6 +60,7 @@ class NewDatasetUtil(BasicErrCheck):
         # to be created
         self.dataset_id = None
         self.tables_dir = None  # where source file is copied: learningData.csv
+        self.dataset_dir = None
         self.problem_dir = None # where problem dir will be written
         self.new_source_file = None
         self.rook_params = None
@@ -123,6 +124,8 @@ class NewDatasetUtil(BasicErrCheck):
         if not self.create_prob_data_docs():
             return
 
+
+
     def construct_folders(self):
         """Create the folder structure"""
         """
@@ -178,7 +181,7 @@ class NewDatasetUtil(BasicErrCheck):
         if not dir_info.success:
             self.add_err_msg(dir_info.err_msg)
             return False
-
+        self.dataset_dir = dirname(self.tables_dir)
         return True
 
     def move_source_file(self):
@@ -217,6 +220,8 @@ class NewDatasetUtil(BasicErrCheck):
 
         description: description from DATA DOC, plus maybe any description of augmented data
 
+        citation: citation in data doc, plus maybe anything from augmented data
+
         ---------------------------
         # PROBLEM DOC vals
         ---------------------------
@@ -225,9 +230,14 @@ class NewDatasetUtil(BasicErrCheck):
         taskSubType: taskSubType from PROBLEM DOC
             - Optional! don't send if it's not there
 
-        depvarname: data.targets[...] from PROBLEM DOC, can be more than one object
+        targets: data.targets[...] from PROBLEM DOC, can be more than one object
 
         metric: performanceMetrics[...] from PROBLEM DOC, can be more than one
+
+        performanceMetrics: performanceMetrics[...] from problem doc, can be more than one
+
+        problemDoc: entire problemDoc.json
+        datasetDoc: entire datasetDoc.json
         """
         if self.has_error():
             return None
@@ -266,6 +276,14 @@ class NewDatasetUtil(BasicErrCheck):
         else:
             params['description'] = '(augmented data)'
 
+        # citation
+        #
+        doc_val_info = get_dict_value(dataset_doc, 'about', 'citation')
+        if doc_val_info.success:
+            params['citation'] = '[augmented] %s' % doc_val_info.result_obj
+        else:
+            params['citation'] = '(no citation)'
+
         # --------------------------------
         # get problem doc info
         # --------------------------------
@@ -293,7 +311,7 @@ class NewDatasetUtil(BasicErrCheck):
         if subtask_type.success:
             params['taskSubType'] = subtask_type.result_obj
 
-        # depvarname - targets
+        # targets
         #
         doc_val_info = get_dict_value(problem_doc, 'inputs', 'data')
         if not doc_val_info.success:
@@ -305,10 +323,24 @@ class NewDatasetUtil(BasicErrCheck):
             return None
 
         try:
-            params['depvarname'] = doc_val_info.result_obj[0]['targets']
+            params['targets'] = doc_val_info.result_obj[0]['targets']
         except KeyError:
             self.add_err_msg('inputs.data.targets not found in problem doc')
             return None
+
+        # performanceMetrics
+        #
+        doc_val_info = get_dict_value(problem_doc, 'inputs', 'performanceMetrics')
+        if not doc_val_info.success:
+            self.add_err_msg('inputs.performanceMetrics not found in problem doc')
+            return None
+        params['performanceMetrics'] = doc_val_info.result_obj
+
+
+        # Full docs at the end
+        #
+        params['problemDoc'] = problem_doc
+        params['datasetDoc'] = dataset_doc
 
         return params
 
@@ -319,4 +351,39 @@ class NewDatasetUtil(BasicErrCheck):
 
         self.rook_params = self.get_makedoc_rook_params()
         if not self.rook_params:
+            return
+
+        md_util = MakeDatadocsUtil(rook_params=self.rook_params)
+        if md_util.has_error():
+            self.add_err_msg('Rook error. %s' % md_util.get_error_message())
+            return
+
+        # -----------------------------
+        # write datasetDoc
+        # -----------------------------
+        doc_info = md_util.get_dataset_doc_string()
+        if not doc_info.success:
+            self.add_err_msg('Rook datasetDoc error. %s' % \
+                             doc_info.err_msg)
+            return
+
+        dataset_doc_path = join(self.dataset_dir, 'datasetDoc.json')
+        finfo = write_file(dataset_doc_path, doc_info.result_obj)
+        if not finfo.succss:
+            self.add_err_msg(finfo.err_msg)
+            return
+
+        # -----------------------------
+        # write problemDoc
+        # -----------------------------
+        doc_info2 = md_util.get_problem_doc_string()
+        if not doc_info2.success:
+            self.add_err_msg('Rook problemDoc error. %s' % \
+                             doc_info2.err_msg)
+            return
+
+        problem_doc_path = join(self.problem_dir, 'problemDoc.json')
+        finfo2 = write_file(problem_doc_path, doc_info2.result_obj)
+        if not finfo2.succss:
+            self.add_err_msg(finfo2.err_msg)
             return

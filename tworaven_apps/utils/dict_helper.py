@@ -27,7 +27,6 @@ def get_dict_value(data_dict, *keys):
 
     dict_val = data_dict
     for key in keys:
-        print('key', key, 'dict_val', type(dict_val))
         try:
             dict_val = dict_val[key]
         except KeyError:

@@ -7,6 +7,18 @@ from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
 
 
+def write_file(fpath, doc_content):
+    """Create a directory"""
+    try:
+        fh = open(fpath, 'w')
+        fh.write(doc_content)
+        fh.close()
+    except OSError as err_obj:
+        user_msg = ('Failed to write file: %s' % fpath)
+        return err_resp(user_msg)
+
+    return ok_resp('File created: %s' % fpath)
+
 def create_directory(new_dir, exist_ok=True):
     """Create a directory"""
     try:
