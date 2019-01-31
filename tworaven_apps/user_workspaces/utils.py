@@ -87,7 +87,7 @@ def get_latest_d3m_user_config(user, create_if_not_found=True, **kwargs):
     if not isinstance(user, User):
         return err_resp('user must be a "User" object, not: "%s"' % user)
 
-    return_full_workspace = kwargs.get('get_full_workspace', False)
+    return_full_workspace = kwargs.get('return_full_workspace', False)
 
     d3m_config = get_latest_d3m_config()
     if not d3m_config:

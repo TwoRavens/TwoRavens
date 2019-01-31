@@ -153,6 +153,7 @@ class DatamartJobUtilISI(object):
         # ----------------------------
         # mock call
         # ----------------------------
+        # 291780000
         """
         right_data = '291770000'
         left_columns= '[[2]]'
@@ -196,6 +197,7 @@ class DatamartJobUtilISI(object):
         #   - This will send a websocket message when process complete
         #   - Needs to be moved to celery queue
         #
+        print("save_info.result_obj['data_path']", save_info.result_obj['data_path'])
         ndu_info = NewDatasetUtil.make_new_dataset_call(\
                              user_workspace.id,
                              save_info.result_obj['data_path'],
@@ -235,6 +237,7 @@ class DatamartJobUtilISI(object):
 
 
         data_split = response['data'].split('\n')
+
 
         with open(data_filepath, 'w') as datafile:
             datafile.writelines(data_split)
