@@ -4730,12 +4730,12 @@ export function handleAugmentDataMessage(msg_data){
       console.log(msg_data.user_message);
 
       setModal("Successful data augmentation. Please reload page. ",
-               "Data Augmentation", true, "Reset", false, locationReload);
+               "Data Augmentation", true, "Close", false, locationReload);
 
       return
   }
 
-  setModal("Data augmentation error.<p>" + msg_data.user_message + '</p>',
+  setModal("Data augmentation error: " + msg_data.user_message,
            "Data Augmentation Failed", true, "Reset", false);
 
 }
