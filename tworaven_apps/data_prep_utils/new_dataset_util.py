@@ -168,7 +168,7 @@ class NewDatasetUtil(BasicErrCheck):
 
         self.create_new_config()
 
-        #self.send_websocket_err_msg('ha ha, your augment did not work')
+        # self.send_websocket_err_msg('ha ha, your augment did not work')
 
         if not self.has_error() and self.websocket_id:
             ws_msg = WebsocketMessage.get_success_message(\

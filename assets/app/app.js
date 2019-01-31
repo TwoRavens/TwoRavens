@@ -4729,14 +4729,14 @@ export function handleAugmentDataMessage(msg_data){
       console.log('Successful Augment.  Try to reload now!!');
       console.log(msg_data.user_message);
 
-      setModal("Successful data augmentation. Please reload page. ",
-               "Data Augmentation", true, "Close", false, locationReload);
+      setModal("Successful data augmentation. Please reload the page. ",
+               "Data Augmentation", true, "Reload", false, locationReload);
 
       return
-  }
+  }3
 
   setModal("Data augmentation error: " + msg_data.user_message,
-           "Data Augmentation Failed", true, "Reset", false);
+           "Data Augmentation Failed", true, "Close", true);
 
 }
 
