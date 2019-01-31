@@ -78,6 +78,12 @@ class MakeDatadocsUtil(BasicErrCheck):
         assert not self.has_error(),\
             'Make sure "has_error()" is False before calling this method'
 
+        print('-' * 40)
+        print('-' * 40)
+        print(self.mkdoc_data)
+        print('-' * 40)
+        print(type(self.mkdoc_data))
+
         if kwargs.get('problemDoc', None) is True:
 
             if not 'problemDoc' in self.mkdoc_data:
@@ -125,10 +131,10 @@ class MakeDatadocsUtil(BasicErrCheck):
         if self.has_error():
             return None
 
-        info = dict(data=self.rook_params,
-                    datastub=self.datastub)
+        #info = dict(data=self.rook_params,
+        #            datastub=self.datastub)
 
-        json_str_info = json_dumps(info)
+        json_str_info = json_dumps(self.rook_params)
         if json_str_info.success:
             app_data = {SOLA_JSON_KEY: json_str_info.result_obj}
             return app_data

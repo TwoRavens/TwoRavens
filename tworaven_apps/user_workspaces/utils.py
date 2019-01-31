@@ -109,12 +109,14 @@ def create_new_user_workspace(user, d3m_config, **kwargs):
 
     params = dict(user=user,
                   is_current_workspace=True,
+                  d3m_config=d3m_config,
                   orig_dataset_id=d3m_config.orig_dataset_id)
 
     params = get_default_workspace_params(**params)
 
     new_workspace = UserWorkspace(**params)
     new_workspace.save()
+
     return ok_resp(new_workspace)
 
 def get_user_workspaces_as_dict(user, create_if_not_found=True):

@@ -104,6 +104,7 @@ source("rookexplore.R")
 source("rookplotdata.R")
 source("rooktree.R")
 source("rooksolver.R")
+source("rookmkdocs.R")
 
 # -------------------------------------
 # end: Load modules for apps
@@ -124,6 +125,8 @@ R.server$add(app = explore.app, name="exploreapp")
 R.server$add(app = plotdata.app, name="plotdataapp")
 R.server$add(app = tree.app, name="treeapp")
 R.server$add(app = solver.app, name="solverapp")
+R.server$add(app = mkdocs.app, name="mkdocsapp")
+
 # Serve files directly from rook
 R.server$add(app = File$new(PREPROCESS_OUTPUT_PATH), name = "rook-files")
 #   R.server$add(app = selector.app, name="selectorapp")
@@ -131,4 +134,3 @@ print(R.server)
 # -------------------------------------
 # end: Add rook apps
 # -------------------------------------
-
