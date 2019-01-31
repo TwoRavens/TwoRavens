@@ -4,6 +4,8 @@ from tworaven_apps.utils.view_helper import \
      get_json_error,
      get_json_success,
      get_common_view_info)
+from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
+
 from tworaven_common_apps.datamart_endpoints.datamart_job_util import (DatamartJobUtilISI,
                                                                        DatamartJobUtilNYU)
 from tworaven_common_apps.datamart_endpoints.forms import (DatamartSearchForm,
@@ -142,8 +144,18 @@ def api_augment(request):
     if not form.is_valid():
         return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
 
+    # Get the latest UserWorkspace
+    #
+    ws_info = get_latest_user_workspace(request)
+    if not ws_info.success:
+        user_msg = 'User workspace not found: %s' % ws_info.err_msg
+        return JsonResponse(get_json_error(user_msg))
+
+    user_workspace = ws_info.result_obj
+
     if json_req_obj['source'] == 'ISI':
         success, results_obj_err = DatamartJobUtilISI.datamart_augment(
+            user_workspace,
             json_req_obj['data_path'],
             json.loads(json_req_obj['search_result']),
             json_req_obj['left_columns'],
