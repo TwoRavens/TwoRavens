@@ -163,6 +163,11 @@ mkdocs.app <- function(env) {
     if (is.null(tasksubtype)) {
         tasksubtype <- "remove" # optional, and will remove when writing problem doc
     }
+    
+    cites <- everything$citation
+    if (is.null(cites)) {
+        cites <- "No citation." # optional, and will remove when writing problem doc
+    }
 
     targets <- everything$targets
     if (is.null(targets)) {
@@ -190,7 +195,7 @@ mkdocs.app <- function(env) {
     mydata <- read.table(dataurl, sep = separator, header = TRUE, fileEncoding = 'UTF-8')
 
     tryCatch({
-        docs <- makeDocs(data=mydata, name=dataname, ID=dataid, citation=citation, description=datadesc, targets=targets, taskType=tasktype, taskSubType=tasksubtype, metric=performancemetrics, problemDoc=originalProblemDoc, dataDoc=originalDataDoc)
+        docs <- makeDocs(data=mydata, name=dataname, ID=dataid, citation=cites, description=datadesc, targets=targets, taskType=tasktype, taskSubType=tasksubtype, metric=performancemetrics, problemDoc=originalProblemDoc, dataDoc=originalDataDoc)
         result <- docs
       },
     error = function(err) {
