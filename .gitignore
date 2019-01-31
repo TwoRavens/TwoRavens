@@ -57,7 +57,8 @@ rook/rook-files/o_185/preprocess/preprocess.json
 assets/pkgs/swagger-ui/dist/*.map
 .Rhistory
 ravens_volume/test_data/*/search_config.json
-ravens_volume/2ravens_local_setup
+ravens_volume/test_data/*/search_config.json
+#ravens_volume/test_data/01_TEST_SOURCE/placeholder.md
 
 
 # IDE

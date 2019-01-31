@@ -189,8 +189,9 @@ class EnvConfigLoader(BasicErrCheck):
         if self.has_error():
             return
 
-        # If created from paths, make it the default!
+        # Should this be the default?
         #
+        print('Default status', self.is_default_config)
         config_info = dict(is_default=self.is_default_config)
 
         try:
@@ -247,9 +248,11 @@ class EnvConfigLoader(BasicErrCheck):
         config_info['cpus'] = self.env_config.D3MCPU
         config_info['timeout'] = self.env_config.D3MTIMEOUT
         config_info['env_values'] = self.env_config.__dict__
-
+        print('config_info', config_info)
         new_config = D3MConfiguration(**config_info)
         new_config.save()
+
+        print('new_config default', new_config.is_default)
 
         for new_dirname in D3M_OUTPUT_SUBDIRECTORIES:
             new_dir_fullpath = join(self.env_config.D3MOUTPUTDIR, new_dirname)
