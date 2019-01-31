@@ -196,7 +196,7 @@ class DatamartJobUtilISI(object):
         except OSError:
             pass
 
-        data_split = [i + '\n' for i in response['data'].split('\n')]
+        data_split = response['data'].split('\n')
 
         with open(data_filepath, 'w') as datafile:
             datafile.writelines(data_split)

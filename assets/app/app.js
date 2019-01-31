@@ -961,27 +961,42 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         // }
 
         mytargetdefault = res.inputs.data[0].targets[0].colName; // easier way to access target name?
-        if (typeof res.about.problemID !== 'undefined') {
-            d3mProblemDescription.id=res.about.problemID;
-        }
-        if (typeof res.about.problemVersion !== 'undefined') {
-            d3mProblemDescription.version=res.about.problemVersion;
-        }
-        if (typeof res.about.problemName !== 'undefined') {
-            d3mProblemDescription.name=res.about.problemName;
-        }
-        if (typeof res.about.problemDescription !== 'undefined') {
-            d3mProblemDescription.description = res.about.problemDescription;
-        }
-        if (typeof res.about.taskType !== 'undefined') {
-            d3mProblemDescription.taskType=res.about.taskType;
-        }
-        if (typeof res.about.taskSubType !== 'undefined') {
-            d3mProblemDescription.taskSubtype=res.about.taskSubType;
-        }
-        if (typeof res.inputs.performanceMetrics[0].metric !== 'undefined') {
-            d3mProblemDescription.performanceMetrics = res.inputs.performanceMetrics;   // or? res.inputs.performanceMetrics[0].metric;
-        }
+        // if (typeof res.about.problemID !== 'undefined') {
+        //     d3mProblemDescription.id=res.about.problemID;
+        // }
+        // if (typeof res.about.problemVersion !== 'undefined') {
+        //     d3mProblemDescription.version=res.about.problemVersion;
+        // }
+        // if (typeof res.about.problemName !== 'undefined') {
+        //     d3mProblemDescription.name=res.about.problemName;
+        // }
+        // if (typeof res.about.problemDescription !== 'undefined') {
+        //     d3mProblemDescription.description = res.about.problemDescription;
+        // }
+        // if (typeof res.about.taskType !== 'undefined') {
+        //     d3mProblemDescription.taskType=res.about.taskType;
+        // }
+        // if (typeof res.about.taskSubType !== 'undefined') {
+        //     d3mProblemDescription.taskSubtype=res.about.taskSubType;
+        // }
+        // if (typeof res.inputs.performanceMetrics[0].metric !== 'undefined') {
+        //     d3mProblemDescription.performanceMetrics = res.inputs.performanceMetrics;   // or? res.inputs.performanceMetrics[0].metric;
+        // }
+
+        manipulations[res.about.problemID] = [];
+        defaultProblem = {
+            problemID: res.about.problemID,
+            system: 'auto',
+            description: res.about.problemDescription,
+            target: res.inputs.data[0].targets[0].colName,
+            predictors: [],
+            get pipeline() {return manipulations[this.problemID]},
+            metric: res.inputs.performanceMetrics[0].metric,
+            model: 'modelUndefined',
+            task: res.about.taskType,
+            subTask: res.about.taskSubType,
+            meaningful: false
+        };
 
         // making it case insensitive because the case seems to disagree all too often
         if (failset.includes(d3mProblemDescription.taskType.toUpperCase())) {
@@ -992,10 +1007,11 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
     }else{
         console.log("Task 1: No Problem Doc");
-        d3mProblemDescription.id="Task1";
-        d3mProblemDescription.name="Task1";
-        d3mProblemDescription.description = "Discovered Problems";
-    };
+        defaultProblem.description = 'Initial discovered problem';
+        // d3mProblemDescription.id="Task1";
+        // d3mProblemDescription.name="Task1";
+        // d3mProblemDescription.description = "Discovered Problems";
+    }
 
     // 4. Read the data document and set 'datadocument'
     datadocument = await m.request(d3mDS);
@@ -1212,20 +1228,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     layout(false, true);
     IS_D3M_DOMAIN ? zPop() : dataDownload();
 
-    manipulations['defaultProblem'] = [];
-    defaultProblem = {
-        problemID: 'defaultProblem',
-        system: 'auto',
-        description: 'default dataset configuration from datasetDoc.json',
-        target: zparams.zdv[0],
-        predictors: [...zparams.zgroup1],
-        get pipeline() {return manipulations['defaultProblem']},
-        metric: 'meanSquaredError',
-        model: 'modelUndefined',
-        task: findNode(zparams.zdv[0]).plottype === "bar" ? 'classification' : 'regression',
-        subTask: 'taskSubtypeUndefined',
-        meaningful: false
-    };
+    defaultProblem.predictors = [...zparams.zgroup1];
     disco.unshift(defaultProblem);
     setSelectedProblem(getProblemCopy(defaultProblem));
 
