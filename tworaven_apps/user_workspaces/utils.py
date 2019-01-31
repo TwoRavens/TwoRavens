@@ -68,12 +68,26 @@ def get_latest_d3m_user_config_by_request(request):
     user = user_info.result_obj
     return get_latest_d3m_user_config(user)
 
+def get_latest_user_workspace(request):
+    """Get latest user workspace"""
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return err_resp(user_info.err_msg)
 
-def get_latest_d3m_user_config(user, create_if_not_found=True):
+    user = user_info.result_obj
+
+    params = dict(return_full_workspace=True)
+    return get_latest_d3m_user_config(user, create_if_not_found=True, **params)
+
+def get_latest_d3m_user_config(user, create_if_not_found=True, **kwargs):
     """Find the lastest UserWorkspace and return the attached d3m_config
+
+    return_full_workspace = True : return UserWorkspace instead of D3MConfiguration
     """
     if not isinstance(user, User):
         return err_resp('user must be a "User" object, not: "%s"' % user)
+
+    return_full_workspace = kwargs.get('get_full_workspace', False)
 
     d3m_config = get_latest_d3m_config()
     if not d3m_config:
@@ -87,6 +101,8 @@ def get_latest_d3m_user_config(user, create_if_not_found=True):
 
     latest_workspace = UserWorkspace.objects.filter(**params).first()
     if latest_workspace:
+        if return_full_workspace:
+            return ok_resp(latest_workspace)
         return ok_resp(latest_workspace.d3m_config)
 
     if create_if_not_found:
@@ -95,6 +111,8 @@ def get_latest_d3m_user_config(user, create_if_not_found=True):
             return err_resp('%s (get_latest_d3m_user_config)' %\
                             (ws_info.err_msg))
         new_workspace = ws_info.result_obj
+        if return_full_workspace:
+            return ok_resp(new_workspace)
         return ok_resp(new_workspace.d3m_config)
 
     return err_resp('No workspace found for the User and default config')
