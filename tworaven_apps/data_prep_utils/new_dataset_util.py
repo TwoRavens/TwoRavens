@@ -99,6 +99,7 @@ class NewDatasetUtil(BasicErrCheck):
     def construct_folders(self):
         """Create the folder structure"""
         """
+           new_dataset_id
            └── TRAIN
                ├── dataset_TRAIN
                │ ├── datasetDoc.json
@@ -168,5 +169,27 @@ class NewDatasetUtil(BasicErrCheck):
         return True
 
     def create_prob_data_docs(self):
-        """Prepare the problem and dataset docs"""
+        """Prepare the problem and dataset docs
+        info to send to rook mkdocsapp:
+
+        datafile: path to data file
+
+        datasetid: datasetID from data doc plus timestamp plus unique id
+
+        name: datasetName from data doc plus (augmented)
+
+        depvarname: data.targets[...] from problem doc, can be more than one object
+
+        description: description from data doc, plus maybe any description of augmented data
+
+        taskType: taskType from problem doc
+
+        taskSubType: taskSubType from problem doc
+            - Optional! don't send if it's not there
+
+        metric: performanceMetrics[...] from problem doc, can be more than one
+        """
+        if self.has_error():
+            return
+
         pass
