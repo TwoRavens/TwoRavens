@@ -515,16 +515,9 @@ export let datamartPreferences = {
             keywords: []
         }
     },
-    // default state for submitting a new dataset
-    index: {
-        title: '',
-        description: '',
-        keywords: [],
-        materialization_arguments: {
-            url: ''
-        },
-        provenance: 'TwoRavens'
-    },
+    // potential new indices to submit to datamart
+    indices: [],
+
     // search results
     results: {
         ISI: [],

@@ -9,25 +9,85 @@ from tworaven_common_apps.datamart_endpoints.datamart_job_util import (DatamartJ
 from tworaven_common_apps.datamart_endpoints.forms import (DatamartSearchForm,
                                                            DatamartAugmentForm,
                                                            DatamartMaterializeForm,
-                                                           DatamartUploadForm)
+                                                           DatamartIndexForm,
+                                                           DatamartScrapeForm,
+                                                           DatamartUploadForm, DatamartCustomForm)
 from django.http import \
     (JsonResponse, HttpResponse)
 
 import json
 
 
-# Create your views here.
-
-
 @csrf_exempt
-def api_upload(request):
+def api_scrape(request):
     success, json_req_obj = get_request_body_as_json(request)
 
     if not success:
         return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
 
     # check if data is valid
-    form = DatamartUploadForm(json_req_obj)
+    form = DatamartScrapeForm(json_req_obj)
+    if not form.is_valid():
+        return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
+
+    success, results_obj_err = DatamartJobUtilISI.datamart_scrape(
+        json_req_obj['url'])
+
+    return JsonResponse({
+        "success": success,
+        "data": results_obj_err
+    })
+
+
+@csrf_exempt
+def api_get_metadata(request):
+    success, json_req_obj = get_request_body_as_json(request)
+
+    if not success:
+        return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
+
+        # check if data is valid
+    form = DatamartCustomForm(json_req_obj)
+    if not form.is_valid():
+        return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
+
+    success, results_obj_err = DatamartJobUtilISI.datamart_get_metadata(json_req_obj['custom'])
+
+    return JsonResponse({
+        "success": success,
+        "data": results_obj_err
+    })
+
+
+@csrf_exempt
+def api_upload_metadata(request):
+    success, json_req_obj = get_request_body_as_json(request)
+
+    if not success:
+        return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
+
+    #     # check if data is valid
+    # form = DatamartUploadForm(json_req_obj)
+    # if not form.is_valid():
+    #     return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
+
+    success, results_obj_err = DatamartJobUtilISI.datamart_get_metadata(json_req_obj['data'])
+
+    return JsonResponse({
+        "success": success,
+        "data": results_obj_err
+    })
+
+
+@csrf_exempt
+def api_index(request):
+    success, json_req_obj = get_request_body_as_json(request)
+
+    if not success:
+        return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
+
+    # check if data is valid
+    form = DatamartIndexForm(json_req_obj)
     if not form.is_valid():
         return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
 
@@ -36,9 +96,7 @@ def api_upload(request):
         'NYU': DatamartJobUtilNYU
     }[json_req_obj['source']]
 
-    print('api upload called')
-
-    success, results_obj_err = DatamartJobUtil.datamart_upload(json_req_obj['data'])
+    success, results_obj_err = DatamartJobUtil.datamart_upload(json_req_obj['indices'])
 
     return JsonResponse({
         "success": success,
@@ -88,8 +146,9 @@ def api_augment(request):
         success, results_obj_err = DatamartJobUtilISI.datamart_augment(
             json_req_obj['data_path'],
             json.loads(json_req_obj['search_result']),
-            json.loads(json_req_obj['left_columns']),
-            json.loads(json_req_obj['right_columns']))
+            json_req_obj['left_columns'],
+            json_req_obj['right_columns'],
+            json_req_obj['exact_match'])
 
     if json_req_obj['source'] == 'NYU':
         success, results_obj_err = DatamartJobUtilNYU.datamart_augment(
