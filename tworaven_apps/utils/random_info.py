@@ -32,11 +32,17 @@ def get_digits_string(str_length):
     params = dict(digits_only=True)
     return get_alphanumeric_string(str_length, **params)
 
+def get_alpha_string(str_length):
+    """Get random string of alpha chars (no digits)"""
+    params = dict(alpha_only=True)
+    return get_alphanumeric_string(str_length, **params)
+
 
 def get_alphanumeric_string(str_length, **kwargs):
     """Get random alpha numeric string, default is lowercase ascii chars
 
     Available kwargs (in order of precedence*):
+        alpha_only = default is False
         uppercase_only = default is False
         mixed_case = default is False
         digits_only = default is False
@@ -55,6 +61,10 @@ def get_alphanumeric_string(str_length, **kwargs):
     if kwargs.get('uppercase_only') is True:
         # uppercase + digits
         choice_list = string.ascii_uppercase + string.digits
+
+    elif kwargs.get('alpha_only') is True:
+        # alpha lowercase
+        choice_list = string.ascii_lowercase
 
     elif kwargs.get('mixed_case') is True:
         # uppercase + lowercase + digits

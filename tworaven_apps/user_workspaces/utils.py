@@ -27,6 +27,21 @@ def get_default_workspace_params(**kwargs):
     return params
 
 
+
+def get_user_workspace_by_id(user_workspace_id):
+    """Retrieve a specific UserWorkspace"""
+    params = dict(id=user_workspace_id)
+    params = get_default_workspace_params(**params)
+
+    try:
+        user_ws = UserWorkspace.objects.get(**params)
+    except UserWorkspace.DoesNotExist:
+        user_msg = 'No active workspaces found for id: %s' % \
+                    (user_workspace_id)
+        return err_resp(user_msg)
+
+    return ok_resp(user_ws)
+
 def get_user_workspace_config(user, user_workspace_id):
     """Retrieve a specific UserWorkspace"""
 
