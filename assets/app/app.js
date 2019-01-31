@@ -961,27 +961,27 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         // }
 
         mytargetdefault = res.inputs.data[0].targets[0].colName; // easier way to access target name?
-        // if (typeof res.about.problemID !== 'undefined') {
-        //     d3mProblemDescription.id=res.about.problemID;
-        // }
-        // if (typeof res.about.problemVersion !== 'undefined') {
-        //     d3mProblemDescription.version=res.about.problemVersion;
-        // }
-        // if (typeof res.about.problemName !== 'undefined') {
-        //     d3mProblemDescription.name=res.about.problemName;
-        // }
-        // if (typeof res.about.problemDescription !== 'undefined') {
-        //     d3mProblemDescription.description = res.about.problemDescription;
-        // }
-        // if (typeof res.about.taskType !== 'undefined') {
-        //     d3mProblemDescription.taskType=res.about.taskType;
-        // }
-        // if (typeof res.about.taskSubType !== 'undefined') {
-        //     d3mProblemDescription.taskSubtype=res.about.taskSubType;
-        // }
-        // if (typeof res.inputs.performanceMetrics[0].metric !== 'undefined') {
-        //     d3mProblemDescription.performanceMetrics = res.inputs.performanceMetrics;   // or? res.inputs.performanceMetrics[0].metric;
-        // }
+        if (typeof res.about.problemID !== 'undefined') {
+            d3mProblemDescription.id=res.about.problemID;
+        }
+        if (typeof res.about.problemVersion !== 'undefined') {
+            d3mProblemDescription.version=res.about.problemVersion;
+        }
+        if (typeof res.about.problemName !== 'undefined') {
+            d3mProblemDescription.name=res.about.problemName;
+        }
+        if (typeof res.about.problemDescription !== 'undefined') {
+            d3mProblemDescription.description = res.about.problemDescription;
+        }
+        if (typeof res.about.taskType !== 'undefined') {
+            d3mProblemDescription.taskType=res.about.taskType;
+        }
+        if (typeof res.about.taskSubType !== 'undefined') {
+            d3mProblemDescription.taskSubtype=res.about.taskSubType;
+        }
+        if (typeof res.inputs.performanceMetrics[0].metric !== 'undefined') {
+            d3mProblemDescription.performanceMetrics = res.inputs.performanceMetrics;   // or? res.inputs.performanceMetrics[0].metric;
+        }
 
         manipulations[res.about.problemID] = [];
         defaultProblem = {
@@ -999,7 +999,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         };
 
         // making it case insensitive because the case seems to disagree all too often
-        if (failset.includes(d3mProblemDescription.taskType.toUpperCase())) {
+        if (failset.includes(defaultProblem.task.toUpperCase())) {
             if(IS_D3M_DOMAIN){
               console.log('D3M WARNING: failset  task type found');
             }
@@ -3146,7 +3146,7 @@ export async function makeRequest(url, data) {
         res = await m.request(url, {method: 'POST', data: data});
         // console.log('response:', res);
         if (Object.keys(res)[0] === 'warning') {
-            alertWarn('Warning: ' + res.warning);
+            // alertWarn('Warning: ' + res.warning);
             end_ta3_search(false, res.warning);
         }
     } catch(err) {
