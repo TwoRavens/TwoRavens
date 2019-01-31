@@ -12,6 +12,9 @@ from tworaven_apps.configurations.utils import \
     (get_latest_d3m_config,
      get_d3m_filepath,
      get_train_data_info)
+from tworaven_apps.utils.view_helper import \
+    (get_json_error,
+     get_json_success)
 
 # Create your views here.
 @csrf_exempt
@@ -108,12 +111,11 @@ def view_get_config_file(request, config_key, d3m_config_id=None):
     if d3m_config is None:
         raise Http404('Config not found!')
 
-    filepath, err_msg_or_None = get_d3m_filepath(d3m_config, config_key)
-    if err_msg_or_None is not None:
-        return JsonResponse(dict(success=False,
-                                 message=err_msg_or_None))
+    filepath_info = get_d3m_filepath(d3m_config, config_key)
+    if not filepath_info.success:
+        return JsonResponse(get_json_error(filepath_info.err_msg))
 
-    response = FileResponse(open(filepath, 'rb'))
+    response = FileResponse(open(filepath_info.result_obj, 'rb'))
 
     return response
 
