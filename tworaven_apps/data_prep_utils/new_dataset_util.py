@@ -104,9 +104,12 @@ class NewDatasetUtil(BasicErrCheck):
         print('\nproblem dir', self.problem_dir)
         print('\nnew_source_file', self.new_source_file)
         if self.rook_params:
+            print('rook_info keys', self.rook_params.keys())
+            """
             rook_info = json_dumps(self.rook_params, indent=4)
             if rook_info.success:
                 print('rook_info', rook_info.result_obj)
+            """
         else:
             print('no rook params')
         print('\nnew_d3m_config', self.new_d3m_config)
@@ -134,12 +137,15 @@ class NewDatasetUtil(BasicErrCheck):
 
         self.create_new_config()
 
-    def create_new_config():
+    def create_new_config(self):
         """Create a new D3M config and set it as the default
         NOTE: Initial demo - This FAILS for multiple users
         Should be:
             - create new D3M config, but not as default...
         """
+        if self.has_error():
+            return
+
         params = dict(orig_dataset_id=self.d3m_config.name,
                       is_user_config=True)
 
@@ -409,7 +415,7 @@ class NewDatasetUtil(BasicErrCheck):
 
         dataset_doc_path = join(self.dataset_dir, 'datasetDoc.json')
         finfo = write_file(dataset_doc_path, doc_info.result_obj)
-        if not finfo.succss:
+        if not finfo.success:
             self.add_err_msg(finfo.err_msg)
             return
 
@@ -424,6 +430,6 @@ class NewDatasetUtil(BasicErrCheck):
 
         problem_doc_path = join(self.problem_dir, 'problemDoc.json')
         finfo2 = write_file(problem_doc_path, doc_info2.result_obj)
-        if not finfo2.succss:
+        if not finfo2.success:
             self.add_err_msg(finfo2.err_msg)
             return

@@ -103,8 +103,8 @@ makeDocs <- function(data, name, ID="", citation="", description="", targets=NUL
   if(problemDoc$about$taskSubType=="remove") problemDoc$about$taskSubType <- NULL
 
 # toJSON and out
-    dataDoc <- toJSON(dataDoc, auto_unbox=TRUE, pretty=TRUE)
-    problemDoc <- toJSON(problemDoc, auto_unbox=TRUE, pretty=TRUE)
+    dataDoc <- jsonlite:::toJSON(dataDoc, auto_unbox=TRUE, pretty=TRUE)
+    problemDoc <- jsonlite:::toJSON(problemDoc, auto_unbox=TRUE, pretty=TRUE)
 
   out <- list(problemDoc=problemDoc, datasetDoc=dataDoc)
   return(out)
