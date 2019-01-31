@@ -627,7 +627,7 @@ export let d3mProblemDescription = {
     name: "",
     description: "",
     taskType: "taskTypeUndefined",
-    taskSubtype: "taskSubtypeUndefined",
+    // taskSubtype: "taskSubtypeUndefined",
     performanceMetrics: [{metric: "metricUndefined"}]
 };
 
@@ -2643,6 +2643,8 @@ function CreateProblemDefinition(depvar, aux) {
             taskSubtype: d3mTaskSubtype[d3mProblemDescription.taskSubtype][1],
             performanceMetrics: [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ]  // need to generalize to case with multiple metrics.  only passes on first presently.
         };
+
+        if (d3mProblemDescription.taskSubtype === 'taskSubtypeUndefined') delete problem.taskSubtype;
         let inputs =  [
             {
                 datasetId: datadocument.about.datasetID,
@@ -2658,12 +2660,12 @@ function CreateProblemDefinition(depvar, aux) {
     } else { //creating pipeline data for problem discovery using aux inputs from disco line
 
         let problem = {
-            id: aux.problem_id,
+            id: aux.problemID,
             version: '1.0',
-            name: aux.problem_id,
+            name: aux.problemID,
             description: aux.description,
             taskType: d3mTaskType[aux.task][1],
-            taskSubtype: 'TASK_SUBTYPE_UNDEFINED',
+            // taskSubtype: 'TASK_SUBTYPE_UNDEFINED',
             performanceMetrics: [{metric: d3mMetrics[aux.metric][1]}]  // need to generalize to case with multiple metrics.  only passes on first presently.
         };
         let inputs =  [
@@ -2687,8 +2689,8 @@ function CreateProblemSchema(aux){
     let my_target = aux.target;
 
     let my_about = {
-        problemID: aux.problem_id,
-        problemName: aux.problem_id,
+        problemID: aux.problemID,
+        problemName: aux.problemID,
         problemDescription: aux.description,
         taskType: d3mTaskType[aux.task][1],
         problemVersion: '1.0',
@@ -2877,6 +2879,15 @@ export async function estimate() {
     resultsProblem = getProblemCopy(selectedProblem);
     disco.unshift(resultsProblem);
 
+    Object.assign(d3mProblemDescription, {
+        taskType: resultsProblem.task,
+        taskSubtype: resultsProblem.subTask,
+        id: resultsProblem.problemID,
+        name: resultsProblem.name || '',
+        description: resultsProblem.description || '',
+        performanceMetrics: [{metric: resultsProblem.metric}]
+    });
+
     if (!IS_D3M_DOMAIN){
         // let userUsg = 'This code path is no longer used.  (Formerly, it used Zelig.)';
         // console.log(userMsg);
@@ -3013,7 +3024,6 @@ export async function estimate() {
             if (res===undefined){
               handleENDGetSearchSolutionsResults();
               alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
-
               return;
             }else if(!res.success){
               handleENDGetSearchSolutionsResults();
