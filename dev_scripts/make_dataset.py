@@ -22,8 +22,13 @@ from tworaven_apps.data_prep_utils.new_dataset_util import NewDatasetUtil
 def make_dataset(user_workspace_id, source_file):
     """test"""
     ndu = NewDatasetUtil(user_workspace_id, source_file)
+    if ndu.has_error():
+        print(ndu.get_error_message())
+        return
+
+    ndu.show_info()
 
 if __name__ == '__main__':
     user_workspace_id = 23
-    source_file = '/Users/ramanprasad/Documents/github-rp/TwoRavens/ravens_volume/test_data/185_baseball/TRAIN/dataset_TRAIN/tables/learningData.csv'
+    source_file = '/Users/ramanprasad/Documents/github-rp/TwoRavens/ravens_volume/test_data/A_TEST_SOURCE/baseball_learningData.csv'
     make_dataset(user_workspace_id, source_file)

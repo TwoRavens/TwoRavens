@@ -12,7 +12,7 @@ from django.conf import settings
 from tworaven_apps.utils.dict_helper import get_dict_value
 from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
-from tworaven_apps.utils.json_helper import json_loads
+from tworaven_apps.utils.json_helper import json_loads, json_dumps
 from tworaven_apps.utils.file_util import \
     (create_directory, move_file)
 from tworaven_apps.utils.basic_response import (ok_resp,
@@ -62,6 +62,7 @@ class NewDatasetUtil(BasicErrCheck):
         self.tables_dir = None  # where source file is copied: learningData.csv
         self.problem_dir = None # where problem dir will be written
         self.new_source_file = None
+        self.rook_params = None
 
         self.run_construct_dataset()
 
@@ -70,11 +71,11 @@ class NewDatasetUtil(BasicErrCheck):
         """Construct an updated Dataset id"""
         if old_id:
             return '%s-%s-%s' % (old_id,
-                                 get_timestamp_string(),
+                                 get_timestamp_string(no_breaks=True),
                                  get_alpha_string(6))
 
         return '%s-%s' % (get_alpha_string(6),
-                          get_timestamp_string())
+                          get_timestamp_string(no_breaks=True))
 
 
     def retrieve_workspace(self):
@@ -89,8 +90,22 @@ class NewDatasetUtil(BasicErrCheck):
         self.dataset_id = NewDatasetUtil.create_dataset_id(self.d3m_config.name)
         return True
 
+    def show_info(self):
+        """Some debug print statements"""
+        print('dataset_id', self.dataset_id)
+        print('\ntables dir', self.tables_dir)
+        print('\nproblem dir', self.problem_dir)
+        print('\nnew_source_file', self.new_source_file)
+        if self.rook_params:
+            rook_info = json_dumps(self.rook_params, indent=4)
+            if rook_info.success:
+                print('rook_info', rook_info.result_obj)
+        else:
+            print('no rook params')
+
     def run_construct_dataset(self):
         """Go through the steps...."""
+        LOGGER.info('run_construct_dataset')
         if not isfile(self.orig_source_file):
             user_msg = 'File does not exists: %s' % self.orig_source_file
             self.add_err_msg(user_msg)
@@ -141,6 +156,7 @@ class NewDatasetUtil(BasicErrCheck):
         # Create the problem_TRAIN
         # ---------------------------------------
         self.problem_dir = join(d3m_config.additional_inputs,
+                                self.dataset_id,
                                 'TRAIN',
                                 'problem_TRAIN')
 
@@ -153,6 +169,7 @@ class NewDatasetUtil(BasicErrCheck):
         # Create the tables dir
         # ---------------------------------------
         self.tables_dir = join(d3m_config.additional_inputs,
+                               self.dataset_id,
                                'TRAIN',
                                'dataset_TRAIN',
                                'tables')
@@ -162,21 +179,26 @@ class NewDatasetUtil(BasicErrCheck):
             self.add_err_msg(dir_info.err_msg)
             return False
 
+        return True
+
     def move_source_file(self):
         """Copy file to learningData.csv"""
         if self.has_error():
             return False
 
+        print('move_source_file 1')
         self.new_source_file = join(self.tables_dir, 'learningData.csv')
         if isfile(self.new_source_file):
             user_msg = 'Destination file already exists: %s' % self.new_source_file
             self.add_err_msg(user_msg)
             return False
+        print('move_source_file 2')
 
         move_info = move_file(self.orig_source_file, self.new_source_file)
         if not move_info.success:
             self.add_err_msg('Failed to move data file: %s' % move_info.err_msg)
             return False
+        print('move_source_file 3')
 
         return True
 
@@ -229,7 +251,7 @@ class NewDatasetUtil(BasicErrCheck):
 
         # name
         #
-        doc_val_info = get_dict_value(problem_doc, 'about', 'datasetName')
+        doc_val_info = get_dict_value(dataset_doc, 'about', 'datasetName')
         if doc_val_info.success:
             params['name'] = '%s (augmented)' % doc_val_info.result_obj
         else:
@@ -238,7 +260,7 @@ class NewDatasetUtil(BasicErrCheck):
 
         # description - optional
         #
-        doc_val_info = get_dict_value(problem_doc, 'about', 'description')
+        doc_val_info = get_dict_value(dataset_doc, 'about', 'description')
         if doc_val_info.success:
             params['description'] = '%s (augmented)' % doc_val_info.result_obj
         else:
@@ -273,10 +295,18 @@ class NewDatasetUtil(BasicErrCheck):
 
         # depvarname - targets
         #
-        doc_val_info = get_dict_value(problem_doc, 'inputs', 'data', 'targets')
-        if doc_val_info.success:
-            params['depvarname'] = doc_val_info.result_obj
-        else:
+        doc_val_info = get_dict_value(problem_doc, 'inputs', 'data')
+        if not doc_val_info.success:
+            self.add_err_msg('inputs.data not found in problem doc')
+            return None
+
+        if not doc_val_info.result_obj:
+            self.add_err_msg('inputs.data list is empty found in problem doc')
+            return None
+
+        try:
+            params['depvarname'] = doc_val_info.result_obj[0]['targets']
+        except KeyError:
             self.add_err_msg('inputs.data.targets not found in problem doc')
             return None
 
@@ -287,6 +317,6 @@ class NewDatasetUtil(BasicErrCheck):
         if self.has_error():
             return
 
-        rook_params = self.get_makedoc_rook_params()
-        if not rook_params:
+        self.rook_params = self.get_makedoc_rook_params()
+        if not self.rook_params:
             return

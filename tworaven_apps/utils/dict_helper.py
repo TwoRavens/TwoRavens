@@ -21,15 +21,16 @@ def get_dict_value(data_dict, *keys):
     if not isinstance(data_dict, dict):
         return err_resp('keys_exists() expects dict as first argument.')
 
-    if len(keys) == 0:
-        return retrieve_value(('keys_exists() expects at least two'
-                               ' arguments, one given.'))
+    if not keys:
+        return err_resp(('get_dict_value(data_dict, *keys) expects at least two'
+                         ' arguments, one given.'))
 
     dict_val = data_dict
     for key in keys:
+        print('key', key, 'dict_val', type(dict_val))
         try:
             dict_val = dict_val[key]
         except KeyError:
-            return err_resp('Key not found: %s' % keys)
+            return err_resp('Key not found: %s' % ', '.join(keys))
 
     return ok_resp(dict_val)

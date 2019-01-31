@@ -4,9 +4,12 @@ import string
 from datetime import datetime as dt
 
 
-def get_timestamp_string():
+def get_timestamp_string(no_breaks=False):
     """Return current time as YYYY-MM-DD_HH-MM-S"""
-    return dt.now().strftime('%Y-%m-%d_%H-%M-%S')
+    tstr = dt.now().strftime('%Y-%m-%d_%H-%M-%S')
+    if no_breaks:
+        return tstr.replace('-', '')
+    return tstr
 
 
 def get_alphanumeric_uppercase(str_length):
