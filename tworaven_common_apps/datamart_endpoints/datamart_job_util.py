@@ -150,6 +150,18 @@ class DatamartJobUtilISI(object):
 
         datamart_id = search_result['datamart_id']
 
+        # ----------------------------
+        # mock call
+        # ----------------------------
+        """
+        right_data = '291770000'
+        left_columns= '[[2]]'
+        right_columns = '[[6]]'
+        exact_match = True
+        data_path = '/Users/ramanprasad/Documents/github-rp/TwoRavens/ravens_volume/test_data/TR1_Greed_Versus_Grievance/TRAIN/dataset_TRAIN/tables/learningData.csv'
+        """
+        # ----------------------------
+
         print('inputs:')
         print({
             'right_data': datamart_id,
@@ -180,19 +192,18 @@ class DatamartJobUtilISI(object):
         if not save_info.success:
             return err_resp(save_info.err_msg)
 
-        # Start process of createing new dataset...
+        # Async, start process of creating new dataset...
         #   - This will send a websocket message when process complete
         #   - Needs to be moved to celery queue
         #
-        ndu = NewDatasetUtil(user_workspace.id,
+        ndu_info = NewDatasetUtil.make_new_dataset_call(\
+                             user_workspace.id,
                              save_info.result_obj['data_path'],
                              **dict(websocket_id=user_workspace.user.username))
-        if ndu.has_error():
-            return err_resp(ndu.get_error_message())
-            print(ndu.get_error_message())
-            return
+        if not ndu_info.success:
+            return err_resp(ndu_info.err_msg)
 
-        return ok_resp('Augment worked')
+        return ok_resp('Augment is in process')
 
 
     @staticmethod

@@ -36,6 +36,7 @@ from tworaven_apps.configurations.models_d3m import \
     (D3MConfiguration,
      KEY_DATASET_SCHEMA,
      KEY_PROBLEM_SCHEMA)
+from tworavensproject.celery import celery_app
 
 import logging
 
@@ -74,6 +75,35 @@ class NewDatasetUtil(BasicErrCheck):
         self.new_workspace = None
 
         self.run_construct_dataset()
+
+
+    @staticmethod
+    def make_new_dataset_call(user_workspace_id, source_file, **kwargs):
+        """Return the result of a SearchSolutions call.
+        If successful, an async process is kicked off"""
+        if not user_workspace_id:
+            return err_resp('websocket_id must be set')
+
+        if not source_file:
+            return err_resp('source_file must be set')
+
+        if not isfile(source_file):
+            return err_resp('source_file not found: %s' % source_file)
+
+
+        # Async task to run augment process
+        #
+        NewDatasetUtil.kick_off_augment_steps.delay(\
+                user_workspace_id, source_file, **kwargs)
+
+        return ok_resp('augment process started')
+
+    @staticmethod
+    @celery_app.task(ignore_result=True)
+    def kick_off_augment_steps(user_workspace_id, source_file, **kwargs):
+        """Run this async"""
+        ndu = NewDatasetUtil(user_workspace_id, source_file, **kwargs)
+
 
     @staticmethod
     def create_dataset_id(old_id=None):

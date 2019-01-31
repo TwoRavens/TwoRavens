@@ -248,7 +248,7 @@ class EnvConfigLoader(BasicErrCheck):
         config_info['cpus'] = self.env_config.D3MCPU
         config_info['timeout'] = self.env_config.D3MTIMEOUT
         config_info['env_values'] = self.env_config.__dict__
-        print('config_info', config_info)
+        #print('config_info', config_info)
         new_config = D3MConfiguration(**config_info)
         new_config.save()
 
