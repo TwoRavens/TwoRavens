@@ -78,12 +78,14 @@ class NewDatasetUtil(BasicErrCheck):
     def create_dataset_id(old_id=None):
         """Construct an updated Dataset id"""
         if old_id:
-            return '%s-%s-%s' % (old_id,
-                                 get_timestamp_string(no_breaks=True),
-                                 get_alpha_string(6))
+            return '%s-augmented-%s' % (old_id,
+                                        get_alpha_string(6))
+            #return '%s-%s-%s' % (old_id,
+            #                     get_timestamp_string(no_breaks=True),
+            #s                     get_alpha_string(6))
 
-        return '%s-%s' % (get_alpha_string(6),
-                          get_timestamp_string(no_breaks=True))
+        return 'augmented-%s' % (get_alpha_string(6),)
+                                 #get_timestamp_string(no_breaks=True))
 
 
     def retrieve_workspace(self):
