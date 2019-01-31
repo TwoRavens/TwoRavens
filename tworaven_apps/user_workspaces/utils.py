@@ -70,7 +70,8 @@ def get_latest_d3m_user_config_by_request(request):
 
 
 def get_latest_d3m_user_config(user, create_if_not_found=True):
-    """Find the lastest UserWorkspace and return the attached d3m_config"""
+    """Find the lastest UserWorkspace and return the attached d3m_config
+    """
     if not isinstance(user, User):
         return err_resp('user must be a "User" object, not: "%s"' % user)
 
@@ -89,15 +90,32 @@ def get_latest_d3m_user_config(user, create_if_not_found=True):
         return ok_resp(latest_workspace.d3m_config)
 
     if create_if_not_found:
-        params['d3m_config'] = d3m_config
-        params['is_current_workspace'] = True
-        new_workspace = UserWorkspace(**params)
-        new_workspace.save()
+        ws_info = create_new_user_workspace(user, d3m_config)
+        if not ws_info.success:
+            return err_resp('%s (get_latest_d3m_user_config)' %\
+                            (ws_info.err_msg))
+        new_workspace = ws_info.result_obj
         return ok_resp(new_workspace.d3m_config)
 
     return err_resp('No workspace found for the User and default config')
 
 
+def create_new_user_workspace(user, d3m_config, **kwargs):
+    """Create a new UserWorkspace, making it the current workspace"""
+    if not isinstance(user, User):
+        return err_resp('"user" is not a User object')
+    if not isinstance(d3m_config, D3MConfiguration):
+        return err_resp('"d3m_config" is not a D3MConfiguration object')
+
+    params = dict(user=user,
+                  is_current_workspace=True,
+                  orig_dataset_id=d3m_config.orig_dataset_id)
+
+    params = get_default_workspace_params(**params)
+
+    new_workspace = UserWorkspace(**params)
+    new_workspace.save()
+    return ok_resp(new_workspace)
 
 def get_user_workspaces_as_dict(user, create_if_not_found=True):
     """Get UserWorkspace list based on the active D3M config, as dicts"""
@@ -133,11 +151,11 @@ def get_user_workspaces(user, create_if_not_found=True):
 
     if (not has_current_workspace) or (workspaces.count() == 0):
         if create_if_not_found:
-            params['d3m_config'] = d3m_config
-            params['is_current_workspace'] = True
-            new_workspace = UserWorkspace(**params)
-            new_workspace.save()
-            return ok_resp([new_workspace])
+            ws_info = create_new_user_workspace(user, d3m_config)
+            if not ws_info.success:
+                return err_resp('%s (get_user_workspaces)' %\
+                                (ws_info.err_msg))
+            return ok_resp([ws_info.result_obj])
         return err_resp('No workspaces found for the User and default config')
 
     return ok_resp(list(workspaces))

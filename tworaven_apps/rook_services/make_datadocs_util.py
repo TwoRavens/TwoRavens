@@ -168,6 +168,9 @@ class MakeDatadocsUtil(BasicErrCheck):
 
         rook_svc_url = self.rook_app_info.get_rook_server_url()
 
+        print('rook_svc_url:', rook_svc_url)
+        print('call_data:', call_data)
+
         # Call R services
         #
         try:
@@ -178,9 +181,15 @@ class MakeDatadocsUtil(BasicErrCheck):
             self.add_err_msg(err_msg)
             return
 
+        if not rservice_req.status_code == 200:
+            user_msg = ('Rook request failed. Status code: %s'
+                        ' \nUrl: %s') % \
+                        (rservice_req.status_code, rook_svc_url)
+            self.add_err_msg(user_msg)
+
         result_info = json_loads(rservice_req.text)
         if not result_info.success:
-            user_msg = ('Failed to convert preprocess data '
+            user_msg = ('Failed to convert datadoc info '
                         ' to JSON: %s') % result_info.err_msg
             self.add_err_msg(user_msg)
             return

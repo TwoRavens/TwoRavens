@@ -17,11 +17,15 @@ from tworaven_apps.utils.file_util import \
     (create_directory, move_file, write_file)
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.rook_services.make_datadocs_util import MakeDatadocsUtil
+from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
+
 from tworaven_apps.configurations.utils import \
     (get_latest_d3m_config,
      get_config_file_contents)
 from tworaven_apps.user_workspaces.models import UserWorkspace
-from tworaven_apps.user_workspaces.utils import get_user_workspace_by_id
+from tworaven_apps.user_workspaces.utils import \
+    (get_user_workspace_by_id,
+     create_new_user_workspace)
 
 from tworaven_apps.utils.random_info import \
     (get_timestamp_string,
@@ -59,11 +63,13 @@ class NewDatasetUtil(BasicErrCheck):
 
         # to be created
         self.dataset_id = None
+        self.dataset_root_dir = None
         self.tables_dir = None  # where source file is copied: learningData.csv
         self.dataset_dir = None
         self.problem_dir = None # where problem dir will be written
         self.new_source_file = None
         self.rook_params = None
+        self.new_d3m_config = None
 
         self.run_construct_dataset()
 
@@ -103,6 +109,8 @@ class NewDatasetUtil(BasicErrCheck):
                 print('rook_info', rook_info.result_obj)
         else:
             print('no rook params')
+        print('\nnew_d3m_config', self.new_d3m_config)
+
 
     def run_construct_dataset(self):
         """Go through the steps...."""
@@ -121,9 +129,44 @@ class NewDatasetUtil(BasicErrCheck):
         if not self.move_source_file():
             return
 
-        if not self.create_prob_data_docs():
+        if not self.create_problem_data_docs():
             return
 
+        self.create_new_config()
+
+    def create_new_config():
+        """Create a new D3M config and set it as the default
+        NOTE: Initial demo - This FAILS for multiple users
+        Should be:
+            - create new D3M config, but not as default...
+        """
+        params = dict(orig_dataset_id=self.d3m_config.name,
+                      is_user_config=True)
+
+        ecl = EnvConfigLoader.make_config_from_directory(\
+                                    self.dataset_root_dir, **params)
+
+        if not ecl.success:
+            self.add_err_msg('Error creating config: %s' % \
+                             ecl.err_msg)
+            return
+
+        self.new_d3m_config = ecl.result_obj
+
+        # -------------------------
+        # Create new UserWorkspace
+        # ---------------------------
+        ws_info = create_new_user_workspace(\
+                                    self.user_workspace.user,
+                                    self.new_d3m_config)
+        if not ws_info.success:
+            self.add_err_msg('Error creating workspace: %s' % \
+                             ws_info.err_msg)
+            return
+
+        self.new_workspace = ws_info.result_obj
+
+        return
 
 
     def construct_folders(self):
@@ -158,8 +201,9 @@ class NewDatasetUtil(BasicErrCheck):
         # ---------------------------------------
         # Create the problem_TRAIN
         # ---------------------------------------
-        self.problem_dir = join(d3m_config.additional_inputs,
-                                self.dataset_id,
+        self.dataset_root_dir = join(d3m_config.additional_inputs,
+                                     self.dataset_id)
+        self.problem_dir = join(self.dataset_root_dir,
                                 'TRAIN',
                                 'problem_TRAIN')
 
@@ -171,8 +215,7 @@ class NewDatasetUtil(BasicErrCheck):
         # ---------------------------------------
         # Create the tables dir
         # ---------------------------------------
-        self.tables_dir = join(d3m_config.additional_inputs,
-                               self.dataset_id,
+        self.tables_dir = join(self.dataset_root_dir,
                                'TRAIN',
                                'dataset_TRAIN',
                                'tables')
@@ -189,19 +232,16 @@ class NewDatasetUtil(BasicErrCheck):
         if self.has_error():
             return False
 
-        print('move_source_file 1')
         self.new_source_file = join(self.tables_dir, 'learningData.csv')
         if isfile(self.new_source_file):
             user_msg = 'Destination file already exists: %s' % self.new_source_file
             self.add_err_msg(user_msg)
             return False
-        print('move_source_file 2')
 
         move_info = move_file(self.orig_source_file, self.new_source_file)
         if not move_info.success:
             self.add_err_msg('Failed to move data file: %s' % move_info.err_msg)
             return False
-        print('move_source_file 3')
 
         return True
 
@@ -344,7 +384,7 @@ class NewDatasetUtil(BasicErrCheck):
 
         return params
 
-    def create_prob_data_docs(self):
+    def create_problem_data_docs(self):
         """Send params to rook app"""
         if self.has_error():
             return
