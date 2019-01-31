@@ -79,7 +79,10 @@ class DatamartJobUtilISI(object):
 
     @staticmethod
     def datamart_search(query, data_path=None, limit=None):
+        # TODO disable #debug
         # return ok_resp(json.loads(cached_response_baseball))
+        # TODO: respect limit
+        limit = 100
 
         files = {'query': ('query.json', query)}
         if data_path and os.path.exists(data_path):
@@ -92,7 +95,12 @@ class DatamartJobUtilISI(object):
         response = requests.post(
             DATAMART_ISI_URL + '/new/search_data',
             params=params,
-            files=files, verify=False).json()
+            files=files, verify=False)
+
+        if response.status_code != 200:
+            return err_resp(response['reason'])
+
+        response = response.json()
 
         if response['code'] != "0000":
             return err_resp(response['message'])
@@ -129,22 +137,31 @@ class DatamartJobUtilISI(object):
         return ok_resp(DatamartJobUtilISI.save(materialize_folderpath, response))
 
     @staticmethod
-    def datamart_augment(data_path, search_result, left_columns, right_columns):
+    def datamart_augment(data_path, search_result, left_columns, right_columns, exact_match=False):
 
         d3m_config = get_latest_d3m_config()
         if not d3m_config:
-            user_msg = 'datamart_materialize failed. no d3m config'
+            user_msg = 'datamart_augment failed. no d3m config'
             LOGGER.error(user_msg)
             return err_resp(user_msg)
 
         datamart_id = search_result['datamart_id']
 
+        print('inputs:')
+        print({
+            'right_data': datamart_id,
+            'left_columns': left_columns,
+            'right_columns': right_columns,
+            'exact_match': exact_match
+        })
+
         response = requests.post(DATAMART_ISI_URL + '/new/join_data',
                                  files={'left_data': open(data_path, 'r')},
                                  data={
                                      'right_data': datamart_id,
-                                     'left_columns': [left_columns],
-                                     'right_columns': [right_columns]
+                                     'left_columns': left_columns,
+                                     'right_columns': right_columns,
+                                     'exact_match': exact_match
                                  },
                                  verify=False).json()
 
