@@ -988,8 +988,23 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             d3mProblemDescription.performanceMetrics = res.inputs.performanceMetrics;   // or? res.inputs.performanceMetrics[0].metric;
         }
 
+        manipulations[res.about.problemID] = [];
+        defaultProblem = {
+            problemID: res.about.problemID,
+            system: 'auto',
+            description: res.about.problemDescription,
+            target: res.inputs.data[0].targets[0].colName,
+            predictors: [],
+            get pipeline() {return manipulations[this.problemID]},
+            metric: res.inputs.performanceMetrics[0].metric,
+            model: 'modelUndefined',
+            task: res.about.taskType,
+            subTask: res.about.taskSubType,
+            meaningful: false
+        };
+
         // making it case insensitive because the case seems to disagree all too often
-        if (failset.includes(d3mProblemDescription.taskType.toUpperCase())) {
+        if (failset.includes(defaultProblem.task.toUpperCase())) {
             if(IS_D3M_DOMAIN){
               console.log('D3M WARNING: failset  task type found');
             }
@@ -997,10 +1012,11 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
     }else{
         console.log("Task 1: No Problem Doc");
-        d3mProblemDescription.id="Task1";
-        d3mProblemDescription.name="Task1";
-        d3mProblemDescription.description = "Discovered Problems";
-    };
+        defaultProblem.description = 'Initial discovered problem';
+        // d3mProblemDescription.id="Task1";
+        // d3mProblemDescription.name="Task1";
+        // d3mProblemDescription.description = "Discovered Problems";
+    }
 
     // 4. Read the data document and set 'datadocument'
     datadocument = await m.request(d3mDS);
@@ -1217,20 +1233,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     layout(false, true);
     IS_D3M_DOMAIN ? zPop() : dataDownload();
 
-    manipulations['defaultProblem'] = [];
-    defaultProblem = {
-        problemID: 'defaultProblem',
-        system: 'auto',
-        description: 'default dataset configuration from datasetDoc.json',
-        target: zparams.zdv[0],
-        predictors: [...zparams.zgroup1],
-        get pipeline() {return manipulations['defaultProblem']},
-        metric: 'meanSquaredError',
-        model: 'modelUndefined',
-        task: findNode(zparams.zdv[0]).plottype === "bar" ? 'classification' : 'regression',
-        subTask: 'taskSubtypeUndefined',
-        meaningful: false
-    };
+    defaultProblem.predictors = [...zparams.zgroup1];
     disco.unshift(defaultProblem);
     setSelectedProblem(getProblemCopy(defaultProblem));
 
@@ -3148,7 +3151,7 @@ export async function makeRequest(url, data) {
         res = await m.request(url, {method: 'POST', data: data});
         // console.log('response:', res);
         if (Object.keys(res)[0] === 'warning') {
-            alertWarn('Warning: ' + res.warning);
+            // alertWarn('Warning: ' + res.warning);
             end_ta3_search(false, res.warning);
         }
     } catch(err) {

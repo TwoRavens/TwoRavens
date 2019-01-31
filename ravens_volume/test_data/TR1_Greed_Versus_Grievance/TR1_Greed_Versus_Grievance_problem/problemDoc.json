@@ -14,8 +14,8 @@
         "datasetID": "Greed_Versus_Grievance_dataset",
         "targets": [
           {
-            "colIndex": 8,
-            "colName": "war"
+            "colIndex": 10,
+            "colName": "onset"
           }
         ]
       }
