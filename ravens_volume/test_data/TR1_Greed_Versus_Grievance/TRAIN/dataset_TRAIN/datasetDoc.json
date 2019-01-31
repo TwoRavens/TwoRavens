@@ -4,6 +4,8 @@
     "datasetName": "Greed_Versus_Grievance",
     "description": "Replication data for Fearon and Laitin greed versus grievance analysis",
     "citation": "",
+    "license": "CC-BY license",
+    "redacted": false,
     "datasetSchemaVersion": "3.0"
   },
   "dataResources": [
@@ -17,13 +19,13 @@
         {
           "colIndex": 0,
           "colName": "d3mIndex",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["index"]
         },
         {
           "colIndex": 1,
           "colName": "ccode",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
@@ -41,55 +43,55 @@
         {
           "colIndex": 4,
           "colName": "cmark",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 5,
           "colName": "year",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 6,
           "colName": "wars",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 7,
           "colName": "war",
-          "colType": "categorical",
-          "role": ["suggestedTarget"]
+          "colType": "integer",
+          "role": ["attribute"]
         },
         {
           "colIndex": 8,
           "colName": "warl",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 9,
           "colName": "onset",
-          "colType": "categorical",
-          "role": ["attribute"]
+          "colType": "integer",
+          "role": ["suggestedTarget"]
         },
         {
           "colIndex": 10,
           "colName": "ethonset",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 11,
           "colName": "durest",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 12,
           "colName": "aim",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
@@ -101,13 +103,13 @@
         {
           "colIndex": 14,
           "colName": "ended",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 15,
           "colName": "ethwar",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
@@ -119,49 +121,49 @@
         {
           "colIndex": 17,
           "colName": "pop",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 18,
           "colName": "lpop",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 19,
           "colName": "polity2",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 20,
           "colName": "gdpen",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 21,
           "colName": "gdptype",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 22,
           "colName": "gdpenl",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 23,
           "colName": "lgdpenl1",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 24,
           "colName": "lpopl1",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
@@ -173,265 +175,265 @@
         {
           "colIndex": 26,
           "colName": "western",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 27,
           "colName": "eeurop",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 28,
           "colName": "lamerica",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 29,
           "colName": "ssafrica",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 30,
           "colName": "asia",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 31,
           "colName": "nafrme",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 32,
           "colName": "colbrit",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 33,
           "colName": "colfra",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 34,
           "colName": "mtnest",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 35,
           "colName": "lmtnest",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 36,
           "colName": "elevdiff",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 37,
           "colName": "Oil",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 38,
           "colName": "ncontig",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 39,
           "colName": "ethfrac",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 40,
           "colName": "ef",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 41,
           "colName": "plural",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 42,
           "colName": "second",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 43,
           "colName": "numlang",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 44,
           "colName": "relfrac",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 45,
           "colName": "plurrel",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 46,
           "colName": "minrelpc",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 47,
           "colName": "muslim",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 48,
           "colName": "nwstate",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 49,
           "colName": "polity2l",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 50,
           "colName": "instab",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 51,
           "colName": "anocl",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 52,
           "colName": "deml",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 53,
           "colName": "empethfrac",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 54,
           "colName": "empwarl",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 55,
           "colName": "emponset",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 56,
           "colName": "empgdpenl",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 57,
           "colName": "emplpopl",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 58,
           "colName": "emplmtnest",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 59,
           "colName": "empncontig",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 60,
           "colName": "empolity2l",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 61,
           "colName": "sdwars",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 62,
           "colName": "sdonset",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 63,
           "colName": "colwars",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 64,
           "colName": "colonset",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 65,
           "colName": "cowwars",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 66,
           "colName": "cowonset",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 67,
           "colName": "cowwarl",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 68,
           "colName": "sdwarl",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 69,
           "colName": "colwarl",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         }
       ]

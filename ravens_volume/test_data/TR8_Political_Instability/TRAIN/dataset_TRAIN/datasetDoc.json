@@ -19,25 +19,25 @@
         {
           "colIndex": 0,
           "colName": "d3mIndex",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["index"]
         },
         {
           "colIndex": 1,
           "colName": "mycode",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 2,
           "colName": "year",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 3,
           "colName": "onset",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["suggestedTarget"]
         },
         {
@@ -49,121 +49,109 @@
         {
           "colIndex": 5,
           "colName": "warl",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 6,
           "colName": "gdpenl",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 7,
           "colName": "lpopl1",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 8,
           "colName": "lmtnest",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 9,
           "colName": "ncontig",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 10,
           "colName": "Oil",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 11,
           "colName": "nwstate",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 12,
           "colName": "instab",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 13,
           "colName": "polity2l",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 14,
           "colName": "ethfrac",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 15,
           "colName": "relfrac",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 16,
-          "colName": "wef_imort",
-          "colType": "categorical",
+          "colName": "wr_regtype",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 17,
-          "colName": "wr_regtype",
-          "colType": "categorical",
+          "colName": "h_j",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 18,
-          "colName": "h_j",
-          "colType": "categorical",
+          "colName": "ht_regtype",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 19,
-          "colName": "ht_regtype",
-          "colType": "categorical",
+          "colName": "p_autoc",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 20,
-          "colName": "p_autoc",
-          "colType": "categorical",
+          "colName": "p_democ",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 21,
-          "colName": "p_democ",
-          "colType": "categorical",
+          "colName": "p_durable",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 22,
-          "colName": "p_durable",
-          "colType": "categorical",
-          "role": ["attribute"]
-        },
-        {
-          "colIndex": 23,
-          "colName": "p_fragment",
-          "colType": "categorical",
-          "role": ["attribute"]
-        },
-        {
-          "colIndex": 24,
           "colName": "p_xconst",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         }
       ]
