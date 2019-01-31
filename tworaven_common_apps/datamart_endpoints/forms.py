@@ -73,6 +73,7 @@ class DatamartAugmentForm(forms.Form):
     search_result = forms.CharField(required=True, widget=forms.Textarea)
     left_columns = forms.CharField(required=False, widget=forms.Textarea)
     right_columns = forms.CharField(required=False, widget=forms.Textarea)
+    exact_match = forms.BooleanField(required=False)
 
     def clean_source(self):
         source = self.cleaned_data.get('source')
@@ -91,6 +92,9 @@ class DatamartAugmentForm(forms.Form):
 
     def clean_right_columns(self):
         return json.loads(self.cleaned_data.get('right_columns') or '{}')
+
+    def clean_exact_match(self):
+        return self.cleaned_data.get('exact_match')
 
 
 class DatamartMaterializeForm(forms.Form):
