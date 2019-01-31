@@ -6,9 +6,10 @@ Conforming to the 1/12/19 version of:
 """
 import os
 from os.path import basename, dirname, isdir, isfile, join
-
+from collections import OrderedDict
 from django.conf import settings
 
+from tworaven_apps.utils.dict_helper import get_dict_value
 from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.utils.json_helper import json_loads
@@ -16,16 +17,20 @@ from tworaven_apps.utils.file_util import \
     (create_directory, move_file)
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
-from tworaven_apps.configurations.utils import get_latest_d3m_config
+from tworaven_apps.configurations.utils import \
+    (get_latest_d3m_config,
+     get_config_file_contents)
 from tworaven_apps.user_workspace.models import UserWorkspace
 from tworaven_apps.user_workspace.utils import get_user_workspace_by_id
 
 from tworaven_apps.utils.random_info import \
     (get_timestamp_string,
      get_alpha_string)
-from tworaven_apps.configurations.models_d3m import \
-    (D3MConfiguration)
 
+from tworaven_apps.configurations.models_d3m import \
+    (D3MConfiguration,
+     KEY_DATASET_SCHEMA,
+     KEY_PROBLEM_SCHEMA)
 
 class NewDatasetUtil(BasicErrCheck):
     """Create a config based on a dict containing key value
@@ -48,6 +53,7 @@ class NewDatasetUtil(BasicErrCheck):
         self.websocket_id = kwargs.get('websocket_id')
 
         # to be created
+        self.dataset_id = None
         self.tables_dir = None  # where source file is copied: learningData.csv
         self.problem_dir = None # where problem dir will be written
         self.new_source_file = None
@@ -55,7 +61,7 @@ class NewDatasetUtil(BasicErrCheck):
         self.run_construct_dataset()
 
     @staticmethod
-    def get_dataset_id(old_id=None):
+    def create_dataset_id(old_id=None):
         """Construct an updated Dataset id"""
         if old_id:
             return '%s-%s-%s' % (old_id,
@@ -75,6 +81,7 @@ class NewDatasetUtil(BasicErrCheck):
 
         self.user_workspace = ws_info.result_obj
         self.d3m_config = ws_info.d3m_config
+        self.dataset_id = NewDatasetUtil.create_dataset_id(self.d3m_config.name)
         return True
 
     def run_construct_dataset(self):
@@ -168,28 +175,113 @@ class NewDatasetUtil(BasicErrCheck):
 
         return True
 
-    def create_prob_data_docs(self):
+    def get_makedoc_rook_params(self):
         """Prepare the problem and dataset docs
         info to send to rook mkdocsapp:
 
         datafile: path to data file
 
-        datasetid: datasetID from data doc plus timestamp plus unique id
+        ---------------------------
+        # DATA DOC vals
+        ---------------------------
+        datasetid: datasetID from DATA DOC plus timestamp plus unique id
 
-        name: datasetName from data doc plus (augmented)
+        name: datasetName from DATA DOC plus (augmented)
 
-        depvarname: data.targets[...] from problem doc, can be more than one object
+        description: description from DATA DOC, plus maybe any description of augmented data
 
-        description: description from data doc, plus maybe any description of augmented data
+        ---------------------------
+        # PROBLEM DOC vals
+        ---------------------------
+        taskType: taskType from PROBLEM DOC
 
-        taskType: taskType from problem doc
-
-        taskSubType: taskSubType from problem doc
+        taskSubType: taskSubType from PROBLEM DOC
             - Optional! don't send if it's not there
 
-        metric: performanceMetrics[...] from problem doc, can be more than one
+        depvarname: data.targets[...] from PROBLEM DOC, can be more than one object
+
+        metric: performanceMetrics[...] from PROBLEM DOC, can be more than one
         """
+        if self.has_error():
+            return None
+
+        params = OrderedDict()
+
+        params['datafile'] = self.new_source_file
+        params['datasetid'] = self.dataset_id
+
+        # --------------------------------
+        # get dataset doc info
+        # --------------------------------
+        dataset_doc = get_config_file_contents(self.d3m_config,
+                                               KEY_DATASET_SCHEMA)
+        if not dataset_doc.success:
+            user_msg = ('Failed to open the dataset doc. %s') % \
+                        (dataset_doc.err_msg,)
+            self.add_err_msg(user_msg)
+            return None
+        dataset_doc = dataset_doc.result_obj
+
+        # name
+        #
+        doc_val_info = get_dict_value(problem_doc, 'about', 'datasetName')
+        if doc_val_info.success:
+            params['name'] = '%s (augmented)' % doc_val_info.result_obj
+        else:
+            self.add_err_msg('about.datasetName not found in dataset doc')
+            return None
+
+        # description - optional
+        #
+        doc_val_info = get_dict_value(problem_doc, 'about', 'description')
+        if doc_val_info.success:
+            params['description'] = '%s (augmented)' % doc_val_info.result_obj
+        else:
+            params['description'] = '(augmented data)'
+
+        # --------------------------------
+        # get problem doc info
+        # --------------------------------
+        problem_doc = get_config_file_contents(self.d3m_config,
+                                               KEY_PROBLEM_SCHEMA)
+        if not problem_doc.success:
+            user_msg = ('Failed to open the problem doc. %s') % \
+                        (problem_doc.err_msg,)
+            self.add_err_msg(user_msg)
+            return None
+        problem_doc = problem_doc.result_obj
+
+        # taskType - required
+        #
+        task_type = get_dict_value(problem_doc, 'about', 'taskType')
+        if task_type.success:
+            params['taskType'] = task_type.result_obj
+        else:
+            self.add_err_msg('about.taskType not found in problem doc')
+            return None
+
+        # taskSubType - optional
+        #
+        subtask_type = get_dict_value(problem_doc, 'about', 'taskSubType')
+        if subtask_type.success:
+            params['taskSubType'] = subtask_type.result_obj
+
+        # depvarname - targets
+        #
+        doc_val_info = get_dict_value(problem_doc, 'inputs', 'data', 'targets')
+        if doc_val_info.success:
+            params['depvarname'] = doc_val_info.result_obj
+        else:
+            self.add_err_msg('inputs.data.targets not found in problem doc')
+            return None
+
+        return params
+
+    def create_prob_data_docs(self):
+        """Send params to rook app"""
         if self.has_error():
             return
 
-        pass
+        rook_params = self.get_makedoc_rook_params()
+        if not rook_params:
+            return

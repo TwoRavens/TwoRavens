@@ -4,6 +4,7 @@ Constants used to track the app names and url between the frontend and rook
 
 SOLA_JSON_KEY = 'solaJSON'
 HEALTH_CHECK_APP = 'HEALTH_CHECK_APP'
+MKDOCS_APP = 'MKDOCS_APP'
 PREPROCESS_ROOK_APP_NAME = 'preprocessapp'
 
 # Used for tracking rook routing.
@@ -16,6 +17,7 @@ PREPROCESS_ROOK_APP_NAME = 'preprocessapp'
 #
 #                   standard     frontend   backend
 ROOK_APP_NAMES = [('DATA_APP', 'dataapp', 'dataapp'),       # session id?
+                  (MKDOCS_APP, 'mkdocsapp', 'mkdocsapp'), # subset file
                   ('SUBSET_APP', 'subsetapp', 'subsetapp'), # subset file
                   ('TRANSFORM_APP', 'transformapp', 'transformapp'), # transfor file
                   ('PREPROCESS_APP', 'preprocessapp', 'preprocessapp'), # preprocess

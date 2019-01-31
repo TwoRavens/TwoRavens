@@ -3,10 +3,13 @@ import csv
 from datetime import datetime as dt
 from os.path import isdir, isfile, getsize, join
 from collections import OrderedDict
-
+from tworaven_apps.utils.json_helper import json_loads
+from tworaven_apps.utils.basic_response import (ok_resp,
+                                                err_resp)
 from tworaven_apps.utils import random_info
 from tworaven_apps.configurations.models_d3m import D3MConfiguration,\
     D3M_FILE_ATTRIBUTES
+
 
 def get_latest_d3m_config():
     """
@@ -209,13 +212,45 @@ def get_d3m_filepath(d3m_config, file_attr):
         err -> (None, err_msg)
     """
     if not d3m_config:
-        return None, 'No D3MConfiguration specified.'
+        return err_resp('No D3MConfiguration specified.')
 
     if not file_attr in D3M_FILE_ATTRIBUTES:
-        return None, 'unknown file attribute.  Use one of %s' % D3M_FILE_ATTRIBUTES
+        user_msg = 'unknown file attribute.  Use one of %s' % D3M_FILE_ATTRIBUTES
+        return err_resp(user_msg)
 
     filepath = d3m_config.__dict__.get(file_attr, '')
     if not isfile(filepath):
-        return None, 'file not found: %s' % filepath
+        return err_resp('file not found: %s' % filepath)
 
-    return filepath, None
+    return ok_resp(filepath)
+
+def get_config_file_contents(d3m_config, config_key, as_dict=True):
+    """Get contents of a file specified in the config"""
+    if not isinstance(d3m_config, D3MConfiguration):
+        return err_resp('d3m_config must be a D3MConfiguration object')
+
+    if not config_key in D3M_FILE_ATTRIBUTES:
+        return err_resp('config_key not found!')
+
+    filepath_info = get_d3m_filepath(d3m_config, config_key)
+    if not filepath_info.success:
+        return err_resp(filepath_info.err_msg)
+
+    fpath = filepath_info.result_obj
+
+    try:
+        with open(fpath, "r") as fh:
+            contents = fh.read()
+    except IOError as err_obj:
+        user_msg = 'Failed to read file: %s\n%s' % \
+                    (fpath, err_obj)
+        return err_resp(user_msg)
+
+    if not as_dict:
+        return ok_resp(contents)
+
+    doc_info = json_loads(contents)
+    if not doc_info.success:
+        return err_resp(doc_info.err_msg)
+
+    return ok_resp(doc_info.result_obj)
