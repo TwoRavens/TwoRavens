@@ -153,6 +153,7 @@ class DatamartJobUtilISI(object):
         # ----------------------------
         # mock call
         # ----------------------------
+        # 291780000
         """
         right_data = '291770000'
         left_columns= '[[2]]'

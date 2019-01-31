@@ -152,7 +152,7 @@ def api_augment(request):
         return JsonResponse(get_json_error(user_msg))
 
     user_workspace = ws_info.result_obj
-
+    
     if json_req_obj['source'] == 'ISI':
         success, results_obj_err = DatamartJobUtilISI.datamart_augment(
             user_workspace,
