@@ -19,9 +19,9 @@ except Exception as e:
 from tworaven_apps.data_prep_utils.new_dataset_util import NewDatasetUtil
 
 
-def make_dataset(user_workspace_id, source_file):
+def make_dataset(user_workspace_id, source_file, **kwargs):
     """test"""
-    ndu = NewDatasetUtil(user_workspace_id, source_file)
+    ndu = NewDatasetUtil(user_workspace_id, source_file, **kwargs)
     if ndu.has_error():
         print(ndu.get_error_message())
         return
@@ -29,6 +29,9 @@ def make_dataset(user_workspace_id, source_file):
     ndu.show_info()
 
 if __name__ == '__main__':
-    user_workspace_id = 20
+    user_workspace_id = 13
+    websocket_id = 'dev_admin'
     source_file = '../ravens_volume/test_data/01_TEST_SOURCE/baseball_learningData.csv'
-    make_dataset(user_workspace_id, source_file)
+    make_dataset(user_workspace_id,
+                 source_file,
+                 **dict(websocket_id=websocket_id))

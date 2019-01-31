@@ -1251,6 +1251,9 @@ class Body {
             m("span", {"class": "footer-info-break"}, "|"),
             m("span", {"style": "color:#337ab7"}, `TA3 API: ${TA3TA2_API_VERSION}`),
             m("span", {"class": "footer-info-break"}, "|"),
+            m("span", {"class": "footer-info", "id": "user-workspace-id"}, '(ws)'),
+            m("span", {"class": "footer-info-break"}, "|"),
+
             m(Button, {
                 style: {'margin-left': '1em'},
                 title: 'alerts',

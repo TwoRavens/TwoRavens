@@ -18,7 +18,8 @@ from tworaven_apps.utils.file_util import \
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.rook_services.make_datadocs_util import MakeDatadocsUtil
 from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
-
+from tworaven_apps.ta2_interfaces.websocket_message import WebsocketMessage
+from tworaven_apps.data_prep_utils.static_vals import DATAMART_AUGMENT_PROCESS
 from tworaven_apps.configurations.utils import \
     (get_latest_d3m_config,
      get_config_file_contents)
@@ -92,7 +93,7 @@ class NewDatasetUtil(BasicErrCheck):
         """Retrieve UserWorkspace and D3M config"""
         ws_info = get_user_workspace_by_id(self.user_workspace_id)
         if not ws_info.success:
-            self.add_err_msg(ws_info.err_msg)
+            self.send_websocket_err_msg(ws_info.err_msg)
             return False
 
         self.user_workspace = ws_info.result_obj
@@ -118,13 +119,39 @@ class NewDatasetUtil(BasicErrCheck):
         print('\nnew_d3m_config', self.new_d3m_config)
         print('\nnew_workspace', self.new_workspace)
 
+    def send_websocket_err_msg(self, user_msg):
+        """Send an error messsage over websockets"""
+        # ----------------------------------
+        # Add error message to class
+        # ----------------------------------
+        self.add_err_msg(user_msg)
+
+        if not self.websocket_id:
+            return
+
+        user_msg = '%s (datamart augment)' % \
+                   (user_msg,)
+
+        # ----------------------------------
+        # Send Websocket message
+        # ----------------------------------
+        ws_msg = WebsocketMessage.get_fail_message(DATAMART_AUGMENT_PROCESS,
+                                                   user_msg)
+        ws_msg.send_message(self.websocket_id)
+
+        # ----------------------------------
+        # Log it
+        # ----------------------------------
+        LOGGER.info('WebsocketMessage: %s', user_msg)
+
+
 
     def run_construct_dataset(self):
         """Go through the steps...."""
         LOGGER.info('run_construct_dataset')
         if not isfile(self.orig_source_file):
             user_msg = 'File does not exists: %s' % self.orig_source_file
-            self.add_err_msg(user_msg)
+            self.send_websocket_err_msg(user_msg)
             return
 
         if not self.retrieve_workspace():
@@ -140,6 +167,14 @@ class NewDatasetUtil(BasicErrCheck):
             return
 
         self.create_new_config()
+
+        if not self.has_error() and self.websocket_id:
+            ws_msg = WebsocketMessage.get_success_message(\
+                        DATAMART_AUGMENT_PROCESS,
+                        'New user workspace created: %s' % self.new_workspace,
+                        msg_cnt=1)
+            ws_msg.send_message(self.websocket_id)
+
 
     def create_new_config(self):
         """Create a new D3M config and set it as the default
@@ -161,7 +196,7 @@ class NewDatasetUtil(BasicErrCheck):
         print('create_new_config 2: ', ecl_info)
 
         if not ecl_info.success:
-            self.add_err_msg('Error creating config: %s' % \
+            self.send_websocket_err_msg('Error creating config: %s' % \
                              ecl_info.err_msg)
             return
 
@@ -176,7 +211,7 @@ class NewDatasetUtil(BasicErrCheck):
                                     self.user_workspace.user,
                                     self.new_d3m_config)
         if not ws_info.success:
-            self.add_err_msg('Error creating workspace: %s' % \
+            self.send_websocket_err_msg('Error creating workspace: %s' % \
                              ws_info.err_msg)
             return
 
@@ -206,14 +241,14 @@ class NewDatasetUtil(BasicErrCheck):
         d3m_config = self.user_workspace.d3m_config #et_latest_d3m_config()
         if not d3m_config:
             user_msg = 'Latest D3M configuration not found. (construct_folders)'
-            self.add_err_msg(user_msg)
+            self.send_websocket_err_msg(user_msg)
             return False
 
         if (not d3m_config.additional_inputs) or \
             (not isdir(d3m_config.additional_inputs)):
             user_msg = ('Additional inputs folder does not exist! %s') % \
                         (d3m_config.additional_inputs,)
-            self.add_err_msg(user_msg)
+            self.send_websocket_err_msg(user_msg)
             return False
 
         # ---------------------------------------
@@ -227,7 +262,7 @@ class NewDatasetUtil(BasicErrCheck):
 
         dir_info = create_directory(self.problem_dir)
         if not dir_info.success:
-            self.add_err_msg(dir_info.err_msg)
+            self.send_websocket_err_msg(dir_info.err_msg)
             return False
 
         # ---------------------------------------
@@ -240,7 +275,7 @@ class NewDatasetUtil(BasicErrCheck):
 
         dir_info = create_directory(self.tables_dir)
         if not dir_info.success:
-            self.add_err_msg(dir_info.err_msg)
+            self.send_websocket_err_msg(dir_info.err_msg)
             return False
         self.dataset_dir = dirname(self.tables_dir)
         return True
@@ -253,12 +288,12 @@ class NewDatasetUtil(BasicErrCheck):
         self.new_source_file = join(self.tables_dir, 'learningData.csv')
         if isfile(self.new_source_file):
             user_msg = 'Destination file already exists: %s' % self.new_source_file
-            self.add_err_msg(user_msg)
+            self.send_websocket_err_msg(user_msg)
             return False
 
         move_info = move_file(self.orig_source_file, self.new_source_file)
         if not move_info.success:
-            self.add_err_msg('Failed to move data file: %s' % move_info.err_msg)
+            self.send_websocket_err_msg('Failed to move data file: %s' % move_info.err_msg)
             return False
 
         return True
@@ -313,7 +348,7 @@ class NewDatasetUtil(BasicErrCheck):
         if not dataset_doc.success:
             user_msg = ('Failed to open the dataset doc. %s') % \
                         (dataset_doc.err_msg,)
-            self.add_err_msg(user_msg)
+            self.send_websocket_err_msg(user_msg)
             return None
         dataset_doc = dataset_doc.result_obj
 
@@ -323,7 +358,7 @@ class NewDatasetUtil(BasicErrCheck):
         if doc_val_info.success:
             params['name'] = '%s (augmented)' % doc_val_info.result_obj
         else:
-            self.add_err_msg('about.datasetName not found in dataset doc')
+            self.send_websocket_err_msg('about.datasetName not found in dataset doc')
             return None
 
         # description - optional
@@ -350,7 +385,7 @@ class NewDatasetUtil(BasicErrCheck):
         if not problem_doc.success:
             user_msg = ('Failed to open the problem doc. %s') % \
                         (problem_doc.err_msg,)
-            self.add_err_msg(user_msg)
+            self.send_websocket_err_msg(user_msg)
             return None
         problem_doc = problem_doc.result_obj
 
@@ -360,7 +395,7 @@ class NewDatasetUtil(BasicErrCheck):
         if task_type.success:
             params['taskType'] = task_type.result_obj
         else:
-            self.add_err_msg('about.taskType not found in problem doc')
+            self.send_websocket_err_msg('about.taskType not found in problem doc')
             return None
 
         # taskSubType - optional
@@ -373,24 +408,24 @@ class NewDatasetUtil(BasicErrCheck):
         #
         doc_val_info = get_dict_value(problem_doc, 'inputs', 'data')
         if not doc_val_info.success:
-            self.add_err_msg('inputs.data not found in problem doc')
+            self.send_websocket_err_msg('inputs.data not found in problem doc')
             return None
 
         if not doc_val_info.result_obj:
-            self.add_err_msg('inputs.data list is empty found in problem doc')
+            self.send_websocket_err_msg('inputs.data list is empty found in problem doc')
             return None
 
         try:
             params['targets'] = doc_val_info.result_obj[0]['targets']
         except KeyError:
-            self.add_err_msg('inputs.data.targets not found in problem doc')
+            self.send_websocket_err_msg('inputs.data.targets not found in problem doc')
             return None
 
         # performanceMetrics
         #
         doc_val_info = get_dict_value(problem_doc, 'inputs', 'performanceMetrics')
         if not doc_val_info.success:
-            self.add_err_msg('inputs.performanceMetrics not found in problem doc')
+            self.send_websocket_err_msg('inputs.performanceMetrics not found in problem doc')
             return None
         params['performanceMetrics'] = doc_val_info.result_obj
 
@@ -413,7 +448,7 @@ class NewDatasetUtil(BasicErrCheck):
 
         md_util = MakeDatadocsUtil(rook_params=self.rook_params)
         if md_util.has_error():
-            self.add_err_msg('Rook error. %s' % md_util.get_error_message())
+            self.send_websocket_err_msg('Rook error. %s' % md_util.get_error_message())
             return False
 
         # -----------------------------
@@ -421,14 +456,14 @@ class NewDatasetUtil(BasicErrCheck):
         # -----------------------------
         doc_info = md_util.get_dataset_doc_string()
         if not doc_info.success:
-            self.add_err_msg('Rook datasetDoc error. %s' % \
+            self.send_websocket_err_msg('Rook datasetDoc error. %s' % \
                              doc_info.err_msg)
             return False
 
         dataset_doc_path = join(self.dataset_dir, 'datasetDoc.json')
         finfo = write_file(dataset_doc_path, doc_info.result_obj)
         if not finfo.success:
-            self.add_err_msg(finfo.err_msg)
+            self.send_websocket_err_msg(finfo.err_msg)
             return False
 
         # -----------------------------
@@ -436,14 +471,14 @@ class NewDatasetUtil(BasicErrCheck):
         # -----------------------------
         doc_info2 = md_util.get_problem_doc_string()
         if not doc_info2.success:
-            self.add_err_msg('Rook problemDoc error. %s' % \
+            self.send_websocket_err_msg('Rook problemDoc error. %s' % \
                              doc_info2.err_msg)
             return False
 
         problem_doc_path = join(self.problem_dir, 'problemDoc.json')
         finfo2 = write_file(problem_doc_path, doc_info2.result_obj)
         if not finfo2.success:
-            self.add_err_msg(finfo2.err_msg)
+            self.send_websocket_err_msg(finfo2.err_msg)
             return False
 
         return True
