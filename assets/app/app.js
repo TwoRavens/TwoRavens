@@ -349,6 +349,7 @@ streamSocket.onmessage = function(e) {
 
     return;
   }
+  console.log('full data: ' + JSON.stringify(msg_data));
 
   console.log('Got it! Message type: ' + msg_data.msg_type);
   //JSON.stringify(msg_data));
@@ -381,7 +382,9 @@ streamSocket.onmessage = function(e) {
     console.log(msg_data.msg_type + ' recognized!');
 
     handleENDGetSearchSolutionsResults();
-
+  } else if (msg_data.msg_type === 'DATAMART_AUGMENT_PROCESS'){
+    console.log(msg_data.msg_type + ' recognized!');
+    handleAugmentDataMessage(msg_data);
 
   } else {
     console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
@@ -846,6 +849,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // ---------------------------------------
     // 2. Set 'configurations'
     // ---------------------------------------
+    $('#user-workspace-id').html('(ws:' + configurations.user_workspace_id +')');
+
     datasetdocurl = configurations.dataset_schema;
 
     if (configurations.d3m_input_dir){
@@ -4555,6 +4560,8 @@ function primitiveStepRemoveColumns (aux) {
     return {primitive:step};
 }
 
+
+
 /**
   Handle a websocket sent GetSearchSolutionResultsResponse
   wrapped in a StoredResponse object
@@ -4714,6 +4721,29 @@ async function handleENDGetSearchSolutionsResults(){
 
   // stop the interval process
 }
+
+export function handleAugmentDataMessage(msg_data){
+
+  if (!msg_data) {
+      console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
+      return;
+  }
+  if (msg_data.success === true) {
+      console.log('Successful Augment.  Try to reload now!!');
+      console.log(msg_data.user_message);
+
+      setModal("Successful data augmentation. Please reload the page. ",
+               "Data Augmentation", true, "Reload", false, locationReload);
+
+      return
+  }3
+
+  setModal("Data augmentation error: " + msg_data.user_message,
+           "Data Augmentation Failed", true, "Close", true);
+
+}
+
+
 
 export function loadResult(my_disco) {
     (my_disco || disco).forEach((problem, i) => {
