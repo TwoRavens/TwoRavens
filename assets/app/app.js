@@ -874,7 +874,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // url example: /config/d3m-config/get-problem-schema/json/39
     //
     d3mPS = configurations.problem_schema_url;
-
     // url example: /config/d3m-config/get-dataset-schema/json/39
     //
     d3mDS = configurations.dataset_schema_url;

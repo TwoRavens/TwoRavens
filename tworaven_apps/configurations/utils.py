@@ -6,6 +6,7 @@ from collections import OrderedDict
 from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
+from django.views.decorators.csrf import csrf_exempt                                                
 from tworaven_apps.utils import random_info
 from tworaven_apps.configurations.models_d3m import D3MConfiguration,\
     D3M_FILE_ATTRIBUTES

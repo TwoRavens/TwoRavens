@@ -20,8 +20,8 @@ from tworaven_apps.utils.basic_response import (ok_resp,
 from tworaven_apps.configurations.utils import \
     (get_latest_d3m_config,
      get_config_file_contents)
-from tworaven_apps.user_workspace.models import UserWorkspace
-from tworaven_apps.user_workspace.utils import get_user_workspace_by_id
+from tworaven_apps.user_workspaces.models import UserWorkspace
+from tworaven_apps.user_workspaces.utils import get_user_workspace_by_id
 
 from tworaven_apps.utils.random_info import \
     (get_timestamp_string,
@@ -31,6 +31,11 @@ from tworaven_apps.configurations.models_d3m import \
     (D3MConfiguration,
      KEY_DATASET_SCHEMA,
      KEY_PROBLEM_SCHEMA)
+
+import logging
+
+LOGGER = logging.getLogger(__name__)
+
 
 class NewDatasetUtil(BasicErrCheck):
     """Create a config based on a dict containing key value
@@ -80,7 +85,7 @@ class NewDatasetUtil(BasicErrCheck):
             return False
 
         self.user_workspace = ws_info.result_obj
-        self.d3m_config = ws_info.d3m_config
+        self.d3m_config = self.user_workspace.d3m_config
         self.dataset_id = NewDatasetUtil.create_dataset_id(self.d3m_config.name)
         return True
 

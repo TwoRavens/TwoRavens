@@ -1,5 +1,6 @@
 """Wrap file/dir functions for error checks"""
-import os, join
+import os
+from os.path import join
 import shutil
 
 from tworaven_apps.utils.basic_response import (ok_resp,

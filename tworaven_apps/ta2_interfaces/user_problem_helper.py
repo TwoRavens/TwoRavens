@@ -316,9 +316,6 @@ class UserProblemHelper(object):
         return True, filepath
 
 
-
-
-
     @staticmethod
     def get_current_problem_schema(user_obj):
         """Return the D3M problem schema as an OrderedDict"""
@@ -327,15 +324,14 @@ class UserProblemHelper(object):
             return False, ('D3M config not found.  Make sure a default'
                            ' config is set. (UserProblemHelper)')
 
-        filepath, err_msg_or_None = get_d3m_filepath(\
-                            d3m_config_info.result_obj,
-                            KEY_PROBLEM_SCHEMA)
-        if err_msg_or_None:
-            return False, err_msg_or_None
+        filepath_info = get_d3m_filepath(d3m_config_info.result_obj,
+                                         KEY_PROBLEM_SCHEMA)
+        if not filepath_info.success:
+            return False, filepath_info.err_msg
 
         fcontents = None
         try:
-            fcontents = open(filepath, 'r').read()
+            fcontents = open(filepath_info.result_obj, 'r').read()
         except IOError as err_obj:
             return False, 'Could not open file: %s' % err_obj
 
