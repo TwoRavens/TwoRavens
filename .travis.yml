@@ -38,10 +38,10 @@ after_success:
     docker build -t tworavens/ravens-main:develop .;
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
     docker push tworavens/ravens-main:develop;
-    docker tag tworavens/ravens-main:develop tworavens/ravens-main:dm-demo3;
-    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-    docker push tworavens/ravens-main:dm-demo3;
     fi
+  #  docker tag tworavens/ravens-main:develop tworavens/ravens-main:dm-demo3;
+  #  docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+  #  docker push tworavens/ravens-main:dm-demo3;
   # -------------------------------------
   # Temp push, to test new k8s deploy
   # -------------------------------------
