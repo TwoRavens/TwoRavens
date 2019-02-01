@@ -29,7 +29,7 @@ class DatamartJobUtilISI(object):
         response = requests.post(
             DATAMART_ISI_URL + '/new/get_metadata_extract_links',
             data=json.dumps({'url': url}),
-            headers={'Content-type': 'application/json'},
+            headers={'Content-Type': 'application/json'},
             verify=False)
 
         if response.status_code != 200:
@@ -47,7 +47,7 @@ class DatamartJobUtilISI(object):
         response = requests.post(
             DATAMART_ISI_URL + '/new/get_metadata_single_file',
             data=data,
-            headers={'Content-type': 'application/json'},
+            headers={'Content-Type': 'application/json'},
             verify=False)
 
         if response.status_code != 200:
@@ -61,11 +61,11 @@ class DatamartJobUtilISI(object):
         return ok_resp(response['data'])
 
     @staticmethod
-    def datamart_upload(indices):
+    def datamart_upload(index):
         response = requests.post(
             DATAMART_ISI_URL + '/new/upload_metadata_list',
-            data=indices,
-            headers={'Content-type': 'application/json'},
+            data=index.encode('utf-8'),
+            headers={'Content-Type': 'application/json'},
             verify=False)
 
         if response.status_code != 200:
@@ -235,9 +235,7 @@ class DatamartJobUtilISI(object):
             return err_resp('Failed to make directory: %s' % \
                             os.path.dirname(data_filepath))
 
-
         data_split = response['data'].split('\n')
-
 
         with open(data_filepath, 'w') as datafile:
             datafile.writelines(data_split)

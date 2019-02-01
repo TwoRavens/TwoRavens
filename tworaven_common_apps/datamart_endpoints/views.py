@@ -98,7 +98,7 @@ def api_index(request):
         'NYU': DatamartJobUtilNYU
     }[json_req_obj['source']]
 
-    success, results_obj_err = DatamartJobUtil.datamart_upload(json_req_obj['indices'])
+    success, results_obj_err = DatamartJobUtil.datamart_upload(json_req_obj['index'])
 
     return JsonResponse({
         "success": success,
