@@ -120,36 +120,24 @@
         },
         {
           "colIndex": 17,
-          "colName": "h_j",
-          "colType": "integer",
-          "role": ["attribute"]
-        },
-        {
-          "colIndex": 18,
-          "colName": "ht_regtype",
-          "colType": "integer",
-          "role": ["attribute"]
-        },
-        {
-          "colIndex": 19,
           "colName": "p_autoc",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
-          "colIndex": 20,
+          "colIndex": 18,
           "colName": "p_democ",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
-          "colIndex": 21,
+          "colIndex": 19,
           "colName": "p_durable",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
-          "colIndex": 22,
+          "colIndex": 20,
           "colName": "p_xconst",
           "colType": "integer",
           "role": ["attribute"]
