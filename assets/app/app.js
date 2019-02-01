@@ -349,6 +349,7 @@ streamSocket.onmessage = function(e) {
 
     return;
   }
+  console.log('full data: ' + JSON.stringify(msg_data));
 
   console.log('Got it! Message type: ' + msg_data.msg_type);
   //JSON.stringify(msg_data));
@@ -381,7 +382,9 @@ streamSocket.onmessage = function(e) {
     console.log(msg_data.msg_type + ' recognized!');
 
     handleENDGetSearchSolutionsResults();
-
+  } else if (msg_data.msg_type === 'DATAMART_AUGMENT_PROCESS'){
+    console.log(msg_data.msg_type + ' recognized!');
+    handleAugmentDataMessage(msg_data);
 
   } else {
     console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
@@ -624,7 +627,7 @@ export let d3mProblemDescription = {
     name: "",
     description: "",
     taskType: "taskTypeUndefined",
-    taskSubtype: "taskSubtypeUndefined",
+    // taskSubtype: "taskSubtypeUndefined",
     performanceMetrics: [{metric: "metricUndefined"}]
 };
 
@@ -846,6 +849,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // ---------------------------------------
     // 2. Set 'configurations'
     // ---------------------------------------
+    $('#user-workspace-id').html('(ws:' + configurations.user_workspace_id +')');
+
     datasetdocurl = configurations.dataset_schema;
 
     if (configurations.d3m_input_dir){
@@ -2638,6 +2643,8 @@ function CreateProblemDefinition(depvar, aux) {
             taskSubtype: d3mTaskSubtype[d3mProblemDescription.taskSubtype][1],
             performanceMetrics: [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ]  // need to generalize to case with multiple metrics.  only passes on first presently.
         };
+
+        if (d3mProblemDescription.taskSubtype === 'taskSubtypeUndefined') delete problem.taskSubtype;
         let inputs =  [
             {
                 datasetId: datadocument.about.datasetID,
@@ -2653,12 +2660,12 @@ function CreateProblemDefinition(depvar, aux) {
     } else { //creating pipeline data for problem discovery using aux inputs from disco line
 
         let problem = {
-            id: aux.problem_id,
+            id: aux.problemID,
             version: '1.0',
-            name: aux.problem_id,
+            name: aux.problemID,
             description: aux.description,
             taskType: d3mTaskType[aux.task][1],
-            taskSubtype: 'TASK_SUBTYPE_UNDEFINED',
+            // taskSubtype: 'TASK_SUBTYPE_UNDEFINED',
             performanceMetrics: [{metric: d3mMetrics[aux.metric][1]}]  // need to generalize to case with multiple metrics.  only passes on first presently.
         };
         let inputs =  [
@@ -2682,8 +2689,8 @@ function CreateProblemSchema(aux){
     let my_target = aux.target;
 
     let my_about = {
-        problemID: aux.problem_id,
-        problemName: aux.problem_id,
+        problemID: aux.problemID,
+        problemName: aux.problemID,
         problemDescription: aux.description,
         taskType: d3mTaskType[aux.task][1],
         problemVersion: '1.0',
@@ -2872,6 +2879,15 @@ export async function estimate() {
     resultsProblem = getProblemCopy(selectedProblem);
     disco.unshift(resultsProblem);
 
+    Object.assign(d3mProblemDescription, {
+        taskType: resultsProblem.task,
+        taskSubtype: resultsProblem.subTask,
+        id: resultsProblem.problemID,
+        name: resultsProblem.name || '',
+        description: resultsProblem.description || '',
+        performanceMetrics: [{metric: resultsProblem.metric}]
+    });
+
     if (!IS_D3M_DOMAIN){
         // let userUsg = 'This code path is no longer used.  (Formerly, it used Zelig.)';
         // console.log(userMsg);
@@ -3008,7 +3024,6 @@ export async function estimate() {
             if (res===undefined){
               handleENDGetSearchSolutionsResults();
               alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
-
               return;
             }else if(!res.success){
               handleENDGetSearchSolutionsResults();
@@ -4555,6 +4570,8 @@ function primitiveStepRemoveColumns (aux) {
     return {primitive:step};
 }
 
+
+
 /**
   Handle a websocket sent GetSearchSolutionResultsResponse
   wrapped in a StoredResponse object
@@ -4714,6 +4731,29 @@ async function handleENDGetSearchSolutionsResults(){
 
   // stop the interval process
 }
+
+export function handleAugmentDataMessage(msg_data){
+
+  if (!msg_data) {
+      console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
+      return;
+  }
+  if (msg_data.success === true) {
+      console.log('Successful Augment.  Try to reload now!!');
+      console.log(msg_data.user_message);
+
+      setModal("Successful data augmentation. Please reload the page. ",
+               "Data Augmentation", true, "Reload", false, locationReload);
+
+      return
+  }3
+
+  setModal("Data augmentation error: " + msg_data.user_message,
+           "Data Augmentation Failed", true, "Close", true);
+
+}
+
+
 
 export function loadResult(my_disco) {
     (my_disco || disco).forEach((problem, i) => {

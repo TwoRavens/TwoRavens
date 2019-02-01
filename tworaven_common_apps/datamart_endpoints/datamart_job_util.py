@@ -3,7 +3,8 @@ import zipfile
 from io import BytesIO
 
 import pandas as pd
-
+from tworaven_apps.data_prep_utils.new_dataset_util import NewDatasetUtil
+from tworaven_apps.user_workspaces.models import UserWorkspace
 from tworaven_apps.configurations.utils import get_latest_d3m_config
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
@@ -137,7 +138,9 @@ class DatamartJobUtilISI(object):
         return ok_resp(DatamartJobUtilISI.save(materialize_folderpath, response))
 
     @staticmethod
-    def datamart_augment(data_path, search_result, left_columns, right_columns, exact_match=False):
+    def datamart_augment(user_workspace, data_path, search_result, left_columns, right_columns, exact_match=False, **kwargs):
+        if not isinstance(user_workspace, UserWorkspace):
+            return err_resp('user_workspace must be a UserWorkspace')
 
         d3m_config = get_latest_d3m_config()
         if not d3m_config:
@@ -146,6 +149,19 @@ class DatamartJobUtilISI(object):
             return err_resp(user_msg)
 
         datamart_id = search_result['datamart_id']
+
+        # ----------------------------
+        # mock call
+        # ----------------------------
+        # 291780000
+        """
+        right_data = '291770000'
+        left_columns= '[[2]]'
+        right_columns = '[[6]]'
+        exact_match = True
+        data_path = '/Users/ramanprasad/Documents/github-rp/TwoRavens/ravens_volume/test_data/TR1_Greed_Versus_Grievance/TRAIN/dataset_TRAIN/tables/learningData.csv'
+        """
+        # ----------------------------
 
         print('inputs:')
         print({
@@ -168,8 +184,29 @@ class DatamartJobUtilISI(object):
         if response['code'] != "0000":
             return err_resp(response['message'])
 
-        augment_folderpath = os.path.join(d3m_config.temp_storage_root, 'augment', str(datamart_id))
-        return ok_resp(DatamartJobUtilISI.save(augment_folderpath, response))
+        augment_folderpath = os.path.join(\
+                            d3m_config.temp_storage_root,
+                            'augment',
+                            str(datamart_id))
+
+        save_info = DatamartJobUtilISI.save(augment_folderpath, response)
+        if not save_info.success:
+            return err_resp(save_info.err_msg)
+
+        # Async, start process of creating new dataset...
+        #   - This will send a websocket message when process complete
+        #   - Needs to be moved to celery queue
+        #
+        print("save_info.result_obj['data_path']", save_info.result_obj['data_path'])
+        ndu_info = NewDatasetUtil.make_new_dataset_call(\
+                             user_workspace.id,
+                             save_info.result_obj['data_path'],
+                             **dict(websocket_id=user_workspace.user.username))
+        if not ndu_info.success:
+            return err_resp(ndu_info.err_msg)
+
+        return ok_resp('Augment is in process')
+
 
     @staticmethod
     def save(folderpath, response):
@@ -184,30 +221,34 @@ class DatamartJobUtilISI(object):
                     except StopIteration:
                         pass
 
-            return {
+            info_dict = {
                 'data_path': data_filepath,
                 'metadata_path': None,
                 'data_preview': ''.join(data),
                 'metadata': None
             }
+            return ok_resp(info_dict)
 
         try:
-            os.makedirs(os.path.dirname(data_filepath))
+            os.makedirs(os.path.dirname(data_filepath), exist_ok=True)
         except OSError:
-            pass
+            return err_resp('Failed to make directory: %s' % \
+                            os.path.dirname(data_filepath))
+
 
         data_split = response['data'].split('\n')
+
 
         with open(data_filepath, 'w') as datafile:
             datafile.writelines(data_split)
 
-        return {
+        info_dict = {
             'data_path': data_filepath,
             'metadata_path': None,
             'data_preview': '\n'.join(data_split[:100]),
             'metadata': None
         }
-
+        return ok_resp(info_dict)
 
 # based on documentation here:
 # https://gitlab.com/ViDA-NYU/datamart/datamart/blob/master/examples/rest-api-fifa2018_manofmatch.ipynb
