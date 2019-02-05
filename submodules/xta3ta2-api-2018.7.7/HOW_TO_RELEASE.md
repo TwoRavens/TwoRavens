@@ -8,8 +8,6 @@
   * `git pull` to make sure everything is in sync with remote origin.
   * Change a version (`protocol_version`) in `core.proto` to a version without `_pre`.
   * Change `vNEXT` in `HISTORY.md` to the to-be-released version, with `v` prefix.
-  * Change Python dependency in `setup.py` for D3M core package from `d3m==devel` to the
-    current stable version.
   * Commit with message `Bumping version for release.`
   * `git push`
   * Wait for CI to run tests successfully.
@@ -24,7 +22,6 @@
   * `git merge master` to make sure `devel` is always on top of `master`.
   * Change a version (`protocol_version`) in `core.proto` to the next day (or next known release date) and append `_pre`.
   * Add a new empty `vNEXT` version on top of `HISTORY.md`.
-  * Change Python dependency in `setup.py` for D3M core package to `d3m==devel`.
   * Commit with message `Version bump for development.`
   * `git push`
 * Close a milestone for the just released version.

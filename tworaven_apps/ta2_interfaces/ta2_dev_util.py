@@ -31,7 +31,8 @@ TA2_IMAGE_INFO = [
     # Feature Labs: may not be using D3MPORT
     (TA2_FeatureLabs,
      #'registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable',
-     'registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:ta3ta2-api-2018.7.7-eval-2018',
+     #'registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:ta3ta2-api-2018.7.7-eval-2018',
+     'registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:ta3ta2-api-2019.1.22-eval-2018',
      '-p 45042:45042 -e D3MPORT=45042'),
 
     # Brown: may not be using D3MPORT
