@@ -328,7 +328,12 @@ def fit_solution(raven_json_str=None):
         req = Parse(raven_json_str,
                     core_pb2.FitSolutionRequest())
     except ParseError as err_obj:
-        err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
+        err_msg = ('Failed to convert JSON to gRPC: %s'
+                   ' (req_search_solutions)'
+                   '\nraven_json_str: %s') % \
+                   (err_obj, raven_json_str)
+        print('-' * 40)
+        print(err_msg)
         return err_resp(err_msg)
 
     # In test mode, return canned response
