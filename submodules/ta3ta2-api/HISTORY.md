@@ -1,7 +1,49 @@
+## v2019.1.19
+
+* Fixed d3m core package paths.
+  [!123](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/123)
+* Doc-only change to highlight the fact that prepends should now accept 
+  multiple input datasets.
+  [#102](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/102)
+  [!120](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/120)
+* Updated messages to align with the latest D3M core package.
+  `DataArgument` message got a new field `container_list`
+  of type `ContainerArguments`. `PipelineDescription` message
+  got a new field `digest` of type `string`. `ProblemDescription`
+  message has fields moved from `Problem` message: `id`, `version`,
+  `name`, and `description`. Fields `digest` and `data_augmentation`
+  added to `ProblemDescription` message.
+  [#103](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/103)
+  [!117](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/117)
+* Added `SaveSolution`, `LoadSolution`, `SaveFittedSolution`, `LoadFittedSolution`
+  optional calls.
+  [#87](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/87)
+  [!109](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/109)
+* Made compiled Python branch into a full Python package with additional
+  utility functions for conversion between Python objects and GRPC messages.
+  [#47](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/47)
+  [!112](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/112)
+* Defined that it is allowed to support `RAW` and `PICKLE_BLOB` values only
+  up to 64KB of size. Added large value types `LARGE_RAW` and `LARGE_PICKLE_BLOB`
+  without this limit.
+  [#92](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/92)
+  [!113](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/113)
+* Added `dataset_id` to `Score` message.
+  [#98](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/98)
+  [!114](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/114)
+* Documented that the standard port is 45042.
+  [#86](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/86)
+  [!108](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/108)
+* In message `StepProgress` renamed field `choosen` to `chosen`.
+  [!105](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/105)
+* Updated documentation to note that pipeline templates and fully specified pipelines
+  accept multiple inputs.
+  [!120](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/120)
+
 ## v2018.7.7
 
-* Message `Value` has replaced most simple types with a message `ValueRaw` 
-  that enumerates those types and also includes a `null`.  This crucially 
+* Message `Value` has replaced most simple types with a message `ValueRaw`
+  that enumerates those types and also includes a `null`.  This crucially
   allows nulls to be passed as arguments in templates in the API.
   [!100](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/100)
 
@@ -10,8 +52,8 @@
 * Fitted solutions now have separate id, and field `solution_id` changed to
   `fitted_solution_id` where appropriate.
   [!92](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/92)
-* The field `rank` in `SolutionExportRequest` has changed from type `int32` to 
-  type `double` and the comments defining this field have also changed, in 
+* The field `rank` in `SolutionExportRequest` has changed from type `int32` to
+  type `double` and the comments defining this field have also changed, in
   combination with revisions to NIST's solution export spec.
   [!93](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/93)
 * New task `OBJECT_DETECTION` and new metric `OBJECT_DETECTION_AVERAGE_PRECISION`
@@ -31,7 +73,7 @@
 
 * API has been completely rewritten to utilize the pipeline template format.
   See the README.md for overview of rpc calls. In particular, TA3 systems can
-  specify early ("preprocessing") steps of pipelines, and TA2 systems can 
+  specify early ("preprocessing") steps of pipelines, and TA2 systems can
   communicate a description of the pipeline of any found solution.
   [!82](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/82)
 * As part of this change, API now uses native gRPC error codes.
@@ -43,19 +85,19 @@
 ## v2017.12.20
 
 * Data extension has been updated according to changes to a D3M dataset structure.
-* Numerous changes were introduced to update calls, enumerated types and values 
-  to conform to changes in newly released version 3.0 of the problem schema. All 
+* Numerous changes were introduced to update calls, enumerated types and values
+  to conform to changes in newly released version 3.0 of the problem schema. All
   of these required breaking changes.  These include (in order of likely relevance):
     1. The call `UpdateProblemSchema` was renamed `SetProblemDoc` to reflect this
        file is now named a "Problem Doc" rather than a "Problem Schema", and to
        better reflect the functionality of this message.  The related messages
-       `UpdateProblemSchemaRequest` and `ReplaceProblemSchemaField` were similarly 
+       `UpdateProblemSchemaRequest` and `ReplaceProblemSchemaField` were similarly
        renamed.
-    2. New enum values were added to `TaskType` and old values deleted. 
-    3. Enum values under type `TaskType` and `TaskSubtype` were rearranged to 
+    2. New enum values were added to `TaskType` and old values deleted.
+    3. Enum values under type `TaskType` and `TaskSubtype` were rearranged to
        follow current order in problem schema.
-    4. Enum values, which are generally SEPARATED\_BY\_UNDERSCORES, were 
-       standardized with respect to hyphens.  Compound words using hyphens are 
+    4. Enum values, which are generally SEPARATED\_BY\_UNDERSCORES, were
+       standardized with respect to hyphens.  Compound words using hyphens are
        separated, but hyphens for prefixes are not separated.  So "Time-series"
        and "Root-mean-squared error" become `TIME_SERIES` and `ROOT_MEAN_SQUARED_ERROR`
        but "Non-overlapping" and "Multi-class" are `NONOVERLAPPING` and `MULTICLASS`.
@@ -79,7 +121,7 @@
 
 * Added comments to clarify various aspects of the API.
 * `Metric` was extended by `MEAN_SQUARED_ERROR`.
-* `UpdateProblemSchemaRequest` message now has `context` field. 
+* `UpdateProblemSchemaRequest` message now has `context` field.
 * Added `ERRORED` value to `Progress` so that TA2 can set a reasonable
   value for responses when a pipeline fails.
 * Made CI add `__init__.py` and `.gitignore` files to Python `dist` branches

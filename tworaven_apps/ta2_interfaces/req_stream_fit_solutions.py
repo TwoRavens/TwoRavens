@@ -45,7 +45,9 @@ def get_fit_solution_results(raven_json_str, user_obj, websocket_id=None):
     try:
         req = Parse(raven_json_str, core_pb2.GetFitSolutionResultsRequest())
     except ParseError as err_obj:
-        err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
+        err_msg = ('Failed to convert JSON to gRPC: %s'
+                   ' (req_stream_fit_solutions)'
+                   '\nInput: %s') % (err_obj, raven_json_str)
         return err_resp(err_msg)
 
     # --------------------------------

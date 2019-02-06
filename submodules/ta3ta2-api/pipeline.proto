@@ -25,6 +25,10 @@ message ContainerArgument {
     string data = 1;
 }
 
+message ContainerArguments {
+    repeated string data = 1;
+}
+
 message DataArgument {
     // Data reference.
     string data = 1;
@@ -54,6 +58,8 @@ message PrimitiveStepArgument {
         ContainerArgument container = 1;
         // A singleton output from another step as an argument.
         DataArgument data = 2;
+        // A list of container data type values as an argument.
+        ContainerArguments container_list = 3;
     }
 }
 
@@ -67,7 +73,7 @@ message PrimitiveStepHyperparameter {
         PrimitiveArgument primitive = 3;
         // A constant value of a hyper-parameter.
         ValueArgument value = 4;
-        // "A set of singleton outputs from other steps in a pipeline.
+        // A set of singleton outputs from other steps in a pipeline.
         DataArguments data_set = 5;
         // A set of primitive instances to be passed as a hyper-parameter.
         PrimitiveArguments primitives_set = 6;
@@ -112,7 +118,7 @@ message PipelineDescriptionUser {
     // Globally unique ID for this user. It can be opaque, but it should identify the same user
     // across sessions. Consider using UUID variant 5 with namespace set to the name of your system
     // and name to an ID in your system's database. It does not have to map to any real ID, just
-    // that it is possible to connect mutliple pipelines/templates by the same user together,
+    // that it is possible to connect multiple pipelines/templates by the same user together,
     // if necessary.
     string id = 1;
     // A natural language description of what the user did to be on the list, e.g., "Picked
@@ -143,14 +149,14 @@ message PrimitivePipelineDescriptionStep {
     // can be automatically created from other information. All these arguments are listed as kind
     // "PIPELINE" in primitive's metadata.
     map<string, PrimitiveStepArgument> arguments = 2;
-    // List of produce metods providing data. One can reference using data reference these outputs
+    // List of produce methods providing data. One can reference using data reference these outputs
     // then in arguments (inputs) in other steps or pipeline outputs.
     repeated StepOutput outputs = 3;
     // Some hyper-parameters are not really tunable and should be fixed as part of template/pipeline.
     // This can be done here. Hyper-parameters listed here cannot be tuned or overridden. Author of a
     // template/pipeline decides which hyper-parameter are which, probably based on their semantic type.
     // TA3 can specify a list of hyper-parameters to fix, and TA2 can add to the list additional
-    // hyper-paramaters in found pipelines.
+    // hyper-parameters in found pipelines.
     map<string, PrimitiveStepHyperparameter> hyperparams = 4;
     // List of users associated with selection of this primitive/arguments/hyper-parameters. Optional.
     repeated PipelineDescriptionUser users = 5;
@@ -190,7 +196,7 @@ message PipelineDescriptionStep {
 // It serves two purposes: describing found pipelines by TA2 to TA3, and communicating pipeline
 // templates by TA3 to TA2. Because of this some fields are reasonable only in one of those uses.
 // They are marked with "TA2" or "TA3" in the comment, for fields which are primarily to be set
-// only by TA2 or only by TA3, respectivelly.
+// only by TA2 or only by TA3, respectively.
 message PipelineDescription {
     // TA2: UUID of the pipeline. Templates do not have IDs. But TA3 might provide it for a fully
     // specified pipeline. It does not necessary have to match "solution_id" from
@@ -226,4 +232,5 @@ message PipelineDescription {
     repeated PipelineDescriptionOutput outputs = 9;
     // Steps defining the pipeline.
     repeated PipelineDescriptionStep steps = 10;
+    string digest = 11;
 }

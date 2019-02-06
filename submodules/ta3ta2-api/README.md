@@ -11,33 +11,13 @@ for multiple programming languages.
 See below for more information and the [Quickstart](http://grpc.io/docs/quickstart/) for details
 about GRPC.
 
-## About Data Driven Discovery Program
-
-DARPA Data Driven Discovery (D3M) Program is researching ways to get machines to build
-machine learning pipelines automatically. It is split into three layers:
-TA1 (primitives), TA2 (systems which combine primitives automatically into pipelines
-and executes them), and TA3 (end-users interfaces).
-
-## Changelog
-
-See [HISTORY.md](./HISTORY.md) for summary of changes to the API.
-
-## Repository structure
-
-`master` branch contains latest stable release of the TA3-TA2 API specification.
-`devel` branch is a staging branch for the next release.
-
-Releases are [tagged](https://gitlab.com/datadrivendiscovery/ta3ta2-api/tags).
-
-At every commit to `master` and `devel` branches we compile `.proto` files and push
-compiled files to `dist-*` and `dev-dist-*` branches for multiple languages. You can use those
-branches in your projects directly using `git submodule` or some other similar mechanism.
-
 ## API Structure
 
 TA3-TA2 API calls are defined in the *core* GRPC service which can be found in [`core.proto`](./core.proto) file
 and all TA3 and TA2 sytems are expected to implement it and support it. Optional services can be
 defined as well in other `.proto` files.
+
+Useful utilities for working with the TA3-TA2 API in Python are available in the included [ta3ta2_api](https://gitlab.com/datadrivendiscovery/ta3ta2-api/tree/dist-python) package.
 
 ![Diagram of the overall flow of the API](flow.png)
 
@@ -159,6 +139,7 @@ will. TA3s should be able to function within the restrictions as stated below.
 
 Pipeline templates are based on pipeline description with few differences:
 
+* Templates can accept *multiple* Dataset container values as inputs.
 * There is a special *placeholder pipeline step* which signals where in the pipeline
   template a TA2 system should insert a standard pipeline it finds.
 * Not all fields in the pipeline description are reasonable (they will be filled out by TA2).
@@ -179,8 +160,8 @@ the purpose of TA3-TA2 API we are currently placing the following restrictions:
 * All primitive steps should have all their hyper-parameters fixed.
 
 These restrictions effectively mean that a pipeline template can only specify preprocessing
-primitives which transform input Dataset container value into transformed Dataset container value
-as input to the placeholder step (and future sub-pipeline in its place).
+primitives which transform one or more input Dataset container values into a *single* transformed
+Dataset container value as input to the placeholder step (and future sub-pipeline in its place).
 
 Relaxation: Individual systems can relax those restrictions. For example, they might allow
 a placeholder step to have postprocessing primitive steps after it. In this case postprocessing
@@ -197,7 +178,7 @@ For fully specified pipelines with fixed hyper-parameters, TA2 will just check t
 pipeline is valid and return it for it to be directly executed (scored, fitted, called to
 produce data). This allows fixed computations to be done on data, for example, the pipeline
 can consist of only one primitive with fixed hyper-parameters to execute that one primitive.
-Moreover, such fully specified pipeline with fixed hyper-parameters can have any
+Moreover, such fully specified pipelines with fixed hyper-parameters can have any
 inputs and any outputs. Otherwise pipelines have to be from a Dataset container value
 to predictions Pandas dataframe.
 
@@ -358,6 +339,10 @@ pipeline is full specified by a TA3 system so inputs and outputs can be anything
 There is a [list of required primitives available](./required_primitives.txt). The list
 contains primitives that TA3 systems expect to be available for execution by any TA2 system.
 
+## Standard port
+
+A standard port for TA2-TA3 API on which TA2 should listen for connections from a TA3 is 45042.
+
 ## Protocol version
 
 To support easier debugging `SearchSolutionsRequest` and `SearchSolutionsResponse` messages contain a version of the protocol
@@ -383,6 +368,28 @@ changes work out, they can submit a merge request to the common API). To make su
 do not conflict between performers, use values from the [allocated tag ranges](./private_tag_ranges.txt) for your
 organization.
 
+## Changelog
+
+See [HISTORY.md](./HISTORY.md) for summary of changes to the API.
+
+## Repository structure
+
+`master` branch contains latest stable release of the TA3-TA2 API specification.
+`devel` branch is a staging branch for the next release.
+
+Releases are [tagged](https://gitlab.com/datadrivendiscovery/ta3ta2-api/tags).
+
+At every commit to `master` and `devel` branches we compile `.proto` files and push
+compiled files to `dist-*` and `dev-dist-*` branches for multiple languages. You can use those
+branches in your projects directly using `git submodule` or some other similar mechanism.
+
 ## Contributing
 
 See [contributing guide](./CONTRIBUTING.md) for more information how to contribute to the API development.
+
+## About Data Driven Discovery Program
+
+DARPA Data Driven Discovery (D3M) Program is researching ways to get machines to build
+machine learning pipelines automatically. It is split into three layers:
+TA1 (primitives), TA2 (systems which combine primitives automatically into pipelines
+and executes them), and TA3 (end-users interfaces).

@@ -17,7 +17,7 @@ extend google.protobuf.FileOptions {
 
 // Date-based version string. Use this to populate version field in "SearchSolutionsRequest"
 // and "SearchSolutionsResponse" messages.
-option (protocol_version) = "2018.7.7";
+option (protocol_version) = "2019.1.22";
 
 enum EvaluationMethod {
     // Default value. Not to be used.
@@ -43,7 +43,10 @@ message ScoringConfiguration {
     EvaluationMethod method = 1;
     // Number of folds made, if applicable.
     int32 folds = 2;
-    // Ratio of train set vs. test set, if applicable.
+    // If applicable, the ratio between the train and test data and represents the proportion of
+    // the input data to include in the train split. The rest is included in the test split.
+    // E.g., "train_test_ratio == 0.8" would mean that 80% of the whole data becomes the train split
+    // and 20% of the whole data becomes the test split.
     double train_test_ratio = 3;
     // Shuffle data? Set to true if employed.
     bool shuffle = 4;
@@ -63,6 +66,8 @@ message Score {
     // To which target or targets does this score apply?
     repeated ProblemTarget targets = 3;
     Value value = 4;
+    // ID of the dataset which contain the targets for this score.
+    string dataset_id = 5;
 }
 
 enum ProgressState {
@@ -136,7 +141,10 @@ message SearchSolutionsRequest {
     // The order is important as a TA2 system will try value types in order until one works out,
     // or an error will be returned instead of the value.
     repeated ValueType allowed_value_types = 5;
-    // Problem description to use for the solution search.
+    // Problem description to use for the solution search. Problem description is optional
+    // with fully specified pipelines which TA3 provides. If still provided, TA2 should use
+    // it to set semantic types on target columns and any other use of a problem description
+    // for the needs of running a pipeline.
     ProblemDescription problem = 6;
     // A pipeline template to use for search or to execute. If template is omitted, then a
     // regular solution search is done. If template consists only of one placeholder step,
@@ -224,11 +232,15 @@ message GetSearchSolutionsResultsResponse {
     // Because this field is optional, if omitted the default value will be 0. But 0 is a
     // valid value for this field. Because of that you should never omit the field.
     // If you do not have internal score to provide, use NaN for the value of this field
-    // to signal that.
+    // to signal that. When solution cannot be scored (i.e., the fully specified pipeline
+    // used as a template is not a standard pipeline) internal score does not have to be
+    // provided.
     double internal_score = 5;
     // TA2 might be able to provide more meaningful scores as well, depending on its
     // approach to solution search. Moreover, even the same TA2 might not use the same scoring
-    // approach for all of its solutions. Optional.
+    // approach for all of its solutions. Optional. When solution cannot be scored (i.e., the
+    // fully specified pipeline used as a template is not a standard pipeline) score does
+    // not have to be provided.
     repeated SolutionSearchScore scores = 6;
 }
 
@@ -258,14 +270,14 @@ message StepDescription {
 message DescribeSolutionResponse {
     // A pipeline description. Nested pipelines should be fully described as well.
     PipelineDescription pipeline = 1;
-    // Each step in a pipeline has description. These are reported in the order of steps in 
+    // Each step in a pipeline has description. These are reported in the order of steps in
     // the pipeline.
     repeated StepDescription steps = 2;
 }
 
 message StepProgress {
     Progress progress = 1;
-    // If step is a sub-pipeline, then this list contains progress for each step in the 
+    // If step is a sub-pipeline, then this list contains progress for each step in the
     // sub-pipeline, in order.
     // List can be incomplete while the process is in progress. Systems can provide
     // steps only at the end (when "progress" equals COMPLETED) and not during running.
@@ -277,16 +289,18 @@ message SolutionRunUser {
     // A UUID of the user. It does not have to map to any real ID, just that it is possible
     // to connect multiple solution actions by the same user together, if necessary.
     string id = 1;
-    // Was this run because solution was choosen by this user.
-    bool choosen = 2;
-    // Textual reason provided by the user why the run was choosen by this user.
+    // Was this run because solution was chosen by this user.
+    bool chosen = 2;
+    // Textual reason provided by the user why the run was chosen by this user.
     string reason = 3;
 }
 
 // Request solution to be scored given inputs. Inputs have to be Dataset container values
 // and pipeline outputs have to be predictions. It can internally run multiple fit + produce
 // runs of the pipeline on permutations of inputs data (e.g., for cross-validation). This is
-// also why we cannot expose outputs here.
+// also why we cannot expose outputs here. When solution cannot be scored (i.e., the fully
+// specified pipeline used as a template is not a standard pipeline), this call does
+// not have to be supported.
 message ScoreSolutionRequest {
     string solution_id = 1;
     repeated Value inputs = 2;
@@ -321,13 +335,13 @@ message FitSolutionRequest {
     repeated Value inputs = 2;
     // List of data references of step outputs which should be exposed to the TA3 system.
     // If you want to expose outputs of the whole pipeline (e.g., predictions themselves),
-    // list them here as well. These can be recursive data references like 
-    // "steps.1.steps.4.produce" to point to an output inside a sub-pipeline. 
-    // Systems only have to support exposing final outputs and can return "ValueError" for 
+    // list them here as well. These can be recursive data references like
+    // "steps.1.steps.4.produce" to point to an output inside a sub-pipeline.
+    // Systems only have to support exposing final outputs and can return "ValueError" for
     // intermediate values.
     repeated string expose_outputs = 3;
     // Which value types should be used for exposing outputs. If not provided, the allowed
-    // value types list from hello call is used instead.
+    // value types list from the search solutions call is used instead.
     // The order is important as TA2 system will try value types in order until one works out,
     // or an error will be returned instead of the value. An error exposing a value does not
     // stop the overall process.
@@ -340,8 +354,8 @@ message FitSolutionResponse {
     string request_id = 1;
 }
 
-// Get all fitted results currently available and start receiving any further
-// new fitted results as well.
+// Get the latest state of fitting the solution and start receiving any further
+// new updates to the state as well.
 message GetFitSolutionResultsRequest {
     string request_id = 1;
 }
@@ -366,14 +380,14 @@ message ProduceSolutionRequest {
     repeated Value inputs = 2;
     // List of data references of step outputs which should be exposed to the TA3 system.
     // If you want to expose outputs of the whole pipeline (e.g., predictions themselves),
-    // list them here as well. These can be recursive data references like 
-    // "steps.1.steps.4.produce" to point to an output inside a sub-pipeline. 
-    // Systems only have to support exposing final outputs and can return "ValueError" for 
+    // list them here as well. These can be recursive data references like
+    // "steps.1.steps.4.produce" to point to an output inside a sub-pipeline.
+    // Systems only have to support exposing final outputs and can return "ValueError" for
     // intermediate values.
     repeated string expose_outputs = 3;
     // Which value types should be used for exposing outputs. If not provided, the allowed
-    // value types list from a hello call is used instead.
-    // The order is important as the TA2 system will try value types in order until one works 
+    // value types list from the search solutions call is used instead.
+    // The order is important as the TA2 system will try value types in order until one works
     // out, or an error will be returned instead of the value. An error exposing a value does
     // not stop the overall process.
     repeated ValueType expose_value_types = 4;
@@ -385,8 +399,8 @@ message ProduceSolutionResponse {
     string request_id = 1;
 }
 
-// Get all producing results computed until now and start receiving any
-// new producing results computed as well.
+// Get the latest state of producing the fitted solution and start receiving any further
+// new updates to the state as well.
 message GetProduceSolutionResultsRequest {
     string request_id = 1;
 }
@@ -414,6 +428,50 @@ message SolutionExportRequest {
 }
 
 message SolutionExportResponse {}
+
+// Save a solution that can be loaded later. (Pipeline description/ Pipeline run) Optional.
+message SaveSolutionRequest {
+    // Id of solution to saved
+    string solution_id = 1;
+}
+
+message SaveSolutionResponse {
+    // An URI pointing to a directory containing a solution saved.
+    string solution_uri = 1;
+}
+
+// Load a solution that was saved before.
+message LoadSolutionRequest {
+    // An URI pointing to a directory containing a solution saved.
+    string solution_uri = 1;
+}
+
+message LoadSolutionResponse {
+    // Id of solution which was loaded.
+    string solution_id = 1;
+}
+
+// Save a fitted solution that can be loaded later. Optional.
+message SaveFittedSolutionRequest {
+    // Fitted solution id to saved.
+    string fitted_solution_id = 1;
+}
+
+message SaveFittedSolutionResponse {
+    // An URI pointing to a directory containing a fitted solution.
+    string fitted_solution_uri = 1;
+}
+
+// Load a fitted solution that was saved before.
+message LoadFittedSolutionRequest {
+    // An URI pointing to a directory containing a fitted solution.
+    string fitted_solution_uri = 1;
+}
+
+message LoadFittedSolutionResponse {
+    // Fitted solution id loaded.
+    string fitted_solution_id = 1;
+}
 
 // List all primitives known to TA2, their IDs, versions, names, and digests. Using this
 // information a TA3 should know which primitives may be put into a pipeline template.
@@ -470,4 +528,11 @@ service Core {
     rpc ListPrimitives (ListPrimitivesRequest) returns (ListPrimitivesResponse) {}
 
     rpc Hello (HelloRequest) returns (HelloResponse) {}
+
+    // Optional.
+    rpc SaveSolution (SaveSolutionRequest) returns (SaveSolutionResponse) {}
+    rpc LoadSolution (LoadSolutionRequest) returns (LoadSolutionResponse) {}
+
+    rpc SaveFittedSolution (SaveFittedSolutionRequest) returns (SaveFittedSolutionResponse) {}
+    rpc LoadFittedSolution (LoadFittedSolutionRequest) returns (LoadFittedSolutionResponse) {}
 }

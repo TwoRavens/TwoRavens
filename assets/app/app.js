@@ -2767,7 +2767,7 @@ export function getFitSolutionDefaultParameters(datasetDocUrl){
   let my_exposeOutputs = ['outputs.0'];
 
   let my_exposeValueTypes = ['CSV_URI'];
-  let my_users = [{id: 'TwoRavens', choosen: false, reason: ''}];
+  let my_users = [{id: 'TwoRavens', chosen: false, reason: ''}];
   return {
       inputs: my_inputs,
       exposeOutputs: my_exposeOutputs,
@@ -2796,12 +2796,12 @@ export function getFitSolutionDefaultParameters(datasetDocUrl){
 //     "users": [
 //         {
 //             "id": "uuid of user",
-//             "choosen": true,
+//             "chosen": true,
 //             "reason": "best solution"
 //         },
 //         {
 //             "id": "uuid of user",
-//             "choosen": false,
+//             "chosen": false,
 //             "reason": ""
 //         }
 //     ]
@@ -2855,7 +2855,7 @@ function getScoreSolutionDefaultParameters(datasetDocUrl){
   let my_dataseturi = 'file://' + datasetDocUrl;
   let my_inputs = [{dataset_uri: my_dataseturi}];
   let my_performanceMetrics = [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ];  // need to generalize to case with multiple metrics.  only passes on first presently.;
-  let my_users = [{id: 'TwoRavens', choosen: false, reason: ""}];
+  let my_users = [{id: 'TwoRavens', chosen: false, reason: ""}];
   let my_configuration = {method: 'HOLDOUT', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
 
   return {inputs: my_inputs, performanceMetrics: my_performanceMetrics, users: my_users, configuration: my_configuration};

@@ -89,6 +89,26 @@ class CoreStub(object):
         request_serializer=core__pb2.HelloRequest.SerializeToString,
         response_deserializer=core__pb2.HelloResponse.FromString,
         )
+    self.SaveSolution = channel.unary_unary(
+        '/Core/SaveSolution',
+        request_serializer=core__pb2.SaveSolutionRequest.SerializeToString,
+        response_deserializer=core__pb2.SaveSolutionResponse.FromString,
+        )
+    self.LoadSolution = channel.unary_unary(
+        '/Core/LoadSolution',
+        request_serializer=core__pb2.LoadSolutionRequest.SerializeToString,
+        response_deserializer=core__pb2.LoadSolutionResponse.FromString,
+        )
+    self.SaveFittedSolution = channel.unary_unary(
+        '/Core/SaveFittedSolution',
+        request_serializer=core__pb2.SaveFittedSolutionRequest.SerializeToString,
+        response_deserializer=core__pb2.SaveFittedSolutionResponse.FromString,
+        )
+    self.LoadFittedSolution = channel.unary_unary(
+        '/Core/LoadFittedSolution',
+        request_serializer=core__pb2.LoadFittedSolutionRequest.SerializeToString,
+        response_deserializer=core__pb2.LoadFittedSolutionResponse.FromString,
+        )
 
 
 class CoreServicer(object):
@@ -200,6 +220,34 @@ class CoreServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def SaveSolution(self, request, context):
+    """Optional.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def LoadSolution(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def SaveFittedSolution(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def LoadFittedSolution(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
 
 def add_CoreServicer_to_server(servicer, server):
   rpc_method_handlers = {
@@ -277,6 +325,26 @@ def add_CoreServicer_to_server(servicer, server):
           servicer.Hello,
           request_deserializer=core__pb2.HelloRequest.FromString,
           response_serializer=core__pb2.HelloResponse.SerializeToString,
+      ),
+      'SaveSolution': grpc.unary_unary_rpc_method_handler(
+          servicer.SaveSolution,
+          request_deserializer=core__pb2.SaveSolutionRequest.FromString,
+          response_serializer=core__pb2.SaveSolutionResponse.SerializeToString,
+      ),
+      'LoadSolution': grpc.unary_unary_rpc_method_handler(
+          servicer.LoadSolution,
+          request_deserializer=core__pb2.LoadSolutionRequest.FromString,
+          response_serializer=core__pb2.LoadSolutionResponse.SerializeToString,
+      ),
+      'SaveFittedSolution': grpc.unary_unary_rpc_method_handler(
+          servicer.SaveFittedSolution,
+          request_deserializer=core__pb2.SaveFittedSolutionRequest.FromString,
+          response_serializer=core__pb2.SaveFittedSolutionResponse.SerializeToString,
+      ),
+      'LoadFittedSolution': grpc.unary_unary_rpc_method_handler(
+          servicer.LoadFittedSolution,
+          request_deserializer=core__pb2.LoadFittedSolutionRequest.FromString,
+          response_serializer=core__pb2.LoadFittedSolutionResponse.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(

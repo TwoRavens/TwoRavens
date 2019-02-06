@@ -44,10 +44,11 @@ digraph G {
   solution_id -> FitSolution;
   train -> FitSolution
   FitSolution -> outputs [penwidth=3.0];
-  solution_id -> ProduceSolution;
+  FitSolution -> fitted_solution_id;
+  fitted_solution_id -> ProduceSolution;
   test -> ProduceSolution;
   ProduceSolution -> outputs [penwidth=3.0];
-  solution_id -> SolutionExport;
+  fitted_solution_id -> SolutionExport;
   rank -> SolutionExport
   SearchSolutions -> UpdateProblem;
   problem -> UpdateProblem;

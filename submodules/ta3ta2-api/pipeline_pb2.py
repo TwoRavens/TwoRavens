@@ -24,7 +24,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='pipeline.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\x0epipeline.proto\x1a google/protobuf/descriptor.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x0fprimitive.proto\x1a\x0bvalue.proto\"!\n\x11\x43ontainerArgument\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"\x1c\n\x0c\x44\x61taArgument\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"\x1d\n\rDataArguments\x12\x0c\n\x04\x64\x61ta\x18\x01 \x03(\t\"!\n\x11PrimitiveArgument\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x05\"\"\n\x12PrimitiveArguments\x12\x0c\n\x04\x64\x61ta\x18\x01 \x03(\x05\"%\n\rValueArgument\x12\x14\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x06.Value\"k\n\x15PrimitiveStepArgument\x12\'\n\tcontainer\x18\x01 \x01(\x0b\x32\x12.ContainerArgumentH\x00\x12\x1d\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\r.DataArgumentH\x00\x42\n\n\x08\x61rgument\"\x8e\x02\n\x1bPrimitiveStepHyperparameter\x12\'\n\tcontainer\x18\x01 \x01(\x0b\x32\x12.ContainerArgumentH\x00\x12\x1d\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\r.DataArgumentH\x00\x12\'\n\tprimitive\x18\x03 \x01(\x0b\x32\x12.PrimitiveArgumentH\x00\x12\x1f\n\x05value\x18\x04 \x01(\x0b\x32\x0e.ValueArgumentH\x00\x12\"\n\x08\x64\x61ta_set\x18\x05 \x01(\x0b\x32\x0e.DataArgumentsH\x00\x12-\n\x0eprimitives_set\x18\x06 \x01(\x0b\x32\x13.PrimitiveArgumentsH\x00\x42\n\n\x08\x61rgument\"\x19\n\tStepInput\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"\x18\n\nStepOutput\x12\n\n\x02id\x18\x01 \x01(\t\"B\n\x0ePipelineSource\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07\x63ontact\x18\x02 \x01(\t\x12\x11\n\tpipelines\x18\x03 \x03(\t\"H\n\x17PipelineDescriptionUser\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06reason\x18\x02 \x01(\t\x12\x11\n\trationale\x18\x03 \x01(\t\"(\n\x18PipelineDescriptionInput\x12\x0c\n\x04name\x18\x01 \x01(\t\"7\n\x19PipelineDescriptionOutput\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\t\"\xb2\x03\n PrimitivePipelineDescriptionStep\x12\x1d\n\tprimitive\x18\x01 \x01(\x0b\x32\n.Primitive\x12\x43\n\targuments\x18\x02 \x03(\x0b\x32\x30.PrimitivePipelineDescriptionStep.ArgumentsEntry\x12\x1c\n\x07outputs\x18\x03 \x03(\x0b\x32\x0b.StepOutput\x12G\n\x0bhyperparams\x18\x04 \x03(\x0b\x32\x32.PrimitivePipelineDescriptionStep.HyperparamsEntry\x12\'\n\x05users\x18\x05 \x03(\x0b\x32\x18.PipelineDescriptionUser\x1aH\n\x0e\x41rgumentsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12%\n\x05value\x18\x02 \x01(\x0b\x32\x16.PrimitiveStepArgument:\x02\x38\x01\x1aP\n\x10HyperparamsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12+\n\x05value\x18\x02 \x01(\x0b\x32\x1c.PrimitiveStepHyperparameter:\x02\x38\x01\"\x86\x01\n\"SubpipelinePipelineDescriptionStep\x12&\n\x08pipeline\x18\x01 \x01(\x0b\x32\x14.PipelineDescription\x12\x1a\n\x06inputs\x18\x02 \x03(\x0b\x32\n.StepInput\x12\x1c\n\x07outputs\x18\x03 \x03(\x0b\x32\x0b.StepOutput\"^\n\"PlaceholderPipelineDescriptionStep\x12\x1a\n\x06inputs\x18\x01 \x03(\x0b\x32\n.StepInput\x12\x1c\n\x07outputs\x18\x02 \x03(\x0b\x32\x0b.StepOutput\"\xce\x01\n\x17PipelineDescriptionStep\x12\x36\n\tprimitive\x18\x01 \x01(\x0b\x32!.PrimitivePipelineDescriptionStepH\x00\x12\x37\n\x08pipeline\x18\x02 \x01(\x0b\x32#.SubpipelinePipelineDescriptionStepH\x00\x12:\n\x0bplaceholder\x18\x03 \x01(\x0b\x32#.PlaceholderPipelineDescriptionStepH\x00\x42\x06\n\x04step\"\xdf\x02\n\x13PipelineDescription\x12\n\n\x02id\x18\x01 \x01(\t\x12\x1f\n\x06source\x18\x02 \x01(\x0b\x32\x0f.PipelineSource\x12+\n\x07\x63reated\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12!\n\x07\x63ontext\x18\x04 \x01(\x0e\x32\x10.PipelineContext\x12\x0c\n\x04name\x18\x05 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x06 \x01(\t\x12\'\n\x05users\x18\x07 \x03(\x0b\x32\x18.PipelineDescriptionUser\x12)\n\x06inputs\x18\x08 \x03(\x0b\x32\x19.PipelineDescriptionInput\x12+\n\x07outputs\x18\t \x03(\x0b\x32\x1a.PipelineDescriptionOutput\x12\'\n\x05steps\x18\n \x03(\x0b\x32\x18.PipelineDescriptionStep*m\n\x0fPipelineContext\x12\x1c\n\x18PIPELINE_CONTEXT_UNKNOWN\x10\x00\x12\x0f\n\x0bPRETRAINING\x10\x01\x12\x0b\n\x07TESTING\x10\x02\x12\x0e\n\nEVALUATION\x10\x03\x12\x0e\n\nPRODUCTION\x10\x04\x42\nZ\x08pipelineb\x06proto3')
+  serialized_pb=_b('\n\x0epipeline.proto\x1a google/protobuf/descriptor.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x0fprimitive.proto\x1a\x0bvalue.proto\"!\n\x11\x43ontainerArgument\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"\"\n\x12\x43ontainerArguments\x12\x0c\n\x04\x64\x61ta\x18\x01 \x03(\t\"\x1c\n\x0c\x44\x61taArgument\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"\x1d\n\rDataArguments\x12\x0c\n\x04\x64\x61ta\x18\x01 \x03(\t\"!\n\x11PrimitiveArgument\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x05\"\"\n\x12PrimitiveArguments\x12\x0c\n\x04\x64\x61ta\x18\x01 \x03(\x05\"%\n\rValueArgument\x12\x14\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x06.Value\"\x9a\x01\n\x15PrimitiveStepArgument\x12\'\n\tcontainer\x18\x01 \x01(\x0b\x32\x12.ContainerArgumentH\x00\x12\x1d\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\r.DataArgumentH\x00\x12-\n\x0e\x63ontainer_list\x18\x03 \x01(\x0b\x32\x13.ContainerArgumentsH\x00\x42\n\n\x08\x61rgument\"\x8e\x02\n\x1bPrimitiveStepHyperparameter\x12\'\n\tcontainer\x18\x01 \x01(\x0b\x32\x12.ContainerArgumentH\x00\x12\x1d\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\r.DataArgumentH\x00\x12\'\n\tprimitive\x18\x03 \x01(\x0b\x32\x12.PrimitiveArgumentH\x00\x12\x1f\n\x05value\x18\x04 \x01(\x0b\x32\x0e.ValueArgumentH\x00\x12\"\n\x08\x64\x61ta_set\x18\x05 \x01(\x0b\x32\x0e.DataArgumentsH\x00\x12-\n\x0eprimitives_set\x18\x06 \x01(\x0b\x32\x13.PrimitiveArgumentsH\x00\x42\n\n\x08\x61rgument\"\x19\n\tStepInput\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"\x18\n\nStepOutput\x12\n\n\x02id\x18\x01 \x01(\t\"B\n\x0ePipelineSource\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07\x63ontact\x18\x02 \x01(\t\x12\x11\n\tpipelines\x18\x03 \x03(\t\"H\n\x17PipelineDescriptionUser\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06reason\x18\x02 \x01(\t\x12\x11\n\trationale\x18\x03 \x01(\t\"(\n\x18PipelineDescriptionInput\x12\x0c\n\x04name\x18\x01 \x01(\t\"7\n\x19PipelineDescriptionOutput\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\t\"\xb2\x03\n PrimitivePipelineDescriptionStep\x12\x1d\n\tprimitive\x18\x01 \x01(\x0b\x32\n.Primitive\x12\x43\n\targuments\x18\x02 \x03(\x0b\x32\x30.PrimitivePipelineDescriptionStep.ArgumentsEntry\x12\x1c\n\x07outputs\x18\x03 \x03(\x0b\x32\x0b.StepOutput\x12G\n\x0bhyperparams\x18\x04 \x03(\x0b\x32\x32.PrimitivePipelineDescriptionStep.HyperparamsEntry\x12\'\n\x05users\x18\x05 \x03(\x0b\x32\x18.PipelineDescriptionUser\x1aH\n\x0e\x41rgumentsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12%\n\x05value\x18\x02 \x01(\x0b\x32\x16.PrimitiveStepArgument:\x02\x38\x01\x1aP\n\x10HyperparamsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12+\n\x05value\x18\x02 \x01(\x0b\x32\x1c.PrimitiveStepHyperparameter:\x02\x38\x01\"\x86\x01\n\"SubpipelinePipelineDescriptionStep\x12&\n\x08pipeline\x18\x01 \x01(\x0b\x32\x14.PipelineDescription\x12\x1a\n\x06inputs\x18\x02 \x03(\x0b\x32\n.StepInput\x12\x1c\n\x07outputs\x18\x03 \x03(\x0b\x32\x0b.StepOutput\"^\n\"PlaceholderPipelineDescriptionStep\x12\x1a\n\x06inputs\x18\x01 \x03(\x0b\x32\n.StepInput\x12\x1c\n\x07outputs\x18\x02 \x03(\x0b\x32\x0b.StepOutput\"\xce\x01\n\x17PipelineDescriptionStep\x12\x36\n\tprimitive\x18\x01 \x01(\x0b\x32!.PrimitivePipelineDescriptionStepH\x00\x12\x37\n\x08pipeline\x18\x02 \x01(\x0b\x32#.SubpipelinePipelineDescriptionStepH\x00\x12:\n\x0bplaceholder\x18\x03 \x01(\x0b\x32#.PlaceholderPipelineDescriptionStepH\x00\x42\x06\n\x04step\"\xef\x02\n\x13PipelineDescription\x12\n\n\x02id\x18\x01 \x01(\t\x12\x1f\n\x06source\x18\x02 \x01(\x0b\x32\x0f.PipelineSource\x12+\n\x07\x63reated\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12!\n\x07\x63ontext\x18\x04 \x01(\x0e\x32\x10.PipelineContext\x12\x0c\n\x04name\x18\x05 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x06 \x01(\t\x12\'\n\x05users\x18\x07 \x03(\x0b\x32\x18.PipelineDescriptionUser\x12)\n\x06inputs\x18\x08 \x03(\x0b\x32\x19.PipelineDescriptionInput\x12+\n\x07outputs\x18\t \x03(\x0b\x32\x1a.PipelineDescriptionOutput\x12\'\n\x05steps\x18\n \x03(\x0b\x32\x18.PipelineDescriptionStep\x12\x0e\n\x06\x64igest\x18\x0b \x01(\t*m\n\x0fPipelineContext\x12\x1c\n\x18PIPELINE_CONTEXT_UNKNOWN\x10\x00\x12\x0f\n\x0bPRETRAINING\x10\x01\x12\x0b\n\x07TESTING\x10\x02\x12\x0e\n\nEVALUATION\x10\x03\x12\x0e\n\nPRODUCTION\x10\x04\x42\nZ\x08pipelineb\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_descriptor__pb2.DESCRIPTOR,google_dot_protobuf_dot_timestamp__pb2.DESCRIPTOR,primitive__pb2.DESCRIPTOR,value__pb2.DESCRIPTOR,])
 
@@ -57,8 +57,8 @@ _PIPELINECONTEXT = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=2230,
-  serialized_end=2339,
+  serialized_start=2330,
+  serialized_end=2439,
 )
 _sym_db.RegisterEnumDescriptor(_PIPELINECONTEXT)
 
@@ -102,6 +102,37 @@ _CONTAINERARGUMENT = _descriptor.Descriptor(
 )
 
 
+_CONTAINERARGUMENTS = _descriptor.Descriptor(
+  name='ContainerArguments',
+  full_name='ContainerArguments',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='data', full_name='ContainerArguments.data', index=0,
+      number=1, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=150,
+  serialized_end=184,
+)
+
+
 _DATAARGUMENT = _descriptor.Descriptor(
   name='DataArgument',
   full_name='DataArgument',
@@ -128,8 +159,8 @@ _DATAARGUMENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=150,
-  serialized_end=178,
+  serialized_start=186,
+  serialized_end=214,
 )
 
 
@@ -159,8 +190,8 @@ _DATAARGUMENTS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=180,
-  serialized_end=209,
+  serialized_start=216,
+  serialized_end=245,
 )
 
 
@@ -190,8 +221,8 @@ _PRIMITIVEARGUMENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=211,
-  serialized_end=244,
+  serialized_start=247,
+  serialized_end=280,
 )
 
 
@@ -221,8 +252,8 @@ _PRIMITIVEARGUMENTS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=246,
-  serialized_end=280,
+  serialized_start=282,
+  serialized_end=316,
 )
 
 
@@ -252,8 +283,8 @@ _VALUEARGUMENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=282,
-  serialized_end=319,
+  serialized_start=318,
+  serialized_end=355,
 )
 
 
@@ -278,6 +309,13 @@ _PRIMITIVESTEPARGUMENT = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='container_list', full_name='PrimitiveStepArgument.container_list', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -293,8 +331,8 @@ _PRIMITIVESTEPARGUMENT = _descriptor.Descriptor(
       name='argument', full_name='PrimitiveStepArgument.argument',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=321,
-  serialized_end=428,
+  serialized_start=358,
+  serialized_end=512,
 )
 
 
@@ -362,8 +400,8 @@ _PRIMITIVESTEPHYPERPARAMETER = _descriptor.Descriptor(
       name='argument', full_name='PrimitiveStepHyperparameter.argument',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=431,
-  serialized_end=701,
+  serialized_start=515,
+  serialized_end=785,
 )
 
 
@@ -393,8 +431,8 @@ _STEPINPUT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=703,
-  serialized_end=728,
+  serialized_start=787,
+  serialized_end=812,
 )
 
 
@@ -424,8 +462,8 @@ _STEPOUTPUT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=730,
-  serialized_end=754,
+  serialized_start=814,
+  serialized_end=838,
 )
 
 
@@ -469,8 +507,8 @@ _PIPELINESOURCE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=756,
-  serialized_end=822,
+  serialized_start=840,
+  serialized_end=906,
 )
 
 
@@ -514,8 +552,8 @@ _PIPELINEDESCRIPTIONUSER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=824,
-  serialized_end=896,
+  serialized_start=908,
+  serialized_end=980,
 )
 
 
@@ -545,8 +583,8 @@ _PIPELINEDESCRIPTIONINPUT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=898,
-  serialized_end=938,
+  serialized_start=982,
+  serialized_end=1022,
 )
 
 
@@ -583,8 +621,8 @@ _PIPELINEDESCRIPTIONOUTPUT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=940,
-  serialized_end=995,
+  serialized_start=1024,
+  serialized_end=1079,
 )
 
 
@@ -621,8 +659,8 @@ _PRIMITIVEPIPELINEDESCRIPTIONSTEP_ARGUMENTSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1278,
-  serialized_end=1350,
+  serialized_start=1362,
+  serialized_end=1434,
 )
 
 _PRIMITIVEPIPELINEDESCRIPTIONSTEP_HYPERPARAMSENTRY = _descriptor.Descriptor(
@@ -658,8 +696,8 @@ _PRIMITIVEPIPELINEDESCRIPTIONSTEP_HYPERPARAMSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1352,
-  serialized_end=1432,
+  serialized_start=1436,
+  serialized_end=1516,
 )
 
 _PRIMITIVEPIPELINEDESCRIPTIONSTEP = _descriptor.Descriptor(
@@ -716,8 +754,8 @@ _PRIMITIVEPIPELINEDESCRIPTIONSTEP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=998,
-  serialized_end=1432,
+  serialized_start=1082,
+  serialized_end=1516,
 )
 
 
@@ -761,8 +799,8 @@ _SUBPIPELINEPIPELINEDESCRIPTIONSTEP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1435,
-  serialized_end=1569,
+  serialized_start=1519,
+  serialized_end=1653,
 )
 
 
@@ -799,8 +837,8 @@ _PLACEHOLDERPIPELINEDESCRIPTIONSTEP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1571,
-  serialized_end=1665,
+  serialized_start=1655,
+  serialized_end=1749,
 )
 
 
@@ -847,8 +885,8 @@ _PIPELINEDESCRIPTIONSTEP = _descriptor.Descriptor(
       name='step', full_name='PipelineDescriptionStep.step',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=1668,
-  serialized_end=1874,
+  serialized_start=1752,
+  serialized_end=1958,
 )
 
 
@@ -929,6 +967,13 @@ _PIPELINEDESCRIPTION = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='digest', full_name='PipelineDescription.digest', index=10,
+      number=11, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -941,19 +986,23 @@ _PIPELINEDESCRIPTION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1877,
-  serialized_end=2228,
+  serialized_start=1961,
+  serialized_end=2328,
 )
 
 _VALUEARGUMENT.fields_by_name['data'].message_type = value__pb2._VALUE
 _PRIMITIVESTEPARGUMENT.fields_by_name['container'].message_type = _CONTAINERARGUMENT
 _PRIMITIVESTEPARGUMENT.fields_by_name['data'].message_type = _DATAARGUMENT
+_PRIMITIVESTEPARGUMENT.fields_by_name['container_list'].message_type = _CONTAINERARGUMENTS
 _PRIMITIVESTEPARGUMENT.oneofs_by_name['argument'].fields.append(
   _PRIMITIVESTEPARGUMENT.fields_by_name['container'])
 _PRIMITIVESTEPARGUMENT.fields_by_name['container'].containing_oneof = _PRIMITIVESTEPARGUMENT.oneofs_by_name['argument']
 _PRIMITIVESTEPARGUMENT.oneofs_by_name['argument'].fields.append(
   _PRIMITIVESTEPARGUMENT.fields_by_name['data'])
 _PRIMITIVESTEPARGUMENT.fields_by_name['data'].containing_oneof = _PRIMITIVESTEPARGUMENT.oneofs_by_name['argument']
+_PRIMITIVESTEPARGUMENT.oneofs_by_name['argument'].fields.append(
+  _PRIMITIVESTEPARGUMENT.fields_by_name['container_list'])
+_PRIMITIVESTEPARGUMENT.fields_by_name['container_list'].containing_oneof = _PRIMITIVESTEPARGUMENT.oneofs_by_name['argument']
 _PRIMITIVESTEPHYPERPARAMETER.fields_by_name['container'].message_type = _CONTAINERARGUMENT
 _PRIMITIVESTEPHYPERPARAMETER.fields_by_name['data'].message_type = _DATAARGUMENT
 _PRIMITIVESTEPHYPERPARAMETER.fields_by_name['primitive'].message_type = _PRIMITIVEARGUMENT
@@ -1012,6 +1061,7 @@ _PIPELINEDESCRIPTION.fields_by_name['inputs'].message_type = _PIPELINEDESCRIPTIO
 _PIPELINEDESCRIPTION.fields_by_name['outputs'].message_type = _PIPELINEDESCRIPTIONOUTPUT
 _PIPELINEDESCRIPTION.fields_by_name['steps'].message_type = _PIPELINEDESCRIPTIONSTEP
 DESCRIPTOR.message_types_by_name['ContainerArgument'] = _CONTAINERARGUMENT
+DESCRIPTOR.message_types_by_name['ContainerArguments'] = _CONTAINERARGUMENTS
 DESCRIPTOR.message_types_by_name['DataArgument'] = _DATAARGUMENT
 DESCRIPTOR.message_types_by_name['DataArguments'] = _DATAARGUMENTS
 DESCRIPTOR.message_types_by_name['PrimitiveArgument'] = _PRIMITIVEARGUMENT
@@ -1039,6 +1089,13 @@ ContainerArgument = _reflection.GeneratedProtocolMessageType('ContainerArgument'
   # @@protoc_insertion_point(class_scope:ContainerArgument)
   ))
 _sym_db.RegisterMessage(ContainerArgument)
+
+ContainerArguments = _reflection.GeneratedProtocolMessageType('ContainerArguments', (_message.Message,), dict(
+  DESCRIPTOR = _CONTAINERARGUMENTS,
+  __module__ = 'pipeline_pb2'
+  # @@protoc_insertion_point(class_scope:ContainerArguments)
+  ))
+_sym_db.RegisterMessage(ContainerArguments)
 
 DataArgument = _reflection.GeneratedProtocolMessageType('DataArgument', (_message.Message,), dict(
   DESCRIPTOR = _DATAARGUMENT,
