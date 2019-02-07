@@ -76,10 +76,14 @@ We standardize location fields to two fields: "TwoRavens_country" and "TwoRavens
 | Antartica                                    | ATA | 999     | ATA   | multiple territories                                                   |
 
 #### New ISO-3 and COW
-| StateName    | COW | COWCode | ISO-3 | UN M.49 | Notes                                               |
-|--------------|-----|---------|-------|---------|-----------------------------------------------------|
-| Curaçao      | CUW | 208     | CUW   | 530     | country from Netherlands Antilles after dissolution |
-| Sint Maarten | SXM | 206     | SXM   | 664     | constituent country of Netherlands                  |
+| StateName     | COW | COWCode | ISO-3 | UN M.49 | Notes                                                    |
+|---------------|-----|---------|-------|---------|----------------------------------------------------------|
+| Curaçao       | CUW | 208     | CUW   | 530     | country from Netherlands Antilles after dissolution      |
+| Sint Maarten  | SXM | 206     | SXM   | 664     | constituent country of Netherlands                       |
+| Corsica       | CRS | 175     | CRS   | ---     | French Mediterranean island; added as part of GTD        |
+| International | III | 1       | III   | 1       | international group of countries; added as part of GTD   |
+| Multinational | MTN | 0       | MTN   | 0       | multinational group of countries; added as part of GTD   |
+| Asian         | ASN | 1000    | ASN   | ---     | group of countries in Asia; added as part of GTD         |
 
 #### Dissolved states
 For States that do not exist anymore, we store their date of dissolution as part of the translation table. This allows for greater detail when subsetting by date and location. The ISO-3 code is the modern day state name, whereas the COW code is the state name at the time of the event. The following is a list of countries that fall under this category:
