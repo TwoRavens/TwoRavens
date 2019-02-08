@@ -4,7 +4,10 @@ from django.conf import settings
 from django.http import JsonResponse    #, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-from tworaven_apps.utils.view_helper import get_request_body_as_json
+from tworaven_apps.utils.view_helper import \
+    (get_request_body_as_json,
+     get_authenticated_user)
+
 from tworaven_apps.ta2_interfaces.user_problem_helper import UserProblemHelper
 from tworaven_apps.ta2_interfaces.util_data_writer import UtilDataWriter
 from tworaven_apps.ta2_interfaces.basic_problem_writer import BasicProblemWriter
@@ -23,6 +26,9 @@ from tworaven_apps.utils.view_helper import \
 @login_required
 def view_save_problem_form(request):
     """View test form"""
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
 
     info_dict = dict()
     if request.POST:
@@ -30,7 +36,8 @@ def view_save_problem_form(request):
         if save_problem_form.is_valid():
             content = save_problem_form.cleaned_data
 
-            bpw = BasicProblemWriter(content[PROBLEM_REQ_FILENAME],
+            bpw = BasicProblemWriter(user_info.result_obj,
+                                     content[PROBLEM_REQ_FILENAME],
                                      content[PROBLEM_REQ_DATA])
 
             if bpw.has_error():
@@ -104,6 +111,10 @@ def view_store_basic_problem(request):
     (1) Try: "output/problems" + ....
     (2) Try: config.temp_storage_root  + "problems" + .....
     """
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
     req_info = get_request_body_as_json(request)
     if not req_info.success:
         #user_msg = ('The request did not contain problem data')
@@ -119,7 +130,8 @@ def view_store_basic_problem(request):
         user_msg = ('The request did not a "%s" value') % PROBLEM_REQ_DATA
         return JsonResponse(get_json_error(user_msg))
 
-    bpw = BasicProblemWriter(req_json[PROBLEM_REQ_FILENAME],
+    bpw = BasicProblemWriter(user_info.result_obj,
+                             req_json[PROBLEM_REQ_FILENAME],
                              req_json[PROBLEM_REQ_DATA])
 
     if bpw.has_error():
@@ -131,6 +143,7 @@ def view_store_basic_problem(request):
 
     info = get_json_success('file created!',
                             data=data_info)
+
     return JsonResponse(info)
 
 
