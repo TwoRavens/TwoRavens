@@ -38,17 +38,19 @@ TA2_IMAGE_INFO = [
     # Brown: may not be using D3MPORT
     (TA2_Brown,
      'registry.datadrivendiscovery.org/zshang/brown:ta2 ta2_search',
-     '-p 45042:45042  -e D3MPORT=45042 -e D3MTESTOPT=xxx -e D3MCPU=1 -e D3MRAM=1Gi'),
+     '-p 45042:45042  -e D3MPORT=45042g'),
 
     # ISI: not using D3MPORT
     (TA2_ISI,
-     'registry.datadrivendiscovery.org/kyao/ta2-isi/ta3ta2-image:latest',
-     '-p 45042:45042 --memory 10g -e D3MRAM=10Gi -e D3MCPU=1'),
+     #'registry.datadrivendiscovery.org/kyao/ta2-isi/ta3ta2-image:latest',
+     'registry.datadrivendiscovery.org/ta2-submissions/ta2-isi/ta3ta2/ta3ta2-image:latest',
+     '-p 45042:45042 -e D3MPORT=45042'),
+     #'-p 45042:45042 --memory 10g -e D3MRAM=10 -e D3MCPU=1'),
 
     # STANFORD: not using D3MPORT
     (TA2_STANFORD,
      'registry.datadrivendiscovery.org/jdunnmon/d3m-ta2-stanford:latest',
-     '-p 45042:50051 --memory 10g -e D3MRAM=10Gi -e D3MCPU=1'),
+     '-p 45042:50051'),
 ]
 
 class TA2Helper(BasicErrCheck):
@@ -181,6 +183,8 @@ class TA2Helper(BasicErrCheck):
                                  additional_options,
                                  image_name,
                                  env_str)
+
+        print('docker_cmd', docker_cmd)
 
         xdocker_cmd = ('docker run --rm'
                       ' --name ta2_server'
