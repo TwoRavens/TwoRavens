@@ -141,6 +141,187 @@
 		"type": "discrete_grouped",
 		"group_by": "region",
 		"columns": ["TwoRavens_natlty3"]
+	},
+	"Number of Perpetrators": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 25000,
+		"columns": ["nperps"]
+	},
+	"Number of Perpetrators Captured": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 406,
+		"columns": ["nperpcap"]
+	},
+	"Claim of Responsibility": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["claimed"]
+	},
+	"Mode for Claim of Responsibility": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["claimmode"]
+	},
+	"Competing Claim of Responsibility": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["compclaim"]
+	},
+	"Second Group Claim of Responsibility": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["claim2"]
+	},
+	"Mode for Second Group Claim of Responsibility": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["claimmode2"]
+	},
+	"Third Group Claim of Responsibility": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["claim3"]
+	},
+	"Mode for Third Group Claim of Responsibility": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["claimmode3"]
+	},
+	"Total Number of Fatalities": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 1570,
+		"columns": ["nkill"]
+	},
+	"Number of US Fatalities": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 1360,
+		"columns": ["nkillus"]
+	},
+	"Number of Perpetrator Fatalities": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 500,
+		"columns": ["nkillter"]
+	},
+	"Total Number of Injured": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 8191,
+		"columns": ["nwound"]
+	},
+	"Number of US Injured": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 751,
+		"columns": ["nwound"]
+	},
+	"Number of Perpetrators Injured": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 200,
+		"columns": ["nwound"]
+	},
+	"Property Damage": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["property"]
+	},
+	"Value of Property Damage (in USD)": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 2700000000,
+		"columns": ["propvalue"]
+	},
+	"Hostages or Kidnapping Victims": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["ishostkid"]
+	},
+	"Total Number of Hostages/Kidnapping Victims": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 17000,
+		"columns": ["nhostkid"]
+	},
+	"Number of US Hostages/Kidnapping Victims": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 86,
+		"columns": ["nhostkidus"]
+	},
+	"Hours of Kidnapping/Hostage Incident": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 999,
+		"columns": ["nhours"]
+	},
+	"Days of Kidnapping/Hostage Incident": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 2454,
+		"columns": ["ndays"]
+	},
+	"Ransom Demanded": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["ransom"]
+	},
+	"Total Ransom Amount Demanded": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 1000000000,
+		"columns": ["ransomamt"]
+	},
+	"Ransom Amount Demanded from US Sources": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 132000000,
+		"columns": ["ransomamtus"]
+	},
+	"Total Ransom Amount Paid": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 275000000,
+		"columns": ["ransompaid"]
+	},
+	"Ransom Amount Demanded Paid by US Sources": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 48000,
+		"columns": ["ransompaidus"]
+	},
+	"Kidnapping/Hostage Outcome": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["hostkidoutcome"]
+	},
+	"Number of Hostages Released/Escaped/Rescued": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 2769,
+		"columns": ["nreleased"]
 	}
   },
   "columns": [
@@ -261,7 +442,18 @@
 	  "targsubtype1": "gtd_subtargets",
 	  "TwoRavens_natlty1": "ISO-3",
 	  "TwoRavens_natlty2": "ISO-3",
-	  "TwoRavens_natlty3": "ISO-3"
+	  "TwoRavens_natlty3": "ISO-3",
+	  "claimed": "gtd_bool",
+	  "claimmode": "gtd_claim_mode",
+	  "compclaim": "gtd_bool_unknown",
+	  "claim2": "gtd_bool",
+	  "claimmode2": "gtd_claim_mode",
+	  "claim3": "gtd_bool",
+	  "claimmode3": "gtd_claim_mode",
+	  "property": "gtd_bool_unknown",
+	  "ishostkid": "gtd_bool_unknown",
+	  "ransom": "gtd_bool_unknown",
+	  "hostkidoutcome": "gtd_hostkid_outcome"
   },
   "citations": [
   {

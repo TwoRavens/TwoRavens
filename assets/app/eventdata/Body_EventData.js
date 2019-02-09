@@ -34,6 +34,7 @@ import CanvasDyad from "../canvases/CanvasDyad";
 import CanvasDate from "../canvases/CanvasDate";
 import CanvasDiscreteGrouped from "../canvases/CanvasDiscreteGrouped";
 import CanvasCoordinates from "../canvases/CanvasCoordinates";
+import CanvasContinuous from "../canvases/CanvasContinuous";
 import CanvasCustom from "./canvases/CanvasCustom";
 import CanvasResults from "./canvases/CanvasResults";
 
@@ -648,7 +649,8 @@ export default class Body_EventData {
                 'dyad': CanvasDyad,
                 'discrete': CanvasDiscrete,
                 'discrete_grouped': CanvasDiscreteGrouped,
-                'coordinates': CanvasCoordinates
+                'coordinates': CanvasCoordinates,
+                'continuous': CanvasContinuous
             }[subsetType], {
                 mode: eventdata.selectedMode,
                 subsetName: eventdata.selectedSubsetName,
