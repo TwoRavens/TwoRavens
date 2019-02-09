@@ -43,6 +43,55 @@
 		"type": "discrete",
 		"measureType": "accumulator",
 		"columns": ["type_of_violence"]
+	},
+	"Deaths on side A": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 10000,
+		"columns": ["deaths_a"]
+	},
+	"Deaths on side B": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 9505,
+		"columns": ["deaths_b"]
+	},
+	"Civilian deaths": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 300559,
+		"columns": ["deaths_civilians"]
+	},
+	"Unknown deaths": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 48183,
+		"columns": ["deaths_unknown"]
+	},
+	"Best estimate of deaths": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 300559,
+		"columns": ["best"]
+	},
+	"High estimate of deaths": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 547077,
+		"columns": ["high"]
+	},
+	"Low estimate of deaths": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 48183,
+		"columns": ["low"]
 	}
   },
   "columns": [
