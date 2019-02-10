@@ -94,13 +94,12 @@ export default class ConfusionMatrix {
             .attr("transform", "translate(0," + margin.top + ")");
 
         // this y is for the legend
-        y = d3.scale.linear()
+        y = d3.scaleLinear()
             .range([height - margin.top - margin.bottom - heightLabels, 0])
             .domain([minValue, maxValue]);
 
-        let yAxis = d3.svg.axis()
-            .scale(y)
-            .orient("right");
+        let yAxis = d3.axisRight()
+            .scale(y);
 
         key
             .append("g")
@@ -123,15 +122,15 @@ export default class ConfusionMatrix {
             .attr("width", width - margin.left - margin.right - widthLabels)
             .attr("height", height - margin.top - margin.bottom - heightLabels);
 
-        let x = d3.scale.ordinal()
+        let x = d3.scaleOrdinal()()
             .domain(d3.range(numcols))
             .rangeBands([0, width - margin.left - widthLabels - margin.right]);
 
-        let y = d3.scale.ordinal()
+        let y = d3.scaleOrdinal()()
             .domain(d3.range(numrows))
             .rangeBands([0, height - margin.top - margin.bottom - heightLabels]);
 
-        let colorMap = d3.scale.linear()
+        let colorMap = d3.scaleLinear()
             .domain([minValue, maxValue])
             .range([startColor, endColor]);
 

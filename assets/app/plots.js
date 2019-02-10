@@ -1,4 +1,5 @@
 import {elem} from './utils';
+import * as d3 from 'd3';
 
 import {alertLog, alertWarn, alertError} from "./app";
 
@@ -49,38 +50,36 @@ export function density(node, div, priv) {
     };
 
 
-    var x = d3.scale.linear()
+    var x = d3.scaleLinear()
         .domain([d3.min(xVals), d3.max(xVals)])
         .range([0, width]);
-    var invx = d3.scale.linear()
+    var invx = d3.scaleLinear()
         .range([d3.min(xVals), d3.max(xVals)])
         .domain([0, width]);
-    var y = d3.scale.linear()
+    var y = d3.scaleLinear()
         .domain([d3.min(yVals), d3.max(yVals)])
         .range([height, 0]);
-    var xAxis = d3.svg.axis()
+    var xAxis = d3.axisBottom()
         .scale(x)
-        .ticks(5)
-        .orient("bottom");
-    var yAxis = d3.svg.axis()
-        .scale(y)
-        .orient("left");
-    var brush = d3.svg.brush()
-        .x(x)
-        .extent(node.subsetrange)
+        .ticks(5);
+    var yAxis = d3.axisLeft()
+        .scale(y);
+    var brush = d3.brushX()
+        .extent([[x.range()[0], node.subsetrange[0]], x.range()[1], node.subsetrange[1]])
         .on("brush", brushed);
-    var brush2 = d3.svg.brush()
-        .x(x)
+    var brush2 = d3.brushX()
+        // possibly broken in transition to D3 V4
+        .extent([[x.range()[0], node.subsetrange[0]], x.range()[1], node.subsetrange[1]])
         .on("brush", brushed2);
-    var area = d3.svg.area()
-        .interpolate("monotone")
+    var area = d3.area()
+        .curve(d3.curveMonotoneX)
         .x(d => x(d.x))
         .y0(height)
         .y1(d => y(d.y));
-    var line = d3.svg.line()
+    var line = d3.line()
         .x(d => x(d.x))
         .y(d => y(d.y))
-        .interpolate("monotone");
+        .curve(d3.curveMonotoneX);
 
     // cumbersome to treat "tabSummary" differently, but works for now
     // tabSummary, has an issue, that unless width height hardcoded, they grow with each additional graph.
@@ -170,10 +169,10 @@ export function density(node, div, priv) {
         
 
         // create tick marks at all zscores in the bounds of the data
-        var lineFunction = d3.svg.line()
+        var lineFunction = d3.line()
             .x(d => d.x)
             .y(d => d.y)
-            .interpolate("linear");
+            .curve(d3.curveLinear);
 
         var colSeq = ["#A2CD5A", "orange", "red"]; // will cycle through color sequence, and then repeat last color
         var lineData = new Array;
@@ -215,10 +214,9 @@ export function density(node, div, priv) {
         var slideBox = plotsvg.append("g")
             .attr("class", "x axis")
             .attr("transform", "translate(0," + height * .8 + ")")
-            .call(d3.svg.axis()
+            .call(d3.axisBottom()
                   .scale(x)
-                  .ticks(0)
-                  .orient("bottom"));
+                  .ticks(0));
         var slider = plotsvg.append("g")
             .attr("class", "slider")
             .call(brush);
@@ -247,7 +245,7 @@ export function density(node, div, priv) {
     function brushed() {
         if (div == "#tabSummary") {
             plotsvg.select("text#range")
-                .text(() => brush.empty() ?
+                .text(() => d3.event.selection === null ?
                     "Range: ".concat(d3.min(xVals).toPrecision(4), " to ", d3.max(xVals).toPrecision(4)) :
                     "Range: ".concat((brush.extent()[0]).toPrecision(4), " to ", (brush.extent()[1]).toPrecision(4))
                 );
@@ -435,43 +433,40 @@ export function bars(node, div, priv) {
     };
 
     if (priv && node.stabilityBin) {
-        var x = d3.scale.linear()
+        var x = d3.scaleLinear()
             .domain([minX - 0.5, maxX + 1.5])
             .range([0, width]);
     } else {
-        var x = d3.scale.linear()
+        var x = d3.scaleLinear()
             .domain([minX - 0.5, maxX + 0.5])
             .range([0, width]);
     }
 
-    var invx = d3.scale.linear()
+    var invx = d3.scaleLinear()
         .range([minX - 0.5, maxX + 0.5])
         .domain([0, width]);
 
-    var y = d3.scale.linear()
+    var y = d3.scaleLinear()
         .domain([0, maxY])
         .range([0, height]);
 
-    var xAxis = d3.svg.axis()
+    var xAxis = d3.axisBottom()
         .scale(x)
-        .ticks(yVals.length)
-        .orient("bottom");
+        .ticks(yVals.length);
 
-    var yAxis = d3.svg.axis()
-        .scale(y)
-        .orient("left");
+    var yAxis = d3.axisLeft()
+        .scale(y);
 
-    var brush = d3.svg.brush()
-        .x(x)
+    var brush = d3.brushX()
         .extent(() => {
-            return node.subsetrange.length == 1 ?
-                [node.subsetrange[0], node.subsetrange[0]]
-                : node.subsetrange;
+            return node.subsetrange.length === 1
+                ? [[x.range()[0], node.subsetrange[0]], x.range()[1], node.subsetrange[0]]
+                : [[x.range()[0], node.subsetrange[0]], x.range()[1], node.subsetrange[1]];
         })
         .on("brush", brushed);
 
-    var brush2 = d3.svg.brush()
-        .x(x)
+    var brush2 = d3.brushX()
+        .extent([[x.range()[0], node.subsetrange[0]], x.range()[1], node.subsetrange[1]])
         .on("brush", brushed2);
 
     // Create SVG element
@@ -679,10 +674,10 @@ export function bars(node, div, priv) {
             });
 
         // create tick marks at all zscores in the bounds of the data
-        var lineFunction = d3.svg.line()
+        var lineFunction = d3.line()
             .x(d => d.x)
             .y(d => d.y)
-            .interpolate("linear");
+            .curve(d3.curveLinear);
 
         var colSeq = ["#A2CD5A", "orange", "red"]; // will cycle through color sequence, and then repeat last color
         var lineData = new Array;
@@ -739,10 +734,9 @@ export function bars(node, div, priv) {
         var slideBox = plotsvg.append("g")
             .attr("class", "x axis")
             .attr("transform", "translate(0," + height * .8 + ")")
-            .call(d3.svg.axis()
+            .call(d3.axisBottom()
                   .scale(x)
-                  .ticks(0)
-                  .orient("bottom"));
+                  .ticks(0));
 
         var slider = plotsvg.append("g")
             .attr("class", "slider")
@@ -954,26 +948,24 @@ export function barsSubset(node) {
         left: 50
     };
 
-    var x = d3.scale.linear()
+    var x = d3.scaleLinear()
         .domain([minX - 0.5, maxX + 0.5])
         .range([0, width]);
 
-    var invx = d3.scale.linear()
+    var invx = d3.scaleLinear()
         .range([minX - 0.5, maxX + 0.5])
         .domain([0, width]);
 
-    var y = d3.scale.linear()
+    var y = d3.scaleLinear()
         .domain([0, maxY])
         .range([0, height]);
 
-    var xAxis = d3.svg.axis()
+    var xAxis = d3.axisBottom()
         .scale(x)
-        .ticks(yVals.length)
-        .orient("bottom");
+        .ticks(yVals.length);
 
-    var yAxis = d3.svg.axis()
-        .scale(y)
-        .orient("left");
+    var yAxis = d3.axisLeft()
+        .scale(y);
 
     //Create SVG element
     var plotsvg = d3.select(mydiv)
@@ -1123,16 +1115,16 @@ export function densityNode(node, obj, radius, explore) {
         left: (80 - width) / 2
     };
 
-    var x = d3.scale.linear()
+    var x = d3.scaleLinear()
         .domain([d3.min(xVals), d3.max(xVals)])
         .range([0, width]);
 
-    var y = d3.scale.linear()
+    var y = d3.scaleLinear()
         .domain([d3.min(yVals), d3.max(yVals)])
         .range([height, 0]);
 
-    var area = d3.svg.area()
-        .interpolate("monotone")
+    var area = d3.area()
+        .curve(d3.curveMonotoneX)
         .x(d => x(d.x))
         .y0(height)
         .y1(d => y(d.y));
@@ -1207,15 +1199,15 @@ export function barsNode(node, obj, radius, explore) {
         left: (80 - width) / 2
     };
 
-    var x = d3.scale.linear()
+    var x = d3.scaleLinear()
         .domain([minX - 0.5, maxX + 0.5])
         .range([0, width]);
 
-    var invx = d3.scale.linear()
+    var invx = d3.scaleLinear()
         .range([minX - 0.5, maxX + 0.5])
         .domain([0, width]);
 
-    var y = d3.scale.linear()
+    var y = d3.scaleLinear()
         .domain([0, maxY])
         .range([0, height]);
 
@@ -1371,19 +1363,17 @@ export function scatterOld(x_Axis, y_Axis, x_Axis_name, y_Axis_name, id='#setxLe
     var max_y = d3.max(data_plot, (d, i) => data_plot[i].yaxis);
     var avg_y = (max_y - min_y) / 10;
 
-    var xScale = d3.scale.linear()
+    var xScale = d3.scaleLinear()
         .domain([min_x - avg_x, max_x + avg_x])
         .range([0, width]);
-    var yScale = d3.scale.linear()
+    var yScale = d3.scaleLinear()
         .domain([min_y - avg_y, max_y + avg_y])
         .range([height, 0]);
-    var xAxis = d3.svg.axis()
+    var xAxis = d3.axisBottom()
         .scale(xScale)
-        .orient('bottom')
         .tickSize(-height);
-    var yAxis = d3.svg.axis()
+    var yAxis = d3.axisLeft()
         .scale(yScale)
-        .orient('left')
         .ticks(5)
         .tickSize(-width);
     var zoom = d3.behavior.zoom()

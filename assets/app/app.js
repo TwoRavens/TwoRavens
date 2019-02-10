@@ -14,6 +14,9 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 import {elem} from './utils';
 import {getTransformVariables} from "./manipulations/manipulate";
 
+import $ from 'jquery';
+import * as d3 from 'd3';
+
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -255,7 +258,7 @@ let tutorial_mode = localStorage.getItem('tutorial_mode') !== 'false';
 // initial color scale used to establish the initial colors of nodes
 // allNodes.push() below establishes a field for the master node array allNodes called "nodeCol" and assigns a color from this scale to that field
 // everything there after should refer to the nodeCol and not the color scale, this enables us to update colors and pass the variable type to R based on its coloring
-let colors = d3.scale.category20();
+let colors = d3.scaleOrdinal(d3.schemeCategory20);
 export let csColor = '#419641';
 export let dvColor = '#28a4c9';
 export let gr1Color = '#14bdcc';  // initially was #24a4c9', but that is dvColor, and we track some properties by color assuming them unique
@@ -671,13 +674,13 @@ let svg, div, selectLadda;
 export let width, height, estimateLadda, discoveryLadda;
 
 // arcs for denoting pebble characteristics
-const arc = (start, end) => (radius) => d3.svg.arc()
+const arc = (start, end) => (radius) => d3.arc()
     .innerRadius(radius + 5)
     .outerRadius(radius + 20)
     .startAngle(start)
     .endAngle(end);
 export const [arc0, arc1, arc2, arc3, arc4] = [arc(0, 3.2), arc(0, 1), arc(1.1, 2.2), arc(2.3, 3.3), arc(4.3, 5.3)];
-const arcInd = (arclimits) => (radius) => d3.svg.arc()
+const arcInd = (arclimits) => (radius) => d3.arc()
     .innerRadius(radius + 22)
     .outerRadius(radius + 37)
     .startAngle(arclimits[0])
@@ -1266,7 +1269,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
      console.log("-- 9. Build allNodes[] using preprocessed information --");
 
     setValueKey(Object.keys(preprocess));
-    setAllNodes(valueKey.map((variable, i) => jQuery.extend(true, {
+    setAllNodes(valueKey.map((variable, i) => $.extend(true, {
         id: i,
         reflexive: false,
         name: variable,
@@ -2219,20 +2222,16 @@ function onPipelinePrime(PipelineCreateResult, rookpipe) {
         allPipelineInfo[PipelineCreateResult.id].score = 'scoring';
     }
 
-        // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
-        // if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
-        //     continue;
-        // }
-        // if(allPipelineInfo[key].progressInfo == "RUNNING")  {
-        //     continue;
-        // }
+    // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
+    // if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
+    //     continue;
+    // }
+    // if(allPipelineInfo[key].progressInfo == "RUNNING")  {
+    //     continue;
+    // }
 
     //adding rookpipe to allPipelineInfo
-    allPipelineInfo.rookpipe=rookpipe;                // This is setting rookpipe for the entire table, but when there are multiple CreatePipelines calls, this is only recording latest values
-
-    // VJD: these two functions are built and (I believe) functioning as intended. These exercise two core API calls that are currently unnecessary
-    //eline(pipelineTable[1][1]);
-    //listpipelines();
+    allPipelineInfo.rookpipe = Object.assign({}, rookpipe);                // This is setting rookpipe for the entire table, but when there are multiple CreatePipelines calls, this is only recording latest values
 
     // VJD: this is a third core API call that is currently unnecessary
     //let pipelineid = PipelineCreateResult.pipelineid;
@@ -2294,12 +2293,12 @@ function CreatePipelineData(predictors, depvar, aux) {
     }
 }
 
-// Update of old CreatePipelineData function that creates problem definition for SearchSolutions call.
+// create problem definition for SearchSolutions call
 function CreateProblemDefinition(depvar, aux) {
 
     let resourceIdFromProblemDoc = d3mProblemDescription.firstTarget.resID;
 
-    if(typeof aux==="undefined") { //default behavior for creating pipeline data
+    if (aux === undefined) { //default behavior for creating pipeline data
         let problem = {
             id: d3mProblemDescription.id,
             version: d3mProblemDescription.version,
@@ -2309,21 +2308,21 @@ function CreateProblemDefinition(depvar, aux) {
             taskSubtype: d3mTaskSubtype[d3mProblemDescription.taskSubtype][1],
             performanceMetrics: [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ]  // need to generalize to case with multiple metrics.  only passes on first presently.
         };
+        if (problem.taskSubtype === 'taskSubtypeUndefined') delete problem.taskSubtype;
 
-        if (d3mProblemDescription.taskSubtype === 'taskSubtypeUndefined') delete problem.taskSubtype;
-        let inputs =  [
-            {
-                datasetId: datadocument.about.datasetID,
-                targets: [
-                    {
-                        //resourceId: '0', # 'learningData in aug datasets'
-                        resourceId: resourceIdFromProblemDoc,
-                        columnIndex: valueKey.indexOf(depvar[0]),  // Adjusted to match dataset doc
-                        columnName: depvar[0]
-                    }
-                ]}];
+        let inputs = [{
+            datasetId: datadocument.about.datasetID,
+            targets: [
+                {
+                    resourceId: resourceIdFromProblemDoc,
+                    columnIndex: valueKey.indexOf(depvar[0]),  // Adjusted to match dataset doc
+                    columnName: depvar[0]
+                }
+            ]
+        }];
 
-        return {problem: problem, inputs: inputs};
+        return {problem, inputs};
+
     } else { //creating pipeline data for problem discovery using aux inputs from disco line
 
         let problem = {
@@ -2341,8 +2340,8 @@ function CreateProblemDefinition(depvar, aux) {
                 targets: [
                     {
                         resourceId: resourceIdFromProblemDoc,
-                        columnIndex: valueKey.indexOf(my_target),  // Adjusted to match dataset doc
-                        columnName: my_target
+                        columnIndex: valueKey.indexOf(resultsProblem.target),  // Adjusted to match dataset doc
+                        columnName: resultsProblem.target
                     }
                 ]}];
         return {problem, inputs};
@@ -2353,66 +2352,54 @@ function CreateProblemDefinition(depvar, aux) {
 // Create a problem description that follows the Problem Schema, for the Task 1 output.
 function CreateProblemSchema(aux){
 
-
     let resourceIdFromDatasetDoc = datadocument.dataResources[0].resID;
-
-    let my_target = aux.target;
-
-    let my_about = {
-        problemID: aux.problemID,
-        problemName: aux.problemID,
-        problemDescription: aux.description,
-        taskType: d3mTaskType[aux.task][1],
-        problemVersion: '1.0',
-        problemSchemaVersion: '3.1.1'
-    };
-    let my_inputs = {
-        data: [
-            {
-                datasetId: datadocument.about.datasetID,
-                targets: [
-                    {
-                        resourceId: resourceIdFromDatasetDoc,
-                        columnIndex: valueKey.indexOf(my_target),  // Adjusted to match dataset doc
-                        columnName: my_target
-                    }
-                ]}],
-        dataSplits: {
-            method: 'holdOut',
-            testSize: 0.2,
-            stratified: true,
-            numRepeats: 0,
-            randomSeed: 123,
-            splitsFile: 'dataSplits.csv'
+    return {
+        about: {
+            problemID: aux.problemID,
+            problemName: aux.problemID,
+            problemDescription: aux.description,
+            taskType: d3mTaskType[aux.task][1],
+            problemVersion: '1.0',
+            problemSchemaVersion: '3.1.1'
+        },
+        inputs: {
+            data: [
+                {
+                    datasetId: datadocument.about.datasetID,
+                    targets: [
+                        {
+                            resourceId: resourceIdFromDatasetDoc,
+                            columnIndex: valueKey.indexOf(aux.target),  // Adjusted to match dataset doc
+                            columnName: aux.target
+                        }
+                    ]
+                }],
+            dataSplits: {
+                method: 'holdOut',
+                testSize: 0.2,
+                stratified: true,
+                numRepeats: 0,
+                randomSeed: 123,
+                splitsFile: 'dataSplits.csv'
             },
-        performanceMetrics: [{metric: d3mMetrics[aux.metric][1]}]
+            performanceMetrics: [{metric: d3mMetrics[aux.metric][1]}]
+        },
+        expectedOutputs: {
+            predictionsFile: 'predictions.csv'
+        }
     };
-
-    return {about: my_about, inputs: my_inputs, expectedOutputs: {predictionsFile: 'predictions.csv'}};
 }
 
 function CreatePipelineDefinition(predictors, depvar, timeBound, aux) {
-    let my_timeBound = 1;
-    if(typeof timeBound !== 'undefined'){
-        my_timeBound = timeBound;
-    }
-    let my_userAgent = TA3_GRPC_USER_AGENT;              // set on django server
-    let my_version = TA3TA2_API_VERSION;                 // set on django server
-    let my_allowedValueTypes = ['DATASET_URI', 'CSV_URI'];      // Get from elsewhere
-    let my_problem = CreateProblemDefinition(depvar, aux);
-    let my_template = makePipelineTemplate(aux);
-    //console.log(my_problem);
-    let my_dataseturi = 'file://' + datasetdocurl;
-    // console.log(my_dataseturi);
     return {
-        userAgent: my_userAgent,
-        version: my_version,
-        timeBound: my_timeBound,
+        userAgent: TA3_GRPC_USER_AGENT, // set on django
+        version: TA3TA2_API_VERSION, // set on django
+        timeBound: timeBound || 1,
         priority: 1,
-        allowedValueTypes: my_allowedValueTypes,
-        problem: my_problem,
-        template: my_template,
-        inputs: [{dataset_uri: my_dataseturi}]
+        allowedValueTypes: ['DATASET_URI', 'CSV_URI'],
+        problem: CreateProblemDefinition(depvar, aux),
+        template: makePipelineTemplate(aux),
+        inputs: [{dataset_uri: 'file://' + datasetdocurl}]
     };
 }
 
@@ -3165,13 +3152,13 @@ export function subsetSelect(btn) {
 
     // store contents of the pre-subset space
     zPop();
-    var myNodes = jQuery.extend(true, [], allNodes);
-    var myParams = jQuery.extend(true, {}, zparams);
-    var myTrans = jQuery.extend(true, [], trans);
-    var myForce = jQuery.extend(true, [], forcetoggle);
-    var myPreprocess = jQuery.extend(true, {}, preprocess);
-    var myLog = jQuery.extend(true, [], logArray);
-    var myHistory = jQuery.extend(true, [], callHistory);
+    var myNodes = $.extend(true, [], allNodes);
+    var myParams = $.extend(true, {}, zparams);
+    var myTrans = $.extend(true, [], trans);
+    var myForce = $.extend(true, [], forcetoggle);
+    var myPreprocess = $.extend(true, {}, preprocess);
+    var myLog = $.extend(true, [], logArray);
+    var myHistory = $.extend(true, [], callHistory);
 
     spaces[myspace] = {
         "allNodes": myNodes,
@@ -3192,9 +3179,9 @@ export function subsetSelect(btn) {
     myspace = spaces.length;
     callHistory.push({
         func: "subset",
-        zvars: jQuery.extend(true, [], zparams.zvars),
-        zsubset: jQuery.extend(true, [], zparams.zsubset),
-        zplot: jQuery.extend(true, [], zparams.zplot)
+        zvars: $.extend(true, [], zparams.zvars),
+        zsubset: $.extend(true, [], zparams.zsubset),
+        zplot: $.extend(true, [], zparams.zplot)
     });
 
     // this is to be used to gray out and remove listeners for variables that have been subsetted out of the data
@@ -3234,7 +3221,7 @@ export function subsetSelect(btn) {
             allNodes[myIndex].plotvalues = undefined;
             allNodes[myIndex].plottype = "";
 
-            jQuery.extend(true, allNodes[myIndex], jsondata[key]);
+            $.extend(true, allNodes[myIndex], jsondata[key]);
             allNodes[myIndex].subsetplot = false;
             allNodes[myIndex].subsetrange = ["", ""];
             allNodes[myIndex].setxplot = false;
@@ -3852,7 +3839,7 @@ export function discovery(preprocess_file) {
 export async function addProblemFromForceDiagram() {
     zPop();
 
-    let newProblem = jQuery.extend(true, {
+    let newProblem = $.extend(true, {
             transform: 0,
             subsetObs: 0,
             subsetFeats: 0
@@ -3881,7 +3868,7 @@ export async function addProblemFromForceDiagram() {
 
     if ((selectedProblem || {}).problemID in manipulations)
         manipulations[newProblem.problemID]
-            = jQuery.extend(true, [], manipulations[selectedProblem.problemID]);
+            = $.extend(true, [], manipulations[selectedProblem.problemID]);
 
     console.log("pushing new problem to discovered problems:");
     console.log(newProblem);
@@ -3973,12 +3960,12 @@ export let redrawForce = problem => {
 };
 
 export function getProblemCopy(problemSource) {
-    let problem = jQuery.extend(true, {}, problemSource);  // deep copy of original
+    let problem = $.extend(true, {}, problemSource);  // deep copy of original
     Object.defineProperties(problem, Object.getOwnPropertyDescriptors(problemSource)); // keep getters
 
     let newProblemID = generateProblemID();
 
-    manipulations[newProblemID] = jQuery.extend(true, [], manipulations[problem.problemID] || []);
+    manipulations[newProblemID] = $.extend(true, [], manipulations[problem.problemID] || []);
 
     Object.assign(problem, {
         problemID: newProblemID,
@@ -4106,27 +4093,19 @@ export async function stopAllSearches() {
  *  Function takes as input the pipeline template information (currently aux) and returns a valid pipline template in json. This json is to be inserted into SearchSolutions. e.g., problem = {...}, template = {...}, inputs = [dataset_uri]
  */
 function makePipelineTemplate (aux) {
-    console.log("this is aux for makePipelineTemplate:")
-    console.log(aux);
-    // aux.transform, aux.subsetFeats, aux.Obs are all by default 0. if not 0, which is set in preprocess, then steps should build the corresponding primitive call.
+    console.log('makePipelineTemplate aux:', aux);
 
     let inputs = [];
     let outputs = [];
     let steps = [];
 
-    if(typeof aux==="undefined") {    // This is how this is called by /SearchSolutions
-        return {inputs:inputs,outputs:outputs,steps:steps};
-
-    } else {                          // This is how this is called by Discovered Problems
-        let ph = placeholderStep(); // this writes the placeholder object
-        let rc = primitiveStepRemoveColumns(aux); // this writes the primitive object to remove columns
-
-        inputs = [{name:"dataset"}];
-        outputs = [{name:"dataset", data:"produce"}];
-        steps = [rc,ph];
-
-        return {inputs:inputs,outputs:outputs,steps:steps};
-    };
+    if (aux !== undefined) {
+        inputs = [{name: "dataset"}];
+        outputs = [{name: "dataset", data: "produce"}];
+        // write the primitive object to remove columns, then generic step to be filled in
+        steps = [primitiveStepRemoveColumns(aux), placeholderStep()];
+    }
+    return {inputs, outputs, steps};
 
     // example template: leave here for reference
     /*
@@ -4201,61 +4180,47 @@ function makePipelineTemplate (aux) {
 }
 
 // function builds a placeholder step for pipeline
-function placeholderStep () {
-    let step = {inputs:[{data:"steps.0.produce"}],outputs:[{id:"produce"}]};
-    return {placeholder:step};
+function placeholderStep() {
+    let step = {inputs: [{data: "steps.0.produce"}], outputs: [{id: "produce"}]};
+    return {placeholder: step};
 }
 
 // function builds a step in a pipeline to remove indices
 function primitiveStepRemoveColumns (aux) {
-    //let keep = aux.predictors;  // This was being assigned by reference, not by value, thus changing the global disco table.
-    let keep = [];
-    for(let i=0; i<aux.predictors.length; i++) {
-        keep[i] = aux.predictors[i];
-    };
-    typeof aux.target === 'string' ?  keep.push(aux.target): keep.concat(aux.target);
-
+    let keep = [...aux.predictors];
+    typeof aux.target === 'string' && keep.push(aux.target);
     // looks like some TA2s need this, so we'll also keep it
     keep.push("d3mIndex");
 
     let indices = [];
-    for(let i=0; i<valueKey.length; i++) {
-        if(keep.indexOf(valueKey[i]) > -1) continue;
-        indices.push(i);
-    }
+    valueKey.forEach((variable, i) => keep.includes(variable) && indices.push(i));
 
-    function buildItems (indices) {
-        let items = [];
-        for(let i = 0; i<indices.length; i++) {
-            items[i] = {int64: indices[i].toString()};
-        }
-        return items;
-    }
+    let primitive = {
+        id: "2eeff053-395a-497d-88db-7374c27812e6",
+        version: "0.2.0",
+        python_path: "d3m.primitives.datasets.RemoveColumns",
+        name: "Column remover",
+        digest: "85b946aa6123354fe51a288c3be56aaca82e76d4071c1edc13be6f9e0e100144"
+    };
 
-    let id = "2eeff053-395a-497d-88db-7374c27812e6";
-    let version = "0.2.0";
-    let python_path = "d3m.primitives.datasets.RemoveColumns";
-    let name = "Column remover";
-    let digest = "85b946aa6123354fe51a288c3be56aaca82e76d4071c1edc13be6f9e0e100144";
-    let users = [];
+    let hpitems = {items: indices.map(index => ({int64: index.toString()}))};
+    let hplist = {list: hpitems};
+    let hpraw = {raw: hplist};
+    let hpdata = {data: hpraw};
+    let hpvalue = {value: hpdata};
+    let hyperparams = {columns: hpvalue};
 
-    let hpitems = {items:buildItems(indices)};
-    let hplist = {list:hpitems};
-    let hpraw = {raw:hplist};
-    let hpdata = {data:hpraw};
-    let hpvalue = {value:hpdata};
-    let hyperparams = {columns:hpvalue};
-
-    let primitive = {id:id, version:version, python_path:python_path, name:name, digest:digest}
-
-    let argdata = {data:"inputs.0"};
-    let argcontainer = {container:argdata};
-    let parguments = {inputs:argcontainer};
-
-    let outputs = [{id:"produce"}];
-
-    let step = {primitive:primitive, arguments:parguments, outputs:outputs, hyperparams:hyperparams, users:users};
-    return {primitive:step};
+    let argdata = {data: "inputs.0"};
+    let argcontainer = {container: argdata};
+    let parguments = {inputs: argcontainer};
+    return {
+        primitive: {
+            primitive: primitive,
+            arguments: parguments,
+            outputs: [{id: "produce"}],
+            hyperparams: hyperparams,
+            users: []
+        }};
 }
 
 
@@ -4277,12 +4242,12 @@ export async function handleGetSearchSolutionResultsResponse(response1) {
     // Note: the response.id becomes the Pipeline id
     //
     //
-    if (typeof response1.id === undefined) {
-        console.log('GetSearchSolutionResultsResponse: Error.  "response1.id" undefined');
+    if (response1.id === undefined) {
+        console.warn('GetSearchSolutionResultsResponse: Error.  "response1.id" undefined');
         return;
     }
-    if (typeof response1.response.solutionId === undefined) {
-        console.log('GetSearchSolutionResultsResponse: Error.  "response1.response.solutionId" undefined');
+    if (response1.response.solutionId === undefined) {
+        console.warn('GetSearchSolutionResultsResponse: Error.  "response1.response.solutionId" undefined');
         return;
     }
     // let solutionId = response1.response.solutionId;
@@ -4291,9 +4256,9 @@ export async function handleGetSearchSolutionResultsResponse(response1) {
     // (2) Update or Create the Pipeline
     // ----------------------------------------
     if (!ROOKPIPE_FROM_REQUEST) {
-        console.log('---------- ERROR: ROOKPIPE_FROM_REQUEST not set!!!');
+        console.warn('---------- ERROR: ROOKPIPE_FROM_REQUEST not set!!!');
     }
-    onPipelinePrime(response1, ROOKPIPE_FROM_REQUEST)  //, rookpipe - handleGetSearchSolutionResultsResponse
+    onPipelinePrime(response1, ROOKPIPE_FROM_REQUEST);  //, rookpipe - handleGetSearchSolutionResultsResponse
 
     if (IS_D3M_DOMAIN) setRightTab('Results');
     if (selectedPipelines.size === 0) setSelectedPipeline(response1.id);

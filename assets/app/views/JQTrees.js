@@ -1,6 +1,7 @@
 import m from 'mithril';
 // Used to render manipulation pipeline steps into interactive trees
-import '../../../node_modules/jqtree/tree.jquery.js';
+// import '../../../node_modules/jqtree/tree.jquery.js';
+import $ from 'jquery';
 import '../../../node_modules/jqtree/jqtree.css';
 import '../../pkgs/jqtree/jqtree.style.css';
 

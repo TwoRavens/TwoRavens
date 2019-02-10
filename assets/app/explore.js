@@ -1,4 +1,5 @@
 import m from 'mithril';
+import * as d3 from 'd3';
 import vegaEmbed from 'vega-embed';
 
 import * as app from './app';
@@ -85,15 +86,15 @@ function heatmap(x_Axis_name, y_Axis_name) {
     });
     var avg_y = (max_y - min_y) / 100;
 
-    var x = d3.scale.linear()
+    var x = d3.scaleLinear()
         .domain([min_x - avg_x, max_x + avg_x])
         .range([0, width_heat]);
 
-    var y = d3.scale.linear()
+    var y = d3.scaleLinear()
         .domain([min_y - avg_y, max_y + avg_y])
         .range([height_heat, 0]);
 
-    var z = d3.scale.linear().range(["#EF9A9A", "#EF5350"]);
+    var z = d3.scaleLinear().range(["#EF9A9A", "#EF5350"]);
 
     // This could be inferred from the data if it weren't sparse.
     var xStep = avg_x+ 0.1,
@@ -154,7 +155,7 @@ function heatmap(x_Axis_name, y_Axis_name) {
     svg_heat.append("g")
         .attr("class", "x axis")
         .attr("transform", "translate(0," + height_heat + ")")
-        .call(d3.svg.axis().scale(x).ticks(5).tickSize(-height_heat).orient("bottom"))
+        .call(d3.axisBottom().scale(x).ticks(5).tickSize(-height_heat))
         .append("text")
         .attr("class", "label")
         .attr("x", width_heat)
@@ -165,7 +166,7 @@ function heatmap(x_Axis_name, y_Axis_name) {
     // Add a y-axis with label.
     svg_heat.append("g")
         .attr("class", "y axis")
-        .call(d3.svg.axis().scale(y).tickSize(-width_heat).orient("left"))
+        .call(d3.axisLeft().scale(y).tickSize(-width_heat))
         .append("text")
         .attr("class", "label")
         .attr("y", 6)
@@ -237,22 +238,20 @@ function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     });
     var avg_y = (max_y - min_y) / 10;
 
-    var xScale = d3.scale.linear()
+    var xScale = d3.scaleLinear()
         .domain([min_x - avg_x, max_x + avg_x])
         .range([0, width]);
 
-    var yScale = d3.scale.linear()
+    var yScale = d3.scaleLinear()
         .domain([min_y - avg_y, max_y + avg_y])
         .range([height, 0]);
 
-    var xAxis = d3.svg.axis()
+    var xAxis = d3.axisBottom()
         .scale(xScale)
-        .orient('bottom')
         .tickSize(-height);
 
-    var yAxis = d3.svg.axis()
+    var yAxis = d3.axisLeft()
         .scale(yScale)
-        .orient('left')
         .ticks(5)
         .tickSize(-width);
 
@@ -479,32 +478,30 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
             return data2[i].y;
         });
         var avg_y = (max_y - min_y) / 10;
-        var x = d3.scale.linear()
+        var x = d3.scaleLinear()
             .domain([d3.min(xVals), d3.max(xVals)])
             .range([0, width_cross]);
-        var invx = d3.scale.linear()
+        var invx = d3.scaleLinear()
             .range([d3.min(data2.map(function (d) {
                 return d.x;
             })), d3.max(data2.map(function (d) {
                 return d.x;
             }))])
             .domain([0, width_cross]);
-        var y = d3.scale.linear()
+        var y = d3.scaleLinear()
             .domain([d3.min(data2.map(function (d) {
                 return d.y;
             })), d3.max(data2.map(function (d) {
                 return d.y;
             }))])
             .range([height_cross, 0]);
-        var xAxis = d3.svg.axis()
+        var xAxis = d3.axisBottom()
             .scale(x)
-            .ticks(5)
-            .orient("bottom");
-        var yAxis = d3.svg.axis()
-            .scale(y)
-            .orient("left");
-        var area = d3.svg.area()
-            .interpolate("monotone")
+            .ticks(5);
+        var yAxis = d3.axisLeft()
+            .scale(y);
+        var area = d3.area()
+            .curve(d3.curveMonotoneX)
             .x(function (d) {
                 return x(d.x);
             })
@@ -512,14 +509,14 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
             .y1(function (d) {
                 return y(d.y);
             });
-        var line = d3.svg.line()
+        var line = d3.line()
             .x(function (d) {
                 return x(d.x);
             })
             .y(function (d) {
                 return y(d.y);
             })
-            .interpolate("monotone");
+            .curve(d3.curveMonotoneX);
 
         var plotsvg = d3.select(plot_a)
             .append("svg")
@@ -664,27 +661,25 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
         var  maxY = d3.max(yVals); // in the future, set maxY to the value of the maximum confidence limit
         var  minX = d3.min(xVals);
         var  maxX = d3.max(xVals);
-        var   x_1 = d3.scale.linear()
+        var   x_1 = d3.scaleLinear()
             .domain([minX - 0.5, maxX + 0.5])
             .range([0, width_cross]);
 
-        var invx = d3.scale.linear()
+        var invx = d3.scaleLinear()
             .range([minX - 0.5, maxX + 0.5])
             .domain([0, width_cross]);
 
-        var  y_1 = d3.scale.linear()
+        var  y_1 = d3.scaleLinear()
         // .domain([0, maxY])
             .domain([0, maxY])
             .range([0, height_cross]);
 
-        var xAxis = d3.svg.axis()
+        var xAxis = d3.axisBottom()
             .scale(x_1)
-            .ticks(yVals.length)
-            .orient("bottom");
+            .ticks(yVals.length);
 
-        var yAxis = d3.svg.axis()
-            .scale(y_1)
-            .orient("left");
+        var yAxis = d3.axisLeft()
+            .scale(y_1);
 
         var plotsvg1 = d3.select(plot_b)
             .append("svg")
@@ -957,27 +952,25 @@ export function linechart(x_Axis_name, y_Axis_name) {
     var chart = svg.append("g")
         .classed("display", true)
         .attr("transform", "translate(" + margin_linechart.left + "," + margin_linechart.top + ")");
-    var x = d3.scale.linear()
+    var x = d3.scaleLinear()
         .domain(d3.extent(data_plot, function (d) {
             return d.xaxis;
         }))
         .range([0, width_linechart]);
-    var y = d3.scale.linear()
+    var y = d3.scaleLinear()
         .domain([d3.min(data_plot, function (d) {
             return d.yaxis;
         }), d3.max(data_plot, function (d) {
             return d.yaxis;
         })])
         .range([height_linechart, 0]);
-    var xAxis = d3.svg.axis()
+    var xAxis = d3.axisBottom()
         .scale(x)
-        .orient("bottom")
         .ticks(5);
-    var yAxis = d3.svg.axis()
+    var yAxis = d3.axisLeft()
         .scale(y)
-        .orient("left")
         .ticks(5);
-    var line = d3.svg.line()
+    var line = d3.line()
         .x(function (d) {
             return x(d.xaxis);
         })
@@ -1817,13 +1810,13 @@ function univariatePart(json, var_name) {
         char_to_pxl = 6,
         root;
 
-    var tree = d3.layout.tree()
+    var tree = d3.tree()
         .size([h, w]);
 
-    var diagonal = d3.svg.diagonal()
-        .projection(function(d) {
-            return [d.x, d.y];
-        });
+    var diagonal = d3.line()
+        .x(function(d) { return d.x; })
+        .y(function(d) { return d.y; })
+        .curve(d3.curveLinear);
 
     // set height of SVG via height of tree, 200px per layer
     let getHeight = (json_data) => json_data.children ? Math.max(...json_data.children.map(v => getHeight(v))) + 1 : 0;
@@ -1836,9 +1829,9 @@ function univariatePart(json, var_name) {
         .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
 
     // global scale for link width
-    var link_stoke_scale = d3.scale.linear();
+    var link_stoke_scale = d3.scaleLinear();
 
-    var color_map = d3.scale.category10();
+    var color_map = d3.scaleOrdinal(d3.schemeCategory10);
 
     // stroke style of link - either color or function
     var stroke_callback = "#ccc";
@@ -1860,7 +1853,7 @@ function univariatePart(json, var_name) {
             stroke_callback = mean_interpolation(root);
         }
 
-        link_stoke_scale = d3.scale.linear()
+        link_stoke_scale = d3.scaleLinear()
             .domain([0, n_samples])
             .range([min_link_width, max_link_width]);
 
@@ -2099,7 +2092,7 @@ function univariatePart(json, var_name) {
 
         recurse(root);
 
-        var scale = d3.scale.linear().domain([min, max])
+        var scale = d3.scaleLinear().domain([min, max])
             .range(["#2166AC", "#B2182B"]);
 
         function interpolator(d) {

@@ -16,6 +16,74 @@ send <- function(res) {
     response$finish()
 }
 
+make.formula <- function(targets, predictors) {
+    targets.str <- paste(make.names(target), collapse='+')
+    predictors.str <- paste(make.names(target), collapse='+')
+    return(formula(paste(targets.str, '~', predictors.str)))
+}
+
+glm_analysis <- function(model, data, predictors, confidence) {
+    samples <- if (length(data) < 1000) 1:length(data) else sort(sample(1:length(data), 1000))
+
+    # construct pointwise confidence intervals
+    predictions <- predict(model, type = "link", se.fit = TRUE) # before link function is applied
+    statistic <- abs(qt((1 - confidence) / 2, length(model$fitted.values) - length(coef(model))))
+    # map intervals from the linear space into the response space via inverse link function
+    interval_lower <- family(model)$linkinv(predictions$fit - statistic * predictions$se.fit)
+    interval_upper <- family(model)$linkinv(predictions$fit + statistic * predictions$se.fit)
+
+    inf = influence(model)
+    return(list(
+        fitted.values=model$fitted.values[samples],  # after link function is applied
+        coefficients=broom::tidy(model, conf.int=TRUE, conf.level=confidence),
+        statistics=broom::glance(model),
+        covariance.matrix=vcov(model)
+    ))
+}
+
+model_glm_gaussian <- function(target, predictors, data, confidence) {
+    # use lm to keep R^2, sigma, F statistic
+    model <- lm(make.formula(target, predictors), data=data)
+    return(glm_analysis(model, predictors, data, confidence))
+}
+
+model_glm_poisson <- function(target, predictors, data, confidence) {
+    model <- glm(make.formula(target, predictors), data=data, family='poisson')
+    return(glm_analysis(model, confidence))
+}
+
+model_glm_binomial <- function(target, predictors, data, confidence) {
+    model <- glm(make.formula(target, predictors), data=data, family='binomial')
+    return(glm_analysis(model, confidence))
+}
+
+model_glm_negative_binomial <- function(target, predictors, data, confidence) {
+    model <- glm.nb(make.formula(target, predictors), data=data)
+    return(glm_analysis(model, confidence))
+}
+
+model_decision_tree <- function(target, predictors, data, confidence) {
+    model <- ranger(make.formula(target, predictors), data = data, classification = TRUE)
+    return(list(
+        fitted.values=predict(model, data=data)$predictions,
+    ))
+}
+
+model_kmeans <- function(target, predictors, data, confidence) {
+    model <- knn()
+}
+
+model_linear_discriminant <- function(target, predictors, data, confidence) {
+    model
+}
+
+models <- list(
+    ols_regression=model_glm_gaussian,
+    poisson_regression=model_glm_poisson,
+    negative_binomial_regression=model_glm_negative_binomial,
+    logistic_regression=model_glm_binomial,
+    decision_tree=model_decision_tree
+)
 
 #  to check if the variable is binary
 is_binary <- function(v) {
@@ -54,10 +122,8 @@ solver.app <- function(env) {
     if (is.null(dataurl)) {
         return(send(list(warning = "No data url.")))
     }
-    description <- everything$prob$description
-    if (is.null(description)) {
-        return(send(list(warning = "No description.")))
-    }
+
+    model <- everything$model
 
     task <- everything$prob$task
     print(paste("task: ", task, sep=""))
@@ -76,7 +142,7 @@ solver.app <- function(env) {
         return(send(list(warning = "No target.")))
     }
 
-    vars <- c(target, predictors)
+    hyperparameters <- everything$hyperparameters
 
     separator <- if (endsWith(dataurl, 'csv'))',' else '\t'
     print(paste("Pre Reading table, separator: ", separator, sep=""))
@@ -86,10 +152,10 @@ solver.app <- function(env) {
 
     tryCatch({
 
-        ## data
-        d <- mydata[, vars]
+        # data
+        data <- data[, c(target, predictors)]
 
-        ## listwise deleting
+        # listwise deletion
         d <- na.omit(d)
         print(colnames(d))
 
@@ -136,6 +202,18 @@ solver.app <- function(env) {
         } else {
             return(send(list(warning = "No model estimated.")))
         }
+
+        # fit the model
+        solution <- models[[model]](target, predictors, data, hyperparameters)
+
+        # evaluate the model
+        solution$score <- metrics[[metric]](solution$fitted.values, solution$actual.values)
+
+        solution$task <- task
+        solution$model <- model
+        solution$metric <- metric
+
+        return(send(solution))
     },
     error = function(err) {
         result <<- list(warning = paste("error: ", err))

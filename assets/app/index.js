@@ -1,8 +1,10 @@
+import $ from 'jquery';
+import * as d3 from 'd3';
+import 'bootstrap/dist/css/bootstrap.css';
+
 import '../css/app.css';
-import '../pkgs/bootstrap/css/bootstrap-theme.min.css';
 import '../pkgs/Ladda/dist/ladda-themeless.min.css';
 import '../../node_modules/hopscotch/dist/css/hopscotch.css';
-
 
 import hopscotch from 'hopscotch';
 
