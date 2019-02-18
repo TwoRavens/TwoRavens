@@ -134,10 +134,6 @@ let makeIntervals = ({values, variances, statistic, type, family, alpha, n, ddof
         binomial: x => 1 / (1 + Math.exp(x))
     }[family];
 
-    console.warn("#debug statValue");
-    console.log(statValue);
-    console.warn("#debug stdErr");
-    console.log(stdErr);
     return values
         .map((val, i) => [-1, 1].map(sign => invLink(val + sign * statValue * stdErr[i])))
 };
@@ -153,7 +149,7 @@ console.log(makeGLMBands(cov, coefs, predictor, constants, {
     MSE: 1.2
 }));
 
-console.warn('Set of coefficient interval');
+console.warn('Set of intervals for coefficients');
 console.log(makeIntervals({
     values: coefs.map(coef => coef[0]),
     variances: cov.map((_, i) => cov[i][i]),

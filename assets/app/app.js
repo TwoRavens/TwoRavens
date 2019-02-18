@@ -235,9 +235,9 @@ export function set_mode(mode) {
 
         currentMode = mode;
         m.route.set('/' + mode);
-        restart && restart();
         updateRightPanelWidth();
         updateLeftPanelWidth();
+        m.redraw()
     }
 
     // cause the peek table to redraw
@@ -1019,8 +1019,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             problemID: res.about.problemID,
             system: 'auto',
             description: res.about.problemDescription,
-            target: res.inputs.data[0].targets[0].colName,
-            firstTarget: res.inputs.data[0].targets[0],
+            target: [res.inputs.data[0].targets[0].colName],
             predictors: [],
             get pipeline() {return manipulations[this.problemID]},
             metric: res.inputs.performanceMetrics[0].metric,
@@ -1296,17 +1295,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     console.log('---------------------------------------');
     console.log("-- 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN) --");
     if(!swandive) {
-        console.log('datadocument_columns: ' + JSON.stringify(datadocument_columns));
-
-        console.log('allnodes: ' + JSON.stringify(allNodes));
-
-        //datadocument_columns.forEach(v => findNode(v.colName).d3mDescription = v);
-        datadocument_columns.forEach(function(v){
-          console.log('v: ' + v);
-          console.log('v.colName: ' + v.colName);
-          findNode(v.colName).d3mDescription = v
-        });
-
+        // TODO: temporarily disabled while forceDiagram is disabled
+        // datadocument_columns.forEach(v => findNode(v.colName).d3mDescription = v);
         console.log("all nodes:");
         console.log(allNodes);
     }
@@ -2995,6 +2985,7 @@ export let hexToRgba = (hex, alpha) => {
    takes node and color and updates zparams
 */
 export function setColors(n, c) {
+    if (!n) return;
 
     // the order of the keys indicates precedence
     let zmap = {
@@ -3004,7 +2995,7 @@ export function setColors(n, c) {
         [dvColor]: 'zdv',
         [gr1Color]: 'zgroup1',
         [gr2Color]: 'zgroup2'
-    }
+    };
     let strokeWidths = {
         [csColor]: 4,
         [timeColor]: 4,
@@ -3012,7 +3003,7 @@ export function setColors(n, c) {
         [dvColor]: 4,
         [gr1Color]: 1,
         [gr2Color]: 1
-    }
+    };
     let nodeColors = {
         [csColor]: taggedColor,
         [timeColor]: taggedColor,
@@ -3020,7 +3011,7 @@ export function setColors(n, c) {
         [dvColor]: taggedColor,
         [gr1Color]: colors(n.id),
         [gr2Color]: colors(n.id)
-    }
+    };
     let strokeColors = {
         [csColor]: csColor,
         [timeColor]: timeColor,
@@ -3028,25 +3019,15 @@ export function setColors(n, c) {
         [dvColor]: dvColor,
         [gr1Color]: selVarColor,
         [gr2Color]: selVarColor
-    }
-
-    console.warn('#debug zmap[c]');
-    console.log(zmap[c]);
-
-    console.warn('#debug n.name');
-    console.log(n.name);
+    };
 
     // from the relevant zparams list: remove if included, add if not included
     if (!Array.isArray(zparams[zmap[c]])) zparams[zmap[c]] = [];
     let index = zparams[zmap[c]].indexOf(n.name);
-    if (index > -1) zparams[zmap[c]].splice(index, 1)
+    if (index > -1) zparams[zmap[c]].splice(index, 1);
     else zparams[zmap[c]].push(n.name);
 
-    console.warn('#debug zparams.zdv');
-    console.log(zparams.zdv);
-
     labelNodeAttrs: {
-        let matchedColor;
         for (let label of Object.keys(zmap))
             if (zparams[zmap[label]].includes(n.name)) {
                 n.strokeWidth = strokeWidths[label];
@@ -3063,20 +3044,20 @@ export function setColors(n, c) {
     // if index was not found, then it was added
     let isIncluded = index === -1;
 
-    if (c == gr1Color) {
-        [n.group1, n.group2] = [isIncluded, false]
-        del(zparams.zgroup2, -1, n.name)
-        del(zparams.zdv, -1, n.name)
+    if (c === gr1Color) {
+        [n.group1, n.group2] = [isIncluded, false];
+        del(zparams.zgroup2, -1, n.name);
+        del(zparams.zdv, -1, n.name);
     }
     if (c === gr2Color) {
-        [n.group1, n.group2] = [false, isIncluded]
-        del(zparams.zgroup1, -1, n.name)
-        del(zparams.zdv, -1, n.name)
+        [n.group1, n.group2] = [false, isIncluded];
+        del(zparams.zgroup1, -1, n.name);
+        del(zparams.zdv, -1, n.name);
     }
     if (c === dvColor) {
-        [n.group1, n.group2] = [false, false]
-        del(zparams.zgroup1, -1, n.name)
-        del(zparams.zgroup2, -1, n.name)
+        [n.group1, n.group2] = [false, false];
+        del(zparams.zgroup1, -1, n.name);
+        del(zparams.zgroup2, -1, n.name);
     }
 
     if (c === nomColor) {
@@ -3463,16 +3444,19 @@ export function generatePerformanceData(confusionData2x2) {
     var p = tp + fn;
     var n = fp + tn;
 
-    var accuracy = (tp + tn) / (p + n);
-    var f1 = 2 * tp / (2 * tp + fp + fn);
-    var precision = tp / (tp + fp);
-    var recall = tp / (tp + fn);
+    let round = (number, digits) => Math.round(number * Math.pow(10, digits)) / Math.pow(10, digits)
 
     return {
-        "f1": Math.round(f1 * 100) / 100,
-        "precision": Math.round(precision * 100) / 100,
-        "recall": Math.round(recall * 100) / 100,
-        "accuracy": Math.round(accuracy * 100) / 100
+        f1: round(2 * tp / (2 * tp + fp + fn), 2),
+        precision:  round(tp / (tp + fp), 2), // positive predictive value
+        recall: round(tp / (tp + fn), 2), // sensitivity, true positive rate
+        accuracy: round((tp + tn) / (p + n), 2),
+
+        // specificity: round(fp / (fp + tn), 2),
+        // 'true positive rate': round(tp / (tp + fn), 2), // already included with recall
+        // 'true negative rate': round(tn / (tn + fp), 2),
+        // 'false positive rate': round(fp / (fp + tn), 2),
+        // 'false negative rate': round(fn / (fn + tp), 2), // miss rate
     }
 }
 
@@ -3771,7 +3755,6 @@ function makeProblemDescription(problem) {
 }
 
 export function discovery(preprocess_file) {
-
     return preprocess_file.dataset.discovery.map((prob, i) => {
         let problemID = generateProblemID();
         let pipeline = [];
@@ -3817,7 +3800,7 @@ export function discovery(preprocess_file) {
             get description() {return makeProblemDescription(this)},
             set description(value) {this.descriptionUser = value;},
 
-            target: prob.target,
+            target: [prob.target],
             predictorsInitial: prob.predictors,
             predictors: [...prob.predictors, ...getTransformVariables(manipulations[problemID])],
 
@@ -3925,7 +3908,7 @@ export function setSelectedProblem(problem) {
         ravenPipelineInfo = {};
         estimateLadda.stop();
     });
-
+    
     updateRightPanelWidth();
 
     // if a constraint is being staged, delete it
@@ -3954,8 +3937,6 @@ export let redrawForce = problem => {
     predictors.forEach(predictor => setColors(nodes.find(node => node.name === predictor), gr1Color));
     setColors(findNode(target), dvColor);
     problem.target = target;
-    restart();
-    restart(); // two calls are necessary here, for now (pebble sizing is finicky)
     m.redraw();
 };
 

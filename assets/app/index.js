@@ -1,3 +1,5 @@
+import * as statistics from './statistics';
+
 import $ from 'jquery';
 import * as d3 from 'd3';
 import 'bootstrap/dist/css/bootstrap.css';
@@ -1068,43 +1070,43 @@ class Body {
                                 }))
                         )],
 
-                    m(ForceDiagram, Object.assign({}, app.forceDiagramEvents, {
-                        selectedNode: undefined,
-
-                        groups: [
-                            {
-                                name: "Predictors",
-                                color: gr1Color,
-                                nodes: []
-                            },
-                            {
-                                name: "Targets",
-                                color: gr2Color,
-                                nodes: []
-                            }
-                        ],
-
-                        nodes: app.nodes,
-
-                        groupLinks: [
-                            {
-                                source: 'Predictors',
-                                target: 'Targets',
-                                left: false,
-                                right: true
-                            }
-                        ],
-                        nodeLinks: [
-                            // {
-                            //     source: '',
-                            //     target: ,
-                            //     left: false,
-                            //     right: true
-                            // }
-                        ],
-
-                        forcetoggle: app.forcetoggle
-                    }))
+                //     m(ForceDiagram, Object.assign({}, app.forceDiagramEvents, {
+                //         selectedNode: undefined,
+                //
+                //         groups: [
+                //             {
+                //                 name: "Predictors",
+                //                 color: gr1Color,
+                //                 nodes: []
+                //             },
+                //             {
+                //                 name: "Targets",
+                //                 color: gr2Color,
+                //                 nodes: []
+                //             }
+                //         ],
+                //
+                //         nodes: app.nodes,
+                //
+                //         groupLinks: [
+                //             {
+                //                 source: 'Predictors',
+                //                 target: 'Targets',
+                //                 left: false,
+                //                 right: true
+                //             }
+                //         ],
+                //         nodeLinks: [
+                //             // {
+                //             //     source: '',
+                //             //     target: ,
+                //             //     left: false,
+                //             //     right: true
+                //             // }
+                //         ],
+                //
+                //         forcetoggle: app.forcetoggle
+                //     }))
                 ),
                     // m('svg#whitespace')),
                 app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}}, [
