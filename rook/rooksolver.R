@@ -25,19 +25,16 @@ make.formula <- function(targets, predictors) {
 glm_analysis <- function(model, data, predictors, confidence) {
     samples <- if (length(data) < 1000) 1:length(data) else sort(sample(1:length(data), 1000))
 
-    # construct pointwise confidence intervals
-    predictions <- predict(model, type = "link", se.fit = TRUE) # before link function is applied
-    statistic <- abs(qt((1 - confidence) / 2, length(model$fitted.values) - length(coef(model))))
-    # map intervals from the linear space into the response space via inverse link function
-    interval_lower <- family(model)$linkinv(predictions$fit - statistic * predictions$se.fit)
-    interval_upper <- family(model)$linkinv(predictions$fit + statistic * predictions$se.fit)
+    is_glm <- "glm" %in% class(model)
 
     inf = influence(model)
     return(list(
         fitted.values=model$fitted.values[samples],  # after link function is applied
         coefficients=broom::tidy(model, conf.int=TRUE, conf.level=confidence),
         statistics=broom::glance(model),
-        covariance.matrix=vcov(model)
+        covariance.matrix=vcov(model),
+        anova=anova(model),
+
     ))
 }
 
