@@ -25,7 +25,7 @@ LOGGER = logging.getLogger(__name__)
 PREVIEW_SIZE = 100
 
 
-class xDatamartJobUtilISI(object):
+class DatamartJobUtilISI(object):
 
     @staticmethod
     def datamart_scrape(url):
@@ -112,6 +112,7 @@ class xDatamartJobUtilISI(object):
         if limit:
             params['max_return_docs'] = limit
 
+        print('start seach')
         try:
             response = requests.post(\
                     get_isi_url() + '/new/search_data',
@@ -122,22 +123,28 @@ class xDatamartJobUtilISI(object):
         except requests.exceptions.Timeout as err_obj:
             return err_resp('Request timed out. responded with: %s' % err_obj)
 
+        print('end seach')
 
         if response.status_code != 200:
             return err_resp(response['reason'])
 
         response = response.json()
-        print('response', response)
+        print('json()!')
 
         if response['code'] != "0000":
             return err_resp(response['message'])
 
         # these fields are unnecessarily long
+        num_datasets = len(response['data'])
+        print('num_datasets', num_datasets)
+        print('iterating through....')
+        cnt = 0
         for dataset in response['data']:
+            cnt += 1
             for variable in dataset['metadata']['variables']:
                 if 'semantic_type' in variable:
                     del variable['semantic_type']
-
+        print('iterating done....', cnt)
         return ok_resp(response['data'][:limit])
 
     @staticmethod
@@ -285,123 +292,3 @@ class xDatamartJobUtilISI(object):
             'metadata': None
         }
         return ok_resp(info_dict)
-
-# based on documentation here:
-# https://gitlab.com/ViDA-NYU/datamart/datamart/blob/master/examples/rest-api-fifa2018_manofmatch.ipynb
-class DatamartJobUtilNYU(object):
-
-    @staticmethod
-    def datamart_upload(data):
-        response = requests.post(
-            get_nyu_url() + '/new/upload_data',
-            files={
-                'file': ('config.json', data)
-            }).json()
-
-        print(response)
-        if response['code'] != '0000':
-            return err_resp(response['message'])
-
-        return ok_resp(response['data'])
-
-    @staticmethod
-    def datamart_search(query, data_path=None, limit=False):
-        payload = {'query': ('query.json', query)}
-
-        if data_path and os.path.exists(data_path):
-            payload['file'] = open(data_path, 'r')
-
-        try:
-            response = requests.post(\
-                        get_nyu_url() + '/search',
-                        files=payload,
-                        stream=True,
-                        timeout=settings.DATAMART_LONG_TIMEOUT)
-        except requests.exceptions.Timeout as err_obj:
-            return err_resp('Request timed out. responded with: %s' % err_obj)
-
-        if response.status_code != 200:
-            print(str(response))
-            return err_resp('NYU Datamart internal server error')
-
-        return ok_resp(response.json()['results'])
-
-    @staticmethod
-    def datamart_materialize(search_result):
-
-        d3m_config = get_latest_d3m_config()
-        if not d3m_config:
-            user_msg = 'datamart_materialize failed. no d3m config'
-            LOGGER.error(user_msg)
-            return err_resp(user_msg)
-
-        materialize_folderpath = os.path.join(
-            d3m_config.temp_storage_root,
-            'materialize', str(search_result['id']))
-
-        if os.path.exists(materialize_folderpath):
-            response = None
-        else:
-            response = requests.get(get_nyu_url() + '/download/' + str(search_result['id']),
-                                    params={'format': 'd3m'}, stream=True)
-
-            if response.status_code != 200:
-                return err_resp('NYU Datamart internal server error')
-
-        return ok_resp(DatamartJobUtilNYU.save(materialize_folderpath, response))
-
-    @staticmethod
-    def datamart_augment(dataset_path, search_result):
-
-        d3m_config = get_latest_d3m_config()
-        if not d3m_config:
-            user_msg = 'failed. no d3m config'
-            LOGGER.error(user_msg)
-            return err_resp(user_msg)
-
-        print(search_result)
-        response = requests.post(get_nyu_url() + '/augment', files={
-            'data': open(dataset_path, 'rb'),
-            'task': ('task.json', json.dumps(search_result), 'application/json')
-        }, stream=True)
-
-        if response.status_code != 200:
-            return err_resp('NYU Datamart internal server error')
-
-        augment_folderpath = os.path.join(d3m_config.temp_storage_root, 'augment', str(search_result['id']))
-        return ok_resp(DatamartJobUtilNYU.save(augment_folderpath, response))
-
-    @staticmethod
-    def save(folderpath, response):
-
-        if not os.path.exists(folderpath):
-            with zipfile.ZipFile(BytesIO(response.content), 'r') as data_zip:
-                data_zip.extractall(folderpath)
-
-        metadata_filepath = os.path.join(folderpath, 'datasetDoc.json')
-        data_filepath = os.path.join(folderpath, 'tables', 'learningData.csv')
-
-        data = []
-        with open(data_filepath, 'r') as datafile:
-            for i in range(100):
-                try:
-                    data.append(next(datafile))
-                except StopIteration:
-                    pass
-
-        return {
-            'data_path': data_filepath,
-            'metadata_path': metadata_filepath,
-            'data_preview': ''.join(data),
-            'metadata': json.load(open(metadata_filepath))
-        }
-
-    @staticmethod
-    def get_data_paths(metadata_path):
-        with open(metadata_path, 'r') as metadata_file:
-            resources = json.load(metadata_file)['dataResources']
-
-        return [
-            os.path.join(os.path.basename(metadata_path), *resource['resPath'].split('/'))
-            for resource in resources
-        ]

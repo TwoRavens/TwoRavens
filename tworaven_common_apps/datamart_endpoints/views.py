@@ -6,8 +6,12 @@ from tworaven_apps.utils.view_helper import \
      get_common_view_info)
 from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 
-from tworaven_common_apps.datamart_endpoints.datamart_job_util import (DatamartJobUtilISI,
-                                                                       DatamartJobUtilNYU)
+from tworaven_common_apps.datamart_endpoints.datamart_util_isi import \
+    (DatamartJobUtilISI,)
+
+from tworaven_common_apps.datamart_endpoints.datamart_job_util import \
+    (DatamartJobUtilNYU,)
+
 from tworaven_common_apps.datamart_endpoints.forms import (DatamartSearchForm,
                                                            DatamartAugmentForm,
                                                            DatamartMaterializeForm,
@@ -152,7 +156,7 @@ def api_augment(request):
         return JsonResponse(get_json_error(user_msg))
 
     user_workspace = ws_info.result_obj
-    
+
     if json_req_obj['source'] == 'ISI':
         success, results_obj_err = DatamartJobUtilISI.datamart_augment(
             user_workspace,
