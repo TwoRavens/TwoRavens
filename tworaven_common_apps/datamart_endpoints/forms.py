@@ -1,7 +1,9 @@
 from django import forms
 import json
 
-from tworaven_common_apps.datamart_endpoints.models import DATAMART_SOURCES
+#from tworaven_common_apps.datamart_endpoints.static_vals import DATAMART_SOURCES
+from tworaven_common_apps.datamart_endpoints.info_util import \
+    (is_datamart_name,)
 
 
 class DatamartUploadForm(forms.Form):
@@ -53,8 +55,9 @@ class DatamartSearchForm(forms.Form):
 
     def clean_source(self):
         source = self.cleaned_data.get('source')
-        if source not in DATAMART_SOURCES:
-            raise ValueError(f"The 'source' argument {source} must be a member of {DATAMART_SOURCES}")
+        if not is_datamart_name(source):
+            raise ValueError((f"The 'source' argument '{source}'"
+                              f" is not an active Datamart in the database"))
         return source
 
     def clean_query(self):
@@ -77,8 +80,11 @@ class DatamartAugmentForm(forms.Form):
 
     def clean_source(self):
         source = self.cleaned_data.get('source')
-        if source not in DATAMART_SOURCES:
-            raise ValueError(f"The 'source' argument {source} must be a member of {DATAMART_SOURCES}")
+        if not is_datamart_name(source):
+            raise ValueError((f"The 'source' argument '{source}'"
+                              f" is not an active Datamart in the database"))
+        #if source not in DATAMART_SOURCES:
+        #    raise ValueError(f"The 'source' argument {source} must be a member of {DATAMART_SOURCES}")
         return source
 
     def clean_data_path(self):
@@ -104,8 +110,11 @@ class DatamartMaterializeForm(forms.Form):
 
     def clean_source(self):
         source = self.cleaned_data.get('source')
-        if source not in DATAMART_SOURCES:
-            raise ValueError(f"The 'source' argument {source} must be a member of {DATAMART_SOURCES}")
+        if not is_datamart_name(source):
+            raise ValueError((f"The 'source' argument '{source}'"
+                              f" is not an active Datamart in the database"))
+        #if source not in DATAMART_SOURCES:
+        #    raise ValueError(f"The 'source' argument {source} must be a member of {DATAMART_SOURCES}")
         return source
 
     def clean_search_result(self):

@@ -2985,8 +2985,9 @@ export async function estimate() {
             estimateLadda.stop();
         } else {
             ROOKPIPE_FROM_REQUEST.predictors && setxTable(ROOKPIPE_FROM_REQUEST.predictors);
+            let searchTimeLimit = 5;
             let searchSolutionParams = CreatePipelineDefinition(ROOKPIPE_FROM_REQUEST.predictors,
-                ROOKPIPE_FROM_REQUEST.depvar,10);
+                ROOKPIPE_FROM_REQUEST.depvar,searchTimeLimit);
 
             let hasManipulation = resultsProblem.problemID in manipulations && manipulations[resultsProblem.problemID].length > 0;
             let hasNominal = [resultsProblem.target, ...resultsProblem.predictors]

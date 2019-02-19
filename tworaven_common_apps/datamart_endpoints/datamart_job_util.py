@@ -2,15 +2,19 @@ import json
 import zipfile
 from io import BytesIO
 
+from django.conf import settings
 import pandas as pd
 from tworaven_apps.data_prep_utils.new_dataset_util import NewDatasetUtil
 from tworaven_apps.user_workspaces.models import UserWorkspace
 from tworaven_apps.configurations.utils import get_latest_d3m_config
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
-from tworaven_common_apps.datamart_endpoints.models import (DATAMART_ISI_URL,
-                                                            DATAMART_NYU_URL,
-                                                            cached_response, cached_response_baseball)
+from tworaven_common_apps.datamart_endpoints.static_vals import \
+    (cached_response,
+     cached_response_baseball)
+from tworaven_common_apps.datamart_endpoints.info_util import \
+    (get_isi_url,
+     get_nyu_url)
 
 import requests
 import logging
@@ -26,11 +30,16 @@ class DatamartJobUtilISI(object):
     @staticmethod
     def datamart_scrape(url):
 
-        response = requests.post(
-            DATAMART_ISI_URL + '/new/get_metadata_extract_links',
-            data=json.dumps({'url': url}),
-            headers={'Content-Type': 'application/json'},
-            verify=False)
+        try:
+            response = requests.post(
+                get_isi_url() + '/new/get_metadata_extract_links',
+                data=json.dumps({'url': url}),
+                headers={'Content-Type': 'application/json'},
+                verify=False,
+                timeout=settings.DATAMART_LONG_TIMEOUT)
+        except requests.exceptions.Timeout as err_obj:
+            return err_resp('Request timed out. responded with: %s' % err_obj)
+
 
         if response.status_code != 200:
             return err_resp('Datamart responded with: ' + response.reason)
@@ -44,11 +53,16 @@ class DatamartJobUtilISI(object):
 
     @staticmethod
     def datamart_get_metadata(data):
-        response = requests.post(
-            DATAMART_ISI_URL + '/new/get_metadata_single_file',
-            data=data,
-            headers={'Content-Type': 'application/json'},
-            verify=False)
+
+        try:
+            response = requests.post(
+                get_isi_url() + '/new/get_metadata_single_file',
+                data=data,
+                headers={'Content-Type': 'application/json'},
+                verify=False,
+                timeout=settings.DATAMART_LONG_TIMEOUT)
+        except requests.exceptions.Timeout as err_obj:
+            return err_resp('Request timed out. responded with: %s' % err_obj)
 
         if response.status_code != 200:
             return err_resp('Datamart responded with: ' + response.reason)
@@ -62,11 +76,16 @@ class DatamartJobUtilISI(object):
 
     @staticmethod
     def datamart_upload(index):
-        response = requests.post(
-            DATAMART_ISI_URL + '/new/upload_metadata_list',
-            data=index.encode('utf-8'),
-            headers={'Content-Type': 'application/json'},
-            verify=False)
+
+        try:
+            response = requests.post(
+                get_isi_url() + '/new/upload_metadata_list',
+                data=index.encode('utf-8'),
+                headers={'Content-Type': 'application/json'},
+                verify=False,
+                timeout=settings.DATAMART_LONG_TIMEOUT)
+        except requests.exceptions.Timeout as err_obj:
+            return err_resp('Request timed out. responded with: %s' % err_obj)
 
         if response.status_code != 200:
             return err_resp('Datamart responded with: ' + response.reason)
@@ -93,15 +112,22 @@ class DatamartJobUtilISI(object):
         if limit:
             params['max_return_docs'] = limit
 
-        response = requests.post(
-            DATAMART_ISI_URL + '/new/search_data',
-            params=params,
-            files=files, verify=False)
+        try:
+            response = requests.post(\
+                    get_isi_url() + '/new/search_data',
+                    params=params,
+                    files=files,
+                    verify=False,
+                    timeout=settings.DATAMART_SHORT_TIMEOUT)
+        except requests.exceptions.Timeout as err_obj:
+            return err_resp('Request timed out. responded with: %s' % err_obj)
+
 
         if response.status_code != 200:
             return err_resp(response['reason'])
 
         response = response.json()
+        print('response', response)
 
         if response['code'] != "0000":
             return err_resp(response['message'])
@@ -123,14 +149,22 @@ class DatamartJobUtilISI(object):
             LOGGER.error(user_msg)
             return err_resp(user_msg)
         datamart_id = search_result['datamart_id']
-        materialize_folderpath = os.path.join(d3m_config.temp_storage_root, 'materialize', str(datamart_id))
+        materialize_folderpath = os.path.join(d3m_config.temp_storage_root,
+                                              'materialize',
+                                              str(datamart_id))
 
         if os.path.exists(materialize_folderpath):
             response = None
         else:
-            response = requests.get(DATAMART_ISI_URL + '/new/materialize_data',
-                                    params={'datamart_id': datamart_id},
-                                    verify=False).json()
+
+            try:
+                response = requests.get(\
+                                get_isi_url() + '/new/materialize_data',
+                                params={'datamart_id': datamart_id},
+                                verify=False,
+                                timeout=settings.DATAMART_LONG_TIMEOUT).json()
+            except requests.exceptions.Timeout as err_obj:
+                return err_resp('Request timed out. responded with: %s' % err_obj)
 
             if response['code'] != "0000":
                 return err_resp(response['message'])
@@ -171,15 +205,19 @@ class DatamartJobUtilISI(object):
             'exact_match': exact_match
         })
 
-        response = requests.post(DATAMART_ISI_URL + '/new/join_data',
-                                 files={'left_data': open(data_path, 'r')},
-                                 data={
-                                     'right_data': datamart_id,
-                                     'left_columns': left_columns,
-                                     'right_columns': right_columns,
-                                     'exact_match': exact_match
-                                 },
-                                 verify=False).json()
+        try:
+            response = requests.post(\
+                    get_isi_url() + '/new/join_data',
+                    files={'left_data': open(data_path, 'r')},
+                    data={'right_data': datamart_id,
+                          'left_columns': left_columns,
+                          'right_columns': right_columns,
+                          'exact_match': exact_match},
+                    verify=False,
+                    timeout=settings.DATAMART_LONG_TIMEOUT).json()
+
+        except requests.exceptions.Timeout as err_obj:
+            return err_resp('Request timed out. responded with: %s' % err_obj)
 
         if response['code'] != "0000":
             return err_resp(response['message'])
@@ -255,7 +293,7 @@ class DatamartJobUtilNYU(object):
     @staticmethod
     def datamart_upload(data):
         response = requests.post(
-            DATAMART_NYU_URL + '/new/upload_data',
+            get_nyu_url() + '/new/upload_data',
             files={
                 'file': ('config.json', data)
             }).json()
@@ -273,9 +311,14 @@ class DatamartJobUtilNYU(object):
         if data_path and os.path.exists(data_path):
             payload['file'] = open(data_path, 'r')
 
-        response = requests.post(
-            DATAMART_NYU_URL + '/search',
-            files=payload, stream=True)
+        try:
+            response = requests.post(\
+                        get_nyu_url() + '/search',
+                        files=payload,
+                        stream=True,
+                        timeout=settings.DATAMART_LONG_TIMEOUT)
+        except requests.exceptions.Timeout as err_obj:
+            return err_resp('Request timed out. responded with: %s' % err_obj)
 
         if response.status_code != 200:
             print(str(response))
@@ -299,7 +342,7 @@ class DatamartJobUtilNYU(object):
         if os.path.exists(materialize_folderpath):
             response = None
         else:
-            response = requests.get(DATAMART_NYU_URL + '/download/' + str(search_result['id']),
+            response = requests.get(get_nyu_url() + '/download/' + str(search_result['id']),
                                     params={'format': 'd3m'}, stream=True)
 
             if response.status_code != 200:
@@ -317,7 +360,7 @@ class DatamartJobUtilNYU(object):
             return err_resp(user_msg)
 
         print(search_result)
-        response = requests.post(DATAMART_NYU_URL + '/augment', files={
+        response = requests.post(get_nyu_url() + '/augment', files={
             'data': open(dataset_path, 'rb'),
             'task': ('task.json', json.dumps(search_result), 'application/json')
         }, stream=True)
