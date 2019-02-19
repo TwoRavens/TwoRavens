@@ -106,7 +106,7 @@ let makeGLMBands = (varCovMat, coefficients, predictor, constants, preferences) 
  */
 let makeIntervals = ({values, variances, statistic, type, family, alpha, n, ddof, MSE, m}) => {
 
-    // MSE is already included in the predictor variance-covariance matrix
+    // MSE is already included in the coefficient variance-covariance matrix
     let stdErr = variances.map({
         mean: _ => _,
         prediction: x => (MSE * 1 / (m || 1)) + x,

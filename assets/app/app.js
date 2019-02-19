@@ -3908,7 +3908,7 @@ export function setSelectedProblem(problem) {
         ravenPipelineInfo = {};
         estimateLadda.stop();
     });
-    
+
     updateRightPanelWidth();
 
     // if a constraint is being staged, delete it

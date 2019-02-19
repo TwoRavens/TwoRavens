@@ -1,222 +1,190 @@
 ##
 ##  rooksolver.r
 ##
-library(stargazer)
-library(ranger)
+
+production <- FALSE
+
+# limit on number of fitted values to return to frontend
+observationLimit <- 1000
+
+
+# POST specification
+# {
+#     dataurl: 'path to url',
+#     predictors: ['pred1', 'pred2', ...],
+#     target: 'targ',
+#     weights: *optional column name of observation weights*,
+#
+#     task: 'regression' or 'classification',
+#     model: *one of keys of methodList variable, like 'linear' or 'poisson'*,
+#     method: *if specified, overrides task and model, passed directly into caret*,
+#     hyperparameters: {named arguments to the relevant R library function, like 'family' or 'k'},
+#     crossValidation: 'cv' or 'timeslice'
+# }
+
 
 send <- function(res) {
     res <- jsonlite:::toJSON(res)
-    if (production) {
-        sink()
-    }
-    write(res, "../assets/result.json")
+    if (production) sink()
+    else write(res, "../assets/result.json")
 
-    response <- Response$new(headers = list("Access-Control-Allow-Origin" = "*"))
+    response <- Response$new(headers = list(`Access-Control-Allow-Origin` = "*"))
     response$write(res)
     response$finish()
 }
 
-make.formula <- function(targets, predictors) {
-    targets.str <- paste(make.names(target), collapse='+')
-    predictors.str <- paste(make.names(target), collapse='+')
-    return(formula(paste(targets.str, '~', predictors.str)))
-}
+# TODO: include confusion matrix (due to observationLimit)
+analyzeWrapper <- function(wrapper, hyperparameters, samples) list(
+    fittedValues=predict(wrapper, type='raw')[samples],
+    label=wrapper$modelInfo$label, # plain english model label
+    method=wrapper$method, # caret library method
+    task=tolower(wrapper$modelType), # if user passed model, then ignore user-passed task (defer to caret)
+    library=wrapper$modelInfo$library, # R library used
+    gridResults=wrapper$results, # fit statistics for each point in a grid over all free hyperparameters
+    hyperparameters=c(hyperparameters, wrapper$bestTune), # combine user hyperparams with the discovered hyperparams
+    sortingMetric=wrapper$metric, # best hyperparameters were selected by this metric (all metrics still returned)
+    times=wrapper$times, # elapsed time for grid search, and for training final model
+    predictorTypes=wrapper$terms, # types for each term. Useful for verifying types used in fit model
+)
 
-glm_analysis <- function(model, data, predictors, confidence) {
-    samples <- if (length(data) < 1000) 1:length(data) else sort(sample(1:length(data), 1000))
+analyzeGLM <- function(model, samples) list(
+    coefficients=coef(model),
+    statistics=broom::glance(model),
+    coefficientCovarianceMatrix=vcov(model),
+    anova=anova(model),
+    # vif=car::vif(model),
+    cooksDistance=cooks.distance(model)[samples],
+    hatDiagonals=influence(model)$hat[samples],
+    meanSquaredError=mean(resid(model)^2)
+)
 
-    is_glm <- "glm" %in% class(model)
+methodList <- list(
+    linear='lm',
+    poisson='glm',
+    binomial='glm',
+    logistic='glm',
+    gamma='glm',
+    exponential='glm',
+    `negative binomial`='glm.nb',
+    `decision tree`='ranger'
+)
 
-    inf = influence(model)
-    return(list(
-        fitted.values=model$fitted.values[samples],  # after link function is applied
-        coefficients=broom::tidy(model, conf.int=TRUE, conf.level=confidence),
-        statistics=broom::glance(model),
-        covariance.matrix=vcov(model),
-        anova=anova(model),
-
-    ))
-}
-
-model_glm_gaussian <- function(target, predictors, data, confidence) {
-    # use lm to keep R^2, sigma, F statistic
-    model <- lm(make.formula(target, predictors), data=data)
-    return(glm_analysis(model, predictors, data, confidence))
-}
-
-model_glm_poisson <- function(target, predictors, data, confidence) {
-    model <- glm(make.formula(target, predictors), data=data, family='poisson')
-    return(glm_analysis(model, confidence))
-}
-
-model_glm_binomial <- function(target, predictors, data, confidence) {
-    model <- glm(make.formula(target, predictors), data=data, family='binomial')
-    return(glm_analysis(model, confidence))
-}
-
-model_glm_negative_binomial <- function(target, predictors, data, confidence) {
-    model <- glm.nb(make.formula(target, predictors), data=data)
-    return(glm_analysis(model, confidence))
-}
-
-model_decision_tree <- function(target, predictors, data, confidence) {
-    model <- ranger(make.formula(target, predictors), data = data, classification = TRUE)
-    return(list(
-        fitted.values=predict(model, data=data)$predictions,
-    ))
-}
-
-model_kmeans <- function(target, predictors, data, confidence) {
-    model <- knn()
-}
-
-model_linear_discriminant <- function(target, predictors, data, confidence) {
-    model
-}
-
-models <- list(
-    ols_regression=model_glm_gaussian,
-    poisson_regression=model_glm_poisson,
-    negative_binomial_regression=model_glm_negative_binomial,
-    logistic_regression=model_glm_binomial,
-    decision_tree=model_decision_tree
+# add family hyperparameter for glm models
+familyList <- list(
+    poisson='poisson',
+    binomial='binomial',
+    logistic='binomial',
+    gamma='gamma',
+    exponential='gamma'
 )
 
 #  to check if the variable is binary
-is_binary <- function(v) {
+isBinary <- function(v) {
     x <- unique(v)
     length(x) - sum(is.na(x)) == 2L
 }
 
-
-#  to check if the variable is binary
-  is_binary <- function(v) {
-    x <- unique(v)
-    length(x) - sum(is.na(x)) == 2L
-  }
-
 solver.app <- function(env) {
+
     print(paste("--- solver.app ---", sep=""))
 
-    print(env)
-    production <- FALSE
-    result <- list()
-
-    if (production) {
-        sink(file = stderr(), type = "output")
-    }
+    if (production) sink(file = stderr(), type = "output")
 
     request <- Request$new(env)
     valid <- jsonlite::validate(request$POST()$solaJSON)
-    if (! valid) {
-        return(send(list(warning = "The request is not valid json. Check for special characters.")))
-    }
+    if (!valid) return(send(list(warning = "The request is not valid json. Check for special characters.")))
 
     everything <- jsonlite::fromJSON(request$POST()$solaJSON, flatten = TRUE)
-    print(paste("everything: ", everything, sep=""))
 
     dataurl <- everything$dataset_path
-    if (is.null(dataurl)) {
-        return(send(list(warning = "No data url.")))
-    }
-
-    model <- everything$model
-
-    task <- everything$prob$task
-    print(paste("task: ", task, sep=""))
-
-    if (is.null(task)) {
-        return(send(list(warning = "No defined task.")))
-    }
+    if (is.null(dataurl)) return(send(list(error = "No data url.")))
 
     predictors <- everything$prob$predictors
-    if (is.null(predictors)) {
-        return(send(list(warning = "No predictors.")))
-    }
+    if (is.null(predictors)) return(send(list(error = "No predictors.")))
 
     target <- everything$prob$target
-    if (is.null(target)) {
-        return(send(list(warning = "No target.")))
+    if (is.null(target)) return(send(list(error = "No target.")))
+
+    weights <- everything$weights
+
+    task <- everything$prob$task
+    if (is.null(task)) return(send(list(error = "No defined task.")))
+
+    hyperparameters <- ifelse(is.null(everything$hyperparameters), list(), everything$hyperparameters)
+    crossValidation <- ifelse(is.null(everything$crossValidation), 'cv', everything$crossValidation)
+
+    if (!(crossValidation %in% c('cv', 'timeslice')))
+        return(send(list(error = paste0('Invalid crossValidation "', crossValidation, '"'))))
+
+    method <- everything$method
+    if (is.null(method)) {
+        model <- everything$model
+
+        # set a default model
+        if (is.null(model) || model == 'modelUndefined') {
+            if (is.null(task) || task == 'regression') model <- 'linear'
+            if (task == 'classification') {
+                model <- if (isBinary(data[target])) 'logistic' else 'ranger'
+            }
+        }
+
+        # map user model to caret method
+        method <- if (model %in% names(methodList)) methodList[[model]] else model
+
+        # add glm family if using glm and hyperparameter if not set
+        if (method == 'glm' && is.null(hyperparameters$family)) hyperparameters$family <- familyList[[model]]
     }
 
-    hyperparameters <- everything$hyperparameters
 
-    separator <- if (endsWith(dataurl, 'csv'))',' else '\t'
-    print(paste("Pre Reading table, separator: ", separator, sep=""))
+    # load data
+    data <- tryCatch({
+        separator <- if (endsWith(dataurl, 'csv'))',' else '\t'
+        print(paste("Pre Reading table, separator: ", separator, sep=""))
 
-    mydata <- read.table(dataurl, sep = separator, header = TRUE, fileEncoding = 'UTF-8')
-    print(paste("POST Reading table", sep=""))
+        data <- read.table(dataurl, sep = separator, header = TRUE, fileEncoding = 'UTF-8')
+        print(paste("POST Reading table", sep=""))
 
-    tryCatch({
+        if (task == 'classification') data[[target]] <- factor(data[[target]]) # this causes caret to treat as classification
+        data[, c(target, predictors)] # subset columns
+    }, error=function(err) list(error = paste0("R solver failed loading data (", err, ")")))
+    if (names(data) == c("error")) return(send(data))
 
-        # data
-        data <- data[, c(target, predictors)]
 
-        # listwise deletion
-        d <- na.omit(d)
-        print(colnames(d))
+    # fit model
+    caretWrapper <- tryCatch(
+        # TODO: prevent thread block when encountering uninstalled package dependency
+        do.call(caret::train, c(list(
+            formula(paste(target, '~', paste(make.names(predictors), collapse='+'))),
+            data=data,
+            method=method,
+            trControl=trainControl(method=crossValidation, number=10),
+            na.action=na.omit, # listwise deletion of rows
+            weights=weights
+        ), hyperparameters)),
+    error=function(err) list(error=paste0("R solver failed fitting model (", err, ")")))
+    if (names(caretWrapper) == c("error")) return(send(caretWrapper))
 
-        # Perform binary check
-        isBinary<- is_binary(d[target])
-        print("is_binary : ")
-        print(isBinary)
-        if(task=="regression" || task=="OLS")
-        {
-        fit <- lm(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d)
-        model_type <- "OLS Regression Model"
-      }else if(task=="classification" || task=="LogisticRegression" || task=="RandomForest"){
-        if(isBinary || task=="LogisticRegression"){
-        fit <- glm(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d, family="binomial")
-        # We predict 
-        model_type <- "Logistic Regression Model"
-        }
-        else{
-          fit <- ranger(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d, classification=TRUE)
-          predict <- predict(fit, data=d)
-          fitted_values<- predict$predictions
-          model_type <- "Random Forest Model"
-        }
-      }
-        if(class(fit)== "ranger"){
-        stargazer_lm <- paste("")
-        jsonfit <- jsonlite::serializeJSON(fit)
-        fittedvalues <- fitted_values
-        actualvalues <- d[,target]
-        }
-        else
-        {
-        stargazer_lm <- paste(stargazer(fit, type="html"), collapse="")
-        jsonfit <- jsonlite::serializeJSON(fit)
-        
-        fittedvalues <- fit$fitted.values
-        actualvalues <- d[,target]
-        
-        }
 
-        if (class(fit)=="lm" || class(fit)=="glm" || class(fit)== "ranger") {
-            return(send(list(data=d, description=description, dependent_variable=target, predictors=predictors,  task=task, model_type = model_type, stargazer= stargazer_lm, 
-            predictor_values=list(fittedvalues=fittedvalues, actualvalues=actualvalues))))
-        } else {
-            return(send(list(warning = "No model estimated.")))
-        }
+    # analyze model
+    analysis <- tryCatch({
+        samples <- if (length(fitted(model)) < observationLimit) 1:length(fitted(model))
+        else sort(sample(1:length(fitted(model)), observationLimit))
 
-        # fit the model
-        solution <- models[[model]](target, predictors, data, hyperparameters)
+        analysis <- analyzeWrapper(caretWrapper, hyperparameters, samples)
 
-        # evaluate the model
-        solution$score <- metrics[[metric]](solution$fitted.values, solution$actual.values)
+        # supplemental information for linear models
+        if (method %in% c('lm', 'glm', 'glm.nb'))
+            analysis <- c(analysis, analyzeGLM(caretWrapper$finalModel, samples))
 
-        solution$task <- task
-        solution$model <- model
-        solution$metric <- metric
+        # percentual average cell counts across resamples
+        if (caretWrapper$modelType == 'Classification')
+            analysis$confusionMatrix <- as.data.frame(caret::confusionMatrix(temp)$table)
 
-        return(send(solution))
-    },
-    error = function(err) {
-        result <<- list(warning = paste("error: ", err))
-        print("result ---- ")
-        print(result)
-    })
+        # TODO: use metric from user argument
+        # TODO: evaluate all metrics for model
 
-    return(send(result))
+        analysis
+    }, error=function(err) list(error=paste0("R solver failed analyzing fitted model (", err, ")")))
+
+    send(analysis)
 }
