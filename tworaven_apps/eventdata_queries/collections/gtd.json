@@ -144,16 +144,12 @@
 	},
 	"Number of Perpetrators": {
 		"type": "continuous",
-		"buckets": 2,
-		"min": 0,
-		"max": 25000,
+		"buckets": 5,
 		"columns": ["nperps"]
 	},
 	"Number of Perpetrators Captured": {
 		"type": "continuous",
-		"buckets": 2,
-		"min": 0,
-		"max": 406,
+		"buckets": 5,
 		"columns": ["nperpcap"]
 	},
 	"Claim of Responsibility": {
@@ -193,44 +189,32 @@
 	},
 	"Total Number of Fatalities": {
 		"type": "continuous",
-		"buckets": 2,
-		"min": 0,
-		"max": 1570,
+		"buckets": 5,
 		"columns": ["nkill"]
 	},
 	"Number of US Fatalities": {
 		"type": "continuous",
-		"buckets": 2,
-		"min": 0,
-		"max": 1360,
+		"buckets": 5,
 		"columns": ["nkillus"]
 	},
 	"Number of Perpetrator Fatalities": {
 		"type": "continuous",
-		"buckets": 2,
-		"min": 0,
-		"max": 500,
+		"buckets": 5,
 		"columns": ["nkillter"]
 	},
 	"Total Number of Injured": {
 		"type": "continuous",
-		"buckets": 2,
-		"min": 0,
-		"max": 8191,
+		"buckets": 5,
 		"columns": ["nwound"]
 	},
 	"Number of US Injured": {
 		"type": "continuous",
-		"buckets": 2,
-		"min": 0,
-		"max": 751,
+		"buckets": 5,
 		"columns": ["nwound"]
 	},
 	"Number of Perpetrators Injured": {
 		"type": "continuous",
-		"buckets": 2,
-		"min": 0,
-		"max": 200,
+		"buckets": 5,
 		"columns": ["nwound"]
 	},
 	"Property Damage": {
@@ -240,9 +224,7 @@
 	},
 	"Value of Property Damage (in USD)": {
 		"type": "continuous",
-		"buckets": 2,
-		"min": 0,
-		"max": 2700000000,
+		"buckets": 5,
 		"columns": ["propvalue"]
 	},
 	"Hostages or Kidnapping Victims": {
@@ -252,30 +234,22 @@
 	},
 	"Total Number of Hostages/Kidnapping Victims": {
 		"type": "continuous",
-		"buckets": 2,
-		"min": 0,
-		"max": 17000,
+		"buckets": 5,
 		"columns": ["nhostkid"]
 	},
 	"Number of US Hostages/Kidnapping Victims": {
 		"type": "continuous",
-		"buckets": 2,
-		"min": 0,
-		"max": 86,
+		"buckets": 5,
 		"columns": ["nhostkidus"]
 	},
 	"Hours of Kidnapping/Hostage Incident": {
 		"type": "continuous",
-		"buckets": 2,
-		"min": 0,
-		"max": 999,
+		"buckets": 5,
 		"columns": ["nhours"]
 	},
 	"Days of Kidnapping/Hostage Incident": {
 		"type": "continuous",
-		"buckets": 2,
-		"min": 0,
-		"max": 2454,
+		"buckets": 5,
 		"columns": ["ndays"]
 	},
 	"Ransom Demanded": {
@@ -292,23 +266,17 @@
 	},
 	"Ransom Amount Demanded from US Sources": {
 		"type": "continuous",
-		"buckets": 2,
-		"min": 0,
-		"max": 132000000,
+		"buckets": 5,
 		"columns": ["ransomamtus"]
 	},
 	"Total Ransom Amount Paid": {
 		"type": "continuous",
-		"buckets": 2,
-		"min": 0,
-		"max": 275000000,
+		"buckets": 5,
 		"columns": ["ransompaid"]
 	},
 	"Ransom Amount Demanded Paid by US Sources": {
 		"type": "continuous",
-		"buckets": 2,
-		"min": 0,
-		"max": 48000,
+		"buckets": 5,
 		"columns": ["ransompaidus"]
 	},
 	"Kidnapping/Hostage Outcome": {
@@ -318,9 +286,7 @@
 	},
 	"Number of Hostages Released/Escaped/Rescued": {
 		"type": "continuous",
-		"buckets": 2,
-		"min": 0,
-		"max": 2769,
+		"buckets": 5,
 		"columns": ["nreleased"]
 	}
   },

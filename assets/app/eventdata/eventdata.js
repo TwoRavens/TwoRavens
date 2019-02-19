@@ -378,6 +378,47 @@ export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={})
 
     // the coordinates menu does not use data, so just return
     if (menu.type === 'menu' && menu.metadata.type === 'coordinates') return [];
+    
+    let promises = [];
+
+    // in case selectedDataset changes while Promises are resolving
+    let dataset = selectedDataset;
+
+    console.log("abstractPipeline");
+    console.log(abstractPipeline);
+    console.log("menu");
+    console.log(menu);
+
+    if (menu.type === 'menu' && menu.metadata.type === 'continuous') {
+        // calc the max from a summary stat?
+        console.log("creating summary stat");
+        //#~ let summary = {
+            //#~ type: 'menu',
+            //#~ metadata: {
+                //#~ type: 'summary',
+                //#~ variables
+            //#~ }
+        //#~ };
+        console.log(menu.metadata.columns[0]);
+        console.log("max query");
+        console.log('[{"$group": {"_id": 0, "max": {"$max": "$' + menu.metadata.columns[0] + '"}, "min": {"$min": "$' + menu.metadata.columns[0] + '"}}}]');
+        //  db.ged.aggregate([ { $group: {_id: 0, max: {$max: "$deaths_a"}} }])
+        await Promise.all(
+        [
+            getData({
+                host: genericMetadata[dataset]['host'],
+                collection_name: dataset,
+                method: 'aggregate',
+                query: '[{"$group": {"_id": 0, "max": {"$max": "$' + menu.metadata.columns[0] + '"}, "min": {"$min": "$' + menu.metadata.columns[0] + '"}}}]'
+            }).then(response => {
+                console.log(response);
+                menu.metadata.max = response[0]["max"];
+                menu.metadata.min = response[0]["min"];
+                console.log(menu.metadata);
+            })
+        ]).catch(onError);
+        console.log("finished summary stat");        
+    }
 
     // convert the pipeline to a mongo query. Note that passing menu extends the pipeline to collect menu data
     let compiled = JSON.stringify(queryMongo.buildPipeline([...abstractPipeline, menu])['pipeline']);
@@ -385,10 +426,11 @@ export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={})
     console.log("Menu Query:");
     console.log(compiled);
 
-    let promises = [];
+    console.log("query info");
+    console.log(genericMetadata);
+    console.log(dataset);
+    console.log("end query info");
 
-    // in case selectedDataset changes while Promises are resolving
-    let dataset = selectedDataset;
 
     if (IS_EVENTDATA_DOMAIN && menu.type !== 'aggregate') {
         // metadata request

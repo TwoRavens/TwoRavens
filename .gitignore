@@ -66,3 +66,6 @@ rook/preprocess/.Rapp.history
 # files related to eventdata preprocessing
 tworaven_apps/eventdata_queries/initialization/*.csv
 tworaven_apps/eventdata_queries/initialization/arcgis_filtered/
+
+# js files created from fab run (not sure about these)
+assets/build/*.js
