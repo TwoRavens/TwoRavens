@@ -382,42 +382,113 @@ function processGroup(group) {
     return group_query;
 }
 
+function dateSubQuery(name, type, date) {
+	let inner = {};
+	inner[type] = {"$date": date};
+	let ret = {};
+	ret[name] = inner;
+	return ret;
+}
+
 // Return a mongoDB query for a rule data structure
 function processRule(rule) {
+	console.log("processing a rule");
+	console.log(rule);
+	console.log(rule.children[0]);
+	console.log(rule.children[0].column);
     let rule_query = {};
 
     if (rule.subset === 'date') {
-        let rule_query_inner = {};
-        if (rule.structure === 'point') {
-            let rule_query_inner = {};
-            let column;
-            for (let child of rule.children) {
-                column = child.column;
-                if ('fromDate' in child) {
-                    child.fromDate = new Date(child.fromDate);
-                    rule_query_inner['$gte'] = {'$date': child.fromDate.toISOString().slice(0, 10)}
-                }
-                if ('toDate' in child) {
-                    child.toDate = new Date(child.toDate);
-                    rule_query_inner['$lte'] = {'$date': child.toDate.toISOString().slice(0, 10)}
-                }
-            }
-            rule_query.$or = [{[column]: rule_query_inner}, {[column]: {$exists: 0}}];
-        } else if (rule.structure === 'interval') {
-            let or = [];
-            for (let column of rule.children.map(child => child.column)) {
-                or.push({[column]: {$exists: 0}});
-                or.push({
-                    [column]: rule.children.reduce((out, child) => {
-                        let side = 'fromDate' in child ? 'fromDate' : 'toDate';
-                        out[side === 'fromDate' ? '$gte' : '$lte'] = {
-                            '$date': child[side].toISOString().slice(0, 10)
-                        }
-                    }, {})
-                });
-            }
-            rule_query = or;
-        }
+		let col1 = rule.children[0].column;
+		let col2 = rule.children[1].column;
+		let fromDate = rule.children[0].fromDate;
+		let toDate = rule.children[1].toDate;
+		let flatMFrom = new Date(fromDate.getFullYear(), fromDate.getMonth(), 1).toISOString().slice(0,10);	//first day
+		let flatMTo = new Date(toDate.getFullYear(), toDate.getMonth() + 1, 0).toISOString().slice(0,10);	//last day
+		let flatYFrom = new Date(fromDate.getFullYear(), 0, 1).toISOString().slice(0,10);	//Jan 1
+		let flatYTo = new Date(toDate.getFullYear(), 11, 31).toISOString().slice(0,10);		//Dec 31 (in JS, 0 = Jan)
+		fromDate = fromDate.toISOString().slice(0,10);
+		toDate = toDate.toISOString().slice(0,10);
+
+		console.log(col1);
+
+		//~ let rule_query_new = {"$or": [
+			//~ {"$and": [{col1: {"$gte": {"$date": fromDate}}}, {col1: {"$lte": {"$date": toDate}}}]},
+			//~ {"$and": [{col2: {"$gte": {"$date": fromDate}}}, {col2: {"$lte": {"$date": toDate}}}]},
+			//~ {"$and": [{"TwoRavens_date info": 1},
+				//~ {"$or": [
+					//~ {"$and": [{col1: {"$gte": {"$date": flatMFrom}}}, {col1: {"$lte": {"$date": flatMTo}}}]},
+					//~ {"$and": [{col2: {"$gte": {"$date": flatMFrom}}}, {col2: {"$lte": {"$date": flatMTo}}}]}
+				//~ ]}
+			//~ ]},
+			//~ {"$and": [{"TwoRavens_date info": 2},
+				//~ {"$or": [
+					//~ {"$and": [{col1: {"$gte": {"$date": flatYFrom}}}, {col1: {"$lte": {"$date": flatYTo}}}]},
+					//~ {"$and": [{col2: {"$gte": {"$date": flatYFrom}}}, {col2: {"$lte": {"$date": flatYTo}}}]}
+				//~ ]}
+			//~ ]},
+			//~ {col1: {$exists: 0}},
+			//~ {col2: {$exists: 0}}
+		//~ ]};
+		
+		//~ let rule_query_new = {"$or": [
+		rule_query = {"$or": [
+			{"$and": [dateSubQuery(col1, "$gte", fromDate), dateSubQuery(col1, "$lte", toDate)]},
+			{"$and": [dateSubQuery(col2, "$gte", fromDate), dateSubQuery(col2, "$lte", toDate)]},
+			{"$and": [{"TwoRavens_date info": 1},
+				{"$or": [
+					{"$and": [dateSubQuery(col1, "$gte", flatMFrom), dateSubQuery(col1, "$lte", flatMTo)]},
+					{"$and": [dateSubQuery(col2, "$gte", flatMFrom), dateSubQuery(col2, "$lte", flatMTo)]}
+				]}
+			]},
+			{"$and": [{"TwoRavens_date info": 2},
+				{"$or": [
+					{"$and": [dateSubQuery(col1, "$gte", flatYFrom), dateSubQuery(col1, "$lte", flatYTo)]},
+					{"$and": [dateSubQuery(col2, "$gte", flatYFrom), dateSubQuery(col2, "$lte", flatYTo)]}
+				]}
+			]},
+			{[col1]: {$exists: 0}},
+			{[col2]: {$exists: 0}}
+		]};
+		console.log(rule_query);
+		
+        //~ let rule_query_inner = {};
+        //~ if (rule.structure === 'point') {
+			//~ console.log("date point");
+            //~ let rule_query_inner = {};
+            //~ let column;
+            //~ for (let child of rule.children) {
+                //~ column = child.column;
+                //~ if ('fromDate' in child) {
+                    //~ child.fromDate = new Date(child.fromDate);
+                    //~ //rule_query_inner['$gte'] = {'$date': child.fromDate.toISOString().slice(0, 10)}
+                    //~ rule_query_inner['$gte'] = {'$date': child.fromDate.toISOString().slice(0, 10)}
+                //~ }
+                //~ if ('toDate' in child) {
+                    //~ child.toDate = new Date(child.toDate);
+                    //~ rule_query_inner['$lte'] = {'$date': child.toDate.toISOString().slice(0, 10)}
+                //~ }
+            //~ }
+            //~ rule_query.$or = [{[column]: rule_query_inner}, {[column]: {$exists: 0}}];
+        //~ } else if (rule.structure === 'interval') {
+			//~ console.log("date interval");
+            //~ let or = [];
+            //~ for (let column of rule.children.map(child => child.column)) {
+                //~ or.push({[column]: {$exists: 0}});	//include data that don't have a date field
+                //~ or.push({
+                    //~ [column]: rule.children.reduce((out, child) => {
+                        //~ let side = 'fromDate' in child ? 'fromDate' : 'toDate';
+                        //~ out[side === 'fromDate' ? '$gte' : '$lte'] = {
+                            //~ '$date': child[side].toISOString().slice(0, 10)
+                        //~ }
+                    //~ }, {})
+                //~ });
+            //~ }
+            //~ rule_query = or;
+        //~ }
+        //~ console.log("resulting date query");
+        //~ console.log(rule_query);
+        //~ console.log(rule_query_new);
     }
 
     if (rule.subset === 'automated') {
