@@ -7,8 +7,9 @@ import pandas as pd
 from tworaven_apps.data_prep_utils.new_dataset_util import NewDatasetUtil
 from tworaven_apps.user_workspaces.models import UserWorkspace
 from tworaven_apps.configurations.utils import get_latest_d3m_config
-from tworaven_apps.utils.basic_response import (ok_resp,
-                                                err_resp)
+from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
+from tworaven_apps.utils.json_helper import (json_dumps, json_loads)
+from tworaven_apps.utils.dict_helper import (clear_dict,)
 from tworaven_common_apps.datamart_endpoints.static_vals import \
     (cached_response,
      cached_response_baseball)
@@ -44,36 +45,29 @@ class DatamartJobUtilNYU(object):
         return ok_resp(response['data'])
 
     @staticmethod
-    def search_query_helper(query):
-        """Check for any obvious issues in the query"""
-        if not query:
-            return err_resp('At least one search parameter must be provided')
+    def datamart_search(query_str, data_path=None, limit=False):
+        """Search the NYU datamart"""
+        query_info_json = json_loads(query_str)
+        if not query_info_json.success:
+            user_msg = ('There is something wrong with the search parameters.'
+                        ' (expected a JSON string)')
+            return err_resp(user_msg)
 
-        # Eliminate any empty values
-        #
-        for key in query.keys():
-            val = query.get(key)
-            if not val:
-                del query[key]
+        query_dict = query_info_json.result_obj
 
-        if not query:
-            return err_resp('At least one search parameter must be provided')
+        clear_dict(query_dict)
+        if not query_dict:
+            no_params_msg = ('There are no search parameters.'
+                             ' You must have at least 1.')
+            return err_resp(no_params_msg)
 
-        return ok_resp(query)
+        formatted_json_info = json_dumps(query_dict)
+        if not formatted_json_info.success:
+            return err_resp('Failed to convert query to JSON. %s' % \
+                            formatted_json_info.err_msg)
 
-
-
-
-    @staticmethod
-    def datamart_search(query, data_path=None, limit=False):
-
-        query_info = DatamartJobUtilNYU.search_query_formatter(query)
-        if not query_info.success:
-            return err_resp(query_info.err_msg )
-
-        formatted_query = query_info.result_obj
-
-        payload = {'query': ('query.json', formatted_query)}
+        print(f'formatted query: {formatted_json_info.result_obj}')
+        payload = {'query': ('query.json', formatted_json_info.result_obj)}
 
         if data_path and os.path.exists(data_path):
             payload['file'] = open(data_path, 'r')
@@ -180,10 +174,3 @@ class DatamartJobUtilNYU(object):
             os.path.join(os.path.basename(metadata_path), *resource['resPath'].split('/'))
             for resource in resources
         ]
-
-
-def clear_dict(query):
-    keys_to_go = [key for key in query.keys()
-                  if not query[key]]
-    for key in keys_to_go:
-        del query[key]
