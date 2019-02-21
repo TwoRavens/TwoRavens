@@ -115,12 +115,14 @@ def api_search(request):
     success, json_req_obj = get_request_body_as_json(request)
 
     if not success:
-        return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
+        return JsonResponse(get_json_error(json_req_obj))
 
     # check if data is valid
     form = DatamartSearchForm(json_req_obj)
     if not form.is_valid():
-        return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
+        json_err = get_json_error('Invalid input.',
+                                  errors=form.errors.as_json())
+        return JsonResponse(json_err)
 
     DatamartJobUtil = {
         'ISI': DatamartJobUtilISI,
@@ -129,11 +131,10 @@ def api_search(request):
 
     data_path = json_req_obj['data_path'] if 'data_path' in json_req_obj else None
     success, results_obj_err = DatamartJobUtil.datamart_search(json_req_obj['query'], data_path)
+    if not success:
+        return JsonResponse(get_json_error(results_obj_err))
 
-    return JsonResponse({
-        "success": success,
-        "data": results_obj_err
-    })
+    return JsonResponse(get_json_success('it worked', data=results_obj_err))
 
 
 @csrf_exempt
@@ -182,12 +183,14 @@ def api_materialize(request):
     success, json_req_obj = get_request_body_as_json(request)
 
     if not success:
-        return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
+        return JsonResponse(get_json_error(json_req_obj))
 
     # check if data is valid
     form = DatamartMaterializeForm(json_req_obj)
     if not form.is_valid():
-        return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
+        return JsonResponse(\
+                get_json_error("invalid input",
+                               errors=form.errors.as_json()))
 
     DatamartJobUtil = {
         'ISI': DatamartJobUtilISI,
@@ -197,7 +200,7 @@ def api_materialize(request):
     success, results_obj_err = DatamartJobUtil.datamart_materialize(
         json.loads(json_req_obj['search_result']))
 
-    return JsonResponse({
-        "success": success,
-        "data": results_obj_err
-    })
+    if not success:
+        return JsonResponse(get_json_error(results_obj_err))
+
+    return JsonResponse(get_json_success('it worked', data=results_obj_err))

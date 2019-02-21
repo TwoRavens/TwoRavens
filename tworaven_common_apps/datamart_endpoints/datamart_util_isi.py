@@ -112,7 +112,7 @@ class DatamartJobUtilISI(object):
         if limit:
             params['max_return_docs'] = limit
 
-        print('start seach')
+        print('start search')
         try:
             response = requests.post(\
                     get_isi_url() + '/new/search_data',
@@ -129,23 +129,46 @@ class DatamartJobUtilISI(object):
             return err_resp(response['reason'])
 
         response = response.json()
-        print('json()!')
 
         if response['code'] != "0000":
             return err_resp(response['message'])
 
+        #num_datasets = len(response['data'])
+        #print('num_datasets', num_datasets)
+        #print('iterating through....')
+
         # these fields are unnecessarily long
-        num_datasets = len(response['data'])
-        print('num_datasets', num_datasets)
-        print('iterating through....')
-        cnt = 0
+        dataset_cnt = 0
+        processed_datasets = []
         for dataset in response['data']:
-            cnt += 1
-            for variable in dataset['metadata']['variables']:
+            try:
+                variable_data = dataset['metadata']['variables']
+            except KeyError:
+                continue    # skip to next record
+            dataset_cnt += 1
+
+            for variable in variable_data:
                 if 'semantic_type' in variable:
                     del variable['semantic_type']
-        print('iterating done....', cnt)
-        return ok_resp(response['data'][:limit])
+            processed_datasets.append(dataset)
+
+        print('dataset_cnt', dataset_cnt)
+        # print('processed_datasets', processed_datasets)
+
+        if not processed_datasets:
+            return err_resp('No datasets found.')
+
+        # Normally, the data is sorted by score in descending order,
+        # but just in case...
+        #
+        sorted_data = sorted(processed_datasets,    #response['data'],
+                             key=lambda k: k['score'],
+                             reverse=True)
+
+        #print([ds['score'] for ds in sorted_data])
+
+        return ok_resp(sorted_data[:limit])
+
 
     @staticmethod
     def datamart_materialize(search_result):
