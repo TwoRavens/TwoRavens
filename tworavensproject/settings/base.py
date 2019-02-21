@@ -82,7 +82,7 @@ INSTALLED_APPS = [
     'tworaven_apps.api_docs',
     'tworaven_apps.call_captures', # capture data sent from UI out to rook/TA2
     'tworaven_apps.eventdata_queries', # eventdata API services
-    'tworaven_common_apps.datamart_endpoints',
+    'tworaven_common_apps.datamart_endpoints', # Datamart connections
 
     # webpack!
     'webpack_loader',
@@ -363,3 +363,10 @@ EVENTDATA_PRODUCTION_SERVER_ADDRESS = os.environ.get('EVENTDATA_PRODUCTION_SERVE
 EVENTDATA_DEFAULT_API_KEY = 'api_key=CD75737EF4CAC292EE17B85AAE4B6'
 EVENTDATA_SERVER_API_KEY = os.environ.get('EVENTDATA_SERVER_API_KEY', EVENTDATA_DEFAULT_API_KEY)
 EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
+
+
+# -------------------------
+# Datamart related
+# -------------------------
+DATAMART_SHORT_TIMEOUT = 10 # seconds
+DATAMART_LONG_TIMEOUT = 30 # seconds

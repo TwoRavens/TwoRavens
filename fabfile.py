@@ -332,6 +332,20 @@ def check_config():
         print('Configs exist in the db: %d' % config_cnt)
 
 @task
+def check_datamarts():
+    """If there aren't any db configurations, then load the fixtures"""
+    from tworaven_common_apps.datamart_endpoints.models import DatamartInfo
+
+    config_cnt = DatamartInfo.objects.count()
+    if config_cnt == 0:
+        local(('python manage.py loaddata'
+               ' tworaven_common_apps/datamart_endpoints/'
+               'fixtures/initial_datamarts.json'))
+    else:
+        print('Configs exist in the db: %d' % config_cnt)
+
+
+@task
 def run_ta2_test_server():
     """Run an external server on 45042 to return gRPC TA2TA3 api calls"""
 
@@ -416,6 +430,7 @@ def run(**kwargs):
     clear_js()  # clear any dev css/js files
     init_db()
     check_config()  # make sure the db has something
+    check_datamarts()    
     #load_d3m_config_from_env() # default the D3M setting to the env variable
     #ta3_listener_add() # add MessageListener object
 

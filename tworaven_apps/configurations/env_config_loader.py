@@ -331,7 +331,8 @@ class EnvConfigLoader(BasicErrCheck):
 
         info.D3MTIMEOUT = '%d' % (60*10)
         info.D3MCPU = '1'
-        info.D3MRAM = '1Gi'
+        info.D3MRAM = 1000 * 1024 * 1024 # '1Gi'
+        #info.D3MRAM = '1Gi'
 
         loader = EnvConfigLoader(info, **kwargs)
         if loader.has_error():

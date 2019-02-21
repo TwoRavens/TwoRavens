@@ -36,7 +36,7 @@ def ta2_hello():
         return err_resp(err_msg)
 
     content = MessageToJson(req, including_default_value_fields=True)
-    print('content as JSON:\n', content)
+    # print('content as JSON:\n', content)
 
     # In test mode, check if the incoming JSON is legit (in line above)
     # -- then return canned response
