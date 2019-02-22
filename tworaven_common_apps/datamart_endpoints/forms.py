@@ -1,8 +1,9 @@
 from django import forms
 import json
+from tworaven_apps.utils.json_helper import json_loads
 
 #from tworaven_common_apps.datamart_endpoints.static_vals import DATAMART_SOURCES
-from tworaven_common_apps.datamart_endpoints.info_util import \
+from tworaven_common_apps.datamart_endpoints.datamart_info_util import \
     (is_datamart_name,)
 
 
@@ -87,11 +88,18 @@ class DatamartAugmentForm(forms.Form):
         #    raise ValueError(f"The 'source' argument {source} must be a member of {DATAMART_SOURCES}")
         return source
 
-    def clean_data_path(self):
-        return self.cleaned_data.get('data_path')
+    #def clean_data_path(self):
+    #    return self.cleaned_data.get('data_path')
 
     def clean_search_result(self):
-        return json.loads(self.cleaned_data.get('search_result'))
+        json_info = json_loads(self.cleaned_data.get('search_result'))
+        if not json_info.success:
+            raise ValueError(("The 'search_result' is not valid JSON."
+                              " %s") % json_info.err_msg)
+
+        return json_info.result_obj
+
+        #return json.loads(self.cleaned_data.get('search_result'))
 
     def clean_left_columns(self):
         return json.loads(self.cleaned_data.get('left_columns') or '{}')
@@ -114,8 +122,22 @@ class DatamartMaterializeForm(forms.Form):
             raise ValueError((f"The 'source' argument '{source}'"
                               f" is not an active Datamart in the database"))
         #if source not in DATAMART_SOURCES:
-        #    raise ValueError(f"The 'source' argument {source} must be a member of {DATAMART_SOURCES}")
+        #    raise ValueError(f"The 'source' argument {source}
+        # must be a member of {DATAMART_SOURCES}")
         return source
 
     def clean_search_result(self):
-        return json.loads(self.cleaned_data.get('search_result'))
+        """Convert search_result to a python dict"""
+        json_info = json_loads(self.cleaned_data.get('search_result'))
+        if not json_info.success:
+            raise ValueError(("The 'search_result' is not valid JSON."
+                              " %s") % json_info.err_msg)
+
+        return json_info.result_obj
+
+        # is not an active Datamart in the database"))
+        #    user_msg = "'search_result' is not valid JSON. %s" % search_result_or_err
+        #    return JsonResponse(get_json_error(user_msg))
+        #json
+
+        #return json.loads(self.cleaned_data.get('search_result'))

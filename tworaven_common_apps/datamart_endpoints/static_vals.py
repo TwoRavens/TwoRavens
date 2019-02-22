@@ -3,7 +3,7 @@ from django.db import models
 DATAMART_ISI_NAME = 'ISI'
 DATAMART_NYU_NAME = 'NYU'
 
-#DATAMART_SOURCES = (u'ISI', u'NYU')
+DATAMART_NAMES = (DATAMART_ISI_NAME, DATAMART_NYU_NAME)
 
 # DATAMART_ISI_URL = 'https://localhost:9001'
 xDATAMART_ISI_URL = 'https://dsbox02.isi.edu:9000'
