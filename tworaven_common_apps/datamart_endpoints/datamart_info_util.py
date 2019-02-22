@@ -1,4 +1,4 @@
-"""Convenience functions for DatamartInfo"""
+"""Convenience functions for accessing DatamartInfo objects in database"""
 import logging
 from tworaven_common_apps.datamart_endpoints.models import DatamartInfo
 from tworaven_common_apps.datamart_endpoints.static_vals import \

@@ -13,7 +13,7 @@ from tworaven_apps.utils.dict_helper import (clear_dict,)
 from tworaven_common_apps.datamart_endpoints.static_vals import \
     (cached_response,
      cached_response_baseball)
-from tworaven_common_apps.datamart_endpoints.info_util import \
+from tworaven_common_apps.datamart_endpoints.datamart_info_util import \
     (get_isi_url,
      get_nyu_url)
 
@@ -96,23 +96,25 @@ class DatamartJobUtilNYU(object):
         return ok_resp(json_results)
 
     @staticmethod
-    def datamart_materialize(search_result):
-
-        d3m_config = get_latest_d3m_config()
-        if not d3m_config:
-            user_msg = 'datamart_materialize failed. no d3m config'
-            LOGGER.error(user_msg)
-            return err_resp(user_msg)
+    def datamart_materialize(user_workspace, search_result):
+        """Materialize the dataset!"""
+        if not isinstance(user_workspace, UserWorkspace):
+            return err_resp('user_workspace must be a UserWorkspace')
 
         materialize_folderpath = os.path.join(
-            d3m_config.temp_storage_root,
-            'materialize', str(search_result['id']))
+                                user_workspace.d3m_config.additional_inputs,
+                                'materialize',
+                                str(search_result['id']))
 
         if os.path.exists(materialize_folderpath):
             response = None
         else:
-            response = requests.get(get_nyu_url() + '/download/' + str(search_result['id']),
-                                    params={'format': 'd3m'}, stream=True)
+            download_url = f"{get_nyu_url()}/download/{search_result['id']}"
+            # print('download_url', download_url)
+            # response = requests.get(get_nyu_url() + '/download/' + str(search_result['id']),
+            response = requests.get(download_url,
+                                    params={'format': 'd3m'},
+                                    stream=True)
 
             if response.status_code != 200:
                 return err_resp('NYU Datamart internal server error')

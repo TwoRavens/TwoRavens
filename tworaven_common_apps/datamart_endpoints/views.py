@@ -1,4 +1,5 @@
 from django.views.decorators.csrf import csrf_exempt
+from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
      get_json_error,
@@ -6,12 +7,15 @@ from tworaven_apps.utils.view_helper import \
      get_common_view_info)
 from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 
+from tworaven_common_apps.datamart_endpoints.static_vals import \
+    (DATAMART_ISI_NAME, DATAMART_NYU_NAME)
 from tworaven_common_apps.datamart_endpoints.datamart_util_isi import \
     (DatamartJobUtilISI,)
 
-from tworaven_common_apps.datamart_endpoints.datamart_job_util import \
+from tworaven_common_apps.datamart_endpoints.datamart_util_nyu import \
     (DatamartJobUtilNYU,)
-
+from tworaven_common_apps.datamart_endpoints.datamart_util import \
+    (get_datamart_job_util,)
 from tworaven_common_apps.datamart_endpoints.forms import (DatamartSearchForm,
                                                            DatamartAugmentForm,
                                                            DatamartMaterializeForm,
@@ -29,48 +33,58 @@ def api_scrape(request):
     success, json_req_obj = get_request_body_as_json(request)
 
     if not success:
-        return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
+        return JsonResponse(get_json_error(json_req_obj))
 
     # check if data is valid
     form = DatamartScrapeForm(json_req_obj)
     if not form.is_valid():
-        return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
+        return JsonResponse(\
+                    get_json_error("invalid input",
+                                   errors=form.errors.as_json()))
 
     success, results_obj_err = DatamartJobUtilISI.datamart_scrape(
         json_req_obj['url'])
 
-    return JsonResponse({
-        "success": success,
-        "data": results_obj_err
-    })
+    if not success:
+        json_resp = get_json_error(results_obj_err)
+    else:
+        json_resp = get_json_success('it worked', data=results_obj_err)
+
+    return JsonResponse(json_resp)
 
 
 @csrf_exempt
 def api_get_metadata(request):
-    success, json_req_obj = get_request_body_as_json(request)
+    """Get metadata using the ISI Datamart"""
+    req_info = get_request_body_as_json(request)
+    if not req_info.success:
+        return JsonResponse(get_json_error(req_info.err_msg))
 
-    if not success:
-        return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
+    json_req_obj = req_info.result_obj
 
         # check if data is valid
     form = DatamartCustomForm(json_req_obj)
     if not form.is_valid():
-        return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
+        return JsonResponse(\
+                get_json_success('invalid input',
+                                 errors=form.errors.as_json()))
 
-    success, results_obj_err = DatamartJobUtilISI.datamart_get_metadata(json_req_obj['custom'])
+    metadata_info = DatamartJobUtilISI.datamart_get_metadata(json_req_obj['custom'])
 
-    return JsonResponse({
-        "success": success,
-        "data": results_obj_err
-    })
+    if not metadata_info.success:
+        json_resp = get_json_error(metadata_info.err_msg)
+    else:
+        json_resp = get_json_success('it worked', data=metadata_info.result_obj)
+
+    return JsonResponse(json_resp)
 
 
 @csrf_exempt
 def api_upload_metadata(request):
+    """NOT TESTED - Use get metadata endpoint from ISI"""
     success, json_req_obj = get_request_body_as_json(request)
-
     if not success:
-        return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
+        return JsonResponse(get_json_error(json_req_obj))
 
     #     # check if data is valid
     # form = DatamartUploadForm(json_req_obj)
@@ -79,10 +93,13 @@ def api_upload_metadata(request):
 
     success, results_obj_err = DatamartJobUtilISI.datamart_get_metadata(json_req_obj['data'])
 
-    return JsonResponse({
-        "success": success,
-        "data": results_obj_err
-    })
+    if not success:
+        json_resp = get_json_error(results_obj_err)
+    else:
+        json_resp = get_json_success('it worked', data=results_obj_err)
+
+    return JsonResponse(json_resp)
+
 
 
 @csrf_exempt
@@ -97,10 +114,13 @@ def api_index(request):
     if not form.is_valid():
         return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
 
-    DatamartJobUtil = {
-        'ISI': DatamartJobUtilISI,
-        'NYU': DatamartJobUtilNYU
-    }[json_req_obj['source']]
+    # Retrieve the appropriate DatamartJobUtil
+    #
+    job_util_info = get_datamart_job_util(form.cleaned_data['source'])
+    if not job_util_info.success:
+        return JsonResponse(get_json_error(job_util_info.err_msg))
+    else:
+        DatamartJobUtil = job_util_info.result_obj # e.g. DatamartJobUtilISI, DatamartJobUtilNYU
 
     success, results_obj_err = DatamartJobUtil.datamart_upload(json_req_obj['index'])
 
@@ -124,17 +144,24 @@ def api_search(request):
                                   errors=form.errors.as_json())
         return JsonResponse(json_err)
 
-    DatamartJobUtil = {
-        'ISI': DatamartJobUtilISI,
-        'NYU': DatamartJobUtilNYU
-    }[json_req_obj['source']]
+    # Retrieve the appropriate DatamartJobUtil
+    #
+    job_util_info = get_datamart_job_util(form.cleaned_data['source'])
+    if not job_util_info.success:
+        return JsonResponse(get_json_error(job_util_info.err_msg))
+    else:
+        DatamartJobUtil = job_util_info.result_obj # e.g. DatamartJobUtilISI, DatamartJobUtilNYU
 
     data_path = json_req_obj['data_path'] if 'data_path' in json_req_obj else None
-    success, results_obj_err = DatamartJobUtil.datamart_search(json_req_obj['query'], data_path)
+
+    success, results_obj_err = DatamartJobUtil.datamart_search(\
+                                    json_req_obj['query'],
+                                    data_path)
     if not success:
         return JsonResponse(get_json_error(results_obj_err))
 
-    return JsonResponse(get_json_success('it worked', data=results_obj_err))
+    return JsonResponse(get_json_success('it worked',
+                                         data=results_obj_err))
 
 
 @csrf_exempt
@@ -158,19 +185,19 @@ def api_augment(request):
 
     user_workspace = ws_info.result_obj
 
-    if json_req_obj['source'] == 'ISI':
+    if json_req_obj['source'] == DATAMART_ISI_NAME:
         success, results_obj_err = DatamartJobUtilISI.datamart_augment(
             user_workspace,
             json_req_obj['data_path'],
-            json.loads(json_req_obj['search_result']),
+            form.cleaned_data['search_result'],
             json_req_obj['left_columns'],
             json_req_obj['right_columns'],
             json_req_obj['exact_match'])
 
-    if json_req_obj['source'] == 'NYU':
+    if json_req_obj['source'] == DATAMART_NYU_NAME:
         success, results_obj_err = DatamartJobUtilNYU.datamart_augment(
             json_req_obj['data_path'],
-            json_req_obj['search_result'])
+            form.cleaned_data['search_result'],)
 
     return JsonResponse({
         "success": success,
@@ -180,10 +207,20 @@ def api_augment(request):
 
 @csrf_exempt
 def api_materialize(request):
+    """Run materialize using either ISI or NYU"""
     success, json_req_obj = get_request_body_as_json(request)
 
     if not success:
         return JsonResponse(get_json_error(json_req_obj))
+
+    # Get the latest UserWorkspace
+    #
+    ws_info = get_latest_user_workspace(request)
+    if not ws_info.success:
+        user_msg = 'User workspace not found: %s' % ws_info.err_msg
+        return JsonResponse(get_json_error(user_msg))
+
+    user_workspace = ws_info.result_obj
 
     # check if data is valid
     form = DatamartMaterializeForm(json_req_obj)
@@ -192,15 +229,20 @@ def api_materialize(request):
                 get_json_error("invalid input",
                                errors=form.errors.as_json()))
 
-    DatamartJobUtil = {
-        'ISI': DatamartJobUtilISI,
-        'NYU': DatamartJobUtilNYU
-    }[json_req_obj['source']]
+    job_util_info = get_datamart_job_util(form.cleaned_data['source'])
+    if not job_util_info.success:
+        return JsonResponse(get_json_error(job_util_info.err_msg))
 
-    success, results_obj_err = DatamartJobUtil.datamart_materialize(
-        json.loads(json_req_obj['search_result']))
+    DatamartJobUtil = job_util_info.result_obj # e.g. DatamartJobUtilISI, DatamartJobUtilNYU
 
-    if not success:
-        return JsonResponse(get_json_error(results_obj_err))
+    # Run datamart_materialize
+    #
+    materialize_result = DatamartJobUtil.datamart_materialize(\
+                                user_workspace,
+                                form.cleaned_data['search_result'])
+    if not materialize_result.success:
+        return JsonResponse(get_json_error(materialize_result.err_msg))
 
-    return JsonResponse(get_json_success('it worked', data=results_obj_err))
+    return JsonResponse(\
+            get_json_success('it worked',
+                             data=materialize_result.result_obj))
