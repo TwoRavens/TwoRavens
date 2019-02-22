@@ -8,6 +8,7 @@ from tworaven_apps.data_prep_utils.new_dataset_util import NewDatasetUtil
 from tworaven_apps.user_workspaces.models import UserWorkspace
 from tworaven_apps.configurations.utils import get_latest_d3m_config
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
+from tworaven_apps.utils.random_info import get_timestamp_string_readable
 from tworaven_apps.utils.json_helper import (json_dumps, json_loads)
 from tworaven_apps.utils.dict_helper import (clear_dict,)
 from tworaven_common_apps.datamart_endpoints.static_vals import \
@@ -91,7 +92,8 @@ class DatamartJobUtilNYU(object):
         print('num results: ', len(json_results))
 
         if not json_results:
-            return err_resp('No resuls found.')
+            return err_resp('No datasets found. (%s)' % \
+                            (get_timestamp_string_readable(time_only=True),))
 
         return ok_resp(json_results)
 
@@ -101,7 +103,7 @@ class DatamartJobUtilNYU(object):
         if not isinstance(user_workspace, UserWorkspace):
             return err_resp('user_workspace must be a UserWorkspace')
 
-        materialize_folderpath = os.path.join(
+        materialize_folderpath = os.path.join(\
                                 user_workspace.d3m_config.additional_inputs,
                                 'materialize',
                                 str(search_result['id']))
@@ -131,15 +133,25 @@ class DatamartJobUtilNYU(object):
             return err_resp(user_msg)
 
         print(search_result)
-        response = requests.post(get_nyu_url() + '/augment', files={
-            'data': open(dataset_path, 'rb'),
-            'task': ('task.json', json.dumps(search_result), 'application/json')
-        }, stream=True)
+        augment_url = f"{ get_nyu_url() }/augment"
+
+        files_info = dict(data=open(dataset_path, 'rb'),
+                          task=('task.json',
+                                json.dumps(search_result),
+                                'application/json'))
+
+        response = requests.post(augment_url,
+                                 files=files_info,
+                                 stream=True)
 
         if response.status_code != 200:
             return err_resp('NYU Datamart internal server error')
 
-        augment_folderpath = os.path.join(d3m_config.temp_storage_root, 'augment', str(search_result['id']))
+        augment_folderpath = os.path.join(\
+                                    d3m_config.temp_storage_root,
+                                    'augment',
+                                    str(search_result['id']))
+
         return ok_resp(DatamartJobUtilNYU.save(augment_folderpath, response))
 
     @staticmethod

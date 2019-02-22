@@ -7,6 +7,7 @@ from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 from tworaven_apps.data_prep_utils.new_dataset_util import NewDatasetUtil
 from tworaven_apps.user_workspaces.models import UserWorkspace
 from tworaven_apps.configurations.utils import get_latest_d3m_config
+from tworaven_apps.utils.random_info import get_timestamp_string_readable
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
 from tworaven_apps.utils.dict_helper import (clear_dict,)
@@ -179,7 +180,8 @@ class DatamartJobUtilISI(object):
         #print('processed_datasets', processed_datasets)
 
         if not processed_datasets:
-            return err_resp('No datasets found.')
+            return err_resp('No datasets found. (%s)' % \
+                            (get_timestamp_string_readable(),))
 
         # Normally, the data is sorted by score in descending order,
         # but just in case...
