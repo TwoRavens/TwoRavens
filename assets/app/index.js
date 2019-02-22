@@ -50,7 +50,7 @@ import ConfusionMatrix from "./views/ConfusionMatrix"
 
 import vegaEmbed from "vega-embed";
 import PreprocessInfo from "./PreprocessInfo";
-
+import ForceDiagram from "./views/ForceDiagram";
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
 export let link = url => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
@@ -1070,43 +1070,115 @@ class Body {
                                 }))
                         )],
 
-                //     m(ForceDiagram, Object.assign({}, app.forceDiagramEvents, {
-                //         selectedNode: undefined,
-                //
-                //         groups: [
-                //             {
-                //                 name: "Predictors",
-                //                 color: gr1Color,
-                //                 nodes: []
-                //             },
-                //             {
-                //                 name: "Targets",
-                //                 color: gr2Color,
-                //                 nodes: []
-                //             }
-                //         ],
-                //
-                //         nodes: app.nodes,
-                //
-                //         groupLinks: [
-                //             {
-                //                 source: 'Predictors',
-                //                 target: 'Targets',
-                //                 left: false,
-                //                 right: true
-                //             }
-                //         ],
-                //         nodeLinks: [
-                //             // {
-                //             //     source: '',
-                //             //     target: ,
-                //             //     left: false,
-                //             //     right: true
-                //             // }
-                //         ],
-                //
-                //         forcetoggle: app.forcetoggle
-                //     }))
+                    m(ForceDiagram, Object.assign({}, app.forceDiagramEvents, {
+                        labels: [
+                            {
+                                id: 'Group',
+                                name: 'Group',
+                                attrs: {
+                                    style: {fill: gr1Color, 'fill-opacity': 0},
+                                    onclick: d => {
+                                        setColors(d, gr1Color);
+                                        setSelectedPebble(d.name);
+                                        m.redraw();
+                                    }
+                                },
+                                children: [
+                                    {
+                                        id: 'Group1',
+                                        name: '',
+                                        attrs: {
+                                            style: {fill: gr1Color, 'fill-opacity': 0},
+                                            onclick: d => {
+                                                setColors(d, gr1Color);
+                                                setSelectedPebble(d.name);
+                                                m.redraw();
+                                            }
+                                        }
+                                    },
+                                    {
+                                        id: 'Group2',
+                                        name: '',
+                                        attrs: {
+                                            style: {fill: gr2Color, 'fill-opacity': 0},
+                                            onclick: d => {
+                                                setColors(d, gr2Color);
+                                                setSelectedPebble(d.name);
+                                                m.redraw();
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                id: 'Dep',
+                                name: 'Dep Var',
+                                attrs: {
+                                    style: {fill: dvColor, 'fill-opacity': 0},
+                                    onclick: d => {
+                                        setColors(d, gr2Color);
+                                        setSelectedPebble(d.name);
+                                        m.redraw();
+                                    }
+                                }
+                            },
+                            {
+                                id: 'Nom',
+                                name: 'Nominal',
+                                attrs: {
+                                    style: {fill: nomColor, 'fill-opacity': 0},
+                                    onclick: d => {
+                                        setColors(d, nomColor);
+                                        setSelectedPebble(d.name);
+                                        m.redraw();
+                                    }
+                                }
+                            }
+                        ],
+
+                        attrs: {
+                            onmousedown: Function,
+                            onmouseup: Function,
+                            style: {background: 'white'}
+                        },
+
+
+                        selectedNode: undefined,
+
+                        groups: [
+                            {
+                                name: "Predictors",
+                                color: gr1Color,
+                                nodes: []
+                            },
+                            {
+                                name: "Targets",
+                                color: gr2Color,
+                                nodes: []
+                            }
+                        ],
+
+                        nodes: app.nodes,
+
+                        groupLinks: [
+                            {
+                                source: 'Predictors',
+                                target: 'Targets',
+                                left: false,
+                                right: true
+                            }
+                        ],
+                        nodeLinks: [
+                            // {
+                            //     source: '',
+                            //     target: '',
+                            //     left: false,
+                            //     right: true
+                            // }
+                        ],
+
+                        forcetoggle: app.forceToggle
+                    }))
                 ),
                     // m('svg#whitespace')),
                 app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}}, [

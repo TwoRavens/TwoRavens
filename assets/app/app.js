@@ -449,7 +449,7 @@ let ind2 = [(RADIUS+30) * Math.cos(1.1), -1*(RADIUS+30) * Math.sin(1.1), 5];
 // space index
 export let myspace = 0;
 
-export let forcetoggle = true;
+export let forceToggle = true;
 
 // when set, a problem's Task, Subtask and Metric may not be edited
 export let lockToggle = true;
@@ -685,6 +685,9 @@ const arcInd = (arclimits) => (radius) => d3.arc()
     .outerRadius(radius + 37)
     .startAngle(arclimits[0])
     .endAngle(arclimits[1]);
+
+// TODO: this was inside restart, a ForceDiagram call
+// record_user_metadata();
 
 const [arcInd1Limits, arcInd2Limits] = [[0, 0.3], [0.35, 0.65]];
 const [arcInd1, arcInd2] = [arcInd(arcInd1Limits), arcInd(arcInd2Limits)];
@@ -1426,173 +1429,12 @@ function zparamsReset(text, labels='zdv zcross ztime znom') {
     labels.split(' ').forEach(x => del(zparams[x], -1, text));
 }
 
-export function setup_svg(svg) {
-    // clear old elements before setting up the force diagram
-    svg.html('');
-
-    svg.append("svg:defs").append("svg:marker")
-        .attr("id", "group1-arrow")
-        .attr('viewBox', '0 -5 15 15')
-        .attr("refX", 2.5)
-        .attr("refY", 0)
-        .attr("markerWidth", 3)
-        .attr("markerHeight", 3)
-        .attr("orient", "auto")
-        .append("path")
-        .attr('d', 'M0,-5L10,0L0,5')
-        .style("fill", gr1Color);
-    svg.append("svg:defs").append("svg:marker")
-        .attr("id", "group2-arrow")
-        .attr('viewBox', '0 -5 15 15')
-        .attr("refX", 2.5)
-        .attr("refY", 0)
-        .attr("markerWidth", 3)
-        .attr("markerHeight", 3)
-        .attr("orient", "auto")
-        .append("path")
-        .attr('d', 'M0,-5L10,0L0,5')
-        .style("fill", gr2Color);
-    // define arrow markers for graph links
-    svg.append('svg:defs').append('svg:marker')
-        .attr('id', 'end-arrow')
-        .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 6)
-        .attr('markerWidth', 3)
-        .attr('markerHeight', 3)
-        .attr('orient', 'auto')
-        .append('svg:path')
-        .attr('d', 'M0,-5L10,0L0,5')
-        .style('fill', '#000');
-    svg.append('svg:defs').append('svg:marker')
-        .attr('id', 'start-arrow')
-        .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 4)
-        .attr('markerWidth', 3)
-        .attr('markerHeight', 3)
-        .attr('orient', 'auto')
-        .append('svg:path')
-        .attr('d', 'M10,-5L0,0L10,5')
-        .style('fill', '#000');
-
-    var line = svg.append("line")
-        .style('fill', 'none')
-        .style('stroke', gr1Color)
-        .style('stroke-width', 5)
-        .attr("marker-end", "url(#group1-arrow)");
-    var line2 = svg.append("line")
-        .style('fill', 'none')
-        .style('stroke', gr2Color)
-        .style('stroke-width', 5)
-        .attr("marker-end", "url(#group2-arrow)");
-    var visbackground = svg.append("svg")
-        .attr("width", width)
-        .attr("height", height);
-    visbackground.append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
-        .attr("id", 'gr1background')
-        .style("fill", '#ffffff')
-        .style("stroke", '#ffffff')
-        .style("stroke-width", 2.5*RADIUS)
-        .style('stroke-linejoin','round')
-        .style("opacity", 1);
-    var vis2background = svg.append("svg")
-        .attr("width", width)
-        .attr("height", height);
-    vis2background.append("path")
-        .attr("id", 'gr1background')
-        .style("fill", '#ffffff')
-        .style("stroke", '#ffffff')
-        .style("stroke-width", 2.5*RADIUS)
-        .style('stroke-linejoin','round')
-        .style("opacity", 1);
-    var vis = svg.append("svg")
-        .attr("width", width)
-        .attr("height", height);
-    vis.append("path")
-        .attr("id", 'gr1hull')
-        .style("fill", gr1Color)
-        .style("stroke", gr1Color)
-        .style("stroke-width", 2.5*RADIUS)
-        .style('stroke-linejoin','round');
-    var vis2 = svg.append("svg")
-        .attr("width", width)
-        .attr("height", height);
-    vis2.append("path")
-        .style("fill", gr2Color)
-        .style("stroke", gr2Color)
-        .style("stroke-width", 2.5*RADIUS)
-        .style('stroke-linejoin','round');
-    // line displayed when dragging new nodes
-    var drag_line = svg.append('svg:path')
-        .attr('class', 'link dragline hidden')
-        .attr('d', 'M0,0L0,0');
-    // handles to link and node element groups
-    var path = svg.append('svg:g').selectAll('path'),
-        circle = svg.append('svg:g').selectAll('g');
-    return [line, line2, visbackground, vis2background, vis, vis2, drag_line, path, circle];
-}
-
-let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
-    .attr('fill-opacity', op).attr('display', op ? '' : 'none')
-    .delay(d1)
-    .duration(d2);
-let fill = (d, id, op, d1, d2) => $fill('#' + id + d.id, op, d1, d2);
-let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
-
-let rightClickLast = false;
-
-
-export function layout(layoutConstant, v2) {
-    var myValues = [];
-    nodes = [];
-    links = [];
-
-    var [line, line2, visbackground, vis2background, vis, vis2, drag_line, path, circle] = setup_svg(svg);
-
-    if (layoutConstant == layoutAdd || layoutConstant == layoutMove) {
-        nodes = zparams.zvars.map(findNode).filter(node => !node.grayout)
-        links = zparams.zedges.map(edge => ({
-            source: findNodeIndex(edge[0]),
-            target: findNodeIndex(edge[1]),
-            left: false,
-            right: true
-        }));
-    } else {
-        if(IS_D3M_DOMAIN) {
-            mytarget = mytargetdefault;
-            nodes = allNodes.slice(1,allNodes.length);  // Add all but first variable on startup (assumes 0 position is d3m index variable)
-            nodes.forEach(node => node.group1 = !mytarget.includes(node.name))
-            // update zparams
-            zparams.zvars = nodes.map(node => node.name);
-            zparams.zgroup1 = nodes.filter(node => !mytarget.includes(node.name)).map(node => node.name);
-
-        } else if (allNodes.length > 2) {
-            nodes = [allNodes[0], allNodes[1], allNodes[2]];
-            links = [{
-                source: nodes[1],
-                target: nodes[0],
-                left: false,
-                right: true
-            }, {
-                source: nodes[0],
-                target: nodes[2],
-                left: false,
-                right: true
-            }];
-        } else if (allNodes.length === 2) {
-            nodes = [allNodes[0], allNodes[1]];
-            links = [{
-                source: nodes[1],
-                target: nodes[0],
-                left: false,
-                right: true
-            }];
-        } else if (allNodes.length === 1) {
-            nodes = [allNodes[0]];
-        } else {
-            alertError("There are zero variables in the metadata.");
-            return;
-        }
-    }
+// mouse event vars
+var selected_node = null,
+    selected_link = null,
+    mousedown_link = null,
+    mousedown_node = null,
+    mouseup_node = null;
 
 // this is to detect a click in the whitespace, but not on a pebble
 let outsideClick = false;
@@ -2083,7 +1925,7 @@ export function getVariableData(json) {
  called by force button
  */
 export function forceSwitch() {
-    forcetoggle = !forcetoggle;
+    forceToggle = !forceToggle;
 }
 
 /** needs doc */
@@ -3136,7 +2978,7 @@ export function subsetSelect(btn) {
     var myNodes = $.extend(true, [], allNodes);
     var myParams = $.extend(true, {}, zparams);
     var myTrans = $.extend(true, [], trans);
-    var myForce = $.extend(true, [], forcetoggle);
+    var myForce = $.extend(true, [], forceToggle);
     var myPreprocess = $.extend(true, {}, preprocess);
     var myLog = $.extend(true, [], logArray);
     var myHistory = $.extend(true, [], callHistory);
@@ -3286,7 +3128,7 @@ export async function endsession() {
 }
 
 
-
+// TODO: is this used?
 function addPredictions(res) {
     function tabulate(data, columns) {
         var table = d3.select('#setxLeftBottomRightBottom').append('table');
@@ -3343,62 +3185,6 @@ function addPredictions(res) {
 
 }
 
-/**
-   find something centerish to the vertices of a convex hull
-   (specifically, the center of the bounding box)
-*/
-function jamescentroid(coord) {
-    var minx = coord[0][0],
-        maxx = coord[0][0],
-        miny = coord[0][1],
-        maxy = coord[0][1];
-    for(var j = 1; j<coord.length; j++){
-        if (coord[j][0] < minx) minx = coord[j][0];
-        if (coord[j][1] < miny) miny = coord[j][1];
-        if (coord[j][0] > maxx) maxx = coord[j][0];
-        if (coord[j][1] > maxy) maxy = coord[j][1];
-    };
-        return[(minx + maxx)/2, (miny + maxy)/2];
-};
-
-/**
-   Define each pebble radius.
-   Presently, most pebbles are scaled to radius set by global RADIUS.
-   Members of groups are scaled down if group gets large.
-*/
-export function setPebbleRadius(d){
-    if (d.group1 || d.group2) { // if a member of a group, need to calculate radius size
-        var uppersize = 7;
-        var ng1 = (d.group1) ? zparams.zgroup1.length : 1; // size of group1, if a member of group 1
-        var ng2 = (d.group2) ? zparams.zgroup2.length : 1; // size of group2, if a member of group 2
-        var maxng = Math.max(ng1, ng2); // size of the largest group variable is member of
-        let node_radius = (maxng>uppersize) ? RADIUS*Math.sqrt(uppersize/maxng) : RADIUS; // keep total area of pebbles bounded to pi * RADIUS^2 * uppersize, thus shrinking radius for pebbles in larger groups
-
-        // make the selected node a bit bigger
-        if (d.name === selectedPebble) return Math.min(node_radius * 1.5, RADIUS);
-        return node_radius
-    } else {
-        return RADIUS; // nongroup members get the common global radius
-    }
-};
-
-/**
-   Define each pebble charge.
-*/
-function setPebbleCharge(d){
-    if(d.group1 || d.group2){
-        if(d.forefront){// pebbles packed in groups repel others on mouseover
-            return -1000;
-        }
-        var uppersize = 7;
-        var ng1 = (d.group1) ? zparams.zgroup1.length : 1;      // size of group1, if a member of group 1
-        var ng2 = (d.group2) ? zparams.zgroup2.length : 1;      // size of group2, if a member of group 2
-        var maxng = Math.max(ng1,ng2);                                                      // size of the largest group variable is member of
-        return (maxng>uppersize) ? -400*(uppersize/maxng) : -400;                           // decrease charge as pebbles become smaller, so they can pack together
-    }else{
-        return -800;
-    }
-}
 
 /* Generates confusion table data and labels, given the expected and predicted values*/
 /* if a factor is passed, the resultant table will be 2x2 with respect to the factor */
