@@ -274,6 +274,7 @@ export let timeColor = '#2d6ca2';
 
 export let leftTab = 'Variables'; // current tab in left panel
 export let leftTabHidden = 'Variables'; // stores the tab user was in before summary hover
+
 export let subset = false;
 export let summaryHold = false;
 
@@ -438,13 +439,6 @@ export let preprocess = {}; // hold pre-processed data
 export let setPreprocess = data => preprocess = data;
 
 let spaces = [];
-
-// radius of circle
-export const RADIUS = 40;
-
-// cx, cy, r values for indicator lights
-let ind1 = [(RADIUS+30) * Math.cos(1.3), -1*(RADIUS+30) * Math.sin(1.3), 5];
-let ind2 = [(RADIUS+30) * Math.cos(1.1), -1*(RADIUS+30) * Math.sin(1.1), 5];
 
 // space index
 export let myspace = 0;
@@ -673,28 +667,9 @@ export let setD3mProblemDescription = (key, value) => {
 let svg, div, selectLadda;
 export let width, height, estimateLadda, discoveryLadda;
 
-// arcs for denoting pebble characteristics
-const arc = (start, end) => (radius) => d3.arc()
-    .innerRadius(radius + 5)
-    .outerRadius(radius + 20)
-    .startAngle(start)
-    .endAngle(end);
-export const [arc0, arc1, arc2, arc3, arc4] = [arc(0, 3.2), arc(0, 1), arc(1.1, 2.2), arc(2.3, 3.3), arc(4.3, 5.3)];
-const arcInd = (arclimits) => (radius) => d3.arc()
-    .innerRadius(radius + 22)
-    .outerRadius(radius + 37)
-    .startAngle(arclimits[0])
-    .endAngle(arclimits[1]);
-
 // TODO: this was inside restart, a ForceDiagram call
 // record_user_metadata();
 
-const [arcInd1Limits, arcInd2Limits] = [[0, 0.3], [0.35, 0.65]];
-const [arcInd1, arcInd2] = [arcInd(arcInd1Limits), arcInd(arcInd2Limits)];
-
-// milliseconds to wait before showing/hiding the pebble handles
-let hoverTimeout = 150;
-let hoverPebble;
 export let selectedPebble;
 export let setSelectedPebble = pebble => selectedPebble = pebble;
 
@@ -1430,14 +1405,15 @@ function zparamsReset(text, labels='zdv zcross ztime znom') {
 }
 
 // mouse event vars
-var selected_node = null,
+export var selected_node = null,
     selected_link = null,
     mousedown_link = null,
     mousedown_node = null,
     mouseup_node = null;
 
 // this is to detect a click in the whitespace, but not on a pebble
-let outsideClick = false;
+export let outsideClick = false;
+export let setOutsideClick = state => outsideClick = state;
 
 function resetMouseVars() {
     mousedown_node = null;
@@ -1445,54 +1421,251 @@ function resetMouseVars() {
     mousedown_link = null;
 }
 
-export let forceDiagramEvents = {
-    labels: [
-        {
-            name: 'Groups',
-            color: common.gr1Color,
-            onclick: d => d.groups[0] = !d.groups[0],
-            labels: [
-                {
-                    name: '',
-                    color: common.gr1Color,
-                    onclick: d => d.groups[0] = !d.groups[0],
-                },
-                {
-                    name: '',
-                    color: common.gr2Color,
-                    onclick: d => d.groups[1] = !d.groups[1],
+
+export let defaultPebbleRadius = 40;
+
+/**
+ Define each pebble radius.
+ Presently, most pebbles are scaled to radius set by global RADIUS.
+ Members of groups are scaled down if group gets large.
+ */
+export function getPebbleRadius(d) {
+    // TODO: don't store group inside d, check has on each group, avoids state duplication
+    if (d.group1 || d.group2) { // if a member of a group, need to calculate radius size
+        var uppersize = 7;
+        var ng1 = (d.group1) ? zparams.zgroup1.length : 1; // size of group1, if a member of group 1
+        var ng2 = (d.group2) ? zparams.zgroup2.length : 1; // size of group2, if a member of group 2
+        var maxng = Math.max(ng1, ng2); // size of the largest group variable is member of
+        // keep total area of pebbles bounded to pi * RADIUS^2 * uppersize, thus shrinking radius for pebbles in larger groups
+        let node_radius = maxng > uppersize
+            ? defaultPebbleRadius * Math.sqrt(uppersize / maxng)
+            : defaultPebbleRadius;
+
+        // make the selected node a bit bigger
+        if (d.name === selectedPebble) return Math.min(node_radius * 1.5, defaultPebbleRadius);
+        return node_radius
+    } else
+        return defaultPebbleRadius; // nongroup members get the common global radius
+}
+
+
+// depth increments for child arcs
+let radialGapSize = depth => Math.pi / 10;
+let axialGapSize = depth => 5 / (depth + 1); // gap between pebble and arc, or between arcs
+let arcHeight = 15;
+
+// milliseconds to wait before showing/hiding the pebble handles
+let hoverTimeout = 150;
+let hoverPebble;
+
+let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
+    .attr('fill-opacity', op).attr('display', op ? '' : 'none')
+    .delay(d1)
+    .duration(d2);
+let fill = (d, id, op, d1, d2) => $fill('#' + id + d.id, op, d1, d2);
+let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
+
+let append = (str, attr) => x => str + x[attr || 'id'];
+let makeArcs = (g, labels, left = 0, right = 2 * Math.pi, depth = 0) => labels.forEach((label, i) => {
+    let labelLeft = left + (right - left) / labels.length * i;
+    let labelRight = left + (right - left) / labels.length * (i + 1) - radialGapSize(depth);
+
+    g.append("path").each(function(d) {
+        let offset = getPebbleRadius(d) + Array.from({length: depth})
+            .reduce((sum, lvl) => sum + axialGapSize(lvl), 0) + arcHeight * depth;
+
+        d3.select(this)
+            .attr("id", append('arc' + label.id))
+            .attr("d", d3.arc()
+                .innerRadius(offset).outerRadius(offset + arcHeight)
+                .startAngle(labelLeft)
+                .endAngle(labelRight))
+            .attrs(label.attrs)
+            .on('mouseover', function (d) {
+                d.forefront = true;
+                if (hoverPebble === d.name) {
+                    setTimeout(() => {
+                        if (!d.forefront) return;
+                        hoverPebble = d.name;
+                        fillThis(this, .3, 0, 100);
+                        fill(d, 'text' + label.id, .9, 0, 100);
+                    }, hoverTimeout)
                 }
-            ]
-        },
-        {
-            name: 'Dep Var',
-            color: common.dvColor,
-            onclick: d => zparams.zdv.includes(d.name) ? del(zparams.zdv, d.name) : zparams.zdv.push(d.name)
-        },
-        {
-            name: 'Nominal',
-            color: common.nomColor,
-            onclick: d => zparams.znom.includes(d.name) ? del(zparams.znom, d.name) : zparams.znom.push(d.name)
+            })
+            .on('mouseout', function (d) {
+                d.forefront = false;
+                if (d.name === selectedPebble) return;
+                setTimeout(() => {
+                    fillThis(this, 0, 100, 500);
+                    fill(d, 'text' + label.id, 0, 100, 500);
+                }, hoverTimeout)
+            });
+
+        g.append("text")
+            .attr("id", append('text' + label.id))
+            .attr("x", 6)
+            .attr("dy", 11.5)
+            .attr("fill-opacity", 0)
+            .append("textPath")
+            .attr("xlink:href", append('#arc' + label.id))
+            .text(label.name);
+    });
+
+    if ('children' in label)
+        makeArcs(g, label.children, labelLeft, labelRight, depth + 1)
+});
+
+let pebbleEvents = {
+    onclick: function (d) {
+        selectedPebble = d.name;
+
+        d3.event.stopPropagation();
+
+        if (rightClickLast) {
+            rightClickLast = false;
+            return;
         }
-    ],
-    svg: {
-        mousedown: () => {
+        if (!mousedown_node) return;
+
+        // needed by FF
+        drag_line
+            .classed('hidden', true)
+            .style('marker-end', '');
+
+        // check for drag-to-self
+        mouseup_node = d;
+        if (mouseup_node === mousedown_node) {
+            resetMouseVars();
+            return;
+        }
+
+        // unenlarge target node
+        d3.select(this).attr('transform', '');
+
+        // add link to graph (update if exists)
+        // NB: links are strictly source < target; arrows separately specified by booleans
+        var source, target, direction;
+        if (mousedown_node.id < mouseup_node.id) {
+            source = mousedown_node;
+            target = mouseup_node;
+            direction = 'right';
+        } else {
+            source = mouseup_node;
+            target = mousedown_node;
+            direction = 'left';
+        }
+
+        let link = nodeLinks.filter(x => x.source == source && x.target == target)[0];
+        if (link) {
+            link[direction] = true;
+        } else {
+            link = {
+                source: source,
+                target: target,
+                left: false,
+                right: false
+            };
+            link[direction] = true;
+            nodeLinks.push(link);
+        }
+
+        // select new link
+        selected_link = link;
+        selected_node = null;
+        svg.on('mousemove', null);
+
+        resetMouseVars();
+        m.redraw()
+    },
+    contextmenu: d => {
+        // right click on node
+        d3.event.preventDefault();
+        d3.event.stopPropagation();
+
+        rightClickLast = true;
+        mousedown_node = d;
+        selected_node = mousedown_node === selected_node ? null : mousedown_node;
+        selected_link = null;
+
+        // reposition drag line
+        drag_line
+            .style('marker-end', is_explore_mode ? 'url(#end-marker)' : 'url(#end-arrow)')
+            .classed('hidden', false)
+            .attr('d', 'M' + mousedown_node.x + ',' + mousedown_node.y + 'L' + mousedown_node.x + ',' +
+                mousedown_node.y);
+    },
+    dblclick: () => d3.event.stopPropagation(), // stop the click from bubbling
+    mouseover: d => { // show summary stats on mouseover
+        d.forefront = true;
+
+        setTimeout(() => {
+            if (leftTab !== 'Summary') leftTabHidden = leftTab;
+            setLeftTab('Summary');
+            varSummary(d);
+
+            m.redraw();
+
+            if (!d.forefront) return;
+            hoverPebble = d.name;
+
+            fill(d, "dvArc", .1, 0, 100);
+            fill(d, "dvText", .5, 0, 100);
+            fill(d, "grArc", .1, 0, 100);
+            fill(d, "grText", .5, 0, 100);
+
+            //fill(d, "gr1indicator", .1, 0, 100);
+            //fill(d, "gr1indicatorText", .1, 0, 100);
+            //fill(d, "gr2indicator", .1, 0, 100);
+            //fill(d, "gr2indicatorText", .1, 0, 100);
+
+            if (d.defaultNumchar === "numeric") {
+                fill(d, "nomArc", .1, 0, 100);
+                fill(d, "nomText", .5, 0, 100);
+            }
+            fill(d, "csArc", .1, 0, 100);
+            fill(d, "csText", .5, 0, 100);
+            fill(d, "timeArc", .1, 0, 100);
+            fill(d, "timeText", .5, 0, 100);
+        }, hoverTimeout)
+    },
+    mouseout: d => {
+        d.forefront = false;
+        setTimeout(() => {
+            hoverPebble = undefined;
+
+            if (selectedPebble) varSummary(allNodes.find((node) => node.name === selectedPebble));
+            else setLeftTab(leftTabHidden);
+
+            if (selectedPebble !== d.name)
+                'csArc csText timeArc timeText dvArc dvText nomArc nomText grArc grText'.split(' ').map(x => fill(d, x, 0, 100, 500));
+
+            m.redraw();
+        }, hoverTimeout)
+    }
+};
+
+
+export let forceDiagramStatic = {
+
+    // TODO: watch out for closures here
+    attrsAll: {
+        onmousedown: function () {
             // prevent I-bar on drag
             d3.event.preventDefault();
-            outsideClick = true;
+            setOutsideClick(true);
         },
-        mouseup: () => {
+        onmouseup: () => {
             if (mousedown_node) {
                 drag_line
                     .classed('hidden', true)
                     .style('marker-end', '');
             }
             if (outsideClick) {
-                outsideClick = false;
-                selectedPebble = undefined;
+                setOutsideClick(false);
+                setSelectedPebble(undefined);
                 if (leftTabHidden) {
                     setLeftTab(leftTabHidden);
-                    leftTabHidden = undefined;
+                    setLeftTabHidden(undefined);
                     m.redraw();
                 }
             }
@@ -1501,298 +1674,145 @@ export let forceDiagramEvents = {
             // clear mouse event vars
             resetMouseVars();
         },
-        mousemove: () => {
+        onmousemove: () => {
             if (!mousedown_node)
                 return;
             // update drag line
             drag_line.attr('d', 'M' + mousedown_node.x + ',' + mousedown_node.y + 'L' + d3.mouse(this)[0] + ',' +
                 d3.mouse(this)[1]);
-        }
+        },
+        style: {background: 'white'}
     },
-    // events for each circle
-    circle: {
-        click: d => {
-            selectedPebble = d.name;
 
-            d3.event.stopPropagation();
-
-            if (rightClickLast) {
-                rightClickLast = false;
-                return;
-            }
-            if (!mousedown_node) return;
-
-            // needed by FF
-            drag_line
-                .classed('hidden', true)
-                .style('marker-end', '');
-
-            // check for drag-to-self
-            mouseup_node = d;
-            if (mouseup_node === mousedown_node) {
-                resetMouseVars();
-                return;
-            }
-
-            // unenlarge target node
-            d3.select(this).attr('transform', '');
-
-            // add link to graph (update if exists)
-            // NB: links are strictly source < target; arrows separately specified by booleans
-            var source, target, direction;
-            if (mousedown_node.id < mouseup_node.id) {
-                source = mousedown_node;
-                target = mouseup_node;
-                direction = 'right';
-            } else {
-                source = mouseup_node;
-                target = mousedown_node;
-                direction = 'left';
-            }
-
-        let marker = side => x => {
-            let kind = side === 'left' ? 'start' : 'end';
-            return is_explore_mode ? 'url(#circle)' :
-                x[side] ? `url(#${kind}-arrow)` :
-                    '';
-        };
-
-        // update existing links
-        // VJD: dashed links between pebbles are "selected". this is disabled for now
-        path.classed('selected', x => null)
-            .style('marker-start', marker('left'))
-            .style('marker-end', marker('right'));
-
-        // add new links
-        path.enter().append('svg:path')
-            .attr('class', 'link')
-            .classed('selected', x => null)
-            .style('marker-start', marker('left'))
-            .style('marker-end', marker('right'))
-            .on('mousedown', function(d) { // do we ever need to select a link? make it delete..
-                var obj = JSON.stringify(d);
-                for (var j = 0; j < links.length; j++) {
-                    if (obj === JSON.stringify(links[j]))
-                        del(links, j);
-                }
-            });
-
-        // remove old links
-        path.exit().remove();
-
+    pebbleBuilder: (circleGroup, nodes) => {
         // circle (node) group
-        circle = circle.data(nodes, x => x.id);
-
-        // remove handles and make sure pebbles are properly sized when restart is called
-        circle[0].forEach(redrawPebble)
+        circleGroup.data(nodes, x => x.id);
 
         // update existing nodes (reflexive & selected visual states)
         // d3.rgb is the function adjusting the color here
-        circle.selectAll('circle')
-            .classed('reflexive', x => x.reflexive)
+        circleGroup.selectAll('circle')
             .style('fill', x => d3.rgb(x.nodeCol))
             .style('stroke', x => d3.rgb(x.strokeColor))
             .style('stroke-width', x => x.strokeWidth);
+
         // add new nodes
-        let g = circle.enter()
+        let g = circleGroup.enter()
             .append('svg:g')
             .attr('id', x => x.name + 'biggroup');
 
         // add plot
-        g.each(function(d) {
+        g.each(function (d) {
             d3.select(this);
-            if (d.plottype == 'continuous') densityNode(d, this, setPebbleRadius(d));
-            else if (d.plottype == 'bar') barsNode(d, this, setPebbleRadius(d));
+            if (d.plottype === 'continuous') densityNode(d, this, getPebbleRadius(d));
+            else if (d.plottype === 'bar') barsNode(d, this, getPebbleRadius(d));
         });
 
-        let append = (str, attr) => x => str + x[attr || 'id'];
+        g.append('svg:circle')
+            .attr('class', 'node')
+            .attr('r', d => getPebbleRadius(d))
+            .style('pointer-events', 'inherit')
+            .style('fill', d => d.nodeCol)
+            .style('opacity', "0.5")
+            .style('stroke', d => d3.rgb(d.strokeColor).toString())
+            .classed('reflexive', d => d.reflexive);
 
-        g.append("path").each(function(d) {
-            let radius = setPebbleRadius(d);
-            d3.select(this)
-                .attr("id", append('dvArc'))
-                .attr("d", arc3(radius))
-                .style("fill", dvColor)
-                .attr("fill-opacity", 0)
-                .on('mouseover', function(d) {
-                    d.forefront = true;
-                    if (hoverPebble === d.name) {
-                        setTimeout(() => {
-                            if (!d.forefront) return;
-                            hoverPebble = d.name;
-                            fillThis(this, .3, 0, 100);
-                            fill(d, 'dvText', .9, 0, 100);
-                        }, hoverTimeout)
-                    }
-                })
-                .on('mouseout', function(d) {
-                    d.forefront = false;
-                    if (d.name === selectedPebble) return;
-                    setTimeout(() => {
-                        fillThis(this, 0, 100, 500);
-                        fill(d, 'dvText', 0, 100, 500);
-                    }, hoverTimeout)
-                })
-                .on('click', function(d) {
-                    setColors(d, dvColor);
-                    (selectedProblem || {}).target = zparams.zdv[0];
-                    selectedPebble = d.name;
-                    restart();
-                    m.redraw();
-                });
-        })
+        // TODO: validate
+        Object.keys(pebbleEvents).forEach(event => g.on(event, pebbleEvents[event]));
 
-            // select new link
-            selected_link = link;
-            selected_node = null;
-            svg.on('mousemove', null);
+        // show node names
+        g.append('svg:text')
+            .attr('id', append('pebbleLabel'))
+            .attr('x', 0)
+            .attr('y', 15)
+            .style('font-size', d => getPebbleRadius(d) * .175 + 7 + 'px')
+            .attr('class', 'id')
+            .text(d => d.name);
 
-        g.append("text")
-            .attr("id", append("nomText"))
-            .attr("x", 6)
-            .attr("dy", 11.5)
-            .attr("fill-opacity", 0)
-            .append("textPath")
-            .attr("xlink:href", append("#nomArc"))
-            .text("Nominal");
+        // remove old nodes
+        circleGroup.exit().remove();
 
-        g.append("path").each(function(d) {
-            let radius = setPebbleRadius(d);
-            d3.select(this)
-                .attr("id", append('grArc'))
-                .attr("d", arc1(radius))
-                .style("fill", gr1Color)
-                .attr("fill-opacity", 0)
-                .on('mouseover', function (d) {
-                    fill(d, "gr1indicator", .3, 0, 100);
-                    fill(d, "gr2indicator", .3, 0, 100);
-                    d.forefront = true;
-                    if (hoverPebble === d.name) {
-                        setTimeout(() => {
-                            if (!d.forefront) return;
-                            hoverPebble = d.name;
-                            fillThis(this, .3, 0, 100);
-                            fill(d, 'grText', .9, 0, 100);
-                        }, hoverTimeout)
-                    }
-                })
-                .on('mouseout', function (d) {
-                    d.forefront = false;
-                    if (d.name === selectedPebble) return;
-                    setTimeout(() => {
-                        fill(d, "gr1indicator", 0, 100, 500);
-                        fill(d, "gr2indicator", 0, 100, 500);
-                        fillThis(this, 0, 100, 500);
-                        fill(d, 'grText', 0, 100, 500);
-                    }, hoverTimeout)
-                })
-                .on('click', d => {
-                    setColors(d, gr1Color);
-                    selectedProblem.predictors = [...zparams.zgroup1],
-                    selectedPebble = d.name;
-                    restart();
-                    m.redraw();
-                });
-        });
-
-        g.append("path").each(function(d) {
-            let radius = setPebbleRadius(d);
-            d3.select(this)
-                .attr("id", append('gr1indicator'))
-                .attr("d", arcInd1(radius))
-                .style("fill", gr1Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
-                .attr("fill-opacity", 0)
-                .on('mouseover', function (d) {
-                    d.forefront = true;
-                    if (hoverPebble === d.name) {
-                        setTimeout(() => {
-                            if (!d.forefront) return;
-                            hoverPebble = d.name;
-                            fillThis(this, .3, 0, 100);
-                            fill(d, "grArc", .1, 0, 100);
-                            fill(d, 'grText', .9, 0, 100);
-                        }, hoverTimeout)
-                    }
-                })
-                .on('mouseout', function (d) {
-                    d.forefront = false;
-                    if (d.name === selectedPebble) return;
-                    setTimeout(() => {
-                        fillThis(this, 0, 100, 500);
-                        fill(d, "grArc", 0, 100, 500);
-                        fill(d, 'grText', 0, 100, 500);
-                    }, hoverTimeout)
-                })
-                .on('click', d => {
-                    setColors(d, gr1Color);
-                    selectedProblem.predictors = [...zparams.zgroup1]
-                    selectedPebble = d.name;
-                    restart();
-                    m.redraw();
-                });
-        });
-
-            setTimeout(() => {
-                if (leftTab !== 'Summary') leftTabHidden = leftTab;
-                setLeftTab('Summary');
-                varSummary(d);
-
-                m.redraw();
-
-                if (!d.forefront) return;
-                hoverPebble = d.name;
-
-                fill(d, "dvArc", .1, 0, 100);
-                fill(d, "dvText", .5, 0, 100);
-                fill(d, "grArc", .1, 0, 100);
-                fill(d, "grText", .5, 0, 100);
-
-                //fill(d, "gr1indicator", .1, 0, 100);
-                //fill(d, "gr1indicatorText", .1, 0, 100);
-                //fill(d, "gr2indicator", .1, 0, 100);
-                //fill(d, "gr2indicatorText", .1, 0, 100);
-
-                if (d.defaultNumchar === "numeric") {
-                    fill(d, "nomArc", .1, 0, 100);
-                    fill(d, "nomText", .5, 0, 100);
-                }
-                fill(d, "csArc", .1, 0, 100);
-                fill(d, "csText", .5, 0, 100);
-                fill(d, "timeArc", .1, 0, 100);
-                fill(d, "timeText", .5, 0, 100);
-            }, hoverTimeout)
-        },
-        mouseout: d => {
-            d.forefront = false;
-            setTimeout(() => {
-                hoverPebble = undefined;
-
-                if (selectedPebble) varSummary(allNodes.find((node) => node.name === selectedPebble));
-                else setLeftTab(leftTabHidden);
-
-                if (selectedPebble !== d.name)
-                    'csArc csText timeArc timeText dvArc dvText nomArc nomText grArc grText'.split(' ').map(x => fill(d, x, 0, 100, 500));
-
-                m.redraw();
-            }, hoverTimeout)
-        },
+        makeArcs(g, labels);
     },
-    edge: {
-        mousedown: d => links.some(link => d === link && (del(links, link) || true)) // delete the link d
+
+    linkBuilder: (nodeLinkGroup, nodeLinks) => {
+        // path (link) group
+        nodeLinkGroup.data(nodeLinks);
+
+        let marker = side => x => {
+            let kind = side === 'left' ? 'start' : 'end';
+            return is_explore_mode ? 'url(#circle)' :
+                x[side] ? `url(#${kind}-arrow)` : '';
+        };
+
+        // update existing links
+        // VJD: dashed links between pebbles are "selected". this is disabled for now
+        nodeLinkGroup.classed('selected', x => null)
+            .style('marker-start', marker('left'))
+            .style('marker-end', marker('right'));
+
+        // add new links
+        nodeLinkGroup.enter().append('svg:path')
+            .attr('class', 'link')
+            .classed('selected', x => null)
+            .style('marker-start', marker('left'))
+            .style('marker-end', marker('right'))
+            .on('mousedown', d => links.some(link => d === link && (del(links, link) || true)));
+
+        // remove old links
+        nodeLinkGroup.exit().remove();
+    },
+
+    groupBuilder: (hullBackgroundSelection, hullSelection, groups, width, height, radius) => {
+        hullBackgroundSelection.data(groups).enter()
+            .append('svg')
+            .attr("width", width)
+            .attr("height", height)
+            .append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
+            .attr("id", 'gr1background')
+            .style("fill", '#ffffff')
+            .style("stroke", '#ffffff')
+            .style("stroke-width", 2.5 * radius)
+            .style('stroke-linejoin', 'round')
+            .style("opacity", 1)
+            .exit().remove();
+
+        hullSelection.data(groups).enter()
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .append("path")
+            .attr("id", 'gr1hull')
+            .style("fill", group => group.color)
+            .style("stroke", group => group.color)
+            .style("stroke-width", 2.5 * radius)
+            .style('stroke-linejoin', 'round')
+            .exit().remove();
+    },
+
+    groupLinkBuilder: (groupLineDefSelection, groupLineSelection, groupLinks) => {
+        groupLineDefSelection.data(groupLinks).enter()
+            .append("svg:marker")
+            .attr("id", groupLink => `${groupLink.id}-arrow`)
+            .attr('viewBox', '0 -5 15 15')
+            .attr("refX", 2.5)
+            .attr("refY", 0)
+            .attr("markerWidth", 3)
+            .attr("markerHeight", 3)
+            .attr("orient", "auto")
+            .append("path")
+            .attr('d', 'M0,-5L10,0L0,5')
+            .style("fill", groupLink => groupLink.color)
+            .exit().remove();
+
+        groupLineSelection.data(groupLinks).enter()
+            .append("line")
+            .style('fill', 'none')
+            .style('stroke', groupLink => groupLink.color)
+            .style('stroke-width', 5)
+            .attr("marker-end", groupLink => `url(#${groupLink.id}-arrow)`)
+            .exit().remove();
     }
 };
-
-
-// layout function constants
-const layoutAdd = "add";
-const layoutMove = "move";
-// TODO large deletion occurred here -Mike
-
-/** needs doc */
-function find($nodes, name) {
-    for (let i in $nodes)
-        if ($nodes[i].name == name) return $nodes[i].id;
-}
 
 // returns index of node in allNodes by node name
 export function findNodeIndex(name) {
@@ -2688,6 +2708,8 @@ export let setLeftTab = (tab) => {
     setFocusedPanel('left');
 };
 
+export let setLeftTabHidden = tab => leftTabHidden = tab;
+
 // formats data for the hidden summary tab in the leftpanel
 export let summary = {data: []};
 
@@ -3056,7 +3078,7 @@ export function subsetSelect(btn) {
             }
         }
         rePlot();
-        layout(layoutAdd);
+        // TODO: default D3M page load setup used to be inside layout()
     });
 
     varOut(grayOuts);

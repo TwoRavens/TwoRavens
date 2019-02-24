@@ -51,6 +51,7 @@ import ConfusionMatrix from "./views/ConfusionMatrix"
 import vegaEmbed from "vega-embed";
 import PreprocessInfo from "./PreprocessInfo";
 import ForceDiagram from "./views/ForceDiagram";
+
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
 export let link = url => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
@@ -1070,7 +1071,8 @@ class Body {
                                 }))
                         )],
 
-                    m(ForceDiagram, Object.assign({}, app.forceDiagramEvents, {
+                    m(ForceDiagram, Object.assign({}, app.forceDiagramStatic, {
+                        radius: app.defaultPebbleRadius,
                         labels: [
                             {
                                 id: 'Group',
@@ -1136,15 +1138,6 @@ class Body {
                             }
                         ],
 
-                        attrs: {
-                            onmousedown: Function,
-                            onmouseup: Function,
-                            style: {background: 'white'}
-                        },
-
-
-                        selectedNode: undefined,
-
                         groups: [
                             {
                                 name: "Predictors",
@@ -1162,10 +1155,9 @@ class Body {
 
                         groupLinks: [
                             {
+                                color: common.gr1Color,
                                 source: 'Predictors',
-                                target: 'Targets',
-                                left: false,
-                                right: true
+                                target: 'Targets'
                             }
                         ],
                         nodeLinks: [
