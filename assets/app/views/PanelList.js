@@ -2,6 +2,7 @@ import m from 'mithril';
 
 import * as app from '../app';
 import * as plots from '../plots';
+import * as common from '../../common/common';
 
 import {searchIndex} from './Search';
 
@@ -18,10 +19,10 @@ class PanelList {
                                'item-default') : '',
                           style: {
                               'background-color': probDesc ? '' :
-                                  app.zparams.zdv.includes(v) ? app.hexToRgba(app.dvColor) :
-                                  app.zparams.znom.includes(v) ? app.hexToRgba(app.nomColor) :
+                                  app.zparams.zdv.includes(v) ? app.hexToRgba(common.dvColorxx) :
+                                  app.zparams.znom.includes(v) ? app.hexToRgba(common.nomColor) :
                                   app.nodes.map(n => n.name).includes(v) ? app.hexToRgba(plots.selVarColor) :
-                                  app.varColor,
+                                  common.varColor,
                               'border-color': '#000000',
                               'border-style': !probDesc && searchIndex && i < searchIndex ? 'solid' : 'none',
                               'text-align': 'center'

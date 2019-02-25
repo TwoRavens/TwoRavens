@@ -415,7 +415,7 @@ function rightpanel(mode) {
                                             .filter(node => node.nature === 'nominal')
                                             .map(node => node.name),
                                         ondelete: name => {
-                                            app.setColors(app.nodes.find(node => node.name === name), app.nomColor);
+                                            app.setColors(app.nodes.find(node => node.name === name), common.nomColor);
                                             app.restart();
                                         }
                                     }))
@@ -1073,83 +1073,7 @@ class Body {
 
                     m(ForceDiagram, Object.assign({}, app.forceDiagramStatic, {
                         radius: app.defaultPebbleRadius,
-                        labels: [
-                            {
-                                id: 'Group',
-                                name: 'Group',
-                                attrs: {
-                                    style: {fill: gr1Color, 'fill-opacity': 0},
-                                    onclick: d => {
-                                        setColors(d, gr1Color);
-                                        setSelectedPebble(d.name);
-                                        m.redraw();
-                                    }
-                                },
-                                children: [
-                                    {
-                                        id: 'Group1',
-                                        name: '',
-                                        attrs: {
-                                            style: {fill: gr1Color, 'fill-opacity': 0},
-                                            onclick: d => {
-                                                setColors(d, gr1Color);
-                                                setSelectedPebble(d.name);
-                                                m.redraw();
-                                            }
-                                        }
-                                    },
-                                    {
-                                        id: 'Group2',
-                                        name: '',
-                                        attrs: {
-                                            style: {fill: gr2Color, 'fill-opacity': 0},
-                                            onclick: d => {
-                                                setColors(d, gr2Color);
-                                                setSelectedPebble(d.name);
-                                                m.redraw();
-                                            }
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                id: 'Dep',
-                                name: 'Dep Var',
-                                attrs: {
-                                    style: {fill: dvColor, 'fill-opacity': 0},
-                                    onclick: d => {
-                                        setColors(d, gr2Color);
-                                        setSelectedPebble(d.name);
-                                        m.redraw();
-                                    }
-                                }
-                            },
-                            {
-                                id: 'Nom',
-                                name: 'Nominal',
-                                attrs: {
-                                    style: {fill: nomColor, 'fill-opacity': 0},
-                                    onclick: d => {
-                                        setColors(d, nomColor);
-                                        setSelectedPebble(d.name);
-                                        m.redraw();
-                                    }
-                                }
-                            }
-                        ],
-
-                        groups: [
-                            {
-                                name: "Predictors",
-                                color: gr1Color,
-                                nodes: []
-                            },
-                            {
-                                name: "Targets",
-                                color: gr2Color,
-                                nodes: []
-                            }
-                        ],
+                        groups: app.getForceDiagramGroups(),
 
                         nodes: app.nodes,
 
@@ -1191,12 +1115,12 @@ class Body {
                         width: '150px'
                     }
                 }, [
-                    ['timeButton', 'ztime', 'Time', app.dvColor, 'white', 1],
-                    ['csButton', 'zcross', 'Cross Sec', app.csColor, 'white', 1],
-                    ['dvButton', 'zdv', 'Dep Var', app.timeColor, 'white', 1],
-                    ['nomButton', 'znom', 'Nom Var', app.nomColor, 'white', 1],
-                    ['gr1Button', 'zgroup1', 'Group 1', app.gr1Color, app.gr1Color, 0],
-                    ['gr2Button', 'zgroup2', 'Group 2', app.gr2Color, app.gr2Color, 0]
+                    ['timeButton', 'ztime', 'Time', common.dvColor, 'white', 1],
+                    ['csButton', 'zcross', 'Cross Sec', common.csColor, 'white', 1],
+                    ['dvButton', 'zdv', 'Dep Var', common.timeColor, 'white', 1],
+                    ['nomButton', 'znom', 'Nom Var', common.nomColor, 'white', 1],
+                    ['gr1Button', 'zgroup1', 'Group 1', common.gr1Color, common.gr1Color, 0],
+                    ['gr2Button', 'zgroup2', 'Group 2', common.gr2Color, common.gr2Color, 0]
                 ].map(btn =>
                     m(`#${btn[0]}.${app.zparams[btn[1]].length === 0 ? "hide" : "show"}[style=width:100% !important]`,
                         m(".rectColor[style=display:inline-block]", m("svg[style=width: 20px; height: 20px]",
@@ -1268,7 +1192,7 @@ class Body {
             m('div.btn-group[role=group][aria-label="..."][style=margin:.25em 1em;display:flex]',
                 m(Button, {
                     id: 'btnTA2',
-                    onclick: _ => hopscotch.startTour(app.mytour, 0)
+                    onclick: _ => hopscotch.startTour(app.mytour(), 0)
                 }, 'Help Tour ', glyph('road')),
                 m(Button, {id: 'btnTA2', onclick: _ => app.helpmaterials('video')}, 'Video ', glyph('expand')),
                 m(Button, {id: 'btnTA2', onclick: _ => app.helpmaterials('manual')}, 'Manual ', glyph('book'))),

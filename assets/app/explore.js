@@ -1239,7 +1239,7 @@ function viz(m, json_vizexplore, model_name_set) {
             for (var m = 0; m < colnames.length; m++) {
                 for (var z = 0; z < data.length; z++) {
                     if (rownames[k] === data[z].rowname && colnames[m] === data[z].colname) {
-                        tr.append("td").style("border", 1).style("text-align", "center").style("position", "relative").style("background-color", app.varColor).text(data[z].value);
+                        tr.append("td").style("border", 1).style("text-align", "center").style("position", "relative").style("background-color", common.varColor).text(data[z].value);
                     }
                 }
             }
@@ -1381,7 +1381,7 @@ function viz(m, json_vizexplore, model_name_set) {
         for (var row in data) {
             var tr = table.append("tr").style("margin-left", 40).style("border", 1).style("text-align", "left");
             for (var td in data[row])
-                tr.append("td").style("border", 1).style("text-align", "left").style("position", "relative").style("background-color", app.varColor).text(data[row][td]);
+                tr.append("td").style("border", 1).style("text-align", "left").style("position", "relative").style("background-color", common.varColor).text(data[row][td]);
         }
     }
     d3table(statistical_data);
@@ -1496,7 +1496,7 @@ export async function explore() {
     d3.select("#resultsView_statistics").html('');
 
     d3.select("#modelView")
-        .style('background-color', app.hexToRgba(app.varColor))
+        .style('background-color', app.hexToRgba(common.varColor))
         .style("overflow-y", "hidden")
         .style("overflow-x", "auto")
         .append("span")

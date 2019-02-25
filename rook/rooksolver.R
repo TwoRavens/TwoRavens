@@ -33,7 +33,6 @@ send <- function(res) {
     response$finish()
 }
 
-# TODO: include confusion matrix (due to observationLimit)
 analyzeWrapper <- function(wrapper, hyperparameters, samples) list(
     fittedValues=predict(wrapper, type='raw')[samples],
     label=wrapper$modelInfo$label, # plain english model label
@@ -144,8 +143,8 @@ solver.app <- function(env) {
         data <- read.table(dataurl, sep = separator, header = TRUE, fileEncoding = 'UTF-8')
         print(paste("POST Reading table", sep=""))
 
-        if (task == 'classification') data[[target]] <- factor(data[[target]]) # this causes caret to treat as classification
-        data[, c(target, predictors)] # subset columns
+        if (task == 'classification') data[[target]] <- as.factor(data[[target]]) # this causes caret to treat as classification
+        data
     }, error=function(err) list(error = paste0("R solver failed loading data (", err, ")")))
     if (names(data) == c("error")) return(send(data))
 
@@ -171,6 +170,7 @@ solver.app <- function(env) {
         else sort(sample(1:length(fitted(model)), observationLimit))
 
         analysis <- analyzeWrapper(caretWrapper, hyperparameters, samples)
+        analysis$trainvalues <- data[samples, predictors]
 
         # supplemental information for linear models
         if (method %in% c('lm', 'glm', 'glm.nb'))

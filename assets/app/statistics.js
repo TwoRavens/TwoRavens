@@ -135,7 +135,7 @@ let makeIntervals = ({values, variances, statistic, type, family, alpha, n, ddof
     }[family];
 
     return values
-        .map((val, i) => [-1, 1].map(sign => invLink(val + sign * statValue * stdErr[i])))
+        .map((val, i) => [-1, 1].map(sign => invLink(val + sign * statValue * stdErr[i])).sort())
 };
 
 // ~~~~ compute confidence intervals

@@ -10,7 +10,7 @@ import * as manipulate from './manipulations/manipulate';
 import {setModal, locationReload} from '../common/views/Modal';
 import Table from "../common/views/Table";
 
-import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
+import {bars, barsNode, barsSubset, density, densityNode} from './plots.js';
 import {elem} from './utils';
 import {getTransformVariables} from "./manipulations/manipulate";
 
@@ -181,10 +181,6 @@ export let alignmentData = {};
 export let solverPending = false;
 export let setSolverPending = state => solverPending = state;
 
-export let solver_res = []
-let problem_sent = []
-let problems_in_preprocess = []
-
 // determines which variable is selected for additional analysis in the classification results menu
 export let confusionFactor;
 export let setConfusionFactor = factor => confusionFactor = factor === 'undefined' ? undefined : factor;
@@ -224,7 +220,7 @@ export function set_mode(mode) {
         });
     }
 
-    is_model_mode = mode === 'model'
+    is_model_mode = mode === 'model';
     is_explore_mode = mode === 'explore';
     is_results_mode = mode === 'results';
     is_manipulate_mode = mode === 'manipulate';
@@ -259,18 +255,6 @@ let tutorial_mode = localStorage.getItem('tutorial_mode') !== 'false';
 // allNodes.push() below establishes a field for the master node array allNodes called "nodeCol" and assigns a color from this scale to that field
 // everything there after should refer to the nodeCol and not the color scale, this enables us to update colors and pass the variable type to R based on its coloring
 let colors = d3.scaleOrdinal(d3.schemeCategory20);
-export let csColor = '#419641';
-export let dvColor = '#28a4c9';
-export let gr1Color = '#14bdcc';  // initially was #24a4c9', but that is dvColor, and we track some properties by color assuming them unique
-let gr1Opacity = [0,1];
-export let gr2Color = '#ffcccc';
-let gr2Opacity = [0,1];
-
-let grayColor = '#c0c0c0';
-export let nomColor = '#ff6600';
-export let varColor = '#f0f8ff'; // d3.rgb("aliceblue");
-let taggedColor = '#f5f5f5'; // d3.rgb("whitesmoke");
-export let timeColor = '#2d6ca2';
 
 export let leftTab = 'Variables'; // current tab in left panel
 export let leftTabHidden = 'Variables'; // stores the tab user was in before summary hover
@@ -435,7 +419,7 @@ updateLeftPanelWidth();
 common.setPanelCallback('right', updateRightPanelWidth);
 common.setPanelCallback('left', updateLeftPanelWidth);
 
-export let preprocess = {}; // hold pre-processed data
+export let preprocess = {}; // hold pre-processed variables
 export let setPreprocess = data => preprocess = data;
 
 let spaces = [];
@@ -559,12 +543,6 @@ let rightClickLast = false;
 let selInteract = false;
 export let callHistory = []; // transform and subset calls
 
-// stores the target on page load
-export let mytargetdefault = [];
-
-// targeted variable name
-export let mytarget = [];
-export let setMytarget = target => mytarget = target;
 
 export let configurations = {};
 export let datadocument = {};
@@ -711,7 +689,7 @@ export let step = (target, placement, title, content) => ({
     }
 });
 
-export let mytour = {
+export let mytour = () => ({
     id: "dataset_launch",
     i18n: {doneBtn:'Ok'},
     showCloseButton: true,
@@ -735,8 +713,8 @@ export let mytour = {
              `<p>This generally is the important step to follow for Task 2 - Build a Model.</p>
                       <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward, and this button will be Green when Task 1 is completed and Task 2 started.</p>
                       <p>Click this Solve button to tell the tool to find a solution to the problem, using the variables presented in the center panel.</p>`),
-        step(mytarget + 'biggroup', "left", "Target Variable",
-             `This is the variable, ${mytarget}, we are trying to predict.
+        step(selectedProblem.target.join(', ') + 'biggroup', "left", "Target Variable",
+             `We are trying to predict ${selectedProblem.target.join(', ')}.
                       This center panel graphically represents the problem currently being attempted.`),
         step("gr1hull", "right", "Explanation Set", "This set of variables can potentially predict the target."),
         step("displacement", "right", "Variable List",
@@ -745,7 +723,7 @@ export let mytour = {
         step("btnEndSession", "bottom", "Finish Problem",
              "If the solution reported back seems acceptable, then finish this problem by clicking this End Session button."),
     ]
-};
+});
 
 
 export let mytour3 = {
@@ -961,43 +939,39 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         //   alertError('problem schema not available: ' + res.message);
         //   return
         // }
-        console.log('problemDoc res: ', res);
 
-        // easier way to access target name?
-        mytargetdefault = (res.inputs.data[0].targets || []).map(targ => targ.colName);
-
-        if (typeof res.about.problemID !== 'undefined') {
+        if (res.about.problemID !== undefined) {
             d3mProblemDescription.id=res.about.problemID;
         }
-        if (typeof res.about.problemVersion !== 'undefined') {
+        if (res.about.problemVersion !== undefined) {
             d3mProblemDescription.version=res.about.problemVersion;
         }
-        if (typeof res.about.problemName !== 'undefined') {
+        if (res.about.problemName !== undefined) {
             d3mProblemDescription.name=res.about.problemName;
         }
-        if (typeof res.about.problemDescription !== 'undefined') {
+        if (res.about.problemDescription !== undefined) {
             d3mProblemDescription.description = res.about.problemDescription;
         }
-        if (typeof res.about.taskType !== 'undefined') {
+        if (res.about.taskType !== undefined) {
             d3mProblemDescription.taskType=res.about.taskType;
         }
-        if (typeof res.about.taskSubType !== 'undefined') {
-          console.log('taskSubType set to ?', res.about.taskSubType);
+        if (res.about.taskSubType !== undefined) {
             d3mProblemDescription.taskSubtype=res.about.taskSubType;
         }else{
            console.log('taskSubTypeset to none');
             d3mProblemDescription.taskSubtype = 'subtypeNone';
         }
-        if (typeof res.inputs.performanceMetrics[0].metric !== 'undefined') {
+        if (res.inputs.performanceMetrics[0].metric !== undefined) {
             d3mProblemDescription.performanceMetrics = res.inputs.performanceMetrics;   // or? res.inputs.performanceMetrics[0].metric;
         }
+
 
         manipulations[res.about.problemID] = [];
         defaultProblem = {
             problemID: res.about.problemID,
             system: 'auto',
             description: res.about.problemDescription,
-            target: [res.inputs.data[0].targets[0].colName],
+            target: res.inputs.data[0].targets.map(targ => targ.colName),
             predictors: [],
             get pipeline() {return manipulations[this.problemID]},
             metric: res.inputs.performanceMetrics[0].metric,
@@ -1025,7 +999,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     /**
      * 4. Read the data document and set 'datadocument'
      */
-   console.log('---------------------------------------');
+    console.log('---------------------------------------');
     console.log("-- 4. Read the data document and set 'datadocument' --");
 
     datadocument = await m.request(d3mDS);
@@ -1160,7 +1134,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // hopscotch tutorial
     if (tutorial_mode) {
         console.log('Starting Hopscotch Tour');
-        hopscotch.startTour(mytour);
+        hopscotch.startTour(mytour());
     }
 
     /**
@@ -1174,25 +1148,21 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     //
     let loadPreprocessData = res => {
         priv = res.dataset.private || priv;
-        Object.keys(res.variables).forEach(k => preprocess[k] = res.variables[k]);
-        if("problems" in res){Object.keys(res.problems).forEach(k => problems_in_preprocess[k] = res.problems[k].description.problem_id);} // storing all the problem id's present in preprocess
+        preprocess = res.variables;
         return res;
     };
 
+    let resPreprocess;
     try {
         console.log('attempt to read preprocess file (which may not exist): ' + pURL);
-        res = loadPreprocessData(await m.request(pURL));
+        resPreprocess = loadPreprocessData(await m.request(pURL));
     } catch(_) {
         console.log("Ok, preprocess not found, try to RUN THE PREPROCESSAPP");
         let url = ROOK_SVC_URL + 'preprocessapp';
-        var json_input;
-        if (IS_D3M_DOMAIN){
-          // For D3M inputs, change the preprocess input data
-          //
-          json_input = {data: d3mData, datastub: d3mDataName};
-        }else{
-          json_input = {data: dataloc, target: targetloc, datastub: datastub};
-        }
+        // For D3M inputs, change the preprocess input data
+        let json_input = IS_D3M_DOMAIN
+            ? {data: d3mData, datastub: d3mDataName}
+            : {data: dataloc, target: targetloc, datastub}; // TODO: these are not defined
 
         try {
             // res = read(await m.request({method: 'POST', url: url, data: json_input}));
@@ -1200,7 +1170,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             console.log('preprocess_info: ', preprocess_info);
             console.log('preprocess_info message: ' + preprocess_info.message);
             if (preprocess_info.success){
-              res = loadPreprocessData(preprocess_info.data);
+              resPreprocess = loadPreprocessData(preprocess_info.data);
 
             }else{
               setModal(m('div', m('p', "Preprocess failed: "  + preprocess_info.message),
@@ -1255,7 +1225,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         count: [.6, .2, .9, .8, .1, .3, .4],  // temporary values for hold that correspond to histogram bins
         nodeCol: colors(i),
         baseCol: colors(i),
-        strokeColor: selVarColor,
+        strokeColor: common.selVarColor,
         strokeWidth: "1",
         subsetplot: false,
         subsetrange: ["", ""],
@@ -1281,16 +1251,16 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     /**
      * 10b. Call problem discovery
-     * Requires that `res` built in 8. above still exists.  Should make this better.
      */
     console.log('---------------------------------------');
     console.log("-- 10b. Call problem discovery --");
-    if(!swandive) {
-        disco = discovery(res);
+
+    if(!swandive && resPreprocess) {
+        disco = discovery(resPreprocess);
 
         // Set target variable for center panel if no problemDoc exists to set this
         if (!problemDocExists)
-            mytarget = disco[0].target;
+            selectedProblem.target = [disco[0].target];
 
         // Kick off discovery button as green for user guidance
         if (!task1_finished) {
@@ -1299,15 +1269,10 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
     }
 
-    /**
-     * 11. Call layout() and start up
-     */
-    console.log('---------------------------------------');
-    console.log('-- 11. Call layout() and start up --');
-    layout(false, true);
-    IS_D3M_DOMAIN ? zPop() : dataDownload();
 
-    defaultProblem.predictors = [...zparams.zgroup1];
+    defaultProblem.predictors = nodes
+        .filter(node => !selectedProblem.target.includes(node.name))
+        .map(node => node.name);
     disco.unshift(defaultProblem);
 
     /**
@@ -1315,9 +1280,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
      *   setSelectedProblem -> loadMenu (manipulate.js) -> getData (manipulate.js)
      */
     setSelectedProblem(getProblemCopy(defaultProblem));
-
-    setTimeout(loadResult, 10000);
-    problem_sent.length = 0;
 }
 
 /**
@@ -1423,6 +1385,22 @@ function resetMouseVars() {
 
 
 export let defaultPebbleRadius = 40;
+
+export let getForceDiagramNodes = () => []
+export let getForceDiagramGroups = () => selectedProblem ? [
+    {
+        name: "Predictors",
+        color: common.gr1Color,
+        nodes: selectedProblem.predictors,
+        lengthen: true
+    },
+    {
+        name: "Targets",
+        color: common.gr2Color,
+        nodes: selectedProblem.target,
+        lengthen: false
+    }
+] : [];
 
 /**
  Define each pebble radius.
@@ -1644,6 +1622,70 @@ let pebbleEvents = {
     }
 };
 
+let forceDiagramLabels = [
+    {
+        id: 'Group',
+        name: 'Group',
+        attrs: {
+            style: {fill: common.gr1Color, 'fill-opacity': 0},
+            onclick: d => {
+                setColors(d, common.gr1Color);
+                setSelectedPebble(d.name);
+                m.redraw();
+            }
+        },
+        children: [
+            {
+                id: 'Group1',
+                name: '',
+                attrs: {
+                    style: {fill: common.gr1Color, 'fill-opacity': 0},
+                    onclick: d => {
+                        setColors(d, common.gr1Color);
+                        setSelectedPebble(d.name);
+                        m.redraw();
+                    }
+                }
+            },
+            {
+                id: 'Group2',
+                name: '',
+                attrs: {
+                    style: {fill: common.gr2Color, 'fill-opacity': 0},
+                    onclick: d => {
+                        setColors(d, common.gr2Color);
+                        setSelectedPebble(d.name);
+                        m.redraw();
+                    }
+                }
+            }
+        ]
+    },
+    {
+        id: 'Dep',
+        name: 'Dep Var',
+        attrs: {
+            style: {fill: common.dvColor, 'fill-opacity': 0},
+            onclick: d => {
+                setColors(d, common.gr2Color);
+                setSelectedPebble(d.name);
+                m.redraw();
+            }
+        }
+    },
+    {
+        id: 'Nom',
+        name: 'Nominal',
+        attrs: {
+            style: {fill: common.nomColor, 'fill-opacity': 0},
+            onclick: d => {
+                setColors(d, common.nomColor);
+                setSelectedPebble(d.name);
+                m.redraw();
+            }
+        }
+    }
+];
 
 export let forceDiagramStatic = {
 
@@ -1693,7 +1735,10 @@ export let forceDiagramStatic = {
         circleGroup.selectAll('circle')
             .style('fill', x => d3.rgb(x.nodeCol))
             .style('stroke', x => d3.rgb(x.strokeColor))
-            .style('stroke-width', x => x.strokeWidth);
+            .style('stroke-width', x => x.strokeWidth)
+            .transition()  // Shrink/expand pebbles that join/leave groups
+            .duration(100)
+            .attr('r', d => getPebbleRadius(d));
 
         // add new nodes
         let g = circleGroup.enter()
@@ -1731,7 +1776,7 @@ export let forceDiagramStatic = {
         // remove old nodes
         circleGroup.exit().remove();
 
-        makeArcs(g, labels);
+        makeArcs(g, forceDiagramLabels);
     },
 
     linkBuilder: (nodeLinkGroup, nodeLinks) => {
@@ -1768,7 +1813,7 @@ export let forceDiagramStatic = {
             .attr("width", width)
             .attr("height", height)
             .append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
-            .attr("id", 'gr1background')
+            .attr("id", group => group.name + 'HullBackground')
             .style("fill", '#ffffff')
             .style("stroke", '#ffffff')
             .style("stroke-width", 2.5 * radius)
@@ -1781,11 +1826,12 @@ export let forceDiagramStatic = {
             .attr("width", width)
             .attr("height", height)
             .append("path")
-            .attr("id", 'gr1hull')
+            .attr("id", group => group.name + 'Hull')
             .style("fill", group => group.color)
             .style("stroke", group => group.color)
             .style("stroke-width", 2.5 * radius)
             .style('stroke-linejoin', 'round')
+            .style('opacity', 0.3)
             .exit().remove();
     },
 
@@ -1843,7 +1889,7 @@ function updateNode(id, nodes) {
             count: [.6, .2, .9, .8, .1, .3, .4],  // temporary values for hold that correspond to histogram bins
             nodeCol: colors(i),
             baseCol: colors(i),
-            strokeColor: selVarColor,
+            strokeColor: common.selVarColor,
             strokeWidth: "1",
             subsetplot: false,
             subsetrange: ["", ""],
@@ -1875,7 +1921,7 @@ function updateNode(id, nodes) {
 
             // node reset - perhaps this will become a hard reset back to all original allNode values?
             node.nodeCol = node.baseCol;
-            node.strokeColor = selVarColor;
+            node.strokeColor = common.selVarColor;
             node.strokeWidth = '1';
         }
     } else nodes.push(node);
@@ -2268,21 +2314,17 @@ function CreateFitDefinition(solutionId){
     Return the default parameters used for a FitSolution call.
     This DOES NOT include the solutionID
  */
-export function getFitSolutionDefaultParameters(datasetDocUrl){
-
-  let my_dataseturi = 'file://' + datasetDocUrl;
-  let my_inputs = [{dataset_uri: my_dataseturi}];
-  //let my_exposeOutputs = [];   // eg. ["steps.3.produce"];  need to fix
-  let my_exposeOutputs = ['outputs.0'];
-
-  let my_exposeValueTypes = ['CSV_URI'];
-  let my_users = [{id: 'TwoRavens', chosen: false, reason: ''}];
-  return {
-      inputs: my_inputs,
-      exposeOutputs: my_exposeOutputs,
-      exposeValueTypes: my_exposeValueTypes,
-      users: my_users
-  };
+export function getFitSolutionDefaultParameters(datasetDocUrl) {
+    return {
+        inputs: [
+            {dataset_uri: 'file://' + datasetDocUrl}
+        ],
+        exposeOutputs: ['outputs.0'],
+        exposeValueTypes: ['CSV_URI'],
+        users: [
+            {id: 'TwoRavens', chosen: false, reason: ''}
+        ]
+    };
 }
 
 // {
@@ -2317,10 +2359,7 @@ export function getFitSolutionDefaultParameters(datasetDocUrl){
 // }
 
 function CreateProduceDefinition(fsid){
-
-    let produceDefn = getProduceSolutionDefaultParameters();
-    produceDefn.fittedSolutionId = fsid
-    return produceDefn;
+    return Object.assign(getProduceSolutionDefaultParameters(), {fittedSolutionId: fsid});
 }
 
 /*
@@ -2328,30 +2367,24 @@ function CreateProduceDefinition(fsid){
   This DOES NOT include the fittedSolutionId
 */
 export function getProduceSolutionDefaultParameters(datasetDocUrl){
-
-  let my_dataseturi = 'file://' + datasetDocUrl;
-  let my_inputs = [{dataset_uri: my_dataseturi}];
-  //let my_exposeOutputs = [];  // Not sure about this.
-  let my_exposeOutputs = ['outputs.0'];
-  let my_exposeValueTypes = ['CSV_URI']; // Not sure about this.
-  return {inputs: my_inputs,
-          exposeOutputs: my_exposeOutputs,
-          exposeValueTypes: my_exposeValueTypes};
+    return {
+        inputs: [{dataset_uri: 'file://' + datasetDocUrl}],
+        exposeOutputs: ['outputs.0'],
+        exposeValueTypes: ['CSV_URI']
+    };
 }
 
 
 
 function CreateScoreDefinition(res){
 
-  if (typeof res.response.solutionId === undefined){
-      let errMsg = 'ERROR: CreateScoreDefinition. solutionId not set.'
+  if (res.response.solutionId === undefined){
+      let errMsg = 'ERROR: CreateScoreDefinition. solutionId not set.';
       console.log(errMsg);
-      return {errMsg: errMsg};
+      return {errMsg};
   }
 
-  let createDefn = getScoreSolutionDefaultParameters();
-  createDefn.solutionId = res.response.solutionId;
-  return createDefn;
+  return Object.assign(getScoreSolutionDefaultParameters(), {solutionId: res.response.solutionId});
 
 }
 
@@ -2361,17 +2394,18 @@ function CreateScoreDefinition(res){
 */
 function getScoreSolutionDefaultParameters(datasetDocUrl){
 
-  let my_dataseturi = 'file://' + datasetDocUrl;
-  let my_inputs = [{dataset_uri: my_dataseturi}];
-  let my_performanceMetrics = [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ];  // need to generalize to case with multiple metrics.  only passes on first presently.;
-  let my_users = [{id: 'TwoRavens', chosen: false, reason: ""}];
-
-  // let my_configuration = {method: 'HOLDOUT', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
-
-  // note: FL only using KFOLD in latest iteration (3/8/2019)
-  let my_configuration = {method: 'K_FOLD', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
-
-  return {inputs: my_inputs, performanceMetrics: my_performanceMetrics, users: my_users, configuration: my_configuration};
+    // TODO: multiMetric can be plugged into performanceMetrics for multiple performance metrics. Not yet tested
+    // let multiMetric = d3mProblemDescription.performanceMetrics
+    //     .map(metricWrapper => ({metric: d3mMetrics[metricWrapper.metric][1]}));
+    return {
+        inputs: [{dataset_uri: 'file://' + datasetDocUrl}],
+        performanceMetrics: [
+            {metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]}
+            ],
+        users: [{id: 'TwoRavens', chosen: false, reason: ""}],
+        // note: FL only using KFOLD in latest iteration (3/8/2019)
+        configuration: {method: 'K_FOLD', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false}
+    };
 
 }
 
@@ -2450,15 +2484,15 @@ export async function estimate() {
         //         .insert("p", ":first-child") // top stack for results
         //         .attr("id", model)
         //         .text(model)
-        //         .style('background-color', hexToRgba(selVarColor))
+        //         .style('background-color', hexToRgba(common.selVarColor))
         //         .on("click", function() {
         //             var a = this.style.backgroundColor.replace(/\s*/g, "");
-        //             var b = hexToRgba(selVarColor).replace(/\s*/g, "");
+        //             var b = hexToRgba(common.selVarColor).replace(/\s*/g, "");
         //             if (a.substr(0, 17) == b.substr(0, 17))
         //                 return; // escape function if displayed model is clicked
         //             modCol();
         //             d3.select(this)
-        //                 .style('background-color', hexToRgba(selVarColor));
+        //                 .style('background-color', hexToRgba(common.selVarColor));
         //             viz(this.id);
         //         });
         //
@@ -2472,16 +2506,14 @@ export async function estimate() {
         zparams.callHistory = callHistory;
 
         // TODO: This needs testing
-        valueKey.filter(key => mytarget.includes(key)).map(key => del(valueKey, valueKey.indexOf(key)))
-        // let myvki = valueKey.indexOf(mytarget);
-        // if(myvki != -1) {
-        //     del(valueKey, myvki);
-        // }
+        valueKey
+            .filter(key => selectedProblem.target.includes(key))
+            .map(key => del(valueKey, valueKey.indexOf(key)));
 
         estimateLadda.start(); // start spinner
 
         alertError('estimate() function. Check app.js error with swandive (err: 003)');
-        //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(valueKey, mytarget));
+        //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(valueKey, selectedProblem.target));
         //res && onPipelineCreate(res);   // arguments were wrong, and this function no longer needed
 
     } else { // we are in IS_D3M_DOMAIN no swandive
@@ -2853,36 +2885,36 @@ export function setColors(n, c) {
 
     // the order of the keys indicates precedence
     let zmap = {
-        [csColor]: 'zcross',
-        [timeColor]: 'ztime',
-        [nomColor]: 'znom',
-        [dvColor]: 'zdv',
-        [gr1Color]: 'zgroup1',
-        [gr2Color]: 'zgroup2'
+        [common.csColor]: 'zcross',
+        [common.timeColor]: 'ztime',
+        [common.nomColor]: 'znom',
+        [common.dvColor]: 'zdv',
+        [common.gr1Color]: 'zgroup1',
+        [common.gr2Color]: 'zgroup2'
     };
     let strokeWidths = {
-        [csColor]: 4,
-        [timeColor]: 4,
-        [nomColor]: 4,
-        [dvColor]: 4,
-        [gr1Color]: 1,
-        [gr2Color]: 1
+        [common.csColor]: 4,
+        [common.timeColor]: 4,
+        [common.nomColor]: 4,
+        [common.dvColor]: 4,
+        [common.gr1Color]: 1,
+        [common.gr2Color]: 1
     };
     let nodeColors = {
-        [csColor]: taggedColor,
-        [timeColor]: taggedColor,
-        [nomColor]: taggedColor,
-        [dvColor]: taggedColor,
-        [gr1Color]: colors(n.id),
-        [gr2Color]: colors(n.id)
+        [common.csColor]: common.taggedColor,
+        [common.timeColor]: common.taggedColor,
+        [common.nomColor]: common.taggedColor,
+        [common.dvColor]: common.taggedColor,
+        [common.gr1Color]: colors(n.id),
+        [common.gr2Color]: colors(n.id)
     };
     let strokeColors = {
-        [csColor]: csColor,
-        [timeColor]: timeColor,
-        [nomColor]: nomColor,
-        [dvColor]: dvColor,
-        [gr1Color]: selVarColor,
-        [gr2Color]: selVarColor
+        [common.csColor]: common.csColor,
+        [common.timeColor]: common.timeColor,
+        [common.nomColor]: common.nomColor,
+        [common.dvColor]: common.dvColor,
+        [common.gr1Color]: common.selVarColor,
+        [common.gr2Color]: common.selVarColor
     };
 
     // from the relevant zparams list: remove if included, add if not included
@@ -2902,29 +2934,29 @@ export function setColors(n, c) {
         // default node color
         n.strokeWidth = 1;
         n.nodeCol = n.baseCol;
-        n.strokeColor = selVarColor;
+        n.strokeColor = common.selVarColor;
     }
 
     // if index was not found, then it was added
     let isIncluded = index === -1;
 
-    if (c === gr1Color) {
+    if (c === common.gr1Color) {
         [n.group1, n.group2] = [isIncluded, false];
         del(zparams.zgroup2, -1, n.name);
         del(zparams.zdv, -1, n.name);
     }
-    if (c === gr2Color) {
+    if (c === common.gr2Color) {
         [n.group1, n.group2] = [false, isIncluded];
         del(zparams.zgroup1, -1, n.name);
         del(zparams.zdv, -1, n.name);
     }
-    if (c === dvColor) {
+    if (c === common.dvColor) {
         [n.group1, n.group2] = [false, false];
         del(zparams.zgroup1, -1, n.name);
         del(zparams.zgroup2, -1, n.name);
     }
 
-    if (c === nomColor) {
+    if (c === common.nomColor) {
         findNode(n.name).nature = isIncluded ? 'nominal' : findNode(n.name).defaultNature;
         resetPeek();
     }
@@ -3035,7 +3067,7 @@ export function subsetSelect(btn) {
         // make unclickable in left panel
         for (var i = 0; i < v.length; i++) {
             var selectMe = v[i].replace(/\W/g, "_");
-            byId(selectMe).style.color = hexToRgba(grayColor);
+            byId(selectMe).style.color = hexToRgba(common.grayColor);
             selectMe = "p#".concat(selectMe);
             d3.select(selectMe)
                 .on("click", null);
@@ -3563,6 +3595,7 @@ function makeProblemDescription(problem) {
 }
 
 export function discovery(preprocess_file) {
+    console.log(preprocess_file)
     return preprocess_file.dataset.discovery.map((prob, i) => {
         let problemID = generateProblemID();
         let pipeline = [];
@@ -3667,7 +3700,6 @@ export async function addProblemFromForceDiagram() {
     disco.push(newProblem);
     setSelectedProblem(newProblem);
     setLeftTab('Discovery');
-    loadResult([newProblem]);
     // let addProblemAPI = app.addProblem(preprocess_id, version, problem_section);
     // console.log("API RESPONSE: ",addProblemAPI );
 
@@ -3717,6 +3749,14 @@ export function setSelectedProblem(problem) {
         estimateLadda.stop();
     });
 
+    erase();
+    if (problem) {
+        let {target, predictors} = selectedProblem;
+        [...target, ...predictors].map(x => clickVar(x));
+        predictors.forEach(predictor => setColors(nodes.find(node => node.name === predictor), common.gr1Color));
+        target.forEach(targ => setColors(findNode(targ), common.dvColor));
+        m.redraw();
+    }
     updateRightPanelWidth();
 
     // if a constraint is being staged, delete it
@@ -3742,8 +3782,8 @@ export let redrawForce = problem => {
     let {target, predictors} = selectedProblem;
     erase();
     [target, ...predictors].map(x => updateNode(x, nodes));
-    predictors.forEach(predictor => setColors(nodes.find(node => node.name === predictor), gr1Color));
-    setColors(findNode(target), dvColor);
+    predictors.forEach(predictor => setColors(nodes.find(node => node.name === predictor), common.gr1Color));
+    setColors(findNode(target), common.dvColor);
     problem.target = target;
     m.redraw();
 };
@@ -4276,41 +4316,6 @@ export function handleAugmentDataMessage(msg_data){
   // console.log('filesize: ' + msg_data.data.filesize);
 
 } // end: handleAugmentDataMessage
-
-
-export function loadResult(my_disco) {
-    (my_disco || disco).forEach((problem, i) => {
-
-        let prob_name = (problem.description || {}).problemID || problem.problemID;
-
-        if (problems_in_preprocess.includes(prob_name))
-            console.log("Problem already exists in preprocess", prob_name);
-        else problem_sent.push({
-            "description": problem,
-            "result": solver_res[i]
-        });
-        // console.log("problem to be sent ", problem_sent);
-    })
-
-    // console.log("problem to be sent ", problem_sent.splice())
-    let preprocess_id = 1
-    let version = 1
-    // addProblem(preprocess_id, version).then(api_res => console.log("ADD PROBLEM/RESULT API RESPONSE ", api_res))
-}
-
-// API call to add problem to preproces file
-export async function addProblem(preprocess_id, version){
-    // return await m.request({
-    //     method: "POST",
-    //     url: "http://127.0.0.1:4354/preprocess/problem-section", // should be changed later
-    //     data: {
-    //         "preprocessId": preprocess_id,
-    //         "version": version,
-    //         "problems": problem_sent
-    //     }
-    // })
-    problem_sent.length = 0;
-}
 
 let ravenPipelineID = 0;
 

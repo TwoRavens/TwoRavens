@@ -905,7 +905,7 @@ export let rebuildPreprocess = async () => {
     hopscotch.endTour();
 
     app.setDisco(app.discovery(response));
-    app.setMytarget(app.disco[0].target);
+    app.setMytarget([app.disco[0].target]);
     app.setSelectedProblem(undefined);
 
     setQueryUpdated(false);
