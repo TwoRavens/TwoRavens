@@ -8,6 +8,7 @@ import * as common from "../common/common";
 import * as manipulate from './manipulations/manipulate';
 
 import {setModal, locationReload} from '../common/views/Modal';
+import Table from "../common/views/Table";
 
 import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
 import {elem} from './utils';
@@ -4767,10 +4768,24 @@ export function handleMaterializeDataMessage(msg_data){
   }
   if (msg_data.success === true) {
       console.log('Successful materialize!!');
-      console.log(msg_data.user_message);
+      console.log(msg_data); //.user_message);
 
-      // setModal("Successful data augmentation. Please reload the page. ",
-      //       "Data Augmentation", true, "Reload", false, locationReload);
+      console.log('filesize: ' + msg_data.data.filesize);
+      console.log('type: ' + msg_data.data.filesize);
+      console.log('data_preview: ' + typeof msg_data.data.data_preview);
+
+      const preview_data = msg_data.data.data_preview.split('\n').map(line => line.split(','));
+
+      console.log('headers ' + preview_data[0]);
+      console.log('data ' + preview_data.slice(1, 2));
+
+      let tblInfo =  m(Table, {
+                            headers: preview_data[0],
+                            data: preview_data.slice(1),
+                          });
+
+      // need to use ModalVanilla or similar
+      setModal(tblInfo, "Preview", true, "Close", true);
 
       return;
   }

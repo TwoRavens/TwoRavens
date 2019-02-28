@@ -429,11 +429,11 @@ class DatamartJobUtilISI(object):
 
         # Write the data to the file
         #
-        data_split = file_data.split('\n')
+        #data_split = file_data.split('\n')
 
         try:
             with open(data_filepath, 'w') as datafile:
-                datafile.writelines(data_split)
+                datafile.write(file_data) #_split)
         except OSError as err_obj:
             user_msg = f'Failed to write file "{data_filepath}". Error: %s' % \
                 (err_obj,)
