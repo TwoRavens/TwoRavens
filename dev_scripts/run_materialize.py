@@ -21,6 +21,7 @@ from tworaven_common_apps.datamart_endpoints.static_vals import \
     (DATAMART_ISI_NAME,)
 from tworaven_common_apps.datamart_endpoints.materialize_util import \
     (MaterializeUtil,)
+from tworaven_common_apps.datamart_endpoints.tasks import make_materialize_call
 
 def test_materialize():
     """run materialize"""
@@ -28,11 +29,11 @@ def test_materialize():
 
     sr_fname = join('.', 'input', 'isi_materialize_req_01.json')
 
-    search_result = json.loads(open(sr_fname, 'r').read())
+    datamart_params = json.loads(open(sr_fname, 'r').read())
 
     mu = MaterializeUtil(DATAMART_ISI_NAME,
                          user_workspace_id,
-                         search_result)
+                         datamart_params)
 
     if mu.has_error():
         print('error: ', mu.get_error_message())
@@ -47,5 +48,25 @@ def test_materialize():
     #    print('success: ', mu.materialize_result)
     #mu.show_info()
 
+def test_celery_materialize():
+    """run materialize"""
+    user_workspace_id = 91
+
+    sr_fname = join('.', 'input', 'isi_materialize_req_01.json')
+
+    datamart_params = json.loads(open(sr_fname, 'r').read())
+
+    mu_info = make_materialize_call(\
+                     DATAMART_ISI_NAME,
+                     user_workspace_id,
+                     datamart_params,
+                     **dict(websocket_id='dev_admin'))
+
+    if not mu_info.success:
+        print('error: ', mu_info.err_msg)
+    else:
+        print('mu_info msg', mu_info.result_obj)
+
+
 if __name__ == '__main__':
-    test_materialize()
+    test_celery_materialize()
