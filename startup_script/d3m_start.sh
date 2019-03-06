@@ -8,6 +8,7 @@ cd /var/webapps/TwoRavens
 # Create new db
 #
 fab init_db
+fab check_datamarts
 
 # Make superuser and test user
 #
