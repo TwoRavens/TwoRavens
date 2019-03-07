@@ -11,10 +11,6 @@ digraph G {
   SolutionExport;
   UpdateProblem;
   ListPrimitives;
-  SaveSolution;
-  LoadSolution;
-  SaveFittedSolution;
-  LoadFittedSolution;
 
   node [style="filled", fillcolor="#ffdddd", shape="rectangle"];
   "outputs";
@@ -50,13 +46,9 @@ digraph G {
   FitSolution -> outputs [penwidth=3.0];
   FitSolution -> fitted_solution_id;
   fitted_solution_id -> ProduceSolution;
-  fitted_solution_id -> SaveFittedSolution;
-  LoadFittedSolution -> fitted_solution_id;
   test -> ProduceSolution;
   ProduceSolution -> outputs [penwidth=3.0];
   fitted_solution_id -> SolutionExport;
-  solution_id -> SaveSolution;
-  LoadSolution -> solution_id;
   rank -> SolutionExport
   SearchSolutions -> UpdateProblem;
   problem -> UpdateProblem;

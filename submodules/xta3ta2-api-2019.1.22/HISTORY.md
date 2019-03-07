@@ -1,21 +1,4 @@
-## v2019.2.27
-
-* Changed `SolutionExportRequest` message to use `solution_id` instead of
-  `fitted_solution_id`.
-  [#104](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/104)
-  [!124](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/124)
-* Fixed the structure of problem description's `data_augmentation` field.
-  Now it can be repeated.
-  [!127](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/127)
-* Doc change to provide clarification on primitive types allowed for use in 
-  pipeline template.
-  [!128](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/128)
-* Doc change to update the flow diagram titled "API Structures" in the 
-  documentation to include Save and Load procedures.
-  [!126](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/126)
-
-
-## v2019.1.22
+## v2019.1.19
 
 * Fixed d3m core package paths.
   [!123](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/123)

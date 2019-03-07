@@ -9,8 +9,7 @@
   * Change a version (`protocol_version`) in `core.proto` to a version without `_pre`.
   * Change `vNEXT` in `HISTORY.md` to the to-be-released version, with `v` prefix.
   * Change Python dependency in `setup.py` for D3M core package from `d3m==devel` to the
-    current stable version. Do **not** start version with `v` for the D3M core package
-    dependency.
+    current stable version.
   * Commit with message `Bumping version for release.`
   * `git push`
   * Wait for CI to run tests successfully.

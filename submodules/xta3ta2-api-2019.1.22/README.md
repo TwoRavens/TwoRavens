@@ -159,12 +159,9 @@ the purpose of TA3-TA2 API we are currently placing the following restrictions:
 * The placeholder can be only the last step in the pipeline.
 * All primitive steps should have all their hyper-parameters fixed.
 
-These restrictions effectively mean that a pipeline template can only specify a directed acyclic graph of preprocessing 
-primitives that transforms one or more input Dataset container values into a *single* transformed
-Dataset container value, which is the input to the placeholder step (and future sub-pipeline in its place).
-There are no additional restrictions on the types of individual primitives that can be used within the 
-pipeline template, although impact on downstream TA2 processing should be assessed before a given 
-primitive is used.
+These restrictions effectively mean that a pipeline template can only specify preprocessing
+primitives which transform one or more input Dataset container values into a *single* transformed
+Dataset container value as input to the placeholder step (and future sub-pipeline in its place).
 
 Relaxation: Individual systems can relax those restrictions. For example, they might allow
 a placeholder step to have postprocessing primitive steps after it. In this case postprocessing
