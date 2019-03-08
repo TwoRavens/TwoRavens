@@ -54,3 +54,7 @@ mysqlclient==1.3.13
 #
 social-auth-app-django==2.1.0
 social-auth-core==1.7.0
+
+# debug
+#
+pylint>=2.3.1
