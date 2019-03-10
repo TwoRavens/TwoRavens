@@ -19,7 +19,7 @@ class PanelList {
                                'item-default') : '',
                           style: {
                               'background-color': probDesc ? '' :
-                                  app.zparams.zdv.includes(v) ? app.hexToRgba(common.dvColorxx) :
+                                  app.zparams.zdv.includes(v) ? app.hexToRgba(common.dvColor) :
                                   app.zparams.znom.includes(v) ? app.hexToRgba(common.nomColor) :
                                   app.nodes.map(n => n.name).includes(v) ? app.hexToRgba(plots.selVarColor) :
                                   common.varColor,

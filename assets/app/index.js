@@ -1,8 +1,7 @@
-import * as statistics from './statistics';
 
 import $ from 'jquery';
-import * as d3 from 'd3';
 import 'bootstrap/dist/css/bootstrap.css';
+import icons from 'glyphicons';
 
 import '../css/app.css';
 import '../pkgs/Ladda/dist/ladda-themeless.min.css';
@@ -15,7 +14,6 @@ import m from 'mithril';
 import * as app from './app';
 import * as exp from './explore';
 import * as plots from './plots';
-import * as results from './results';
 
 import * as manipulate from './manipulations/manipulate';
 
@@ -58,19 +56,36 @@ export let link = url => m('a', {href: url, style: {color: 'darkblue'}, target: 
 
 
 // adding problemID and version for Preprocess API part
-let problemID = 1;
 let version = 1;
 let nodesExplore = [];
 
 function leftpanel(mode) {
 
-    if (mode === 'results')
-        return results.leftpanel(Object.keys(app.allPipelineInfo));
-
     if (mode === 'manipulate')
         return manipulate.leftpanel();
 
-    let transformVars = [...manipulate.getTransformVariables(manipulate.getProblemPipeline(app.selectedProblem) || [])];
+    let problems = app.getSelectedDataset().problems;
+    let selectedProblem = app.getSelectedProblem();
+
+    // base dataset variables, then transformed variables from the problem
+    let leftpanelVariables = [
+        ...Object.keys(app.getSelectedDataset().preprocess),
+        ...manipulate.getTransformVariables(selectedProblem.manipulations)
+    ];
+
+    // if no search string, match nothing
+    let matchedVariables = app.variableSearchText.length !== 0 ? []
+        : leftpanelVariables.filter(variable => variable.toLowerCase().includes(app.variableSearchText)
+            || (selectedProblem.preprocess.label || "").toLowerCase().includes(app.variableSearchText));
+
+    // reorder leftpanel variables
+    leftpanelVariables = [
+        ...matchedVariables,
+        ...leftpanelVariables.filter(variable => !matchedVariables.includes(variable))
+    ];
+
+    let nominalVariables = Object.keys(selectedProblem.preprocess)
+        .filter(variable => selectedProblem.preprocess[variable].nature === 'nominal');
 
     let allMeaningful = app.disco.every(prob => prob.meaningful);
     let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
@@ -79,13 +94,13 @@ function leftpanel(mode) {
         title: `mark ${allMeaningful ? 'no' : 'all'} problems as meaningful`
     });
 
-    let discoveryHeaders = app.selectedProblem && [
+    let discoveryHeaders = [
         'problemID',
         m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
         'User', 'Target', 'Predictors',
-        [...app.disco, app.selectedProblem].some(prob => prob.model !== 'modelUndefined') ? 'Model' : '',
+        [...problems, selectedProblem].some(prob => prob.model !== 'modelUndefined') ? 'Model' : '',
         'Task',
-        [...app.disco, app.selectedProblem].some(prob => prob.subTask !== 'taskSubtypeUndefined') ? 'Subtask' : '',
+        [...problems, selectedProblem].some(prob => prob.subTask !== 'taskSubtypeUndefined') ? 'Subtask' : '',
         'Metric', 'Manipulations'
     ];
 
@@ -106,7 +121,7 @@ function leftpanel(mode) {
         // the view manipulations button
         (!!problem.subsetObs || !!problem.transform || (app.manipulations[problem.problemID] || []).length !== 0) && m(
             'div[style=width:100%;text-align:center]', m(Button, {
-                disabled: problem === app.selectedProblem && app.rightTab === 'Manipulate' && common.panelOpen['right'],
+                disabled: problem === selectedProblem && app.rightTab === 'Manipulate' && common.panelOpen['right'],
                 title: `view manipulations for ${problem.problemID}`,
                 onclick: () => {
                     app.setRightTab('Manipulate');
@@ -114,8 +129,6 @@ function leftpanel(mode) {
                 }
             }, 'View'))
     ];
-
-    let nodes = app.is_explore_mode ? nodesExplore : app.nodes;
 
     return m(Panel, {
         side: 'left',
@@ -152,27 +165,35 @@ function leftpanel(mode) {
                         m(TextField, {
                             id: 'searchVar',
                             placeholder: 'Search variables and labels',
-                            oninput: app.searchVariables
+                            oninput: app.setVariableSearchText,
+                            onblur: app.setVariableSearchText,
+                            value: app.variableSearchText
                         }),
                         m(PanelList, {
                             id: 'varList',
-                            items: app.valueKey.concat(transformVars),
+                            items: leftpanelVariables,
                             colors: {
-                                [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
-                                [app.hexToRgba(common.gr1Color, .25)]: app.zparams.zgroup1,
-                                [app.hexToRgba(common.gr2Color)]: app.zparams.zgroup2,
-                                [app.hexToRgba(common.taggedColor)]: app.zparams.znom,
-                                [app.hexToRgba(common.taggedColor)]: app.is_explore_mode ? [] : app.zparams.zdv
+                                [app.hexToRgba(common.selVarColor)]: app.is_explore_mode ? selectedProblem.loose : nodesExplore.map(node => node.name),
+                                [app.hexToRgba(common.gr1Color, .25)]: selectedProblem.predictors,
+                                // [app.hexToRgba(common.gr2Color)]: app.zparams.zgroup2,
+                                [app.hexToRgba(common.taggedColor)]: nominalVariables,
+                                [app.hexToRgba(common.taggedColor)]: app.is_explore_mode ? [] : selectedProblem.target
                             },
                             classes: {
-                                'item-dependent': app.is_explore_mode ? [] : app.zparams.zdv,
-                                'item-nominal': app.zparams.znom,
-                                'item-bordered': app.matchedVariables
+                                'item-dependent': app.is_explore_mode ? [] : selectedProblem.target,
+                                'item-nominal': nominalVariables,
+                                'item-bordered': matchedVariables
                             },
                             callback: x => {
-                                app.clickVar(x, nodes);
-                                app.selectedProblem.predictors = [...app.zparams.zgroup1];
-                                app.selectedProblem.target = app.zparams.zdv[0];
+                                let selectedProblem = app.getSelectedProblem();
+
+                                if (selectedProblem.predictors.includes(x))
+                                    app.remove(selectedProblem.predictors, x);
+                                else if (selectedProblem.target.includes(x))
+                                    app.remove(selectedProblem.target, x);
+                                else if (selectedProblem.loose.includes(x))
+                                    app.remove(selectedProblem.loose, x);
+                                else selectedProblem.loose.push(x);
                             },
                             popup: variable => app.popoverContent(app.findNode(variable)),
                             attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
@@ -182,8 +203,8 @@ function leftpanel(mode) {
                             id: 'btnCreateVariable',
                             style: {width: '100%', 'margin-top': '10px'},
                             onclick: async () => {
-                                if (!app.selectedProblem) await app.addProblemFromForceDiagram();
-                                let problemPipeline = manipulate.getProblemPipeline(app.selectedProblem);
+
+                                let problemPipeline = app.getSelectedProblem().manipulations;
                                 if ((problemPipeline[problemPipeline.length - 1] || {}).type !== 'transform') {
                                     problemPipeline.push({
                                         type: 'transform',
@@ -198,7 +219,7 @@ function leftpanel(mode) {
                                 manipulate.setConstraintMenu({
                                     type: 'transform',
                                     step: problemPipeline[problemPipeline.length - 1],
-                                    pipeline: manipulate.getPipeline(app.selectedProblem)
+                                    pipeline: problemPipeline
                                 });
                                 common.setPanelOpen('left');
                                 app.setLeftTab('Variables');
@@ -218,12 +239,12 @@ function leftpanel(mode) {
                                 'max-width': (window.innerWidth - 90) + 'px'
                             }
                         },
-                        app.selectedProblem && [
+                        [
                             m('h4', [
                                 'Current Problem',
                                 m(Button, {
                                     id: 'saveProblemBtn',
-                                    onclick: () => app.disco.unshift(app.getProblemCopy(app.selectedProblem)),
+                                    onclick: () => app.disco.unshift(app.getProblemCopy(app.getSelectedProblem())),
                                     title: 'save problem',
                                     style: {float: 'right', margin: '-.5em 1em 0 0'}
                                 }, 'Save Problem')
@@ -231,23 +252,26 @@ function leftpanel(mode) {
                             m(Table, {
                                 id: 'discoveryTableManipulations',
                                 headers: discoveryHeaders,
-                                data: [formatProblem(app.selectedProblem)],
-                                activeRow: app.selectedProblem.problemID,
+                                data: [formatProblem(app.getSelectedProblem())],
+                                activeRow: app.getSelectedDataset().selectedProblem,
                                 showUID: false,
                                 abbreviation: 40
                             }),
                             m('h4', 'All Problems - Results Problem Highlighted')
                         ],
-                        app.selectedProblem && m(Table, {
+                        m(Table, {
                             id: 'discoveryTable',
                             headers: discoveryHeaders,
                             data: [ // I would sort system via (a, b) => a.system === b.system ? 0 : a.system === 'user' ? -1 : 1, but javascript sort isn't stable
-                                ...app.disco.filter(prob => prob.system === 'user'),
-                                ...app.disco.filter(prob => prob.system !== 'user')
+                                ...problems.filter(prob => prob.system === 'user'),
+                                ...problems.filter(prob => prob.system !== 'user')
                             ].map(formatProblem),
-                            activeRow: (app.resultsProblem || {}).problemID,
-                            onclick: problemID => app.setSelectedProblem(
-                                app.getProblemCopy(app.disco.find(prob => prob.problemID === problemID))),
+                            activeRow: app.getSelectedDataset().resultsProblem,
+                            onclick: problemID => {
+                                let copiedProblem = app.getProblemCopy(problems.find(prob => prob.problemID === problemID));
+                                problems.unshift(copiedProblem);
+                                app.setSelectedProblem(copiedProblem.problemID);
+                            },
                             showUID: false,
                             abbreviation: 40,
                             sortable: true
@@ -256,15 +280,15 @@ function leftpanel(mode) {
                         id: 'discoveryInput',
                         textarea: true,
                         style: {width: '100%', height: 'calc(20% - 50px)', overflow: 'auto'},
-                        value: (app.selectedProblem || {}).description || '',
-                        oninput: value => app.selectedProblem.description = value,
-                        onblur: value => app.selectedProblem.description = value
+                        value: selectedProblem.description || app.getDescription(selectedProblem),
+                        oninput: value => selectedProblem.description = value,
+                        onblur: value => selectedProblem.description = value
                     }),
                     m(Button, {
                         id: 'btnDelete',
-                        disabled: !app.selectedProblem || app.selectedProblem.system === 'auto',
+                        disabled: selectedProblem || selectedProblem.system === 'auto',
                         style: 'float:right',
-                        onclick: () => setTimeout(() => app.deleteProblem(problemID, version, 'id_000003'), 500),
+                        onclick: () => setTimeout(() => app.deleteProblem(selectedProblem.problemID, version, 'id_000003'), 500),
                         title: 'Delete the user created problem'
                     }, 'Delete Problem'),
                     m(PanelButton, {
@@ -313,8 +337,13 @@ function rightpanel(mode) {
 
     let sections = [];
 
+    let selectedProblem = app.getSelectedProblem();
+    let nominalVariables = Object.keys(selectedProblem.preprocess)
+        .filter(variable => selectedProblem.preprocess[variable].nature === 'nominal');
+
+
     // PROBLEM TAB
-    app.selectedProblem && sections.push({
+    sections.push({
         value: 'Problem',
         idSuffix: 'Type',
         contents: [
@@ -328,12 +357,12 @@ function rightpanel(mode) {
                 m(Dropdown, {
                     id: 'taskType',
                     items: Object.keys(app.d3mTaskType),
-                    activeItem: app.selectedProblem.task,
+                    activeItem: selectedProblem.task,
                     onclickChild: child => {
-                        app.selectedProblem.task = child;
-                        app.selectedProblem.model = 'modelUndefined';
+                        selectedProblem.task = child;
+                        selectedProblem.model = 'modelUndefined';
                         // will trigger the call to solver, if a menu that needs that info is shown
-                        if (app.selectedProblem) app.setSolverPending(true);
+                        app.setSolverPending(true);
                     },
                     style: {'margin-bottom': '1em'},
                     disabled: app.lockToggle
@@ -343,9 +372,9 @@ function rightpanel(mode) {
                     items: Object.keys(app.d3mTaskSubtype),
                     activeItem: app.selectedProblem.subTask,
                     onclickChild: child => {
-                        app.selectedProblem.subTask = child;
+                        selectedProblem.subTask = child;
                         // will trigger the call to solver, if a menu that needs that info is shown
-                        if (app.selectedProblem) app.setSolverPending(true);
+                        app.setSolverPending(true);
                     },
                     style: {'margin-bottom': '1em'},
                     disabled: app.lockToggle
@@ -355,21 +384,21 @@ function rightpanel(mode) {
                     items: Object.keys(app.d3mMetrics),
                     activeItem: app.selectedProblem.metric,
                     onclickChild: child => {
-                        app.selectedProblem.metric = child;
+                        selectedProblem.metric = child;
                         // will trigger the call to solver, if a menu that needs that info is shown
-                        if (app.selectedProblem) app.setSolverPending(true);
+                        app.setSolverPending(true);
                     },
                     style: {'margin-bottom': '1em'},
                     disabled: app.lockToggle
                 }),
-                app.twoRavensModelTypes[app.selectedProblem.task] && m(Dropdown, {
+                app.twoRavensModelTypes[selectedProblem.task] && m(Dropdown, {
                     id: 'modelType',
-                    items: app.twoRavensModelTypes[app.selectedProblem.task],
-                    activeItem: app.selectedProblem.model,
+                    items: app.twoRavensModelTypes[selectedProblem.task],
+                    activeItem: selectedProblem.model,
                     onclickChild: child => {
-                        app.selectedProblem.model = child;
+                        selectedProblem.model = child;
                         // will trigger the call to solver, if a menu that needs that info is shown
-                        if (app.selectedProblem) app.setSolverPending(true);
+                        app.setSolverPending(true);
                     },
                     style: {'margin-bottom': '1em'},
                     disabled: app.lockToggle
@@ -379,18 +408,18 @@ function rightpanel(mode) {
     });
 
     // MANIPULATE TAB
-    app.selectedProblem && sections.push({
+    sections.push({
         value: 'Manipulate',
         title: 'Apply transformations and subsets to a problem',
         contents: m(MenuHeaders, {
             id: 'aggregateMenu',
             attrsAll: {style: {height: '100%', overflow: 'auto'}},
             sections: [
-                manipulate.getPipeline().length !== 0 && {
+                app.getSelectedDataset().manipulations.length !== 0 && {
                     value: 'Dataset Pipeline',
                     contents: m(manipulate.PipelineFlowchart, {
-                        compoundPipeline: manipulate.getPipeline(),
-                        pipelineId: app.datadocument.about.datasetID,
+                        compoundPipeline: app.getSelectedDataset().manipulations,
+                        pipelineId: app.selectedDataset,
                         editable: false
                     })
                 },
@@ -398,12 +427,12 @@ function rightpanel(mode) {
                     value: 'Problem Pipeline',
                     contents: [
                         m(manipulate.PipelineFlowchart, {
-                            compoundPipeline: manipulate.getPipeline(app.selectedProblem),
-                            pipelineId: app.selectedProblem.problemID,
+                            compoundPipeline: selectedProblem.manipulations,
+                            pipelineId: selectedProblem.problemID,
                             editable: true,
                             aggregate: false
                         }),
-                        app.nodes.filter(node => node.nature === 'nominal').length !== 0 && m(Flowchart, {
+                        selectedProblem.nominalCast.length > 0 && m(Flowchart, {
                             attrsAll: {style: {height: 'calc(100% - 87px)', overflow: 'auto'}},
                             labelWidth: '5em',
                             steps: [{
@@ -411,13 +440,9 @@ function rightpanel(mode) {
                                 color: common.nomColor,
                                 content: m('div', {style: {'text-align': 'left'}},
                                     m(ListTags, {
-                                        tags: app.nodes
-                                            .filter(node => node.nature === 'nominal')
-                                            .map(node => node.name),
-                                        ondelete: name => {
-                                            app.setColors(app.nodes.find(node => node.name === name), common.nomColor);
-                                            app.restart();
-                                        }
+                                        // TODO: initialize nominalCast
+                                        tags: selectedProblem.nominalCast,
+                                        ondelete: name => app.remove(selectedProblem.nominalCast, name)
                                     }))
                             }]
                         })
@@ -430,7 +455,7 @@ function rightpanel(mode) {
     // RESULTS TAB
     // reload the results if on the results tab and there are pending changes
     // Automatic reloading only when running in TwoRavens mode
-    if (!IS_D3M_DOMAIN && app.rightTab === 'Results' && app.solverPending) app.callSolver(app.selectedProblem);
+    if (!IS_D3M_DOMAIN && app.rightTab === 'Results' && app.solverPending) app.callSolver(app.getSelectedProblem());
 
     let plotScatter = ({state, attrs, dom}) => {
         let xData = {};
@@ -449,7 +474,7 @@ function rightpanel(mode) {
         vegaEmbed(dom, plots.vegaScatter(
             xData, yData,
             "Actuals", "Predicted",
-            "Actuals vs. Predicted: Pipeline " + app.resultsProblem.problemID,
+            "Actuals vs. Predicted: Pipeline " + selectedProblem.problemID,
             "pipeline"
         ), {actions: false, width: dom.offsetWidth, height: dom.offsetHeight});
     };
@@ -457,9 +482,9 @@ function rightpanel(mode) {
     let firstSelectedPipelineID = app.selectedPipelines.values().next().value;
 
     let confusionData = [];
-    let showPredictionSummary = (app.selectedProblem && common.panelOpen['right'] && app.rightTab === 'Results'
+    let showPredictionSummary = (common.panelOpen['right'] && app.rightTab === 'Results'
                                  && app.selectedResultsMenu === 'Prediction Summary' && firstSelectedPipelineID in app.pipelineAdapter);
-    if (showPredictionSummary && app.selectedProblem.task === 'classification')
+    if (showPredictionSummary && selectedProblem.task === 'classification')
         confusionData = [...app.selectedPipelines]
             .map(pipelineID => Object.assign({pipelineID}, app.generateConfusionData(
                 app.pipelineAdapter[pipelineID].actualValues,
@@ -514,6 +539,7 @@ function rightpanel(mode) {
         ];
     }
 
+    let resultsProblem = app.getResultsProblem();
     sections.push({
         value: 'Results',
         display: !app.swandive || IS_D3M_DOMAIN ? 'block' : 'none',
@@ -575,34 +601,44 @@ function rightpanel(mode) {
                     {value: 'Solution Table', id: 'btnSolTable', attrsInterface: {disabled: app.modelComparison || !String(firstSelectedPipelineID).includes('raven')}}
                 ]
             }),
-                app.resultsProblem && m(`div#problemDescription[style=display:${app.selectedResultsMenu === 'Problem Description' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%]`,
-                    m(Table, {
-                        headers: ['Variable', 'Data'],
-                        data: [
-                            ['Dependent Variable', app.resultsProblem.target],
-                            ['Predictors', app.resultsProblem.predictors],
-                            ['Description', app.resultsProblem.description],
-                            ['Task', app.resultsProblem.task],
-                            ['Model', app.resultsProblem.model]
-                        ],
-                        nest: true,
-                        attrsAll: {
-                            style: {
-                                width: 'calc(100% - 2em)',
-                                overflow: 'auto',
-                                border: '1px solid #ddd',
-                                margin: '1em',
-                                'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)'
-                            }
+                resultsProblem && m(`div#problemDescription`, {
+                    display: app.selectedResultsMenu === 'Problem Description' ? 'block' : 'none',
+                    height: "calc(100% - 30px)",
+                    overflow: "auto",
+                    width: "70%"
+                },
+                m(Table, {
+                    headers: ['Variable', 'Data'],
+                    data: [
+                        ['Dependent Variable', resultsProblem.target],
+                        ['Predictors', resultsProblem.predictors],
+                        ['Description', resultsProblem.description],
+                        ['Task', resultsProblem.task],
+                        ['Model', resultsProblem.model]
+                    ],
+                    nest: true,
+                    attrsAll: {
+                        style: {
+                            width: 'calc(100% - 2em)',
+                            overflow: 'auto',
+                            border: '1px solid #ddd',
+                            margin: '1em',
+                            'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)'
                         }
-                    })
-                        // m('#setPredictionDataLeft[style=display:block; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white; padding : 1em; margin-top: 1em]')
+                    }
+                })
+                // m('#setPredictionDataLeft[style=display:block; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white; padding : 1em; margin-top: 1em]')
                 ),
-                m(`div#predictionSummary[style=display:${app.selectedResultsMenu === 'Prediction Summary' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%]`,
+                    m(`div#predictionSummary`, {
+                        display: app.selectedResultsMenu === 'Prediction Summary' ? 'block' : 'none',
+                        height:"calc(100% - 30px)",
+                        overflow: "auto",
+                        width: "70%"
+                    },
                     m('#setxLeftPlot[style=float:left; background-color:white; overflow:auto;]'),
                     m('#setxLeft[style=display:none; float: left; overflow: auto; background-color: white]'),
 
-                    showPredictionSummary && app.selectedProblem.task === 'regression' && [...app.selectedPipelines].some(pipeID => app.pipelineAdapter[pipeID].fittedValues) && m('#resultsScatter', {
+                    showPredictionSummary && selectedProblem.task === 'regression' && [...app.selectedPipelines].some(pipeID => app.pipelineAdapter[pipeID].fittedValues) && m('#resultsScatter', {
                         oncreate(vnode) {
                             plotScatter(vnode)
                         },
@@ -676,7 +712,7 @@ function rightpanel(mode) {
                         // }, m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))
                     ),
                     m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]')),
-                app.selectedResultsMenu === 'Visualize Pipeline' && app.selectedPipelines.size === 1 && [...app.selectedPipelines].some(pipeID => pipeID in app.allPipelineInfo) && m('div', {
+                app.selectedResultsMenu === 'Visualize Pipeline' && app.selectedPipelines.size === 1 && [...app.selectedPipelines][0] in resultsProblem.solutions.d3m && m('div', {
                     style: {
                         width: '70%',
                         height: 'calc(100% - 30px)',
@@ -686,9 +722,9 @@ function rightpanel(mode) {
                 m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Overview: '),
                 m(Table, {
                     id: 'pipelineOverviewTable',
-                    data: Object.keys(app.allPipelineInfo[[...app.selectedPipelines][0]].pipeline).reduce((out, entry) => {
+                    data: Object.keys(resultsProblem.solutions.d3m[[...app.selectedPipelines][0]].pipeline).reduce((out, entry) => {
                         if (['inputs', 'steps', 'outputs'].indexOf(entry) === -1)
-                            out[entry] = app.allPipelineInfo[[...app.selectedPipelines][0]].pipeline[entry];
+                            out[entry] = resultsProblem.solutions.d3m[[...app.selectedPipelines][0]].pipeline[entry];
                         return out;
                     }, {}),
                     attrsAll: {
@@ -704,11 +740,12 @@ function rightpanel(mode) {
                 m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Steps: '),
                 m(Flowchart, {
                     labelWidth: '5em',
-                    steps: pipelineFlowchartPrep(app.allPipelineInfo[[...app.selectedPipelines][0]].pipeline)
+                    steps: pipelineFlowchartPrep(resultsProblem.solutions.d3m[[...app.selectedPipelines][0]].pipeline)
                 })),
+                // TODO: call solver backend has changed, stargazer may not behave the same anymore
                 m(`div#solutionTable[style=display:${app.selectedResultsMenu === 'Solution Table' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%;]`,
-                    app.selectedProblem && firstSelectedPipelineID in app.ravenPipelineInfo && m(DataTable, {
-                        data: app.ravenPipelineInfo[firstSelectedPipelineID].stargazer,
+                    firstSelectedPipelineID in resultsProblem.solutions.rook && m(DataTable, {
+                        data: resultsProblem.solutions.rook[firstSelectedPipelineID].stargazer,
                         variable: app.pipelineAdapter[firstSelectedPipelineID].target
                     })
                 )
@@ -739,7 +776,7 @@ function rightpanel(mode) {
     //    )
     //  ]}
 
-    return m(Panel, {
+    return app.selectedProblem && m(Panel, {
             side: 'right',
             label: 'Model Selection',
             hover: true,
@@ -749,7 +786,6 @@ function rightpanel(mode) {
                 style: {
                     'z-index': 100 + (app.focusedPanel === 'right'),
                     height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`,
-                    display: app.selectedProblem ? 'block' : 'none'
                 }
             }
         },
@@ -907,6 +943,11 @@ class Body {
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
 
+        let fullManipulations = [
+            ...app.getSelectedDataset().manipulations,
+            ...app.getSelectedProblem().manipulations
+        ];
+
         return m('main',
             m(Modal),
             app.alertsShown && m(ModalVanilla, {
@@ -952,9 +993,9 @@ class Body {
             leftpanel(app.currentMode),
             rightpanel(app.currentMode),
 
-            (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate' && app.selectedProblem)) && manipulate.menu(
-                manipulate.getPipeline(app.selectedProblem), // the complete pipeline to build menus with
-                app.is_model_mode ? app.selectedProblem.problemID : app.datadocument.about.datasetID),  // the identifier for which pipeline to edit
+            (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu(
+                fullManipulations,
+                app.is_model_mode ? app.getSelectedDataset().selectedProblem : app.selectedDataset),  // the identifier for which pipeline to edit
             app.peekInlineShown && this.peekTable(),
 
             m(`#main`, {
@@ -992,7 +1033,7 @@ class Body {
                                 classes: 'btn-success',
                                 onclick: _ => {
                                     let variate = app.exploreVariate.toLowerCase();
-                                    let selected = discovery ? [app.selectedProblem.problemID] : nodesExplore.map(x => x.name);
+                                    let selected = discovery ? [app.getSelectedDataset().selectedProblem] : nodesExplore.map(x => x.name);
                                     let len = selected.length;
                                     if (variate === 'univariate' && len != 1
                                         || variate === 'problem' && len != 1
@@ -1006,7 +1047,7 @@ class Body {
                             }, 'go'),
                             m('br'),
                             m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
-                                (discovery ? app.disco : app.valueKey).map(x => { // entry could either be a problem or a variable name
+                                (discovery ? app.getSelectedDataset().problems : Object.keys(app.getSelectedProblem().preprocess)).map(x => { // entry could either be a problem or a variable name
                                     let selected = discovery ? x === app.selectedProblem : nodesExplore.map(y => y.name).includes(x);
                                     let targetName = x.target || x;
 
@@ -1071,37 +1112,17 @@ class Body {
                                 }))
                         )],
 
-                    m(ForceDiagram, Object.assign({}, app.forceDiagramStatic, {
-                        radius: app.defaultPebbleRadius,
-                        groups: app.getForceDiagramGroups(),
-
-                        nodes: app.nodes,
-
-                        groupLinks: [
-                            {
-                                color: common.gr1Color,
-                                source: 'Predictors',
-                                target: 'Targets'
-                            }
-                        ],
-                        nodeLinks: [
-                            // {
-                            //     source: '',
-                            //     target: '',
-                            //     left: false,
-                            //     right: true
-                            // }
-                        ],
-
-                        forcetoggle: app.forceToggle
-                    }))
+                    m(ForceDiagram, Object.assign({
+                        forcetoggle: app.forceToggle,
+                        radius: app.defaultPebbleRadius
+                    }, app.forceDiagramStatic, app.buildForceDiagram()))
                 ),
                     // m('svg#whitespace')),
                 app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}}, [
                     spaceBtn('btnAdd', app.addProblemFromForceDiagram, 'add model to problems', 'plus'),
                     spaceBtn('btnJoin', app.connectAllForceDiagram, 'Make all possible connections between nodes', 'link'),
                     spaceBtn('btnDisconnect', () => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
-                    spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
+                    spaceBtn('btnForce', () => app.setForceToggle(!app.forceToggle), 'Pin the variable pebbles to the page', 'pushpin'),
                     spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')
                 ]),
                 app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}),
@@ -1174,7 +1195,7 @@ class Body {
                 {style: `display: ${this.cite ? 'block' : 'none'}; margin-top: 2.5em; right: 50%; width: 380px; text-align: left; z-index: 50; position:absolute`},
                 m('.panel-body', IS_D3M_DOMAIN && m(Table, {data: app.datadocument['about']}))),
 
-            Object.keys(app.allPipelineInfo).length > 0 && m(Button, {
+            Object.keys(resultsProblem.solutions.d3m).length > 0 && m(Button, {
                 id: 'btnEndSession',
                 class: 'ladda-label ladda-button',
                 onclick: app.endsession,
@@ -1214,7 +1235,10 @@ class Body {
     }
 
     peekTable() {
-        let pipeline = manipulate.getPipeline(app.is_model_mode && app.selectedProblem);
+        let pipeline = [
+            ...app.getSelectedDataset().manipulations,
+            ...(app.is_model_mode ? app.getSelectedProblem().manipulations : [])
+        ];
         if (app.peekInlineShown && !app.peekData && !app.peekIsExhausted) app.resetPeek(pipeline);
 
         return m('div#previewTable', {

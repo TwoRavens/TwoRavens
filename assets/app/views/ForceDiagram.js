@@ -1,28 +1,6 @@
 import m from 'mithril';
 import {mergeAttributes} from "../../common/common";
-import {
-    zparams
-} from "../app";
 import * as d3 from 'd3';
-
-
-/**
- Define each pebble charge.
- */
-function getPebbleCharge(d) {
-    if (d.group1 || d.group2){
-        if(d.forefront){// pebbles packed in groups repel others on mouseover
-            return -1000;
-        }
-        var uppersize = 7;
-        var ng1 = (d.group1) ? zparams.zgroup1.length : 1;      // size of group1, if a member of group 1
-        var ng2 = (d.group2) ? zparams.zgroup2.length : 1;      // size of group2, if a member of group 2
-        var maxng = Math.max(ng1,ng2);                                                      // size of the largest group variable is member of
-        return (maxng>uppersize) ? -400*(uppersize/maxng) : -400;                           // decrease charge as pebbles become smaller, so they can pack together
-    }else{
-        return -800;
-    }
-}
 
 
 /**
@@ -34,18 +12,20 @@ function jamescentroid(coord) {
         maxx = coord[0][0],
         miny = coord[0][1],
         maxy = coord[0][1];
-    for(let j = 1; j<coord.length; j++){
+    for (let j = 1; j < coord.length; j++) {
         if (coord[j][0] < minx) minx = coord[j][0];
         if (coord[j][1] < miny) miny = coord[j][1];
         if (coord[j][0] > maxx) maxx = coord[j][0];
         if (coord[j][1] > maxy) maxy = coord[j][1];
     }
-    return[(minx + maxx)/2, (miny + maxy)/2];
+    return [(minx + maxx) / 2, (miny + maxy) / 2];
 }
 
-export let k = 4; // strength parameter for group attraction/repulsion
-
 export default class ForceDiagram {
+    oninit() {
+        // strength parameter for group attraction/repulsion
+        this.kGroupGravity = 4;
+    }
 
     onupdate(vnode) {
         // element constructors
@@ -86,6 +66,22 @@ export default class ForceDiagram {
         // nodes.index is floating and depends on updates to nodes.  a variables index changes when new variables are added.
         this.force.nodes(nodes);
 
+        /**
+         Define each pebble charge.
+         */
+        let uppersize = 7;
+        function getPebbleCharge(d) {
+            let groupSize = Math.max(...groups // find the size of the largest group that d is a member of
+                .filter(group => group.nodes.has(d.name)) // find groups that contain node
+                .map(group => group.nodes.length)); // grab the group size
+
+            if (groupSize === -Infinity) return -800;
+            if (d.forefront) return -1000;
+
+            // decrease charge as pebbles become smaller, so they can pack together
+            return groupSize > uppersize ? -400 * uppersize / groupSize : -400;
+        }
+
         // TODO: this api changed in v4 // https://bl.ocks.org/mbostock/ad70335eeef6d167bc36fd3c04378048
         // this.circle.call(this.force.drag);
         if (forceToggle) {
@@ -95,14 +91,14 @@ export default class ForceDiagram {
                 .force('x', d3.forceX(width / 2).strength(.05))
                 .force('x', d3.forceY(height / 2).strength(.05));
 
-            k = 8 / (groups.length || 1); // strength parameter for group attraction/repulsion
+            this.kGroupGravity = 8 / (groups.length || 1); // strength parameter for group attraction/repulsion
         } else {
             this.force
                 .force('link', d3.forceLink(nodeLinks).distance(100))
                 .force('charge', d3.forceManyBody().strength(0)) // prevent tight clustering
                 .force('x', d3.forceX(width / 2).strength(0))
                 .force('x', d3.forceY(height / 2).strength(0));
-            k = 0;
+            this.kGroupGravity = 0;
         }
 
         // called on each force animation frame
@@ -187,8 +183,8 @@ export default class ForceDiagram {
                     let dist = Math.sqrt(delta.reduce((sum, axis) => sum + axis * axis, 0));
                     let norm = dist === 0 ? [0, 0] : delta.map(axis => axis / dist);
 
-                    n.x += Math.min(norm[0], delta[0] / 100) * k * sign * this.force.alpha();
-                    n.y += Math.min(norm[1], delta[1] / 100) * k * sign * this.force.alpha();
+                    n.x += Math.min(norm[0], delta[0] / 100) * this.kGroupGravity * sign * this.force.alpha();
+                    n.y += Math.min(norm[1], delta[1] / 100) * this.kGroupGravity * sign * this.force.alpha();
                 });
             });
 

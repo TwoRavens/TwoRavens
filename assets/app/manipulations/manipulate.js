@@ -182,10 +182,10 @@ export function varList() {
             if (constraintPreferences.type === 'Equation' && constraintPreferences.menus.Equation.usedTerms)
                 selectedVariables = [...constraintPreferences.menus.Equation.usedTerms.variables];
             if (constraintPreferences.type === 'Expansion') {
-                variables = [
-                    ...app.selectedProblem.predictorsInitial || app.selectedProblem.predictors,
+                variables = [...new Set([
+                    ...Object.keys(app.getSelectedDataset().preprocess),
                     ...getTransformVariables(partialPipeline)
-                ];
+                ])];
                 selectedVariables = Object.keys(constraintPreferences.menus.Expansion.variables || {});
             }
             if (constraintPreferences.type === 'Binning') {
@@ -266,8 +266,8 @@ export function rightpanel() {
                 }
             }
         }, m(PipelineFlowchart, {
-            compoundPipeline: getPipeline(),
-            pipelineId: app.datadocument.about.datasetID,
+            compoundPipeline: app.getSelectedDataset().manipulations,
+            pipelineId: app.selectedDataset,
             editable: true
         }));
 }
@@ -544,9 +544,8 @@ export let setQueryUpdated = async state => {
     if (app.is_manipulate_mode) {
         if (!pendingHardManipulation && state) {
             hopscotch.startTour(datasetChangedTour, 0);
-            Object.keys(app.manipulations)
-                .filter(key => key !== app.datadocument.about.datasetID)
-                .forEach(key => delete app.manipulations[key])
+            // TODO: eventually, discovery should be called if problems is undefined. Not here though, only when switching back to model mode
+            delete app.getSelectedDataset().problems;
         }
         pendingHardManipulation = state;
     }
@@ -554,17 +553,35 @@ export let setQueryUpdated = async state => {
     // if we have an edit to the problem manipulations
     if (!app.is_manipulate_mode) {
 
-        app.selectedProblem.predictors = [
-            ...app.selectedProblem.predictorsInitial,
-            ...getTransformVariables(app.selectedProblem.pipeline)
-        ];
+        let selectedDataset = app.getSelectedDataset();
+        let selectedProblem = app.getSelectedProblem();
 
-        // if the predictors changed, then redraw the force diagram
-        if (app.nodes.length !== app.selectedProblem.predictors.length || app.nodes.some(node => !app.selectedProblem.predictors.includes(node.name)))
-            app.redrawForce(app.selectedProblem);
+        // TODO: IMPORTANT: this is where preprocess needs to be re-run
+        // "A": old predictors list
+        // "C": old transformed variables
+        // "D": new predictors list
+        // "F": new transformed variables
+        //
+        // Must find D.
+        //     D = (A union (F \ C)) \ (C \ F)
+        //
+        // F \ C is the set of added transformed variables
+        // (A union (F \ C)) is the set of old variables and new transform variables
+        // (A union (F \ C)) \ (C \ F) now remove transformed variables that are not present in the new query
+
+        let predictorsOld = Object.keys(selectedProblem.preprocess);
+        let transformsOld = selectedProblem.transformedVariables;
+        let transformsNew = getTransformVariables(selectedProblem.manipulations);
+
+        let transformsRemoved = new Set([...transformsOld].filter(elem => !transformsNew.has(elem)));
+        let transformsAdded = [...transformsNew].filter(elem => !transformsOld.has(elem));
+
+        selectedProblem.predictors = [...predictorsOld, ...transformsAdded]
+            .filter(elem => !transformsRemoved.has(elem));
+        selectedProblem.transformedVariables = transformsNew;
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
-        loadMenu([...getPipeline(), ...app.selectedProblem.pipeline], countMenu).then(count => {
+        loadMenu([...selectedDataset.manipulations, ...selectedProblem.manipulations], countMenu).then(count => {
             setTotalSubsetRecords(count);
             m.redraw();
         });
@@ -572,19 +589,6 @@ export let setQueryUpdated = async state => {
         // will trigger the call to solver, if a menu that needs that info is shown
         app.setSolverPending(true);
     }
-};
-
-// returns the fragment of a pipeline representing a problem
-export let getProblemPipeline = problem => {
-    if (!problem) return;
-    if (!(problem.problemID in app.manipulations)) app.manipulations[problem.problemID] = [];
-
-    return app.manipulations[problem.problemID];
-};
-
-export let getPipeline = (problem) => {
-    if (!(app.datadocument.about.datasetID in app.manipulations)) app.manipulations[app.datadocument.about.datasetID] = [];
-    return [...app.manipulations[app.datadocument.about.datasetID], ...(getProblemPipeline(problem) || [])];
 };
 
 // when set, the constraint menu will rebuild non-mithril elements (like plots) on the next redraw
@@ -843,7 +847,7 @@ export let rebuildPreprocess = async () => {
     };
 
     let compiled = JSON.stringify(queryMongo.buildPipeline(
-        [...getPipeline(), menuDownload],
+        [...app.getSelectedDataset().manipulations, menuDownload],
         Object.keys(variablesInitial))['pipeline']);
 
     let dataPath = await getData({
@@ -905,7 +909,6 @@ export let rebuildPreprocess = async () => {
     hopscotch.endTour();
 
     app.setDisco(app.discovery(response));
-    app.setMytarget([app.disco[0].target]);
     app.setSelectedProblem(undefined);
 
     setQueryUpdated(false);
@@ -943,7 +946,11 @@ export async function buildDatasetUrl(problem) {
         }
     };
 
-    let compiled = queryMongo.buildPipeline([...getPipeline(problem), problemStep], Object.keys(variablesInitial))['pipeline'];
+    let compiled = queryMongo.buildPipeline([
+        ...app.getSelectedDataset().manipulations,
+        ...app.getSelectedProblem().manipulations,
+        problemStep
+    ], Object.keys(variablesInitial))['pipeline'];
 
     return await getData({
         method: 'aggregate',
@@ -954,7 +961,8 @@ export async function buildDatasetUrl(problem) {
 
 export async function buildProblemUrl(problem) {
     let abstractPipeline = [
-        ...getPipeline(problem),
+        ...app.getSelectedDataset().manipulations,
+        ...app.getSelectedProblem().manipulations,
         {
             type: 'menu',
             metadata: {
