@@ -119,7 +119,7 @@ function leftpanel(mode) {
         problem.subTask === 'taskSubtypeUndefined' ? '' : problem.subTask, // ignore taskSubtypeUndefined
         problem.metric,
         // the view manipulations button
-        (!!problem.subsetObs || !!problem.transform || (app.manipulations[problem.problemID] || []).length !== 0) && m(
+        problem.manipulations.length !== 0 && m(
             'div[style=width:100%;text-align:center]', m(Button, {
                 disabled: problem === selectedProblem && app.rightTab === 'Manipulate' && common.panelOpen['right'],
                 title: `view manipulations for ${problem.problemID}`,
@@ -948,6 +948,8 @@ class Body {
             ...app.getSelectedProblem().manipulations
         ];
 
+        let selectedProblem = app.getSelectedProblem();
+
         return m('main',
             m(Modal),
             app.alertsShown && m(ModalVanilla, {
@@ -1127,7 +1129,7 @@ class Body {
                 ]),
                 app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}),
 
-                app.currentMode !== 'explore' && ['zgroup1', 'zgroup2', 'ztime', 'zcross', 'zdv', 'znom'].reduce((acc, elem) => acc + app.zparams[elem].length, 0) > 0 && m(Subpanel2, {
+                app.currentMode !== 'explore' && ['predictors', 'time', 'crossSection', 'target'].reduce((acc, elem) => acc + selectedProblem[elem].length, 0) > 0 && m(Subpanel2, {
                     id: 'legend', header: 'Legend', class: 'legend',
                     style: {
                         right: app.panelWidth['right'],
@@ -1136,20 +1138,20 @@ class Body {
                         width: '150px'
                     }
                 }, [
-                    ['timeButton', 'ztime', 'Time', common.dvColor, 'white', 1],
-                    ['csButton', 'zcross', 'Cross Sec', common.csColor, 'white', 1],
-                    ['dvButton', 'zdv', 'Dep Var', common.timeColor, 'white', 1],
-                    ['nomButton', 'znom', 'Nom Var', common.nomColor, 'white', 1],
-                    ['gr1Button', 'zgroup1', 'Group 1', common.gr1Color, common.gr1Color, 0],
-                    ['gr2Button', 'zgroup2', 'Group 2', common.gr2Color, common.gr2Color, 0]
+                    ['timeButton', 'time', 'Time', common.dvColor, 'white', 1],
+                    ['csButton', 'crossSection', 'Cross Sec', common.csColor, 'white', 1],
+                    ['dvButton', 'target', 'Dep Var', common.timeColor, 'white', 1],
+                    // ['nomButton', 'nominal', 'Nom Var', common.nomColor, 'white', 1],
+                    ['gr1Button', 'predictors', 'Predictors', common.gr1Color, common.gr1Color, 0],
+                    // ['gr2Button', 'zgroup2', 'Group 2', common.gr2Color, common.gr2Color, 0]
                 ].map(btn =>
-                    m(`#${btn[0]}.${app.zparams[btn[1]].length === 0 ? "hide" : "show"}[style=width:100% !important]`,
+                    m(`#${btn[0]}.${selectedProblem[btn[1]].length === 0 ? "hide" : "show"}[style=width:100% !important]`,
                         m(".rectColor[style=display:inline-block]", m("svg[style=width: 20px; height: 20px]",
                             m(`circle[cx=10][cy=10][fill=${btn[4]}][fill-opacity=0.6][r=9][stroke=${btn[3]}][stroke-opacity=${btn[5]}][stroke-width=2]`))),
                         m(".rectLabel[style=display:inline-block;vertical-align:text-bottom;margin-left:.5em]", btn[2])))
                 ),
 
-                (app.manipulations[(app.selectedProblem || {}).problemID] || []).filter(step => step.type === 'subset').length !== 0 && m(Subpanel2, {
+                selectedProblem.manipulations.filter(step => step.type === 'subset').length !== 0 && m(Subpanel2, {
                     id: 'subsetSubpanel',
                     header: 'Subsets',
                     style: {
@@ -1157,7 +1159,7 @@ class Body {
                         top: common.panelMargin,
                         position: 'absolute'
                     }
-                }, app.manipulations[app.selectedProblem.problemID]
+                }, selectedProblem.manipulations
                     .filter(step => step.type === 'subset')
                     .map(step => m('div', step.id))
                     .concat([`${manipulate.totalSubsetRecords} Records`]))

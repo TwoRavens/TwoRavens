@@ -531,10 +531,6 @@ export let datamartPreferences = {
     cached: {}
 };
 
-// list of variable strings (same as Object.keys(preprocess))
-export let valueKey = [];
-export let setValueKey = keys => valueKey = keys;
-
 // list of discovered problem objects
 export let disco = [];
 export let setDisco = data => disco = data;
@@ -905,9 +901,11 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     //
     // Note: if data files have "exists" as false, stay at default which is null
     //
-    let set_d3m_data_path = (field, val) => problem_info_result.data[field].exists ? problem_info_result.data[field].path :
-        problem_info_result.data[field + '.gz'].exists ? problem_info_result.data[field + '.gz'].path :
-        val;
+    let set_d3m_data_path = (field, val) => problem_info_result.data[field].exists
+        ? problem_info_result.data[field].path
+        : problem_info_result.data[field + '.gz'].exists
+            ? problem_info_result.data[field + '.gz'].path
+            : val;
 
     zparams.zd3mdata = d3mData = set_d3m_data_path('learningData.csv', d3mData);
     zparams.zd3mtarget = set_d3m_data_path('learningData.csv', d3mData);
@@ -978,24 +976,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             d3mProblemDescription.performanceMetrics = res.inputs.performanceMetrics;   // or? res.inputs.performanceMetrics[0].metric;
         }
 
-
-        manipulations[res.about.problemID] = [];
-        defaultProblem = {
-            problemID: res.about.problemID,
-            system: 'auto',
-            description: res.about.problemDescription,
-            target: res.inputs.data[0].targets.map(targ => targ.colName),
-            predictors: [],
-            get pipeline() {return manipulations[this.problemID]},
-            metric: res.inputs.performanceMetrics[0].metric,
-            model: 'modelUndefined',
-            task: res.about.taskType,
-            subTask: d3mProblemDescription.taskSubtype,
-            meaningful: false
-        };
-
         // making it case insensitive because the case seems to disagree all too often
-        if (failset.includes(defaultProblem.task.toUpperCase())) {
+        if (failset.includes(res.about.taskType.toUpperCase())) {
             if(IS_D3M_DOMAIN){
               console.log('D3M WARNING: failset  task type found');
             }
@@ -1003,7 +985,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
     }else{
         console.log("Task 1: No Problem Doc");
-        defaultProblem.description = 'Initial discovered problem';
         // d3mProblemDescription.id="Task1";
         // d3mProblemDescription.name="Task1";
         // d3mProblemDescription.description = "Discovered Problems";
@@ -1161,7 +1142,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     //
     let loadPreprocessData = res => {
         priv = res.dataset.private || priv;
-        preprocess = res.variables;
+        getSelectedDataset().preprocess = res.variables;
+        defaultProblem.preprocess = res.variables;
         return res;
     };
 
@@ -1228,8 +1210,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
      console.log('---------------------------------------');
      console.log("-- 9. Build allNodes[] using preprocessed information --");
 
-    setValueKey(Object.keys(preprocess));
-    setAllNodes(valueKey.map((variable, i) => $.extend(true, {
+    setAllNodes(Object.keys(getSelectedDataset().preprocess).map((variable, i) => $.extend(true, {
         id: i,
         reflexive: false,
         name: variable,
@@ -1282,16 +1263,39 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
     }
 
-
-    defaultProblem.predictors = nodes
-        .filter(node => !selectedProblem.target.includes(node.name))
-        .map(node => node.name);
-    disco.unshift(defaultProblem);
+    // create the default problem provided by d3m
+    let targets = res.inputs.data[0].targets.map(targ => targ.colName);
+    let predictors = Object.keys(getSelectedDataset().preprocess)
+        .filter(variable => !targets.includes(variable));
+    defaultProblem = {
+        problemID: res.about.problemID,
+        system: 'auto',
+        description: res.about.problemDescription,
+        target: targets,
+        predictors: predictors,
+        transformedVariables: [],
+        metric: res.inputs.performanceMetrics[0].metric,
+        task: res.about.taskType,
+        subTask: res.about.taskSubType,
+        model: 'modelUndefined',
+        meaningful: false,
+        manipulations: [],
+        solutions: {
+            d3m: {},
+            rook: {}
+        },
+        crossSection: [],
+        time: [],
+        preprocess: getSelectedDataset().preprocess
+    };
+    // add the default problems to the list of problems
+    getSelectedDataset().problems[res.about.problemID] = defaultProblem;
 
     /**
      * Note: mongodb data retrieval initiated here
      *   setSelectedProblem -> loadMenu (manipulate.js) -> getData (manipulate.js)
      */
+    // select a copy of the default problem
     setSelectedProblem(getProblemCopy(defaultProblem));
 }
 
@@ -2267,7 +2271,7 @@ function CreateProblemDefinition(depvar, aux) {
             targets: [
                 {
                     resourceId: resourceIdFromProblemDoc,
-                    columnIndex: valueKey.indexOf(depvar[0]),  // Adjusted to match dataset doc
+                    columnIndex: Object.keys(getSelectedProblem().preprocess).indexOf(depvar[0]),  // Adjusted to match dataset doc
                     columnName: depvar[0]
                 }
             ]
@@ -2292,7 +2296,7 @@ function CreateProblemDefinition(depvar, aux) {
                 targets: [
                     {
                         resourceId: resourceIdFromProblemDoc,
-                        columnIndex: valueKey.indexOf(resultsProblem.target),  // Adjusted to match dataset doc
+                        columnIndex: Object.keys(getSelectedProblem().preprocess).indexOf(resultsProblem.target),  // Adjusted to match dataset doc
                         columnName: resultsProblem.target
                     }
                 ]}];
@@ -2321,7 +2325,7 @@ function CreateProblemSchema(aux){
                     targets: [
                         {
                             resourceId: resourceIdFromDatasetDoc,
-                            columnIndex: valueKey.indexOf(aux.target),  // Adjusted to match dataset doc
+                            columnIndex: Object.keys(getSelectedProblem().preprocess).indexOf(aux.target),  // Adjusted to match dataset doc
                             columnName: aux.target
                         }
                     ]
@@ -2558,11 +2562,6 @@ export async function estimate() {
     } else if (swandive) { // IS_D3M_DOMAIN and swandive is true
         zPop();
         zparams.callHistory = callHistory;
-
-        // TODO: This needs testing
-        valueKey
-            .filter(key => selectedProblem.target.includes(key))
-            .map(key => del(valueKey, valueKey.indexOf(key)));
 
         estimateLadda.start(); // start spinner
 
@@ -3565,7 +3564,7 @@ export function getDescription(problem) {
 }
 
 export function discovery(preprocess_file) {
-    return preprocess_file.dataset.discovery.reduce((out, prob) => {
+    let problems = preprocess_file.dataset.discovery.reduce((out, prob) => {
         let problemID = generateProblemID();
         let manips = [];
 
@@ -3600,24 +3599,18 @@ export function discovery(preprocess_file) {
             })
         }
 
-        // TODO: compute preprocess if manipulations pipeline is non-empty, potential block here
-
         // TODO: IMPORTANT: update this to be in-key with rest of page expectations
         out[problemID] = {
             problemID,
             system: "auto",
-
             description: undefined,
-
             target: [prob.target],
-            predictorsInitial: prob.predictors,
             predictors: [...prob.predictors, ...getTransformVariables(manips)],
             transformedVariables: manipulate.getTransformVariables(manips), // this is used when updating manipulations pipeline
-            metric: findNode(prob.target).plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
-            task: findNode(prob.target).plottype === "bar" ? 'classification' : 'regression',
+            metric: undefined, // this is set below
+            task: undefined, // this is set below
             subTask: 'taskSubtypeUndefined',
             model: 'modelUndefined',
-            rating: 3,
             meaningful: false,
             manipulations: manips,
             solutions: {
@@ -3625,10 +3618,34 @@ export function discovery(preprocess_file) {
                 rook: {}
             },
             crossSection: [],
-            time: []
+            time: [],
+            preprocess: {} // this gets populated below
         };
         return out;
     }, {});
+
+    let dataset = getSelectedDataset();
+    Object.keys(problems)
+        .filter(problemID => problems[problemID].manipulations.length === 0)
+        .forEach(problemID => problems[problemID].preprocess = dataset.preprocess);
+
+    // construct preprocess for all problems with manipulations
+    Promise.all(Object.keys(problems)
+        .filter(problemID => problems[problemID].manipulations.length !== 0)
+        .map(problemID => manipulate.buildDatasetUrl(problems[problemID])
+            .then(url => m.request({
+                method: 'POST',
+                url: ROOK_SVC_URL + 'preprocessapp',
+                data: url
+            }))
+            .then(response => {
+                let problem = problems[problemID];
+                Object.assign(problem, {
+                    preprocess: response.variables,
+                    metric: response.variables[problem.target[0]].plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
+                    task: response.variables[problem.target[0]].plottype === "bar" ? 'classification' : 'regression'
+                })
+            })));
 }
 
 // creates a new problem from the force diagram problem space and adds to disco
@@ -3705,19 +3722,20 @@ export function connectAllForceDiagram() {
 
 export let datasets = {};
 export let selectedDataset;
-export let setSelectedDataset = datasetID => {
-    selectedDataset = datasetID;
-    if (!(selectedDataset in datasets)) {
-
+export let setSelectedDataset = async datasetID => {
+    if (!(datasetID in datasets)) {
         // TODO: IMPORTANT: this is the first thing to fix to get the page loading properly
         // 1. load preprocess
-        // 2. load d3m dataaset doc
+        // 2. load d3m dataset doc
         // 3. construct default problem
         datasets[selectedDataset] = {
             manipulations: [],
-            preprocess: {}
+            preprocess: preprocess
         }
     }
+
+
+    selectedDataset = datasetID;
 };
 
 export let getSelectedDataset = () => datasets[selectedDataset];
@@ -3759,20 +3777,12 @@ export function setSelectedProblem(problemID) {
 }
 
 export function getProblemCopy(problemSource) {
-    let problem = $.extend(true, {}, problemSource);  // deep copy of original
-    Object.defineProperties(problem, Object.getOwnPropertyDescriptors(problemSource)); // keep getters
-
-    let newProblemID = generateProblemID();
-
-    manipulations[newProblemID] = $.extend(true, [], manipulations[problem.problemID] || []);
-
-    Object.assign(problem, {
-        problemID: newProblemID,
-        provenanceID: problem.problemID,
+    // deep copy of original
+    return Object.assign($.extend(true, {}, problemSource), {
+        problemID: generateProblemID(),
+        provenanceID: problemSource.problemID,
         system: 'user'
     });
-
-    return problem;
 }
 
 // When enabled, multiple pipelineTable pipelineIDs may be selected at once
@@ -3992,7 +4002,7 @@ function primitiveStepRemoveColumns (aux) {
     keep.push("d3mIndex");
 
     let indices = [];
-    valueKey.forEach((variable, i) => keep.includes(variable) && indices.push(i));
+    aux.preprocess.forEach((variable, i) => keep.includes(variable) && indices.push(i));
 
     let primitive = {
         id: "2eeff053-395a-497d-88db-7374c27812e6",

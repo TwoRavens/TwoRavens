@@ -882,9 +882,7 @@ export let rebuildPreprocess = async () => {
     // update state with new preprocess metadata
     response.dataset.private !== undefined && app.setPriv(response.dataset.private);
 
-    app.setPreprocess(response.variables);
-    app.setValueKey(Object.keys(response.variables));
-    app.setAllNodes(app.valueKey.map((variable, i) => jQuery.extend(true, {
+    app.setAllNodes(Object.keys(response.variables).map((variable, i) => jQuery.extend(true, {
         id: i,
         reflexive: false,
         name: variable,
