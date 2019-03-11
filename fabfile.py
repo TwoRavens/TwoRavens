@@ -87,7 +87,7 @@ def clear_d3m_configs():
     print('Clear all D3MConfiguration database entries')
     print('-' * 40)
 
-    config_cnt = D3MConfis.count()
+    config_cnt = D3MConfiguration.objects.count()
     if config_cnt == 0:
         print('  -> No DM configs to delete')
     else:
