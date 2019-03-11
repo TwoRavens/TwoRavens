@@ -16,6 +16,8 @@ import {getTransformVariables} from "./manipulations/manipulate";
 
 import $ from 'jquery';
 import * as d3 from 'd3';
+import * as queryMongo from "./manipulations/queryMongo";
+import {getData} from "./manipulations/manipulate";
 
 
 //-------------------------------------------------
@@ -107,8 +109,10 @@ export async function updatePeek(pipeline) {
     peekIsLoading = true;
     let variables = [];
 
-    if (is_model_mode && selectedProblem)
-        variables = [...selectedProblem.predictors, ...selectedProblem.target];
+    if (is_model_mode){
+        let problem = getSelectedProblem();
+        variables = [...problem.predictors, ...problem.target];
+    }
 
     let previewMenu = {
         type: 'menu',
@@ -241,8 +245,13 @@ export function set_mode(mode) {
     is_manipulate_mode = mode === 'manipulate';
 
     if (currentMode !== mode) {
-        if (mode === 'model' && manipulate.pendingHardManipulation)
-            manipulate.rebuildPreprocess();
+        if (mode === 'model' && manipulate.pendingHardManipulation) {
+            let dataset = getSelectedDataset();
+            buildDatasetPreprocess(dataset).then(response => {
+                dataset.preprocess = response.variables;
+                dataset.problems = discovery(response.dataset.discovery);
+            });
+        }
 
         currentMode = mode;
         m.route.set('/' + mode);
@@ -259,6 +268,39 @@ export function set_mode(mode) {
         ws.style.display = is_explore_mode ? 'none' : 'block';
     }
 }
+
+export let buildDatasetPreprocess = async dataset => await getData({
+    method: 'aggregate',
+    query: JSON.stringify(queryMongo.buildPipeline(
+        dataset.manipulations,
+        Object.keys(dataset.variablesInitial))['pipeline']),
+    export: 'dataset'
+}).then(url => m.request({
+    method: 'POST',
+    url: ROOK_SVC_URL + 'preprocessapp',
+    data: url
+}));
+
+export let buildProblemPreprocess = async (dataset, problem) => problem.manipulations.length === 0
+    ? dataset.preprocess
+    : await getData({
+        method: 'aggregate',
+        query: JSON.stringify(queryMongo.buildPipeline(
+            [...dataset.manipulations, ...problem.manipulations, {
+                type: 'menu',
+                metadata: {
+                    type: 'data',
+                    variables: [...problem.predictors, problem.target],
+                    nominal: problem.nominalCast
+                }
+            }],
+            Object.keys(dataset.variablesInitial))['pipeline']),
+        export: 'dataset'
+    }).then(url => m.request({
+        method: 'POST',
+        url: ROOK_SVC_URL + 'preprocessapp',
+        data: url
+    }));
 
 // for debugging - if not in PRODUCTION, prints args
 export let cdb = _ => PRODUCTION || console.log(...arguments);
@@ -408,7 +450,7 @@ streamSocket.onclose = function(e) {
 
 export let updateRightPanelWidth = () => {
     if (is_explore_mode) panelWidth.right = `calc(${common.panelMargin}*2 + 16px)`;
-    else if (is_model_mode && !selectedProblem) panelWidth.right = common.panelMargin;
+    // else if (is_model_mode && !selectedProblem) panelWidth.right = common.panelMargin;
     else if (common.panelOpen['right']) {
         let tempWidth = {
             'model': modelRightPanelWidths[rightTab],
@@ -434,9 +476,6 @@ updateLeftPanelWidth();
 
 common.setPanelCallback('right', updateRightPanelWidth);
 common.setPanelCallback('left', updateLeftPanelWidth);
-
-export let preprocess = {}; // hold pre-processed variables
-export let setPreprocess = data => preprocess = data;
 
 let spaces = [];
 
@@ -531,13 +570,10 @@ export let datamartPreferences = {
     cached: {}
 };
 
-// list of discovered problem objects
-export let disco = [];
-export let setDisco = data => disco = data;
-
 // list of force diagram node objects
+// TODO: IMPORTANT: references to allnodes are currently broken
 export let allNodes = [];
-export let setAllNodes = data => allNodes = data;
+
 
 export let modelCount = 0;
 
@@ -722,8 +758,8 @@ export let mytour = () => ({
              `<p>This generally is the important step to follow for Task 2 - Build a Model.</p>
                       <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward, and this button will be Green when Task 1 is completed and Task 2 started.</p>
                       <p>Click this Solve button to tell the tool to find a solution to the problem, using the variables presented in the center panel.</p>`),
-        step(selectedProblem.target.join(', ') + 'biggroup', "left", "Target Variable",
-             `We are trying to predict ${selectedProblem.target.join(', ')}.
+        step(getSelectedProblem().target.join(', ') + 'biggroup', "left", "Target Variable",
+             `We are trying to predict ${getSelectedProblem().target.join(', ')}.
                       This center panel graphically represents the problem currently being attempted.`),
         step("gr1hull", "right", "Explanation Set", "This set of variables can potentially predict the target."),
         step("displacement", "right", "Variable List",
@@ -1009,6 +1045,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     if (IS_D3M_DOMAIN) {
         let datasetName = datadocument.about.datasetID;   //.datasetName;             // Was use "datasetName" field in dataset document, but is commonly "null"
+
         zparams.zdata = datasetName.charAt(0).toUpperCase() + datasetName.slice(1); // Make sure to capitalize;
         let cite = "No citation provided";
         if (typeof datadocument.about.citation !== 'undefined') {
@@ -1040,8 +1077,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         // fill in citation in header
         byId('cite').children[0].textContent = zparams.zdatacite;
     }
+    selectedDataset = IS_D3M_DOMAIN ? zparams.zdata : datadocument.about.datasetID;
+    let dataset = getSelectedDataset();
     // drop file extension
-    setSelectedDataset(IS_D3M_DOMAIN ? zparams.zdata : datadocument.about.datasetID);
     d3.select("#dataName").html(selectedDataset);
     // put dataset name, from meta-data, into page title
     d3.select("title").html("TwoRavens " + selectedDataset);
@@ -1142,8 +1180,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     //
     let loadPreprocessData = res => {
         priv = res.dataset.private || priv;
-        getSelectedDataset().preprocess = res.variables;
-        defaultProblem.preprocess = res.variables;
+        dataset.preprocess = res.variables;
         return res;
     };
 
@@ -1195,47 +1232,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
     }
 
-
-    console.log("is this preprocess?")
-    console.log(res);
-    console.log(preprocess);
-
-    /**
-     * 9. Build allNodes[] using preprocessed information
-     * contains all the preprocessed data we have for the variable,
-     * as well as UI data pertinent to that variable,
-     *
-     * such as setx values (if the user has selected them) and pebble coordinates
-     **/
-     console.log('---------------------------------------');
-     console.log("-- 9. Build allNodes[] using preprocessed information --");
-
-    setAllNodes(Object.keys(getSelectedDataset().preprocess).map((variable, i) => $.extend(true, {
-        id: i,
-        reflexive: false,
-        name: variable,
-        labl: lablArray[i],
-        data: [5, 15, 20, 0, 5, 15, 20],
-        count: [.6, .2, .9, .8, .1, .3, .4],  // temporary values for hold that correspond to histogram bins
-        nodeCol: colors(i),
-        baseCol: colors(i),
-        strokeColor: common.selVarColor,
-        strokeWidth: "1",
-        subsetplot: false,
-        subsetrange: ["", ""],
-        setxplot: false,
-        setxvals: ["", ""],
-        grayout: false,
-        group1: false,
-        group2: false,
-        forefront: false
-    }, preprocess[variable])));
-
-    /**
-     * 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN)
-     */
-    console.log('---------------------------------------');
-    console.log("-- 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN) --");
     if(!swandive) {
         // TODO: temporarily disabled while forceDiagram is disabled
         // datadocument_columns.forEach(v => findNode(v.colName).d3mDescription = v);
@@ -1250,11 +1246,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     console.log("-- 10b. Call problem discovery --");
 
     if(!swandive && resPreprocess) {
-        datasets[selectedDataset].problems = discovery(resPreprocess);
-
-        // Set target variable for center panel if no problemDoc exists to set this
-        if (!problemDocExists)
-            selectedProblem.target = [disco[0].target];
+        dataset.problems = discovery(resPreprocess.dataset.discovery);
+        dataset.variablesInitial = Object.keys(dataset.preprocess);
 
         // Kick off discovery button as green for user guidance
         if (!task1_finished) {
@@ -1286,17 +1279,21 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         },
         crossSection: [],
         time: [],
-        preprocess: getSelectedDataset().preprocess
+        nominalCast: [],
+        preprocess: dataset.preprocess
     };
     // add the default problems to the list of problems
-    getSelectedDataset().problems[res.about.problemID] = defaultProblem;
 
+    dataset.problems[res.about.problemID] = defaultProblem;
+
+    let problemCopy = getProblemCopy(defaultProblem);
+    dataset.problems[problemCopy.problemID] = problemCopy;
     /**
      * Note: mongodb data retrieval initiated here
      *   setSelectedProblem -> loadMenu (manipulate.js) -> getData (manipulate.js)
      */
     // select a copy of the default problem
-    setSelectedProblem(getProblemCopy(defaultProblem));
+    setSelectedProblem(problemCopy);
 }
 
 /**
@@ -2481,8 +2478,8 @@ export function downloadIncomplete() {
     called by clicking 'Solve This Problem' in model mode
 */
 export async function estimate() {
-    resultsProblem = getProblemCopy(selectedProblem);
-    disco.unshift(resultsProblem);
+    resultsProblem = getProblemCopy(getSelectedProblem());
+    getSelectedDataset().problems[resultsProblem.problemID] = resultsProblem;
 
     Object.assign(d3mProblemDescription, {
         taskType: resultsProblem.task,
@@ -3001,7 +2998,7 @@ export function subsetSelect(btn) {
     var myParams = $.extend(true, {}, zparams);
     var myTrans = $.extend(true, [], trans);
     var myForce = $.extend(true, [], forceToggle);
-    var myPreprocess = $.extend(true, {}, preprocess);
+    var myPreprocess = $.extend(true, {}, getSelectedDataset().preprocess);
     var myLog = $.extend(true, [], logArray);
     var myHistory = $.extend(true, [], callHistory);
 
@@ -3563,8 +3560,8 @@ export function getDescription(problem) {
     return `${problem.target} is predicted by ${problem.predictors.slice(0, -1).join(", ")} ${problem.predictors.length > 1 ? 'and ' : ''}${problem.predictors[problem.predictors.length - 1]}`;
 }
 
-export function discovery(preprocess_file) {
-    let problems = preprocess_file.dataset.discovery.reduce((out, prob) => {
+export function discovery(problems) {
+    problems = problems.reduce((out, prob) => {
         let problemID = generateProblemID();
         let manips = [];
 
@@ -3599,7 +3596,6 @@ export function discovery(preprocess_file) {
             })
         }
 
-        // TODO: IMPORTANT: update this to be in-key with rest of page expectations
         out[problemID] = {
             problemID,
             system: "auto",
@@ -3619,6 +3615,7 @@ export function discovery(preprocess_file) {
             },
             crossSection: [],
             time: [],
+            nominalCast: [],
             preprocess: {} // this gets populated below
         };
         return out;
@@ -3657,7 +3654,7 @@ export async function addProblemFromForceDiagram() {
             subsetObs: 0,
             subsetFeats: 0
         },
-        selectedProblem || {},
+        getSelectedProblem() || {},
         await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams),
         {
             problemID: generateProblemID(),
@@ -3679,15 +3676,11 @@ export async function addProblemFromForceDiagram() {
         newProblem.metric = currentMetric === 'metricUndefined' ? 'meanSquaredError' : currentMetric;
     }
 
-    if ((selectedProblem || {}).problemID in manipulations)
-        manipulations[newProblem.problemID]
-            = $.extend(true, [], manipulations[selectedProblem.problemID]);
-
     console.log("pushing new problem to discovered problems:");
     console.log(newProblem);
 
-    disco.push(newProblem);
-    setSelectedProblem(newProblem);
+    getSelectedDataset().problems[newProblem.problemID] = newProblem;
+    setSelectedProblem(newProblem.problemID);
     setLeftTab('Discovery');
     // let addProblemAPI = app.addProblem(preprocess_id, version, problem_section);
     // console.log("API RESPONSE: ",addProblemAPI );
@@ -3722,19 +3715,16 @@ export function connectAllForceDiagram() {
 
 export let datasets = {};
 export let selectedDataset;
+// TODO: Not implemented. Would like to move discovery inside this
 export let setSelectedDataset = async datasetID => {
     if (!(datasetID in datasets)) {
-        // TODO: IMPORTANT: this is the first thing to fix to get the page loading properly
         // 1. load preprocess
         // 2. load d3m dataset doc
         // 3. construct default problem
         datasets[selectedDataset] = {
-            manipulations: [],
-            preprocess: preprocess
+            manipulations: []
         }
     }
-
-
     selectedDataset = datasetID;
 };
 
@@ -3750,7 +3740,6 @@ export let getNominalVariables = () => {
 
 export let defaultProblem;
 export let resultsProblem;
-export let selectedProblem;
 
 
 export function setSelectedProblem(problemID) {
@@ -3795,41 +3784,37 @@ export let setModelComparison = state => {
 };
 
 export let setCheckedDiscoveryProblem = (status, problemID) => {
-    if (problemID) {
-        let problem = selectedProblem.problemID === problemID ? selectedProblem :
-            disco.find(prob => prob.problemID === problemID);
-        problem.meaningful = status;
-    }
-    else {
-        disco.map(prob => prob.meaningful = status);
-        selectedProblem.meaningful = status;
-    }
+    let dataset = getSelectedDataset();
+    if (problemID)
+        dataset.problems[problemID].meaningful = status;
+    else
+        Object.keys(dataset.problems)
+            .forEach(problemID => dataset.problems[problemID].meaningful = status)
 };
 
 export async function submitDiscProb() {
+    let problems = getSelectedDataset().problems;
     discoveryLadda.start();
     console.log("This is disco");
-    console.log(disco);
-    let outputCSV = "problemID, system, meaningful \n";
+    console.log(problems);
 
-    for(let i = 0; i < disco.length; i++) {
+    let outputCSV = Object.keys(problems).reduce((out, problemID) => {
+        let problem = problems[problemID];
 
-        // build up the required .csv file line by line
-        outputCSV = outputCSV + disco[i].problemID + ", \"" + disco[i].system + "\", \"" + (disco[i].meaningful ? 'yes' : 'no') + "\"\n";
 
-        if(disco[i].subsetObs ==0 && disco[i].transform==0){
+        if(problem.manipulations.length === 0){
             // construct and write out the api call and problem description for each discovered problem
-            let problemApiCall = CreatePipelineDefinition(disco[i].predictors, [disco[i].target], 10, disco[i]);
-            let problemProblemSchema = CreateProblemSchema(disco[i]);
-            let filename_api = disco[i].problemID + '/ss_api.json';
-            let filename_ps = disco[i].problemID + '/schema.json';
-            let res1 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
-            let res2 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
+            let problemApiCall = CreatePipelineDefinition(problem.predictors, problem.target, 10, problem);
+            let problemProblemSchema = CreateProblemSchema(problem);
+            let filename_api = problem.problemID + '/ss_api.json';
+            let filename_ps = problem.problemID + '/schema.json';
+            makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
+            makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
         } else {
             console.log('omitting:');
-            console.log(disco[i]);
+            console.log(problem);
         }
-    }
+    };
 
     // write the CSV file requested by NIST that describes properties of the solutions
     console.log(outputCSV);
@@ -3842,24 +3827,14 @@ export async function submitDiscProb() {
     byId("btnSubmitDisc").classList.remove("btn-success");
     byId("btnSubmitDisc").classList.add("btn-default");
     task1_finished = true;
-    if(!(task2_finished)){
+    if (!(task2_finished)) {
         byId("btnEstimate").classList.remove("btn-default");
         byId("btnEstimate").classList.add("btn-success");
-    };
+    }
     //trigger("btnVariables", 'click');
 
-    if(!problemDocExists){
+    if (!problemDocExists)
         setModal("Your discovered problems have been submitted.", "Task Complete", true, false, false, locationReload);
-    };
-
-}
-
-export function deleteFromDisc(discov){
-    var index = disco.indexOf(discov);
-    console.log("index of disco to be deleted", index)
-    if (index > -1) {
-        disco.splice(index, 1);
-    }
 }
 
 export function deleteProblem(preprocessID, version, problemID) {

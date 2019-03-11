@@ -87,7 +87,7 @@ function leftpanel(mode) {
     let nominalVariables = Object.keys(selectedProblem.preprocess)
         .filter(variable => selectedProblem.preprocess[variable].nature === 'nominal');
 
-    let allMeaningful = app.disco.every(prob => prob.meaningful);
+    let allMeaningful = Object.keys(problems).every(probID => problems[probID].meaningful);
     let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
         onclick: m.withAttr("checked", app.setCheckedDiscoveryProblem),
         checked: allMeaningful,
@@ -244,7 +244,10 @@ function leftpanel(mode) {
                                 'Current Problem',
                                 m(Button, {
                                     id: 'saveProblemBtn',
-                                    onclick: () => app.disco.unshift(app.getProblemCopy(app.getSelectedProblem())),
+                                    onclick: () => {
+                                        let problemCopy = app.getProblemCopy(app.getSelectedProblem());
+                                        app.getSelectedDataset().problems[problemCopy.problemID] = problemCopy;
+                                    },
                                     title: 'save problem',
                                     style: {float: 'right', margin: '-.5em 1em 0 0'}
                                 }, 'Save Problem')
@@ -370,7 +373,7 @@ function rightpanel(mode) {
                 m(Dropdown, {
                     id: 'taskSubType',
                     items: Object.keys(app.d3mTaskSubtype),
-                    activeItem: app.selectedProblem.subTask,
+                    activeItem: selectedProblem.subTask,
                     onclickChild: child => {
                         selectedProblem.subTask = child;
                         // will trigger the call to solver, if a menu that needs that info is shown
@@ -382,7 +385,7 @@ function rightpanel(mode) {
                 m(Dropdown, {
                     id: 'performanceMetrics',
                     items: Object.keys(app.d3mMetrics),
-                    activeItem: app.selectedProblem.metric,
+                    activeItem: selectedProblem.metric,
                     onclickChild: child => {
                         selectedProblem.metric = child;
                         // will trigger the call to solver, if a menu that needs that info is shown
@@ -776,7 +779,7 @@ function rightpanel(mode) {
     //    )
     //  ]}
 
-    return app.selectedProblem && m(Panel, {
+    return app.getSelectedDataset().selectedProblem && m(Panel, {
             side: 'right',
             label: 'Model Selection',
             hover: true,
@@ -857,7 +860,7 @@ class Body {
             });
             if (variate === "problem") {
                 return m('', [
-                    m('#plot', {style: 'display: block', oncreate: _ => exp.plot([], "", app.selectedProblem)})
+                    m('#plot', {style: 'display: block', oncreate: _ => exp.plot([], "", app.getSelectedProblem())})
                 ]);
             }
             if (!expnodes[0] && !expnodes[1]) {
@@ -1050,7 +1053,7 @@ class Body {
                             m('br'),
                             m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
                                 (discovery ? app.getSelectedDataset().problems : Object.keys(app.getSelectedProblem().preprocess)).map(x => { // entry could either be a problem or a variable name
-                                    let selected = discovery ? x === app.selectedProblem : nodesExplore.map(y => y.name).includes(x);
+                                    let selected = discovery ? x === app.getSelectedProblem() : nodesExplore.map(y => y.name).includes(x);
                                     let targetName = x.target || x;
 
                                     let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';

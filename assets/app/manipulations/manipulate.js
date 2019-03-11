@@ -23,17 +23,6 @@ import hopscotch from 'hopscotch';
 import CanvasImputation from "../canvases/CanvasImputation";
 import {alertLog, alertError} from "../app";
 
-// dataset name from app.datadocument.about.datasetID
-// variable names from the keys of the initial preprocess variables object
-
-
-// stores all variable data from preprocess on initial page load
-// when hard manipulations are applied, app.preprocess is overwritten,
-// but additional hard manipulations and pipeline construction still needs the original preprocess variables
-let variablesInitial;
-export let setVariablesInitial = vars => variablesInitial = vars;
-
-
 export function menu(compoundPipeline, pipelineId) {
 
     return [
@@ -103,7 +92,7 @@ function canvas(compoundPipeline) {
 
     if (!constraintMenu) return;
 
-    let {pipeline, variables} = queryMongo.buildPipeline(compoundPipeline, Object.keys(variablesInitial));
+    let {pipeline, variables} = queryMongo.buildPipeline(compoundPipeline, app.getSelectedDataset().variablesInitial);
 
     if (constraintMenu.type === 'transform') return m(CanvasTransform, {
         preferences: constraintPreferences,
@@ -163,7 +152,7 @@ export function leftpanel() {
 
 export function varList() {
 
-    let variables = Object.keys(variablesInitial);
+    let variables = app.getSelectedDataset().variablesInitial;
     let selectedVariables = (constraintMetadata || {}).columns || [];
 
     if (constraintMenu) {
@@ -544,8 +533,7 @@ export let setQueryUpdated = async state => {
     if (app.is_manipulate_mode) {
         if (!pendingHardManipulation && state) {
             hopscotch.startTour(datasetChangedTour, 0);
-            // TODO: eventually, discovery should be called if problems is undefined. Not here though, only when switching back to model mode
-            delete app.getSelectedDataset().problems;
+            app.getSelectedDataset().problems = []; // TODO: somehow preserve the default problem
         }
         pendingHardManipulation = state;
     }
@@ -556,7 +544,6 @@ export let setQueryUpdated = async state => {
         let selectedDataset = app.getSelectedDataset();
         let selectedProblem = app.getSelectedProblem();
 
-        // TODO: IMPORTANT: this is where preprocess needs to be re-run
         // "A": old predictors list
         // "C": old transformed variables
         // "D": new predictors list
@@ -579,6 +566,9 @@ export let setQueryUpdated = async state => {
         selectedProblem.predictors = [...predictorsOld, ...transformsAdded]
             .filter(elem => !transformsRemoved.has(elem));
         selectedProblem.transformedVariables = transformsNew;
+
+        app.buildProblemPreprocess(selectedDataset, selectedProblem)
+            .then(response => selectedProblem.preprocess = response.variables);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
         loadMenu([...selectedDataset.manipulations, ...selectedProblem.manipulations], countMenu).then(count => {
@@ -615,13 +605,10 @@ export let setConstraintMenu = async (menu) => {
         return;
     }
 
-    // ensure a version of the variables on page load is cached
-    if (!variablesInitial) setVariablesInitial(app.preprocess);
-
     // get the variables present at the new menu's position in the pipeline
     let variables = [...queryMongo.buildPipeline(
         menu.pipeline.slice(0, menu.pipeline.indexOf(menu.step)),
-        Object.keys(variablesInitial))['variables']];
+        app.getSelectedDataset().variablesInitial)['variables']];
 
     // update variable metadata
     if (!constraintMenu || (menu || {}).step !== constraintMenu.step) {
@@ -761,11 +748,9 @@ export let getData = async body => m.request({
 // download data to display a menu
 export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { // the dict is for optional named arguments
 
-    if (!variablesInitial) setVariablesInitial(app.preprocess);
-
     // convert the pipeline to a mongo query. Note that passing menu extends the pipeline to collect menu data
     let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, menu],
-        Object.keys(variablesInitial))['pipeline']);
+        app.getSelectedDataset().variablesInitial)['pipeline']);
 
     console.log("Menu Query:");
     console.log(compiled);
@@ -775,7 +760,7 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
     // record count request
     if (recount) {
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
-        let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, countMenu], Object.keys(variablesInitial))['pipeline']);
+        let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, countMenu], app.getSelectedDataset().variablesInitial)['pipeline']);
 
         console.log("Count Query:");
         console.log(compiled);
@@ -837,81 +822,6 @@ let loadMenuManipulations = async (pipeline) => {
     m.redraw();
 };
 
-export let rebuildPreprocess = async () => {
-
-    let menuDownload = {
-        type: 'menu',
-        metadata: {
-            type: 'data'
-        }
-    };
-
-    let compiled = JSON.stringify(queryMongo.buildPipeline(
-        [...app.getSelectedDataset().manipulations, menuDownload],
-        Object.keys(variablesInitial))['pipeline']);
-
-    let dataPath = await getData({
-        method: 'aggregate',
-        query: compiled,
-        export: 'dataset'
-    });
-
-    let targetPath = dataPath.split('/').slice(0, dataPath.split('/').length - 1).join('/') + '/preprocess.json';
-
-    let response = await m.request({
-        method: 'POST',
-        url: ROOK_SVC_URL + 'preprocessapp',
-        data: {
-            data: dataPath,
-            target: targetPath,
-            datastub: app.configurations.name,
-            delimiter: '\t'
-        }
-    });
-
-    console.log("preprocess response");
-    console.log(response);
-
-    if (!response) {
-        console.log('preprocess failed');
-        alertError('preprocess failed. ending user session.');
-        app.endsession();
-        return;
-    }
-
-    // update state with new preprocess metadata
-    response.dataset.private !== undefined && app.setPriv(response.dataset.private);
-
-    app.setAllNodes(Object.keys(response.variables).map((variable, i) => jQuery.extend(true, {
-        id: i,
-        reflexive: false,
-        name: variable,
-        labl: 'no label',
-        data: [5, 15, 20, 0, 5, 15, 20],
-        count: [.6, .2, .9, .8, .1, .3, .4],
-        nodeCol: common.colors(i),
-        baseCol: common.colors(i),
-        strokeColor: common.selVarColor,
-        strokeWidth: "1",
-        subsetplot: false,
-        subsetrange: ["", ""],
-        setxplot: false,
-        setxvals: ["", ""],
-        grayout: false,
-        group1: false,
-        group2: false,
-        forefront: false
-    }, app.preprocess[variable])));
-
-    app.restart();
-    hopscotch.endTour();
-
-    app.setDisco(app.discovery(response));
-    app.setSelectedProblem(undefined);
-
-    setQueryUpdated(false);
-};
-
 // contains the menu state (which nominal variables are selected, ranges, etc.)
 export let constraintPreferences = {};
 
@@ -948,7 +858,7 @@ export async function buildDatasetUrl(problem) {
         ...app.getSelectedDataset().manipulations,
         ...app.getSelectedProblem().manipulations,
         problemStep
-    ], Object.keys(variablesInitial))['pipeline'];
+    ], app.getSelectedDataset().variablesInitial)['pipeline'];
 
     return await getData({
         method: 'aggregate',
@@ -973,8 +883,8 @@ export async function buildProblemUrl(problem) {
         }
     ];
 
-    let compiled = queryMongo.buildPipeline(abstractPipeline, Object.keys(variablesInitial))['pipeline'];
-    let metadata = queryMongo.translateDatasetDoc(compiled, app.datadocument, app.selectedProblem);
+    let compiled = queryMongo.buildPipeline(abstractPipeline, app.getSelectedDataset().variablesInitial)['pipeline'];
+    let metadata = queryMongo.translateDatasetDoc(compiled, app.datadocument, app.getSelectedProblem());
 
     return await getData({
         method: 'aggregate',
