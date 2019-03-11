@@ -59,7 +59,7 @@ seed_skeleton <- function(data, name, fraction=0.2, ID=NULL, citation="", descri
 
   for(i in 1:ncol(data)){
 
-    tempdata <- data[i,]
+    tempdata <- data[,i]
 
 
     if(allNames[i] == depvarname){
@@ -73,9 +73,10 @@ seed_skeleton <- function(data, name, fraction=0.2, ID=NULL, citation="", descri
     }
     
     # can't judge categorical
-    if(!is.numeric(tempdata)){
+    typevar <- na.omit(tempdata)
+    if(!is.numeric(typevar)){
       temptype <- "categorical"
-    } else if(any(!(round(tempdata)==tempdata))){
+    } else if(any(!(round(typevar)==typevar))){
       temptype <- "real"
     } else {
       temptype <- "integer"
