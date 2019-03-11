@@ -430,7 +430,7 @@ def run(**kwargs):
     clear_js()  # clear any dev css/js files
     init_db()
     check_config()  # make sure the db has something
-    check_datamarts()    
+    check_datamarts()
     #load_d3m_config_from_env() # default the D3M setting to the env variable
     #ta3_listener_add() # add MessageListener object
 
@@ -535,7 +535,7 @@ def create_test_user():
     """Create regular user with creds: test_user/test_user.  No admin access"""
     from tworaven_apps.raven_auth.models import User
 
-    test_username = 'test_user2'
+    test_username = 'test_user'
 
     if User.objects.filter(username=test_username).count() > 0:
         print('A "%s" test user already exists' % test_username)

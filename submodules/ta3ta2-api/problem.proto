@@ -125,5 +125,5 @@ message ProblemDescription {
     string name = 5;
     string description = 6;
     string digest = 7;
-    DataAugmentation data_augmentation = 8;
+    repeated DataAugmentation data_augmentation = 8;
 }

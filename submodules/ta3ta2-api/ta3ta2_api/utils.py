@@ -374,10 +374,13 @@ def encode_problem_description(problem_description):
             problem_pb2.ProblemInput(dataset_id=problem_input['dataset_id'], targets=targets),
         )
 
-    data_augmentation = problem_pb2.DataAugmentation(
-        domain=problem_description.get('data_augmentation', {}).get('domain', []),
-        keywords=problem_description.get('data_augmentation', {}).get('keywords', []),
-    )
+    data_augmentation = []
+    for data in problem_description.get('data_augmentation', []):
+        if data.get('domain', []) or data.get('keywords', []):
+            problem_pb2.DataAugmentation(
+                domain=data.get('domain', []),
+                keywords=data.get('keywords', []),
+            )
 
     return problem_pb2.ProblemDescription(
         problem=problem,
@@ -429,14 +432,21 @@ def decode_problem_description(problem_description, *, strict_digest=False):
     elif problem_description.problem.description:
         description['description'] = problem_description.problem.description
 
-    if problem_description.data_augmentation.domain or problem_description.data_augmentation.keywords:
-        description['data_augmentation'] = {}
+    if problem_description.data_augmentation:
+        description['data_augmentation'] = []
 
-        if problem_description.data_augmentation.domain:
-            description['data_augmentation']['domain'] = problem_description.data_augmentation.domain
+        for data in problem_description.data_augmentation:
+            if data.domain or data.keywords:
+                description['data_augmentation'].append({})
 
-        if problem_description.data_augmentation.keywords:
-            description['data_augmentation']['keywords'] = problem_description.data_augmentation.keywords
+                if data.domain:
+                    description['data_augmentation'][-1]['domain'] = data.domain
+
+                if data.keywords:
+                    description['data_augmentation'][-1]['keywords'] = data.keywords
+
+        if not description['data_augmentation']:
+            del description['data_augmentation']
 
     performance_metrics = []
     for performance_metric in problem_description.problem.performance_metrics:

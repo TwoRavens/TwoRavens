@@ -2864,6 +2864,9 @@ function getScoreSolutionDefaultParameters(datasetDocUrl){
   let my_users = [{id: 'TwoRavens', chosen: false, reason: ""}];
   let my_configuration = {method: 'HOLDOUT', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
 
+  // note: FL only using KFOLD in latest iteration (3/8/2019)
+  //let my_configuration = {method: 'K_FOLD', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
+
   return {inputs: my_inputs, performanceMetrics: my_performanceMetrics, users: my_users, configuration: my_configuration};
 
 }

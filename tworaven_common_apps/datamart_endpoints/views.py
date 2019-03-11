@@ -6,6 +6,7 @@ from tworaven_apps.utils.view_helper import \
      get_json_success,
      get_common_view_info)
 from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
+from tworaven_apps.utils.json_helper import json_loads #(json_dumps, json_loads)
 
 from tworaven_common_apps.datamart_endpoints.static_vals import \
     (DATAMART_ISI_NAME, DATAMART_NYU_NAME)
@@ -140,8 +141,16 @@ def api_search(request):
     # check if data is valid
     form = DatamartSearchForm(json_req_obj)
     if not form.is_valid():
-        json_err = get_json_error('Invalid input.',
-                                  errors=form.errors.as_json())
+        #print('form.errors', form.errors.as_json())
+        print('\ntype form.errors', type(form.errors.as_json()))
+        json_errs = json.loads(form.errors.as_json())
+        err_msgs = [dal['message']
+                    for dval_list in json_errs.values()
+                    for dal in dval_list
+                    if 'message' in dal]
+        print('\nerr_msgs', err_msgs)
+
+        json_err = get_json_error('Input error: %s' % ('. '.join(err_msgs)))
         return JsonResponse(json_err)
 
     # Retrieve the appropriate DatamartJobUtil
@@ -223,8 +232,10 @@ def api_materialize(request):
     user_workspace = ws_info.result_obj
 
     # check if data is valid
+    print('materialize input: ', json_req_obj)
     form = DatamartMaterializeForm(json_req_obj)
     if not form.is_valid():
+        print('form.errors.as_json()', form.errors.as_json())
         return JsonResponse(\
                 get_json_error("invalid input",
                                errors=form.errors.as_json()))
