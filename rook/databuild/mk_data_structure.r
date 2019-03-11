@@ -64,7 +64,7 @@ seed_skeleton <- function(data, name, fraction=0.2, ID=NULL, citation="", descri
 
     if(allNames[i] == depvarname){
       temprole <- "suggestedTarget"
-      depvarColIndex <- i
+      depvarColIndex <- i-1
       locatedDV <- TRUE
     }else if (i==1){
       temprole <- "index"
