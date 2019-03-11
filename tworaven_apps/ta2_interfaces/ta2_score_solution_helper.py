@@ -132,8 +132,11 @@ class ScoreSolutionHelper(BasicErrCheck):
         # ----------------------------------
         # Run ScoreSolution
         # ----------------------------------
+        LOGGER.info('run ScoreSolution: ', json_str_input)
         fit_info = score_solution(json_str_input)
         if not fit_info.success:
+            print('ScoreSolution err_msg: ', fit_info.err_msg)
+
             self.send_websocket_err_msg(self.GRCP_SCORE_SOLUTION,
                                         fit_info.err_msg)
             return
@@ -143,6 +146,7 @@ class ScoreSolutionHelper(BasicErrCheck):
         # ----------------------------------
         response_info = json_loads(fit_info.result_obj)
         if not response_info.success:
+            print('ScoreSolution grpc err_msg: ', response_info.err_msg)
             self.send_websocket_err_msg(self.GRCP_SCORE_SOLUTION, response_info.err_msg)
             return
 

@@ -1,0 +1,195 @@
+{
+  "about": {
+    "datasetID": "DA_college_debt_dataset_TRAIN",
+    "datasetName": "DA college debt dataset",
+    "description": "College Scorecards make it easier for students to search for a college that is a good fit for them. They can use the College Scorecard to find out more about a college's affordability and value so they can make more informed decisions about which college to attend, including factors such as median debt-to-earning ratio of graduates.",
+    "license": "Other",
+    "datasetVersion": "2.0",
+    "redacted": false,
+    "datasetSchemaVersion": "3.2.0",
+    "digest": "30449de033ab9e4ace730e6e8d954f0f790171bb35840a02517128b6bde37d50"
+  },
+  "dataResources": [
+    {
+      "resID": "learningData",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "UNITID",
+          "colDescription": "Unit ID for institution",
+          "colType": "integer",
+          "role": [
+            "key"
+          ]
+        },
+        {
+          "colIndex": 2,
+          "colName": "INSTNM",
+          "colDescription": "Institution name",
+          "colType": "string",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 3,
+          "colName": "PCTFLOAN",
+          "colDescription": "Percent of all undergraduate students receiving a federal student loan",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 4,
+          "colName": "CONTROL",
+          "colDescription": "Control of institution",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 5,
+          "colName": "STABBR",
+          "colDescription": "State postcode",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 6,
+          "colName": "PCIP16",
+          "colDescription": "Percentage of degrees awarded in Foreign Languages, Literatures, And Linguistics.",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 7,
+          "colName": "MD_EARN_WNE_P10",
+          "colDescription": "Median earnings of students working and not enrolled 10 years after entry",
+          "colType": "integer",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 8,
+          "colName": "PPTUG_EF",
+          "colDescription": "Share of undergraduate, degree-/certificate-seeking students who are part-time",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 9,
+          "colName": "UGDS_WHITE",
+          "colDescription": "Total share of enrollment of undergraduate degree-seeking students who are white",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 10,
+          "colName": "UGDS_BLACK",
+          "colDescription": "Total share of enrollment of undergraduate degree-seeking students who are black",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 11,
+          "colName": "UGDS_HISP",
+          "colDescription": "Total share of enrollment of undergraduate degree-seeking students who are Hispanic",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 12,
+          "colName": "UGDS_ASIAN",
+          "colDescription": "Total share of enrollment of undergraduate degree-seeking students who are Asian",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 13,
+          "colName": "SATMTMID",
+          "colDescription": "Midpoint of SAT scores at the institution (math)",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 14,
+          "colName": "SATVRMID",
+          "colDescription": "Midpoint of SAT scores at the institution (critical reading)",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 15,
+          "colName": "SATWRMID",
+          "colDescription": "Midpoint of SAT scores at the institution (writing)",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 16,
+          "colName": "UGDS",
+          "colDescription": "Enrollment of undergraduate certificate/degree-seeking students",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 17,
+          "colName": "PREDDEG",
+          "colDescription": "Predominant undergraduate degree awarded\n 0 Not classified\n 1 Predominantly certificate-degree granting\n 2 Predominantly associate's-degree granting\n 3 Predominantly bachelor's-degree granting\n 4 Entirely graduate-degree granting",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 18,
+          "colName": "DEBT_EARNINGS_RATIO",
+          "colDescription": "debt to earnings ratio of graduates",
+          "colType": "integer",
+          "role": [
+            "suggestedTarget"
+          ]
+        }
+      ]
+    }
+  ]
+}

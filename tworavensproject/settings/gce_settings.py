@@ -39,8 +39,8 @@ if not os.path.isdir(STATIC_ROOT):
     os.makedirs(STATIC_ROOT)
 
 SESSION_COOKIE_NAME = os.environ.get('SESSION_COOKIE_NAME',
-                                     '2ravens_metadata_gce')
-CSRF_COOKIE_NAME = '2ravens_metadata_gce_csrf'
+                                     '2ravens_org_gce')
+CSRF_COOKIE_NAME = '2ravens_org_gce_csrf'
 
 # -----------------------------------
 # Note: SECRET_KEY and MONGO_CONNECTION_STRING

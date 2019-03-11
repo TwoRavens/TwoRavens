@@ -11,6 +11,12 @@ def get_timestamp_string(no_breaks=False):
         return tstr.replace('-', '')
     return tstr
 
+def get_timestamp_string_readable(time_only=True):
+    """Return current time as %Y-%m-%d %H:%M:%S%f """
+    if time_only:
+        return dt.now().strftime('%H:%M:%S')
+
+    return dt.now().strftime('%Y-%m-%d %H:%M:%S')
 
 def get_alphanumeric_uppercase(str_length):
     """Get random alpha numeric string, with uppercase letters"""

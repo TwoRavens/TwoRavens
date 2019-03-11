@@ -29,6 +29,7 @@ enum ValueType {
     // The following value types are those everyone should support.
 
     // Raw value. Not all values can be represented as a raw value.
+    // The value before encoding should be at most 64 KB.
     RAW = 1;
     // Represent the value as a D3M dataset. Only "file://" schema is supported using a
     // shared file system. Dataset URI should point to the "datasetDoc.json" file of the dataset.
@@ -36,7 +37,7 @@ enum ValueType {
     DATASET_URI = 2;
     // Represent the value as a CSV file. Only "file://" schema is supported using a
     // shared file system. CSV URI should point to the file with ".csv" file extension.
-    // Only tabular container values with numberic and string cell values can be represented
+    // Only tabular container values with numeric and string cell values can be represented
     // this way.
     CSV_URI = 3;
 
@@ -48,9 +49,14 @@ enum ValueType {
     // shared file system. Pickle URI should point to the file with ".pickle" file extension.
     PICKLE_URI = 4;
     // Represent values by Python-pickling them but sending them through the API.
+    // The value before encoding should be at most 64 KB.
     PICKLE_BLOB = 5;
     // Represent values with arrow and storing them into shared instance of Plasma.
     PLASMA_ID = 6;
+    // Same as "RAW", but without any size limit.
+    LARGE_RAW = 7;
+    // Same as "PICKLE_BLOB", but without any size limit.
+    LARGE_PICKLE_BLOB = 8;
 }
 
 message ValueError {
