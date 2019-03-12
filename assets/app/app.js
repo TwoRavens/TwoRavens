@@ -4763,40 +4763,60 @@ export function handleAugmentDataMessage(msg_data){
 
 }
 
+/**
+ * handleMaterializeDataMessage()
+ *  - Processes a websocket message based on clicking Datamart "Preview"
+ *  - On success, displays a modal window with a preview of the data.
+ *  - Example of successful response:
+ *  {
+       "msg_type":"DATAMART_MATERIALIZE_PROCESS",
+       "timestamp":"2019-03-12T10:50:06",
+       "success":true,
+       "user_message":"The dataset has been materialized",
+       "data":{
+          "datamart_id":"287260000",
+          "data_path":"/ravens_volume/test_output/185_baseball/additional_inputs/materialize/287260000/materialize/learningData.csv",
+          "filesize":2114303,
+          "metadata_path":null,
+          "data_preview":"source,subject_label,category,prop_value,value_label\nhttp://www.wikidata.org/entity/Q5661707,Harold McCarthy,human,http://www.wikidata.org/entity/Q82133,Bodleian Library
+          human,http://www.wikidata.org/entity/Q148554,National Museum of Natural History\n [TRUNCATED - GIVES UP TO 100 PREVIEW ROWS]",
+      "metadata":null
+       }
+    }
+ */
 export function handleMaterializeDataMessage(msg_data){
 
   if (!msg_data) {
       console.log('handleMaterializeDataMessage: Error.  "msg_data" undefined');
       return;
   }
-  if (msg_data.success === true) {
-      console.log('Successful materialize!!');
-      console.log(msg_data); //.user_message);
-
-      console.log('filesize: ' + msg_data.data.filesize);
-      console.log('type: ' + msg_data.data.filesize);
-      console.log('data_preview: ' + typeof msg_data.data.data_preview);
-
-      const preview_data = msg_data.data.data_preview.split('\n').map(line => line.split(','));
-
-      console.log('headers ' + preview_data[0]);
-      console.log('data ' + preview_data.slice(1, 2));
-
-      let tblInfo =  m(Table, {
-                            headers: preview_data[0],
-                            data: preview_data.slice(1),
-                          });
-
-      // need to use ModalVanilla or similar
-      setModal(tblInfo, "Preview", true, "Close", true);
-
-      return;
+  if (msg_data.success === false) {
+    setModal("Data preview error: " + msg_data.user_message,
+             "Data materialization Failed", true, "Close", true);
+    return;
   }
 
-  setModal("Data preview error: " + msg_data.user_message,
-           "Data materialization Failed", true, "Close", true);
+  console.log('datamart_id: ' + msg_data.data.datamart_id);
+  console.log('filesize: ' + msg_data.data.filesize);
 
-}
+  // Save the data in the datamartPreferences object
+  //
+  const previewDatamartId = msg_data.data.datamart_id;
+  datamartPreferences.cached[previewDatamartId] = msg_data.data;
+
+  // Format the data_preview
+  //
+  datamartPreferences.cached[previewDatamartId].data_preview =   datamartPreferences.cached[previewDatamartId].data_preview.split('\n').map(line => line.split(','));
+
+  // Set the modal type
+  datamartPreferences.modalShown = 'preview';
+
+  // Refresh the display
+  m.redraw();
+
+  
+} // end handleMaterializeDataMessage
+
 
 export function loadResult(my_disco) {
     (my_disco || disco).forEach((problem, i) => {

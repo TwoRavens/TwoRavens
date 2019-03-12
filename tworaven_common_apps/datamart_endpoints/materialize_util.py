@@ -52,22 +52,8 @@ class MaterializeUtil(BasicErrCheck):
         if self.has_error():
             return
 
-        ws_msg = WebsocketMessage.get_success_message(\
-                    DATAMART_MATERIALIZE_PROCESS,
-                    'The dataset has been materialized',
-                    data='hi')
-                    #data=self.materialize_result)
-        ws_msg.send_message(self.websocket_id)
-
         if not self.retrieve_workspace():
             return
-
-        ws_msg = WebsocketMessage.get_success_message(\
-                    DATAMART_MATERIALIZE_PROCESS,
-                    'The dataset has been materialized',
-                    data='bye')
-                    #data=self.materialize_result)
-        ws_msg.send_message(self.websocket_id)
 
         if not self.load_datamart_util():
             return

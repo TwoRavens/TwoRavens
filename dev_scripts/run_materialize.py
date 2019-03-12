@@ -50,7 +50,7 @@ def test_materialize():
 
 def test_celery_materialize():
     """run materialize"""
-    user_workspace_id = 91
+    user_workspace_id = 21
 
     sr_fname = join('.', 'input', 'isi_materialize_req_01.json')
 

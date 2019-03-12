@@ -250,12 +250,9 @@ class DatamartJobUtilISI(object):
                             f' {preview_info.err_msg}')
                 return err_resp(user_msg)
 
-            info_dict = OrderedDict({ \
-                            'data_path': dest_filepath,
-                            'filesize': os.stat(dest_filepath).st_size,
-                            'metadata_path': None,
-                            'data_preview': ''.join(preview_info.result_obj),
-                            'metadata': None})
+            info_dict = DatamartJobUtilISI.format_materialize_response(\
+                            datamart_id, dest_filepath, preview_info)
+
             return ok_resp(info_dict)
 
         # -----------------------------------------
@@ -313,14 +310,24 @@ class DatamartJobUtilISI(object):
                         f' {preview_info.err_msg}')
             return err_resp(user_msg)
 
+        info_dict = DatamartJobUtilISI.format_materialize_response(\
+                        datamart_id, dest_filepath, preview_info)
+
+        return ok_resp(info_dict)
+
+
+    @staticmethod
+    def format_materialize_response(datamart_id, dest_filepath, preview_info):
+        """Return the materialize response"""
         info_dict = OrderedDict({ \
+                        KEY_DATAMART_ID: datamart_id,
                         'data_path': dest_filepath,
                         'filesize': os.stat(dest_filepath).st_size,
                         'metadata_path': None,
                         'data_preview': ''.join(preview_info.result_obj),
                         'metadata': None})
 
-        return ok_resp(info_dict)
+        return info_dict
 
 
     @staticmethod
