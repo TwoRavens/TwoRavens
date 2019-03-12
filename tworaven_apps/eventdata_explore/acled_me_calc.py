@@ -8,6 +8,8 @@ from scipy import stats
 #~ matplotlib.use("agg")
 import matplotlib.pylab as plt
 
+import itertools
+
 # look at source file, or look at mongo?
 # create time series on action codes - one per each
 # compare slope (derivative) on self and other action codes
@@ -68,54 +70,230 @@ actionGroup = {}
 for a in interaction:
     actionGroup["action" + a] = {"$sum": {"$cond": {"if": {"$eq": ["$INTERACTION", a]}, "then": 1, "else": 0}}}
 
-#~ actionGroup["_id"] = {"date": "$TwoRavens_start date"}
 actionGroup["_id"] = "$TwoRavens_start date"
-#~ print(actionGroup)
+
 
 res = list(db.aggregate([{"$group": actionGroup}]))
-'''
-#group by id: date, interX = $sum: $INTER == X
-
-#~ res = db.aggregate(
-#~ [
-    #~ {"$group": {"_id": {"date": "$TwoRavens_start date", "action": "$INTERACTION"}, "count": {"$sum": 1}}},
-    #~ {"$project": {"date": "$_id.date", "action": "$_id.action", "count": 1, "_id": 0}}
-#~ ])
-
-#~ print(res[0:3])
-#~ print([x for x in res if x["_id"] == datetime.datetime(2019, 1, 5, 0, 0)])
-
-1. group
-2. project
-
-db.acled_middle_east.aggregate([{$group: {"_id": {"date": "$TwoRavens_start date", "action": "$INTERACTION"}, "count": {$sum: 1}}}])
-
-db.acled_middle_east.aggregate([{$group: {"_id": {"date": "$TwoRavens_start date", "action": "$INTERACTION"}, "count": {$sum: 1}}}, {$project: {"date": "$_id.date", "action": "$_id.action", "count": 1, "_id": 0}}])
-
-'''
 
 res = pd.DataFrame(res).rename(columns={"_id": "date"}).sort_values(by=["date"])
 res["date"] = pd.to_datetime(res["date"])
-#~ print(res.iloc[0:2].to_string())
 
+#convert to series
+res = res.set_index(res["date"])
+
+#drop date column
+res = res.drop("date", axis='columns')
+
+#calculate the pairs with highest correlation
+
+#pick date aggregation type
+dateGroup = "M"
 '''
-https://towardsdatascience.com/playing-with-time-series-data-in-python-959e2485bff8
-https://www.analyticsvidhya.com/blog/2016/02/time-series-forecasting-codes-python/
+    if option == "day":
+        sampType = "D"
+    elif option == "week":
+        sampType = "W"
+    elif option == "month":
+        sampType = "M"
+    elif option == "quarter":
+        sampType = "Q"
+    elif option == "year":
+        sampType = "A"
 '''
+res = res.resample(dateGroup).sum()
 
-#~ data = res[["date", "action10"]]
+windowSize = 10
+confidenceMargin = 0.1     #90% confident
 
-#below is ex of working
-#~ data = res.loc[:, ["action10"]]
-#~ data = data.set_index(res["date"])
-#~ data = data.resample("M").sum()
-#~ print(data.head())
-#~ plt.plot(data)
-#~ plt.show()
+globalPearsonResults = []
+globalKendallResults = []
 
-#~ plt.plot(res[["date", "action10"]])
-#~ plt.show()
+localPearsonResults = []
+localKendallResults = []
 
+#create all pairs
+actions = res.columns.values.tolist()
+
+#~ #if data contains zeroes, add 1 (keep shape and prevents divide by zero errors)
+#~ for ac in actions:
+    #~ if 0 in res[ac].tolist():
+        #~ res[ac] += 1
+
+#for each pair, calculate the overall Pearson and Kendall correlation, and the Pearson and Kendall correlation in the window
+#~ print(res[["action10"]])
+#~ print(res["action10"].tolist())
+#~ print(len(res["action10"].tolist()))
+#~ print(res[["action10"]].iloc[0:5])
+for actionX, actionY in list(itertools.combinations(actions, 2)):
+#~ for actionX, actionY in [("action10", "action12")]:
+#~ for actionX, actionY in [("action10", "action25")]:
+#~ for actionX, actionY in [("action25", "action56")]:
+    storKey = [actionX, actionY]
+    actionXData = res[[actionX]]
+    actionYData = res[[actionY]]
+    #~ print("Comparing", actionX, "and", actionY)
+    #~ print("overall Pearson correlation:")
+    globalPearsonResults.append((stats.pearsonr(actionXData, actionYData), storKey))
+    #~ print("overall Kendall correlation:")
+    globalKendallResults.append((stats.kendalltau(actionXData, actionYData), storKey))
+    #~ print(actionXData, actionYData)
+
+    for sta in range(windowSize, len(res.index.values)):
+        actionXWin = actionXData.iloc[sta-windowSize:sta]
+        actionYWin = actionYData.iloc[sta-windowSize:sta]
+        #~ print("local Pearson correlation @ index", sta)
+        try:
+            localPear = stats.pearsonr(actionXWin, actionYWin)
+            #~ print("local Kendall correlation @ index", sta)
+            localKend = stats.kendalltau(actionXWin, actionYWin)
+            #~ print(localPear, localKend)
+            #~ print(localPear[0][0])
+            #~ print(localKend[0])
+
+            if localPear[1][0] < confidenceMargin or localKend[1] < confidenceMargin:
+                localPearsonResults.append((localPear, storKey, [sta-windowSize]))
+                localKendallResults.append((localKend, storKey, [sta-windowSize]))
+            #~ print()
+        except:
+            #https://stats.stackexchange.com/questions/220787/pearson-correlation-to-a-uniformly-distributed-dataset
+            print("bad data")
+            break
+            #maybe also remove data from global?
+            #how to catch warning?
+    #~ print()
+
+matchLimit = 5      #find top 5 results
+
+#TODO: remove results that have a lot of 0 or low entries because they skew results
+
+#sort global results first by correlation and then by p value
+globalPearsonResults.sort(key=lambda re: (-abs(re[0][0][0]), re[0][1][0]))
+globalKendallResults.sort(key=lambda re: (-abs(re[0][0]), re[0][1]))
+
+print("top 5 global results")
+print("global pearson")
+print(globalPearsonResults[0:5])
+print("global kendall")
+print(globalKendallResults[0:5])
+print()
+
+plt.figure(0)
+plt.suptitle("Global Pearson")
+ctr = 1
+for result in globalPearsonResults[0:5]:
+    plt.subplot(3, 2, ctr)
+    ctr += 1
+    plt.title(str(result[0]))
+    plt.plot(res.loc[:, result[1]])
+    plt.legend(result[1])
+
+plt.figure(1)
+plt.suptitle("Global Kendall")
+ctr = 1
+for result in globalKendallResults[0:5]:
+    plt.subplot(3, 2, ctr)
+    ctr += 1
+    plt.title(str(result[0]))
+    plt.plot(res.loc[:, result[1]])
+    plt.legend(result[1])
+
+#sort local results first by correlation and then by p value
+localPearsonResults.sort(key=lambda re: (-abs(re[0][0][0]), re[0][1][0]))
+localKendallResults.sort(key=lambda re: (-abs(re[0][0]), re[0][1]))
+
+#now merge local results if they are on the same pair
+localPearsonFinal = []
+for corRes in localPearsonResults:
+    corr, acts, start = corRes
+    merged = False
+    for x in range(len(localPearsonFinal)):
+        if acts[0] in localPearsonFinal[x][1] and acts[1] in localPearsonFinal[x][1]:
+            #~ print(acts, x, "same actions, merging start points")
+            localPearsonFinal[x][2].append(start[0])
+            merged = True
+            break
+        elif acts[0] in localPearsonFinal[x][1]: #and starting points are close, moderately correlated?
+            #~ print(acts, x, "matched action 0, merging actions")
+            localPearsonFinal[x][1].append(acts[1])
+            merged = True
+            break
+        elif acts[1] in localPearsonFinal[x][1]:
+            #~ print(acts, x, "matched action 1, merging actions")
+            #~ print(localPearsonFinal[x])
+            #~ print(localPearsonFinal[x][1])
+            localPearsonFinal[x][1].append(acts[0])
+            merged = True
+            break
+    if not merged:
+        localPearsonFinal.append(corRes)
+    '''
+    if acts in [x[1] for x in localPearsonFinal]:
+        #append this result's start to the tuple stored
+        print(x, corRes, localPearsonFinal)
+    #maybe merge actions if the starting points are close and moderately correlated
+    else:
+        #insert this result into the final result
+        localPearsonFinal.append(corRes)
+    '''
+    if len(localPearsonFinal) > matchLimit:
+        break
+
+print("top 5 local results")
+print("local pearson")
+print(localPearsonFinal[0:5])
+
+plt.figure(2)
+plt.suptitle("Local Pearson")
+ctr = 1
+for result in localPearsonFinal[0:5]:
+    plt.subplot(3, 2, ctr)
+    ctr += 1
+    plt.title(str(result[0]))
+    plt.plot(res.loc[:, result[1]])
+    plt.legend(result[1])
+
+localKendallFinal = []
+
+print("local kendall")
+for corRes in localKendallResults:
+    corr, acts, start = corRes
+    merged = False
+    for x in range(len(localKendallFinal)):
+        if acts[0] in localKendallFinal[x][1] and acts[1] in localKendallFinal[x][1]:
+            #~ print(acts, x, "same actions, merging start points")
+            localKendallFinal[x][2].append(start[0])
+            merged = True
+            break
+        elif acts[0] in localKendallFinal[x][1]: #and starting points are close, moderately correlated?
+            #~ print(acts, x, "matched action 0, merging actions")
+            localKendallFinal[x][1].append(acts[1])
+            merged = True
+            break
+        elif acts[1] in localKendallFinal[x][1]:
+            #~ print(acts, x, "matched action 1, merging actions")
+            localKendallFinal[x][1].append(acts[0])
+            merged = True
+            break
+    if not merged:
+        localKendallFinal.append(corRes)
+    if len(localKendallFinal) > matchLimit:
+        break
+print(localKendallFinal[0:5])
+print()
+
+plt.figure(3)
+plt.suptitle("Local Kendall")
+ctr = 1
+for result in localKendallFinal[0:5]:
+    plt.subplot(3, 2, ctr)
+    ctr += 1
+    plt.title(str(result[0]))
+    plt.plot(res.loc[:, result[1]])
+    plt.legend(result[1])
+
+plt.show()
+
+"""
 '''
 loop w/ input commands:
 q: quit
@@ -293,3 +471,4 @@ examples of interesting:
 current -> drift apart
 extreme diffrenece in corrleation
 '''
+"""
