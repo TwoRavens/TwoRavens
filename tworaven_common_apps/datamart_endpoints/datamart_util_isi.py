@@ -15,9 +15,11 @@ from tworaven_apps.utils.file_util import \
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
 from tworaven_apps.utils.dict_helper import (clear_dict,)
+from tworaven_common_apps.datamart_endpoints.datamart_util_base import \
+    (DatamartJobUtilBase,)
 from tworaven_common_apps.datamart_endpoints.static_vals import \
     (DATAMART_ISI_NAME,
-     KEY_DATAMART_ID,
+     KEY_ISI_DATAMART_ID,
      KEY_DATA,
      NUM_PREVIEW_ROWS,
      cached_response,
@@ -35,7 +37,7 @@ LOGGER = logging.getLogger(__name__)
 PREVIEW_SIZE = 100
 
 
-class DatamartJobUtilISI(object):
+class DatamartJobUtilISI(DatamartJobUtilBase):
 
     @staticmethod
     def datamart_scrape(url):
@@ -206,23 +208,23 @@ class DatamartJobUtilISI(object):
     @staticmethod
     def datamart_materialize(user_workspace, search_result):
         """Materialize the dataset"""
-        LOGGER.info('-- atttempt to materialize dataset --')
+        LOGGER.info('-- atttempt to materialize ISI dataset --')
         if not isinstance(user_workspace, UserWorkspace):
             return err_resp('user_workspace must be a UserWorkspace')
 
         if not isinstance(search_result, dict):
             return err_resp('search_result must be a python dictionary')
 
-        if not KEY_DATAMART_ID in search_result:
+        if not KEY_ISI_DATAMART_ID in search_result:
             user_msg = (f'"search_result" did not contain'
-                        f' "{KEY_DATAMART_ID}" key')
+                        f' "{KEY_ISI_DATAMART_ID}" key')
             return err_resp(user_msg)
 
         # -----------------------------------------
         # Format output file path
         # -----------------------------------------
         LOGGER.info('(1) build path')
-        datamart_id = search_result[KEY_DATAMART_ID]
+        datamart_id = search_result[KEY_ISI_DATAMART_ID]
 
         dest_filepath_info = DatamartJobUtilISI.get_output_filepath(\
                                         user_workspace,
@@ -252,7 +254,8 @@ class DatamartJobUtilISI(object):
                 return err_resp(user_msg)
 
             info_dict = DatamartJobUtilISI.format_materialize_response(\
-                            datamart_id, dest_filepath, preview_info)
+                            datamart_id, DATAMART_ISI_NAME,
+                            dest_filepath, preview_info)
 
             return ok_resp(info_dict)
 
@@ -265,7 +268,7 @@ class DatamartJobUtilISI(object):
         try:
             response = requests.get(\
                         get_isi_url() + '/new/materialize_data',
-                        params={KEY_DATAMART_ID: datamart_id},
+                        params={KEY_ISI_DATAMART_ID: datamart_id},
                         verify=False,
                         timeout=settings.DATAMART_LONG_TIMEOUT)
         except requests.exceptions.Timeout as err_obj:
@@ -312,24 +315,11 @@ class DatamartJobUtilISI(object):
             return err_resp(user_msg)
 
         info_dict = DatamartJobUtilISI.format_materialize_response(\
-                        datamart_id, dest_filepath, preview_info)
+                        datamart_id, DATAMART_ISI_NAME,
+                        dest_filepath, preview_info)
 
         return ok_resp(info_dict)
 
-
-    @staticmethod
-    def format_materialize_response(datamart_id, dest_filepath, preview_info):
-        """Return the materialize response"""
-        info_dict = OrderedDict({ \
-                        KEY_DATAMART_ID: datamart_id,
-                        'source_mode': DATAMART_ISI_NAME,
-                        'data_path': dest_filepath,
-                        'filesize': os.stat(dest_filepath).st_size,
-                        'metadata_path': None,
-                        'data_preview': ''.join(preview_info.result_obj),
-                        'metadata': None})
-
-        return info_dict
 
 
     @staticmethod
@@ -337,12 +327,12 @@ class DatamartJobUtilISI(object):
         if not isinstance(user_workspace, UserWorkspace):
             return err_resp('user_workspace must be a UserWorkspace')
 
-        if not KEY_DATAMART_ID in search_result:
+        if not KEY_ISI_DATAMART_ID in search_result:
             user_msg = (f'"search_result" did not contain'
-                        f' "{KEY_DATAMART_ID}" key')
+                        f' "{KEY_ISI_DATAMART_ID}" key')
             return err_resp(user_msg)
 
-        datamart_id = search_result[KEY_DATAMART_ID]
+        datamart_id = search_result[KEY_ISI_DATAMART_ID]
 
         # ----------------------------
         # mock call
@@ -405,21 +395,6 @@ class DatamartJobUtilISI(object):
 
         return ok_resp('Augment is in process')
 
-
-    @staticmethod
-    def get_output_filepath(user_workspace, datamart_id, dir_type='materialize'):
-        """Create the output filepath for materialze and augment"""
-        if not isinstance(user_workspace, UserWorkspace):
-            return err_resp('user_workspace must be a UserWorkspace')
-        if not datamart_id:
-            return err_resp('"datamart_id" must be set')
-
-        output_path = join(user_workspace.d3m_config.additional_inputs,
-                           dir_type,
-                           str(datamart_id),
-                           'learningData.csv')
-
-        return ok_resp(output_path)
 
 
     @staticmethod
