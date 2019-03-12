@@ -16,7 +16,8 @@ from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
 from tworaven_apps.utils.dict_helper import (clear_dict,)
 from tworaven_common_apps.datamart_endpoints.static_vals import \
-    (KEY_DATAMART_ID,
+    (DATAMART_ISI_NAME,
+     KEY_DATAMART_ID,
      KEY_DATA,
      NUM_PREVIEW_ROWS,
      cached_response,
@@ -321,6 +322,7 @@ class DatamartJobUtilISI(object):
         """Return the materialize response"""
         info_dict = OrderedDict({ \
                         KEY_DATAMART_ID: datamart_id,
+                        'source_mode': DATAMART_ISI_NAME,
                         'data_path': dest_filepath,
                         'filesize': os.stat(dest_filepath).st_size,
                         'metadata_path': None,
@@ -415,7 +417,6 @@ class DatamartJobUtilISI(object):
         output_path = join(user_workspace.d3m_config.additional_inputs,
                            dir_type,
                            str(datamart_id),
-                           dir_type, # e.g. materialze, augment
                            'learningData.csv')
 
         return ok_resp(output_path)
@@ -447,22 +448,3 @@ class DatamartJobUtilISI(object):
             return err_resp(user_msg)
 
         return ok_resp(data_filepath)
-        # Read in the preview rows
-        #
-        data = []
-        with open(data_filepath, 'r') as datafile:
-            for _idx in range(NUM_MATERIALIZE_PREVIEW_ROWS):
-                try:
-                    data.append(next(datafile))
-                except StopIteration:
-                    pass
-
-        # Prepare resonse
-        #
-        info_dict = OrderedDict({ \
-                        'data_path': data_filepath,
-                        'metadata_path': None,
-                        'data_preview': ''.join(data),
-                        'metadata': None})
-
-        return ok_resp(info_dict)

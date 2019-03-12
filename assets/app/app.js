@@ -4811,10 +4811,14 @@ export function handleMaterializeDataMessage(msg_data){
   // Set the modal type
   datamartPreferences.modalShown = 'preview';
 
+  // Set user message
+  const userMsg = 'File preview complete.'
+  datamartPreferences.success[msg_data.data.source_mode] = userMsg;
+
   // Refresh the display
   m.redraw();
 
-  
+
 } // end handleMaterializeDataMessage
 
 
