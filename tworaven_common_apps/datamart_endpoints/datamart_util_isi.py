@@ -1,6 +1,8 @@
 import json
+from collections import OrderedDict
 from tworaven_apps.utils.json_helper import json_loads, json_dumps
-
+import os
+from os.path import dirname, join, isfile
 from django.conf import settings
 from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 
@@ -8,11 +10,19 @@ from tworaven_apps.data_prep_utils.new_dataset_util import NewDatasetUtil
 from tworaven_apps.user_workspaces.models import UserWorkspace
 from tworaven_apps.configurations.utils import get_latest_d3m_config
 from tworaven_apps.utils.random_info import get_timestamp_string_readable
+from tworaven_apps.utils.file_util import \
+    (create_directory, read_file_rows)
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
 from tworaven_apps.utils.dict_helper import (clear_dict,)
+from tworaven_common_apps.datamart_endpoints.datamart_util_base import \
+    (DatamartJobUtilBase,)
 from tworaven_common_apps.datamart_endpoints.static_vals import \
-    (cached_response,
+    (DATAMART_ISI_NAME,
+     KEY_ISI_DATAMART_ID,
+     KEY_DATA,
+     NUM_PREVIEW_ROWS,
+     cached_response,
      cached_response_baseball)
 from tworaven_common_apps.datamart_endpoints.datamart_info_util import \
     (get_isi_url,
@@ -27,7 +37,7 @@ LOGGER = logging.getLogger(__name__)
 PREVIEW_SIZE = 100
 
 
-class DatamartJobUtilISI(object):
+class DatamartJobUtilISI(DatamartJobUtilBase):
 
     @staticmethod
     def datamart_scrape(url):
@@ -198,49 +208,131 @@ class DatamartJobUtilISI(object):
     @staticmethod
     def datamart_materialize(user_workspace, search_result):
         """Materialize the dataset"""
+        LOGGER.info('-- atttempt to materialize ISI dataset --')
         if not isinstance(user_workspace, UserWorkspace):
             return err_resp('user_workspace must be a UserWorkspace')
 
-        datamart_id = search_result['datamart_id']
-        materialize_folderpath = os.path.join(\
-                                user_workspace.d3m_config.additional_inputs,
-                                'materialize',
-                                str(datamart_id))
+        if not isinstance(search_result, dict):
+            return err_resp('search_result must be a python dictionary')
 
-        print('materialize_folderpath', materialize_folderpath)
-        if os.path.exists(materialize_folderpath):
-            response = None
-        else:
-            try:
-                response = requests.get(\
-                                get_isi_url() + '/new/materialize_data',
-                                params={'datamart_id': datamart_id},
-                                verify=False,
-                                timeout=settings.DATAMART_LONG_TIMEOUT).json()
-            except requests.exceptions.Timeout as err_obj:
-                return err_resp('Request timed out. responded with: %s' % err_obj)
+        if not KEY_ISI_DATAMART_ID in search_result:
+            user_msg = (f'"search_result" did not contain'
+                        f' "{KEY_ISI_DATAMART_ID}" key')
+            return err_resp(user_msg)
 
-            if response['code'] != "0000":
-                return err_resp(response['message'])
+        # -----------------------------------------
+        # Format output file path
+        # -----------------------------------------
+        LOGGER.info('(1) build path')
+        datamart_id = search_result[KEY_ISI_DATAMART_ID]
 
-        save_info = DatamartJobUtilISI.save_datamart_file(materialize_folderpath, response)
+        dest_filepath_info = DatamartJobUtilISI.get_output_filepath(\
+                                        user_workspace,
+                                        datamart_id,
+                                        dir_type='materialize')
+
+        if not dest_filepath_info.success:
+            return err_resp(dest_filepath_info.err_msg)
+
+        dest_filepath = dest_filepath_info.result_obj
+
+        LOGGER.info('(2) Download file')
+
+        # -----------------------------------------
+        # Has the file already been downloaded?
+        # -----------------------------------------
+        print('dest_filepath', dest_filepath)
+        if isfile(dest_filepath):
+            LOGGER.info('(2a) file already downloaded')
+
+            # Get preview rows
+            #
+            preview_info = read_file_rows(dest_filepath, NUM_PREVIEW_ROWS)
+            if not preview_info.success:
+                user_msg = (f'Failed to retrieve preview rows.'
+                            f' {preview_info.err_msg}')
+                return err_resp(user_msg)
+
+            info_dict = DatamartJobUtilISI.format_materialize_response(\
+                            datamart_id, DATAMART_ISI_NAME,
+                            dest_filepath, preview_info)
+
+            return ok_resp(info_dict)
+
+        # -----------------------------------------
+        # Download the file
+        # -----------------------------------------
+        # can this be streamed to a file?
+
+        LOGGER.info('(2b) attempting download')
+        try:
+            response = requests.get(\
+                        get_isi_url() + '/new/materialize_data',
+                        params={KEY_ISI_DATAMART_ID: datamart_id},
+                        verify=False,
+                        timeout=settings.DATAMART_LONG_TIMEOUT)
+        except requests.exceptions.Timeout as err_obj:
+            return err_resp('Request timed out. responded with: %s' % err_obj)
+
+        if response.status_code != 200:
+            user_msg = (f'Materialize failed.  Status code:'
+                        f' {response.status_code}.  response: {response.text}')
+            return err_resp(user_msg)
+
+        resp_json = response.json()
+
+        if ('code' not in resp_json) or (resp_json['code'] != "0000"):
+            user_msg = 'Error message from datamart:'
+            if 'message' in resp_json:
+                user_msg += ' %s' % resp_json['message']
+                return err_resp(user_msg)
+
+        if not KEY_DATA in resp_json:
+            user_msg = (f'Key "{KEY_DATA}" not found in the'
+                        f' materialize response')
+            return err_resp(user_msg)
+
+        LOGGER.info('(3) Download complete.  Save file')
+
+        # -----------------------------------------
+        # Save the downloaded file
+        # -----------------------------------------
+        save_info = DatamartJobUtilISI.save_datamart_file(\
+                        dest_filepath,
+                        resp_json[KEY_DATA])
+
         if not save_info.success:
             return err_resp(save_info.err_msg)
 
-        return ok_resp(save_info.result_obj)
+        LOGGER.info('(4) File saved')
+
+        # Get preview rows
+        #
+        preview_info = read_file_rows(dest_filepath, NUM_PREVIEW_ROWS)
+        if not preview_info.success:
+            user_msg = (f'Failed to retrieve preview rows.'
+                        f' {preview_info.err_msg}')
+            return err_resp(user_msg)
+
+        info_dict = DatamartJobUtilISI.format_materialize_response(\
+                        datamart_id, DATAMART_ISI_NAME,
+                        dest_filepath, preview_info)
+
+        return ok_resp(info_dict)
+
+
 
     @staticmethod
     def datamart_augment(user_workspace, data_path, search_result, left_columns, right_columns, exact_match=False, **kwargs):
         if not isinstance(user_workspace, UserWorkspace):
             return err_resp('user_workspace must be a UserWorkspace')
 
-        d3m_config = get_latest_d3m_config()
-        if not d3m_config:
-            user_msg = 'datamart_augment failed. no d3m config'
-            LOGGER.error(user_msg)
+        if not KEY_ISI_DATAMART_ID in search_result:
+            user_msg = (f'"search_result" did not contain'
+                        f' "{KEY_ISI_DATAMART_ID}" key')
             return err_resp(user_msg)
 
-        datamart_id = search_result['datamart_id']
+        datamart_id = search_result[KEY_ISI_DATAMART_ID]
 
         # ----------------------------
         # mock call
@@ -281,7 +373,7 @@ class DatamartJobUtilISI(object):
             return err_resp(response['message'])
 
         augment_folderpath = os.path.join(\
-                            d3m_config.temp_storage_root,
+                            user_workspace.d3m_config.additional_inputs,
                             'augment',
                             str(datamart_id))
 
@@ -304,43 +396,30 @@ class DatamartJobUtilISI(object):
         return ok_resp('Augment is in process')
 
 
+
     @staticmethod
-    def save_datamart_file(folderpath, response):
+    def save_datamart_file(data_filepath, file_data):
         """Save materialize response as a file"""
-        data_filepath = os.path.join(folderpath, 'tables', 'learningData.csv')
+        if not file_data:
+            return err_resp('"file_data" must be specified')
 
-        if os.path.exists(folderpath):
-            data = []
-            with open(data_filepath, 'r') as datafile:
-                for i in range(100):
-                    try:
-                        data.append(next(datafile))
-                    except StopIteration:
-                        pass
+        # create directory if it doesn't exist
+        #       (Ok if the directory already exists)
+        #
+        dir_info = create_directory(dirname(data_filepath))
+        if not dir_info.success:
+            return err_resp(dir_info.err_msg)
 
-            info_dict = {
-                'data_path': data_filepath,
-                'metadata_path': None,
-                'data_preview': ''.join(data),
-                'metadata': None
-            }
-            return ok_resp(info_dict)
+        # Write the data to the file
+        #
+        #data_split = file_data.split('\n')
 
         try:
-            os.makedirs(os.path.dirname(data_filepath), exist_ok=True)
-        except OSError:
-            return err_resp('Failed to make directory: %s' % \
-                            os.path.dirname(data_filepath))
+            with open(data_filepath, 'w') as datafile:
+                datafile.write(file_data) #_split)
+        except OSError as err_obj:
+            user_msg = f'Failed to write file "{data_filepath}". Error: %s' % \
+                (err_obj,)
+            return err_resp(user_msg)
 
-        data_split = response['data'].split('\n')
-
-        with open(data_filepath, 'w') as datafile:
-            datafile.writelines(data_split)
-
-        info_dict = {
-            'data_path': data_filepath,
-            'metadata_path': None,
-            'data_preview': '\n'.join(data_split[:100]),
-            'metadata': None
-        }
-        return ok_resp(info_dict)
+        return ok_resp(data_filepath)

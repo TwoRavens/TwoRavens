@@ -1,18 +1,19 @@
-"""Helper for winter 2019 config loaded through env variables
-
-Conforming to the 1/12/19 version of:
-    - https://datadrivendiscovery.org/wiki/display/work/Evaluation+Workflow
-    - https://datadrivendiscovery.org/wiki/pages/viewpage.action?pageId=11276800
 """
-import os
-from os.path import basename, dirname, isdir, isfile, join
+For the augment process, complete the following steps:
+
+- retrieve the user's workspace
+- construct folders to replicate the D3M format
+- move the augmented file into the new folders, renaming it
+- create problem docs using rook endpoint and move files into new folder structure
+- build and save a new D3m config database entry based on the new folders
+
+"""
+from os.path import dirname, isdir, isfile, join
 from collections import OrderedDict
-from django.conf import settings
 
 from tworaven_apps.utils.dict_helper import get_dict_value
-from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
-from tworaven_apps.utils.json_helper import json_loads, json_dumps
+#from tworaven_apps.utils.json_helper import json_loads, json_dumps
 from tworaven_apps.utils.file_util import \
     (create_directory, move_file, write_file)
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
@@ -21,20 +22,16 @@ from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
 from tworaven_apps.ta2_interfaces.websocket_message import WebsocketMessage
 from tworaven_apps.data_prep_utils.static_vals import DATAMART_AUGMENT_PROCESS
 from tworaven_apps.configurations.utils import \
-    (get_latest_d3m_config,
-     get_config_file_contents)
-from tworaven_apps.user_workspaces.models import UserWorkspace
+    (get_config_file_contents,)
 from tworaven_apps.user_workspaces.utils import \
     (get_user_workspace_by_id,
      create_new_user_workspace)
 
 from tworaven_apps.utils.random_info import \
-    (get_timestamp_string,
-     get_alpha_string)
+    (get_alpha_string,)
 
 from tworaven_apps.configurations.models_d3m import \
-    (D3MConfiguration,
-     KEY_DATASET_SCHEMA,
+    (KEY_DATASET_SCHEMA,
      KEY_PROBLEM_SCHEMA)
 from tworavensproject.celery import celery_app
 
@@ -82,7 +79,7 @@ class NewDatasetUtil(BasicErrCheck):
         """Return the result of a SearchSolutions call.
         If successful, an async process is kicked off"""
         if not user_workspace_id:
-            return err_resp('websocket_id must be set')
+            return err_resp('user_workspace_id must be set')
 
         if not source_file:
             return err_resp('source_file must be set')

@@ -1,6 +1,6 @@
 """Wrap file/dir functions for error checks"""
 import os
-from os.path import join
+from os.path import join, isfile
 import shutil
 
 from tworaven_apps.utils.basic_response import (ok_resp,
@@ -42,3 +42,23 @@ def move_file(src_file, dest_file):
         return err_resp(user_msg)
 
     return ok_resp('File copied to: %s' % dest_file)
+
+
+def read_file_rows(data_filepath, num_rows=100):
+    """Initial use is for dataset preview"""
+    if not isfile(data_filepath):
+        return err_resp(f'File doesn\'t exist: {data_filepath}')
+    if not isinstance(num_rows, int):
+        return err_resp(f'"num_rows" must be an integer.')
+
+    if num_rows < 1:
+        return err_resp(f'"num_rows" must be at least 1. Found: "{num_rows}"')
+
+    data_rows = []
+    with open(data_filepath, 'r') as datafile:
+        for idx, line in enumerate(datafile):
+            if idx == num_rows:
+                break
+            data_rows.append(line)
+
+    return ok_resp(data_rows)

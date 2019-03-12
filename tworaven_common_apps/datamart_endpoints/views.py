@@ -23,6 +23,9 @@ from tworaven_common_apps.datamart_endpoints.forms import (DatamartSearchForm,
                                                            DatamartIndexForm,
                                                            DatamartScrapeForm,
                                                            DatamartUploadForm, DatamartCustomForm)
+
+from tworaven_common_apps.datamart_endpoints.tasks import make_materialize_call
+
 from django.http import \
     (JsonResponse, HttpResponse)
 
@@ -257,3 +260,65 @@ def api_materialize(request):
     return JsonResponse(\
             get_json_success('it worked',
                              data=materialize_result.result_obj))
+
+
+@csrf_exempt
+def api_materialize_async(request):
+    """Run async materialize with ISI"""
+    success, json_req_obj = get_request_body_as_json(request)
+
+    if not success:
+        return JsonResponse(get_json_error(json_req_obj))
+
+    # Get the latest UserWorkspace
+    #
+    ws_info = get_latest_user_workspace(request)
+    if not ws_info.success:
+        user_msg = 'User workspace not found: %s' % ws_info.err_msg
+        return JsonResponse(get_json_error(user_msg))
+
+    user_workspace = ws_info.result_obj
+
+    # check if data is valid
+    print('materialize input: ', json_req_obj)
+    form = DatamartMaterializeForm(json_req_obj)
+    if not form.is_valid():
+        print('form.errors.as_json()', form.errors.as_json())
+        return JsonResponse(\
+                get_json_error("invalid input",
+                               errors=form.errors.as_json()))
+
+    # job_util_info = get_datamart_job_util(form.cleaned_data['source'])
+    # if not job_util_info.success:
+    #    return JsonResponse(get_json_error(job_util_info.err_msg))
+
+    # DatamartJobUtil = job_util_info.result_obj # e.g. DatamartJobUtilISI, DatamartJobUtilNYU
+
+
+    mu_info = make_materialize_call(\
+                 form.cleaned_data['source'],
+                 user_workspace.id,
+                 form.cleaned_data,
+                 **dict(websocket_id=user_workspace.user.username))
+
+    if not mu_info.success:
+        return JsonResponse(get_json_error(mu_info.err_msg))
+    else:
+        return JsonResponse(\
+                    get_json_success('in process',
+                                     data=mu_info.result_obj))
+
+
+    """
+    # Run datamart_materialize
+    #
+    materialize_result = DatamartJobUtil.datamart_materialize(\
+                                user_workspace,
+                                form.cleaned_data['search_result'])
+    if not materialize_result.success:
+        return JsonResponse(get_json_error(materialize_result.err_msg))
+
+    return JsonResponse(\
+            get_json_success('it worked',
+                             data=materialize_result.result_obj))
+    """

@@ -1,6 +1,7 @@
 import json
 import zipfile
 from io import BytesIO
+from os.path import dirname, join, isfile
 
 from django.conf import settings
 import pandas as pd
@@ -12,12 +13,18 @@ from tworaven_apps.utils.random_info import get_timestamp_string_readable
 from tworaven_apps.utils.json_helper import (json_dumps, json_loads)
 from tworaven_apps.utils.dict_helper import (clear_dict,)
 from tworaven_common_apps.datamart_endpoints.static_vals import \
-    (cached_response,
+    (DATAMART_NYU_NAME,
+     KEY_NYU_DATAMART_ID,
+     KEY_DATA,
+     NUM_PREVIEW_ROWS,
+     cached_response,
      cached_response_baseball)
 from tworaven_common_apps.datamart_endpoints.datamart_info_util import \
-    (get_isi_url,
-     get_nyu_url)
-
+    (get_nyu_url,)
+from tworaven_common_apps.datamart_endpoints.datamart_util_base import \
+    (DatamartJobUtilBase,)
+from tworaven_apps.utils.file_util import \
+    (create_directory, read_file_rows)
 import requests
 import logging
 import os
@@ -29,7 +36,7 @@ PREVIEW_SIZE = 100
 
 # based on documentation here:
 # https://gitlab.com/ViDA-NYU/datamart/datamart/blob/master/examples/rest-api-fifa2018_manofmatch.ipynb
-class DatamartJobUtilNYU(object):
+class DatamartJobUtilNYU(DatamartJobUtilBase):
 
     @staticmethod
     def datamart_upload(data):
@@ -99,29 +106,118 @@ class DatamartJobUtilNYU(object):
 
     @staticmethod
     def datamart_materialize(user_workspace, search_result):
-        """Materialize the dataset!"""
+        """Materialize an NYU dataset!"""
+        LOGGER.info('-- atttempt to materialize NYU dataset --')
         if not isinstance(user_workspace, UserWorkspace):
             return err_resp('user_workspace must be a UserWorkspace')
 
-        materialize_folderpath = os.path.join(\
-                                user_workspace.d3m_config.additional_inputs,
-                                'materialize',
-                                str(search_result['id']))
+        if not isinstance(search_result, dict):
+            return err_resp('search_result must be a python dictionary')
 
-        if os.path.exists(materialize_folderpath):
-            response = None
-        else:
-            download_url = f"{get_nyu_url()}/download/{search_result['id']}"
-            # print('download_url', download_url)
-            # response = requests.get(get_nyu_url() + '/download/' + str(search_result['id']),
-            response = requests.get(download_url,
-                                    params={'format': 'd3m'},
-                                    stream=True)
+        print('\nsearch_result', search_result)
+        print('\nsearch_result.keys()', search_result.keys())
+        if not KEY_NYU_DATAMART_ID in search_result:
+            user_msg = (f'"search_result" did not contain'
+                        f' "{KEY_NYU_DATAMART_ID}" key')
+            return err_resp(user_msg)
 
-            if response.status_code != 200:
-                return err_resp('NYU Datamart internal server error')
+        # -----------------------------------------
+        # Format output file path
+        # -----------------------------------------
+        LOGGER.info('(1) build path')
+        datamart_id = search_result[KEY_NYU_DATAMART_ID]
 
-        return ok_resp(DatamartJobUtilNYU.save(materialize_folderpath, response))
+        dest_folderpath_info = DatamartJobUtilNYU.get_output_folderpath(\
+                                        user_workspace,
+                                        datamart_id,
+                                        dir_type='materialize')
+
+        if not dest_folderpath_info.success:
+            return err_resp(dest_folderpath_info.err_msg)
+
+        # Set the output folder
+        #
+        dest_folderpath = dest_folderpath_info.result_obj
+
+        # Set the output file
+        #
+        dest_filepath = join(dest_folderpath, 'tables', 'learningData.csv')
+
+        LOGGER.info('(2) Download file')
+
+        # -----------------------------------------
+        # Has the file already been downloaded?
+        # -----------------------------------------
+        print('dest_filepath', dest_filepath)
+        if isfile(dest_filepath):
+            LOGGER.info('(2a) file already downloaded')
+
+            # Get preview rows
+            #
+            preview_info = read_file_rows(dest_filepath, NUM_PREVIEW_ROWS)
+            if not preview_info.success:
+                user_msg = (f'Failed to retrieve preview rows.'
+                            f' {preview_info.err_msg}')
+                return err_resp(user_msg)
+
+            info_dict = DatamartJobUtilNYU.format_materialize_response(\
+                            datamart_id, DATAMART_NYU_NAME,
+                            dest_filepath, preview_info)
+
+            return ok_resp(info_dict)
+
+
+        # -----------------------------------------
+        # Download the file
+        # -----------------------------------------
+        # can this be streamed to a file?
+
+        LOGGER.info('(2b) attempting download')
+
+        if not 'id' in search_result:
+            user_msg = f'search_result did not contain the key "id"'
+            return err_resp(user_msg)
+
+        download_url = f"{get_nyu_url()}/download/{search_result['id']}"
+
+        try:
+            response = requests.get(\
+                        download_url,
+                        params={'format': 'd3m'},
+                        verify=False,
+                        stream=True,
+                        timeout=settings.DATAMART_LONG_TIMEOUT)
+        except requests.exceptions.Timeout as err_obj:
+            return err_resp('Request timed out. responded with: %s' % err_obj)
+
+        if response.status_code != 200:
+            user_msg = (f'Materialize failed.  Status code:'
+                        f' {response.status_code}.  response: {response.text}')
+            return err_resp(user_msg)
+
+        save_info = DatamartJobUtilNYU.save_datamart_file(\
+                                    dest_folderpath,
+                                    response,
+                                    expected_filepath=dest_filepath)
+
+        if not save_info.success:
+            return err_resp(save_info.err_msg)
+
+        # Get preview rows
+        #
+        preview_info = read_file_rows(dest_filepath, NUM_PREVIEW_ROWS)
+        if not preview_info.success:
+            user_msg = (f'Failed to retrieve preview rows.'
+                        f' {preview_info.err_msg}')
+            return err_resp(user_msg)
+
+        info_dict = DatamartJobUtilNYU.format_materialize_response(\
+                        datamart_id, DATAMART_NYU_NAME,
+                        dest_filepath, preview_info)
+
+        return ok_resp(info_dict)
+
+
 
     @staticmethod
     def datamart_augment(dataset_path, search_result):
@@ -153,6 +249,42 @@ class DatamartJobUtilNYU(object):
                                     str(search_result['id']))
 
         return ok_resp(DatamartJobUtilNYU.save(augment_folderpath, response))
+
+
+    @staticmethod
+    def save_datamart_file(data_foldername, file_data, **kwargs):
+        """Save materialize response as a file"""
+        if not file_data:
+            return err_resp('"file_data" must be specified')
+
+        # create directory if it doesn't exist
+        #       (Ok if the directory already exists)
+        #
+        dir_info = create_directory(data_foldername)
+        if not dir_info.success:
+            return err_resp(dir_info.err_msg)
+
+        try:
+            with zipfile.ZipFile(BytesIO(file_data.content), 'r') as data_zip:
+                data_zip.extractall(data_foldername)
+        except RuntimeError as err_obj:
+            user_msg = (f'Failed to extract zip to "{data_foldername}".'
+                        f' Error: %s') % (err_obj,)
+            return err_resp(user_msg)
+
+        data_filepath = join(data_foldername, 'tables', 'learningData.csv')
+        if not isfile(data_filepath):
+            user_msg = 'File not found in expected place: %s' % data_filepath
+            return err_resp(user_msg)
+
+        expected_filepath = kwargs.get('expected_filepath', None)
+        if expected_filepath:
+            if expected_filepath != data_filepath:
+                user_msg = 'File not found on expected path: %s' % expected_filepath
+                return err_resp(user_msg)
+
+        return ok_resp(data_filepath)
+
 
     @staticmethod
     def save(folderpath, response):
