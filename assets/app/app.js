@@ -943,7 +943,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // ---------------------------------------
     let res = await m.request(d3mPS);
     // console.log("prob schema data: ", res);
-    if(typeof res.success=='undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
+    if(typeof res.success === 'undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
         // This is a Task 2 assignment
         // console.log("DID WE GET HERE?");
         task1_finished = true;
@@ -970,6 +970,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         //   alertError('problem schema not available: ' + res.message);
         //   return
         // }
+        console.log('problemDoc res: ', res);
 
         mytargetdefault = res.inputs.data[0].targets[0].colName; // easier way to access target name?
         if (typeof res.about.problemID !== 'undefined') {
@@ -988,7 +989,11 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             d3mProblemDescription.taskType=res.about.taskType;
         }
         if (typeof res.about.taskSubType !== 'undefined') {
+          console.log('taskSubType set to ?', res.about.taskSubType);
             d3mProblemDescription.taskSubtype=res.about.taskSubType;
+        }else{
+           console.log('taskSubTypeset to none');
+            d3mProblemDescription.taskSubtype = 'subtypeNone';
         }
         if (typeof res.inputs.performanceMetrics[0].metric !== 'undefined') {
             d3mProblemDescription.performanceMetrics = res.inputs.performanceMetrics;   // or? res.inputs.performanceMetrics[0].metric;
@@ -1005,7 +1010,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             metric: res.inputs.performanceMetrics[0].metric,
             model: 'modelUndefined',
             task: res.about.taskType,
-            subTask: res.about.taskSubType,
+            subTask: d3mProblemDescription.taskSubtype,
             meaningful: false
         };
 
@@ -2862,10 +2867,11 @@ function getScoreSolutionDefaultParameters(datasetDocUrl){
   let my_inputs = [{dataset_uri: my_dataseturi}];
   let my_performanceMetrics = [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ];  // need to generalize to case with multiple metrics.  only passes on first presently.;
   let my_users = [{id: 'TwoRavens', chosen: false, reason: ""}];
-  let my_configuration = {method: 'HOLDOUT', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
+
+  // let my_configuration = {method: 'HOLDOUT', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
 
   // note: FL only using KFOLD in latest iteration (3/8/2019)
-  //let my_configuration = {method: 'K_FOLD', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
+  let my_configuration = {method: 'K_FOLD', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
 
   return {inputs: my_inputs, performanceMetrics: my_performanceMetrics, users: my_users, configuration: my_configuration};
 
