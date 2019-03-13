@@ -8,6 +8,9 @@ MKDOCS_APP = 'MKDOCS_APP'
 MKDOCS_ROOK_APP_NAME = 'mkdocsapp'
 PREPROCESS_ROOK_APP_NAME = 'preprocessapp'
 
+KEY_DATA = 'data'
+KEY_DATASTUB = 'datastub'
+
 # Used for tracking rook routing.
 #
 # Example ZELIG_APP is the constant used in logs

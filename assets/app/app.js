@@ -1181,15 +1181,18 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     console.log('---------------------------------------');
     console.log("-- 8. read preprocess data or (if necessary) run preprocess --");
 
-    let read = res => {
+    // Function to load retreived preprocess data
+    //
+    let loadPreprocessData = res => {
         priv = res.dataset.private || priv;
         Object.keys(res.variables).forEach(k => preprocess[k] = res.variables[k]);
         if("problems" in res){Object.keys(res.problems).forEach(k => problems_in_preprocess[k] = res.problems[k].description.problem_id);} // storing all the problem id's present in preprocess
         return res;
     };
+
     try {
         console.log('attempt to read preprocess file (which may not exist): ' + pURL);
-        res = read(await m.request(pURL));
+        res = loadPreprocessData(await m.request(pURL));
     } catch(_) {
         console.log("Ok, preprocess not found, try to RUN THE PREPROCESSAPP");
         let url = ROOK_SVC_URL + 'preprocessapp';
@@ -1199,24 +1202,49 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
           //
           json_input = {data: d3mData, datastub: d3mDataName};
         }else{
-         json_input = {data: dataloc, target: targetloc, datastub: datastub};
+          json_input = {data: dataloc, target: targetloc, datastub: datastub};
         }
 
-        console.log('json_input: ', json_input);
-        console.log('url: ', url);
         try {
-            res = read(await m.request({method: 'POST', url: url, data: json_input}));
+            // res = read(await m.request({method: 'POST', url: url, data: json_input}));
+            let preprocess_info = await m.request({method: 'POST', url: url, data: json_input});
+            console.log('preprocess_info: ', preprocess_info);
+            console.log('preprocess_info message: ' + preprocess_info.message);
+            if (preprocess_info.success){
+              res = loadPreprocessData(preprocess_info.data);
+
+            }else{
+              setModal(m('div', m('p', "Preprocess failed: "  + preprocess_info.message),
+                                m('p', '(May be a serious problem)')),
+                       "Failed to load basic data.",
+                       true,
+                       "Try to Reload Page",
+                       false,
+                       locationReload);
+
+              //alertError('Preprocess failed: ' + preprocess_info.message);
+              // endsession();
+              return;
+            }
         } catch(_) {
             console.log('preprocess failed');
-            alertError('preprocess failed. ending user session.');
-            endsession();
+            // alertError('preprocess failed. ending user session.');
+            setModal(m('div', m('p', "Preprocess failed."),
+                              m('p', '(May be a serious problem)')),
+                     "Failed to load basic data.",
+                     true,
+                     "Try to Reload Page",
+                     false,
+                     locationReload);
+            // endsession();
+            return;
         }
     }
 
 
-    // console.log("is this preprocess?")
-    // console.log(res);
-    // console.log(preprocess);
+    console.log("is this preprocess?")
+    console.log(res);
+    console.log(preprocess);
 
     /**
      * 9. Build allNodes[] using preprocessed information
