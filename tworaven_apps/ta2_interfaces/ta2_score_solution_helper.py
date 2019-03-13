@@ -132,7 +132,7 @@ class ScoreSolutionHelper(BasicErrCheck):
         # ----------------------------------
         # Run ScoreSolution
         # ----------------------------------
-        LOGGER.info('run ScoreSolution: ', json_str_input)
+        LOGGER.info('run ScoreSolution: %s', json_str_input)
         fit_info = score_solution(json_str_input)
         if not fit_info.success:
             print('ScoreSolution err_msg: ', fit_info.err_msg)

@@ -48,6 +48,8 @@ def search_solutions(raven_json_str=None):
         if not raven_json_info.success:
             return err_resp(raven_json_info.err_msg)
 
+    print('SearchSolutionsRequest (string)', raven_json_str)
+
     # --------------------------------
     # convert the JSON string to a gRPC request
     # --------------------------------
@@ -268,6 +270,7 @@ def score_solution(raven_json_str=None):
     if not raven_json_info.success:
         return err_resp(raven_json_info.err_msg)
 
+    print('ScoreSolutionRequest', raven_json_str)
     # --------------------------------
     # convert the JSON string to a gRPC request
     # --------------------------------
