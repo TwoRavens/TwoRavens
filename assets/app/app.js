@@ -1235,10 +1235,10 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             console.log('preprocess failed');
             // alertError('preprocess failed. ending user session.');
             setModal(m('div', m('p', "Preprocess failed."),
-                              m('p', '(May be a serious problem)')),
+                              m('p', '(p: 2)')),
                      "Failed to load basic data.",
                      true,
-                     "Try to Reload Page",
+                     "Reload Page",
                      false,
                      locationReload);
             // endsession();

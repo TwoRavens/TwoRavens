@@ -97,12 +97,12 @@ class ScoreSolutionHelper(BasicErrCheck):
         assert websocket_id, "websocket_id must be set"
         assert user_id, "user_id must be set"
         assert score_params, "score_params must be set"
-        fit_helper = ScoreSolutionHelper(pipeline_id, websocket_id,
-                                         user_id, score_params, **kwargs)
+        score_helper = ScoreSolutionHelper(pipeline_id, websocket_id,
+                                           user_id, score_params, **kwargs)
 
-        if fit_helper.has_error():
+        if score_helper.has_error():
             user_msg = ('ScoreSolution failure for pipeline (%s): %s') % \
-                        (pipeline_id, fit_helper.get_error_message())
+                        (pipeline_id, score_helper.get_error_message())
 
             ws_msg = WebsocketMessage.get_fail_message(\
                         ScoreSolutionHelper.GRCP_SCORE_SOLUTION, user_msg)
@@ -111,7 +111,7 @@ class ScoreSolutionHelper(BasicErrCheck):
             LOGGER.error(user_msg)
             return
 
-        fit_helper.run_process()
+        score_helper.run_process()
 
 
     def run_process(self):

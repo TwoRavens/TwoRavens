@@ -33,6 +33,8 @@ class StoredRequestAdmin(admin.ModelAdmin):
                     'request_type',
                     'is_finished',
                     'status',
+                    'search_id',
+                    'pipeline_id',
                     'user',
                     'workspace',
                     'hash_id',
@@ -41,7 +43,8 @@ class StoredRequestAdmin(admin.ModelAdmin):
 
     list_filter = ('is_finished',
                    'status',
-                   'request_type')
+                   'request_type',
+                   'search_id',)
     readonly_fields = ('request',
                        'request_as_json',
                        'request_type',
