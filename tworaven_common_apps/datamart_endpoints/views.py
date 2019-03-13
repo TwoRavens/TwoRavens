@@ -235,7 +235,7 @@ def api_materialize(request):
     user_workspace = ws_info.result_obj
 
     # check if data is valid
-    print('materialize input: ', json_req_obj)
+    #print('materialize input: ', json_req_obj)
     form = DatamartMaterializeForm(json_req_obj)
     if not form.is_valid():
         print('form.errors.as_json()', form.errors.as_json())
@@ -280,7 +280,7 @@ def api_materialize_async(request):
     user_workspace = ws_info.result_obj
 
     # check if data is valid
-    print('materialize input: ', json_req_obj)
+    #print('materialize input: ', json_req_obj)
     form = DatamartMaterializeForm(json_req_obj)
     if not form.is_valid():
         print('form.errors.as_json()', form.errors.as_json())
