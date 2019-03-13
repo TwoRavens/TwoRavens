@@ -283,6 +283,27 @@ def run_ta2_brown_choose_config(choice_num=''):
 
 
 @task
+def run_ta2_berkeley_choose_config(choice_num=''):
+    """Pick a config from /ravens_volume and run Berkeley's TA2"""
+    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
+            (TA2Helper, TA2_BERKELEY)
+
+    resp = TA2Helper.run_ta2_with_dataset(\
+                TA2_BERKELEY,
+                choice_num,
+                run_ta2_berkeley_choose_config.__name__)
+
+    if resp.success:
+        stop_ta2_server()
+
+        docker_cmd = resp.result_obj
+        print('Running command: %s' % docker_cmd)
+        local(docker_cmd)
+    elif resp.err_msg:
+        print(resp.err_msg)
+
+
+@task
 def run_ta2_isi_choose_config(choice_num=''):
     """Pick a config from /ravens_volume and run ISI's TA2"""
     from tworaven_apps.ta2_interfaces.ta2_dev_util import \
