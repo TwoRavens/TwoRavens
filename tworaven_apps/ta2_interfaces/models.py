@@ -49,6 +49,10 @@ class StoredRequest(TimeStampedModel):
 
     is_finished = models.BooleanField(default=False)
 
+    search_id = models.CharField(\
+                        max_length=255,
+                        blank=True)
+
     pipeline_id = models.IntegerField(\
                         default=-1,
                         help_text=('Not always used'))
@@ -356,6 +360,55 @@ class StoredResponse(TimeStampedModel):
         stored_response.save()
 
         return True
+
+
+    @staticmethod
+    def add_err_response(stored_request, response, pipeline_id=None):
+        """Given a StoredRequest, create a StoredResponse with an error"""
+        if not isinstance(stored_request, StoredRequest):
+            return err_resp('"stored_request" must be a StoredRequest')
+
+        stored_response = StoredResponse(\
+                            stored_request=stored_request,
+                            response=response,
+                            status=STATUS_ERROR,
+                            is_finished=True)
+
+        if pipeline_id:
+            stored_response.pipeline_id = pipeline_id
+
+        stored_response.save()
+
+        stored_request.status = STATUS_COMPLETE
+        stored_request.save()
+
+        return ok_resp(stored_response)
+
+    @staticmethod
+    def add_success_response(stored_request, response, **kwargs):
+        """Given a StoredRequest, create a StoredResponse with a success response"""
+        if not isinstance(stored_request, StoredRequest):
+            return err_resp('"stored_request" must be a StoredRequest')
+
+        stored_response = StoredResponse(\
+                            stored_request=stored_request,
+                            response=response,
+                            status=STATUS_COMPLETE,
+                            is_finished=True)
+
+        if kwargs.get('pipeline_id'):
+            stored_response.pipeline_id = kwargs['pipeline_id']
+
+        stored_response.save()
+
+        # Update request object
+        #
+        if kwargs.get('search_id'):
+            stored_request.search_id = kwargs['search_id']
+        stored_request.status = STATUS_COMPLETE
+        stored_request.save()
+
+        return ok_resp(stored_response)
 
     @staticmethod
     def add_response(stored_request_id, response, pipeline_id=None):

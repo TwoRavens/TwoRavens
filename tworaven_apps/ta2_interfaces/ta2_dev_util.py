@@ -21,11 +21,13 @@ TA2_FeatureLabs = 'TA2_FeatureLabs'
 TA2_Brown = 'TA2_Brown'
 TA2_ISI = 'TA2_ISI'
 TA2_STANFORD = 'TA2_STANFORD'
+TA2_BERKELEY = 'TA2_BERKELEY'
 
 TA2_NAMES = (TA2_FeatureLabs,
              TA2_Brown,
              TA2_ISI,
-             TA2_STANFORD)
+             TA2_STANFORD,
+             TA2_BERKELEY)
 
 TA2_IMAGE_INFO = [
     # Feature Labs: may not be using D3MPORT
@@ -38,8 +40,8 @@ TA2_IMAGE_INFO = [
 
     # Brown: may not be using D3MPORT
     (TA2_Brown,
-     'registry.datadrivendiscovery.org/zshang/brown:ta2 ta2_search',
-     '-p 45042:45042  -e D3MPORT=45042g'),
+     'registry.datadrivendiscovery.org/zshang/docker_images:ta2',
+     '-p 45042:45042  -e D3MPORT=45042'),
 
     # ISI: not using D3MPORT
     (TA2_ISI,
@@ -52,7 +54,11 @@ TA2_IMAGE_INFO = [
     (TA2_STANFORD,
      'registry.datadrivendiscovery.org/mlam/stanford-d3m-full:evaluation_workflow_compliant_stable',
      #'registry.datadrivendiscovery.org/jdunnmon/d3m-ta2-stanford:latest',
-     '-p 45042:50051'),
+     '-p 45042:45042'),
+
+    (TA2_BERKELEY,
+     'registry.datadrivendiscovery.org/berkeley/aika:2019-march-dry-run',
+     '-p 45042:45042 -e D3MPORT=45042',)
 ]
 
 class TA2Helper(BasicErrCheck):

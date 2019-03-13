@@ -113,10 +113,28 @@ class SearchSolutionsHelper(BasicErrCheck):
 
         print('make_search_solutions_call 2')
 
+        try:
+            user_obj = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            user_msg = 'No user found for id: %s' % user_id
+            return err_resp(user_msg)
+
+
+        stored_request = StoredRequest(\
+                        user=user_obj,
+                        #search_id=self.search_id,
+                        workspace='(not specified)',
+                        request_type='SearchSolutions',
+                        is_finished=False,
+                        request=all_params[KEY_SEARCH_SOLUTION_PARAMS])
+        stored_request.save()
+
         # Run SearchSolutions against the TA2
         #
         search_info = search_solutions(all_params[KEY_SEARCH_SOLUTION_PARAMS])
         if not search_info.success:
+            StoredResponse.add_err_response(stored_request,
+                                            search_info.err_msg)
             return search_info
 
         print('make_search_solutions_call 2')
@@ -130,10 +148,14 @@ class SearchSolutionsHelper(BasicErrCheck):
         print('make_search_solutions_call 3')
 
         if not KEY_SEARCH_ID in search_info_data:
-            return err_resp('searchId not found in the SearchSolutionsResponse')
+            user_msg = 'searchId not found in the SearchSolutionsResponse'
+            StoredResponse.add_err_response(stored_request,
+                                            user_msg)
+            return err_resp(user_msg)
 
         search_id = search_info_data['searchId']
 
+        StoredResponse.add_success_response(stored_request, search_info_data, search_id=search_id)
         # Async task to run GetSearchSolutionsResults
         #
         SearchSolutionsHelper.kick_off_solution_results.delay(\
@@ -222,6 +244,7 @@ class SearchSolutionsHelper(BasicErrCheck):
         # --------------------------------
         stored_request = StoredRequest(\
                         user=self.user_object,
+                        search_id=self.search_id,
                         workspace='(not specified)',
                         request_type='GetSearchSolutionsResults',
                         is_finished=False,
