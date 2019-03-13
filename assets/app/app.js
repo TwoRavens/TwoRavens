@@ -98,7 +98,6 @@ export async function resetPeek(pipeline) {
 }
 
 export async function updatePeek(pipeline) {
-
     if (peekIsLoading || peekIsExhausted || pipeline === undefined)
         return;
 
@@ -807,6 +806,8 @@ export let lockTour = {
   11. Call layout() and start up
 */
 async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL) {
+    console.log('---------------------------------------');
+    console.log('-- initial load, app.js - load() --');
     if (!IS_D3M_DOMAIN) {
         return;
     }
@@ -815,6 +816,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // 1. Retrieve the configuration information
     //  dev view: http://127.0.0.1:8080/user-workspaces/d3m-configs/json/latest?pretty
     // ---------------------------------------
+    console.log('---------------------------------------');
+    console.log('-- 1. Retrieve the configuration information --');
+
     let d3m_config_url = '/user-workspaces/d3m-configs/json/latest';
 
     let config_result = await m.request({
@@ -849,12 +853,15 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // Take the 1st configuration from the list -- for now...
     //let configurations = config_result.data[0]
 
-    console.log("this is the config file:");
-    console.log(configurations);
+    // console.log("this is the config file:");
+    // console.log(configurations);
 
     // ---------------------------------------
     // 2. Set 'configurations'
     // ---------------------------------------
+    console.log('---------------------------------------');
+    console.log('-- 2. Set "configurations" --');
+
     $('#user-workspace-id').html('(ws:' + configurations.user_workspace_id +')');
 
     datasetdocurl = configurations.dataset_schema;
@@ -891,6 +898,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // 3. Read the problem schema and set 'd3mProblemDescription'
     // ...and make a call to Hello to check TA2 is up.  If we get this far, data are guaranteed to exist for the frontend
     // ---------------------------------------
+    console.log('---------------------------------------');
+    console.log("-- 3. Read the problem schema and set 'd3mProblemDescription' --");
 
     //url example: /config/d3m-config/get-problem-data-file-info/39
     //
@@ -1024,7 +1033,12 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         // d3mProblemDescription.description = "Discovered Problems";
     }
 
-    // 4. Read the data document and set 'datadocument'
+    /**
+     * 4. Read the data document and set 'datadocument'
+     */
+   console.log('---------------------------------------');
+    console.log("-- 4. Read the data document and set 'datadocument' --");
+
     datadocument = await m.request(d3mDS);
 
     // if no columns in the datadocument, go to swandive
@@ -1097,8 +1111,14 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
     console.log("data schema data: ", datadocument);
 
-    // 5. Read in zelig models (not for d3m)
-    // 6. Read in zeligchoice models (not for d3m)
+    /**
+     * 5. Read in zelig models (not for d3m)
+     * 6. Read in zeligchoice models (not for d3m)
+     */
+    console.log('---------------------------------------');
+    console.log("-- 5. Read in zelig models (not for d3m) --");
+    console.log("-- 6. Read in zeligchoice models (not for d3m) --");
+
     if (!IS_D3M_DOMAIN){
       for (let field of ['zelig5models', 'zelig5choicemodels']) {
           try {
@@ -1112,8 +1132,14 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
           }
       }
     }
-    // 7. Start the user session
-    // rpc rpc Hello (HelloRequest) returns (HelloResponse) {}
+
+    /**
+     * 7. Start the user session
+     * rpc rpc Hello (HelloRequest) returns (HelloResponse) {}
+     */
+    console.log('---------------------------------------');
+    console.log("-- 7. Start the user session /Hello --");
+
     res = await makeRequest(D3M_SVC_URL + '/Hello', {});
     if (res) {
       console.log(res)
@@ -1148,8 +1174,13 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         hopscotch.startTour(mytour);
     }
 
-    // 8. read preprocess data or (if necessary) run preprocess
-    // NOTE: preprocess.json is now guaranteed to exist...
+    /**
+     * 8. read preprocess data or (if necessary) run preprocess
+     * NOTE: preprocess.json is now guaranteed to exist...
+     */
+    console.log('---------------------------------------');
+    console.log("-- 8. read preprocess data or (if necessary) run preprocess --");
+
     let read = res => {
         priv = res.dataset.private || priv;
         Object.keys(res.variables).forEach(k => preprocess[k] = res.variables[k]);
@@ -1187,9 +1218,16 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // console.log(res);
     // console.log(preprocess);
 
-    // 9. Build allNodes[] using preprocessed information
-    // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
-    // such as setx values (if the user has selected them) and pebble coordinates
+    /**
+     * 9. Build allNodes[] using preprocessed information
+     * contains all the preprocessed data we have for the variable,
+     * as well as UI data pertinent to that variable,
+     *
+     * such as setx values (if the user has selected them) and pebble coordinates
+     **/
+     console.log('---------------------------------------');
+     console.log("-- 9. Build allNodes[] using preprocessed information --");
+
     setValueKey(Object.keys(preprocess));
     setAllNodes(valueKey.map((variable, i) => jQuery.extend(true, {
         id: i,
@@ -1212,15 +1250,23 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         forefront: false
     }, preprocess[variable])));
 
-    // 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN)
+    /**
+     * 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN)
+     */
+    console.log('---------------------------------------');
+    console.log("-- 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN) --");
     if(!swandive) {
         datadocument_columns.forEach(v => findNode(v.colName).d3mDescription = v);
         console.log("all nodes:");
         console.log(allNodes);
     }
 
-    // 10b. Call problem discovery
-    // Requires that `res` built in 8. above still exists.  Should make this better.
+    /**
+     * 10b. Call problem discovery
+     * Requires that `res` built in 8. above still exists.  Should make this better.
+     */
+    console.log('---------------------------------------');
+    console.log("-- 10b. Call problem discovery --");
     if(!swandive) {
         disco = discovery(res);
 
@@ -1235,12 +1281,21 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
     }
 
-    // 11. Call layout() and start up
+    /**
+     * 11. Call layout() and start up
+     */
+    console.log('---------------------------------------');
+    console.log('-- 11. Call layout() and start up --');
     layout(false, true);
     IS_D3M_DOMAIN ? zPop() : dataDownload();
 
     defaultProblem.predictors = [...zparams.zgroup1];
     disco.unshift(defaultProblem);
+
+    /**
+     * Note: mongodb data retrieval initiated here
+     *   setSelectedProblem -> loadMenu (manipulate.js) -> getData (manipulate.js)
+     */
     setSelectedProblem(getProblemCopy(defaultProblem));
 
     setTimeout(loadResult, 10000);
@@ -4250,6 +4305,7 @@ export let resultsProblem;
 export let selectedProblem;
 
 export function setSelectedProblem(problem) {
+    console.log('-- setSelectedProblem --')
     if (typeof problem === 'string') problem = disco.find(prob => prob.problemID === problem);
     if (!problem || selectedProblem === problem) return;
 
