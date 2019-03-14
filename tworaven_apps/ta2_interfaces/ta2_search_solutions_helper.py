@@ -329,7 +329,7 @@ class SearchSolutionsHelper(BasicErrCheck):
                     #
                     user_msg = 'Failed to store response from %s: %s' % \
                                 (self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
-                                msg_json_info.err_msg)
+                                 msg_json_info.err_msg)
 
                     StoredResponse.add_stream_err_response(\
                                         stored_response, user_msg)
