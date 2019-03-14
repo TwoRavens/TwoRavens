@@ -46,6 +46,8 @@ class FitSolutionHelper(BasicErrCheck):
         self.user_object = None
 
         self.fit_params = fit_params
+
+        self.search_id = kwargs.get('search_id', None)
         self.produce_params = kwargs.get('produce_params', None)
 
         self.get_user()
@@ -99,7 +101,7 @@ class FitSolutionHelper(BasicErrCheck):
         assert user_id, "user_id must be set"
         assert fit_params, "fit_params must be set"
         fit_helper = FitSolutionHelper(pipeline_id, websocket_id,
-                                        user_id, fit_params, **kwargs)
+                                       user_id, fit_params, **kwargs)
 
         if fit_helper.has_error():
             user_msg = ('FitSolution failure for pipeline (%s): %s') % \
@@ -132,6 +134,16 @@ class FitSolutionHelper(BasicErrCheck):
 
         json_str_input = json_str_info.result_obj
 
+        stored_request = StoredRequest(\
+                        user=self.user_object,
+                        search_id=self.search_id,
+                        pipeline_id=self.pipeline_id,
+                        workspace='(not specified)',
+                        request_type=self.GRCP_FIT_SOLUTION,
+                        is_finished=False,
+                        request=self.fit_params)
+        stored_request.save()
+
         # ----------------------------------
         # Run FitSolution
         # ----------------------------------
@@ -139,6 +151,9 @@ class FitSolutionHelper(BasicErrCheck):
         if not fit_info.success:
             self.send_websocket_err_msg(self.GRCP_FIT_SOLUTION,
                                         fit_info.err_msg)
+            StoredResponse.add_err_response(\
+                    stored_request,
+                    fit_info.err_msg)
             return
 
         # ----------------------------------
@@ -146,10 +161,14 @@ class FitSolutionHelper(BasicErrCheck):
         # ----------------------------------
         response_info = json_loads(fit_info.result_obj)
         if not response_info.success:
+            StoredResponse.add_err_response(\
+                    stored_request,
+                    response_info.err_msg)
             self.send_websocket_err_msg(self.GRCP_FIT_SOLUTION, response_info.err_msg)
             return
 
         result_json = response_info.result_obj
+
 
         # ----------------------------------
         # Get the requestId
@@ -157,8 +176,14 @@ class FitSolutionHelper(BasicErrCheck):
         if not KEY_REQUEST_ID in result_json:
             user_msg = (' "%s" not found in response to JSON: %s') % \
                         (KEY_REQUEST_ID, result_json)
+            #
+            StoredResponse.add_err_response(stored_request, user_msg)
+            #
             self.send_websocket_err_msg(self.GRCP_FIT_SOLUTION, user_msg)
             return
+
+        StoredResponse.add_success_response(stored_request,
+                                            result_json)
 
         self.run_get_fit_solution_responses(result_json[KEY_REQUEST_ID])
 
@@ -221,6 +246,7 @@ class FitSolutionHelper(BasicErrCheck):
                         user=self.user_object,
                         request_type=GRPC_GET_FIT_SOLUTION_RESULTS,
                         pipeline_id=self.pipeline_id,
+                        search_id=self.search_id,
                         is_finished=False,
                         request=params_dict)
         stored_request.save()
@@ -255,6 +281,9 @@ class FitSolutionHelper(BasicErrCheck):
                     err_msg = ('Failed to convert JSON to gRPC: %s') % \
                                (err_obj,)
 
+                    StoredResponse.add_stream_err_response(\
+                                        stored_request, err_msg)
+
                     self.send_websocket_err_msg(\
                             GRPC_GET_FIT_SOLUTION_RESULTS,
                             err_msg)
@@ -266,6 +295,10 @@ class FitSolutionHelper(BasicErrCheck):
                 if not KEY_FITTED_SOLUTION_ID in result_json:
                     user_msg = '"%s" not found in response to JSON: %s' % \
                                (KEY_FITTED_SOLUTION_ID, result_json)
+
+                    StoredResponse.add_stream_err_response(\
+                                        stored_request, err_msg)
+
                     self.send_websocket_err_msg(\
                             GRPC_GET_FIT_SOLUTION_RESULTS,
                             err_msg)
@@ -277,29 +310,20 @@ class FitSolutionHelper(BasicErrCheck):
                 # -----------------------------------------
                 # Looks good, save the response
                 # -----------------------------------------
-                stored_resp_info = StoredResponse.add_response(\
-                                stored_request.id,
-                                response=result_json,
-                                pipeline_id=self.pipeline_id)
+                save_resp_info = StoredResponse.add_stream_success_response(\
+                                        stored_request, result_json)
 
-                # -----------------------------------------
-                # Make sure the response was saved (probably won't happen)
-                # -----------------------------------------
-                if not stored_resp_info.success:
-                    # Not good but probably won't happen
-                    # send a message to the user...
-                    #
-                    self.send_websocket_err_msg(\
-                                    GRPC_GET_FIT_SOLUTION_RESULTS,
-                                    stored_resp_info.err_msg)
+                if not save_resp_info.success:
+                    # shouldn't happen...
+                    StoredResponse.add_stream_err_response(\
+                                    stored_request, save_resp_info.err_msg)
                     continue
 
                 # ---------------------------------------------
                 # Looks good!  Get the StoredResponse
                 # - send responses back to WebSocket
                 # ---------------------------------------------
-                stored_response = stored_resp_info.result_obj
-                stored_response.set_pipeline_id(self.pipeline_id)
+                stored_response = save_resp_info.result_obj
 
                 # ---------------------------------------------
                 # If progress is complete,
@@ -323,11 +347,10 @@ class FitSolutionHelper(BasicErrCheck):
                             msg_cnt=msg_cnt,
                             data=stored_response.as_dict())
 
-                LOGGER.info('ws_msg: %s' % ws_msg)
+                LOGGER.info('ws_msg: %s', ws_msg)
                 #print('ws_msg', ws_msg.as_dict())
 
                 ws_msg.send_message(self.websocket_id)
-                stored_response.mark_as_sent_to_user()
 
                 # if GetFitSolutionResultsResponse is COMPLETE,
                 #  then trigger ProduceSolution
@@ -385,4 +408,5 @@ class FitSolutionHelper(BasicErrCheck):
                                     self.pipeline_id,
                                     self.websocket_id,
                                     self.user_id,
-                                    prod_params)
+                                    prod_params,
+                                    search_id=self.search_id)

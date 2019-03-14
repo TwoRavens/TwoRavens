@@ -47,6 +47,8 @@ class ScoreSolutionHelper(BasicErrCheck):
 
         self.score_params = score_params
 
+        self.search_id = kwargs.get('search_id')
+
         self.get_user()
         self.check_score_params()
 
@@ -130,13 +132,27 @@ class ScoreSolutionHelper(BasicErrCheck):
         json_str_input = json_str_info.result_obj
 
         # ----------------------------------
+        # Save the request
+        # ----------------------------------
+        stored_request = StoredRequest(\
+                        user=self.user_object,
+                        search_id=self.search_id,
+                        pipeline_id=self.pipeline_id,
+                        workspace='(not specified)',
+                        request_type=self.GRCP_SCORE_SOLUTION,
+                        is_finished=False,
+                        request=self.score_params)
+        stored_request.save()
+
+        # ----------------------------------
         # Run ScoreSolution
         # ----------------------------------
         LOGGER.info('run ScoreSolution: %s', json_str_input)
         fit_info = score_solution(json_str_input)
         if not fit_info.success:
             print('ScoreSolution err_msg: ', fit_info.err_msg)
-
+            StoredResponse.add_err_response(stored_request,
+                                            fit_info.err_msg)
             self.send_websocket_err_msg(self.GRCP_SCORE_SOLUTION,
                                         fit_info.err_msg)
             return
@@ -147,6 +163,8 @@ class ScoreSolutionHelper(BasicErrCheck):
         response_info = json_loads(fit_info.result_obj)
         if not response_info.success:
             print('ScoreSolution grpc err_msg: ', response_info.err_msg)
+            StoredResponse.add_err_response(stored_request,
+                                            response_info.err_msg)
             self.send_websocket_err_msg(self.GRCP_SCORE_SOLUTION, response_info.err_msg)
             return
 
@@ -158,8 +176,13 @@ class ScoreSolutionHelper(BasicErrCheck):
         if not KEY_REQUEST_ID in result_json:
             user_msg = (' "%s" not found in response to JSON: %s') % \
                         (KEY_REQUEST_ID, result_json)
+            StoredResponse.add_err_response(stored_request, user_msg)
+
             self.send_websocket_err_msg(self.GRCP_SCORE_SOLUTION, user_msg)
             return
+
+        StoredResponse.add_success_response(stored_request,
+                                            result_json)
 
         self.run_get_score_solution_responses(result_json[KEY_REQUEST_ID])
 
@@ -221,6 +244,7 @@ class ScoreSolutionHelper(BasicErrCheck):
         stored_request = StoredRequest(\
                         user=self.user_object,
                         request_type=self.GRPC_GET_SCORE_SOLUTION_RESULTS,
+                        search_id=self.search_id,
                         pipeline_id=self.pipeline_id,
                         is_finished=False,
                         request=params_dict)
@@ -255,6 +279,8 @@ class ScoreSolutionHelper(BasicErrCheck):
                 if not msg_json_info.success:
                     err_msg = ('Failed to convert JSON to gRPC: %s') % \
                                (err_obj,)
+                    StoredResponse.add_stream_err_response(stored_request,
+                                                           user_msg)
 
                     self.send_websocket_err_msg(\
                             self.GRPC_GET_SCORE_SOLUTION_RESULTS,
@@ -267,10 +293,8 @@ class ScoreSolutionHelper(BasicErrCheck):
                 # -----------------------------------------
                 # Looks good, save the response
                 # -----------------------------------------
-                stored_resp_info = StoredResponse.add_response(\
-                                stored_request.id,
-                                response=result_json,
-                                pipeline_id=self.pipeline_id)
+                stored_resp_info = StoredResponse.add_stream_success_response(\
+                                    stored_request, result_json)
 
                 # -----------------------------------------
                 # Make sure the response was saved (probably won't happen)
@@ -282,6 +306,10 @@ class ScoreSolutionHelper(BasicErrCheck):
                     self.send_websocket_err_msg(\
                                     self.GRPC_GET_SCORE_SOLUTION_RESULTS,
                                     stored_resp_info.err_msg)
+                    #
+                    StoredResponse.add_stream_err_response(\
+                                    stored_request, stored_resp_info.err_msg)
+                    #
                     continue
 
                 # ---------------------------------------------
@@ -317,7 +345,7 @@ class ScoreSolutionHelper(BasicErrCheck):
                 #print('ws_msg', ws_msg.as_dict())
 
                 ws_msg.send_message(self.websocket_id)
-                stored_response.mark_as_sent_to_user()
+                # stored_response.mark_as_sent_to_user()
 
         except grpc.RpcError as err_obj:
             stored_request.set_error_status(str(err_obj))
@@ -326,6 +354,5 @@ class ScoreSolutionHelper(BasicErrCheck):
         except Exception as err_obj:
             stored_request.set_error_status(str(err_obj))
             return
-
 
         StoredRequestUtil.set_finished_ok_status(stored_request.id)

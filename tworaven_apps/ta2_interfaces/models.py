@@ -201,7 +201,7 @@ class StoredResponse(TimeStampedModel):
 
     sent_to_user = models.BooleanField(\
                         help_text='Sent to the UI for user viewing',
-                        default=False)
+                        default=True)
 
     status = models.CharField(\
                         max_length=255,
@@ -363,7 +363,7 @@ class StoredResponse(TimeStampedModel):
 
 
     @staticmethod
-    def add_err_response(stored_request, response, pipeline_id=None):
+    def add_err_response(stored_request, response, **kwargs):
         """Given a StoredRequest, create a StoredResponse with an error"""
         if not isinstance(stored_request, StoredRequest):
             return err_resp('"stored_request" must be a StoredRequest')
@@ -374,15 +374,53 @@ class StoredResponse(TimeStampedModel):
                             status=STATUS_ERROR,
                             is_finished=True)
 
+        # Save the pipeline id
+        #
+        pipeline_id = kwargs.get('pipeline_id')
         if pipeline_id:
+            #
+            # Has a pipeline_id been specified?
+            #
             stored_response.pipeline_id = pipeline_id
+        elif stored_request.pipeline_id:
+            #
+            # Nope, is there a pipeline_id available in the StoredRequest
+            #
+            stored_response.pipeline_id = stored_request.pipeline_id
 
+        # Save Response
         stored_response.save()
 
-        stored_request.status = STATUS_COMPLETE
+        # Save request
+        if kwargs.get('request_complete', True) is True:
+            stored_request.status = STATUS_COMPLETE
+
         stored_request.save()
 
         return ok_resp(stored_response)
+
+    @staticmethod
+    def add_stream_err_response(stored_request, response, **kwargs):
+        """Create a StoredResponse with an error -- but leave the Request open,
+        e.g., not complete"""
+        if not isinstance(stored_request, StoredRequest):
+            return err_resp('"stored_request" must be a StoredRequest')
+
+        kwargs['request_complete'] = False
+        return StoredResponse.add_err_response(stored_request,
+                                               response,
+                                               **kwargs)
+
+    @staticmethod
+    def add_stream_success_response(stored_request, response, **kwargs):
+        """Given a StoredRequest, create a StoredResponse with a success response"""
+        if not isinstance(stored_request, StoredRequest):
+            return err_resp('"stored_request" must be a StoredRequest')
+
+        kwargs['request_complete'] = False
+        return StoredResponse.add_success_response(stored_request,
+                                                   response,
+                                                   **kwargs)
 
     @staticmethod
     def add_success_response(stored_request, response, **kwargs):
@@ -396,16 +434,30 @@ class StoredResponse(TimeStampedModel):
                             status=STATUS_COMPLETE,
                             is_finished=True)
 
+        # Save the pipeline id
+        #
         if kwargs.get('pipeline_id'):
+            #
+            # Has a pipeline_id been specified?
+            #
             stored_response.pipeline_id = kwargs['pipeline_id']
+        elif stored_request.pipeline_id:
+            #
+            # Nope, is there a pipeline_id available in the StoredRequest
+            #
+            stored_response.pipeline_id = stored_request.pipeline_id
 
         stored_response.save()
 
         # Update request object
         #
-        if kwargs.get('search_id'):
+        if (not stored_request.search_id) and kwargs.get('search_id'):
             stored_request.search_id = kwargs['search_id']
-        stored_request.status = STATUS_COMPLETE
+
+        # For streaming responses, we want to keep the STATUS as STATUS_IN_PROGRESS
+        #
+        if kwargs.get('request_complete', True) is True:
+            stored_request.status = STATUS_COMPLETE
         stored_request.save()
 
         return ok_resp(stored_response)
