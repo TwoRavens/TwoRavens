@@ -53,6 +53,7 @@ LOGGER = logging.getLogger(__name__)
 
 class SearchSolutionsHelper(BasicErrCheck):
     """Server-side process for SearchSolutions calls to a TA2"""
+    GRPC_SEARCH_SOLUTIONS = 'SearchSolutions'
     GRPC_GET_SEARCH_SOLUTIONS_RESULTS = 'GetSearchSolutionsResults'
 
     def __init__(self, search_id, websocket_id, user_id, **kwargs):
@@ -122,9 +123,9 @@ class SearchSolutionsHelper(BasicErrCheck):
 
         stored_request = StoredRequest(\
                         user=user_obj,
-                        #search_id=self.search_id,
+                        # search_id=self.search_id,
                         workspace='(not specified)',
-                        request_type='SearchSolutions',
+                        request_type=SearchSolutionsHelper.GRPC_SEARCH_SOLUTIONS,
                         is_finished=False,
                         request=all_params[KEY_SEARCH_SOLUTION_PARAMS])
         stored_request.save()
@@ -141,6 +142,8 @@ class SearchSolutionsHelper(BasicErrCheck):
 
         search_info_json = json_loads(search_info.result_obj)
         if not search_info_json.success:
+            StoredResponse.add_err_response(stored_request,
+                                            search_info_json.err_msg)
             return search_info_json
         search_info_data = search_info_json.result_obj
         print('search_info_data', json_dumps(search_info_data)[1])
@@ -155,7 +158,9 @@ class SearchSolutionsHelper(BasicErrCheck):
 
         search_id = search_info_data['searchId']
 
-        StoredResponse.add_success_response(stored_request, search_info_data, search_id=search_id)
+        StoredResponse.add_success_response(stored_request,
+                                            search_info_data,
+                                            search_id=search_id)
         # Async task to run GetSearchSolutionsResults
         #
         SearchSolutionsHelper.kick_off_solution_results.delay(\
@@ -246,7 +251,7 @@ class SearchSolutionsHelper(BasicErrCheck):
                         user=self.user_object,
                         search_id=self.search_id,
                         workspace='(not specified)',
-                        request_type='GetSearchSolutionsResults',
+                        request_type=self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
                         is_finished=False,
                         request=params_dict)
         stored_request.save()
@@ -279,9 +284,13 @@ class SearchSolutionsHelper(BasicErrCheck):
                 if not msg_json_info.success:
                     user_msg = 'Failed to convert response to JSON: %s' % \
                                msg_json_info.err_msg
+
                     self.send_websocket_err_msg(\
                                     self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
                                     user_msg)
+
+                    StoredResponse.add_stream_err_response(\
+                                        stored_response, user_msg)
                     # Wait for next response....
                     continue
 
@@ -290,6 +299,9 @@ class SearchSolutionsHelper(BasicErrCheck):
                 if not KEY_SOLUTION_ID in result_json:
                     user_msg = '"%s" not found in response to JSON: %s' % \
                                (KEY_SOLUTION_ID, result_json)
+
+                    StoredResponse.add_stream_err_response(\
+                                        stored_response, user_msg)
 
                     self.send_websocket_err_msg(\
                                     self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
@@ -305,9 +317,8 @@ class SearchSolutionsHelper(BasicErrCheck):
                 # -----------------------------------------
                 # Looks good, save the response
                 # -----------------------------------------
-                stored_resp_info = StoredResponse.add_response(\
-                                stored_request.id,
-                                response=result_json)
+                stored_resp_info = StoredResponse.add_stream_success_response(\
+                                    stored_request, result_json)
 
                 # -----------------------------------------
                 # Make sure the response was saved (probably won't happen)
@@ -318,7 +329,10 @@ class SearchSolutionsHelper(BasicErrCheck):
                     #
                     user_msg = 'Failed to store response from %s: %s' % \
                                 (self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
-                                msg_json_info.err_msg)
+                                 msg_json_info.err_msg)
+
+                    StoredResponse.add_stream_err_response(\
+                                        stored_response, user_msg)
 
                     self.send_websocket_err_msg(\
                                     self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
@@ -333,6 +347,9 @@ class SearchSolutionsHelper(BasicErrCheck):
                 # ---------------------------------------------
                 stored_response = stored_resp_info.result_obj
                 stored_response.use_id_as_pipeline_id()
+
+                StoredResponse.add_stream_success_response(\
+                                    stored_response, stored_response)
 
                 # -----------------------------------------------
                 # send responses back to WebSocket
@@ -413,7 +430,8 @@ class SearchSolutionsHelper(BasicErrCheck):
                                     pipeline_id,
                                     self.websocket_id,
                                     self.user_id,
-                                    score_params)
+                                    score_params,
+                                    search_id=self.search_id)
 
     def run_fit_solution(self, pipeline_id, solution_id):
         """async: Run FitSolution and GetFitSolutionResults"""
@@ -435,6 +453,7 @@ class SearchSolutionsHelper(BasicErrCheck):
                                     self.websocket_id,
                                     self.user_id,
                                     fit_params,
+                                    search_id=self.search_id,
                                     produce_params=produce_params)
 
     def run_describe_solution(self, pipeline_id, solution_id, msg_cnt=-1):
@@ -443,19 +462,32 @@ class SearchSolutionsHelper(BasicErrCheck):
         # ----------------------------------
         # Create the input
         # ----------------------------------
-        json_str_info = json_dumps({KEY_SOLUTION_ID: solution_id})
+        req_params = {KEY_SOLUTION_ID: solution_id}
+        json_str_info = json_dumps(req_params)
         if not json_str_info.success:
             self.add_err_msg(json_str_info.err_msg)
             return
 
         json_str_input = json_str_info.result_obj
 
+        stored_request = StoredRequest(\
+                        user=self.user_object,
+                        search_id=self.search_id,
+                        pipeline_id=pipeline_id,
+                        workspace='(not specified)',
+                        request_type='DescribeSolution',
+                        is_finished=False,
+                        request=req_params)
+        stored_request.save()
         # ----------------------------------
         # Run Describe Solution
         # ----------------------------------
         describe_info = describe_solution(json_str_input)
         if not describe_info.success:
             self.add_err_msg(describe_info.err_msg)
+            StoredResponse.add_err_response(\
+                                stored_request,
+                                describe_info.err_msg)
             return
 
         # ----------------------------------
@@ -464,6 +496,9 @@ class SearchSolutionsHelper(BasicErrCheck):
         describe_data_info = json_loads(describe_info.result_obj)
         if not describe_data_info.success:
             self.add_err_msg(describe_data_info.err_msg)
+            StoredResponse.add_err_response(\
+                                stored_request,
+                                describe_data_info.err_msg)
             return
 
         # -----------------------------------------------
@@ -473,7 +508,8 @@ class SearchSolutionsHelper(BasicErrCheck):
         describe_data[KEY_PIPELINE_ID] = pipeline_id
         describe_data.move_to_end(KEY_PIPELINE_ID, last=False)
 
-
+        StoredResponse.add_success_response(stored_request,
+                                            describe_data)
         # -----------------------------------------------
         # send responses back to WebSocket
         # ---------------------------------------------

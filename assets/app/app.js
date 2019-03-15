@@ -3724,8 +3724,9 @@ export async function endsession() {
 
     let chosenSolutionId = allPipelineInfo[[...selectedPipelines][0]].response.solutionId;
 
-    // calling exportpipeline
-    let end = await exportpipeline(chosenSolutionId);
+    // calling exportSolution
+    //
+    let end = await exportSolution(chosenSolutionId);
 
    // makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
     //let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
@@ -4008,24 +4009,27 @@ export function setxTable(features) {
 // }
 
 
-export async function exportpipeline(pipelineId) {
+export async function exportSolution(solutionId) {
     exportCount++;
     let res;
     let my_rank = 1.01 - 0.01 * exportCount;   // ranks always gets smaller each call
 
-    let params = {pipelineId: pipelineId, rank: my_rank};
-    res = await makeRequest(D3M_SVC_URL + '/SolutionExport2', params);
+    let params = {solutionId: solutionId, rank: my_rank};
+    res = await makeRequest(D3M_SVC_URL + '/SolutionExport3', params);
 
-    // we need standardized status messages...
-    let mystatus = res.status;
     console.log(res);
-    if (typeof mystatus !== 'undefined') {
-        if(mystatus.code=="FAILED_PRECONDITION") {
-            console.log("TA2 has not written the executable.");    // was alert(), but testing on NIST infrastructure suggests these are getting written but triggering alert.
-        }else{
-            console.log(`Executable for solution ${pipelineId} with fittedsolution ${finalFittedId} has been written`);
-        }
+    if (typeof res === 'undefined') {
+        console.log('Failed to write executable for solutionId:' + solutionId);
+        return res;
     }
+
+    if (res.success === false) {
+        // console.log('Successful Augment.  Try to reload now!!');
+        console.log(msg_data.message);
+        setModal(res.message,
+                 "Solution export failed", true, false, false, locationReload);
+    }
+
     return res;
 }
 
