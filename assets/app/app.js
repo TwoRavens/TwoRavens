@@ -4014,7 +4014,7 @@ export async function exportpipeline(pipelineId) {
     let my_rank = 1.01 - 0.01 * exportCount;   // ranks always gets smaller each call
 
     let params = {pipelineId: pipelineId, rank: my_rank};
-    res = await makeRequest(D3M_SVC_URL + '/SolutionExport2', params);
+    res = await makeRequest(D3M_SVC_URL + '/SolutionExport3', params);
 
     // we need standardized status messages...
     let mystatus = res.status;

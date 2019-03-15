@@ -72,6 +72,7 @@ class StoredResponseAdmin(admin.ModelAdmin):
                     'status',
                     'is_finished',
                     'sent_to_user',
+                    'search_id',
                     'pipeline_id',
                     'created',
                     'modified')
@@ -82,6 +83,7 @@ class StoredResponseAdmin(admin.ModelAdmin):
     readonly_fields = ('response',
                        'response_as_json',
                        'pipeline_id',
+                       'search_id',
                        'stored_request',
                        'hash_id',
                        'link_to_request',

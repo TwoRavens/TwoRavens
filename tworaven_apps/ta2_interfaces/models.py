@@ -250,6 +250,11 @@ class StoredResponse(TimeStampedModel):
         """reference name"""
         return '%s' % self.stored_request
 
+
+    def search_id(self):
+        """Return the search_id from the StoredRequest"""
+        return self.stored_request.search_id
+
     def get_absolute_url(self):
         """for the admin"""
         return self.get_callback_url(is_pretty=True)

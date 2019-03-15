@@ -19,3 +19,21 @@ docker run --rm --name ta2_server\
  -v /ravens_volume:/ravens_volume\
  registry.datadrivendiscovery.org/zshang/docker_images:ta2
 ```
+
+```
+from tworaven_apps.ta2_interfaces.models import StoredRequest, StoredResponse
+
+l = StoredResponse.objects.filter(stored_request__request_type='GetFitSolutionResults')
+
+for sr in l:
+  info = f"{sr.id}:  {sr.response['fittedSolutionId']}"
+  print(info)
+
+
+# -------------------
+l = StoredResponse.objects.filter(stored_request__request_type='GetSearchSolutionsResults')
+for sr in l:
+  info = f"{sr.id}:  {sr.response['solutionId']}"
+  print(info)
+
+```

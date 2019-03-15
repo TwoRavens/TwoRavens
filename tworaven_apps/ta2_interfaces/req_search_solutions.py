@@ -5,6 +5,8 @@ import json
 
 from django.conf import settings
 
+from tworaven_apps.raven_auth.models import User
+
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.random_info import get_alphanumeric_string
 from tworaven_apps.utils.json_helper import json_dumps, json_loads
@@ -528,6 +530,66 @@ def solution_export(raven_json_str=None):
                             timeout=settings.TA2_GRPC_SHORT_TIMEOUT)
     except Exception as err_obj:
         return err_resp(str(err_obj))
+
+    # --------------------------------
+    # Convert the reply to JSON and send it back
+    # --------------------------------
+    return ok_resp(message_to_json(reply))
+
+
+
+def solution_export3(user, raven_json):
+    """
+    Send a SolutionExportRequest to the SolutionExport command
+    """
+    if not isinstance(user, User):
+        err_msg = '"user" must be a User object'
+        return err_resp(err_msg)
+
+    if not isinstance(raven_json, dict):
+        err_msg = 'raven_dict must be a python dict'
+        return err_resp(err_msg)
+
+    # --------------------------------
+    # Convert dict to string
+    # --------------------------------
+    raven_json_info = json_dumps(raven_json)
+    if not raven_json_info.success:
+        return err_resp(raven_json_info.err_msg)
+
+    raven_json_str = raven_json_info.result_obj
+
+    # --------------------------------
+    # convert the JSON string to a gRPC request
+    # --------------------------------
+    try:
+        req = Parse(raven_json_str,
+                    core_pb2.SolutionExportRequest())
+    except ParseError as err_obj:
+        err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
+        return err_resp(err_msg)
+
+    # In test mode, return canned response
+    #
+    if settings.TA2_STATIC_TEST_MODE:
+        resp = core_pb2.SolutionExportResponse()
+
+        return ok_resp(message_to_json(resp))
+
+    core_stub, err_msg = TA2Connection.get_grpc_stub()
+    if err_msg:
+        return err_resp(err_msg)
+
+    # --------------------------------
+    # Send the gRPC request
+    # --------------------------------
+    try:
+        reply = core_stub.SolutionExport(\
+                            req,
+                            timeout=settings.TA2_GRPC_SHORT_TIMEOUT)
+    except Exception as err_obj:
+        user_msg = f'Error: {err_obj}'
+        return err_resp(user_msg)
 
     # --------------------------------
     # Convert the reply to JSON and send it back
