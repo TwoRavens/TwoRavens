@@ -2,6 +2,12 @@
 Running individual tests
 
 python manage.py test tworaven_apps.ta2_interfaces.testing.test_non_streaming
+
+# -------------
+python manage.py test tworaven_apps.ta2_interfaces.testing.test_non_streaming.test_110_GetSearchSolutionsResults
+
+# -------------
+
 python manage.py test tworaven_apps.ta2_interfaces.testing.test_problem_writing
 
 # python manage.py test tworaven_apps.ta2_interfaces.testing.test_create_pipeline
