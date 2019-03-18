@@ -48,7 +48,7 @@ window.addEventListener('storage', (e) => {
     if (e.key !== 'peekMore' + peekId || peekIsLoading) return;
     if (localStorage.getItem('peekMore' + peekId) !== 'true' || peekIsExhausted) return;
     localStorage.setItem('peekMore' + peekId, 'false');
-    updatePeek([...getSelectedDataset().manipulations, ...getSelectedProblem().manipulations]);
+    updatePeek([...getSelectedDataset().hardManipulations, ...getSelectedProblem().manipulations]);
 });
 
 // for the draggable within-window data preview
@@ -171,20 +171,24 @@ export async function updatePeek(pipeline) {
 export let mongoURL = '/eventdata/api/';
 export let datamartURL = '/datamart/api/';
 
-// this contains an object of abstract descriptions of pipelines of manipulations
+// this contains an object of abstract descriptions of pipelines of manipulations for eventdata
 export let eventDataPipeline;
 
 // The JQtrees can't store references to objects within their callbacks.
 // The manipulations proxy allows manipulations pipelines to be stored inside problems (where they belong!)
 export let manipulations = new Proxy({}, {
-   ownKeys() {return Object.keys(datasets[selectedDataset].problems)},
-    has(_, key) {return key in datasets[selectedDataset]},
+    ownKeys() {
+        // if no dataset selected, then there are no manipulations
+        return selectedDataset
+            ? [selectedDataset, ...Object.keys(datasets[selectedDataset].problems)]
+            : []
+    },
+    has(_, key) {
+        return key in datasets || key in (datasets[selectedDataset] || {}).problems
+    },
     get(obj, manipulationID) {
-       if (IS_EVENTDATA_DOMAIN) return eventDataPipeline;
-
-       let problem = datasets[selectedDataset].problems[manipulationID];
-       if (!('manipulations' in problem)) problem.manipulations = [];
-       return problem.manipulations;
+        if (IS_EVENTDATA_DOMAIN && manipulationID === 'eventdata') return eventDataPipeline;
+        return selectedDataset && datasets[selectedDataset].problems[manipulationID].manipulations;
     }
 });
 
@@ -229,7 +233,7 @@ export function set_mode(mode) {
     mode = mode ? mode.toLowerCase() : 'model';
 
     // remove empty steps when leaving manipulate mode
-    if ((domainIdentifier || {}).name in manipulations && is_manipulate_mode && mode !== 'manipulate') {
+    if (selectedDataset && (domainIdentifier || {}).name in manipulations && is_manipulate_mode && mode !== 'manipulate') {
         manipulations[domainIdentifier.name] = manipulations[domainIdentifier.name].filter(step => {
             if (step.type === 'subset' && step.abstractQuery.length === 0) return false;
             if (step.type === 'aggregate' && step.measuresAccum.length === 0) return false;
@@ -269,10 +273,11 @@ export function set_mode(mode) {
     }
 }
 
+// TODO: should have an early exit if the manipulations are empty
 export let buildDatasetPreprocess = async dataset => await getData({
     method: 'aggregate',
     query: JSON.stringify(queryMongo.buildPipeline(
-        dataset.manipulations,
+        dataset.hardManipulations,
         Object.keys(dataset.variablesInitial))['pipeline']),
     export: 'dataset'
 }).then(url => m.request({
@@ -286,7 +291,7 @@ export let buildProblemPreprocess = async (dataset, problem) => problem.manipula
     : await getData({
         method: 'aggregate',
         query: JSON.stringify(queryMongo.buildPipeline(
-            [...dataset.manipulations, ...problem.manipulations, {
+            [...dataset.hardManipulations, ...problem.manipulations, {
                 type: 'menu',
                 metadata: {
                     type: 'data',
@@ -1432,6 +1437,7 @@ export let setForceDiagramMode = mode => forceDiagramMode = mode;
 export let buildForceDiagram = () => {
 
     let selectedProblem = getSelectedProblem();
+    if (!selectedProblem) return;
 
     let groups = [];
     let nodes = [...Object.values(getSelectedProblem().preprocess)];
@@ -3722,15 +3728,16 @@ export let setSelectedDataset = async datasetID => {
         // 2. load d3m dataset doc
         // 3. construct default problem
         datasets[selectedDataset] = {
-            manipulations: []
+            manipulations: [],
+
         }
     }
     selectedDataset = datasetID;
 };
 
 export let getSelectedDataset = () => datasets[selectedDataset];
-export let getSelectedProblem = () => getSelectedDataset().problems[getSelectedDataset().selectedProblem];
-export let getResultsProblem = () => getSelectedDataset().problems[getSelectedDataset().resultsProblem];
+export let getSelectedProblem = () => selectedDataset && getSelectedDataset().problems[getSelectedDataset().selectedProblem];
+export let getResultsProblem = () => selectedDataset && getSelectedDataset().problems[getSelectedDataset().resultsProblem];
 
 export let getNominalVariables = () => {
     let selectedProblem = getSelectedProblem();
@@ -3751,7 +3758,7 @@ export function setSelectedProblem(problemID) {
     // if a constraint is being staged, delete it
     manipulate.setConstraintMenu(undefined);
 
-    let subsetMenu = [...getSelectedDataset().manipulations, ...getSelectedProblem().manipulations];
+    let subsetMenu = [...getSelectedDataset().hardManipulations, ...getSelectedProblem().manipulations];
     let countMenu = {type: 'menu', metadata: {type: 'count'}};
     manipulate.loadMenu(subsetMenu, countMenu).then(count => {
         manipulate.setTotalSubsetRecords(count);
@@ -3814,7 +3821,7 @@ export async function submitDiscProb() {
             console.log('omitting:');
             console.log(problem);
         }
-    };
+    });
 
     // write the CSV file requested by NIST that describes properties of the solutions
     console.log(outputCSV);

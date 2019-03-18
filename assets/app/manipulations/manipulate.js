@@ -255,7 +255,7 @@ export function rightpanel() {
                 }
             }
         }, m(PipelineFlowchart, {
-            compoundPipeline: app.getSelectedDataset().manipulations,
+            compoundPipeline: app.getSelectedDataset().hardManipulations,
             pipelineId: app.selectedDataset,
             editable: true
         }));
@@ -571,7 +571,7 @@ export let setQueryUpdated = async state => {
             .then(response => selectedProblem.preprocess = response.variables);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
-        loadMenu([...selectedDataset.manipulations, ...selectedProblem.manipulations], countMenu).then(count => {
+        loadMenu([...selectedDataset.hardManipulations, ...selectedProblem.manipulations], countMenu).then(count => {
             setTotalSubsetRecords(count);
             m.redraw();
         });
@@ -855,7 +855,7 @@ export async function buildDatasetUrl(problem) {
     };
 
     let compiled = queryMongo.buildPipeline([
-        ...app.getSelectedDataset().manipulations,
+        ...app.getSelectedDataset().hardManipulations,
         ...app.getSelectedProblem().manipulations,
         problemStep
     ], app.getSelectedDataset().variablesInitial)['pipeline'];
@@ -869,7 +869,7 @@ export async function buildDatasetUrl(problem) {
 
 export async function buildProblemUrl(problem) {
     let abstractPipeline = [
-        ...app.getSelectedDataset().manipulations,
+        ...app.getSelectedDataset().hardManipulations,
         ...app.getSelectedProblem().manipulations,
         {
             type: 'menu',

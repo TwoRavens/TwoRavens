@@ -64,8 +64,11 @@ function leftpanel(mode) {
     if (mode === 'manipulate')
         return manipulate.leftpanel();
 
-    let problems = app.getSelectedDataset().problems;
+    let selectedDataset = app.getSelectedDataset();
     let selectedProblem = app.getSelectedProblem();
+
+    if (!selectedDataset) return;
+    let problems = selectedDataset.problems;
 
     // base dataset variables, then transformed variables from the problem
     let leftpanelVariables = [
@@ -340,13 +343,12 @@ function rightpanel(mode) {
 
     let sections = [];
 
+    let selectedDataset = app.getSelectedDataset();
     let selectedProblem = app.getSelectedProblem();
-    let nominalVariables = Object.keys(selectedProblem.preprocess)
-        .filter(variable => selectedProblem.preprocess[variable].nature === 'nominal');
-
+    let resultsProblem = app.getResultsProblem();
 
     // PROBLEM TAB
-    sections.push({
+    selectedDataset && selectedProblem && sections.push({
         value: 'Problem',
         idSuffix: 'Type',
         contents: [
@@ -411,17 +413,17 @@ function rightpanel(mode) {
     });
 
     // MANIPULATE TAB
-    sections.push({
+    selectedDataset && selectedProblem && sections.push({
         value: 'Manipulate',
         title: 'Apply transformations and subsets to a problem',
         contents: m(MenuHeaders, {
             id: 'aggregateMenu',
             attrsAll: {style: {height: '100%', overflow: 'auto'}},
             sections: [
-                app.getSelectedDataset().manipulations.length !== 0 && {
+                app.getSelectedDataset().hardManipulations.length !== 0 && {
                     value: 'Dataset Pipeline',
                     contents: m(manipulate.PipelineFlowchart, {
-                        compoundPipeline: app.getSelectedDataset().manipulations,
+                        compoundPipeline: app.getSelectedDataset().hardManipulations,
                         pipelineId: app.selectedDataset,
                         editable: false
                     })
@@ -456,304 +458,306 @@ function rightpanel(mode) {
     });
 
     // RESULTS TAB
-    // reload the results if on the results tab and there are pending changes
-    // Automatic reloading only when running in TwoRavens mode
-    if (!IS_D3M_DOMAIN && app.rightTab === 'Results' && app.solverPending) app.callSolver(app.getSelectedProblem());
+    if (selectedDataset && resultsProblem) {
+        // reload the results if on the results tab and there are pending changes
+        // Automatic reloading only when running in TwoRavens mode
+        if (!IS_D3M_DOMAIN && app.rightTab === 'Results' && app.solverPending) app.callSolver(app.getSelectedProblem());
 
-    let plotScatter = ({state, attrs, dom}) => {
-        let xData = {};
-        let yData = {};
+        let plotScatter = ({state, attrs, dom}) => {
+            let xData = {};
+            let yData = {};
 
-        [...app.selectedPipelines].forEach((pipelineID) => {
-            let xDataGroup = app.pipelineAdapter[pipelineID].actualValues;
-            let yDataGroup = app.pipelineAdapter[pipelineID].fittedValues;
+            [...app.selectedPipelines].forEach((pipelineID) => {
+                let xDataGroup = app.pipelineAdapter[pipelineID].actualValues;
+                let yDataGroup = app.pipelineAdapter[pipelineID].fittedValues;
 
-            if (xDataGroup && yDataGroup) {
-                Object.assign(xData, {[pipelineID]: xDataGroup});
-                Object.assign(yData, {[pipelineID]: yDataGroup})
-            }
-        });
-
-        vegaEmbed(dom, plots.vegaScatter(
-            xData, yData,
-            "Actuals", "Predicted",
-            "Actuals vs. Predicted: Pipeline " + selectedProblem.problemID,
-            "pipeline"
-        ), {actions: false, width: dom.offsetWidth, height: dom.offsetHeight});
-    };
-
-    let firstSelectedPipelineID = app.selectedPipelines.values().next().value;
-
-    let confusionData = [];
-    let showPredictionSummary = (common.panelOpen['right'] && app.rightTab === 'Results'
-                                 && app.selectedResultsMenu === 'Prediction Summary' && firstSelectedPipelineID in app.pipelineAdapter);
-    if (showPredictionSummary && selectedProblem.task === 'classification')
-        confusionData = [...app.selectedPipelines]
-            .map(pipelineID => Object.assign({pipelineID}, app.generateConfusionData(
-                app.pipelineAdapter[pipelineID].actualValues,
-                app.pipelineAdapter[pipelineID].fittedValues, app.confusionFactor) || {}))
-            .filter(instance => 'data' in instance)
-            .sort((a, b) => app.sortPipelineTable(app.pipelineAdapter[a.pipelineID].score, app.pipelineAdapter[b.pipelineID].score));
-
-    // only called if the pipeline flowchart is rendered
-    function pipelineFlowchartPrep(pipeline) {
-        let steps = pipeline.steps.map((pipeStep, i) => ({
-            key: 'Step ' + i,
-            color: common.grayColor,
-            // special coloring is not enabled for now
-            // color: {
-            //     'data': common.grayColor,
-            //     'byudml': common.dvColor,
-            //     'sklearn_wrap': common.csColor
-            // }[pipeStep.primitive.python_path.split('.')[2]] || common.grayColor,
-            // the table is overkill, but we could certainly add more info here
-            summary: m(Table, {
-                id: 'pipelineFlowchartSummary' + i,
-                abbreviation: 40,
-                data: {
-                    'Name': pipeStep['primitive']['primitive'].name,
-                    // 'Method': pipeStep['primitive']['primitive']['pythonPath'].split('.').slice(-1)[0]
-                },
-                attrsAll: {style: {'margin-bottom': 0, padding: '1em'}}
-            }),
-            content: m(Table, {
-                id: 'pipelineTableStep' + i,
-                abbreviation: 40,
-                data: pipeStep,
-                nest: true
-            })
-        }));
-
-        let inputs = 'inputs' in pipeline && m(Table, {
-            id: 'pipelineInputsTable',
-            data: pipeline.inputs,
-            attrsAll: {style: {'margin-bottom': 0, 'padding': '1em'}}
-        });
-        let outputs = 'outputs' in pipeline && m(Table, {
-            id: 'pipelineOutputsTable',
-            data: pipeline.outputs,
-            attrsAll: {style: {'margin-bottom': 0, 'padding': '1em'}}
-        });
-
-        return [
-            {color: common.csColor, key: 'Inputs', summary: inputs, content: inputs},
-            ...steps,
-            {color: common.csColor, key: 'Outputs', summary: outputs, content: outputs}
-        ];
-    }
-
-    let resultsProblem = app.getResultsProblem();
-    sections.push({
-        value: 'Results',
-        display: !app.swandive || IS_D3M_DOMAIN ? 'block' : 'none',
-        idSuffix: 'Setx',
-        contents: [
-            Object.keys(app.pipelineAdapter).length === 0 && m('#loading.loader', {
-                style: {
-                    margin: 'auto',
-                    position: 'relative',
-                    top: '40%',
-                    transform: 'translateY(-50%)'
+                if (xDataGroup && yDataGroup) {
+                    Object.assign(xData, {[pipelineID]: xDataGroup});
+                    Object.assign(yData, {[pipelineID]: yDataGroup})
                 }
-            }),
+            });
 
-            m('#resultsContent', {style: {display: Object.keys(app.pipelineAdapter).length === 0 ? 'none' : 'block', height: '100% '}},
-            m('#setxRight[style=float: right; width: 23%; height: 100%; overflow:auto; margin-right: 1px]',
-                m('div#modelComparisonOption',
-                    m('input#modelComparisonCheck[type=checkbox]', {
-                        onclick: m.withAttr("checked", app.setModelComparison),
-                        checked: app.modelComparison,
-                        style: {margin: '.25em'}
-                    }),
-                    m('label#modelComparisonLabel', {
-                        title: 'select multiple models to compare',
-                        style: {display: 'inline-block'}
-                    }, 'Model Comparison')
-                ),
-                app.selectedPipelines.size > 0 && [
-                    bold('Score Metric: '), app.d3mProblemDescription.performanceMetrics[0].metric, m('br'),
-                    (app.reverseSet.includes(app.d3mProblemDescription.performanceMetrics[0].metric)
-                        ? 'Smaller' : 'Larger') + ' numbers are better fits'
-                ],
-                m(Table, {
-                    id: 'pipelineTable',
-                    headers: ['PipelineID', 'Score'],
-                    data: Object.keys(app.pipelineAdapter)
-                        .filter(pipelineID => pipelineID !== 'rookpipe')
-                        .map(pipelineID => [pipelineID, app.pipelineAdapter[pipelineID].score]),
-                    sortHeader: 'Score',
-                    sortFunction: app.sortPipelineTable,
-                    activeRow: app.selectedPipelines,
-                    onclick: app.setSelectedPipeline,
-                    tableTags: m('colgroup',
-                        m('col', {span: 1}),
-                        m('col', {span: 1, width: '30%'}))
-                })),
+            vegaEmbed(dom, plots.vegaScatter(
+                xData, yData,
+                "Actuals", "Predicted",
+                "Actuals vs. Predicted: Pipeline " + selectedProblem.problemID,
+                "pipeline"
+            ), {actions: false, width: dom.offsetWidth, height: dom.offsetHeight});
+        };
 
-            m(ButtonRadio, {
-                id: 'resultsButtonBar',
-                attrsAll: {style: {width: 'auto'}},
-                attrsButtons: {class: ['btn-sm'], style: {width: 'auto'}},
-                onclick: app.setSelectedResultsMenu,
-                activeSection: app.selectedResultsMenu,
-                sections: [
-                    {value: 'Problem Description', id: 'btnPredData'},
-                    {value: 'Prediction Summary', id: 'btnPredPlot'},
-                    {value: 'Generate New Predictions', id: 'btnGenPreds', attrsInterface: {disabled: app.modelComparison || String(firstSelectedPipelineID).includes('raven')}},
-                    {value: 'Visualize Pipeline', id: 'btnVisPipe', attrsInterface: {disabled: app.modelComparison || String(firstSelectedPipelineID).includes('raven')}},
-                    {value: 'Solution Table', id: 'btnSolTable', attrsInterface: {disabled: app.modelComparison || !String(firstSelectedPipelineID).includes('raven')}}
-                ]
-            }),
-                resultsProblem && m(`div#problemDescription`, {
-                    display: app.selectedResultsMenu === 'Problem Description' ? 'block' : 'none',
-                    height: "calc(100% - 30px)",
-                    overflow: "auto",
-                    width: "70%"
-                },
-                m(Table, {
-                    headers: ['Variable', 'Data'],
-                    data: [
-                        ['Dependent Variable', resultsProblem.target],
-                        ['Predictors', resultsProblem.predictors],
-                        ['Description', resultsProblem.description],
-                        ['Task', resultsProblem.task],
-                        ['Model', resultsProblem.model]
-                    ],
-                    nest: true,
-                    attrsAll: {
-                        style: {
-                            width: 'calc(100% - 2em)',
-                            overflow: 'auto',
-                            border: '1px solid #ddd',
-                            margin: '1em',
-                            'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)'
-                        }
-                    }
+        let firstSelectedPipelineID = app.selectedPipelines.values().next().value;
+
+        let confusionData = [];
+        let showPredictionSummary = (common.panelOpen['right'] && app.rightTab === 'Results'
+            && app.selectedResultsMenu === 'Prediction Summary' && firstSelectedPipelineID in app.pipelineAdapter);
+        if (showPredictionSummary && selectedProblem.task === 'classification')
+            confusionData = [...app.selectedPipelines]
+                .map(pipelineID => Object.assign({pipelineID}, app.generateConfusionData(
+                    app.pipelineAdapter[pipelineID].actualValues,
+                    app.pipelineAdapter[pipelineID].fittedValues, app.confusionFactor) || {}))
+                .filter(instance => 'data' in instance)
+                .sort((a, b) => app.sortPipelineTable(app.pipelineAdapter[a.pipelineID].score, app.pipelineAdapter[b.pipelineID].score));
+
+        // only called if the pipeline flowchart is rendered
+        let pipelineFlowchartPrep = pipeline => {
+            let steps = pipeline.steps.map((pipeStep, i) => ({
+                key: 'Step ' + i,
+                color: common.grayColor,
+                // special coloring is not enabled for now
+                // color: {
+                //     'data': common.grayColor,
+                //     'byudml': common.dvColor,
+                //     'sklearn_wrap': common.csColor
+                // }[pipeStep.primitive.python_path.split('.')[2]] || common.grayColor,
+                // the table is overkill, but we could certainly add more info here
+                summary: m(Table, {
+                    id: 'pipelineFlowchartSummary' + i,
+                    abbreviation: 40,
+                    data: {
+                        'Name': pipeStep['primitive']['primitive'].name,
+                        // 'Method': pipeStep['primitive']['primitive']['pythonPath'].split('.').slice(-1)[0]
+                    },
+                    attrsAll: {style: {'margin-bottom': 0, padding: '1em'}}
+                }),
+                content: m(Table, {
+                    id: 'pipelineTableStep' + i,
+                    abbreviation: 40,
+                    data: pipeStep,
+                    nest: true
                 })
-                // m('#setPredictionDataLeft[style=display:block; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white; padding : 1em; margin-top: 1em]')
-                ),
-                    m(`div#predictionSummary`, {
-                        display: app.selectedResultsMenu === 'Prediction Summary' ? 'block' : 'none',
-                        height:"calc(100% - 30px)",
+            }));
+
+            let inputs = 'inputs' in pipeline && m(Table, {
+                id: 'pipelineInputsTable',
+                data: pipeline.inputs,
+                attrsAll: {style: {'margin-bottom': 0, 'padding': '1em'}}
+            });
+            let outputs = 'outputs' in pipeline && m(Table, {
+                id: 'pipelineOutputsTable',
+                data: pipeline.outputs,
+                attrsAll: {style: {'margin-bottom': 0, 'padding': '1em'}}
+            });
+
+            return [
+                {color: common.csColor, key: 'Inputs', summary: inputs, content: inputs},
+                ...steps,
+                {color: common.csColor, key: 'Outputs', summary: outputs, content: outputs}
+            ];
+        };
+
+        sections.push({
+            value: 'Results',
+            display: !app.swandive || IS_D3M_DOMAIN ? 'block' : 'none',
+            idSuffix: 'Setx',
+            contents: [
+                Object.keys(app.pipelineAdapter).length === 0 && m('#loading.loader', {
+                    style: {
+                        margin: 'auto',
+                        position: 'relative',
+                        top: '40%',
+                        transform: 'translateY(-50%)'
+                    }
+                }),
+
+                m('#resultsContent', {style: {display: Object.keys(app.pipelineAdapter).length === 0 ? 'none' : 'block', height: '100% '}},
+                    m('#setxRight[style=float: right; width: 23%; height: 100%; overflow:auto; margin-right: 1px]',
+                        m('div#modelComparisonOption',
+                            m('input#modelComparisonCheck[type=checkbox]', {
+                                onclick: m.withAttr("checked", app.setModelComparison),
+                                checked: app.modelComparison,
+                                style: {margin: '.25em'}
+                            }),
+                            m('label#modelComparisonLabel', {
+                                title: 'select multiple models to compare',
+                                style: {display: 'inline-block'}
+                            }, 'Model Comparison')
+                        ),
+                        app.selectedPipelines.size > 0 && [
+                            bold('Score Metric: '), app.d3mProblemDescription.performanceMetrics[0].metric, m('br'),
+                            (app.reverseSet.includes(app.d3mProblemDescription.performanceMetrics[0].metric)
+                                ? 'Smaller' : 'Larger') + ' numbers are better fits'
+                        ],
+                        m(Table, {
+                            id: 'pipelineTable',
+                            headers: ['PipelineID', 'Score'],
+                            data: Object.keys(app.pipelineAdapter)
+                                .filter(pipelineID => pipelineID !== 'rookpipe')
+                                .map(pipelineID => [pipelineID, app.pipelineAdapter[pipelineID].score]),
+                            sortHeader: 'Score',
+                            sortFunction: app.sortPipelineTable,
+                            activeRow: app.selectedPipelines,
+                            onclick: app.setSelectedPipeline,
+                            tableTags: m('colgroup',
+                                m('col', {span: 1}),
+                                m('col', {span: 1, width: '30%'}))
+                        })),
+
+                    m(ButtonRadio, {
+                        id: 'resultsButtonBar',
+                        attrsAll: {style: {width: 'auto'}},
+                        attrsButtons: {class: ['btn-sm'], style: {width: 'auto'}},
+                        onclick: app.setSelectedResultsMenu,
+                        activeSection: app.selectedResultsMenu,
+                        sections: [
+                            {value: 'Problem Description', id: 'btnPredData'},
+                            {value: 'Prediction Summary', id: 'btnPredPlot'},
+                            {value: 'Generate New Predictions', id: 'btnGenPreds', attrsInterface: {disabled: app.modelComparison || String(firstSelectedPipelineID).includes('raven')}},
+                            {value: 'Visualize Pipeline', id: 'btnVisPipe', attrsInterface: {disabled: app.modelComparison || String(firstSelectedPipelineID).includes('raven')}},
+                            {value: 'Solution Table', id: 'btnSolTable', attrsInterface: {disabled: app.modelComparison || !String(firstSelectedPipelineID).includes('raven')}}
+                        ]
+                    }),
+                    resultsProblem && m(`div#problemDescription`, {
+                        display: app.selectedResultsMenu === 'Problem Description' ? 'block' : 'none',
+                        height: "calc(100% - 30px)",
                         overflow: "auto",
                         width: "70%"
                     },
-                    m('#setxLeftPlot[style=float:left; background-color:white; overflow:auto;]'),
-                    m('#setxLeft[style=display:none; float: left; overflow: auto; background-color: white]'),
-
-                    showPredictionSummary && selectedProblem.task === 'regression' && [...app.selectedPipelines].some(pipeID => app.pipelineAdapter[pipeID].fittedValues) && m('#resultsScatter', {
-                        oncreate(vnode) {
-                            plotScatter(vnode)
-                        },
-                        onupdate(vnode) {
-                            this.pipelinesShown = this.pipelinesShown || [];
-                            if (this.pipelinesShown.length !== app.selectedPipelines.size || this.pipelinesShown.some(a => !app.selectedPipelines.has(a))) {
-                                this.pipelinesShown = [...app.selectedPipelines];
-                                plotScatter(vnode);
+                    m(Table, {
+                        headers: ['Variable', 'Data'],
+                        data: [
+                            ['Dependent Variable', resultsProblem.target],
+                            ['Predictors', resultsProblem.predictors],
+                            ['Description', resultsProblem.description],
+                            ['Task', resultsProblem.task],
+                            ['Model', resultsProblem.model]
+                        ],
+                        nest: true,
+                        attrsAll: {
+                            style: {
+                                width: 'calc(100% - 2em)',
+                                overflow: 'auto',
+                                border: '1px solid #ddd',
+                                margin: '1em',
+                                'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)'
                             }
+                        }
+                    })
+                    // m('#setPredictionDataLeft[style=display:block; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white; padding : 1em; margin-top: 1em]')
+                    ),
+                    m(`div#predictionSummary`, {
+                            display: app.selectedResultsMenu === 'Prediction Summary' ? 'block' : 'none',
+                            height:"calc(100% - 30px)",
+                            overflow: "auto",
+                            width: "70%"
                         },
-                        style: {width: '100%', height: 'calc(100% - 30px)'}
-                    }),
+                        m('#setxLeftPlot[style=float:left; background-color:white; overflow:auto;]'),
+                        m('#setxLeft[style=display:none; float: left; overflow: auto; background-color: white]'),
 
-                    confusionData.map((confusionInstance, i) => [
-                        i === 0 && m('div[style=margin-top:.5em]',
-                            m('label#confusionFactorLabel', 'Confusion Matrix Factor: '),
-                            m('[style=display:inline-block]', m(Dropdown, {
-                                id: 'confusionFactorDropdown',
-                                items: ['undefined', ...confusionInstance.allClasses],
-                                activeItem: app.confusionFactor,
-                                onclickChild: app.setConfusionFactor,
-                                style: {'margin-left': '1em'}
-                            }))),
-                        confusionInstance.data.length === 2 && m(Table, {
-                            id: 'resultsPerformanceTable',
-                            headers: ['metric', 'score'],
-                            data: app.generatePerformanceData(confusionInstance.data),
-                            attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
+                        showPredictionSummary && selectedProblem.task === 'regression' && [...app.selectedPipelines].some(pipeID => app.pipelineAdapter[pipeID].fittedValues) && m('#resultsScatter', {
+                            oncreate(vnode) {
+                                plotScatter(vnode)
+                            },
+                            onupdate(vnode) {
+                                this.pipelinesShown = this.pipelinesShown || [];
+                                if (this.pipelinesShown.length !== app.selectedPipelines.size || this.pipelinesShown.some(a => !app.selectedPipelines.has(a))) {
+                                    this.pipelinesShown = [...app.selectedPipelines];
+                                    plotScatter(vnode);
+                                }
+                            },
+                            style: {width: '100%', height: 'calc(100% - 30px)'}
                         }),
-                        confusionInstance.data.length < 100 ? m(ConfusionMatrix, Object.assign({}, confusionInstance, {
-                            id: 'resultsConfusionMatrixContainer' + confusionInstance.pipelineID,
-                            title: "Confusion Matrix: Pipeline " + confusionInstance.pipelineID,
-                            startColor: '#ffffff', endColor: '#e67e22',
-                            margin: {left: 10, right: 10, top: 50, bottom: 10},
-                            attrsAll: {
-                                style: {height: '600px'},
-                            }
-                        })) : 'Too many classes for confusion matrix!'
-                    ])
-                ),
-                m(`#setxLeftGen[style=display:${app.selectedResultsMenu === 'Generate New Predictions' ? 'block' : 'none'}; float: left; width: 70%; height:calc(100% - 30px); overflow: auto; background-color: white]`,
-                    m('#setxLeftTop[style=display:block; float: left; width: 100%; height:50%; overflow: auto; background-color: white]',
-                        m('#setxLeftTopLeft[style=display:block; float: left; width: 30%; height:100%; overflow: auto; background-color: white]'),
-                        m('#setxLeftTopRight[style=display:block; float: left; width: 70%; height:100%; overflow: auto; background-color: white]')),
-                    m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]',
-                        // m(PanelList, {
-                        //     id: 'setxLeftBottomLeftList',
-                        //     items: app.pipelineAdapter[firstSelectedPipelineID].predictors,
-                        //     colors: {
-                        //         [app.hexToRgba(common.selVarColor)]: [...(this.selectedPredictors || new Set())]
-                        //     },
-                        //     callback: variable => {
-                        //         this.selectedPredictors = this.selectedPredictors || new Set();
-                        //         this.selectedPredictors.has(variable)
-                        //             ? this.selectedPredictors.delete(variable)
-                        //             : this.selectedPredictors.add(variable);
-                        //     }
-                        // })
+
+                        confusionData.map((confusionInstance, i) => [
+                            i === 0 && m('div[style=margin-top:.5em]',
+                                m('label#confusionFactorLabel', 'Confusion Matrix Factor: '),
+                                m('[style=display:inline-block]', m(Dropdown, {
+                                    id: 'confusionFactorDropdown',
+                                    items: ['undefined', ...confusionInstance.allClasses],
+                                    activeItem: app.confusionFactor,
+                                    onclickChild: app.setConfusionFactor,
+                                    style: {'margin-left': '1em'}
+                                }))),
+                            confusionInstance.data.length === 2 && m(Table, {
+                                id: 'resultsPerformanceTable',
+                                headers: ['metric', 'score'],
+                                data: app.generatePerformanceData(confusionInstance.data),
+                                attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
+                            }),
+                            confusionInstance.data.length < 100 ? m(ConfusionMatrix, Object.assign({}, confusionInstance, {
+                                id: 'resultsConfusionMatrixContainer' + confusionInstance.pipelineID,
+                                title: "Confusion Matrix: Pipeline " + confusionInstance.pipelineID,
+                                startColor: '#ffffff', endColor: '#e67e22',
+                                margin: {left: 10, right: 10, top: 50, bottom: 10},
+                                attrsAll: {
+                                    style: {height: '600px'},
+                                }
+                            })) : 'Too many classes for confusion matrix!'
+                        ])
                     ),
-                    m('#setxLeftBottomRightTop[style=display:block; float: left; width: 30%; height:10%; overflow: auto; background-color: white]',
-                        // m(PanelButton, {
-                        //     id: 'btnExecutePipe',
-                        //     classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
-                        //     onclick: app.executepipeline,
-                        //     style: {
-                        //         display: app.selectedPipelines.size === 0 ? 'none' : 'block',
-                        //         float: 'left',
-                        //         'margin-right': '10px'
-                        //     },
-                        //     title: 'Execute pipeline'
-                        // }, m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))
-                    ),
-                    m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]')),
-                app.selectedResultsMenu === 'Visualize Pipeline' && app.selectedPipelines.size === 1 && [...app.selectedPipelines][0] in resultsProblem.solutions.d3m && m('div', {
-                    style: {
-                        width: '70%',
-                        height: 'calc(100% - 30px)',
-                        overflow: 'auto'
-                    }
-                },
-                m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Overview: '),
-                m(Table, {
-                    id: 'pipelineOverviewTable',
-                    data: Object.keys(resultsProblem.solutions.d3m[[...app.selectedPipelines][0]].pipeline).reduce((out, entry) => {
-                        if (['inputs', 'steps', 'outputs'].indexOf(entry) === -1)
-                            out[entry] = resultsProblem.solutions.d3m[[...app.selectedPipelines][0]].pipeline[entry];
-                        return out;
-                    }, {}),
-                    attrsAll: {
+                    m(`#setxLeftGen[style=display:${app.selectedResultsMenu === 'Generate New Predictions' ? 'block' : 'none'}; float: left; width: 70%; height:calc(100% - 30px); overflow: auto; background-color: white]`,
+                        m('#setxLeftTop[style=display:block; float: left; width: 100%; height:50%; overflow: auto; background-color: white]',
+                            m('#setxLeftTopLeft[style=display:block; float: left; width: 30%; height:100%; overflow: auto; background-color: white]'),
+                            m('#setxLeftTopRight[style=display:block; float: left; width: 70%; height:100%; overflow: auto; background-color: white]')),
+                        m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]',
+                            // m(PanelList, {
+                            //     id: 'setxLeftBottomLeftList',
+                            //     items: app.pipelineAdapter[firstSelectedPipelineID].predictors,
+                            //     colors: {
+                            //         [app.hexToRgba(common.selVarColor)]: [...(this.selectedPredictors || new Set())]
+                            //     },
+                            //     callback: variable => {
+                            //         this.selectedPredictors = this.selectedPredictors || new Set();
+                            //         this.selectedPredictors.has(variable)
+                            //             ? this.selectedPredictors.delete(variable)
+                            //             : this.selectedPredictors.add(variable);
+                            //     }
+                            // })
+                        ),
+                        m('#setxLeftBottomRightTop[style=display:block; float: left; width: 30%; height:10%; overflow: auto; background-color: white]',
+                            // m(PanelButton, {
+                            //     id: 'btnExecutePipe',
+                            //     classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
+                            //     onclick: app.executepipeline,
+                            //     style: {
+                            //         display: app.selectedPipelines.size === 0 ? 'none' : 'block',
+                            //         float: 'left',
+                            //         'margin-right': '10px'
+                            //     },
+                            //     title: 'Execute pipeline'
+                            // }, m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))
+                        ),
+                        m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]')),
+                    app.selectedResultsMenu === 'Visualize Pipeline' && app.selectedPipelines.size === 1 && [...app.selectedPipelines][0] in resultsProblem.solutions.d3m && m('div', {
                         style: {
-                            margin: '1em',
-                            width: 'calc(100% - 2em)',
-                            border: common.borderColor,
-                            'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
+                            width: '70%',
+                            height: 'calc(100% - 30px)',
+                            overflow: 'auto'
                         }
                     },
-                    nest: true
-                }),
-                m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Steps: '),
-                m(Flowchart, {
-                    labelWidth: '5em',
-                    steps: pipelineFlowchartPrep(resultsProblem.solutions.d3m[[...app.selectedPipelines][0]].pipeline)
-                })),
-                // TODO: call solver backend has changed, stargazer may not behave the same anymore
-                m(`div#solutionTable[style=display:${app.selectedResultsMenu === 'Solution Table' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%;]`,
-                    firstSelectedPipelineID in resultsProblem.solutions.rook && m(DataTable, {
-                        data: resultsProblem.solutions.rook[firstSelectedPipelineID].stargazer,
-                        variable: app.pipelineAdapter[firstSelectedPipelineID].target
-                    })
-                )
-            )]
-    });
+                    m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Overview: '),
+                    m(Table, {
+                        id: 'pipelineOverviewTable',
+                        data: Object.keys(resultsProblem.solutions.d3m[[...app.selectedPipelines][0]].pipeline).reduce((out, entry) => {
+                            if (['inputs', 'steps', 'outputs'].indexOf(entry) === -1)
+                                out[entry] = resultsProblem.solutions.d3m[[...app.selectedPipelines][0]].pipeline[entry];
+                            return out;
+                        }, {}),
+                        attrsAll: {
+                            style: {
+                                margin: '1em',
+                                width: 'calc(100% - 2em)',
+                                border: common.borderColor,
+                                'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
+                            }
+                        },
+                        nest: true
+                    }),
+                    m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Steps: '),
+                    m(Flowchart, {
+                        labelWidth: '5em',
+                        steps: pipelineFlowchartPrep(resultsProblem.solutions.d3m[[...app.selectedPipelines][0]].pipeline)
+                    })),
+                    // TODO: call solver backend has changed, stargazer may not behave the same anymore
+                    m(`div#solutionTable[style=display:${app.selectedResultsMenu === 'Solution Table' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%;]`,
+                        firstSelectedPipelineID in resultsProblem.solutions.rook && m(DataTable, {
+                            data: resultsProblem.solutions.rook[firstSelectedPipelineID].stargazer,
+                            variable: app.pipelineAdapter[firstSelectedPipelineID].target
+                        })
+                    )
+                )]
+        });
+    }
+
     // },{
     // value: 'Discovery',
     //  idSuffix: 'disc',
@@ -779,7 +783,7 @@ function rightpanel(mode) {
     //    )
     //  ]}
 
-    return app.getSelectedDataset().selectedProblem && m(Panel, {
+    return selectedDataset && m(Panel, {
             side: 'right',
             label: 'Model Selection',
             hover: true,
@@ -946,11 +950,6 @@ class Body {
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
 
-        let fullManipulations = [
-            ...app.getSelectedDataset().manipulations,
-            ...app.getSelectedProblem().manipulations
-        ];
-
         let selectedProblem = app.getSelectedProblem();
 
         return m('main',
@@ -998,8 +997,10 @@ class Body {
             leftpanel(app.currentMode),
             rightpanel(app.currentMode),
 
-            (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu(
-                fullManipulations,
+            (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu([
+                ...app.getSelectedDataset().hardManipulations,
+                ...app.getSelectedProblem().manipulations
+            ],
                 app.is_model_mode ? app.getSelectedDataset().selectedProblem : app.selectedDataset),  // the identifier for which pipeline to edit
             app.peekInlineShown && this.peekTable(),
 
@@ -1117,7 +1118,7 @@ class Body {
                                 }))
                         )],
 
-                    m(ForceDiagram, Object.assign({
+                    selectedProblem && m(ForceDiagram, Object.assign({
                         forcetoggle: app.forceToggle,
                         radius: app.defaultPebbleRadius
                     }, app.forceDiagramStatic, app.buildForceDiagram()))
@@ -1132,7 +1133,7 @@ class Body {
                 ]),
                 app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}),
 
-                app.currentMode !== 'explore' && ['predictors', 'time', 'crossSection', 'target'].reduce((acc, elem) => acc + selectedProblem[elem].length, 0) > 0 && m(Subpanel2, {
+                app.currentMode !== 'explore' && selectedProblem && ['predictors', 'time', 'crossSection', 'target'].reduce((acc, elem) => acc + selectedProblem[elem].length, 0) > 0 && m(Subpanel2, {
                     id: 'legend', header: 'Legend', class: 'legend',
                     style: {
                         right: app.panelWidth['right'],
@@ -1154,7 +1155,7 @@ class Body {
                         m(".rectLabel[style=display:inline-block;vertical-align:text-bottom;margin-left:.5em]", btn[2])))
                 ),
 
-                selectedProblem.manipulations.filter(step => step.type === 'subset').length !== 0 && m(Subpanel2, {
+                selectedProblem && selectedProblem.manipulations.filter(step => step.type === 'subset').length !== 0 && m(Subpanel2, {
                     id: 'subsetSubpanel',
                     header: 'Subsets',
                     style: {
@@ -1179,6 +1180,8 @@ class Body {
             {title: "Links", url: devlinks_url},
             {title: "Logout", url: logout_url}];
 
+        let resultsProblem = app.getResultsProblem();
+
         return m(Header, {
                 image: '/static/images/TwoRavens.png',
                 aboutText: 'TwoRavens v0.1 "Dallas" -- ' +
@@ -1200,7 +1203,7 @@ class Body {
                 {style: `display: ${this.cite ? 'block' : 'none'}; margin-top: 2.5em; right: 50%; width: 380px; text-align: left; z-index: 50; position:absolute`},
                 m('.panel-body', IS_D3M_DOMAIN && m(Table, {data: app.datadocument['about']}))),
 
-            Object.keys(resultsProblem.solutions.d3m).length > 0 && m(Button, {
+            resultsProblem && Object.keys(resultsProblem.solutions.d3m).length > 0 && m(Button, {
                 id: 'btnEndSession',
                 class: 'ladda-label ladda-button',
                 onclick: app.endsession,
@@ -1241,7 +1244,7 @@ class Body {
 
     peekTable() {
         let pipeline = [
-            ...app.getSelectedDataset().manipulations,
+            ...app.getSelectedDataset().hardManipulations,
             ...(app.is_model_mode ? app.getSelectedProblem().manipulations : [])
         ];
         if (app.peekInlineShown && !app.peekData && !app.peekIsExhausted) app.resetPeek(pipeline);
