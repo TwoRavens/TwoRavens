@@ -557,7 +557,7 @@ export let setQueryUpdated = async state => {
         // (A union (F \ C)) \ (C \ F) now remove transformed variables that are not present in the new query
 
         let predictorsOld = Object.keys(selectedProblem.preprocess);
-        let transformsOld = selectedProblem.transformedVariables;
+        let transformsOld = selectedProblem.tags.transformed;
         let transformsNew = getTransformVariables(selectedProblem.manipulations);
 
         let transformsRemoved = new Set([...transformsOld].filter(elem => !transformsNew.has(elem)));
@@ -565,7 +565,7 @@ export let setQueryUpdated = async state => {
 
         selectedProblem.predictors = [...predictorsOld, ...transformsAdded]
             .filter(elem => !transformsRemoved.has(elem));
-        selectedProblem.transformedVariables = transformsNew;
+        selectedProblem.tags.transformed = transformsNew;
 
         app.buildProblemPreprocess(selectedDataset, selectedProblem)
             .then(response => selectedProblem.preprocess = response.variables);
@@ -718,7 +718,7 @@ export let getData = async body => m.request({
     method: 'POST',
     data: Object.assign({
         datafile: app.zparams.zd3mdata, // location of the dataset csv
-        collection_name: app.datadocument.about.datasetID // collection/dataset name
+        collection_name: app.selectedDataset // collection/dataset name
     }, body)
 }).then(response => {
     console.log(' -- manipulate.js geData --');
@@ -847,7 +847,7 @@ export async function buildDatasetUrl(problem) {
         type: 'menu',
         metadata: {
             type: 'data',
-            variables: [...problem.predictors, problem.target],
+            variables: [...problem.predictors, ...problem.targets],
             nominal: !app.is_manipulate_mode && app.nodes
                 .filter(node => node.nature === 'nominal')
                 .map(node => node.name)
@@ -875,7 +875,7 @@ export async function buildProblemUrl(problem) {
             type: 'menu',
             metadata: {
                 type: 'data',
-                variables: ['d3mIndex', ...problem.predictors, problem.target],
+                variables: ['d3mIndex', ...problem.predictors, ...problem.targets],
                 nominal: !app.is_manipulate_mode && app.nodes
                     .filter(node => node.nature === 'nominal')
                     .map(node => node.name)
@@ -884,7 +884,7 @@ export async function buildProblemUrl(problem) {
     ];
 
     let compiled = queryMongo.buildPipeline(abstractPipeline, app.getSelectedDataset().variablesInitial)['pipeline'];
-    let metadata = queryMongo.translateDatasetDoc(compiled, app.datadocument, app.getSelectedProblem());
+    let metadata = queryMongo.translateDatasetDoc(compiled, app.datadocuments[app.selectedDataset], app.getSelectedProblem());
 
     return await getData({
         method: 'aggregate',

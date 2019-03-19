@@ -115,7 +115,7 @@ function leftpanel(mode) {
             title: `mark ${problem.problemID} as meaningful`
         }),
         problem.system === 'user' && m('div[title="user created problem"]', glyph('user')),
-        problem.target.join(', '),
+        problem.targets.join(', '),
         problem.predictors.join(', '),
         problem.model === 'modelUndefined' || !problem.model ? '' : problem.model,
         problem.task,
@@ -180,10 +180,10 @@ function leftpanel(mode) {
                                 [app.hexToRgba(common.gr1Color, .25)]: selectedProblem.predictors,
                                 // [app.hexToRgba(common.gr2Color)]: app.zparams.zgroup2,
                                 [app.hexToRgba(common.taggedColor)]: nominalVariables,
-                                [app.hexToRgba(common.taggedColor)]: app.is_explore_mode ? [] : selectedProblem.target
+                                [app.hexToRgba(common.taggedColor)]: app.is_explore_mode ? [] : selectedProblem.targets
                             },
                             classes: {
-                                'item-dependent': app.is_explore_mode ? [] : selectedProblem.target,
+                                'item-dependent': app.is_explore_mode ? [] : selectedProblem.targets,
                                 'item-nominal': nominalVariables,
                                 'item-bordered': matchedVariables
                             },
@@ -192,11 +192,11 @@ function leftpanel(mode) {
 
                                 if (selectedProblem.predictors.includes(x))
                                     app.remove(selectedProblem.predictors, x);
-                                else if (selectedProblem.target.includes(x))
-                                    app.remove(selectedProblem.target, x);
-                                else if (selectedProblem.loose.includes(x))
-                                    app.remove(selectedProblem.loose, x);
-                                else selectedProblem.loose.push(x);
+                                else if (selectedProblem.targets.includes(x))
+                                    app.remove(selectedProblem.targets, x);
+                                else if (selectedProblem.tags.loose.includes(x))
+                                    app.remove(selectedProblem.tags.loose, x);
+                                else selectedProblem.tags.loose.push(x);
                             },
                             popup: variable => app.popoverContent(app.findNode(variable)),
                             attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
@@ -437,7 +437,7 @@ function rightpanel(mode) {
                             editable: true,
                             aggregate: false
                         }),
-                        selectedProblem.nominalCast.length > 0 && m(Flowchart, {
+                        selectedProblem.tags.nominal.length > 0 && m(Flowchart, {
                             attrsAll: {style: {height: 'calc(100% - 87px)', overflow: 'auto'}},
                             labelWidth: '5em',
                             steps: [{
@@ -445,9 +445,8 @@ function rightpanel(mode) {
                                 color: common.nomColor,
                                 content: m('div', {style: {'text-align': 'left'}},
                                     m(ListTags, {
-                                        // TODO: initialize nominalCast
-                                        tags: selectedProblem.nominalCast,
-                                        ondelete: name => app.remove(selectedProblem.nominalCast, name)
+                                        tags: selectedProblem.tags.nominal,
+                                        ondelete: name => app.remove(selectedProblem.tags.nominal, name)
                                     }))
                             }]
                         })
@@ -615,7 +614,7 @@ function rightpanel(mode) {
                     m(Table, {
                         headers: ['Variable', 'Data'],
                         data: [
-                            ['Dependent Variable', resultsProblem.target],
+                            ['Dependent Variable', resultsProblem.targets],
                             ['Predictors', resultsProblem.predictors],
                             ['Description', resultsProblem.description],
                             ['Task', resultsProblem.task],
@@ -751,7 +750,7 @@ function rightpanel(mode) {
                     m(`div#solutionTable[style=display:${app.selectedResultsMenu === 'Solution Table' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%;]`,
                         firstSelectedPipelineID in resultsProblem.solutions.rook && m(DataTable, {
                             data: resultsProblem.solutions.rook[firstSelectedPipelineID].stargazer,
-                            variable: app.pipelineAdapter[firstSelectedPipelineID].target
+                            variable: app.pipelineAdapter[firstSelectedPipelineID].targets
                         })
                     )
                 )]
@@ -1055,7 +1054,7 @@ class Body {
                             m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
                                 (discovery ? app.getSelectedDataset().problems : Object.keys(app.getSelectedProblem().preprocess)).map(x => { // entry could either be a problem or a variable name
                                     let selected = discovery ? x === app.getSelectedProblem() : nodesExplore.map(y => y.name).includes(x);
-                                    let targetName = x.target || x;
+                                    let targetName = x.targets[0] || x;
 
                                     let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
                                     let [n0, n1, n2] = nodesExplore;
@@ -1097,7 +1096,7 @@ class Body {
                                                 this.node && plot(this.node, vnode.dom, 110, true);
                                             },
                                             onupdate(vnode) {
-                                                let node = app.findNode(typeof x === 'object' ? x.target : x);
+                                                let node = app.findNode(typeof x === 'object' ? x.targets[0] : x);
                                                 if (node && node !== this.node) {
                                                     let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
                                                     plot(node, vnode.dom, 110, true);
@@ -1133,7 +1132,8 @@ class Body {
                 ]),
                 app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}),
 
-                app.currentMode !== 'explore' && selectedProblem && ['predictors', 'time', 'crossSection', 'target'].reduce((acc, elem) => acc + selectedProblem[elem].length, 0) > 0 && m(Subpanel2, {
+
+                app.currentMode !== 'explore' && selectedProblem && m(Subpanel2, {
                     id: 'legend', header: 'Legend', class: 'legend',
                     style: {
                         right: app.panelWidth['right'],
@@ -1142,17 +1142,16 @@ class Body {
                         width: '150px'
                     }
                 }, [
-                    ['timeButton', 'time', 'Time', common.dvColor, 'white', 1],
-                    ['csButton', 'crossSection', 'Cross Sec', common.csColor, 'white', 1],
-                    ['dvButton', 'target', 'Dep Var', common.timeColor, 'white', 1],
-                    // ['nomButton', 'nominal', 'Nom Var', common.nomColor, 'white', 1],
-                    ['gr1Button', 'predictors', 'Predictors', common.gr1Color, common.gr1Color, 0],
-                    // ['gr2Button', 'zgroup2', 'Group 2', common.gr2Color, common.gr2Color, 0]
-                ].map(btn =>
-                    m(`#${btn[0]}.${selectedProblem[btn[1]].length === 0 ? "hide" : "show"}[style=width:100% !important]`,
+                    {id: "timeButton", vars: selectedProblem.tags.time, name: 'Time', borderColor: common.timeColor, innerColor: 'white', width: 1},
+                    {id: "csButton", vars: selectedProblem.tags.crossSection, name: 'Cross Sec', borderColor: common.csColor, innerColor: 'white', width:  1},
+                    {id: "dvButton", vars: selectedProblem.targets, name: 'Dep Var', borderColor: common.dvColor, innerColor: 'white', width: 1},
+                    {id: "predButton", vars: selectedProblem.predictors, name: 'Predictors', borderColor: common.gr1Color, innerColor: common.gr1Color, width: 0},
+                    {id: "nomButton", vars: selectedProblem.tags.nominal, name: 'Nominal', borderColor: common.nomColor, innerColor: 'white', width: 1},
+                ].filter(group => group.vars.length > 0).map(group =>
+                    m(`#${group.id}[style=width:100% !important]`,
                         m(".rectColor[style=display:inline-block]", m("svg[style=width: 20px; height: 20px]",
-                            m(`circle[cx=10][cy=10][fill=${btn[4]}][fill-opacity=0.6][r=9][stroke=${btn[3]}][stroke-opacity=${btn[5]}][stroke-width=2]`))),
-                        m(".rectLabel[style=display:inline-block;vertical-align:text-bottom;margin-left:.5em]", btn[2])))
+                            m(`circle[cx=10][cy=10][fill=${group.innerColor}][fill-opacity=0.6][r=9][stroke=${group.borderColor}][stroke-opacity=${group.width}][stroke-width=2]`))),
+                        m(".rectLabel[style=display:inline-block;vertical-align:text-bottom;margin-left:.5em]", group.name)))
                 ),
 
                 selectedProblem && selectedProblem.manipulations.filter(step => step.type === 'subset').length !== 0 && m(Subpanel2, {
@@ -1197,11 +1196,11 @@ class Body {
                     onmouseout: _ => this.citeHidden || (this.cite = false),
                     onmouseover: _ => this.cite = true
                 },
-                'Dataset Name'),
+                app.selectedDataset || 'Dataset Name'),
             m('div', {style: {'flex-grow': 1}}),
-            m('#cite.panel.panel-default',
+            app.selectedDataset && m('#cite.panel.panel-default',
                 {style: `display: ${this.cite ? 'block' : 'none'}; margin-top: 2.5em; right: 50%; width: 380px; text-align: left; z-index: 50; position:absolute`},
-                m('.panel-body', IS_D3M_DOMAIN && m(Table, {data: app.datadocument['about']}))),
+                m('.panel-body', IS_D3M_DOMAIN && m(Table, {data: app.datadocuments[app.selectedDataset].about}))),
 
             resultsProblem && Object.keys(resultsProblem.solutions.d3m).length > 0 && m(Button, {
                 id: 'btnEndSession',

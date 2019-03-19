@@ -1027,7 +1027,7 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
     }, doc.dataResources[tableResourceIndex].columns)
         .map(struct => Object.assign(struct, { // relabel roles to reflect the proper target
             role: [
-                struct.colName === problem.target ? 'suggestedTarget'
+                problem.targets.includes(struct.colName) ? 'suggestedTarget'
                     : struct.colName === 'd3mIndex' ? 'index' : 'attribute'
             ]
         }));
