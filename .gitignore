@@ -64,3 +64,4 @@ ravens_volume/test_data/*/search_config.json
 # IDE
 .idea/
 rook/preprocess/.Rapp.history
+ravens_volume/db_mongo

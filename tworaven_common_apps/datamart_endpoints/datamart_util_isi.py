@@ -9,7 +9,9 @@ from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 from tworaven_apps.data_prep_utils.new_dataset_util import NewDatasetUtil
 from tworaven_apps.user_workspaces.models import UserWorkspace
 from tworaven_apps.configurations.utils import get_latest_d3m_config
-from tworaven_apps.utils.random_info import get_timestamp_string_readable
+from tworaven_apps.utils.random_info import \
+    (get_timestamp_string,
+     get_timestamp_string_readable)
 from tworaven_apps.utils.file_util import \
     (create_directory, read_file_rows)
 from tworaven_apps.utils.basic_response import (ok_resp,
@@ -346,6 +348,19 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
         data_path = '/Users/ramanprasad/Documents/github-rp/TwoRavens/ravens_volume/test_data/TR1_Greed_Versus_Grievance/TRAIN/dataset_TRAIN/tables/learningData.csv'
         """
         # ----------------------------
+        LOGGER.info('(1) build path')
+        datamart_id = search_result[KEY_ISI_DATAMART_ID]
+
+        dest_filepath_info = DatamartJobUtilISI.get_output_filepath(\
+                                    user_workspace,
+                                    f'{datamart_id}-{get_timestamp_string()}',
+                                    dir_type='augment')
+
+        if not dest_filepath_info.success:
+            return err_resp(dest_filepath_info.err_msg)
+
+        augment_filepath = dest_filepath_info.result_obj
+
 
         print('inputs:')
         print({
@@ -364,32 +379,46 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
                           'right_columns': right_columns,
                           'exact_match': exact_match},
                     verify=False,
-                    timeout=settings.DATAMART_LONG_TIMEOUT).json()
+                    timeout=settings.DATAMART_LONG_TIMEOUT)
 
         except requests.exceptions.Timeout as err_obj:
             return err_resp('Request timed out. responded with: %s' % err_obj)
 
-        if response['code'] != "0000":
-            return err_resp(response['message'])
+        if not response.status_code == 200:
+            user_msg = (f'Augment response failed with status code: '
+                        f'{response.status_code}.')
+            return err_resp(user_msg)
 
-        augment_folderpath = os.path.join(\
-                            user_workspace.d3m_config.additional_inputs,
-                            'augment',
-                            str(datamart_id))
+        try:
+            resp_json = response.json()
+            print('resp_json.keys()', resp_json.keys())
+        except ValueError as err_obj:
+            user_msg = (f'Augment response failed.  Could not convert to JSON.'
+                        f' Error: {err_obj}')
+            return err_resp(user_msg)
 
-        save_info = DatamartJobUtilISI.save_datamart_file(augment_folderpath, response)
+        if resp_json['code'] != "0000":
+            return err_resp(resp_json['message'])
+
+        save_info = DatamartJobUtilISI.save_datamart_file(\
+                        augment_filepath,
+                        resp_json['data'])
+
         if not save_info.success:
             return err_resp(save_info.err_msg)
+
+        augment_new_filepath = save_info.result_obj
+        print("augment_new_filepath", augment_new_filepath)
 
         # Async, start process of creating new dataset...
         #   - This will send a websocket message when process complete
         #   - Needs to be moved to celery queue
         #
-        print("save_info.result_obj['data_path']", save_info.result_obj['data_path'])
         ndu_info = NewDatasetUtil.make_new_dataset_call(\
                              user_workspace.id,
-                             save_info.result_obj['data_path'],
+                             augment_new_filepath,
                              **dict(websocket_id=user_workspace.user.username))
+
         if not ndu_info.success:
             return err_resp(ndu_info.err_msg)
 

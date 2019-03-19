@@ -195,9 +195,15 @@ class PreprocessUtil(BasicErrCheck):
         updated_columns = col_info.result_obj['new_columns']
         num_cols_renamed = col_info.result_obj['num_cols_renamed']
 
-
         if num_cols_renamed == 0:   # Nothing to change!
             return ok_resp('All set. Column names are already unique')
+
+        # For Mongo: Remove dots and dollar signs from column names
+        #  temp fix 3/19/2019
+        #
+        updated_columns = [x.replace('.', '_').replace('$', '-')
+                           for x in updated_columns]
+
 
         print('num_cols_renamed: ', num_cols_renamed)
         # ---------------------------------
