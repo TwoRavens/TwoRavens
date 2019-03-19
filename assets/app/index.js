@@ -319,14 +319,14 @@ function leftpanel(mode) {
                 value: 'Summary',
                 title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
                 display: 'none',
-                contents: [
+                contents: (app.hoverPebble || app.selectedPebble) && [
                     m('center',
-                        m('b', app.summary.name),
+                        m('b', app.hoverPebble || app.selectedPebble),
                         m('br'),
-                        m('i', app.summary.labl)),
+                        m('i', app.getSelectedProblem().preprocess[app.hoverPebble || app.selectedPebble].labl)),
                     m(Table, {
                         id: 'varSummaryTable',
-                        data: app.summary.data
+                        data: app.getVarSummary(app.getSelectedProblem().preprocess[app.hoverPebble || app.selectedPebble])
                     })
                 ]
             }

@@ -575,10 +575,6 @@ export let datamartPreferences = {
     cached: {}
 };
 
-// list of force diagram node objects
-// TODO: IMPORTANT: references to allnodes are currently broken
-export let allNodes = [];
-
 
 export let modelCount = 0;
 
@@ -695,11 +691,9 @@ export let setD3mProblemDescription = (key, value) => {
 let svg, div;
 export let width, height, estimateLadda, discoveryLadda;
 
-// TODO: this was inside restart, a ForceDiagram call
-// record_user_metadata();
-
 export let selectedPebble;
 export let setSelectedPebble = pebble => selectedPebble = pebble;
+export let hoverPebble;
 
 export let byId = id => document.getElementById(id);
 // export let byId = id => {console.log(id); return document.getElementById(id);}
@@ -1237,13 +1231,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
     }
 
-    if(!swandive) {
-        // TODO: temporarily disabled while forceDiagram is disabled
-        // datadocument_columns.forEach(v => findNode(v.colName).d3mDescription = v);
-        console.log("all nodes:");
-        console.log(allNodes);
-    }
-
     /**
      * 10b. Call problem discovery
      */
@@ -1551,7 +1538,6 @@ let arcHeight = 15;
 
 // milliseconds to wait before showing/hiding the pebble handles
 let hoverTimeout = 150;
-let hoverPebble;
 
 let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
     .attr('fill-opacity', op).attr('display', op ? '' : 'none')
@@ -1565,12 +1551,13 @@ let makeArcs = (g, labels, left = 0, right = 2 * Math.pi, depth = 0) => labels.f
     let labelLeft = left + (right - left) / labels.length * i;
     let labelRight = left + (right - left) / labels.length * (i + 1) - radialGapSize(depth);
 
+    if (depth === 0) arcIds.length = 0;
     g.append("path").each(function(d) {
         let offset = d.radius + Array.from({length: depth})
             .reduce((sum, lvl) => sum + axialGapSize(lvl), 0) + arcHeight * depth;
 
         d3.select(this)
-            .attr("id", append('arc' + label.id))
+            .attr("id", append('arc' + depth + label.id))
             .attr("d", d3.arc()
                 .innerRadius(offset).outerRadius(offset + arcHeight)
                 .startAngle(labelLeft)
@@ -1590,25 +1577,40 @@ let makeArcs = (g, labels, left = 0, right = 2 * Math.pi, depth = 0) => labels.f
             .on('mouseout', function (d) {
                 d.forefront = false;
                 if (d.name === selectedPebble) return;
-                setTimeout(() => {
-                    fillThis(this, 0, 100, 500);
-                    fill(d, 'text' + label.id, 0, 100, 500);
-                }, hoverTimeout)
+                setTimeout(() => hideArcs(d.id), hoverTimeout)
             });
 
         g.append("text")
-            .attr("id", append('text' + label.id))
+            .attr("id", append('arcText' + label.id))
             .attr("x", 6)
             .attr("dy", 11.5)
             .attr("fill-opacity", 0)
             .append("textPath")
             .attr("xlink:href", append('#arc' + label.id))
             .text(label.name);
+
+        arcIds.push(label.id)
     });
+
 
     if ('children' in label)
         makeArcs(g, label.children, labelLeft, labelRight, depth + 1)
 });
+
+let arcIds = [];
+let showArcs = pebbleId => {
+    arcIds.forEach(arcId => {
+        $fill('#arc' + arcId + pebbleId, .1, 0, 100);
+        $fill('#arcText' + arcId + pebbleId, .5, 0, 100);
+    })
+};
+
+let hideArcs = pebbleId => {
+    arcIds.forEach(arcId => {
+        $fill('#arc' + arcId + pebbleId, 0, 100, 500);
+        $fill('#arcText' + arcId + pebbleId, 0, 100, 500);
+    })
+};
 
 let pebbleEvents = {
     onclick: function (d) {
@@ -1622,6 +1624,7 @@ let pebbleEvents = {
         }
         if (!mousedown_node) return;
 
+        // TODO: verify
         // needed by FF
         drag_line
             .classed('hidden', true)
@@ -1650,7 +1653,7 @@ let pebbleEvents = {
             direction = 'left';
         }
 
-        let link = nodeLinks.filter(x => x.source == source && x.target == target)[0];
+        let link = links.filter(x => x.source === source && x.target === target)[0];
         if (link) {
             link[direction] = true;
         } else {
@@ -1661,13 +1664,12 @@ let pebbleEvents = {
                 right: false
             };
             link[direction] = true;
-            nodeLinks.push(link);
+            links.push(link);
         }
 
         // select new link
         selected_link = link;
         selected_node = null;
-        svg.on('mousemove', null);
 
         resetMouseVars();
         m.redraw()
@@ -1696,31 +1698,11 @@ let pebbleEvents = {
         setTimeout(() => {
             if (leftTab !== 'Summary') leftTabHidden = leftTab;
             setLeftTab('Summary');
-            varSummary(d);
-
-            m.redraw();
 
             if (!d.forefront) return;
             hoverPebble = d.name;
-
-            fill(d, "dvArc", .1, 0, 100);
-            fill(d, "dvText", .5, 0, 100);
-            fill(d, "grArc", .1, 0, 100);
-            fill(d, "grText", .5, 0, 100);
-
-            //fill(d, "gr1indicator", .1, 0, 100);
-            //fill(d, "gr1indicatorText", .1, 0, 100);
-            //fill(d, "gr2indicator", .1, 0, 100);
-            //fill(d, "gr2indicatorText", .1, 0, 100);
-
-            if (d.defaultNumchar === "numeric") {
-                fill(d, "nomArc", .1, 0, 100);
-                fill(d, "nomText", .5, 0, 100);
-            }
-            fill(d, "csArc", .1, 0, 100);
-            fill(d, "csText", .5, 0, 100);
-            fill(d, "timeArc", .1, 0, 100);
-            fill(d, "timeText", .5, 0, 100);
+            showArcs(d.id);
+            m.redraw();
         }, hoverTimeout)
     },
     mouseout: d => {
@@ -1728,11 +1710,9 @@ let pebbleEvents = {
         setTimeout(() => {
             hoverPebble = undefined;
 
-            if (selectedPebble) varSummary(allNodes.find((node) => node.name === selectedPebble));
             else setLeftTab(leftTabHidden);
 
-            if (selectedPebble !== d.name)
-                'csArc csText timeArc timeText dvArc dvText nomArc nomText grArc grText'.split(' ').map(x => fill(d, x, 0, 100, 500));
+            if (selectedPebble !== d.name) hideArcs(d.id);
 
             m.redraw();
         }, hoverTimeout)
@@ -2798,46 +2778,37 @@ export let setLeftTab = (tab) => {
 
 export let setLeftTabHidden = tab => leftTabHidden = tab;
 
-// formats data for the hidden summary tab in the leftpanel
-export let summary = {data: []};
-
 // d is a node from allNodes or nodes
 // updates the summary variable, which is rendered in the hidden summary tab in the leftpanel;
-function varSummary(d) {
-    if (!d) {
-        summary = {data: []};
-        return;
-    }
+export function getVarSummary(d) {
+    if (!d) return {};
 
-    let t1 = 'Mean:, Median:, Most Freq:, Occurrences:, Median Freq:, Occurrences:, Least Freq:, Occurrences:, Std Dev:, Minimum:, Maximum:, Invalid:, Valid:, Uniques:, Herfindahl'.split(', ');
-
-    d3.select('#tabSummary')
-        .selectAll('svg')
-        .remove();
-
-    if (!d.plottype)
-        return;
-    d.plottype == 'continuous' ? density(d, 'Summary', priv) :
-        d.plottype == "bar" ? bars(d, 'Summary', priv) :
-        d3.select("#tabSummary") // no graph to draw, but still need to remove previous graph
-        .selectAll("svg")
-        .remove();
-
+    // d3 significant digit formatter
     let rint = d3.format('r');
-    let str = (x, p) => (+x).toPrecision(p || 4).toString();
-    let t2 = priv && d.meanCI ?
-        [str(d.mean, 2) + ' (' + str(d.meanCI.lowerBound, 2) + ' - ' + str(d.meanCI.upperBound, 2) + ')',
-         str(d.median), d.mode, rint(d.freqmode), d.mid, rint(d.freqmid), d.fewest, rint(d.freqfewest),
-         str(d.sd), str(d.min), str(d.max), rint(d.invalid), rint(d.valid), rint(d.uniques), str(d.herfindahl)] :
-        [str(d.mean), str(d.median), d.mode, rint(d.freqmode), d.mid, rint(d.freqmid), d.fewest, rint(d.freqfewest),
-         str(d.sd), str(d.min), str(d.max), rint(d.invalid), rint(d.valid), rint(d.uniques), str(d.herfindahl)];
+    const precision = 4;
+    let data = {
+        'Mean': formatPrecision(d.mean, precision) + d.meanCI
+            ? ` (${formatPrecision(d.meanCI.lowerBound, precision)}, ${formatPrecision(d.meanCI.upperBound, precision)})`
+            : '',
+        'Median': formatPrecision(d.median, precision),
+        'Most Freq': rint(d.mode),
+        'Most Freq Occurrences': rint(d.freqmode),
+        'Median Freq': d.mid,
+        'Mid Freq Occurrences': rint(d.freqmid),
+        'Least Freq': d.fewest,
+        'Least Freq Occurrences': rint(d.freqfewest),
+        'Std Dev (Sample)': formatPrecision(d.sd, precision),
+        'Minimum': formatPrecision(d.min, precision),
+        'Maximum': formatPrecision(d.max, precision),
+        'Invalid': rint(d.invalid),
+        'Valid': rint(d.valid),
+        'Uniques': rint(d.uniques),
+        'Herfindahl': formatPrecision(d.herfindahl)
+    };
 
-    summary.data = [];
-    t1.forEach((e, i) => !t2[i].includes('NaN') && t2[i] != 'NA' && t2[i] != '' && summary.data.push([e, t2[i]]));
-
-    summary.name = d.name;
-    summary.labl = d.labl;
-
+    return Object.keys(data)
+        .filter(key => data[key] === undefined) // drop all keys with nonexistent values
+        .reduce((out, key) => Object.assign(out, {[key]: data[key]}), {})
 }
 
 export let popoverContent = node => {
@@ -3495,6 +3466,7 @@ export function end_ta3_search(is_success, user_msg){
 let recorder_cnt = 0;
 const save_workspace_url = '/workspaces/record-user-workspace';
 
+// TODO: this used to be embedded inside the force diagram restart, needs a new calling source
 export function record_user_metadata(){
 
   // turning off for now
@@ -3515,17 +3487,14 @@ export function record_user_metadata(){
     console.log('No workspace recording. zparams not defined');
     return;
   }
-  if (allNodes == null){
-    console.log('No workspace recording. zparams not defined');
-    return;
-  }
 
   // (2) Format workspace data
   //
-  let workspace_data = {'app_domain': APP_DOMAIN,
-                        'domain_identifier': domain_identifier,
-                        'allnodes': allNodes,
-                        'zparams': zparams}
+  let workspace_data = {
+      'app_domain': APP_DOMAIN,
+      domain_identifier,
+      datasets,
+  };
 
         //console.log('workspace_data: ' + workspace_data);
 
