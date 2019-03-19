@@ -28,6 +28,7 @@ from os.path import isfile
 from datetime import datetime as dt
 import requests
 
+from tworaven_apps.data_prep_utils.duplicate_column_remover import DuplicateColumnRemover
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.rook_services.rook_app_info import RookAppInfo
 from tworaven_apps.rook_services.app_names import \
@@ -123,12 +124,12 @@ class PreprocessUtil(BasicErrCheck):
         # Fix duplicate columns
         #
         if self.fix_duplicate_columns:
-            col_info = PreprocessUtil.remove_duplicate_columns(self.source_path)
-            if not col_info.success:
-                user_msg = f'Error fixing duplicate columns. {col_info.err_msg}'
+            dcr = DuplicateColumnRemover(self.source_path)
+            if dcr.has_error():
+                user_msg = (f'Augment error during column checks: '
+                            f'{dcr.get_error_message()}')
                 self.add_error_message(user_msg)
                 return
-            print(f'remove_duplicate_columns (worked): {col_info.result_obj}')
 
         # Set datastub, if not set
         #
@@ -163,80 +164,6 @@ class PreprocessUtil(BasicErrCheck):
 
         self.preprocess_data = result_info.result_obj
 
-
-    @staticmethod
-    def remove_duplicate_columns(source_path):
-        """Remove duplicate columns
-        reference: https://stackoverflow.com/questions/44778/how-would-you-make-a-comma-separated-string-from-a-list-of-strings
-        """
-        if (not source_path) or (not isfile(source_path)):
-            return err_resp(f'File not found: {source_path}')
-
-        orig_column_names = None
-        csv_dialect = None
-
-        # Read in the header row
-        #
-        with open(source_path, newline='') as fh:
-            reader = csv.reader(fh)
-            csv_dialect = reader.dialect
-            #col_delimiter = reader.dialect.delimiter
-            #import ipdb; ipdb.set_trace()
-            for row in reader:
-                orig_column_names = row
-                break
-
-        # Check for unique columns
-        #
-        col_info = column_uniquify(orig_column_names)
-        if not col_info.success:
-            return err_resp(col_info.err_msg)
-
-        updated_columns = col_info.result_obj['new_columns']
-        num_cols_renamed = col_info.result_obj['num_cols_renamed']
-
-        if num_cols_renamed == 0:   # Nothing to change!
-            return ok_resp('All set. Column names are already unique')
-
-        # For Mongo: Remove dots and dollar signs from column names
-        #  temp fix 3/19/2019
-        #
-        updated_columns = [x.replace('.', '_').replace('$', '-')
-                           for x in updated_columns]
-
-
-        print('num_cols_renamed: ', num_cols_renamed)
-        # ---------------------------------
-        # Format a new first file line
-        # ---------------------------------
-        new_first_line = StringIO()
-        writer = csv.writer(new_first_line, dialect=csv_dialect)
-        writer.writerow(updated_columns)
-
-        new_first_line_content = new_first_line.getvalue() # \
-                                 # + csv_dialect.lineterminator
-
-        print('new_first_line_content', new_first_line_content)
-
-        # ---------------------------------
-        # Replace original first line (ref: reddit)
-        # ---------------------------------
-        with open(source_path, 'r+') as fh: #open in read / write mode
-            # Read the file
-            #
-            fh.readline() #read the first line and throw it out
-            file_data = fh.read() #read the rest
-            #
-            # Do some writing, e.g. new header row
-            #
-            fh.seek(0) #set the cursor to the top of the file
-            fh.write(new_first_line_content)    # write 1st line
-            fh.write(file_data) #write the data back
-            fh.truncate() #set the file size to the current size
-
-
-        return ok_resp('All set. Columns updated')
-        #column_uniquify
 
 """
 from tworaven_apps.rook_services.preprocess_util import PreprocessUtil

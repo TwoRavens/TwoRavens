@@ -8,6 +8,7 @@ from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 
 from tworaven_apps.data_prep_utils.new_dataset_util import NewDatasetUtil
 from tworaven_apps.user_workspaces.models import UserWorkspace
+from tworaven_apps.data_prep_utils.duplicate_column_remover import DuplicateColumnRemover
 from tworaven_apps.configurations.utils import get_latest_d3m_config
 from tworaven_apps.utils.random_info import \
     (get_timestamp_string,
@@ -409,6 +410,12 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
 
         augment_new_filepath = save_info.result_obj
         print("augment_new_filepath", augment_new_filepath)
+
+        dcr = DuplicateColumnRemover(augment_new_filepath)
+        if dcr.has_error():
+            user_msg = (f'Augment error during column checks: '
+                        f'{dcr.get_error_message()}')
+            return err_resp(user_msg)
 
         # Async, start process of creating new dataset...
         #   - This will send a websocket message when process complete

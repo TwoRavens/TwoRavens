@@ -31,7 +31,7 @@ class DuplicateColumnRemover(BasicErrCheck):
         self.num_cols_renamed = 0
 
         self.success_msg = None
-        self.file_change_needed = False
+        self.column_change_needed = False
 
         self.run_process()
 
@@ -52,7 +52,7 @@ class DuplicateColumnRemover(BasicErrCheck):
             return
 
         if self.column_change_needed is True:
-            self.rewrite_file()
+            self.rewrite_file_header()
 
     def format_column_names(self):
         """Format the list of column names"""
@@ -74,17 +74,23 @@ class DuplicateColumnRemover(BasicErrCheck):
         self.updated_columns = col_info.result_obj['new_columns']
         self.num_cols_renamed = col_info.result_obj['num_cols_renamed']
 
+        # For Mongo: Remove dots and dollar signs from column names
+        #  temp fix 3/19/2019
+        #
+        updated_columns2 = [x.replace('.', '_').replace('$', '-')
+                            for x in self.updated_columns]
+
+        if self.updated_columns != updated_columns2:
+            self.updated_columns = updated_columns2
+            self.num_cols_renamed += 1 # just to get it above zero
+
         if self.num_cols_renamed == 0:   # Nothing to change!
             self.success_msg = 'All set. Column names are already unique'
             return True
 
-        # For Mongo: Remove dots and dollar signs from column names
-        #  temp fix 3/19/2019
-        #
-        self.updated_columns = [x.replace('.', '_').replace('$', '-')
-                                for x in self.updated_columns]
 
-        self.file_change_needed = True
+
+        self.column_change_needed = True
 
         return True
 
@@ -113,54 +119,21 @@ class DuplicateColumnRemover(BasicErrCheck):
 
         return True
 
-    @staticmethod
     def rewrite_file_header(self):
-        """Remove duplicate columns
-        reference: https://stackoverflow.com/questions/44778/how-would-you-make-a-comma-separated-string-from-a-list-of-strings
-        """
-        if (not source_path) or (not isfile(source_path)):
-            return err_resp(f'File not found: {source_path}')
+        """Add new header to the file"""
+        if self.has_error():
+            return
 
-        orig_column_names = None
-        csv_dialect = None
+        if not self.column_change_needed:
+            self.add_error('Column changes is not needed')
+            return
 
-        # Read in the header row
-        #
-        with open(source_path, newline='') as fh:
-            reader = csv.reader(fh)
-            csv_dialect = reader.dialect
-            #col_delimiter = reader.dialect.delimiter
-            #import ipdb; ipdb.set_trace()
-            for row in reader:
-                orig_column_names = row
-                break
-
-        # Check for unique columns
-        #
-        col_info = column_uniquify(orig_column_names)
-        if not col_info.success:
-            return err_resp(col_info.err_msg)
-
-        updated_columns = col_info.result_obj['new_columns']
-        num_cols_renamed = col_info.result_obj['num_cols_renamed']
-
-        if num_cols_renamed == 0:   # Nothing to change!
-            return ok_resp('All set. Column names are already unique')
-
-        # For Mongo: Remove dots and dollar signs from column names
-        #  temp fix 3/19/2019
-        #
-        updated_columns = [x.replace('.', '_').replace('$', '-')
-                           for x in updated_columns]
-
-
-        print('num_cols_renamed: ', num_cols_renamed)
         # ---------------------------------
         # Format a new first file line
         # ---------------------------------
         new_first_line = StringIO()
-        writer = csv.writer(new_first_line, dialect=csv_dialect)
-        writer.writerow(updated_columns)
+        writer = csv.writer(new_first_line, dialect=self.csv_dialect)
+        writer.writerow(self.updated_columns)
 
         new_first_line_content = new_first_line.getvalue() # \
                                  # + csv_dialect.lineterminator
@@ -170,7 +143,7 @@ class DuplicateColumnRemover(BasicErrCheck):
         # ---------------------------------
         # Replace original first line (ref: reddit)
         # ---------------------------------
-        with open(source_path, 'r+') as fh: #open in read / write mode
+        with open(self.source_path, 'r+') as fh: #open in read / write mode
             # Read the file
             #
             fh.readline() #read the first line and throw it out
