@@ -179,6 +179,7 @@ export class TreeTransform {
     }
 }
 
+// TODO: glyphicon
 function buttonDeleteTransform(pipelineId, stepId, id) {
     return `<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;margin-top:2px;height:18px' onclick='callbackDeleteTransform("${pipelineId}", "${stepId}", "${id}")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>`;
 }

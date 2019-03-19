@@ -39,6 +39,7 @@ import CanvasResults from "./canvases/CanvasResults";
 
 import SaveQuery from "./SaveQuery";
 import {TreeAggregate, TreeSubset, TreeVariables} from "../views/JQTrees";
+import Icon from "../views/Icon";
 
 export default class Body_EventData {
 
@@ -148,7 +149,7 @@ export default class Body_EventData {
             
             m('.dropdown[style=float: right; padding-right: 1em]',
                 m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
-                    [isAuthenticated ? username : m('div[style=font-style:oblique]', 'not logged in'), " ", glyph('triangle-bottom')]),
+                    [isAuthenticated ? username : m('div[style=font-style:oblique]', 'not logged in'), " ", m(Icon, {name: 'triangle-down'})]),
                 m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
                     userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
         );

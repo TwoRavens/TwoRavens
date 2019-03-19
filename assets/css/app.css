@@ -1,3 +1,39 @@
+/* BEGIN BOOTSWATCH MATERIA OVERRIDES */
+.btn.active {
+    background-color: #e8e8e8;
+    box-shadow: inset 0px 0px 8px #b0b0b0;
+}
+input.form-control {
+    background-color: #00000012;
+    border-radius: 3px;
+    padding: 1rem;
+}
+.btn {
+    text-transform: none;
+    font-size: .9rem;
+}
+.btn-sm {
+    padding: 0.4rem 0.6rem;
+    font-size: .85rem;
+    line-height: 1.5;
+    border-radius: 0.2rem;
+}
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-size: .9rem;
+}
+:root{
+    --font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+.tooltip {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+.popover {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+/* END BOOTSWATCH MATERIA OVERRIDES */
+
 svg {
   background-color: transparent;
   cursor: default;
@@ -221,10 +257,6 @@ div.sidepanel div.panelbar span {
     position: absolute;
 }
 
-.spaceTool button:first-child {
-    margin-right:1em;
-}
-
 .spaceTool button span {
     font-size:1em;
     color:#818181;
@@ -310,10 +342,6 @@ div.sidepanel div.panelbar span {
 }
 
 /* p { padding-left: 15px; } */
-
-path {
-    fill: steelblue;
-}
 
 .axis path,
 .axis line {

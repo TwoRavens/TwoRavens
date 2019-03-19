@@ -199,6 +199,15 @@ export let formattingData = {};
 export let alignmentData = {};
 // ~~~~
 
+export let buttonLadda = {
+    btnSubmitDisc: false,
+    btnEstimate: false
+};
+export let buttonClasses = {
+    btnDiscovery: 'btn-secondary',
+    btnSubmitDisc: 'btn-secondary',
+    btnEstimate: 'btn-secondary'
+};
 
 // when set, solver will be called if results menu is active
 export let solverPending = false;
@@ -689,7 +698,7 @@ export let setD3mProblemDescription = (key, value) => {
 }
 
 let svg, div;
-export let width, height, estimateLadda, discoveryLadda;
+export let width, height;
 
 export let selectedPebble;
 export let setSelectedPebble = pebble => selectedPebble = pebble;
@@ -910,8 +919,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     let resDataDocument = await m.request(d3mDS);
     // sets the dataset, which prepares internal state
-    setSelectedDataset(IS_D3M_DOMAIN ? resDataDocument : zparams.zdata);
-    datadocuments[resDataDocument.about.datasetID] = resDataDocument;
+    setSelectedDataset(IS_D3M_DOMAIN ? resDataDocument.about.datasetID : zparams.zdata);
+    datadocuments[selectedDataset] = resDataDocument;
 
     // if no columns in the datadocument, go to swandive
     // 3. Set datadocument columns!
@@ -1030,12 +1039,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         // This is a Task 2 assignment
         // console.log("DID WE GET HERE?");
         task1_finished = true;
-        byId("btnDiscovery").classList.remove("btn-success");
-        byId("btnDiscovery").classList.add("btn-default");
-        byId("btnSubmitDisc").classList.remove("btn-success");
-        byId("btnSubmitDisc").classList.add("btn-default");
-        byId("btnEstimate").classList.remove("btn-default");
-        byId("btnEstimate").classList.add("btn-success");
+        buttonClasses.btnDiscovery = 'btn-success';
+        buttonClasses.btnSubmitDisc = 'btn-success';
+        buttonClasses.btnEstimate = 'btn-success';
 
     } else if (!res.success){                       // Task 1 is when res.success==false
         // This is a Task 1 assignment: no problem doc.
@@ -1229,10 +1235,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         dataset.variablesInitial = Object.keys(dataset.preprocess);
 
         // Kick off discovery button as green for user guidance
-        if (!task1_finished) {
-            byId("btnDiscovery").classList.remove("btn-default");
-            byId("btnDiscovery").classList.add("btn-success"); // Would be better to attach this as a class at creation, but don't see where it is created
-        }
+        if (!task1_finished) buttonClasses.btnDiscovery = 'btn-success'
     }
 
     // create the default problem provided by d3m
@@ -1308,8 +1311,6 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     width = tempWidth.substring(0, tempWidth.length - 2);
     height = window.innerHeight - 120; // hard code header, footer, and bottom margin
 
-    estimateLadda = Ladda.create(byId("btnEstimate"));
-    discoveryLadda = Ladda.create(byId("btnSubmitDisc"));
     svg = d3.select("#whitespace");
 
     // indicators for showing membership above arcs
@@ -2474,7 +2475,9 @@ export async function estimate() {
         // zparams.allVars = valueKey.slice(10, 25); // because the URL is too long...
         //
         //
-        // estimateLadda.start(); // start spinner
+        // laddaState['btnEstimate'] = true;
+        // m.redraw()
+        //
         // let json = await makeRequest(ROOK_SVC_URL + 'zeligapp', zparams);
         // if (!json) {
         //     estimated = true;
@@ -2527,7 +2530,8 @@ export async function estimate() {
         zPop();
         zparams.callHistory = callHistory;
 
-        estimateLadda.start(); // start spinner
+        buttonLadda['btnEstimate'] = true;
+        m.redraw();
 
         alertError('estimate() function. Check app.js error with swandive (err: 003)');
         //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(valueKey, selectedProblem.targets));
@@ -2540,13 +2544,15 @@ export async function estimate() {
 
         // pipelineapp is a rook application that returns the dependent variable, the DV values, and the predictors. can think of it was a way to translate the potentially complex grammar from the UI
 
-        estimateLadda.start(); // start spinner
+        buttonLadda['btnEstimate'] = true;
+        m.redraw();
 
         ROOKPIPE_FROM_REQUEST = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);        // parse the center panel data into a formula like construction
 
         if (!ROOKPIPE_FROM_REQUEST) {
             estimated = true;
-            estimateLadda.stop();
+            buttonLadda['btnEstimate'] = false;
+            m.redraw();
         } else {
             ROOKPIPE_FROM_REQUEST.predictors && setxTable(ROOKPIPE_FROM_REQUEST.predictors);
             let searchTimeLimit = 4;
@@ -2740,7 +2746,10 @@ export async function makeRequest(url, data) {
     }
     */
 
-    if (!IS_D3M_DOMAIN) estimateLadda.stop();    // estimateLadda is being stopped somewhere else in D3M
+    if (!IS_D3M_DOMAIN) {
+        buttonLadda['btnEstimate'] = false;
+        m.redraw()
+    }
     return res;
 }
 
@@ -2753,6 +2762,7 @@ export let erase = () => nodes
 export let setLeftTab = (tab) => {
     leftTab = tab;
     updateLeftPanelWidth();
+    if (tab === 'Discovery') buttonClasses.btnDiscovery = 'btn-secondary';
     exploreVariate = tab === 'Discovery' ? 'Problem' : 'Univariate';
     setFocusedPanel('left');
 };
@@ -3509,8 +3519,6 @@ export function getDescription(problem) {
     if (problem.description) return problem.description;
 
     // TODO: generate better descriptions based on the manipulations pipeline
-    if (problem.transform && problem.transform != 0)
-        return `The combination of ${problem.transform.split('=')[1]} is predicted by ${problem.predictors.join(" and ")}`;
     if (problem.subset && problem.subsetObs != 0)
         return `${problem.predictors} is predicted by ${problem.predictors.join(" and ")} whenever ${problem.subsetObs}`;
     return `${problem.targets} is predicted by ${problem.predictors.slice(0, -1).join(", ")} ${problem.predictors.length > 1 ? 'and ' : ''}${problem.predictors[problem.predictors.length - 1]}`;
@@ -3646,7 +3654,7 @@ export let selectedDataset;
 
 export let setSelectedDataset = datasetID => {
     if (!(datasetID in datasets)) {
-        datasets[selectedDataset] = {
+        datasets[datasetID] = {
             hardManipulations: [],
             problems: {},
             tags: {
@@ -3726,7 +3734,8 @@ export let setCheckedDiscoveryProblem = (status, problemID) => {
 
 export async function submitDiscProb() {
     let problems = getSelectedDataset().problems;
-    discoveryLadda.start();
+    buttonLadda['btnSubmitDisc'] = true;
+    m.redraw()
     console.log("This is disco");
     console.log(problems);
 
@@ -3752,18 +3761,13 @@ export async function submitDiscProb() {
     console.log(outputCSV);
     let res3 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: 'labels.csv', data: outputCSV});
 
-    discoveryLadda.stop();
-    // change status of buttons for estimating problem and marking problem as finished
-    byId("btnDiscovery").classList.remove("btn-success");
-    byId("btnDiscovery").classList.add("btn-default");
-    byId("btnSubmitDisc").classList.remove("btn-success");
-    byId("btnSubmitDisc").classList.add("btn-default");
+    buttonLadda.btnSubmitDisc = false;
+    buttonClasses.btnSubmitDisc = 'btn-secondary';
+    buttonClasses.btnDiscovery = 'btn-secondary';
+    if (!task2_finished) buttonClasses.btnEstimate = 'btn-secondary';
+
     task1_finished = true;
-    if (!(task2_finished)) {
-        byId("btnEstimate").classList.remove("btn-default");
-        byId("btnEstimate").classList.add("btn-success");
-    }
-    //trigger("btnVariables", 'click');
+    m.redraw()
 
     if (!problemDocExists)
         setModal("Your discovered problems have been submitted.", "Task Complete", true, false, false, locationReload);
@@ -4115,7 +4119,8 @@ async function handleGetProduceSolutionResultsResponse(response){
 async function handleENDGetSearchSolutionsResults(){
 
   // stop spinner
-  estimateLadda.stop();
+    buttonLadda['btnEstimate'] = false;
+    m.redraw()
   // change status of buttons for estimating problem and marking problem as finished
   byId("btnEstimate").classList.remove("btn-success");
   byId("btnEstimate").classList.add("btn-default");

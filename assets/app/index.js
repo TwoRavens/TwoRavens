@@ -1,11 +1,11 @@
 
 import $ from 'jquery';
 import 'bootstrap/dist/css/bootstrap.css';
-import icons from 'glyphicons';
+import 'bootswatch/dist/materia/bootstrap.css';
 
 import '../css/app.css';
-import '../pkgs/Ladda/dist/ladda-themeless.min.css';
 import '../../node_modules/hopscotch/dist/css/hopscotch.css';
+
 
 import hopscotch from 'hopscotch';
 
@@ -20,6 +20,7 @@ import * as manipulate from './manipulations/manipulate';
 import PanelButton from './views/PanelButton';
 import Subpanel from './views/Subpanel';
 import Flowchart from './views/Flowchart';
+import Icon from './views/Icon';
 
 import * as common from '../common/common';
 import ButtonRadio from '../common/views/ButtonRadio';
@@ -49,6 +50,7 @@ import ConfusionMatrix from "./views/ConfusionMatrix"
 import vegaEmbed from "vega-embed";
 import PreprocessInfo from "./PreprocessInfo";
 import ForceDiagram from "./views/ForceDiagram";
+import ButtonLadda from "./views/LaddaButton";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -66,29 +68,105 @@ function leftpanel(mode) {
 
     let selectedDataset = app.getSelectedDataset();
     let selectedProblem = app.getSelectedProblem();
-
     if (!selectedDataset) return;
+
+    let sections = [];
+
+    // VARIABLES TAB
+    if (selectedProblem) {
+
+        // base dataset variables, then transformed variables from the problem
+        let leftpanelVariables = Object.keys(app.getSelectedProblem().preprocess);
+
+        // if no search string, match nothing
+        let matchedVariables = app.variableSearchText.length !== 0 ? []
+            : leftpanelVariables.filter(variable => variable.toLowerCase().includes(app.variableSearchText)
+                || (selectedProblem.preprocess.label || "").toLowerCase().includes(app.variableSearchText));
+
+        // reorder leftpanel variables
+        leftpanelVariables = [
+            ...matchedVariables,
+            ...leftpanelVariables.filter(variable => !matchedVariables.includes(variable))
+        ];
+
+        let nominalVariables = Object.keys(selectedProblem.preprocess)
+            .filter(variable => selectedProblem.preprocess[variable].nature === 'nominal');
+
+        sections.push({
+            value: 'Variables',
+            title: 'Click variable name to add or remove the variable pebble from the modeling space.',
+            contents: app.is_model_mode && app.rightTab === 'Manipulate' && manipulate.constraintMenu
+                ? manipulate.varList()
+                : [
+                    m(TextField, {
+                        id: 'searchVar',
+                        placeholder: 'Search variables and labels',
+                        oninput: app.setVariableSearchText,
+                        onblur: app.setVariableSearchText,
+                        value: app.variableSearchText
+                    }),
+                    m(PanelList, {
+                        id: 'varList',
+                        items: leftpanelVariables,
+                        colors: {
+                            [app.hexToRgba(common.selVarColor)]: app.is_explore_mode ? selectedProblem.loose : nodesExplore.map(node => node.name),
+                            [app.hexToRgba(common.gr1Color, .25)]: selectedProblem.predictors,
+                            // [app.hexToRgba(common.gr2Color)]: app.zparams.zgroup2,
+                            [app.hexToRgba(common.taggedColor)]: nominalVariables,
+                            [app.hexToRgba(common.taggedColor)]: app.is_explore_mode ? [] : selectedProblem.targets
+                        },
+                        classes: {
+                            'item-dependent': app.is_explore_mode ? [] : selectedProblem.targets,
+                            'item-nominal': nominalVariables,
+                            'item-bordered': matchedVariables
+                        },
+                        callback: x => {
+                            let selectedProblem = app.getSelectedProblem();
+
+                            if (selectedProblem.predictors.includes(x))
+                                app.remove(selectedProblem.predictors, x);
+                            else if (selectedProblem.targets.includes(x))
+                                app.remove(selectedProblem.targets, x);
+                            else if (selectedProblem.tags.loose.includes(x))
+                                app.remove(selectedProblem.tags.loose, x);
+                            else selectedProblem.tags.loose.push(x);
+                        },
+                        popup: variable => app.popoverContent(app.findNode(variable)),
+                        attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
+                        attrsAll: {style: {height: 'calc(100% - 90px)', overflow: 'auto'}}
+                    }),
+                    m(Button, {
+                        id: 'btnCreateVariable',
+                        style: {width: '100%', 'margin-top': '10px'},
+                        onclick: async () => {
+
+                            let problemPipeline = app.getSelectedProblem().manipulations;
+                            if ((problemPipeline[problemPipeline.length - 1] || {}).type !== 'transform') {
+                                problemPipeline.push({
+                                    type: 'transform',
+                                    id: 'transform ' + problemPipeline.length,
+                                    transforms: [],
+                                    expansions: [],
+                                    binnings: [],
+                                    manual: []
+                                })
+                            }
+                            app.setRightTab('Manipulate');
+                            manipulate.setConstraintMenu({
+                                type: 'transform',
+                                step: problemPipeline[problemPipeline.length - 1],
+                                pipeline: problemPipeline
+                            });
+                            common.setPanelOpen('left');
+                            app.setLeftTab('Variables');
+                        }
+                    }, 'Create New Variable'),
+                ]
+        })
+    }
+
+    // DISCOVERY TAB
     let problems = selectedDataset.problems;
-
-    // base dataset variables, then transformed variables from the problem
-    let leftpanelVariables = [
-        ...Object.keys(app.getSelectedDataset().preprocess),
-        ...manipulate.getTransformVariables(selectedProblem.manipulations)
-    ];
-
-    // if no search string, match nothing
-    let matchedVariables = app.variableSearchText.length !== 0 ? []
-        : leftpanelVariables.filter(variable => variable.toLowerCase().includes(app.variableSearchText)
-            || (selectedProblem.preprocess.label || "").toLowerCase().includes(app.variableSearchText));
-
-    // reorder leftpanel variables
-    leftpanelVariables = [
-        ...matchedVariables,
-        ...leftpanelVariables.filter(variable => !matchedVariables.includes(variable))
-    ];
-
-    let nominalVariables = Object.keys(selectedProblem.preprocess)
-        .filter(variable => selectedProblem.preprocess[variable].nature === 'nominal');
 
     let allMeaningful = Object.keys(problems).every(probID => problems[probID].meaningful);
     let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
@@ -101,9 +179,9 @@ function leftpanel(mode) {
         'problemID',
         m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
         'User', 'Target', 'Predictors',
-        [...problems, selectedProblem].some(prob => prob.model !== 'modelUndefined') ? 'Model' : '',
+        Object.values(problems).some(prob => prob.model !== 'modelUndefined') ? 'Model' : '',
         'Task',
-        [...problems, selectedProblem].some(prob => prob.subTask !== 'taskSubtypeUndefined') ? 'Subtask' : '',
+        Object.values(problems).some(prob => prob.subTask !== 'taskSubtypeUndefined') ? 'Subtask' : '',
         'Metric', 'Manipulations'
     ];
 
@@ -114,7 +192,7 @@ function leftpanel(mode) {
             checked: problem.meaningful,
             title: `mark ${problem.problemID} as meaningful`
         }),
-        problem.system === 'user' && m('div[title="user created problem"]', glyph('user')),
+        problem.system === 'user' && m('div[title="user created problem"]', m(Icon, {name: 'person'})),
         problem.targets.join(', '),
         problem.predictors.join(', '),
         problem.model === 'modelUndefined' || !problem.model ? '' : problem.model,
@@ -132,6 +210,84 @@ function leftpanel(mode) {
                 }
             }, 'View'))
     ];
+    sections.push({
+        value: 'Discovery',
+        attrsInterface: {class: app.buttonClasses.btnDiscovery}, // passed into button
+        contents: [
+            m('div#discoveryTablesContainer', {
+                    style: {
+                        height: '80%',
+                        overflow: 'auto',
+                        display: 'block',
+                        'margin-bottom': 0,
+                        'max-width': (window.innerWidth - 90) + 'px'
+                    }
+                },
+                [
+                    selectedProblem && m('h5', [
+                        'Current Problem',
+                        m(Button, {
+                            id: 'saveProblemBtn',
+                            onclick: () => {
+                                let problemCopy = app.getProblemCopy(app.getSelectedProblem());
+                                selectedDataset.problems[problemCopy.problemID] = problemCopy;
+                            },
+                            title: 'save problem',
+                            style: {float: 'right', margin: '.5em .5em 0 0'}
+                        }, 'Save Problem')
+                    ]),
+                    selectedProblem && m(Table, {
+                        id: 'discoveryTableManipulations',
+                        headers: discoveryHeaders,
+                        data: [formatProblem(selectedProblem)],
+                        activeRow: selectedDataset.selectedProblem,
+                        showUID: false,
+                        abbreviation: 40
+                    }),
+                    m('h5', 'All Problems')
+                ],
+                m(Table, {
+                    id: 'discoveryTable',
+                    headers: discoveryHeaders,
+                    data: [ // I would sort system via (a, b) => a.system === b.system ? 0 : a.system === 'user' ? -1 : 1, but javascript sort isn't stable
+                        ...Object.values(problems).filter(prob => prob.system === 'user'),
+                        ...Object.values(problems).filter(prob => prob.system !== 'user')
+                    ].map(formatProblem),
+                    activeRow: selectedDataset.resultsProblem,
+                    onclick: problemID => {
+                        let copiedProblem = app.getProblemCopy(problems.find(prob => prob.problemID === problemID));
+                        problems.unshift(copiedProblem);
+                        app.setSelectedProblem(copiedProblem.problemID);
+                    },
+                    showUID: false,
+                    abbreviation: 40,
+                    sortable: true
+                })),
+            selectedProblem && m(TextField, {
+                id: 'discoveryInput',
+                textarea: true,
+                style: {width: '100%', height: 'calc(20% - 50px)', overflow: 'auto'},
+                value: selectedProblem.description || app.getDescription(selectedProblem), // description is autogenerated if not edited
+                oninput: value => selectedProblem.description = value,
+                onblur: value => selectedProblem.description = value
+            }),
+            selectedProblem && m(Button, {
+                id: 'btnDelete',
+                disabled: selectedProblem || selectedProblem.system === 'auto',
+                style: 'float:right',
+                onclick: () => setTimeout(() => app.deleteProblem(selectedProblem.problemID, version, 'id_000003'), 500),
+                title: 'Delete the user created problem'
+            }, 'Delete Problem'),
+            !app.is_explore_mode && m(ButtonLadda, {
+                id: 'btnSubmitDisc',
+                class: app.buttonClasses.btnSubmitDisc,
+                activeLadda: app.buttonLadda.btnSubmitDisc,
+                style: {float: 'right'},
+                onclick: app.submitDiscProb,
+                title: 'Submit all checked discovered problems'
+            }, 'Submit Disc. Probs.')
+        ]
+    });
 
     return m(Panel, {
         side: 'left',
@@ -151,160 +307,13 @@ function leftpanel(mode) {
         attrsAll: {style: {height: 'calc(100% - 39px)'}},
         currentTab: app.leftTab,
         callback: app.setLeftTab,
-        sections: [
+        sections: sections.concat([
             {
                 value: app.preprocessTabName,
                 id: 'preprocessInfoTab',
                 display: 'none',
                 title: 'Data Log',
                 contents: m(PreprocessInfo,{})
-            },
-            {
-                value: 'Variables',
-                title: 'Click variable name to add or remove the variable pebble from the modeling space.',
-                contents: app.is_model_mode && app.rightTab === 'Manipulate' && manipulate.constraintMenu
-                    ? manipulate.varList()
-                    : [
-                        m(TextField, {
-                            id: 'searchVar',
-                            placeholder: 'Search variables and labels',
-                            oninput: app.setVariableSearchText,
-                            onblur: app.setVariableSearchText,
-                            value: app.variableSearchText
-                        }),
-                        m(PanelList, {
-                            id: 'varList',
-                            items: leftpanelVariables,
-                            colors: {
-                                [app.hexToRgba(common.selVarColor)]: app.is_explore_mode ? selectedProblem.loose : nodesExplore.map(node => node.name),
-                                [app.hexToRgba(common.gr1Color, .25)]: selectedProblem.predictors,
-                                // [app.hexToRgba(common.gr2Color)]: app.zparams.zgroup2,
-                                [app.hexToRgba(common.taggedColor)]: nominalVariables,
-                                [app.hexToRgba(common.taggedColor)]: app.is_explore_mode ? [] : selectedProblem.targets
-                            },
-                            classes: {
-                                'item-dependent': app.is_explore_mode ? [] : selectedProblem.targets,
-                                'item-nominal': nominalVariables,
-                                'item-bordered': matchedVariables
-                            },
-                            callback: x => {
-                                let selectedProblem = app.getSelectedProblem();
-
-                                if (selectedProblem.predictors.includes(x))
-                                    app.remove(selectedProblem.predictors, x);
-                                else if (selectedProblem.targets.includes(x))
-                                    app.remove(selectedProblem.targets, x);
-                                else if (selectedProblem.tags.loose.includes(x))
-                                    app.remove(selectedProblem.tags.loose, x);
-                                else selectedProblem.tags.loose.push(x);
-                            },
-                            popup: variable => app.popoverContent(app.findNode(variable)),
-                            attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
-                            attrsAll: {style: {height: 'calc(100% - 90px)', overflow: 'auto'}}
-                        }),
-                        m(Button, {
-                            id: 'btnCreateVariable',
-                            style: {width: '100%', 'margin-top': '10px'},
-                            onclick: async () => {
-
-                                let problemPipeline = app.getSelectedProblem().manipulations;
-                                if ((problemPipeline[problemPipeline.length - 1] || {}).type !== 'transform') {
-                                    problemPipeline.push({
-                                        type: 'transform',
-                                        id: 'transform ' + problemPipeline.length,
-                                        transforms: [],
-                                        expansions: [],
-                                        binnings: [],
-                                        manual: []
-                                    })
-                                }
-                                app.setRightTab('Manipulate');
-                                manipulate.setConstraintMenu({
-                                    type: 'transform',
-                                    step: problemPipeline[problemPipeline.length - 1],
-                                    pipeline: problemPipeline
-                                });
-                                common.setPanelOpen('left');
-                                app.setLeftTab('Variables');
-                            }
-                        }, 'Create New Variable'),
-                    ]
-            },
-            {
-                value: 'Discovery',
-                contents: [
-                    m('div#discoveryTablesContainer', {
-                            style: {
-                                height: '80%',
-                                overflow: 'auto',
-                                display: 'block',
-                                'margin-bottom': 0,
-                                'max-width': (window.innerWidth - 90) + 'px'
-                            }
-                        },
-                        [
-                            m('h4', [
-                                'Current Problem',
-                                m(Button, {
-                                    id: 'saveProblemBtn',
-                                    onclick: () => {
-                                        let problemCopy = app.getProblemCopy(app.getSelectedProblem());
-                                        app.getSelectedDataset().problems[problemCopy.problemID] = problemCopy;
-                                    },
-                                    title: 'save problem',
-                                    style: {float: 'right', margin: '-.5em 1em 0 0'}
-                                }, 'Save Problem')
-                            ]),
-                            m(Table, {
-                                id: 'discoveryTableManipulations',
-                                headers: discoveryHeaders,
-                                data: [formatProblem(app.getSelectedProblem())],
-                                activeRow: app.getSelectedDataset().selectedProblem,
-                                showUID: false,
-                                abbreviation: 40
-                            }),
-                            m('h4', 'All Problems - Results Problem Highlighted')
-                        ],
-                        m(Table, {
-                            id: 'discoveryTable',
-                            headers: discoveryHeaders,
-                            data: [ // I would sort system via (a, b) => a.system === b.system ? 0 : a.system === 'user' ? -1 : 1, but javascript sort isn't stable
-                                ...problems.filter(prob => prob.system === 'user'),
-                                ...problems.filter(prob => prob.system !== 'user')
-                            ].map(formatProblem),
-                            activeRow: app.getSelectedDataset().resultsProblem,
-                            onclick: problemID => {
-                                let copiedProblem = app.getProblemCopy(problems.find(prob => prob.problemID === problemID));
-                                problems.unshift(copiedProblem);
-                                app.setSelectedProblem(copiedProblem.problemID);
-                            },
-                            showUID: false,
-                            abbreviation: 40,
-                            sortable: true
-                        })),
-                    m(TextField, {
-                        id: 'discoveryInput',
-                        textarea: true,
-                        style: {width: '100%', height: 'calc(20% - 50px)', overflow: 'auto'},
-                        value: selectedProblem.description || app.getDescription(selectedProblem),
-                        oninput: value => selectedProblem.description = value,
-                        onblur: value => selectedProblem.description = value
-                    }),
-                    m(Button, {
-                        id: 'btnDelete',
-                        disabled: selectedProblem || selectedProblem.system === 'auto',
-                        style: 'float:right',
-                        onclick: () => setTimeout(() => app.deleteProblem(selectedProblem.problemID, version, 'id_000003'), 500),
-                        title: 'Delete the user created problem'
-                    }, 'Delete Problem'),
-                    m(PanelButton, {
-                        id: 'btnSubmitDisc',
-                        classes: 'btn-success',
-                        style: 'float: right',
-                        onclick: app.submitDiscProb,
-                        title: 'Submit all checked discovered problems.'
-                    }, 'Submit Disc. Probs.')
-                ]
             },
             {
                 value: 'Augment',
@@ -330,7 +339,7 @@ function leftpanel(mode) {
                     })
                 ]
             }
-        ]
+        ])
     }));
 }
 
@@ -346,6 +355,7 @@ function rightpanel(mode) {
     let selectedDataset = app.getSelectedDataset();
     let selectedProblem = app.getSelectedProblem();
     let resultsProblem = app.getResultsProblem();
+    return;
 
     // PROBLEM TAB
     selectedDataset && selectedProblem && sections.push({
@@ -357,7 +367,7 @@ function rightpanel(mode) {
                 onclick: () => app.setLockToggle(!app.lockToggle),
                 title: 'Lock selection of problem description',
                 style: 'float: right',
-            }, glyph(app.lockToggle ? 'lock' : 'pencil', true)),
+            }, m(Icon, {name: app.lockToggle ? 'lock' : 'pencil'})),
             m('', {style: 'float: left'},
                 m(Dropdown, {
                     id: 'taskType',
@@ -805,13 +815,6 @@ function rightpanel(mode) {
     );
 }
 
-export let glyph = (icon, unstyled) =>
-    m(`span.glyphicon.glyphicon-${icon}` + (unstyled ? '' : '[style=color: #818181; font-size: 1em; pointer-events: none]'));
-
-export let glyph2 = (icon, attrs) => m(`span.glyphicon.glyphicon-${icon}`, common.mergeAttributes({
-    style: {color: '#818181', 'font-size': '1em', 'pointer-events': 'none'}
-}, attrs));
-
 class Body {
     oninit() {
         app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
@@ -944,7 +947,7 @@ class Body {
         })();
 
         let spaceBtn = (id, onclick, title, icon) =>
-            m(`button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
+            m(`button#${id}.btn.btn-default`, {onclick, title, style: {'margin-left': '.5em'}}, icon);
         let discovery = app.leftTab === 'Discovery';
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
@@ -966,11 +969,11 @@ class Body {
                     style: {display: 'inline-block', 'margin-right': '0.75em'},
                     onclick: () => app.alerts.length = 0,
                     disabled: app.alerts.length === 0
-                }, glyph2('ok')),
+                }, m(Icon, {name: 'check'})),
                 app.alerts.length === 0 && italicize('No alerts recorded.'),
                 app.alerts.length > 0 && m(Table, {
                     data: [...app.alerts].reverse().map(alert => [
-                        alert.time > app.alertsLastViewed && glyph2('asterisk'),
+                        alert.time > app.alertsLastViewed && m(Icon, {name: 'primitive-dot'}),
                         m(`div[style=background:${app.hexToRgba({
                             'log': common.menuColor,
                             'warn': common.warnColor,
@@ -1006,6 +1009,9 @@ class Body {
             m(`#main`, {
                     style: {
                         overflow,
+                        top: common.heightHeader,
+                        height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`,
+                        bottom: common.heightFooter,
                         display: app.is_manipulate_mode || (app.rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'none' : 'block'
                     }
                 },
@@ -1124,11 +1130,11 @@ class Body {
                 ),
                     // m('svg#whitespace')),
                 app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}}, [
-                    spaceBtn('btnAdd', app.addProblemFromForceDiagram, 'add model to problems', 'plus'),
-                    spaceBtn('btnJoin', app.connectAllForceDiagram, 'Make all possible connections between nodes', 'link'),
-                    spaceBtn('btnDisconnect', () => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
-                    spaceBtn('btnForce', () => app.setForceToggle(!app.forceToggle), 'Pin the variable pebbles to the page', 'pushpin'),
-                    spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')
+                    spaceBtn('btnAdd', app.addProblemFromForceDiagram, 'add model to problems', m(Icon, {name: 'plus'})),
+                    spaceBtn('btnJoin', app.connectAllForceDiagram, 'Make all possible connections between nodes', m(Icon, {name: 'link'})),
+                    spaceBtn('btnDisconnect', () => app.restart([]), 'Delete all connections between nodes', m(Icon, {name: 'circle-slash'})),
+                    spaceBtn('btnForce', () => app.setForceToggle(!app.forceToggle), 'Pin the variable pebbles to the page', m(Icon, {name: 'pin'})),
+                    spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', m(Icon, {name: 'trashcan'}))
                 ]),
                 app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}),
 
@@ -1170,7 +1176,7 @@ class Body {
         );
     }
 
-    header(mode) {
+    header() {
         let userlinks = username === '' ? [
             {title: "Log in", url: login_url},
             {title: "Sign up", url: signup_url}
@@ -1215,19 +1221,20 @@ class Body {
                 title: 'Reset',
                 onclick: app.reset,
                 style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
-            }, glyph('repeat')),
+            }, m(Icon, {name: 'sync'})),
 
-            m('div.btn-group[role=group][aria-label="..."][style=margin:.25em 1em;display:flex]',
-                m(Button, {
+            m('div.btn-group.btn-group-toggle[data-toggle=buttons][style=margin:.25em 1em;display:flex]',
+                m('button.btn.btn-secondary', {
                     id: 'btnTA2',
                     onclick: _ => hopscotch.startTour(app.mytour(), 0)
-                }, 'Help Tour ', glyph('road')),
-                m(Button, {id: 'btnTA2', onclick: _ => app.helpmaterials('video')}, 'Video ', glyph('expand')),
-                m(Button, {id: 'btnTA2', onclick: _ => app.helpmaterials('manual')}, 'Manual ', glyph('book'))),
+                }, 'Help Tour ', m(Icon, {name: 'milestone'})),
+                m(Button, {id: 'btnTA2', onclick: _ => app.helpmaterials('video')}, 'Video ', m(Icon, {name: 'file-media'})),
+                m(Button, {id: 'btnTA2', onclick: _ => app.helpmaterials('manual')}, 'Manual ', m(Icon, {name: 'file-pdf'}))),
 
-            IS_D3M_DOMAIN && app.is_model_mode && m(Button, {
+            IS_D3M_DOMAIN && app.is_model_mode && m(ButtonLadda, {
                 id: 'btnEstimate',
-                class: 'ladda-button',
+                class: app.buttonClasses.btnEstimate,
+                activeLadda: app.buttonLadda.btnEstimate,
                 onclick: app.estimate,
                 style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
             }, 'Solve This Problem'),
@@ -1235,7 +1242,7 @@ class Body {
 
             m('.dropdown[style=float: right; padding-right: 1em]',
                 m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
-                    [username, " ", glyph('triangle-bottom')]),
+                    [username, " ", m(Icon, {name: 'triangle-down'})]),
                 m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
                     userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
         );
@@ -1297,14 +1304,16 @@ class Body {
         return m(Footer, [
             m(ButtonRadio, {
                 id: 'modeButtonBar',
-                attrsAll: {style: {margin: '2px', width: 'auto'}, class: 'navbar-left'},
+                attrsAll: {style: {margin: '8px', width: 'auto'}, class: 'navbar-left'},
+                attrsButtons: {class: 'btn-sm', style: {width: "auto"}},
                 onclick: app.set_mode,
                 activeSection: mode || 'model',
                 sections: [{value: 'Model'}, {value: 'Explore'}], // {value: 'Manipulate'} disabled
 
                 // attrsButtons: {class: ['btn-sm']}, // if you'd like small buttons (btn-sm should be applied to individual buttons, not the entire component)
-                attrsButtons: {style: {width: 'auto'}}
+                // attrsButtons: {style: {width: 'auto'}}
             }),
+
             m("span", {"class": "footer-info-break"}, "|"),
             m("a", {"href" : "/dev-raven-links", "target": "=_blank"}, "raven-links"),
             m("span", {"class": "footer-info-break"}, "|"),
@@ -1316,16 +1325,17 @@ class Body {
             m("span", {"class": "footer-info-break"}, "|"),
 
             m(Button, {
-                style: {'margin-left': '1em'},
+                style: {'margin': '8px'},
                 title: 'alerts',
+                class: ['btn-sm'],
                 onclick: () => app.setAlertsShown(true)
-            }, glyph2('alert', {style: {color: app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}})),
-            m('div.btn.btn-group', {style: 'float: right; padding: 0px'},
+            }, m(Icon, {name: 'bell', style: `color: ${app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}`})),
+            m('div.btn.btn-group', {style: 'float: right; padding: 0px;margin:5px'},
                 m(Button, {
-                    class: app.peekInlineShown && ['active'],
+                    class: ['btn-sm'].concat(app.peekInlineShown ? ['active'] : []),
                     onclick: () => app.setPeekInlineShown(!app.peekInlineShown)
                 }, 'Peek'),
-                m(Button, {onclick: () => window.open('#!/data', 'data')}, glyph('new-window'))),
+                m(Button, {onclick: () => window.open('#!/data', 'data'), class: 'btn-sm'}, m(Icon, {name: 'link-external'}))),
             manipulate.totalSubsetRecords !== undefined && m("span.label.label-default#recordCount", {
                 style: {
                     float: 'right',

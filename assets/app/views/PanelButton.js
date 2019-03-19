@@ -14,9 +14,10 @@ class PanelButton {
         let disabled = is_explore_mode && !app.explored;
         return m(
             `button#${id}.btn.${classes || when(left ? 'left' : 'right', id2, 'active', disabled ? 'btn.disabled' : 'btn-default')}[type=button]`, {
-            onclick: onclick || (_ => left ? app.probDiscView(id2) : disabled || app.tabRight(id2)),
-            style: style,
-            title: title},
+                onclick: onclick || (_ => left ? app.probDiscView(id2) : disabled || app.tabRight(id2)),
+                style: style,
+                title: title
+            },
             vnode.children);
     }
 }
