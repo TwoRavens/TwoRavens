@@ -533,7 +533,7 @@ export let setQueryUpdated = async state => {
     if (app.is_manipulate_mode) {
         if (!pendingHardManipulation && state) {
             hopscotch.startTour(datasetChangedTour, 0);
-            app.getSelectedDataset().problems = []; // TODO: somehow preserve the default problem
+            app.getSelectedDataset().problems = [];
         }
         pendingHardManipulation = state;
     }
@@ -856,7 +856,7 @@ export async function buildDatasetUrl(problem) {
 
     let compiled = queryMongo.buildPipeline([
         ...app.getSelectedDataset().hardManipulations,
-        ...app.getSelectedProblem().manipulations,
+        ...problem.manipulations,
         problemStep
     ], app.getSelectedDataset().variablesInitial)['pipeline'];
 

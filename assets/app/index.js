@@ -74,9 +74,8 @@ function leftpanel(mode) {
 
     // VARIABLES TAB
     if (selectedProblem) {
-
         // base dataset variables, then transformed variables from the problem
-        let leftpanelVariables = Object.keys(app.getSelectedProblem().preprocess);
+        let leftpanelVariables = Object.keys(selectedProblem.preprocess);
 
         // if no search string, match nothing
         let matchedVariables = app.variableSearchText.length !== 0 ? []
@@ -582,8 +581,8 @@ function rightpanel(mode) {
                             }, 'Model Comparison')
                         ),
                         app.selectedPipelines.size > 0 && [
-                            bold('Score Metric: '), app.d3mProblemDescription.performanceMetrics[0].metric, m('br'),
-                            (app.reverseSet.includes(app.d3mProblemDescription.performanceMetrics[0].metric)
+                            bold('Score Metric: '), resultsProblem.metric, m('br'),
+                            (app.reverseSet.includes(resultsProblem.metric)
                                 ? 'Smaller' : 'Larger') + ' numbers are better fits'
                         ],
                         m(Table, {
