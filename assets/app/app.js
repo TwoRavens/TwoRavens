@@ -39,9 +39,6 @@ var transform_data ={
     "transform_data":""
  }
 
-export let marginTopCarousel = 0;
-export let marginLeftCarousel = 0;
-
 // ~~~~~ PEEK ~~~~~
 // for the second-window data preview
 window.addEventListener('storage', (e) => {
@@ -261,7 +258,7 @@ export function set_mode(mode) {
         if (mode === 'model' && manipulate.pendingHardManipulation) {
             let dataset = getSelectedDataset();
             buildDatasetPreprocess(dataset).then(response => {
-                dataset.preprocess = response.variables;
+                dataset.summaries = response.variables;
                 dataset.problems = discovery(response.dataset.discovery);
             });
         }
@@ -296,7 +293,7 @@ export let buildDatasetPreprocess = async dataset => await getData({
 }));
 
 export let buildProblemPreprocess = async (dataset, problem) => problem.manipulations.length === 0
-    ? dataset.preprocess
+    ? dataset.summaries
     : await getData({
         method: 'aggregate',
         query: JSON.stringify(queryMongo.buildPipeline(
@@ -925,9 +922,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // Function to load retreived preprocess data
     //
     let loadPreprocessData = res => {
-        priv = res.dataset.private || priv;
-        getSelectedDataset().preprocess = res.variables;
-        return res;
+        priv = res.data.dataset.private || priv;
+        getSelectedDataset().summaries = res.data.variables;
+        return res.data;
     };
 
     let resPreprocess;
@@ -948,7 +945,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             console.log('preprocess_info: ', preprocess_info);
             console.log('preprocess_info message: ' + preprocess_info.message);
             if (preprocess_info.success){
-                resPreprocess = loadPreprocessData(preprocess_info.data);
+                resPreprocess = loadPreprocessData(preprocess_info);
 
             }else{
                 setModal(m('div', m('p', "Preprocess failed: "  + preprocess_info.message),
@@ -988,7 +985,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         let dataset = getSelectedDataset();
         // assign discovered problems into problems set, keeping the d3m problem
         Object.assign(dataset.problems, discovery(resPreprocess.dataset.discovery));
-        dataset.variablesInitial = Object.keys(dataset.preprocess);
+        dataset.variablesInitial = Object.keys(dataset.summaries);
 
         // Kick off discovery button as green for user guidance
         if (!task1_finished) buttonClasses.btnDiscovery = 'btn-success'
@@ -1090,7 +1087,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         let targets = res.inputs.data
             .flatMap(source => source.targets.map(targ => targ.colName));
         let predictors = swandive
-            ? Object.keys(getSelectedDataset().preprocess)
+            ? Object.keys(getSelectedDataset().summaries)
                 .filter(column => column !== 'd3mIndex' && !targets.includes(column))
             : resDataDocument.dataResources // if swandive false, then datadoc has column labeling
                 .filter(resource => resource.resType === 'table')
@@ -1120,9 +1117,10 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
                 weights: [], // singleton list
                 crossSection: [],
                 time: [],
-                nominal: []
+                nominal: [],
+                loose: [] // variables displayed in the force diagram, but not in any groups
             },
-            preprocess: getSelectedDataset().preprocess
+            summaries: getSelectedDataset().summaries
         };
 
         // add the default problems to the list of problems
@@ -1331,28 +1329,33 @@ export let defaultPebbleRadius = 40;
 export let forceDiagramMode = 'variables';
 export let setForceDiagramMode = mode => forceDiagramMode = mode;
 
-export let buildForceDiagram = () => {
+// normalize: text -> html id
+let normalize = text => text.replace(/\W/g,'_')
 
-    let selectedProblem = getSelectedProblem();
-    if (!selectedProblem) return;
+export let buildForceDiagram = problem => {
 
+    if (!problem) return;
+
+    let summaries = problem.summaries;
+    let nodeNames = [...problem.predictors, ...problem.targets, ...problem.tags.loose];
+
+    let nodes = nodeNames.map(name => ({id: normalize(name), name, summary: summaries[name]}));
     let groups = [];
-    let nodes = [...Object.values(getSelectedProblem().preprocess)];
-    let groupLinks = [];
     let nodeLinks = [];
+    let groupLinks = [];
 
     if (forceDiagramMode === 'variables') {
         groups = [
             {
                 name: "Predictors",
                 color: common.gr1Color,
-                nodes: new Set(selectedProblem.predictors),
+                nodes: new Set(problem.predictors),
                 lengthen: true
             },
             {
                 name: "Targets",
                 color: common.gr2Color,
-                nodes: new Set(selectedProblem.targets),
+                nodes: new Set(problem.targets),
                 lengthen: false
             }
         ];
@@ -1375,7 +1378,7 @@ export let buildForceDiagram = () => {
     let maxNodes = 100;
     groups.filter(group => group.nodes.length > maxNodes).forEach(group => {
         nodes = nodes.filter(node => !group.nodes.has(node.name)); // remove nodes from said group
-        nodes.push({id: group.name, name: group.name}); // add one node to represent all the nodes
+        nodes.push({id: normalize(group.name), name: group.name}); // add one node to represent all the nodes
         group.nodes = [group.name]; // redefine the group to only contain the new node
     });
 
@@ -1384,7 +1387,7 @@ export let buildForceDiagram = () => {
         let upperSize = 7;
         let maxNodeGroupSize = Math.max(...groups
             .filter(group => group.nodes.has(node.name))
-            .map(group => group.nodes.length), upperSize);
+            .map(group => group.nodes.size), upperSize);
         node.radius = defaultPebbleRadius * Math.sqrt(upperSize / maxNodeGroupSize);
 
         if (node.name === selectedPebble)
@@ -1393,12 +1396,12 @@ export let buildForceDiagram = () => {
 
     // the order of the keys indicates precedence
     let params = {
-        transformed: new Set(selectedProblem.tags.transformed),
-        crossSection: new Set(selectedProblem.tags.crossSection),
-        time: new Set(selectedProblem.tags.time),
-        nominals: new Set(getNominalVariables()), // include both nominal-casted and string-type variables
-        targets: new Set(selectedProblem.targets),
-        predictors: new Set(selectedProblem.predictors),
+        transformed: new Set(problem.tags.transformed),
+        crossSection: new Set(problem.tags.crossSection),
+        time: new Set(problem.tags.time),
+        // nominals: new Set(getNominalVariables()), // include both nominal-casted and string-type variables
+        targets: new Set(problem.targets),
+        predictors: new Set(problem.predictors),
     };
 
 
@@ -1421,6 +1424,9 @@ export let buildForceDiagram = () => {
         targets: common.dvColor
     };
 
+    console.warn("#debug nodes");
+    console.log(nodes);
+
     // set the base color of each node
     nodes.forEach(node => {
         node.strokeWidth = 1;
@@ -1430,15 +1436,19 @@ export let buildForceDiagram = () => {
 
     // set additional styling for each node
     nodes.forEach(node => Object.keys(params)
-        // only apply styles on classes the variable is a member of
+    // only apply styles on classes the variable is a member of
         .filter(label => params[label].has(node.name))
         .forEach(label => {
-            node.strokeWidth = strokeWidths[label];
-            node.nodeCol = nodeColors[label];
-            node.strokeColor = strokeColors[label];
+            if (label in strokeWidths) node.strokeWidth = strokeWidths[label];
+            if (label in nodeColors) node.nodeCol = nodeColors[label];
+            if (label in strokeColors) node.strokeColor = strokeColors[label];
         }));
 
-    return {nodes, groups, nodeLinks, groupLinks}
+    let builtInfo = {nodes, groups, nodeLinks, groupLinks};
+
+    console.warn("#debug builtInfo");
+    console.log(builtInfo);
+    return builtInfo
 };
 
 // depth increments for child arcs
@@ -1722,13 +1732,14 @@ export let forceDiagramStatic = {
             // clear mouse event vars
             resetMouseVars();
         },
-        onmousemove: () => {
-            if (!mousedown_node)
-                return;
-            // update drag line
-            drag_line.attr('d', 'M' + mousedown_node.x + ',' + mousedown_node.y + 'L' + d3.mouse(this)[0] + ',' +
-                d3.mouse(this)[1]);
-        },
+        // TODO: drag_line scoping
+        // onmousemove: () => {
+        //     if (!mousedown_node)
+        //         return;
+        //     // update drag line
+        //     drag_line.attr('d', 'M' + mousedown_node.x + ',' + mousedown_node.y + 'L' + d3.mouse(this)[0] + ',' +
+        //         d3.mouse(this)[1]);
+        // },
         style: {background: 'white'}
     },
 
@@ -2153,7 +2164,7 @@ function CreateProblemDefinition(problem) {
             datasetId: selectedDataset,
             targets: problem.targets.map((target, resourceId) => ({
                 resourceId: resourceIdFromProblemDoc,
-                columnIndex: Object.keys(getSelectedProblem().preprocess).indexOf(target),  // Adjusted to match dataset doc
+                columnIndex: Object.keys(getSelectedProblem().summaries).indexOf(target),  // Adjusted to match dataset doc
                 columnName: target
             }))
         }
@@ -2178,7 +2189,7 @@ function CreateProblemSchema(problem){
                     datasetId: selectedDataset,
                     targets: problem.targets.map((target, resourceId) => ({
                         resourceId: resourceIdFromDatasetDoc,
-                        columnIndex: Object.keys(getSelectedProblem().preprocess).indexOf(target),
+                        columnIndex: Object.keys(getSelectedProblem().summaries).indexOf(target),
                         columnName: target
                     }))
                 }],
@@ -2842,7 +2853,7 @@ export function subsetSelect(btn) {
     var myParams = $.extend(true, {}, zparams);
     var myTrans = $.extend(true, [], trans);
     var myForce = $.extend(true, [], forceToggle);
-    var myPreprocess = $.extend(true, {}, getSelectedDataset().preprocess);
+    var myPreprocess = $.extend(true, {}, getSelectedDataset().summaries);
     var myLog = $.extend(true, [], logArray);
     var myHistory = $.extend(true, [], callHistory);
 
@@ -3454,8 +3465,9 @@ export function discovery(problems) {
                 crossSection: [],
                 time: [],
                 nominal: [],
+                loose: [] // variables displayed in the force diagram, but not in any groups
             },
-            preprocess: {} // this gets populated below
+            summaries: {} // this gets populated below
         };
         return out;
     }, {});
@@ -3463,7 +3475,7 @@ export function discovery(problems) {
     let dataset = getSelectedDataset();
     Object.keys(problems)
         .filter(problemID => problems[problemID].manipulations.length === 0)
-        .forEach(problemID => problems[problemID].preprocess = dataset.preprocess);
+        .forEach(problemID => problems[problemID].summaries = dataset.summaries);
 
     // construct preprocess for all problems with manipulations
     // TODO: optimization- preprocess variables only, for 5000 samples
@@ -3478,7 +3490,7 @@ export function discovery(problems) {
             .then(response => {
                 let problem = problems[problemID];
                 Object.assign(problem, {
-                    preprocess: response.variables,
+                    summaries: response.variables,
                     metric: response.variables[problem.targets[0]].plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
                     task: response.variables[problem.targets[0]].plottype === "bar" ? 'classification' : 'regression'
                 })
@@ -3531,10 +3543,12 @@ export let setSelectedDataset = datasetID => {
             hardManipulations: [],
             problems: {},
             tags: {
-                weights: undefined, // only one variable can be a weight
+                transformed: [],
+                weights: [], // only one variable can be a weight
                 crossSection: [],
                 time: [],
                 nominal: [],
+                loose: [] // variables displayed in the force diagram, but not in any groups
             }
         }
     }
@@ -3551,8 +3565,8 @@ export let getResultsProblem = () => selectedDataset && getSelectedDataset().pro
 
 export let getNominalVariables = () => {
     let selectedProblem = getSelectedProblem();
-    return Object.keys(selectedProblem.preprocess)
-        .filter(variable => selectedProblem.preprocess[variable].nature === 'nominal');
+    return Object.keys(selectedProblem.summaries)
+        .filter(variable => selectedProblem.summaries[variable].nature === 'nominal');
 };
 
 export function setSelectedProblem(problemID) {
@@ -3782,7 +3796,7 @@ function primitiveStepRemoveColumns (problem) {
     let keep = [...problem.predictors, ...problem.targets, "d3mIndex"];
 
     let indices = [];
-    Object.keys(problem.preprocess).forEach((variable, i) => keep.includes(variable) && indices.push(i));
+    Object.keys(problem.summaries).forEach((variable, i) => keep.includes(variable) && indices.push(i));
 
     let primitive = {
         id: "2eeff053-395a-497d-88db-7374c27812e6",

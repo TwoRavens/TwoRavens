@@ -172,7 +172,7 @@ export function varList() {
                 selectedVariables = [...constraintPreferences.menus.Equation.usedTerms.variables];
             if (constraintPreferences.type === 'Expansion') {
                 variables = [...new Set([
-                    ...Object.keys(app.getSelectedDataset().preprocess),
+                    ...Object.keys(app.getSelectedDataset().summaries),
                     ...getTransformVariables(partialPipeline)
                 ])];
                 selectedVariables = Object.keys(constraintPreferences.menus.Expansion.variables || {});
@@ -556,7 +556,7 @@ export let setQueryUpdated = async state => {
         // (A union (F \ C)) is the set of old variables and new transform variables
         // (A union (F \ C)) \ (C \ F) now remove transformed variables that are not present in the new query
 
-        let predictorsOld = Object.keys(selectedProblem.preprocess);
+        let predictorsOld = Object.keys(selectedProblem.summaries);
         let transformsOld = selectedProblem.tags.transformed;
         let transformsNew = getTransformVariables(selectedProblem.manipulations);
 
@@ -568,7 +568,7 @@ export let setQueryUpdated = async state => {
         selectedProblem.tags.transformed = transformsNew;
 
         app.buildProblemPreprocess(selectedDataset, selectedProblem)
-            .then(response => selectedProblem.preprocess = response.variables);
+            .then(response => selectedProblem.summaries = response.variables);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
         loadMenu([...selectedDataset.hardManipulations, ...selectedProblem.manipulations], countMenu).then(count => {

@@ -35,7 +35,7 @@ let problemExample = {
     predictors: ['bats'],
     targets: ['home_runs'],
     manipulations: manipulationExample,
-    preprocess: preprocessExample,
+    summaries: preprocessExample,
     solutions: {
         d3m: {
             '218': solutionD3MExample
@@ -45,8 +45,8 @@ let problemExample = {
 
 let datasetsExample = {
     '185_bl_problem_train': {
-        preprocess: preprocessExample,
-        manipulations: manipulationExample,
+        summaries: preprocessExample,
+        hardManipulations: manipulationExample,
         problems: {
             'Problem 1': problemExample
         },

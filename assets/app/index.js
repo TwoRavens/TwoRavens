@@ -51,6 +51,7 @@ import vegaEmbed from "vega-embed";
 import PreprocessInfo from "./PreprocessInfo";
 import ForceDiagram from "./views/ForceDiagram";
 import ButtonLadda from "./views/LaddaButton";
+import TestPage from "./views/TestPage";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -75,12 +76,12 @@ function leftpanel(mode) {
     // VARIABLES TAB
     if (selectedProblem) {
         // base dataset variables, then transformed variables from the problem
-        let leftpanelVariables = Object.keys(selectedProblem.preprocess);
+        let leftpanelVariables = Object.keys(selectedProblem.summaries);
 
         // if no search string, match nothing
         let matchedVariables = app.variableSearchText.length !== 0 ? []
             : leftpanelVariables.filter(variable => variable.toLowerCase().includes(app.variableSearchText)
-                || (selectedProblem.preprocess.label || "").toLowerCase().includes(app.variableSearchText));
+                || (selectedProblem.summaries.label || "").toLowerCase().includes(app.variableSearchText));
 
         // reorder leftpanel variables
         leftpanelVariables = [
@@ -88,8 +89,8 @@ function leftpanel(mode) {
             ...leftpanelVariables.filter(variable => !matchedVariables.includes(variable))
         ];
 
-        let nominalVariables = Object.keys(selectedProblem.preprocess)
-            .filter(variable => selectedProblem.preprocess[variable].nature === 'nominal');
+        let nominalVariables = Object.keys(selectedProblem.summaries)
+            .filter(variable => selectedProblem.summaries[variable].nature === 'nominal');
 
         sections.push({
             value: 'Variables',
@@ -331,10 +332,10 @@ function leftpanel(mode) {
                     m('center',
                         m('b', app.hoverPebble || app.selectedPebble),
                         m('br'),
-                        m('i', app.getSelectedProblem().preprocess[app.hoverPebble || app.selectedPebble].labl)),
+                        m('i', app.getSelectedProblem().summaries[app.hoverPebble || app.selectedPebble].labl)),
                     m(Table, {
                         id: 'varSummaryTable',
-                        data: app.getVarSummary(app.getSelectedProblem().preprocess[app.hoverPebble || app.selectedPebble])
+                        data: app.getVarSummary(app.getSelectedProblem().summaries[app.hoverPebble || app.selectedPebble])
                     })
                 ]
             }
@@ -1057,7 +1058,7 @@ class Body {
                             }, 'go'),
                             m('br'),
                             m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
-                                (discovery ? app.getSelectedDataset().problems : Object.keys(app.getSelectedProblem().preprocess)).map(x => { // entry could either be a problem or a variable name
+                                (discovery ? app.getSelectedDataset().problems : Object.keys(app.getSelectedProblem().summaries)).map(x => { // entry could either be a problem or a variable name
                                     let selected = discovery ? x === app.getSelectedProblem() : nodesExplore.map(y => y.name).includes(x);
                                     let targetName = x.targets[0] || x;
 
@@ -1125,9 +1126,9 @@ class Body {
                     selectedProblem && m(ForceDiagram, Object.assign({
                         forcetoggle: app.forceToggle,
                         radius: app.defaultPebbleRadius
-                    }, app.forceDiagramStatic, app.buildForceDiagram()))
+                    }, app.forceDiagramStatic, app.buildForceDiagram(selectedProblem)))
                 ),
-                    // m('svg#whitespace')),
+
                 app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}}, [
                     spaceBtn('btnAdd', app.addProblemFromForceDiagram, 'add model to problems', m(Icon, {name: 'plus'})),
                     spaceBtn('btnJoin', app.connectAllForceDiagram, 'Make all possible connections between nodes', m(Icon, {name: 'link'})),
@@ -1395,6 +1396,7 @@ else {
         },
         '/explore/:variate/:vars...': Body,
         '/data': {render: () => m(Peek, {id: app.peekId, image: '/static/images/TwoRavens.png'})},
+        '/test': TestPage,
         '/:mode': Body,
 
         /*'/results': {
