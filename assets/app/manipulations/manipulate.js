@@ -717,7 +717,7 @@ export let getData = async body => m.request({
     url: app.mongoURL + 'get-data',
     method: 'POST',
     data: Object.assign({
-        datafile: app.zparams.zd3mdata, // location of the dataset csv
+        datafile: app.getSelectedDataset().datasetUrl, // location of the dataset csv
         collection_name: app.selectedDataset // collection/dataset name
     }, body)
 }).then(response => {
@@ -870,7 +870,7 @@ export async function buildDatasetUrl(problem) {
 export async function buildProblemUrl(problem) {
     let abstractPipeline = [
         ...app.getSelectedDataset().hardManipulations,
-        ...app.getSelectedProblem().manipulations,
+        ...problem.manipulations,
         {
             type: 'menu',
             metadata: {
@@ -884,7 +884,7 @@ export async function buildProblemUrl(problem) {
     ];
 
     let compiled = queryMongo.buildPipeline(abstractPipeline, app.getSelectedDataset().variablesInitial)['pipeline'];
-    let metadata = queryMongo.translateDatasetDoc(compiled, app.datadocuments[app.selectedDataset], app.getSelectedProblem());
+    let metadata = queryMongo.translateDatasetDoc(compiled, app.getSelectedDataset().datasetDoc, problem);
 
     return await getData({
         method: 'aggregate',

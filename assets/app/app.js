@@ -504,7 +504,7 @@ export let setLockToggle = state => lockToggle = state;
 let priv = true;
 export let setPriv = state => priv = state;
 
-// if no columns in the datadocument, swandive is enabled
+// if no columns in the datasetDoc, swandive is enabled
 // swandive set to true if task is in failset
 export let swandive = false;
 let failset = ["TIME_SERIES_FORECASTING","GRAPH_MATCHING","LINK_PREDICTION","timeSeriesForecasting","graphMatching","linkPrediction"];
@@ -597,7 +597,6 @@ export let callHistory = []; // transform and subset calls
 
 
 export let configurations = {};
-export let datadocuments = {};
 
 export let domainIdentifier = null; // available throughout apps js; used for saving workspace
 
@@ -688,8 +687,6 @@ export const reset = async function reloadPage() {
 export let restart;
 
 let dataurl = '';
-let datasetdocurl = '';
-let datasetDocProblemUrl = {};
 
 export let step = (target, placement, title, content) => ({
     target,
@@ -820,6 +817,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     if (!configurations){
         setModal('No current workspace config in list!', "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
     }
+    console.warn("#debug configurations");
+    console.log(configurations);
 
     // Take the 1st configuration from the list -- for now...
     //let configurations = config_result.data[0]
@@ -834,8 +833,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     console.log('-- 2. Set "configurations" --');
 
     $('#user-workspace-id').html('(ws:' + configurations.user_workspace_id +')');
-
-    datasetdocurl = configurations.dataset_schema;
 
     if (configurations.d3m_input_dir){
       // 2019 config
@@ -874,8 +871,10 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     let resDataDocument = await m.request(d3mDS);
     // sets the dataset, which prepares internal state
-    setSelectedDataset(IS_D3M_DOMAIN ? resDataDocument.about.datasetID : zparams.zdata);
-    datadocuments[selectedDataset] = resDataDocument;
+    setSelectedDataset(resDataDocument.about.datasetID);
+    let selectedDataset = getSelectedDataset();
+    selectedDataset.datasetDoc = resDataDocument;
+    selectedDataset.datasetDocPath = configurations.dataset_schema;
 
     // 3. Set datadocument columns!
 
@@ -910,7 +909,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         byId('main').style.backgroundColor = 'grey';
         byId('whitespace').style.backgroundColor = 'grey';
     }
-    console.log("data schema data: ", datadocuments[selectedDataset]);
+    console.log("data schema data: ", selectedDataset.datasetDoc);
 
     /**
      * 4. read preprocess data or (if necessary) run preprocess
@@ -1035,8 +1034,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             ? problem_info_result.data[field + '.gz'].path
             : val;
 
-    zparams.zd3mdata = d3mData = set_d3m_data_path('learningData.csv', d3mData);
-    zparams.zd3mtarget = set_d3m_data_path('learningData.csv', d3mData);
+
+    getSelectedDataset().datasetUrl = d3mData = set_d3m_data_path('learningData.csv', d3mData);
+    // zparams.zd3mtarget = set_d3m_data_path('learningData.csv', d3mData);
 
     // If this is the D3M domain; d3mData MUST be set to an actual value
     //
@@ -1324,24 +1324,22 @@ function resetMouseVars() {
 
 export let defaultPebbleRadius = 40;
 
+// readonly, modified within the ForceDiagram class TODO: (monitor x/y coords to move pebbles between groups)
+export let nodesReadOnly = {};
+let hullRadius = 40;
 
 // layout for force diagram pebbles. Can be 'variables', 'pca', 'clustering' etc. (ideas)
 export let forceDiagramMode = 'variables';
 export let setForceDiagramMode = mode => forceDiagramMode = mode;
 
-// normalize: text -> html id
-let normalize = text => text.replace(/\W/g,'_')
-
-export let buildForceDiagram = problem => {
+export let buildForceData = problem => {
 
     if (!problem) return;
 
     let summaries = problem.summaries;
-    let nodeNames = [...problem.predictors, ...problem.targets, ...problem.tags.loose];
-
-    let nodes = nodeNames.map(name => ({id: normalize(name), name, summary: summaries[name]}));
+    let pebbles = [...problem.predictors, ...problem.targets, ...problem.tags.loose];
     let groups = [];
-    let nodeLinks = [];
+    let pebbleLinks = [];
     let groupLinks = [];
 
     if (forceDiagramMode === 'variables') {
@@ -1377,21 +1375,39 @@ export let buildForceDiagram = problem => {
     // collapse groups with more than maxNodes into a single node
     let maxNodes = 100;
     groups.filter(group => group.nodes.length > maxNodes).forEach(group => {
-        nodes = nodes.filter(node => !group.nodes.has(node.name)); // remove nodes from said group
-        nodes.push({id: normalize(group.name), name: group.name}); // add one node to represent all the nodes
+        pebbles = pebbles.filter(node => !group.nodes.has(node.name)); // remove nodes from said group
+        pebbles.push({id: normalize(group.name), name: group.name}); // add one node to represent all the nodes
         group.nodes = [group.name]; // redefine the group to only contain the new node
     });
 
+    let builtInfo = {pebbles, groups, pebbleLinks, groupLinks};
+
+    console.warn("#debug builtInfo");
+    console.log(builtInfo);
+    return builtInfo
+};
+
+export let buildForceDiagram = problem => data => {
+    let {
+        nodes, width, height,
+        data: {pebbles, pebbleLinks, groups, groupLinks} = {},
+        selectors
+    } = data;
+
+    // ~~~~ PREPARATION ~~~~
+    let pebbleInfo = pebbles
+        .reduce((out, pebble) => Object.assign(out, {[pebble]: {}}), {})
+
     // set radius of each node. Members of groups are scaled down if group gets large.
-    nodes.forEach(node => {
+    pebbles.forEach(pebble => {
         let upperSize = 7;
         let maxNodeGroupSize = Math.max(...groups
-            .filter(group => group.nodes.has(node.name))
+            .filter(group => group.nodes.has(pebble.name))
             .map(group => group.nodes.size), upperSize);
-        node.radius = defaultPebbleRadius * Math.sqrt(upperSize / maxNodeGroupSize);
+        pebbleInfo[pebble].radius = defaultPebbleRadius * Math.sqrt(upperSize / maxNodeGroupSize);
 
-        if (node.name === selectedPebble)
-            node.radius = Math.min(node.radius * 1.5, defaultPebbleRadius);
+        if (pebble.name === selectedPebble)
+            pebbleInfo[pebble].radius = Math.min(pebbleInfo[pebble].radius * 1.5, defaultPebbleRadius);
     });
 
     // the order of the keys indicates precedence
@@ -1403,7 +1419,6 @@ export let buildForceDiagram = problem => {
         targets: new Set(problem.targets),
         predictors: new Set(problem.predictors),
     };
-
 
     let strokeWidths = {
         crossSection: 4,
@@ -1424,32 +1439,156 @@ export let buildForceDiagram = problem => {
         targets: common.dvColor
     };
 
-    console.warn("#debug nodes");
-    console.log(nodes);
-
     // set the base color of each node
-    nodes.forEach(node => {
-        node.strokeWidth = 1;
-        node.nodeCol = colors(generateID(node.name));
-        node.strokeColor = common.selVarColor;
+    pebbles.forEach(pebble => {
+        pebbleInfo[pebble].strokeWidth = 1;
+        pebbleInfo[pebble].nodeCol = colors(generateID(pebble));
+        pebbleInfo[pebble].strokeColor = common.selVarColor;
     });
 
     // set additional styling for each node
-    nodes.forEach(node => Object.keys(params)
+    pebbles.forEach(pebble => Object.keys(params)
     // only apply styles on classes the variable is a member of
-        .filter(label => params[label].has(node.name))
+        .filter(label => params[label].has(pebble))
         .forEach(label => {
-            if (label in strokeWidths) node.strokeWidth = strokeWidths[label];
-            if (label in nodeColors) node.nodeCol = nodeColors[label];
-            if (label in strokeColors) node.strokeColor = strokeColors[label];
+            if (label in strokeWidths) pebbleInfo[pebble].strokeWidth = strokeWidths[label];
+            if (label in nodeColors) pebbleInfo[pebble].nodeCol = nodeColors[label];
+            if (label in strokeColors) pebbleInfo[pebble].strokeColor = strokeColors[label];
         }));
 
-    let builtInfo = {nodes, groups, nodeLinks, groupLinks};
 
-    console.warn("#debug builtInfo");
-    console.log(builtInfo);
-    return builtInfo
-};
+    // ~~~~ PEBBLES ~~~~
+
+    // update existing nodes
+    selectors.circle.selectAll('circle')
+        .style('fill', pebble => d3.rgb(pebbleInfo[pebble].nodeCol))
+        .style('stroke', pebble => d3.rgb(pebbleInfo[pebble].strokeColor))
+        .style('stroke-width', pebble => pebbleInfo[pebble].strokeWidth)
+        .transition()  // Shrink/expand pebbles that join/leave groups
+        .duration(100)
+        .attr('r', pebble => pebbleInfo[pebble].radius);
+
+    // selectors.circle.data(pebbles);
+    // add new nodes
+    let g = selectors.circle.data(pebbles).enter()
+        .append('svg:g')
+        .attr('id', pebble => nodesReadOnly[pebble].id + 'biggroup');
+
+    // TODO: check if necessary
+    g.append('svg:circle')
+        .attr('class', 'node')
+        .attr('r', pebble => pebbleInfo[pebble].radius)
+        .style('pointer-events', 'inherit')
+        .style('fill', pebble => d3.rgb(pebbleInfo[pebble].nodeCol))
+        .style('opacity', "0.5")
+        .style('stroke', pebble => d3.rgb(pebbleInfo[pebble].strokeColor))
+    // .classed('reflexive', d => d.reflexive);
+
+    // add plot
+    g.each(function (pebble) {
+        d3.select(this);
+        let summary = problem.summaries[pebble];
+        if (!summary) return;
+        if (summary.plottype === 'continuous')
+            densityNode(summary, this, pebbleInfo[pebble].radius);
+        else if (summary.plottype === 'bar')
+            barsNode(summary, this, pebbleInfo[pebble].radius);
+    });
+
+    // TODO: validate
+    Object.keys(pebbleEvents).forEach(event => g.on(event, pebbleEvents[event]));
+
+    // show node names
+    g.append('svg:text')
+        .attr('id', append('pebbleLabel'))
+        .attr('x', 0)
+        .attr('y', 15)
+        .style('font-size', pebble => pebbleInfo[pebble].radius * .175 + 7 + 'px')
+        .attr('class', 'id')
+        .text(d => d);
+
+    // remove old nodes
+    selectors.circle.exit().remove();
+
+    makeArcs(g, forceDiagramLabels(problem));
+
+    // ~~~~ LINKS ~~~~
+    // path (link) group
+    selectors.path.data(pebbleLinks);
+
+    let marker = side => x => {
+        let kind = side === 'left' ? 'start' : 'end';
+        return is_explore_mode ? 'url(#circle)' :
+            x[side] ? `url(#${kind}-arrow)` : '';
+    };
+
+    // update existing links
+    // VJD: dashed links between pebbles are "selected". this is disabled for now
+    selectors.path.classed('selected', x => null)
+        .style('marker-start', marker('left'))
+        .style('marker-end', marker('right'));
+
+    // add new links
+    selectors.path.enter().append('svg:path')
+        .attr('class', 'link')
+        .classed('selected', x => null)
+        .style('marker-start', marker('left'))
+        .style('marker-end', marker('right'))
+        .on('mousedown', d => pebbleLinks.some(link => d === link && (del(pebbleLinks, link) || true)));
+
+    // remove old links
+    selectors.path.exit().remove();
+
+    // ~~~~ GROUPS ~~~~
+    selectors.hullBackgrounds.data(groups).enter()
+        .append('svg')
+        .attr("width", width)
+        .attr("height", height)
+        .append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
+        .attr("id", group => group.name + 'HullBackground')
+        .style("fill", '#ffffff')
+        .style("stroke", '#ffffff')
+        .style("stroke-width", 2.5 * hullRadius)
+        .style('stroke-linejoin', 'round')
+        .style("opacity", 1)
+        .exit().remove();
+
+    selectors.hulls.data(groups).enter()
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("path")
+        .attr("id", group => group.name + 'Hull')
+        .style("fill", group => group.color)
+        .style("stroke", group => group.color)
+        .style("stroke-width", 2.5 * hullRadius)
+        .style('stroke-linejoin', 'round')
+        .style('opacity', 0.3)
+        .exit().remove();
+
+    // ~~~~ GROUP LINKS ~~~~
+    selectors.groupLineDefs.data(groupLinks).enter()
+        .append("svg:marker")
+        .attr("id", groupLink => `${groupLink.id}-arrow`)
+        .attr('viewBox', '0 -5 15 15')
+        .attr("refX", 2.5)
+        .attr("refY", 0)
+        .attr("markerWidth", 3)
+        .attr("markerHeight", 3)
+        .attr("orient", "auto")
+        .append("path")
+        .attr('d', 'M0,-5L10,0L0,5')
+        .style("fill", groupLink => groupLink.color)
+        .exit().remove();
+
+    selectors.groupLines.data(groupLinks).enter()
+        .append("line")
+        .style('fill', 'none')
+        .style('stroke', groupLink => groupLink.color)
+        .style('stroke-width', 5)
+        .attr("marker-end", groupLink => `url(#${groupLink.id}-arrow)`)
+        .exit().remove();
+}
 
 // depth increments for child arcs
 let radialGapSize = depth => Math.pi / 10;
@@ -1481,6 +1620,7 @@ let makeArcs = (g, labels, left = 0, right = 2 * Math.pi, depth = 0) => labels.f
                 .startAngle(labelLeft)
                 .endAngle(labelRight))
             .attrs(label.attrs)
+            .on('onclick', label.onclick)
             .on('mouseover', function (d) {
                 d.forefront = true;
                 if (hoverPebble === d.name) {
@@ -1531,7 +1671,7 @@ let hideArcs = pebbleId => {
 
 let pebbleEvents = {
     onclick: function (d) {
-        selectedPebble = d.name;
+        selectedPebble = d;
 
         d3.event.stopPropagation();
 
@@ -1609,94 +1749,84 @@ let pebbleEvents = {
                 mousedown_node.y);
     },
     dblclick: () => d3.event.stopPropagation(), // stop the click from bubbling
-    mouseover: d => { // show summary stats on mouseover
-        d.forefront = true;
+    mouseover: pebble => { // show summary stats on mouseover
+        nodesReadOnly[pebble].forefront = true;
 
         setTimeout(() => {
             if (leftTab !== 'Summary') leftTabHidden = leftTab;
             setLeftTab('Summary');
 
-            if (!d.forefront) return;
-            hoverPebble = d.name;
-            showArcs(d.id);
+            if (!nodesReadOnly[pebble].forefront) return;
+            hoverPebble = pebble;
+            showArcs(nodesReadOnly[pebble].id);
             m.redraw();
         }, hoverTimeout)
     },
-    mouseout: d => {
-        d.forefront = false;
+    mouseout: pebble => {
+        nodesReadOnly[pebble].forefront = false;
         setTimeout(() => {
             hoverPebble = undefined;
             setLeftTab(leftTabHidden);
 
-            if (selectedPebble !== d.name) hideArcs(d.id);
+            if (selectedPebble !== pebble) hideArcs(nodesReadOnly[pebble].id);
 
             m.redraw();
         }, hoverTimeout)
     }
 };
 
-let forceDiagramLabels = [
+let forceDiagramLabels = problem => [
     {
         id: 'Predictor',
         name: 'Predictor',
-        attrs: {
-            style: {fill: common.gr1Color, 'fill-opacity': 0},
-            onclick: d => {
-                let problem = getSelectedProblem();
-                remove(problem.targets, d.name);
-                toggle(problem.predictors, d.name);
-                setSelectedPebble(d.name);
-                m.redraw();
-            }
+        attrs: {style: {fill: common.gr1Color, 'fill-opacity': 0}},
+        onclick: d => {
+            remove(problem.targets, d.name);
+            toggle(problem.predictors, d.name);
+            setSelectedPebble(d.name);
+            m.redraw();
         }
     },
     {
         id: 'Dep',
         name: 'Dep Var',
-        attrs: {
-            style: {fill: common.dvColor, 'fill-opacity': 0},
-            onclick: d => {
-                let problem = getSelectedProblem();
-                remove(problem.predictors, d.name);
-                toggle(problem.targets, d.name);
-                setSelectedPebble(d.name);
-                m.redraw();
-            }
+        attrs: {style: {fill: common.dvColor, 'fill-opacity': 0}},
+        onclick: d => {
+            console.warn("#debug 'clicked depvar'");
+            console.log('clicked depvar', d);
+            remove(problem.predictors, d.name);
+            toggle(problem.targets, d.name);
+            setSelectedPebble(d.name);
+            m.redraw();
         }
     },
     {
         id: 'GroupLabel',
         name: 'Labels',
-        attrs: {
-            style: {fill: common.nomColor, 'fill-opacity': 0},
-            onclick: d => {
-                setSelectedPebble(d.name);
-                m.redraw();
-            }
+        attrs: {style: {fill: common.nomColor, 'fill-opacity': 0}},
+        onclick: d => {
+            setSelectedPebble(d.name);
+            m.redraw();
         },
         children: [
             {
                 id: 'Nominal',
                 name: 'Nom',
-                attrs: {
-                    style: {fill: common.nomColor, 'fill-opacity': 0},
-                    onclick: d => {
-                        toggle(getSelectedProblem().tags.nominal, d.name);
-                        setSelectedPebble(d.name);
-                        m.redraw();
-                    }
+                attrs: {style: {fill: common.nomColor, 'fill-opacity': 0}},
+                onclick: d => {
+                    toggle(problem.tags.nominal, d.name);
+                    setSelectedPebble(d.name);
+                    m.redraw();
                 }
             },
             {
                 id: 'Time',
                 name: 'Time',
-                attrs: {
-                    style: {fill: common.timeColor, 'fill-opacity': 0},
-                    onclick: d => {
-                        toggle(getSelectedProblem().time, d.name);
-                        setSelectedPebble(d.name);
-                        m.redraw();
-                    }
+                attrs: {style: {fill: common.timeColor, 'fill-opacity': 0}},
+                onclick: d => {
+                    toggle(problem.time, d.name);
+                    setSelectedPebble(d.name);
+                    m.redraw();
                 }
             }
         ]
@@ -1707,9 +1837,9 @@ export let forceDiagramStatic = {
 
     // TODO: watch out for closures here
     attrsAll: {
-        onmousedown: function () {
+        onmousedown: function (e) {
             // prevent I-bar on drag
-            d3.event.preventDefault();
+            e.preventDefault()
             setOutsideClick(true);
         },
         onmouseup: () => {
@@ -1741,139 +1871,6 @@ export let forceDiagramStatic = {
         //         d3.mouse(this)[1]);
         // },
         style: {background: 'white'}
-    },
-
-    pebbleBuilder: (circleGroup, nodes) => {
-        // circle (node) group
-        circleGroup.data(nodes, x => x.id);
-
-        // update existing nodes (reflexive & selected visual states)
-        // d3.rgb is the function adjusting the color here
-        circleGroup.selectAll('circle')
-            .style('fill', x => d3.rgb(x.nodeCol))
-            .style('stroke', x => d3.rgb(x.strokeColor))
-            .style('stroke-width', x => x.strokeWidth)
-            .transition()  // Shrink/expand pebbles that join/leave groups
-            .duration(100)
-            .attr('r', d => d.radius);
-
-        // add new nodes
-        let g = circleGroup.enter()
-            .append('svg:g')
-            .attr('id', x => x.name + 'biggroup');
-
-        // add plot
-        g.each(function (d) {
-            d3.select(this);
-            if (d.plottype === 'continuous') densityNode(d, this, d.radius);
-            else if (d.plottype === 'bar') barsNode(d, this, d.radius);
-        });
-
-        g.append('svg:circle')
-            .attr('class', 'node')
-            .attr('r', d => d.radius)
-            .style('pointer-events', 'inherit')
-            .style('fill', d => d.nodeCol)
-            .style('opacity', "0.5")
-            .style('stroke', d => d3.rgb(d.strokeColor).toString())
-            .classed('reflexive', d => d.reflexive);
-
-        // TODO: validate
-        Object.keys(pebbleEvents).forEach(event => g.on(event, pebbleEvents[event]));
-
-        // show node names
-        g.append('svg:text')
-            .attr('id', append('pebbleLabel'))
-            .attr('x', 0)
-            .attr('y', 15)
-            .style('font-size', d => d.radius * .175 + 7 + 'px')
-            .attr('class', 'id')
-            .text(d => d.name);
-
-        // remove old nodes
-        circleGroup.exit().remove();
-
-        makeArcs(g, forceDiagramLabels);
-    },
-
-    linkBuilder: (nodeLinkGroup, nodeLinks) => {
-        // path (link) group
-        nodeLinkGroup.data(nodeLinks);
-
-        let marker = side => x => {
-            let kind = side === 'left' ? 'start' : 'end';
-            return is_explore_mode ? 'url(#circle)' :
-                x[side] ? `url(#${kind}-arrow)` : '';
-        };
-
-        // update existing links
-        // VJD: dashed links between pebbles are "selected". this is disabled for now
-        nodeLinkGroup.classed('selected', x => null)
-            .style('marker-start', marker('left'))
-            .style('marker-end', marker('right'));
-
-        // add new links
-        nodeLinkGroup.enter().append('svg:path')
-            .attr('class', 'link')
-            .classed('selected', x => null)
-            .style('marker-start', marker('left'))
-            .style('marker-end', marker('right'))
-            .on('mousedown', d => links.some(link => d === link && (del(links, link) || true)));
-
-        // remove old links
-        nodeLinkGroup.exit().remove();
-    },
-
-    groupBuilder: (hullBackgroundSelection, hullSelection, groups, width, height, radius) => {
-        hullBackgroundSelection.data(groups).enter()
-            .append('svg')
-            .attr("width", width)
-            .attr("height", height)
-            .append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
-            .attr("id", group => group.name + 'HullBackground')
-            .style("fill", '#ffffff')
-            .style("stroke", '#ffffff')
-            .style("stroke-width", 2.5 * radius)
-            .style('stroke-linejoin', 'round')
-            .style("opacity", 1)
-            .exit().remove();
-
-        hullSelection.data(groups).enter()
-            .append("svg")
-            .attr("width", width)
-            .attr("height", height)
-            .append("path")
-            .attr("id", group => group.name + 'Hull')
-            .style("fill", group => group.color)
-            .style("stroke", group => group.color)
-            .style("stroke-width", 2.5 * radius)
-            .style('stroke-linejoin', 'round')
-            .style('opacity', 0.3)
-            .exit().remove();
-    },
-
-    groupLinkBuilder: (groupLineDefSelection, groupLineSelection, groupLinks) => {
-        groupLineDefSelection.data(groupLinks).enter()
-            .append("svg:marker")
-            .attr("id", groupLink => `${groupLink.id}-arrow`)
-            .attr('viewBox', '0 -5 15 15')
-            .attr("refX", 2.5)
-            .attr("refY", 0)
-            .attr("markerWidth", 3)
-            .attr("markerHeight", 3)
-            .attr("orient", "auto")
-            .append("path")
-            .attr('d', 'M0,-5L10,0L0,5')
-            .style("fill", groupLink => groupLink.color)
-            .exit().remove();
-
-        groupLineSelection.data(groupLinks).enter()
-            .append("line")
-            .style('fill', 'none')
-            .style('stroke', groupLink => groupLink.color)
-            .style('stroke-width', 5)
-            .attr("marker-end", groupLink => `url(#${groupLink.id}-arrow)`)
-            .exit().remove();
     }
 };
 
@@ -2115,12 +2112,12 @@ export let setSelectedResultsMenu = menu => {
     if (!isValid(selectedResultsMenu)) selectedResultsMenu = 'Problem Description';
 };
 
-function CreatePipelineData(problem) {
+function CreatePipelineData(dataset, problem) {
 
     let pipelineSpec = Object.assign({
         context: apiSession(zparams.zsessionid),
         // uriCsv is also valid, but not currently accepted by ISI TA2
-        dataset_uri: zparams.zd3mdata.substring(0, zparams.zd3mdata.lastIndexOf("/tables")) + "/datasetDoc.json",
+        dataset_uri: dataset.datasetUrl.substring(0, dataset.datasetUrl.lastIndexOf("/tables")) + "/datasetDoc.json",
         // valid values will come in future API
         output: "OUTPUT_TYPE_UNDEFINED",
         // Example:
@@ -2218,15 +2215,15 @@ function CreatePipelineDefinition(problem, timeBound) {
         allowedValueTypes: ['DATASET_URI', 'CSV_URI'],
         problem: CreateProblemDefinition(problem),
         template: makePipelineTemplate(problem),
-        inputs: [{dataset_uri: 'file://' + datasetdocurl}]
+        inputs: [{dataset_uri: 'file://' + getSelectedDataset().datasetDocPath}]
     };
 }
 
 
 
-function CreateFitDefinition(solutionId){
+function CreateFitDefinition(datasetDocUrl, solutionId){
 
-    let fitDefn = getFitSolutionDefaultParameters(datasetdocurl);
+    let fitDefn = getFitSolutionDefaultParameters(datasetDocUrl);
     fitDefn.solutionId = solutionId;
     return fitDefn;
 }
@@ -2305,20 +2302,18 @@ function CreateScoreDefinition(res){
       return {errMsg};
   }
 
-  let problem = getResultsProblem();
   return Object.assign(
-      getScoreSolutionDefaultParameters(problem, datasetDocProblemUrl[problem.problemID]),
+      getScoreSolutionDefaultParameters(getResultsProblem()),
       {solutionId: res.response.solutionId});
-
 }
 
 /*
   Return the default parameters used for a ProduceSolution call.
   This DOES NOT include the solutionId
 */
-function getScoreSolutionDefaultParameters(problem, datasetDocUrl) {
+function getScoreSolutionDefaultParameters(problem) {
     return {
-        inputs: [{dataset_uri: 'file://' + datasetDocUrl}],
+        inputs: [{dataset_uri: 'file://' + problem.datasetDocPath}],
         performanceMetrics: [
             {metric: d3mMetrics[problem.metric][1]}
         ],
@@ -2413,7 +2408,10 @@ export async function estimate() {
         //
         //     viz(model);
         // }
-    } else if (swandive) { // IS_D3M_DOMAIN and swandive is true
+        return;
+    }
+
+    if (swandive) { // IS_D3M_DOMAIN and swandive is true
         zPop();
         zparams.callHistory = callHistory;
 
@@ -2423,76 +2421,78 @@ export async function estimate() {
         alertError('estimate() function. Check app.js error with swandive (err: 003)');
         //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(resultsProblem, 10));
         //res && onPipelineCreate(res);   // arguments were wrong, and this function no longer needed
-
-    } else { // we are in IS_D3M_DOMAIN no swandive
-        // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
-        zPop();
-        zparams.callHistory = callHistory;
-
-        // pipelineapp is a rook application that returns the dependent variable, the DV values, and the predictors. can think of it was a way to translate the potentially complex grammar from the UI
-
-        buttonLadda.btnEstimate = true;
-        m.redraw();
-
-        ROOKPIPE_FROM_REQUEST = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);        // parse the center panel data into a formula like construction
-
-        if (!ROOKPIPE_FROM_REQUEST) {
-            estimated = true;
-            buttonLadda.btnEstimate = false;
-            m.redraw();
-        } else {
-            ROOKPIPE_FROM_REQUEST.predictors && setxTable(ROOKPIPE_FROM_REQUEST.predictors);
-
-            let searchTimeLimit = 4;
-            let searchSolutionParams = CreatePipelineDefinition(resultsProblem, searchTimeLimit);
-
-            let hasManipulation = resultsProblem.problemID in manipulations && manipulations[resultsProblem.problemID].length > 0;
-            let hasNominal = [resultsProblem.targets, ...resultsProblem.predictors]
-                .some(variable => zparams.znom.includes(variable));
-
-            let needsProblemCopy = hasManipulation || hasNominal;
-
-            let datasetPath = zparams.zd3mdata;
-            // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
-            if (needsProblemCopy) {
-                let {data_path, metadata_path} = await manipulate.buildProblemUrl(resultsProblem);
-                datasetDocProblemUrl[resultsProblem.problemID] = metadata_path;
-                datasetPath = data_path;
-            } else delete datasetDocProblemUrl[resultsProblem.problemID];
-
-            let solutions = getResultsProblem().solutions;
-            makeRequest(ROOK_SVC_URL + 'solverapp', {prob: resultsProblem, dataset_path: datasetPath})
-                .then(response => {
-                    if ('warning' in response) return;
-                    let ravenID = 'raven ' + ravenPipelineID++;
-                    solutions.rook[ravenID] = response;
-                    if (selectedPipelines.size === 0) setSelectedPipeline(ravenID);
-                });
-
-            let allParams = {
-                searchSolutionParams: searchSolutionParams,
-                fitSolutionDefaultParams: getFitSolutionDefaultParameters(datasetDocProblemUrl[resultsProblem.problemID] || datasetdocurl),
-                produceSolutionDefaultParams: getProduceSolutionDefaultParameters(datasetDocProblemUrl[resultsProblem.problemID] || datasetdocurl),
-                scoreSolutionDefaultParams: getScoreSolutionDefaultParameters(resultsProblem, datasetDocProblemUrl[resultsProblem.problemID] || datasetdocurl)
-            };
-
-            //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
-            let res = await makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', allParams);
-            console.log(JSON.stringify(res));
-            if (res===undefined){
-              handleENDGetSearchSolutionsResults();
-              alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
-              return;
-            }else if(!res.success){
-              handleENDGetSearchSolutionsResults();
-              alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
-              return;
-            }
-
-            let searchId = res.data.searchId;
-            allsearchId.push(searchId);
-        }
+        return;
     }
+
+    // we are in IS_D3M_DOMAIN no swandive
+    // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
+    zPop();
+    zparams.callHistory = callHistory;
+
+    // pipelineapp is a rook application that returns the dependent variable, the DV values, and the predictors. can think of it was a way to translate the potentially complex grammar from the UI
+
+    buttonLadda.btnEstimate = true;
+    m.redraw();
+
+    ROOKPIPE_FROM_REQUEST = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);        // parse the center panel data into a formula like construction
+
+    if (!ROOKPIPE_FROM_REQUEST) {
+        estimated = true;
+        buttonLadda.btnEstimate = false;
+        m.redraw();
+        return;
+    }
+
+    ROOKPIPE_FROM_REQUEST.predictors && setxTable(ROOKPIPE_FROM_REQUEST.predictors);
+    let searchTimeLimit = 5;
+    let searchSolutionParams = CreatePipelineDefinition(searchTimeLimit, resultsProblem);
+
+    let hasManipulation = resultsProblem.manipulations.length > 0;
+    let hasNominal = [...resultsProblem.targets, ...resultsProblem.predictors]
+        .some(variable => zparams.znom.includes(variable));
+
+    let needsProblemCopy = hasManipulation || hasNominal;
+
+    let datasetPath = getSelectedDataset().datasetUrl;
+    // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
+    if (needsProblemCopy) {
+        let {data_path, metadata_path} = await manipulate.buildProblemUrl(resultsProblem);
+        resultsProblem.datasetDocPath = metadata_path;
+        datasetPath = data_path;
+    } else delete resultsProblem.datasetDocPath;
+
+    makeRequest(ROOK_SVC_URL + 'solverapp', {prob: resultsProblem, dataset_path: datasetPath})
+        .then(response => {
+            if ('warning' in response) return;
+            let ravenID = 'raven ' + ravenPipelineID++;
+            resultsProblem.solutions.rook[ravenID] = response;
+            if (selectedPipelines.size === 0) setSelectedPipeline(ravenID);
+        });
+
+    let datasetDocPath = resultsProblem.datasetDocPath || selectedDataset.datasetDocPath;
+
+    let allParams = {
+        searchSolutionParams: searchSolutionParams,
+        fitSolutionDefaultParams: getFitSolutionDefaultParameters(datasetDocPath),
+        produceSolutionDefaultParams: getProduceSolutionDefaultParameters(datasetDocPath),
+        scoreSolutionDefaultParams: getScoreSolutionDefaultParameters(resultsProblem, datasetDocPath)
+    };
+
+    //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
+    let res = await makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', allParams);
+    console.log(JSON.stringify(res));
+    if (res === undefined) {
+        handleENDGetSearchSolutionsResults();
+        alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
+        return;
+    } else if (!res.success) {
+        handleENDGetSearchSolutionsResults();
+        alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
+        return;
+    }
+
+    let searchId = res.data.searchId;
+    allsearchId.push(searchId);
 }
 
 
@@ -4126,9 +4126,11 @@ let ravenPipelineID = 0;
 // takes as input problem in the form of a "discovered problem" (can also be user-defined), calls rooksolver, and stores result
 export async function callSolver(prob) {
     setSolverPending(false);
+    let dataset = getSelectedDataset();
+
     let hasManipulation = prob.problemID in manipulations && manipulations[prob.problemID].length > 0;
     let hasNominal = [prob.targets, ...prob.predictors].some(variable => zparams.znom.includes(variable));
-    let datasetPath = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : zparams.zd3mdata;
+    let datasetPath = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : dataset.datasetUrl;
     let ravenID = 'raven ' + ravenPipelineID++;
 
     let solutions = getResultsProblem().solutions;

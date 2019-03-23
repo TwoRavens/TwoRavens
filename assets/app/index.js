@@ -319,7 +319,7 @@ function leftpanel(mode) {
                 value: 'Augment',
                 contents: m(Datamart, {
                     preferences: app.datamartPreferences,
-                    dataPath: app.zparams.zd3mdata,
+                    dataPath: selectedDataset.datasetUrl,
                     endpoint: app.datamartURL,
                     labelWidth: '10em'
                 })
@@ -952,6 +952,7 @@ class Body {
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
 
+        let selectedDataset = app.getSelectedDataset();
         let selectedProblem = app.getSelectedProblem();
 
         return m('main',
@@ -988,10 +989,10 @@ class Body {
                         m('col', {span: 1}))
                 })
             ]),
-            m(ModalDatamart, {
+            selectedDataset && m(ModalDatamart, {
                 preferences: app.datamartPreferences,
                 endpoint: app.datamartURL,
-                dataPath: app.zparams.zd3mdata
+                dataPath: selectedDataset.datasetUrl
             }),
 
             this.header(app.currentMode),
@@ -1125,8 +1126,9 @@ class Body {
 
                     selectedProblem && m(ForceDiagram, Object.assign({
                         forcetoggle: app.forceToggle,
-                        radius: app.defaultPebbleRadius
-                    }, app.forceDiagramStatic, app.buildForceDiagram(selectedProblem)))
+                        radius: app.defaultPebbleRadius,
+                        nodes: app.nodesReadOnly,
+                    }, app.forceDiagramStatic, app.buildForceData(selectedProblem)))
                 ),
 
                 app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}}, [
@@ -1206,7 +1208,7 @@ class Body {
             m('div', {style: {'flex-grow': 1}}),
             app.selectedDataset && m('#cite.panel.panel-default',
                 {style: `display: ${this.cite ? 'block' : 'none'}; margin-top: 2.5em; right: 50%; width: 380px; text-align: left; z-index: 50; position:absolute`},
-                m('.panel-body', IS_D3M_DOMAIN && m(Table, {data: app.datadocuments[app.selectedDataset].about}))),
+                m('.panel-body', IS_D3M_DOMAIN && m(Table, {data: app.getSelectedDataset().datasetDoc.about}))),
 
             resultsProblem && Object.keys(resultsProblem.solutions.d3m).length > 0 && m(Button, {
                 id: 'btnEndSession',
@@ -1383,14 +1385,14 @@ else {
                 m('div', {style: {margin: 'auto', 'margin-top': '1em', 'max-width': '1000px'}},
                     m(Datamart, {
                         preferences: app.datamartPreferences,
-                        dataPath: app.zparams.zd3mdata,
+                        dataPath: selectedDataset.datasetUrl,
                         endpoint: app.datamartURL,
                         labelWidth: '10em'
                     })),
                 m(ModalDatamart, {
                     preferences: app.datamartPreferences,
                     endpoint: app.datamartURL,
-                    dataPath: app.zparams.zd3mdata
+                    dataPath: selectedDataset.datasetUrl
                 })
             ]
         },

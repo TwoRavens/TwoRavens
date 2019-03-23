@@ -1,6 +1,7 @@
 import m from 'mithril';
 import {mergeAttributes} from "../../common/common";
 import * as d3 from 'd3';
+import 'd3-selection-multi';
 
 
 /**
@@ -21,53 +22,55 @@ function jamescentroid(coord) {
     return [(minx + maxx) / 2, (miny + maxy) / 2];
 }
 
+// normalize: text -> html id
+let normalize = text => text.replace(/\W/g,'_');
+
 export default class ForceDiagram {
     oninit() {
         // strength parameter for group attraction/repulsion
         this.kGroupGravity = 4;
-
-        // nodes passed into the diagram are rebound to the pebbles object
-        this.pebbles = [];
     }
 
     onupdate(vnode) {
         // element constructors
-        let {
-            pebbleBuilder, linkBuilder,
-            groupBuilder, groupLinkBuilder
-        } = vnode.attrs;
+        let {builder, nodes} = vnode.attrs;
 
         // data
         let {
-            nodes, nodeLinks,
+            pebbles, pebbleLinks,
             groups, groupLinks
         } = vnode.attrs;
 
         // options
         let {radius, forceToggle} = vnode.attrs;
-
-        let nodeNames = new Set(nodes.map(node => node.name));
+        let pebbleSet = new Set(pebbles);
 
         groups = groups
-            .filter(group => [...group.nodes].some(node => nodeNames.has(node)));
+            .filter(group => [...group.nodes].some(node => pebbleSet.has(node)));
         let groupNames = new Set(groups.map(group => group.name));
 
-        nodeLinks = nodeLinks
-            .filter(link => nodeNames.has(link.source) && nodeNames.has(link.target));
+        pebbleLinks = pebbleLinks
+            .filter(link => pebbleSet.has(link.source) && pebbleSet.has(link.target));
         groupLinks = groupLinks
             .filter(link => groupNames.has(link.source) && groupNames.has(link.target));
 
         let {width, height} = vnode.dom.getBoundingClientRect();
 
-        // construct page
-        groupLinkBuilder && groupLinkBuilder(this.groupLineDefs, this.groupLines, groupLinks);
-        groupBuilder && groupBuilder(this.hullBackgrounds, this.hulls, groups, width, height, radius);
-        linkBuilder && linkBuilder(this.path, nodeLinks);
-        pebbleBuilder && pebbleBuilder(this.circle, nodes);
+        // synchronize nodes with pebbles
+        pebbles
+            .filter(pebble => !(pebble in nodes))
+            .forEach(pebble => nodes[pebble] = {id: normalize(pebble), name: pebble});
+        Object.keys(nodes)
+            .filter(pebble => !pebbleSet.has(pebble))
+            .forEach(pebble => delete nodes[pebble]);
 
-        // nodes.id is pegged to allNodes, i.e. the order in which variables are read in
-        // nodes.index is floating and depends on updates to nodes.  a variables index changes when new variables are added.
-        this.force.nodes(nodes);
+        // rebind data to selectors
+        builder && builder({
+            nodes, width, height,
+
+            data: {pebbles, pebbleLinks, groups, groupLinks},
+            selectors: this.selectors
+        });
 
         /**
          Define each pebble charge.
@@ -87,9 +90,10 @@ export default class ForceDiagram {
 
         // TODO: this api changed in v4 // https://bl.ocks.org/mbostock/ad70335eeef6d167bc36fd3c04378048
         // this.circle.call(this.force.drag);
+        this.force.nodes([...Object.values(nodes)]);
         if (forceToggle) {
             this.force
-                .force('link', d3.forceLink(nodeLinks).distance(100))
+                .force('link', d3.forceLink(pebbleLinks).distance(100))
                 .force('charge', d3.forceManyBody().strength(getPebbleCharge)) // prevent tight clustering
                 .force('x', d3.forceX(width / 2).strength(.05))
                 .force('x', d3.forceY(height / 2).strength(.05));
@@ -97,7 +101,7 @@ export default class ForceDiagram {
             this.kGroupGravity = 8 / (groups.length || 1); // strength parameter for group attraction/repulsion
         } else {
             this.force
-                .force('link', d3.forceLink(nodeLinks).distance(100))
+                .force('link', d3.forceLink(pebbleLinks).distance(100))
                 .force('charge', d3.forceManyBody().strength(0)) // prevent tight clustering
                 .force('x', d3.forceX(width / 2).strength(0))
                 .force('x', d3.forceY(height / 2).strength(0));
@@ -108,7 +112,7 @@ export default class ForceDiagram {
         let tick = () => {
 
             function findCoords(group) {
-                let groupCoords = nodes
+                let groupCoords = pebbles
                     .filter(node => group.nodes.has(node.name))
                     .map(node => [node.x, node.y]);
 
@@ -138,15 +142,19 @@ export default class ForceDiagram {
 
             // draw convex hull around independent variables, if three or more coordinates given
             // note, d3.geom.hull returns null if shorter coordinate set than 3,
-            // so findcoords() function has option to lengthen the coordinates returned to bypass this
-            let hullCoords = groups.map(findCoords).map(d3.polygonHull) //.map((hull, i) => [groups[i], hull]);
+            // so findcoords() function always returns 0 or >= 3 coords
+            let hullCoords = groups
+                .map(findCoords)
+                .filter(arr => arr.length > 0)
+                .map(d3.polygonHull)
+                .map((hull, i) => ({name: groups[i].name, hull}));
 
-            this.hulls.data(hullCoords).enter()
+            this.selectors.hulls.data(hullCoords, coord => coord.name).enter()
                 .append('path')
-                .attr('d', d => `M${d.join('L')}Z`).exit().remove();
-            this.hullBackgrounds.data(hullCoords).enter()
+                .attr('d', d => `M${d.hull.join('L')}Z`).exit().remove();
+            this.selectors.hullBackgrounds.data(hullCoords, coord => coord.name).enter()
                 .append('path')
-                .attr('d', d => `M${d.join('L')}Z`).exit().remove();
+                .attr('d', d => `M${d.hull.join('L')}Z`).exit().remove();
 
             // update positions of groupLines
             // TODO: intersect arrow with convex hull
@@ -211,7 +219,9 @@ export default class ForceDiagram {
     };
 
     oncreate(vnode) {
+        let {nodes} = vnode.attrs;
         let svg = d3.select(vnode.dom);
+        this.selectors = {};
 
         // define arrow markers for graph links
         svg.append('svg:defs').append('svg:marker')
@@ -235,39 +245,41 @@ export default class ForceDiagram {
             .attr('d', 'M10,-5L0,0L10,5')
             .style('fill', '#000');
 
-        this.groupLineDefs = svg // group line defs handle
+        this.selectors.groupLineDefs = svg // group line defs handle
             .append("svg:defs")
             .attr('id', 'groupLineDefs')
             .selectAll('marker');
-        this.groupLines = svg // group lines handle
+        this.selectors.groupLines = svg // group lines handle
             .append('svg:g')
             .attr('id', 'groupLinks')
             .selectAll('line');
 
-        this.hullBackgrounds = svg // white backings for each group
+        this.selectors.hullBackgrounds = svg // white backings for each group
             .append('g')
             .attr('id', 'hullBackgrounds')
             .selectAll('svg');
-        this.hulls = svg // group hulls handle
+        this.selectors.hulls = svg // group hulls handle
             .append('svg:g')
             .attr('id', 'hulls')
             .selectAll('svg');
 
-        this.path = svg // links handle
+        this.selectors.path = svg // links handle
             .append('svg:g')
             .attr('id', 'linksContainer')
             .selectAll('path');
-        this.circle = svg  // nodes handle
+        this.selectors.circle = svg  // nodes handle
             .append('svg:g')
             .attr('id', 'pebblesContainer')
             .selectAll('g');
 
         // line displayed when dragging new nodes
-        this.nodeDragLine = svg.append('svg:path')
+        this.selectors.nodeDragLine = svg.append('svg:path')
             .attr('class', 'link dragline hidden')
             .attr('d', 'M0,0L0,0');
 
-        this.force = d3.forceSimulation();
+        console.warn("#debug nodes");
+        console.log(nodes);
+        this.force = d3.forceSimulation([...Object.values(nodes)]);
 
         this.onupdate(vnode);
     }

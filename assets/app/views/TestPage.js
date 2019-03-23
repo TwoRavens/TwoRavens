@@ -15,14 +15,17 @@ export default class TestPage {
         m.request(`rook-custom/rook-files/185_bl_problem_TRAIN/preprocess/preprocess.json`)
             .then(response => testProblem.summaries = response.variables)
     }
+
     view() {
         return m('div',
             m(Header, {image: '/static/images/TwoRavens.png', aboutText: 'TwoRavens Test Page'}),
             m(Canvas,
                 m(ForceDiagram, Object.assign({
                     forcetoggle: app.forceToggle,
-                    radius: app.defaultPebbleRadius
-                }, app.forceDiagramStatic, app.buildForceDiagram(testProblem)))
+                    radius: app.defaultPebbleRadius,
+                    nodes: app.nodesReadOnly,
+                    builder: app.buildForceDiagram(testProblem),
+                }, app.forceDiagramStatic, app.buildForceData(testProblem)))
             ),
             m(Footer,
                 m(Button, {style: {margin: '8px'}, class: ['btn-sm']}, 'Test')
@@ -45,16 +48,16 @@ let testProblem = {
     meaningful: false,
     manipulations: [],
     solutions: {
-    d3m: {},
-    rook: {}
-},
+        d3m: {},
+        rook: {}
+    },
     tags: {
         transformed: [],
-            weights: [], // singleton list
-            crossSection: [],
-            time: [],
-            nominal: [],
-            loose: [] // variables displayed in the force diagram, but not in any groups
+        weights: [], // singleton list
+        crossSection: [],
+        time: [],
+        nominal: [],
+        loose: [] // variables displayed in the force diagram, but not in any groups
     },
     summaries: {}
 };
