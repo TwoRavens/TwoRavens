@@ -1,7 +1,7 @@
 /* BEGIN BOOTSWATCH MATERIA OVERRIDES */
 .btn.active {
     background-color: #e8e8e8;
-    box-shadow: inset 0px 0px 8px #b0b0b0;
+    box-shadow: inset 0px 0px 8px #b0b0b0 !important;
 }
 input.form-control {
     background-color: #00000012;

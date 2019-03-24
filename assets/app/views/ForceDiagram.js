@@ -67,7 +67,6 @@ export default class ForceDiagram {
         // rebind data to selectors
         builder && builder({
             nodes, width, height,
-
             data: {pebbles, pebbleLinks, groups, groupLinks},
             selectors: this.selectors
         });
@@ -79,7 +78,7 @@ export default class ForceDiagram {
         function getPebbleCharge(d) {
             let groupSize = Math.max(...groups // find the size of the largest group that d is a member of
                 .filter(group => group.nodes.has(d.name)) // find groups that contain node
-                .map(group => group.nodes.length)); // grab the group size
+                .map(group => group.nodes.size)); // grab the group size
 
             if (groupSize === -Infinity) return -800;
             if (d.forefront) return -1000;
@@ -157,7 +156,7 @@ export default class ForceDiagram {
 
             // update positions of groupLines
             // TODO: intersect arrow with convex hull
-            let centroids = Object.keys(groupCoords)
+            let centroids = Object.keys(hullCoords)
                 .reduce((out, group) => Object.assign(out, {[group]: jamescentroid(hullCoords[group])}), {});
 
             // let groupLinkPrep = link => {

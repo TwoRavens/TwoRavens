@@ -79,7 +79,7 @@ function leftpanel(mode) {
         let leftpanelVariables = Object.keys(selectedProblem.summaries);
 
         // if no search string, match nothing
-        let matchedVariables = app.variableSearchText.length !== 0 ? []
+        let matchedVariables = app.variableSearchText.length === 0 ? []
             : leftpanelVariables.filter(variable => variable.toLowerCase().includes(app.variableSearchText)
                 || (selectedProblem.summaries.label || "").toLowerCase().includes(app.variableSearchText));
 
@@ -131,7 +131,7 @@ function leftpanel(mode) {
                                 app.remove(selectedProblem.tags.loose, x);
                             else selectedProblem.tags.loose.push(x);
                         },
-                        popup: variable => app.popoverContent(app.findNode(variable)),
+                        // popup: variable => app.popoverContent(app.findNode(variable)),
                         attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
                         attrsAll: {style: {height: 'calc(100% - 90px)', overflow: 'auto'}}
                     }),
@@ -1128,6 +1128,7 @@ class Body {
                         forcetoggle: app.forceToggle,
                         radius: app.defaultPebbleRadius,
                         nodes: app.nodesReadOnly,
+                        builder: app.buildForceDiagram(selectedProblem)
                     }, app.forceDiagramStatic, app.buildForceData(selectedProblem)))
                 ),
 

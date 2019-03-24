@@ -911,6 +911,56 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
     console.log("data schema data: ", selectedDataset.datasetDoc);
 
+    //url example: /config/d3m-config/get-problem-data-file-info/39
+    //
+    let problem_info_result = await m.request(configurations.problem_data_info);
+
+    console.log("result from problem data file info:");
+    console.log(problem_info_result);
+
+    // The result of this call is similar to below:
+    // example:
+    /*  {
+             "success":true,
+             "data":{
+                "learningData.csv":{
+                   "exists":true,
+                   "size":11654,
+                   "path":"/inputs/dataset_TRAIN/tables/learningData.csv"
+                },
+                "learningData.csv.gz":{
+                   "exists":false,
+                   "size":-1,
+                   "path":"/inputs/dataset_TRAIN/tables/learningData.csv.gz"
+                }
+             }
+          }
+    */
+
+    // Loop through the response above and
+    // pick the first "path" where "exists" is true
+    //
+    // Note: if data files have "exists" as false, stay at default which is null
+    //
+    let set_d3m_data_path = (field, val) => problem_info_result.data[field].exists
+        ? problem_info_result.data[field].path
+        : problem_info_result.data[field + '.gz'].exists
+            ? problem_info_result.data[field + '.gz'].path
+            : val;
+
+
+    selectedDataset.datasetUrl = d3mData = set_d3m_data_path('learningData.csv', d3mData);
+    // zparams.zd3mtarget = set_d3m_data_path('learningData.csv', d3mData);
+
+    // If this is the D3M domain; d3mData MUST be set to an actual value
+    //
+    if ((IS_D3M_DOMAIN)&&(d3mData == null)){
+        const d3m_path_err = 'NO VALID d3mData path!! ' + JSON.stringify(problem_info_result)
+        console.log(d3m_path_err);
+        alertError('debug (be more graceful): ' + d3m_path_err);
+    }
+
+
     /**
      * 4. read preprocess data or (if necessary) run preprocess
      * NOTE: preprocess.json is now guaranteed to exist...
@@ -996,55 +1046,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // ---------------------------------------
     console.log('---------------------------------------');
     console.log("-- 5. Read the d3m problem schema and add to problems --");
-
-    //url example: /config/d3m-config/get-problem-data-file-info/39
-    //
-    let problem_info_result = await m.request(configurations.problem_data_info);
-
-    console.log("result from problem data file info:");
-    console.log(problem_info_result);
-
-    // The result of this call is similar to below:
-    // example:
-    /*  {
-             "success":true,
-             "data":{
-                "learningData.csv":{
-                   "exists":true,
-                   "size":11654,
-                   "path":"/inputs/dataset_TRAIN/tables/learningData.csv"
-                },
-                "learningData.csv.gz":{
-                   "exists":false,
-                   "size":-1,
-                   "path":"/inputs/dataset_TRAIN/tables/learningData.csv.gz"
-                }
-             }
-          }
-    */
-
-    // Loop through the response above and
-    // pick the first "path" where "exists" is true
-    //
-    // Note: if data files have "exists" as false, stay at default which is null
-    //
-    let set_d3m_data_path = (field, val) => problem_info_result.data[field].exists
-        ? problem_info_result.data[field].path
-        : problem_info_result.data[field + '.gz'].exists
-            ? problem_info_result.data[field + '.gz'].path
-            : val;
-
-
-    getSelectedDataset().datasetUrl = d3mData = set_d3m_data_path('learningData.csv', d3mData);
-    // zparams.zd3mtarget = set_d3m_data_path('learningData.csv', d3mData);
-
-    // If this is the D3M domain; d3mData MUST be set to an actual value
-    //
-    if ((IS_D3M_DOMAIN)&&(d3mData == null)){
-        const d3m_path_err = 'NO VALID d3mData path!! ' + JSON.stringify(problem_info_result)
-        console.log(d3m_path_err);
-        alertError('debug (be more graceful): ' + d3m_path_err);
-    }
 
     // ---------------------------------------
     // Retrieve the problem schema....
@@ -1380,8 +1381,8 @@ export let buildForceData = problem => {
 
     let builtInfo = {pebbles, groups, pebbleLinks, groupLinks};
 
-    console.warn("#debug builtInfo");
-    console.log(builtInfo);
+    // console.warn("#debug builtInfo");
+    // console.log(builtInfo);
     return builtInfo
 };
 
@@ -1493,10 +1494,14 @@ export let buildForceDiagram = problem => data => {
         d3.select(this);
         let summary = problem.summaries[pebble];
         if (!summary) return;
-        if (summary.plottype === 'continuous')
-            densityNode(summary, this, pebbleInfo[pebble].radius);
-        else if (summary.plottype === 'bar')
-            barsNode(summary, this, pebbleInfo[pebble].radius);
+        try {
+            if (summary.plottype === 'continuous')
+                densityNode(summary, this, pebbleInfo[pebble].radius);
+            else if (summary.plottype === 'bar')
+                barsNode(summary, this, pebbleInfo[pebble].radius);
+        } catch (e) {
+            console.warn('Drawing node failed');
+        }
     });
     //
     // // TODO: validate
