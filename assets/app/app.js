@@ -201,7 +201,7 @@ export let buttonLadda = {
     btnEstimate: false
 };
 export let buttonClasses = {
-    btnDiscovery: 'btn-secondary',
+    btnDiscover: 'btn-secondary',
     btnSubmitDisc: 'btn-secondary',
     btnEstimate: 'btn-secondary'
 };
@@ -342,9 +342,9 @@ export let setPreprocessTab = () =>{
     isPreprocessTab() ? setLeftTab('Variables') : setLeftTab(preprocessTabName);
 }
 export let modelLeftPanelWidths = {
-    preprocessTabName: '500px',
+    [preprocessTabName]: '500px',
     'Variables': '300px',
-    'Discovery': 'auto',
+    'Discover': 'auto',
     'Augment': '600px',
     'Summary': '300px'
 };
@@ -712,7 +712,7 @@ export let mytour = () => ({
                       <p>These messages will teach you the steps to take to find and submit a solution.</p>`),
         step("btnReset", "bottom", "Restart Any Problem Here",
              '<p>You can always start a problem over by using this reset button.</p>'),
-        step("btnDiscovery", "right", "Start Task 1",
+        step("btnDiscover", "right", "Start Task 1",
              `<p>This Problem Discovery button allows you to start Task 1 - Problem Discovery.</p>
                      <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>
                      <p>Click this button to see a list of problems that have been discovered in the dataset.</p>
@@ -1037,7 +1037,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         dataset.variablesInitial = Object.keys(dataset.summaries);
 
         // Kick off discovery button as green for user guidance
-        if (!task1_finished) buttonClasses.btnDiscovery = 'btn-success'
+        if (!task1_finished) buttonClasses.btnDiscover = 'btn-success'
     }
 
     // ---------------------------------------
@@ -1056,7 +1056,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         // This is a Task 2 assignment
         // console.log("DID WE GET HERE?");
         task1_finished = true;
-        buttonClasses.btnDiscovery = 'btn-success';
+        buttonClasses.btnDiscover = 'btn-success';
         buttonClasses.btnSubmitDisc = 'btn-success';
         buttonClasses.btnEstimate = 'btn-success';
 
@@ -2660,8 +2660,8 @@ export let erase = () => nodes
 export let setLeftTab = (tab) => {
     leftTab = tab;
     updateLeftPanelWidth();
-    if (tab === 'Discovery') buttonClasses.btnDiscovery = 'btn-secondary';
-    exploreVariate = tab === 'Discovery' ? 'Problem' : 'Univariate';
+    if (tab === 'Discover') buttonClasses.btnDiscover = 'btn-secondary';
+    exploreVariate = tab === 'Discover' ? 'Problem' : 'Univariate';
     setFocusedPanel('left');
 };
 
@@ -3516,7 +3516,7 @@ export async function addProblemFromForceDiagram() {
     getSelectedDataset().problems[problemCopy.problemID] = problemCopy;
 
     setSelectedProblem(problemCopy.problemID);
-    setLeftTab('Discovery');
+    setLeftTab('Discover');
     m.redraw();
 }
 
@@ -3659,7 +3659,7 @@ export async function submitDiscProb() {
 
     buttonLadda.btnSubmitDisc = false;
     buttonClasses.btnSubmitDisc = 'btn-secondary';
-    buttonClasses.btnDiscovery = 'btn-secondary';
+    buttonClasses.btnDiscover = 'btn-secondary';
     if (!task2_finished) buttonClasses.btnEstimate = 'btn-secondary';
 
     task1_finished = true;

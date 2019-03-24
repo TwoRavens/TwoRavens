@@ -133,7 +133,6 @@ function leftpanel(mode) {
                         },
                         // popup: variable => app.popoverContent(app.findNode(variable)),
                         attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
-                        attrsAll: {style: {height: 'calc(100% - 90px)', overflow: 'auto'}}
                     }),
                     m(Button, {
                         id: 'btnCreateVariable',
@@ -211,8 +210,8 @@ function leftpanel(mode) {
             }, 'View'))
     ];
     sections.push({
-        value: 'Discovery',
-        attrsInterface: {class: app.buttonClasses.btnDiscovery}, // passed into button
+        value: 'Discover',
+        attrsInterface: {class: app.buttonClasses.btnDiscover}, // passed into button
         contents: [
             m('div#discoveryTablesContainer', {
                     style: {
@@ -304,7 +303,7 @@ function leftpanel(mode) {
         }
     }, m(MenuTabbed, {
         id: 'leftpanelMenu',
-        attrsAll: {style: {height: 'calc(100% - 39px)'}},
+        // attrsAll: {style: {height: 'calc(100% - 39px)'}},
         currentTab: app.leftTab,
         callback: app.setLeftTab,
         sections: sections.concat([
@@ -810,7 +809,7 @@ function rightpanel(mode) {
             currentTab: app.rightTab,
             callback: app.setRightTab,
             sections,
-            attrsAll: {style: {height: 'calc(100% - 39px)'}}
+            // attrsAll: {style: {height: 'calc(100% - 39px)'}}
         })
     );
 }
@@ -948,7 +947,7 @@ class Body {
 
         let spaceBtn = (id, onclick, title, icon) =>
             m(`button#${id}.btn.btn-default`, {onclick, title, style: {'margin-left': '.5em'}}, icon);
-        let discovery = app.leftTab === 'Discovery';
+        let discovery = app.leftTab === 'Discover';
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
 

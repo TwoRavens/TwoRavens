@@ -125,9 +125,9 @@ export default class CanvasDiscrete {
                         "margin-bottom": '10px'
                     }, getShape(format)),
                 },
-                m(".panel-heading.text-center", {
+                m(".card-header.text-center", {
                         style: {"float": "left", "padding-top": "9px"}
-                    }, m("h3.panel-title", format)
+                    }, m("h3.card-title", format)
                 ),
                 m("br"),
                 m('div', {'style': {'height': 'calc(100% - 40px)'}},

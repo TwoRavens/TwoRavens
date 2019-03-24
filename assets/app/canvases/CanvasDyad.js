@@ -291,7 +291,7 @@ export default class CanvasDyad {
     dyadSelection(vnode) {
         let {data, metadata, preferences, setRedraw} = vnode.attrs;
         return [
-            m(".panel-heading.text-center[id='dyadSelectionTitle']", {style: {"padding-bottom": "5px"}},
+            m(".card-header.text-center[id='dyadSelectionTitle']", {style: {"padding-bottom": "5px"}},
                 m("[id='dyadPanelTitleDiv']",
                     m("h3.panel-title", {style: {'padding-top': '2px', 'padding-bottom': '2px'}}, "Dyad Selection"))
             ),

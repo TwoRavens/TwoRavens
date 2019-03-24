@@ -373,7 +373,7 @@ export default class Body_EventData {
                 id: 'leftPanelMenu',
                 callback: eventdata.setLeftTabSubset,
                 currentTab: eventdata.leftTabSubset,
-                attrsAll: {style: {height: 'calc(100% - 39px)'}},
+                // attrsAll: {style: {height: 'calc(100% - 39px)'}},
                 sections: [
                     {
                         value: 'Variables',
