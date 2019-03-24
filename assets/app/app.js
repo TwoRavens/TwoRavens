@@ -1347,14 +1347,12 @@ export let buildForceData = problem => {
             {
                 name: "Predictors",
                 color: common.gr1Color,
-                nodes: new Set(problem.predictors),
-                lengthen: true
+                nodes: new Set(problem.predictors)
             },
             {
                 name: "Targets",
                 color: common.gr2Color,
-                nodes: new Set(problem.targets),
-                lengthen: false
+                nodes: new Set(problem.targets)
             }
         ];
 
@@ -1468,24 +1466,30 @@ export let buildForceDiagram = problem => data => {
         .duration(100)
         .attr('r', pebble => pebbleInfo[pebble].radius);
 
-    // selectors.circle.data(pebbles);
-    // add new nodes
-    let g = selectors.circle.data(pebbles).enter()
-        .append('svg:g')
-        .attr('id', pebble => nodesReadOnly[pebble].id + 'biggroup');
+    selectors.circle = selectors.circle.data(pebbles);
+    selectors.circle.exit().remove();
 
-    // TODO: check if necessary
-    g.append('svg:circle')
+    let bigGroup = selectors.circle
+        .enter().append('svg:g')
+        .attr('id', pebble => nodesReadOnly[pebble].id + 'biggroup')
+
+    selectors.circle = bigGroup.merge(selectors.circle);
+
+    bigGroup.append('svg:circle')
         .attr('class', 'node')
         .attr('r', pebble => pebbleInfo[pebble].radius)
         .style('pointer-events', 'inherit')
         .style('fill', pebble => d3.rgb(pebbleInfo[pebble].nodeCol))
         .style('opacity', "0.5")
         .style('stroke', pebble => d3.rgb(pebbleInfo[pebble].strokeColor))
+
+    // TODO: check if necessary
+    // g.append('svg:circle')
+
     // .classed('reflexive', d => d.reflexive);
 
     // add plot
-    g.each(function (pebble) {
+    bigGroup.each(function (pebble) {
         d3.select(this);
         let summary = problem.summaries[pebble];
         if (!summary) return;
@@ -1494,23 +1498,23 @@ export let buildForceDiagram = problem => data => {
         else if (summary.plottype === 'bar')
             barsNode(summary, this, pebbleInfo[pebble].radius);
     });
-
-    // TODO: validate
-    Object.keys(pebbleEvents).forEach(event => g.on(event, pebbleEvents[event]));
-
+    //
+    // // TODO: validate
+    // Object.keys(pebbleEvents).forEach(event => g.on(event, pebbleEvents[event]));
+    //
     // show node names
-    g.append('svg:text')
+    bigGroup.append('svg:text')
         .attr('id', append('pebbleLabel'))
         .attr('x', 0)
         .attr('y', 15)
         .style('font-size', pebble => pebbleInfo[pebble].radius * .175 + 7 + 'px')
         .attr('class', 'id')
         .text(d => d);
-
-    // remove old nodes
-    selectors.circle.exit().remove();
-
-    makeArcs(g, forceDiagramLabels(problem));
+    //
+    // // remove old nodes
+    // selectors.circle.exit().remove();
+    //
+    // makeArcs(g, forceDiagramLabels(problem));
 
     // ~~~~ LINKS ~~~~
     // path (link) group
@@ -1540,20 +1544,22 @@ export let buildForceDiagram = problem => data => {
     selectors.path.exit().remove();
 
     // ~~~~ GROUPS ~~~~
-    selectors.hullBackgrounds.data(groups).enter()
-        .append('svg')
-        .attr("width", width)
-        .attr("height", height)
-        .append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
-        .attr("id", group => group.name + 'HullBackground')
-        .style("fill", '#ffffff')
-        .style("stroke", '#ffffff')
-        .style("stroke-width", 2.5 * hullRadius)
-        .style('stroke-linejoin', 'round')
-        .style("opacity", 1)
-        .exit().remove();
+    // selectors.hullBackgrounds.data(groups, group => group.name).enter()
+    //     .append('svg')
+    //     .attr("width", width)
+    //     .attr("height", height)
+    //     .append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
+    //     .attr("id", group => group.name + 'HullBackground')
+    //     .style("fill", '#ffffff')
+    //     .style("stroke", '#ffffff')
+    //     .style("stroke-width", 2.5 * hullRadius)
+    //     .style('stroke-linejoin', 'round')
+    //     .style("opacity", 1)
+    //     .exit().remove();
 
-    selectors.hulls.data(groups).enter()
+    selectors.hulls = selectors.hulls.data(groups, group => group.name)
+    selectors.hulls.exit().remove();
+    selectors.hulls = selectors.hulls.enter()
         .append("svg")
         .attr("width", width)
         .attr("height", height)
@@ -1564,7 +1570,7 @@ export let buildForceDiagram = problem => data => {
         .style("stroke-width", 2.5 * hullRadius)
         .style('stroke-linejoin', 'round')
         .style('opacity', 0.3)
-        .exit().remove();
+        .merge(selectors.hulls);
 
     // ~~~~ GROUP LINKS ~~~~
     selectors.groupLineDefs.data(groupLinks).enter()

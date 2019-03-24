@@ -88,79 +88,78 @@ export default class ForceDiagram {
             return groupSize > uppersize ? -400 * uppersize / groupSize : -400;
         }
 
+        let nodeArray = [...Object.values(nodes)];
         // TODO: this api changed in v4 // https://bl.ocks.org/mbostock/ad70335eeef6d167bc36fd3c04378048
         // this.circle.call(this.force.drag);
-        this.force.nodes([...Object.values(nodes)]);
+        this.force.nodes(nodeArray);
         if (forceToggle) {
-            this.force
-                .force('link', d3.forceLink(pebbleLinks).distance(100))
-                .force('charge', d3.forceManyBody().strength(getPebbleCharge)) // prevent tight clustering
-                .force('x', d3.forceX(width / 2).strength(.05))
-                .force('x', d3.forceY(height / 2).strength(.05));
-
-            this.kGroupGravity = 8 / (groups.length || 1); // strength parameter for group attraction/repulsion
-        } else {
             this.force
                 .force('link', d3.forceLink(pebbleLinks).distance(100))
                 .force('charge', d3.forceManyBody().strength(0)) // prevent tight clustering
                 .force('x', d3.forceX(width / 2).strength(0))
-                .force('x', d3.forceY(height / 2).strength(0));
+                .force('y', d3.forceY(height / 2).strength(0));
+
             this.kGroupGravity = 0;
+        } else {
+            this.force
+                .force('link', d3.forceLink(pebbleLinks).distance(100))
+                .force('charge', d3.forceManyBody().strength(getPebbleCharge)) // prevent tight clustering
+                .force('x', d3.forceX(width / 2).strength(.05))
+                .force('y', d3.forceY(height / 2).strength(.05));
+
+            this.kGroupGravity = 8 / (groups.length || 1); // strength parameter for group attraction/repulsion
         }
+
+        let debugCount = 0;
 
         // called on each force animation frame
         let tick = () => {
 
-            function findCoords(group) {
-                let groupCoords = pebbles
-                    .filter(node => group.nodes.has(node.name))
-                    .map(node => [node.x, node.y]);
-
+            function lengthen(coords) {
                 // d3.geom.hull returns null for two points, and fails if three points are in a line,
                 // so this puts a couple points slightly off the line for two points, or around a singleton.
-                if (groupCoords.length === 2) {
-                    let deltax = groupCoords[0][0] - groupCoords[1][0];
-                    let deltay = groupCoords[0][1] - groupCoords[1][1];
-                    groupCoords.push([
-                        (groupCoords[0][0] + groupCoords[1][0]) / 2 + deltay / 20,
-                        (groupCoords[0][1] + groupCoords[1][1]) / 2 + deltax / 20
+                if (coords.length === 2) {
+                    let deltax = coords[0][0] - coords[1][0];
+                    let deltay = coords[0][1] - coords[1][1];
+                    coords.push([
+                        (coords[0][0] + coords[1][0]) / 2 + deltay / 20,
+                        (coords[0][1] + coords[1][1]) / 2 + deltax / 20
                     ]);
-                    groupCoords.push([
-                        (groupCoords[0][0] + groupCoords[1][0]) / 2 - deltay / 20,
-                        (groupCoords[0][1] + groupCoords[1][1]) / 2 - deltax / 20
+                    coords.push([
+                        (coords[0][0] + coords[1][0]) / 2 - deltay / 20,
+                        (coords[0][1] + coords[1][1]) / 2 - deltax / 20
                     ]);
                 }
-                if (groupCoords.length === 1) {
+                if (coords.length === 1) {
                     let delta = radius * 0.2;
-                    groupCoords.push([groupCoords[0][0] + delta, groupCoords[0][1]]);
-                    groupCoords.push([groupCoords[0][0] - delta, groupCoords[0][1]]);
-                    groupCoords.push([groupCoords[0][0], groupCoords[0][1] + delta]);
-                    groupCoords.push([groupCoords[0][0], groupCoords[0][1] - delta]);
+                    coords.push([coords[0][0] + delta, coords[0][1]]);
+                    coords.push([coords[0][0] - delta, coords[0][1]]);
+                    coords.push([coords[0][0], coords[0][1] + delta]);
+                    coords.push([coords[0][0], coords[0][1] - delta]);
                 }
-                return groupCoords;
+                return coords;
             }
 
-            // draw convex hull around independent variables, if three or more coordinates given
-            // note, d3.geom.hull returns null if shorter coordinate set than 3,
-            // so findcoords() function always returns 0 or >= 3 coords
-            let hullCoords = groups
-                .map(findCoords)
-                .filter(arr => arr.length > 0)
-                .map(d3.polygonHull)
-                .map((hull, i) => ({name: groups[i].name, hull}));
+            let groupCoords = groups
+                .reduce((out, group) => Object.assign(out, {
+                    [group.name]: [...group.nodes].map(node => [nodes[node].x, nodes[node].y])
+                }), {});
 
-            this.selectors.hulls.data(hullCoords, coord => coord.name).enter()
-                .append('path')
-                .attr('d', d => `M${d.hull.join('L')}Z`).exit().remove();
-            this.selectors.hullBackgrounds.data(hullCoords, coord => coord.name).enter()
-                .append('path')
-                .attr('d', d => `M${d.hull.join('L')}Z`).exit().remove();
+            let hullCoords = groups.reduce((out, group) => group.nodes.length === 0 ? out
+                : Object.assign(out, {
+                    [group.name]: d3.polygonHull(lengthen(groupCoords[group.name]))
+                }), {});
+
+            this.selectors.hulls
+                .attr('d', d => `M${hullCoords[d.name].join('L')}Z`);
+            // this.selectors.hullBackgrounds.data(hullCoords, coord => coord.name)
+            //     .attr('d', d => `M${hullCoords[d.name].join('L')}Z`);
 
             // update positions of groupLines
             // TODO: intersect arrow with convex hull
-            // let centroids = groups
-            //     .reduce((out, group) => Object.assign(out, {[group.name]: jamescentroid(group)}), {});
-            //
+            let centroids = Object.keys(groupCoords)
+                .reduce((out, group) => Object.assign(out, {[group]: jamescentroid(hullCoords[group])}), {});
+
             // let groupLinkPrep = link => {
             //     let srcCent = centroids[link.source];
             //     let tgtCent = centroids[link.target];
@@ -181,20 +180,27 @@ export default class ForceDiagram {
             //     .attr('x1', d => d.tgtCent[1] + d.padding[1] * d.norm[1])
             //     .exit().remove();
             //
-            // // update positions of nodes (not implemented as a force because centroid computation is shared)
-            // // group members attract each other, repulse non-group members
-            // groups.forEach(group => {
-            //     nodes.forEach(n => {
-            //         let sign = group.nodes.has(node.name) ? 1 : -1;
-            //
-            //         let delta = [centroids[group.name][0] - n.x, centroids[group.name][1] - n.y];
-            //         let dist = Math.sqrt(delta.reduce((sum, axis) => sum + axis * axis, 0));
-            //         let norm = dist === 0 ? [0, 0] : delta.map(axis => axis / dist);
-            //
-            //         n.x += Math.min(norm[0], delta[0] / 100) * this.kGroupGravity * sign * this.force.alpha();
-            //         n.y += Math.min(norm[1], delta[1] / 100) * this.kGroupGravity * sign * this.force.alpha();
-            //     });
-            // });
+
+            // NOTE: update positions of nodes BEFORE adjusting positions for group forces
+            // This keeps the nodes centered in the group when resizing,
+            // and the adjustment is still applied on the next tick regardless
+            this.selectors.circle
+                .attr('transform', d => `translate(${nodes[d].x},${nodes[d].y})`);
+
+            // update positions of nodes (not implemented as a force because centroid computation is shared)
+            // group members attract each other, repulse non-group members
+            groups.filter(group => group.name in centroids).forEach(group => {
+                nodeArray.forEach(node => {
+                    let sign = group.nodes.has(node.name) ? 1 : -1;
+
+                    let delta = [centroids[group.name][0] - node.x, centroids[group.name][1] - node.y];
+                    let dist = Math.sqrt(delta.reduce((sum, axis) => sum + axis * axis, 0));
+                    let norm = dist === 0 ? [0, 0] : delta.map(axis => axis / dist);
+
+                    node.x += Math.min(norm[0], delta[0] / 100) * this.kGroupGravity * sign * this.force.alpha();
+                    node.y += Math.min(norm[1], delta[1] / 100) * this.kGroupGravity * sign * this.force.alpha();
+                });
+            });
             //
             // // draw directed edges with proper padding from node centers
             // this.path.attr('d', d => {
@@ -215,7 +221,7 @@ export default class ForceDiagram {
             // this.circle.attr('transform', d => 'translate(' + (d.x || 0) + ',' + (d.y || 0) + ')');
         };
         this.force.on('tick', tick);
-        this.force.restart();
+        this.force.alpha(1).restart();
     };
 
     oncreate(vnode) {
@@ -277,8 +283,6 @@ export default class ForceDiagram {
             .attr('class', 'link dragline hidden')
             .attr('d', 'M0,0L0,0');
 
-        console.warn("#debug nodes");
-        console.log(nodes);
         this.force = d3.forceSimulation([...Object.values(nodes)]);
 
         this.onupdate(vnode);
