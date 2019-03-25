@@ -151,8 +151,6 @@ export default class ForceDiagram {
 
             this.selectors.hulls
                 .attr('d', d => `M${hullCoords[d.name].join('L')}Z`);
-            // this.selectors.hullBackgrounds.data(hullCoords, coord => coord.name)
-            //     .attr('d', d => `M${hullCoords[d.name].join('L')}Z`);
 
             // update positions of groupLines
             // TODO: intersect arrow with convex hull

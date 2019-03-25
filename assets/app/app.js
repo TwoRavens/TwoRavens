@@ -1032,6 +1032,15 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     if(!swandive && resPreprocess) {
         let dataset = getSelectedDataset();
+
+
+        console.warn("#debug resPreprocess");
+        console.log(resPreprocess);
+        console.warn("#debug swandive");
+        console.log(swandive);
+
+        console.warn("#debug dataset");
+        console.log(dataset);
         // assign discovered problems into problems set, keeping the d3m problem
         Object.assign(dataset.problems, discovery(resPreprocess.dataset.discovery));
         dataset.variablesInitial = Object.keys(dataset.summaries);
@@ -1458,17 +1467,27 @@ export let buildForceDiagram = problem => data => {
 
     // ~~~~ PEBBLES ~~~~
 
+    selectors.circle = selectors.circle.data(pebbles, _=>_);
+    selectors.circle.exit().remove();
+    console.warn("#debug pebbles");
+    console.log(pebbles);
+
     // update existing nodes
     selectors.circle.selectAll('circle')
-        .style('fill', pebble => d3.rgb(pebbleInfo[pebble].nodeCol))
+        .style('fill', pebble => {
+            if (!(pebble in pebbleInfo)) {
+                console.warn("#debug pebble");
+                console.log(pebble);
+                console.warn("#debug pebbleInfo");
+                console.log(pebbleInfo);
+            }
+            return d3.rgb(pebbleInfo[pebble].nodeCol)
+        })
         .style('stroke', pebble => d3.rgb(pebbleInfo[pebble].strokeColor))
         .style('stroke-width', pebble => pebbleInfo[pebble].strokeWidth)
         .transition()  // Shrink/expand pebbles that join/leave groups
         .duration(100)
         .attr('r', pebble => pebbleInfo[pebble].radius);
-
-    selectors.circle = selectors.circle.data(pebbles);
-    selectors.circle.exit().remove();
 
     let bigGroup = selectors.circle
         .enter().append('svg:g')
@@ -1483,11 +1502,6 @@ export let buildForceDiagram = problem => data => {
         .style('fill', pebble => d3.rgb(pebbleInfo[pebble].nodeCol))
         .style('opacity', "0.5")
         .style('stroke', pebble => d3.rgb(pebbleInfo[pebble].strokeColor))
-
-    // TODO: check if necessary
-    // g.append('svg:circle')
-
-    // .classed('reflexive', d => d.reflexive);
 
     // add plot
     bigGroup.each(function (pebble) {
@@ -1523,7 +1537,7 @@ export let buildForceDiagram = problem => data => {
 
     // ~~~~ LINKS ~~~~
     // path (link) group
-    selectors.path.data(pebbleLinks);
+    selectors.path.data(pebbleLinks, link => `${link.source}-${link.target}`);
 
     let marker = side => x => {
         let kind = side === 'left' ? 'start' : 'end';
@@ -1578,7 +1592,7 @@ export let buildForceDiagram = problem => data => {
         .merge(selectors.hulls);
 
     // ~~~~ GROUP LINKS ~~~~
-    selectors.groupLineDefs.data(groupLinks).enter()
+    selectors.groupLineDefs.data(groupLinks, link => `${link.source}-${link.target}`).enter()
         .append("svg:marker")
         .attr("id", groupLink => `${groupLink.id}-arrow`)
         .attr('viewBox', '0 -5 15 15')
@@ -1592,7 +1606,7 @@ export let buildForceDiagram = problem => data => {
         .style("fill", groupLink => groupLink.color)
         .exit().remove();
 
-    selectors.groupLines.data(groupLinks).enter()
+    selectors.groupLines.data(groupLinks, link => `${link.source}-${link.target}`).enter()
         .append("line")
         .style('fill', 'none')
         .style('stroke', groupLink => groupLink.color)
@@ -3486,7 +3500,11 @@ export function discovery(problems) {
     let dataset = getSelectedDataset();
     Object.keys(problems)
         .filter(problemID => problems[problemID].manipulations.length === 0)
-        .forEach(problemID => problems[problemID].summaries = dataset.summaries);
+        .forEach(problemID => Object.assign(problems[problemID], {
+            summaries: dataset.summaries,
+            metric: dataset.summaries[problems[problemID].targets[0]].plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
+            task: dataset.summaries[problems[problemID].targets[0]].plottype === "bar" ? 'classification' : 'regression'
+        }));
 
     // construct preprocess for all problems with manipulations
     // TODO: optimization- preprocess variables only, for 5000 samples
@@ -3506,6 +3524,8 @@ export function discovery(problems) {
                     task: response.variables[problem.targets[0]].plottype === "bar" ? 'classification' : 'regression'
                 })
             })));
+
+    return problems;
 }
 
 // creates a new problem from the force diagram problem space and adds to disco

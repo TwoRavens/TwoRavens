@@ -198,16 +198,24 @@ function leftpanel(mode) {
         problem.task,
         problem.subTask === 'taskSubtypeUndefined' ? '' : problem.subTask, // ignore taskSubtypeUndefined
         problem.metric,
-        // the view manipulations button
-        problem.manipulations.length !== 0 && m(
-            'div[style=width:100%;text-align:center]', m(Button, {
-                disabled: problem === selectedProblem && app.rightTab === 'Manipulate' && common.panelOpen['right'],
-                title: `view manipulations for ${problem.problemID}`,
+        m('',
+            problem.manipulations.length !== 0 && m(
+                'div[style=width:100%;text-align:center]', m(Button, {
+                    disabled: problem === selectedProblem && app.rightTab === 'Manipulate' && common.panelOpen['right'],
+                    title: `view manipulations for ${problem.problemID}`,
+                    onclick: () => {
+                        app.setRightTab('Manipulate');
+                        common.setPanelOpen('right');
+                    }
+                }, 'View')),
+            problem === selectedProblem && m(Button, {
+                id: 'btnSaveProblem',
                 onclick: () => {
-                    app.setRightTab('Manipulate');
-                    common.setPanelOpen('right');
+                    let problemCopy = app.getProblemCopy(app.getSelectedProblem());
+                    selectedDataset.problems[problemCopy.problemID] = problemCopy;
                 }
-            }, 'View'))
+            }, 'Save')
+        )
     ];
     sections.push({
         value: 'Discover',
@@ -223,18 +231,7 @@ function leftpanel(mode) {
                     }
                 },
                 [
-                    selectedProblem && m('h5', [
-                        'Current Problem',
-                        m(Button, {
-                            id: 'saveProblemBtn',
-                            onclick: () => {
-                                let problemCopy = app.getProblemCopy(app.getSelectedProblem());
-                                selectedDataset.problems[problemCopy.problemID] = problemCopy;
-                            },
-                            title: 'save problem',
-                            style: {float: 'right', margin: '.5em .5em 0 0'}
-                        }, 'Save Problem')
-                    ]),
+                    selectedProblem && m('h4.card-header.clearfix', 'Current Problem'),
                     selectedProblem && m(Table, {
                         id: 'discoveryTableManipulations',
                         headers: discoveryHeaders,
@@ -243,7 +240,7 @@ function leftpanel(mode) {
                         showUID: false,
                         abbreviation: 40
                     }),
-                    m('h5', 'All Problems')
+                    m('h4.card-header', 'All Problems')
                 ],
                 m(Table, {
                     id: 'discoveryTable',
@@ -254,8 +251,9 @@ function leftpanel(mode) {
                     ].map(formatProblem),
                     activeRow: selectedDataset.resultsProblem,
                     onclick: problemID => {
-                        let copiedProblem = app.getProblemCopy(problems.find(prob => prob.problemID === problemID));
-                        problems.unshift(copiedProblem);
+                        delete problems[selectedProblem.problemID];
+                        let copiedProblem = app.getProblemCopy(problems[problemID]);
+                        problems[copiedProblem.problemID] = copiedProblem;
                         app.setSelectedProblem(copiedProblem.problemID);
                     },
                     showUID: false,
