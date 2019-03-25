@@ -382,14 +382,14 @@ streamSocket.onmessage = function(e) {
     console.log(msg_data.msg_type + ' recognized!');
 
     handleENDGetSearchSolutionsResults();
-  } else if (msg_data.msg_type === 'DATAMART_AUGMENT_PROCESS'){
-    console.log(msg_data.msg_type + ' recognized!');
-    handleAugmentDataMessage(msg_data);
 
   } else if (msg_data.msg_type === 'DATAMART_MATERIALIZE_PROCESS'){
     console.log(msg_data.msg_type + ' recognized!');
     handleMaterializeDataMessage(msg_data);
 
+  } else if (msg_data.msg_type === 'DATAMART_AUGMENT_PROCESS'){
+    console.log(msg_data.msg_type + ' recognized!');
+    handleAugmentDataMessage(msg_data);
 
   } else {
     console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
@@ -4836,7 +4836,7 @@ async function handleENDGetSearchSolutionsResults(){
   // stop the interval process
 }
 
-export function handleAugmentDataMessage(msg_data){
+export function xhandleAugmentDataMessage(msg_data){
 
   if (!msg_data) {
       console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
@@ -4914,6 +4914,26 @@ export function handleMaterializeDataMessage(msg_data){
 
 
 } // end handleMaterializeDataMessage
+
+export function handleAugmentDataMessage(msg_data){
+
+  if (!msg_data) {
+      console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
+      return;
+  }
+  if (msg_data.success === false) {
+    setModal("Error: " + msg_data.user_message,
+             "Data Augmentation Failed", true, "Close", true);
+    return;
+  }
+
+  setModal("Success: " + msg_data.user_message,
+           "Data Augmentation Succeeded!", true, "Close", true);
+
+  // console.log('datamart_id: ' + msg_data.data.datamart_id);
+  // console.log('filesize: ' + msg_data.data.filesize);
+
+} // end: handleAugmentDataMessage
 
 
 export function loadResult(my_disco) {

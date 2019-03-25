@@ -417,20 +417,7 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
                         f'{dcr.get_error_message()}')
             return err_resp(user_msg)
 
-        # Async, start process of creating new dataset...
-        #   - This will send a websocket message when process complete
-        #   - Needs to be moved to celery queue
-        #
-        ndu_info = NewDatasetUtil.make_new_dataset_call(\
-                             user_workspace.id,
-                             augment_new_filepath,
-                             **dict(websocket_id=user_workspace.user.username))
-
-        if not ndu_info.success:
-            return err_resp(ndu_info.err_msg)
-
-        return ok_resp('Augment is in process')
-
+        return ok_resp(augment_new_filepath)
 
 
     @staticmethod
