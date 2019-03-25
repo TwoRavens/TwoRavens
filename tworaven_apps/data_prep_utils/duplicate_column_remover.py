@@ -138,7 +138,7 @@ class DuplicateColumnRemover(BasicErrCheck):
         new_first_line_content = new_first_line.getvalue() # \
                                  # + csv_dialect.lineterminator
 
-        print('new_first_line_content', new_first_line_content)
+        LOGGER.info('new_first_line_content: %s', new_first_line_content)
 
         # ---------------------------------
         # Replace original first line (ref: reddit)

@@ -138,7 +138,6 @@ class MaterializeUtil(BasicErrCheck):
 
     def add_err_msg(self, user_msg):
         """Add to base base "add_err_msg", also send a websocket message"""
-
         # call the base "add_err_msg"
         #
         super().add_err_msg(user_msg)

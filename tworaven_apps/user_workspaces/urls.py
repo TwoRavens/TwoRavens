@@ -20,4 +20,8 @@ urlpatterns = (
 
     url(r'^d3m-configs/delete-config/(?P<user_workspace_id>\d{1,7})$',
         views.view_delete_config,
-        name='view_delete_config'))
+        name='view_delete_config'),
+
+    url(r'^clear-user-workspaces$',
+        views.clear_user_workspaces,
+        name='clear_user_workspaces'),)

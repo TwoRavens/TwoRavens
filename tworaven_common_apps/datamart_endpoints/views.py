@@ -24,7 +24,9 @@ from tworaven_common_apps.datamart_endpoints.forms import (DatamartSearchForm,
                                                            DatamartScrapeForm,
                                                            DatamartUploadForm, DatamartCustomForm)
 
-from tworaven_common_apps.datamart_endpoints.tasks import make_materialize_call
+from tworaven_common_apps.datamart_endpoints.tasks import \
+    (make_materialize_call,
+     make_augment_call)
 
 from django.http import \
     (JsonResponse, HttpResponse)
@@ -177,7 +179,39 @@ def api_search(request):
 
 
 @csrf_exempt
-def api_augment(request):
+def api_augment_async(request):
+    """Run steps of augment, create new dataset folder structure, etc"""
+
+    # Get the latest UserWorkspace
+    #
+    ws_info = get_latest_user_workspace(request)
+    if not ws_info.success:
+        user_msg = 'User workspace not found: %s' % ws_info.err_msg
+        return JsonResponse(get_json_error(user_msg))
+
+    user_workspace = ws_info.result_obj
+
+    # Request as python dict
+    #
+    json_req_info = get_request_body_as_json(request)
+    if not json_req_info.success:
+        return JsonResponse(get_json_error(json_req_info.err_msg))
+
+    augment_params = json_req_info.result_obj
+
+    augment_info = make_augment_call(user_workspace,
+                                     augment_params)
+
+    if not augment_info.success:
+        return JsonResponse(get_json_error(augment_info.err_msg))
+
+    return JsonResponse(get_json_success(augment_info.result_obj))
+
+
+
+@csrf_exempt
+def xapi_augment(request):
+    """removed for async version: api_augment_async"""
     success, json_req_obj = get_request_body_as_json(request)
 
     if not success:
