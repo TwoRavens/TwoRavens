@@ -1123,7 +1123,7 @@ class Body {
                         )],
 
                     selectedProblem && m(ForceDiagram, Object.assign({
-                        forcetoggle: app.forceToggle,
+                        isPinned: app.forceToggle,
                         radius: app.defaultPebbleRadius,
                         nodes: app.nodesReadOnly,
                         selectedPebble: app.selectedPebble,

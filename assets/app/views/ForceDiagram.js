@@ -7,6 +7,8 @@ export default class ForceDiagram {
     oninit() {
         // strength parameter for group attraction/repulsion
         this.kGroupGravity = 4;
+        this.isDragging = false;
+        this.selectedPebble;
     }
 
     onupdate(vnode) {
@@ -21,7 +23,7 @@ export default class ForceDiagram {
         } = vnode.attrs;
 
         // options
-        let {forceToggle, hullRadius} = vnode.attrs;
+        let {isPinned, hullRadius} = vnode.attrs;
         let pebbleSet = new Set(pebbles);
 
         groups = groups
@@ -54,6 +56,19 @@ export default class ForceDiagram {
             selectors: this.selectors
         });
 
+        if (this.selectedPebble !== selectedPebble) {
+            if (this.selectedPebble) {
+                delete nodes[this.selectedPebble].fx;
+                delete nodes[this.selectedPebble].fy;
+            }
+            this.selectedPebble = selectedPebble;
+
+            if (this.selectedPebble) Object.assign(nodes[selectedPebble], {
+                fx: nodes[selectedPebble].x,
+                fy: nodes[selectedPebble].y
+            });
+        }
+
         /**
          Define each pebble charge.
          */
@@ -71,25 +86,25 @@ export default class ForceDiagram {
         }
 
         let nodeArray = [...Object.values(nodes)];
-        // TODO: this api changed in v4 // https://bl.ocks.org/mbostock/ad70335eeef6d167bc36fd3c04378048
-        // this.circle.call(this.force.drag);
-        this.force.nodes(nodeArray);
-        if (forceToggle) {
-            this.force
-                .force('link', d3.forceLink(pebbleLinks).distance(100))
-                .force('charge', d3.forceManyBody().strength(0)) // prevent tight clustering
-                .force('x', d3.forceX(width / 2).strength(0))
-                .force('y', d3.forceY(height / 2).strength(0));
 
-            this.kGroupGravity = 0;
-        } else {
-            this.force
-                .force('link', d3.forceLink(pebbleLinks).distance(100))
-                .force('charge', d3.forceManyBody().strength(getPebbleCharge)) // prevent tight clustering
-                .force('x', d3.forceX(width / 2).strength(.05))
-                .force('y', d3.forceY(height / 2).strength(.05));
+        this.kGroupGravity = isPinned ? 0 : 6 / (groups.length || 1); // strength parameter for group attraction/repulsion
+        this.force.nodes(nodeArray)
+            .force('link', d3.forceLink(pebbleLinks).distance(100))
+            .force('charge', d3.forceManyBody().strength(getPebbleCharge)) // prevent tight clustering
+            .force('x', d3.forceX(width / 2).strength(.05))
+            .force('y', d3.forceY(height / 2).strength(.05));
 
-            this.kGroupGravity = 6 / (groups.length || 1); // strength parameter for group attraction/repulsion
+        if (this.isPinned !== isPinned) {
+            this.isPinned = isPinned;
+            if (isPinned) Object.keys(nodes)
+                .forEach(key => Object.assign(nodes[key], {
+                    fx: nodes[key].x,
+                    fy: nodes[key].y
+                }));
+            else Object.keys(nodes).forEach(key => {
+                delete nodes[key].fx;
+                delete nodes[key].fy;
+            })
         }
 
         // called on each force animation frame
@@ -167,7 +182,10 @@ export default class ForceDiagram {
         };
         this.force.on('tick', tick);
         this.force.alphaTarget( 1).restart();
-        setTimeout(() => this.force.alphaTarget(0).restart(), 1000)
+        setTimeout(() => {
+            if (this.isDragging) return;
+            this.force.alphaTarget(0).restart();
+        }, 1000)
     }
 
     oncreate(vnode) {
@@ -230,6 +248,29 @@ export default class ForceDiagram {
             .attr('d', 'M0,0L0,0');
 
         this.force = d3.forceSimulation([...Object.values(nodes)]);
+
+
+        d3.select(vnode.dom)
+            .call(d3.drag()
+                .container(vnode.dom)
+                .subject(() => this.force.find(d3.event.x, d3.event.y))
+                .on("start", () => {
+                    this.isDragging = true;
+                    if (!d3.event.active) this.force.alphaTarget(1).restart();
+                    d3.event.subject.fx = d3.event.subject.x;
+                    d3.event.subject.fy = d3.event.subject.y;
+                })
+                .on("drag", () => {
+                    d3.event.subject.fx = d3.event.x;
+                    d3.event.subject.fy = d3.event.y;
+                })
+                .on("end", () => {
+                    this.isDragging = false;
+                    if (!d3.event.active) this.force.alphaTarget(0);
+                    if (this.isPinned) return;
+                    d3.event.subject.fx = null;
+                    d3.event.subject.fy = null;
+                }));
 
         this.onupdate(vnode);
     }

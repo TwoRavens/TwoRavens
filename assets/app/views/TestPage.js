@@ -21,7 +21,7 @@ export default class TestPage {
             m(Header, {image: '/static/images/TwoRavens.png', aboutText: 'TwoRavens Test Page'}),
             m(Canvas,
                 m(ForceDiagram, Object.assign({
-                    forcetoggle: app.forceToggle,
+                    isPinned: app.forceToggle,
                     radius: app.defaultPebbleRadius,
                     nodes: app.nodesReadOnly,
                     builder: app.buildForceDiagram(testProblem),

@@ -493,8 +493,8 @@ let spaces = [];
 // space index
 export let myspace = 0;
 
-// when set, force diagram components may move freely
-export let forceToggle = true;
+// when set, force diagram components are pinned
+export let forceToggle = false;
 export let setForceToggle = state => forceToggle = state;
 
 // when set, a problem's Task, Subtask and Metric may not be edited
@@ -1483,9 +1483,7 @@ export let buildForceDiagram = problem => data => {
     // ~~~~ PEBBLES ~~~~
 
     selectors.circle = selectors.circle.data(pebbles, _=>_);
-    selectors.circle.exit()
-        .transition()
-        .attr("r", 0).remove();
+    selectors.circle.exit().remove();
 
     // update existing nodes
     selectors.circle.selectAll('circle')
