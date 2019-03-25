@@ -16,6 +16,8 @@ from tworaven_common_apps.datamart_endpoints.static_vals import \
     (DATAMART_NYU_NAME,
      KEY_NYU_DATAMART_ID,
      KEY_DATA,
+     KEY_AUGMENT,
+     KEY_MATERIALIZE,
      NUM_PREVIEW_ROWS,
      cached_response,
      cached_response_baseball)
@@ -130,7 +132,7 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
         dest_folderpath_info = DatamartJobUtilNYU.get_output_folderpath(\
                                         user_workspace,
                                         datamart_id,
-                                        dir_type='materialize')
+                                        dir_type=KEY_MATERIALIZE)
 
         if not dest_folderpath_info.success:
             return err_resp(dest_folderpath_info.err_msg)
@@ -220,35 +222,104 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
 
     @staticmethod
-    def datamart_augment(dataset_path, search_result):
+    def datamart_augment(user_workspace, dataset_path, search_result, **kwargs):
+        """Augment the file via the NYU API"""
+        if not isinstance(user_workspace, UserWorkspace):
+            return err_resp('user_workspace must be a UserWorkspace')
 
-        d3m_config = get_latest_d3m_config()
-        if not d3m_config:
-            user_msg = 'failed. no d3m config'
-            LOGGER.error(user_msg)
+        # Make sure the soure file exitss
+        #
+        if not isfile(dataset_path):
+            user_msg = f'Original data file not found: {dataset_path}'
             return err_resp(user_msg)
 
-        print(search_result)
-        augment_url = f"{ get_nyu_url() }/augment"
+        # Make sure the NYU datamart id is in the search_result
+        #
+        if not KEY_NYU_DATAMART_ID in search_result:
+            user_msg = (f'"search_result" did not contain'
+                        f' "{KEY_NYU_DATAMART_ID}" key')
+            return err_resp(user_msg)
+        datamart_id = search_result[KEY_NYU_DATAMART_ID]
+
+        # Ready the query parameters
+        #
+        search_result['join_columns'] = [['INSTNM', 'INSTNM']]
+        search_result_str = json.dumps(search_result)
+        print('search_result_str', search_result_str)
 
         files_info = dict(data=open(dataset_path, 'rb'),
                           task=('task.json',
-                                json.dumps(search_result),
+                                search_result_str,
                                 'application/json'))
 
-        response = requests.post(augment_url,
-                                 files=files_info,
-                                 stream=True)
+        # Make the augment request
+        #
+        augment_url = f"{ get_nyu_url() }/augment"
 
+        try:
+            response = requests.post(augment_url,
+                                     files=files_info,
+                                     stream=True,
+                                     timeout=settings.DATAMART_LONG_TIMEOUT)
+        except requests.exceptions.Timeout as err_obj:
+            return err_resp('Request timed out. responded with: %s' % err_obj)
+
+        # Any errors?
+        #
         if response.status_code != 200:
+            user_msg = (f'NYU Datamart internal server error. Status code:'
+                        f' "{response.status_code}"')
+            print(response.content)
+
             return err_resp('NYU Datamart internal server error')
 
-        augment_folderpath = os.path.join(\
-                                    d3m_config.temp_storage_root,
-                                    'augment',
-                                    str(search_result['id']))
+        # Write the augmented file
+        #
+        dest_folderpath_info = DatamartJobUtilNYU.get_output_folderpath(\
+                                        user_workspace,
+                                        datamart_id,
+                                        dir_type=KEY_AUGMENT)
 
-        return ok_resp(DatamartJobUtilNYU.save(augment_folderpath, response))
+        if not dest_folderpath_info.success:
+            return err_resp(dest_folderpath_info.err_msg)
+
+
+        augment_folderpath = dest_folderpath_info.result_obj
+
+        # Set the output file
+        #
+        dest_filepath = join(augment_folderpath, 'tables', 'learningData.csv')
+
+
+        save_info = DatamartJobUtilNYU.save_datamart_file(\
+                                    augment_folderpath,
+                                    response,
+                                    expected_filepath=dest_filepath)
+
+        if not save_info.success:
+            return err_resp(save_info.err_msg)
+
+        # -----------------------------------------
+        # Retrieve preview rows and return response
+        # -----------------------------------------
+
+        # preview rows
+        #
+        preview_info = read_file_rows(dest_filepath, NUM_PREVIEW_ROWS)
+        if not preview_info.success:
+            user_msg = (f'Failed to retrieve preview rows.'
+                        f' {preview_info.err_msg}')
+            return err_resp(user_msg)
+
+        # Format/return reponse
+        #
+        info_dict = DatamartJobUtilNYU.format_materialize_response(\
+                        datamart_id, DATAMART_NYU_NAME,
+                        dest_filepath, preview_info)
+
+        return ok_resp(info_dict)
+
+
 
 
     @staticmethod

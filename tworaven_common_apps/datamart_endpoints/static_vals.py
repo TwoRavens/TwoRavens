@@ -12,6 +12,12 @@ KEY_ISI_DATAMART_ID = 'datamart_id'
 KEY_NYU_DATAMART_ID = 'id'
 KEY_DATA = 'data'
 
+# Used by NYU/ISI for directory construction
+#
+KEY_AUGMENT = 'augment'
+KEY_MATERIALIZE  = 'materialize'
+KEY_DATA_PATH = 'data_path'
+
 NUM_PREVIEW_ROWS = 100
 
 # DATAMART_ISI_URL = 'https://localhost:9001'

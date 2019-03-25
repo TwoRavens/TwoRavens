@@ -5,6 +5,7 @@ For the materialze process, complete the following steps:
 - send a web socket message back to the frontend
 """
 import logging
+import json
 
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.utils.json_helper import json_loads, json_dumps
@@ -18,7 +19,8 @@ from tworaven_apps.user_workspaces.utils import \
 from tworaven_common_apps.datamart_endpoints.static_vals import \
     (DATAMART_AUGMENT_PROCESS,
      DATAMART_ISI_NAME,
-     DATAMART_NYU_NAME)
+     DATAMART_NYU_NAME,
+     KEY_DATA_PATH)
 from tworaven_common_apps.datamart_endpoints.datamart_util import \
     (get_datamart_job_util)
 
@@ -36,9 +38,8 @@ class AugmentUtil(BasicErrCheck):
         self.user_workspace = None
         self.augment_params = augment_params
 
-        #import json
-        #print('self.augment_params', json.dumps(self.augment_params, indent=4))
-        #print('augment keys', self.augment_params.keys())
+        print('self.augment_params', json.dumps(self.augment_params, indent=4))
+        print('augment keys', self.augment_params.keys())
         # optional for websocket messages
         #
         self.websocket_id = kwargs.get('websocket_id')
@@ -64,6 +65,9 @@ class AugmentUtil(BasicErrCheck):
 
         if self.datamart_name == DATAMART_ISI_NAME:
             if not self.augment_isi_file():
+                return
+        elif self.datamart_name == DATAMART_NYU_NAME:
+            if not self.augment_nyu_file():
                 return
         else:
             self.add_err_msg('Materialize not implemented for NYU. (Only ISI)')
@@ -137,7 +141,7 @@ class AugmentUtil(BasicErrCheck):
 
 
     def augment_isi_file(self):
-        """Augment the file"""
+        """Augment the file via the ISI API"""
         if self.has_error():
             return False
 
@@ -169,6 +173,55 @@ class AugmentUtil(BasicErrCheck):
         # print('augment_info', augment_info.result_obj)
 
         self.augment_new_filepath = augment_info.result_obj
+        return True
+
+
+    def augment_nyu_file(self):
+        """Augment the file via NYU API"""
+        if self.has_error():
+            return False
+
+        # user_workspace, data_path, search_result, left_columns,
+        # right_columns, exact_match=False, **kwargs
+        search_result_info = json_loads(self.augment_params['search_result'])
+        if not search_result_info.success:
+            err_msg = (f"Failed to load augment_params['search_result']"
+                       f" as JSON: {search_result_info.err_msg}")
+            self.add_err_msg(err_msg)
+            return
+        search_result_json = search_result_info.result_obj
+
+        extra_params = dict()   # none for now...
+
+        # Different params than ISI
+        #
+        augment_info = self.datamart_util.datamart_augment(\
+                            self.user_workspace,
+                            self.augment_params['data_path'],
+                            search_result_json,
+                            **extra_params)
+
+        if not augment_info.success:
+            self.add_err_msg(augment_info.err_msg)
+            return False
+
+        # print('augment_info', augment_info.result_obj)
+
+        if not isinstance(augment_info.result_obj, dict):
+            self.add_err_msg('NYU augment info did not return a dict')
+            return False
+
+        augment_dict = augment_info.result_obj
+
+        if not KEY_DATA_PATH in augment_dict:
+            user_msg = (f'Key "{KEY_DATA_PATH}" not found in the NYU'
+                        f' augment_dict.'
+                        f' Keys: {augment_dict.keys()}')
+            self.add_err_msg(user_msg)
+            return False
+
+        print('augment_dict', augment_dict)
+        self.augment_new_filepath = augment_dict[KEY_DATA_PATH]
         return True
 
     def make_new_dataset(self):
