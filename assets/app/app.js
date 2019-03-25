@@ -1333,12 +1333,10 @@ function resetMouseVars() {
     mousedown_link = null;
 }
 
-
-export let defaultPebbleRadius = 40;
-
 // readonly, modified within the ForceDiagram class TODO: (monitor x/y coords to move pebbles between groups)
 export let nodesReadOnly = {};
-let hullRadius = 40;
+export let hullRadius = 40;
+export let defaultPebbleRadius = 40;
 
 // layout for force diagram pebbles. Can be 'variables', 'pca', 'clustering' etc. (ideas)
 export let forceDiagramMode = 'variables';
@@ -1411,9 +1409,6 @@ export let buildForceDiagram = problem => data => {
         data: {pebbles, pebbleLinks, groups, groupLinks} = {},
         selectors
     } = data;
-
-    console.warn("#debug problem");
-    console.log(problem);
 
     // ~~~~ PREPARATION ~~~~
     let pebbleInfo = pebbles
@@ -1488,7 +1483,9 @@ export let buildForceDiagram = problem => data => {
     // ~~~~ PEBBLES ~~~~
 
     selectors.circle = selectors.circle.data(pebbles, _=>_);
-    selectors.circle.exit().remove();
+    selectors.circle.exit()
+        .transition()
+        .attr("r", 0).remove();
 
     // update existing nodes
     selectors.circle.selectAll('circle')
@@ -1561,34 +1558,31 @@ export let buildForceDiagram = problem => data => {
     makeArcs(bigGroup, pebbleInfo, forceDiagramLabels(problem));
 
     // ~~~~ LINKS ~~~~
-    // path (link) group
-    selectors.path.data(pebbleLinks, link => `${link.source}-${link.target}`);
-
     let marker = side => x => {
         let kind = side === 'left' ? 'start' : 'end';
         return is_explore_mode ? 'url(#circle)' :
             x[side] ? `url(#${kind}-arrow)` : '';
     };
 
-    // update existing links
-    // VJD: dashed links between pebbles are "selected". this is disabled for now
-    selectors.path.classed('selected', x => null)
-        .style('marker-start', marker('left'))
-        .style('marker-end', marker('right'));
-
-    // add new links
-    selectors.path.enter().append('svg:path')
+    selectors.path = selectors.path.data(pebbleLinks, link => `${link.source}-${link.target}`);
+    selectors.path.exit().remove();
+    selectors.path = selectors.path.enter()
+        .append('svg:path')
         .attr('class', 'link')
         .classed('selected', x => null)
         .style('marker-start', marker('left'))
         .style('marker-end', marker('right'))
-        .on('mousedown', d => pebbleLinks.some(link => d === link && (del(pebbleLinks, link) || true)));
+        .on('mousedown', d => pebbleLinks.some(link => d === link && (del(pebbleLinks, link) || true)))
+        .merge(selectors.path);
 
-    // remove old links
-    selectors.path.exit().remove();
+    // update existing links
+    // VJD: dashed links between pebbles are "selected". this is disabled for now
+    // selectors.path.classed('selected', x => null)
+    //     .style('marker-start', marker('left'))
+    //     .style('marker-end', marker('right'));
+
 
     // ~~~~ GROUPS ~~~~
-
     selectors.hulls = selectors.hulls.data(groups, group => group.name)
     selectors.hulls.exit().remove();
     selectors.hulls = selectors.hulls.enter()
@@ -1602,10 +1596,27 @@ export let buildForceDiagram = problem => data => {
         .style('opacity', group => group.opacity)
         .merge(selectors.hulls);
 
+    selectors.hullBackgrounds = selectors.hullBackgrounds.data(groups, group => group.name);
+    selectors.hullBackgrounds.exit().remove();
+    selectors.hullBackgrounds = selectors.hullBackgrounds.enter()
+        .append('svg')
+        .attr("width", width)
+        .attr("height", height)
+        .append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
+        .attr("id", group => group.name + 'HullBackground')
+        .style("fill", '#ffffff')
+        .style("stroke", '#ffffff')
+        .style("stroke-width", 2.5 * hullRadius)
+        .style('stroke-linejoin', 'round')
+        .style("opacity", 1)
+        .merge(selectors.hullBackgrounds);
+
     // ~~~~ GROUP LINKS ~~~~
-    selectors.groupLineDefs.data(groupLinks, link => `${link.source}-${link.target}`).enter()
+    selectors.groupLineDefs = selectors.groupLineDefs.data(groupLinks, link => `${link.source}-${link.target}`)
+    selectors.groupLineDefs.exit().remove();
+    selectors.groupLineDefs = selectors.groupLineDefs.enter()
         .append("svg:marker")
-        .attr("id", groupLink => `${groupLink.id}-arrow`)
+        .attr("id", groupLink => `${groupLink.source}-${groupLink.target}-arrow`)
         .attr('viewBox', '0 -5 15 15')
         .attr("refX", 2.5)
         .attr("refY", 0)
@@ -1615,15 +1626,17 @@ export let buildForceDiagram = problem => data => {
         .append("path")
         .attr('d', 'M0,-5L10,0L0,5')
         .style("fill", groupLink => groupLink.color)
-        .exit().remove();
+        .merge(selectors.groupLineDefs);
 
-    selectors.groupLines.data(groupLinks, link => `${link.source}-${link.target}`).enter()
+    selectors.groupLines = selectors.groupLines.data(groupLinks, link => `${link.source}-${link.target}`)
+    selectors.groupLines.exit().remove();
+    selectors.groupLines = selectors.groupLines.enter()
         .append("line")
         .style('fill', 'none')
         .style('stroke', groupLink => groupLink.color)
         .style('stroke-width', 5)
-        .attr("marker-end", groupLink => `url(#${groupLink.id}-arrow)`)
-        .exit().remove();
+        .attr("marker-end", groupLink => `url(#${groupLink.source}-${groupLink.target}-arrow)`)
+        .merge(selectors.groupLines);
 }
 
 // depth increments for child arcs

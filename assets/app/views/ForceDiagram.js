@@ -3,28 +3,6 @@ import {mergeAttributes} from "../../common/common";
 import * as d3 from 'd3';
 import 'd3-selection-multi';
 
-
-/**
- find something centerish to the vertices of a convex hull
- (specifically, the center of the bounding box)
- */
-function jamescentroid(coord) {
-    let minx = coord[0][0],
-        maxx = coord[0][0],
-        miny = coord[0][1],
-        maxy = coord[0][1];
-    for (let j = 1; j < coord.length; j++) {
-        if (coord[j][0] < minx) minx = coord[j][0];
-        if (coord[j][1] < miny) miny = coord[j][1];
-        if (coord[j][0] > maxx) maxx = coord[j][0];
-        if (coord[j][1] > maxy) maxy = coord[j][1];
-    }
-    return [(minx + maxx) / 2, (miny + maxy) / 2];
-}
-
-// normalize: text -> html id
-let normalize = text => text.replace(/\W/g,'_');
-
 export default class ForceDiagram {
     oninit() {
         // strength parameter for group attraction/repulsion
@@ -43,7 +21,7 @@ export default class ForceDiagram {
         } = vnode.attrs;
 
         // options
-        let {radius, forceToggle} = vnode.attrs;
+        let {forceToggle, hullRadius} = vnode.attrs;
         let pebbleSet = new Set(pebbles);
 
         groups = groups
@@ -64,7 +42,7 @@ export default class ForceDiagram {
         // synchronize nodes with pebbles
         pebbles
             .filter(pebble => !(pebble in nodes))
-            .forEach(pebble => nodes[pebble] = {id: normalize(pebble), name: pebble});
+            .forEach(pebble => nodes[pebble] = {id: normalize(pebble), name: pebble, x: width * Math.random(), y: height * Math.random()});
         Object.keys(nodes)
             .filter(pebble => !pebbleSet.has(pebble))
             .forEach(pebble => delete nodes[pebble]);
@@ -108,41 +86,14 @@ export default class ForceDiagram {
             this.force
                 .force('link', d3.forceLink(pebbleLinks).distance(100))
                 .force('charge', d3.forceManyBody().strength(getPebbleCharge)) // prevent tight clustering
-                .force('x', d3.forceX(width / 2).strength(1))
-                .force('y', d3.forceY(height / 2).strength(1));
+                .force('x', d3.forceX(width / 2).strength(.05))
+                .force('y', d3.forceY(height / 2).strength(.05));
 
-            this.kGroupGravity = 8 / (groups.length || 1); // strength parameter for group attraction/repulsion
+            this.kGroupGravity = 6 / (groups.length || 1); // strength parameter for group attraction/repulsion
         }
-
-        let debugCount = 0;
 
         // called on each force animation frame
         let tick = () => {
-
-            function lengthen(coords) {
-                // d3.geom.hull returns null for two points, and fails if three points are in a line,
-                // so this puts a couple points slightly off the line for two points, or around a singleton.
-                if (coords.length === 2) {
-                    let deltax = coords[0][0] - coords[1][0];
-                    let deltay = coords[0][1] - coords[1][1];
-                    coords.push([
-                        (coords[0][0] + coords[1][0]) / 2 + deltay / 20,
-                        (coords[0][1] + coords[1][1]) / 2 + deltax / 20
-                    ]);
-                    coords.push([
-                        (coords[0][0] + coords[1][0]) / 2 - deltay / 20,
-                        (coords[0][1] + coords[1][1]) / 2 - deltax / 20
-                    ]);
-                }
-                if (coords.length === 1) {
-                    let delta = radius * 0.2;
-                    coords.push([coords[0][0] + delta, coords[0][1]]);
-                    coords.push([coords[0][0] - delta, coords[0][1]]);
-                    coords.push([coords[0][0], coords[0][1] + delta]);
-                    coords.push([coords[0][0], coords[0][1] - delta]);
-                }
-                return coords;
-            }
 
             let groupCoords = groups
                 .reduce((out, group) => Object.assign(out, {
@@ -151,37 +102,29 @@ export default class ForceDiagram {
 
             let hullCoords = groups.reduce((out, group) => group.nodes.length === 0 ? out
                 : Object.assign(out, {
-                    [group.name]: d3.polygonHull(lengthen(groupCoords[group.name]))
+                    [group.name]: d3.polygonHull(lengthen(groupCoords[group.name], hullRadius))
                 }), {});
 
             this.selectors.hulls
                 .attr('d', d => `M${hullCoords[d.name].join('L')}Z`);
+            this.selectors.hullBackgrounds
+                .attr('d', d => `M${hullCoords[d.name].join('L')}Z`);
 
             // update positions of groupLines
-            // TODO: intersect arrow with convex hull
             let centroids = Object.keys(hullCoords)
                 .reduce((out, group) => Object.assign(out, {[group]: jamescentroid(hullCoords[group])}), {});
 
-            // let groupLinkPrep = link => {
-            //     let srcCent = centroids[link.source];
-            //     let tgtCent = centroids[link.target];
-            //
-            //     let delta = [tgtCent[0] - srcCent[0], tgtCent[1] - srcCent[1]];
-            //     let dist = Math.sqrt(delta.reduce((sum, axis) => sum + axis * axis, 0));
-            //     let norm = dist === 0 ? [0, 0] : delta.map(axis => axis / dist);
-            //     let padding = [radius + 7, radius + 10];
-            //
-            //     return {srcCent, tgtCent, padding, norm};
-            // };
-            //
-            // this.groupLines.data(groupLinks.map(groupLinkPrep)).enter()
-            //     .append('line')
-            //     .attr('x1', d => d.srcCent[0] + d.padding[0] * d.norm[0])
-            //     .attr('y1', d => d.srcCent[1] + d.padding[0] * d.norm[1])
-            //     .attr('x2', d => d.tgtCent[0] + d.padding[1] * d.norm[0])
-            //     .attr('x1', d => d.tgtCent[1] + d.padding[1] * d.norm[1])
-            //     .exit().remove();
-            //
+            let intersections = groupLinks.reduce((out, line) => Object.assign(out, {
+                [`${line.source}-${line.target}`]: {
+                    source: centroids[line.source],
+                    target: intersectLineHull(centroids[line.source], centroids[line.target], hullCoords[line.target], hullRadius * 1.5)
+                }}), {});
+
+            this.selectors.groupLines// TODO: intersect arrow with convex hull
+                .attr('x1', line => (intersections[`${line.source}-${line.target}`].source || centroids[line.source])[0] || 0)
+                .attr('y1', line => (intersections[`${line.source}-${line.target}`].source || centroids[line.source])[1] || 0)
+                .attr('x2', line => (intersections[`${line.source}-${line.target}`].target || centroids[line.target])[0] || 0)
+                .attr('y2', line => (intersections[`${line.source}-${line.target}`].target || centroids[line.target])[1] || 0);
 
             // NOTE: update positions of nodes BEFORE adjusting positions for group forces
             // This keeps the nodes centered in the group when resizing,
@@ -193,7 +136,7 @@ export default class ForceDiagram {
             // group members attract each other, repulse non-group members
             groups.filter(group => group.name in centroids).forEach(group => {
                 nodeArray.forEach(node => {
-                    let sign = group.nodes.has(node.name) ? 1 : -1;
+                    let sign = group.nodes.has(node.name) ? 2.5 : -1;
 
                     let delta = [centroids[group.name][0] - node.x, centroids[group.name][1] - node.y];
                     let dist = Math.sqrt(delta.reduce((sum, axis) => sum + axis * axis, 0));
@@ -223,8 +166,9 @@ export default class ForceDiagram {
             // this.circle.attr('transform', d => 'translate(' + (d.x || 0) + ',' + (d.y || 0) + ')');
         };
         this.force.on('tick', tick);
-        this.force.alpha(1).restart();
-    };
+        this.force.alphaTarget( 1).restart();
+        setTimeout(() => this.force.alphaTarget(0).restart(), 1000)
+    }
 
     oncreate(vnode) {
         let {nodes} = vnode.attrs;
@@ -262,6 +206,10 @@ export default class ForceDiagram {
             .attr('id', 'groupLinks')
             .selectAll('line');
 
+        this.selectors.hullBackgrounds = svg // group hulls handle
+            .append('svg:g')
+            .attr('id', 'hulls')
+            .selectAll('svg');
         this.selectors.hulls = svg // group hulls handle
             .append('svg:g')
             .attr('id', 'hulls')
@@ -295,3 +243,106 @@ export default class ForceDiagram {
         );
     }
 }
+
+
+/**
+ find something centerish to the vertices of a convex hull
+ (specifically, the center of the bounding box)
+ */
+function jamescentroid(coord) {
+    let minx = coord[0][0],
+        maxx = coord[0][0],
+        miny = coord[0][1],
+        maxy = coord[0][1];
+    for (let j = 1; j < coord.length; j++) {
+        if (coord[j][0] < minx) minx = coord[j][0];
+        if (coord[j][1] < miny) miny = coord[j][1];
+        if (coord[j][0] > maxx) maxx = coord[j][0];
+        if (coord[j][1] > maxy) maxy = coord[j][1];
+    }
+    return [(minx + maxx) / 2, (miny + maxy) / 2];
+}
+
+let sub = (a, b) => a.reduce((out, _, i) => [...out, a[i] - b[i]], []);
+let mul = (a, b) => a.map(e => e * b);
+let dot = (a, b) => a.reduce((out, _, i) => out + a[i] * b[i], 0);
+let mag = a => a.reduce((out, e) => out + e * e, 0);
+
+let intersectLineHull = (a1, a2, points, radius) => {
+    // endpoints of the line segment on the convex hull that intercepts a1, a2 centroids
+    let b1, b2;
+    let int; // intercept
+    points.some((_, i) => {
+        b1 = points[i];
+        b2 = points[(i + 1) % points.length];
+        int = intersectLineLine(a1, a2, b1, b2);
+        return int !== undefined;
+    });
+
+    if (!int) return;
+    let dir1 = sub(b2, int);
+    let dir2 = sub(b2, int);
+
+    let dirSource = sub(a1, int);
+
+    // definition of dot product to find angle between segment a and segment b
+    let theta1 = Math.acos(dot(dir1, dirSource) / (mag(dir1) * mag(dirSource)));
+    let theta2 = Math.acos(dot(dir2, dirSource) / (mag(dir2) * mag(dirSource)));
+    // take the acute side
+    let [dirHull, theta] = Math.abs(theta1) < 90 ? [dir1, theta1] : [dir2, theta2];
+
+    // compute length of triangle base
+    let width = radius / Math.tan(theta);
+    let hypotenuse = Math.sqrt(width * width + radius * radius);
+    // offset intercept by the hypotenuse length in the direction of the source centroid
+    return sub(int, mul(dirSource, -hypotenuse / Math.sqrt(mag(dirSource))));
+};
+
+let intersectLineLine = (p1, p2, p3, p4) => {
+    // ua_t is the reparameterization for the segment p1 - p2
+    let ua_t = (p3[1] - p4[1]) * (p1[0] - p3[0]) + (p4[0] - p3[0]) * (p1[1] - p3[1]);
+    let ub_t = (p1[1] - p2[1]) * (p1[0] - p3[0]) + (p2[0] - p1[0]) * (p1[1] - p3[1]);
+    let u_b = (p4[0] - p3[0]) * (p1[1] - p2[1]) - (p1[0] - p2[0]) * (p4[1] - p3[1]);
+
+    if (u_b !== 0) {
+        let ua = ua_t / u_b;
+        let ub = ub_t / u_b;
+
+        if ( 0 <= ua && ua <= 1 && 0 <= ub && ub <= 1 ) {
+            return [
+                p1[0] + ua * (p2[0] - p1[0]),
+                p1[1] + ua * (p2[1] - p1[1])
+            ]
+        }
+    }
+};
+
+
+function lengthen(coords, radius) {
+    // d3.geom.hull returns null for two points, and fails if three points are in a line,
+    // so this puts a couple points slightly off the line for two points, or around a singleton.
+    if (coords.length === 2) {
+        let deltax = coords[0][0] - coords[1][0];
+        let deltay = coords[0][1] - coords[1][1];
+        coords.push([
+            (coords[0][0] + coords[1][0]) / 2 + deltay / 20,
+            (coords[0][1] + coords[1][1]) / 2 + deltax / 20
+        ]);
+        coords.push([
+            (coords[0][0] + coords[1][0]) / 2 - deltay / 20,
+            (coords[0][1] + coords[1][1]) / 2 - deltax / 20
+        ]);
+    }
+    if (coords.length === 1) {
+        let delta = radius * 0.2;
+        coords.push([coords[0][0] + delta, coords[0][1] + delta]);
+        coords.push([coords[0][0] - delta, coords[0][1] + delta]);
+        coords.push([coords[0][0] + delta, coords[0][1] - delta]);
+        coords.push([coords[0][0] - delta, coords[0][1] - delta]);
+    }
+    return coords;
+}
+
+
+// normalize: text -> html id
+let normalize = text => text.replace(/\W/g,'_');

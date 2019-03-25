@@ -1127,7 +1127,8 @@ class Body {
                         radius: app.defaultPebbleRadius,
                         nodes: app.nodesReadOnly,
                         selectedPebble: app.selectedPebble,
-                        builder: app.buildForceDiagram(selectedProblem)
+                        builder: app.buildForceDiagram(selectedProblem),
+                        hullRadius: app.hullRadius
                     }, app.forceDiagramStatic, app.buildForceData(selectedProblem)))
                 ),
 
