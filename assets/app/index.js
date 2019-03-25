@@ -89,8 +89,7 @@ function leftpanel(mode) {
             ...leftpanelVariables.filter(variable => !matchedVariables.includes(variable))
         ];
 
-        let nominalVariables = Object.keys(selectedProblem.summaries)
-            .filter(variable => selectedProblem.summaries[variable].nature === 'nominal');
+        let nominalVariables = app.getNominalVariables();
 
         sections.push({
             value: 'Variables',
@@ -112,13 +111,15 @@ function leftpanel(mode) {
                             [app.hexToRgba(common.selVarColor)]: app.is_explore_mode ? selectedProblem.loose : nodesExplore.map(node => node.name),
                             [app.hexToRgba(common.gr1Color, .25)]: selectedProblem.predictors,
                             // [app.hexToRgba(common.gr2Color)]: app.zparams.zgroup2,
-                            [app.hexToRgba(common.taggedColor)]: nominalVariables,
                             [app.hexToRgba(common.taggedColor)]: app.is_explore_mode ? [] : selectedProblem.targets
                         },
                         classes: {
                             'item-dependent': app.is_explore_mode ? [] : selectedProblem.targets,
                             'item-nominal': nominalVariables,
-                            'item-bordered': matchedVariables
+                            'item-bordered': matchedVariables,
+                            'item-cross-section': selectedProblem.tags.crossSection,
+                            'item-time': selectedProblem.tags.time,
+                            'item-weight': selectedProblem.tags.weights
                         },
                         callback: x => {
                             let selectedProblem = app.getSelectedProblem();
@@ -329,10 +330,10 @@ function leftpanel(mode) {
                     m('center',
                         m('b', app.hoverPebble || app.selectedPebble),
                         m('br'),
-                        m('i', app.getSelectedProblem().summaries[app.hoverPebble || app.selectedPebble].labl)),
+                        m('i', selectedProblem.summaries[app.hoverPebble || app.selectedPebble].labl)),
                     m(Table, {
                         id: 'varSummaryTable',
-                        data: app.getVarSummary(app.getSelectedProblem().summaries[app.hoverPebble || app.selectedPebble])
+                        data: app.getVarSummary(selectedProblem.summaries[app.hoverPebble || app.selectedPebble])
                     })
                 ]
             }
@@ -1125,6 +1126,7 @@ class Body {
                         forcetoggle: app.forceToggle,
                         radius: app.defaultPebbleRadius,
                         nodes: app.nodesReadOnly,
+                        selectedPebble: app.selectedPebble,
                         builder: app.buildForceDiagram(selectedProblem)
                     }, app.forceDiagramStatic, app.buildForceData(selectedProblem)))
                 ),
@@ -1151,8 +1153,10 @@ class Body {
                     {id: "timeButton", vars: selectedProblem.tags.time, name: 'Time', borderColor: common.timeColor, innerColor: 'white', width: 1},
                     {id: "csButton", vars: selectedProblem.tags.crossSection, name: 'Cross Sec', borderColor: common.csColor, innerColor: 'white', width:  1},
                     {id: "dvButton", vars: selectedProblem.targets, name: 'Dep Var', borderColor: common.dvColor, innerColor: 'white', width: 1},
-                    {id: "predButton", vars: selectedProblem.predictors, name: 'Predictors', borderColor: common.gr1Color, innerColor: common.gr1Color, width: 0},
                     {id: "nomButton", vars: selectedProblem.tags.nominal, name: 'Nominal', borderColor: common.nomColor, innerColor: 'white', width: 1},
+                    {id: "weightButton", vars: selectedProblem.tags.weights, name: 'Weight', borderColor: common.weightColor, innerColor: 'white', width: 1},
+                    {id: "predButton", vars: selectedProblem.predictors, name: 'Predictors', borderColor: common.gr1Color, innerColor: common.gr1Color, width: 0},
+                    {id: "priorsButton", vars: selectedProblem.predictors, name: 'Priors', borderColor: common.warnColor, innerColor: common.warnColor, width: 0},
                 ].filter(group => group.vars.length > 0).map(group =>
                     m(`#${group.id}[style=width:100% !important]`,
                         m(".rectColor[style=display:inline-block]", m("svg[style=width: 20px; height: 20px]",
@@ -1336,7 +1340,7 @@ class Body {
                     onclick: () => app.setPeekInlineShown(!app.peekInlineShown)
                 }, 'Peek'),
                 m(Button, {onclick: () => window.open('#!/data', 'data'), class: 'btn-sm'}, m(Icon, {name: 'link-external'}))),
-            manipulate.totalSubsetRecords !== undefined && m("span.label.label-default#recordCount", {
+            manipulate.totalSubsetRecords !== undefined && m("span.badge.badge-pill.badge-secondary#recordCount", {
                 style: {
                     float: 'right',
                     "margin-left": "5px",

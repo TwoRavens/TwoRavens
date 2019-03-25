@@ -11,6 +11,7 @@ input.form-control {
 .btn {
     text-transform: none;
     font-size: .9rem;
+    padding: 0.8rem;
 }
 .btn-sm {
     padding: 0.4rem 0.6rem;
@@ -392,6 +393,15 @@ tr.item-lineout{
 }
 .item-nominal {
     border: solid #ff6600;
+}
+.item-cross-section {
+    border: solid #419641;
+}
+.item-time {
+    border: solid #2d6ca2;
+}
+.item-weight {
+    border: solid #bf4d66;
 }
 .item-lineout{
     text-decoration:line-through;

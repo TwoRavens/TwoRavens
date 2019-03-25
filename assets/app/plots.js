@@ -1143,7 +1143,8 @@ export function densityNode(node, obj, radius, explore) {
     plotsvg.append("path")
         .datum(data2)
         .attr("class", "area")
-        .attr("d", area);
+        .attr("d", area)
+        .attr("fill", "#1f77b4");
 }
 
 export function barsNode(node, obj, radius, explore) {

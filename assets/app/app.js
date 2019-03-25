@@ -662,7 +662,20 @@ let svg, div;
 export let width, height;
 
 export let selectedPebble;
-export let setSelectedPebble = pebble => selectedPebble = pebble;
+export let setSelectedPebble = pebble => {
+    selectedPebble && hideArcs(selectedPebble);
+    selectedPebble = pebble;
+
+    if (selectedPebble) {
+        showArcs(selectedPebble);
+        leftTab !== 'Summary' && setLeftTabHidden(leftTab);
+        setLeftTab('Summary');
+    } else if (leftTabHidden) {
+        setLeftTab(leftTabHidden);
+        setLeftTabHidden(undefined);
+    }
+    m.redraw();
+}
 export let hoverPebble;
 
 export let byId = id => document.getElementById(id);
@@ -817,8 +830,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     if (!configurations){
         setModal('No current workspace config in list!', "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
     }
-    console.warn("#debug configurations");
-    console.log(configurations);
 
     // Take the 1st configuration from the list -- for now...
     //let configurations = config_result.data[0]
@@ -1032,15 +1043,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     if(!swandive && resPreprocess) {
         let dataset = getSelectedDataset();
-
-
-        console.warn("#debug resPreprocess");
-        console.log(resPreprocess);
-        console.warn("#debug swandive");
-        console.log(swandive);
-
-        console.warn("#debug dataset");
-        console.log(dataset);
         // assign discovered problems into problems set, keeping the d3m problem
         Object.assign(dataset.problems, discovery(resPreprocess.dataset.discovery));
         dataset.variablesInitial = Object.keys(dataset.summaries);
@@ -1357,12 +1359,20 @@ export let buildForceData = problem => {
             {
                 name: "Predictors",
                 color: common.gr1Color,
-                nodes: new Set(problem.predictors)
+                nodes: new Set(problem.predictors),
+                opacity: 0.3
             },
             {
                 name: "Targets",
                 color: common.gr2Color,
-                nodes: new Set(problem.targets)
+                nodes: new Set(problem.targets),
+                opacity: 0.3
+            },
+            {
+                name: "Priors",
+                color: common.warnColor,
+                nodes: new Set(['At_bats', 'Hits', 'RBIs']),
+                opacity: 0.4
             }
         ];
 
@@ -1402,6 +1412,9 @@ export let buildForceDiagram = problem => data => {
         selectors
     } = data;
 
+    console.warn("#debug problem");
+    console.log(problem);
+
     // ~~~~ PREPARATION ~~~~
     let pebbleInfo = pebbles
         .reduce((out, pebble) => Object.assign(out, {[pebble]: {}}), {})
@@ -1420,38 +1433,45 @@ export let buildForceDiagram = problem => data => {
 
     // the order of the keys indicates precedence
     let params = {
+        predictors: new Set(problem.predictors),
+        loose: new Set(problem.tags.loose),
         transformed: new Set(problem.tags.transformed),
         crossSection: new Set(problem.tags.crossSection),
         time: new Set(problem.tags.time),
-        // nominals: new Set(getNominalVariables()), // include both nominal-casted and string-type variables
+        nominal: new Set(getNominalVariables()), // include both nominal-casted and string-type variables
+        weight: new Set(problem.tags.weights),
         targets: new Set(problem.targets),
-        predictors: new Set(problem.predictors),
     };
 
     let strokeWidths = {
         crossSection: 4,
         time: 4,
         nominal: 4,
-        targets: 4
+        targets: 4,
+        weight: 4
     };
+
     let nodeColors = {
         crossSection: common.taggedColor,
         time: common.taggedColor,
         nominal: common.taggedColor,
         targets: common.taggedColor,
+        weight: common.taggedColor,
+        loose: common.selVarColor,
     };
     let strokeColors = {
         crossSection: common.csColor,
         time: common.timeColor,
         nominal: common.nomColor,
-        targets: common.dvColor
+        targets: common.dvColor,
+        weight: common.weightColor
     };
 
     // set the base color of each node
     pebbles.forEach(pebble => {
         pebbleInfo[pebble].strokeWidth = 1;
         pebbleInfo[pebble].nodeCol = colors(generateID(pebble));
-        pebbleInfo[pebble].strokeColor = common.selVarColor;
+        pebbleInfo[pebble].strokeColor = 'transparent';
     });
 
     // set additional styling for each node
@@ -1469,22 +1489,27 @@ export let buildForceDiagram = problem => data => {
 
     selectors.circle = selectors.circle.data(pebbles, _=>_);
     selectors.circle.exit().remove();
-    console.warn("#debug pebbles");
-    console.log(pebbles);
 
     // update existing nodes
     selectors.circle.selectAll('circle')
-        .style('fill', pebble => {
-            if (!(pebble in pebbleInfo)) {
-                console.warn("#debug pebble");
-                console.log(pebble);
-                console.warn("#debug pebbleInfo");
-                console.log(pebbleInfo);
-            }
-            return d3.rgb(pebbleInfo[pebble].nodeCol)
-        })
+        .style('fill', pebble => d3.rgb(pebbleInfo[pebble].nodeCol))
         .style('stroke', pebble => d3.rgb(pebbleInfo[pebble].strokeColor))
         .style('stroke-width', pebble => pebbleInfo[pebble].strokeWidth)
+        .on('mouseover', d => {
+            hoverPebble = d;
+            setTimeout(() => {
+                if (hoverPebble !== d) return;
+                showArcs(d); // TODO: normalize d
+            }, hoverTimeout)
+        })
+        .on('mouseout', d => {
+            hoverPebble = undefined;
+            setTimeout(() => {
+                if (hoverPebble === d || selectedPebble === d) return;
+                hideArcs(d)
+            }, hoverTimeout) // TODO: normalize d
+        })
+        .on('click', setSelectedPebble)
         .transition()  // Shrink/expand pebbles that join/leave groups
         .duration(100)
         .attr('r', pebble => pebbleInfo[pebble].radius);
@@ -1505,17 +1530,20 @@ export let buildForceDiagram = problem => data => {
 
     // add plot
     bigGroup.each(function (pebble) {
-        d3.select(this);
         let summary = problem.summaries[pebble];
         if (!summary) return;
-        try {
-            if (summary.plottype === 'continuous')
-                densityNode(summary, this, pebbleInfo[pebble].radius);
-            else if (summary.plottype === 'bar')
-                barsNode(summary, this, pebbleInfo[pebble].radius);
-        } catch (e) {
-            console.warn('Drawing node failed');
-        }
+        if (summary.plottype === 'continuous')
+            densityNode({
+                name: pebble,
+                plotx: summary.plotx,
+                ploty: summary.ploty,
+            }, this, pebbleInfo[pebble].radius);
+        else if (summary.plottype === 'bar')
+            barsNode({
+                name: pebble,
+                plotvalues: summary.plotvalues,
+                nature: summary.nature
+            }, this, pebbleInfo[pebble].radius);
     });
     //
     // // TODO: validate
@@ -1529,11 +1557,8 @@ export let buildForceDiagram = problem => data => {
         .style('font-size', pebble => pebbleInfo[pebble].radius * .175 + 7 + 'px')
         .attr('class', 'id')
         .text(d => d);
-    //
-    // // remove old nodes
-    // selectors.circle.exit().remove();
-    //
-    // makeArcs(g, forceDiagramLabels(problem));
+
+    makeArcs(bigGroup, pebbleInfo, forceDiagramLabels(problem));
 
     // ~~~~ LINKS ~~~~
     // path (link) group
@@ -1563,32 +1588,18 @@ export let buildForceDiagram = problem => data => {
     selectors.path.exit().remove();
 
     // ~~~~ GROUPS ~~~~
-    // selectors.hullBackgrounds.data(groups, group => group.name).enter()
-    //     .append('svg')
-    //     .attr("width", width)
-    //     .attr("height", height)
-    //     .append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
-    //     .attr("id", group => group.name + 'HullBackground')
-    //     .style("fill", '#ffffff')
-    //     .style("stroke", '#ffffff')
-    //     .style("stroke-width", 2.5 * hullRadius)
-    //     .style('stroke-linejoin', 'round')
-    //     .style("opacity", 1)
-    //     .exit().remove();
 
     selectors.hulls = selectors.hulls.data(groups, group => group.name)
     selectors.hulls.exit().remove();
     selectors.hulls = selectors.hulls.enter()
         .append("svg")
-        .attr("width", width)
-        .attr("height", height)
         .append("path")
         .attr("id", group => group.name + 'Hull')
         .style("fill", group => group.color)
         .style("stroke", group => group.color)
         .style("stroke-width", 2.5 * hullRadius)
         .style('stroke-linejoin', 'round')
-        .style('opacity', 0.3)
+        .style('opacity', group => group.opacity)
         .merge(selectors.hulls);
 
     // ~~~~ GROUP LINKS ~~~~
@@ -1616,8 +1627,9 @@ export let buildForceDiagram = problem => data => {
 }
 
 // depth increments for child arcs
-let radialGapSize = depth => Math.pi / 10;
-let axialGapSize = depth => 5 / (depth + 1); // gap between pebble and arc, or between arcs
+let radialGapSize = depth => Math.PI / 20;
+let axialGapSize = depth => 3 / (depth / 4 + 1); // gap between pebble and arc, or between arcs
+let axialLabelSize = depth => arcHeight // / (depth / 4 + 1); // uncomment to reduce width on deeper arcs
 let arcHeight = 15;
 
 // milliseconds to wait before showing/hiding the pebble handles
@@ -1629,74 +1641,78 @@ let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
     .duration(d2);
 
 let append = (str, attr) => x => str + x[attr || 'id'];
-let makeArcs = (g, labels, left = 0, right = 2 * Math.pi, depth = 0) => labels.forEach((label, i) => {
+let makeArcs = (g, pebbleInfo, labels, left = 0, right = 2 * Math.PI, depth = 0) => labels.forEach((label, i) => {
     let labelLeft = left + (right - left) / labels.length * i;
-    let labelRight = left + (right - left) / labels.length * (i + 1) - radialGapSize(depth);
+    let labelRight = left + (right - left) / labels.length * (i + 1)  + (!label.children && i === labels.length - 1 ? 0 : -radialGapSize(depth));
 
-    if (depth === 0) arcIds.length = 0;
+    // if (depth === 0) arcIds.length = 0;
     g.append("path").each(function(d) {
-        let offset = d.radius + Array.from({length: depth})
-            .reduce((sum, lvl) => sum + axialGapSize(lvl), 0) + arcHeight * depth;
+        let offset = pebbleInfo[d].radius + Array.from({length: depth})
+            .reduce((sum, _, lvl) => sum + axialGapSize(lvl) + axialLabelSize(lvl), axialGapSize(0));
+
+        let arc = d3.arc()
+            .innerRadius(offset).outerRadius(offset + axialLabelSize(depth))
+            .startAngle(labelLeft)
+            .endAngle(labelRight);
 
         d3.select(this)
-            .attr("id", append('arc' + depth + label.id))
-            .attr("d", d3.arc()
-                .innerRadius(offset).outerRadius(offset + arcHeight)
-                .startAngle(labelLeft)
-                .endAngle(labelRight))
+            .attr("id", 'arc' + label.id + d) // TODO: normalize d
+            .attr("d", arc)
             .attrs(label.attrs)
-            .on('onclick', label.onclick)
-            .on('mouseover', function (d) {
-                d.forefront = true;
-                if (hoverPebble === d.name) {
-                    setTimeout(() => {
-                        if (!d.forefront) return;
-                        hoverPebble = d.name;
-                        showArcs(d.id);
-                    }, hoverTimeout)
-                }
+            .on('click', label.onclick)
+            .on('mouseover', d => {
+                hoverPebble = d;
+                setTimeout(() => {
+                    if (hoverPebble !== d) return;
+                    showArcs(d); // TODO: normalize d
+                }, hoverTimeout)
             })
-            .on('mouseout', function (d) {
-                d.forefront = false;
-                if (d.name === selectedPebble) return;
-                setTimeout(() => hideArcs(d.id), hoverTimeout)
+            .on('mouseout', d => {
+                hoverPebble = undefined;
+                setTimeout(() => {
+                    if (hoverPebble === d || selectedPebble === d) return;
+                    hideArcs(d)
+                }, hoverTimeout) // TODO: normalize d
             });
+    });
 
-        g.append("text")
-            .attr("id", append('arcText' + label.id))
+    g.append("text").each(function(d) {
+        d3.select(this)
+            .attr("id", 'arcText' + label.id + d)
             .attr("x", 6)
             .attr("dy", 11.5)
             .attr("fill-opacity", 0)
+            .on('click', label.onclick)
             .append("textPath")
-            .attr("xlink:href", append('#arc' + label.id))
+            .attr("xlink:href", '#arc' + label.id + d)
             .text(label.name);
+    })
 
-        arcIds.push(label.id)
-    });
-
+    arcIds.add(label.id)
 
     if ('children' in label)
-        makeArcs(g, label.children, labelLeft, labelRight, depth + 1)
+        makeArcs(g, pebbleInfo, label.children, labelLeft, labelRight, depth + 1)
 });
 
-let arcIds = [];
+let arcIds = new Set();
 let showArcs = pebbleId => {
-    arcIds.forEach(arcId => {
-        $fill('#arc' + arcId + pebbleId, .1, 0, 100);
-        $fill('#arcText' + arcId + pebbleId, .5, 0, 100);
+    [...arcIds].forEach(arcId => {
+        $fill('#arc' + arcId + pebbleId, .4, 0, 100);
+        $fill('#arcText' + arcId + pebbleId, .6, 0, 100);
     })
 };
 
 let hideArcs = pebbleId => {
-    arcIds.forEach(arcId => {
+    [...arcIds].forEach(arcId => {
         $fill('#arc' + arcId + pebbleId, 0, 100, 500);
         $fill('#arcText' + arcId + pebbleId, 0, 100, 500);
     })
 };
 
+// TODO: move into builder
 let pebbleEvents = {
     onclick: function (d) {
-        selectedPebble = d;
+        setSelectedPebble(d);
 
         d3.event.stopPropagation();
 
@@ -1774,88 +1790,97 @@ let pebbleEvents = {
                 mousedown_node.y);
     },
     dblclick: () => d3.event.stopPropagation(), // stop the click from bubbling
-    mouseover: pebble => { // show summary stats on mouseover
-        nodesReadOnly[pebble].forefront = true;
-
-        setTimeout(() => {
-            if (leftTab !== 'Summary') leftTabHidden = leftTab;
-            setLeftTab('Summary');
-
-            if (!nodesReadOnly[pebble].forefront) return;
-            hoverPebble = pebble;
-            showArcs(nodesReadOnly[pebble].id);
-            m.redraw();
-        }, hoverTimeout)
-    },
-    mouseout: pebble => {
-        nodesReadOnly[pebble].forefront = false;
-        setTimeout(() => {
-            hoverPebble = undefined;
-            setLeftTab(leftTabHidden);
-
-            if (selectedPebble !== pebble) hideArcs(nodesReadOnly[pebble].id);
-
-            m.redraw();
-        }, hoverTimeout)
-    }
 };
 
 let forceDiagramLabels = problem => [
     {
-        id: 'Predictor',
-        name: 'Predictor',
-        attrs: {style: {fill: common.gr1Color, 'fill-opacity': 0}},
-        onclick: d => {
-            remove(problem.targets, d.name);
-            toggle(problem.predictors, d.name);
-            setSelectedPebble(d.name);
-            m.redraw();
-        }
-    },
-    {
-        id: 'Dep',
-        name: 'Dep Var',
-        attrs: {style: {fill: common.dvColor, 'fill-opacity': 0}},
-        onclick: d => {
-            console.warn("#debug 'clicked depvar'");
-            console.log('clicked depvar', d);
-            remove(problem.predictors, d.name);
-            toggle(problem.targets, d.name);
-            setSelectedPebble(d.name);
-            m.redraw();
-        }
+        id: 'Group',
+        name: 'Group',
+        attrs: {fill: common.gr1Color, 'fill-opacity':0},
+        children: [
+            {
+                id: 'Predictor',
+                name: 'Predictor',
+                attrs: {fill: common.gr1Color, 'fill-opacity':0},
+                onclick: d => {
+                    remove(problem.targets, d);
+                    toggle(problem.predictors, d);
+                    setSelectedPebble(d);
+                }
+            },
+            {
+                id: 'Dep',
+                name: 'Dep Var',
+                attrs: {fill: common.dvColor, 'fill-opacity':0},
+                onclick: d => {
+                    remove(problem.predictors, d);
+                    toggle(problem.targets, d);
+                    setSelectedPebble(d);
+                }
+            },
+            {
+                id: 'Prior',
+                name: 'Prior',
+                attrs: {fill: common.warnColor, 'fill-opacity':0},
+                onclick: d => {
+
+                    setSelectedPebble(d);
+                }
+            }
+        ]
     },
     {
         id: 'GroupLabel',
         name: 'Labels',
-        attrs: {style: {fill: common.nomColor, 'fill-opacity': 0}},
-        onclick: d => {
-            setSelectedPebble(d.name);
-            m.redraw();
-        },
+        attrs: {fill: common.nomColor, 'fill-opacity':0},
+        onclick: setSelectedPebble,
         children: [
             {
                 id: 'Nominal',
                 name: 'Nom',
-                attrs: {style: {fill: common.nomColor, 'fill-opacity': 0}},
+                attrs: {fill: common.nomColor, 'fill-opacity':0},
                 onclick: d => {
-                    toggle(problem.tags.nominal, d.name);
-                    setSelectedPebble(d.name);
-                    m.redraw();
+                    toggle(problem.tags.nominal, d);
+                    setSelectedPebble(d);
                 }
             },
             {
                 id: 'Time',
                 name: 'Time',
-                attrs: {style: {fill: common.timeColor, 'fill-opacity': 0}},
+                attrs: {fill: common.timeColor, 'fill-opacity':0},
                 onclick: d => {
-                    toggle(problem.time, d.name);
-                    setSelectedPebble(d.name);
-                    m.redraw();
+                    toggle(problem.tags.time, d);
+                    setSelectedPebble(d);
+                }
+            },
+            {
+                id: 'Cross',
+                name: 'Cross',
+                attrs: {fill: common.csColor, 'fill-opacity':0},
+                onclick: d => {
+                    toggle(problem.tags.crossSection, d);
+                    setSelectedPebble(d);
+                }
+            },
+            {
+                id: 'Weight',
+                name: 'Weight',
+                attrs: {fill: common.weightColor, 'fill-opacity':0},
+                onclick: d => {
+                    if (problem.tags.weights.includes(d))
+                        problem.tags.weights = [];
+                    else {
+                        problem.tags.weights = [d];
+                        remove(problem.targets, d);
+                        remove(problem.tags.time, d);
+                        remove(problem.tags.nominal, d);
+                        remove(problem.tags.crossSection, d);
+                    }
+                    setSelectedPebble(d);
                 }
             }
         ]
-    }
+    },
 ];
 
 export let forceDiagramStatic = {
@@ -1868,20 +1893,13 @@ export let forceDiagramStatic = {
             setOutsideClick(true);
         },
         onmouseup: () => {
-            if (mousedown_node) {
-                drag_line
-                    .classed('hidden', true)
-                    .style('marker-end', '');
-            }
-            if (outsideClick) {
-                setOutsideClick(false);
-                setSelectedPebble(undefined);
-                if (leftTabHidden) {
-                    setLeftTab(leftTabHidden);
-                    setLeftTabHidden(undefined);
-                    m.redraw();
-                }
-            }
+            // if (mousedown_node) {
+            //     drag_line
+            //         .classed('hidden', true)
+            //         .style('marker-end', '');
+            // }
+            setSelectedPebble(undefined);
+
             // because :active only works in WebKit?
             svg.classed('active', false);
             // clear mouse event vars
@@ -2710,7 +2728,7 @@ export function getVarSummary(d) {
     };
 
     return Object.keys(data)
-        .filter(key => data[key] === undefined) // drop all keys with nonexistent values
+        .filter(key => data[key] !== "" && data[key] !== undefined && !isNaN(data[key])) // drop all keys with nonexistent values
         .reduce((out, key) => Object.assign(out, {[key]: data[key]}), {})
 }
 
@@ -3596,8 +3614,10 @@ export let getResultsProblem = () => selectedDataset && getSelectedDataset().pro
 
 export let getNominalVariables = () => {
     let selectedProblem = getSelectedProblem();
-    return Object.keys(selectedProblem.summaries)
-        .filter(variable => selectedProblem.summaries[variable].nature === 'nominal');
+    return [...new Set([
+        ...Object.keys(selectedProblem.summaries).filter(variable => selectedProblem.summaries[variable].nature === 'nominal'),
+        ...selectedProblem.tags.nominal])
+    ];
 };
 
 export function setSelectedProblem(problemID) {

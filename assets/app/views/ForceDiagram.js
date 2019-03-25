@@ -38,7 +38,8 @@ export default class ForceDiagram {
         // data
         let {
             pebbles, pebbleLinks,
-            groups, groupLinks
+            groups, groupLinks,
+            selectedPebble
         } = vnode.attrs;
 
         // options
@@ -48,6 +49,10 @@ export default class ForceDiagram {
         groups = groups
             .filter(group => [...group.nodes].some(node => pebbleSet.has(node)));
         let groupNames = new Set(groups.map(group => group.name));
+
+        groups.forEach(group => {
+            group.nodes = new Set([...group.nodes].filter(pebble => pebbleSet.has(pebble)));
+        });
 
         pebbleLinks = pebbleLinks
             .filter(link => pebbleSet.has(link.source) && pebbleSet.has(link.target));
@@ -81,7 +86,7 @@ export default class ForceDiagram {
                 .map(group => group.nodes.size)); // grab the group size
 
             if (groupSize === -Infinity) return -800;
-            if (d.forefront) return -1000;
+            if (d.name === selectedPebble) return -1000;
 
             // decrease charge as pebbles become smaller, so they can pack together
             return groupSize > uppersize ? -400 * uppersize / groupSize : -400;
@@ -103,8 +108,8 @@ export default class ForceDiagram {
             this.force
                 .force('link', d3.forceLink(pebbleLinks).distance(100))
                 .force('charge', d3.forceManyBody().strength(getPebbleCharge)) // prevent tight clustering
-                .force('x', d3.forceX(width / 2).strength(.05))
-                .force('y', d3.forceY(height / 2).strength(.05));
+                .force('x', d3.forceX(width / 2).strength(1))
+                .force('y', d3.forceY(height / 2).strength(1));
 
             this.kGroupGravity = 8 / (groups.length || 1); // strength parameter for group attraction/repulsion
         }
@@ -257,10 +262,6 @@ export default class ForceDiagram {
             .attr('id', 'groupLinks')
             .selectAll('line');
 
-        this.selectors.hullBackgrounds = svg // white backings for each group
-            .append('g')
-            .attr('id', 'hullBackgrounds')
-            .selectAll('svg');
         this.selectors.hulls = svg // group hulls handle
             .append('svg:g')
             .attr('id', 'hulls')
