@@ -89,13 +89,14 @@
 
       <!-- D3M config info -->
       <div class="card">
-        <div class="card-header"><b>D3M config info</b></div>
+        <div class="card-header"><b>D3M config info / User Workspaces</b></div>
         <div class="card-body">
           <ul>
             <li><b>Current User Workspaces</b>
               <ul>
                 <li>Workspaces configs: <a href="{% url 'view_latest_user_configs' %}?pretty">view</a></li>
                 <li>Reset workspaces configs: <a href="{% url 'view_reset_user_configs' %}?pretty">view</a></li>
+                <li><a href="{% url 'clear_user_workspaces' %}">Clear user workspaces + return to pebbles page</a></li>
               </ul>
 
             <li><a href="{% url 'view_d3m_list' %}">

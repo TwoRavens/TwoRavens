@@ -4921,6 +4921,10 @@ export function handleAugmentDataMessage(msg_data){
       console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
       return;
   }
+
+  // Hide the modal
+  datamartPreferences.modalShown = undefined;
+
   if (msg_data.success === false) {
     setModal("Error: " + msg_data.user_message,
              "Data Augmentation Failed", true, "Close", true);
@@ -4928,7 +4932,8 @@ export function handleAugmentDataMessage(msg_data){
   }
 
   setModal("Success: " + msg_data.user_message,
-           "Data Augmentation Succeeded!", true, "Close", true);
+           "Data Augmentation Succeeded!", true, "Reload", false, locationReload);
+
 
   // console.log('datamart_id: ' + msg_data.data.datamart_id);
   // console.log('filesize: ' + msg_data.data.filesize);
