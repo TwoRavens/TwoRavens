@@ -26,7 +26,7 @@ urlpatterns = (
     #    views.api_materialize,
     #    name='api_materialize'),
 
-    url(r'^api/augment-async$',
+    url(r'^api/augment$',
         views.api_augment_async,
         name='api_augment_async'),
 

@@ -36,9 +36,9 @@ class AugmentUtil(BasicErrCheck):
         self.user_workspace = None
         self.augment_params = augment_params
 
-        import json
-        print('self.augment_params', json.dumps(self.augment_params, indent=4))
-        print('augment keys', self.augment_params.keys())
+        #import json
+        #print('self.augment_params', json.dumps(self.augment_params, indent=4))
+        #print('augment keys', self.augment_params.keys())
         # optional for websocket messages
         #
         self.websocket_id = kwargs.get('websocket_id')
