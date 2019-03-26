@@ -252,6 +252,7 @@ function leftpanel(mode) {
                     ].map(formatProblem),
                     activeRow: selectedDataset.resultsProblem,
                     onclick: problemID => {
+                        if (selectedProblem.problemID === problemID) return;
                         delete problems[selectedProblem.problemID];
                         let copiedProblem = app.getProblemCopy(problems[problemID]);
                         problems[copiedProblem.problemID] = copiedProblem;
@@ -353,7 +354,6 @@ function rightpanel(mode) {
     let selectedDataset = app.getSelectedDataset();
     let selectedProblem = app.getSelectedProblem();
     let resultsProblem = app.getResultsProblem();
-    return;
 
     // PROBLEM TAB
     selectedDataset && selectedProblem && sections.push({
@@ -1123,13 +1123,12 @@ class Body {
                         )],
 
                     selectedProblem && m(ForceDiagram, Object.assign({
-                        isPinned: app.forceToggle,
-                        radius: app.defaultPebbleRadius,
-                        nodes: app.nodesReadOnly,
                         selectedPebble: app.selectedPebble,
-                        builder: app.buildForceDiagram(selectedProblem),
-                        hullRadius: app.hullRadius
-                    }, app.forceDiagramStatic, app.buildForceData(selectedProblem)))
+                        setSelectedPebble: app.setSelectedPebble,
+                        isPinned: app.forceToggle,
+                        hullRadius: app.hullRadius,
+                        builder: app.buildForceDiagram(selectedProblem)
+                    }, app.buildForceData(selectedProblem)))
                 ),
 
                 app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}}, [

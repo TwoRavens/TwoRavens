@@ -1333,8 +1333,6 @@ function resetMouseVars() {
     mousedown_link = null;
 }
 
-// readonly, modified within the ForceDiagram class TODO: (monitor x/y coords to move pebbles between groups)
-export let nodesReadOnly = {};
 export let hullRadius = 40;
 export let defaultPebbleRadius = 40;
 
@@ -1511,7 +1509,7 @@ export let buildForceDiagram = problem => data => {
 
     let bigGroup = selectors.circle
         .enter().append('svg:g')
-        .attr('id', pebble => nodesReadOnly[pebble].id + 'biggroup')
+        .attr('id', pebble => pebble + 'biggroup')
 
     selectors.circle = bigGroup.merge(selectors.circle);
 
@@ -1894,40 +1892,6 @@ let forceDiagramLabels = problem => [
     },
 ];
 
-export let forceDiagramStatic = {
-
-    // TODO: watch out for closures here
-    attrsAll: {
-        onmousedown: function (e) {
-            // prevent I-bar on drag
-            e.preventDefault()
-            setOutsideClick(true);
-        },
-        onmouseup: () => {
-            // if (mousedown_node) {
-            //     drag_line
-            //         .classed('hidden', true)
-            //         .style('marker-end', '');
-            // }
-            setSelectedPebble(undefined);
-
-            // because :active only works in WebKit?
-            svg.classed('active', false);
-            // clear mouse event vars
-            resetMouseVars();
-        },
-        // TODO: drag_line scoping
-        // onmousemove: () => {
-        //     if (!mousedown_node)
-        //         return;
-        //     // update drag line
-        //     drag_line.attr('d', 'M' + mousedown_node.x + ',' + mousedown_node.y + 'L' + d3.mouse(this)[0] + ',' +
-        //         d3.mouse(this)[1]);
-        // },
-        style: {background: 'white'}
-    }
-};
-
 // returns index of node in allNodes by node name
 export function findNodeIndex(name) {
     return allNodes.findIndex(node => node.name === name)
@@ -2220,7 +2184,8 @@ function CreateProblemDefinition(problem) {
             }))
         }
     ];
-    return {problem: problemSpec, inputSpec};
+
+    return {problem: problemSpec, inputs: inputSpec};
 }
 
 // Create a problem description that follows the Problem Schema, for the Task 1 output.
@@ -2391,8 +2356,9 @@ export function downloadIncomplete() {
     called by clicking 'Solve This Problem' in model mode
 */
 export async function estimate() {
-    resultsProblem = getProblemCopy(getSelectedProblem());
+    let resultsProblem = getProblemCopy(getSelectedProblem());
     getSelectedDataset().problems[resultsProblem.problemID] = resultsProblem;
+    getSelectedDataset().resultsProblem = resultsProblem.problemID;
 
     if (!IS_D3M_DOMAIN){
         // let userUsg = 'This code path is no longer used.  (Formerly, it used Zelig.)';
@@ -2499,7 +2465,7 @@ export async function estimate() {
 
     ROOKPIPE_FROM_REQUEST.predictors && setxTable(ROOKPIPE_FROM_REQUEST.predictors);
     let searchTimeLimit = 5;
-    let searchSolutionParams = CreatePipelineDefinition(searchTimeLimit, resultsProblem);
+    let searchSolutionParams = CreatePipelineDefinition(resultsProblem, searchTimeLimit);
 
     let hasManipulation = resultsProblem.manipulations.length > 0;
     let hasNominal = [...resultsProblem.targets, ...resultsProblem.predictors]
@@ -2719,9 +2685,9 @@ export function getVarSummary(d) {
     let rint = d3.format('r');
     const precision = 4;
     let data = {
-        'Mean': formatPrecision(d.mean, precision) + d.meanCI
+        'Mean': formatPrecision(d.mean, precision) + (d.meanCI
             ? ` (${formatPrecision(d.meanCI.lowerBound, precision)}, ${formatPrecision(d.meanCI.upperBound, precision)})`
-            : '',
+            : ''),
         'Median': formatPrecision(d.median, precision),
         'Most Freq': rint(d.mode),
         'Most Freq Occurrences': rint(d.freqmode),
@@ -4063,20 +4029,17 @@ async function handleGetProduceSolutionResultsResponse(response){
 /*
   Triggered at the end of GetSearchSolutionsResults
 */
-async function handleENDGetSearchSolutionsResults(){
+async function handleENDGetSearchSolutionsResults() {
 
-  // stop spinner
+    // stop spinner
     buttonLadda['btnEstimate'] = false;
     m.redraw()
-  // change status of buttons for estimating problem and marking problem as finished
-  byId("btnEstimate").classList.remove("btn-success");
-  byId("btnEstimate").classList.add("btn-default");
-  byId("btnEndSession").classList.remove("btn-default");
-  byId("btnEndSession").classList.add("btn-success");
+    // change status of buttons for estimating problem and marking problem as finished
+    buttonClasses.btnEstimate = 'btn-secondary';
 
-  task2_finished = true; // should this go here?
+    task2_finished = true; // should this go here?
 
-  // stop the interval process
+    // stop the interval process
 }
 
 export function xhandleAugmentDataMessage(msg_data){

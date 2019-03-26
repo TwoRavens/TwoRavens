@@ -22,6 +22,7 @@ import * as queryMongo from "./queryMongo";
 import hopscotch from 'hopscotch';
 import CanvasImputation from "../canvases/CanvasImputation";
 import {alertLog, alertError} from "../app";
+import Icon from "../views/Icon";
 
 export function menu(compoundPipeline, pipelineId) {
 
@@ -269,7 +270,7 @@ export class PipelineFlowchart {
 
         let pipeline = app.manipulations[pipelineId];
 
-        let plus = m(`span.glyphicon.glyphicon-plus[style=color: #818181; font-size: 1em; pointer-events: none]`);
+        let plus = m(Icon, {name: 'plus'});
         let warn = (text) => m('[style=color:#dc3545;display:inline-block;]', text);
 
         let currentStepNumber = pipeline.indexOf((constraintMenu || {}).step);

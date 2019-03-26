@@ -7,20 +7,24 @@ export default class ForceDiagram {
     oninit() {
         // strength parameter for group attraction/repulsion
         this.kGroupGravity = 4;
+        // set when node is being dragged
         this.isDragging = false;
-        this.selectedPebble;
+        this.selectedPebble = undefined;
+        this.nodes = {};
+        this.selectors = {};
     }
 
     onupdate(vnode) {
         // element constructors
-        let {builder, nodes} = vnode.attrs;
+        let {builder} = vnode.attrs;
 
         // data
         let {
             pebbles, pebbleLinks,
-            groups, groupLinks,
-            selectedPebble
+            groups, groupLinks
         } = vnode.attrs;
+
+        let {selectedPebble} = vnode.attrs;
 
         // options
         let {isPinned, hullRadius} = vnode.attrs;
@@ -43,29 +47,29 @@ export default class ForceDiagram {
 
         // synchronize nodes with pebbles
         pebbles
-            .filter(pebble => !(pebble in nodes))
-            .forEach(pebble => nodes[pebble] = {id: normalize(pebble), name: pebble, x: width * Math.random(), y: height * Math.random()});
-        Object.keys(nodes)
+            .filter(pebble => !(pebble in this.nodes))
+            .forEach(pebble => this.nodes[pebble] = {id: normalize(pebble), name: pebble, x: width * Math.random(), y: height * Math.random()});
+        Object.keys(this.nodes)
             .filter(pebble => !pebbleSet.has(pebble))
-            .forEach(pebble => delete nodes[pebble]);
+            .forEach(pebble => delete this.nodes[pebble]);
 
         // rebind data to selectors
         builder && builder({
-            nodes, width, height,
+            nodes: this.nodes, width, height,
             data: {pebbles, pebbleLinks, groups, groupLinks},
             selectors: this.selectors
         });
 
         if (this.selectedPebble !== selectedPebble) {
             if (this.selectedPebble) {
-                delete nodes[this.selectedPebble].fx;
-                delete nodes[this.selectedPebble].fy;
+                delete (this.nodes[this.selectedPebble] || {}).fx;
+                delete (this.nodes[this.selectedPebble] || {}).fy;
             }
             this.selectedPebble = selectedPebble;
 
-            if (this.selectedPebble) Object.assign(nodes[selectedPebble], {
-                fx: nodes[selectedPebble].x,
-                fy: nodes[selectedPebble].y
+            if (this.selectedPebble && selectedPebble in this.nodes) Object.assign(this.nodes[selectedPebble], {
+                fx: this.nodes[selectedPebble].x,
+                fy: this.nodes[selectedPebble].y
             });
         }
 
@@ -85,25 +89,25 @@ export default class ForceDiagram {
             return groupSize > uppersize ? -400 * uppersize / groupSize : -400;
         }
 
-        let nodeArray = [...Object.values(nodes)];
+        let nodeArray = [...Object.values(this.nodes)];
 
         this.kGroupGravity = isPinned ? 0 : 6 / (groups.length || 1); // strength parameter for group attraction/repulsion
         this.force.nodes(nodeArray)
             .force('link', d3.forceLink(pebbleLinks).distance(100))
             .force('charge', d3.forceManyBody().strength(getPebbleCharge)) // prevent tight clustering
             .force('x', d3.forceX(width / 2).strength(.05))
-            .force('y', d3.forceY(height / 2).strength(.05));
+            .force('y', d3.forceY(height / 2.5).strength(.05));
 
         if (this.isPinned !== isPinned) {
             this.isPinned = isPinned;
             if (isPinned) Object.keys(nodes)
-                .forEach(key => Object.assign(nodes[key], {
-                    fx: nodes[key].x,
-                    fy: nodes[key].y
+                .forEach(key => Object.assign(this.nodes[key], {
+                    fx: this.nodes[key].x,
+                    fy: this.nodes[key].y
                 }));
-            else Object.keys(nodes).forEach(key => {
-                delete nodes[key].fx;
-                delete nodes[key].fy;
+            else Object.keys(this.nodes).forEach(key => {
+                delete this.nodes[key].fx;
+                delete this.nodes[key].fy;
             })
         }
 
@@ -112,7 +116,7 @@ export default class ForceDiagram {
 
             let groupCoords = groups
                 .reduce((out, group) => Object.assign(out, {
-                    [group.name]: [...group.nodes].map(node => [nodes[node].x, nodes[node].y])
+                    [group.name]: [...group.nodes].map(node => [this.nodes[node].x, this.nodes[node].y])
                 }), {});
 
             let hullCoords = groups.reduce((out, group) => group.nodes.length === 0 ? out
@@ -127,7 +131,7 @@ export default class ForceDiagram {
 
             // update positions of groupLines
             let centroids = Object.keys(hullCoords)
-                .reduce((out, group) => Object.assign(out, {[group]: jamescentroid(hullCoords[group])}), {});
+                .reduce((out, group) => Object.assign(out, {[group]: jamescentroid(groupCoords[group])}), {});
 
             let intersections = groupLinks.reduce((out, line) => Object.assign(out, {
                 [`${line.source}-${line.target}`]: {
@@ -145,20 +149,24 @@ export default class ForceDiagram {
             // This keeps the nodes centered in the group when resizing,
             // and the adjustment is still applied on the next tick regardless
             this.selectors.circle
-                .attr('transform', d => `translate(${nodes[d].x},${nodes[d].y})`);
+                .attr('transform', d => `translate(${this.nodes[d].x},${this.nodes[d].y})`);
 
             // update positions of nodes (not implemented as a force because centroid computation is shared)
             // group members attract each other, repulse non-group members
             groups.filter(group => group.name in centroids).forEach(group => {
                 nodeArray.forEach(node => {
-                    let sign = group.nodes.has(node.name) ? 2.5 : -1;
+                    let sign = group.nodes.has(node.name) ? 1 : -1;
 
                     let delta = [centroids[group.name][0] - node.x, centroids[group.name][1] - node.y];
                     let dist = Math.sqrt(delta.reduce((sum, axis) => sum + axis * axis, 0));
                     let norm = dist === 0 ? [0, 0] : delta.map(axis => axis / dist);
 
-                    node.x += Math.min(norm[0], delta[0] / 100) * this.kGroupGravity * sign * this.force.alpha();
-                    node.y += Math.min(norm[1], delta[1] / 100) * this.kGroupGravity * sign * this.force.alpha();
+                    let dx = Math.min(norm[0], delta[0] / 100) * this.kGroupGravity * sign * this.force.alpha();
+                    let dy = Math.min(norm[1], delta[1] / 100) * this.kGroupGravity * sign * this.force.alpha();
+                    node.x += dx;
+                    node.y += dy;
+                    node.vx += dx * .1;
+                    node.vy += dy * .1;
                 });
             });
             //
@@ -189,9 +197,9 @@ export default class ForceDiagram {
     }
 
     oncreate(vnode) {
-        let {nodes} = vnode.attrs;
+        let {nodes, setSelectedPebble} = vnode.attrs;
         let svg = d3.select(vnode.dom);
-        this.selectors = {};
+        this.nodes = nodes || this.nodes;
 
         // define arrow markers for graph links
         svg.append('svg:defs').append('svg:marker')
@@ -247,7 +255,7 @@ export default class ForceDiagram {
             .attr('class', 'link dragline hidden')
             .attr('d', 'M0,0L0,0');
 
-        this.force = d3.forceSimulation([...Object.values(nodes)]);
+        this.force = d3.forceSimulation([...Object.values(this.nodes)]);
 
 
         d3.select(vnode.dom)
@@ -255,16 +263,22 @@ export default class ForceDiagram {
                 .container(vnode.dom)
                 .subject(() => this.force.find(d3.event.x, d3.event.y))
                 .on("start", () => {
+                    if (Math.abs(d3.event.sourceEvent.x - d3.event.subject.x) > 80 || Math.abs(d3.event.sourceEvent.y - d3.event.subject.y - 100) > 80) {
+                        setSelectedPebble(undefined);
+                        return;
+                    }
                     this.isDragging = true;
                     if (!d3.event.active) this.force.alphaTarget(1).restart();
                     d3.event.subject.fx = d3.event.subject.x;
                     d3.event.subject.fy = d3.event.subject.y;
                 })
                 .on("drag", () => {
+                    if (!this.isDragging) return;
                     d3.event.subject.fx = d3.event.x;
                     d3.event.subject.fy = d3.event.y;
                 })
                 .on("end", () => {
+                    if (!this.isDragging) return;
                     this.isDragging = false;
                     if (!d3.event.active) this.force.alphaTarget(0);
                     if (this.isPinned) return;
