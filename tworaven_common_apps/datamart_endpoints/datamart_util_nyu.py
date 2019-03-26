@@ -243,7 +243,8 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
         # Ready the query parameters
         #
-        search_result['join_columns'] = [['INSTNM', 'INSTNM']]
+        # search_result['join_columns'] = [['INSTNM', 'INSTNM']]
+        
         search_result_str = json.dumps(search_result)
         print('search_result_str', search_result_str)
 

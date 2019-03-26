@@ -3083,7 +3083,7 @@ export async function estimate() {
             estimateLadda.stop();
         } else {
             ROOKPIPE_FROM_REQUEST.predictors && setxTable(ROOKPIPE_FROM_REQUEST.predictors);
-            let searchTimeLimit = 5;
+            let searchTimeLimit = 2;
             let searchSolutionParams = CreatePipelineDefinition(ROOKPIPE_FROM_REQUEST.predictors,
                 ROOKPIPE_FROM_REQUEST.depvar,searchTimeLimit);
 
