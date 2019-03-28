@@ -5,7 +5,7 @@ from tworaven_apps.ta2_interfaces import (\
         views_additional,
         views_streaming_requests,
         views_saved_requests,
-        views_non_streaming_requests)
+        views_non_streaming_requests,)
 
 urlpatterns = (
 

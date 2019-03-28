@@ -4000,21 +4000,26 @@ export function setxTable(features) {
 
 /**
   rpc SolutionExport (SolutionExportRequest) returns (SolutionExportResponse) {}
+
+   Example call:
+  {
+       "fittedSolutionId": "solutionId_gtk2c2",
+       "rank": 0.122
+       "searchId": "17"
+  }
+
+  Note: "searchId" is not part of the gRPC call but used for server
+        side tracking.
+
 */
-
-// Example call:
-// {
-//     "fittedSolutionId": "solutionId_gtk2c2",
-//     "rank": 0.122
-// }
-
-
 export async function exportSolution(solutionId) {
     exportCount++;
     let res;
     let my_rank = 1.01 - 0.01 * exportCount;   // ranks always gets smaller each call
 
-    let params = {solutionId: solutionId, rank: my_rank};
+    let params = {solutionId: solutionId,
+                  rank: my_rank,
+                  searchId: (allsearchId.length) ? allsearchId[0] : null};
     res = await makeRequest(D3M_SVC_URL + '/SolutionExport3', params);
 
     console.log(res);

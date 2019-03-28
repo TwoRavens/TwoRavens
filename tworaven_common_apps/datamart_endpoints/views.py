@@ -18,7 +18,6 @@ from tworaven_common_apps.datamart_endpoints.datamart_util_nyu import \
 from tworaven_common_apps.datamart_endpoints.datamart_util import \
     (get_datamart_job_util,)
 from tworaven_common_apps.datamart_endpoints.forms import (DatamartSearchForm,
-                                                           DatamartAugmentForm,
                                                            DatamartMaterializeForm,
                                                            DatamartIndexForm,
                                                            DatamartScrapeForm,

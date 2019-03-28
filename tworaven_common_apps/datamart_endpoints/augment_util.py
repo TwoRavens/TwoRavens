@@ -181,6 +181,13 @@ class AugmentUtil(BasicErrCheck):
         if self.has_error():
             return False
 
+        # -----------------------------
+        # TEMPORARILY DISABLED
+        # -----------------------------
+        err_msg = ('NYU augment functionality is currently disabled')
+        self.add_err_msg(err_msg)
+        return False
+
         # user_workspace, data_path, search_result, left_columns,
         # right_columns, exact_match=False, **kwargs
         search_result_info = json_loads(self.augment_params['search_result'])

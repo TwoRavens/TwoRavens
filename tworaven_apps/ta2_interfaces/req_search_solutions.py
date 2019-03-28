@@ -17,6 +17,7 @@ from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json
 from tworaven_apps.ta2_interfaces.static_vals import \
     (GRPC_GET_FIT_SOLUTION_RESULTS,
+     KEY_SEARCH_ID,
      KEY_PIPELINE_ID, KEY_RANK, KEY_FITTED_SOLUTION_ID)
 
 import core_pb2
@@ -550,6 +551,14 @@ def solution_export3(user, raven_json):
         err_msg = 'raven_dict must be a python dict'
         return err_resp(err_msg)
 
+    if not KEY_SEARCH_ID in raven_json:
+        err_msg = (f'Key: "{KEY_SEARCH_ID}" not found in the'
+                   f' "raven_json" dict.  (solution_export3)')
+        return err_resp(err_msg)
+
+    search_id = raven_json.pop(KEY_SEARCH_ID)   # not needed for GRPC call
+
+
     # --------------------------------
     # Convert dict to string
     # --------------------------------
@@ -585,6 +594,7 @@ def solution_export3(user, raven_json):
     # --------------------------------
     stored_request = StoredRequest(\
                     user=user,
+                    search_id=search_id,
                     workspace='(not specified)',
                     request_type='SolutionExport',
                     is_finished=False,
