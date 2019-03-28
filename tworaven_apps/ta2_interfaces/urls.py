@@ -41,6 +41,10 @@ urlpatterns = (
             views_saved_requests.view_stored_response,
             name='view_stored_response'),
 
+    re_path((r'view-grpc_search-history/(?P<search_id>[\d]{1,7})$'),
+            views_saved_requests.view_grpc_search_history,
+            name='view_grpc_search_history'),
+
     path(r'Hello',
          views_non_streaming_requests.view_hello,
          name='Hello'),

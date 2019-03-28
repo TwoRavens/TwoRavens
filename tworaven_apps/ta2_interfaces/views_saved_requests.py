@@ -11,20 +11,33 @@ from tworaven_apps.utils.view_helper import \
     (get_session_key, get_authenticated_user)
 from tworaven_apps.ta2_interfaces.models import \
     (StoredRequest, StoredResponse)
+from tworaven_apps.ta2_interfaces.static_vals import \
+        (SEARCH_SOLUTIONS,
+         GET_SEARCH_SOLUTIONS_RESULTS)
+
+def view_grpc_search_history(request, search_id):
+    """View stored request/responses based on search_id"""
+
+    # Ideally the sort order is:
+    # - SearchSolutions
+    # - GetSearchSolutionsResults
+    # (... everything else: sorted by pipeline_id ...)
+    # - SolutionExport
+    return HttpResponse('in progress')
 
 
 @csrf_exempt
 def view_stored_request(request, hash_id):
     """Return a StoredRequest object"""
     user_info = get_authenticated_user(request)
-    if not user_info.success:
-        return JsonResponse(get_json_error(user_info.err_msg))
+    #if not user_info.success:
+    #    return JsonResponse(get_json_error(user_info.err_msg))
+    #user = user_info.result_obj
 
-    user = user_info.result_obj
     try:
         req = StoredRequest.objects.get(\
-                                hash_id=hash_id,
-                                user=user)
+                                hash_id=hash_id)
+                                #user=user)
     except StoredRequest.DoesNotExist:
         user_msg = 'StoredRequest not found.'
         return JsonResponse(get_json_error(user_msg))
@@ -44,14 +57,14 @@ def view_stored_request(request, hash_id):
 def view_stored_response(request, hash_id):
     """Return a StoredResponse object"""
     user_info = get_authenticated_user(request)
-    if not user_info.success:
-        return JsonResponse(get_json_error(user_info.err_msg))
+    #if not user_info.success:
+    #    return JsonResponse(get_json_error(user_info.err_msg))
+    #user = user_info.result_obj
 
-    user = user_info.result_obj
     try:
         resp = StoredResponse.objects.get(\
-                                hash_id=hash_id,
-                                stored_request__user=user)
+                                hash_id=hash_id,)
+                                # stored_request__user=user)
     except StoredResponse.DoesNotExist:
         user_msg = 'StoredResponse not found.'
         return JsonResponse(get_json_error(user_msg))

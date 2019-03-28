@@ -30,6 +30,8 @@ from tworaven_apps.utils.view_helper import \
      get_json_success)
 from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.utils.view_helper import get_session_key
+from tworaven_apps.ta2_interfaces.static_vals import \
+    (SEARCH_SOLUTIONS,)
 from tworaven_apps.ta2_interfaces.ta2_search_solutions_helper import \
         SearchSolutionsHelper
 
@@ -125,7 +127,7 @@ def view_search_solutions(request):
     if ServiceCallEntry.record_d3m_call():
         call_entry = ServiceCallEntry.get_dm3_entry(\
                         request_obj=request,
-                        call_type='SearchSolutions',
+                        call_type=SEARCH_SOLUTIONS,
                         request_msg=req_body_info.result_obj)
 
     # Let's call the TA2!

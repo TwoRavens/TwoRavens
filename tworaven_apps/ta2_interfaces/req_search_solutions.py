@@ -17,6 +17,7 @@ from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json
 from tworaven_apps.ta2_interfaces.static_vals import \
     (GRPC_GET_FIT_SOLUTION_RESULTS,
+     SEARCH_SOLUTIONS,
      KEY_SEARCH_ID,
      KEY_PIPELINE_ID, KEY_RANK, KEY_FITTED_SOLUTION_ID)
 

@@ -36,6 +36,10 @@ from tworaven_apps.ta2_interfaces.models import \
 
 from tworaven_apps.ta2_interfaces.req_search_solutions import \
         (search_solutions, describe_solution)
+from tworaven_apps.ta2_interfaces.static_vals import \
+        (SEARCH_SOLUTIONS,
+         GET_SEARCH_SOLUTIONS_RESULTS)
+
 from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
@@ -53,8 +57,6 @@ LOGGER = logging.getLogger(__name__)
 
 class SearchSolutionsHelper(BasicErrCheck):
     """Server-side process for SearchSolutions calls to a TA2"""
-    GRPC_SEARCH_SOLUTIONS = 'SearchSolutions'
-    GRPC_GET_SEARCH_SOLUTIONS_RESULTS = 'GetSearchSolutionsResults'
 
     def __init__(self, search_id, websocket_id, user_id, **kwargs):
         """Start the process with params for a SearchSolutions call"""
@@ -125,7 +127,7 @@ class SearchSolutionsHelper(BasicErrCheck):
                         user=user_obj,
                         # search_id=self.search_id,
                         workspace='(not specified)',
-                        request_type=SearchSolutionsHelper.GRPC_SEARCH_SOLUTIONS,
+                        request_type=SEARCH_SOLUTIONS,
                         is_finished=False,
                         request=all_params[KEY_SEARCH_SOLUTION_PARAMS])
         stored_request.save()
@@ -229,7 +231,7 @@ class SearchSolutionsHelper(BasicErrCheck):
         params_info = json_dumps(params_dict)
         if not params_info.success:
             self.send_websocket_err_msg(\
-                    self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
+                    GET_SEARCH_SOLUTIONS_RESULTS,
                     params_info.err_msg)
             return
 
@@ -240,7 +242,7 @@ class SearchSolutionsHelper(BasicErrCheck):
             err_msg = ('GetSearchSolutionsResultsRequest: Failed to'
                        ' convert JSON to gRPC: %s') % (err_obj)
             self.send_websocket_err_msg(\
-                    self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
+                    GET_SEARCH_SOLUTIONS_RESULTS,
                     params_info.err_msg)
             return
 
@@ -251,7 +253,7 @@ class SearchSolutionsHelper(BasicErrCheck):
                         user=self.user_object,
                         search_id=self.search_id,
                         workspace='(not specified)',
-                        request_type=self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
+                        request_type=GET_SEARCH_SOLUTIONS_RESULTS,
                         is_finished=False,
                         request=params_dict)
         stored_request.save()
@@ -286,7 +288,7 @@ class SearchSolutionsHelper(BasicErrCheck):
                                msg_json_info.err_msg
 
                     self.send_websocket_err_msg(\
-                                    self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
+                                    GET_SEARCH_SOLUTIONS_RESULTS,
                                     user_msg)
 
                     StoredResponse.add_stream_err_response(\
@@ -304,7 +306,7 @@ class SearchSolutionsHelper(BasicErrCheck):
                                         stored_response, user_msg)
 
                     self.send_websocket_err_msg(\
-                                    self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
+                                    GET_SEARCH_SOLUTIONS_RESULTS,
                                     user_msg)
 
                     # Wait for next response....
@@ -328,14 +330,14 @@ class SearchSolutionsHelper(BasicErrCheck):
                     # send a message to the user...
                     #
                     user_msg = 'Failed to store response from %s: %s' % \
-                                (self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
+                                (GET_SEARCH_SOLUTIONS_RESULTS,
                                  msg_json_info.err_msg)
 
                     StoredResponse.add_stream_err_response(\
                                         stored_response, user_msg)
 
                     self.send_websocket_err_msg(\
-                                    self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
+                                    GET_SEARCH_SOLUTIONS_RESULTS,
                                     user_msg)
 
                     # Wait for the next response...
@@ -355,7 +357,7 @@ class SearchSolutionsHelper(BasicErrCheck):
                 # send responses back to WebSocket
                 # ---------------------------------------------
                 ws_msg = WebsocketMessage.get_success_message(\
-                            self.GRPC_GET_SEARCH_SOLUTIONS_RESULTS,
+                            GET_SEARCH_SOLUTIONS_RESULTS,
                             'it worked',
                             msg_cnt=msg_cnt,
                             data=stored_response.as_dict())
