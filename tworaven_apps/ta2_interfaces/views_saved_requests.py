@@ -11,19 +11,41 @@ from tworaven_apps.utils.view_helper import \
     (get_session_key, get_authenticated_user)
 from tworaven_apps.ta2_interfaces.models import \
     (StoredRequest, StoredResponse)
+from tworaven_apps.ta2_interfaces.search_history_util import SearchHistoryUtil
 from tworaven_apps.ta2_interfaces.static_vals import \
         (SEARCH_SOLUTIONS,
          GET_SEARCH_SOLUTIONS_RESULTS)
 
-def view_grpc_search_history(request, search_id):
-    """View stored request/responses based on search_id"""
+def view_grpc_search_history_json_no_id(request):
+    """Pick an existing search history, if it exists"""
 
-    # Ideally the sort order is:
-    # - SearchSolutions
-    # - GetSearchSolutionsResults
-    # (... everything else: sorted by pipeline_id ...)
-    # - SolutionExport
-    return HttpResponse('in progress')
+    resp = SearchHistoryUtil.get_first_search_soutions_call()
+
+    if not resp:
+        err_info = get_json_error('No search_id was found')
+        return JsonResponse(get_json_error(err_info))
+
+    return view_grpc_search_history_json(request, resp.search_id)
+
+
+def view_grpc_search_history_json(request, search_id):
+    """View stored request/responses based on search_id"""
+    if not search_id:
+        err_info = get_json_error('No search_id was found')
+        return JsonResponse(get_json_error(err_info))
+
+    search_history_util = SearchHistoryUtil(search_id=search_id)
+
+    if search_history_util.has_error():
+        err_info = f'Error found: {search_history_util.get_err_msg()}'
+        #print(f'Error found: f{search_history_util.get_error()}')
+        return JsonResponse(get_json_error(err_info))
+
+    info_dict = dict(search_id=search_id,
+                     json_history=search_history_util.get_finalized_history())
+
+    user_info = get_json_success('History found', data=info_dict)
+    return JsonResponse(user_info)
 
 
 @csrf_exempt
