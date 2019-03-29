@@ -8,6 +8,8 @@ python manage.py test tworaven_apps.ta2_interfaces.testing.test_non_streaming.No
 
 # -------------
 
+python manage.py test tworaven_apps.ta2_interfaces.testing.test_grpc_history
+
 python manage.py test tworaven_apps.ta2_interfaces.testing.test_problem_writing
 
 # python manage.py test tworaven_apps.ta2_interfaces.testing.test_create_pipeline

@@ -24,6 +24,8 @@ from tworaven_common_apps.datamart_endpoints.static_vals import \
     (DATAMART_ISI_NAME,
      KEY_ISI_DATAMART_ID,
      KEY_DATA,
+     KEY_AUGMENT,
+     KEY_MATERIALIZE,
      NUM_PREVIEW_ROWS,
      cached_response,
      cached_response_baseball)
@@ -335,6 +337,10 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
                         f' "{KEY_ISI_DATAMART_ID}" key')
             return err_resp(user_msg)
 
+        if not isfile(data_path):
+            user_msg = f'Original data file not found: {data_path}'
+            return err_resp(user_msg)
+
         datamart_id = search_result[KEY_ISI_DATAMART_ID]
 
         # ----------------------------
@@ -355,7 +361,7 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
         dest_filepath_info = DatamartJobUtilISI.get_output_filepath(\
                                     user_workspace,
                                     f'{datamart_id}-{get_timestamp_string()}',
-                                    dir_type='augment')
+                                    dir_type=KEY_AUGMENT)
 
         if not dest_filepath_info.success:
             return err_resp(dest_filepath_info.err_msg)

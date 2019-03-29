@@ -57,6 +57,8 @@ class StoredRequestAdmin(admin.ModelAdmin):
               'status',
               'user',
               'hash_id',
+              'search_id',
+              'pipeline_id',
               'workspace',
               'request',
               'request_as_json',

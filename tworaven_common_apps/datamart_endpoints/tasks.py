@@ -1,3 +1,4 @@
+import json
 from tworavensproject.celery import celery_app
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 
@@ -44,6 +45,10 @@ def make_augment_call(user_workspace, augment_params, **kwargs):
 
     if not augment_params:
         return err_resp('augment_params must be set')
+
+    print('augment_params', json.dumps(augment_params, indent=4))
+    print('augment keys', augment_params.keys())
+
 
     # check if data is valid
     form = DatamartAugmentForm(augment_params)

@@ -45,7 +45,7 @@ after_success:
   # -------------------------------------
   # Temp push, to test new k8s deploy
   # -------------------------------------
-  - if [ "$TRAVIS_BRANCH" == "x523-gce" ]; then
+  - if [ "$TRAVIS_BRANCH" == "zz509-aug-nyu" ]; then
     docker build -t tworavens/ravens-main:latest .;
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
     docker push tworavens/ravens-main:latest;

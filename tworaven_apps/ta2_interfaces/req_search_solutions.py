@@ -12,11 +12,13 @@ from tworaven_apps.utils.random_info import get_alphanumeric_string
 from tworaven_apps.utils.json_helper import json_dumps, json_loads
 from tworaven_apps.utils.proto_util import message_to_json
 
-from tworaven_apps.ta2_interfaces.models import StoredResponse
+from tworaven_apps.ta2_interfaces.models import StoredRequest, StoredResponse
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json
 from tworaven_apps.ta2_interfaces.static_vals import \
     (GRPC_GET_FIT_SOLUTION_RESULTS,
+     SEARCH_SOLUTIONS,
+     KEY_SEARCH_ID,
      KEY_PIPELINE_ID, KEY_RANK, KEY_FITTED_SOLUTION_ID)
 
 import core_pb2
@@ -550,6 +552,14 @@ def solution_export3(user, raven_json):
         err_msg = 'raven_dict must be a python dict'
         return err_resp(err_msg)
 
+    if not KEY_SEARCH_ID in raven_json:
+        err_msg = (f'Key: "{KEY_SEARCH_ID}" not found in the'
+                   f' "raven_json" dict.  (solution_export3)')
+        return err_resp(err_msg)
+
+    search_id = raven_json.pop(KEY_SEARCH_ID)   # not needed for GRPC call
+
+
     # --------------------------------
     # Convert dict to string
     # --------------------------------
@@ -581,6 +591,18 @@ def solution_export3(user, raven_json):
         return err_resp(err_msg)
 
     # --------------------------------
+    # Save the request to the db
+    # --------------------------------
+    stored_request = StoredRequest(\
+                    user=user,
+                    search_id=search_id,
+                    workspace='(not specified)',
+                    request_type='SolutionExport',
+                    is_finished=False,
+                    request=raven_json)
+    stored_request.save()
+
+    # --------------------------------
     # Send the gRPC request
     # --------------------------------
     try:
@@ -589,12 +611,28 @@ def solution_export3(user, raven_json):
                             timeout=settings.TA2_GRPC_SHORT_TIMEOUT)
     except Exception as err_obj:
         user_msg = f'Error: {err_obj}'
+        StoredResponse.add_err_response(stored_request,
+                                        user_msg)
+
         return err_resp(user_msg)
 
     # --------------------------------
     # Convert the reply to JSON and send it back
     # --------------------------------
-    return ok_resp(message_to_json(reply))
+    resp_json_str = message_to_json(reply)
+
+    resp_json_dict_info = json_loads(resp_json_str)
+    if not resp_json_dict_info.success:
+        user_msg = (f'Failed to convert GRPC response to JSON:'
+                    f' {resp_json_dict_info.err_msg}')
+        StoredResponse.add_err_response(stored_request,
+                                        user_msg)
+        return err_resp(user_msg)
+
+
+    StoredResponse.add_success_response(stored_request,
+                                        resp_json_dict_info.result_obj)
+    return ok_resp(resp_json_str)
 
 
 def update_problem(raven_json_str=None):
