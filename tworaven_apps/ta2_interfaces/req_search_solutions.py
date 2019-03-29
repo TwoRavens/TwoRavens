@@ -599,7 +599,7 @@ def solution_export3(user, raven_json):
                     workspace='(not specified)',
                     request_type='SolutionExport',
                     is_finished=False,
-                    request=raven_json_info.result_obj)
+                    request=raven_json)
     stored_request.save()
 
     # --------------------------------

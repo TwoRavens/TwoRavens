@@ -18,6 +18,30 @@ from tworaven_apps.ta2_interfaces.static_vals import \
         (SEARCH_SOLUTIONS,
          GET_SEARCH_SOLUTIONS_RESULTS)
 
+
+def view_clear_grpc_stored_history(request):
+    """For develop, clear GPRC stored history"""
+    msg_list = []
+    for model_name in [StoredResponse, StoredRequest]:
+        mcnt = model_name.objects.count()
+
+        user_msg = '%d %s objects(s) found' % (mcnt, model_name.__name__)
+        print(f'\n{user_msg}')
+        msg_list.append(user_msg)
+
+        if mcnt > 0:
+            for meta_obj in model_name.objects.all().order_by('-id'):
+                meta_obj.delete()
+            print('Deleted...')
+            msg_list.append('Deleted...')
+
+        else:
+            user_msg = f'No {model_name.__name__} objects found.'
+            print(f'\n{user_msg}')
+            msg_list.append(user_msg)
+
+    return HttpResponse('<br />'.join(msg_list))
+
 def view_grpc_search_history_json_no_id(request):
     """Pick an existing search history, if it exists"""
 

@@ -60,6 +60,10 @@ urlpatterns = (
             views_saved_requests.view_grpc_stored_history_no_id,
             name='view_grpc_stored_history_no_id'),
 
+    path(r'clear-grpc-stored-history',
+         views_saved_requests.view_clear_grpc_stored_history,
+         name='view_clear_grpc_stored_history'),
+
     path(r'Hello',
          views_non_streaming_requests.view_hello,
          name='Hello'),

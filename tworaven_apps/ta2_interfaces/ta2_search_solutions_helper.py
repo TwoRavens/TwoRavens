@@ -460,7 +460,7 @@ class SearchSolutionsHelper(BasicErrCheck):
 
     def run_describe_solution(self, pipeline_id, solution_id, msg_cnt=-1):
         """sync: Run a DescribeSolution call for each solution_id"""
-
+        print(f'run_describe_solution 1. pipeline_id: {pipeline_id}')
         # ----------------------------------
         # Create the input
         # ----------------------------------
@@ -481,6 +481,9 @@ class SearchSolutionsHelper(BasicErrCheck):
                         is_finished=False,
                         request=req_params)
         stored_request.save()
+
+        print(f'run_describe_solution 2. stored_request.pipeline_id: {stored_request.pipeline_id}')
+
         # ----------------------------------
         # Run Describe Solution
         # ----------------------------------
@@ -507,11 +510,25 @@ class SearchSolutionsHelper(BasicErrCheck):
         # Add the pipline id to the result
         # -----------------------------------------------
         describe_data = describe_data_info.result_obj
+
         describe_data[KEY_PIPELINE_ID] = pipeline_id
         describe_data.move_to_end(KEY_PIPELINE_ID, last=False)
 
-        StoredResponse.add_success_response(stored_request,
-                                            describe_data)
+        # params = dict()
+        # if not stored_request.pipeline_id:
+        #    params['pipeline_id'] = describe_data[KEY_PIPELINE_ID]
+
+        stored_info = StoredResponse.add_success_response(stored_request,
+                                            describe_data,
+                                            pipeline_id=pipeline_id)
+
+        if not stored_info.success:
+            print('stored info fail!', stored_info.err_msg)
+
+        print(f'run_describe_solution 3. stored_info.result_obj.pipeline_id: {stored_info.result_obj.pipeline_id}')
+
+        print(f'run_describe_solution 4. stored_request.pipeline_id: {stored_request.pipeline_id}')
+
         # -----------------------------------------------
         # send responses back to WebSocket
         # ---------------------------------------------

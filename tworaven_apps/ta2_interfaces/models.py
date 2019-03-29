@@ -179,6 +179,7 @@ class StoredRequest(TimeStampedModel):
 
         attr_names = ('id', 'name', 'hash_id',
                       'is_finished', 'is_error',
+                      'search_id', 'pipeline_id',
                       'status', 'user_message',
                       'workspace', 'request_type',
                       DETAILS_URL,
@@ -430,6 +431,8 @@ class StoredResponse(TimeStampedModel):
             # Has a pipeline_id been specified?
             #
             stored_response.pipeline_id = pipeline_id
+            stored_request.pipeline_id = pipeline_id
+            #
         elif stored_request.pipeline_id:
             #
             # Nope, is there a pipeline_id available in the StoredRequest
@@ -482,13 +485,17 @@ class StoredResponse(TimeStampedModel):
                             status=STATUS_COMPLETE,
                             is_finished=True)
 
+        new_pipeline_id = kwargs.get('pipeline_id')
+
         # Save the pipeline id
         #
-        if kwargs.get('pipeline_id'):
+        if new_pipeline_id:
             #
             # Has a pipeline_id been specified?
             #
-            stored_response.pipeline_id = kwargs['pipeline_id']
+            stored_response.pipeline_id = new_pipeline_id
+            stored_request.pipeline_id = new_pipeline_id
+
         elif stored_request.pipeline_id:
             #
             # Nope, is there a pipeline_id available in the StoredRequest
@@ -497,8 +504,9 @@ class StoredResponse(TimeStampedModel):
 
         stored_response.save()
 
+        # ---------------------------------
         # Update request object
-        #
+        # ---------------------------------
         if (not stored_request.search_id) and kwargs.get('search_id'):
             stored_request.search_id = kwargs['search_id']
 
