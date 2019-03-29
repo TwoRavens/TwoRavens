@@ -26,7 +26,28 @@ table.tbl_workspaces tbody tr td {
 {{ block.super }}
 
 <script src="{% static "js/open_close_btn.js" %}"></script>
+<script>
+  function collapseAllHide(){
+    $('.collapse').collapse('hide');
+    $("#btnShowAll").removeClass('btn-outline-secondary disabled').addClass('btn-primary');
+    $("#btnHideAll").removeClass('btn-primary').addClass('btn-outline-secondary disabled');
+  }
+  function collapseAllShow(){
+    $('.collapse').collapse('show');
+    $("#btnHideAll").removeClass('btn-outline-secondary disabled').addClass('btn-primary');
+    $("#btnShowAll").removeClass('btn-primary').addClass('btn-outline-secondary disabled');
+  }
 
+  $(document).ready(function() {
+    $("#btnShowAll").bind( "click", function() {
+      collapseAllShow()
+    });
+    $("#btnHideAll" ).bind( "click", function() {
+      collapseAllHide()
+    });
+    console.log( "ready!" );
+  });
+</script>
 {% endblock %}
 
 {% block main_content %}
@@ -55,39 +76,63 @@ table.tbl_workspaces tbody tr td {
 
 
     {% if json_history %}
-    <table class="table table-bordered table-condensed tbl_workspaces">
+    <br />
+    <div>
+      <p>
+        <a id="btnShowAll" href="#" class="btn btn-sm btn-primary">Show All Responses/Requests</a>
+          &nbsp; &nbsp;
+          <a id="btnHideAll" href="#"  class="btn btn-sm btn-outline-secondary">Hide All Responses/Requests</a>
+      </p>
+    </div>
+
+    <div class="table-responsive">
+    <table class="table table-bordered table-hover table-sm tbl_workspaces">
       <thead>
         <tr>
           <th>cnt</th>
           <th>Request Type</th>
           <th>Pipeline Id</th>
           <th>Request/Response</th>
-          <th>Last updated</th>
         </tr>
       </thead>
-
+      <tbody>
       {% for req in json_history %}
       <tr>
         <td>({{ forloop.counter }})</td>
-        <td>{{ req.request_type }} ({{ req.id }})</td>
+        <td>{{ req.request_type }} ({{ req.id }})
+          {#<br />created: {{ req.created|date:"D d M Y" }} #}
+        </td>
         <td>{{ req.pipeline_id }}</td>
-        <td>(view)</td>
-        <th>{{ req.created|date:"D d M Y" }}</th>
+        <td>
+          <a class="btn btn-sm btn-info" data-toggle="collapse" href="#req-id-{{ req.id }}" role="button" aria-expanded="false" aria-controls="req-id-{{ req.id }}">view request</a>
+          <br />
+          <div class="collapse multi-collapse" id="req-id-{{ req.id }}">
+            <div class="card card-body">
+              <pre>{{ req.request_as_json }}</pre>
+            </div>
+          </div>
+        </td>
       </tr>
         {% for resp in req.response_list %}
         <tr>
           <td>&nbsp;</td>
-          <td>&nbsp;</td>
+          <td>&nbsp; {# created: {{ resp.created|date:"D d M Y" }} #}</td>
           <td>{{ resp.pipeline_id }}</td>
-          <td>view</td>
-          <th>{{ resp.created|date:"D d M Y" }}</th>
-
+          <td class="xtext-center">
+            &nbsp;&nbsp;&nbsp;&nbsp; <a class="btn btn-sm btn-outline-info" data-toggle="collapse" href="#resp-id-{{ resp.id }}" role="button" aria-expanded="false" aria-controls="resp-id-{{ resp.id }}">view response</a>
+            <br />
+            <div class="collapse multi-collapse" id="resp-id-{{ resp.id }}">
+              <div class="card card-body">
+                <pre>{{ resp.response_as_json }}</pre>
+              </div>
+            </div>
+          </td>
         </tr>
         {% endfor %}
-
+      </tbody>
       {% endfor %}
-
     </table>
+    </div>
     {% endif %}
     <hr />
 

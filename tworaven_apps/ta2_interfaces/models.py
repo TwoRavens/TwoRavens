@@ -133,28 +133,56 @@ class StoredRequest(TimeStampedModel):
         """convenience method to check if status == STATUS_ERROR"""
         return self.status == STATUS_ERROR
 
-    def request_as_json(self):
+    def request_as_json(self, wrap_in_html=True):
         """Display OrderedDict as JSON"""
         if not self.request:
             return '(n/a)'
 
         json_info = json_dumps(self.request, indent=4)
         if json_info.success:
-            json_str = '<pre>%s</pre>' % json_info.result_obj
+            if wrap_in_html:
+                json_str = '<pre>%s</pre>' % json_info.result_obj
+            else:
+                json_str = json_info.result_obj
         else:
             json_str = 'Error: %s' % json_info.err_msg
 
         return mark_safe(json_str)
 
+    '''
+    def as_json_string(self, **kwargs):
+        """Convert as_dict result to a JSON string
+        kwargs:
+        - indent_level = default 4.
+        - short_version = default False. If True, includes StoredRequest
+        """
+        indent_level = kwargs.get('indent_level', 4)
 
-    def as_dict(self, short_version=False):
-        """Return info as a dict"""
+        dict_info = self.as_dict(**kwargs)
+
+        json_info = json_dumps(dict_info, indent=indent_level)
+        if json_info.success:
+            json_str = '%s' % json_info.result_obj
+        else:
+            json_str = 'Error: %s' % json_info.err_msg
+
+        return json_str
+    '''
+
+    def as_dict(self, **kwargs):
+        """Return info as a dict
+        kwargs:
+        - short_version = default False. If True, includes StoredRequest
+        """
+        short_version = kwargs.get('short_version', False)
+
+
         attr_names = ('id', 'name', 'hash_id',
                       'is_finished', 'is_error',
                       'status', 'user_message',
                       'workspace', 'request_type',
                       DETAILS_URL,
-                      'request')
+                      'request', 'request_as_json')
 
         od = OrderedDict()
         for key in attr_names:
@@ -162,6 +190,8 @@ class StoredRequest(TimeStampedModel):
                 od[key] = self.has_error_occurred()
             elif key == 'is_finished':
                 od[key] = self.is_finished
+            elif key == 'request_as_json':
+                od[key] = self.request_as_json(wrap_in_html=False)
             elif key == DETAILS_URL:
                 od[DETAILS_URL] = self.get_callback_url()
             else:
@@ -169,7 +199,7 @@ class StoredRequest(TimeStampedModel):
         od['created'] = self.created.isoformat()
         od['modified'] = self.modified.isoformat()
 
-        if short_version:
+        if short_version is True:
             # used by StoredResponse.as_dict()
             return od
 
@@ -297,22 +327,33 @@ class StoredResponse(TimeStampedModel):
         return mark_safe(url_str)
 
 
-    def response_as_json(self):
+    def response_as_json(self, wrap_in_html=True):
         """Display OrderedDict as JSON"""
         if not self.response:
             return '(n/a)'
 
         json_info = json_dumps(self.response, indent=4)
         if json_info.success:
-            json_str = '<pre>%s</pre>' % json_info.result_obj
+            if wrap_in_html:
+                json_str = '<pre>%s</pre>' % json_info.result_obj
+            else:
+                json_str = json_info.result_obj
         else:
             json_str = 'Error: %s' % json_info.err_msg
 
         return mark_safe(json_str)
 
 
-    def as_dict(self, short_version=False):
-        """Return info as a dict"""
+    def as_dict(self, **kwargs):
+        """Return info as a dict
+        kwargs:
+        - short_version = default False. If True, includes StoredRequest
+        """
+
+        short_version = kwargs.get('short_version', False)
+
+        # Retrieve kwargs (or default vals)
+
         attr_names = ('id', 'hash_id', 'pipeline_id',
                       'is_finished', 'is_error',
                       'status', 'sent_to_user',
@@ -332,11 +373,13 @@ class StoredResponse(TimeStampedModel):
         od['created'] = self.created.isoformat()
         od['modified'] = self.modified.isoformat()
 
-        if short_version:
+        od['response'] = self.response
+        od['response_as_json'] = self.response_as_json(wrap_in_html=False)
+
+        if short_version is True:
             # used if part of StoredRequest.as_dict() list
             return od
 
-        od['response'] = self.response
         od['stored_request'] = self.stored_request.as_dict(short_version=True)
         if self.additionalInfo:
             od['additionalInfo'] = self.additionalInfo
