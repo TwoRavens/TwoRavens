@@ -49,6 +49,17 @@ urlpatterns = (
             views_saved_requests.view_grpc_search_history_json_no_id,
             name='view_grpc_search_history_json_no_id'),
 
+    #re_path((r'view-grpc-search-history-no-id$'),
+    #        views_saved_requests.view_grpc_search_history_no_id,
+    #        name='view_grpc_search_history_no_id'),
+    re_path((r'view-grpc-stored-history/(?P<search_id>[\d]{1,7})$'),
+            views_saved_requests.view_grpc_stored_history,
+            name='view_grpc_stored_history'),
+
+    re_path((r'view-grpc-stored-history$'),
+            views_saved_requests.view_grpc_stored_history_no_id,
+            name='view_grpc_stored_history_no_id'),
+
     path(r'Hello',
          views_non_streaming_requests.view_hello,
          name='Hello'),

@@ -1,6 +1,8 @@
 import json
 from collections import OrderedDict
 from django.http import JsonResponse, HttpResponse
+from django.shortcuts import render
+
 from django.views.decorators.csrf import csrf_exempt
 from tworaven_apps.utils.view_helper import \
     (get_request_body,
@@ -46,6 +48,48 @@ def view_grpc_search_history_json(request, search_id):
 
     user_info = get_json_success('History found', data=info_dict)
     return JsonResponse(user_info)
+
+
+def view_grpc_stored_history_no_id(request):
+    """Pick an existing search history, if it exists"""
+
+    resp = SearchHistoryUtil.get_first_search_soutions_call()
+
+    resp_id = resp.search_id if resp else None
+    #if not resp:
+    #    err_info = get_json_error('No search_id was found')
+    #    return JsonResponse(get_json_error(err_info))
+
+    return view_grpc_stored_history(request, resp_id)
+
+
+def view_grpc_stored_history(request, search_id):
+    """View stored request/responses based on search_id"""
+
+    info_dict = dict(search_id=search_id)
+
+    if not search_id:
+        info_dict['ERROR_MSG'] = 'No search_id was found'
+        return render(request,
+                      'grpc/view_grpc_stored_history.html',
+                      info_dict)
+
+    search_history_util = SearchHistoryUtil(search_id=search_id)
+
+    if search_history_util.has_error():
+        err_msg = f'Error found: {search_history_util.get_err_msg()}'
+        info_dict['ERROR_MSG'] = err_msg
+
+        return render(request,
+                      'grpc/view_grpc_stored_history.html',
+                      info_dict)
+
+    info_dict = dict(search_id=search_id,
+                     json_history=search_history_util.get_finalized_history())
+
+    return render(request,
+                  'grpc/view_grpc_stored_history.html',
+                  info_dict)
 
 
 @csrf_exempt

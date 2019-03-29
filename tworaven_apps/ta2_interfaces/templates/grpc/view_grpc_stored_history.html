@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title_block %}GRPC History{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static "pkgs/open-iconic/font/css/open-iconic-bootstrap.min.css" %}">
+
+<style>
+#tbl_workspace_info th {
+  text-align: left;
+}
+table.tbl_workspaces thead th {
+  text-align: center;
+  background-color: #ececec;
+}
+table.tbl_workspaces tbody tr td {
+  text-align: left;
+}
+
+</style>
+{% endblock %}
+{% block extra_js %}
+{{ block.super }}
+
+<script src="{% static "js/open_close_btn.js" %}"></script>
+
+{% endblock %}
+
+{% block main_content %}
+
+<div class="row">
+
+  <div class="col-12 col-md-12">
+    {% include "content_pages/snippet_return_to_links.html" %}
+    <h3>gRPC Search History</h3>
+
+
+    <div class="card">
+      <h4 class="card-header">Search ID: {{ search_id}}</h4>
+      {% comment %}
+      <div class="card-body">
+       - <b>session_key</b>: <code>{{ session_key }}</code>
+      </div>
+      {% endcomment %}
+    </div>
+
+    {% if ERROR_MSG %}
+      <div class="alert alert-danger" role="alert">
+        {{ ERROR_MSG }}
+      </div>
+    {% endif %}
+
+
+    {% if json_history %}
+    <table class="table table-bordered table-condensed tbl_workspaces">
+      <thead>
+        <tr>
+          <th>cnt</th>
+          <th>Request Type</th>
+          <th>Pipeline Id</th>
+          <th>Request/Response</th>
+          <th>Last updated</th>
+        </tr>
+      </thead>
+
+      {% for req in json_history %}
+      <tr>
+        <td>({{ forloop.counter }})</td>
+        <td>{{ req.request_type }} ({{ req.id }})</td>
+        <td>{{ req.pipeline_id }}</td>
+        <td>(view)</td>
+        <th>{{ req.created|date:"D d M Y" }}</th>
+      </tr>
+        {% for resp in req.response_list %}
+        <tr>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>{{ resp.pipeline_id }}</td>
+          <td>view</td>
+          <th>{{ resp.created|date:"D d M Y" }}</th>
+
+        </tr>
+        {% endfor %}
+
+      {% endfor %}
+
+    </table>
+    {% endif %}
+    <hr />
+
+  </div><!-- end col -->
+</div><!-- end row -->
+{% endblock %}
