@@ -996,7 +996,7 @@ class Body {
             this.header(app.currentMode),
             this.footer(app.currentMode),
             leftpanel(app.currentMode),
-            rightpanel(app.currentMode),
+            // rightpanel(app.currentMode),
 
             (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu([
                 ...app.getSelectedDataset().hardManipulations,

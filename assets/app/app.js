@@ -2167,9 +2167,8 @@ function CreateProblemDefinition(problem) {
         id: problem.problemID,
         version: problem.version || '1.0',
         name: problem.problemID,
-        description: problem.description,
         taskType: d3mTaskType[problem.task][1],
-        taskSubtype: problem.taskSubtype,
+        taskSubtype: problem.taskSubtype, // TODO: MULTICLASS designation
         performanceMetrics: [{metric: d3mMetrics[problem.metric][1]}]  // need to generalize to case with multiple metrics.  only passes on first presently.
     };
     if (problemSpec.taskSubtype === 'taskSubtypeUndefined') delete problemSpec.taskSubtype;
@@ -2330,9 +2329,9 @@ function CreateScoreDefinition(res){
   Return the default parameters used for a ProduceSolution call.
   This DOES NOT include the solutionId
 */
-function getScoreSolutionDefaultParameters(problem) {
+function getScoreSolutionDefaultParameters(problem, datasetDocUrl) {
     return {
-        inputs: [{dataset_uri: 'file://' + problem.datasetDocPath}],
+        inputs: [{dataset_uri: 'file://' + datasetDocUrl}],
         performanceMetrics: [
             {metric: d3mMetrics[problem.metric][1]}
         ],
@@ -2489,7 +2488,7 @@ export async function estimate() {
             if (selectedPipelines.size === 0) setSelectedPipeline(ravenID);
         });
 
-    let datasetDocPath = resultsProblem.datasetDocPath || selectedDataset.datasetDocPath;
+    let datasetDocPath = resultsProblem.datasetDocPath || getSelectedDataset().datasetDocPath;
 
     let allParams = {
         searchSolutionParams: searchSolutionParams,
@@ -3732,12 +3731,12 @@ function makePipelineTemplate (problem) {
     let outputs = [];
     let steps = [];
 
-    if (problem) {
-        inputs = [{name: "dataset"}];
-        outputs = [{name: "dataset", data: "produce"}];
-        // write the primitive object to remove columns, then generic step to be filled in
-        steps = [primitiveStepRemoveColumns(problem), placeholderStep()];
-    }
+    // if (problem) {
+    //     inputs = [{name: "dataset"}];
+    //     outputs = [{name: "dataset", data: "produce"}];
+    //     // write the primitive object to remove columns, then generic step to be filled in
+    //     steps = [primitiveStepRemoveColumns(problem), placeholderStep()];
+    // }
     return {inputs, outputs, steps};
 
     // example template: leave here for reference
