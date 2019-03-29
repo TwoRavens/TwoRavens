@@ -62,6 +62,9 @@ interaction = "\
 80- SOLE OTHER ACTION\
 "
 
+def minResStart(result):
+    return min(result[2])
+
 interaction = interaction.split("#")
 for x in range(len(interaction)):
     interaction[x] = interaction[x].split("-")[0]
@@ -102,8 +105,27 @@ dateGroup = "M"
 '''
 res = res.resample(dateGroup).sum()
 
+#TODO: remove results that have a lot of 0 or low entries because they skew results
+minMean = 20
+for col in res.columns.values.tolist():
+    #calc mean and variance of column data
+    mean = np.mean(res[[col]])
+    var = np.var(res[[col]])
+    #~ print(col)
+    #~ print(res[[col]])
+    print("mean")
+    print(mean[0])
+    print("var")
+    print(var[0])
+    print()
+
+    if mean[0] < minMean and var[0] < 500:
+        print('dropping', col)
+        res.drop([col], axis=1, inplace=True)
+        #~ print('dropped')
+
 windowSize = 10
-confidenceMargin = 0.1     #90% confident
+confidenceMargin = 0.05     #95% confident
 
 globalPearsonResults = []
 globalKendallResults = []
@@ -163,8 +185,7 @@ for actionX, actionY in list(itertools.combinations(actions, 2)):
     #~ print()
 
 matchLimit = 5      #find top 5 results
-
-#TODO: remove results that have a lot of 0 or low entries because they skew results
+maxGroup = 8
 
 #sort global results first by correlation and then by p value
 globalPearsonResults.sort(key=lambda re: (-abs(re[0][0][0]), re[0][1][0]))
@@ -177,29 +198,37 @@ print("global kendall")
 print(globalKendallResults[0:5])
 print()
 
-plt.figure(0)
-plt.suptitle("Global Pearson")
-ctr = 1
-for result in globalPearsonResults[0:5]:
-    plt.subplot(3, 2, ctr)
-    ctr += 1
-    plt.title(str(result[0]))
-    plt.plot(res.loc[:, result[1]])
-    plt.legend(result[1])
+#~ plt.figure(0)
+#~ plt.suptitle("Global Pearson")
+#~ ctr = 1
+#~ for result in globalPearsonResults[0:5]:
+    #~ plt.subplot(3, 2, ctr)
+    #~ ctr += 1
+    #~ plt.title(str(result[0]))
+    #~ plt.plot(res.loc[:, result[1]])
+    #~ plt.legend(result[1])
 
-plt.figure(1)
-plt.suptitle("Global Kendall")
-ctr = 1
-for result in globalKendallResults[0:5]:
-    plt.subplot(3, 2, ctr)
-    ctr += 1
-    plt.title(str(result[0]))
-    plt.plot(res.loc[:, result[1]])
-    plt.legend(result[1])
+#~ plt.figure(1)
+#~ plt.suptitle("Global Kendall")
+#~ ctr = 1
+#~ for result in globalKendallResults[0:5]:
+    #~ plt.subplot(3, 2, ctr)
+    #~ ctr += 1
+    #~ plt.title(str(result[0]))
+    #~ plt.plot(res.loc[:, result[1]])
+    #~ plt.legend(result[1])
 
 #sort local results first by correlation and then by p value
 localPearsonResults.sort(key=lambda re: (-abs(re[0][0][0]), re[0][1][0]))
 localKendallResults.sort(key=lambda re: (-abs(re[0][0]), re[0][1]))
+
+def within(localRange, allRange):
+    localStart = min(allRange)
+    localEnd = max(allRange)
+    #~ if min(localRange) >= localStart and max(localRange) <= localEnd:
+    if abs(min(localRange) - localStart) < 3 and abs(max(localRange) - localEnd) < 3:
+        return True
+    return False
 
 #now merge local results if they are on the same pair
 localPearsonFinal = []
@@ -207,23 +236,33 @@ for corRes in localPearsonResults:
     corr, acts, start = corRes
     merged = False
     for x in range(len(localPearsonFinal)):
-        if acts[0] in localPearsonFinal[x][1] and acts[1] in localPearsonFinal[x][1]:
-            #~ print(acts, x, "same actions, merging start points")
+        if len(localPearsonFinal[x][1]) > maxGroup:
+            continue
+        if acts[0] in localPearsonFinal[x][1] and acts[1] in localPearsonFinal[x][1] and within(start, localPearsonFinal[x][2]):
+            # print(acts, x, "same actions, merging start points")
             localPearsonFinal[x][2].append(start[0])
             merged = True
             break
-        elif acts[0] in localPearsonFinal[x][1]: #and starting points are close, moderately correlated?
-            #~ print(acts, x, "matched action 0, merging actions")
+        elif acts[0] in localPearsonFinal[x][1] and within(start, localPearsonFinal[x][2]): #and starting points are close, moderately correlated?
+            # print(acts, x, "matched action 0, merging actions")
             localPearsonFinal[x][1].append(acts[1])
             merged = True
             break
-        elif acts[1] in localPearsonFinal[x][1]:
-            #~ print(acts, x, "matched action 1, merging actions")
-            #~ print(localPearsonFinal[x])
-            #~ print(localPearsonFinal[x][1])
+        elif acts[1] in localPearsonFinal[x][1] and within(start, localPearsonFinal[x][2]):
+            # print(acts, x, "matched action 1, merging actions")
             localPearsonFinal[x][1].append(acts[0])
             merged = True
             break
+        #~ elif acts[0] in localPearsonFinal[x][1]: #and starting points are close, moderately correlated?
+            #~ # print(acts, x, "matched action 0, merging actions")
+            #~ localPearsonFinal[x][1].append(acts[1])
+            #~ merged = True
+            #~ break
+        #~ elif acts[1] in localPearsonFinal[x][1]:
+            #~ # print(acts, x, "matched action 1, merging actions")
+            #~ localPearsonFinal[x][1].append(acts[0])
+            #~ merged = True
+            #~ break
     if not merged:
         localPearsonFinal.append(corRes)
     '''
@@ -235,8 +274,8 @@ for corRes in localPearsonResults:
         #insert this result into the final result
         localPearsonFinal.append(corRes)
     '''
-    if len(localPearsonFinal) > matchLimit:
-        break
+    #~ if len(localPearsonFinal) > matchLimit:
+        #~ break
 
 print("top 5 local results")
 print("local pearson")
@@ -249,7 +288,7 @@ for result in localPearsonFinal[0:5]:
     plt.subplot(3, 2, ctr)
     ctr += 1
     plt.title(str(result[0]))
-    plt.plot(res.loc[:, result[1]])
+    plt.plot(res.loc[:, result[1]].iloc[min(result[2]):max(result[2])+windowSize, :])
     plt.legend(result[1])
 
 localKendallFinal = []
@@ -259,25 +298,27 @@ for corRes in localKendallResults:
     corr, acts, start = corRes
     merged = False
     for x in range(len(localKendallFinal)):
-        if acts[0] in localKendallFinal[x][1] and acts[1] in localKendallFinal[x][1]:
-            #~ print(acts, x, "same actions, merging start points")
+        if len(localKendallFinal[x][1]) > maxGroup:
+            continue
+        if acts[0] in localKendallFinal[x][1] and acts[1] in localKendallFinal[x][1] and within(start, localKendallFinal[x][2]):
+            # print(acts, x, "same actions, merging start points")
             localKendallFinal[x][2].append(start[0])
             merged = True
             break
-        elif acts[0] in localKendallFinal[x][1]: #and starting points are close, moderately correlated?
-            #~ print(acts, x, "matched action 0, merging actions")
+        elif acts[0] in localKendallFinal[x][1] and within(start, localKendallFinal[x][2]): #and starting points are close, moderately correlated?
+            # print(acts, x, "matched action 0, merging actions")
             localKendallFinal[x][1].append(acts[1])
             merged = True
             break
-        elif acts[1] in localKendallFinal[x][1]:
-            #~ print(acts, x, "matched action 1, merging actions")
+        elif acts[1] in localKendallFinal[x][1] and within(start, localKendallFinal[x][2]):
+            # print(acts, x, "matched action 1, merging actions")
             localKendallFinal[x][1].append(acts[0])
             merged = True
             break
     if not merged:
         localKendallFinal.append(corRes)
-    if len(localKendallFinal) > matchLimit:
-        break
+    #~ if len(localKendallFinal) > matchLimit:  limit to 5 results
+        #~ break
 print(localKendallFinal[0:5])
 print()
 
@@ -288,7 +329,7 @@ for result in localKendallFinal[0:5]:
     plt.subplot(3, 2, ctr)
     ctr += 1
     plt.title(str(result[0]))
-    plt.plot(res.loc[:, result[1]])
+    plt.plot(res.loc[:, result[1]].iloc[min(result[2]):max(result[2])+windowSize, :])
     plt.legend(result[1])
 
 plt.show()
