@@ -1,0 +1,49 @@
+{
+  "about": {
+    "datasetID": "DA_ny_taxi_demand_dataset_TRAIN",
+    "datasetName": "data associated with DA_ny_taxi_demand",
+    "description": "This dataset contains hourly passenger pickup numbers from LGA airport by Yellow cab between Jan 2018 to June 2018.",
+    "license": "Other",
+    "datasetVersion": "2.0",
+    "redacted": false,
+    "datasetSchemaVersion": "3.2.0",
+    "digest": "65720823f03f36e8fc1908ba240260e6c9c86fd85c645109097c0474b55a38ba"
+  },
+  "dataResources": [
+    {
+      "resID": "learningData",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "tpep_pickup_datetime",
+          "colType": "dateTime",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 2,
+          "colName": "num_pickups",
+          "colType": "integer",
+          "role": [
+            "suggestedTarget"
+          ]
+        }
+      ]
+    }
+  ]
+}
