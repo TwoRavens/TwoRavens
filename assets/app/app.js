@@ -663,11 +663,9 @@ export let width, height;
 
 export let selectedPebble;
 export let setSelectedPebble = pebble => {
-    selectedPebble && hideArcs(selectedPebble);
     selectedPebble = pebble;
 
     if (selectedPebble) {
-        showArcs(selectedPebble);
         leftTab !== 'Summary' && setLeftTabHidden(leftTab);
         setLeftTab('Summary');
     } else if (leftTabHidden) {
@@ -677,6 +675,11 @@ export let setSelectedPebble = pebble => {
     m.redraw();
 }
 export let hoverPebble;
+// milliseconds to wait before showing/hiding the pebble handles
+let hoverTimeoutDuration = 150;
+let selectTransitionDuration = 300; // duration of pebble animations
+
+let hoverTimeout;
 
 export let byId = id => document.getElementById(id);
 // export let byId = id => {console.log(id); return document.getElementById(id);}
@@ -1396,8 +1399,6 @@ export let buildForceData = problem => {
 
     let builtInfo = {pebbles, groups, pebbleLinks, groupLinks};
 
-    // console.warn("#debug builtInfo");
-    // console.log(builtInfo);
     return builtInfo
 };
 
@@ -1409,19 +1410,17 @@ export let buildForceDiagram = problem => data => {
     } = data;
 
     // ~~~~ PREPARATION ~~~~
-    let pebbleInfo = pebbles
-        .reduce((out, pebble) => Object.assign(out, {[pebble]: {}}), {})
 
     // set radius of each node. Members of groups are scaled down if group gets large.
     pebbles.forEach(pebble => {
-        let upperSize = 7;
+        let upperSize = 10;
         let maxNodeGroupSize = Math.max(...groups
-            .filter(group => group.nodes.has(pebble.name))
+            .filter(group => group.nodes.has(pebble))
             .map(group => group.nodes.size), upperSize);
-        pebbleInfo[pebble].radius = defaultPebbleRadius * Math.sqrt(upperSize / maxNodeGroupSize);
+        nodes[pebble].radius = defaultPebbleRadius * Math.sqrt(upperSize / maxNodeGroupSize);
 
-        if (pebble.name === selectedPebble)
-            pebbleInfo[pebble].radius = Math.min(pebbleInfo[pebble].radius * 1.5, defaultPebbleRadius);
+        if (pebble === selectedPebble)
+            nodes[pebble].radius = Math.min(nodes[pebble].radius * 1.5, defaultPebbleRadius);
     });
 
     // the order of the keys indicates precedence
@@ -1462,9 +1461,9 @@ export let buildForceDiagram = problem => data => {
 
     // set the base color of each node
     pebbles.forEach(pebble => {
-        pebbleInfo[pebble].strokeWidth = 1;
-        pebbleInfo[pebble].nodeCol = colors(generateID(pebble));
-        pebbleInfo[pebble].strokeColor = 'transparent';
+        nodes[pebble].strokeWidth = 1;
+        nodes[pebble].nodeCol = colors(generateID(pebble));
+        nodes[pebble].strokeColor = 'transparent';
     });
 
     // set additional styling for each node
@@ -1472,86 +1471,294 @@ export let buildForceDiagram = problem => data => {
     // only apply styles on classes the variable is a member of
         .filter(label => params[label].has(pebble))
         .forEach(label => {
-            if (label in strokeWidths) pebbleInfo[pebble].strokeWidth = strokeWidths[label];
-            if (label in nodeColors) pebbleInfo[pebble].nodeCol = nodeColors[label];
-            if (label in strokeColors) pebbleInfo[pebble].strokeColor = strokeColors[label];
+            if (label in strokeWidths) nodes[pebble].strokeWidth = strokeWidths[label];
+            if (label in nodeColors) nodes[pebble].nodeCol = nodeColors[label];
+            if (label in strokeColors) nodes[pebble].strokeColor = strokeColors[label];
         }));
-
 
     // ~~~~ PEBBLES ~~~~
 
-    selectors.circle = selectors.circle.data(pebbles, _=>_);
-    selectors.circle.exit().remove();
+    selectors.pebbles
+        = selectors.pebbles
+        .data(pebbles, _=>_);
+    selectors.pebbles
+        .exit().remove();
 
-    // update existing nodes
-    selectors.circle.selectAll('circle')
-        .style('fill', pebble => d3.rgb(pebbleInfo[pebble].nodeCol))
-        .style('stroke', pebble => d3.rgb(pebbleInfo[pebble].strokeColor))
-        .style('stroke-width', pebble => pebbleInfo[pebble].strokeWidth)
-        .on('mouseover', d => {
-            hoverPebble = d;
-            setTimeout(() => {
-                if (hoverPebble !== d) return;
-                showArcs(d); // TODO: normalize d
-            }, hoverTimeout)
-        })
-        .on('mouseout', d => {
-            hoverPebble = undefined;
-            setTimeout(() => {
-                if (hoverPebble === d || selectedPebble === d) return;
-                hideArcs(d)
-            }, hoverTimeout) // TODO: normalize d
-        })
-        .on('click', setSelectedPebble)
-        .transition()  // Shrink/expand pebbles that join/leave groups
-        .duration(100)
-        .attr('r', pebble => pebbleInfo[pebble].radius);
+    let newPebbles = selectors.pebbles
 
-    let bigGroup = selectors.circle
         .enter().append('svg:g')
         .attr('id', pebble => pebble + 'biggroup')
 
-    selectors.circle = bigGroup.merge(selectors.circle);
+    selectors.pebbles
+        = selectors.pebbles
+        .merge(newPebbles)
 
-    bigGroup.append('svg:circle')
+
+    // ~ ARCS ~
+    // container for arcs
+    newPebbles
+        .append('svg:g')
+        .attr('id', pebble => 'pebbleArcs' + pebble)
+        .attr('class', 'arc')
+        .attr('opacity', 0)
+
+    selectors.pebbles
+        .selectAll('g.arc')
+        .transition()  // Animate transitions between styles
+        .duration(selectTransitionDuration)
+        .style('opacity', d => (d === hoverPebble || d === selectedPebble) ? 1 : 0)
+        .on('start', function(d) {d3.select(this).style('display', 'block')}) // prevent mouseovers/clicks from opacity:0 elements
+        .on('end', function(d) {
+            if (d === hoverPebble || d === selectedPebble) return;
+            d3.select(this).style('display', 'none');
+        })
+
+    // construct and update arcs for hovered/selected pebbles
+    selectors.pebbles
+        .selectAll('g.arc').filter(d => d === hoverPebble || d === selectedPebble).each(function (pebble) {
+        let data = {name: '', children: forceDiagramLabels(problem)}
+        let setWidths = node => {
+            if ('children' in node) node.value = node.children.reduce((sum, child) => sum + setWidths(child), 0);
+            else node.value = node.name.length + 5;
+            return node.value;
+        }
+        setWidths(data)
+
+        let root = d3.hierarchy(data);
+
+        var x = d3.scaleLinear()
+            .range([0, 2 * Math.PI]);
+        var partition = d3.partition();
+
+        var arc = d3.arc()
+            .startAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x0))); })
+            .endAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x1))); })
+            .innerRadius(function(d) {
+                if (d.depth === 0) return 0;
+                return nodes[pebble].radius + Array.from({length: d.depth - 1})
+                    .reduce((sum, _, lvl) => sum + axialGapSize(lvl) + axialLabelSize(lvl), axialGapSize(0))
+            })
+            .outerRadius(function(d) {
+                if (d.depth === 0) return nodes[pebble].radius;
+                return nodes[pebble].radius + Array.from({length: d.depth - 1})
+                    .reduce((sum, _, lvl) => sum + axialGapSize(lvl) + axialLabelSize(lvl), axialGapSize(0)) + axialLabelSize(d.depth);
+            });
+
+        // add paths for new nodes
+        d3.select(this).selectAll('path')
+            .data(partition(root).descendants())
+            .enter()
+            .append("path")
+            .attr('id', label => 'arc' + label.data.id + pebble)
+            .attr('opacity', 0.4)
+            .append("title");
+
+        // add texts for new nodes
+        d3.select(this).selectAll('text')
+            .data(partition(root).descendants())
+            .enter()
+            .append('text')
+            .attr("id", label => 'arcText' + label.data.id + pebble)
+            .attr("x", 6)
+            .attr("dy", 11.5)
+            .attr('opacity', 0.8)
+            .append("textPath")
+            .attr("xlink:href", label => '#arc' + label.data.id + pebble)
+            .text(label => label.data.name)
+
+        // update arc sizes
+        d3.select(this).selectAll('path')
+            .on("click", label => label.data.onclick(pebble))
+            .on('mouseover', d => {
+                clearTimeout(hoverTimeout)
+                hoverTimeout = setTimeout(() => {
+                    hoverPebble = pebble;
+                    m.redraw()
+                }, hoverTimeoutDuration)
+            })
+            .on('mouseout', () => {
+                clearTimeout(hoverTimeout)
+                hoverTimeout = setTimeout(() => {
+                    hoverPebble = undefined;
+                    m.redraw()
+                }, hoverTimeoutDuration)
+            })
+            .transition()  // Animate transitions between styles
+            .duration(selectTransitionDuration)
+            .attr("d", arc)
+            .style("fill", d => {
+                if (d.depth === 0) return 'transparent'
+                return d3.rgb(d.data.attrs.fill)
+            })
+        d3.select(this).selectAll('path').selectAll('title')
+            .text(d => d.data.name);
+    })
+
+    // ~ CIRCLE ~
+    newPebbles
+        .append('svg:circle')
         .attr('class', 'node')
-        .attr('r', pebble => pebbleInfo[pebble].radius)
         .style('pointer-events', 'inherit')
-        .style('fill', pebble => d3.rgb(pebbleInfo[pebble].nodeCol))
         .style('opacity', "0.5")
-        .style('stroke', pebble => d3.rgb(pebbleInfo[pebble].strokeColor))
 
-    // add plot
-    bigGroup.each(function (pebble) {
+    // update existing nodes
+    selectors.pebbles
+        .selectAll('circle')
+        .on('mouseover', d => {
+            clearTimeout(hoverTimeout)
+            hoverTimeout = setTimeout(() => {
+                hoverPebble = d;
+                m.redraw()
+            }, hoverTimeoutDuration)
+        })
+        .on('mouseout', () => {
+            clearTimeout(hoverTimeout)
+            hoverTimeout = setTimeout(() => {
+                hoverPebble = undefined;
+                m.redraw()
+            }, hoverTimeoutDuration)
+        })
+        .on('click', setSelectedPebble)
+        .style('fill', pebble => d3.rgb(nodes[pebble].nodeCol))
+        .style('stroke', pebble => d3.rgb(nodes[pebble].strokeColor))
+        .style('stroke-width', pebble => nodes[pebble].strokeWidth)
+        .transition()  // Animate transitions between styles
+        .duration(selectTransitionDuration)
+        .attr('r', pebble => nodes[pebble].radius);
+
+    // ~ LABEL ~
+    newPebbles
+        .append('svg:text')
+        .attr('class', 'id')
+        .attr('id', pebble => 'pebbleLabel' + pebble)
+        .attr('x', 0)
+        .attr('y', 15);
+
+    selectors.pebbles
+        .selectAll('text.id')
+        .text(d => d)
+        .transition()  // Animate transitions between styles
+        .duration(selectTransitionDuration)
+        .style('font-size', pebble => nodes[pebble].radius * .175 + 7 + 'px');
+
+    // ~ PLOT ~
+    newPebbles
+        .append('g')
+        .attr('class', pebble => ({
+            'continuous': 'density-plot',
+            'bar': 'bar-plot'
+        }[problem.summaries[pebble].plottype]))
+        .attr('opacity', 0.4);
+
+    selectors.pebbles
+        .select('g.density-plot').each(function (pebble) {
         let summary = problem.summaries[pebble];
         if (!summary) return;
-        if (summary.plottype === 'continuous')
-            densityNode({
-                name: pebble,
-                plotx: summary.plotx,
-                ploty: summary.ploty,
-            }, this, pebbleInfo[pebble].radius);
-        else if (summary.plottype === 'bar')
-            barsNode({
-                name: pebble,
-                plotvalues: summary.plotvalues,
-                nature: summary.nature
-            }, this, pebbleInfo[pebble].radius);
-    });
-    //
-    // // TODO: validate
-    // Object.keys(pebbleEvents).forEach(event => g.on(event, pebbleEvents[event]));
-    //
-    // show node names
-    bigGroup.append('svg:text')
-        .attr('id', append('pebbleLabel'))
-        .attr('x', 0)
-        .attr('y', 15)
-        .style('font-size', pebble => pebbleInfo[pebble].radius * .175 + 7 + 'px')
-        .attr('class', 'id')
-        .text(d => d);
 
-    makeArcs(bigGroup, pebbleInfo, forceDiagramLabels(problem));
+        let width = nodes[pebble].radius * 1.5;
+        let height = nodes[pebble].radius * 0.75;
+
+        let xScale = d3.scaleLinear()
+            .domain(d3.extent(summary.plotx))
+            .range([0, width]);
+        let yScale = d3.scaleLinear()
+            .domain(d3.extent(summary.ploty))
+            .range([height, 0]);
+
+        let area = d3.area()
+            .curve(d3.curveMonotoneX)
+            .x(d => xScale(d.x))
+            .y0(height)
+            .y1(d => yScale(d.y))
+
+        // append path if not exists
+        d3.select(this).selectAll('path')
+            .data([null]).enter().append('path')
+            .attr("class", "area")
+            .attr("fill", "#1f77b4")
+            .on('mouseover', () => {
+                clearTimeout(hoverTimeout)
+                hoverTimeout = setTimeout(() => {
+                    hoverPebble = pebble;
+                    m.redraw()
+                }, hoverTimeoutDuration)
+            })
+            .on('mouseout', () => {
+                clearTimeout(hoverTimeout)
+                hoverTimeout = setTimeout(() => {
+                    hoverPebble = undefined;
+                    m.redraw()
+                }, hoverTimeoutDuration)
+            })
+            .on('click', () => setSelectedPebble(pebble))
+
+        // rebind the path datum regardless of if path existed
+        d3.select(this).selectAll('path')
+            .datum(summary.plotx.map((x_i, i) => ({x: summary.plotx[i], y: summary.ploty[i]})))
+            .transition()
+            .duration(selectTransitionDuration)
+            .attr("d", area)
+            .attr("transform", "translate(" + (-width/2) + "," + (-height) + ")");
+    });
+
+    selectors.pebbles
+        .select('g.bar-plot').each(function (pebble) {
+        let summary = problem.summaries[pebble];
+        if (!summary || !summary.plotvalues) return;
+
+        let width = nodes[pebble].radius * 1.5;
+        let height = nodes[pebble].radius * 0.75;
+
+        let barPadding = .015; // Space between bars
+        let barLimit = 15;
+        let keys = Object.keys(summary.plotvalues);
+        let data = keys
+            .filter((key, i) => keys.length < barLimit || !(i % parseInt(keys.length / barLimit)) || i === keys.length - 1)
+            .map((key, i) => ({
+                x: summary.nature === 'nominal' ? i : Number(key),
+                y: summary.plotvalues[key]
+            })).sort((a, b) => b.x - a.x);
+
+        let maxY = d3.max(data, d => d.y);
+        let [minX, maxX] = d3.extent(data, d => d.x);
+
+        let xScale = d3.scaleLinear()
+            .domain([minX - 0.5, maxX + 0.5])
+            .range([0, width]);
+
+        let yScale = d3.scaleLinear()
+            .domain([0, maxY])
+            .range([0, height]);
+
+        d3.select(this).selectAll("rect").data(data)
+            .on('mouseover', () => {
+                clearTimeout(hoverTimeout)
+                hoverTimeout = setTimeout(() => {
+                    hoverPebble = pebble;
+                    m.redraw()
+                }, hoverTimeoutDuration)
+            })
+            .on('mouseout', () => {
+                clearTimeout(hoverTimeout)
+                hoverTimeout = setTimeout(() => {
+                    hoverPebble = undefined;
+                    m.redraw()
+                }, hoverTimeoutDuration)
+            })
+            .on('click', () => setSelectedPebble(pebble))
+            .enter()
+            .append("rect");
+
+        d3.select(this).selectAll("rect")
+            .transition()
+            .duration(selectTransitionDuration)
+            .attr("x", d =>  xScale(d.x - 0.5 + barPadding))
+            .attr("y", d =>  yScale(maxY - d.y))
+            .attr("width", xScale(minX + 0.5 - 2 * barPadding)) // the "width" is the coordinate of the end of the first bar
+            .attr("height", d => yScale(d.y))
+            .attr("fill", "#1f77b4")
+            .attr("transform", "translate(" + (-width/2) + "," + (-height) + ")");
+    })
 
     // ~~~~ LINKS ~~~~
     let marker = side => x => {
@@ -1560,20 +1767,20 @@ export let buildForceDiagram = problem => data => {
             x[side] ? `url(#${kind}-arrow)` : '';
     };
 
-    selectors.path = selectors.path.data(pebbleLinks, link => `${link.source}-${link.target}`);
-    selectors.path.exit().remove();
-    selectors.path = selectors.path.enter()
+    selectors.links = selectors.links.data(pebbleLinks, link => `${link.source}-${link.target}`);
+    selectors.links.exit().remove();
+    selectors.links = selectors.links.enter()
         .append('svg:path')
         .attr('class', 'link')
         .classed('selected', x => null)
         .style('marker-start', marker('left'))
         .style('marker-end', marker('right'))
         .on('mousedown', d => pebbleLinks.some(link => d === link && (del(pebbleLinks, link) || true)))
-        .merge(selectors.path);
+        .merge(selectors.links);
 
     // update existing links
     // VJD: dashed links between pebbles are "selected". this is disabled for now
-    // selectors.path.classed('selected', x => null)
+    // selectors.links.classed('selected', x => null)
     //     .style('marker-start', marker('left'))
     //     .style('marker-end', marker('right'));
 
@@ -1582,7 +1789,6 @@ export let buildForceDiagram = problem => data => {
     selectors.hulls = selectors.hulls.data(groups, group => group.name)
     selectors.hulls.exit().remove();
     selectors.hulls = selectors.hulls.enter()
-        .append("svg")
         .append("path")
         .attr("id", group => group.name + 'Hull')
         .style("fill", group => group.color)
@@ -1595,9 +1801,6 @@ export let buildForceDiagram = problem => data => {
     selectors.hullBackgrounds = selectors.hullBackgrounds.data(groups, group => group.name);
     selectors.hullBackgrounds.exit().remove();
     selectors.hullBackgrounds = selectors.hullBackgrounds.enter()
-        .append('svg')
-        .attr("width", width)
-        .attr("height", height)
         .append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
         .attr("id", group => group.name + 'HullBackground')
         .style("fill", '#ffffff')
@@ -1608,9 +1811,10 @@ export let buildForceDiagram = problem => data => {
         .merge(selectors.hullBackgrounds);
 
     // ~~~~ GROUP LINKS ~~~~
-    selectors.groupLineDefs = selectors.groupLineDefs.data(groupLinks, link => `${link.source}-${link.target}`)
-    selectors.groupLineDefs.exit().remove();
-    selectors.groupLineDefs = selectors.groupLineDefs.enter()
+    selectors.groupLinkDefs = selectors.groupLinkDefs.data(groupLinks, link => `${link.source}-${link.target}`)
+    selectors.groupLinkDefs.exit().remove();
+
+    let newGroupLinkDefs = selectors.groupLinkDefs.enter()
         .append("svg:marker")
         .attr("id", groupLink => `${groupLink.source}-${groupLink.target}-arrow`)
         .attr('viewBox', '0 -5 15 15')
@@ -1618,31 +1822,31 @@ export let buildForceDiagram = problem => data => {
         .attr("refY", 0)
         .attr("markerWidth", 3)
         .attr("markerHeight", 3)
-        .attr("orient", "auto")
+        .attr("orient", "auto");
+
+    newGroupLinkDefs
         .append("path")
         .attr('d', 'M0,-5L10,0L0,5')
-        .style("fill", groupLink => groupLink.color)
-        .merge(selectors.groupLineDefs);
+        .style("fill", groupLink => groupLink.color);
 
-    selectors.groupLines = selectors.groupLines.data(groupLinks, link => `${link.source}-${link.target}`)
-    selectors.groupLines.exit().remove();
-    selectors.groupLines = selectors.groupLines.enter()
+    selectors.groupLinkDefs = newGroupLinkDefs.merge(selectors.groupLinkDefs);
+
+    selectors.groupLinks = selectors.groupLinks.data(groupLinks, link => `${link.source}-${link.target}`)
+    selectors.groupLinks.exit().remove();
+    selectors.groupLinks = selectors.groupLinks.enter()
         .append("line")
         .style('fill', 'none')
         .style('stroke', groupLink => groupLink.color)
         .style('stroke-width', 5)
         .attr("marker-end", groupLink => `url(#${groupLink.source}-${groupLink.target}-arrow)`)
-        .merge(selectors.groupLines);
+        .merge(selectors.groupLinks);
 }
 
 // depth increments for child arcs
 let radialGapSize = depth => Math.PI / 20;
-let axialGapSize = depth => 3 / (depth / 4 + 1); // gap between pebble and arc, or between arcs
+let axialGapSize = depth => 1 // / (depth / 4 + 1); // gap between pebble and arc, or between arcs
 let axialLabelSize = depth => arcHeight // / (depth / 4 + 1); // uncomment to reduce width on deeper arcs
-let arcHeight = 15;
-
-// milliseconds to wait before showing/hiding the pebble handles
-let hoverTimeout = 150;
+let arcHeight = 16;
 
 let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
     .attr('fill-opacity', op).attr('display', op ? '' : 'none')
@@ -1650,73 +1854,7 @@ let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
     .duration(d2);
 
 let append = (str, attr) => x => str + x[attr || 'id'];
-let makeArcs = (g, pebbleInfo, labels, left = 0, right = 2 * Math.PI, depth = 0) => labels.forEach((label, i) => {
-    let labelLeft = left + (right - left) / labels.length * i;
-    let labelRight = left + (right - left) / labels.length * (i + 1)  + (!label.children && i === labels.length - 1 ? 0 : -radialGapSize(depth));
 
-    // if (depth === 0) arcIds.length = 0;
-    g.append("path").each(function(d) {
-        let offset = pebbleInfo[d].radius + Array.from({length: depth})
-            .reduce((sum, _, lvl) => sum + axialGapSize(lvl) + axialLabelSize(lvl), axialGapSize(0));
-
-        let arc = d3.arc()
-            .innerRadius(offset).outerRadius(offset + axialLabelSize(depth))
-            .startAngle(labelLeft)
-            .endAngle(labelRight);
-
-        d3.select(this)
-            .attr("id", 'arc' + label.id + d) // TODO: normalize d
-            .attr("d", arc)
-            .attrs(label.attrs)
-            .on('click', label.onclick)
-            .on('mouseover', d => {
-                hoverPebble = d;
-                setTimeout(() => {
-                    if (hoverPebble !== d) return;
-                    showArcs(d); // TODO: normalize d
-                }, hoverTimeout)
-            })
-            .on('mouseout', d => {
-                hoverPebble = undefined;
-                setTimeout(() => {
-                    if (hoverPebble === d || selectedPebble === d) return;
-                    hideArcs(d)
-                }, hoverTimeout) // TODO: normalize d
-            });
-    });
-
-    g.append("text").each(function(d) {
-        d3.select(this)
-            .attr("id", 'arcText' + label.id + d)
-            .attr("x", 6)
-            .attr("dy", 11.5)
-            .attr("fill-opacity", 0)
-            .on('click', label.onclick)
-            .append("textPath")
-            .attr("xlink:href", '#arc' + label.id + d)
-            .text(label.name);
-    })
-
-    arcIds.add(label.id)
-
-    if ('children' in label)
-        makeArcs(g, pebbleInfo, label.children, labelLeft, labelRight, depth + 1)
-});
-
-let arcIds = new Set();
-let showArcs = pebbleId => {
-    [...arcIds].forEach(arcId => {
-        $fill('#arc' + arcId + pebbleId, .4, 0, 100);
-        $fill('#arcText' + arcId + pebbleId, .6, 0, 100);
-    })
-};
-
-let hideArcs = pebbleId => {
-    [...arcIds].forEach(arcId => {
-        $fill('#arc' + arcId + pebbleId, 0, 100, 500);
-        $fill('#arcText' + arcId + pebbleId, 0, 100, 500);
-    })
-};
 
 // TODO: move into builder
 let pebbleEvents = {
@@ -1805,13 +1943,14 @@ let forceDiagramLabels = problem => [
     {
         id: 'Group',
         name: 'Group',
-        attrs: {fill: common.gr1Color, 'fill-opacity':0},
+        attrs: {fill: common.gr1Color},
         children: [
             {
                 id: 'Predictor',
                 name: 'Predictor',
-                attrs: {fill: common.gr1Color, 'fill-opacity':0},
+                attrs: {fill: common.gr1Color},
                 onclick: d => {
+                    toggle(problem.tags.loose, d);
                     remove(problem.targets, d);
                     toggle(problem.predictors, d);
                     setSelectedPebble(d);
@@ -1820,8 +1959,9 @@ let forceDiagramLabels = problem => [
             {
                 id: 'Dep',
                 name: 'Dep Var',
-                attrs: {fill: common.dvColor, 'fill-opacity':0},
+                attrs: {fill: common.dvColor},
                 onclick: d => {
+                    toggle(problem.tags.loose, d);
                     remove(problem.predictors, d);
                     toggle(problem.targets, d);
                     setSelectedPebble(d);
@@ -1830,9 +1970,9 @@ let forceDiagramLabels = problem => [
             {
                 id: 'Prior',
                 name: 'Prior',
-                attrs: {fill: common.warnColor, 'fill-opacity':0},
+                attrs: {fill: common.warnColor},
                 onclick: d => {
-
+                    alertLog('Neat feature to add?')
                     setSelectedPebble(d);
                 }
             }
@@ -1841,13 +1981,13 @@ let forceDiagramLabels = problem => [
     {
         id: 'GroupLabel',
         name: 'Labels',
-        attrs: {fill: common.nomColor, 'fill-opacity':0},
+        attrs: {fill: common.nomColor},
         onclick: setSelectedPebble,
         children: [
             {
                 id: 'Nominal',
                 name: 'Nom',
-                attrs: {fill: common.nomColor, 'fill-opacity':0},
+                attrs: {fill: common.nomColor},
                 onclick: d => {
                     toggle(problem.tags.nominal, d);
                     setSelectedPebble(d);
@@ -1856,7 +1996,7 @@ let forceDiagramLabels = problem => [
             {
                 id: 'Time',
                 name: 'Time',
-                attrs: {fill: common.timeColor, 'fill-opacity':0},
+                attrs: {fill: common.timeColor},
                 onclick: d => {
                     toggle(problem.tags.time, d);
                     setSelectedPebble(d);
@@ -1865,7 +2005,7 @@ let forceDiagramLabels = problem => [
             {
                 id: 'Cross',
                 name: 'Cross',
-                attrs: {fill: common.csColor, 'fill-opacity':0},
+                attrs: {fill: common.csColor},
                 onclick: d => {
                     toggle(problem.tags.crossSection, d);
                     setSelectedPebble(d);
@@ -1874,7 +2014,7 @@ let forceDiagramLabels = problem => [
             {
                 id: 'Weight',
                 name: 'Weight',
-                attrs: {fill: common.weightColor, 'fill-opacity':0},
+                attrs: {fill: common.weightColor},
                 onclick: d => {
                     if (problem.tags.weights.includes(d))
                         problem.tags.weights = [];
@@ -2660,9 +2800,19 @@ export async function makeRequest(url, data) {
 }
 
 // programmatically deselect every selected variable
-export let erase = () => nodes
-    .map(node => node.name)
-    .forEach(name => clickVar(name, nodes));
+export let erase = () => {
+    let problem = getSelectedProblem();
+    problem.predictors = [];
+    problem.targets = [];
+    problem.tags = {
+        transformed: problem.tags.transformed, // this is used when updating manipulations pipeline
+        weights: [], // singleton list
+        crossSection: [],
+        time: [],
+        nominal: [],
+        loose: [] // variables displayed in the force diagram, but not in any groups
+    }
+}
 
 // call with a tab name to change the left tab in model mode
 export let setLeftTab = (tab) => {

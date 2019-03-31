@@ -1123,6 +1123,7 @@ class Body {
                         )],
 
                     selectedProblem && m(ForceDiagram, Object.assign({
+                        hoverPebble: app.hoverPebble,
                         selectedPebble: app.selectedPebble,
                         setSelectedPebble: app.setSelectedPebble,
                         isPinned: app.forceToggle,
