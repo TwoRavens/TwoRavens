@@ -43,6 +43,8 @@ import * as stackedbarnnn from './vega-schemas/trivariate/stackedbarnnn';
 import * as facetbox from './vega-schemas/trivariate/facetbox';
 import * as facetheatmap from './vega-schemas/trivariate/facetheatmap';
 import * as groupedbarnqq from './vega-schemas/trivariate/groupedbarnqq';
+import {logArray, zPop} from "./inactive";
+
 const $private = false;
 
 let approps = {
@@ -1332,7 +1334,7 @@ function viz(m, json_vizexplore, model_name_set) {
         if (app.downloadIncomplete()) {
             return;
         }
-        app.zPop();
+        zPop();
 
         app.estimateLadda.start();
         // write links to file & run R CMD
@@ -1453,10 +1455,10 @@ function model_selection(model_selection_name, count_value, json) {
 }
 
 function showLog() {
-    if (app.logArray.length > 0) {
+    if (logArray.length > 0) {
         app.byId('logdiv').setAttribute("style", "display:block");
         d3.select("#collapseLog div.panel-body").selectAll("p")
-            .data(app.logArray)
+            .data(logArray)
             .enter()
             .append("p")
             .text(d => d);
@@ -1476,7 +1478,7 @@ export async function explore() {
         return;
     }
 
-    app.zPop();
+    zPop();
     console.log('zpop:', app.zparams);
 
     // write links to file & run R CMD
@@ -1522,7 +1524,7 @@ export async function explore() {
 
     var rCall = [];
     rCall[0] = json.call;
-    app.logArray.push("explore: ".concat(rCall[0]));
+    logArray.push("explore: ".concat(rCall[0]));
     showLog();
     viz(model_name, json, model_name);
     m.redraw();
@@ -1586,7 +1588,7 @@ export async function plot(plotNodes, plottype="", problem={}) {
         return;
     }
 
-    app.zPop();
+    zPop();
     console.log('zpop:', app.zparams);
 
     function getNames(arr) {

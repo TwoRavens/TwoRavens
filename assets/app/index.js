@@ -1,4 +1,3 @@
-
 import $ from 'jquery';
 import 'bootstrap/dist/css/bootstrap.css';
 import 'bootswatch/dist/materia/bootstrap.css';
@@ -42,7 +41,6 @@ import MenuHeaders from "../common/views/MenuHeaders";
 import Subpanel2 from '../common/views/Subpanel';
 
 import Datamart, {ModalDatamart} from "../common/TwoRavens/Datamart";
-
 // EVENTDATA
 import Body_EventData from './eventdata/Body_EventData';
 import ConfusionMatrix from "./views/ConfusionMatrix"
@@ -51,7 +49,7 @@ import vegaEmbed from "vega-embed";
 import PreprocessInfo from "./PreprocessInfo";
 import ForceDiagram from "./views/ForceDiagram";
 import ButtonLadda from "./views/LaddaButton";
-import TestPage from "./views/TestPage";
+import {findNode} from "./inactive";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -327,14 +325,14 @@ function leftpanel(mode) {
                 value: 'Summary',
                 title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
                 display: 'none',
-                contents: (app.hoverPebble || app.selectedPebble) && [
+                contents: (app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble) && [
                     m('center',
-                        m('b', app.hoverPebble || app.selectedPebble),
+                        m('b', app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble),
                         m('br'),
-                        m('i', selectedProblem.summaries[app.hoverPebble || app.selectedPebble].labl)),
+                        m('i', selectedProblem.summaries[app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble].labl)),
                     m(Table, {
                         id: 'varSummaryTable',
-                        data: app.getVarSummary(selectedProblem.summaries[app.hoverPebble || app.selectedPebble])
+                        data: app.getVarSummary(selectedProblem.summaries[app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble])
                     })
                 ]
             }
@@ -859,7 +857,7 @@ class Body {
 
         let exploreVars = (() => {
             vars.forEach(x => {
-                let node = app.findNode(x);
+                let node = findNode(x);
                 node && expnodes.push(node);
             });
             if (variate === "problem") {
@@ -1064,7 +1062,7 @@ class Body {
                                     let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
                                     let [n0, n1, n2] = nodesExplore;
                                     return m('span#exploreNodeBox', {
-                                            onclick: _ => discovery ? app.setSelectedProblem(x) : app.clickVar(x, nodesExplore),
+                                            onclick: _ => discovery ? app.setSelectedProblem(x) : undefined, // used to clickVar if in explore mode, need to debug (Shoeboxam)
                                             onmouseover: function () {
                                                 $(this).popover('toggle');
                                                 $('body div.popover')
@@ -1074,7 +1072,7 @@ class Body {
                                             },
                                             onmouseout: "$(this).popover('toggle');",
                                             'data-container': 'body',
-                                            'data-content': app.findNode(targetName).labl || '<i>none provided</i>',
+                                            'data-content': findNode(targetName).labl || '<i>none provided</i>',
                                             'data-html': 'true',
                                             'data-original-title': 'Description',
                                             'data-placement': 'top',
@@ -1094,14 +1092,14 @@ class Body {
                                             }
                                         }, m('#exploreNodePlot', {
                                             oninit() {
-                                                this.node = app.findNode(x);
+                                                this.node = findNode(x);
                                             },
                                             oncreate(vnode) {
                                                 let plot = (this.node || {}).plottype === 'continuous' ? plots.densityNode : plots.barsNode;
                                                 this.node && plot(this.node, vnode.dom, 110, true);
                                             },
                                             onupdate(vnode) {
-                                                let node = app.findNode(typeof x === 'object' ? x.targets[0] : x);
+                                                let node = findNode(typeof x === 'object' ? x.targets[0] : x);
                                                 if (node && node !== this.node) {
                                                     let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
                                                     plot(node, vnode.dom, 110, true);
@@ -1122,21 +1120,25 @@ class Body {
                                 }))
                         )],
 
-                    selectedProblem && m(ForceDiagram, Object.assign({
-                        hoverPebble: app.hoverPebble,
-                        selectedPebble: app.selectedPebble,
-                        setSelectedPebble: app.setSelectedPebble,
-                        isPinned: app.forceToggle,
-                        hullRadius: app.hullRadius,
-                        builder: app.buildForceDiagram(selectedProblem)
+                    selectedProblem && m(ForceDiagram, Object.assign(app.forceDiagramState,{
+                        // these attributes may change dynamically, (the problem could change)
+                        onDragAway: pebble => {
+                            app.remove(selectedProblem.tags.loose, pebble);
+                            app.remove(selectedProblem.predictors, pebble);
+                            app.remove(selectedProblem.targets, pebble);
+                            m.redraw();
+                        },
+                        labels: app.forceDiagramLabels(selectedProblem),
+                        mutateNodes: app.mutateNodes(selectedProblem),
+                        summaries: selectedProblem.summaries
                     }, app.buildForceData(selectedProblem)))
                 ),
 
                 app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}}, [
                     spaceBtn('btnAdd', app.addProblemFromForceDiagram, 'add model to problems', m(Icon, {name: 'plus'})),
                     spaceBtn('btnJoin', app.connectAllForceDiagram, 'Make all possible connections between nodes', m(Icon, {name: 'link'})),
-                    spaceBtn('btnDisconnect', () => app.restart([]), 'Delete all connections between nodes', m(Icon, {name: 'circle-slash'})),
-                    spaceBtn('btnForce', () => app.setForceToggle(!app.forceToggle), 'Pin the variable pebbles to the page', m(Icon, {name: 'pin'})),
+                    spaceBtn('btnDisconnect', () => app.forceDiagramState.pebbleLinks = [], 'Delete all connections between nodes', m(Icon, {name: 'circle-slash'})),
+                    spaceBtn('btnForce', () => app.forceDiagramState.isPinned = !app.forceDiagramState.isPinned, 'Pin the variable pebbles to the page', m(Icon, {name: 'pin'})),
                     spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', m(Icon, {name: 'trashcan'}))
                 ]),
                 app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}),
@@ -1401,7 +1403,6 @@ else {
         },
         '/explore/:variate/:vars...': Body,
         '/data': {render: () => m(Peek, {id: app.peekId, image: '/static/images/TwoRavens.png'})},
-        '/test': TestPage,
         '/:mode': Body,
 
         /*'/results': {

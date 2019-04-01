@@ -6,38 +6,21 @@ import m from 'mithril';
 import * as common from "../common/common";
 
 import * as manipulate from './manipulations/manipulate';
+import {getData, getTransformVariables} from './manipulations/manipulate';
 
-import {setModal, locationReload} from '../common/views/Modal';
-import Table from "../common/views/Table";
-
-import {bars, barsNode, barsSubset, density, densityNode} from './plots.js';
+import {locationReload, setModal} from '../common/views/Modal';
 import {elem} from './utils';
-import {getTransformVariables} from "./manipulations/manipulate";
 
 import $ from 'jquery';
 import * as d3 from 'd3';
 import * as queryMongo from "./manipulations/queryMongo";
-import {getData} from "./manipulations/manipulate";
+import {groupBuilder, groupLinkBuilder, linkBuilder, pebbleBuilder} from "./views/ForceDiagram";
 
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
 //    Developers, see /template/index.html
 //-------------------------------------------------
-
-var transform_data ={
-    "preprocess_id":0,
-    "current_variable":"",
-    "description" : "",
-    "transform_variable":[
-       "any name (optional)"
-    ],
-    "transform_type":{
-       "manual_transform":true,
-       "functional_transform":false
-    },
-    "transform_data":""
- }
 
 // ~~~~~ PEEK ~~~~~
 // for the second-window data preview
@@ -322,13 +305,10 @@ let tutorial_mode = localStorage.getItem('tutorial_mode') !== 'false';
 // initial color scale used to establish the initial colors of nodes
 // allNodes.push() below establishes a field for the master node array allNodes called "nodeCol" and assigns a color from this scale to that field
 // everything there after should refer to the nodeCol and not the color scale, this enables us to update colors and pass the variable type to R based on its coloring
-let colors = d3.scaleOrdinal(d3.schemeCategory20);
+export let colors = d3.scaleOrdinal(d3.schemeCategory20);
 
 export let leftTab = 'Variables'; // current tab in left panel
 export let leftTabHidden = 'Variables'; // stores the tab user was in before summary hover
-
-export let subset = false;
-export let summaryHold = false;
 
 export let rightTab = 'Problem'; // current tab in right panel
 export let rightTabExplore = 'Univariate';
@@ -369,11 +349,51 @@ export let setRightTab = tab => {
 };
 export let setRightTabExplore = (tab) => { rightTabExplore = tab; updateRightPanelWidth() };
 
+// call with a tab name to change the left tab in model mode
+export let setLeftTab = (tab) => {
+    leftTab = tab;
+    updateLeftPanelWidth();
+    if (tab === 'Discover') buttonClasses.btnDiscover = 'btn-secondary';
+    exploreVariate = tab === 'Discover' ? 'Problem' : 'Univariate';
+    setFocusedPanel('left');
+};
+
+export let setLeftTabHidden = tab => leftTabHidden = tab;
+
 // panelWidth is meant to be read only
 export let panelWidth = {
     'left': '0',
     'right': '0'
 };
+
+export let updateRightPanelWidth = () => {
+    if (is_explore_mode) panelWidth.right = `calc(${common.panelMargin}*2 + 16px)`;
+    // else if (is_model_mode && !selectedProblem) panelWidth.right = common.panelMargin;
+    else if (common.panelOpen['right']) {
+        let tempWidth = {
+            'model': modelRightPanelWidths[rightTab],
+            'explore': exploreRightPanelWidths[rightTabExplore]
+        }[currentMode];
+
+        panelWidth['right'] = `calc(${common.panelMargin}*2 + ${tempWidth})`;
+    }
+    else panelWidth['right'] = `calc(${common.panelMargin}*2 + 16px)`;
+};
+let updateLeftPanelWidth = () => {
+    if (common.panelOpen['left'])
+        panelWidth['left'] = `calc(${common.panelMargin}*2 + ${modelLeftPanelWidths[leftTab]})`;
+    else panelWidth['left'] = `calc(${common.panelMargin}*2 + 16px)`;
+};
+
+// minor quality of life, the focused panel gets +1 to the z-index. Set whenever a panel is clicked
+export let focusedPanel = 'left';
+export let setFocusedPanel = side => focusedPanel = side;
+
+updateRightPanelWidth();
+updateLeftPanelWidth();
+
+common.setPanelCallback('right', updateRightPanelWidth);
+common.setPanelCallback('left', updateLeftPanelWidth);
 
 
 //-------------------------------------------------
@@ -457,51 +477,11 @@ streamSocket.onclose = function(e) {
 };
 //-------------------------------------------------
 
-
-
-export let updateRightPanelWidth = () => {
-    if (is_explore_mode) panelWidth.right = `calc(${common.panelMargin}*2 + 16px)`;
-    // else if (is_model_mode && !selectedProblem) panelWidth.right = common.panelMargin;
-    else if (common.panelOpen['right']) {
-        let tempWidth = {
-            'model': modelRightPanelWidths[rightTab],
-            'explore': exploreRightPanelWidths[rightTabExplore]
-        }[currentMode];
-
-        panelWidth['right'] = `calc(${common.panelMargin}*2 + ${tempWidth})`;
-    }
-    else panelWidth['right'] = `calc(${common.panelMargin}*2 + 16px)`;
-};
-let updateLeftPanelWidth = () => {
-    if (common.panelOpen['left'])
-        panelWidth['left'] = `calc(${common.panelMargin}*2 + ${modelLeftPanelWidths[leftTab]})`;
-    else panelWidth['left'] = `calc(${common.panelMargin}*2 + 16px)`;
-};
-
-// minor quality of life, the focused panel gets +1 to the z-index. Set whenever a panel is clicked
-export let focusedPanel = 'left';
-export let setFocusedPanel = side => focusedPanel = side;
-
-updateRightPanelWidth();
-updateLeftPanelWidth();
-
-common.setPanelCallback('right', updateRightPanelWidth);
-common.setPanelCallback('left', updateLeftPanelWidth);
-
-let spaces = [];
-
-// space index
-export let myspace = 0;
-
-// when set, force diagram components are pinned
-export let forceToggle = false;
-export let setForceToggle = state => forceToggle = state;
-
 // when set, a problem's Task, Subtask and Metric may not be edited
 export let lockToggle = true;
 export let setLockToggle = state => lockToggle = state;
 
-let priv = true;
+export let priv = true;
 export let setPriv = state => priv = state;
 
 // if no columns in the datasetDoc, swandive is enabled
@@ -532,8 +512,6 @@ export let alertsLastViewed = new Date();
 export let alertsShown = false;
 export let setAlertsShown = state => alertsShown = state;
 
-
-export let logArray = [];
 export let zparams = {
     zdata: [],
     zedges: [],
@@ -591,7 +569,6 @@ export let nodes = [];
 export let links = [];
 let mods = {};
 let estimated = false;
-let rightClickLast = false;
 let selInteract = false;
 export let callHistory = []; // transform and subset calls
 
@@ -658,37 +635,8 @@ export let twoRavensModelTypes = {
     clustering: ['modelUndefined', 'KMeans']
 };
 
-let svg, div;
-export let width, height;
-
-export let selectedPebble;
-export let setSelectedPebble = pebble => {
-    selectedPebble = pebble;
-
-    if (selectedPebble) {
-        leftTab !== 'Summary' && setLeftTabHidden(leftTab);
-        setLeftTab('Summary');
-    } else if (leftTabHidden) {
-        setLeftTab(leftTabHidden);
-        setLeftTabHidden(undefined);
-    }
-    m.redraw();
-}
-export let hoverPebble;
-// milliseconds to wait before showing/hiding the pebble handles
-let hoverTimeoutDuration = 150;
-let selectTransitionDuration = 300; // duration of pebble animations
-
-let hoverTimeout;
-
 export let byId = id => document.getElementById(id);
 // export let byId = id => {console.log(id); return document.getElementById(id);}
-
-function trigger(id, event) {
-    let evt = document.createEvent('HTMLEvents');
-    evt.initEvent(event, true, false);
-    byId(id).dispatchEvent(evt);
-}
 
 /**
    page reload linked to btnReset
@@ -700,9 +648,6 @@ export const reset = async function reloadPage() {
     //clearInterval(requestIntervalId);
     location.reload();
 };
-export let restart;
-
-let dataurl = '';
 
 export let step = (target, placement, title, content) => ({
     target,
@@ -1240,10 +1185,6 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     cdb('--dataverseurl: ' + dataverseurl);
 
     let tempWidth = d3.select('#main').style('width');
-    width = tempWidth.substring(0, tempWidth.length - 2);
-    height = window.innerHeight - 120; // hard code header, footer, and bottom margin
-
-    svg = d3.select("#whitespace");
 
     // indicators for showing membership above arcs
     // let indicator = (degree) => d3.svg.circle()
@@ -1285,7 +1226,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
    @param {number} idx - index
    @param {Object} [obj] - object
 */
-function del(arr, idx, obj) {
+export function del(arr, idx, obj) {
     idx = obj ? arr.indexOf(obj) : idx;
     idx > -1 && arr.splice(idx, 1);
 }
@@ -1314,31 +1255,6 @@ export let toggle = (collection, obj) => {
         collection.has(obj) ? collection.delete(obj) : collection.add(obj)
 };
 
-/** needs doc */
-function zparamsReset(text, labels='zdv zcross ztime znom') {
-    labels.split(' ').forEach(x => del(zparams[x], -1, text));
-}
-
-// mouse event vars
-export var selected_node = null,
-    selected_link = null,
-    mousedown_link = null,
-    mousedown_node = null,
-    mouseup_node = null;
-
-// this is to detect a click in the whitespace, but not on a pebble
-export let outsideClick = false;
-export let setOutsideClick = state => outsideClick = state;
-
-function resetMouseVars() {
-    mousedown_node = null;
-    mouseup_node = null;
-    mousedown_link = null;
-}
-
-export let hullRadius = 40;
-export let defaultPebbleRadius = 40;
-
 // layout for force diagram pebbles. Can be 'variables', 'pca', 'clustering' etc. (ideas)
 export let forceDiagramMode = 'variables';
 export let setForceDiagramMode = mode => forceDiagramMode = mode;
@@ -1350,7 +1266,6 @@ export let buildForceData = problem => {
     let summaries = problem.summaries;
     let pebbles = [...problem.predictors, ...problem.targets, ...problem.tags.loose];
     let groups = [];
-    let pebbleLinks = [];
     let groupLinks = [];
 
     if (forceDiagramMode === 'variables') {
@@ -1397,30 +1312,84 @@ export let buildForceData = problem => {
         group.nodes = [group.name]; // redefine the group to only contain the new node
     });
 
-    let builtInfo = {pebbles, groups, pebbleLinks, groupLinks};
-
-    return builtInfo
+    return {pebbles, groups, groupLinks};
 };
 
-export let buildForceDiagram = problem => data => {
-    let {
-        nodes, width, height,
-        data: {pebbles, pebbleLinks, groups, groupLinks} = {},
-        selectors
-    } = data;
+export let forceDiagramState = {
+    builders: [pebbleBuilder, groupBuilder, linkBuilder, groupLinkBuilder],
+    pebbleLinks: [],
+    hoverPebble: undefined,
+    contextPebble: undefined,
+    selectedPebble: undefined,
+    hoverTimeout: undefined,
+    isPinned: false,
+    hullRadius: 40,
+    defaultPebbleRadius: 40,
+    hoverTimeoutDuration: 150, // milliseconds to wait before showing/hiding the pebble handles
+    selectTransitionDuration: 300, // milliseconds of pebble resizing animations
+    arcHeight: 16,
+    arcGap: 1
+}
 
-    // ~~~~ PREPARATION ~~~~
+let setSelectedPebble = pebble => {
+    forceDiagramState.selectedPebble = pebble;
+
+    if (pebble) {
+        leftTab !== 'Summary' && setLeftTabHidden(leftTab);
+        setLeftTab('Summary');
+    } else if (leftTabHidden) {
+        setLeftTab(leftTabHidden);
+        setLeftTabHidden(undefined);
+    }
+    m.redraw();
+}
+
+Object.assign(forceDiagramState, {
+    setSelectedPebble,
+    pebbleEvents: {
+        click: setSelectedPebble,
+        mouseover: pebble => {
+            clearTimeout(forceDiagramState.hoverTimeout);
+            forceDiagramState.hoverTimeout = setTimeout(() => {
+                forceDiagramState.hoverPebble = pebble;
+                m.redraw()
+            }, forceDiagramState.hoverTimeoutDuration)
+        },
+        mouseout: () => {
+            clearTimeout(forceDiagramState.hoverTimeout);
+            forceDiagramState.hoverTimeout = setTimeout(() => {
+                forceDiagramState.hoverPebble = undefined;
+                m.redraw()
+            }, forceDiagramState.hoverTimeoutDuration)
+        },
+        contextmenu: pebble => {
+            d3.event.preventDefault(); // block browser context menu
+            if (forceDiagramState.contextPebble) {
+                if (forceDiagramState.contextPebble !== pebble) forceDiagramState.pebbleLinks.push({
+                    source: forceDiagramState.contextPebble,
+                    target: pebble,
+                    right: true
+                });
+                forceDiagramState.contextPebble = undefined;
+            } else forceDiagramState.contextPebble = pebble;
+            m.redraw();
+        }
+    }
+})
+
+export let mutateNodes = problem => (state, context) => {
+    let pebbles = Object.keys(context.nodes);
 
     // set radius of each node. Members of groups are scaled down if group gets large.
     pebbles.forEach(pebble => {
         let upperSize = 10;
-        let maxNodeGroupSize = Math.max(...groups
+        let maxNodeGroupSize = Math.max(...context.filtered.groups
             .filter(group => group.nodes.has(pebble))
             .map(group => group.nodes.size), upperSize);
-        nodes[pebble].radius = defaultPebbleRadius * Math.sqrt(upperSize / maxNodeGroupSize);
+        context.nodes[pebble].radius = state.defaultPebbleRadius * Math.sqrt(upperSize / maxNodeGroupSize);
 
-        if (pebble === selectedPebble)
-            nodes[pebble].radius = Math.min(nodes[pebble].radius * 1.5, defaultPebbleRadius);
+        if (pebble === state.selectedPebble)
+            context.nodes[pebble].radius = Math.min(context.nodes[pebble].radius * 1.5, state.defaultPebbleRadius);
     });
 
     // the order of the keys indicates precedence
@@ -1430,7 +1399,7 @@ export let buildForceDiagram = problem => data => {
         transformed: new Set(problem.tags.transformed),
         crossSection: new Set(problem.tags.crossSection),
         time: new Set(problem.tags.time),
-        nominal: new Set(getNominalVariables()), // include both nominal-casted and string-type variables
+        nominal: new Set(getNominalVariables(problem)), // include both nominal-casted and string-type variables
         weight: new Set(problem.tags.weights),
         targets: new Set(problem.targets),
     };
@@ -1461,9 +1430,9 @@ export let buildForceDiagram = problem => data => {
 
     // set the base color of each node
     pebbles.forEach(pebble => {
-        nodes[pebble].strokeWidth = 1;
-        nodes[pebble].nodeCol = colors(generateID(pebble));
-        nodes[pebble].strokeColor = 'transparent';
+        context.nodes[pebble].strokeWidth = 1;
+        context.nodes[pebble].nodeCol = colors(generateID(pebble));
+        context.nodes[pebble].strokeColor = 'transparent';
     });
 
     // set additional styling for each node
@@ -1471,475 +1440,13 @@ export let buildForceDiagram = problem => data => {
     // only apply styles on classes the variable is a member of
         .filter(label => params[label].has(pebble))
         .forEach(label => {
-            if (label in strokeWidths) nodes[pebble].strokeWidth = strokeWidths[label];
-            if (label in nodeColors) nodes[pebble].nodeCol = nodeColors[label];
-            if (label in strokeColors) nodes[pebble].strokeColor = strokeColors[label];
+            if (label in strokeWidths) context.nodes[pebble].strokeWidth = strokeWidths[label];
+            if (label in nodeColors) context.nodes[pebble].nodeCol = nodeColors[label];
+            if (label in strokeColors) context.nodes[pebble].strokeColor = strokeColors[label];
         }));
-
-    // ~~~~ PEBBLES ~~~~
-
-    selectors.pebbles
-        = selectors.pebbles
-        .data(pebbles, _=>_);
-    selectors.pebbles
-        .exit().remove();
-
-    let newPebbles = selectors.pebbles
-
-        .enter().append('svg:g')
-        .attr('id', pebble => pebble + 'biggroup')
-
-    selectors.pebbles
-        = selectors.pebbles
-        .merge(newPebbles)
-
-
-    // ~ ARCS ~
-    // container for arcs
-    newPebbles
-        .append('svg:g')
-        .attr('id', pebble => 'pebbleArcs' + pebble)
-        .attr('class', 'arc')
-        .attr('opacity', 0)
-
-    selectors.pebbles
-        .selectAll('g.arc')
-        .transition()  // Animate transitions between styles
-        .duration(selectTransitionDuration)
-        .style('opacity', d => (d === hoverPebble || d === selectedPebble) ? 1 : 0)
-        .on('start', function(d) {d3.select(this).style('display', 'block')}) // prevent mouseovers/clicks from opacity:0 elements
-        .on('end', function(d) {
-            if (d === hoverPebble || d === selectedPebble) return;
-            d3.select(this).style('display', 'none');
-        })
-
-    // construct and update arcs for hovered/selected pebbles
-    selectors.pebbles
-        .selectAll('g.arc').filter(d => d === hoverPebble || d === selectedPebble).each(function (pebble) {
-        let data = {name: '', children: forceDiagramLabels(problem)}
-        let setWidths = node => {
-            if ('children' in node) node.value = node.children.reduce((sum, child) => sum + setWidths(child), 0);
-            else node.value = node.name.length + 5;
-            return node.value;
-        }
-        setWidths(data)
-
-        let root = d3.hierarchy(data);
-
-        var x = d3.scaleLinear()
-            .range([0, 2 * Math.PI]);
-        var partition = d3.partition();
-
-        var arc = d3.arc()
-            .startAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x0))); })
-            .endAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x1))); })
-            .innerRadius(function(d) {
-                if (d.depth === 0) return 0;
-                return nodes[pebble].radius + Array.from({length: d.depth - 1})
-                    .reduce((sum, _, lvl) => sum + axialGapSize(lvl) + axialLabelSize(lvl), axialGapSize(0))
-            })
-            .outerRadius(function(d) {
-                if (d.depth === 0) return nodes[pebble].radius;
-                return nodes[pebble].radius + Array.from({length: d.depth - 1})
-                    .reduce((sum, _, lvl) => sum + axialGapSize(lvl) + axialLabelSize(lvl), axialGapSize(0)) + axialLabelSize(d.depth);
-            });
-
-        // add paths for new nodes
-        d3.select(this).selectAll('path')
-            .data(partition(root).descendants())
-            .enter()
-            .append("path")
-            .attr('id', label => 'arc' + label.data.id + pebble)
-            .attr('opacity', 0.4)
-            .append("title");
-
-        // add texts for new nodes
-        d3.select(this).selectAll('text')
-            .data(partition(root).descendants())
-            .enter()
-            .append('text')
-            .attr("id", label => 'arcText' + label.data.id + pebble)
-            .attr("x", 6)
-            .attr("dy", 11.5)
-            .attr('opacity', 0.8)
-            .append("textPath")
-            .attr("xlink:href", label => '#arc' + label.data.id + pebble)
-            .text(label => label.data.name)
-
-        // update arc sizes
-        d3.select(this).selectAll('path')
-            .on("click", label => label.data.onclick(pebble))
-            .on('mouseover', d => {
-                clearTimeout(hoverTimeout)
-                hoverTimeout = setTimeout(() => {
-                    hoverPebble = pebble;
-                    m.redraw()
-                }, hoverTimeoutDuration)
-            })
-            .on('mouseout', () => {
-                clearTimeout(hoverTimeout)
-                hoverTimeout = setTimeout(() => {
-                    hoverPebble = undefined;
-                    m.redraw()
-                }, hoverTimeoutDuration)
-            })
-            .transition()  // Animate transitions between styles
-            .duration(selectTransitionDuration)
-            .attr("d", arc)
-            .style("fill", d => {
-                if (d.depth === 0) return 'transparent'
-                return d3.rgb(d.data.attrs.fill)
-            })
-        d3.select(this).selectAll('path').selectAll('title')
-            .text(d => d.data.name);
-    })
-
-    // ~ CIRCLE ~
-    newPebbles
-        .append('svg:circle')
-        .attr('class', 'node')
-        .style('pointer-events', 'inherit')
-        .style('opacity', "0.5")
-
-    // update existing nodes
-    selectors.pebbles
-        .selectAll('circle')
-        .on('mouseover', d => {
-            clearTimeout(hoverTimeout)
-            hoverTimeout = setTimeout(() => {
-                hoverPebble = d;
-                m.redraw()
-            }, hoverTimeoutDuration)
-        })
-        .on('mouseout', () => {
-            clearTimeout(hoverTimeout)
-            hoverTimeout = setTimeout(() => {
-                hoverPebble = undefined;
-                m.redraw()
-            }, hoverTimeoutDuration)
-        })
-        .on('click', setSelectedPebble)
-        .style('fill', pebble => d3.rgb(nodes[pebble].nodeCol))
-        .style('stroke', pebble => d3.rgb(nodes[pebble].strokeColor))
-        .style('stroke-width', pebble => nodes[pebble].strokeWidth)
-        .transition()  // Animate transitions between styles
-        .duration(selectTransitionDuration)
-        .attr('r', pebble => nodes[pebble].radius);
-
-    // ~ LABEL ~
-    newPebbles
-        .append('svg:text')
-        .attr('class', 'id')
-        .attr('id', pebble => 'pebbleLabel' + pebble)
-        .attr('x', 0)
-        .attr('y', 15);
-
-    selectors.pebbles
-        .selectAll('text.id')
-        .text(d => d)
-        .transition()  // Animate transitions between styles
-        .duration(selectTransitionDuration)
-        .style('font-size', pebble => nodes[pebble].radius * .175 + 7 + 'px');
-
-    // ~ PLOT ~
-    newPebbles
-        .append('g')
-        .attr('class', pebble => ({
-            'continuous': 'density-plot',
-            'bar': 'bar-plot'
-        }[problem.summaries[pebble].plottype]))
-        .attr('opacity', 0.4);
-
-    selectors.pebbles
-        .select('g.density-plot').each(function (pebble) {
-        let summary = problem.summaries[pebble];
-        if (!summary) return;
-
-        let width = nodes[pebble].radius * 1.5;
-        let height = nodes[pebble].radius * 0.75;
-
-        let xScale = d3.scaleLinear()
-            .domain(d3.extent(summary.plotx))
-            .range([0, width]);
-        let yScale = d3.scaleLinear()
-            .domain(d3.extent(summary.ploty))
-            .range([height, 0]);
-
-        let area = d3.area()
-            .curve(d3.curveMonotoneX)
-            .x(d => xScale(d.x))
-            .y0(height)
-            .y1(d => yScale(d.y))
-
-        // append path if not exists
-        d3.select(this).selectAll('path')
-            .data([null]).enter().append('path')
-            .attr("class", "area")
-            .attr("fill", "#1f77b4")
-            .on('mouseover', () => {
-                clearTimeout(hoverTimeout)
-                hoverTimeout = setTimeout(() => {
-                    hoverPebble = pebble;
-                    m.redraw()
-                }, hoverTimeoutDuration)
-            })
-            .on('mouseout', () => {
-                clearTimeout(hoverTimeout)
-                hoverTimeout = setTimeout(() => {
-                    hoverPebble = undefined;
-                    m.redraw()
-                }, hoverTimeoutDuration)
-            })
-            .on('click', () => setSelectedPebble(pebble))
-
-        // rebind the path datum regardless of if path existed
-        d3.select(this).selectAll('path')
-            .datum(summary.plotx.map((x_i, i) => ({x: summary.plotx[i], y: summary.ploty[i]})))
-            .transition()
-            .duration(selectTransitionDuration)
-            .attr("d", area)
-            .attr("transform", "translate(" + (-width/2) + "," + (-height) + ")");
-    });
-
-    selectors.pebbles
-        .select('g.bar-plot').each(function (pebble) {
-        let summary = problem.summaries[pebble];
-        if (!summary || !summary.plotvalues) return;
-
-        let width = nodes[pebble].radius * 1.5;
-        let height = nodes[pebble].radius * 0.75;
-
-        let barPadding = .015; // Space between bars
-        let barLimit = 15;
-        let keys = Object.keys(summary.plotvalues);
-        let data = keys
-            .filter((key, i) => keys.length < barLimit || !(i % parseInt(keys.length / barLimit)) || i === keys.length - 1)
-            .map((key, i) => ({
-                x: summary.nature === 'nominal' ? i : Number(key),
-                y: summary.plotvalues[key]
-            })).sort((a, b) => b.x - a.x);
-
-        let maxY = d3.max(data, d => d.y);
-        let [minX, maxX] = d3.extent(data, d => d.x);
-
-        let xScale = d3.scaleLinear()
-            .domain([minX - 0.5, maxX + 0.5])
-            .range([0, width]);
-
-        let yScale = d3.scaleLinear()
-            .domain([0, maxY])
-            .range([0, height]);
-
-        d3.select(this).selectAll("rect").data(data)
-            .on('mouseover', () => {
-                clearTimeout(hoverTimeout)
-                hoverTimeout = setTimeout(() => {
-                    hoverPebble = pebble;
-                    m.redraw()
-                }, hoverTimeoutDuration)
-            })
-            .on('mouseout', () => {
-                clearTimeout(hoverTimeout)
-                hoverTimeout = setTimeout(() => {
-                    hoverPebble = undefined;
-                    m.redraw()
-                }, hoverTimeoutDuration)
-            })
-            .on('click', () => setSelectedPebble(pebble))
-            .enter()
-            .append("rect");
-
-        d3.select(this).selectAll("rect")
-            .transition()
-            .duration(selectTransitionDuration)
-            .attr("x", d =>  xScale(d.x - 0.5 + barPadding))
-            .attr("y", d =>  yScale(maxY - d.y))
-            .attr("width", xScale(minX + 0.5 - 2 * barPadding)) // the "width" is the coordinate of the end of the first bar
-            .attr("height", d => yScale(d.y))
-            .attr("fill", "#1f77b4")
-            .attr("transform", "translate(" + (-width/2) + "," + (-height) + ")");
-    })
-
-    // ~~~~ LINKS ~~~~
-    let marker = side => x => {
-        let kind = side === 'left' ? 'start' : 'end';
-        return is_explore_mode ? 'url(#circle)' :
-            x[side] ? `url(#${kind}-arrow)` : '';
-    };
-
-    selectors.links = selectors.links.data(pebbleLinks, link => `${link.source}-${link.target}`);
-    selectors.links.exit().remove();
-    selectors.links = selectors.links.enter()
-        .append('svg:path')
-        .attr('class', 'link')
-        .classed('selected', x => null)
-        .style('marker-start', marker('left'))
-        .style('marker-end', marker('right'))
-        .on('mousedown', d => pebbleLinks.some(link => d === link && (del(pebbleLinks, link) || true)))
-        .merge(selectors.links);
-
-    // update existing links
-    // VJD: dashed links between pebbles are "selected". this is disabled for now
-    // selectors.links.classed('selected', x => null)
-    //     .style('marker-start', marker('left'))
-    //     .style('marker-end', marker('right'));
-
-
-    // ~~~~ GROUPS ~~~~
-    selectors.hulls = selectors.hulls.data(groups, group => group.name)
-    selectors.hulls.exit().remove();
-    selectors.hulls = selectors.hulls.enter()
-        .append("path")
-        .attr("id", group => group.name + 'Hull')
-        .style("fill", group => group.color)
-        .style("stroke", group => group.color)
-        .style("stroke-width", 2.5 * hullRadius)
-        .style('stroke-linejoin', 'round')
-        .style('opacity', group => group.opacity)
-        .merge(selectors.hulls);
-
-    selectors.hullBackgrounds = selectors.hullBackgrounds.data(groups, group => group.name);
-    selectors.hullBackgrounds.exit().remove();
-    selectors.hullBackgrounds = selectors.hullBackgrounds.enter()
-        .append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
-        .attr("id", group => group.name + 'HullBackground')
-        .style("fill", '#ffffff')
-        .style("stroke", '#ffffff')
-        .style("stroke-width", 2.5 * hullRadius)
-        .style('stroke-linejoin', 'round')
-        .style("opacity", 1)
-        .merge(selectors.hullBackgrounds);
-
-    // ~~~~ GROUP LINKS ~~~~
-    selectors.groupLinkDefs = selectors.groupLinkDefs.data(groupLinks, link => `${link.source}-${link.target}`)
-    selectors.groupLinkDefs.exit().remove();
-
-    let newGroupLinkDefs = selectors.groupLinkDefs.enter()
-        .append("svg:marker")
-        .attr("id", groupLink => `${groupLink.source}-${groupLink.target}-arrow`)
-        .attr('viewBox', '0 -5 15 15')
-        .attr("refX", 2.5)
-        .attr("refY", 0)
-        .attr("markerWidth", 3)
-        .attr("markerHeight", 3)
-        .attr("orient", "auto");
-
-    newGroupLinkDefs
-        .append("path")
-        .attr('d', 'M0,-5L10,0L0,5')
-        .style("fill", groupLink => groupLink.color);
-
-    selectors.groupLinkDefs = newGroupLinkDefs.merge(selectors.groupLinkDefs);
-
-    selectors.groupLinks = selectors.groupLinks.data(groupLinks, link => `${link.source}-${link.target}`)
-    selectors.groupLinks.exit().remove();
-    selectors.groupLinks = selectors.groupLinks.enter()
-        .append("line")
-        .style('fill', 'none')
-        .style('stroke', groupLink => groupLink.color)
-        .style('stroke-width', 5)
-        .attr("marker-end", groupLink => `url(#${groupLink.source}-${groupLink.target}-arrow)`)
-        .merge(selectors.groupLinks);
 }
 
-// depth increments for child arcs
-let radialGapSize = depth => Math.PI / 20;
-let axialGapSize = depth => 1 // / (depth / 4 + 1); // gap between pebble and arc, or between arcs
-let axialLabelSize = depth => arcHeight // / (depth / 4 + 1); // uncomment to reduce width on deeper arcs
-let arcHeight = 16;
-
-let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
-    .attr('fill-opacity', op).attr('display', op ? '' : 'none')
-    .delay(d1)
-    .duration(d2);
-
-let append = (str, attr) => x => str + x[attr || 'id'];
-
-
-// TODO: move into builder
-let pebbleEvents = {
-    onclick: function (d) {
-        setSelectedPebble(d);
-
-        d3.event.stopPropagation();
-
-        if (rightClickLast) {
-            rightClickLast = false;
-            return;
-        }
-        if (!mousedown_node) return;
-
-        // TODO: verify
-        // needed by FF
-        drag_line
-            .classed('hidden', true)
-            .style('marker-end', '');
-
-        // check for drag-to-self
-        mouseup_node = d;
-        if (mouseup_node === mousedown_node) {
-            resetMouseVars();
-            return;
-        }
-
-        // unenlarge target node
-        d3.select(this).attr('transform', '');
-
-        // add link to graph (update if exists)
-        // NB: links are strictly source < target; arrows separately specified by booleans
-        var source, target, direction;
-        if (mousedown_node.id < mouseup_node.id) {
-            source = mousedown_node;
-            target = mouseup_node;
-            direction = 'right';
-        } else {
-            source = mouseup_node;
-            target = mousedown_node;
-            direction = 'left';
-        }
-
-        let link = links.filter(x => x.source === source && x.targets.contains(target))[0];
-        if (link) {
-            link[direction] = true;
-        } else {
-            link = {
-                source: source,
-                target: target,
-                left: false,
-                right: false
-            };
-            link[direction] = true;
-            links.push(link);
-        }
-
-        // select new link
-        selected_link = link;
-        selected_node = null;
-
-        resetMouseVars();
-        m.redraw()
-    },
-    contextmenu: d => {
-        // right click on node
-        d3.event.preventDefault();
-        d3.event.stopPropagation();
-
-        rightClickLast = true;
-        mousedown_node = d;
-        selected_node = mousedown_node === selected_node ? null : mousedown_node;
-        selected_link = null;
-
-        // reposition drag line
-        drag_line
-            .style('marker-end', is_explore_mode ? 'url(#end-marker)' : 'url(#end-arrow)')
-            .classed('hidden', false)
-            .attr('d', 'M' + mousedown_node.x + ',' + mousedown_node.y + 'L' + mousedown_node.x + ',' +
-                mousedown_node.y);
-    },
-    dblclick: () => d3.event.stopPropagation(), // stop the click from bubbling
-};
-
-let forceDiagramLabels = problem => [
+export let forceDiagramLabels = problem => [
     {
         id: 'Group',
         name: 'Group',
@@ -1953,7 +1460,7 @@ let forceDiagramLabels = problem => [
                     toggle(problem.tags.loose, d);
                     remove(problem.targets, d);
                     toggle(problem.predictors, d);
-                    setSelectedPebble(d);
+                    forceDiagramState.setSelectedPebble(d);
                 }
             },
             {
@@ -1964,7 +1471,7 @@ let forceDiagramLabels = problem => [
                     toggle(problem.tags.loose, d);
                     remove(problem.predictors, d);
                     toggle(problem.targets, d);
-                    setSelectedPebble(d);
+                    forceDiagramState.setSelectedPebble(d);
                 }
             },
             {
@@ -1973,7 +1480,7 @@ let forceDiagramLabels = problem => [
                 attrs: {fill: common.warnColor},
                 onclick: d => {
                     alertLog('Neat feature to add?')
-                    setSelectedPebble(d);
+                    forceDiagramState.setSelectedPebble(d);
                 }
             }
         ]
@@ -1982,7 +1489,7 @@ let forceDiagramLabels = problem => [
         id: 'GroupLabel',
         name: 'Labels',
         attrs: {fill: common.nomColor},
-        onclick: setSelectedPebble,
+        onclick: forceDiagramState.setSelectedPebble,
         children: [
             {
                 id: 'Nominal',
@@ -1990,7 +1497,7 @@ let forceDiagramLabels = problem => [
                 attrs: {fill: common.nomColor},
                 onclick: d => {
                     toggle(problem.tags.nominal, d);
-                    setSelectedPebble(d);
+                    forceDiagramState.setSelectedPebble(d);
                 }
             },
             {
@@ -1999,7 +1506,7 @@ let forceDiagramLabels = problem => [
                 attrs: {fill: common.timeColor},
                 onclick: d => {
                     toggle(problem.tags.time, d);
-                    setSelectedPebble(d);
+                    forceDiagramState.setSelectedPebble(d);
                 }
             },
             {
@@ -2008,7 +1515,7 @@ let forceDiagramLabels = problem => [
                 attrs: {fill: common.csColor},
                 onclick: d => {
                     toggle(problem.tags.crossSection, d);
-                    setSelectedPebble(d);
+                    forceDiagramState.setSelectedPebble(d);
                 }
             },
             {
@@ -2025,131 +1532,16 @@ let forceDiagramLabels = problem => [
                         remove(problem.tags.nominal, d);
                         remove(problem.tags.crossSection, d);
                     }
-                    setSelectedPebble(d);
+                    forceDiagramState.setSelectedPebble(d);
                 }
             }
         ]
     },
 ];
 
-// returns index of node in allNodes by node name
-export function findNodeIndex(name) {
-    return allNodes.findIndex(node => node.name === name)
-}
-
-// return node in allNodes by node name
-export function findNode(name) {
-    return allNodes.find(node => node.name === name);
-}
-
-/** needs doc */
-//
-function updateNode(id, nodes) {
-
-    let node = allNodes.find(node => node.name === id) || nodes.find(node => node.name === id);
-
-    if (node === undefined) {
-        let i = 0;
-        while (nodes.find(tempNode => tempNode.id === i)) i++;
-
-        node = {
-            id: i,
-            reflexive: false,
-            name: id,
-            label: 'no label',
-            data: [5, 15, 20, 0, 5, 15, 20],
-            count: [.6, .2, .9, .8, .1, .3, .4],  // temporary values for hold that correspond to histogram bins
-            nodeCol: colors(i),
-            baseCol: colors(i),
-            strokeColor: common.selVarColor,
-            strokeWidth: "1",
-            subsetplot: false,
-            subsetrange: ["", ""],
-            setxplot: false,
-            setxvals: ["", ""],
-            grayout: false,
-            group1: false,
-            group2: false,
-            forefront: false
-        }
-    }
-
-    if (node.grayout) return false;
-
-    let name = node.name;
-    let names = _ => nodes.map(n => n.name);
-    if (names().includes(name)) {
-        del(nodes, node.index, is_explore_mode && node);
-        if (!is_explore_mode) {
-            links
-                .filter(l => l.source === node || l.target === node)
-                .forEach(l => del(links, -1, l));
-            zparamsReset(name);
-
-            // remove node name from group lists
-            node.group1 && del(zparams.zgroup1, -1, name);
-            node.group2 && del(zparams.zgroup2, -1, name);
-            node.group1 = node.group2 = false;
-
-            // node reset - perhaps this will become a hard reset back to all original allNode values?
-            node.nodeCol = node.baseCol;
-            node.strokeColor = common.selVarColor;
-            node.strokeWidth = '1';
-        }
-    } else nodes.push(node);
-
-    if (is_explore_mode) return false;
-
-    zparams.zvars = names();
-    return true;
-}
-
-/**
- every time a variable in leftpanel is clicked, nodes updates and background color changes
- */
-export function clickVar(elem, $nodes) {
-    if (is_explore_mode && $nodes && !$nodes.map(x => x.name).includes(elem)) {
-        let max = exploreVariate === 'Univariate' ? 1
-            : exploreVariate === 'Bivariate' ? 2
-            : exploreVariate === 'Trivariate' ? 3
-            : 5;
-        if ($nodes.length >= max) {
-            alertLog('Please deselect another variable first.')
-            return;
-        }
-    }
-
-    if (updateNode(elem, $nodes || nodes)) {
-        // panelPlots(); is this necessary?
-        restart && restart();
-    }
-}
-
 // Used for left panel variable search
 export let variableSearchText = "";
 export let setVariableSearchText = text => variableSearchText = text.toLowerCase();
-
-/**
- Retrieve the variable list from the preprocess data.
- This helps handle the new format and (temporarily)
- the older format in PRODUCTION (rp 8.14.2017)
- "new" response:
- {
- "dataset" : {...}
- "variables" : {
- "var1" : {...},
- (etc)
- }
- }
- "old" response:
- {
- "var1" : {...},
- (etc)
- }
- */
-export function getVariableData(json) {
-    return json.hasOwnProperty('variables') ? json.variables : json;
-}
 
 /** needs doc */
 export function helpmaterials(type) {
@@ -2161,29 +1553,6 @@ export function helpmaterials(type) {
         win.focus();
     }
     console.log(type);
-}
-
-/** needs doc */
-export function zPop() {
-    if (dataurl) zparams.zdataurl = dataurl;
-    zparams.zmodelcount = modelCount;
-    zparams.zedges = [];
-    zparams.zvars = [];
-    zparams.znature = [];
-    for (let j = 0; j < nodes.length; j++) { //populate zvars array
-        zparams.zvars.push(nodes[j].name);
-        zparams.znature.push(nodes[j].nature);
-        let temp = nodes[j].id;
-        zparams.zsetx[j] = allNodes[temp].setxvals;
-        zparams.zsubset[j] = allNodes[temp].subsetrange;
-    }
-    for (let j = 0; j < links.length; j++) { //populate zedges array
-        //correct the source target ordering for Zelig
-        let srctgt = links[j].left == false ?
-            [links[j].source.name, links[j].target.name] :
-            [links[j].target.name, links[j].source.name];
-        zparams.zedges.push(srctgt);
-    }
 }
 
 // when selected, the key/value [mode]: [pipelineID] is set.
@@ -2379,11 +1748,11 @@ function CreatePipelineDefinition(problem, timeBound) {
 
 
 
-function CreateFitDefinition(datasetDocUrl, solutionId){
-
-    let fitDefn = getFitSolutionDefaultParameters(datasetDocUrl);
-    fitDefn.solutionId = solutionId;
-    return fitDefn;
+function CreateFitDefinition(datasetDocUrl, solutionId) {
+    return Object.assign(
+        getFitSolutionDefaultParameters(datasetDocUrl),
+        {solutionId}
+    );
 }
 
 /**
@@ -2434,8 +1803,11 @@ export function getFitSolutionDefaultParameters(datasetDocUrl) {
 //     ]
 // }
 
-function CreateProduceDefinition(fsid){
-    return Object.assign(getProduceSolutionDefaultParameters(), {fittedSolutionId: fsid});
+function CreateProduceDefinition(fittedSolutionId) {
+    return Object.assign(
+        getProduceSolutionDefaultParameters(),
+        {fittedSolutionId}
+    );
 }
 
 /*
@@ -2571,7 +1943,7 @@ export async function estimate() {
     }
 
     if (swandive) { // IS_D3M_DOMAIN and swandive is true
-        zPop();
+        // zPop();
         zparams.callHistory = callHistory;
 
         buttonLadda.btnEstimate = true;
@@ -2585,7 +1957,7 @@ export async function estimate() {
 
     // we are in IS_D3M_DOMAIN no swandive
     // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
-    zPop();
+    // zPop();
     zparams.callHistory = callHistory;
 
     // pipelineapp is a rook application that returns the dependent variable, the DV values, and the predictors. can think of it was a way to translate the potentially complex grammar from the UI
@@ -2602,13 +1974,15 @@ export async function estimate() {
         return;
     }
 
-    ROOKPIPE_FROM_REQUEST.predictors && setxTable(ROOKPIPE_FROM_REQUEST.predictors);
+    // ROOKPIPE_FROM_REQUEST.predictors && setxTable(ROOKPIPE_FROM_REQUEST.predictors);
     let searchTimeLimit = 5;
     let searchSolutionParams = CreatePipelineDefinition(resultsProblem, searchTimeLimit);
 
+    let nominalVars = new Set(getNominalVariables(resultsProblem));
+
     let hasManipulation = resultsProblem.manipulations.length > 0;
     let hasNominal = [...resultsProblem.targets, ...resultsProblem.predictors]
-        .some(variable => zparams.znom.includes(variable));
+        .some(variable => nominalVars.has(variable));
 
     let needsProblemCopy = hasManipulation || hasNominal;
 
@@ -2622,7 +1996,7 @@ export async function estimate() {
 
     makeRequest(ROOK_SVC_URL + 'solverapp', {prob: resultsProblem, dataset_path: datasetPath})
         .then(response => {
-            if ('warning' in response) return;
+            if (response && 'warning' in response) return;
             let ravenID = 'raven ' + ravenPipelineID++;
             resultsProblem.solutions.rook[ravenID] = response;
             if (selectedPipelines.size === 0) setSelectedPipeline(ravenID);
@@ -2653,114 +2027,6 @@ export async function estimate() {
     let searchId = res.data.searchId;
     allsearchId.push(searchId);
 }
-
-
-/** needs doc */
-async function dataDownload() {
-    zPop();
-    // write links to file & run R CMD
-
-    // package the output as JSON
-    // add call history and package the zparams object as JSON
-    let res = await makeRequest(ROOK_SVC_URL + 'dataapp', zparams);
-    if (!res) {
-        return;
-    }
-
-    zparams.zsessionid = res.sessionid[0];
-    // set link URL
-    byId("logID").href = `${PRODUCTION ? ROOK_SVC_URL + 'log_dir/log_' : 'rook/log_' }${zparams.zsessionid}.txt`;
-}
-
-/** needs doc */
-function viz(mym) {
-    mym = +mym.substr(5, 5) - 1;
-
-    let removeKids = parent => {
-        while (parent.firstChild)
-            parent.removeChild(parent.firstChild);
-    };
-    removeKids(byId("resultsView"));
-
-    let json = allResults[mym];
-
-    // pipe in figures to right panel
-    var filelist = new Array;
-    for (var i in json.images) {
-        var zfig = document.createElement("img");
-        zfig.setAttribute("src", json.images[i]);
-        zfig.setAttribute('width', 200);
-        zfig.setAttribute('height', 200);
-        byId("resultsView").appendChild(zfig);
-    }
-
-    // write the results table
-    var resultsArray = [];
-    for (var key in json.sumInfo) {
-        if (key == 'colnames')
-            continue;
-        resultsArray.push(json.sumInfo[key]);
-    }
-
-    var table = d3.select("#resultsView")
-        .append("p")
-        .append("table");
-
-    var thead = table.append("thead");
-    thead.append("tr")
-        .selectAll("th")
-        .data(json.sumInfo.colnames)
-        .enter()
-        .append("th")
-        .text(d => d);
-
-    var tbody = table.append("tbody");
-    tbody.selectAll("tr")
-        .data(resultsArray)
-        .enter().append("tr")
-        .selectAll("td")
-        .data(d => d)
-        .enter().append("td")
-        .text(function(d) {
-            var myNum = Number(d);
-            if (isNaN(myNum))
-                return d;
-            return myNum.toPrecision(3);
-        })
-        .on("mouseover", function() {
-            d3.select(this).style("background-color", "aliceblue");
-        }) // for no discernable reason
-        .on("mouseout", function() {
-            d3.select(this).style("background-color", "#F9F9F9");
-        }); //(but maybe we'll think of one)
-
-    d3.select("#resultsView")
-        .append("p")
-        .html(() => "<b>Formula: </b>".concat(json.call[0]));
-
-    m.redraw();
-}
-
-export async function updateRequest(url) {
-    //console.log('url:', url);
-    //console.log('POST:', data);
-    let res;
-    try {
-        res = await m.request(url, {method: 'POST', data:{}});       // maybe change the POST and data
-        //console.log('response:', res);
-        if (Object.keys(res)[0] === 'warning') {
-            alertWarn('Warning: ' + res.warning);
-            end_ta3_search(false, res.warning);
-        }
-    } catch(err) {
-        end_ta3_search(false, err);
-        cdb(err);
-        alertError(`Error: call to ${url} failed`);
-    }
-    return res;
-}
-
-
 
 export async function makeRequest(url, data) {
     // console.log('url:', url);
@@ -2804,8 +2070,9 @@ export let erase = () => {
     let problem = getSelectedProblem();
     problem.predictors = [];
     problem.targets = [];
+    problem.manipulations = [];
     problem.tags = {
-        transformed: problem.tags.transformed, // this is used when updating manipulations pipeline
+        transformed: [],
         weights: [], // singleton list
         crossSection: [],
         time: [],
@@ -2813,17 +2080,6 @@ export let erase = () => {
         loose: [] // variables displayed in the force diagram, but not in any groups
     }
 }
-
-// call with a tab name to change the left tab in model mode
-export let setLeftTab = (tab) => {
-    leftTab = tab;
-    updateLeftPanelWidth();
-    if (tab === 'Discover') buttonClasses.btnDiscover = 'btn-secondary';
-    exploreVariate = tab === 'Discover' ? 'Problem' : 'Univariate';
-    setFocusedPanel('left');
-};
-
-export let setLeftTabHidden = tab => leftTabHidden = tab;
 
 // d is a node from allNodes or nodes
 // updates the summary variable, which is rendered in the hidden summary tab in the leftpanel;
@@ -2888,61 +2144,6 @@ export let popoverContent = node => {
     return text + '</tbody></table>';
 };
 
-/** needs doc */
-export function panelPlots() {
-
-    // build arrays from nodes in main
-    let vars = [];
-    let ids = [];
-    nodes.forEach(n => {
-        vars.push(n.name.replace(/\(|\)/g, ''));
-        ids.push(n.id);
-    });
-
-    //remove all plots, could be smarter here
-    d3.select('#setxLeft').selectAll('svg').remove();
-    for (var i = 0; i < vars.length; i++) {
-        if(allNodes[ids[i]].valid==0) // this was a silent error... very frustrating...
-            continue;
-        let node = allNodes[ids[i]];
-        node.setxplot = false;
-        node.subsetplot = false;
-        if (node.plottype === "continuous" & node.setxplot == false) {
-            node.setxplot = true;
-            density(node, div = "setxLeft", priv);
-            node.subsetplot = true;
-            density(node, div = "Summary", priv);
-        } else if (node.plottype === "bar" & node.setxplot == false) {
-            node.setxplot = true;
-            bars(node, div = "setxLeft", priv);
-            node.subsetplot = true;
-            barsSubset(node);
-        }
-    }
-
-        d3.select("#setxLeft").selectAll("svg")
-        .each(function () {
-            d3.select(this);
-            var regstr = /(.+)_setxLeft_(\d+)/;
-            var myname = regstr.exec(this.id);
-            var nodeid = myname[2];
-            myname = myname[1];
-            if (!vars.includes(myname)) {
-                allNodes[nodeid].setxplot = false;
-                let temp = "#".concat(myname, "_setxLeft_", nodeid);
-                d3.select(temp)
-                    .remove();
-                allNodes[nodeid].subsetplot = false;
-                temp = "#".concat(myname, "_tab2_", nodeid);
-                d3.select(temp)
-                    .remove();
-            }
-        });
-
-    // just removing all the subset plots here, because using this button for problem discover
-    d3.select('#tabDiscovery').selectAll('svg').remove();
-}
-
 /**
    converts color codes
 */
@@ -2950,183 +2151,6 @@ export let hexToRgba = (hex, alpha) => {
     let int = parseInt(hex.replace('#', ''), 16);
     return `rgba(${[(int >> 16) & 255, (int >> 8) & 255, int & 255, alpha || '0.5'].join(',')})`;
 };
-
-
-/** needs doc */
-export function subsetSelect(btn) {
-    if (dataurl) {
-        zparams.zdataurl = dataurl;
-    }
-    if (downloadIncomplete()) {
-        return;
-    }
-
-    zparams.zvars = [];
-    zparams.zplot = [];
-    var subsetEmpty = true;
-    // is this the same as zPop()?
-    for (var j = 0; j < nodes.length; j++) { // populate zvars and zsubset arrays
-        zparams.zvars.push(nodes[j].name);
-        var temp = nodes[j].id;
-        zparams.zsubset[j] = allNodes[temp].subsetrange;
-        if (zparams.zsubset[j].length > 0) {
-            if (zparams.zsubset[j][0] != "")
-                zparams.zsubset[j][0] = Number(zparams.zsubset[j][0]);
-            if (zparams.zsubset[j][1] != "")
-                zparams.zsubset[j][1] = Number(zparams.zsubset[j][1]);
-        }
-        zparams.zplot.push(allNodes[temp].plottype);
-        if (zparams.zsubset[j][1] != "")
-            subsetEmpty = false; // only need to check one
-    }
-
-    if (subsetEmpty == true) {
-        alertWarn("Warning: No new subset selected.");
-        return;
-    }
-
-    var outtypes = [];
-    for (var j = 0; j < allNodes.length; j++) {
-        outtypes.push({
-            varnamesTypes: allNodes[j].name,
-            nature: allNodes[j].nature,
-            numchar: allNodes[j].numchar,
-            binary: allNodes[j].binary,
-            interval: allNodes[j].interval
-        });
-    }
-
-    let json = makeRequest(
-        ROOK_SVC_URL + 'subsetSelect',
-        {zdataurl: zparams.zdataurl,
-         zvars: zparams.zvars,
-         zsubset: zparams.zsubset,
-         zsessionid: zparams.zsessionid,
-         zplot: zparams.zplot,
-         callHistory: callHistory,
-         typeStuff: outtypes});
-    if (!json) {
-        return;
-    }
-
-    trigger("btnVariables", "click"); // programmatic clicks
-    trigger("btnModels", "click");
-
-    var grayOuts = [];
-    var rCall = [];
-    rCall[0] = json.call;
-
-    // store contents of the pre-subset space
-    zPop();
-    var myNodes = $.extend(true, [], allNodes);
-    var myParams = $.extend(true, {}, zparams);
-    var myTrans = $.extend(true, [], trans);
-    var myForce = $.extend(true, [], forceToggle);
-    var myPreprocess = $.extend(true, {}, getSelectedDataset().summaries);
-    var myLog = $.extend(true, [], logArray);
-    var myHistory = $.extend(true, [], callHistory);
-
-    spaces[myspace] = {
-        "allNodes": myNodes,
-        "zparams": myParams,
-        "trans": myTrans,
-        "force": myForce,
-        "preprocess": myPreprocess,
-        "logArray": myLog,
-        "callHistory": myHistory
-    };
-
-    // remove pre-subset svg
-    var selectMe = "#m".concat(myspace);
-    d3.select(selectMe).attr('class', 'item');
-    selectMe = "#whitespace".concat(myspace);
-    d3.select(selectMe).remove();
-
-    myspace = spaces.length;
-    callHistory.push({
-        func: "subset",
-        zvars: $.extend(true, [], zparams.zvars),
-        zsubset: $.extend(true, [], zparams.zsubset),
-        zplot: $.extend(true, [], zparams.zplot)
-    });
-
-    // this is to be used to gray out and remove listeners for variables that have been subsetted out of the data
-    function varOut(v) {
-        // if in nodes, remove gray out in left panel
-        // make unclickable in left panel
-        for (var i = 0; i < v.length; i++) {
-            var selectMe = v[i].replace(/\W/g, "_");
-            byId(selectMe).style.color = hexToRgba(common.grayColor);
-            selectMe = "p#".concat(selectMe);
-            d3.select(selectMe)
-                .on("click", null);
-        }
-    }
-
-    showLog('subset', rCall);
-
-    d3.select("#innercarousel")
-        .append('div')
-        .attr('class', 'item active')
-        .attr('id', () => "m".concat(myspace.toString()))
-        .append('svg')
-        .attr('id', 'whitespace');
-    svg = d3.select("#whitespace");
-
-    d3.json(json.url, function(error, json) {
-        if (error){
-            return console.warn(error);
-        }
-        var jsondata = getVariableData(json);
-
-        for (var key in jsondata) {
-            var myIndex = findNodeIndex(key);
-
-            allNodes[myIndex].plotx = undefined;
-            allNodes[myIndex].ploty = undefined;
-            allNodes[myIndex].plotvalues = undefined;
-            allNodes[myIndex].plottype = "";
-
-            $.extend(true, allNodes[myIndex], jsondata[key]);
-            allNodes[myIndex].subsetplot = false;
-            allNodes[myIndex].subsetrange = ["", ""];
-            allNodes[myIndex].setxplot = false;
-            allNodes[myIndex].setxvals = ["", ""];
-
-            if (allNodes[myIndex].valid == 0) {
-                grayOuts.push(allNodes[myIndex].name);
-                allNodes[myIndex].grayout = true;
-            }
-        }
-        rePlot();
-        // TODO: default D3M page load setup used to be inside layout()
-    });
-
-    varOut(grayOuts);
-}
-
-/**
-   removes all the children svgs inside subset and setx divs
-*/
-function rePlot() {
-    d3.select('#tab2')
-        .selectAll('svg')
-        .remove();
-    d3.select('#setx')
-        .selectAll('svg')
-        .remove();
-    allNodes.forEach(n => n.setxplot = n.subsetplot = false);
-}
-
-// acts as if the user clicked in whitespace. useful when restart() is outside of scope
-export function fakeClick() {
-    let el = byId(`whitespace${myspace}`);
-    let evt = document.createEvent("MouseEvents");
-    evt.initMouseEvent("mousedown", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-    el.dispatchEvent(evt);
-    d3.select(el)
-        .classed('active', false);
-}
 
 /**
    EndSession(SessionContext) returns (Response) {}
@@ -3170,65 +2194,6 @@ export async function endsession() {
         setModal("Your selected pipeline has been submitted.", "Task Complete", true, false, false, locationReload);
     //}
 }
-
-
-// TODO: is this used?
-function addPredictions(res) {
-    function tabulate(data, columns) {
-        var table = d3.select('#setxLeftBottomRightBottom').append('table');
-        var thead = table.append('thead');
-        var    tbody = table.append('tbody');
-
-        // append the header row
-        thead.append('tr')
-        .selectAll('th')
-        .data(columns).enter()
-        .append('th')
-        .text(function (column) { return column; });
-
-        // create a row for each object in the data
-        var rows = tbody.selectAll('tr')
-        .data(data)
-        .enter()
-        .append('tr');
-
-        // create a cell in each row for each column
-        var cells = rows.selectAll('td')
-            .data(function (row) {
-                return columns.map(function (column) {
-                    return {column: column, value: row[column]};
-                });
-            })
-            .enter()
-            .append('td')
-            .text(function (d) { return d.value; })
-            .attr('id',function(d,i) {
-                let rowname = this.parentElement.firstChild.innerText;
-                return rowname + d.column;
-            });
-
-        return table;
-    }
-
-    // this is what ISI should look like, and the test server eventually, so just remove the following line when it's up
-    res = res.grpcResp[0];
-
-    console.log(res);
-    let allPreds = res.resultData.data;
-    let predvals = [];
-
-    for(let i = 0; i < allPreds.length; i++) {
-        predvals.push(allPreds[i]["preds"]);
-    }
-
-    let mydata = [];
-    mydata.push({" ":"Pred 1","E(Y|X1)":predvals[0], "E(Y|X2)":predvals[1]});
-
-    // render the table(s)
-    tabulate(mydata, [' ', 'E(Y|X1)', 'E(Y|X2)']); // 2 column table
-
-}
-
 
 /* Generates confusion table data and labels, given the expected and predicted values*/
 /* if a factor is passed, the resultant table will be 2x2 with respect to the factor */
@@ -3302,80 +2267,6 @@ export function sortPipelineTable(a, b) {
     if (a === "no score") return 1000;
     if (b === "no score") return -1000;
     return (parseFloat(b) - parseFloat(a)) * (reverseSet.includes(getSelectedProblem().metric) ? -1 : 1);
-}
-
-/** needs doc */
-export function setxTable(features) {
-    function tabulate(data, columns) {
-        var table = d3.select('#setxLeftBottomLeft').append('table');
-        var thead = table.append('thead');
-        var	tbody = table.append('tbody');
-
-        // append the header row
-        thead.append('tr')
-        .selectAll('th')
-        .data(columns).enter()
-        .append('th')
-        .text(function (column) { return column; });
-
-        // create a row for each object in the data
-        var rows = tbody.selectAll('tr')
-        .data(data)
-        .enter()
-        .append('tr');
-
-        // create a cell in each row for each column
-        var cells = rows.selectAll('td')
-            .data(function (row) {
-                return columns.map(function (column) {
-                    return {column: column, value: row[column]};
-                });
-            })
-            .enter()
-            .append('td')
-            .text(function (d) { return d.value; })
-            .attr('id',function(d,i) {
-                let rowname = this.parentElement.firstChild.innerText;
-                return rowname + d.column;
-            });
-
-        return table;
-    }
-
-    let mydata = [];
-    for (let i = 0; i < features.length; i++) {
-        let myi = findNodeIndex(features[i]); //i+1;                                // This was set as (i+1), but should be allnodes position, not features position
-        if (myi === -1) continue;
-
-        if(allNodes[myi].valid==0) {
-            let xval=0;
-            let x1val=0;
-            mydata.push({"Variables":features[i],"From":xval, "To":x1val});
-            continue;
-        }
-
-        let mysvg = features[i]+"_setxLeft_"+myi;
-
-        try
-        {
-            //console.log(mysvg);
-            //console.log(byId(mysvg).querySelector('.xval'));
-            let xval = byId(mysvg).querySelector('.xval').innerHTML;
-            let x1val = byId(mysvg).querySelector('.x1val').innerHTML;
-            //console.log(xval);
-            //console.log(x1val);
-            xval = xval.split("x: ").pop();
-            x1val = x1val.split("x1: ").pop();
-            mydata.push({"Variables":features[i],"From":xval, "To":x1val});
-        }
-        catch(error)
-        {
-            continue;
-        }
-    }
-
-    // render the table(s)
-    tabulate(mydata, ['Variables', 'From', 'To']); // 2 column table
 }
 
 /**
@@ -3556,21 +2447,6 @@ export function record_user_metadata(){
       }
 }
 
-function singlePlot(pred) {
-    d3.select('#setxLeftTopRight').selectAll('svg').remove();
-    let i = findNodeIndex(pred);
-    let node = allNodes[i];
-    node.setxplot = false;
-        node.subsetplot = false;
-        if (node.plottype === "continuous" & node.setxplot == false) {
-            node.setxplot = true;
-            density(node, div = "setxLeftTopRight", priv);
-        } else if (node.plottype === "bar" & node.setxplot == false) {
-            node.setxplot = true;
-            bars(node, div = "setxLeftTopRight", priv);
-        }
-}
-
 export function getDescription(problem) {
     if (problem.description) return problem.description;
     return `${problem.targets} is predicted by ${problem.predictors.slice(0, -1).join(", ")} ${problem.predictors.length > 1 ? 'and ' : ''}${problem.predictors[problem.predictors.length - 1]}`;
@@ -3674,8 +2550,6 @@ export function discovery(problems) {
 
 // creates a new problem from the force diagram problem space and adds to disco
 export async function addProblemFromForceDiagram() {
-    zPop();
-
     let problemCopy = getProblemCopy(getSelectedProblem());
     getSelectedDataset().problems[problemCopy.problemID] = problemCopy;
 
@@ -3685,28 +2559,22 @@ export async function addProblemFromForceDiagram() {
 }
 
 export function connectAllForceDiagram() {
-    let links = [];
-    if (is_explore_mode) {
-        for (let node of nodes) {
-            for (let node1 of nodes) {
-                if (node !== node1 && links.filter(l => l.target === node1 && l.source === node).length === 0) {
-                    links.push({left: false, right: false, target: node, source: node1});
-                }
-            }
-        }
-    } else {
-        let dvs = nodes.filter(n => zparams.zdv.includes(n.name));
-        let nolink = zparams.zdv.concat(zparams.zgroup1).concat(zparams.zgroup2);
-        let ivs = nodes.filter(n => !nolink.includes(n.name));
+    let problem = getSelectedProblem();
 
-        links = dvs.map(dv => ivs.map(iv => ({
-            left: true,
-            right: false,
-            target: iv,
-            source: dv
-        })));
+    if (is_explore_mode) {
+        let pebbles = [...problem.predictors, ...problem.targets];
+        forceDiagramState.pebbleLinks = pebbles
+            .flatMap((pebble1, i) => pebbles.slice(i + 1, pebbles.length)
+                .map(pebble2 => ({
+                    source: pebble1, target: pebble2
+                })))
     }
-    restart([...links]);
+    else forceDiagramState.pebbleLinks = problem.predictors
+        .flatMap(source => problem.targets
+            .map(target => ({
+                source, target, right: true
+            })))
+    m.redraw();
 }
 
 export let datasets = {};
@@ -3738,8 +2606,8 @@ export let getSelectedDataset = () => datasets[selectedDataset];
 export let getSelectedProblem = () => selectedDataset && getSelectedDataset().problems[getSelectedDataset().selectedProblem];
 export let getResultsProblem = () => selectedDataset && getSelectedDataset().problems[getSelectedDataset().resultsProblem];
 
-export let getNominalVariables = () => {
-    let selectedProblem = getSelectedProblem();
+export let getNominalVariables = problem => {
+    let selectedProblem = problem || getSelectedProblem();
     return [...new Set([
         ...Object.keys(selectedProblem.summaries).filter(variable => selectedProblem.summaries[variable].nature === 'nominal'),
         ...selectedProblem.tags.nominal])
@@ -4312,21 +3180,6 @@ export async function callSolver(prob) {
     if (selectedPipelines.size === 0) setSelectedPipeline(ravenID);
     console.log("callSolver response:", solutions.rook[ravenID]);
     m.redraw();
-}
-
-export function callTransform(elem){
-    console.log("function called")
-    let json =  makeRequest(
-        ROOK_SVC_URL + 'transformapp',
-        {zdataurl: dataurl,
-            zvars: elem,
-            zsessionid: zparams.zsessionid,
-            transform: t,
-            callHistory: callHistory,
-            typeTransform: typeTransform,
-            typeStuff: outtypes});
-
-    console.log(json)
 }
 
 
