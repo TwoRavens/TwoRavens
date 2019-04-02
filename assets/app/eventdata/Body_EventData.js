@@ -391,7 +391,7 @@ export default class Body_EventData {
                                     items: matchedVariables,
                                     colors: {[common.selVarColor]: eventdata.selectedVariables},
                                     callback: eventdata.toggleSelectedVariable,
-                                    popup: popoverContentVariable,
+                                    popup: {content: popoverContentVariable},
                                     attrsItems: {
                                         'data-placement': 'right',
                                         'data-container': '#variablesList'
@@ -421,7 +421,7 @@ export default class Body_EventData {
                                         items: subsetLists[key],
                                         colors: {[common.selVarColor]: eventdata.selectedCanvas === 'Custom' ? ['Custom'] : [eventdata.selectedSubsetName]},
                                         callback: (subset) => (subset === 'Custom' ? eventdata.setSelectedCanvas : eventdata.setSelectedSubsetName)(subset),
-                                        popup: popoverContentSubset,
+                                        popup: {content: popoverContentSubset},
                                         attrsItems: {
                                             'data-placement': 'right',
                                             'data-container': '#subsetsMenu',
@@ -545,9 +545,6 @@ export default class Body_EventData {
                         value: 'Unit Measures',
                         contents: looseSteps['eventdataAggregate'].measuresUnit.length
                             ? m(TreeAggregate, {
-                                pipelineId: 'looseStep',
-                                stepId: looseSteps['eventdataAggregate'].id,
-                                measure: 'unit',
                                 data: looseSteps['eventdataAggregate'].measuresUnit,
                                 editable: true
                             })
@@ -557,9 +554,6 @@ export default class Body_EventData {
                         value: 'Event Measures',
                         contents: looseSteps['eventdataAggregate'].measuresAccum.length
                             ? m(TreeAggregate, {
-                                pipelineId: 'looseStep',
-                                stepId: looseSteps['eventdataAggregate'].id,
-                                measure: 'accumulator',
                                 data: looseSteps['eventdataAggregate'].measuresAccum,
                                 editable: true
                             })

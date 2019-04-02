@@ -16,7 +16,6 @@ import * as d3 from 'd3';
 import * as queryMongo from "./manipulations/queryMongo";
 import {groupBuilder, groupLinkBuilder, linkBuilder, pebbleBuilder} from "./views/ForceDiagram";
 
-
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
 //    Developers, see /template/index.html
@@ -241,8 +240,11 @@ export function set_mode(mode) {
         if (mode === 'model' && manipulate.pendingHardManipulation) {
             let dataset = getSelectedDataset();
             buildDatasetPreprocess(dataset).then(response => {
-                dataset.summaries = response.variables;
-                dataset.problems = discovery(response.dataset.discovery);
+                if (!response.success) alertLog(response.message)
+                else {
+                    dataset.summaries = response.data.variables;
+                    dataset.problems = discovery(response.data.dataset.discovery);
+                }
             });
         }
 
@@ -267,12 +269,15 @@ export let buildDatasetPreprocess = async dataset => await getData({
     method: 'aggregate',
     query: JSON.stringify(queryMongo.buildPipeline(
         dataset.hardManipulations,
-        Object.keys(dataset.variablesInitial))['pipeline']),
+        dataset.variablesInitial)['pipeline']),
     export: 'dataset'
 }).then(url => m.request({
     method: 'POST',
     url: ROOK_SVC_URL + 'preprocessapp',
-    data: url
+    data: {
+        data: url,
+        datastub: selectedDataset
+    }
 }));
 
 export let buildProblemPreprocess = async (dataset, problem) => problem.manipulations.length === 0
@@ -284,17 +289,23 @@ export let buildProblemPreprocess = async (dataset, problem) => problem.manipula
                 type: 'menu',
                 metadata: {
                     type: 'data',
-                    variables: [...problem.predictors, problem.targets],
-                    nominal: problem.tags.nominal
+                    nominal: problem.tags.nominal,
+                    sample: 5000
                 }
             }],
-            Object.keys(dataset.variablesInitial))['pipeline']),
+            dataset.variablesInitial)['pipeline']),
         export: 'dataset'
     }).then(url => m.request({
         method: 'POST',
         url: ROOK_SVC_URL + 'preprocessapp',
-        data: url
-    }));
+        data: {
+            data: url,
+            datastub: selectedDataset
+        }
+    })).then(response => {
+        if (!response.success) alertError(response.message);
+        else return response.data.variables
+    });
 
 // for debugging - if not in PRODUCTION, prints args
 export let cdb = _ => PRODUCTION || console.log(...arguments);
@@ -1392,7 +1403,11 @@ export let mutateNodes = problem => (state, context) => {
             context.nodes[pebble].radius = Math.min(context.nodes[pebble].radius * 1.5, state.defaultPebbleRadius);
     });
 
-    // the order of the keys indicates precedence
+    // if no search string, match nothing
+    let matchedVariables = variableSearchText.length === 0 ? []
+        : pebbles.filter(variable => variable.toLowerCase().includes(variableSearchText));
+
+    // the order of the keys indicates precedence, lower keys are more important
     let params = {
         predictors: new Set(problem.predictors),
         loose: new Set(problem.tags.loose),
@@ -1402,9 +1417,11 @@ export let mutateNodes = problem => (state, context) => {
         nominal: new Set(getNominalVariables(problem)), // include both nominal-casted and string-type variables
         weight: new Set(problem.tags.weights),
         targets: new Set(problem.targets),
+        matched: new Set(matchedVariables),
     };
 
     let strokeWidths = {
+        matched: 4,
         crossSection: 4,
         time: 4,
         nominal: 4,
@@ -1421,6 +1438,7 @@ export let mutateNodes = problem => (state, context) => {
         loose: common.selVarColor,
     };
     let strokeColors = {
+        matched: 'black',
         crossSection: common.csColor,
         time: common.timeColor,
         nominal: common.nomColor,

@@ -206,7 +206,7 @@ export function varList() {
             callback: ['transform', 'imputation'].includes(constraintMenu.type)
                 ? variable => constraintPreferences.select(variable) // the select function is defined inside CanvasTransform
                 : variable => setConstraintColumn(variable, constraintMenu.pipeline),
-            popup: variable => app.popoverContent(variableMetadata[variable]),
+            popup: {content: variable => app.popoverContent(variableMetadata[variable])},
             attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
             attrsAll: {
                 style: {
@@ -370,23 +370,15 @@ export class PipelineFlowchart {
                             step.measuresUnit.length !== 0 && [
                                 m('h5', 'Unit Measures'),
                                 m(TreeAggregate, {
-                                    pipelineId,
-                                    stepId: step.id,
-                                    measure: 'unit',
                                     data: step.measuresUnit,
-                                    editable,
-                                    redraw, setRedraw
+                                    editable
                                 }),
                             ],
                             step.measuresAccum.length !== 0 && [
                                 m('h5', 'Column Accumulations'),
                                 m(TreeAggregate, {
-                                    pipelineId,
-                                    stepId: step.id,
-                                    measure: 'unit',
                                     data: step.measuresAccum,
-                                    editable,
-                                    redraw, setRedraw
+                                    editable
                                 }),
                             ],
 
@@ -472,8 +464,9 @@ export class PipelineFlowchart {
                     onclick: () => pipeline.push({
                         type: 'subset',
                         abstractQuery: [],
+                        // abstractQuery: [{"id":"1","name":"continuous: Walks","type":"rule","subset":"continuous","column":"Walks","children":[{"id":"2","name":"From: 83.2675","fromLabel":83.2675,"cancellable":false,"show_op":false},{"id":"3","name":"To: 1281.18","toLabel":1281.18,"cancellable":false,"show_op":false}],"operation":"and","show_op":false}],
                         id: 'subset ' + pipeline.length,
-                        nodeId: 1,
+                        nodeId: 4,
                         groupId: 1,
                         queryId: 1
                     })
@@ -545,31 +538,12 @@ export let setQueryUpdated = async state => {
         let selectedDataset = app.getSelectedDataset();
         let selectedProblem = app.getSelectedProblem();
 
-        // "A": old predictors list
-        // "C": old transformed variables
-        // "D": new predictors list
-        // "F": new transformed variables
-        //
-        // Must find D.
-        //     D = (A union (F \ C)) \ (C \ F)
-        //
-        // F \ C is the set of added transformed variables
-        // (A union (F \ C)) is the set of old variables and new transform variables
-        // (A union (F \ C)) \ (C \ F) now remove transformed variables that are not present in the new query
-
-        let predictorsOld = Object.keys(selectedProblem.summaries);
-        let transformsOld = selectedProblem.tags.transformed;
-        let transformsNew = getTransformVariables(selectedProblem.manipulations);
-
-        let transformsRemoved = new Set([...transformsOld].filter(elem => !transformsNew.has(elem)));
-        let transformsAdded = [...transformsNew].filter(elem => !transformsOld.has(elem));
-
-        selectedProblem.predictors = [...predictorsOld, ...transformsAdded]
-            .filter(elem => !transformsRemoved.has(elem));
-        selectedProblem.tags.transformed = transformsNew;
+        selectedProblem.tags.transformed = [...getTransformVariables(selectedProblem.manipulations)];
 
         app.buildProblemPreprocess(selectedDataset, selectedProblem)
-            .then(response => selectedProblem.summaries = response.variables);
+            .then(summaries => {
+                if (summaries) selectedProblem.summaries = summaries
+            }).then(m.redraw);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
         loadMenu([...selectedDataset.hardManipulations, ...selectedProblem.manipulations], countMenu).then(count => {

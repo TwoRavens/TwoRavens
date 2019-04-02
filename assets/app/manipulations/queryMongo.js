@@ -872,16 +872,29 @@ export function buildMenu(step) {
         let subset = [];
         if (metadata.skip) subset.push({$skip: metadata.skip});
         if (metadata.limit) subset.push({$limit: metadata.limit});
+        if (metadata.sample) subset.push({$sample: {size: metadata.sample}});
+
+        if (!metadata.variables && metadata.nominal && metadata.nominal.length > 0) return [
+            ...subset,
+            {
+                $addFields: metadata.nominal.reduce((out, entry) => {
+                    out[entry] = {'$toString': '$' + entry};
+                    return out;
+                }, {})
+            },
+            {$project: {_id: 0}}
+        ];
 
         return [
+            ...subset,
             {
                 $project: (metadata.variables || []).reduce((out, entry) => {
                     out[entry] = (metadata.nominal || []).includes(entry) ? {'$toString': '$' + entry} : 1;
                     return out;
                 }, {_id: 0})
-            },
-            ...subset
+            }
         ];
+
     }
 
     if (metadata.type === 'count') return [{

@@ -1,7 +1,8 @@
 import $ from 'jquery';
-import 'bootstrap/dist/css/bootstrap.css';
-import 'bootswatch/dist/materia/bootstrap.css';
+// import 'bootstrap/dist/css/bootstrap.css';
 
+import 'bootstrap';
+import 'bootswatch/dist/materia/bootstrap.css';
 import '../css/app.css';
 import '../../node_modules/hopscotch/dist/css/hopscotch.css';
 
@@ -49,7 +50,7 @@ import vegaEmbed from "vega-embed";
 import PreprocessInfo from "./PreprocessInfo";
 import ForceDiagram from "./views/ForceDiagram";
 import ButtonLadda from "./views/LaddaButton";
-import {findNode} from "./inactive";
+import TwoPanel from "../common/views/TwoPanel";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -108,7 +109,7 @@ function leftpanel(mode) {
                         colors: {
                             [app.hexToRgba(common.selVarColor)]: app.is_explore_mode ? selectedProblem.loose : nodesExplore.map(node => node.name),
                             [app.hexToRgba(common.gr1Color, .25)]: selectedProblem.predictors,
-                            // [app.hexToRgba(common.gr2Color)]: app.zparams.zgroup2,
+                            [app.hexToRgba(common.selVarColor, .5)]: selectedProblem.tags.loose,
                             [app.hexToRgba(common.taggedColor)]: app.is_explore_mode ? [] : selectedProblem.targets
                         },
                         classes: {
@@ -130,7 +131,7 @@ function leftpanel(mode) {
                                 app.remove(selectedProblem.tags.loose, x);
                             else selectedProblem.tags.loose.push(x);
                         },
-                        // popup: variable => app.popoverContent(app.findNode(variable)),
+                        popup: {content: variable => app.popoverContent(selectedProblem.summaries[variable])},
                         attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
                     }),
                     m(Button, {
@@ -329,7 +330,7 @@ function leftpanel(mode) {
                     m('center',
                         m('b', app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble),
                         m('br'),
-                        m('i', selectedProblem.summaries[app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble].labl)),
+                        m('i', (selectedProblem.summaries[app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble] || {}).labl)),
                     m(Table, {
                         id: 'varSummaryTable',
                         data: app.getVarSummary(selectedProblem.summaries[app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble])
@@ -994,7 +995,7 @@ class Body {
             this.header(app.currentMode),
             this.footer(app.currentMode),
             leftpanel(app.currentMode),
-            // rightpanel(app.currentMode),
+            rightpanel(app.currentMode),
 
             (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu([
                 ...app.getSelectedDataset().hardManipulations,
@@ -1119,7 +1120,6 @@ class Body {
                                     );
                                 }))
                         )],
-
                     selectedProblem && m(ForceDiagram, Object.assign(app.forceDiagramState,{
                         // these attributes may change dynamically, (the problem could change)
                         onDragAway: pebble => {
@@ -1131,7 +1131,34 @@ class Body {
                         labels: app.forceDiagramLabels(selectedProblem),
                         mutateNodes: app.mutateNodes(selectedProblem),
                         summaries: selectedProblem.summaries
-                    }, app.buildForceData(selectedProblem)))
+                    }, app.buildForceData(selectedProblem))),
+
+                    // selectedProblem && m(TwoPanel, {
+                    //     left: m(ForceDiagram, Object.assign(app.forceDiagramState,{
+                    //         // these attributes may change dynamically, (the problem could change)
+                    //         onDragAway: pebble => {
+                    //             app.remove(selectedProblem.tags.loose, pebble);
+                    //             app.remove(selectedProblem.predictors, pebble);
+                    //             app.remove(selectedProblem.targets, pebble);
+                    //             m.redraw();
+                    //         },
+                    //         labels: app.forceDiagramLabels(selectedProblem),
+                    //         mutateNodes: app.mutateNodes(selectedProblem),
+                    //         summaries: selectedProblem.summaries
+                    //     }, app.buildForceData(selectedProblem))),
+                    //     right: m(ForceDiagram, Object.assign(app.forceDiagramState,{
+                    //         // these attributes may change dynamically, (the problem could change)
+                    //         onDragAway: pebble => {
+                    //             app.remove(selectedProblem.tags.loose, pebble);
+                    //             app.remove(selectedProblem.predictors, pebble);
+                    //             app.remove(selectedProblem.targets, pebble);
+                    //             m.redraw();
+                    //         },
+                    //         labels: app.forceDiagramLabels(selectedProblem),
+                    //         mutateNodes: app.mutateNodes(selectedProblem),
+                    //         summaries: selectedProblem.summaries
+                    //     }, app.buildForceData(selectedProblem)))
+                    // })
                 ),
 
                 app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}}, [

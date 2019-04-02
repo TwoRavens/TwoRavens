@@ -600,7 +600,11 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
     context.selectors.pebbles
         .select('g.density-plot').each(function (pebble) {
         let summary = attrs.summaries[pebble];
-        if (!summary) return;
+        if (!summary || !summary.plotx) {
+            d3.select(this).selectAll('path')
+                .data([]).exit().remove();
+            return;
+        }
 
         let width = context.nodes[pebble].radius * 1.5;
         let height = context.nodes[pebble].radius * 0.75;
@@ -641,7 +645,12 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
     context.selectors.pebbles
         .select('g.bar-plot').each(function (pebble) {
         let summary = attrs.summaries[pebble];
-        if (!summary || !summary.plotvalues) return;
+
+        if (!summary || !summary.plotvalues) {
+            d3.select(this).selectAll('rect')
+                .data([]).exit().remove();
+            return;
+        }
 
         let width = context.nodes[pebble].radius * 1.5;
         let height = context.nodes[pebble].radius * 0.75;
@@ -667,15 +676,15 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
             .domain([0, maxY])
             .range([0, height]);
 
-        let plotSelection = d3.select(this).selectAll("rect").data(data)
-            .enter()
-            .append("rect");
+        let rectSelection = d3.select(this).selectAll("rect").data(data);
+        rectSelection.exit().remove();
+        rectSelection.enter().append("rect");
 
         // bind all events to the plot
         Object.keys(attrs.pebbleEvents)
-            .forEach(event => plotSelection.on(event, () => attrs.pebbleEvents[event](pebble)));
+            .forEach(event => rectSelection.on(event, () => attrs.pebbleEvents[event](pebble)));
 
-        d3.select(this).selectAll("rect")
+        d3.select(this).selectAll("rect").data(data)
             .transition()
             .duration(attrs.selectTransitionDuration)
             .attr("x", d => xScale(d.x - 0.5 + barPadding))
