@@ -143,6 +143,7 @@ export default class Body_EventData {
                 sections: [
                     {value: 'Home', attrsInterface: {style: {'width': 'auto'}}}
                 ].concat(eventdata.selectedDataset ? [
+                    {value: 'Explore', id: 'btnExploreMode', attrsInterface: {style: {'width': 'auto'}}},
                     {value: 'Subset', id: 'btnSubsetMode', attrsInterface: {style: {'width': 'auto'}}},
                     {value: 'Aggregate', attrsInterface: {style: {'width': 'auto'}}}
                 ] : [])
@@ -300,7 +301,7 @@ export default class Body_EventData {
     }
 
     leftpanel(mode) {
-        if (mode === 'home') {
+        if (mode === 'home' || mode === 'explore') {
             common.setPanelOcclusion('left', `calc(2*${common.panelMargin} + 250px)`);
         }
 
@@ -510,7 +511,7 @@ export default class Body_EventData {
 
     rightpanel(mode) {
 
-        if (mode === 'home') {
+        if (mode === 'home' || mode === 'explore') {
             common.setPanelOcclusion('left', window.innerWidth < 1200 ? `calc(${common.panelMargin}*2)` : '250px');
             common.setPanelOcclusion('right', window.innerWidth < 1200 ? `calc(${common.panelMargin}*2)` : '250px');
             return;
@@ -617,6 +618,43 @@ export default class Body_EventData {
     }
 
     canvasContent() {
+        console.log("content mode", eventdata);
+        if (eventdata.selectedMode === "explore") {
+            var graphData = [];
+            graphData.push(m('h2', "Global highest correlation"));
+            for (var x = 0; x < 2; x ++) {
+                var innerDisp = [];
+                x == 0 ? innerDisp.push(m('h3', "Pearson")) : innerDisp.push(m('h3', "Kendall"));
+                for (var y = 0; y < 1; y ++) {
+                    innerDisp.push(m('div', "Test div " + y));
+                }
+                graphData.push(m('div', {style: "float:left; width: 50%;"}, innerDisp));
+            }
+            graphData.push(m('h2', "Local highest correlation"));
+            for (var x = 0; x < 2; x ++) {
+                var innerDisp = [];
+                x == 0 ? innerDisp.push(m('h3', "Pearson")) : innerDisp.push(m('h3', "Kendall"));
+                for (var y = 0; y < 4; y ++) {
+                    innerDisp.push(m('div', "Test div " + y));
+                }
+                graphData.push(m('div', {style: "float:left; width: 50%;"}, innerDisp));
+            }
+            graphData.push(m('h2', "Local lowest correlation"));
+            for (var x = 0; x < 2; x ++) {
+                var innerDisp = [];
+                x == 0 ? innerDisp.push(m('h3', "Pearson")) : innerDisp.push(m('h3', "Kendall"));
+                for (var y = 0; y < 4; y ++) {
+                    innerDisp.push(m('div', "Test div " + y));
+                }
+                graphData.push(m('div', {style: "float:left; width: 50%;"}, innerDisp));
+            }
+            //~ graphData.push(m('div', ["img", {style: 
+            //~ for (var x = 0; x < 8; x++) {
+                //~ graphData.push(m('div', "Test div " + x));
+            //~ }
+            return graphData;
+        }
+        
         if (eventdata.selectedCanvas === 'Subset') {
             if (eventdata.subsetData[eventdata.selectedSubsetName] === undefined) {
 
