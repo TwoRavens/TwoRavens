@@ -618,39 +618,40 @@ export default class Body_EventData {
     }
 
     canvasContent() {
-        console.log("content mode", eventdata);
+        //~ console.log("content mode", eventdata);
         if (eventdata.selectedMode === "explore") {
             var graphData = [];
             graphData.push(m('h2', "Global highest correlation"));
             for (var x = 0; x < 2; x ++) {
                 var innerDisp = [];
+                var type = x == 0 ? "Pearson" : "Kendall";
                 x == 0 ? innerDisp.push(m('h3', "Pearson")) : innerDisp.push(m('h3', "Kendall"));
-                for (var y = 0; y < 1; y ++) {
-                    innerDisp.push(m('div', "Test div " + y));
+                //~ for (var y = 0; y < 1; y ++) {
+                    //~ innerDisp.push(m('div', "Test div " + y));
+                for (var y = 0; y < 4; y ++) {
+                    innerDisp.push(m('img', {src: "/static/images/eventdata/images/global" + type + y + ".png", style: "max-width:100%;max-height:100%"}));
                 }
                 graphData.push(m('div', {style: "float:left; width: 50%;"}, innerDisp));
             }
             graphData.push(m('h2', "Local highest correlation"));
             for (var x = 0; x < 2; x ++) {
                 var innerDisp = [];
+                var type = x == 0 ? "Pearson" : "Kendall";
                 x == 0 ? innerDisp.push(m('h3', "Pearson")) : innerDisp.push(m('h3', "Kendall"));
                 for (var y = 0; y < 4; y ++) {
-                    innerDisp.push(m('div', "Test div " + y));
+                    //~ innerDisp.push(m('div', "Test div " + y));
+                    innerDisp.push(m('img', {src: "/static/images/eventdata/images/local" + type + y + ".png", style: "max-width:100%;max-height:100%"}));
                 }
                 graphData.push(m('div', {style: "float:left; width: 50%;"}, innerDisp));
             }
-            graphData.push(m('h2', "Local lowest correlation"));
-            for (var x = 0; x < 2; x ++) {
-                var innerDisp = [];
-                x == 0 ? innerDisp.push(m('h3', "Pearson")) : innerDisp.push(m('h3', "Kendall"));
-                for (var y = 0; y < 4; y ++) {
-                    innerDisp.push(m('div', "Test div " + y));
-                }
-                graphData.push(m('div', {style: "float:left; width: 50%;"}, innerDisp));
-            }
-            //~ graphData.push(m('div', ["img", {style: 
-            //~ for (var x = 0; x < 8; x++) {
-                //~ graphData.push(m('div', "Test div " + x));
+            //~ graphData.push(m('h2', "Local lowest correlation"));
+            //~ for (var x = 0; x < 2; x ++) {
+                //~ var innerDisp = [];
+                //~ x == 0 ? innerDisp.push(m('h3', "Pearson")) : innerDisp.push(m('h3', "Kendall"));
+                //~ for (var y = 0; y < 4; y ++) {
+                    //~ innerDisp.push(m('div', "Test div " + y));
+                //~ }
+                //~ graphData.push(m('div', {style: "float:left; width: 50%;"}, innerDisp));
             //~ }
             return graphData;
         }

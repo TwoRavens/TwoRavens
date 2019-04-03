@@ -17,13 +17,13 @@ import json
 
 mongo_client = MongoClient(host='localhost', port=27017)  # Default port
 print(mongo_client.event_data.list_collection_names())
-selectedDB = input("database name: ")
-while selectedDB not in mongo_client.event_data.list_collection_names():
-    selectedDB = input("database name: ")
-if selectedDB in ["mid", "cline_speed", "ged", "gtd"]:
-    print("currently not supported (no action type)")
-    exit()
-#~ selectedDB = "acled_middle_east"
+#~ selectedDB = input("database name: ")
+#~ while selectedDB not in mongo_client.event_data.list_collection_names():
+    #~ selectedDB = input("database name: ")
+#~ if selectedDB in ["mid", "cline_speed", "ged", "gtd"]:
+    #~ print("currently not supported (no action type)")
+    #~ exit()
+selectedDB = "acled_middle_east"
 db = mongo_client.event_data[selectedDB]
 
 '''
@@ -178,9 +178,9 @@ for actionX, actionY in list(itertools.combinations(actions, 2)):
     actionYData = res[[actionY]]
     #~ print("Comparing", actionX, "and", actionY)
     #~ print("overall Pearson correlation:")
-    globalPearsonResults.append((stats.pearsonr(actionXData, actionYData), storKey))
+    globalPearsonResults.append((stats.pearsonr(actionXData, actionYData), [actionX, actionY]))
     #~ print("overall Kendall correlation:")
-    globalKendallResults.append((stats.kendalltau(actionXData, actionYData), storKey))
+    globalKendallResults.append((stats.kendalltau(actionXData, actionYData), [actionX, actionY]))
     #~ print(actionXData, actionYData)
 
     for sta in range(windowSize, len(res.index.values)):
@@ -196,8 +196,8 @@ for actionX, actionY in list(itertools.combinations(actions, 2)):
             #~ print(localKend[0])
 
             if localPear[1][0] < confidenceMargin or localKend[1] < confidenceMargin:
-                localPearsonResults.append((localPear, storKey, [sta-windowSize]))
-                localKendallResults.append((localKend, storKey, [sta-windowSize]))
+                localPearsonResults.append((localPear, [actionX, actionY], [sta-windowSize]))
+                localKendallResults.append((localKend, [actionX, actionY], [sta-windowSize]))
             #~ print()
         except:
             #https://stats.stackexchange.com/questions/220787/pearson-correlation-to-a-uniformly-distributed-dataset
@@ -221,25 +221,25 @@ print("global kendall")
 print(globalKendallResults[0:5])
 print()
 
-plt.figure(0)
-plt.suptitle("Global Pearson")
-ctr = 1
-for result in globalPearsonResults[0:5]:
-    plt.subplot(3, 2, ctr)
-    ctr += 1
-    plt.title(str(result[0]))
-    plt.plot(res.loc[:, result[1]])
-    plt.legend(result[1])
+#~ plt.figure(0)
+#~ plt.suptitle("Global Pearson")
+#~ ctr = 1
+#~ for result in globalPearsonResults[0:5]:
+    #~ plt.subplot(3, 2, ctr)
+    #~ ctr += 1
+    #~ plt.title(str(result[0]))
+    #~ plt.plot(res.loc[:, result[1]])
+    #~ plt.legend(result[1])
 
-plt.figure(1)
-plt.suptitle("Global Kendall")
-ctr = 1
-for result in globalKendallResults[0:5]:
-    plt.subplot(3, 2, ctr)
-    ctr += 1
-    plt.title(str(result[0]))
-    plt.plot(res.loc[:, result[1]])
-    plt.legend(result[1])
+#~ plt.figure(1)
+#~ plt.suptitle("Global Kendall")
+#~ ctr = 1
+#~ for result in globalKendallResults[0:5]:
+    #~ plt.subplot(3, 2, ctr)
+    #~ ctr += 1
+    #~ plt.title(str(result[0]))
+    #~ plt.plot(res.loc[:, result[1]])
+    #~ plt.legend(result[1])
 
 #sort local results first by correlation and then by p value
 localPearsonResults.sort(key=lambda re: (-abs(re[0][0][0]), re[0][1][0]))
@@ -254,6 +254,7 @@ def within(localRange, allRange):
     return False
 
 #now merge local results if they are on the same pair
+#TODO: remove duplicates
 localPearsonFinal = []
 for corRes in localPearsonResults:
     corr, acts, start = corRes
@@ -303,16 +304,17 @@ for corRes in localPearsonResults:
 print("top 5 local results")
 print("local pearson")
 print(localPearsonFinal[0:5])
+print()
 
-plt.figure(2)
-plt.suptitle("Local Pearson")
-ctr = 1
-for result in localPearsonFinal[0:5]:
-    plt.subplot(3, 2, ctr)
-    ctr += 1
-    plt.title(str(result[0]))
-    plt.plot(res.loc[:, result[1]].iloc[min(result[2]):max(result[2])+windowSize, :])
-    plt.legend(result[1])
+#~ plt.figure(2)
+#~ plt.suptitle("Local Pearson")
+#~ ctr = 1
+#~ for result in localPearsonFinal[0:5]:
+    #~ plt.subplot(3, 2, ctr)
+    #~ ctr += 1
+    #~ plt.title(str(result[0]))
+    #~ plt.plot(res.loc[:, result[1]].iloc[min(result[2]):max(result[2])+windowSize, :])
+    #~ plt.legend(result[1])
 
 localKendallFinal = []
 
@@ -345,17 +347,43 @@ for corRes in localKendallResults:
 print(localKendallFinal[0:5])
 print()
 
-plt.figure(3)
-plt.suptitle("Local Kendall")
-ctr = 1
-for result in localKendallFinal[0:5]:
-    plt.subplot(3, 2, ctr)
-    ctr += 1
-    plt.title(str(result[0]))
-    plt.plot(res.loc[:, result[1]].iloc[min(result[2]):max(result[2])+windowSize, :])
-    plt.legend(result[1])
+#~ plt.figure(3)
+#~ plt.suptitle("Local Kendall")
+#~ ctr = 1
+#~ for result in localKendallFinal[0:5]:
+    #~ plt.subplot(3, 2, ctr)
+    #~ ctr += 1
+    #~ plt.title(str(result[0]))
+    #~ plt.plot(res.loc[:, result[1]].iloc[min(result[2]):max(result[2])+windowSize, :])
+    #~ plt.legend(result[1])
 
 #~ plt.show()
+
+#temp save output of top 4 of each
+#~ for im, n in zip(globalPearsonResults[:4], [z for z in range(4)]):
+    #~ print(im)
+    #~ print(n)
+    #~ plt.title(str(im[0]))
+    #~ plt.plot(res.loc[:, im[1]])
+    #~ plt.legend(im[1])
+    #~ plt.savefig('images/globalPearson' + str(n) + '.png')
+
+for im, ty in zip([globalPearsonResults, globalKendallResults, localPearsonFinal, localKendallFinal], ["globalPearson", "globalKendall", "localPearson", "localKendall"]):
+    for img, n in zip(im[0:4], [z for z in range(4)]):
+        #~ print(img)
+        plt.figure()
+        plt.title(str(img[0]))
+        #~ print(ty)
+        #~ print(img)
+        if "global" in ty:
+            print(ty)
+            print(img)
+            plt.plot(res.loc[:, img[1]])
+        else:
+            plt.plot(res.loc[:, img[1]].iloc[min(img[2]):max(img[2])+windowSize, :])
+        plt.legend(img[1])
+        plt.savefig('images/' + ty + str(n) + '.png')
+
 
 #cleanup results and save to file
 results = {}
@@ -411,6 +439,7 @@ results["localKendall"] = localKendalSave
 #write to file
 with open(selectedDB + "_output.json", "w") as outFile:
     outFile.write(json.dumps(results, indent=4))
+
 
 #~ print(res)
 #~ print(localPearsonFinal[0])
