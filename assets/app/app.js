@@ -1273,8 +1273,6 @@ export let setForceDiagramMode = mode => forceDiagramMode = mode;
 export let buildForceData = problem => {
 
     if (!problem) return;
-
-    let summaries = problem.summaries;
     let pebbles = [...problem.predictors, ...problem.targets, ...problem.tags.loose];
     let groups = [];
     let groupLinks = [];
@@ -1489,15 +1487,6 @@ export let forceDiagramLabels = problem => [
                     toggle(problem.tags.loose, d);
                     remove(problem.predictors, d);
                     toggle(problem.targets, d);
-                    forceDiagramState.setSelectedPebble(d);
-                }
-            },
-            {
-                id: 'Prior',
-                name: 'Prior',
-                attrs: {fill: common.warnColor},
-                onclick: d => {
-                    alertLog('Neat feature to add?')
                     forceDiagramState.setSelectedPebble(d);
                 }
             }
@@ -2012,7 +2001,7 @@ export async function estimate() {
         datasetPath = data_path;
     } else delete resultsProblem.datasetDocPath;
 
-    makeRequest(ROOK_SVC_URL + 'solverapp', {prob: resultsProblem, dataset_path: datasetPath})
+    makeRequest(ROOK_SVC_URL + 'solverapp', {problem: resultsProblem, dataset_path: datasetPath})
         .then(response => {
             if (response && 'warning' in response) return;
             let ravenID = 'raven ' + ravenPipelineID++;
@@ -2028,6 +2017,7 @@ export async function estimate() {
         produceSolutionDefaultParams: getProduceSolutionDefaultParameters(datasetDocPath),
         scoreSolutionDefaultParams: getScoreSolutionDefaultParameters(resultsProblem, datasetDocPath)
     };
+    return;
 
     //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
     let res = await makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', allParams);

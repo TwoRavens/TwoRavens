@@ -63,6 +63,7 @@ export default class ForceDiagram {
         };
 
         // rebind data to elements in the force diagram
+        // if this is called after hoverPebble assignment, the pebble jilts on hover
         attrs.builders && attrs.builders.forEach(builder => builder(attrs, this));
 
         /**

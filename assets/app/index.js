@@ -1131,35 +1131,7 @@ class Body {
                         labels: app.forceDiagramLabels(selectedProblem),
                         mutateNodes: app.mutateNodes(selectedProblem),
                         summaries: selectedProblem.summaries
-                    }, app.buildForceData(selectedProblem))),
-
-                    // selectedProblem && m(TwoPanel, {
-                    //     left: m(ForceDiagram, Object.assign(app.forceDiagramState,{
-                    //         // these attributes may change dynamically, (the problem could change)
-                    //         onDragAway: pebble => {
-                    //             app.remove(selectedProblem.tags.loose, pebble);
-                    //             app.remove(selectedProblem.predictors, pebble);
-                    //             app.remove(selectedProblem.targets, pebble);
-                    //             m.redraw();
-                    //         },
-                    //         labels: app.forceDiagramLabels(selectedProblem),
-                    //         mutateNodes: app.mutateNodes(selectedProblem),
-                    //         summaries: selectedProblem.summaries
-                    //     }, app.buildForceData(selectedProblem))),
-                    //     right: m(ForceDiagram, Object.assign(app.forceDiagramState,{
-                    //         // these attributes may change dynamically, (the problem could change)
-                    //         onDragAway: pebble => {
-                    //             app.remove(selectedProblem.tags.loose, pebble);
-                    //             app.remove(selectedProblem.predictors, pebble);
-                    //             app.remove(selectedProblem.targets, pebble);
-                    //             m.redraw();
-                    //         },
-                    //         labels: app.forceDiagramLabels(selectedProblem),
-                    //         mutateNodes: app.mutateNodes(selectedProblem),
-                    //         summaries: selectedProblem.summaries
-                    //     }, app.buildForceData(selectedProblem)))
-                    // })
-                ),
+                    }, app.buildForceData(selectedProblem)))),
 
                 app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}}, [
                     spaceBtn('btnAdd', app.addProblemFromForceDiagram, 'add model to problems', m(Icon, {name: 'plus'})),
