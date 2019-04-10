@@ -10,6 +10,7 @@ import matplotlib.pylab as plt
 
 import itertools
 import json
+import copy
 
 # look at source file, or look at mongo?
 # create time series on action codes - one per each
@@ -257,24 +258,25 @@ def within(localRange, allRange):
 #TODO: remove duplicates
 localPearsonFinal = []
 for corRes in localPearsonResults:
+    #structure of object in localPearsonFinal: [correlation, [actions], [start points], [original actions]]
     corr, acts, start = corRes
     merged = False
     for x in range(len(localPearsonFinal)):
         if len(localPearsonFinal[x][1]) > maxGroup:
             continue
-        if acts[0] in localPearsonFinal[x][1] and acts[1] in localPearsonFinal[x][1] and within(start, localPearsonFinal[x][2]):
+        if acts[0] in localPearsonFinal[x][3] and acts[1] in localPearsonFinal[x][3] and within(start, localPearsonFinal[x][2]):
             # print(acts, x, "same actions, merging start points")
             localPearsonFinal[x][2].append(start[0])
             merged = True
             break
-        elif acts[0] in localPearsonFinal[x][1] and within(start, localPearsonFinal[x][2]): #and starting points are close, moderately correlated?
+        elif acts[0] in localPearsonFinal[x][3] and within(start, localPearsonFinal[x][2]): #and starting points are close, moderately correlated?
             # print(acts, x, "matched action 0, merging actions")
-            localPearsonFinal[x][1].append(acts[1])
+            if acts[1] not in localPearsonFinal[x][1]: localPearsonFinal[x][1].append(acts[1])
             merged = True
             break
-        elif acts[1] in localPearsonFinal[x][1] and within(start, localPearsonFinal[x][2]):
+        elif acts[1] in localPearsonFinal[x][3] and within(start, localPearsonFinal[x][2]):
             # print(acts, x, "matched action 1, merging actions")
-            localPearsonFinal[x][1].append(acts[0])
+            if acts[0] not in localPearsonFinal[x][1]: localPearsonFinal[x][1].append(acts[0])
             merged = True
             break
         #~ elif acts[0] in localPearsonFinal[x][1]: #and starting points are close, moderately correlated?
@@ -288,7 +290,8 @@ for corRes in localPearsonResults:
             #~ merged = True
             #~ break
     if not merged:
-        localPearsonFinal.append(corRes)
+        orig = copy.deepcopy(acts)
+        localPearsonFinal.append([corr, acts, start, orig])
     '''
     if acts in [x[1] for x in localPearsonFinal]:
         #append this result's start to the tuple stored
@@ -306,15 +309,16 @@ print("local pearson")
 print(localPearsonFinal[0:5])
 print()
 
-#~ plt.figure(2)
-#~ plt.suptitle("Local Pearson")
-#~ ctr = 1
-#~ for result in localPearsonFinal[0:5]:
-    #~ plt.subplot(3, 2, ctr)
-    #~ ctr += 1
-    #~ plt.title(str(result[0]))
-    #~ plt.plot(res.loc[:, result[1]].iloc[min(result[2]):max(result[2])+windowSize, :])
-    #~ plt.legend(result[1])
+plt.figure(2)
+plt.suptitle("Local Pearson")
+ctr = 1
+for result in localPearsonFinal[0:6]:
+    plt.subplot(3, 2, ctr)
+    ctr += 1
+    plt.title("Graph " + str(ctr-1) + str(result[0]) + str(result[3]))
+    plt.plot(res.loc[:, result[1]].iloc[min(result[2]):max(result[2])+windowSize, :])
+    plt.legend(result[1])
+#~ plt.show()
 
 localKendallFinal = []
 
@@ -325,49 +329,43 @@ for corRes in localKendallResults:
     for x in range(len(localKendallFinal)):
         if len(localKendallFinal[x][1]) > maxGroup:
             continue
-        if acts[0] in localKendallFinal[x][1] and acts[1] in localKendallFinal[x][1] and within(start, localKendallFinal[x][2]):
+        if acts[0] in localKendallFinal[x][3] and acts[1] in localKendallFinal[x][3] and within(start, localKendallFinal[x][2]):
             # print(acts, x, "same actions, merging start points")
             localKendallFinal[x][2].append(start[0])
             merged = True
             break
-        elif acts[0] in localKendallFinal[x][1] and within(start, localKendallFinal[x][2]): #and starting points are close, moderately correlated?
+        elif acts[0] in localKendallFinal[x][3] and within(start, localKendallFinal[x][2]): #and starting points are close, moderately correlated?
             # print(acts, x, "matched action 0, merging actions")
-            localKendallFinal[x][1].append(acts[1])
+            if acts[1] not in localKendallFinal[x][1]: localKendallFinal[x][1].append(acts[1])
             merged = True
             break
-        elif acts[1] in localKendallFinal[x][1] and within(start, localKendallFinal[x][2]):
+        elif acts[1] in localKendallFinal[x][3] and within(start, localKendallFinal[x][2]):
             # print(acts, x, "matched action 1, merging actions")
-            localKendallFinal[x][1].append(acts[0])
+            if acts[0] not in localKendallFinal[x][1]: localKendallFinal[x][1].append(acts[0])
             merged = True
             break
     if not merged:
-        localKendallFinal.append(corRes)
+        orig = copy.deepcopy(acts)
+        localKendallFinal.append([corr, acts, start, orig])
     #~ if len(localKendallFinal) > matchLimit:  limit to 5 results
         #~ break
 print(localKendallFinal[0:5])
 print()
 
-#~ plt.figure(3)
-#~ plt.suptitle("Local Kendall")
-#~ ctr = 1
-#~ for result in localKendallFinal[0:5]:
-    #~ plt.subplot(3, 2, ctr)
-    #~ ctr += 1
-    #~ plt.title(str(result[0]))
-    #~ plt.plot(res.loc[:, result[1]].iloc[min(result[2]):max(result[2])+windowSize, :])
-    #~ plt.legend(result[1])
+plt.figure(3)
+plt.suptitle("Local Kendall")
+ctr = 1
+for result in localKendallFinal[0:5]:
+    plt.subplot(3, 2, ctr)
+    ctr += 1
+    plt.title("Graph " + str(ctr-1) + str(result[0]) + str(result[3]))
+    plt.plot(res.loc[:, result[1]].iloc[min(result[2]):max(result[2])+windowSize, :])
+    plt.legend(result[1])
 
 #~ plt.show()
 
 #temp save output of top 4 of each
-#~ for im, n in zip(globalPearsonResults[:4], [z for z in range(4)]):
-    #~ print(im)
-    #~ print(n)
-    #~ plt.title(str(im[0]))
-    #~ plt.plot(res.loc[:, im[1]])
-    #~ plt.legend(im[1])
-    #~ plt.savefig('images/globalPearson' + str(n) + '.png')
-
+'''
 for im, ty in zip([globalPearsonResults, globalKendallResults, localPearsonFinal, localKendallFinal], ["globalPearson", "globalKendall", "localPearson", "localKendall"]):
     for img, n in zip(im[0:4], [z for z in range(4)]):
         #~ print(img)
@@ -383,7 +381,7 @@ for im, ty in zip([globalPearsonResults, globalKendallResults, localPearsonFinal
             plt.plot(res.loc[:, img[1]].iloc[min(img[2]):max(img[2])+windowSize, :])
         plt.legend(img[1])
         plt.savefig('images/' + ty + str(n) + '.png')
-
+'''
 
 #cleanup results and save to file
 results = {}
@@ -419,7 +417,8 @@ for r in localPearsonFinal:
         "p-val": r[0][1][0],
         "actions": r[1],
         "start": str(res.index[min(r[2])])[:10],
-        "end": str(min(res.index[max(r[2])], res.index[-1]))[:10]
+        "end": str(min(res.index[max(r[2])], res.index[-1]))[:10],
+        "original": r[3]
     }
     localPearsonSave.append(re)
 results["localPearson"] = localPearsonSave
@@ -431,7 +430,8 @@ for r in localKendallFinal:
         "p-val": r[0][1],
         "actions": r[1],
         "start": str(res.index[min(r[2])])[:10],
-        "end": str(min(res.index[max(r[2])], res.index[-1]))[:10]
+        "end": str(min(res.index[max(r[2])], res.index[-1]))[:10],
+        "original": r[3]
     }
     localKendalSave.append(re)
 results["localKendall"] = localKendalSave
