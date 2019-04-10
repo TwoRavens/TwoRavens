@@ -151,11 +151,29 @@ def dateSTD_terrier():
 			print(err)
 			print(doc['_id'])
 
-dateSTD_cline_phoenix()
-dateSTD_cline_speed()
-dateSTD_acled()
-dateSTD_icews()
-dateSTD_ged()
-dateSTD_gtd()
-dateSTD_mid()
-dateSTD_terrier()
+def dateSTD_mmad():
+    print("Processing MMAD")
+    for doc in db["mmad"].find({"TwoRavens_event_date": {"$exists": 1}}):
+        try:
+            db["mmad"].update(
+                {"_id": doc["_id"]},
+                {"$set": {
+                    "TwoRavens_start date": doc["TwoRavens_event_date"],
+                    "TwoRavens_end date": doc["TwoRavens_event_date"],
+                    "TwoRavens_date info": 0
+                    }
+                }
+            )
+        except Exception as err:
+            print(err)
+            print(doc['_id'])
+
+#~ dateSTD_cline_phoenix()
+#~ dateSTD_cline_speed()
+#~ dateSTD_acled()
+#~ dateSTD_icews()
+#~ dateSTD_ged()
+#~ dateSTD_gtd()
+#~ dateSTD_mid()
+#~ dateSTD_terrier()
+dateSTD_mmad()

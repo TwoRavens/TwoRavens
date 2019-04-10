@@ -42,6 +42,8 @@ mongoimport -d event_data -c mid-actors --type csv --ignoreBlanks --columnsHaveT
 # Terrier
 mongoimport -d event_data -c terrier --file ~/Documents/TwoRavens_Su17/Datasets/Terrier/terrier-location-source-profile-cliff-phoenix.json --jsonArray
 
+# MMAD
+mongoimport -d event_data -c mmad --type csv --ignoreBlanks --columnsHaveTypes --fields "cowcode.string(),location.string(),asciiname.string(),longitude.double(),latitude.double(),event_date.string(),side.string(),num_reports.int32(),max_scope.string(),max_partviolence.string(),max_secengagement.string(),mean_avg_numparticipants.string()" --file ~/Documents/TwoRavens_Su17/Datasets/MMAD/events.csv
 
 # To check that the csv data is available, run in new CMD:
 # (connects to mongo server on default port, opens mongo prompt)

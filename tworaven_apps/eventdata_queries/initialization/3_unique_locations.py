@@ -176,10 +176,27 @@ def terrier_locations():
 		]):
 			outfile.write(','.join([str(doc['_id'][out]) for out in ['Latitude', 'Longitude']]) + "\n")
 
-icews_locations()
-cline_locations()
-#~ acled_locations()
-acled_locations2()	#this geolocates with lat/long
-ged_locations()
-gtd_locations()
-terrier_locations()
+def mmad_locations():
+    print("processing mmad")
+    with open("locations_mmad.csv", "w") as outfile:
+        outfile.write("Latitude,Longitude\n")
+        for doc in db["mmad"].aggregate([
+            {
+                "$group": {
+                    "_id": {
+                        "Latitude": "$latitude",
+                        "Longitude": "$longitude"
+                    }
+                }
+            }
+        ]):
+            outfile.write(','.join([str(doc["_id"][out]) for out in ["Latitude", "Longitude"]]) + "\n")
+
+#~ icews_locations()
+#~ cline_locations()
+#~ ##~ acled_locations()
+#~ acled_locations2()	#this geolocates with lat/long
+#~ ged_locations()
+#~ gtd_locations()
+#~ terrier_locations()
+mmad_locations()

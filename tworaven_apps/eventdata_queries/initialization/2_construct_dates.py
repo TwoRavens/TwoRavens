@@ -149,14 +149,27 @@ def date_terrier():
 			print(err)
 			print(doc['_id'])
 
+def date_mmad():
+    print("Processing MMAD")
+    for doc in db["mmad"].find({"TwoRavens_event_date": {"$exists": 0}}):
+        try:
+            db["mmad"].update(
+                {'_id': doc['_id']},
+                {'$set': {"TwoRavens_event_date": datetime.datetime.strptime(str(doc["event_date"]), "%Y-%m-%d")}}
+            )
+        except Exception as err:
+            print(err)
+            print(doc["_id"])
+
 #remove_header()
 
 # add constructed date fields
-date_cline_phoenix()
-date_cline_speed()
-date_acled()
-date_icews()
-date_ged()
-date_gtd()
-date_mid()
-date_terrier()
+#~ date_cline_phoenix()
+#~ date_cline_speed()
+#~ date_acled()
+#~ date_icews()
+#~ date_ged()
+#~ date_gtd()
+#~ date_mid()
+#~ date_terrier()
+date_mmad()
