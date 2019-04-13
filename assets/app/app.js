@@ -14,7 +14,17 @@ import {elem} from './utils';
 import $ from 'jquery';
 import * as d3 from 'd3';
 import * as queryMongo from "./manipulations/queryMongo";
-import {groupBuilder, groupLinkBuilder, linkBuilder, pebbleBuilder} from "./views/ForceDiagram";
+import {groupBuilder, groupLinkBuilder, linkBuilder, pebbleBuilderLabeled} from "./views/ForceDiagram";
+import {
+    end_ta3_search,
+    endAllSearches,
+    handleDescribeSolutionResponse,
+    handleENDGetSearchSolutionsResults,
+    handleGetProduceSolutionResultsResponse,
+    handleGetScoreSolutionResultsResponse,
+    handleGetSearchSolutionResultsResponse,
+    makePipelineTemplate
+} from "./solvers/d3m";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -203,6 +213,9 @@ export function setVariate(variate) {
 
 export let task1_finished = false;
 export let task2_finished = false;
+export let setTask1_finished = state => task1_finished = state;
+export let setTask2_finished = state => task2_finished = state;
+
 export let problemDocExists = true;
 export let univariate_finished = false;
 
@@ -253,6 +266,14 @@ export function set_mode(mode) {
         updateRightPanelWidth();
         updateLeftPanelWidth();
         m.redraw()
+    }
+
+    // TODO: needs to be in parent context
+    // reload the results if on the results tab and there are pending changes
+    // Automatic reloading only when running in TwoRavens mode
+    if (is_results_mode && solverPending) {
+        setResultsProblem(getSelectedProblem().problemID);
+        callSolver(getResultsProblem());
     }
 
     // cause the peek table to redraw
@@ -640,10 +661,12 @@ export let d3mMetrics = {
     jaccardSimilarityScore:["description", "JACCARD_SIMILARITY_SCORE" , 15]
 };
 
-export let twoRavensModelTypes = {
-    regression: ['modelUndefined', 'Linear', 'Logistic', 'Negative Binomial', 'Poisson'],
-    classification: ['modelUndefined'],
-    clustering: ['modelUndefined', 'KMeans']
+// available models from rookSolver
+export let baselineModelTypes = {
+    regression: ['Linear', 'Negative Binomial', 'Poisson'],
+    classification: ['Logistic', 'Multinomial'],
+    clustering: ['KMeans'],
+    timeSeriesForecasting: ['Vector Autoregression']
 };
 
 export let byId = id => document.getElementById(id);
@@ -1076,12 +1099,16 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             metric: res.inputs.performanceMetrics[0].metric,
             task: res.about.taskType,
             subTask: res.about.taskSubType,
-            model: 'modelUndefined',
             meaningful: false,
             manipulations: [],
             solutions: {
                 d3m: {},
                 rook: {}
+            },
+            selectedSource: undefined, // 'd3m' or 'rook'
+            selectedSolutions: {
+                d3m: undefined,
+                rook: undefined
             },
             tags: {
                 transformed: [],
@@ -1291,12 +1318,12 @@ export let buildForceData = problem => {
                 nodes: new Set(problem.targets),
                 opacity: 0.3
             },
-            {
-                name: "Priors",
-                color: common.warnColor,
-                nodes: new Set(['At_bats', 'Hits', 'RBIs']),
-                opacity: 0.4
-            }
+            // {
+            //     name: "Priors",
+            //     color: common.warnColor,
+            //     nodes: new Set(['At_bats', 'Hits', 'RBIs']),
+            //     opacity: 0.4
+            // }
         ];
 
         groupLinks = [
@@ -1325,7 +1352,7 @@ export let buildForceData = problem => {
 };
 
 export let forceDiagramState = {
-    builders: [pebbleBuilder, groupBuilder, linkBuilder, groupLinkBuilder],
+    builders: [pebbleBuilderLabeled, groupBuilder, linkBuilder, groupLinkBuilder],
     pebbleLinks: [],
     hoverPebble: undefined,
     contextPebble: undefined,
@@ -1564,72 +1591,20 @@ export function helpmaterials(type) {
 
 // when selected, the key/value [mode]: [pipelineID] is set.
 export let selectedPipelines = new Set([]);
-export let setSelectedPipeline = pipelineID => {
-    pipelineID = String(pipelineID);
+export let setSelectedSolution = (problem, source, pipelineId) => {
+    pipelineId = String(pipelineId);
 
-    if (modelComparison) selectedPipelines.has(pipelineID)
-        ? selectedPipelines.delete(pipelineID)
-        : selectedPipelines.add(pipelineID);
-    else selectedPipelines = new Set([pipelineID]);
+    if (!problem) return;
+    let pipelineIds = problem.selectedSolutions[source];
+    if (modelComparison) problem.selectedSolutions[source].includes(pipelineId)
+        ? remove(problem.selectedSolutions[source], pipelineId)
+        : problem.selectedSolutions[source].push(pipelineId)
+    else
+        problem.selectedSolutions[source] = [pipelineId]
 
     // ensures results menu is in a valid state
     setSelectedResultsMenu(selectedResultsMenu);
 };
-
-// read-only abstraction layer for retrieving useful pipeline data
-export let pipelineAdapter = new Proxy({}, {
-    ownKeys() {
-        // grab all pipeline ids for results problem
-        let solutions = getResultsProblem().solutions;
-        return Object.keys(solutions).reduce((out, solver) => out.concat(Object.keys(solutions[solver])), []);
-    },
-    getOwnPropertyDescriptor() {
-        return {enumerable: true, configurable: true};
-    },
-    has(_, key) {
-        let solutions = getResultsProblem().solutions;
-        return key in solutions.rook || key in solutions.d3m
-    },
-
-    get(obj, pipelineID) {
-        let solutions = getResultsProblem().solutions;
-        if (pipelineID in solutions.rook) return {
-            get actualValues() {
-                return solutions.rook[pipelineID].predictor_values.actualvalues;
-            },
-            get fittedValues() {
-                return solutions.rook[pipelineID].predictor_values.fittedvalues;
-            },
-            get score() {return solutions.rook[pipelineID].score},
-            get target() {return solutions.rook[pipelineID].dependent_variable[0]},
-            get predictors() {return solutions.rook[pipelineID].predictors},
-            get description() {return solutions.rook[pipelineID].description[0]},
-            get task() {return solutions.rook[pipelineID].task[0]},
-            get model() {return solutions.rook[pipelineID].model_type[0]}
-        };
-
-        if (pipelineID in solutions.d3m) return {
-            get actualValues() {
-                return solutions.d3m.rookpipe.dvvalues;
-            },
-            get fittedValues() {
-                if ((solutions.d3m[pipelineID].predictedValues || {}).success)
-                    return solutions.d3m[pipelineID].predictedValues.data
-                        .map(item => parseFloat(item[solutions.d3m.rookpipe.depvar]))
-            },
-            get score() {return solutions.d3m[pipelineID].score},
-
-            get target() {return (solutions.d3m.rookpipe || {}).depvar},
-            get predictors() {return (solutions.d3m.rookpipe || {}).predictors},
-            get description() {return (solutions.d3m[pipelineID].pipeline || {}).description},
-            get task() {return solutions.d3m[pipelineID].status},
-            get model() {return `${(solutions.d3m[pipelineID].steps || []).length} steps`}
-        };
-
-        // no need to perform null check while accessing pipeline attributes
-        return {};
-    }
-});
 
 export let selectedResultsMenu = 'Problem Description';
 export let setSelectedResultsMenu = menu => {
@@ -2006,7 +1981,7 @@ export async function estimate() {
             if (response && 'warning' in response) return;
             let ravenID = 'raven ' + ravenPipelineID++;
             resultsProblem.solutions.rook[ravenID] = response;
-            if (selectedPipelines.size === 0) setSelectedPipeline(ravenID);
+            if (selectedPipelines.size === 0) setSelectedSolution(ravenID);
         });
 
     let datasetDocPath = resultsProblem.datasetDocPath || getSelectedDataset().datasetDocPath;
@@ -2203,66 +2178,6 @@ export async function endsession() {
     //}
 }
 
-/* Generates confusion table data and labels, given the expected and predicted values*/
-/* if a factor is passed, the resultant table will be 2x2 with respect to the factor */
-export function generateConfusionData(Y_true, Y_pred, factor=undefined) {
-    if (!Y_true || ! Y_pred) return;
-
-    // dvvalues are generally numeric
-    Y_true = Y_true.map(String);
-
-    // predvals are generally strings
-    Y_pred = Y_pred.map(String);
-
-    // combine actuals and predicted, and get all unique elements
-    let classes = [...new Set([...Y_true, ...Y_pred])].sort();
-    let allClasses = classes;
-
-    if (factor !== undefined) {
-        factor = String(factor);
-        Y_true = Y_true.map(obs => factor === obs ? factor : 'not ' + factor);
-        Y_pred = Y_pred.map(obs => factor === obs ? factor : 'not ' + factor);
-        classes = [...new Set([...Y_true, ...Y_pred])].sort()
-    }
-
-    // create a matrix of zeros
-    let data = Array.from({length: classes.length}, () => new Array(classes.length).fill(0));
-
-    // linearize the coordinate assignment stage
-    let indexOf = classes.reduce((out, clss, i) => {out[clss] = i; return out}, {})
-    // increment the data matrix at the class coordinates of true and pred
-    Y_true.forEach((_, i) => data[indexOf[Y_true[i]]][indexOf[Y_pred[i]]]++);
-
-    return {data, classes, allClasses};
-}
-
-/* generate an object containing accuracy, recall, precision, F1, given a 2x2 confusion data matrix */
-export function generatePerformanceData(confusionData2x2) {
-
-    var tp = confusionData2x2[0][0];
-    var fn = confusionData2x2[0][1];
-    var fp = confusionData2x2[1][0];
-    var tn = confusionData2x2[1][1];
-
-    var p = tp + fn;
-    var n = fp + tn;
-
-    let round = (number, digits) => Math.round(number * Math.pow(10, digits)) / Math.pow(10, digits)
-
-    return {
-        f1: round(2 * tp / (2 * tp + fp + fn), 2),
-        precision:  round(tp / (tp + fp), 2), // positive predictive value
-        recall: round(tp / (tp + fn), 2), // sensitivity, true positive rate
-        accuracy: round((tp + tn) / (p + n), 2),
-
-        // specificity: round(fp / (fp + tn), 2),
-        // 'true positive rate': round(tp / (tp + fn), 2), // already included with recall
-        // 'true negative rate': round(tn / (tn + fp), 2),
-        // 'false positive rate': round(fp / (fp + tn), 2),
-        // 'false negative rate': round(fn / (fn + tp), 2), // miss rate
-    }
-}
-
 export let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSquaredErrorAvg", "meanAbsoluteError"];  // array of metrics to sort low to high
 
 /**
@@ -2351,60 +2266,6 @@ function apiSession(context) {
     return {session_id: context};
 }
 
-
-/**
- *  Send a status message to the TA3 console
- */
-export function ta3_search_message(user_msg){
-  /*
-  let ta3_search_message = {'message': user_msg}
-
-  const end_search_url = 'ta3-search/send-reviewer-message';
-
-  try {
-      let res = m.request(end_search_url,
-                          {method: 'POST', data: ta3_search_message});
-      console.log('ta3_search_message succeeded:' + res);
-  } catch (err) {
-      console.log('ta3_search_message failed: ' + err);
-  }
-  */
-}
-
-export function test_msg_ta3_search(){
-  //end_ta3_search(true, 'it worked!');
-  //end_ta3_search(false, 'it failed!');
-  //ta3_search_message('just sending a message!');
-}
-
-/**
- *  End the TA3 search.  This sends a message
- *  to the ta3_search console as well as message
- *  for the console to exit with a:
- *  - return code 0 for success
- *  - return code -1 for failure
- *
- *  > is_success - boolean
- *  > user_msg - string sent to the console
- */
-export function end_ta3_search(is_success, user_msg){
-
-  // 6/21/2018 - removed from eval
-  /*
-  let end_search_msg = {'is_success': is_success,
-                        'message': user_msg}
-
-  const end_search_url = 'ta3-search/end-search';
-
-  try {
-      let res = m.request(end_search_url,
-                          {method: 'POST', data: end_search_msg});
-      console.log('end_ta3_search succeeded:' + res);
-  } catch (err) {
-      console.log('end_ta3_search failed: ' + err);
-  }
-  */
-}
 
 /**
  *  record user metadata
@@ -2505,12 +2366,16 @@ export function discovery(problems) {
             metric: undefined, // this is set below
             task: undefined, // this is set below
             subTask: 'taskSubtypeUndefined',
-            model: 'modelUndefined',
             meaningful: false,
             manipulations: manips,
             solutions: {
                 d3m: {},
                 rook: {}
+            },
+            selectedSource: undefined, // 'd3m' or 'rook'
+            selectedSolutions: {
+                d3m: undefined,
+                rook: undefined
             },
             tags: {
                 transformed: manipulate.getTransformVariables(manips), // this is used when updating manipulations pipeline
@@ -2614,6 +2479,18 @@ export let getSelectedDataset = () => datasets[selectedDataset];
 export let getSelectedProblem = () => selectedDataset && getSelectedDataset().problems[getSelectedDataset().selectedProblem];
 export let getResultsProblem = () => selectedDataset && getSelectedDataset().problems[getSelectedDataset().resultsProblem];
 
+export let getSelectedSolutions = source => {
+    let resultsProblem = getResultsProblem();
+    if (!resultsProblem) return [];
+
+    if (!source) return Object.keys(resultsProblem.selectedSolutions)
+        .flatMap(source => resultsProblem.selectedSolutions[source]
+            .map(id => resultsProblem.solutions[source][id]))
+
+    return resultsProblem.selectedSolutions[source]
+        .map(id => resultsProblem.solutions[source][id])
+};
+
 export let getNominalVariables = problem => {
     let selectedProblem = problem || getSelectedProblem();
     return [...new Set([
@@ -2621,6 +2498,11 @@ export let getNominalVariables = problem => {
         ...selectedProblem.tags.nominal])
     ];
 };
+
+export let getBaselineModels = problem => {
+    // TODO: filter found models with a trivial hyperparameter grid
+    return [...baselineModelTypes[problem.task], 'modelUndefined']
+}
 
 export function setSelectedProblem(problemID) {
     if (!problemID || getSelectedDataset().selectedProblem === problemID) return;
@@ -2643,6 +2525,11 @@ export function setSelectedProblem(problemID) {
     // will trigger the call to solver, if a menu that needs that info is shown
     setSolverPending(true);
     confusionFactor = undefined;
+}
+
+export function setResultsProblem(problemID) {
+    if (!problemID || getSelectedDataset().resultsProblem === problemID) return;
+    getSelectedDataset().resultsProblem = problemID;
 }
 
 export function getProblemCopy(problemSource) {
@@ -2725,349 +2612,7 @@ export function deleteProblem(preprocessID, version, problemID) {
 
 }
 
-export async function endAllSearches() {
-    console.log("Attempting to End All Searches");
-    console.log(allsearchId);
-    console.log(allsearchId[0]);
-    let res = await makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId: allsearchId[0]} );
-    if(allsearchId.length > 1){
-        for(let i = 1; i < allsearchId.length; i++) {
-            res = await makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId: allsearchId[i]} );
-        };
-    };
-    //allsearchId = [];
-}
-
-export async function stopAllSearches() {
-    let res = await makeRequest(D3M_SVC_URL + '/StopSearchSolutions', {searchId: allsearchId[0]} );
-    if(allsearchId.length > 1){
-        for(let i = 1; i < allsearchId.length; i++) {
-            res = await makeRequest(D3M_SVC_URL + '/StopSearchSolutions', {searchId: allsearchId[i]} );
-        };
-    };
-}
-
-/**
- *  Function takes as input the pipeline template information (currently problem) and returns a valid pipline template in json. This json is to be inserted into SearchSolutions. e.g., problem = {...}, template = {...}, inputs = [dataset_uri]
- */
-function makePipelineTemplate (problem) {
-    console.log('makePipelineTemplate problem:', problem);
-
-    let inputs = [];
-    let outputs = [];
-    let steps = [];
-
-    // if (problem) {
-    //     inputs = [{name: "dataset"}];
-    //     outputs = [{name: "dataset", data: "produce"}];
-    //     // write the primitive object to remove columns, then generic step to be filled in
-    //     steps = [primitiveStepRemoveColumns(problem), placeholderStep()];
-    // }
-    return {inputs, outputs, steps};
-
-    // example template: leave here for reference
-    /*
-"template": {
-    "inputs": [
-                {
-                    "name": "dataset"
-                }
-            ],
-    "outputs": [
-                {
-                    "name": "dataset",
-                    "data": "produce"
-                }
-            ],
-    "steps": [
-    {
-                    "primitive": {
-                    "primitive": {
-                        "id": "2eeff053-395a-497d-88db-7374c27812e6",
-                    "version": "0.2.0",
-                    "python_path": "d3m.primitives.datasets.RemoveColumns",
-                    "name": "Column remover",
-                    "digest": "85b946aa6123354fe51a288c3be56aaca82e76d4071c1edc13be6f9e0e100144"
-                        },
-                        "arguments": {
-                            "inputs": {
-                                "container": {
-                                    "data": "inputs.0"
-                                }
-                            }
-                        },
-                        "outputs": [
-                            {
-                                "id": "produce"
-                            }
-                        ],
-                        "hyperparams": {
-                        "columns": {
-  "value": {
-    "data": {
-      "raw": {
-        "list": {
-          "items": [
-            {
-              "int64": "2"
-            },
-            {
-              "int64": "3"
-            },
-            {
-              "int64": "4"
-            },
-            {
-              "int64": "5"
-            }
-          ]
-        }
-      }
-    }
-  }
-}
-                           },
-                        "users": []
-                }},{
-                    "placeholder": {
-                        "inputs": [{"data":"steps.0.produce"}],
-                        "outputs": [{"id":"produce"}]
-                    }
-                }]}
-                    */
-}
-
-// function builds a placeholder step for pipeline
-function placeholderStep() {
-    let step = {inputs: [{data: "steps.0.produce"}], outputs: [{id: "produce"}]};
-    return {placeholder: step};
-}
-
-// function builds a step in a pipeline to remove indices
-function primitiveStepRemoveColumns (problem) {
-    // looks like some TA2s need "d3mIndex"
-    let keep = [...problem.predictors, ...problem.targets, "d3mIndex"];
-
-    let indices = [];
-    Object.keys(problem.summaries).forEach((variable, i) => keep.includes(variable) && indices.push(i));
-
-    let primitive = {
-        id: "2eeff053-395a-497d-88db-7374c27812e6",
-        version: "0.2.0",
-        python_path: "d3m.primitives.datasets.RemoveColumns",
-        name: "Column remover",
-        digest: "85b946aa6123354fe51a288c3be56aaca82e76d4071c1edc13be6f9e0e100144"
-    };
-
-    let hpitems = {items: indices.map(index => ({int64: index.toString()}))};
-    let hplist = {list: hpitems};
-    let hpraw = {raw: hplist};
-    let hpdata = {data: hpraw};
-    let hpvalue = {value: hpdata};
-    let hyperparams = {columns: hpvalue};
-
-    let argdata = {data: "inputs.0"};
-    let argcontainer = {container: argdata};
-    let parguments = {inputs: argcontainer};
-    return {
-        primitive: {
-            primitive: primitive,
-            arguments: parguments,
-            outputs: [{id: "produce"}],
-            hyperparams: hyperparams,
-            users: []
-        }};
-}
-
-
-/**
-  Handle a websocket sent GetSearchSolutionResultsResponse
-  wrapped in a StoredResponse object
-*/
-export async function handleGetSearchSolutionResultsResponse(response1) {
-    if (response1 === undefined) {
-        console.log('GetSearchSolutionResultsResponse: Error.  "response1" undefined');
-        return;
-    }
-
-    // ----------------------------------------
-    // (1) Pull the solutionId
-    // ----------------------------------------
-    console.log('(1) Pull the solutionId');
-
-    // Note: the response.id becomes the Pipeline id
-    //
-    //
-    if (response1.id === undefined) {
-        console.warn('GetSearchSolutionResultsResponse: Error.  "response1.id" undefined');
-        return;
-    }
-    if (response1.response.solutionId === undefined) {
-        console.warn('GetSearchSolutionResultsResponse: Error.  "response1.response.solutionId" undefined');
-        return;
-    }
-    // let solutionId = response1.response.solutionId;
-
-    // ----------------------------------------
-    // (2) Update or Create the Pipeline
-    // ----------------------------------------
-    if (!ROOKPIPE_FROM_REQUEST) {
-        console.warn('---------- ERROR: ROOKPIPE_FROM_REQUEST not set!!!');
-    }
-
-    let solutions = getResultsProblem().solutions;
-    // Need to deal with (exclude) pipelines that are reported, but failed.  For approach, see below.
-    if (response1.id in solutions.d3m)
-        Object.assign(solutions.d3m[response1.id], response1);
-    else {
-        solutions.d3m[response1.id] = response1;
-        solutions.d3m[response1.id].score = 'scoring';
-    }
-
-    // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
-    // if(solutions.d3m[key].responseInfo.status.details == "Pipeline Failed")  {
-    //     continue;
-    // }
-    // if(solutions.d3m[key].progressInfo == "RUNNING")  {
-    //     continue;
-    // }
-
-    //adding rookpipe to the set of d3m solutions for the problem
-    solutions.d3m.rookpipe = Object.assign({}, ROOKPIPE_FROM_REQUEST);                // This is setting rookpipe for the entire table, but when there are multiple CreatePipelines calls, this is only recording latest values
-
-    // VJD: this is a third core API call that is currently unnecessary
-    //let pipelineid = PipelineCreateResult.pipelineid;
-    // getexecutepipelineresults is the third to be called
-    //  makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(solutions.d3m)});
-
-
-    if (selectedPipelines.size === 0) setSelectedPipeline(response1.id);
-
-    // Add pipeline descriptions
-    // TODO: this is redundant, check if can be deleted
-    Object.assign(solutions.d3m[response1.id], response1.data);
-    m.redraw();
-}
-
-
-/**
-  Handle a describeSolutionResponse sent via websockets
-*/
-async function handleDescribeSolutionResponse(response) {
-
-    if (response === undefined) {
-        console.log('handleDescribeSolutionResponse: Error.  "response" undefined');
-        return;
-    }
-    if (response.pipelineId === undefined) {
-        console.log('handleDescribeSolutionResponse: Error.  "pipelineId" undefined');
-        return;
-    }
-    console.log('---- handleDescribeSolutionResponse -----');
-    console.log(JSON.stringify(response));
-
-    // -------------------------------
-    // Update pipeline info....
-    // -------------------------------
-    let pipelineId = response.pipelineId;
-    delete response.pipelineId;
-    let pipelineInfo = getResultsProblem().solutions.d3m;
-
-    Object.assign(pipelineInfo[pipelineId], response);
-
-} // end: handleDescribeSolutionResponse
-
-
-/**
- Handle a getScoreSolutionResultsResponse send via websocket
- wrapped in a StoredResponse object
- */
-async function handleGetScoreSolutionResultsResponse(response) {
-    if (response === undefined) {
-        console.log('handleGetScoreSolutionResultsResponse: Error.  "response" undefined');
-        return;
-    }
-    if (response.is_finished === undefined) {
-        console.log('handleGetScoreSolutionResultsResponse: Error.  "response.data.is_finished" undefined');
-        return;
-    }
-    if (!response.is_finished) return;
-
-    let myscore;
-
-    try {
-        // This is very specific, the potential responses may vary greatly
-        //
-        myscore = response.response.scores[0].value.raw.double.toPrecision(3);
-    } catch (error) {
-        console.log(JSON.stringify(response));
-        alertError('Error in "handleGetScoreSolutionResultsResponse": ' + error);
-        return;
-    }
-    // Note: what's now the "res4DataId" needs to be sent to this function
-    //
-    let pipelineInfo = getResultsProblem().solutions.d3m;
-    pipelineInfo[response.pipeline_id].score = myscore;
-    m.redraw();
-} // end: handleGetScoreSolutionResultsResponse
-
-
-/**
-  Handle a GetProduceSolutionResultsResponse sent via websockets
-  -> parse response, retrieve data, plot data
-*/
-async function handleGetProduceSolutionResultsResponse(response){
-
-    if(response === undefined){
-      console.log('handleGetProduceSolutionResultsResponse: Error.  "response" undefined');
-      return;
-    }
-    if(response.pipelineId === undefined){
-      console.log('handleGetProduceSolutionResultsResponse: Error.  "pipelineId" undefined');
-      return;
-    }
-    console.log('---- handleGetProduceSolutionResultsResponse -----');
-    console.log(JSON.stringify(response));
-
-    // Note: UI update logic moved from generatePredictions
-    if (!response.is_finished){
-      console.log('-- GetProduceSolutionResultsResponse not finished yet... (returning) --');
-      return;
-    } else if (response.is_error){
-      console.log('-- GetProduceSolutionResultsResponse has error --')
-      console.log('response: ' + JSON.stringify(response));
-      console.log('----------------------------------------------');
-      return;
-    }
-
-    let hold = response.response.exposedOutputs;
-    let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
-    let hold3 = hold2.csvUri;
-
-    let responseOutputData = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
-
-    let pipelineInfo = getResultsProblem().solutions.d3m;
-    pipelineInfo[response.pipelineId].predictedValues = responseOutputData;
-
-} // end: handleGetProduceSolutionResultsResponse
-
-/*
-  Triggered at the end of GetSearchSolutionsResults
-*/
-async function handleENDGetSearchSolutionsResults() {
-
-    // stop spinner
-    buttonLadda['btnEstimate'] = false;
-    m.redraw()
-    // change status of buttons for estimating problem and marking problem as finished
-    buttonClasses.btnEstimate = 'btn-secondary';
-
-    task2_finished = true; // should this go here?
-
-    // stop the interval process
-}
-
-export function xhandleAugmentDataMessage(msg_data){
+export function handleAugmentDataMessage(msg_data){
 
   if (!msg_data) {
       console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
@@ -3173,7 +2718,7 @@ export function handleAugmentDataMessage(msg_data){
 
 let ravenPipelineID = 0;
 
-// takes as input problem in the form of a "discovered problem" (can also be user-defined), calls rooksolver, and stores result
+// takes as input problem, calls rooksolver, and stores result
 export async function callSolver(prob) {
     setSolverPending(false);
     let dataset = getSelectedDataset();
@@ -3185,7 +2730,12 @@ export async function callSolver(prob) {
 
     let solutions = getResultsProblem().solutions;
     solutions.rook[ravenID] = await makeRequest(ROOK_SVC_URL + 'solverapp', {prob, dataset_path: datasetPath});
-    if (selectedPipelines.size === 0) setSelectedPipeline(ravenID);
+
+    console.warn("#debug ravenID");
+    console.log(ravenID);
+
+
+    if (selectedPipelines.size === 0) setSelectedSolution(prob, 'rook', ravenID);
     console.log("callSolver response:", solutions.rook[ravenID]);
     m.redraw();
 }

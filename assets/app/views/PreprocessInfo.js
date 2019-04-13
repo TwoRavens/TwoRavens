@@ -1,6 +1,6 @@
 import m from 'mithril';
-import TextField from '../common/views/TextField';
-import Table from '../common/views/Table';
+import TextField from '../../common/views/TextField';
+import Table from '../../common/views/Table';
 
 
 export default class PreprocessInfo {

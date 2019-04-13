@@ -7,7 +7,6 @@ import {
     cdb,
     del,
     downloadIncomplete,
-    end_ta3_search,
     getSelectedDataset,
     hexToRgba,
     links,
@@ -22,6 +21,7 @@ import m from "mithril";
 import {bars, barsSubset, density} from "./plots";
 import $ from "jquery";
 import * as common from "../common/common";
+import {end_ta3_search} from "./solvers/d3m";
 
 var transform_data ={
     "preprocess_id":0,

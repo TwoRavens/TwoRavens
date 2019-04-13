@@ -698,7 +698,25 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
 };
 
 
+// builder for pebbles without labels
 export let pebbleBuilder = (attrs, context) => {
+    attrs.mutateNodes(attrs, context);
+
+    context.selectors.pebbles = context.selectors.pebbles.data(context.filtered.pebbles, _ => _);
+    context.selectors.pebbles.exit().remove();
+
+    let newPebbles = context.selectors.pebbles
+        .enter().append('svg:g')
+        .attr('id', pebble => pebble + 'biggroup');
+
+    context.selectors.pebbles = context.selectors.pebbles.merge(newPebbles);
+    pebbleBuilderCircles(attrs, context, newPebbles);
+    pebbleBuilderLabels(attrs, context, newPebbles);
+    pebbleBuilderPlots(attrs, context, newPebbles);
+};
+
+// builder for pebbles with labels
+export let pebbleBuilderLabeled = (attrs, context) => {
     attrs.mutateNodes(attrs, context);
 
     context.selectors.pebbles = context.selectors.pebbles.data(context.filtered.pebbles, _ => _);
