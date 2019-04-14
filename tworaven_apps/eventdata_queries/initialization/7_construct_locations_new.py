@@ -10,6 +10,9 @@ from random import shuffle
 
 batch = 1
 
+#define the key in the target dataset for latitude/longitude: this is used to search for the partitions
+docLat = "latitude"
+docLong = "longitude"
 
 def format_coordinate(document):
 
@@ -36,7 +39,7 @@ def process_partition(locations, partition, db):
 	   partition,
 	   {"TwoRavens_country": {"$exists": 0}} ]}
 	
-	for collection in ["acled_africa", "acled_asia", "acled_middle_east"]: #["gtd"]:#, "terrier"]:
+	for collection in ["mmad"]:#["acled_africa", "acled_asia", "acled_middle_east"]: #["gtd"]:#, "terrier"]:
 		matchZero = 0
 		matchMult = 0
 		emptyMatch = 0
@@ -49,7 +52,7 @@ def process_partition(locations, partition, db):
 			#~ print(doc)
 			#~ print("lat/long")
 			#~ print(doc["longitude"], " ", doc["latitude"])
-			queryMatch = {"$and": [{"Longitude": doc["LONGITUDE"]}, {"Latitude": doc["LATITUDE"]}]}
+			queryMatch = {"$and": [{"Longitude": doc[docLong]}, {"Latitude": doc[docLat]}]}
 			#~ print("query:")
 			#~ print(query)
 			match = locations["arcgis3"].find(queryMatch)
@@ -98,7 +101,7 @@ def reformat_database():
 
 	#~ partitions = [{"TwoRavens_country": country} for country in db.icews.distinct('TwoRavens_country') if country is not None]
 	partitions = []
-	step = 45
+	step = 90
 	for latitude in range(-90, 90, step):
 		for longitude in range(-180, 180, step):
 			part = {}
@@ -111,15 +114,15 @@ def reformat_database():
 			#~ else:
 				#~ part["longitude"] = {"$and": [{"$gte": longitude}, {"$lte": longitude + 45}]}
 			if latitude != 90-step:
-				part["$and"] = [{"LATITUDE": {"$gte": latitude}}, {"LATITUDE": {"$lt": latitude + step}}]
+				part["$and"] = [{docLat: {"$gte": latitude}}, {docLat: {"$lt": latitude + step}}]
 			else:
-				part["$and"] = [{"LATITUDE": {"$gte": latitude}}, {"LATITUDE": {"$lte": latitude + step}}]
+				part["$and"] = [{docLat: {"$gte": latitude}}, {docLat: {"$lte": latitude + step}}]
 			if longitude != 180-step:
-				part["$and"].append({"LONGITUDE": {"$gte": longitude}})
-				part["$and"].append({"LONGITUDE": {"$lt": longitude + step}})
+				part["$and"].append({docLong: {"$gte": longitude}})
+				part["$and"].append({docLong: {"$lt": longitude + step}})
 			else:
-				part["$and"].append({"LONGITUDE": {"$gte": longitude}})
-				part["$and"].append({"LONGITUDE": {"$lte": longitude + step}})
+				part["$and"].append({docLong: {"$gte": longitude}})
+				part["$and"].append({docLong: {"$lte": longitude + step}})
 			partitions.append(part)
 	#~ for collection in ["ged"]:#, "gtd", "terrier"]:
 		#~ if collection == "ged":
