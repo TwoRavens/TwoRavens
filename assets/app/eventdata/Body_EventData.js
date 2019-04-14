@@ -143,7 +143,7 @@ export default class Body_EventData {
                 sections: [
                     {value: 'Home', attrsInterface: {style: {'width': 'auto'}}}
                 ].concat(eventdata.selectedDataset ? [
-                    {value: 'Explore', id: 'btnExploreMode', attrsInterface: {style: {'width': 'auto'}}},
+                    {value: 'Discover', id: 'btnDiscoverMode', attrsInterface: {style: {'width': 'auto'}}},
                     {value: 'Subset', id: 'btnSubsetMode', attrsInterface: {style: {'width': 'auto'}}},
                     {value: 'Aggregate', attrsInterface: {style: {'width': 'auto'}}}
                 ] : [])
@@ -301,7 +301,7 @@ export default class Body_EventData {
     }
 
     leftpanel(mode) {
-        if (mode === 'home' || mode === 'explore') {
+        if (mode === 'home' || mode === 'discover') {
             common.setPanelOcclusion('left', `calc(2*${common.panelMargin} + 250px)`);
         }
 
@@ -511,7 +511,7 @@ export default class Body_EventData {
 
     rightpanel(mode) {
 
-        if (mode === 'home' || mode === 'explore') {
+        if (mode === 'home' || mode === 'discover') {
             common.setPanelOcclusion('left', window.innerWidth < 1200 ? `calc(${common.panelMargin}*2)` : '250px');
             common.setPanelOcclusion('right', window.innerWidth < 1200 ? `calc(${common.panelMargin}*2)` : '250px');
             return;
@@ -619,7 +619,7 @@ export default class Body_EventData {
 
     canvasContent() {
         //~ console.log("content mode", eventdata);
-        if (eventdata.selectedMode === "explore") {
+        if (eventdata.selectedMode === "discover") {
             var graphData = [];
             graphData.push(m('h2', "Global highest correlation"));
             for (var x = 0; x < 2; x ++) {

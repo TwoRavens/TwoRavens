@@ -129,6 +129,14 @@ class EventDataGetMetadataForm(forms.Form):
     def clean_collections(self):
         return self.cleaned_data.get('collections')
 
+class EventDataGetDiscoveryForm(forms.Form):
+    """ check if parameters are ok """
+    
+    collection = forms.CharField(required=True, widget=forms.Textarea)
+    limit = forms.IntegerField(required=True, min_value=0)
+    
+    def clean_collections(self):
+        return self.cleaned_data.get('collection')
 
 class EventDataGetManipulationForm(forms.Form):
     """ check if query submission parameters are ok"""

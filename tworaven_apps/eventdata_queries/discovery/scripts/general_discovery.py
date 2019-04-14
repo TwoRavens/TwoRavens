@@ -27,53 +27,6 @@ print(mongo_client.event_data.list_collection_names())
 selectedDB = "acled_middle_east"
 db = mongo_client.event_data[selectedDB]
 
-'''
-#to generalize this, read the formats from the initialization of eventdata
-interaction = "\
-10- SOLE MILITARY ACTION#\
-11- MILITARY VERSUS MILITARY#\
-12- MILITARY VERSUS REBELS#\
-13- MILITARY VERSUS POLITICAL MILITIA#\
-14- MILITARY VERSUS COMMUNAL MILITIA#\
-15- MILITARY VERSUS RIOTERS#\
-16- MILITARY VERSUS PROTESTERS#\
-17- MILITARY VERSUS CIVILIANS#\
-18- MILITARY VERSUS OTHER#\
-20- SOLE REBEL ACTION (e.g. base establishment)#\
-22- REBELS VERSUS REBELS#\
-23- REBELS VERSUS POLITICAL MILIITA#\
-24- REBELS VERSUS COMMUNAL MILITIA#\
-25- REBELS VERSUS RIOTERS#\
-26- REBELS VERSUS PROTESTERS#\
-27- REBELS VERSUS CIVILIANS#\
-28- REBELS VERSUS OTHERS#\
-30- SOLE POLITICAL MILITIA ACTION#\
-33- POLITICAL MILITIA VERSUS POLITICAL MILITIA#\
-34- POLITICAL MILITIA VERSUS COMMUNAL MILITIA#\
-35- POLITICAL MILITIA VERSUS RIOTERS#\
-36- POLITICAL MILITIA VERSUS PROTESTERS#\
-37- POLITICAL MILITIA VERSUS CIVILIANS#\
-38- POLITICAL MILITIA VERSUS OTHERS#\
-40- SOLE COMMUNAL MILITIA ACTION#\
-44- COMMUNAL MILITIA VERSUS COMMUNAL MILITIA#\
-45- COMMUNAL MILITIA VERSUS RIOTERS#\
-46- COMMUNAL MILITIA VERSUS PROTESTERS#\
-47- COMMUNAL MILITIA VERSUS CIVILIANS#\
-48- COMMUNAL MILITIA VERSUS OTHER#\
-50- SOLE RIOTER ACTION#\
-55- RIOTERS VERSUS RIOTERS#\
-56- RIOTERS VERSUS PROTESTERS#\
-57- RIOTERS VERSUS CIVILIANS#\
-58- RIOTERS VERSUS OTHERS#\
-60- SOLE PROTESTER ACTION#\
-66- PROTESTERS VERSUS PROTESTERS#\
-67- PROTESTERS VERSUS CIVILIANS#\
-68- PROTESTERS VERSUS OTHER#\
-78- OTHER ACTOR VERSUS CIVILIANS#\
-80- SOLE OTHER ACTION\
-"
-'''
-
 def minResStart(result):
     return min(result[2])
 '''
@@ -82,7 +35,7 @@ for x in range(len(interaction)):
     interaction[x] = interaction[x].split("-")[0]
 '''
 
-pathToSetup = "../eventdata_queries/"
+pathToSetup = "../../"	#path to eventdata_queries
 #open the format file
 aggregateQ = ""
 interaction = []
@@ -380,7 +333,7 @@ for im, ty in zip([globalPearsonResults, globalKendallResults, localPearsonFinal
         else:
             plt.plot(res.loc[:, img[1]].iloc[min(img[2]):max(img[2])+windowSize, :])
         plt.legend(img[1])
-        plt.savefig('images/' + ty + str(n) + '.png')
+        plt.savefig('../images/' + ty + str(n) + '.png')
 '''
 
 #cleanup results and save to file
@@ -437,7 +390,7 @@ for r in localKendallFinal:
 results["localKendall"] = localKendalSave
 
 #write to file
-with open(selectedDB + "_output.json", "w") as outFile:
+with open("../output/" + selectedDB + "_output.json", "w") as outFile:
     outFile.write(json.dumps(results, indent=4))
 
 
