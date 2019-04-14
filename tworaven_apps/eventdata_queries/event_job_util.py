@@ -473,6 +473,23 @@ class EventJobUtil(object):
             filename.replace('.json', ''): json.load(open(directory + os.sep + filename, 'r'), object_pairs_hook=OrderedDict) for filename in names
         }
 
+    @staticmethod
+    def get_ev_discovery(collection, limit=6):
+        directory = os.path.join(os.getcwd(), "tworaven_apps", "eventdata_queries", "discovery", "output")
+        names = os.listdir(directory)
+
+        if collection in names:     #TODO: need to check if discovery is supported by this collection
+             with open(directory + os.sep + collection + "_output.json") as input_file:
+                data = json.load(input_file, object_pairs_hook=OrderedDict)
+                #find highest and lowest in global and local
+                return {
+                    "max": {
+                        corType: [data[corType][:limit]] for corType in ["localKendall", "localPearson", "globalKendall", "globalPearson"]
+                    },
+                    "min": {
+                        corType: [data[corType][-limit:]] for corType in ["localKendall", "localPearons", "globalKendall", "globalPearson"]
+                    }
+                }
 
     @staticmethod
     def get_data(database, collection, method, query, distinct=None, host=None):

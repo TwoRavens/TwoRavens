@@ -68,6 +68,11 @@ urlpatterns = [
          views.api_get_metadata,
          name='api_get_metadata'),
 
+    # eventdata discovery
+    path(r'api/get-ev-discovery',
+        views.api_get_ev_discovery,
+        name='api_get_ev_discovery'),
+
     # general api to access TwoRavens data
     path(r'api/get-data',
          views.api_get_data,
