@@ -424,7 +424,7 @@ def api_get_ev_discovery(request):
     """Get eventdata discovery info"""
     success, json_req_obj = get_request_body_as_json(request)
     
-    if not sucess:
+    if not success:
         return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
         
     # check if data is valid
@@ -432,7 +432,7 @@ def api_get_ev_discovery(request):
     if not form.is_valid():
         return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
         
-    return JsonResponse({data: EventJobUtil.get_ev_discovery(json_req_obj["collection"], json_req_obj["limit"])})
+    return JsonResponse({'success': success, 'data': EventJobUtil.get_ev_discovery(json_req_obj["collection"], json_req_obj["limit"])})
 
 @csrf_exempt
 def api_get_data(request):
