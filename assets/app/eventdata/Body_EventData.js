@@ -653,6 +653,11 @@ export default class Body_EventData {
                 //~ }
                 //~ graphData.push(m('div', {style: "float:left; width: 50%;"}, innerDisp));
             //~ }
+
+            //test api endpoint
+            console.log("testing endpoint");
+            eventdata.loadDiscovery("acled_middle_east", 6);
+            
             return graphData;
         }
         

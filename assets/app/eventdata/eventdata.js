@@ -364,6 +364,35 @@ export let getSubsetMetadata = (dataset, subset) => {
     return {alignments, formats, columns};
 };
 
+export let getDiscoveryEventData = async body => m.request({
+    url: mongoURL + 'get-ev-discovery',
+    method: "POST",
+    data: body
+}).then(response => {
+    if (!response.success) throw response;
+    return response.data;
+});
+
+export let loadDiscovery = async (collection, limit) => {
+    let onError = err => {
+        if (err === 'no records matched') alertError("No records match your subset. Plots will not be updated.");
+        else console.error(err);
+    };
+
+    await Promise.all(
+    [
+        getDiscoveryEventData(
+        {
+            "collection": collection,
+            "limit": limit
+        }
+        ).then(response => {
+            console.log(response);
+        })
+    ]).catch(onError);
+    console.log("finished getting discovery data");
+};
+
 export let getData = async body => m.request({
     url: mongoURL + 'get-eventdata',
     method: 'POST',
