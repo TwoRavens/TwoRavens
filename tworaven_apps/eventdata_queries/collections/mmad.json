@@ -1,0 +1,105 @@
+{
+    "name": "Mass Mobilization in Autocracies Database (MMAD)",
+    "key": "mmad",
+    "description": "The Mass Mobilization in Autocracies Database (MMAD) contains sub-national data on mass mobilization events in autocracies worldwide. It includes both instances of anti- and pro-regime protest at the level of cities with daily resolution.",
+    "interval": "2002-2015",
+    "codebook": "https://mmadatabase.org/download/282/",
+    "download": "https://mmadatabase.org/download/298/",
+    "host": "TwoRavens",
+    "subsets": {
+        "Date": {
+            "type": "date",
+            "measureType": "unit",
+            "structure": "point",
+            "columns": ["TwoRavens_start date"]
+        },
+        "Location": {
+            "type": "discrete_grouped",
+            "group_by": "region",
+            "columns": ["TwoRavens_country"]
+        },
+        "Coordinates": {
+            "type": "coordinates",
+            "columns": ["latitude", "longitude"]
+        },
+        "Side": {
+            "type": "discrete",
+            "measureType": "accumulator",
+            "columns": ["side"]
+        },
+        "Number of Reports": {
+            "type": "continuous",
+            "buckets": 2,
+            "columns": ["num_reports"]
+        },
+        "Max scope": {
+            "type": "discrete",
+            "measureType": "accumulator",
+            "columns": ["max_scope"]
+        },
+        "Max Violence": {
+            "type": "discrete",
+            "measureType": "accumulator",
+            "columns": ["max_partviolence"]
+        },
+        "Max Level of Official Security Engagement": {
+            "type": "discrete",
+            "measureType": "accumulator",
+            "columns": ["max_secengagement"]
+        },
+        "Mean Average of Participants": {
+            "type": "continuous",
+            "buckets": 3,
+            "columns": ["mean_avg_numparticipants"]
+        }
+    },
+    "columns": [
+        "cowcode",
+        "location",
+        "asciiname",
+        "longitude",
+        "latitude",
+        "event_date",
+        "side",
+        "num_reports",
+        "max_scope",
+        "max_partviolence",
+        "max_secengagement",
+        "mean_avg_numparticipants"
+    ],
+    "columns_constructed": [
+        "TwoRavens_event_date",
+        "TwoRavens_date info",
+        "TwoRavens_start date",
+        "TwoRavens_end date",
+        "TwoRavens_country",
+        "TwoRavens_address",
+        "TwoRavens_city",
+        "TwoRavens_postal",
+        "TwoRavens_postal_ext",
+        "TwoRavens_region",
+        "TwoRavens_subregion"
+    ],
+    "alignments": {
+        "TwoRavens_start date": "date",
+        "latitude": "latitude",
+        "longitude": "longitude",
+        "TwoRavens_country": "country"
+    },
+    "formats": {
+        "TwoRavens_country": "ISO-3",
+        "side": "mmad_side",
+        "max_scope": "mmad_scope",
+        "max_partviolence": "mmad_violence",
+        "max_secengagement": "mmad_part"
+    },
+    "citations": [
+    {
+        "author": "Weidmann, Nils B. and Espen Geelmuyden Rød",
+        "year": 2017,
+        "title": "The Internet and Political Protest in Autocracies",
+        "url": "https://mmadatabase.org/download/118/",
+        "note": "Oxford University Press"
+    }
+    ]
+}

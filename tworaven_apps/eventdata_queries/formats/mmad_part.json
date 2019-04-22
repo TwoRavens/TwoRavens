@@ -1,0 +1,7 @@
+{
+    "NA": "no report of official security forces engagement",
+    "0": "explicit report of no present",
+    "1": "reports of presence",
+    "2": "reports of physical intervention; includes crowd dispersal, arrests, and beatings, but excludes lethal intervention",
+    "3": "reports of lethal intervention"
+}
