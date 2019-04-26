@@ -255,7 +255,7 @@ export function set_mode(mode) {
             buildDatasetPreprocess(dataset).then(response => {
                 if (!response.success) alertLog(response.message)
                 else {
-                    dataset.summaries = response.data.variables;
+                    app.setVariableSummaries(response.data.variables);
                     dataset.problems = discovery(response.data.dataset.discovery);
                 }
             });
@@ -302,7 +302,7 @@ export let buildDatasetPreprocess = async dataset => await getData({
 }));
 
 export let buildProblemPreprocess = async (dataset, problem) => problem.manipulations.length === 0
-    ? dataset.summaries
+    ? variableSummaries
     : await getData({
         method: 'aggregate',
         query: JSON.stringify(queryMongo.buildPipeline(
@@ -392,29 +392,25 @@ export let setLeftTab = (tab) => {
 
 export let setLeftTabHidden = tab => leftTabHidden = tab;
 
-// panelWidth is meant to be read only
-export let panelWidth = {
-    'left': '0',
-    'right': '0'
-};
-
 export let updateRightPanelWidth = () => {
-    if (is_explore_mode) panelWidth.right = `calc(${common.panelMargin}*2 + 16px)`;
-    // else if (is_model_mode && !selectedProblem) panelWidth.right = common.panelMargin;
+    if (is_explore_mode) common.panelOcclusion.right = `calc(${common.panelMargin}*2 + 16px)`;
+    // else if (is_model_mode && !selectedProblem) common.panelOcclusion.right = common.panelMargin;
     else if (common.panelOpen['right']) {
         let tempWidth = {
             'model': modelRightPanelWidths[rightTab],
             'explore': exploreRightPanelWidths[rightTabExplore]
         }[currentMode];
 
-        panelWidth['right'] = `calc(${common.panelMargin}*2 + ${tempWidth})`;
+        common.panelOcclusion['right'] = `calc(${common.panelMargin}*2 + ${tempWidth})`;
     }
-    else panelWidth['right'] = `calc(${common.panelMargin}*2 + 16px)`;
+    else common.panelOcclusion['right'] = `calc(${common.panelMargin}*2 + 16px)`;
+    console.warn("#debug common.panelOcclusion");
+    console.log(common.panelOcclusion);
 };
 let updateLeftPanelWidth = () => {
     if (common.panelOpen['left'])
-        panelWidth['left'] = `calc(${common.panelMargin}*2 + ${modelLeftPanelWidths[leftTab]})`;
-    else panelWidth['left'] = `calc(${common.panelMargin}*2 + 16px)`;
+        common.panelOcclusion['left'] = `calc(${common.panelMargin}*2 + ${modelLeftPanelWidths[leftTab]})`;
+    else common.panelOcclusion['left'] = `calc(${common.panelMargin}*2 + 16px)`;
 };
 
 // minor quality of life, the focused panel gets +1 to the z-index. Set whenever a panel is clicked
@@ -965,7 +961,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     //
     let loadPreprocessData = res => {
         priv = res.data.dataset.private || priv;
-        getSelectedDataset().summaries = res.data.variables;
+        setVariableSummaries(res.data.variables);
         return res.data;
     };
 
@@ -1027,7 +1023,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         let dataset = getSelectedDataset();
         // assign discovered problems into problems set, keeping the d3m problem
         Object.assign(dataset.problems, discovery(resPreprocess.dataset.discovery));
-        dataset.variablesInitial = Object.keys(dataset.summaries);
+        dataset.variablesInitial = Object.keys(variableSummaries);
 
         // Kick off discovery button as green for user guidance
         if (!task1_finished) buttonClasses.btnDiscover = 'btn-success'
@@ -1081,7 +1077,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         let targets = res.inputs.data
             .flatMap(source => source.targets.map(targ => targ.colName));
         let predictors = swandive
-            ? Object.keys(getSelectedDataset().summaries)
+            ? Object.keys(variableSummaries)
                 .filter(column => column !== 'd3mIndex' && !targets.includes(column))
             : resDataDocument.dataResources // if swandive false, then datadoc has column labeling
                 .filter(resource => resource.resType === 'table')
@@ -1117,8 +1113,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
                 time: [],
                 nominal: [],
                 loose: [] // variables displayed in the force diagram, but not in any groups
-            },
-            summaries: getSelectedDataset().summaries
+            }
         };
 
         // add the default problems to the list of problems
@@ -1350,6 +1345,8 @@ export let buildForceData = problem => {
 
     return {pebbles, groups, groupLinks};
 };
+
+export let forceDiagramNodesReadOnly = {};
 
 export let forceDiagramState = {
     builders: [pebbleBuilderLabeled, groupBuilder, linkBuilder, groupLinkBuilder],
@@ -1669,7 +1666,7 @@ function CreateProblemDefinition(problem) {
             datasetId: selectedDataset,
             targets: problem.targets.map((target, resourceId) => ({
                 resourceId: resourceIdFromProblemDoc,
-                columnIndex: Object.keys(getSelectedProblem().summaries).indexOf(target),  // Adjusted to match dataset doc
+                columnIndex: Object.keys(variableSummaries).indexOf(target),  // Adjusted to match dataset doc
                 columnName: target
             }))
         }
@@ -1695,7 +1692,7 @@ function CreateProblemSchema(problem){
                     datasetId: selectedDataset,
                     targets: problem.targets.map((target, resourceId) => ({
                         resourceId: resourceIdFromDatasetDoc,
-                        columnIndex: Object.keys(getSelectedProblem().summaries).indexOf(target),
+                        columnIndex: Object.keys(variableSummaries).indexOf(target),
                         columnName: target
                     }))
                 }],
@@ -2097,36 +2094,6 @@ export function getVarSummary(d) {
         .reduce((out, key) => Object.assign(out, {[key]: data[key]}), {})
 }
 
-export let popoverContent = node => {
-    if (swandive || !node) return;
-
-    let text = '<table class="table table-sm table-striped" style="margin:-10px;"><tbody>';
-    let [rint, prec] = [d3.format('r'), (val, int) => (+val).toPrecision(int).toString()];
-    let div = (field, name, val) => {
-        if ((field != 'NA' && ((field && !isNaN(field)) || (val && !isNaN(val)))))
-            text += `<tr><th>${name}</th><td><p class="text-left" style="height:10px;">${val || field}</p></td></tr>`;
-    };
-    node.labl != '' && div(node.labl, 'Label');
-    div(node.mean, 'Mean', priv && node.meanCI ?
-        `${prec(node.mean, 2)} (${prec(node.meanCI.lowerBound, 2)} - ${prec(node.meanCI.upperBound, 2)})` :
-        prec(node.mean, 4));
-    div(node.median, 'Median', prec(node.median, 4));
-    div(node.mode, 'Most Freq');
-    div(node.freqmode, 'Occurrences',  rint(node.freqmode));
-    div(node.mid, 'Median Freq');
-    div(node.freqmid, 'Occurrences', rint(node.freqmid));
-    div(node.fewest, 'Least Freq');
-    div(node.freqfewest, 'Occurrences', rint(node.freqfewest));
-    div(node.sd, 'Stand Dev', prec(node.sd, 4));
-    div(node.max, 'Maximum', prec(node.max, 4));
-    div(node.min, 'Minimum', prec(node.min, 4));
-    div(node.invalid, 'Invalid', rint(node.invalid));
-    div(node.valid, 'Valid', rint(node.valid));
-    div(node.uniques, 'Uniques', rint(node.uniques));
-    div(node.herfindahl, 'Herfindahl', prec(node.herfindahl, 4));
-    return text + '</tbody></table>';
-};
-
 /**
    converts color codes
 */
@@ -2391,12 +2358,12 @@ export function discovery(problems) {
     }, {});
 
     let dataset = getSelectedDataset();
+    // TODO: metric/task should be set when problem is selected, after summaries is computed
     Object.keys(problems)
         .filter(problemID => problems[problemID].manipulations.length === 0)
         .forEach(problemID => Object.assign(problems[problemID], {
-            summaries: dataset.summaries,
-            metric: dataset.summaries[problems[problemID].targets[0]].plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
-            task: dataset.summaries[problems[problemID].targets[0]].plottype === "bar" ? 'classification' : 'regression'
+            metric: variableSummaries[problems[problemID].targets[0]].plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
+            task: variableSummaries[problems[problemID].targets[0]].plottype === "bar" ? 'classification' : 'regression'
         }));
 
     // construct preprocess for all problems with manipulations
@@ -2453,6 +2420,15 @@ export function connectAllForceDiagram() {
 export let datasets = {};
 export let selectedDataset;
 
+// TODO: apply label in this setter?
+export let setVariableSummaries = state => {
+    variableSummaries = state;
+
+    // quality of life
+    Object.keys(variableSummaries).forEach(variable => variableSummaries[variable].name = variable);
+}
+export let variableSummaries = {};
+
 export let setSelectedDataset = datasetID => {
     if (!(datasetID in datasets)) {
         datasets[datasetID] = {
@@ -2494,7 +2470,7 @@ export let getSelectedSolutions = source => {
 export let getNominalVariables = problem => {
     let selectedProblem = problem || getSelectedProblem();
     return [...new Set([
-        ...Object.keys(selectedProblem.summaries).filter(variable => selectedProblem.summaries[variable].nature === 'nominal'),
+        ...Object.keys(variableSummaries).filter(variable => variableSummaries[variable].nature === 'nominal'),
         ...selectedProblem.tags.nominal])
     ];
 };
@@ -2506,19 +2482,27 @@ export let getBaselineModels = problem => {
 
 export function setSelectedProblem(problemID) {
     if (!problemID || getSelectedDataset().selectedProblem === problemID) return;
-    getSelectedDataset().selectedProblem = problemID;
+    let dataset = getSelectedDataset();
+    dataset.selectedProblem = problemID;
+    let problem = getSelectedProblem();
 
     updateRightPanelWidth();
 
     // if a constraint is being staged, delete it
     manipulate.setConstraintMenu(undefined);
 
-    let subsetMenu = [...getSelectedDataset().hardManipulations, ...getSelectedProblem().manipulations];
+    let problemPipeline = [...getSelectedDataset().hardManipulations, ...getSelectedProblem().manipulations];
     let countMenu = {type: 'menu', metadata: {type: 'count'}};
-    manipulate.loadMenu(subsetMenu, countMenu).then(count => {
-        manipulate.setTotalSubsetRecords(count);
-        m.redraw();
-    });
+
+    // update number of records
+    manipulate.loadMenu(problemPipeline, countMenu)
+        .then(manipulate.setTotalSubsetRecords)
+        .then(m.redraw);
+
+    // update preprocess
+    buildProblemPreprocess(dataset, problem)
+        .then(setVariableSummaries)
+        .then(m.redraw);
 
     resetPeek();
 

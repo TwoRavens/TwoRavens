@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {TreeAggregate, TreeSubset, TreeTransform, TreeImputation} from '../views/JQTrees';
+import {TreeAggregate, TreeSubset, TreeTransform, TreeImputation} from '../views/QueryTrees';
 import CanvasContinuous from '../canvases/CanvasContinuous';
 import CanvasDate from '../canvases/CanvasDate';
 import CanvasDiscrete from '../canvases/CanvasDiscrete';
@@ -23,6 +23,7 @@ import hopscotch from 'hopscotch';
 import CanvasImputation from "../canvases/CanvasImputation";
 import {alertLog, alertError} from "../app";
 import Icon from "../views/Icon";
+import Table from "../../common/views/Table";
 
 export function menu(compoundPipeline, pipelineId) {
 
@@ -173,7 +174,7 @@ export function varList() {
                 selectedVariables = [...constraintPreferences.menus.Equation.usedTerms.variables];
             if (constraintPreferences.type === 'Expansion') {
                 variables = [...new Set([
-                    ...Object.keys(app.getSelectedDataset().summaries),
+                    ...Object.keys(app.variableSummaries),
                     ...getTransformVariables(partialPipeline)
                 ])];
                 selectedVariables = Object.keys(constraintPreferences.menus.Expansion.variables || {});
@@ -206,7 +207,8 @@ export function varList() {
             callback: ['transform', 'imputation'].includes(constraintMenu.type)
                 ? variable => constraintPreferences.select(variable) // the select function is defined inside CanvasTransform
                 : variable => setConstraintColumn(variable, constraintMenu.pipeline),
-            popup: {content: variable => app.popoverContent(variableMetadata[variable])},
+            popup: x => m('div', m('h4', 'Summary Statistics for ' + x), m(Table, {attrsAll: {class: 'table-sm'}, data: app.getVarSummary(app.variableSummaries[x])})),
+            popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
             attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
             attrsAll: {
                 style: {
@@ -542,7 +544,7 @@ export let setQueryUpdated = async state => {
 
         app.buildProblemPreprocess(selectedDataset, selectedProblem)
             .then(summaries => {
-                if (summaries) selectedProblem.summaries = summaries
+                if (summaries) app.variableSummaries = summaries
             }).then(m.redraw);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};

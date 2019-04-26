@@ -241,11 +241,11 @@ solver <- function(everything) {
 # ))
 
 # basic regression
-jsonlite::toJSON(solver(list(
-  dataset_path='/ravens_volume/test_data/185_baseball/TRAIN/dataset_TRAIN/tables/learningData.csv',
-  problem='{"targets": ["Doubles", "RBIs"], "predictors": ["At_bats", "Triples"], "task": "regression"}',
-  method="lm"
-)))
+# jsonlite::toJSON(solver(list(
+#   dataset_path='/ravens_volume/test_data/185_baseball/TRAIN/dataset_TRAIN/tables/learningData.csv',
+#   problem='{"targets": ["Doubles", "RBIs"], "predictors": ["At_bats", "Triples"], "task": "regression"}',
+#   method="lm"
+# )))
 
 # should error with a friendly prompt to install the package
 # jsonlite::toJSON(solver(list(

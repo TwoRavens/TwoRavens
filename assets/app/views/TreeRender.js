@@ -49,13 +49,16 @@ export let renderNodeFactory = callbacks => (datum, data) => m('div', {
 
         draggable: callbacks.draggable && callbacks.draggable(datum, data),
         ondragover: callbacks.dragover && ((e) => callbacks.dragover(datum, data, e)),
+        ondragleave: callbacks.dragleave && ((e) => callbacks.dragleave(datum, data, e)),
         ondragstart: callbacks.dragstart && ((e) => callbacks.dragstart(datum, data, e)),
         ondragend: callbacks.dragend && ((e) => callbacks.dragend(datum, data, e)),
-        ondrop: callbacks.drop && ((e) => callbacks.drop(datum, data, e))
+        ondrop: callbacks.drop && ((e) => callbacks.drop(datum, data, e)),
+
+        oncreate({dom}) {dom.style.border = '3px solid transparent'}
     },
     datum.editable !== false ? [
         // logical button
-        data.indexOf(datum) !== 0 && datum.show_op && m(Button, {
+        data.indexOf(datum) !== 0 && datum.show_op !== false && m(Button, {
             'class': 'btn-xs',
             style: 'margin:1px',
             onclick: callbacks.logical && (() => callbacks.logical(datum, data))

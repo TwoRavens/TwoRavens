@@ -196,7 +196,7 @@ function primitiveStepRemoveColumns(problem) {
     let keep = [...problem.predictors, ...problem.targets, "d3mIndex"];
 
     let indices = [];
-    Object.keys(problem.summaries).forEach((variable, i) => keep.includes(variable) && indices.push(i));
+    Object.keys(variableSummaries).forEach((variable, i) => keep.includes(variable) && indices.push(i));
 
     let primitive = {
         id: "2eeff053-395a-497d-88db-7374c27812e6",

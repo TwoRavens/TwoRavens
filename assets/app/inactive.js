@@ -1,7 +1,7 @@
 import {
     alertError,
     alertWarn,
-    allResults,
+    allResults, default as app,
     byId,
     callHistory,
     cdb,
@@ -330,7 +330,7 @@ export function subsetSelect(btn) {
     var myParams = $.extend(true, {}, zparams);
     var myTrans = $.extend(true, [], trans);
     var myForce = $.extend(true, [], forceToggle);
-    var myPreprocess = $.extend(true, {}, getSelectedDataset().summaries);
+    var myPreprocess = $.extend(true, {}, app.variableSummaries);
     var myLog = $.extend(true, [], logArray);
     var myHistory = $.extend(true, [], callHistory);
 

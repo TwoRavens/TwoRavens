@@ -140,6 +140,9 @@ export class TreeTransform {
     }
 }
 
+let datumSource = undefined;
+let dataSource = undefined;
+
 export class TreeSubset {
     selectAll(subsetTree, abstractQuery, state) {
         if (Array.isArray(abstractQuery)) abstractQuery.forEach(element => this.selectAll(subsetTree, element, state));
@@ -198,23 +201,27 @@ export class TreeSubset {
                     // Subset and Group may be moved
                     return (['rule', 'group'].includes(datum.type));
                 },
-                dragover: (datum, _, e) => {
+                dragover(datum, _, e) {
+                    let position = 'inside';
+
+                    if (e.offsetY <= 5) position = 'before';
+                    if (e.offsetY >= e.target.clientHeight - 5) position = 'after';
+
                     let canMove = (moved_node, target_node) => {
-                        // TODO: compute based on e
-                        let position = 'inside';
+                        if (moved_node === target_node) return false;
 
                         // Cannot move to uneditable queries
                         if ('editable' in target_node && !target_node.editable) return false;
 
-                        if (moved_node.subset === 'link') return position === 'after' && target_node.subset === 'link';
-                        if (moved_node.subset === 'node') return position === 'after' && target_node.subset === 'node';
+                        if (moved_node.subset === 'link') return ['before', 'after'].includes(position) && target_node.subset === 'link';
+                        if (moved_node.subset === 'node') return ['before', 'after'].includes(position) && target_node.subset === 'node';
 
                         // Categories may be reordered or swapped between similar subsets
                         if (['categorical', 'categorical_grouped'].indexOf(moved_node.type) !== -1) {
-                            return position === 'after' && target_node.parent.name === moved_node.parent.name;
+                            return ['before', 'after'].includes(position) && target_node.parent.name === moved_node.parent.name;
                         }
                         // Rules may be moved next to another rule or grouping
-                        if (position === 'after' && (target_node.type === 'rule' || target_node.type === 'group')) {
+                        if (['before', 'after'].includes(position) && (target_node.type === 'rule' || target_node.type === 'group')) {
                             return true;
                         }
                         // Rules may be moved inside a group or root
@@ -223,18 +230,54 @@ export class TreeSubset {
                         }
                         return false;
                     };
-                    if (canMove(this.dragSource, datum))
-                        e.preventDefault()
-                },
-                dragstart: datum => this.dragSource = datum,
-                dragend: () => this.dragSource = undefined,
-                drop: (datum, data, e) => {
-                    let position = 'inside';
 
-                    this.dragSource.data.splice(this.dragSource.data.indexOf(this.dragSource.datum), 1);
-                    if (position === 'inside') datum.children.unshift(this.dragSource.datum);
-                    if (position === 'after') data.splice(data.indexOf(datum), 0, this.dragSource.datum);
-                    if (position === 'before') data.splice(data.indexOf(datum) + 1, 0, this.dragSource.datum);
+                    e.target.style.border = '3px solid transparent';
+
+                    if (canMove(datumSource, datum)) {
+                        e.preventDefault();
+                        let border = '3px solid black';
+
+                        if (position === 'before') {
+                            e.target.style.borderBottom = '';
+                            e.target.style.border = '3px solid transparent';
+                            e.target.style.borderTop = border;
+                        }
+                        if (position === 'inside') {
+                            e.target.style.borderTop = '';
+                            e.target.style.borderBottom = '';
+                            e.target.style.border = border;
+                        }
+                        if (position === 'after') {
+                            e.target.style.borderTop = '';
+                            e.target.style.border = '3px solid transparent';
+                            e.target.style.borderBottom = border;
+                        }
+
+                    }
+
+                },
+                dragleave(datum, data, e) {
+                    e.target.style.border = '3px solid transparent';
+                },
+                dragstart(datum, data) {
+                    datumSource = datum; // child
+                    dataSource = data; // parent
+                },
+                dragend() {
+                    datumSource = undefined;
+                    dataSource = undefined;
+                },
+                drop(datumTarget, dataTarget, e) {
+                    e.target.style.border = '3px solid transparent';
+
+                    let position = 'inside';
+                    if (e.offsetY <= 5) position = 'before';
+                    if (e.offsetY >= e.target.clientHeight - 5) position = 'after';
+
+                    dataSource.splice(dataSource.indexOf(datumSource), 1);
+                    if (position === 'inside') datumTarget.children.unshift(datumSource);
+                    if (position === 'before') dataTarget.splice(dataTarget.indexOf(datumTarget), 0, datumSource);
+                    if (position === 'after') dataTarget.splice(dataTarget.indexOf(datumTarget) + 1, 0, datumSource);
 
                     if (!IS_EVENTDATA_DOMAIN) manipulate.setQueryUpdated(true);
                 },

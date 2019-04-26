@@ -1672,9 +1672,8 @@ export async function plot(plotNodes, plottype="", problem={}) {
     let jsonarr = [];
 
     if(plotNodes.length===0) {
-        let summaries = app.getSelectedDataset().summaries;
-        myy = summaries[problem.target[0]];
-        myx = problem.predictors.map(predictor => summaries[predictor]);
+        myy = app.variableSummaries[problem.target[0]];
+        myx = problem.predictors.map(predictor => app.variableSummaries[predictor]);
     } else {
         myx[0] = "oneshot"; // necessary to work out the looping
         mypn=plotNodes;

@@ -62,12 +62,13 @@ export function density(node, div, priv) {
         .ticks(5);
     var yAxis = d3.axisLeft()
         .scale(y);
+    let rangeX = x.range();
     var brush = d3.brushX()
-        .extent([[x.range()[0], node.subsetrange[0]], x.range()[1], node.subsetrange[1]])
+        .extent([[rangeX[0], node.subsetrange[0]], rangeX[1], node.subsetrange[1]])
         .on("brush", brushed);
     var brush2 = d3.brushX()
         // possibly broken in transition to D3 V4
-        .extent([[x.range()[0], node.subsetrange[0]], x.range()[1], node.subsetrange[1]])
+        .extent([[rangeX[0], node.subsetrange[0]], rangeX[1], node.subsetrange[1]])
         .on("brush", brushed2);
     var area = d3.area()
         .curve(d3.curveMonotoneX)
@@ -158,13 +159,14 @@ export function density(node, div, priv) {
 
         plotsvg.append("text")
             .attr("id", "range2") // this is bad practice, id is not unique
-            .attr('class','x1val')
+            .attr('class', 'x1val')
             .attr("x", 25)
             .attr("y", height + 50)
-            .text( _ => {
-                  let returnval = "x1: ".concat((+node.mean).toPrecision(4));
-               return returnval});
-        
+            .text(_ => {
+                let returnval = "x1: ".concat((+node.mean).toPrecision(4));
+                return returnval
+            });
+
 
         // create tick marks at all zscores in the bounds of the data
         var lineFunction = d3.line()
@@ -1086,7 +1088,6 @@ export function barsSubset(node) {
 }
 
 export function densityNode(node, obj, radius, explore) {
-    var myname = node.name.toString().concat("nodeplot");
 
     d3.select(obj).selectAll("svg").remove();
 
@@ -1134,7 +1135,6 @@ export function densityNode(node, obj, radius, explore) {
         .insert("svg", ":first-child")
         .attr("x", -40) // NOTE: Not sure exactly why these numbers work, but these hardcoded values seem to position the plot inside g correctly.  this shouldn't be hardcoded in the future
         .attr("y", -45)
-        .attr("id", () => myname)
         .style("width", width)
         // .style("height", height) // MIKE: I commented this because the plots were getting cut off in explore mode
         .append("g")
@@ -1148,8 +1148,6 @@ export function densityNode(node, obj, radius, explore) {
 }
 
 export function barsNode(node, obj, radius, explore) {
-
-    var myname = node.name.toString().concat("nodeplot");
 
     d3.select(obj).selectAll("svg").remove();
 
@@ -1216,9 +1214,8 @@ export function barsNode(node, obj, radius, explore) {
         .insert("svg", ":first-child")
         .attr("x", -40)
         .attr("y", -45)
-        .attr("id", () => myname)
         .style("width", width) // set height to the height of #main.left
-        .style("height", height)
+        // .style("height", height)
         .append("g")
         .attr("transform", "translate(" + left + "," + top + ")");
 

@@ -15,25 +15,13 @@ import {alertError, alertLog} from "../app";
 //     type: 'rule' || 'query' || 'group
 //     subset: 'date' || 'dyad' || 'discrete' || 'discrete_grouped' || 'coordinates' || 'custom' (if this.type === 'rule')
 //     name: '[title]',         // 'Subsets', 'Group #', '[Selection] Subset' or tag name
-//     show_op: true,           // If true, show operation menu element
+//     show_op: false,           // If false, operation button ('and', 'or') will not be rendered
 //     operation: 'and',        // Stores preference of operation menu element
 //     children: [],            // If children exist
 //     negate: false,           // If exists, have a negation button
 //     editable: true,          // If false, operation cannot be edited
 //     cancellable: false       // If exists and false, disable the delete button
 // }
-
-// don't show operator button on first element of any group
-export function hideFirst(data) {
-    for (let child_id in data) {
-        let child = data[child_id];
-        if ('children' in child) {
-            child.children = hideFirst(child.children);
-        }
-        child['show_op'] = child_id !== "0";
-    }
-    return data;
-}
 
 export function addGroup(pipelineId, step) {
 
@@ -57,9 +45,6 @@ export function addGroup(pipelineId, step) {
             removeIds.push(child_id);
         }
     }
-    if (movedChildren.length > 0) {
-        movedChildren[0]['show_op'] = false;
-    }
 
     // Delete elements from root directory that are moved
     for (let i = removeIds.length - 1; i >= 0; i--) {
@@ -75,11 +60,7 @@ export function addGroup(pipelineId, step) {
         show_op: step.abstractQuery.length > 0
     });
 
-    hideFirst(step.abstractQuery);
     m.redraw();
-
-    let qtree = $('#subsetTree' + pipelineId + String(step.id));
-    qtree.tree('openNode', qtree.tree('getNodeById', step.nodeId - 1), true);
 }
 
 /**
@@ -115,11 +96,6 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
     }
 
     if (step.type === 'subset') {
-
-        // Don't show the boolean operator on the first element
-        if (step.abstractQuery.length === 0)
-            abstractBranch['show_op'] = false;
-
         step.abstractQuery.push(abstractBranch);
 
         m.redraw();
@@ -311,7 +287,6 @@ function makeAbstractBranch(step, preferences, metadata, name) {
             let link = {
                 id: String(step.nodeId++) + measureId,
                 name: 'Link ' + String(linkId),
-                show_op: linkId !== '0',
                 operation: 'or',
                 subset: 'link',
                 children: [{
@@ -432,7 +407,7 @@ function makeAbstractBranch(step, preferences, metadata, name) {
                 {
                     id: String(step.nodeId++) + measureId,
                     name: 'From: ' + monthNames[preferences['userLower'].getMonth()] + ' ' + preferences['userLower'].getDate() + ' ' + String(preferences['userLower'].getFullYear()),
-                    fromDate: new Date(preferences['userLower'].getTime()),
+                    fromDate: preferences['userLower'].getTime(),
                     cancellable: false,
                     show_op: false,
                     column: metadata['columns'][0]
@@ -440,7 +415,7 @@ function makeAbstractBranch(step, preferences, metadata, name) {
                 {
                     id: String(step.nodeId++) + measureId,
                     name: 'To:   ' + monthNames[preferences['userUpper'].getMonth()] + ' ' + preferences['userUpper'].getDate() + ' ' + String(preferences['userUpper'].getFullYear()),
-                    toDate: new Date(preferences['userUpper'].getTime()),
+                    toDate: preferences['userUpper'].getTime(),
                     cancellable: false,
                     show_op: false,
                     // If the date is an interval, the last element will be different from the first

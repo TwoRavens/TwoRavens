@@ -6,7 +6,6 @@ import 'bootswatch/dist/materia/bootstrap.css';
 import '../css/app.css';
 import '../../node_modules/hopscotch/dist/css/hopscotch.css';
 
-
 import hopscotch from 'hopscotch';
 
 import m from 'mithril';
@@ -41,6 +40,8 @@ import TextField from '../common/views/TextField';
 import MenuHeaders from "../common/views/MenuHeaders";
 import Subpanel2 from '../common/views/Subpanel';
 
+import Popper from '../common/views/Popper';
+
 import Datamart, {ModalDatamart} from "../common/TwoRavens/Datamart";
 // EVENTDATA
 import Body_EventData from './eventdata/Body_EventData';
@@ -48,6 +49,8 @@ import Body_EventData from './eventdata/Body_EventData';
 import PreprocessInfo from "./views/PreprocessInfo";
 import ForceDiagram from "./views/ForceDiagram";
 import ButtonLadda from "./views/LaddaButton";
+import {exploreVariate} from "./app";
+import Canvas from "../common/views/Canvas";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -56,7 +59,7 @@ export let link = url => m('a', {href: url, style: {color: 'darkblue'}, target: 
 
 // adding problemID and version for Preprocess API part
 let version = 1;
-let nodesExplore = [];
+let exploreVariables = [];
 
 function leftpanel(mode) {
 
@@ -75,12 +78,12 @@ function leftpanel(mode) {
     // VARIABLES TAB
     if (selectedProblem) {
         // base dataset variables, then transformed variables from the problem
-        let leftpanelVariables = Object.keys(selectedProblem.summaries);
+        let leftpanelVariables = Object.keys(app.variableSummaries);
 
         // if no search string, match nothing
         let matchedVariables = app.variableSearchText.length === 0 ? []
             : leftpanelVariables.filter(variable => variable.toLowerCase().includes(app.variableSearchText)
-                || (selectedProblem.summaries.label || "").toLowerCase().includes(app.variableSearchText));
+                || (app.variableSummaries.label || "").toLowerCase().includes(app.variableSearchText));
 
         // reorder leftpanel variables
         leftpanelVariables = [
@@ -107,7 +110,7 @@ function leftpanel(mode) {
                         id: 'varList',
                         items: leftpanelVariables,
                         colors: {
-                            [app.hexToRgba(common.selVarColor)]: app.is_explore_mode ? selectedProblem.loose : nodesExplore.map(node => node.name),
+                            [app.hexToRgba(common.selVarColor)]: app.is_explore_mode ? selectedProblem.loose : exploreVariables,
                             [app.hexToRgba(common.gr1Color, .25)]: selectedProblem.predictors,
                             [app.hexToRgba(common.selVarColor, .5)]: selectedProblem.tags.loose,
                             [app.hexToRgba(common.taggedColor)]: app.is_explore_mode ? [] : selectedProblem.targets
@@ -131,8 +134,8 @@ function leftpanel(mode) {
                                 app.remove(selectedProblem.tags.loose, x);
                             else selectedProblem.tags.loose.push(x);
                         },
-                        popup: {content: variable => app.popoverContent(selectedProblem.summaries[variable])},
-                        attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
+                        popup: x => m('div', m('h4', 'Summary Statistics for ' + x), m(Table, {attrsAll: {class: 'table-sm'}, data: app.getVarSummary(app.variableSummaries[x])})),
+                        popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
                     }),
                     m(Button, {
                         id: 'btnCreateVariable',
@@ -288,7 +291,7 @@ function leftpanel(mode) {
     return m(Panel, {
         side: 'left',
         label: 'Data Selection',
-        hover: !(app.is_manipulate_mode || app.rightTab === 'Manipulate'),
+        hover: app.is_model_mode && !manipulate.constraintMenu,
         width: app.modelLeftPanelWidths[app.leftTab],
         attrsAll: {
             onclick: () => app.setFocusedPanel('left'),
@@ -328,10 +331,10 @@ function leftpanel(mode) {
                     m('center',
                         m('b', app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble),
                         m('br'),
-                        m('i', (selectedProblem.summaries[app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble] || {}).labl)),
+                        m('i', (app.variableSummaries[app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble] || {}).labl)),
                     m(Table, {
                         id: 'varSummaryTable',
-                        data: app.getVarSummary(selectedProblem.summaries[app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble])
+                        data: app.getVarSummary(app.variableSummaries[app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble])
                     })
                 ]
             }
@@ -516,7 +519,7 @@ class Body {
 
         let exploreVars = (() => {
             vars.forEach(x => {
-                let node = findNode(x);
+                let node = app.variableSummaries[x];
                 node && expnodes.push(node);
             });
             if (variate === "problem") {
@@ -582,8 +585,15 @@ class Body {
 
             let plot = expnodes[0] && expnodes[0].plottype === 'continuous' ? plots.density : plots.bars;
 
-            return m('', [
-                m('', {style: 'margin-bottom: 1em; max-width: 1000px; overflow: scroll; white-space: nowrap'},
+            return m('div', [
+                m('div', {
+                        style: {
+                            'margin-bottom': '1em',
+                            'overflow-x': 'scroll',
+                            'white-space': 'nowrap',
+                            width: '100%'
+                        }
+                    },
                     filtered.split(' ').map(x => {
                         return m("figure", {style: 'display: inline-block'}, [
                             m(`img#${x}_img[alt=${x}][height=140px][width=260px][src=/static/images/${x}.png]`, {
@@ -605,7 +615,6 @@ class Body {
             m(`button#${id}.btn.btn-default`, {onclick, title, style: {'margin-left': '.5em'}}, icon);
         let discovery = app.leftTab === 'Discover';
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
-        let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
 
         let selectedDataset = app.getSelectedDataset();
         let selectedProblem = app.getSelectedProblem();
@@ -674,26 +683,32 @@ class Body {
                         display: app.is_manipulate_mode || (app.rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'none' : 'block'
                     }
                 },
-                m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
+                m(Canvas,
                     app.is_explore_mode && [variate === 'problem' ?
-                    m('', {style},
+                    m('',
                         m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
                         m('br'),
                         exploreVars)
-                    //                        JSON.stringify(app.disco[app.selectedProblem.problemID]))
                     : exploreVars ?
-                        m('', {style},
+                        m('',
                             m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
                             m('br'),
                             exploreVars)
-                        : m('', {style},
+                        : m('',
                             m(ButtonRadio, {
                                 id: 'exploreButtonBar',
                                 attrsAll: {style: {width: '400px'}},
                                 attrsButtons: {class: ['btn-sm']},
                                 onclick: x => {
-                                    nodesExplore = [];
-                                    app.setVariate(x)
+                                    app.setVariate(x);
+                                    if (app.exploreVariate === 'Multivariate') return;
+                                    let maxVariables = {
+                                        Univariate: 1,
+                                        Bivariate: 2,
+                                        Trivariate: 3
+                                    }[app.exploreVariate];
+                                    exploreVariables = exploreVariables
+                                        .slice(Math.max(0, exploreVariables.length - maxVariables));
                                 },
                                 activeSection: app.exploreVariate,
                                 sections: discovery ? [{value: 'Problem'}] : [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]
@@ -703,7 +718,7 @@ class Body {
                                 classes: 'btn-success',
                                 onclick: _ => {
                                     let variate = app.exploreVariate.toLowerCase();
-                                    let selected = discovery ? [app.getSelectedDataset().selectedProblem] : nodesExplore.map(x => x.name);
+                                    let selected = discovery ? [app.getSelectedDataset().selectedProblem] : exploreVariables;
                                     let len = selected.length;
                                     if (variate === 'univariate' && len != 1
                                         || variate === 'problem' && len != 1
@@ -716,52 +731,74 @@ class Body {
                                 }
                             }, 'go'),
                             m('br'),
+
                             m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
-                                (discovery ? app.getSelectedDataset().problems : Object.keys(app.getSelectedProblem().summaries)).map(x => { // entry could either be a problem or a variable name
-                                    let selected = discovery ? x === app.getSelectedProblem() : nodesExplore.map(y => y.name).includes(x);
-                                    let targetName = x.targets[0] || x;
+                                // x could either be a problemID or a variable name
+                                (discovery ? Object.keys(app.getSelectedDataset().problems) : Object.keys(app.variableSummaries)).map(x => {
+                                    let selected = discovery
+                                        ? x === selectedProblem.problemID
+                                        : exploreVariables.includes(x);
+
+                                    let targetName = discovery
+                                        ? app.getSelectedDataset().problems[x].targets[0]
+                                        : x;
 
                                     let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
-                                    let [n0, n1, n2] = nodesExplore;
-                                    return m('span#exploreNodeBox', {
-                                            onclick: _ => discovery ? app.setSelectedProblem(x) : undefined, // used to clickVar if in explore mode, need to debug (Shoeboxam)
-                                            onmouseover: function () {
-                                                $(this).popover('toggle');
-                                                $('body div.popover')
-                                                    .addClass('variables');
-                                                $('body div.popover div.popover-content')
-                                                    .addClass('form-horizontal');
+                                    let [n0, n1, n2] = exploreVariables.map(variable => app.variableSummaries[variable]);
+
+                                    // tile for each variable or problem
+                                    let tile = m('span#exploreNodeBox', {
+                                            onclick: _ => {
+                                                if (discovery) {
+                                                    app.setSelectedProblem(x);
+                                                    exploreVariables = [x];
+                                                    return;
+                                                }
+
+                                                if (exploreVariate === 'Multivariate') {
+                                                    exploreVariables.includes(x)
+                                                        ? app.remove(exploreVariables, x) : exploreVariables.push(x);
+                                                    return;
+                                                }
+
+                                                let maxVariables = {
+                                                    'Univariate': 1,
+                                                    'Bivariate': 2,
+                                                    'Trivariate': 3
+                                                }[app.exploreVariate];
+
+                                                if (exploreVariables.includes(x)) app.remove(exploreVariables, x);
+                                                exploreVariables.push(x);
+                                                exploreVariables = exploreVariables
+                                                    .slice(Math.max(0, exploreVariables.length - maxVariables));
+                                                exploreVariables = [...new Set(exploreVariables)];
+
                                             },
-                                            onmouseout: "$(this).popover('toggle');",
-                                            'data-container': 'body',
-                                            'data-content': findNode(targetName).labl || '<i>none provided</i>',
-                                            'data-html': 'true',
-                                            'data-original-title': 'Description',
-                                            'data-placement': 'top',
-                                            'data-toggle': 'popover',
-                                            'data-trigger': 'hover',
                                             style: {
-                                                border: '1px solid rgba(0, 0, 0, .2)',
+                                                // border: '1px solid rgba(0, 0, 0, .2)',
                                                 'border-radius': '5px',
-                                                'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)',
+                                                'box-shadow': '1px 1px 4px rgba(0, 0, 0, 0.4)',
                                                 display: 'flex',
                                                 'flex-direction': 'column',
                                                 height: '250px',
                                                 margin: '.5em',
                                                 width: '250px',
                                                 'align-items': 'center',
-                                                'background-color': app.hexToRgba(common[selected ? 'selVarColor' : 'varColor'])
+                                                'background-color': selected ? app.hexToRgba(common.selVarColor) : common.menuColor
                                             }
                                         }, m('#exploreNodePlot', {
                                             oninit() {
-                                                this.node = findNode(x);
+                                                this.node = app.variableSummaries[x];
                                             },
                                             oncreate(vnode) {
                                                 let plot = (this.node || {}).plottype === 'continuous' ? plots.densityNode : plots.barsNode;
                                                 this.node && plot(this.node, vnode.dom, 110, true);
                                             },
                                             onupdate(vnode) {
-                                                let node = findNode(typeof x === 'object' ? x.targets[0] : x);
+                                                let targetName = discovery
+                                                    ? app.getSelectedDataset().problems[x].targets[0]
+                                                    : x;
+                                                let node = app.variableSummaries[targetName];
                                                 if (node && node !== this.node) {
                                                     let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
                                                     plot(node, vnode.dom, 110, true);
@@ -779,9 +816,14 @@ class Body {
                                                             m('p', x.predictors.join(', '))]
                                                         : x)
                                     );
+
+                                    if (app.variableSummaries[targetName].labl)
+                                        return m(Popper, {content: () => app.variableSummaries[targetName].labl}, tile);
+                                    return tile;
                                 }))
                         )],
                     app.is_model_mode && selectedProblem && m(ForceDiagram, Object.assign(app.forceDiagramState,{
+                        nodes: app.forceDiagramNodesReadOnly,
                         // these attributes may change dynamically, (the problem could change)
                         onDragAway: pebble => {
                             app.remove(selectedProblem.tags.loose, pebble);
@@ -791,10 +833,13 @@ class Body {
                         },
                         labels: app.forceDiagramLabels(selectedProblem),
                         mutateNodes: app.mutateNodes(selectedProblem),
-                        summaries: selectedProblem.summaries
+                        summaries: app.variableSummaries
                     }, app.buildForceData(selectedProblem)))),
 
-                app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}}, [
+                // m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
+                //     ),
+
+                app.is_model_mode && m("#spacetools.spaceTool", {style: {right: common.panelOcclusion.right, 'z-index': 16}}, [
                     spaceBtn('btnAdd', app.addProblemFromForceDiagram, 'add model to problems', m(Icon, {name: 'plus'})),
                     spaceBtn('btnJoin', app.connectAllForceDiagram, 'Make all possible connections between nodes', m(Icon, {name: 'link'})),
                     spaceBtn('btnDisconnect', () => app.forceDiagramState.pebbleLinks = [], 'Delete all connections between nodes', m(Icon, {name: 'circle-slash'})),
@@ -807,7 +852,7 @@ class Body {
                 app.is_model_mode && selectedProblem && m(Subpanel2, {
                     id: 'legend', header: 'Legend', class: 'legend',
                     style: {
-                        right: app.panelWidth['right'],
+                        right: common.panelOcclusion['right'],
                         bottom: `calc(2*${common.panelMargin} + ${app.peekInlineShown ? app.peekInlineHeight + ' + 23px' : '0px'})`,
                         position: 'absolute',
                         width: '150px'
@@ -831,7 +876,7 @@ class Body {
                     id: 'subsetSubpanel',
                     header: 'Subsets',
                     style: {
-                        left: app.panelWidth['left'],
+                        left: common.panelOcclusion['left'],
                         top: common.panelMargin,
                         position: 'absolute'
                     }
@@ -864,16 +909,12 @@ class Body {
                 attrsInterface: {style: app.is_explore_mode ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}}
             },
             m('div', {style: {'flex-grow': 1}}),
-            m('h4#dataName[style=display: inline-block; margin: .25em 1em]', {
-                    onclick: _ => this.cite = this.citeHidden = !this.citeHidden,
-                    onmouseout: _ => this.citeHidden || (this.cite = false),
-                    onmouseover: _ => this.cite = true
-                },
-                app.selectedDataset || 'Dataset Name'),
+
+            m(Popper, {
+                content: () => IS_D3M_DOMAIN && m(Table, {data: app.getSelectedDataset().datasetDoc.about})
+            }, m('h4#dataName[style=display: inline-block; margin: .25em 1em]', app.selectedDataset || 'Dataset Name')),
+
             m('div', {style: {'flex-grow': 1}}),
-            app.selectedDataset && m('#cite.panel.panel-default',
-                {style: `display: ${this.cite ? 'block' : 'none'}; margin-top: 2.5em; right: 50%; width: 380px; text-align: left; z-index: 50; position:absolute`},
-                m('.panel-body', IS_D3M_DOMAIN && m(Table, {data: app.getSelectedDataset().datasetDoc.about}))),
 
             resultsProblem && Object.keys(resultsProblem.solutions.d3m).length > 0 && m(Button, {
                 id: 'btnEndSession',
@@ -1054,7 +1095,6 @@ let standaloneDatamart = () => {
     ]
 };
 
-
 if (IS_EVENTDATA_DOMAIN) {
     m.route(document.body, '/home', {
         '/data': {render: () => m(Peek, {id: 'eventdata', image: '/static/images/TwoRavens.png'})},
@@ -1063,6 +1103,12 @@ if (IS_EVENTDATA_DOMAIN) {
 }
 else {
     m.route(document.body, '/model', {
+        '/popper': {
+            render: () => m(Popper, {
+                content: m("div", "popper content"),
+                options: {trigger: 'hover'}
+            }, m(Button, 'test button'))
+        },
         '/datamart': {render: standaloneDatamart},
         '/explore/:variate/:vars...': Body,
         '/data': {render: () => m(Peek, {id: app.peekId, image: '/static/images/TwoRavens.png'})},

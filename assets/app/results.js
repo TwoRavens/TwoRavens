@@ -34,7 +34,7 @@ export let leftPanel = () => {
             contents: [
                 m(ForceDiagram, Object.assign(forceDiagramStateResults,{
                     mutateNodes: app.mutateNodes(resultsProblem),
-                    summaries: resultsProblem.summaries
+                    summaries: app.variableSummaries
                 }, app.buildForceData(resultsProblem))),
                 m(Table, {data: resultsProblem})
             ]
