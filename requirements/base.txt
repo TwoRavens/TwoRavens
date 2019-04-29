@@ -29,7 +29,7 @@ redis==3.2.0
 #Flask==0.12.2
 
 # for nist k8s templates
-Jinja2==2.10
+Jinja2==2.10.1
 
 # for eventdata
 #
