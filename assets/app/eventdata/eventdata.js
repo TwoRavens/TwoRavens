@@ -30,6 +30,9 @@ export let setMetadata = (data) => Object.keys(data).forEach(key =>
 // metadata computed on the dataset for each subset
 export let subsetData = {};
 
+// metadata for discovery for each subset, if it exists
+export let discoveryData = {};
+
 // if selectedSubsetName: true, then the loading symbol is displayed instead of the menu
 export let isLoading = {};
 
@@ -373,12 +376,16 @@ export let getDiscoveryEventData = async body => m.request({
     return response.data;
 });
 
-export let loadDiscovery = async (collection, limit) => {
+export async function loadDiscovery(menu, collection, limit) {
+    isLoading[menu.name] = true;
+    //isLoading["discovery"] = true;
     let onError = err => {
         if (err === 'no records matched') alertError("No records match your subset. Plots will not be updated.");
         else console.error(err);
     };
 
+    console.log("submitting: " + collection + ", " + limit);
+    console.log("endpoint: " + mongoURL + "get-ev-discovery");
     await Promise.all(
     [
         getDiscoveryEventData(
@@ -387,7 +394,11 @@ export let loadDiscovery = async (collection, limit) => {
             "limit": limit
         }
         ).then(response => {
+            console.log("received response!");
             console.log(response);
+            discoveryData[selectedDataset] = {"data": response};
+            isLoading[menu.name] = false;
+            m.redraw();
         })
     ]).catch(onError);
     console.log("finished getting discovery data");
