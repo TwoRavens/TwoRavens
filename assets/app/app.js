@@ -392,8 +392,13 @@ export let setLeftTab = (tab) => {
 
 export let setLeftTabHidden = tab => leftTabHidden = tab;
 
+export let panelWidth = {
+    'left': '0',
+    'right': '0'
+};
+
 export let updateRightPanelWidth = () => {
-    if (is_explore_mode) common.panelOcclusion.right = `calc(${common.panelMargin}*2 + 16px)`;
+    if (is_results_mode) common.panelOcclusion.right = '0px';
     // else if (is_model_mode && !selectedProblem) common.panelOcclusion.right = common.panelMargin;
     else if (common.panelOpen['right']) {
         let tempWidth = {
@@ -401,16 +406,14 @@ export let updateRightPanelWidth = () => {
             'explore': exploreRightPanelWidths[rightTabExplore]
         }[currentMode];
 
-        common.panelOcclusion['right'] = `calc(${common.panelMargin}*2 + ${tempWidth})`;
+        panelWidth['right'] = `calc(${common.panelMargin}*2 + ${tempWidth})`;
     }
-    else common.panelOcclusion['right'] = `calc(${common.panelMargin}*2 + 16px)`;
-    console.warn("#debug common.panelOcclusion");
-    console.log(common.panelOcclusion);
+    else panelWidth['right'] = `calc(${common.panelMargin}*2 + 16px)`;
 };
 let updateLeftPanelWidth = () => {
     if (common.panelOpen['left'])
-        common.panelOcclusion['left'] = `calc(${common.panelMargin}*2 + ${modelLeftPanelWidths[leftTab]})`;
-    else common.panelOcclusion['left'] = `calc(${common.panelMargin}*2 + 16px)`;
+        panelWidth['left'] = `calc(${common.panelMargin}*2 + ${modelLeftPanelWidths[leftTab]})`;
+    else panelWidth['left'] = `calc(${common.panelMargin}*2 + 16px)`;
 };
 
 // minor quality of life, the focused panel gets +1 to the z-index. Set whenever a panel is clicked
@@ -1605,12 +1608,16 @@ export let setSelectedSolution = (problem, source, pipelineId) => {
 
 export let selectedResultsMenu = 'Problem Description';
 export let setSelectedResultsMenu = menu => {
+
     let isValid = state => {
         if (modelComparison) return ['Problem Description', 'Prediction Summary'].includes(state);
 
-        let selectedPipeline = [...selectedPipelines][0] || '';
-        if (selectedPipeline.includes('raven') && ['Generate New Predictions', 'Visualize Pipeline'].includes(state)) return false;
-        if (!selectedPipeline.includes('raven') && ['Solution Table'].includes(state)) return false;
+        let selectedSolution = getSelectedSolutions()[0];
+
+        if (!selectedSolution) return false;
+        if (selectedSolution.source === 'rook' && ['Generate New Predictions', 'Visualize Pipeline'].includes(state)) return false;
+        if (!(selectedSolution.source === 'rook') && ['Solution Table'].includes(state)) return false;
+
         return true;
     };
 
@@ -2713,16 +2720,21 @@ export async function callSolver(prob) {
     let ravenID = 'raven ' + ravenPipelineID++;
 
     let solutions = getResultsProblem().solutions;
-    solutions.rook[ravenID] = await makeRequest(ROOK_SVC_URL + 'solverapp', {prob, dataset_path: datasetPath});
+    // solutions.rook[ravenID] = cachedResponse;
+    solutions.rook[ravenID] = await makeRequest(ROOK_SVC_URL + 'solverapp', {
+        problem: prob,
+        dataset_path: datasetPath
+    });
 
-    console.warn("#debug ravenID");
-    console.log(ravenID);
-
+    solutions.rook[ravenID].source = 'rook';
 
     if (selectedPipelines.size === 0) setSelectedSolution(prob, 'rook', ravenID);
+    // console.log("callSolver response:", JSON.stringify(solutions.rook[ravenID]));
     console.log("callSolver response:", solutions.rook[ravenID]);
     m.redraw();
 }
+
+let cachedResponse = {"models":{"Number_seasons":{"fittedValues":[11.9202,12.805,9.621,14.4103,13.7564,12.3929,12.219,11.1587,11.3852,13.077],"gridResults":[{"intercept":true,"RMSE":1.7098,"Rsquared":0.7159,"MAE":1.332,"RMSESD":0.1125,"RsquaredSD":0.0391,"MAESD":0.0617}],"hyperparameters":{"intercept":[true]},"sortingMetric":"RMSE","predictorTypes":{},"coefficients":[6.2143,0.0101,-0.0019,0.0018],"statistics":[{"r.squared":0.7126,"adj.r.squared":0.7118,"sigma":1.7077,"statistic":883.3982,"p.value":8.4521e-289,"df":4,"logLik":-2094.7086,"AIC":4199.4172,"BIC":4224.3082,"deviance":3117.3324,"df.residual":1069}],"coefficientCovarianceMatrix":[[0.0268,0,0.0000017556,0],[0,1.8492e-7,-5.8592e-8,4.6405e-8],[0.0000017556,-5.8592e-8,3.7295e-8,-7.4359e-8],[0,4.6405e-8,-7.4359e-8,2.0799e-7]],"anova":[{"Df":1,"Sum Sq":7291.0981,"Mean Sq":7291.0981,"F value":2500.2736,"Pr(>F)":3.9731e-282,"_row":"Games_played"},{"Df":1,"Sum Sq":389.3479,"Mean Sq":389.3479,"F value":133.5157,"Pr(>F)":3.4795e-29,"_row":"At_bats"},{"Df":1,"Sum Sq":47.8395,"Mean Sq":47.8395,"F value":16.4052,"Pr(>F)":0.0001,"_row":"Hits"},{"Df":1069,"Sum Sq":3117.3324,"Mean Sq":2.9161,"_row":"Residuals"}],"vif":{"Games_played":[18.7483],"At_bats":[61.6246],"Hits":[32.7844]}}},"meta":{"label":"Linear Regression","method":"lm","task":"regression","library":{},"tags":["Linear Regression","Accepts Case Weights"], predictors: ["At_bats", "Hits", "Games_played"]}}
 
 
 // pretty precision formatting- null and undefined are NaN, attempt to parse strings to float

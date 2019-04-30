@@ -1,4 +1,3 @@
-import $ from 'jquery';
 // import 'bootstrap/dist/css/bootstrap.css';
 
 import 'bootstrap';
@@ -67,7 +66,7 @@ function leftpanel(mode) {
         return manipulate.leftpanel();
 
     if (mode === 'results')
-        return results.leftPanel();
+        return results.leftpanel();
 
     let selectedDataset = app.getSelectedDataset();
     let selectedProblem = app.getSelectedProblem();
@@ -684,6 +683,7 @@ class Body {
                     }
                 },
                 m(Canvas,
+                    app.is_results_mode && m(results.CanvasSolutions, {problem: selectedProblem}),
                     app.is_explore_mode && [variate === 'problem' ?
                     m('',
                         m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
@@ -839,7 +839,7 @@ class Body {
                 // m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
                 //     ),
 
-                app.is_model_mode && m("#spacetools.spaceTool", {style: {right: common.panelOcclusion.right, 'z-index': 16}}, [
+                app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}}, [
                     spaceBtn('btnAdd', app.addProblemFromForceDiagram, 'add model to problems', m(Icon, {name: 'plus'})),
                     spaceBtn('btnJoin', app.connectAllForceDiagram, 'Make all possible connections between nodes', m(Icon, {name: 'link'})),
                     spaceBtn('btnDisconnect', () => app.forceDiagramState.pebbleLinks = [], 'Delete all connections between nodes', m(Icon, {name: 'circle-slash'})),
@@ -852,7 +852,7 @@ class Body {
                 app.is_model_mode && selectedProblem && m(Subpanel2, {
                     id: 'legend', header: 'Legend', class: 'legend',
                     style: {
-                        right: common.panelOcclusion['right'],
+                        right: app.panelWidth['right'],
                         bottom: `calc(2*${common.panelMargin} + ${app.peekInlineShown ? app.peekInlineHeight + ' + 23px' : '0px'})`,
                         position: 'absolute',
                         width: '150px'
@@ -876,7 +876,7 @@ class Body {
                     id: 'subsetSubpanel',
                     header: 'Subsets',
                     style: {
-                        left: common.panelOcclusion['left'],
+                        left: app.panelWidth['left'],
                         top: common.panelMargin,
                         position: 'absolute'
                     }

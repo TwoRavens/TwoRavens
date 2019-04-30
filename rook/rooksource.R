@@ -19,12 +19,12 @@ if(!production){
     useRepos <- sample(availableRepos$URL[flag],1)
 
     ## install missing packages, and update if newer version available
-    for(i in 1:length(packageList)){
-       if (!require(packageList[i],character.only = TRUE)){
-           install.packages(packageList[i], repos=useRepos)
-       }
-    }
-    update.packages(ask = FALSE, dependencies = c('Suggests'), oldPkgs=packageList, repos=useRepos)
+    # for(i in 1:length(packageList)){
+    #    if (!require(packageList[i],character.only = TRUE)){
+    #        install.packages(packageList[i], repos=useRepos)
+    #    }
+    # }
+    # update.packages(ask = FALSE, dependencies = c('Suggests'), oldPkgs=packageList, repos=useRepos)
 }
 
 library(Rook)

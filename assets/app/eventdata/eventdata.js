@@ -228,7 +228,7 @@ export function handleResize() {
     m.redraw();
 }
 
-window.addEventListener('resize', handleResize);
+if (IS_EVENTDATA_DOMAIN) window.addEventListener('resize', handleResize);
 
 common.setPanelCallback('right', () => {
     common.setPanelOcclusion('right', `calc(${common.panelOpen['right'] ? '250px' : '16px'} + 2*${common.panelMargin})`);

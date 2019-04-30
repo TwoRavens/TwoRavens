@@ -1,5 +1,6 @@
 import m from 'mithril';
 import * as jStat from 'jstat';
+import * as d3 from "d3";
 
 import * as app from "./app";
 import * as plots from "./plots";
@@ -16,17 +17,14 @@ import PlotVegaLite from "./views/PlotVegaLite";
 import ConfusionMatrix from "./views/ConfusionMatrix";
 import Flowchart from "./views/Flowchart";
 import ForceDiagram, {groupBuilder, groupLinkBuilder, linkBuilder, pebbleBuilder} from "./views/ForceDiagram";
-import * as d3 from "d3";
+import Subpanel from "../common/views/Subpanel";
 
-export let leftPanel = () => {
+export let leftpanel = () => {
 
     let selectedDataset = app.getSelectedDataset();
     let resultsProblem = app.getResultsProblem();
 
     if (!resultsProblem) return;
-
-    console.warn("#debug resultsProblem");
-    console.log(resultsProblem);
 
     let sections = [
         {
@@ -42,15 +40,16 @@ export let leftPanel = () => {
         {
             value: 'Solutions',
             contents: [
-                m(Dropdown, {
-                    id: 'pipelineDropdown',
-                    items: Object.keys(selectedDataset.problems).filter(key =>
-                        Object.keys(selectedDataset.problems[key].solutions)
-                            .reduce((sum, source) => sum + Object.keys(selectedDataset.problems[key].solutions[source]).length, 0)),
-                    activeItem: selectedDataset.resultsProblem,
-                    onclickChild: app.setResultsProblem
-                }),
-                m('div#modelComparisonOption',
+                m('div', {style: {display: 'inline-block', margin: '1em'}},
+                    m(Dropdown, {
+                        id: 'pipelineDropdown',
+                        items: Object.keys(selectedDataset.problems).filter(key =>
+                            Object.keys(selectedDataset.problems[key].solutions)
+                                .reduce((sum, source) => sum + Object.keys(selectedDataset.problems[key].solutions[source]).length, 0)),
+                        activeItem: selectedDataset.resultsProblem,
+                        onclickChild: app.setResultsProblem
+                    })),
+                m('div#modelComparisonOption', {style: {display: 'inline-block'}},
                     m('input#modelComparisonCheck[type=checkbox]', {
                         onclick: m.withAttr("checked", app.setModelComparison),
                         checked: app.modelComparison,
@@ -66,7 +65,7 @@ export let leftPanel = () => {
                     sections: [
                         {
                             value: 'Discovered Pipelines',
-                            content:
+                            contents:
                                 m(Table, {
                                     id: 'pipelineTable',
                                     headers: ['PipelineID', 'Score'],
@@ -84,7 +83,7 @@ export let leftPanel = () => {
                         },
                         {
                             value: 'Baselines',
-                            content: [
+                            contents: [
                                 // m(Subpanel, {
                                 //     id: 'addModelSubpanel',
                                 //     onclick: app.setResultsProblem
@@ -97,8 +96,8 @@ export let leftPanel = () => {
                                         .map(pipelineId => [pipelineId, resultsProblem.solutions.rook[pipelineId].score]),
                                     sortHeader: 'Score',
                                     sortFunction: app.sortPipelineTable,
-                                    activeRow: resultsProblem.selectedSolutions.rook,
-                                    callback: pipelineId => app.setSelectedSolution(resultsProblem, 'rook', pipelineId),
+                                    activeRow: new Set(resultsProblem.selectedSolutions.rook),
+                                    onclick: pipelineId => app.setSelectedSolution(resultsProblem, 'rook', pipelineId),
                                     tableTags: m('colgroup',
                                         m('col', {span: 1}),
                                         m('col', {span: 1, width: '30%'}))
@@ -113,17 +112,20 @@ export let leftPanel = () => {
 
     return m(Panel, {
         side: 'left',
-        label: 'Evaluate',
+        label: 'Results',
         hover: false,
         width: '600px'
-    }, m(MenuTabbed, {
+    },
+    // there seems to be a strange mithril bug here - when returning back to model from results,
+    // the dom element for MenuTabbed is reused, but the state is incorrectly transitioned, leaving an invalid '[' key.
+    // "Fixed" by wrapping in a div, to prevent the dom reuse optimization
+    m('div', m(MenuTabbed, {
         id: 'resultsMenu',
         currentTab: leftTabResults,
         callback: setLeftTabResults,
         sections
-    }))
+    })))
 };
-
 
 let pipelineAdapter = (source, pipeline) => {
     if (source === 'rook') return Object.assign({
@@ -145,10 +147,11 @@ let pipelineAdapter = (source, pipeline) => {
     }
 };
 
-export default class CanvasSolutions {
+export class CanvasSolutions {
 
     oninit(vnode) {
         this.confusionFactor = undefined;
+        app.updateRightPanelWidth()
     }
 
     predictionSummary(problem, summaries) {
@@ -280,18 +283,86 @@ export default class CanvasSolutions {
     solutionTable(problem) {
 
         let firstSource = Object.keys(problem.selectedSolutions).find(source => problem.selectedSolutions[source].length);
-        let firstPipeline = problem.solutions[firstSource][problem.selectedSolutions[firstSource][0]];
-        let firstSummary = pipelineAdapter(firstPipeline);
+        let firstSolution = problem.solutions[firstSource][problem.selectedSolutions[firstSource][0]];
 
-        // TODO: call solver backend has changed, stargazer may not behave the same anymore
-        return m(`div#solutionTable[style=display:${app.selectedResultsMenu === 'Solution Table' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%;]`,
+        let performanceStatsContents = Object.keys(firstSolution.models)
+            .filter(target => firstSolution.models[target].statistics)
+            .map(target => m('div',
+                m('h5', target),
+                m(Table, {
+                    data: firstSolution.models[target].statistics[0]
+                })));
+        let performanceStats = performanceStatsContents.length > 0 && m(Subpanel, {
+            style: {margin: '0px 1em'},
+            header: 'Performance Statistics'
+        }, performanceStatsContents);
 
-        )
+        let coefficientsContents = Object.keys(firstSolution.models)
+            .filter(target => firstSolution.models[target].coefficients !== undefined)
+            .map(target => m('div',
+                m('h5', target),
+                m(Table, {data: ['intercept', ...firstSolution.meta.predictors].map((predictor, i) => [
+                    predictor,
+                    firstSolution.models[target].coefficients[i]
+                    ])}),
+                m(ConfusionMatrix, {
+                    id: target + 'CovarianceMatrix',
+                    title: 'Coefficient Covariance Matrix for ' + target,
+                    data: firstSolution.models[target].coefficientCovarianceMatrix,
+                    startColor: '#e9ede8',
+                    endColor: '#5770b0',
+                    classes: ['intercept', ...firstSolution.meta.predictors],
+                    margin: {left: 10, right: 10, top: 50, bottom: 10},
+                    attrsAll: {style: {height: '600px'}}
+                })));
+        let coefficientMatrix = coefficientsContents.length > 0 && m(Subpanel, {
+            style: {margin: '0px 1em'},
+            header: 'Coefficients'
+        }, coefficientsContents);
+
+
+        let prepareANOVA = table => [...firstSolution.meta.predictors, 'Residuals']
+            .map(predictor => table.find(row => row._row === predictor))
+            .map(row => ({
+                'Predictor': row._row,
+                'Sum Sq': row['Sum Sq'],
+                'Df': row.Df,
+                'Mean Sq': row['Mean Sq'],
+                'F value': row['F value'],
+                'P-value': row['Pr(>F)']
+            }));
+        if (!('models' in firstSolution)) return;
+
+        let anovaTablesContent = Object.keys(firstSolution.models)
+            .filter(target => firstSolution.models[target].anova)
+            .map(target => m('div',
+                m('h5', target),
+                m(Table, {data: prepareANOVA(firstSolution.models[target].anova)})));
+        let anovaTables = anovaTablesContent.length > 0 && m(Subpanel, {
+            style: {margin: '0px 1em'},
+            header: 'ANOVA Tables'
+        }, anovaTablesContent);
+
+        let VIFContents = Object.keys(firstSolution.models)
+            .filter((target, i) => i === 0 && firstSolution.models[target].vif)
+            .map(target => m('div',
+                m(Table, {
+                    data: Object.keys(firstSolution.models[target].vif).map(predictor => [
+                        predictor,
+                        firstSolution.models[target].vif[predictor][0]
+                    ])
+                })));
+        let VIF = VIFContents.length === 1 && m(Subpanel, {
+            style: {margin: '0px 1em'},
+            header: 'Variance Inflation'
+        }, VIFContents);
+
+        return m('div', {style: {margin: '1em 0px'}},
+            performanceStats, coefficientMatrix, anovaTables, VIF)
     }
 
     view(vnode) {
         let {problem} = vnode.attrs;
-
         // sections: [
         //     {value: 'Problem Description', id: 'btnPredData'},
         //     {value: 'Prediction Summary', id: 'btnPredPlot'},
@@ -300,54 +371,79 @@ export default class CanvasSolutions {
         //     {value: 'Solution Table', id: 'btnSolTable', attrsInterface: {disabled: app.modelComparison || !String(firstSelectedPipelineID).includes('raven')}}
         // ]
 
-
-        let resultsProblem = app.getResultsProblem();
-        let firstPipeline = Object.keys(resultsProblem.selectedSolutions)
-            .flatMap(source => resultsProblem.selectedSolutions[source])[0];
-
-        return m(MenuTabbed, {
-            sections: [
-                {
-                    value: 'Problem Description',
-                    id: 'tabProblemDesciption',
-                    contents: m(Table, {
-                        headers: ['Variable', 'Data'],
-                        data: [
-                            ['Dependent Variables', problem.targets],
-                            ['Predictors', problem.predictors],
-                            ['Description', problem.description],
-                            ['Task', problem.task]
-                        ],
-                        attrsAll: {
-                            style: {
-                                width: 'calc(100% - 2em)',
-                                overflow: 'auto',
-                                border: '1px solid #ddd',
-                                margin: '1em',
-                                'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)'
-                            }
-                        }
-                    })
-                },
-                {
-                    value: 'Prediction Summary',
-                    id: 'tabPredictionSummary',
-                    contents: app.selectedResultsMenu === 'Prediction Summary' && this.predictionSummary(problem, Object.keys(problem.selectedSolutions)
-                        .map(source => problem.selectedSolutions[source]
-                            .map(problemId => pipelineAdapter(source, problemId)).flatMap(_ => _)))
-                },
-                {
-                    value: 'Visualize Pipeline',
-                    id: 'tabVisualizePipeline',
-                    contents: app.selectedResultsMenu === 'Visualize Pipeline' && this.visualizePipeline(firstPipeline)
-                },
-                {
-                    value: 'Solution Table',
-                    id: 'tabSolutionTable',
-                    contents: app.selectedResultsMenu === 'Solution Table' && this.solutionTable(problem)
-                }
-            ]
-        });
+        let selectedSolutions = app.getSelectedSolutions();
+        return m('div', {style: {margin: '1em'}},
+            m(MenuTabbed, {
+                currentTab: app.selectedResultsMenu,
+                callback: app.setSelectedResultsMenu,
+                sections: [
+                    {
+                        value: 'Problem Description',
+                        id: 'tabProblemDesciption',
+                        contents: m('div', {style: {margin: '1em 0px'}},
+                            m(Subpanel, {
+                                style: {margin: '0px 1em'},
+                                header: 'Problem Description'
+                            }, m(Table, {
+                                headers: ['Variable', 'Data'],
+                                data: [
+                                    ['Dependent Variables', problem.targets],
+                                    ['Predictors', problem.predictors],
+                                    ['Description', problem.description],
+                                    ['Task', problem.task]
+                                ],
+                                // attrsAll: {
+                                //     style: {
+                                //         width: 'calc(100% - 2em)',
+                                //         overflow: 'auto',
+                                //         border: '1px solid #ddd',
+                                //         margin: '1em',
+                                //         'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)'
+                                //     }
+                                // }
+                            })),
+                            selectedSolutions.length === 1 && m(Subpanel, {
+                                style: {margin: '0px 1em'},
+                                header: 'Solution Description'
+                            }, m(Table, {
+                                headers: ['Variable', 'Data'],
+                                data: [
+                                    ['Source', selectedSolutions[0].source],
+                                    ['Label', selectedSolutions[0].meta.label],
+                                    ['Caret/R Method', selectedSolutions[0].meta.method],
+                                    ['Tags', selectedSolutions[0].meta.tags]
+                                ],
+                                // attrsAll: {
+                                //     style: {
+                                //         width: 'calc(100% - 2em)',
+                                //         overflow: 'auto',
+                                //         border: '1px solid #ddd',
+                                //         margin: '1em',
+                                //         'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)'
+                                //     }
+                                // }
+                            }))
+                            )
+                    },
+                    // {
+                    //     value: 'Prediction Summary',
+                    //     id: 'tabPredictionSummary',
+                    //     contents: app.selectedResultsMenu === 'Prediction Summary' && this.predictionSummary(problem, Object.keys(problem.selectedSolutions)
+                    //         .map(source => problem.selectedSolutions[source]
+                    //             .map(problemId => pipelineAdapter(source, problemId)).flatMap(_ => _)))
+                    // },
+                    {
+                        value: 'Visualize Pipeline',
+                        id: 'tabVisualizePipeline',
+                        contents: app.selectedResultsMenu === 'Visualize Pipeline' && this.visualizePipeline(selectedSolutions)
+                    },
+                    {
+                        value: 'Solution Table',
+                        id: 'tabSolutionTable',
+                        contents: app.selectedResultsMenu === 'Solution Table' && this.solutionTable(problem)
+                    }
+                ]
+            }));
     }
 }
 
