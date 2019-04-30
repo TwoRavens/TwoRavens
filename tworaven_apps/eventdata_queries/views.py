@@ -385,12 +385,11 @@ def api_get_ev_discovery(request):
         return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
         
     # check if data is valid
-    #form = EventDataGetDiscoveryForm(json_req_obj)
-    #if not form.is_valid():
-    #    return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
-    return JsonResponse({"success": True, "data": "data"})
-    #return({"success": True, "data": {"collection": json_req_obj["collection"], "limit": json_req_obj["limit"]}})
-    #return JsonResponse({'success': success, 'data': EventJobUtil.get_ev_discovery(json_req_obj["collection"], json_req_obj["limit"])})
+    form = EventDataGetDiscoveryForm(json_req_obj)
+    if not form.is_valid():
+        return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
+    #return JsonResponse({"success": True, "data": "data"})
+    return JsonResponse({'success': success, 'data': EventJobUtil.get_ev_discovery(json_req_obj["collection"], json_req_obj["limit"])})
 
 @csrf_exempt
 def api_get_eventdata(request):
