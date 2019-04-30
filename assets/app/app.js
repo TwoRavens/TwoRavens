@@ -982,6 +982,10 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         console.log('problemDoc res: ', res);
 
         mytargetdefault = res.inputs.data[0].targets[0].colName; // easier way to access target name?
+
+        if (typeof res.inputs.data[0].targets[0] !== 'undefined') {
+            d3mProblemDescription.firstTarget=res.inputs.data[0].targets[0];
+        }
         if (typeof res.about.problemID !== 'undefined') {
             d3mProblemDescription.id=res.about.problemID;
         }
@@ -1014,6 +1018,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             system: 'auto',
             description: res.about.problemDescription,
             target: res.inputs.data[0].targets[0].colName,
+            firstTarget: res.inputs.data[0].targets[0],
             predictors: [],
             get pipeline() {return manipulations[this.problemID]},
             metric: res.inputs.performanceMetrics[0].metric,
@@ -1289,7 +1294,17 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     console.log('---------------------------------------');
     console.log("-- 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN) --");
     if(!swandive) {
-        datadocument_columns.forEach(v => findNode(v.colName).d3mDescription = v);
+        console.log('datadocument_columns: ' + JSON.stringify(datadocument_columns));
+
+        console.log('allnodes: ' + JSON.stringify(allNodes));
+
+        //datadocument_columns.forEach(v => findNode(v.colName).d3mDescription = v);
+        datadocument_columns.forEach(function(v){
+          console.log('v: ' + v);
+          console.log('v.colName: ' + v.colName);
+          findNode(v.colName).d3mDescription = v
+        });
+
         console.log("all nodes:");
         console.log(allNodes);
     }
@@ -2727,6 +2742,8 @@ function CreatePipelineData(predictors, depvar, aux) {
 // Update of old CreatePipelineData function that creates problem definition for SearchSolutions call.
 function CreateProblemDefinition(depvar, aux) {
 
+    let resourceIdFromProblemDoc = d3mProblemDescription.firstTarget.resID;
+
     if(typeof aux==="undefined") { //default behavior for creating pipeline data
         let problem = {
             id: d3mProblemDescription.id,
@@ -2744,7 +2761,8 @@ function CreateProblemDefinition(depvar, aux) {
                 datasetId: datadocument.about.datasetID,
                 targets: [
                     {
-                        resourceId: '0',
+                        //resourceId: '0', # 'learningData in aug datasets'
+                        resourceId: resourceIdFromProblemDoc,
                         columnIndex: valueKey.indexOf(depvar[0]),  // Adjusted to match dataset doc
                         columnName: depvar[0]
                     }
@@ -2767,8 +2785,7 @@ function CreateProblemDefinition(depvar, aux) {
                 datasetId: datadocument.about.datasetID,
                 targets: [
                     {
-                        resourceId: '0',
-                        // columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        resourceId: resourceIdFromProblemDoc,
                         columnIndex: valueKey.indexOf(my_target),  // Adjusted to match dataset doc
                         columnName: my_target
                     }
@@ -2780,6 +2797,10 @@ function CreateProblemDefinition(depvar, aux) {
 
 // Create a problem description that follows the Problem Schema, for the Task 1 output.
 function CreateProblemSchema(aux){
+
+
+    let resourceIdFromDatasetDoc = datadocument.dataResources[0].resID;
+
     let my_target = aux.target;
 
     let my_about = {
@@ -2796,7 +2817,7 @@ function CreateProblemSchema(aux){
                 datasetId: datadocument.about.datasetID,
                 targets: [
                     {
-                        resourceId: '0',
+                        resourceId: resourceIdFromDatasetDoc,
                         columnIndex: valueKey.indexOf(my_target),  // Adjusted to match dataset doc
                         columnName: my_target
                     }

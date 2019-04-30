@@ -1,0 +1,60 @@
+{
+  "about": {
+    "problemID": "DA_poverty_estimation_problem",
+    "problemName": "DA poverty estimation problem",
+    "problemDescription": "Socioeconomic indicators like poverty rates, population change, unemployment rates, and education levels vary geographically across U.S. States and counties. This dataset includes poverty indicators across different counties across all states of the US. The task is to estimate the number of people living in poverty in 2016 across counties in the US. This is a regression problem.",
+    "taskType": "regression",
+    "problemSchemaVersion": "3.2.0",
+    "problemVersion": "2.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "DA_poverty_estimation_dataset",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "learningData",
+            "colIndex": 5,
+            "colName": "POVALL_2016"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.35,
+      "stratified": false,
+      "numRepeats": 0,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "meanAbsoluteError"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  },
+  "dataAugmentation": [
+    {
+      "domain": [
+        "Government",
+        "Economics",
+        "Depratment of Agriculture"
+      ],
+      "keywords": [
+        "USDA",
+        "economic research service",
+        "ERS",
+        "county-leval",
+        "socioeconomic indicators",
+        "poverty rate",
+        "education",
+        "population",
+        "unemployment"
+      ]
+    }
+  ]
+}
