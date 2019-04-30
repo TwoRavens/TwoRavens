@@ -618,7 +618,7 @@ export default class Body_EventData {
     }
 
     canvasContent() {
-        //~ console.log("content mode", eventdata);
+        //console.log("content mode", eventdata);
         if (eventdata.selectedMode === "discover") {
             var graphData = [];
             graphData.push(m('h2', "Global highest correlation"));
@@ -655,9 +655,20 @@ export default class Body_EventData {
             //~ }
 
             //test api endpoint
-            console.log("testing endpoint");
-            eventdata.loadDiscovery("acled_middle_east", 6);
-            
+            //add check for if discovery mode available in canvasdatasets.js?
+            //console.log("checking discovery data", eventdata.discoveryData);
+            if (eventdata.discoveryData[eventdata.selectedDataset] === undefined) {
+                console.log("no discovery data yet?");
+                if (!eventdata.isLoading[eventdata.selectedDataset]) {
+                    console.log("testing endpoint");
+                    let newMenu = {
+                        type: "discovery",
+                        name: eventdata.selectedDataset
+                    };
+                    eventdata.loadDiscovery(newMenu, "acled_middle_east", 6);
+                }
+                return graphData;
+            }
             return graphData;
         }
         

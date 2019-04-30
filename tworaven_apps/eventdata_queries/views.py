@@ -376,6 +376,21 @@ def api_get_files_list(request, version_id):
 
         return JsonResponse(usr_msg)
 
+@csrf_exempt
+def api_get_ev_discovery(request):
+    """Get eventdata discovery info"""
+    success, json_req_obj = get_request_body_as_json(request)
+    
+    if not success:
+        return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
+        
+    # check if data is valid
+    #form = EventDataGetDiscoveryForm(json_req_obj)
+    #if not form.is_valid():
+    #    return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
+    return JsonResponse({"success": True, "data": "data"})
+    #return({"success": True, "data": {"collection": json_req_obj["collection"], "limit": json_req_obj["limit"]}})
+    #return JsonResponse({'success': success, 'data': EventJobUtil.get_ev_discovery(json_req_obj["collection"], json_req_obj["limit"])})
 
 @csrf_exempt
 def api_get_eventdata(request):
@@ -418,21 +433,6 @@ def api_get_metadata(request):
 
     return JsonResponse({name: EventJobUtil.get_metadata(name, json_req_obj[name])
                          for name in ['collections', 'formats', 'alignments'] if name in json_req_obj})
-
-@csrf_exempt
-def api_get_ev_discovery(request):
-    """Get eventdata discovery info"""
-    success, json_req_obj = get_request_body_as_json(request)
-    
-    if not success:
-        return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
-        
-    # check if data is valid
-    form = EventDataGetDiscoveryForm(json_req_obj)
-    if not form.is_valid():
-        return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
-        
-    return JsonResponse({'success': success, 'data': EventJobUtil.get_ev_discovery(json_req_obj["collection"], json_req_obj["limit"])})
 
 @csrf_exempt
 def api_get_data(request):
