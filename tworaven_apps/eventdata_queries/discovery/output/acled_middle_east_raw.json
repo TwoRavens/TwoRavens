@@ -1,0 +1,5217 @@
+{
+    "windowSize": 10,
+    "aggregateDateType": "M",
+    "confidenceMargin": 0.95,
+    "max": {
+        "globalPearson": [
+            {
+                "correlation": 0.9455660113298752,
+                "p-val": 1.2183294507647519e-18,
+                "actions": [
+                    "action10",
+                    "action17"
+                ]
+            },
+            {
+                "correlation": 0.8782123704735367,
+                "p-val": 9.29768116359828e-13,
+                "actions": [
+                    "action10",
+                    "action37"
+                ]
+            },
+            {
+                "correlation": 0.8758148666350218,
+                "p-val": 1.2821426516820438e-12,
+                "actions": [
+                    "action12",
+                    "action27"
+                ]
+            },
+            {
+                "correlation": 0.8704630781270413,
+                "p-val": 2.5666782650108085e-12,
+                "actions": [
+                    "action16",
+                    "action38"
+                ]
+            },
+            {
+                "correlation": 0.8629395913533899,
+                "p-val": 6.4762306067655515e-12,
+                "actions": [
+                    "action17",
+                    "action37"
+                ]
+            },
+            {
+                "correlation": 0.8606118145899453,
+                "p-val": 8.529136543761658e-12,
+                "actions": [
+                    "action12",
+                    "action78"
+                ]
+            },
+            {
+                "correlation": 0.846867970556248,
+                "p-val": 3.942336445735365e-11,
+                "actions": [
+                    "action78",
+                    "action80"
+                ]
+            },
+            {
+                "correlation": 0.8445810805104103,
+                "p-val": 5.012900218120347e-11,
+                "actions": [
+                    "action17",
+                    "action22"
+                ]
+            },
+            {
+                "correlation": 0.830753985360232,
+                "p-val": 1.9829074871378934e-10,
+                "actions": [
+                    "action23",
+                    "action30"
+                ]
+            },
+            {
+                "correlation": 0.8230980765501047,
+                "p-val": 4.0310695701394656e-10,
+                "actions": [
+                    "action13",
+                    "action38"
+                ]
+            }
+        ],
+        "localPearson": [
+            {
+                "correlation": 0.9977012013626444,
+                "p-val": 1.2183813698908971e-10,
+                "actions": [
+                    "action17",
+                    "action30",
+                    "action22",
+                    "action12",
+                    "action10",
+                    "action20",
+                    "action27",
+                    "action37",
+                    "action23"
+                ],
+                "start": "2016-04-30",
+                "end": "2016-06-30",
+                "original": [
+                    "action17",
+                    "action30"
+                ],
+                "data": [
+                    {
+                        "action17": 29,
+                        "action30": 10,
+                        "action22": 2,
+                        "action12": 429,
+                        "action10": 87,
+                        "action20": 14,
+                        "action27": 47,
+                        "action37": 63,
+                        "action23": 1,
+                        "date": "2016-04-30"
+                    },
+                    {
+                        "action17": 26,
+                        "action30": 10,
+                        "action22": 0,
+                        "action12": 329,
+                        "action10": 150,
+                        "action20": 22,
+                        "action27": 36,
+                        "action37": 42,
+                        "action23": 1,
+                        "date": "2016-05-31"
+                    },
+                    {
+                        "action17": 52,
+                        "action30": 20,
+                        "action22": 1,
+                        "action12": 317,
+                        "action10": 155,
+                        "action20": 21,
+                        "action27": 49,
+                        "action37": 49,
+                        "action23": 4,
+                        "date": "2016-06-30"
+                    },
+                    {
+                        "action17": 50,
+                        "action30": 16,
+                        "action22": 4,
+                        "action12": 240,
+                        "action10": 137,
+                        "action20": 19,
+                        "action27": 28,
+                        "action37": 71,
+                        "action23": 16,
+                        "date": "2016-07-31"
+                    },
+                    {
+                        "action17": 29,
+                        "action30": 9,
+                        "action22": 3,
+                        "action12": 343,
+                        "action10": 74,
+                        "action20": 19,
+                        "action27": 51,
+                        "action37": 55,
+                        "action23": 14,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action17": 18,
+                        "action30": 4,
+                        "action22": 0,
+                        "action12": 217,
+                        "action10": 49,
+                        "action20": 13,
+                        "action27": 41,
+                        "action37": 50,
+                        "action23": 5,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action17": 21,
+                        "action30": 8,
+                        "action22": 3,
+                        "action12": 249,
+                        "action10": 45,
+                        "action20": 14,
+                        "action27": 53,
+                        "action37": 34,
+                        "action23": 9,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action17": 36,
+                        "action30": 7,
+                        "action22": 1,
+                        "action12": 278,
+                        "action10": 64,
+                        "action20": 8,
+                        "action27": 56,
+                        "action37": 44,
+                        "action23": 8,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action17": 41,
+                        "action30": 8,
+                        "action22": 0,
+                        "action12": 264,
+                        "action10": 79,
+                        "action20": 12,
+                        "action27": 54,
+                        "action37": 63,
+                        "action23": 1,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action17": 340,
+                        "action30": 157,
+                        "action22": 259,
+                        "action12": 953,
+                        "action10": 712,
+                        "action20": 88,
+                        "action27": 211,
+                        "action37": 145,
+                        "action23": 57,
+                        "date": "2017-01-31"
+                    },
+                    {
+                        "action17": 332,
+                        "action30": 114,
+                        "action22": 295,
+                        "action12": 755,
+                        "action10": 609,
+                        "action20": 88,
+                        "action27": 187,
+                        "action37": 123,
+                        "action23": 66,
+                        "date": "2017-02-28"
+                    },
+                    {
+                        "action17": 346,
+                        "action30": 162,
+                        "action22": 187,
+                        "action12": 915,
+                        "action10": 593,
+                        "action20": 62,
+                        "action27": 212,
+                        "action37": 157,
+                        "action23": 83,
+                        "date": "2017-03-31"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.9915295669016637,
+                "p-val": 2.229355158183569e-08,
+                "actions": [
+                    "action10",
+                    "action20",
+                    "action22",
+                    "action12",
+                    "action27",
+                    "action23",
+                    "action17",
+                    "action37",
+                    "action30"
+                ],
+                "start": "2016-04-30",
+                "end": "2016-06-30",
+                "original": [
+                    "action10",
+                    "action20"
+                ],
+                "data": [
+                    {
+                        "action10": 87,
+                        "action20": 14,
+                        "action22": 2,
+                        "action12": 429,
+                        "action27": 47,
+                        "action23": 1,
+                        "action17": 29,
+                        "action37": 63,
+                        "action30": 10,
+                        "date": "2016-04-30"
+                    },
+                    {
+                        "action10": 150,
+                        "action20": 22,
+                        "action22": 0,
+                        "action12": 329,
+                        "action27": 36,
+                        "action23": 1,
+                        "action17": 26,
+                        "action37": 42,
+                        "action30": 10,
+                        "date": "2016-05-31"
+                    },
+                    {
+                        "action10": 155,
+                        "action20": 21,
+                        "action22": 1,
+                        "action12": 317,
+                        "action27": 49,
+                        "action23": 4,
+                        "action17": 52,
+                        "action37": 49,
+                        "action30": 20,
+                        "date": "2016-06-30"
+                    },
+                    {
+                        "action10": 137,
+                        "action20": 19,
+                        "action22": 4,
+                        "action12": 240,
+                        "action27": 28,
+                        "action23": 16,
+                        "action17": 50,
+                        "action37": 71,
+                        "action30": 16,
+                        "date": "2016-07-31"
+                    },
+                    {
+                        "action10": 74,
+                        "action20": 19,
+                        "action22": 3,
+                        "action12": 343,
+                        "action27": 51,
+                        "action23": 14,
+                        "action17": 29,
+                        "action37": 55,
+                        "action30": 9,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action10": 49,
+                        "action20": 13,
+                        "action22": 0,
+                        "action12": 217,
+                        "action27": 41,
+                        "action23": 5,
+                        "action17": 18,
+                        "action37": 50,
+                        "action30": 4,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action10": 45,
+                        "action20": 14,
+                        "action22": 3,
+                        "action12": 249,
+                        "action27": 53,
+                        "action23": 9,
+                        "action17": 21,
+                        "action37": 34,
+                        "action30": 8,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action10": 64,
+                        "action20": 8,
+                        "action22": 1,
+                        "action12": 278,
+                        "action27": 56,
+                        "action23": 8,
+                        "action17": 36,
+                        "action37": 44,
+                        "action30": 7,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action10": 79,
+                        "action20": 12,
+                        "action22": 0,
+                        "action12": 264,
+                        "action27": 54,
+                        "action23": 1,
+                        "action17": 41,
+                        "action37": 63,
+                        "action30": 8,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action10": 712,
+                        "action20": 88,
+                        "action22": 259,
+                        "action12": 953,
+                        "action27": 211,
+                        "action23": 57,
+                        "action17": 340,
+                        "action37": 145,
+                        "action30": 157,
+                        "date": "2017-01-31"
+                    },
+                    {
+                        "action10": 609,
+                        "action20": 88,
+                        "action22": 295,
+                        "action12": 755,
+                        "action27": 187,
+                        "action23": 66,
+                        "action17": 332,
+                        "action37": 123,
+                        "action30": 114,
+                        "date": "2017-02-28"
+                    },
+                    {
+                        "action10": 593,
+                        "action20": 62,
+                        "action22": 187,
+                        "action12": 915,
+                        "action27": 212,
+                        "action23": 83,
+                        "action17": 346,
+                        "action37": 157,
+                        "action30": 162,
+                        "date": "2017-03-31"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.9896520678287729,
+                "p-val": 4.9543791247705494e-08,
+                "actions": [
+                    "action12",
+                    "action27",
+                    "action10",
+                    "action22",
+                    "action17",
+                    "action37",
+                    "action23",
+                    "action30",
+                    "action78"
+                ],
+                "start": "2016-05-31",
+                "end": "2016-07-31",
+                "original": [
+                    "action12",
+                    "action27"
+                ],
+                "data": [
+                    {
+                        "action12": 329,
+                        "action27": 36,
+                        "action10": 150,
+                        "action22": 0,
+                        "action17": 26,
+                        "action37": 42,
+                        "action23": 1,
+                        "action30": 10,
+                        "action78": 36,
+                        "date": "2016-05-31"
+                    },
+                    {
+                        "action12": 317,
+                        "action27": 49,
+                        "action10": 155,
+                        "action22": 1,
+                        "action17": 52,
+                        "action37": 49,
+                        "action23": 4,
+                        "action30": 20,
+                        "action78": 27,
+                        "date": "2016-06-30"
+                    },
+                    {
+                        "action12": 240,
+                        "action27": 28,
+                        "action10": 137,
+                        "action22": 4,
+                        "action17": 50,
+                        "action37": 71,
+                        "action23": 16,
+                        "action30": 16,
+                        "action78": 41,
+                        "date": "2016-07-31"
+                    },
+                    {
+                        "action12": 343,
+                        "action27": 51,
+                        "action10": 74,
+                        "action22": 3,
+                        "action17": 29,
+                        "action37": 55,
+                        "action23": 14,
+                        "action30": 9,
+                        "action78": 112,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action12": 217,
+                        "action27": 41,
+                        "action10": 49,
+                        "action22": 0,
+                        "action17": 18,
+                        "action37": 50,
+                        "action23": 5,
+                        "action30": 4,
+                        "action78": 98,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action12": 249,
+                        "action27": 53,
+                        "action10": 45,
+                        "action22": 3,
+                        "action17": 21,
+                        "action37": 34,
+                        "action23": 9,
+                        "action30": 8,
+                        "action78": 85,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action12": 278,
+                        "action27": 56,
+                        "action10": 64,
+                        "action22": 1,
+                        "action17": 36,
+                        "action37": 44,
+                        "action23": 8,
+                        "action30": 7,
+                        "action78": 52,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action12": 264,
+                        "action27": 54,
+                        "action10": 79,
+                        "action22": 0,
+                        "action17": 41,
+                        "action37": 63,
+                        "action23": 1,
+                        "action30": 8,
+                        "action78": 55,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action12": 953,
+                        "action27": 211,
+                        "action10": 712,
+                        "action22": 259,
+                        "action17": 340,
+                        "action37": 145,
+                        "action23": 57,
+                        "action30": 157,
+                        "action78": 329,
+                        "date": "2017-01-31"
+                    },
+                    {
+                        "action12": 755,
+                        "action27": 187,
+                        "action10": 609,
+                        "action22": 295,
+                        "action17": 332,
+                        "action37": 123,
+                        "action23": 66,
+                        "action30": 114,
+                        "action78": 191,
+                        "date": "2017-02-28"
+                    },
+                    {
+                        "action12": 915,
+                        "action27": 212,
+                        "action10": 593,
+                        "action22": 187,
+                        "action17": 346,
+                        "action37": 157,
+                        "action23": 83,
+                        "action30": 162,
+                        "action78": 217,
+                        "date": "2017-03-31"
+                    },
+                    {
+                        "action12": 885,
+                        "action27": 188,
+                        "action10": 675,
+                        "action22": 240,
+                        "action17": 442,
+                        "action37": 137,
+                        "action23": 72,
+                        "action30": 73,
+                        "action78": 226,
+                        "date": "2017-04-30"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.9853245330096931,
+                "p-val": 1.9937787596921268e-07,
+                "actions": [
+                    "action22",
+                    "action27",
+                    "action23",
+                    "action17",
+                    "action30",
+                    "action12",
+                    "action78",
+                    "action37",
+                    "action80"
+                ],
+                "start": "2016-04-30",
+                "end": "2016-04-30",
+                "original": [
+                    "action22",
+                    "action27"
+                ],
+                "data": [
+                    {
+                        "action22": 2,
+                        "action27": 47,
+                        "action23": 1,
+                        "action17": 29,
+                        "action30": 10,
+                        "action12": 429,
+                        "action78": 31,
+                        "action37": 63,
+                        "action80": 119,
+                        "date": "2016-04-30"
+                    },
+                    {
+                        "action22": 0,
+                        "action27": 36,
+                        "action23": 1,
+                        "action17": 26,
+                        "action30": 10,
+                        "action12": 329,
+                        "action78": 36,
+                        "action37": 42,
+                        "action80": 74,
+                        "date": "2016-05-31"
+                    },
+                    {
+                        "action22": 1,
+                        "action27": 49,
+                        "action23": 4,
+                        "action17": 52,
+                        "action30": 20,
+                        "action12": 317,
+                        "action78": 27,
+                        "action37": 49,
+                        "action80": 122,
+                        "date": "2016-06-30"
+                    },
+                    {
+                        "action22": 4,
+                        "action27": 28,
+                        "action23": 16,
+                        "action17": 50,
+                        "action30": 16,
+                        "action12": 240,
+                        "action78": 41,
+                        "action37": 71,
+                        "action80": 147,
+                        "date": "2016-07-31"
+                    },
+                    {
+                        "action22": 3,
+                        "action27": 51,
+                        "action23": 14,
+                        "action17": 29,
+                        "action30": 9,
+                        "action12": 343,
+                        "action78": 112,
+                        "action37": 55,
+                        "action80": 365,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action22": 0,
+                        "action27": 41,
+                        "action23": 5,
+                        "action17": 18,
+                        "action30": 4,
+                        "action12": 217,
+                        "action78": 98,
+                        "action37": 50,
+                        "action80": 460,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action22": 3,
+                        "action27": 53,
+                        "action23": 9,
+                        "action17": 21,
+                        "action30": 8,
+                        "action12": 249,
+                        "action78": 85,
+                        "action37": 34,
+                        "action80": 288,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action22": 1,
+                        "action27": 56,
+                        "action23": 8,
+                        "action17": 36,
+                        "action30": 7,
+                        "action12": 278,
+                        "action78": 52,
+                        "action37": 44,
+                        "action80": 211,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action22": 0,
+                        "action27": 54,
+                        "action23": 1,
+                        "action17": 41,
+                        "action30": 8,
+                        "action12": 264,
+                        "action78": 55,
+                        "action37": 63,
+                        "action80": 292,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action22": 259,
+                        "action27": 211,
+                        "action23": 57,
+                        "action17": 340,
+                        "action30": 157,
+                        "action12": 953,
+                        "action78": 329,
+                        "action37": 145,
+                        "action80": 626,
+                        "date": "2017-01-31"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.9845567819596223,
+                "p-val": 2.442632448965404e-07,
+                "actions": [
+                    "action10",
+                    "action17",
+                    "action22",
+                    "action12",
+                    "action37",
+                    "action23",
+                    "action20",
+                    "action78",
+                    "action30"
+                ],
+                "start": "2016-07-31",
+                "end": "2016-09-30",
+                "original": [
+                    "action10",
+                    "action17"
+                ],
+                "data": [
+                    {
+                        "action10": 137,
+                        "action17": 50,
+                        "action22": 4,
+                        "action12": 240,
+                        "action37": 71,
+                        "action23": 16,
+                        "action20": 19,
+                        "action78": 41,
+                        "action30": 16,
+                        "date": "2016-07-31"
+                    },
+                    {
+                        "action10": 74,
+                        "action17": 29,
+                        "action22": 3,
+                        "action12": 343,
+                        "action37": 55,
+                        "action23": 14,
+                        "action20": 19,
+                        "action78": 112,
+                        "action30": 9,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action10": 49,
+                        "action17": 18,
+                        "action22": 0,
+                        "action12": 217,
+                        "action37": 50,
+                        "action23": 5,
+                        "action20": 13,
+                        "action78": 98,
+                        "action30": 4,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action10": 45,
+                        "action17": 21,
+                        "action22": 3,
+                        "action12": 249,
+                        "action37": 34,
+                        "action23": 9,
+                        "action20": 14,
+                        "action78": 85,
+                        "action30": 8,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action10": 64,
+                        "action17": 36,
+                        "action22": 1,
+                        "action12": 278,
+                        "action37": 44,
+                        "action23": 8,
+                        "action20": 8,
+                        "action78": 52,
+                        "action30": 7,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action10": 79,
+                        "action17": 41,
+                        "action22": 0,
+                        "action12": 264,
+                        "action37": 63,
+                        "action23": 1,
+                        "action20": 12,
+                        "action78": 55,
+                        "action30": 8,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action10": 712,
+                        "action17": 340,
+                        "action22": 259,
+                        "action12": 953,
+                        "action37": 145,
+                        "action23": 57,
+                        "action20": 88,
+                        "action78": 329,
+                        "action30": 157,
+                        "date": "2017-01-31"
+                    },
+                    {
+                        "action10": 609,
+                        "action17": 332,
+                        "action22": 295,
+                        "action12": 755,
+                        "action37": 123,
+                        "action23": 66,
+                        "action20": 88,
+                        "action78": 191,
+                        "action30": 114,
+                        "date": "2017-02-28"
+                    },
+                    {
+                        "action10": 593,
+                        "action17": 346,
+                        "action22": 187,
+                        "action12": 915,
+                        "action37": 157,
+                        "action23": 83,
+                        "action20": 62,
+                        "action78": 217,
+                        "action30": 162,
+                        "date": "2017-03-31"
+                    },
+                    {
+                        "action10": 675,
+                        "action17": 442,
+                        "action22": 240,
+                        "action12": 885,
+                        "action37": 137,
+                        "action23": 72,
+                        "action20": 47,
+                        "action78": 226,
+                        "action30": 73,
+                        "date": "2017-04-30"
+                    },
+                    {
+                        "action10": 488,
+                        "action17": 217,
+                        "action22": 242,
+                        "action12": 764,
+                        "action37": 81,
+                        "action23": 84,
+                        "action20": 64,
+                        "action78": 163,
+                        "action30": 62,
+                        "date": "2017-05-31"
+                    },
+                    {
+                        "action10": 428,
+                        "action17": 222,
+                        "action22": 229,
+                        "action12": 804,
+                        "action37": 117,
+                        "action23": 98,
+                        "action20": 43,
+                        "action78": 159,
+                        "action30": 123,
+                        "date": "2017-06-30"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.970438101204548,
+                "p-val": 3.2241634105167405e-06,
+                "actions": [
+                    "action10",
+                    "action17",
+                    "action12",
+                    "action22",
+                    "action80",
+                    "action78",
+                    "action37",
+                    "action20",
+                    "action30"
+                ],
+                "start": "2016-10-31",
+                "end": "2016-12-31",
+                "original": [
+                    "action10",
+                    "action17"
+                ],
+                "data": [
+                    {
+                        "action10": 45,
+                        "action17": 21,
+                        "action12": 249,
+                        "action22": 3,
+                        "action80": 288,
+                        "action78": 85,
+                        "action37": 34,
+                        "action20": 14,
+                        "action30": 8,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action10": 64,
+                        "action17": 36,
+                        "action12": 278,
+                        "action22": 1,
+                        "action80": 211,
+                        "action78": 52,
+                        "action37": 44,
+                        "action20": 8,
+                        "action30": 7,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action10": 79,
+                        "action17": 41,
+                        "action12": 264,
+                        "action22": 0,
+                        "action80": 292,
+                        "action78": 55,
+                        "action37": 63,
+                        "action20": 12,
+                        "action30": 8,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action10": 712,
+                        "action17": 340,
+                        "action12": 953,
+                        "action22": 259,
+                        "action80": 626,
+                        "action78": 329,
+                        "action37": 145,
+                        "action20": 88,
+                        "action30": 157,
+                        "date": "2017-01-31"
+                    },
+                    {
+                        "action10": 609,
+                        "action17": 332,
+                        "action12": 755,
+                        "action22": 295,
+                        "action80": 466,
+                        "action78": 191,
+                        "action37": 123,
+                        "action20": 88,
+                        "action30": 114,
+                        "date": "2017-02-28"
+                    },
+                    {
+                        "action10": 593,
+                        "action17": 346,
+                        "action12": 915,
+                        "action22": 187,
+                        "action80": 579,
+                        "action78": 217,
+                        "action37": 157,
+                        "action20": 62,
+                        "action30": 162,
+                        "date": "2017-03-31"
+                    },
+                    {
+                        "action10": 675,
+                        "action17": 442,
+                        "action12": 885,
+                        "action22": 240,
+                        "action80": 651,
+                        "action78": 226,
+                        "action37": 137,
+                        "action20": 47,
+                        "action30": 73,
+                        "date": "2017-04-30"
+                    },
+                    {
+                        "action10": 488,
+                        "action17": 217,
+                        "action12": 764,
+                        "action22": 242,
+                        "action80": 327,
+                        "action78": 163,
+                        "action37": 81,
+                        "action20": 64,
+                        "action30": 62,
+                        "date": "2017-05-31"
+                    },
+                    {
+                        "action10": 428,
+                        "action17": 222,
+                        "action12": 804,
+                        "action22": 229,
+                        "action80": 407,
+                        "action78": 159,
+                        "action37": 117,
+                        "action20": 43,
+                        "action30": 123,
+                        "date": "2017-06-30"
+                    },
+                    {
+                        "action10": 450,
+                        "action17": 215,
+                        "action12": 759,
+                        "action22": 243,
+                        "action80": 449,
+                        "action78": 208,
+                        "action37": 121,
+                        "action20": 50,
+                        "action30": 111,
+                        "date": "2017-07-31"
+                    },
+                    {
+                        "action10": 641,
+                        "action17": 237,
+                        "action12": 934,
+                        "action22": 180,
+                        "action80": 532,
+                        "action78": 153,
+                        "action37": 146,
+                        "action20": 80,
+                        "action30": 98,
+                        "date": "2017-08-31"
+                    },
+                    {
+                        "action10": 653,
+                        "action17": 408,
+                        "action12": 782,
+                        "action22": 198,
+                        "action80": 417,
+                        "action78": 242,
+                        "action37": 126,
+                        "action20": 80,
+                        "action30": 107,
+                        "date": "2017-09-30"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.9689831815303479,
+                "p-val": 3.9004076023646996e-06,
+                "actions": [
+                    "action17",
+                    "action37",
+                    "action23",
+                    "action30",
+                    "action12",
+                    "action20",
+                    "action78",
+                    "action80",
+                    "action38"
+                ],
+                "start": "2016-04-30",
+                "end": "2016-06-30",
+                "original": [
+                    "action17",
+                    "action37"
+                ],
+                "data": [
+                    {
+                        "action17": 29,
+                        "action37": 63,
+                        "action23": 1,
+                        "action30": 10,
+                        "action12": 429,
+                        "action20": 14,
+                        "action78": 31,
+                        "action80": 119,
+                        "action38": 8,
+                        "date": "2016-04-30"
+                    },
+                    {
+                        "action17": 26,
+                        "action37": 42,
+                        "action23": 1,
+                        "action30": 10,
+                        "action12": 329,
+                        "action20": 22,
+                        "action78": 36,
+                        "action80": 74,
+                        "action38": 20,
+                        "date": "2016-05-31"
+                    },
+                    {
+                        "action17": 52,
+                        "action37": 49,
+                        "action23": 4,
+                        "action30": 20,
+                        "action12": 317,
+                        "action20": 21,
+                        "action78": 27,
+                        "action80": 122,
+                        "action38": 6,
+                        "date": "2016-06-30"
+                    },
+                    {
+                        "action17": 50,
+                        "action37": 71,
+                        "action23": 16,
+                        "action30": 16,
+                        "action12": 240,
+                        "action20": 19,
+                        "action78": 41,
+                        "action80": 147,
+                        "action38": 16,
+                        "date": "2016-07-31"
+                    },
+                    {
+                        "action17": 29,
+                        "action37": 55,
+                        "action23": 14,
+                        "action30": 9,
+                        "action12": 343,
+                        "action20": 19,
+                        "action78": 112,
+                        "action80": 365,
+                        "action38": 4,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action17": 18,
+                        "action37": 50,
+                        "action23": 5,
+                        "action30": 4,
+                        "action12": 217,
+                        "action20": 13,
+                        "action78": 98,
+                        "action80": 460,
+                        "action38": 16,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action17": 21,
+                        "action37": 34,
+                        "action23": 9,
+                        "action30": 8,
+                        "action12": 249,
+                        "action20": 14,
+                        "action78": 85,
+                        "action80": 288,
+                        "action38": 12,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action17": 36,
+                        "action37": 44,
+                        "action23": 8,
+                        "action30": 7,
+                        "action12": 278,
+                        "action20": 8,
+                        "action78": 52,
+                        "action80": 211,
+                        "action38": 11,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action17": 41,
+                        "action37": 63,
+                        "action23": 1,
+                        "action30": 8,
+                        "action12": 264,
+                        "action20": 12,
+                        "action78": 55,
+                        "action80": 292,
+                        "action38": 6,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action17": 340,
+                        "action37": 145,
+                        "action23": 57,
+                        "action30": 157,
+                        "action12": 953,
+                        "action20": 88,
+                        "action78": 329,
+                        "action80": 626,
+                        "action38": 17,
+                        "date": "2017-01-31"
+                    },
+                    {
+                        "action17": 332,
+                        "action37": 123,
+                        "action23": 66,
+                        "action30": 114,
+                        "action12": 755,
+                        "action20": 88,
+                        "action78": 191,
+                        "action80": 466,
+                        "action38": 20,
+                        "date": "2017-02-28"
+                    },
+                    {
+                        "action17": 346,
+                        "action37": 157,
+                        "action23": 83,
+                        "action30": 162,
+                        "action12": 915,
+                        "action20": 62,
+                        "action78": 217,
+                        "action80": 579,
+                        "action38": 17,
+                        "date": "2017-03-31"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.9632197785020813,
+                "p-val": 7.658381526237471e-06,
+                "actions": [
+                    "action23",
+                    "action27",
+                    "action30",
+                    "action12",
+                    "action22",
+                    "action17",
+                    "action10",
+                    "action20",
+                    "action13"
+                ],
+                "start": "2016-08-31",
+                "end": "2016-10-31",
+                "original": [
+                    "action23",
+                    "action27"
+                ],
+                "data": [
+                    {
+                        "action23": 14,
+                        "action27": 51,
+                        "action30": 9,
+                        "action12": 343,
+                        "action22": 3,
+                        "action17": 29,
+                        "action10": 74,
+                        "action20": 19,
+                        "action13": 67,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action23": 5,
+                        "action27": 41,
+                        "action30": 4,
+                        "action12": 217,
+                        "action22": 0,
+                        "action17": 18,
+                        "action10": 49,
+                        "action20": 13,
+                        "action13": 76,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action23": 9,
+                        "action27": 53,
+                        "action30": 8,
+                        "action12": 249,
+                        "action22": 3,
+                        "action17": 21,
+                        "action10": 45,
+                        "action20": 14,
+                        "action13": 83,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action23": 8,
+                        "action27": 56,
+                        "action30": 7,
+                        "action12": 278,
+                        "action22": 1,
+                        "action17": 36,
+                        "action10": 64,
+                        "action20": 8,
+                        "action13": 51,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action23": 1,
+                        "action27": 54,
+                        "action30": 8,
+                        "action12": 264,
+                        "action22": 0,
+                        "action17": 41,
+                        "action10": 79,
+                        "action20": 12,
+                        "action13": 36,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action23": 57,
+                        "action27": 211,
+                        "action30": 157,
+                        "action12": 953,
+                        "action22": 259,
+                        "action17": 340,
+                        "action10": 712,
+                        "action20": 88,
+                        "action13": 119,
+                        "date": "2017-01-31"
+                    },
+                    {
+                        "action23": 66,
+                        "action27": 187,
+                        "action30": 114,
+                        "action12": 755,
+                        "action22": 295,
+                        "action17": 332,
+                        "action10": 609,
+                        "action20": 88,
+                        "action13": 92,
+                        "date": "2017-02-28"
+                    },
+                    {
+                        "action23": 83,
+                        "action27": 212,
+                        "action30": 162,
+                        "action12": 915,
+                        "action22": 187,
+                        "action17": 346,
+                        "action10": 593,
+                        "action20": 62,
+                        "action13": 103,
+                        "date": "2017-03-31"
+                    },
+                    {
+                        "action23": 72,
+                        "action27": 188,
+                        "action30": 73,
+                        "action12": 885,
+                        "action22": 240,
+                        "action17": 442,
+                        "action10": 675,
+                        "action20": 47,
+                        "action13": 137,
+                        "date": "2017-04-30"
+                    },
+                    {
+                        "action23": 84,
+                        "action27": 288,
+                        "action30": 62,
+                        "action12": 764,
+                        "action22": 242,
+                        "action17": 217,
+                        "action10": 488,
+                        "action20": 64,
+                        "action13": 133,
+                        "date": "2017-05-31"
+                    },
+                    {
+                        "action23": 98,
+                        "action27": 241,
+                        "action30": 123,
+                        "action12": 804,
+                        "action22": 229,
+                        "action17": 222,
+                        "action10": 428,
+                        "action20": 43,
+                        "action13": 128,
+                        "date": "2017-06-30"
+                    },
+                    {
+                        "action23": 116,
+                        "action27": 234,
+                        "action30": 111,
+                        "action12": 759,
+                        "action22": 243,
+                        "action17": 215,
+                        "action10": 450,
+                        "action20": 50,
+                        "action13": 92,
+                        "date": "2017-07-31"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.9602496768419463,
+                "p-val": 1.0410520029653063e-05,
+                "actions": [
+                    "action13",
+                    "action38",
+                    "action16",
+                    "action18",
+                    "action23",
+                    "action17",
+                    "action10",
+                    "action78",
+                    "action30"
+                ],
+                "start": "2017-10-31",
+                "end": "2017-12-31",
+                "original": [
+                    "action13",
+                    "action38"
+                ],
+                "data": [
+                    {
+                        "action13": 99,
+                        "action38": 8,
+                        "action16": 12,
+                        "action18": 251,
+                        "action23": 63,
+                        "action17": 307,
+                        "action10": 602,
+                        "action78": 145,
+                        "action30": 114,
+                        "date": "2017-10-31"
+                    },
+                    {
+                        "action13": 76,
+                        "action38": 9,
+                        "action16": 6,
+                        "action18": 118,
+                        "action23": 54,
+                        "action17": 375,
+                        "action10": 555,
+                        "action78": 152,
+                        "action30": 85,
+                        "date": "2017-11-30"
+                    },
+                    {
+                        "action13": 92,
+                        "action38": 22,
+                        "action16": 13,
+                        "action18": 271,
+                        "action23": 44,
+                        "action17": 306,
+                        "action10": 572,
+                        "action78": 135,
+                        "action30": 84,
+                        "date": "2017-12-31"
+                    },
+                    {
+                        "action13": 100,
+                        "action38": 18,
+                        "action16": 2,
+                        "action18": 223,
+                        "action23": 53,
+                        "action17": 442,
+                        "action10": 918,
+                        "action78": 180,
+                        "action30": 114,
+                        "date": "2018-01-31"
+                    },
+                    {
+                        "action13": 80,
+                        "action38": 31,
+                        "action16": 4,
+                        "action18": 246,
+                        "action23": 50,
+                        "action17": 431,
+                        "action10": 714,
+                        "action78": 116,
+                        "action30": 115,
+                        "date": "2018-02-28"
+                    },
+                    {
+                        "action13": 80,
+                        "action38": 26,
+                        "action16": 14,
+                        "action18": 265,
+                        "action23": 28,
+                        "action17": 381,
+                        "action10": 711,
+                        "action78": 133,
+                        "action30": 118,
+                        "date": "2018-03-31"
+                    },
+                    {
+                        "action13": 86,
+                        "action38": 16,
+                        "action16": 25,
+                        "action18": 293,
+                        "action23": 43,
+                        "action17": 309,
+                        "action10": 746,
+                        "action78": 129,
+                        "action30": 76,
+                        "date": "2018-04-30"
+                    },
+                    {
+                        "action13": 144,
+                        "action38": 84,
+                        "action16": 47,
+                        "action18": 222,
+                        "action23": 67,
+                        "action17": 137,
+                        "action10": 394,
+                        "action78": 81,
+                        "action30": 127,
+                        "date": "2018-05-31"
+                    },
+                    {
+                        "action13": 190,
+                        "action38": 112,
+                        "action16": 56,
+                        "action18": 168,
+                        "action23": 84,
+                        "action17": 152,
+                        "action10": 500,
+                        "action78": 90,
+                        "action30": 184,
+                        "date": "2018-06-30"
+                    },
+                    {
+                        "action13": 174,
+                        "action38": 118,
+                        "action16": 63,
+                        "action18": 143,
+                        "action23": 75,
+                        "action17": 195,
+                        "action10": 492,
+                        "action78": 95,
+                        "action30": 134,
+                        "date": "2018-07-31"
+                    },
+                    {
+                        "action13": 161,
+                        "action38": 121,
+                        "action16": 57,
+                        "action18": 140,
+                        "action23": 57,
+                        "action17": 196,
+                        "action10": 373,
+                        "action78": 95,
+                        "action30": 89,
+                        "date": "2018-08-31"
+                    },
+                    {
+                        "action13": 211,
+                        "action38": 108,
+                        "action16": 64,
+                        "action18": 161,
+                        "action23": 68,
+                        "action17": 195,
+                        "action10": 399,
+                        "action78": 92,
+                        "action30": 108,
+                        "date": "2018-09-30"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.9594653686279894,
+                "p-val": 1.1246045611558183e-05,
+                "actions": [
+                    "action12",
+                    "action30",
+                    "action23",
+                    "action78",
+                    "action17",
+                    "action80",
+                    "action10",
+                    "action28",
+                    "action13"
+                ],
+                "start": "2016-04-30",
+                "end": "2016-04-30",
+                "original": [
+                    "action12",
+                    "action30"
+                ],
+                "data": [
+                    {
+                        "action12": 429,
+                        "action30": 10,
+                        "action23": 1,
+                        "action78": 31,
+                        "action17": 29,
+                        "action80": 119,
+                        "action10": 87,
+                        "action28": 340,
+                        "action13": 45,
+                        "date": "2016-04-30"
+                    },
+                    {
+                        "action12": 329,
+                        "action30": 10,
+                        "action23": 1,
+                        "action78": 36,
+                        "action17": 26,
+                        "action80": 74,
+                        "action10": 150,
+                        "action28": 297,
+                        "action13": 52,
+                        "date": "2016-05-31"
+                    },
+                    {
+                        "action12": 317,
+                        "action30": 20,
+                        "action23": 4,
+                        "action78": 27,
+                        "action17": 52,
+                        "action80": 122,
+                        "action10": 155,
+                        "action28": 296,
+                        "action13": 89,
+                        "date": "2016-06-30"
+                    },
+                    {
+                        "action12": 240,
+                        "action30": 16,
+                        "action23": 16,
+                        "action78": 41,
+                        "action17": 50,
+                        "action80": 147,
+                        "action10": 137,
+                        "action28": 251,
+                        "action13": 101,
+                        "date": "2016-07-31"
+                    },
+                    {
+                        "action12": 343,
+                        "action30": 9,
+                        "action23": 14,
+                        "action78": 112,
+                        "action17": 29,
+                        "action80": 365,
+                        "action10": 74,
+                        "action28": 232,
+                        "action13": 67,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action12": 217,
+                        "action30": 4,
+                        "action23": 5,
+                        "action78": 98,
+                        "action17": 18,
+                        "action80": 460,
+                        "action10": 49,
+                        "action28": 210,
+                        "action13": 76,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action12": 249,
+                        "action30": 8,
+                        "action23": 9,
+                        "action78": 85,
+                        "action17": 21,
+                        "action80": 288,
+                        "action10": 45,
+                        "action28": 203,
+                        "action13": 83,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action12": 278,
+                        "action30": 7,
+                        "action23": 8,
+                        "action78": 52,
+                        "action17": 36,
+                        "action80": 211,
+                        "action10": 64,
+                        "action28": 153,
+                        "action13": 51,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action12": 264,
+                        "action30": 8,
+                        "action23": 1,
+                        "action78": 55,
+                        "action17": 41,
+                        "action80": 292,
+                        "action10": 79,
+                        "action28": 130,
+                        "action13": 36,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action12": 953,
+                        "action30": 157,
+                        "action23": 57,
+                        "action78": 329,
+                        "action17": 340,
+                        "action80": 626,
+                        "action10": 712,
+                        "action28": 137,
+                        "action13": 119,
+                        "date": "2017-01-31"
+                    }
+                ]
+            }
+        ],
+        "globalKendall": [
+            {
+                "correlation": 0.7855065552469556,
+                "p-val": 1.0030863023145299e-11,
+                "actions": [
+                    "action10",
+                    "action17"
+                ]
+            },
+            {
+                "correlation": 0.6977451498055789,
+                "p-val": 1.2819792138681564e-09,
+                "actions": [
+                    "action78",
+                    "action80"
+                ]
+            },
+            {
+                "correlation": 0.6696766380343149,
+                "p-val": 5.828881069672944e-09,
+                "actions": [
+                    "action27",
+                    "action78"
+                ]
+            },
+            {
+                "correlation": 0.669195751138088,
+                "p-val": 7.680280593351182e-09,
+                "actions": [
+                    "action17",
+                    "action37"
+                ]
+            },
+            {
+                "correlation": 0.645598376891508,
+                "p-val": 1.99679373472177e-08,
+                "actions": [
+                    "action12",
+                    "action78"
+                ]
+            },
+            {
+                "correlation": 0.643609022556391,
+                "p-val": 2.15942469574225e-08,
+                "actions": [
+                    "action12",
+                    "action27"
+                ]
+            },
+            {
+                "correlation": 0.6322195750916244,
+                "p-val": 5.0606599000178644e-08,
+                "actions": [
+                    "action17",
+                    "action22"
+                ]
+            },
+            {
+                "correlation": 0.6253840651389224,
+                "p-val": 6.004402817629102e-08,
+                "actions": [
+                    "action10",
+                    "action37"
+                ]
+            },
+            {
+                "correlation": 0.6190115858293963,
+                "p-val": 9.74468743018539e-08,
+                "actions": [
+                    "action20",
+                    "action30"
+                ]
+            },
+            {
+                "correlation": 0.5900259320350142,
+                "p-val": 3.2955609289597293e-07,
+                "actions": [
+                    "action10",
+                    "action22"
+                ]
+            }
+        ],
+        "localKendall": [
+            {
+                "correlation": -0.9555555555555554,
+                "p-val": 5.5114638447971785e-06,
+                "actions": [
+                    "action16",
+                    "action80",
+                    "action28",
+                    "action60",
+                    "action10",
+                    "action17",
+                    "action78",
+                    "action13",
+                    "action12"
+                ],
+                "start": "2017-10-31",
+                "end": "2017-12-31",
+                "original": [
+                    "action16",
+                    "action80"
+                ],
+                "data": [
+                    {
+                        "action16": 12,
+                        "action80": 405,
+                        "action28": 140,
+                        "action60": 110,
+                        "action10": 602,
+                        "action17": 307,
+                        "action78": 145,
+                        "action13": 99,
+                        "action12": 750,
+                        "date": "2017-10-31"
+                    },
+                    {
+                        "action16": 6,
+                        "action80": 388,
+                        "action28": 106,
+                        "action60": 72,
+                        "action10": 555,
+                        "action17": 375,
+                        "action78": 152,
+                        "action13": 76,
+                        "action12": 732,
+                        "date": "2017-11-30"
+                    },
+                    {
+                        "action16": 13,
+                        "action80": 416,
+                        "action28": 44,
+                        "action60": 280,
+                        "action10": 572,
+                        "action17": 306,
+                        "action78": 135,
+                        "action13": 92,
+                        "action12": 507,
+                        "date": "2017-12-31"
+                    },
+                    {
+                        "action16": 2,
+                        "action80": 573,
+                        "action28": 187,
+                        "action60": 220,
+                        "action10": 918,
+                        "action17": 442,
+                        "action78": 180,
+                        "action13": 100,
+                        "action12": 574,
+                        "date": "2018-01-31"
+                    },
+                    {
+                        "action16": 4,
+                        "action80": 443,
+                        "action28": 161,
+                        "action60": 204,
+                        "action10": 714,
+                        "action17": 431,
+                        "action78": 116,
+                        "action13": 80,
+                        "action12": 399,
+                        "date": "2018-02-28"
+                    },
+                    {
+                        "action16": 14,
+                        "action80": 360,
+                        "action28": 150,
+                        "action60": 272,
+                        "action10": 711,
+                        "action17": 381,
+                        "action78": 133,
+                        "action13": 80,
+                        "action12": 425,
+                        "date": "2018-03-31"
+                    },
+                    {
+                        "action16": 25,
+                        "action80": 339,
+                        "action28": 67,
+                        "action60": 325,
+                        "action10": 746,
+                        "action17": 309,
+                        "action78": 129,
+                        "action13": 86,
+                        "action12": 397,
+                        "date": "2018-04-30"
+                    },
+                    {
+                        "action16": 47,
+                        "action80": 317,
+                        "action28": 51,
+                        "action60": 432,
+                        "action10": 394,
+                        "action17": 137,
+                        "action78": 81,
+                        "action13": 144,
+                        "action12": 313,
+                        "date": "2018-05-31"
+                    },
+                    {
+                        "action16": 56,
+                        "action80": 274,
+                        "action28": 61,
+                        "action60": 278,
+                        "action10": 500,
+                        "action17": 152,
+                        "action78": 90,
+                        "action13": 190,
+                        "action12": 366,
+                        "date": "2018-06-30"
+                    },
+                    {
+                        "action16": 63,
+                        "action80": 273,
+                        "action28": 57,
+                        "action60": 360,
+                        "action10": 492,
+                        "action17": 195,
+                        "action78": 95,
+                        "action13": 174,
+                        "action12": 466,
+                        "date": "2018-07-31"
+                    },
+                    {
+                        "action16": 57,
+                        "action80": 257,
+                        "action28": 41,
+                        "action60": 362,
+                        "action10": 373,
+                        "action17": 196,
+                        "action78": 95,
+                        "action13": 161,
+                        "action12": 320,
+                        "date": "2018-08-31"
+                    },
+                    {
+                        "action16": 64,
+                        "action80": 252,
+                        "action28": 32,
+                        "action60": 575,
+                        "action10": 399,
+                        "action17": 195,
+                        "action78": 92,
+                        "action13": 211,
+                        "action12": 273,
+                        "date": "2018-09-30"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.911111111111111,
+                "p-val": 2.9761904761904762e-05,
+                "actions": [
+                    "action78",
+                    "action80",
+                    "action12",
+                    "action18",
+                    "action20",
+                    "action13",
+                    "action28",
+                    "action10",
+                    "action23"
+                ],
+                "start": "2016-05-31",
+                "end": "2016-07-31",
+                "original": [
+                    "action78",
+                    "action80"
+                ],
+                "data": [
+                    {
+                        "action78": 36,
+                        "action80": 74,
+                        "action12": 329,
+                        "action18": 49,
+                        "action20": 22,
+                        "action13": 52,
+                        "action28": 297,
+                        "action10": 150,
+                        "action23": 1,
+                        "date": "2016-05-31"
+                    },
+                    {
+                        "action78": 27,
+                        "action80": 122,
+                        "action12": 317,
+                        "action18": 37,
+                        "action20": 21,
+                        "action13": 89,
+                        "action28": 296,
+                        "action10": 155,
+                        "action23": 4,
+                        "date": "2016-06-30"
+                    },
+                    {
+                        "action78": 41,
+                        "action80": 147,
+                        "action12": 240,
+                        "action18": 185,
+                        "action20": 19,
+                        "action13": 101,
+                        "action28": 251,
+                        "action10": 137,
+                        "action23": 16,
+                        "date": "2016-07-31"
+                    },
+                    {
+                        "action78": 112,
+                        "action80": 365,
+                        "action12": 343,
+                        "action18": 397,
+                        "action20": 19,
+                        "action13": 67,
+                        "action28": 232,
+                        "action10": 74,
+                        "action23": 14,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action78": 98,
+                        "action80": 460,
+                        "action12": 217,
+                        "action18": 292,
+                        "action20": 13,
+                        "action13": 76,
+                        "action28": 210,
+                        "action10": 49,
+                        "action23": 5,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action78": 85,
+                        "action80": 288,
+                        "action12": 249,
+                        "action18": 371,
+                        "action20": 14,
+                        "action13": 83,
+                        "action28": 203,
+                        "action10": 45,
+                        "action23": 9,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action78": 52,
+                        "action80": 211,
+                        "action12": 278,
+                        "action18": 225,
+                        "action20": 8,
+                        "action13": 51,
+                        "action28": 153,
+                        "action10": 64,
+                        "action23": 8,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action78": 55,
+                        "action80": 292,
+                        "action12": 264,
+                        "action18": 220,
+                        "action20": 12,
+                        "action13": 36,
+                        "action28": 130,
+                        "action10": 79,
+                        "action23": 1,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action78": 329,
+                        "action80": 626,
+                        "action12": 953,
+                        "action18": 237,
+                        "action20": 88,
+                        "action13": 119,
+                        "action28": 137,
+                        "action10": 712,
+                        "action23": 57,
+                        "date": "2017-01-31"
+                    },
+                    {
+                        "action78": 191,
+                        "action80": 466,
+                        "action12": 755,
+                        "action18": 228,
+                        "action20": 88,
+                        "action13": 92,
+                        "action28": 136,
+                        "action10": 609,
+                        "action23": 66,
+                        "date": "2017-02-28"
+                    },
+                    {
+                        "action78": 217,
+                        "action80": 579,
+                        "action12": 915,
+                        "action18": 217,
+                        "action20": 62,
+                        "action13": 103,
+                        "action28": 107,
+                        "action10": 593,
+                        "action23": 83,
+                        "date": "2017-03-31"
+                    },
+                    {
+                        "action78": 226,
+                        "action80": 651,
+                        "action12": 885,
+                        "action18": 262,
+                        "action20": 47,
+                        "action13": 137,
+                        "action28": 117,
+                        "action10": 675,
+                        "action23": 72,
+                        "date": "2017-04-30"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.9057894597833126,
+                "p-val": 0.00048011120413066324,
+                "actions": [
+                    "action22",
+                    "action23",
+                    "action20",
+                    "action30",
+                    "action13",
+                    "action10",
+                    "action17",
+                    "action38",
+                    "action37"
+                ],
+                "start": "2016-05-31",
+                "end": "2016-07-31",
+                "original": [
+                    "action22",
+                    "action23"
+                ],
+                "data": [
+                    {
+                        "action22": 0,
+                        "action23": 1,
+                        "action20": 22,
+                        "action30": 10,
+                        "action13": 52,
+                        "action10": 150,
+                        "action17": 26,
+                        "action38": 20,
+                        "action37": 42,
+                        "date": "2016-05-31"
+                    },
+                    {
+                        "action22": 1,
+                        "action23": 4,
+                        "action20": 21,
+                        "action30": 20,
+                        "action13": 89,
+                        "action10": 155,
+                        "action17": 52,
+                        "action38": 6,
+                        "action37": 49,
+                        "date": "2016-06-30"
+                    },
+                    {
+                        "action22": 4,
+                        "action23": 16,
+                        "action20": 19,
+                        "action30": 16,
+                        "action13": 101,
+                        "action10": 137,
+                        "action17": 50,
+                        "action38": 16,
+                        "action37": 71,
+                        "date": "2016-07-31"
+                    },
+                    {
+                        "action22": 3,
+                        "action23": 14,
+                        "action20": 19,
+                        "action30": 9,
+                        "action13": 67,
+                        "action10": 74,
+                        "action17": 29,
+                        "action38": 4,
+                        "action37": 55,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action22": 0,
+                        "action23": 5,
+                        "action20": 13,
+                        "action30": 4,
+                        "action13": 76,
+                        "action10": 49,
+                        "action17": 18,
+                        "action38": 16,
+                        "action37": 50,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action22": 3,
+                        "action23": 9,
+                        "action20": 14,
+                        "action30": 8,
+                        "action13": 83,
+                        "action10": 45,
+                        "action17": 21,
+                        "action38": 12,
+                        "action37": 34,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action22": 1,
+                        "action23": 8,
+                        "action20": 8,
+                        "action30": 7,
+                        "action13": 51,
+                        "action10": 64,
+                        "action17": 36,
+                        "action38": 11,
+                        "action37": 44,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action22": 0,
+                        "action23": 1,
+                        "action20": 12,
+                        "action30": 8,
+                        "action13": 36,
+                        "action10": 79,
+                        "action17": 41,
+                        "action38": 6,
+                        "action37": 63,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action22": 259,
+                        "action23": 57,
+                        "action20": 88,
+                        "action30": 157,
+                        "action13": 119,
+                        "action10": 712,
+                        "action17": 340,
+                        "action38": 17,
+                        "action37": 145,
+                        "date": "2017-01-31"
+                    },
+                    {
+                        "action22": 295,
+                        "action23": 66,
+                        "action20": 88,
+                        "action30": 114,
+                        "action13": 92,
+                        "action10": 609,
+                        "action17": 332,
+                        "action38": 20,
+                        "action37": 123,
+                        "date": "2017-02-28"
+                    },
+                    {
+                        "action22": 187,
+                        "action23": 83,
+                        "action20": 62,
+                        "action30": 162,
+                        "action13": 103,
+                        "action10": 593,
+                        "action17": 346,
+                        "action38": 17,
+                        "action37": 157,
+                        "date": "2017-03-31"
+                    },
+                    {
+                        "action22": 240,
+                        "action23": 72,
+                        "action20": 47,
+                        "action30": 73,
+                        "action13": 137,
+                        "action10": 675,
+                        "action17": 442,
+                        "action38": 25,
+                        "action37": 137,
+                        "date": "2017-04-30"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.8863636363636364,
+                "p-val": 0.0004377810451053638,
+                "actions": [
+                    "action17",
+                    "action78",
+                    "action10",
+                    "action12",
+                    "action23",
+                    "action28",
+                    "action80",
+                    "action16",
+                    "action60"
+                ],
+                "start": "2018-01-31",
+                "end": "2018-03-31",
+                "original": [
+                    "action17",
+                    "action78"
+                ],
+                "data": [
+                    {
+                        "action17": 442,
+                        "action78": 180,
+                        "action10": 918,
+                        "action12": 574,
+                        "action23": 53,
+                        "action28": 187,
+                        "action80": 573,
+                        "action16": 2,
+                        "action60": 220,
+                        "date": "2018-01-31"
+                    },
+                    {
+                        "action17": 431,
+                        "action78": 116,
+                        "action10": 714,
+                        "action12": 399,
+                        "action23": 50,
+                        "action28": 161,
+                        "action80": 443,
+                        "action16": 4,
+                        "action60": 204,
+                        "date": "2018-02-28"
+                    },
+                    {
+                        "action17": 381,
+                        "action78": 133,
+                        "action10": 711,
+                        "action12": 425,
+                        "action23": 28,
+                        "action28": 150,
+                        "action80": 360,
+                        "action16": 14,
+                        "action60": 272,
+                        "date": "2018-03-31"
+                    },
+                    {
+                        "action17": 309,
+                        "action78": 129,
+                        "action10": 746,
+                        "action12": 397,
+                        "action23": 43,
+                        "action28": 67,
+                        "action80": 339,
+                        "action16": 25,
+                        "action60": 325,
+                        "date": "2018-04-30"
+                    },
+                    {
+                        "action17": 137,
+                        "action78": 81,
+                        "action10": 394,
+                        "action12": 313,
+                        "action23": 67,
+                        "action28": 51,
+                        "action80": 317,
+                        "action16": 47,
+                        "action60": 432,
+                        "date": "2018-05-31"
+                    },
+                    {
+                        "action17": 152,
+                        "action78": 90,
+                        "action10": 500,
+                        "action12": 366,
+                        "action23": 84,
+                        "action28": 61,
+                        "action80": 274,
+                        "action16": 56,
+                        "action60": 278,
+                        "date": "2018-06-30"
+                    },
+                    {
+                        "action17": 195,
+                        "action78": 95,
+                        "action10": 492,
+                        "action12": 466,
+                        "action23": 75,
+                        "action28": 57,
+                        "action80": 273,
+                        "action16": 63,
+                        "action60": 360,
+                        "date": "2018-07-31"
+                    },
+                    {
+                        "action17": 196,
+                        "action78": 95,
+                        "action10": 373,
+                        "action12": 320,
+                        "action23": 57,
+                        "action28": 41,
+                        "action80": 257,
+                        "action16": 57,
+                        "action60": 362,
+                        "date": "2018-08-31"
+                    },
+                    {
+                        "action17": 195,
+                        "action78": 92,
+                        "action10": 399,
+                        "action12": 273,
+                        "action23": 68,
+                        "action28": 32,
+                        "action80": 252,
+                        "action16": 64,
+                        "action60": 575,
+                        "date": "2018-09-30"
+                    },
+                    {
+                        "action17": 112,
+                        "action78": 53,
+                        "action10": 247,
+                        "action12": 235,
+                        "action23": 78,
+                        "action28": 46,
+                        "action80": 203,
+                        "action16": 58,
+                        "action60": 405,
+                        "date": "2018-10-31"
+                    },
+                    {
+                        "action17": 169,
+                        "action78": 86,
+                        "action10": 408,
+                        "action12": 217,
+                        "action23": 70,
+                        "action28": 65,
+                        "action80": 248,
+                        "action16": 61,
+                        "action60": 358,
+                        "date": "2018-11-30"
+                    },
+                    {
+                        "action17": 175,
+                        "action78": 55,
+                        "action10": 555,
+                        "action12": 188,
+                        "action23": 65,
+                        "action28": 34,
+                        "action80": 259,
+                        "action16": 70,
+                        "action60": 428,
+                        "date": "2018-12-31"
+                    }
+                ]
+            },
+            {
+                "correlation": -0.8666666666666666,
+                "p-val": 0.00011518959435626102,
+                "actions": [
+                    "action16",
+                    "action80",
+                    "action28",
+                    "action13",
+                    "action10",
+                    "action60",
+                    "action12",
+                    "action18",
+                    "action38"
+                ],
+                "start": "2018-01-31",
+                "end": "2018-02-28",
+                "original": [
+                    "action16",
+                    "action80"
+                ],
+                "data": [
+                    {
+                        "action16": 2,
+                        "action80": 573,
+                        "action28": 187,
+                        "action13": 100,
+                        "action10": 918,
+                        "action60": 220,
+                        "action12": 574,
+                        "action18": 223,
+                        "action38": 18,
+                        "date": "2018-01-31"
+                    },
+                    {
+                        "action16": 4,
+                        "action80": 443,
+                        "action28": 161,
+                        "action13": 80,
+                        "action10": 714,
+                        "action60": 204,
+                        "action12": 399,
+                        "action18": 246,
+                        "action38": 31,
+                        "date": "2018-02-28"
+                    },
+                    {
+                        "action16": 14,
+                        "action80": 360,
+                        "action28": 150,
+                        "action13": 80,
+                        "action10": 711,
+                        "action60": 272,
+                        "action12": 425,
+                        "action18": 265,
+                        "action38": 26,
+                        "date": "2018-03-31"
+                    },
+                    {
+                        "action16": 25,
+                        "action80": 339,
+                        "action28": 67,
+                        "action13": 86,
+                        "action10": 746,
+                        "action60": 325,
+                        "action12": 397,
+                        "action18": 293,
+                        "action38": 16,
+                        "date": "2018-04-30"
+                    },
+                    {
+                        "action16": 47,
+                        "action80": 317,
+                        "action28": 51,
+                        "action13": 144,
+                        "action10": 394,
+                        "action60": 432,
+                        "action12": 313,
+                        "action18": 222,
+                        "action38": 84,
+                        "date": "2018-05-31"
+                    },
+                    {
+                        "action16": 56,
+                        "action80": 274,
+                        "action28": 61,
+                        "action13": 190,
+                        "action10": 500,
+                        "action60": 278,
+                        "action12": 366,
+                        "action18": 168,
+                        "action38": 112,
+                        "date": "2018-06-30"
+                    },
+                    {
+                        "action16": 63,
+                        "action80": 273,
+                        "action28": 57,
+                        "action13": 174,
+                        "action10": 492,
+                        "action60": 360,
+                        "action12": 466,
+                        "action18": 143,
+                        "action38": 118,
+                        "date": "2018-07-31"
+                    },
+                    {
+                        "action16": 57,
+                        "action80": 257,
+                        "action28": 41,
+                        "action13": 161,
+                        "action10": 373,
+                        "action60": 362,
+                        "action12": 320,
+                        "action18": 140,
+                        "action38": 121,
+                        "date": "2018-08-31"
+                    },
+                    {
+                        "action16": 64,
+                        "action80": 252,
+                        "action28": 32,
+                        "action13": 211,
+                        "action10": 399,
+                        "action60": 575,
+                        "action12": 273,
+                        "action18": 161,
+                        "action38": 108,
+                        "date": "2018-09-30"
+                    },
+                    {
+                        "action16": 58,
+                        "action80": 203,
+                        "action28": 46,
+                        "action13": 158,
+                        "action10": 247,
+                        "action60": 405,
+                        "action12": 235,
+                        "action18": 204,
+                        "action38": 80,
+                        "date": "2018-10-31"
+                    },
+                    {
+                        "action16": 61,
+                        "action80": 248,
+                        "action28": 65,
+                        "action13": 172,
+                        "action10": 408,
+                        "action60": 358,
+                        "action12": 217,
+                        "action18": 105,
+                        "action38": 120,
+                        "date": "2018-11-30"
+                    }
+                ]
+            },
+            {
+                "correlation": -0.8666666666666666,
+                "p-val": 0.00011518959435626102,
+                "actions": [
+                    "action18",
+                    "action38",
+                    "action13",
+                    "action23",
+                    "action10",
+                    "action58",
+                    "action16",
+                    "action80",
+                    "action37"
+                ],
+                "start": "2017-12-31",
+                "end": "2018-02-28",
+                "original": [
+                    "action18",
+                    "action38"
+                ],
+                "data": [
+                    {
+                        "action18": 271,
+                        "action38": 22,
+                        "action13": 92,
+                        "action23": 44,
+                        "action10": 572,
+                        "action58": 177,
+                        "action16": 13,
+                        "action80": 416,
+                        "action37": 126,
+                        "date": "2017-12-31"
+                    },
+                    {
+                        "action18": 223,
+                        "action38": 18,
+                        "action13": 100,
+                        "action23": 53,
+                        "action10": 918,
+                        "action58": 46,
+                        "action16": 2,
+                        "action80": 573,
+                        "action37": 137,
+                        "date": "2018-01-31"
+                    },
+                    {
+                        "action18": 246,
+                        "action38": 31,
+                        "action13": 80,
+                        "action23": 50,
+                        "action10": 714,
+                        "action58": 72,
+                        "action16": 4,
+                        "action80": 443,
+                        "action37": 165,
+                        "date": "2018-02-28"
+                    },
+                    {
+                        "action18": 265,
+                        "action38": 26,
+                        "action13": 80,
+                        "action23": 28,
+                        "action10": 711,
+                        "action58": 78,
+                        "action16": 14,
+                        "action80": 360,
+                        "action37": 150,
+                        "date": "2018-03-31"
+                    },
+                    {
+                        "action18": 293,
+                        "action38": 16,
+                        "action13": 86,
+                        "action23": 43,
+                        "action10": 746,
+                        "action58": 53,
+                        "action16": 25,
+                        "action80": 339,
+                        "action37": 143,
+                        "date": "2018-04-30"
+                    },
+                    {
+                        "action18": 222,
+                        "action38": 84,
+                        "action13": 144,
+                        "action23": 67,
+                        "action10": 394,
+                        "action58": 57,
+                        "action16": 47,
+                        "action80": 317,
+                        "action37": 126,
+                        "date": "2018-05-31"
+                    },
+                    {
+                        "action18": 168,
+                        "action38": 112,
+                        "action13": 190,
+                        "action23": 84,
+                        "action10": 500,
+                        "action58": 46,
+                        "action16": 56,
+                        "action80": 274,
+                        "action37": 120,
+                        "date": "2018-06-30"
+                    },
+                    {
+                        "action18": 143,
+                        "action38": 118,
+                        "action13": 174,
+                        "action23": 75,
+                        "action10": 492,
+                        "action58": 41,
+                        "action16": 63,
+                        "action80": 273,
+                        "action37": 131,
+                        "date": "2018-07-31"
+                    },
+                    {
+                        "action18": 140,
+                        "action38": 121,
+                        "action13": 161,
+                        "action23": 57,
+                        "action10": 373,
+                        "action58": 39,
+                        "action16": 57,
+                        "action80": 257,
+                        "action37": 131,
+                        "date": "2018-08-31"
+                    },
+                    {
+                        "action18": 161,
+                        "action38": 108,
+                        "action13": 211,
+                        "action23": 68,
+                        "action10": 399,
+                        "action58": 64,
+                        "action16": 64,
+                        "action80": 252,
+                        "action37": 116,
+                        "date": "2018-09-30"
+                    },
+                    {
+                        "action18": 204,
+                        "action38": 80,
+                        "action13": 158,
+                        "action23": 78,
+                        "action10": 247,
+                        "action58": 88,
+                        "action16": 58,
+                        "action80": 203,
+                        "action37": 132,
+                        "date": "2018-10-31"
+                    },
+                    {
+                        "action18": 105,
+                        "action38": 120,
+                        "action13": 172,
+                        "action23": 70,
+                        "action10": 408,
+                        "action58": 34,
+                        "action16": 61,
+                        "action80": 248,
+                        "action37": 121,
+                        "date": "2018-11-30"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.8666666666666666,
+                "p-val": 0.00011518959435626102,
+                "actions": [
+                    "action18",
+                    "action60",
+                    "action28",
+                    "action11"
+                ],
+                "start": "2016-11-30",
+                "end": "2017-01-31",
+                "original": [
+                    "action18",
+                    "action60"
+                ],
+                "data": [
+                    {
+                        "action18": 225,
+                        "action60": 112,
+                        "action28": 153,
+                        "action11": 210,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action18": 220,
+                        "action60": 176,
+                        "action28": 130,
+                        "action11": 201,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action18": 237,
+                        "action60": 184,
+                        "action28": 137,
+                        "action11": 204,
+                        "date": "2017-01-31"
+                    },
+                    {
+                        "action18": 228,
+                        "action60": 156,
+                        "action28": 136,
+                        "action11": 127,
+                        "date": "2017-02-28"
+                    },
+                    {
+                        "action18": 217,
+                        "action60": 143,
+                        "action28": 107,
+                        "action11": 134,
+                        "date": "2017-03-31"
+                    },
+                    {
+                        "action18": 262,
+                        "action60": 212,
+                        "action28": 117,
+                        "action11": 152,
+                        "date": "2017-04-30"
+                    },
+                    {
+                        "action18": 240,
+                        "action60": 181,
+                        "action28": 99,
+                        "action11": 164,
+                        "date": "2017-05-31"
+                    },
+                    {
+                        "action18": 216,
+                        "action60": 101,
+                        "action28": 161,
+                        "action11": 139,
+                        "date": "2017-06-30"
+                    },
+                    {
+                        "action18": 182,
+                        "action60": 126,
+                        "action28": 151,
+                        "action11": 216,
+                        "date": "2017-07-31"
+                    },
+                    {
+                        "action18": 176,
+                        "action60": 90,
+                        "action28": 182,
+                        "action11": 239,
+                        "date": "2017-08-31"
+                    },
+                    {
+                        "action18": 169,
+                        "action60": 60,
+                        "action28": 167,
+                        "action11": 268,
+                        "date": "2017-09-30"
+                    },
+                    {
+                        "action18": 251,
+                        "action60": 110,
+                        "action28": 140,
+                        "action11": 288,
+                        "date": "2017-10-31"
+                    }
+                ]
+            },
+            {
+                "correlation": -0.8539864924534399,
+                "p-val": 0.0006436975254696877,
+                "actions": [
+                    "action16",
+                    "action80",
+                    "action17",
+                    "action28",
+                    "action78",
+                    "action38",
+                    "action60",
+                    "action12",
+                    "action10"
+                ],
+                "start": "2017-08-31",
+                "end": "2017-09-30",
+                "original": [
+                    "action16",
+                    "action80"
+                ],
+                "data": [
+                    {
+                        "action16": 23,
+                        "action80": 532,
+                        "action17": 237,
+                        "action28": 182,
+                        "action78": 153,
+                        "action38": 12,
+                        "action60": 90,
+                        "action12": 934,
+                        "action10": 641,
+                        "date": "2017-08-31"
+                    },
+                    {
+                        "action16": 6,
+                        "action80": 417,
+                        "action17": 408,
+                        "action28": 167,
+                        "action78": 242,
+                        "action38": 9,
+                        "action60": 60,
+                        "action12": 782,
+                        "action10": 653,
+                        "date": "2017-09-30"
+                    },
+                    {
+                        "action16": 12,
+                        "action80": 405,
+                        "action17": 307,
+                        "action28": 140,
+                        "action78": 145,
+                        "action38": 8,
+                        "action60": 110,
+                        "action12": 750,
+                        "action10": 602,
+                        "date": "2017-10-31"
+                    },
+                    {
+                        "action16": 6,
+                        "action80": 388,
+                        "action17": 375,
+                        "action28": 106,
+                        "action78": 152,
+                        "action38": 9,
+                        "action60": 72,
+                        "action12": 732,
+                        "action10": 555,
+                        "date": "2017-11-30"
+                    },
+                    {
+                        "action16": 13,
+                        "action80": 416,
+                        "action17": 306,
+                        "action28": 44,
+                        "action78": 135,
+                        "action38": 22,
+                        "action60": 280,
+                        "action12": 507,
+                        "action10": 572,
+                        "date": "2017-12-31"
+                    },
+                    {
+                        "action16": 2,
+                        "action80": 573,
+                        "action17": 442,
+                        "action28": 187,
+                        "action78": 180,
+                        "action38": 18,
+                        "action60": 220,
+                        "action12": 574,
+                        "action10": 918,
+                        "date": "2018-01-31"
+                    },
+                    {
+                        "action16": 4,
+                        "action80": 443,
+                        "action17": 431,
+                        "action28": 161,
+                        "action78": 116,
+                        "action38": 31,
+                        "action60": 204,
+                        "action12": 399,
+                        "action10": 714,
+                        "date": "2018-02-28"
+                    },
+                    {
+                        "action16": 14,
+                        "action80": 360,
+                        "action17": 381,
+                        "action28": 150,
+                        "action78": 133,
+                        "action38": 26,
+                        "action60": 272,
+                        "action12": 425,
+                        "action10": 711,
+                        "date": "2018-03-31"
+                    },
+                    {
+                        "action16": 25,
+                        "action80": 339,
+                        "action17": 309,
+                        "action28": 67,
+                        "action78": 129,
+                        "action38": 16,
+                        "action60": 325,
+                        "action12": 397,
+                        "action10": 746,
+                        "date": "2018-04-30"
+                    },
+                    {
+                        "action16": 47,
+                        "action80": 317,
+                        "action17": 137,
+                        "action28": 51,
+                        "action78": 81,
+                        "action38": 84,
+                        "action60": 432,
+                        "action12": 313,
+                        "action10": 394,
+                        "date": "2018-05-31"
+                    },
+                    {
+                        "action16": 56,
+                        "action80": 274,
+                        "action17": 152,
+                        "action28": 61,
+                        "action78": 90,
+                        "action38": 112,
+                        "action60": 278,
+                        "action12": 366,
+                        "action10": 500,
+                        "date": "2018-06-30"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.8539864924534399,
+                "p-val": 0.0006436975254696877,
+                "actions": [
+                    "action17",
+                    "action30",
+                    "action10",
+                    "action20",
+                    "action37",
+                    "action12",
+                    "action13",
+                    "action27",
+                    "action60"
+                ],
+                "start": "2016-05-31",
+                "end": "2016-07-31",
+                "original": [
+                    "action17",
+                    "action30"
+                ],
+                "data": [
+                    {
+                        "action17": 26,
+                        "action30": 10,
+                        "action10": 150,
+                        "action20": 22,
+                        "action37": 42,
+                        "action12": 329,
+                        "action13": 52,
+                        "action27": 36,
+                        "action60": 187,
+                        "date": "2016-05-31"
+                    },
+                    {
+                        "action17": 52,
+                        "action30": 20,
+                        "action10": 155,
+                        "action20": 21,
+                        "action37": 49,
+                        "action12": 317,
+                        "action13": 89,
+                        "action27": 49,
+                        "action60": 80,
+                        "date": "2016-06-30"
+                    },
+                    {
+                        "action17": 50,
+                        "action30": 16,
+                        "action10": 137,
+                        "action20": 19,
+                        "action37": 71,
+                        "action12": 240,
+                        "action13": 101,
+                        "action27": 28,
+                        "action60": 1431,
+                        "date": "2016-07-31"
+                    },
+                    {
+                        "action17": 29,
+                        "action30": 9,
+                        "action10": 74,
+                        "action20": 19,
+                        "action37": 55,
+                        "action12": 343,
+                        "action13": 67,
+                        "action27": 51,
+                        "action60": 108,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action17": 18,
+                        "action30": 4,
+                        "action10": 49,
+                        "action20": 13,
+                        "action37": 50,
+                        "action12": 217,
+                        "action13": 76,
+                        "action27": 41,
+                        "action60": 108,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action17": 21,
+                        "action30": 8,
+                        "action10": 45,
+                        "action20": 14,
+                        "action37": 34,
+                        "action12": 249,
+                        "action13": 83,
+                        "action27": 53,
+                        "action60": 110,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action17": 36,
+                        "action30": 7,
+                        "action10": 64,
+                        "action20": 8,
+                        "action37": 44,
+                        "action12": 278,
+                        "action13": 51,
+                        "action27": 56,
+                        "action60": 112,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action17": 41,
+                        "action30": 8,
+                        "action10": 79,
+                        "action20": 12,
+                        "action37": 63,
+                        "action12": 264,
+                        "action13": 36,
+                        "action27": 54,
+                        "action60": 176,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action17": 340,
+                        "action30": 157,
+                        "action10": 712,
+                        "action20": 88,
+                        "action37": 145,
+                        "action12": 953,
+                        "action13": 119,
+                        "action27": 211,
+                        "action60": 184,
+                        "date": "2017-01-31"
+                    },
+                    {
+                        "action17": 332,
+                        "action30": 114,
+                        "action10": 609,
+                        "action20": 88,
+                        "action37": 123,
+                        "action12": 755,
+                        "action13": 92,
+                        "action27": 187,
+                        "action60": 156,
+                        "date": "2017-02-28"
+                    },
+                    {
+                        "action17": 346,
+                        "action30": 162,
+                        "action10": 593,
+                        "action20": 62,
+                        "action37": 157,
+                        "action12": 915,
+                        "action13": 103,
+                        "action27": 212,
+                        "action60": 143,
+                        "date": "2017-03-31"
+                    },
+                    {
+                        "action17": 442,
+                        "action30": 73,
+                        "action10": 675,
+                        "action20": 47,
+                        "action37": 137,
+                        "action12": 885,
+                        "action13": 137,
+                        "action27": 188,
+                        "action60": 212,
+                        "date": "2017-04-30"
+                    }
+                ]
+            },
+            {
+                "correlation": -0.8409090909090909,
+                "p-val": 0.0008503098424788042,
+                "actions": [
+                    "action13",
+                    "action37",
+                    "action23",
+                    "action17",
+                    "action80",
+                    "action16",
+                    "action60",
+                    "action28",
+                    "action22"
+                ],
+                "start": "2017-12-31",
+                "end": "2018-02-28",
+                "original": [
+                    "action13",
+                    "action37"
+                ],
+                "data": [
+                    {
+                        "action13": 92,
+                        "action37": 126,
+                        "action23": 44,
+                        "action17": 306,
+                        "action80": 416,
+                        "action16": 13,
+                        "action60": 280,
+                        "action28": 44,
+                        "action22": 147,
+                        "date": "2017-12-31"
+                    },
+                    {
+                        "action13": 100,
+                        "action37": 137,
+                        "action23": 53,
+                        "action17": 442,
+                        "action80": 573,
+                        "action16": 2,
+                        "action60": 220,
+                        "action28": 187,
+                        "action22": 153,
+                        "date": "2018-01-31"
+                    },
+                    {
+                        "action13": 80,
+                        "action37": 165,
+                        "action23": 50,
+                        "action17": 431,
+                        "action80": 443,
+                        "action16": 4,
+                        "action60": 204,
+                        "action28": 161,
+                        "action22": 264,
+                        "date": "2018-02-28"
+                    },
+                    {
+                        "action13": 80,
+                        "action37": 150,
+                        "action23": 28,
+                        "action17": 381,
+                        "action80": 360,
+                        "action16": 14,
+                        "action60": 272,
+                        "action28": 150,
+                        "action22": 257,
+                        "date": "2018-03-31"
+                    },
+                    {
+                        "action13": 86,
+                        "action37": 143,
+                        "action23": 43,
+                        "action17": 309,
+                        "action80": 339,
+                        "action16": 25,
+                        "action60": 325,
+                        "action28": 67,
+                        "action22": 108,
+                        "date": "2018-04-30"
+                    },
+                    {
+                        "action13": 144,
+                        "action37": 126,
+                        "action23": 67,
+                        "action17": 137,
+                        "action80": 317,
+                        "action16": 47,
+                        "action60": 432,
+                        "action28": 51,
+                        "action22": 74,
+                        "date": "2018-05-31"
+                    },
+                    {
+                        "action13": 190,
+                        "action37": 120,
+                        "action23": 84,
+                        "action17": 152,
+                        "action80": 274,
+                        "action16": 56,
+                        "action60": 278,
+                        "action28": 61,
+                        "action22": 105,
+                        "date": "2018-06-30"
+                    },
+                    {
+                        "action13": 174,
+                        "action37": 131,
+                        "action23": 75,
+                        "action17": 195,
+                        "action80": 273,
+                        "action16": 63,
+                        "action60": 360,
+                        "action28": 57,
+                        "action22": 109,
+                        "date": "2018-07-31"
+                    },
+                    {
+                        "action13": 161,
+                        "action37": 131,
+                        "action23": 57,
+                        "action17": 196,
+                        "action80": 257,
+                        "action16": 57,
+                        "action60": 362,
+                        "action28": 41,
+                        "action22": 47,
+                        "date": "2018-08-31"
+                    },
+                    {
+                        "action13": 211,
+                        "action37": 116,
+                        "action23": 68,
+                        "action17": 195,
+                        "action80": 252,
+                        "action16": 64,
+                        "action60": 575,
+                        "action28": 32,
+                        "action22": 112,
+                        "date": "2018-09-30"
+                    },
+                    {
+                        "action13": 158,
+                        "action37": 132,
+                        "action23": 78,
+                        "action17": 112,
+                        "action80": 203,
+                        "action16": 58,
+                        "action60": 405,
+                        "action28": 46,
+                        "action22": 137,
+                        "date": "2018-10-31"
+                    },
+                    {
+                        "action13": 172,
+                        "action37": 121,
+                        "action23": 70,
+                        "action17": 169,
+                        "action80": 248,
+                        "action16": 61,
+                        "action60": 358,
+                        "action28": 65,
+                        "action22": 76,
+                        "date": "2018-11-30"
+                    }
+                ]
+            }
+        ]
+    },
+    "min": {
+        "globalPearson": [
+            {
+                "correlation": 0.026134324000860253,
+                "p-val": 0.8779734436617529,
+                "actions": [
+                    "action12",
+                    "action28"
+                ]
+            },
+            {
+                "correlation": -0.02507632897968112,
+                "p-val": 0.8828786316711545,
+                "actions": [
+                    "action10",
+                    "action60"
+                ]
+            },
+            {
+                "correlation": -0.022525893638569616,
+                "p-val": 0.894720557672465,
+                "actions": [
+                    "action10",
+                    "action16"
+                ]
+            },
+            {
+                "correlation": 0.01935890223207116,
+                "p-val": 0.9094562266047808,
+                "actions": [
+                    "action20",
+                    "action60"
+                ]
+            },
+            {
+                "correlation": -0.018599653920457492,
+                "p-val": 0.9129935453508019,
+                "actions": [
+                    "action18",
+                    "action28"
+                ]
+            },
+            {
+                "correlation": 0.015008279948152507,
+                "p-val": 0.9297468954041154,
+                "actions": [
+                    "action18",
+                    "action23"
+                ]
+            },
+            {
+                "correlation": 0.01489031514035443,
+                "p-val": 0.9302977325789521,
+                "actions": [
+                    "action11",
+                    "action12"
+                ]
+            },
+            {
+                "correlation": 0.005549898296511723,
+                "p-val": 0.9739933832290515,
+                "actions": [
+                    "action18",
+                    "action20"
+                ]
+            },
+            {
+                "correlation": -0.0023154821745123406,
+                "p-val": 0.9891482185801226,
+                "actions": [
+                    "action17",
+                    "action38"
+                ]
+            },
+            {
+                "correlation": 0.0018762803887266996,
+                "p-val": 0.9912065007232547,
+                "actions": [
+                    "action12",
+                    "action58"
+                ]
+            }
+        ],
+        "localPearson": [
+            {
+                "correlation": -0.6160845159666084,
+                "p-val": 0.05787698045329903,
+                "actions": [
+                    "action11",
+                    "action38"
+                ],
+                "start": "2016-01-31",
+                "end": "2016-11-30",
+                "original": [
+                    "action11",
+                    "action38"
+                ],
+                "data": [
+                    {
+                        "action11": 115,
+                        "action38": 24,
+                        "date": "2016-01-31"
+                    },
+                    {
+                        "action11": 130,
+                        "action38": 18,
+                        "date": "2016-02-29"
+                    },
+                    {
+                        "action11": 116,
+                        "action38": 16,
+                        "date": "2016-03-31"
+                    },
+                    {
+                        "action11": 242,
+                        "action38": 8,
+                        "date": "2016-04-30"
+                    },
+                    {
+                        "action11": 138,
+                        "action38": 20,
+                        "date": "2016-05-31"
+                    },
+                    {
+                        "action11": 137,
+                        "action38": 6,
+                        "date": "2016-06-30"
+                    },
+                    {
+                        "action11": 184,
+                        "action38": 16,
+                        "date": "2016-07-31"
+                    },
+                    {
+                        "action11": 193,
+                        "action38": 4,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action11": 148,
+                        "action38": 16,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action11": 192,
+                        "action38": 12,
+                        "date": "2016-10-31"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.5826233257228259,
+                "p-val": 0.07714519440146433,
+                "actions": [
+                    "action16",
+                    "action23",
+                    "action22"
+                ],
+                "start": "2016-05-31",
+                "end": "2017-03-31",
+                "original": [
+                    "action16",
+                    "action23"
+                ],
+                "data": [
+                    {
+                        "action16": 11,
+                        "action23": 1,
+                        "action22": 0,
+                        "date": "2016-05-31"
+                    },
+                    {
+                        "action16": 9,
+                        "action23": 4,
+                        "action22": 1,
+                        "date": "2016-06-30"
+                    },
+                    {
+                        "action16": 18,
+                        "action23": 16,
+                        "action22": 4,
+                        "date": "2016-07-31"
+                    },
+                    {
+                        "action16": 13,
+                        "action23": 14,
+                        "action22": 3,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action16": 1,
+                        "action23": 5,
+                        "action22": 0,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action16": 10,
+                        "action23": 9,
+                        "action22": 3,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action16": 31,
+                        "action23": 8,
+                        "action22": 1,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action16": 9,
+                        "action23": 1,
+                        "action22": 0,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action16": 13,
+                        "action23": 57,
+                        "action22": 259,
+                        "date": "2017-01-31"
+                    },
+                    {
+                        "action16": 39,
+                        "action23": 66,
+                        "action22": 295,
+                        "date": "2017-02-28"
+                    }
+                ]
+            },
+            {
+                "correlation": -0.5593546884506088,
+                "p-val": 0.09273085603853291,
+                "actions": [
+                    "action22",
+                    "action60",
+                    "action80",
+                    "action11"
+                ],
+                "start": "2017-12-31",
+                "end": "2018-10-31",
+                "original": [
+                    "action22",
+                    "action60"
+                ],
+                "data": [
+                    {
+                        "action22": 147,
+                        "action60": 280,
+                        "action80": 416,
+                        "action11": 235,
+                        "date": "2017-12-31"
+                    },
+                    {
+                        "action22": 153,
+                        "action60": 220,
+                        "action80": 573,
+                        "action11": 370,
+                        "date": "2018-01-31"
+                    },
+                    {
+                        "action22": 264,
+                        "action60": 204,
+                        "action80": 443,
+                        "action11": 283,
+                        "date": "2018-02-28"
+                    },
+                    {
+                        "action22": 257,
+                        "action60": 272,
+                        "action80": 360,
+                        "action11": 292,
+                        "date": "2018-03-31"
+                    },
+                    {
+                        "action22": 108,
+                        "action60": 325,
+                        "action80": 339,
+                        "action11": 244,
+                        "date": "2018-04-30"
+                    },
+                    {
+                        "action22": 74,
+                        "action60": 432,
+                        "action80": 317,
+                        "action11": 191,
+                        "date": "2018-05-31"
+                    },
+                    {
+                        "action22": 105,
+                        "action60": 278,
+                        "action80": 274,
+                        "action11": 240,
+                        "date": "2018-06-30"
+                    },
+                    {
+                        "action22": 109,
+                        "action60": 360,
+                        "action80": 273,
+                        "action11": 241,
+                        "date": "2018-07-31"
+                    },
+                    {
+                        "action22": 47,
+                        "action60": 362,
+                        "action80": 257,
+                        "action11": 230,
+                        "date": "2018-08-31"
+                    },
+                    {
+                        "action22": 112,
+                        "action60": 575,
+                        "action80": 252,
+                        "action11": 285,
+                        "date": "2018-09-30"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.5260494204345079,
+                "p-val": 0.11831784876155248,
+                "actions": [
+                    "action23",
+                    "action78",
+                    "action80",
+                    "action27"
+                ],
+                "start": "2017-06-30",
+                "end": "2018-04-30",
+                "original": [
+                    "action23",
+                    "action78"
+                ],
+                "data": [
+                    {
+                        "action23": 98,
+                        "action78": 159,
+                        "action80": 407,
+                        "action27": 241,
+                        "date": "2017-06-30"
+                    },
+                    {
+                        "action23": 116,
+                        "action78": 208,
+                        "action80": 449,
+                        "action27": 234,
+                        "date": "2017-07-31"
+                    },
+                    {
+                        "action23": 59,
+                        "action78": 153,
+                        "action80": 532,
+                        "action27": 189,
+                        "date": "2017-08-31"
+                    },
+                    {
+                        "action23": 66,
+                        "action78": 242,
+                        "action80": 417,
+                        "action27": 125,
+                        "date": "2017-09-30"
+                    },
+                    {
+                        "action23": 63,
+                        "action78": 145,
+                        "action80": 405,
+                        "action27": 99,
+                        "date": "2017-10-31"
+                    },
+                    {
+                        "action23": 54,
+                        "action78": 152,
+                        "action80": 388,
+                        "action27": 147,
+                        "date": "2017-11-30"
+                    },
+                    {
+                        "action23": 44,
+                        "action78": 135,
+                        "action80": 416,
+                        "action27": 137,
+                        "date": "2017-12-31"
+                    },
+                    {
+                        "action23": 53,
+                        "action78": 180,
+                        "action80": 573,
+                        "action27": 79,
+                        "date": "2018-01-31"
+                    },
+                    {
+                        "action23": 50,
+                        "action78": 116,
+                        "action80": 443,
+                        "action27": 80,
+                        "date": "2018-02-28"
+                    },
+                    {
+                        "action23": 28,
+                        "action78": 133,
+                        "action80": 360,
+                        "action27": 75,
+                        "date": "2018-03-31"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.5228159373669135,
+                "p-val": 0.1210129819104951,
+                "actions": [
+                    "action12",
+                    "action80"
+                ],
+                "start": "2017-08-31",
+                "end": "2018-07-31",
+                "original": [
+                    "action12",
+                    "action80"
+                ],
+                "data": [
+                    {
+                        "action12": 934,
+                        "action80": 532,
+                        "date": "2017-08-31"
+                    },
+                    {
+                        "action12": 782,
+                        "action80": 417,
+                        "date": "2017-09-30"
+                    },
+                    {
+                        "action12": 750,
+                        "action80": 405,
+                        "date": "2017-10-31"
+                    },
+                    {
+                        "action12": 732,
+                        "action80": 388,
+                        "date": "2017-11-30"
+                    },
+                    {
+                        "action12": 507,
+                        "action80": 416,
+                        "date": "2017-12-31"
+                    },
+                    {
+                        "action12": 574,
+                        "action80": 573,
+                        "date": "2018-01-31"
+                    },
+                    {
+                        "action12": 399,
+                        "action80": 443,
+                        "date": "2018-02-28"
+                    },
+                    {
+                        "action12": 425,
+                        "action80": 360,
+                        "date": "2018-03-31"
+                    },
+                    {
+                        "action12": 397,
+                        "action80": 339,
+                        "date": "2018-04-30"
+                    },
+                    {
+                        "action12": 313,
+                        "action80": 317,
+                        "date": "2018-05-31"
+                    },
+                    {
+                        "action12": 366,
+                        "action80": 274,
+                        "date": "2018-06-30"
+                    }
+                ]
+            },
+            {
+                "correlation": -0.503922155004846,
+                "p-val": 0.13752208218037018,
+                "actions": [
+                    "action12",
+                    "action22"
+                ],
+                "start": "2017-02-28",
+                "end": "2017-12-31",
+                "original": [
+                    "action12",
+                    "action22"
+                ],
+                "data": [
+                    {
+                        "action12": 755,
+                        "action22": 295,
+                        "date": "2017-02-28"
+                    },
+                    {
+                        "action12": 915,
+                        "action22": 187,
+                        "date": "2017-03-31"
+                    },
+                    {
+                        "action12": 885,
+                        "action22": 240,
+                        "date": "2017-04-30"
+                    },
+                    {
+                        "action12": 764,
+                        "action22": 242,
+                        "date": "2017-05-31"
+                    },
+                    {
+                        "action12": 804,
+                        "action22": 229,
+                        "date": "2017-06-30"
+                    },
+                    {
+                        "action12": 759,
+                        "action22": 243,
+                        "date": "2017-07-31"
+                    },
+                    {
+                        "action12": 934,
+                        "action22": 180,
+                        "date": "2017-08-31"
+                    },
+                    {
+                        "action12": 782,
+                        "action22": 198,
+                        "date": "2017-09-30"
+                    },
+                    {
+                        "action12": 750,
+                        "action22": 278,
+                        "date": "2017-10-31"
+                    },
+                    {
+                        "action12": 732,
+                        "action22": 187,
+                        "date": "2017-11-30"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.4861132847168548,
+                "p-val": 0.15428561215459383,
+                "actions": [
+                    "action58",
+                    "action60"
+                ],
+                "start": "2017-08-31",
+                "end": "2018-06-30",
+                "original": [
+                    "action58",
+                    "action60"
+                ],
+                "data": [
+                    {
+                        "action58": 33,
+                        "action60": 90,
+                        "date": "2017-08-31"
+                    },
+                    {
+                        "action58": 30,
+                        "action60": 60,
+                        "date": "2017-09-30"
+                    },
+                    {
+                        "action58": 19,
+                        "action60": 110,
+                        "date": "2017-10-31"
+                    },
+                    {
+                        "action58": 19,
+                        "action60": 72,
+                        "date": "2017-11-30"
+                    },
+                    {
+                        "action58": 177,
+                        "action60": 280,
+                        "date": "2017-12-31"
+                    },
+                    {
+                        "action58": 46,
+                        "action60": 220,
+                        "date": "2018-01-31"
+                    },
+                    {
+                        "action58": 72,
+                        "action60": 204,
+                        "date": "2018-02-28"
+                    },
+                    {
+                        "action58": 78,
+                        "action60": 272,
+                        "date": "2018-03-31"
+                    },
+                    {
+                        "action58": 53,
+                        "action60": 325,
+                        "date": "2018-04-30"
+                    },
+                    {
+                        "action58": 57,
+                        "action60": 432,
+                        "date": "2018-05-31"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.475803820368397,
+                "p-val": 0.16452849137236736,
+                "actions": [
+                    "action16",
+                    "action27"
+                ],
+                "start": "2017-05-31",
+                "end": "2018-03-31",
+                "original": [
+                    "action16",
+                    "action27"
+                ],
+                "data": [
+                    {
+                        "action16": 16,
+                        "action27": 288,
+                        "date": "2017-05-31"
+                    },
+                    {
+                        "action16": 8,
+                        "action27": 241,
+                        "date": "2017-06-30"
+                    },
+                    {
+                        "action16": 8,
+                        "action27": 234,
+                        "date": "2017-07-31"
+                    },
+                    {
+                        "action16": 23,
+                        "action27": 189,
+                        "date": "2017-08-31"
+                    },
+                    {
+                        "action16": 6,
+                        "action27": 125,
+                        "date": "2017-09-30"
+                    },
+                    {
+                        "action16": 12,
+                        "action27": 99,
+                        "date": "2017-10-31"
+                    },
+                    {
+                        "action16": 6,
+                        "action27": 147,
+                        "date": "2017-11-30"
+                    },
+                    {
+                        "action16": 13,
+                        "action27": 137,
+                        "date": "2017-12-31"
+                    },
+                    {
+                        "action16": 2,
+                        "action27": 79,
+                        "date": "2018-01-31"
+                    },
+                    {
+                        "action16": 4,
+                        "action27": 80,
+                        "date": "2018-02-28"
+                    }
+                ]
+            },
+            {
+                "correlation": -0.4574904976490737,
+                "p-val": 0.18370375168808542,
+                "actions": [
+                    "action37",
+                    "action58"
+                ],
+                "start": "2017-03-31",
+                "end": "2018-01-31",
+                "original": [
+                    "action37",
+                    "action58"
+                ],
+                "data": [
+                    {
+                        "action37": 157,
+                        "action58": 26,
+                        "date": "2017-03-31"
+                    },
+                    {
+                        "action37": 137,
+                        "action58": 39,
+                        "date": "2017-04-30"
+                    },
+                    {
+                        "action37": 81,
+                        "action58": 83,
+                        "date": "2017-05-31"
+                    },
+                    {
+                        "action37": 117,
+                        "action58": 32,
+                        "date": "2017-06-30"
+                    },
+                    {
+                        "action37": 121,
+                        "action58": 77,
+                        "date": "2017-07-31"
+                    },
+                    {
+                        "action37": 146,
+                        "action58": 33,
+                        "date": "2017-08-31"
+                    },
+                    {
+                        "action37": 126,
+                        "action58": 30,
+                        "date": "2017-09-30"
+                    },
+                    {
+                        "action37": 151,
+                        "action58": 19,
+                        "date": "2017-10-31"
+                    },
+                    {
+                        "action37": 181,
+                        "action58": 19,
+                        "date": "2017-11-30"
+                    },
+                    {
+                        "action37": 126,
+                        "action58": 177,
+                        "date": "2017-12-31"
+                    }
+                ]
+            },
+            {
+                "correlation": -0.13030171052829714,
+                "p-val": 0.7197553839810759,
+                "actions": [
+                    "action10",
+                    "action60"
+                ],
+                "start": "2016-07-31",
+                "end": "2017-05-31",
+                "original": [
+                    "action10",
+                    "action60"
+                ],
+                "data": [
+                    {
+                        "action10": 137,
+                        "action60": 1431,
+                        "date": "2016-07-31"
+                    },
+                    {
+                        "action10": 74,
+                        "action60": 108,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action10": 49,
+                        "action60": 108,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action10": 45,
+                        "action60": 110,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action10": 64,
+                        "action60": 112,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action10": 79,
+                        "action60": 176,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action10": 712,
+                        "action60": 184,
+                        "date": "2017-01-31"
+                    },
+                    {
+                        "action10": 609,
+                        "action60": 156,
+                        "date": "2017-02-28"
+                    },
+                    {
+                        "action10": 593,
+                        "action60": 143,
+                        "date": "2017-03-31"
+                    },
+                    {
+                        "action10": 675,
+                        "action60": 212,
+                        "date": "2017-04-30"
+                    }
+                ]
+            }
+        ],
+        "globalKendall": [
+            {
+                "correlation": 0.03471746562269437,
+                "p-val": 0.7634055642516608,
+                "actions": [
+                    "action13",
+                    "action80"
+                ]
+            },
+            {
+                "correlation": 0.025817149583993573,
+                "p-val": 0.8237869374944882,
+                "actions": [
+                    "action38",
+                    "action78"
+                ]
+            },
+            {
+                "correlation": -0.021374145442318106,
+                "p-val": 0.8544060404578728,
+                "actions": [
+                    "action16",
+                    "action22"
+                ]
+            },
+            {
+                "correlation": 0.01971286043149648,
+                "p-val": 0.8648105905263186,
+                "actions": [
+                    "action38",
+                    "action80"
+                ]
+            },
+            {
+                "correlation": -0.019534190336712394,
+                "p-val": 0.8649786797706165,
+                "actions": [
+                    "action11",
+                    "action80"
+                ]
+            },
+            {
+                "correlation": 0.012030088789751361,
+                "p-val": 0.9166543698713527,
+                "actions": [
+                    "action18",
+                    "action60"
+                ]
+            },
+            {
+                "correlation": 0.006042406375654253,
+                "p-val": 0.9582487321806614,
+                "actions": [
+                    "action18",
+                    "action20"
+                ]
+            },
+            {
+                "correlation": -0.00450789007770286,
+                "p-val": 0.968699042917424,
+                "actions": [
+                    "action11",
+                    "action18"
+                ]
+            },
+            {
+                "correlation": -0.003007518796992481,
+                "p-val": 0.9791279379624603,
+                "actions": [
+                    "action11",
+                    "action12"
+                ]
+            },
+            {
+                "correlation": 0.0015140257987591502,
+                "p-val": 0.9895538599778739,
+                "actions": [
+                    "action22",
+                    "action60"
+                ]
+            }
+        ],
+        "localKendall": [
+            {
+                "correlation": 0.28888888888888886,
+                "p-val": 0.2912483465608466,
+                "actions": [
+                    "action12",
+                    "action37",
+                    "action17",
+                    "action78",
+                    "action23",
+                    "action80",
+                    "action20",
+                    "action27"
+                ],
+                "start": "2016-04-30",
+                "end": "2017-03-31",
+                "original": [
+                    "action12",
+                    "action37"
+                ],
+                "data": [
+                    {
+                        "action12": 429,
+                        "action37": 63,
+                        "action17": 29,
+                        "action78": 31,
+                        "action23": 1,
+                        "action80": 119,
+                        "action20": 14,
+                        "action27": 47,
+                        "date": "2016-04-30"
+                    },
+                    {
+                        "action12": 329,
+                        "action37": 42,
+                        "action17": 26,
+                        "action78": 36,
+                        "action23": 1,
+                        "action80": 74,
+                        "action20": 22,
+                        "action27": 36,
+                        "date": "2016-05-31"
+                    },
+                    {
+                        "action12": 317,
+                        "action37": 49,
+                        "action17": 52,
+                        "action78": 27,
+                        "action23": 4,
+                        "action80": 122,
+                        "action20": 21,
+                        "action27": 49,
+                        "date": "2016-06-30"
+                    },
+                    {
+                        "action12": 240,
+                        "action37": 71,
+                        "action17": 50,
+                        "action78": 41,
+                        "action23": 16,
+                        "action80": 147,
+                        "action20": 19,
+                        "action27": 28,
+                        "date": "2016-07-31"
+                    },
+                    {
+                        "action12": 343,
+                        "action37": 55,
+                        "action17": 29,
+                        "action78": 112,
+                        "action23": 14,
+                        "action80": 365,
+                        "action20": 19,
+                        "action27": 51,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action12": 217,
+                        "action37": 50,
+                        "action17": 18,
+                        "action78": 98,
+                        "action23": 5,
+                        "action80": 460,
+                        "action20": 13,
+                        "action27": 41,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action12": 249,
+                        "action37": 34,
+                        "action17": 21,
+                        "action78": 85,
+                        "action23": 9,
+                        "action80": 288,
+                        "action20": 14,
+                        "action27": 53,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action12": 278,
+                        "action37": 44,
+                        "action17": 36,
+                        "action78": 52,
+                        "action23": 8,
+                        "action80": 211,
+                        "action20": 8,
+                        "action27": 56,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action12": 264,
+                        "action37": 63,
+                        "action17": 41,
+                        "action78": 55,
+                        "action23": 1,
+                        "action80": 292,
+                        "action20": 12,
+                        "action27": 54,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action12": 953,
+                        "action37": 145,
+                        "action17": 340,
+                        "action78": 329,
+                        "action23": 57,
+                        "action80": 626,
+                        "action20": 88,
+                        "action27": 211,
+                        "date": "2017-01-31"
+                    },
+                    {
+                        "action12": 755,
+                        "action37": 123,
+                        "action17": 332,
+                        "action78": 191,
+                        "action23": 66,
+                        "action80": 466,
+                        "action20": 88,
+                        "action27": 187,
+                        "date": "2017-02-28"
+                    }
+                ]
+            },
+            {
+                "correlation": -0.26967994498529685,
+                "p-val": 0.2811980995641792,
+                "actions": [
+                    "action23",
+                    "action37",
+                    "action10",
+                    "action38"
+                ],
+                "start": "2018-03-31",
+                "end": "2019-01-31",
+                "original": [
+                    "action23",
+                    "action37"
+                ],
+                "data": [
+                    {
+                        "action23": 28,
+                        "action37": 150,
+                        "action10": 711,
+                        "action38": 26,
+                        "date": "2018-03-31"
+                    },
+                    {
+                        "action23": 43,
+                        "action37": 143,
+                        "action10": 746,
+                        "action38": 16,
+                        "date": "2018-04-30"
+                    },
+                    {
+                        "action23": 67,
+                        "action37": 126,
+                        "action10": 394,
+                        "action38": 84,
+                        "date": "2018-05-31"
+                    },
+                    {
+                        "action23": 84,
+                        "action37": 120,
+                        "action10": 500,
+                        "action38": 112,
+                        "date": "2018-06-30"
+                    },
+                    {
+                        "action23": 75,
+                        "action37": 131,
+                        "action10": 492,
+                        "action38": 118,
+                        "date": "2018-07-31"
+                    },
+                    {
+                        "action23": 57,
+                        "action37": 131,
+                        "action10": 373,
+                        "action38": 121,
+                        "date": "2018-08-31"
+                    },
+                    {
+                        "action23": 68,
+                        "action37": 116,
+                        "action10": 399,
+                        "action38": 108,
+                        "date": "2018-09-30"
+                    },
+                    {
+                        "action23": 78,
+                        "action37": 132,
+                        "action10": 247,
+                        "action38": 80,
+                        "date": "2018-10-31"
+                    },
+                    {
+                        "action23": 70,
+                        "action37": 121,
+                        "action10": 408,
+                        "action38": 120,
+                        "date": "2018-11-30"
+                    },
+                    {
+                        "action23": 65,
+                        "action37": 114,
+                        "action10": 555,
+                        "action38": 77,
+                        "date": "2018-12-31"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.2588414429342564,
+                "p-val": 0.31422466010991756,
+                "actions": [
+                    "action23",
+                    "action30",
+                    "action17",
+                    "action78",
+                    "action27",
+                    "action80",
+                    "action10"
+                ],
+                "start": "2016-04-30",
+                "end": "2017-02-28",
+                "original": [
+                    "action23",
+                    "action30"
+                ],
+                "data": [
+                    {
+                        "action23": 1,
+                        "action30": 10,
+                        "action17": 29,
+                        "action78": 31,
+                        "action27": 47,
+                        "action80": 119,
+                        "action10": 87,
+                        "date": "2016-04-30"
+                    },
+                    {
+                        "action23": 1,
+                        "action30": 10,
+                        "action17": 26,
+                        "action78": 36,
+                        "action27": 36,
+                        "action80": 74,
+                        "action10": 150,
+                        "date": "2016-05-31"
+                    },
+                    {
+                        "action23": 4,
+                        "action30": 20,
+                        "action17": 52,
+                        "action78": 27,
+                        "action27": 49,
+                        "action80": 122,
+                        "action10": 155,
+                        "date": "2016-06-30"
+                    },
+                    {
+                        "action23": 16,
+                        "action30": 16,
+                        "action17": 50,
+                        "action78": 41,
+                        "action27": 28,
+                        "action80": 147,
+                        "action10": 137,
+                        "date": "2016-07-31"
+                    },
+                    {
+                        "action23": 14,
+                        "action30": 9,
+                        "action17": 29,
+                        "action78": 112,
+                        "action27": 51,
+                        "action80": 365,
+                        "action10": 74,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action23": 5,
+                        "action30": 4,
+                        "action17": 18,
+                        "action78": 98,
+                        "action27": 41,
+                        "action80": 460,
+                        "action10": 49,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action23": 9,
+                        "action30": 8,
+                        "action17": 21,
+                        "action78": 85,
+                        "action27": 53,
+                        "action80": 288,
+                        "action10": 45,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action23": 8,
+                        "action30": 7,
+                        "action17": 36,
+                        "action78": 52,
+                        "action27": 56,
+                        "action80": 211,
+                        "action10": 64,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action23": 1,
+                        "action30": 8,
+                        "action17": 41,
+                        "action78": 55,
+                        "action27": 54,
+                        "action80": 292,
+                        "action10": 79,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action23": 57,
+                        "action30": 157,
+                        "action17": 340,
+                        "action78": 329,
+                        "action27": 211,
+                        "action80": 626,
+                        "action10": 712,
+                        "date": "2017-01-31"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.24444444444444444,
+                "p-val": 0.38071979717813054,
+                "actions": [
+                    "action10",
+                    "action22",
+                    "action27",
+                    "action30"
+                ],
+                "start": "2016-12-31",
+                "end": "2017-10-31",
+                "original": [
+                    "action10",
+                    "action22"
+                ],
+                "data": [
+                    {
+                        "action10": 79,
+                        "action22": 0,
+                        "action27": 54,
+                        "action30": 8,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action10": 712,
+                        "action22": 259,
+                        "action27": 211,
+                        "action30": 157,
+                        "date": "2017-01-31"
+                    },
+                    {
+                        "action10": 609,
+                        "action22": 295,
+                        "action27": 187,
+                        "action30": 114,
+                        "date": "2017-02-28"
+                    },
+                    {
+                        "action10": 593,
+                        "action22": 187,
+                        "action27": 212,
+                        "action30": 162,
+                        "date": "2017-03-31"
+                    },
+                    {
+                        "action10": 675,
+                        "action22": 240,
+                        "action27": 188,
+                        "action30": 73,
+                        "date": "2017-04-30"
+                    },
+                    {
+                        "action10": 488,
+                        "action22": 242,
+                        "action27": 288,
+                        "action30": 62,
+                        "date": "2017-05-31"
+                    },
+                    {
+                        "action10": 428,
+                        "action22": 229,
+                        "action27": 241,
+                        "action30": 123,
+                        "date": "2017-06-30"
+                    },
+                    {
+                        "action10": 450,
+                        "action22": 243,
+                        "action27": 234,
+                        "action30": 111,
+                        "date": "2017-07-31"
+                    },
+                    {
+                        "action10": 641,
+                        "action22": 180,
+                        "action27": 189,
+                        "action30": 98,
+                        "date": "2017-08-31"
+                    },
+                    {
+                        "action10": 653,
+                        "action22": 198,
+                        "action27": 125,
+                        "action30": 107,
+                        "date": "2017-09-30"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.19999999999999998,
+                "p-val": 0.4843127204585538,
+                "actions": [
+                    "action10",
+                    "action13",
+                    "action17",
+                    "action27",
+                    "action78",
+                    "action80"
+                ],
+                "start": "2016-04-30",
+                "end": "2017-02-28",
+                "original": [
+                    "action10",
+                    "action13"
+                ],
+                "data": [
+                    {
+                        "action10": 87,
+                        "action13": 45,
+                        "action17": 29,
+                        "action27": 47,
+                        "action78": 31,
+                        "action80": 119,
+                        "date": "2016-04-30"
+                    },
+                    {
+                        "action10": 150,
+                        "action13": 52,
+                        "action17": 26,
+                        "action27": 36,
+                        "action78": 36,
+                        "action80": 74,
+                        "date": "2016-05-31"
+                    },
+                    {
+                        "action10": 155,
+                        "action13": 89,
+                        "action17": 52,
+                        "action27": 49,
+                        "action78": 27,
+                        "action80": 122,
+                        "date": "2016-06-30"
+                    },
+                    {
+                        "action10": 137,
+                        "action13": 101,
+                        "action17": 50,
+                        "action27": 28,
+                        "action78": 41,
+                        "action80": 147,
+                        "date": "2016-07-31"
+                    },
+                    {
+                        "action10": 74,
+                        "action13": 67,
+                        "action17": 29,
+                        "action27": 51,
+                        "action78": 112,
+                        "action80": 365,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action10": 49,
+                        "action13": 76,
+                        "action17": 18,
+                        "action27": 41,
+                        "action78": 98,
+                        "action80": 460,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action10": 45,
+                        "action13": 83,
+                        "action17": 21,
+                        "action27": 53,
+                        "action78": 85,
+                        "action80": 288,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action10": 64,
+                        "action13": 51,
+                        "action17": 36,
+                        "action27": 56,
+                        "action78": 52,
+                        "action80": 211,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action10": 79,
+                        "action13": 36,
+                        "action17": 41,
+                        "action27": 54,
+                        "action78": 55,
+                        "action80": 292,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action10": 712,
+                        "action13": 119,
+                        "action17": 340,
+                        "action27": 211,
+                        "action78": 329,
+                        "action80": 626,
+                        "date": "2017-01-31"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.19999999999999998,
+                "p-val": 0.4843127204585538,
+                "actions": [
+                    "action22",
+                    "action80"
+                ],
+                "start": "2018-02-28",
+                "end": "2018-12-31",
+                "original": [
+                    "action22",
+                    "action80"
+                ],
+                "data": [
+                    {
+                        "action22": 264,
+                        "action80": 443,
+                        "date": "2018-02-28"
+                    },
+                    {
+                        "action22": 257,
+                        "action80": 360,
+                        "date": "2018-03-31"
+                    },
+                    {
+                        "action22": 108,
+                        "action80": 339,
+                        "date": "2018-04-30"
+                    },
+                    {
+                        "action22": 74,
+                        "action80": 317,
+                        "date": "2018-05-31"
+                    },
+                    {
+                        "action22": 105,
+                        "action80": 274,
+                        "date": "2018-06-30"
+                    },
+                    {
+                        "action22": 109,
+                        "action80": 273,
+                        "date": "2018-07-31"
+                    },
+                    {
+                        "action22": 47,
+                        "action80": 257,
+                        "date": "2018-08-31"
+                    },
+                    {
+                        "action22": 112,
+                        "action80": 252,
+                        "date": "2018-09-30"
+                    },
+                    {
+                        "action22": 137,
+                        "action80": 203,
+                        "date": "2018-10-31"
+                    },
+                    {
+                        "action22": 76,
+                        "action80": 248,
+                        "date": "2018-11-30"
+                    }
+                ]
+            },
+            {
+                "correlation": -0.1797866299901979,
+                "p-val": 0.47249761400068846,
+                "actions": [
+                    "action28",
+                    "action58",
+                    "action12"
+                ],
+                "start": "2017-03-31",
+                "end": "2018-01-31",
+                "original": [
+                    "action28",
+                    "action58"
+                ],
+                "data": [
+                    {
+                        "action28": 107,
+                        "action58": 26,
+                        "action12": 915,
+                        "date": "2017-03-31"
+                    },
+                    {
+                        "action28": 117,
+                        "action58": 39,
+                        "action12": 885,
+                        "date": "2017-04-30"
+                    },
+                    {
+                        "action28": 99,
+                        "action58": 83,
+                        "action12": 764,
+                        "date": "2017-05-31"
+                    },
+                    {
+                        "action28": 161,
+                        "action58": 32,
+                        "action12": 804,
+                        "date": "2017-06-30"
+                    },
+                    {
+                        "action28": 151,
+                        "action58": 77,
+                        "action12": 759,
+                        "date": "2017-07-31"
+                    },
+                    {
+                        "action28": 182,
+                        "action58": 33,
+                        "action12": 934,
+                        "date": "2017-08-31"
+                    },
+                    {
+                        "action28": 167,
+                        "action58": 30,
+                        "action12": 782,
+                        "date": "2017-09-30"
+                    },
+                    {
+                        "action28": 140,
+                        "action58": 19,
+                        "action12": 750,
+                        "date": "2017-10-31"
+                    },
+                    {
+                        "action28": 106,
+                        "action58": 19,
+                        "action12": 732,
+                        "date": "2017-11-30"
+                    },
+                    {
+                        "action28": 44,
+                        "action58": 177,
+                        "action12": 507,
+                        "date": "2017-12-31"
+                    }
+                ]
+            },
+            {
+                "correlation": 0.15555555555555553,
+                "p-val": 0.6006536596119929,
+                "actions": [
+                    "action17",
+                    "action78",
+                    "action80",
+                    "action20"
+                ],
+                "start": "2016-04-30",
+                "end": "2017-04-30",
+                "original": [
+                    "action17",
+                    "action78"
+                ],
+                "data": [
+                    {
+                        "action17": 29,
+                        "action78": 31,
+                        "action80": 119,
+                        "action20": 14,
+                        "date": "2016-04-30"
+                    },
+                    {
+                        "action17": 26,
+                        "action78": 36,
+                        "action80": 74,
+                        "action20": 22,
+                        "date": "2016-05-31"
+                    },
+                    {
+                        "action17": 52,
+                        "action78": 27,
+                        "action80": 122,
+                        "action20": 21,
+                        "date": "2016-06-30"
+                    },
+                    {
+                        "action17": 50,
+                        "action78": 41,
+                        "action80": 147,
+                        "action20": 19,
+                        "date": "2016-07-31"
+                    },
+                    {
+                        "action17": 29,
+                        "action78": 112,
+                        "action80": 365,
+                        "action20": 19,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action17": 18,
+                        "action78": 98,
+                        "action80": 460,
+                        "action20": 13,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action17": 21,
+                        "action78": 85,
+                        "action80": 288,
+                        "action20": 14,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action17": 36,
+                        "action78": 52,
+                        "action80": 211,
+                        "action20": 8,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action17": 41,
+                        "action78": 55,
+                        "action80": 292,
+                        "action20": 12,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action17": 340,
+                        "action78": 329,
+                        "action80": 626,
+                        "action20": 88,
+                        "date": "2017-01-31"
+                    },
+                    {
+                        "action17": 332,
+                        "action78": 191,
+                        "action80": 466,
+                        "action20": 88,
+                        "date": "2017-02-28"
+                    },
+                    {
+                        "action17": 346,
+                        "action78": 217,
+                        "action80": 579,
+                        "action20": 62,
+                        "date": "2017-03-31"
+                    }
+                ]
+            },
+            {
+                "correlation": -0.11366572324507891,
+                "p-val": 0.6521086053828111,
+                "actions": [
+                    "action20",
+                    "action80",
+                    "action27"
+                ],
+                "start": "2016-04-30",
+                "end": "2017-03-31",
+                "original": [
+                    "action20",
+                    "action80"
+                ],
+                "data": [
+                    {
+                        "action20": 14,
+                        "action80": 119,
+                        "action27": 47,
+                        "date": "2016-04-30"
+                    },
+                    {
+                        "action20": 22,
+                        "action80": 74,
+                        "action27": 36,
+                        "date": "2016-05-31"
+                    },
+                    {
+                        "action20": 21,
+                        "action80": 122,
+                        "action27": 49,
+                        "date": "2016-06-30"
+                    },
+                    {
+                        "action20": 19,
+                        "action80": 147,
+                        "action27": 28,
+                        "date": "2016-07-31"
+                    },
+                    {
+                        "action20": 19,
+                        "action80": 365,
+                        "action27": 51,
+                        "date": "2016-08-31"
+                    },
+                    {
+                        "action20": 13,
+                        "action80": 460,
+                        "action27": 41,
+                        "date": "2016-09-30"
+                    },
+                    {
+                        "action20": 14,
+                        "action80": 288,
+                        "action27": 53,
+                        "date": "2016-10-31"
+                    },
+                    {
+                        "action20": 8,
+                        "action80": 211,
+                        "action27": 56,
+                        "date": "2016-11-30"
+                    },
+                    {
+                        "action20": 12,
+                        "action80": 292,
+                        "action27": 54,
+                        "date": "2016-12-31"
+                    },
+                    {
+                        "action20": 88,
+                        "action80": 626,
+                        "action27": 211,
+                        "date": "2017-01-31"
+                    },
+                    {
+                        "action20": 88,
+                        "action80": 466,
+                        "action27": 187,
+                        "date": "2017-02-28"
+                    }
+                ]
+            },
+            {
+                "correlation": -0.08989331499509894,
+                "p-val": 0.7194375444233914,
+                "actions": [
+                    "action17",
+                    "action38"
+                ],
+                "start": "2018-02-28",
+                "end": "2019-01-31",
+                "original": [
+                    "action17",
+                    "action38"
+                ],
+                "data": [
+                    {
+                        "action17": 431,
+                        "action38": 31,
+                        "date": "2018-02-28"
+                    },
+                    {
+                        "action17": 381,
+                        "action38": 26,
+                        "date": "2018-03-31"
+                    },
+                    {
+                        "action17": 309,
+                        "action38": 16,
+                        "date": "2018-04-30"
+                    },
+                    {
+                        "action17": 137,
+                        "action38": 84,
+                        "date": "2018-05-31"
+                    },
+                    {
+                        "action17": 152,
+                        "action38": 112,
+                        "date": "2018-06-30"
+                    },
+                    {
+                        "action17": 195,
+                        "action38": 118,
+                        "date": "2018-07-31"
+                    },
+                    {
+                        "action17": 196,
+                        "action38": 121,
+                        "date": "2018-08-31"
+                    },
+                    {
+                        "action17": 195,
+                        "action38": 108,
+                        "date": "2018-09-30"
+                    },
+                    {
+                        "action17": 112,
+                        "action38": 80,
+                        "date": "2018-10-31"
+                    },
+                    {
+                        "action17": 169,
+                        "action38": 120,
+                        "date": "2018-11-30"
+                    },
+                    {
+                        "action17": 175,
+                        "action38": 77,
+                        "date": "2018-12-31"
+                    }
+                ]
+            }
+        ]
+    }
+}

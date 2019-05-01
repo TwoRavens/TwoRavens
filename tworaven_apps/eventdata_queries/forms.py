@@ -133,7 +133,7 @@ class EventDataGetDiscoveryForm(forms.Form):
     """ check if parameters are ok """
     
     collection = forms.CharField(required=True, widget=forms.Textarea)
-    limit = forms.IntegerField(required=True, min_value=0)
+    limit = forms.IntegerField(required=True, min_value=0, max_value=10)
     
     def clean_collections(self):
         return self.cleaned_data.get('collection')

@@ -588,6 +588,11 @@ export async function submitAggregation() {
 
     let cachedPipeline = queryMongo.buildPipeline([...manipulations.eventdata, looseSteps['eventdataAggregate']]);
 
+    console.log("submitting aggregation");
+    console.log(cachedPipeline);
+    console.log(manipulations);
+    console.log(looseSteps);
+
     let data = await loadMenu(manipulations.eventdata, looseSteps['eventdataAggregate']);
     if (data) {
         tableData = data;

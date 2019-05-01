@@ -37,10 +37,13 @@ import CanvasCoordinates from "../canvases/CanvasCoordinates";
 import CanvasContinuous from "../canvases/CanvasContinuous";
 import CanvasCustom from "./canvases/CanvasCustom";
 import CanvasResults from "./canvases/CanvasResults";
+import CanvasDiscover from "./canvases/CanvasDiscover";
 
 import SaveQuery from "./SaveQuery";
 import {TreeAggregate, TreeSubset, TreeVariables} from "../views/JQTrees";
 import * as app from "../app";
+
+let discoveryLimit = 6; //this is the limit to the number of graphs per correlation in the discovery mode; the max is 10 (set in script to generate the graph data)
 
 export default class Body_EventData {
 
@@ -665,11 +668,27 @@ export default class Body_EventData {
                         type: "discovery",
                         name: eventdata.selectedDataset
                     };
-                    eventdata.loadDiscovery(newMenu, "acled_middle_east", 6);
+                    eventdata.loadDiscovery(newMenu, "acled_middle_east", discoveryLimit);
                 }
-                return graphData;
+                //return loading screen
+                return m('#loading.loader', {
+                    style: {
+                        margin: 'auto',
+                        position: 'relative',
+                        top: '40%',
+                        transform: 'translateY(-50%)'
+                    }
+                })
             }
-            return graphData;
+            //return canvas for discovery
+            //return graphData;
+            return m(
+                CanvasDiscover, {
+                    mode: eventdata.selectedMode,
+                    subsetName: eventdata.selectedSubsetName,
+                    data: eventdata.discoveryData["max"]["globalKendall"][0],
+                    dateField: "TwoRavens_start date"   //need to add redraw?
+                    });
         }
         
         if (eventdata.selectedCanvas === 'Subset') {

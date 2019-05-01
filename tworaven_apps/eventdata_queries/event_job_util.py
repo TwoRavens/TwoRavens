@@ -478,6 +478,23 @@ class EventJobUtil(object):
         directory = os.path.join(os.getcwd(), "tworaven_apps", "eventdata_queries", "discovery", "output")
         names = os.listdir(directory)
 
+        if collection + "_raw.json" in names:
+            with open(directory + os.sep + collection + "_raw.json") as input_file:
+                data = json.load(input_file, object_pairs_hook=OrderedDict)
+                return {
+                    "dateType": data["aggregateDateType"],
+                    "windowSize": data["windowSize"],
+                    "confidenceMargin": data["confidenceMargin"],
+                    "max": {
+                        corType: [data["max"][corType][:limit]] for corType in ["localKendall", "localPearson", "globalKendall", "globalPearson"]
+                    },
+                    "min": {
+                        corType: [data["min"][corType][-limit:]] for corType in ["localKendall", "localPearson", "globalKendall", "globalPearson"]
+                    }
+                }
+                        
+
+    '''
         if collection + "_output.json" in names:     #TODO: need to check if discovery is supported by this collection
              with open(directory + os.sep + collection + "_output.json") as input_file:
                 data = json.load(input_file, object_pairs_hook=OrderedDict)
@@ -488,8 +505,10 @@ class EventJobUtil(object):
                     },
                     "min": {
                         corType: [data[corType][-limit:]] for corType in ["localKendall", "localPearson", "globalKendall", "globalPearson"]
-                    }
+                    },
+                    "dateType": data["aggregateDateType"]
                 }
+    '''
 
     @staticmethod
     def get_data(database, collection, method, query, distinct=None, host=None):
