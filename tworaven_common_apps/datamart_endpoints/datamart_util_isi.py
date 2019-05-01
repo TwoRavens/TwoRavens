@@ -273,8 +273,10 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
 
         LOGGER.info('(2b) attempting download')
         try:
+            isi_materialize_url = get_isi_url() + '/new/materialize_data'
+            print('isi_materialize_url', isi_materialize_url)
             response = requests.get(\
-                        get_isi_url() + '/new/materialize_data',
+                        isi_materialize_url,
                         params={KEY_ISI_DATAMART_ID: datamart_id},
                         verify=False,
                         timeout=settings.DATAMART_LONG_TIMEOUT)
