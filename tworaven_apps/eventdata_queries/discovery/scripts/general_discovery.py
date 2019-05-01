@@ -369,6 +369,13 @@ for ra, key in zip([globalPearsonResults, localPearsonFinal, globalKendallResult
             for reI, reD in zip(reData, res.index[min(r[2]):min(max(r[2])+windowSize, len(res.index))]):
                 reI["date"] = str(reD)[:10]       #replace date with the actual date field from config
             re["data"] = reData
+        else:
+            re["start"] = str(res.index[0])[:10]
+            re["end"] = str(res.index[-1])[:10]
+            reData = json.loads(res.loc[:, r[1]].to_json(orient="records", date_format="iso"))
+            for reI, reD in zip(reData, res.index):
+                reI["date"] = str(reD)[:10]
+            re["data"] = reData
         results["max"][key].append(re)
 for ra, key in zip([globalPearsonResults, localPearsonFinal, globalKendallResults, localKendallFinal], ["globalPearson", "localPearson", "globalKendall", "localKendall"]):
     results["min"][key] = []
@@ -393,7 +400,13 @@ for ra, key in zip([globalPearsonResults, localPearsonFinal, globalKendallResult
             for reI, reD in zip(reData, res.index[min(r[2]):min(max(r[2])+windowSize, len(res.index))]):
                 reI["date"] = str(reD)[:10]       #replace date with the actual date field from config
             re["data"] = reData
-            #print(re["data"])
+        else:
+            re["start"] = str(res.index[0])[:10]
+            re["end"] = str(res.index[-1])[:10]
+            reData = json.loads(res.loc[:, r[1]].to_json(orient="records", date_format="iso"))
+            for reI, reD in zip(reData, res.index):
+                reI["date"] = str(reD)[:10]
+            re["data"] = reData
         results["min"][key].append(re)
 '''
 #pick max(8, aggregate size / 3) groups to show max correl, median correl, and min correl?

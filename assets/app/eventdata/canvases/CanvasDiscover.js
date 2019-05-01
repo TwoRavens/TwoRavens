@@ -71,31 +71,48 @@ export default class CanvasDiscover {
 
     plot(vnode) {
         let {preferences} = vnode.attrs;
+        console.log("plotting");
+        console.log(preferences);
 
         let width = Math.max(window.innerWidth
-            - document.getElementById('leftpanel').getBoundingClientRect().width
-            - document.getElementById('rightpanel').getBoundingClientRect().width
+            //~ - document.getElementById('leftpanel').getBoundingClientRect().width
+            //~ - document.getElementById('rightpanel').getBoundingClientRect().width
             - Math.max(...eventdata.tableHeaders.map(col => col.length)) * 4 - 133, 400);
 //        let height = Math.max(window.innerHeight
 //            - document.getElementById('aggregDataOutput').getBoundingClientRect().height
 //            - 40 - 153, 400);
         let height = Math.max(window.innerHeight - 153, 400);
 
+        console.log(eventdata.discoveryData[eventdata.selectedDataset]["data"]["max"]);
+        console.log(melt(eventdata.discoveryData[eventdata.selectedDataset]["data"]["max"]["localKendall"][0][0]["data"], ["date"]));
+/**
         let vegaSchema;
-        //if (eventdata.tableHeaders.length === 1 && 'date' in eventdata.aggregationHeadersLabels) {
-            vegaSchema = {
-                "$schema": "https://vega.github.io/schema/vega-lite/v2.0.json",
-//                "data": {"values": melt(eventdata.tableData, eventdata.tableHeaders)},
-                "data": {"values": eventdata.discoveryData[eventdata.selectedDataset]}, //need to loop on this
-                "mark": "line",
-                "encoding": {
-                    "x": {"field": eventdata.aggregationHeadersLabels['date'][0], "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
-                    "y": {"field": "value", "type": "quantitative"},
-                    "color": {"field": "variable", "type": "nominal"}
-                }
-            };
+        vegaSchema = {
+            "$schema": "https://vega.github.io/schema/vega-lite/v2.0.json",
+            "data": {"values": melt(eventdata.discoveryData[eventdata.selectedDataset]["data"]["max"]["localKendall"][0][0]["data"], ["date"])},
+            "mark": "line",
+            "encoding": {
+                "x": {"field": "date", "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
+                "y": {"field": "value", "type": "quantitative"},
+                "color": {"field": "variable", "type": "nominal"}
+            }
+        };
+        //~ //if (eventdata.tableHeaders.length === 1 && 'date' in eventdata.aggregationHeadersLabels) {
+            //~ vegaSchema = {
+                //~ "$schema": "https://vega.github.io/schema/vega-lite/v2.0.json",
+//~ //                "data": {"values": melt(eventdata.tableData, eventdata.tableHeaders)},
+                //~ // "data": {"values": eventdata.discoveryData[eventdata.selectedDataset]}, //need to loop on this
+                //~ "data": {"values": melt(eventdata.discoveryData[eventdata.selectedDataset]["data"]["max"]["localKendall"][0][0]["data"], ["date"])}, //need to loop on this
+                //~ "mark": "line",
+                //~ "encoding": {
+                    //~ "x": {"field": "date", "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
+                    //~ "y": {"field": "value", "type": "quantitative"},
+                    //~ "color": {"field": "variable", "type": "nominal"}
+                //~ }
+            //~ };
         //}
 
-        vegaEmbed('#plotResults', vegaSchema, {actions: false, width: width, height: height});
+        vegaEmbed('#plotDiscovery', vegaSchema, {actions: false, width: width, height: height});
+        **/
     }
 }
