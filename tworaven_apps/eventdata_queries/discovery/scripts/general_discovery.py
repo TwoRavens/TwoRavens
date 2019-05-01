@@ -341,6 +341,61 @@ results = {}
 results["windowSize"] = 10
 results["aggregateDateType"] = dateGroup
 results["confidenceMargin"] = 1 - confidenceMargin
+
+#pick top and bottom 10 of each group
+selectRange = 10
+results["max"] = {}
+results["min"] = {}
+for ra, key in zip([globalPearsonResults, localPearsonFinal, globalKendallResults, localKendallFinal], ["globalPearson", "localPearson", "globalKendall", "localKendall"]):
+    results["max"][key] = []
+    for r in ra[:selectRange]:
+        if "Pearson" in key:
+            re = {
+                "correlation": r[0][0][0],
+                "p-val": r[0][1][0],
+                "actions": r[1]
+            }
+        else:
+            re = {
+                "correlation": r[0][0],
+                "p-val": r[0][1],
+                "actions": r[1]
+            }
+        if "local" in key:
+            re["start"] = str(res.index[min(r[2])])[:10]
+            re["end"] = str(min(res.index[max(r[2])], res.index[-1]))[:10]
+            re["original"] = r[3]
+            reData = json.loads(res.loc[:, r[1]].iloc[min(r[2]):min(max(r[2])+windowSize, len(res.index)), :].to_json(orient="records", date_format="iso"))
+            for reI, reD in zip(reData, res.index[min(r[2]):min(max(r[2])+windowSize, len(res.index))]):
+                reI["date"] = str(reD)[:10]       #replace date with the actual date field from config
+            re["data"] = reData
+        results["max"][key].append(re)
+for ra, key in zip([globalPearsonResults, localPearsonFinal, globalKendallResults, localKendallFinal], ["globalPearson", "localPearson", "globalKendall", "localKendall"]):
+    results["min"][key] = []
+    for r in ra[-selectRange:]:
+        if "Pearson" in key:
+            re = {
+                "correlation": r[0][0][0],
+                "p-val": r[0][1][0],
+                "actions": r[1]
+            }
+        else:
+            re = {
+                "correlation": r[0][0],
+                "p-val": r[0][1],
+                "actions": r[1]
+            }
+        if "local" in key:
+            re["start"] = str(res.index[min(r[2])])[:10]
+            re["end"] = str(min(res.index[max(r[2]) + windowSize], res.index[-1]))[:10]
+            re["original"] = r[3]
+            reData = json.loads(res.loc[:, r[1]].iloc[min(r[2]):min(max(r[2])+windowSize, len(res.index)), :].to_json(orient="records", date_format="iso"))
+            for reI, reD in zip(reData, res.index[min(r[2]):min(max(r[2])+windowSize, len(res.index))]):
+                reI["date"] = str(reD)[:10]       #replace date with the actual date field from config
+            re["data"] = reData
+            #print(re["data"])
+        results["min"][key].append(re)
+'''
 #pick max(8, aggregate size / 3) groups to show max correl, median correl, and min correl?
 #for now: save all results to file in a sorted array -> let front end pick
 globalPearsonSave = []
@@ -388,9 +443,11 @@ for r in localKendallFinal:
     }
     localKendalSave.append(re)
 results["localKendall"] = localKendalSave
+'''
 
 #write to file
-with open("../output/" + selectedDB + "_output.json", "w") as outFile:
+#with open("../output/" + selectedDB + "_output.json", "w") as outFile:
+with open("../output/" + selectedDB + "_raw.json", "w") as outFile:
     outFile.write(json.dumps(results, indent=4))
 
 

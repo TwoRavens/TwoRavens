@@ -107,6 +107,11 @@ export default class CanvasResults {
 
         let vegaSchema;
         if (eventdata.tableHeaders.length === 1 && 'date' in eventdata.aggregationHeadersLabels) {
+            console.log("in vegas plot; head len = 1; date in header labels");
+            console.log(eventdata.tableHeaders);
+            console.log(eventdata.aggregationHeadersLabels);
+            console.log(eventdata.tableData);
+            console.log(melt(eventdata.tableData, eventdata.tableHeaders));
             vegaSchema = {
                 "$schema": "https://vega.github.io/schema/vega-lite/v2.0.json",
                 "data": {"values": melt(eventdata.tableData, eventdata.tableHeaders)},
