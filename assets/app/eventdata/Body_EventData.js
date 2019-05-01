@@ -681,12 +681,11 @@ export default class Body_EventData {
                 })
             }
             //return canvas for discovery
-            //return graphData;
+            //~ return graphData;
             return m(
                 CanvasDiscover, {
-                    mode: eventdata.selectedMode,
-                    subsetName: eventdata.selectedSubsetName,
-                    data: eventdata.discoveryData["max"]["globalKendall"][0],
+                    dataset: eventdata.selectedDataset,
+                    data: eventdata.discoveryData[eventdata.selectedDataset],
                     dateField: "TwoRavens_start date"   //need to add redraw?
                     });
         }
