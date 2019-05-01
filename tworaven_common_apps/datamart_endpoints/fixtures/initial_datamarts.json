@@ -8,7 +8,7 @@
         "name": "ISI",
         "display_name": "ISI - production",
         "is_active": true,
-        "url": "https://dsbox02.isi.edu:9000",
+        "url": "http://dsbox02.isi.edu:9000",
         "documentation_link": "https://github.com/usc-isi-i2/datamart",
         "description": "ISI Datamart"
     }
