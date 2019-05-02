@@ -74,22 +74,29 @@ export default class CanvasDiscover {
         console.log("plotting");
         console.log(preferences);
 
-        let width = Math.max(window.innerWidth
+        //let width = Math.max(window.innerWidth
             //~ - document.getElementById('leftpanel').getBoundingClientRect().width
             //~ - document.getElementById('rightpanel').getBoundingClientRect().width
-            - Math.max(...eventdata.tableHeaders.map(col => col.length)) * 4 - 133, 400);
+            // Math.max(...eventdata.tableHeaders.map(col => col.length)) * 4 - 133, 400);
 //        let height = Math.max(window.innerHeight
 //            - document.getElementById('aggregDataOutput').getBoundingClientRect().height
 //            - 40 - 153, 400);
-        let height = Math.max(window.innerHeight - 153, 400);
+        let height = Math.max(window.innerHeight - 200, 400);
+        let width = Math.max(window.innerWidth - 600, 400);
 
         console.log(eventdata.discoveryData[eventdata.selectedDataset]["data"]["max"]);
         console.log(melt(eventdata.discoveryData[eventdata.selectedDataset]["data"]["max"]["localKendall"][0][0]["data"], ["date"]));
-/**
+
         let vegaSchema;
         vegaSchema = {
             "$schema": "https://vega.github.io/schema/vega-lite/v2.0.json",
-            "data": {"values": melt(eventdata.discoveryData[eventdata.selectedDataset]["data"]["max"]["localKendall"][0][0]["data"], ["date"])},
+            "data": {"values": [...melt(eventdata.discoveryData[eventdata.selectedDataset]["data"]["max"]["localKendall"][0][0]["data"], ["date"])]},
+/**
+            "data": {"values": [
+                {"date": "2016-03-20", "variable": "action10", "value": 200},
+                {"date": "2016-03-30", "variable": "action10", "value": 250}
+            ]},
+**/
             "mark": "line",
             "encoding": {
                 "x": {"field": "date", "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
@@ -111,8 +118,8 @@ export default class CanvasDiscover {
                 //~ }
             //~ };
         //}
-
+        console.log("plotting");
         vegaEmbed('#plotDiscovery', vegaSchema, {actions: false, width: width, height: height});
-        **/
+        console.log("done plotting");
     }
 }
