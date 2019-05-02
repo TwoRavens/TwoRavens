@@ -1,17 +1,71 @@
 import requests
 import json
+import logging
 from requests.exceptions import ConnectionError
 
 from django.http import JsonResponse, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 
 from tworaven_apps.call_captures.models import ServiceCallEntry
+
 from tworaven_apps.rook_services.rook_app_info import RookAppInfo
 from tworaven_apps.rook_services.models import UI_KEY_SOLA_JSON, ROOK_ZESSIONID
+from tworaven_apps.rook_services.app_names import \
+    (KEY_DATA, KEY_DATASTUB)
+from tworaven_apps.rook_services.preprocess_util import \
+    (PreprocessUtil,)
+
 from tworaven_apps.workspaces.workspace_util import WorkspaceUtil
 from tworaven_apps.utils.view_helper import get_session_key
-from tworaven_apps.utils.view_helper import get_request_body,\
-    get_request_body_as_json
+
+from tworaven_apps.utils.view_helper import \
+    (get_request_body,
+     get_request_body_as_json)
+from tworaven_apps.utils.view_helper import \
+    (get_json_error,
+     get_json_success)
+
+LOGGER = logging.getLogger(__name__)
+
+
+@csrf_exempt
+def view_rook_preprocess(request):
+    """Route to rook preprocess
+    Example input:
+        {
+          "data": "/ravens_volume/test_data/196_autoMpg/TRAIN/dataset_TRAIN/tables/learningData.csv",
+          "datastub": "196_ag_problem_TRAIN"
+        }
+    """
+    json_info = get_request_body_as_json(request)
+    if not json_info.success:
+        return JsonResponse(get_json_error(json_info.err_msg))
+
+    json_data = json_info.result_obj
+
+    LOGGER.info('view_rook_preprocess input: %s', json_data)
+    print('json_data', json_data)
+
+    if not KEY_DATA in json_data:
+        err_msg = (f'The key "{KEY_DATA}" was not found'
+                   f' in the preprocess request')
+        return JsonResponse(get_json_error(err_msg))
+
+    if not KEY_DATASTUB in json_data:
+        err_msg = (f'The key "{KEY_DATASTUB}" was not found'
+                   f' in the preprocess request')
+        return JsonResponse(get_json_error(err_msg))
+
+    putil = PreprocessUtil(json_data[KEY_DATA],
+                           datastub=json_data[KEY_DATASTUB])
+    if putil.has_error():
+        return JsonResponse(get_json_error(putil.get_error_message()))
+
+    info = get_json_success('it worked',
+                            data=putil.get_preprocess_data())
+
+    return JsonResponse(info)
+
 
 @csrf_exempt
 def view_rook_route(request, app_name_in_url):
@@ -101,7 +155,7 @@ def view_rook_route(request, app_name_in_url):
                         outgoing_url=rook_svc_url,
                         request_msg=raven_data_text)
 
-    print('app_data: %s' % app_data)
+    #print('app_data: %s' % app_data)
 
     # Call R services
     #

@@ -25,8 +25,8 @@ class ProblemWriterTest(TestCase):
         # test client
         self.client = Client()
 
-        user_obj = User.objects.get_or_create(username='dev_admin')[0]
-        self.client.force_login(user_obj)
+        self.user_obj = User.objects.get_or_create(username='dev_admin')[0]
+        self.client.force_login(self.user_obj)
 
     def test_010_testwrite(self):
         """(10) test success"""
@@ -35,11 +35,12 @@ class ProblemWriterTest(TestCase):
         fname = 'dir1/dir2/test_file1.json'
         data = dict(pet="dog")
 
-        bpw = BasicProblemWriter(fname,
+        bpw = BasicProblemWriter(self.user_obj,
+                                 fname,
                                  data,
                                  **dict(write_directory=self.test_dir.name))
 
-        self.assertTrue(not bpw.has_error)
+        self.assertTrue(not bpw.has_error())
         self.assertTrue(bpw.error_message is None)
 
         self.assertTrue(bpw.new_filepath.endswith(fname))
@@ -57,11 +58,12 @@ class ProblemWriterTest(TestCase):
         fname = '../dir-traverse/../test_file1.json'
         data = dict(pet="dog")
 
-        bpw = BasicProblemWriter(fname,
+        bpw = BasicProblemWriter(self.user_obj,
+                                 fname,
                                  data,
                                  **dict(write_directory=self.test_dir.name))
 
-        self.assertTrue(bpw.has_error)
+        self.assertTrue(bpw.has_error())
         self.assertTrue(bpw.error_message)
         self.assertTrue(bpw.error_message.find(ERR_MSG_UNEXPECTED_DIRECTORY) > -1)
 
@@ -75,11 +77,12 @@ class ProblemWriterTest(TestCase):
         fname = ''
         data = dict(pet="dog")
 
-        bpw = BasicProblemWriter(fname,
+        bpw = BasicProblemWriter(self.user_obj,
+                                 fname,
                                  data,
                                  **dict(write_directory=self.test_dir.name))
 
-        self.assertTrue(bpw.has_error)
+        self.assertTrue(bpw.has_error())
         self.assertTrue(bpw.error_message)
         print('error_message:', bpw.error_message)
         self.assertTrue(bpw.error_message.find(ERR_MSG_NO_FILENAME) > -1)
@@ -93,11 +96,12 @@ class ProblemWriterTest(TestCase):
         fname = 'dog_data.json'
         data = ''
 
-        bpw = BasicProblemWriter(fname,
+        bpw = BasicProblemWriter(self.user_obj,
+                                 fname,
                                  data,
                                  **dict(write_directory=self.test_dir.name))
 
-        self.assertTrue(bpw.has_error)
+        self.assertTrue(bpw.has_error())
         self.assertTrue(bpw.error_message)
         print('error_message:', bpw.error_message)
         self.assertTrue(bpw.error_message.find(ERR_MSG_NO_DATA) > -1)

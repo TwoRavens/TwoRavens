@@ -6,7 +6,7 @@ https://datadrivendiscovery.org/wiki/pages/viewpage.action?spaceKey=gov&title=Da
 from collections import OrderedDict
 from datetime import datetime as dt
 import json
-
+import jsonfield
 from django.db import models
 from django.urls import reverse
 from django.template.defaultfilters import slugify
@@ -19,7 +19,8 @@ from tworaven_apps.utils.url_helper import add_trailing_slash,\
 
 from tworaven_apps.configurations.util_path_check import are_d3m_paths_valid,\
     get_bad_paths, get_bad_paths_for_admin
-
+from tworaven_apps.configurations.static_vals import \
+    (KEY_D3MINPUTDIR, KEY_D3M_DIR_ADDITIONAL_INPUTS)
 KEY_DATASET_SCHEMA = 'dataset_schema'
 
 KEY_PROBLEM_SCHEMA = 'problem_schema'
@@ -60,7 +61,6 @@ D3M_REQUIRED.remove(KEY_PROBLEM_ROOT)
 
 # environment variable name to store a d3m config filepath for startup
 CONFIG_JSON_PATH = 'CONFIG_JSON_PATH'
-D3M_ENV_INPUT_DIR = 'D3MINPUTDIR'
 D3M_SEARCH_CONFIG_NAME = 'search_config.json'
 
 class D3MConfiguration(TimeStampedModel):
@@ -78,13 +78,40 @@ class D3MConfiguration(TimeStampedModel):
     "temp_storage_root": "/temp"
     }
     """
-    name = models.CharField(max_length=255,
-                            help_text='for internal use',
+    name = models.CharField('Dataset Id',
+                            max_length=255,
+                            help_text='This is same as dataset_id for now',
                             unique=True)
+
+    # -------------------------------
+    # Next 2 fields a temp hack to get UserWorkspace going
+    # -------------------------------
+    #dataset_id = models.CharField(\
+    #                        max_length=255,
+    #                        help_text='from the problem doc')
+
+    orig_dataset_id = models.CharField(\
+                            max_length=255,
+                            default="default: not set",
+                            help_text='from the problem doc')
+
+    is_user_config = models.BooleanField(\
+                    default=False,
+                    help_text='If true, must be used through a UserWorkspace')
+    # -------------------------------
+
+    description = models.CharField(\
+                            max_length=255,
+                            help_text='For internal use',
+                            blank=True)
 
     is_default = models.BooleanField(\
                     default=False,
                     help_text='There can be either one default or no defaults')
+
+    d3m_input_dir = models.TextField(KEY_D3MINPUTDIR,
+                                     blank=True,
+                                     help_text='Added in 2019 config.')
 
     dataset_schema = models.TextField(\
                         help_text='Input: Path to the dataset schema')
@@ -93,6 +120,8 @@ class D3MConfiguration(TimeStampedModel):
                         help_text='Input: Path to the problem schema')
 
     training_data_root = models.TextField(\
+                        'input_root',
+                        blank=True,
                         help_text=('Input: Path to the root directory of the'
                                    ' dataset described by dataset_schema'))
 
@@ -100,6 +129,11 @@ class D3MConfiguration(TimeStampedModel):
                     blank=True,
                     help_text=('Path to the root directory of the'
                                ' problem.'))
+
+    root_output_directory = models.TextField(\
+                        blank=True,
+                        help_text=(('Not an official field.  Used for testing'
+                                    ' to determine the "/output" directory')))
 
     executables_root = models.TextField(\
                         blank=True,
@@ -124,14 +158,13 @@ class D3MConfiguration(TimeStampedModel):
                         help_text=('Temporary storage root for performers'
                                    ' to use.'))
 
-    root_output_directory = models.TextField(\
+    additional_inputs = models.TextField(\
                         blank=True,
-                        help_text=(('Not an official field.  Used for testing'
-                                    ' to determine the "/output" directory')))
+                        help_text=('Additional inputs directory'))
 
-    timeout = models.IntegerField(\
+    timeout = models.BigIntegerField(\
                 default=-1,
-                help_text=('Allotted time for search, in minutes.'
+                help_text=('Allotted time for search, in seconds.'
                            ' No timeout if negative.'))
 
     cpus = models.CharField(\
@@ -143,6 +176,11 @@ class D3MConfiguration(TimeStampedModel):
                 max_length=255,
                 blank=True,
                 help_text=('Amount of RAM available for search.'))
+
+    env_values = jsonfield.JSONField(\
+                blank=True,
+                help_text='D3M env values for running Docker TA2s',
+                load_kwargs=dict(object_pairs_hook=OrderedDict))
 
     slug = models.SlugField(blank=True,
                             help_text='auto-filled on save')
@@ -163,11 +201,17 @@ class D3MConfiguration(TimeStampedModel):
 
         self.slug = slugify(self.name)
 
+        # A user config CANNOT be the default
+        #
+        if self.is_user_config:
+            self.is_default = False
+
         # If this is the default, set everything else to non-default
         if self.is_default:
-            D3MConfiguration.objects.filter(\
-                            is_default=True\
-                            ).update(is_default=False)
+            qs = D3MConfiguration.objects.filter(is_default=True)
+            if self.id:
+                qs = qs.exclude(id=self.id)
+            qs.update(is_default=False)
 
         super(D3MConfiguration, self).save(*args, **kwargs)
 
@@ -198,13 +242,17 @@ class D3MConfiguration(TimeStampedModel):
     def to_dict(self, as_eval_dict=False):
         """Return in an OrderedDict"""
         attrs = ['id', 'name', 'is_default',
+                 'is_user_config', 'orig_dataset_id',
+                 'description',
+                 'd3m_input_dir',
                  'dataset_schema', 'problem_schema',
                  'training_data_root', 'problem_root',
                  'pipeline_logs_root', 'executables_root',
                  'user_problems_root',
+                 'additional_inputs',
                  'temp_storage_root',
                  OPTIONAL_DIR_OUTPUT_ROOT,
-                 'timeout', 'cpus', 'ram']
+                 'timeout', 'cpus', 'ram', 'env_values']
         date_attrs = ['created', 'modified']
 
         od = OrderedDict()
@@ -238,18 +286,30 @@ class D3MConfiguration(TimeStampedModel):
 
         return od
 
+    def get_docker_env_settings(self):
+        """Used for local TA2 tests and setting env variables"""
+        if not self.env_values:
+            return None
+
+        pairs = ['-e %s=%s' % (key, val)
+                 for key, val in self.env_values.items()]
+
+        return ' '.join(pairs)
+
 
     def are_d3m_paths_valid(self):
         """Check the paths"""
         return are_d3m_paths_valid(self)
 
+    #@mark_safe
     def are_paths_valid(self):
         """Check the paths, show in admin"""
         if not self.are_d3m_paths_valid():
-            return "<span class='deletelink'>invalid paths</a>"
+            return False
+            #return "<span class='deletelink'>invalid paths</a>"
         else:
             return True
-    are_paths_valid.allow_tags = True
+    #are_paths_valid.allow_tags = True
 
     def get_bad_paths_for_admin(self):
         """Formatted for the admin with <br />'s separating the path list"""

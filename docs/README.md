@@ -78,7 +78,7 @@ The following command runs a TA2 test server with the core code from the NYU tea
     ```
     export TA2_STATIC_TEST_MODE=False
     ```
-    
+
 - Start the main app: `fab run` (or `fab run_with_rook`)
 
 
@@ -160,7 +160,7 @@ Upon saving config information, the paths are evaluated (e.g. do they exist?) an
 A config file may also be added using this command from the Terminal.  
 
 ```
-fab load_d3m_config:[path to config]
+fab load_d3m_config:[path to data directory]
 ```
 
 - Default: A config file loaded this way will immediately become the default available in JSON format via:

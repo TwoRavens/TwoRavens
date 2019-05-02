@@ -8,7 +8,7 @@ Updated 7/17/2018.
 
 ```
 docker login registry.datadrivendiscovery.org
-docker pull registry.datadrivendiscovery.org/zshang/brown:ta2
+docker pull registry.datadrivendiscovery.org/zshang/docker_images:ta2
 ```
 
 ## Run it with env variable
@@ -21,7 +21,7 @@ Within a Terminal:
     ```
 1. make config files
     ```
-    fab make_d3m_config_files
+    fab make_d3m_configs_from_files
     ```
 1. Show a list of datasets to run with the TA2
     ```

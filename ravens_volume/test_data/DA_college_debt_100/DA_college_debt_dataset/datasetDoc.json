@@ -1,0 +1,69 @@
+{
+  "about": {
+    "datasetID": "DA_college_debt_dataset_100",
+    "datasetName": "DA college debt dataset 100",
+    "description": "College Scorecards make it easier for students to search for a college that is a good fit for them. They can use the College Scorecard to find out more about a college's affordability and value so they can make more informed decisions about which college to attend, including factors such as median debt-to-earning ratio of graduates.",
+    "license": "Other",
+    "datasetVersion": "2.0",
+    "datasetSchemaVersion": "3.1.2",
+    "redacted": true,
+    "digest": "54cc9884adac8319835cc5ce3dc3dcd0762854f816aaa7a3a8aa2fc26b85e264"
+  },
+  "dataResources": [
+    {
+      "resID": "0",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "INSTNM",
+          "colDescription": "Institution name",
+          "colType": "string",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 2,
+          "colName": "PCTFLOAN",
+          "colDescription": "Percent of all undergraduate students receiving a federal student loan",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 3,
+          "colName": "MD_EARN_WNE_P10",
+          "colDescription": "Median earnings of students working and not enrolled 10 years after entry",
+          "colType": "integer",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 4,
+          "colName": "DEBT_EARNINGS_RATIO",
+          "colDescription": "debt to earnings ratio of graduates",
+          "colType": "integer",
+          "role": [
+            "suggestedTarget"
+          ]
+        }
+      ]
+    }
+  ]
+}

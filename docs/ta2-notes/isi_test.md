@@ -8,7 +8,7 @@
 
 ```
 docker login registry.datadrivendiscovery.org
-docker pull registry.datadrivendiscovery.org/ta2-submissions-summer/ta2-isi/ta3ta2-image:latest
+docker pull registry.datadrivendiscovery.org/kyao/ta2-isi/ta3ta2-image:latest
 ```
 
 ## Run it with env variable
@@ -21,7 +21,7 @@ Within a Terminal:
     ```
 1. make config files
     ```
-    fab make_d3m_config_files
+    fab make_d3m_configs_from_files
     ```
 1. Show a list of datasets to run with the TA2
     ```

@@ -3,6 +3,7 @@
 These are the additional instructions, following those in:
   - `fl_notes.md`
   - `brown_notes.md`
+  - `isi_test.md`
 
 
 ## TA3 instructions

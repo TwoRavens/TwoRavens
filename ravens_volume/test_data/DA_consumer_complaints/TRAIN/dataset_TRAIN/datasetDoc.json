@@ -1,0 +1,96 @@
+{
+  "about": {
+    "datasetID": "DA_consumer_complaints_dataset_TRAIN",
+    "datasetName": "data associated with DA_consumer_complaints",
+    "description": "This dataset contains consumer complaints  added to a public database after the company has responded to the complaint, including the complaint narratives. The data has been labeled with a relevance score and filtered to contain only records pertaining to the state of California.",
+    "license": "Other",
+    "datasetVersion": "2.0",
+    "redacted": false,
+    "datasetSchemaVersion": "3.2.0",
+    "digest": "d0b6b05ea45b8b10fd20a8008a07e9cf62fb32b2090e894bf426b12e5d3c80e8"
+  },
+  "dataResources": [
+    {
+      "resID": "learningData",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "Complaint ID",
+          "colDescription": "unique ID of the complaint",
+          "colType": "integer",
+          "role": [
+            "key"
+          ]
+        },
+        {
+          "colIndex": 2,
+          "colName": "State",
+          "colDescription": "state associated with the complaint",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 3,
+          "colName": "ZIP code",
+          "colDescription": "zip code associated with the complaint",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 4,
+          "colName": "Company",
+          "colDescription": "company against whom the complaint was registered",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 5,
+          "colName": "Consumer complaint narrative",
+          "colDescription": "narrative of the complaint",
+          "colType": "string",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 6,
+          "colName": "Date sent to company",
+          "colDescription": "date of the complaint",
+          "colType": "dateTime",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 7,
+          "colName": "relevance",
+          "colDescription": "relevance score",
+          "colType": "categorical",
+          "role": [
+            "suggestedTarget"
+          ]
+        }
+      ]
+    }
+  ]
+}

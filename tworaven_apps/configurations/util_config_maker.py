@@ -44,7 +44,8 @@ class TestConfigMaker:
 
     @staticmethod
     def make_configs(config_files_only=False):
-        """Make config db entries, directories, and files"""
+        """ONLY used with 2018 search_config.json
+        Make config db entries, directories, and files"""
         data_dir = _TEST_DATA_DIR
 
         problem_dirs = [x for x in os.listdir(data_dir)

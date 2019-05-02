@@ -1,0 +1,56 @@
+{
+  "about": {
+    "problemID": "DA_global_terrorism_problem",
+    "problemName": "DA global terrorism problem",
+    "problemDescription": "Given a year and a country predict the activity level of a terrorist group (on a scale of 1 to 5) relative to the other groups in the region. This is a multi class classification problem.",
+    "taskType": "classification",
+    "taskSubType": "multiClass",
+    "problemSchemaVersion": "3.2.0",
+    "problemVersion": "2.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "DA_global_terrorism_dataset",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "learningData",
+            "colIndex": 4,
+            "colName": "activity_level"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.35,
+      "stratified": false,
+      "numRepeats": 0,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "accuracy"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  },
+  "dataAugmentation": [
+    {
+      "domain": [
+        "terrorism",
+        "national secutiry",
+        "conflict"
+      ],
+      "keywords": [
+        "global terrorism",
+        "terrorist events",
+        "domestic",
+        "international"
+      ]
+    }
+  ]
+}

@@ -12,9 +12,6 @@ from tworaven_apps.ta2_interfaces.static_vals import STATUS_VAL_FAILED_PRECONDIT
 from tworaven_apps.utils.view_helper import get_session_key
 
 # Create your models here.
-ZELIG_APP = 'zelig'
-DATA_APP = 'dataapp'
-
 SERVICE_TYPE_ROOK = 'ROOK SERVICE'
 SERVICE_TYPE_D3M = 'D3M SERVICE'
 SERVICE_TYPE_NOT_SPECIFIED = 'service not specified'

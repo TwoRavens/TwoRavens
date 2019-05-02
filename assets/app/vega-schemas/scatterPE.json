@@ -2,14 +2,32 @@
   "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
   "description": "A scatterplot.",
   "title": "tworavensTitle",
-  "data": {"url": "tworavensData"},
+  "data": {
+    "url": "tworavensData"
+  },
+  "autosize": {
+    "type": "fit",
+    "contains": "padding"
+  },
   "layer": [
     {
       "mark": "point",
-  "encoding": {
-    "x": {"field": "tworavensX","type": "quantitative","axis": {"title": "tworavensX"}},
-    "y": {"field": "tworavensY","type": "quantitative","axis": {"title": "tworavensY"}}
-  }
+      "encoding": {
+        "x": {
+          "field": "tworavensX",
+          "type": "quantitative",
+          "axis": {
+            "title": "tworavensX"
+          }
+        },
+        "y": {
+          "field": "tworavensY",
+          "type": "quantitative",
+          "axis": {
+            "title": "tworavensY"
+          }
+        }
+      }
     },
     {
       "mark": {
@@ -20,22 +38,22 @@
         "y": {
           "field": "tworavensX",
           "type": "quantitative",
-          "aggregate":"min"
+          "aggregate": "min"
         },
         "y2": {
           "field": "tworavensX",
           "type": "quantitative",
-          "aggregate":"max"
+          "aggregate": "max"
         },
         "x": {
           "field": "tworavensX",
           "type": "quantitative",
-          "aggregate":"min"
+          "aggregate": "min"
         },
         "x2": {
           "field": "tworavensX",
           "type": "quantitative",
-          "aggregate":"max"
+          "aggregate": "max"
         }
       }
     }

@@ -78,12 +78,11 @@ message ProblemPerformanceMetric {
 }
 
 message Problem {
-    // ID of this problem.
-    string id = 1;
-    // Version of this problem.
-    string version = 2;
-    string name = 3;
-    string description = 4;
+    // TODO: Remove deprecated fields in a future version.
+    string id = 1 [deprecated=true];
+    string version = 2 [deprecated=true];
+    string name = 3 [deprecated=true];
+    string description = 4 [deprecated=true];
     TaskType task_type = 5;
     TaskSubtype task_subtype = 6;
     repeated ProblemPerformanceMetric performance_metrics = 7;
@@ -106,6 +105,11 @@ message ProblemInput {
     repeated ProblemTarget targets = 2;
 }
 
+message DataAugmentation {
+    repeated string domain = 1;
+    repeated string keywords = 2;
+}
+
 // Problem description matches the parsed problem description by
 // the d3m_metadata.problem.parse_problem_description Python method.
 // Problem outputs are not necessary for the purpose of this API
@@ -114,4 +118,12 @@ message ProblemInput {
 message ProblemDescription {
     Problem problem = 1;
     repeated ProblemInput inputs = 2;
+    // ID of this problem. Required.
+    string id = 3;
+    // Version of this problem.
+    string version = 4;
+    string name = 5;
+    string description = 6;
+    string digest = 7;
+    repeated DataAugmentation data_augmentation = 8;
 }

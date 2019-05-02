@@ -1,6 +1,8 @@
 import json
 from collections import OrderedDict
 from django.http import JsonResponse, HttpResponse
+from django.shortcuts import render
+
 from django.views.decorators.csrf import csrf_exempt
 from tworaven_apps.utils.view_helper import \
     (get_request_body,
@@ -11,20 +13,121 @@ from tworaven_apps.utils.view_helper import \
     (get_session_key, get_authenticated_user)
 from tworaven_apps.ta2_interfaces.models import \
     (StoredRequest, StoredResponse)
+from tworaven_apps.ta2_interfaces.search_history_util import SearchHistoryUtil
+from tworaven_apps.ta2_interfaces.static_vals import \
+        (SEARCH_SOLUTIONS,
+         GET_SEARCH_SOLUTIONS_RESULTS)
+
+
+def view_clear_grpc_stored_history(request):
+    """For develop, clear GPRC stored history"""
+    msg_list = []
+    for model_name in [StoredResponse, StoredRequest]:
+        mcnt = model_name.objects.count()
+
+        user_msg = '%d %s objects(s) found' % (mcnt, model_name.__name__)
+        print(f'\n{user_msg}')
+        msg_list.append(user_msg)
+
+        if mcnt > 0:
+            for meta_obj in model_name.objects.all().order_by('-id'):
+                meta_obj.delete()
+            print('Deleted...')
+            msg_list.append('Deleted...')
+
+        else:
+            user_msg = f'No {model_name.__name__} objects found.'
+            print(f'\n{user_msg}')
+            msg_list.append(user_msg)
+
+    return HttpResponse('<br />'.join(msg_list))
+
+def view_grpc_search_history_json_no_id(request):
+    """Pick an existing search history, if it exists"""
+
+    resp = SearchHistoryUtil.get_first_search_soutions_call()
+
+    if not resp:
+        err_info = get_json_error('No search_id was found')
+        return JsonResponse(get_json_error(err_info))
+
+    return view_grpc_search_history_json(request, resp.search_id)
+
+
+def view_grpc_search_history_json(request, search_id):
+    """View stored request/responses based on search_id"""
+    if not search_id:
+        err_info = get_json_error('No search_id was found')
+        return JsonResponse(get_json_error(err_info))
+
+    search_history_util = SearchHistoryUtil(search_id=search_id)
+
+    if search_history_util.has_error():
+        err_info = f'Error found: {search_history_util.get_err_msg()}'
+        #print(f'Error found: f{search_history_util.get_error()}')
+        return JsonResponse(get_json_error(err_info))
+
+    info_dict = dict(search_id=search_id,
+                     json_history=search_history_util.get_finalized_history())
+
+    user_info = get_json_success('History found', data=info_dict)
+    return JsonResponse(user_info)
+
+
+def view_grpc_stored_history_no_id(request):
+    """Pick an existing search history, if it exists"""
+
+    resp = SearchHistoryUtil.get_first_search_soutions_call()
+
+    resp_id = resp.search_id if resp else None
+    #if not resp:
+    #    err_info = get_json_error('No search_id was found')
+    #    return JsonResponse(get_json_error(err_info))
+
+    return view_grpc_stored_history(request, resp_id)
+
+
+def view_grpc_stored_history(request, search_id):
+    """View stored request/responses based on search_id"""
+
+    info_dict = dict(search_id=search_id)
+
+    if not search_id:
+        info_dict['ERROR_MSG'] = 'No search_id was found'
+        return render(request,
+                      'grpc/view_grpc_stored_history.html',
+                      info_dict)
+
+    search_history_util = SearchHistoryUtil(search_id=search_id)
+
+    if search_history_util.has_error():
+        err_msg = f'Error found: {search_history_util.get_err_msg()}'
+        info_dict['ERROR_MSG'] = err_msg
+
+        return render(request,
+                      'grpc/view_grpc_stored_history.html',
+                      info_dict)
+
+    info_dict = dict(search_id=search_id,
+                     json_history=search_history_util.get_finalized_history())
+
+    return render(request,
+                  'grpc/view_grpc_stored_history.html',
+                  info_dict)
 
 
 @csrf_exempt
 def view_stored_request(request, hash_id):
     """Return a StoredRequest object"""
     user_info = get_authenticated_user(request)
-    if not user_info.success:
-        return JsonResponse(get_json_error(user_info.err_msg))
+    #if not user_info.success:
+    #    return JsonResponse(get_json_error(user_info.err_msg))
+    #user = user_info.result_obj
 
-    user = user_info.result_obj
     try:
         req = StoredRequest.objects.get(\
-                                hash_id=hash_id,
-                                user=user)
+                                hash_id=hash_id)
+                                #user=user)
     except StoredRequest.DoesNotExist:
         user_msg = 'StoredRequest not found.'
         return JsonResponse(get_json_error(user_msg))
@@ -44,14 +147,14 @@ def view_stored_request(request, hash_id):
 def view_stored_response(request, hash_id):
     """Return a StoredResponse object"""
     user_info = get_authenticated_user(request)
-    if not user_info.success:
-        return JsonResponse(get_json_error(user_info.err_msg))
+    #if not user_info.success:
+    #    return JsonResponse(get_json_error(user_info.err_msg))
+    #user = user_info.result_obj
 
-    user = user_info.result_obj
     try:
         resp = StoredResponse.objects.get(\
-                                hash_id=hash_id,
-                                stored_request__user=user)
+                                hash_id=hash_id,)
+                                # stored_request__user=user)
     except StoredResponse.DoesNotExist:
         user_msg = 'StoredResponse not found.'
         return JsonResponse(get_json_error(user_msg))

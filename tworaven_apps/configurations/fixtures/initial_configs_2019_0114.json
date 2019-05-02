@@ -1,0 +1,87 @@
+[
+{
+    "model": "configurations.appconfiguration",
+    "pk": 1,
+    "fields": {
+        "created": "2017-09-01T22:10:52.681Z",
+        "modified": "2017-11-20T16:23:16.865Z",
+        "name": "Default Mode Dev configuration",
+        "is_active": false,
+        "production": false,
+        "app_domain": "DATAVERSE_DOMAIN",
+        "d3m_svc_url": "/d3m-service",
+        "privacy_mode": false,
+        "rook_svc_url": "/rook-custom/",
+        "dataverse_url": "https://beta.dataverse.org",
+        "description": "Basic dev configuration.  Rook calls are routed through Django."
+    }
+},
+{
+    "model": "configurations.appconfiguration",
+    "pk": 2,
+    "fields": {
+        "created": "2017-09-01T22:15:48.937Z",
+        "modified": "2018-03-26T20:42:12.841Z",
+        "name": "D3M Dev configuration",
+        "is_active": true,
+        "production": false,
+        "app_domain": "D3M_DOMAIN",
+        "d3m_svc_url": "/d3m-service",
+        "privacy_mode": false,
+        "rook_svc_url": "/rook-custom/",
+        "dataverse_url": "https://beta.dataverse.org",
+        "description": "Rook calls routed through Django"
+    }
+},
+{
+    "model": "configurations.appconfiguration",
+    "pk": 3,
+    "fields": {
+        "created": "2017-09-05T19:20:31.198Z",
+        "modified": "2017-11-20T16:23:11.924Z",
+        "name": "D3M Deploy configuration (Docker)",
+        "is_active": false,
+        "production": false,
+        "app_domain": "D3M_DOMAIN",
+        "d3m_svc_url": "/d3m-service",
+        "privacy_mode": false,
+        "rook_svc_url": "/rook-custom/",
+        "dataverse_url": "https://beta.dataverse.org",
+        "description": "Basic dev configuration within docker compose.  Both Rook and Django calls are routed through nginx which is running on port 80"
+    }
+},
+{
+    "model": "configurations.appconfiguration",
+    "pk": 4,
+    "fields": {
+        "created": "2018-03-26T20:41:33.443Z",
+        "modified": "2018-03-26T20:52:36.839Z",
+        "name": "EventData DEV",
+        "is_active": false,
+        "production": false,
+        "app_domain": "EVENTDATA_DOMAIN",
+        "d3m_svc_url": "/d3m-service",
+        "privacy_mode": false,
+        "rook_svc_url": "http://localhost:8000/custom/",
+        "dataverse_url": "https://beta.dataverse.org",
+        "description": "Run event data in a local environment.  The Rook service url will be \"http://localhost:8000/custom/\""
+    }
+},
+{
+    "model": "configurations.appconfiguration",
+    "pk": 5,
+    "fields": {
+        "created": "2018-03-26T20:42:08.294Z",
+        "modified": "2018-03-26T20:53:08.422Z",
+        "name": "EventData PROD",
+        "is_active": false,
+        "production": true,
+        "app_domain": "EVENTDATA_DOMAIN",
+        "d3m_svc_url": "/d3m-service",
+        "privacy_mode": false,
+        "rook_svc_url": "/custom/",
+        "dataverse_url": "https://beta.harvard.edu",
+        "description": "Run event data in production.  The Rook service url will be relative to the deployed server: \"/custom/\""
+    }
+}
+]

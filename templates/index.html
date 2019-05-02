@@ -12,12 +12,15 @@
     <!-- d3 --><script src="{% static "js/d3/d3.v3.min.js" %}"></script>
     <script>
 
+          const WEBSOCKET_PREFIX = '{{ WEBSOCKET_PREFIX }}'; // 'ws:/ or ws://'
+
           // -----------------------------
           // constants: possible domain settings
           // -----------------------------
           const D3M_DOMAIN = 'D3M_DOMAIN';
           const DATAVERSE_DOMAIN = 'DATAVERSE_DOMAIN';
           const EVENTDATA_DOMAIN = 'EVENTDATA_DOMAIN';
+          const DATAMART_ONLY_DOMAIN = 'DATAMART_ONLY_DOMAIN';
 
         {% if app_config %}
           // ----------------------------
@@ -51,6 +54,7 @@
           const IS_D3M_DOMAIN = (APP_DOMAIN === D3M_DOMAIN);
           const IS_DATAVERSE_DOMAIN = (APP_DOMAIN === DATAVERSE_DOMAIN);
           const IS_EVENTDATA_DOMAIN = (APP_DOMAIN === EVENTDATA_DOMAIN);
+          const IS_DATAMART_ONLY_DOMAIN = (APP_DOMAIN === DATAMART_ONLY_DOMAIN);
 
           // TA2 information
           {% if TA2_STATIC_TEST_MODE %}

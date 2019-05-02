@@ -12,7 +12,11 @@ APP_CONFIG_BOOLEAN_FIELDS = (\
 D3M_DOMAIN = 'D3M_DOMAIN'
 DATAVERSE_DOMAIN = 'DATAVERSE_DOMAIN'
 EVENTDATA_DOMAIN = 'EVENTDATA_DOMAIN'
-DOMAIN_LIST = [D3M_DOMAIN, DATAVERSE_DOMAIN, EVENTDATA_DOMAIN]
+DATAMART_ONLY_DOMAIN = 'DATAMART_ONLY_DOMAIN'
+DOMAIN_LIST = [D3M_DOMAIN,
+               DATAMART_ONLY_DOMAIN,
+               DATAVERSE_DOMAIN,
+               EVENTDATA_DOMAIN]
 APP_DOMAINS = [(d, d) for d in DOMAIN_LIST]
 
 class AppConfiguration(TimeStampedModel):
@@ -84,9 +88,12 @@ class AppConfiguration(TimeStampedModel):
         self.d3m_svc_url = remove_trailing_slash(self.d3m_svc_url)
 
         if self.is_active:
+            if not self.id:
+                super(AppConfiguration, self).save(*args, **kwargs)
+
             # If this is active, set everything else to inactive
-            AppConfiguration.objects.filter(\
-                    is_active=True\
+            AppConfiguration.objects.exclude(id=self.id\
+                    ).filter(is_active=True\
                     ).update(is_active=False)
         super(AppConfiguration, self).save(*args, **kwargs)
 

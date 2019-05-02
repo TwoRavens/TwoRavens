@@ -27,7 +27,7 @@ from google.protobuf.json_format import MessageToJson,\
 def msg_and_back(msg_obj, CORE_OBJ):
 
     content = MessageToJson(msg_obj, including_default_value_fields=True)
-    print('content as JSON:\n', content)
+    # print('content as JSON:\n', content)
 
     req = Parse(content, CORE_OBJ())
     print('\n\nJSON back to request:\n', req)

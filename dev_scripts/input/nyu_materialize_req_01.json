@@ -1,0 +1,444 @@
+{
+    "join_columns": [],
+    "discoverer": "datamart.d3m",
+    "union_columns": [],
+    "score": 19.85619,
+    "id": "datamart.d3m.aug.DA_college_debt",
+    "metadata": {
+        "materialize": {
+            "date": "2019-01-25T18:29:11.858061Z",
+            "d3m_name": "DA_college_debt",
+            "identifier": "datamart.d3m"
+        },
+        "name": "DA college debt dataset",
+        "license": "Other",
+        "description": "College Scorecards make it easier for students to search for a college that is a good fit for them. ...",
+        "date": "2019-01-25T18:32:56.401030Z",
+        "size": 570884,
+        "columns": [
+            {
+                "semantic_types": [
+                    "http://schema.org/identifier"
+                ],
+                "name": "d3mIndex",
+                "coverage": [
+                    {
+                        "range": {
+                            "gte": 0,
+                            "lte": 4989
+                        }
+                    }
+                ],
+                "structural_type": "http://schema.org/Integer",
+                "stddev": 1440.4888927027519,
+                "mean": 2494.5
+            },
+            {
+                "semantic_types": [
+                    "http://schema.org/identifier",
+                    "https://metadata.datadrivendiscovery.org/types/PhoneNumber"
+                ],
+                "name": "UNITID",
+                "coverage": [
+                    {
+                        "range": {
+                            "gte": 100654,
+                            "lte": 485421
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 10236801,
+                            "lte": 24893414
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 36520401,
+                            "lte": 48065701
+                        }
+                    }
+                ],
+                "structural_type": "http://schema.org/Integer",
+                "stddev": 6719849.188793989,
+                "mean": 1747338.812024048
+            },
+            {
+                "semantic_types": [],
+                "name": "INSTNM",
+                "structural_type": "http://schema.org/Text"
+            },
+            {
+                "semantic_types": [],
+                "name": "PCTFLOAN",
+                "coverage": [
+                    {
+                        "range": {
+                            "gte": 0,
+                            "lte": 0
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.0054,
+                            "lte": 0.9828
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.9882,
+                            "lte": 0.9882
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.9964,
+                            "lte": 1
+                        }
+                    }
+                ],
+                "structural_type": "http://schema.org/Float",
+                "stddev": 0.23281372579807563,
+                "mean": 0.5132988977955922
+            },
+            {
+                "semantic_types": [],
+                "name": "CONTROL",
+                "coverage": [
+                    {
+                        "range": {
+                            "gte": 1,
+                            "lte": 3
+                        }
+                    }
+                ],
+                "structural_type": "http://schema.org/Integer",
+                "stddev": 0.8449953921663131,
+                "mean": 2.0861723446893787
+            },
+            {
+                "semantic_types": [],
+                "name": "STABBR",
+                "structural_type": "http://schema.org/Text"
+            },
+            {
+                "semantic_types": [],
+                "name": "PCIP16",
+                "coverage": [
+                    {
+                        "range": {
+                            "gte": 0,
+                            "lte": 0.1093
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.1389,
+                            "lte": 0.1538
+                        }
+                    }
+                ],
+                "structural_type": "http://schema.org/Float",
+                "stddev": 0.009122213526651409,
+                "mean": 0.0029666733466933823
+            },
+            {
+                "semantic_types": [],
+                "name": "MD_EARN_WNE_P10",
+                "structural_type": "http://schema.org/Text"
+            },
+            {
+                "semantic_types": [],
+                "name": "PPTUG_EF",
+                "coverage": [
+                    {
+                        "range": {
+                            "gte": 0,
+                            "lte": 0.8143
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.8237,
+                            "lte": 0.8899
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.8983,
+                            "lte": 0.9421
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.9524,
+                            "lte": 0.9563
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.9664,
+                            "lte": 0.9664
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.9753,
+                            "lte": 0.9815
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.9932,
+                            "lte": 1
+                        }
+                    }
+                ],
+                "structural_type": "http://schema.org/Float",
+                "stddev": 0.23855042720977787,
+                "mean": 0.2173022845691384
+            },
+            {
+                "semantic_types": [],
+                "name": "UGDS_WHITE",
+                "coverage": [
+                    {
+                        "range": {
+                            "gte": 0,
+                            "lte": 0.9762
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.98,
+                            "lte": 0.9882
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 1,
+                            "lte": 1
+                        }
+                    }
+                ],
+                "structural_type": "http://schema.org/Float",
+                "stddev": 0.25686377006577643,
+                "mean": 0.47169625250501024
+            },
+            {
+                "semantic_types": [],
+                "name": "UGDS_BLACK",
+                "coverage": [
+                    {
+                        "range": {
+                            "gte": 0,
+                            "lte": 0.6161
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.6217,
+                            "lte": 0.772
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.7785,
+                            "lte": 0.8033
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.8108,
+                            "lte": 0.9655
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.9747,
+                            "lte": 0.9783
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.9841,
+                            "lte": 0.9941
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 1,
+                            "lte": 1
+                        }
+                    }
+                ],
+                "structural_type": "http://schema.org/Float",
+                "stddev": 0.20422078929744,
+                "mean": 0.17516234468937913
+            },
+            {
+                "semantic_types": [],
+                "name": "UGDS_HISP",
+                "coverage": [
+                    {
+                        "range": {
+                            "gte": 0,
+                            "lte": 0.8178
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.831,
+                            "lte": 0.8368
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.8519,
+                            "lte": 0.8917
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.9061,
+                            "lte": 1
+                        }
+                    }
+                ],
+                "structural_type": "http://schema.org/Float",
+                "stddev": 0.19875743287085393,
+                "mean": 0.15332240480961917
+            },
+            {
+                "semantic_types": [],
+                "name": "UGDS_ASIAN",
+                "coverage": [
+                    {
+                        "range": {
+                            "gte": 0,
+                            "lte": 0.5263
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.59,
+                            "lte": 0.59
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 0.6409999999999999,
+                            "lte": 0.6481
+                        }
+                    }
+                ],
+                "structural_type": "http://schema.org/Float",
+                "stddev": 0.054456603887270985,
+                "mean": 0.032229839679358684
+            },
+            {
+                "semantic_types": [
+                    "https://metadata.datadrivendiscovery.org/types/PhoneNumber"
+                ],
+                "name": "SATMTMID",
+                "coverage": [
+                    {
+                        "range": {
+                            "gte": 355,
+                            "lte": 785
+                        }
+                    }
+                ],
+                "structural_type": "http://schema.org/Float",
+                "stddev": 199.95282173757764,
+                "mean": 127.00340681362725
+            },
+            {
+                "semantic_types": [
+                    "https://metadata.datadrivendiscovery.org/types/PhoneNumber"
+                ],
+                "name": "SATVRMID",
+                "coverage": [
+                    {
+                        "range": {
+                            "gte": 315,
+                            "lte": 770
+                        }
+                    }
+                ],
+                "structural_type": "http://schema.org/Float",
+                "stddev": 197.21074031211498,
+                "mean": 125.39779559118236
+            },
+            {
+                "semantic_types": [
+                    "https://metadata.datadrivendiscovery.org/types/PhoneNumber"
+                ],
+                "name": "SATWRMID",
+                "coverage": [
+                    {
+                        "range": {
+                            "gte": 280,
+                            "lte": 765
+                        }
+                    }
+                ],
+                "structural_type": "http://schema.org/Float",
+                "stddev": 169.6292849256932,
+                "mean": 73.6256513026052
+            },
+            {
+                "semantic_types": [],
+                "name": "UGDS",
+                "coverage": [
+                    {
+                        "range": {
+                            "gte": 0,
+                            "lte": 65092
+                        }
+                    },
+                    {
+                        "range": {
+                            "gte": 100011,
+                            "lte": 100011
+                        }
+                    }
+                ],
+                "structural_type": "http://schema.org/Float",
+                "stddev": 5972.321072782205,
+                "mean": 2933.154108216433
+            },
+            {
+                "semantic_types": [],
+                "name": "PREDDEG",
+                "coverage": [
+                    {
+                        "range": {
+                            "gte": 0,
+                            "lte": 4
+                        }
+                    }
+                ],
+                "structural_type": "http://schema.org/Integer",
+                "stddev": 0.9884478582897329,
+                "mean": 1.9326653306613226
+            },
+            {
+                "semantic_types": [],
+                "name": "DEBT_EARNINGS_RATIO",
+                "coverage": [
+                    {
+                        "range": {
+                            "gte": 2,
+                            "lte": 239
+                        }
+                    }
+                ],
+                "structural_type": "http://schema.org/Integer",
+                "stddev": 28.816079351832904,
+                "mean": 60.29338677354709
+            }
+        ],
+        "nb_rows": 4990
+    }
+}

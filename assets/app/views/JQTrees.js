@@ -9,7 +9,7 @@ import * as queryAbstract from '../manipulations/queryAbstract';
 import * as manipulate from "../manipulations/manipulate";
 
 import * as eventdata from "../eventdata/eventdata";
-import {looseSteps, manipulations} from "../app";
+import {alertError, looseSteps, manipulations} from "../app";
 import {hideFirst} from "../manipulations/queryAbstract";
 
 
@@ -308,7 +308,7 @@ export class TreeSubset {
                 if (IS_EVENTDATA_DOMAIN) {
                     let tempQuery = queryMongo.buildSubset([event.node]);
                     if ($.isEmptyObject(tempQuery)) {
-                        alert("\"" + event.node.name + "\" is too specific to parse into a query.");
+                        alertError("\"" + event.node.name + "\" is too specific to parse into a query.");
                     } else {
                         eventdata.canvasPreferences['Custom'] = eventdata.canvasPreferences['Custom'] || {};
                         eventdata.canvasPreferences['Custom']['text'] = JSON.stringify(tempQuery, null, '\t');
@@ -458,6 +458,119 @@ function buttonDeleteAggregation(pipelineId, stepId, nodeId) {
     return `<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;margin-top:2px;float:right;height:18px' onclick='callbackDeleteAggregation("${pipelineId}", "${stepId}", "${nodeId}")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>`;
 }
 
+
+export class TreeImputation {
+    convertToJQTreeFormat(pipelineId, step, editable) {
+        return step.imputations.map((imputation, i) => ({
+            id: imputation.id,
+            name: `${i + 1}: ${imputation.imputationMode} ${imputation.nullValue}`,
+            cancellable: editable,
+            show_op: false,
+            children: [
+                {
+                    id: imputation.id + 'NullValueType',
+                    name: 'Null Value Type: ' + imputation.nullValueType,
+                    show_op: false, cancellable: false
+                }
+            ].concat(imputation.imputationMode === 'Delete' ? [
+                {
+                    id: imputation.id + 'Variables',
+                    name: imputation.variables.size + ' Variables',
+                    children: [...imputation.variables].map(column => ({
+                        id: imputation.id + column,
+                        name: column,
+                        show_op: false, cancellable: false
+                    })),
+                    show_op: false, cancellable: false
+                }
+            ] : [
+                {
+                    id: imputation.id + 'Variables',
+                    name: Object.keys(imputation.replacementValues).length + ' Variables',
+                    children: Object.keys(imputation.replacementValues).map(column => ({
+                        id: imputation.id + column,
+                        name: `${column}: ${imputation.replacementValues[column]}`,
+                        show_op: false, cancellable: false
+                    })),
+                    show_op: false, cancellable: false
+                },
+                {
+                    id: imputation.id + 'ReplacementMode',
+                    name: 'Replacement Mode: ' + imputation.replacementMode,
+                    show_op: false, cancellable: false
+                }
+            ].concat(imputation.replacementMode === 'Custom' ? [
+                {
+                    id: imputation.id + 'ReplacementType',
+                    name: 'Replacement Type: ' + imputation.customValueType,
+                    show_op: false, cancellable: false
+                }
+            ] : []))
+        }))
+    }
+
+    oncreate({attrs, dom}) {
+        let imputationTree = $(dom);
+        let {pipelineId, step, editable} = attrs;
+
+        let temp = this.convertToJQTreeFormat(pipelineId, step, editable);
+
+        imputationTree.tree({
+            data: temp,
+            saveState: true,
+            dragAndDrop: false,
+            autoOpen: false,
+            selectable: false,
+            onCreateLi: function (node, $li) {
+                if (!('cancellable' in node) || (node['cancellable'] === true)) {
+                    $li.find('.jqtree-element').prepend(buttonDeleteImputation(pipelineId, step.id, node.id));
+                }
+            }
+        });
+
+        imputationTree.on(
+            'tree.click',
+            event => {
+                if (event.node.hasChildren()) imputationTree.tree('toggle', event.node);
+            }
+        );
+    }
+
+    // when mithril updates this component, it redraws the tree with whatever the abstract query is
+    onupdate({attrs, dom}) {
+        let {pipelineId, step, editable, redraw, setRedraw} = attrs;
+        let imputationTree = $(dom);
+        if (redraw) {
+            setRedraw(false);
+            imputationTree.tree('destroy');
+            this.oncreate({attrs, dom});
+            return;
+        }
+        let state = imputationTree.tree('getState');
+        imputationTree.tree('loadData', this.convertToJQTreeFormat(pipelineId, step, editable));
+        imputationTree.tree('setState', state);
+    }
+
+    view() {
+        return m('div#imputationTree')
+    }
+}
+
+function buttonDeleteImputation(pipelineId, stepId, id) {
+    return `<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;margin-top:2px;height:18px' onclick='callbackDeleteImputation("${pipelineId}", "${stepId}", "${id}")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>`;
+}
+
+window.callbackDeleteImputation = function (pipelineId, stepId, imputationId) {
+    let step = [
+        ...(manipulations[pipelineId] || []),
+        ...Object.values(looseSteps)
+    ].find(step => String(step.id) === String(stepId));
+    step.imputations.splice(step.imputations.findIndex(imputation => imputation.name === imputationId), 1);
+
+    if (!IS_EVENTDATA_DOMAIN) manipulate.setQueryUpdated(true);
+    m.redraw();
+};
+
 // Edit tree (typically called from JQtree)
 
 window.callbackDeleteTransform = function (pipelineId, stepId, transformationName) {
@@ -466,8 +579,8 @@ window.callbackDeleteTransform = function (pipelineId, stepId, transformationNam
         ...Object.values(looseSteps)
     ].find(step => String(step.id) === String(stepId));
     step.transforms.splice(step.transforms.findIndex(transformation => transformation.name === transformationName), 1);
-    step.expansions.splice(step.expansions.findIndex(expansion => expansion.name === transformationName));
-    step.manual.splice(step.manual.findIndex(manual => manual.name === transformationName));
+    step.expansions.splice(step.expansions.findIndex(expansion => expansion.name === transformationName), 1);
+    step.manual.splice(step.manual.findIndex(manual => manual.name === transformationName), 1);
 
     if (!IS_EVENTDATA_DOMAIN) manipulate.setQueryUpdated(true);
     m.redraw();

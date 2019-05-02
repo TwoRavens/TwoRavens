@@ -33,6 +33,7 @@ TYPE_OPTIONS = (SUBSET, AGGREGATE)
 TYPE_CHOICES = [(x, x) for x in TYPE_OPTIONS]
 STATUS_CHOICES = [(x, x) for x in STATUS_STATES]
 METHOD_CHOICES = (u'find', u'aggregate', u'count')  # the valid mongodb collection methods
+EXPORT_CHOICES = (u'dataset', u'problem')
 HOST_CHOICES = (u'TwoRavens', 'UTDallas')
 DATA_PARTITIONS = (u'TEST', u'TRAIN')
 

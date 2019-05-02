@@ -4,10 +4,19 @@ import string
 from datetime import datetime as dt
 
 
-def get_timestamp_string():
+def get_timestamp_string(no_breaks=False):
     """Return current time as YYYY-MM-DD_HH-MM-S"""
-    return dt.now().strftime('%Y-%m-%d_%H-%M-%S')
+    tstr = dt.now().strftime('%Y-%m-%d_%H-%M-%S')
+    if no_breaks:
+        return tstr.replace('-', '')
+    return tstr
 
+def get_timestamp_string_readable(time_only=True):
+    """Return current time as %Y-%m-%d %H:%M:%S%f """
+    if time_only:
+        return dt.now().strftime('%H:%M:%S')
+
+    return dt.now().strftime('%Y-%m-%d %H:%M:%S')
 
 def get_alphanumeric_uppercase(str_length):
     """Get random alpha numeric string, with uppercase letters"""
@@ -32,11 +41,17 @@ def get_digits_string(str_length):
     params = dict(digits_only=True)
     return get_alphanumeric_string(str_length, **params)
 
+def get_alpha_string(str_length):
+    """Get random string of alpha chars (no digits)"""
+    params = dict(alpha_only=True)
+    return get_alphanumeric_string(str_length, **params)
+
 
 def get_alphanumeric_string(str_length, **kwargs):
     """Get random alpha numeric string, default is lowercase ascii chars
 
     Available kwargs (in order of precedence*):
+        alpha_only = default is False
         uppercase_only = default is False
         mixed_case = default is False
         digits_only = default is False
@@ -55,6 +70,10 @@ def get_alphanumeric_string(str_length, **kwargs):
     if kwargs.get('uppercase_only') is True:
         # uppercase + digits
         choice_list = string.ascii_uppercase + string.digits
+
+    elif kwargs.get('alpha_only') is True:
+        # alpha lowercase
+        choice_list = string.ascii_lowercase
 
     elif kwargs.get('mixed_case') is True:
         # uppercase + lowercase + digits

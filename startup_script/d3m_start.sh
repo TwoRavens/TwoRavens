@@ -8,6 +8,7 @@ cd /var/webapps/TwoRavens
 # Create new db
 #
 fab init_db
+fab check_datamarts
 
 # Make superuser and test user
 #
@@ -34,7 +35,7 @@ fab clear_test_data
 
 # (20) Make D3M config files
 printf "\n(20) Make D3M config files"
-fab make_d3m_config_files
+fab make_d3m_configs_from_files
 
 # (30) Copy test data to ravens_volume
 printf "\n(30) Copy data to ravens_volume"
@@ -46,4 +47,5 @@ fab load_d3m_config_from_env
 
 # (50) "Run web server.."
 printf "\n(50) Run web server.."
-setsid python manage.py runserver 0.0.0.0:8080
+#setsid python manage.py runserver 0.0.0.0:8080
+daphne -b 0.0.0.0 -p 8080 tworavensproject.asgi:application
