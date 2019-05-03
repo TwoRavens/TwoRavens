@@ -201,20 +201,14 @@ function leftpanel(mode) {
         m('',
             problem.manipulations.length !== 0 && m(
                 'div[style=width:100%;text-align:center]', m(Button, {
+                    class: 'btn-sm',
                     disabled: problem === selectedProblem && app.rightTab === 'Manipulate' && common.panelOpen['right'],
                     title: `view manipulations for ${problem.problemID}`,
                     onclick: () => {
                         app.setRightTab('Manipulate');
                         common.setPanelOpen('right');
                     }
-                }, 'View')),
-            problem === selectedProblem && m(Button, {
-                id: 'btnSaveProblem',
-                onclick: () => {
-                    let problemCopy = app.getProblemCopy(app.getSelectedProblem());
-                    selectedDataset.problems[problemCopy.problemID] = problemCopy;
-                }
-            }, 'Save')
+                }, 'View'))
         )
     ];
     sections.push({
@@ -231,7 +225,17 @@ function leftpanel(mode) {
                     }
                 },
                 [
-                    selectedProblem && m('h4.card-header.clearfix', 'Current Problem'),
+                    selectedProblem && m('h4.card-header.clearfix',
+                        m('div[style=height:50px;display:inline]', 'Current Problem'),
+                        m(Button, {
+                            id: 'btnSaveProblem',
+                            style: {float: 'right', margin: '-5px', 'margin-right': '22px'},
+                            class: 'btn-sm',
+                            onclick: () => {
+                                let problemCopy = app.getProblemCopy(app.getSelectedProblem());
+                                selectedDataset.problems[problemCopy.problemID] = problemCopy;
+                            }
+                        }, 'Save')),
                     selectedProblem && m(Table, {
                         id: 'discoveryTableManipulations',
                         headers: discoveryHeaders,

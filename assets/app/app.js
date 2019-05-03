@@ -2283,7 +2283,7 @@ export function getDescription(problem) {
 }
 
 export function discovery(problems) {
-    problems = problems.reduce((out, prob) => {
+    return problems.reduce((out, prob) => {
         let problemID = generateProblemID();
         let manips = [];
 
@@ -2324,8 +2324,9 @@ export function discovery(problems) {
             description: undefined,
             predictors: [...prob.predictors, ...getTransformVariables(manips)],
             targets: [prob.target],
-            metric: undefined, // this is set below
-            task: undefined, // this is set below
+            // NOTE: if the target is manipulated, the metric/task could be wrong
+            metric: variableSummaries[prob.target].plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
+            task: variableSummaries[prob.target].plottype === "bar" ? 'classification' : 'regression',
             subTask: 'taskSubtypeUndefined',
             meaningful: false,
             manipulations: manips,
@@ -2350,35 +2351,6 @@ export function discovery(problems) {
         };
         return out;
     }, {});
-
-    let dataset = getSelectedDataset();
-    // TODO: metric/task should be set when problem is selected, after summaries is computed
-    Object.keys(problems)
-        .filter(problemID => problems[problemID].manipulations.length === 0)
-        .forEach(problemID => Object.assign(problems[problemID], {
-            metric: variableSummaries[problems[problemID].targets[0]].plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
-            task: variableSummaries[problems[problemID].targets[0]].plottype === "bar" ? 'classification' : 'regression'
-        }));
-
-    // construct preprocess for all problems with manipulations
-    Promise.all(Object.keys(problems)
-        .filter(problemID => problems[problemID].manipulations.length !== 0)
-        .map(problemID => manipulate.buildDatasetUrl(problems[problemID])
-            .then(url => m.request({
-                method: 'POST',
-                url: ROOK_SVC_URL + 'preprocessapp',
-                data: url
-            }))
-            .then(response => {
-                let problem = problems[problemID];
-                Object.assign(problem, {
-                    summaries: response.variables,
-                    metric: response.variables[problem.targets[0]].plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
-                    task: response.variables[problem.targets[0]].plottype === "bar" ? 'classification' : 'regression'
-                })
-            })));
-
-    return problems;
 }
 
 // creates a new problem from the force diagram problem space and adds to disco
