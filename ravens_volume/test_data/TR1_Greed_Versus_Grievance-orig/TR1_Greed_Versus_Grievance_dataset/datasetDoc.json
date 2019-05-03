@@ -1,0 +1,442 @@
+{
+  "about": {
+    "datasetID": "TR1_Greed_Versus_Grievance",
+    "datasetName": "Greed_Versus_Grievance",
+    "description": "Replication data for Fearon and Laitin greed versus grievance analysis",
+    "citation": "",
+    "license": "CC-BY license",
+    "redacted": false,
+    "datasetSchemaVersion": "3.0"
+  },
+  "dataResources": [
+    {
+      "resID": "0",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": ["text/csv"],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": ["index"]
+        },
+        {
+          "colIndex": 1,
+          "colName": "ccode",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 2,
+          "colName": "country",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 3,
+          "colName": "cname",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 4,
+          "colName": "cmark",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 5,
+          "colName": "year",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 6,
+          "colName": "wars",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 7,
+          "colName": "war",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 8,
+          "colName": "warl",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 9,
+          "colName": "onset",
+          "colType": "integer",
+          "role": ["suggestedTarget"]
+        },
+        {
+          "colIndex": 10,
+          "colName": "ethonset",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 11,
+          "colName": "durest",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 12,
+          "colName": "aim",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 13,
+          "colName": "casename",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 14,
+          "colName": "ended",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 15,
+          "colName": "ethwar",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 16,
+          "colName": "waryrs",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 17,
+          "colName": "pop",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 18,
+          "colName": "lpop",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 19,
+          "colName": "polity2",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 20,
+          "colName": "gdpen",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 21,
+          "colName": "gdptype",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 22,
+          "colName": "gdpenl",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 23,
+          "colName": "lgdpenl1",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 24,
+          "colName": "lpopl1",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 25,
+          "colName": "region",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 26,
+          "colName": "western",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 27,
+          "colName": "eeurop",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 28,
+          "colName": "lamerica",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 29,
+          "colName": "ssafrica",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 30,
+          "colName": "asia",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 31,
+          "colName": "nafrme",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 32,
+          "colName": "colbrit",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 33,
+          "colName": "colfra",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 34,
+          "colName": "mtnest",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 35,
+          "colName": "lmtnest",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 36,
+          "colName": "elevdiff",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 37,
+          "colName": "Oil",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 38,
+          "colName": "ncontig",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 39,
+          "colName": "ethfrac",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 40,
+          "colName": "ef",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 41,
+          "colName": "plural",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 42,
+          "colName": "second",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 43,
+          "colName": "numlang",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 44,
+          "colName": "relfrac",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 45,
+          "colName": "plurrel",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 46,
+          "colName": "minrelpc",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 47,
+          "colName": "muslim",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 48,
+          "colName": "nwstate",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 49,
+          "colName": "polity2l",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 50,
+          "colName": "instab",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 51,
+          "colName": "anocl",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 52,
+          "colName": "deml",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 53,
+          "colName": "empethfrac",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 54,
+          "colName": "empwarl",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 55,
+          "colName": "emponset",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 56,
+          "colName": "empgdpenl",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 57,
+          "colName": "emplpopl",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 58,
+          "colName": "emplmtnest",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 59,
+          "colName": "empncontig",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 60,
+          "colName": "empolity2l",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 61,
+          "colName": "sdwars",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 62,
+          "colName": "sdonset",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 63,
+          "colName": "colwars",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 64,
+          "colName": "colonset",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 65,
+          "colName": "cowwars",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 66,
+          "colName": "cowonset",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 67,
+          "colName": "cowwarl",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 68,
+          "colName": "sdwarl",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 69,
+          "colName": "colwarl",
+          "colType": "integer",
+          "role": ["attribute"]
+        }
+      ]
+    }
+  ]
+}
