@@ -5,7 +5,6 @@ import {mergeAttributes} from "../../common/common";
 // icon names from here:
 // https://octicons.github.com/
 
-// TODO: Pending mithril v2.0 update: name can become a child because children aren't normalized
 // m(Icon, {
 //     name: 'sync'
 //     *: any attributes may be passed

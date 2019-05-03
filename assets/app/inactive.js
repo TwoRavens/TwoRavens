@@ -407,7 +407,6 @@ export function subsetSelect(btn) {
             }
         }
         rePlot();
-        // TODO: default D3M page load setup used to be inside layout()
     });
 
     varOut(grayOuts);
@@ -423,7 +422,6 @@ export function fakeClick() {
         .classed('active', false);
 }
 
-// TODO: is this used?
 function addPredictions(res) {
     function tabulate(data, columns) {
         var table = d3.select('#setxLeftBottomRightBottom').append('table');

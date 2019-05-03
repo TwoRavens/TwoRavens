@@ -158,7 +158,7 @@ export default class ForceDiagram {
                     target: intersectLineHull(centroids[line.source], centroids[line.target], hullCoords[line.target], attrs.hullRadius * 1.5)
                 }}), {});
 
-            this.selectors.groupLinks// TODO: intersect arrow with convex hull
+            this.selectors.groupLinks
                 .attr('x1', line => (intersections[`${line.source}-${line.target}`].source || centroids[line.source])[0] || 0)
                 .attr('y1', line => (intersections[`${line.source}-${line.target}`].source || centroids[line.source])[1] || 0)
                 .attr('x2', line => (intersections[`${line.source}-${line.target}`].target || centroids[line.target])[0] || 0)
@@ -753,8 +753,8 @@ export let groupBuilder = (attrs, context) => {
     context.selectors.hullBackgrounds = context.selectors.hullBackgrounds.enter()
         .append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
         .attr("id", group => group.name + 'HullBackground')
-        .style("fill", '#ffffff')
-        .style("stroke", '#ffffff')
+        .style("fill", group => group.colorBackground || '#ffffff')
+        .style("stroke", group => group.colorBackground || '#ffffff')
         .style("stroke-width", 2.5 * attrs.hullRadius)
         .style('stroke-linejoin', 'round')
         .style("opacity", 1)

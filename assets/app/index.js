@@ -610,8 +610,6 @@ class Body {
             ]);
         })();
 
-        let spaceBtn = (id, onclick, title, icon) =>
-            m(`button#${id}.btn.btn-default`, {onclick, title, style: {'margin-left': '.5em'}}, icon);
         let discovery = app.leftTab === 'Discover';
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
 
@@ -679,7 +677,8 @@ class Body {
                         top: common.heightHeader,
                         height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`,
                         bottom: common.heightFooter,
-                        display: app.is_manipulate_mode || (app.rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'none' : 'block'
+                        display: app.is_manipulate_mode || (app.rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'none' : 'block',
+                        'background-color': app.swandive ? 'grey' : 'transparent'
                     }
                 },
                 m(Canvas,
@@ -836,16 +835,34 @@ class Body {
                         summaries: app.variableSummaries
                     }, app.buildForceData(selectedProblem)))),
 
-                // m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
-                //     ),
-
-                app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}}, [
-                    spaceBtn('btnAdd', app.addProblemFromForceDiagram, 'add model to problems', m(Icon, {name: 'plus'})),
-                    spaceBtn('btnJoin', app.connectAllForceDiagram, 'Make all possible connections between nodes', m(Icon, {name: 'link'})),
-                    spaceBtn('btnDisconnect', () => app.forceDiagramState.pebbleLinks = [], 'Delete all connections between nodes', m(Icon, {name: 'circle-slash'})),
-                    spaceBtn('btnForce', () => app.forceDiagramState.isPinned = !app.forceDiagramState.isPinned, 'Pin the variable pebbles to the page', m(Icon, {name: 'pin'})),
-                    spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', m(Icon, {name: 'trashcan'}))
-                ]),
+                app.is_model_mode && !app.swandive && m("#spacetools.spaceTool", {
+                    style: {right: app.panelWidth.right,'z-index': 16}
+                },
+                m(Button, {
+                    id: 'btnAdd', style: {margin: '0px .5em'},
+                    onclick: app.addProblemFromForceDiagram,
+                    title: 'add model to problems'
+                }, m(Icon, {name: 'plus'})),
+                m(Button, {
+                    id: 'btnJoin', style: {margin: '0px .5em'},
+                    onclick: app.connectAllForceDiagram,
+                    title: 'make all possible connections between nodes'
+                }, m(Icon, {name: 'link'})),
+                m(Button, {
+                    id: 'btnDisconnect', style: {margin: '0px .5em'},
+                    onclick: () => app.forceDiagramState.pebbleLinks = [],
+                    title: 'delete all connections between nodes'
+                }, m(Icon, {name: 'circle-slash'})),
+                m(Button, {
+                    id: 'btnForce', style: {margin: '0px .5em'},
+                    onclick: () => app.forceDiagramState.isPinned = !app.forceDiagramState.isPinned,
+                    title: 'pin the variable pebbles to the page'
+                }, m(Icon, {name: 'pin'})),
+                m(Button, {
+                    id: 'btnEraser', style: {margin: '0px .5em'},
+                    onclick: app.erase,
+                    title: 'wipe all variables from the modeling space'
+                }, m(Icon, {name: 'trashcan'}))),
                 !app.is_manipulate_mode && m(Subpanel, {title: "History"}),
 
 

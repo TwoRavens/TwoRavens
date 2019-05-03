@@ -268,9 +268,7 @@ export function set_mode(mode) {
         m.redraw()
     }
 
-    // TODO: needs to be in parent context
     // reload the results if on the results tab and there are pending changes
-    // Automatic reloading only when running in TwoRavens mode
     if (is_results_mode && solverPending) {
         setResultsProblem(getSelectedProblem().problemID);
         callSolver(getResultsProblem());
@@ -278,11 +276,6 @@ export function set_mode(mode) {
 
     // cause the peek table to redraw
     resetPeek();
-
-    let ws = elem('#whitespace0');
-    if (ws) {
-        ws.style.display = is_explore_mode ? 'none' : 'block';
-    }
 }
 
 // TODO: should have an early exit if the manipulations are empty
@@ -890,17 +883,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         byId('cite').children[0].textContent = zparams.zdatacite;
     }
 
-    if (swandive) {
+    if (swandive)
         alertWarn('Exceptional data detected.  Please check the logs for "D3M WARNING"');
 
-        // TODO: should be tied into a global pageLocked boolean?
-        byId('btnLock').classList.add('noshow');
-        byId('btnForce').classList.add('noshow');
-        byId('btnEraser').classList.add('noshow');
-        byId('btnSubset').classList.add('noshow');
-        byId('main').style.backgroundColor = 'grey';
-        byId('whitespace').style.backgroundColor = 'grey';
-    }
     console.log("data schema data: ", selectedDataset.datasetDoc);
 
     //url example: /config/d3m-config/get-problem-data-file-info/39
@@ -1307,12 +1292,14 @@ export let buildForceData = problem => {
             {
                 name: "Predictors",
                 color: common.gr1Color,
+                colorBackground: swandive && 'grey',
                 nodes: new Set(problem.predictors),
                 opacity: 0.3
             },
             {
                 name: "Targets",
                 color: common.gr2Color,
+                colorBackground: swandive && 'grey',
                 nodes: new Set(problem.targets),
                 opacity: 0.3
             },
@@ -2374,7 +2361,6 @@ export function discovery(problems) {
         }));
 
     // construct preprocess for all problems with manipulations
-    // TODO: optimization- preprocess variables only, for 5000 samples
     Promise.all(Object.keys(problems)
         .filter(problemID => problems[problemID].manipulations.length !== 0)
         .map(problemID => manipulate.buildDatasetUrl(problems[problemID])
