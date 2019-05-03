@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/TwoRavens/TwoRavens.svg?branch=master)](https://travis-ci.org/TwoRavens/TwoRavens)
+* TOC {:toc}
 
 ![Two Ravens](/static/TwoRavens.png)
 ![teaser](/static/teaser.png)
