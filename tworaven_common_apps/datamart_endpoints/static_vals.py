@@ -5,6 +5,21 @@ DATAMART_NYU_NAME = 'NYU'
 
 DATAMART_NAMES = (DATAMART_ISI_NAME, DATAMART_NYU_NAME)
 
+DATAMART_MATERIALIZE_PROCESS = 'DATAMART_MATERIALIZE_PROCESS'
+DATAMART_AUGMENT_PROCESS = 'DATAMART_AUGMENT_PROCESS'
+
+KEY_ISI_DATAMART_ID = 'datamart_id'
+KEY_NYU_DATAMART_ID = 'id'
+KEY_DATA = 'data'
+
+# Used by NYU/ISI for directory construction
+#
+KEY_AUGMENT = 'augment'
+KEY_MATERIALIZE  = 'materialize'
+KEY_DATA_PATH = 'data_path'
+
+NUM_PREVIEW_ROWS = 100
+
 # DATAMART_ISI_URL = 'https://localhost:9001'
 xDATAMART_ISI_URL = 'https://dsbox02.isi.edu:9000'
 xDATAMART_NYU_URL = 'https://datamart.d3m.vida-nyu.org'

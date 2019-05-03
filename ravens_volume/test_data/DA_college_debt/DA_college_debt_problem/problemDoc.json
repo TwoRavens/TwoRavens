@@ -1,0 +1,55 @@
+{
+  "about": {
+    "problemID": "DA_college_debt_problem",
+    "problemName": "DA college debt problem",
+    "problemDescription": "The task here is to predict the median debt-to-earnings ratio of colleges across the US. The supplied dataset consists of the College Scorecards dataset which make it easier for students to search for a college that is a good fit for them. They can use the College Scorecard to find out more about a college's affordability and value so they can make more informed decisions about which college to attend, including factors such as median debt-to-earning ratio of graduates. This is a regression problem.",
+    "taskType": "regression",
+    "problemSchemaVersion": "3.2.0",
+    "problemVersion": "2.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "DA_college_debt_dataset",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "learningData",
+            "colIndex": 18,
+            "colName": "DEBT_EARNINGS_RATIO"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.35,
+      "stratified": false,
+      "numRepeats": 0,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "rootMeanSquaredError"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  },
+  "dataAugmentation": [
+    {
+      "domain": [
+        "government",
+        "education",
+        "college"
+      ],
+      "keywords": [
+        "college scorecard",
+        "finance",
+        "debt",
+        "earnings"
+      ]
+    }
+  ]
+}

@@ -17,7 +17,7 @@ extend google.protobuf.FileOptions {
 
 // Date-based version string. Use this to populate version field in "SearchSolutionsRequest"
 // and "SearchSolutionsResponse" messages.
-option (protocol_version) = "2019.1.22";
+option (protocol_version) = "2019.2.27";
 
 enum EvaluationMethod {
     // Default value. Not to be used.
@@ -416,12 +416,12 @@ message GetProduceSolutionResultsResponse {
     map<string, Value> exposed_outputs = 3;
 }
 
-// Exports a solution for evaluation purposes based on NIST specifications.
+// Exports a solution for evaluation purposes based on evaluation specifications.
 message SolutionExportRequest {
     // Found solution to export.
-    string fitted_solution_id = 1;
+    string solution_id = 3;
     // Solution rank to be used for the exported solution. Lower numbers represent
-    // better solutions. Presently NIST requirements are that ranks should be non-negative
+    // better solutions. Presently evaluation requirements are that ranks should be non-negative
     // and that each exported pipeline have a different rank. TA3 should make sure not to repeat ranks.
     // Filenames of exported files are left to be chosen by the TA2 system.
     double rank = 2;

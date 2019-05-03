@@ -37,7 +37,7 @@ class ProduceSolutionHelper(BasicErrCheck):
     GRCP_PRODUCE_SOLUTION = 'ProduceSolution'
     GRPC_GET_PRODUCE_SOLUTION_RESULTS = 'GetProduceSolutionResults'
 
-    def __init__(self, pipeline_id, websocket_id, user_id, produce_params):
+    def __init__(self, pipeline_id, websocket_id, user_id, produce_params, **kwargs):
         """initial params"""
         self.pipeline_id = pipeline_id
         self.websocket_id = websocket_id
@@ -45,6 +45,7 @@ class ProduceSolutionHelper(BasicErrCheck):
         self.user_object = None
 
         self.produce_params = produce_params
+        self.search_id = kwargs.get('search_id', None)
 
         self.get_user()
         self.check_produce_params()
@@ -135,11 +136,26 @@ class ProduceSolutionHelper(BasicErrCheck):
 
         json_str_input = json_str_info.result_obj
 
+        # --------------------------------
+        # (2) Save the request to the db
+        # --------------------------------
+        stored_request = StoredRequest(\
+                        user=self.user_object,
+                        request_type=self.GRCP_PRODUCE_SOLUTION,
+                        pipeline_id=self.pipeline_id,
+                        search_id=self.search_id,
+                        is_finished=False,
+                        request=self.produce_params)
+        stored_request.save()
+
         # ----------------------------------
         # Run FitSolution
         # ----------------------------------
         produce_info = produce_solution(json_str_input)
         if not produce_info.success:
+            StoredResponse.add_err_response(stored_request,
+                                            produce_info.err_msg)
+
             self.send_websocket_err_msg(self.GRCP_PRODUCE_SOLUTION,
                                         produce_info.err_msg)
             return
@@ -149,6 +165,9 @@ class ProduceSolutionHelper(BasicErrCheck):
         # ----------------------------------
         response_info = json_loads(produce_info.result_obj)
         if not response_info.success:
+            StoredResponse.add_err_response(stored_request,
+                                            response_info.err_msg)
+
             self.send_websocket_err_msg(self.GRCP_PRODUCE_SOLUTION,
                                         response_info.err_msg)
             return
@@ -161,8 +180,17 @@ class ProduceSolutionHelper(BasicErrCheck):
         if not KEY_REQUEST_ID in result_json:
             user_msg = (' "%s" not found in response to JSON: %s') % \
                         (KEY_REQUEST_ID, result_json)
+            #
+            StoredResponse.add_err_response(stored_request,
+                                            user_msg)
+            #
             self.send_websocket_err_msg(self.GRCP_PRODUCE_SOLUTION, user_msg)
             return
+
+        # Store success response
+        #
+        StoredResponse.add_success_response(stored_request, result_json)
+
 
         self.run_get_produce_solution_responses(result_json[KEY_REQUEST_ID])
 
@@ -225,6 +253,7 @@ class ProduceSolutionHelper(BasicErrCheck):
                         user=self.user_object,
                         request_type=self.GRPC_GET_PRODUCE_SOLUTION_RESULTS,
                         pipeline_id=self.pipeline_id,
+                        search_id=self.search_id,
                         is_finished=False,
                         request=params_dict)
         stored_request.save()
@@ -259,6 +288,9 @@ class ProduceSolutionHelper(BasicErrCheck):
                     err_msg = ('Failed to convert JSON to gRPC: %s') % \
                                (err_obj,)
 
+                    StoredResponse.add_stream_err_response(\
+                                            stored_request, err_msg)
+
                     self.send_websocket_err_msg(\
                             self.GRPC_GET_PRODUCE_SOLUTION_RESULTS,
                             err_msg)
@@ -270,10 +302,8 @@ class ProduceSolutionHelper(BasicErrCheck):
                 # -----------------------------------------
                 # Looks good, save the response
                 # -----------------------------------------
-                stored_resp_info = StoredResponse.add_response(\
-                                stored_request.id,
-                                response=result_json,
-                                pipeline_id=self.pipeline_id)
+                stored_resp_info = StoredResponse.add_stream_success_response(\
+                                            stored_request, result_json)
 
                 # -----------------------------------------
                 # Make sure the response was saved (probably won't happen)
@@ -282,6 +312,9 @@ class ProduceSolutionHelper(BasicErrCheck):
                     # Not good but probably won't happen
                     # send a message to the user...
                     #
+                    StoredResponse.add_stream_err_response(\
+                                stored_request, stored_resp_info.err_msg)
+
                     self.send_websocket_err_msg(\
                                     self.GRPC_GET_PRODUCE_SOLUTION_RESULTS,
                                     stored_resp_info.err_msg)
@@ -314,7 +347,7 @@ class ProduceSolutionHelper(BasicErrCheck):
                             msg_cnt=msg_cnt,
                             data=stored_response.as_dict())
 
-                print('ws_msg: %s' % ws_msg)
+                LOGGER.info('ws_msg: %s', ws_msg)
                 #print('ws_msg', ws_msg.as_dict())
 
                 # ---------------------------------------------
@@ -322,7 +355,7 @@ class ProduceSolutionHelper(BasicErrCheck):
                 # before sending it back?
                 # ---------------------------------------------
                 ws_msg.send_message(self.websocket_id)
-                stored_response.mark_as_sent_to_user()
+
 
         except grpc.RpcError as err_obj:
             stored_request.set_error_status(str(err_obj))
@@ -331,6 +364,5 @@ class ProduceSolutionHelper(BasicErrCheck):
         except Exception as err_obj:
             stored_request.set_error_status(str(err_obj))
             return
-
 
         StoredRequestUtil.set_finished_ok_status(stored_request.id)

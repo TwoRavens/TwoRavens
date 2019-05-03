@@ -68,3 +68,24 @@ def clear_dict(query_dict):
                  ]
     for key in keys_to_go:
         del query_dict[key]
+
+
+
+def column_uniquify(column_names):
+    """Check for duplicate names in a list and fix them"""
+    if not isinstance(column_names, list):
+        return err_resp('"column_names" must be a list')
+    #
+    new_columns = []
+    num_cols_renamed = 0
+    for item in column_names:
+        counter = 0
+        newitem = item
+        while newitem in new_columns:
+            counter += 1
+            newitem = f"{item}_{counter}"
+            num_cols_renamed += 1
+        new_columns.append(newitem)
+    #
+    return ok_resp(dict(new_columns=new_columns,
+                        num_cols_renamed=num_cols_renamed))

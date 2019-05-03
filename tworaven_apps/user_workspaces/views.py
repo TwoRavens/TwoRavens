@@ -4,6 +4,7 @@ from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirec
 from django.views.decorators.csrf import csrf_exempt
 #from django.contrib.auth.decorators import login_required
 from django.conf import settings
+from django.urls import reverse
 
 from tworaven_apps.utils.view_helper import \
     (get_request_body,
@@ -26,6 +27,23 @@ from tworaven_apps.user_workspaces.utils import \
 from tworaven_apps.configurations.models_d3m import D3MConfiguration
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
+
+
+@csrf_exempt
+def clear_user_workspaces(request):
+    """Clear the workspaces of the logged in User and return to pebbles page"""
+
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    user = user_info.result_obj
+    delete_info = delete_user_workspaces(user)
+    if not delete_info.success:
+        return JsonResponse(get_json_error(delete_info.err_msg))
+
+    return HttpResponseRedirect(reverse('home'))
+
 
 @csrf_exempt
 def view_set_current_config(request, user_workspace_id):

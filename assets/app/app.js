@@ -8,6 +8,7 @@ import * as common from "../common/common";
 import * as manipulate from './manipulations/manipulate';
 
 import {setModal, locationReload} from '../common/views/Modal';
+import Table from "../common/views/Table";
 
 import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
 import {elem} from './utils';
@@ -97,7 +98,6 @@ export async function resetPeek(pipeline) {
 }
 
 export async function updatePeek(pipeline) {
-
     if (peekIsLoading || peekIsExhausted || pipeline === undefined)
         return;
 
@@ -382,6 +382,11 @@ streamSocket.onmessage = function(e) {
     console.log(msg_data.msg_type + ' recognized!');
 
     handleENDGetSearchSolutionsResults();
+
+  } else if (msg_data.msg_type === 'DATAMART_MATERIALIZE_PROCESS'){
+    console.log(msg_data.msg_type + ' recognized!');
+    handleMaterializeDataMessage(msg_data);
+
   } else if (msg_data.msg_type === 'DATAMART_AUGMENT_PROCESS'){
     console.log(msg_data.msg_type + ' recognized!');
     handleAugmentDataMessage(msg_data);
@@ -801,6 +806,8 @@ export let lockTour = {
   11. Call layout() and start up
 */
 async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL) {
+    console.log('---------------------------------------');
+    console.log('-- initial load, app.js - load() --');
     if (!IS_D3M_DOMAIN) {
         return;
     }
@@ -809,6 +816,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // 1. Retrieve the configuration information
     //  dev view: http://127.0.0.1:8080/user-workspaces/d3m-configs/json/latest?pretty
     // ---------------------------------------
+    console.log('---------------------------------------');
+    console.log('-- 1. Retrieve the configuration information --');
+
     let d3m_config_url = '/user-workspaces/d3m-configs/json/latest';
 
     let config_result = await m.request({
@@ -843,12 +853,15 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // Take the 1st configuration from the list -- for now...
     //let configurations = config_result.data[0]
 
-    console.log("this is the config file:");
-    console.log(configurations);
+    // console.log("this is the config file:");
+    // console.log(configurations);
 
     // ---------------------------------------
     // 2. Set 'configurations'
     // ---------------------------------------
+    console.log('---------------------------------------');
+    console.log('-- 2. Set "configurations" --');
+
     $('#user-workspace-id').html('(ws:' + configurations.user_workspace_id +')');
 
     datasetdocurl = configurations.dataset_schema;
@@ -885,6 +898,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // 3. Read the problem schema and set 'd3mProblemDescription'
     // ...and make a call to Hello to check TA2 is up.  If we get this far, data are guaranteed to exist for the frontend
     // ---------------------------------------
+    console.log('---------------------------------------');
+    console.log("-- 3. Read the problem schema and set 'd3mProblemDescription' --");
 
     //url example: /config/d3m-config/get-problem-data-file-info/39
     //
@@ -937,7 +952,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // ---------------------------------------
     let res = await m.request(d3mPS);
     // console.log("prob schema data: ", res);
-    if(typeof res.success=='undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
+    if(typeof res.success === 'undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
         // This is a Task 2 assignment
         // console.log("DID WE GET HERE?");
         task1_finished = true;
@@ -964,8 +979,13 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         //   alertError('problem schema not available: ' + res.message);
         //   return
         // }
+        console.log('problemDoc res: ', res);
 
         mytargetdefault = res.inputs.data[0].targets[0].colName; // easier way to access target name?
+
+        if (typeof res.inputs.data[0].targets[0] !== 'undefined') {
+            d3mProblemDescription.firstTarget=res.inputs.data[0].targets[0];
+        }
         if (typeof res.about.problemID !== 'undefined') {
             d3mProblemDescription.id=res.about.problemID;
         }
@@ -982,7 +1002,11 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             d3mProblemDescription.taskType=res.about.taskType;
         }
         if (typeof res.about.taskSubType !== 'undefined') {
+          console.log('taskSubType set to ?', res.about.taskSubType);
             d3mProblemDescription.taskSubtype=res.about.taskSubType;
+        }else{
+           console.log('taskSubTypeset to none');
+            d3mProblemDescription.taskSubtype = 'subtypeNone';
         }
         if (typeof res.inputs.performanceMetrics[0].metric !== 'undefined') {
             d3mProblemDescription.performanceMetrics = res.inputs.performanceMetrics;   // or? res.inputs.performanceMetrics[0].metric;
@@ -994,12 +1018,13 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             system: 'auto',
             description: res.about.problemDescription,
             target: res.inputs.data[0].targets[0].colName,
+            firstTarget: res.inputs.data[0].targets[0],
             predictors: [],
             get pipeline() {return manipulations[this.problemID]},
             metric: res.inputs.performanceMetrics[0].metric,
             model: 'modelUndefined',
             task: res.about.taskType,
-            subTask: res.about.taskSubType,
+            subTask: d3mProblemDescription.taskSubtype,
             meaningful: false
         };
 
@@ -1018,7 +1043,12 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         // d3mProblemDescription.description = "Discovered Problems";
     }
 
-    // 4. Read the data document and set 'datadocument'
+    /**
+     * 4. Read the data document and set 'datadocument'
+     */
+   console.log('---------------------------------------');
+    console.log("-- 4. Read the data document and set 'datadocument' --");
+
     datadocument = await m.request(d3mDS);
 
     // if no columns in the datadocument, go to swandive
@@ -1091,8 +1121,14 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
     console.log("data schema data: ", datadocument);
 
-    // 5. Read in zelig models (not for d3m)
-    // 6. Read in zeligchoice models (not for d3m)
+    /**
+     * 5. Read in zelig models (not for d3m)
+     * 6. Read in zeligchoice models (not for d3m)
+     */
+    console.log('---------------------------------------');
+    console.log("-- 5. Read in zelig models (not for d3m) --");
+    console.log("-- 6. Read in zeligchoice models (not for d3m) --");
+
     if (!IS_D3M_DOMAIN){
       for (let field of ['zelig5models', 'zelig5choicemodels']) {
           try {
@@ -1106,8 +1142,14 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
           }
       }
     }
-    // 7. Start the user session
-    // rpc rpc Hello (HelloRequest) returns (HelloResponse) {}
+
+    /**
+     * 7. Start the user session
+     * rpc rpc Hello (HelloRequest) returns (HelloResponse) {}
+     */
+    console.log('---------------------------------------');
+    console.log("-- 7. Start the user session /Hello --");
+
     res = await makeRequest(D3M_SVC_URL + '/Hello', {});
     if (res) {
       console.log(res)
@@ -1142,17 +1184,25 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         hopscotch.startTour(mytour);
     }
 
-    // 8. read preprocess data or (if necessary) run preprocess
-    // NOTE: preprocess.json is now guaranteed to exist...
-    let read = res => {
+    /**
+     * 8. read preprocess data or (if necessary) run preprocess
+     * NOTE: preprocess.json is now guaranteed to exist...
+     */
+    console.log('---------------------------------------');
+    console.log("-- 8. read preprocess data or (if necessary) run preprocess --");
+
+    // Function to load retreived preprocess data
+    //
+    let loadPreprocessData = res => {
         priv = res.dataset.private || priv;
         Object.keys(res.variables).forEach(k => preprocess[k] = res.variables[k]);
         if("problems" in res){Object.keys(res.problems).forEach(k => problems_in_preprocess[k] = res.problems[k].description.problem_id);} // storing all the problem id's present in preprocess
         return res;
     };
+
     try {
         console.log('attempt to read preprocess file (which may not exist): ' + pURL);
-        res = read(await m.request(pURL));
+        res = loadPreprocessData(await m.request(pURL));
     } catch(_) {
         console.log("Ok, preprocess not found, try to RUN THE PREPROCESSAPP");
         let url = ROOK_SVC_URL + 'preprocessapp';
@@ -1162,28 +1212,60 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
           //
           json_input = {data: d3mData, datastub: d3mDataName};
         }else{
-         json_input = {data: dataloc, target: targetloc, datastub: datastub};
+          json_input = {data: dataloc, target: targetloc, datastub: datastub};
         }
 
-        console.log('json_input: ', json_input);
-        console.log('url: ', url);
         try {
-            res = read(await m.request({method: 'POST', url: url, data: json_input}));
+            // res = read(await m.request({method: 'POST', url: url, data: json_input}));
+            let preprocess_info = await m.request({method: 'POST', url: url, data: json_input});
+            console.log('preprocess_info: ', preprocess_info);
+            console.log('preprocess_info message: ' + preprocess_info.message);
+            if (preprocess_info.success){
+              res = loadPreprocessData(preprocess_info.data);
+
+            }else{
+              setModal(m('div', m('p', "Preprocess failed: "  + preprocess_info.message),
+                                m('p', '(May be a serious problem)')),
+                       "Failed to load basic data.",
+                       true,
+                       "Try to Reload Page",
+                       false,
+                       locationReload);
+
+              //alertError('Preprocess failed: ' + preprocess_info.message);
+              // endsession();
+              return;
+            }
         } catch(_) {
             console.log('preprocess failed');
-            alertError('preprocess failed. ending user session.');
-            endsession();
+            // alertError('preprocess failed. ending user session.');
+            setModal(m('div', m('p', "Preprocess failed."),
+                              m('p', '(p: 2)')),
+                     "Failed to load basic data.",
+                     true,
+                     "Reload Page",
+                     false,
+                     locationReload);
+            // endsession();
+            return;
         }
     }
 
 
-    // console.log("is this preprocess?")
-    // console.log(res);
-    // console.log(preprocess);
+    console.log("is this preprocess?")
+    console.log(res);
+    console.log(preprocess);
 
-    // 9. Build allNodes[] using preprocessed information
-    // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
-    // such as setx values (if the user has selected them) and pebble coordinates
+    /**
+     * 9. Build allNodes[] using preprocessed information
+     * contains all the preprocessed data we have for the variable,
+     * as well as UI data pertinent to that variable,
+     *
+     * such as setx values (if the user has selected them) and pebble coordinates
+     **/
+     console.log('---------------------------------------');
+     console.log("-- 9. Build allNodes[] using preprocessed information --");
+
     setValueKey(Object.keys(preprocess));
     setAllNodes(valueKey.map((variable, i) => jQuery.extend(true, {
         id: i,
@@ -1206,15 +1288,33 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         forefront: false
     }, preprocess[variable])));
 
-    // 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN)
+    /**
+     * 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN)
+     */
+    console.log('---------------------------------------');
+    console.log("-- 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN) --");
     if(!swandive) {
-        datadocument_columns.forEach(v => findNode(v.colName).d3mDescription = v);
+        console.log('datadocument_columns: ' + JSON.stringify(datadocument_columns));
+
+        console.log('allnodes: ' + JSON.stringify(allNodes));
+
+        //datadocument_columns.forEach(v => findNode(v.colName).d3mDescription = v);
+        datadocument_columns.forEach(function(v){
+          console.log('v: ' + v);
+          console.log('v.colName: ' + v.colName);
+          findNode(v.colName).d3mDescription = v
+        });
+
         console.log("all nodes:");
         console.log(allNodes);
     }
 
-    // 10b. Call problem discovery
-    // Requires that `res` built in 8. above still exists.  Should make this better.
+    /**
+     * 10b. Call problem discovery
+     * Requires that `res` built in 8. above still exists.  Should make this better.
+     */
+    console.log('---------------------------------------');
+    console.log("-- 10b. Call problem discovery --");
     if(!swandive) {
         disco = discovery(res);
 
@@ -1229,12 +1329,21 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
     }
 
-    // 11. Call layout() and start up
+    /**
+     * 11. Call layout() and start up
+     */
+    console.log('---------------------------------------');
+    console.log('-- 11. Call layout() and start up --');
     layout(false, true);
     IS_D3M_DOMAIN ? zPop() : dataDownload();
 
     defaultProblem.predictors = [...zparams.zgroup1];
     disco.unshift(defaultProblem);
+
+    /**
+     * Note: mongodb data retrieval initiated here
+     *   setSelectedProblem -> loadMenu (manipulate.js) -> getData (manipulate.js)
+     */
     setSelectedProblem(getProblemCopy(defaultProblem));
 
     setTimeout(loadResult, 10000);
@@ -2633,6 +2742,8 @@ function CreatePipelineData(predictors, depvar, aux) {
 // Update of old CreatePipelineData function that creates problem definition for SearchSolutions call.
 function CreateProblemDefinition(depvar, aux) {
 
+    let resourceIdFromProblemDoc = d3mProblemDescription.firstTarget.resID;
+
     if(typeof aux==="undefined") { //default behavior for creating pipeline data
         let problem = {
             id: d3mProblemDescription.id,
@@ -2650,7 +2761,8 @@ function CreateProblemDefinition(depvar, aux) {
                 datasetId: datadocument.about.datasetID,
                 targets: [
                     {
-                        resourceId: '0',
+                        //resourceId: '0', # 'learningData in aug datasets'
+                        resourceId: resourceIdFromProblemDoc,
                         columnIndex: valueKey.indexOf(depvar[0]),  // Adjusted to match dataset doc
                         columnName: depvar[0]
                     }
@@ -2673,8 +2785,7 @@ function CreateProblemDefinition(depvar, aux) {
                 datasetId: datadocument.about.datasetID,
                 targets: [
                     {
-                        resourceId: '0',
-                        // columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        resourceId: resourceIdFromProblemDoc,
                         columnIndex: valueKey.indexOf(my_target),  // Adjusted to match dataset doc
                         columnName: my_target
                     }
@@ -2686,6 +2797,10 @@ function CreateProblemDefinition(depvar, aux) {
 
 // Create a problem description that follows the Problem Schema, for the Task 1 output.
 function CreateProblemSchema(aux){
+
+
+    let resourceIdFromDatasetDoc = datadocument.dataResources[0].resID;
+
     let my_target = aux.target;
 
     let my_about = {
@@ -2702,7 +2817,7 @@ function CreateProblemSchema(aux){
                 datasetId: datadocument.about.datasetID,
                 targets: [
                     {
-                        resourceId: '0',
+                        resourceId: resourceIdFromDatasetDoc,
                         columnIndex: valueKey.indexOf(my_target),  // Adjusted to match dataset doc
                         columnName: my_target
                     }
@@ -2856,7 +2971,11 @@ function getScoreSolutionDefaultParameters(datasetDocUrl){
   let my_inputs = [{dataset_uri: my_dataseturi}];
   let my_performanceMetrics = [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ];  // need to generalize to case with multiple metrics.  only passes on first presently.;
   let my_users = [{id: 'TwoRavens', chosen: false, reason: ""}];
-  let my_configuration = {method: 'HOLDOUT', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
+
+  // let my_configuration = {method: 'HOLDOUT', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
+
+  // note: FL only using KFOLD in latest iteration (3/8/2019)
+  let my_configuration = {method: 'K_FOLD', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
 
   return {inputs: my_inputs, performanceMetrics: my_performanceMetrics, users: my_users, configuration: my_configuration};
 
@@ -2985,7 +3104,7 @@ export async function estimate() {
             estimateLadda.stop();
         } else {
             ROOKPIPE_FROM_REQUEST.predictors && setxTable(ROOKPIPE_FROM_REQUEST.predictors);
-            let searchTimeLimit = 5;
+            let searchTimeLimit = 4;
             let searchSolutionParams = CreatePipelineDefinition(ROOKPIPE_FROM_REQUEST.predictors,
                 ROOKPIPE_FROM_REQUEST.depvar,searchTimeLimit);
 
@@ -3626,8 +3745,9 @@ export async function endsession() {
 
     let chosenSolutionId = allPipelineInfo[[...selectedPipelines][0]].response.solutionId;
 
-    // calling exportpipeline
-    let end = await exportpipeline(chosenSolutionId);
+    // calling exportSolution
+    //
+    let end = await exportSolution(chosenSolutionId);
 
    // makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
     //let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
@@ -3901,33 +4021,41 @@ export function setxTable(features) {
 
 /**
   rpc SolutionExport (SolutionExportRequest) returns (SolutionExportResponse) {}
+
+   Example call:
+  {
+       "fittedSolutionId": "solutionId_gtk2c2",
+       "rank": 0.122
+       "searchId": "17"
+  }
+
+  Note: "searchId" is not part of the gRPC call but used for server
+        side tracking.
+
 */
-
-// Example call:
-// {
-//     "fittedSolutionId": "solutionId_gtk2c2",
-//     "rank": 0.122
-// }
-
-
-export async function exportpipeline(pipelineId) {
+export async function exportSolution(solutionId) {
     exportCount++;
     let res;
     let my_rank = 1.01 - 0.01 * exportCount;   // ranks always gets smaller each call
 
-    let params = {pipelineId: pipelineId, rank: my_rank};
-    res = await makeRequest(D3M_SVC_URL + '/SolutionExport2', params);
+    let params = {solutionId: solutionId,
+                  rank: my_rank,
+                  searchId: (allsearchId.length) ? allsearchId[0] : null};
+    res = await makeRequest(D3M_SVC_URL + '/SolutionExport3', params);
 
-    // we need standardized status messages...
-    let mystatus = res.status;
     console.log(res);
-    if (typeof mystatus !== 'undefined') {
-        if(mystatus.code=="FAILED_PRECONDITION") {
-            console.log("TA2 has not written the executable.");    // was alert(), but testing on NIST infrastructure suggests these are getting written but triggering alert.
-        }else{
-            console.log(`Executable for solution ${pipelineId} with fittedsolution ${finalFittedId} has been written`);
-        }
+    if (typeof res === 'undefined') {
+        console.log('Failed to write executable for solutionId:' + solutionId);
+        return res;
     }
+
+    if (res.success === false) {
+        // console.log('Successful Augment.  Try to reload now!!');
+        console.log(msg_data.message);
+        setModal(res.message,
+                 "Solution export failed", true, false, false, locationReload);
+    }
+
     return res;
 }
 
@@ -4241,6 +4369,7 @@ export let resultsProblem;
 export let selectedProblem;
 
 export function setSelectedProblem(problem) {
+    console.log('-- setSelectedProblem --')
     if (typeof problem === 'string') problem = disco.find(prob => prob.problemID === problem);
     if (!problem || selectedProblem === problem) return;
 
@@ -4733,7 +4862,7 @@ async function handleENDGetSearchSolutionsResults(){
   // stop the interval process
 }
 
-export function handleAugmentDataMessage(msg_data){
+export function xhandleAugmentDataMessage(msg_data){
 
   if (!msg_data) {
       console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
@@ -4747,13 +4876,95 @@ export function handleAugmentDataMessage(msg_data){
                "Data Augmentation", true, "Reload", false, locationReload);
 
       return
-  }3
+  }
 
   setModal("Data augmentation error: " + msg_data.user_message,
            "Data Augmentation Failed", true, "Close", true);
 
 }
 
+/**
+ * handleMaterializeDataMessage()
+ *  - Processes a websocket message based on clicking Datamart "Preview"
+ *  - On success, displays a modal window with a preview of the data.
+ *  - Example of successful response:
+ *  {
+       "msg_type":"DATAMART_MATERIALIZE_PROCESS",
+       "timestamp":"2019-03-12T10:50:06",
+       "success":true,
+       "user_message":"The dataset has been materialized",
+       "data":{
+          "datamart_id":"287260000",
+          "data_path":"/ravens_volume/test_output/185_baseball/additional_inputs/materialize/287260000/materialize/learningData.csv",
+          "filesize":2114303,
+          "metadata_path":null,
+          "data_preview":"source,subject_label,category,prop_value,value_label\nhttp://www.wikidata.org/entity/Q5661707,Harold McCarthy,human,http://www.wikidata.org/entity/Q82133,Bodleian Library
+          human,http://www.wikidata.org/entity/Q148554,National Museum of Natural History\n [TRUNCATED - GIVES UP TO 100 PREVIEW ROWS]",
+      "metadata":null
+       }
+    }
+ */
+export function handleMaterializeDataMessage(msg_data){
+
+  if (!msg_data) {
+      console.log('handleMaterializeDataMessage: Error.  "msg_data" undefined');
+      return;
+  }
+  if (msg_data.success === false) {
+    setModal("Data preview error: " + msg_data.user_message,
+             "Data materialization Failed", true, "Close", true);
+    return;
+  }
+
+  console.log('datamart_id: ' + msg_data.data.datamart_id);
+  console.log('filesize: ' + msg_data.data.filesize);
+
+  // Save the data in the datamartPreferences object
+  //
+  const previewDatamartId = msg_data.data.datamart_id;
+  datamartPreferences.cached[previewDatamartId] = msg_data.data;
+
+  // Format the data_preview
+  //
+  datamartPreferences.cached[previewDatamartId].data_preview =   datamartPreferences.cached[previewDatamartId].data_preview.split('\n').map(line => line.split(','));
+
+  // Set the modal type
+  datamartPreferences.modalShown = 'preview';
+
+  // Set user message
+  const userMsg = 'File preview complete.'
+  datamartPreferences.success[msg_data.data.source_mode] = userMsg;
+
+  // Refresh the display
+  m.redraw();
+
+
+} // end handleMaterializeDataMessage
+
+export function handleAugmentDataMessage(msg_data){
+
+  if (!msg_data) {
+      console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
+      return;
+  }
+
+  // Hide the modal
+  datamartPreferences.modalShown = undefined;
+
+  if (msg_data.success === false) {
+    setModal("Error: " + msg_data.user_message,
+             "Data Augmentation Failed", true, "Close", true);
+    return;
+  }
+
+  setModal("Success: " + msg_data.user_message,
+           "Data Augmentation Succeeded!", true, "Reload", false, locationReload);
+
+
+  // console.log('datamart_id: ' + msg_data.data.datamart_id);
+  // console.log('filesize: ' + msg_data.data.filesize);
+
+} // end: handleAugmentDataMessage
 
 
 export function loadResult(my_disco) {

@@ -18,6 +18,10 @@ class BasicErrCheck(object):
 
         return self.error_message
 
+    def get_err_msg(self):
+        """Return the error message if 'has_error' is True"""
+        return self.get_error_message()
+
     def add_err_msg(self, err_msg):
         """Add an error message"""
         self.error_found = True
