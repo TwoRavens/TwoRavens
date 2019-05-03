@@ -22,26 +22,36 @@ else:
     print('preprocess data (json string)', putil.get_preprocess_data_as_json(4))
 
 """
+import csv
+from io import StringIO
 from os.path import isfile
 from datetime import datetime as dt
 import requests
 
+from tworaven_apps.data_prep_utils.duplicate_column_remover import DuplicateColumnRemover
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.rook_services.rook_app_info import RookAppInfo
 from tworaven_apps.rook_services.app_names import \
     (PREPROCESS_ROOK_APP_NAME, SOLA_JSON_KEY)
 from tworaven_apps.utils.json_helper import json_dumps, json_loads
-
+from tworaven_apps.utils.dict_helper import column_uniquify
+from tworaven_apps.utils.basic_response import (ok_resp,
+                                                err_resp)
 
 class PreprocessUtil(BasicErrCheck):
     """Convenience class for rook preprocess"""
-    def __init__(self, source_path, datastub=None):
+    def __init__(self, source_path, **kwargs):
         """Takes a path to a data file and runs preprocess
 
         - datastub is a unique directory that rookpreprocess uses to write
         """
         self.source_path = source_path
-        self.datastub = datastub
+        self.datastub = kwargs.get('datastub', None)
+
+        # Option to read 1st line of file and fix duplicate columns names
+        #
+        self.fix_duplicate_columns = kwargs.get('fix_duplicate_columns', True)
+
         self.rook_app_info = None
         self.preprocess_data = None
 
@@ -111,6 +121,16 @@ class PreprocessUtil(BasicErrCheck):
             self.add_error_message('File not found: %s' % self.source_path)
             return
 
+        # Fix duplicate columns
+        #
+        if self.fix_duplicate_columns:
+            dcr = DuplicateColumnRemover(self.source_path)
+            if dcr.has_error():
+                user_msg = (f'Augment error during column checks: '
+                            f'{dcr.get_error_message()}')
+                self.add_error_message(user_msg)
+                return
+
         # Set datastub, if not set
         #
         if not self.datastub:
@@ -143,7 +163,6 @@ class PreprocessUtil(BasicErrCheck):
             return
 
         self.preprocess_data = result_info.result_obj
-
 
 
 """

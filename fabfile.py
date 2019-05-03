@@ -283,6 +283,27 @@ def run_ta2_brown_choose_config(choice_num=''):
 
 
 @task
+def run_ta2_berkeley_choose_config(choice_num=''):
+    """Pick a config from /ravens_volume and run Berkeley's TA2"""
+    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
+            (TA2Helper, TA2_BERKELEY)
+
+    resp = TA2Helper.run_ta2_with_dataset(\
+                TA2_BERKELEY,
+                choice_num,
+                run_ta2_berkeley_choose_config.__name__)
+
+    if resp.success:
+        stop_ta2_server()
+
+        docker_cmd = resp.result_obj
+        print('Running command: %s' % docker_cmd)
+        local(docker_cmd)
+    elif resp.err_msg:
+        print(resp.err_msg)
+
+
+@task
 def run_ta2_isi_choose_config(choice_num=''):
     """Pick a config from /ravens_volume and run ISI's TA2"""
     from tworaven_apps.ta2_interfaces.ta2_dev_util import \
@@ -430,7 +451,7 @@ def run(**kwargs):
     clear_js()  # clear any dev css/js files
     init_db()
     check_config()  # make sure the db has something
-    check_datamarts()    
+    check_datamarts()
     #load_d3m_config_from_env() # default the D3M setting to the env variable
     #ta3_listener_add() # add MessageListener object
 
@@ -535,7 +556,7 @@ def create_test_user():
     """Create regular user with creds: test_user/test_user.  No admin access"""
     from tworaven_apps.raven_auth.models import User
 
-    test_username = 'test_user2'
+    test_username = 'test_user'
 
     if User.objects.filter(username=test_username).count() > 0:
         print('A "%s" test user already exists' % test_username)

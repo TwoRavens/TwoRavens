@@ -5,7 +5,7 @@ from tworaven_apps.ta2_interfaces import (\
         views_additional,
         views_streaming_requests,
         views_saved_requests,
-        views_non_streaming_requests)
+        views_non_streaming_requests,)
 
 urlpatterns = (
 
@@ -40,6 +40,29 @@ urlpatterns = (
     re_path((r'stored-response/(?P<hash_id>[\w]{40,200})$'),
             views_saved_requests.view_stored_response,
             name='view_stored_response'),
+
+    re_path((r'view-grpc-search-history-json/(?P<search_id>[\d]{1,7})$'),
+            views_saved_requests.view_grpc_search_history_json,
+            name='view_grpc_search_history_json'),
+
+    re_path((r'view-grpc-search-history-json$'),
+            views_saved_requests.view_grpc_search_history_json_no_id,
+            name='view_grpc_search_history_json_no_id'),
+
+    #re_path((r'view-grpc-search-history-no-id$'),
+    #        views_saved_requests.view_grpc_search_history_no_id,
+    #        name='view_grpc_search_history_no_id'),
+    re_path((r'view-grpc-stored-history/(?P<search_id>[\d]{1,7})$'),
+            views_saved_requests.view_grpc_stored_history,
+            name='view_grpc_stored_history'),
+
+    re_path((r'view-grpc-stored-history$'),
+            views_saved_requests.view_grpc_stored_history_no_id,
+            name='view_grpc_stored_history_no_id'),
+
+    path(r'clear-grpc-stored-history',
+         views_saved_requests.view_clear_grpc_stored_history,
+         name='view_clear_grpc_stored_history'),
 
     path(r'Hello',
          views_non_streaming_requests.view_hello,
@@ -97,9 +120,13 @@ urlpatterns = (
     #     views_non_streaming_requests.view_solution_export,
     #     name='SolutionExport'),
 
-    path(r'SolutionExport2',
-         views_non_streaming_requests.view_solution_export2,
-         name='SolutionExport2'),
+    #path(r'SolutionExport2',
+    #     views_non_streaming_requests.view_solution_export2,
+    #     name='SolutionExport2'),
+
+    path(r'SolutionExport3',
+         views_non_streaming_requests.view_solution_export3,
+         name='SolutionExport3'),
 
     path(r'UpdateProblem',
          views_non_streaming_requests.view_update_problem,

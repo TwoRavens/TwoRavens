@@ -21,8 +21,9 @@ grpcio-tools==1.12.0
 
 # For long-running GRPC requests
 #
-celery==4.1.1
-redis==2.10.6
+celery==4.2.1
+# redis==2.10.6
+redis==3.2.0
 
 # for the ta3_search callback
 #Flask==0.12.2
@@ -38,7 +39,7 @@ pandas==0.22.0
 #  note on http2: https://github.com/django/daphne#http2-support
 #
 Twisted[tls,http2]==18.9.0
-channels==2.1.5
+channels==2.2.0
 channels_redis==2.3.1
 
 # pymongo
@@ -47,9 +48,13 @@ pymongo==3.7.2
 
 # mySQL
 #
-mysqlclient==1.3.13
+#mysqlclient==1.3.13
 
 # python social auth
 #
 social-auth-app-django==2.1.0
 social-auth-core==1.7.0
+
+# debug
+#
+pylint>=2.3.1
