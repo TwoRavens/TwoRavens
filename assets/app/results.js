@@ -372,6 +372,9 @@ export class CanvasSolutions {
         // ]
 
         let selectedSolutions = app.getSelectedSolutions();
+
+        console.warn("#debug selectedSolutions");
+        console.log(selectedSolutions);
         return m('div', {style: {margin: '1em'}},
             m(MenuTabbed, {
                 currentTab: app.selectedResultsMenu,
