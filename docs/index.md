@@ -7,7 +7,7 @@
 The project has 3 core applications:
 * D3M
 * [Event Data](/EventData/index.md) provides access to openly available event datasets.
-* Metadata Service
+* [Metadata Service](/Metadata/index.md)
 
 # Live Demos
 Demo [TwoRavens D3M](http://2ravens.org) \\
