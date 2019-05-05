@@ -3,16 +3,24 @@ import {
     allsearchId,
     buttonClasses,
     buttonLadda,
-    getResultsProblem,
     makeRequest,
     ROOKPIPE_FROM_REQUEST,
-    selectedPipelines,
     setSelectedSolution,
-    task2_finished
 } from "../app";
 import m from "mithril";
 
 import * as app from '../app.js';
+
+
+export let getName = (problem, solution) => solution.pipelineId;
+export let getActualValues = (problem, solution, target) => problem.solutions.d3m.rookpipe.dvvalues;
+export let getFittedValues = (problem, solution, target) => (solution.predictedValues || {}).success && solution.predictedValues.data
+    .map(item => parseFloat(item[solution.depvar] || item[solution['0']]));
+export let getScore = (problem, solution, target) => solution.score;
+export let getDescription = (problem, solution) => solution.description;
+export let getTask = (problem, solution) => solution.status;
+export let getModel = (problem, solution) => `${(solution.steps || []).length} steps`;
+
 
 export async function stopAllSearches() {
     let res = await makeRequest(D3M_SVC_URL + '/StopSearchSolutions', {searchId: allsearchId[0]});
@@ -180,9 +188,7 @@ export async function endAllSearches() {
         for (let i = 1; i < allsearchId.length; i++) {
             res = await makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId: allsearchId[i]});
         }
-        ;
     }
-    ;
     //allsearchId = [];
 }
 
@@ -262,37 +268,43 @@ export async function handleGetSearchSolutionResultsResponse(response1) {
         console.warn('---------- ERROR: ROOKPIPE_FROM_REQUEST not set!!!');
     }
 
-    let solutions = getResultsProblem().solutions;
+    response1.source = 'd3m';
+
+    let solutionProblem = app.solverProblem.d3m;
+    let solutions = solutionProblem.solutions.d3m;
+
     // Need to deal with (exclude) pipelines that are reported, but failed.  For approach, see below.
-    if (response1.id in solutions.d3m)
-        Object.assign(solutions.d3m[response1.id], response1);
+    if (response1.id in solutions)
+        Object.assign(solutions[response1.id], response1);
     else {
-        solutions.d3m[response1.id] = response1;
-        solutions.d3m[response1.id].score = 'scoring';
+        solutions[response1.id] = response1;
+        solutions[response1.id].score = 'scoring';
     }
 
     // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
-    // if(solutions.d3m[key].responseInfo.status.details == "Pipeline Failed")  {
+    // if(solutions[key].responseInfo.status.details == "Pipeline Failed")  {
     //     continue;
     // }
-    // if(solutions.d3m[key].progressInfo == "RUNNING")  {
+    // if(solutions[key].progressInfo == "RUNNING")  {
     //     continue;
     // }
 
     //adding rookpipe to the set of d3m solutions for the problem
-    solutions.d3m.rookpipe = Object.assign({}, ROOKPIPE_FROM_REQUEST);                // This is setting rookpipe for the entire table, but when there are multiple CreatePipelines calls, this is only recording latest values
+    solutions.rookpipe = Object.assign({}, ROOKPIPE_FROM_REQUEST);                // This is setting rookpipe for the entire table, but when there are multiple CreatePipelines calls, this is only recording latest values
 
     // VJD: this is a third core API call that is currently unnecessary
     //let pipelineid = PipelineCreateResult.pipelineid;
     // getexecutepipelineresults is the third to be called
-    //  makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(solutions.d3m)});
+    //  makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(solutions)});
 
+    let selectedSolutions = app.getSelectedSolutions();
 
-    if (selectedPipelines.size === 0) setSelectedSolution(response1.id);
+    if (selectedSolutions.size === 0) setSelectedSolution(solutionProblem, 'd3m', response1.id);
 
     // Add pipeline descriptions
     // TODO: this is redundant, check if can be deleted
-    Object.assign(solutions.d3m[response1.id], response1.data);
+    Object.assign(solutions[response1.id], response1.data);
+
     m.redraw();
 }
 
@@ -316,11 +328,10 @@ export async function handleDescribeSolutionResponse(response) {
     // Update pipeline info....
     // -------------------------------
     let pipelineId = response.pipelineId;
-    delete response.pipelineId;
-    let pipelineInfo = getResultsProblem().solutions.d3m;
+    let solverProblem = app.solverProblem.d3m;
+    let solutions = solverProblem.solutions.d3m;
 
-    Object.assign(pipelineInfo[pipelineId], response);
-
+    Object.assign(solutions[pipelineId], response);
 }
 
 /**
@@ -328,6 +339,7 @@ export async function handleDescribeSolutionResponse(response) {
  wrapped in a StoredResponse object
  */
 export async function handleGetScoreSolutionResultsResponse(response) {
+
     if (response === undefined) {
         console.log('handleGetScoreSolutionResultsResponse: Error.  "response" undefined');
         return;
@@ -351,8 +363,9 @@ export async function handleGetScoreSolutionResultsResponse(response) {
     }
     // Note: what's now the "res4DataId" needs to be sent to this function
     //
-    let pipelineInfo = getResultsProblem().solutions.d3m;
-    pipelineInfo[response.pipeline_id].score = myscore;
+    let solverProblem = app.solverProblem.d3m;
+    let solutions = solverProblem.solutions.d3m;
+    solutions[response.pipelineId].score = myscore;
     m.redraw();
 }
 
@@ -390,18 +403,22 @@ export async function handleGetProduceSolutionResultsResponse(response) {
 
     let responseOutputData = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
 
-    let pipelineInfo = getResultsProblem().solutions.d3m;
-    pipelineInfo[response.pipelineId].predictedValues = responseOutputData;
+    let solverProblem = app.solverProblem.d3m;
+    let solutions = solverProblem.solutions.d3m;
+    solutions[response.pipelineId].predictedValues = responseOutputData;
 
 }
 
 export async function handleENDGetSearchSolutionsResults() {
 
     // stop spinner
-    buttonLadda['btnEstimate'] = false;
-    m.redraw();
+    buttonLadda.btnEstimate = false;
     // change status of buttons for estimating problem and marking problem as finished
     buttonClasses.btnEstimate = 'btn-secondary';
+
+    app.solverProblem.d3m = undefined;
+
+    m.redraw();
 
     app.setTask2_finished(true);
 }

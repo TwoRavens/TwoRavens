@@ -189,8 +189,7 @@ export let alignmentData = {};
 // ~~~~
 
 export let buttonLadda = {
-    btnSubmitDisc: false,
-    btnEstimate: false
+    btnSubmitDisc: false
 };
 export let buttonClasses = {
     btnDiscover: 'btn-secondary',
@@ -255,7 +254,7 @@ export function set_mode(mode) {
             buildDatasetPreprocess(dataset).then(response => {
                 if (!response.success) alertLog(response.message)
                 else {
-                    app.setVariableSummaries(response.data.variables);
+                    setVariableSummaries(response.data.variables);
                     dataset.problems = discovery(response.data.dataset.discovery);
                 }
             });
@@ -268,10 +267,12 @@ export function set_mode(mode) {
         m.redraw()
     }
 
-    // reload the results if on the results tab and there are pending changes
-    if (is_results_mode && solverPending) {
-        setResultsProblem(getSelectedProblem().problemID);
-        callSolver(getResultsProblem());
+    if (is_results_mode) {
+        let resultsProblem = getResultsProblem();
+
+        // reload the results if on the results tab and there are pending changes
+        if (!resultsProblem || solverPending)
+            estimate();
     }
 
     // cause the peek table to redraw
@@ -1577,39 +1578,19 @@ export function helpmaterials(type) {
 }
 
 // when selected, the key/value [mode]: [pipelineID] is set.
-export let selectedPipelines = new Set([]);
-export let setSelectedSolution = (problem, source, pipelineId) => {
-    pipelineId = String(pipelineId);
+export let setSelectedSolution = (problem, source, solutionId) => {
+    solutionId = String(solutionId);
 
     if (!problem) return;
     let pipelineIds = problem.selectedSolutions[source];
-    if (modelComparison) problem.selectedSolutions[source].includes(pipelineId)
-        ? remove(problem.selectedSolutions[source], pipelineId)
-        : problem.selectedSolutions[source].push(pipelineId)
-    else
-        problem.selectedSolutions[source] = [pipelineId]
-
-    // ensures results menu is in a valid state
-    setSelectedResultsMenu(selectedResultsMenu);
-};
-
-export let selectedResultsMenu = 'Problem Description';
-export let setSelectedResultsMenu = menu => {
-
-    let isValid = state => {
-        if (modelComparison) return ['Problem Description', 'Prediction Summary'].includes(state);
-
-        let selectedSolution = getSelectedSolutions()[0];
-
-        if (!selectedSolution) return false;
-        if (selectedSolution.source === 'rook' && ['Generate New Predictions', 'Visualize Pipeline'].includes(state)) return false;
-        if (!(selectedSolution.source === 'rook') && ['Solution Table'].includes(state)) return false;
-
-        return true;
-    };
-
-    if (isValid(menu)) selectedResultsMenu = menu;
-    if (!isValid(selectedResultsMenu)) selectedResultsMenu = 'Problem Description';
+    if (modelComparison) problem.selectedSolutions[source].includes(solutionId)
+        ? remove(problem.selectedSolutions[source], solutionId)
+        : problem.selectedSolutions[source].push(solutionId)
+    else {
+        problem.selectedSolutions = Object.keys(problem.selectedSolutions)
+            .reduce((out, source) => Object.assign(out, {[source]: []}, {}), {})
+        problem.selectedSolutions[source] = [solutionId]
+    }
 };
 
 function CreatePipelineData(dataset, problem) {
@@ -1840,9 +1821,21 @@ export function downloadIncomplete() {
     called by clicking 'Solve This Problem' in model mode
 */
 export async function estimate() {
-    let resultsProblem = getProblemCopy(getSelectedProblem());
+    if (solverProblem.d3m) {
+        alertWarn('Another problem is still being solved. Please wait until the solver for ', solverProblem.d3m.problemId, ' is complete.')
+        return;
+    }
+    // return if current problem already has solutions
+    if (getSelectedSolutions().length > 0) return;
+
+    let selectedProblem = getSelectedProblem();
+    selectedProblem.pending = false; // a problem with solutions is no longer pending
+    let resultsProblem = getProblemCopy(selectedProblem);
+    resultsProblem.system = 'results';
     getSelectedDataset().problems[resultsProblem.problemID] = resultsProblem;
     getSelectedDataset().resultsProblem = resultsProblem.problemID;
+
+    solverProblem.d3m = resultsProblem;
 
     if (!IS_D3M_DOMAIN){
         // let userUsg = 'This code path is no longer used.  (Formerly, it used Zelig.)';
@@ -1915,12 +1908,11 @@ export async function estimate() {
         return;
     }
 
-    if (swandive) { // IS_D3M_DOMAIN and swandive is true
-        // zPop();
+    // IS_D3M_DOMAIN and swandive is true
+    if (swandive) {
         zparams.callHistory = callHistory;
 
-        buttonLadda.btnEstimate = true;
-        m.redraw();
+        buttonLadda.btnEstimate = false;
 
         alertError('estimate() function. Check app.js error with swandive (err: 003)');
         //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(resultsProblem, 10));
@@ -1967,13 +1959,8 @@ export async function estimate() {
         datasetPath = data_path;
     } else delete resultsProblem.datasetDocPath;
 
-    makeRequest(ROOK_SVC_URL + 'solverapp', {problem: resultsProblem, dataset_path: datasetPath})
-        .then(response => {
-            if (response && 'warning' in response) return;
-            let ravenID = 'raven ' + ravenPipelineID++;
-            resultsProblem.solutions.rook[ravenID] = response;
-            if (selectedPipelines.size === 0) setSelectedSolution(ravenID);
-        });
+    // initiate rook solver
+    callSolver(resultsProblem, datasetPath);
 
     let datasetDocPath = resultsProblem.datasetDocPath || getSelectedDataset().datasetDocPath;
 
@@ -1983,7 +1970,6 @@ export async function estimate() {
         produceSolutionDefaultParams: getProduceSolutionDefaultParameters(datasetDocPath),
         scoreSolutionDefaultParams: getScoreSolutionDefaultParameters(resultsProblem, datasetDocPath)
     };
-    return;
 
     //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
     let res = await makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', allParams);
@@ -2106,16 +2092,13 @@ export async function endsession() {
         return;
     }
 
+    let selectedPipelines = getSelectedSolutions('d3m');
     if (selectedPipelines.size === 0) {
         alertWarn("No pipelines exist. Cannot mark problem as complete");
         return;
     }
     if (selectedPipelines.size > 1) {
-        alertWarn("More than one pipeline selected. Please select one TA2 pipeline");
-        return;
-    }
-    if ([...selectedPipelines].filter(pipelineID => pipelineID.includes('raven')).length !== 0) {
-        alertWarn("Cannot select a TwoRavens pipeline. Please select a different pipeline");
+        alertWarn("More than one pipeline selected. Please select one discovered pipeline");
         return;
     }
 
@@ -2493,10 +2476,12 @@ export function getProblemCopy(problemSource) {
 // When enabled, multiple pipelineTable pipelineIDs may be selected at once
 export let modelComparison = false;
 export let setModelComparison = state => {
-    if (!state) selectedPipelines = new Set([...selectedPipelines].slice(undefined, 1));
-    modelComparison = state;
+    let selectedSolutions = getSelectedSolutions();
 
-    setSelectedResultsMenu('Prediction Summary');
+    if (selectedSolutions.length > 1 && !state)
+        setSelectedSolution(getResultsProblem, selectedSolutions[0].source, selectedSolution[0])
+
+    modelComparison = state;
 };
 
 export let setCheckedDiscoveryProblem = (status, problemID) => {
@@ -2667,32 +2652,88 @@ export function handleAugmentDataMessage(msg_data){
 
 let ravenPipelineID = 0;
 
+// when a solver is in the process of solving a problem, the problem to save to is stored here:
+export let solverProblem = {
+    rook: undefined,
+    d3m: undefined
+}
+
 // takes as input problem, calls rooksolver, and stores result
-export async function callSolver(prob) {
+export async function callSolver(prob, datasetPath=undefined) {
+    if (solverProblem.rook) {
+        alertWarn('Another problem is still being solved. Please wait until the solver for ', solverProblem.rook.problemId, ' is complete.')
+        return;
+    }
     setSolverPending(false);
     let dataset = getSelectedDataset();
 
     let hasManipulation = prob.problemID in manipulations && manipulations[prob.problemID].length > 0;
     let hasNominal = [prob.targets, ...prob.predictors].some(variable => zparams.znom.includes(variable));
-    let datasetPath = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : dataset.datasetUrl;
-    let ravenID = 'raven ' + ravenPipelineID++;
+
+    if (!datasetPath)
+        datasetPath = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : dataset.datasetUrl;
 
     let solutions = getResultsProblem().solutions;
     // solutions.rook[ravenID] = cachedResponse;
-    solutions.rook[ravenID] = await makeRequest(ROOK_SVC_URL + 'solverapp', {
-        problem: prob,
-        dataset_path: datasetPath
-    });
+    let params = {
+        regression: [
+            {method: 'lm'}, // old faithful
+            {method: 'pcr'}, // principal components regression
+            {method: 'glmnet'}, // lasso/ridge
+            {method: 'rpart'}, // regression tree
+            {method: 'knn'}, // k nearest neighbors
+            {method: 'earth'}, // regression splines
+            {method: 'svmLinear'} // linear support vector regression
+        ],
+        classification: [
+            ...(variableSummaries[prob.targets[0]].unique == 2 ? [
+                {method: 'glm', hyperparameters: {family: 'binomial'}},
+                {method: 'glmnet', hyperparameters: {family: 'binomial'}},
+            ] : []),
+            {method: 'lda'}, // linear discriminant analysis
+            {method: 'qda'}, // quadratic discriminant analysis
+            {method: 'rpart'}, // decision tree
+            {method: 'svmLinear'}, // support vector machine
+            {method: 'naive_bayes'},
+            {method: 'knn'}
+        ]
+    }[prob.task];
 
-    solutions.rook[ravenID].source = 'rook';
+    // keep the problem light
+    let probReduced = Object.assign({}, prob)
+    delete probReduced.solutions;
+    delete probReduced.metric;
 
-    if (selectedPipelines.size === 0) setSelectedSolution(prob, 'rook', ravenID);
-    // console.log("callSolver response:", JSON.stringify(solutions.rook[ravenID]));
-    console.log("callSolver response:", solutions.rook[ravenID]);
+    solverProblem.rook = prob;
+    m.redraw();
+
+    for (let param of params) await makeRequest(ROOK_SVC_URL + 'solverapp', Object.assign({
+        problem: probReduced,
+        dataset_path: datasetPath,
+    }, param)).then(response => {
+
+        // assign source and remove errant fits
+        Object.keys(response.results)
+            .forEach(result => {
+
+                response.results[result].source = 'rook'
+                if ('error' in response.results[result])
+                    delete response.results[result]
+                else if (Object.keys(response.results[result].models)
+                    .some(target => 'error' in response.results[result].models[target]))
+                    delete response.results[result]
+            })
+
+        // add to rook solutions
+        Object.assign(solutions.rook, response.results)
+        let selectedPipelines = getSelectedSolutions();
+        if (selectedPipelines.length === 0) setSelectedSolution(prob, 'rook', Object.keys(solutions.rook)[0]);
+        m.redraw()
+    })
+
+    solverProblem.rook = undefined;
     m.redraw();
 }
-
-let cachedResponse = {"models":{"Number_seasons":{"fittedValues":[11.9202,12.805,9.621,14.4103,13.7564,12.3929,12.219,11.1587,11.3852,13.077],"gridResults":[{"intercept":true,"RMSE":1.7098,"Rsquared":0.7159,"MAE":1.332,"RMSESD":0.1125,"RsquaredSD":0.0391,"MAESD":0.0617}],"hyperparameters":{"intercept":[true]},"sortingMetric":"RMSE","predictorTypes":{},"coefficients":[6.2143,0.0101,-0.0019,0.0018],"statistics":[{"r.squared":0.7126,"adj.r.squared":0.7118,"sigma":1.7077,"statistic":883.3982,"p.value":8.4521e-289,"df":4,"logLik":-2094.7086,"AIC":4199.4172,"BIC":4224.3082,"deviance":3117.3324,"df.residual":1069}],"coefficientCovarianceMatrix":[[0.0268,0,0.0000017556,0],[0,1.8492e-7,-5.8592e-8,4.6405e-8],[0.0000017556,-5.8592e-8,3.7295e-8,-7.4359e-8],[0,4.6405e-8,-7.4359e-8,2.0799e-7]],"anova":[{"Df":1,"Sum Sq":7291.0981,"Mean Sq":7291.0981,"F value":2500.2736,"Pr(>F)":3.9731e-282,"_row":"Games_played"},{"Df":1,"Sum Sq":389.3479,"Mean Sq":389.3479,"F value":133.5157,"Pr(>F)":3.4795e-29,"_row":"At_bats"},{"Df":1,"Sum Sq":47.8395,"Mean Sq":47.8395,"F value":16.4052,"Pr(>F)":0.0001,"_row":"Hits"},{"Df":1069,"Sum Sq":3117.3324,"Mean Sq":2.9161,"_row":"Residuals"}],"vif":{"Games_played":[18.7483],"At_bats":[61.6246],"Hits":[32.7844]}}},"meta":{"label":"Linear Regression","method":"lm","task":"regression","library":{},"tags":["Linear Regression","Accepts Case Weights"], predictors: ["At_bats", "Hits", "Games_played"]}}
 
 
 // pretty precision formatting- null and undefined are NaN, attempt to parse strings to float

@@ -50,6 +50,9 @@ import ForceDiagram from "./views/ForceDiagram";
 import ButtonLadda from "./views/LaddaButton";
 import {exploreVariate} from "./app";
 import Canvas from "../common/views/Canvas";
+import {currentMode} from "./app";
+import * as solverRook from "./solvers/rook";
+import * as solverD3M from "./solvers/d3m";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -177,8 +180,8 @@ function leftpanel(mode) {
     });
 
     let discoveryHeaders = [
-        'problemID',
-        m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
+        'Name',
+        // m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
         'User', 'Target', 'Predictors',
         'Task',
         Object.values(problems).some(prob => prob.subTask !== 'taskSubtypeUndefined') ? 'Subtask' : '',
@@ -187,11 +190,11 @@ function leftpanel(mode) {
 
     let formatProblem = problem => [
         problem.problemID, // this is masked as the UID
-        m('input[type=checkbox][style=width:100%]', {
-            onclick: m.withAttr("checked", checked => app.setCheckedDiscoveryProblem(checked, problem.problemID)),
-            checked: problem.meaningful,
-            title: `mark ${problem.problemID} as meaningful`
-        }),
+        // m('input[type=checkbox][style=width:100%]', {
+        //     onclick: m.withAttr("checked", checked => app.setCheckedDiscoveryProblem(checked, problem.problemID)),
+        //     checked: problem.meaningful,
+        //     title: `mark ${problem.problemID} as meaningful`
+        // }),
         problem.system === 'user' && m('div[title="user created problem"]', m(Icon, {name: 'person'})),
         problem.targets.join(', '),
         problem.predictors.join(', '),
@@ -241,7 +244,7 @@ function leftpanel(mode) {
                         headers: discoveryHeaders,
                         data: [formatProblem(selectedProblem)],
                         activeRow: selectedDataset.selectedProblem,
-                        showUID: false,
+                        // showUID: false,
                         abbreviation: 40
                     }),
                     m('h4.card-header', 'All Problems')
@@ -261,7 +264,7 @@ function leftpanel(mode) {
                         problems[copiedProblem.problemID] = copiedProblem;
                         app.setSelectedProblem(copiedProblem.problemID);
                     },
-                    showUID: false,
+                    // showUID: false,
                     abbreviation: 40,
                     sortable: true
                 })),
@@ -918,7 +921,32 @@ class Body {
             {title: "Links", url: devlinks_url},
             {title: "Logout", url: logout_url}];
 
+
         let resultsProblem = app.getResultsProblem();
+        let selectedProblem = app.getSelectedProblem();
+
+        let path = [
+            m(Popper, {
+                content: () => IS_D3M_DOMAIN && m(Table, {data: app.getSelectedDataset().datasetDoc.about})
+            }, m('h4#dataName[style=display: inline-block; margin: .25em 1em]', app.selectedDataset || 'Dataset Name')),
+        ];
+
+        let pathProblem = {
+            'model': selectedProblem, 'results': resultsProblem
+        }[app.currentMode];
+
+        if (pathProblem) path.push(m(Icon, {name: 'chevron-right'}), m(Popper, {
+            content: () => m(Table, {
+                    data: {'targets': pathProblem.targets, 'predictors': pathProblem.predictors,'description': pathProblem.description}
+                })
+        }, m('h4[style=display: inline-block; margin: .25em 1em]', pathProblem.problemID)));
+
+        let selectedSolutions = app.getSelectedSolutions();
+        if (app.is_results_mode && selectedSolutions.length === 1) {
+            path.push(m(Icon, {name: 'chevron-right'}), m('h4[style=display: inline-block; margin: .25em 1em]', ({
+                'rook': solverRook, 'd3m': solverD3M
+            })[selectedSolutions[0].source].getName(pathProblem, selectedSolutions[0])))
+        }
 
         return m(Header, {
                 image: '/static/images/TwoRavens.png',
@@ -931,49 +959,61 @@ class Body {
             },
             m('div', {style: {'flex-grow': 1}}),
 
-            m(Popper, {
-                content: () => IS_D3M_DOMAIN && m(Table, {data: app.getSelectedDataset().datasetDoc.about})
-            }, m('h4#dataName[style=display: inline-block; margin: .25em 1em]', app.selectedDataset || 'Dataset Name')),
+            path,
 
             m('div', {style: {'flex-grow': 1}}),
 
-            resultsProblem && Object.keys(resultsProblem.solutions.d3m).length > 0 && m(Button, {
+            currentMode === 'results' && resultsProblem && Object.keys(resultsProblem.solutions.d3m).length > 0 && m(Button, {
                 id: 'btnEndSession',
                 class: 'ladda-label ladda-button',
                 onclick: app.endsession,
                 style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
             }, 'Mark Problem Finished'),
 
-            m(Button, {
-                id: 'btnReset',
-                class: 'ladda-label ladda-button',
-                title: 'Reset',
-                onclick: app.reset,
-                style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
-            }, m(Icon, {name: 'sync'})),
 
-            m('div.btn-group.btn-group-toggle[data-toggle=buttons][style=margin:.25em 1em;display:flex]',
-                m('button.btn.btn-secondary', {
-                    id: 'btnTA2',
-                    onclick: _ => hopscotch.startTour(app.mytour(), 0)
-                }, 'Help Tour ', m(Icon, {name: 'milestone'})),
-                m(Button, {id: 'btnTA2', onclick: _ => app.helpmaterials('video')}, 'Video ', m(Icon, {name: 'file-media'})),
-                m(Button, {id: 'btnTA2', onclick: _ => app.helpmaterials('manual')}, 'Manual ', m(Icon, {name: 'file-pdf'}))),
+            // m(Button, {onclick: () => app.alertWarn(JSON.stringify(app.getResultsProblem()))}, 'debug'),
+            m(ButtonRadio, {
+                id: 'modeButtonBar',
+                attrsAll: {style: {margin: '0px 1em', width: 'auto'}, class: 'navbar-left'},
+                attrsButtons: {
+                    // class: 'btn-sm',
+                    style: {width: "auto"}},
+                onclick: app.set_mode,
+                activeSection: app.currentMode || 'model',
+                sections: ['Model', 'Explore', 'Results'].map(mode => ({value: mode})), // mode 'Manipulate' diabled
 
-            IS_D3M_DOMAIN && app.is_model_mode && m(ButtonLadda, {
-                id: 'btnEstimate',
-                class: app.buttonClasses.btnEstimate,
-                activeLadda: app.buttonLadda.btnEstimate,
-                onclick: app.estimate,
-                style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
-            }, 'Solve This Problem'),
+                // attrsButtons: {class: ['btn-sm']}, // if you'd like small buttons (btn-sm should be applied to individual buttons, not the entire component)
+                // attrsButtons: {style: {width: 'auto'}}
+            }),
+
+            // m(Button, {
+            //     id: 'btnReset',
+            //     class: 'ladda-label ladda-button',
+            //     title: 'Reset',
+            //     onclick: app.reset,
+            //     style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
+            // }, m(Icon, {name: 'sync'})),
+
+            // IS_D3M_DOMAIN && app.is_model_mode && m(ButtonLadda, {
+            //     id: 'btnEstimate',
+            //     class: app.buttonClasses.btnEstimate,
+            //     activeLadda: Object.values(app.solverPending).some(_=>_),
+            //     onclick: app.estimate,
+            //     style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
+            // }, 'Solve This Problem'),
             // mode !== 'model' ? null : navBtn('btnEstimate.btn-default', 1, 1, app.estimate, m("span.ladda-label", mode === 'explore' ? 'Explore' : 'Solve This Problem'), '150px'),
 
-            m('.dropdown[style=float: right; padding-right: 1em]',
-                m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
-                    [username, " ", m(Icon, {name: 'triangle-down'})]),
-                m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
-                    userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
+            m(Dropdown, {
+                id: 'loginDropdown',
+                items: userlinks.map(link => link.title),
+                activeItem: username,
+                onclickChild: child => window.open(userlinks.find(link => link.title === child).url)
+            })
+            // m('.dropdown[style=float: right; padding-right: 1em]',
+            //     m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
+            //         [username, " ", m(Icon, {name: 'triangle-down'})]),
+            //     m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
+            //         userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
         );
     }
 
@@ -1028,20 +1068,16 @@ class Body {
         );
     }
 
-    footer(mode) {
+    footer() {
 
         return m(Footer, [
-            m(ButtonRadio, {
-                id: 'modeButtonBar',
-                attrsAll: {style: {margin: '8px', width: 'auto'}, class: 'navbar-left'},
-                attrsButtons: {class: 'btn-sm', style: {width: "auto"}},
-                onclick: app.set_mode,
-                activeSection: mode || 'model',
-                sections: ['Model', 'Explore', 'Results'].map(mode => ({value: mode})), // mode 'Manipulate' diabled
-
-                // attrsButtons: {class: ['btn-sm']}, // if you'd like small buttons (btn-sm should be applied to individual buttons, not the entire component)
-                // attrsButtons: {style: {width: 'auto'}}
-            }),
+            m('div.btn-group.btn-group-toggle[data-toggle=buttons][style=margin:.25em 1em]',
+                m('button.btn.btn-secondary.btn-sm', {
+                    id: 'btnTA2',
+                    onclick: _ => hopscotch.startTour(app.mytour(), 0)
+                }, 'Help Tour ', m(Icon, {name: 'milestone'})),
+                m(Button, {id: 'btnTA2', class: 'btn-sm', onclick: _ => app.helpmaterials('video')}, 'Video ', m(Icon, {name: 'file-media'})),
+                m(Button, {id: 'btnTA2', class: 'btn-sm', onclick: _ => app.helpmaterials('manual')}, 'Manual ', m(Icon, {name: 'file-pdf'}))),
 
             m("span", {"class": "footer-info-break"}, "|"),
             m("a", {"href" : "/dev-raven-links", "target": "=_blank"}, "raven-links"),

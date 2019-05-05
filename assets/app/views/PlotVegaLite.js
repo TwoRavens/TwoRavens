@@ -8,31 +8,29 @@ import vegaEmbed from "vega-embed";
 // })
 
 export default class PlotVegaLite {
-    view({attrs}) {
-        return m('', attrs)
+    view() {
+        return m('')
     }
 
-
-
-    static plot({children, dom}) {
-    }
-    oncreate(vnode) {
+    static plot(vnode, heightOffset) {
         let {specification, data} = vnode.attrs;
 
-        vegaEmbed(dom, children, {
+        vegaEmbed(vnode.dom, specification, {
             actions: false,
-            width: dom.offsetWidth,
-            height: dom.offsetHeight
+            width: vnode.dom.offsetWidth - 38,
+            height: vnode.dom.offsetHeight + (heightOffset || 0)
         });
-
+    }
+    oncreate(vnode) {
+        PlotVegaLite.plot(vnode);
     }
     onupdate(vnode) {
         // mask repeated warnings about outdated vega-lite specification
         let tempWarn = console.warn;
-        console.warn = Function;
+        console.warn = _ => _;
 
         try {
-            PlotVegaLite.plot(vnode)
+            PlotVegaLite.plot(vnode, -6)
         } finally {
             console.warn = tempWarn;
         }

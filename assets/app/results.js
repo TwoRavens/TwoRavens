@@ -19,6 +19,10 @@ import Flowchart from "./views/Flowchart";
 import ForceDiagram, {groupBuilder, groupLinkBuilder, linkBuilder, pebbleBuilder} from "./views/ForceDiagram";
 import Subpanel from "../common/views/Subpanel";
 
+import * as solverRook from './solvers/rook';
+import * as solverD3M from './solvers/d3m';
+
+
 export let leftpanel = () => {
 
     let selectedDataset = app.getSelectedDataset();
@@ -30,11 +34,11 @@ export let leftpanel = () => {
         {
             value: 'Problem',
             contents: [
-                m(ForceDiagram, Object.assign(forceDiagramStateResults,{
+                m('div', {style: {height: '100%'}}, m(ForceDiagram, Object.assign(forceDiagramStateResults,{
                     mutateNodes: app.mutateNodes(resultsProblem),
                     summaries: app.variableSummaries
-                }, app.buildForceData(resultsProblem))),
-                m(Table, {data: resultsProblem})
+                }, app.buildForceData(resultsProblem)))),
+                // m(Table, {data: resultsProblem})
             ]
         },
         {
@@ -64,18 +68,18 @@ export let leftpanel = () => {
                     id: 'pipelineMenu',
                     sections: [
                         {
-                            value: 'Discovered Pipelines',
+                            value: 'Discovered Solutions',
                             contents:
                                 m(Table, {
                                     id: 'pipelineTable',
-                                    headers: ['PipelineID', 'Score'],
+                                    headers: ['Solution', 'Score'],
                                     data: Object.keys(resultsProblem.solutions.d3m)
                                         .filter(pipelineId => pipelineId !== 'rookpipe')
                                         .map(pipelineId => [pipelineId, resultsProblem.solutions.d3m[pipelineId].score]),
                                     sortHeader: 'Score',
                                     sortFunction: app.sortPipelineTable,
-                                    activeRow: resultsProblem.selectedSolutions.d3m,
-                                    callback: pipelineId => app.setSelectedSolution(resultsProblem, 'd3m', pipelineId),
+                                    activeRow: new Set(resultsProblem.selectedSolutions.d3m),
+                                    onclick: pipelineId => app.setSelectedSolution(resultsProblem, 'd3m', pipelineId),
                                     tableTags: m('colgroup',
                                         m('col', {span: 1}),
                                         m('col', {span: 1, width: '30%'}))
@@ -91,9 +95,12 @@ export let leftpanel = () => {
 
                                 m(Table, {
                                     id: 'pipelineTable',
-                                    headers: ['PipelineID', 'Score'],
+                                    headers: ['Solution', 'Score'],
                                     data: Object.keys(resultsProblem.solutions.rook)
-                                        .map(pipelineId => [pipelineId, resultsProblem.solutions.rook[pipelineId].score]),
+                                        .map(solutionId => [
+                                            solutionId,
+                                            solverRook.getScore(resultsProblem, resultsProblem.solutions.rook[solutionId])
+                                        ]),
                                     sortHeader: 'Score',
                                     sortFunction: app.sortPipelineTable,
                                     activeRow: new Set(resultsProblem.selectedSolutions.rook),
@@ -119,7 +126,7 @@ export let leftpanel = () => {
     // there seems to be a strange mithril bug here - when returning back to model from results,
     // the dom element for MenuTabbed is reused, but the state is incorrectly transitioned, leaving an invalid '[' key.
     // "Fixed" by wrapping in a div, to prevent the dom reuse optimization
-    m('div', m(MenuTabbed, {
+    m('div', {style: {height: 'calc(100% - 50px)'}}, m(MenuTabbed, {
         id: 'resultsMenu',
         currentTab: leftTabResults,
         callback: setLeftTabResults,
@@ -127,29 +134,9 @@ export let leftpanel = () => {
     })))
 };
 
-let pipelineAdapter = (source, pipeline) => {
-    if (source === 'rook') return Object.assign({
-        source,
-        description: pipeline.meta.label
-    }, pipeline);
-
-    if (source === 'd3m') return {
-        source,
-        actualValues: undefined, // TODO: should be assigned from rookpipe on websocket response
-        fittedValues: (pipeline.predictedValues || {}).success && pipeline.predictedValues.data
-            .map(item => parseFloat(item[pipeline.depvar])), // TODO: should be assigned from rookpipe on websocket response
-        score: pipeline.score,
-        targets: [pipeline.target],
-        predictors: pipeline.predictors,
-        description: pipeline.description,
-        task: pipeline.status,
-        model: `${(pipeline.steps || []).length} steps`
-    }
-};
-
 export class CanvasSolutions {
 
-    oninit(vnode) {
+    oninit() {
         this.confusionFactor = undefined;
         app.updateRightPanelWidth()
     }
@@ -159,8 +146,18 @@ export class CanvasSolutions {
         let setConfusionFactor = factor => this.confusionFactor = factor === 'undefined' ? undefined : factor;
 
         if (problem.task === 'regression') {
+            let xData = summaries.reduce((out, summary) =>
+                Object.assign(out, {[summary.name]: summary.fittedValues}), {});
+            let yData = summaries.reduce((out, summary) =>
+                Object.assign(out, {[summary.name]: summary.actualValues}), {});
+
+            let xName = 'Fitted Values';
+            let yName = 'Actual Values';
+            let title = 'Fitted vs. Actuals';
+            let legendName = 'Solution Name';
+
             return m(PlotVegaLite, {
-                specification: plots.vegaScatter(),
+                specification: plots.vegaScatter(xData, yData, xName, yName, title, legendName),
                 data: summaries
             })
         }
@@ -280,12 +277,54 @@ export class CanvasSolutions {
             }))
     };
 
-    solutionTable(problem) {
+    view(vnode) {
+        let {problem} = vnode.attrs;
 
-        let firstSource = Object.keys(problem.selectedSolutions).find(source => problem.selectedSolutions[source].length);
-        let firstSolution = problem.solutions[firstSource][problem.selectedSolutions[firstSource][0]];
+        let problemSummary = m(Subpanel, {
+            style: {margin: '0px 1em'},
+            header: 'Problem Description'
+        }, m(Table, {
+            headers: ['Variable', 'Data'],
+            data: [
+                ['Dependent Variables', problem.targets],
+                ['Predictors', problem.predictors],
+                ['Description', problem.description],
+                ['Task', problem.task]
+            ]
+        }));
 
-        let performanceStatsContents = Object.keys(firstSolution.models)
+        let selectedSolutions = app.getSelectedSolutions();
+        if (selectedSolutions.length === 0)
+            return problemSummary;
+        let solutionSummaries = selectedSolutions
+            .map(solution => solutionAdapter(problem, solution)).filter(_=>_);
+        let firstSolution = selectedSolutions[0];
+
+        let solutionSummary = selectedSolutions.length === 1 && m(Subpanel, {
+            style: {margin: '0px 1em'},
+            header: 'Solution Description'
+        }, m(Table, {
+            headers: ['Variable', 'Data'],
+            data: [
+                ['Source', firstSolution.source]
+            ].concat(firstSolution.source === 'rook' ? [
+                ['Label', firstSolution.meta.label],
+                ['Caret/R Method', firstSolution.meta.method],
+                ['Tags', firstSolution.meta.tags]
+            ] : [])
+        }));
+
+        let predictionSummary = m(Subpanel, {
+            style: {margin: '0px 1em'},
+            header: 'Prediction Summary'
+        }, this.predictionSummary(problem, solutionSummaries));
+
+        let visualizePipeline = selectedSolutions.length === 1 && firstSolution.source === 'd3m' && m(Subpanel, {
+            style: {margin: '0px 1em'},
+            header: 'Visualize Pipeline'
+        }, this.visualizePipeline(firstSolution));
+
+        let performanceStatsContents = firstSolution.source === 'rook' && Object.keys(firstSolution.models)
             .filter(target => firstSolution.models[target].statistics)
             .map(target => m('div',
                 m('h5', target),
@@ -297,21 +336,21 @@ export class CanvasSolutions {
             header: 'Performance Statistics'
         }, performanceStatsContents);
 
-        let coefficientsContents = Object.keys(firstSolution.models)
+        let coefficientsContents = firstSolution.source === 'rook' && Object.keys(firstSolution.models)
             .filter(target => firstSolution.models[target].coefficients !== undefined)
             .map(target => m('div',
                 m('h5', target),
-                m(Table, {data: ['intercept', ...firstSolution.meta.predictors].map((predictor, i) => [
-                    predictor,
-                    firstSolution.models[target].coefficients[i]
+                m(Table, {data: ['intercept', ...problem.predictors].map((predictor, i) => [
+                        predictor,
+                        firstSolution.models[target].coefficients[i]
                     ])}),
-                m(ConfusionMatrix, {
+                firstSolution.models[target].coefficientCovarianceMatrix && m(ConfusionMatrix, {
                     id: target + 'CovarianceMatrix',
                     title: 'Coefficient Covariance Matrix for ' + target,
                     data: firstSolution.models[target].coefficientCovarianceMatrix,
                     startColor: '#e9ede8',
                     endColor: '#5770b0',
-                    classes: ['intercept', ...firstSolution.meta.predictors],
+                    classes: ['intercept', ...problem.predictors],
                     margin: {left: 10, right: 10, top: 50, bottom: 10},
                     attrsAll: {style: {height: '600px'}}
                 })));
@@ -321,7 +360,7 @@ export class CanvasSolutions {
         }, coefficientsContents);
 
 
-        let prepareANOVA = table => [...firstSolution.meta.predictors, 'Residuals']
+        let prepareANOVA = table => [...problem.predictors, 'Residuals']
             .map(predictor => table.find(row => row._row === predictor))
             .map(row => ({
                 'Predictor': row._row,
@@ -331,19 +370,18 @@ export class CanvasSolutions {
                 'F value': row['F value'],
                 'P-value': row['Pr(>F)']
             }));
-        if (!('models' in firstSolution)) return;
 
-        let anovaTablesContent = Object.keys(firstSolution.models)
+        let anovaTablesContent = firstSolution.source === 'rook' && Object.keys(firstSolution.models)
             .filter(target => firstSolution.models[target].anova)
             .map(target => m('div',
                 m('h5', target),
                 m(Table, {data: prepareANOVA(firstSolution.models[target].anova)})));
-        let anovaTables = anovaTablesContent.length > 0 && m(Subpanel, {
+        let anovaTables = (anovaTablesContent || []).length > 0 && m(Subpanel, {
             style: {margin: '0px 1em'},
             header: 'ANOVA Tables'
         }, anovaTablesContent);
 
-        let VIFContents = Object.keys(firstSolution.models)
+        let VIFContents = firstSolution.source === 'rook' && Object.keys(firstSolution.models)
             .filter((target, i) => i === 0 && firstSolution.models[target].vif)
             .map(target => m('div',
                 m(Table, {
@@ -352,103 +390,52 @@ export class CanvasSolutions {
                         firstSolution.models[target].vif[predictor][0]
                     ])
                 })));
-        let VIF = VIFContents.length === 1 && m(Subpanel, {
+        let VIF = (VIFContents || []).length === 1 && m(Subpanel, {
             style: {margin: '0px 1em'},
             header: 'Variance Inflation'
         }, VIFContents);
 
+
+
         return m('div', {style: {margin: '1em 0px'}},
-            performanceStats, coefficientMatrix, anovaTables, VIF)
-    }
-
-    view(vnode) {
-        let {problem} = vnode.attrs;
-        // sections: [
-        //     {value: 'Problem Description', id: 'btnPredData'},
-        //     {value: 'Prediction Summary', id: 'btnPredPlot'},
-        //     {value: 'Generate New Predictions', id: 'btnGenPreds', attrsInterface: {disabled: app.modelComparison || String(firstSelectedPipelineID).includes('raven')}},
-        //     {value: 'Visualize Pipeline', id: 'btnVisPipe', attrsInterface: {disabled: app.modelComparison || String(firstSelectedPipelineID).includes('raven')}},
-        //     {value: 'Solution Table', id: 'btnSolTable', attrsInterface: {disabled: app.modelComparison || !String(firstSelectedPipelineID).includes('raven')}}
-        // ]
-
-        let selectedSolutions = app.getSelectedSolutions();
-
-        console.warn("#debug selectedSolutions");
-        console.log(selectedSolutions);
-        return m('div', {style: {margin: '1em'}},
-            m(MenuTabbed, {
-                currentTab: app.selectedResultsMenu,
-                callback: app.setSelectedResultsMenu,
-                sections: [
-                    {
-                        value: 'Problem Description',
-                        id: 'tabProblemDesciption',
-                        contents: m('div', {style: {margin: '1em 0px'}},
-                            m(Subpanel, {
-                                style: {margin: '0px 1em'},
-                                header: 'Problem Description'
-                            }, m(Table, {
-                                headers: ['Variable', 'Data'],
-                                data: [
-                                    ['Dependent Variables', problem.targets],
-                                    ['Predictors', problem.predictors],
-                                    ['Description', problem.description],
-                                    ['Task', problem.task]
-                                ],
-                                // attrsAll: {
-                                //     style: {
-                                //         width: 'calc(100% - 2em)',
-                                //         overflow: 'auto',
-                                //         border: '1px solid #ddd',
-                                //         margin: '1em',
-                                //         'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)'
-                                //     }
-                                // }
-                            })),
-                            selectedSolutions.length === 1 && m(Subpanel, {
-                                style: {margin: '0px 1em'},
-                                header: 'Solution Description'
-                            }, m(Table, {
-                                headers: ['Variable', 'Data'],
-                                data: [
-                                    ['Source', selectedSolutions[0].source],
-                                    ['Label', selectedSolutions[0].meta.label],
-                                    ['Caret/R Method', selectedSolutions[0].meta.method],
-                                    ['Tags', selectedSolutions[0].meta.tags]
-                                ],
-                                // attrsAll: {
-                                //     style: {
-                                //         width: 'calc(100% - 2em)',
-                                //         overflow: 'auto',
-                                //         border: '1px solid #ddd',
-                                //         margin: '1em',
-                                //         'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)'
-                                //     }
-                                // }
-                            }))
-                            )
-                    },
-                    // {
-                    //     value: 'Prediction Summary',
-                    //     id: 'tabPredictionSummary',
-                    //     contents: app.selectedResultsMenu === 'Prediction Summary' && this.predictionSummary(problem, Object.keys(problem.selectedSolutions)
-                    //         .map(source => problem.selectedSolutions[source]
-                    //             .map(problemId => pipelineAdapter(source, problemId)).flatMap(_ => _)))
-                    // },
-                    {
-                        value: 'Visualize Pipeline',
-                        id: 'tabVisualizePipeline',
-                        contents: app.selectedResultsMenu === 'Visualize Pipeline' && this.visualizePipeline(selectedSolutions)
-                    },
-                    {
-                        value: 'Solution Table',
-                        id: 'tabSolutionTable',
-                        contents: app.selectedResultsMenu === 'Solution Table' && this.solutionTable(problem)
-                    }
-                ]
-            }));
+            problemSummary,
+            solutionSummary,
+            predictionSummary,
+            visualizePipeline,
+            performanceStats,
+            coefficientMatrix,
+            anovaTables,
+            VIF
+        );
     }
 }
+
+
+let solutionAdapter = (problem, solution) => {
+    let solver = {
+        'rook': solverRook,
+        'd3m': solverD3M
+    }[solution.source];
+    let target = problem.targets[0];
+
+
+    if (solution.source === 'd3m') {
+        if (!((problem.solutions.d3m.rookpipe || {}).warning)) return;
+        if ('warning' in problem.solutions.d3m.rookpipe) return;
+    }
+
+    return {
+        name: solver.getName(problem, solution),
+        actualValues: solver.getActualValues(problem, solution, target),
+        fittedValues: solver.getFittedValues(problem, solution, target),
+        score: solver.getScore(problem, solution, target),
+        targets: problem.targets,
+        predictors: problem.predictors,
+        description: solver.getDescription(problem, solution),
+        task: solver.getTask(problem, solution),
+        model: solver.getModel(problem, solution)
+    };
+};
 
 let leftTabResults = 'Solutions';
 let setLeftTabResults = tab => leftTabResults = tab;
