@@ -1028,9 +1028,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // ---------------------------------------
     // Retrieve the problem schema....
     // ---------------------------------------
-    let res = await m.request(d3mPS);
+    let problemDoc = await m.request(d3mPS);
     // console.log("prob schema data: ", res);
-    if(typeof res.success === 'undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
+    if(typeof problemDoc.success === 'undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
         // This is a Task 2 assignment
         // console.log("DID WE GET HERE?");
         task1_finished = true;
@@ -1038,7 +1038,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         buttonClasses.btnSubmitDisc = 'btn-success';
         buttonClasses.btnEstimate = 'btn-success';
 
-    } else if (!res.success){                       // Task 1 is when res.success==false
+    } else if (!problemDoc.success){                       // Task 1 is when res.success==false
         // This is a Task 1 assignment: no problem doc.
         task2_finished = true;
         problemDocExists = false;
@@ -1055,7 +1055,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         // }
 
         // making it case insensitive because the case seems to disagree all too often
-        if (failset.includes(res.about.taskType.toUpperCase())) {
+        if (failset.includes(problemDoc.about.taskType.toUpperCase())) {
             if(IS_D3M_DOMAIN){
               console.log('D3M WARNING: failset  task type found');
             }
@@ -1063,7 +1063,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
 
         // create the default problem provided by d3m
-        let targets = res.inputs.data
+        let targets = problemDoc.inputs.data
             .flatMap(source => source.targets.map(targ => targ.colName));
         let predictors = swandive
             ? Object.keys(variableSummaries)
@@ -1075,15 +1075,15 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
                     .map(column => column.colName));
 
         let defaultProblem = {
-            problemID: res.about.problemID,
+            problemID: problemDoc.about.problemID,
             system: 'auto',
-            version: res.about.version,
+            version: problemDoc.about.version,
             predictors: predictors,
             targets: targets,
-            description: res.about.problemDescription,
-            metric: res.inputs.performanceMetrics[0].metric,
-            task: res.about.taskType,
-            subTask: res.about.taskSubType,
+            description: problemDoc.about.problemDescription,
+            metric: problemDoc.inputs.performanceMetrics[0].metric,
+            task: problemDoc.about.taskType,
+            subTask: problemDoc.about.taskSubType,
             meaningful: false,
             manipulations: [],
             solutions: {
@@ -1108,7 +1108,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         // add the default problems to the list of problems
         let problemCopy = getProblemCopy(defaultProblem);
 
-        getSelectedDataset().problems[res.about.problemID] = defaultProblem;
+        getSelectedDataset().problems[problemDoc.about.problemID] = defaultProblem;
         getSelectedDataset().problems[problemCopy.problemID] = problemCopy;
         /**
          * Note: mongodb data retrieval initiated here
@@ -1129,10 +1129,10 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     if (!IS_D3M_DOMAIN){
       for (let field of ['zelig5models', 'zelig5choicemodels']) {
           try {
-              res = await m.request(`data/${field}.json`);
-              cdb(field + ' json: ', res);
-              res[field]
-                  .filter(key => res[field].hasOwnProperty(key))
+              problemDoc = await m.request(`data/${field}.json`);
+              cdb(field + ' json: ', problemDoc);
+              problemDoc[field]
+                  .filter(key => problemDoc[field].hasOwnProperty(key))
                   .forEach(key => mods[key.name[0]] = key.description[0]);
           } catch(_) {
               console.log("can't load " + field);
@@ -1147,11 +1147,11 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     console.log('---------------------------------------');
     console.log("-- 8. Start the user session /Hello --");
 
-    res = await makeRequest(D3M_SVC_URL + '/Hello', {});
-    if (res) {
-      console.log(res)
-      if (res.success != true){
-        const user_err_msg = "Failed to make Hello connection with TA2! status code: " + res.message;
+    problemDoc = await makeRequest(D3M_SVC_URL + '/Hello', {});
+    if (problemDoc) {
+      console.log(problemDoc)
+      if (problemDoc.success != true){
+        const user_err_msg = "Failed to make Hello connection with TA2! status code: " + problemDoc.message;
         setModal(user_err_msg, "Error Connecting to TA2", true, "Reset", false, locationReload);
         return;
       } else {
@@ -1161,10 +1161,10 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             // Format and show the TA2 name in the footer
             // ----------------------------------------------
             let ta2Version;
-            if(typeof res.data.version !== 'undefined'){
-              ta2Version = res.data.version;
+            if(typeof problemDoc.data.version !== 'undefined'){
+              ta2Version = problemDoc.data.version;
             }
-            let ta2Name = res.data.userAgent;
+            let ta2Name = problemDoc.data.userAgent;
             if (ta2Version){
               ta2Name += ' (API: ' + ta2Version + ')';
             }
@@ -1625,7 +1625,7 @@ function CreatePipelineData(dataset, problem) {
 
 // create problem definition for SearchSolutions call
 function CreateProblemDefinition(problem) {
-    let resourceIdFromProblemDoc = d3mProblemDescription.firstTarget.resID;
+    // let resourceIdFromProblemDoc = d3mProblemDescription.firstTarget.resID;
     let problemSpec = {
         id: problem.problemID,
         version: problem.version || '1.0',
@@ -1640,7 +1640,7 @@ function CreateProblemDefinition(problem) {
         {
             datasetId: selectedDataset,
             targets: problem.targets.map((target, resourceId) => ({
-                resourceId: resourceIdFromProblemDoc,
+                // resourceId: resourceIdFromProblemDoc,
                 columnIndex: Object.keys(variableSummaries).indexOf(target),  // Adjusted to match dataset doc
                 columnName: target
             }))
@@ -1666,7 +1666,7 @@ function CreateProblemSchema(problem){
                 {
                     datasetId: selectedDataset,
                     targets: problem.targets.map((target, resourceId) => ({
-                        resourceId: resourceIdFromDatasetDoc,
+                        // resourceId: resourceIdFromDatasetDoc,
                         columnIndex: Object.keys(variableSummaries).indexOf(target),
                         columnName: target
                     }))
@@ -1940,7 +1940,7 @@ export async function estimate() {
                     type: 'menu',
                     metadata: {
                         type: 'data',
-                        variables: ['d3mIndex', resultsProblem.targets],
+                        variables: ['d3mIndex', ...resultsProblem.targets],
                         sample: 1000
                     }
                 }],
@@ -2556,26 +2556,27 @@ export function deleteProblem(preprocessID, version, problemID) {
 
 }
 
-export function handleAugmentDataMessage(msg_data){
+export function xhandleAugmentDataMessage(msg_data) {
 
-  if (!msg_data) {
-      console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
-      return;
-  }
-  if (msg_data.success === true) {
-      console.log('Successful Augment.  Try to reload now!!');
-      console.log(msg_data.user_message);
+    if (!msg_data) {
+        console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
+        return;
+    }
+    if (msg_data.success === true) {
+        console.log('Successful Augment.  Try to reload now!!');
+        console.log(msg_data.user_message);
 
-      setModal("Successful data augmentation. Please reload the page. ",
-               "Data Augmentation", true, "Reload", false, locationReload);
+        setModal("Successful data augmentation. Please reload the page. ",
+            "Data Augmentation", true, "Reload", false, locationReload);
 
-      return
-  }
+        return
+    }
 
-  setModal("Data augmentation error: " + msg_data.user_message,
-           "Data Augmentation Failed", true, "Close", true);
+    setModal("Data augmentation error: " + msg_data.user_message,
+        "Data Augmentation Failed", true, "Close", true);
 
 }
+
 
 /**
  * handleMaterializeDataMessage()
