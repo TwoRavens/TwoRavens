@@ -424,7 +424,7 @@ function rightpanel(mode) {
                     value: 'Dataset Pipeline',
                     contents: m(manipulate.PipelineFlowchart, {
                         compoundPipeline: app.getSelectedDataset().hardManipulations,
-                        pipelineId: app.selectedDataset,
+                        pipeline: app.getSelectedDataset().hardManipulations,
                         editable: false
                     })
                 },
@@ -432,8 +432,11 @@ function rightpanel(mode) {
                     value: 'Problem Pipeline',
                     contents: [
                         m(manipulate.PipelineFlowchart, {
-                            compoundPipeline: selectedProblem.manipulations,
-                            pipelineId: selectedProblem.problemID,
+                            compoundPipeline: [
+                                ...app.getSelectedDataset().hardManipulations,
+                                ...selectedProblem.manipulations
+                            ],
+                            pipeline: selectedProblem.manipulations,
                             editable: true,
                             aggregate: false
                         }),
@@ -672,9 +675,8 @@ class Body {
             // manipulations menu
             (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu([
                 ...app.getSelectedDataset().hardManipulations,
-                ...app.getSelectedProblem().manipulations
-            ],
-                app.is_model_mode ? app.getSelectedDataset().selectedProblem : app.selectedDataset),  // the identifier for which pipeline to edit
+                ...(app.is_model_mode ? app.getSelectedProblem().manipulations : [])
+            ]),  // the identifier for which pipeline to edit
 
             // peek
             app.peekInlineShown && this.peekTable(),

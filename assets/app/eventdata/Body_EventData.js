@@ -1,12 +1,10 @@
 import m from 'mithril';
 
-import {glyph} from "../index";
-
 import * as eventdata from './eventdata';
 import * as tour from "./tour";
 import '../../css/eventdata.css'
 
-import {manipulations, looseSteps, mongoURL} from "../app";
+import {looseSteps, mongoURL} from "../app";
 import * as queryAbstract from '../manipulations/queryAbstract';
 import * as queryMongo from '../manipulations/queryMongo';
 
@@ -50,7 +48,7 @@ export default class Body_EventData {
         }
 
         // all eventdata manipulations stored in one manipulations key
-        manipulations['eventdata'] = [];
+        eventdata.manipulations = [];
 
         looseSteps['pendingSubset'] = {
             type: 'subset',
@@ -125,14 +123,14 @@ export default class Body_EventData {
                 'data-spinner-color': '#818181',
                 style: {margin: '1em'},
                 onclick: eventdata.reset
-            },
-            m("span.ladda-label.glyphicon.glyphicon-repeat", {
-                style: {
-                    "font-size": ".25em 1em",
-                    "color": "#818181",
-                    "pointer-events": "none"
-                }
-            })),
+            }, m(Icon, {name: 'sync'})),
+            // m("span.ladda-label.glyphicon.glyphicon-repeat", {
+            //     style: {
+            //         "font-size": ".25em 1em",
+            //         "color": "#818181",
+            //         "pointer-events": "none"
+            //     }
+            // })),
 
             m(ButtonRadio, {
                 id: 'modeButtonBar',
@@ -178,7 +176,7 @@ export default class Body_EventData {
             };
             let subsetType = eventdata.genericMetadata[eventdata.selectedDataset]['subsets'][eventdata.selectedSubsetName]['type'];
             tourBar = [
-                m("span.label.label-default", {style: {"margin-left": "10px", "display": "inline-block"}}, "Tours"),
+                m("span.badge.badge-pill.badge-secondary", {style: {"margin-left": "10px", "display": "inline-block"}}, "Tours"),
                 m("div[id='subsetTourBar']", {style: {"display": "inline-block"}},
                     tourButton('General', tour.tourStartGeneral),
                     eventdata.selectedCanvas === 'Subset' && tourButton(eventdata.selectedSubsetName, tours[subsetType]),
@@ -188,7 +186,7 @@ export default class Body_EventData {
 
         if (mode === 'aggregate') {
             tourBar = [
-                m("span.label.label-default", {style: {"margin-left": "10px", "display": "inline-block"}}, "Tours"),
+                m("span.badge.badge-pill.badge-secondary", {style: {"margin-left": "10px", "display": "inline-block"}}, "Tours"),
                 m("div[id='aggregTourBar']", {style: {"display": "inline-block"}}, [
                     tourButton('Aggregation', tour.tourStartAggregation)
                 ])];
@@ -210,7 +208,7 @@ export default class Body_EventData {
                         : 'must be logged in to save ' + eventdata.selectedMode,
                     disabled: !isAuthenticated,
                     onclick: async () => {
-                        if ('subset' === eventdata.selectedMode && manipulations.eventdata.length === 0)
+                        if ('subset' === eventdata.selectedMode && eventdata.manipulations.length === 0)
                             tour.tourStartSaveQueryEmpty();
                         else if ('aggregate' === eventdata.selectedMode && !looseSteps['eventdataAggregate'].measuresAccum.length)
                             tour.tourStartEventMeasure();
@@ -242,7 +240,7 @@ export default class Body_EventData {
                     },
                     onclick: async () => {
                         if ('subset' === eventdata.selectedMode) {
-                            if (manipulations.eventdata.length === 0) {
+                            if (eventdata.manipulations.length === 0) {
                                 tour.tourStartSaveQueryEmpty();
                                 return;
                             }
@@ -260,7 +258,7 @@ export default class Body_EventData {
                                         ]
                                 }
                             };
-                            let compiled = queryMongo.buildPipeline([...manipulations.eventdata, downloadStep])['pipeline'];
+                            let compiled = queryMongo.buildPipeline([...eventdata.manipulations, downloadStep])['pipeline'];
                             eventdata.setLaddaSpinner('btnDownload', true);
                             await eventdata.download(eventdata.selectedDataset, JSON.stringify(compiled))
                                 .finally(() => eventdata.setLaddaSpinner('btnDownload', false));
@@ -271,7 +269,7 @@ export default class Body_EventData {
                                 tour.tourStartEventMeasure();
                                 return;
                             }
-                            let compiled = queryMongo.buildPipeline([...manipulations.eventdata, looseSteps['eventdataAggregate']])['pipeline'];
+                            let compiled = queryMongo.buildPipeline([...eventdata.manipulations, looseSteps['eventdataAggregate']])['pipeline'];
                             eventdata.setLaddaSpinner('btnDownload', true);
                             await eventdata.download(eventdata.selectedDataset, JSON.stringify(compiled))
                                 .finally(() => eventdata.setLaddaSpinner('btnDownload', false));
@@ -280,7 +278,7 @@ export default class Body_EventData {
                 }, m("span.ladda-label", "Download")),
 
                 // Record Count
-                eventdata.selectedDataset && recordCount !== undefined && m("span.label.label-default#recordCount", {
+                eventdata.selectedDataset && recordCount !== undefined && m("span.badge.badge-pill.badge-secondary#recordCount", {
                     style: {
                         "margin-left": "5px",
                         "margin-top": "10px",
@@ -319,43 +317,33 @@ export default class Body_EventData {
                 }, {Aligned: [], Unaligned: []});
             subsetLists['Unaligned'].push('Custom');
 
-            let popoverContentSubset = (subset) => {
+            let popoverContentSubset = subset => {
                 let metadata = eventdata.genericMetadata[eventdata.selectedDataset]['subsets'][subset];
                 if (!metadata) return;
                 let {alignments, formats, columns} = eventdata.getSubsetMetadata(eventdata.selectedDataset, subset);
-                let text = '<table class="table table-sm table-striped" style="margin-bottom:0"><tbody>';
-                let div = (name, val) =>
-                    text += `<tr><th>${name}</th><td><p class="text-left">${val}</p></td></tr>`;
-                columns.length && div('Columns', columns.join(', '));
-                formats.length && div('Formats', formats.join(', '));
-                alignments.length && div('Alignments', alignments.join(', '));
 
-                if ('type' in metadata) div('Type', metadata['type']);
-                if ('structure' in metadata) div('Structure', metadata['structure']);
-                if ('tabs' in metadata) div('Tabs', Object.keys(metadata['tabs']).join(', '));
-                if ('group_by' in metadata) div('Group By', metadata['group_by']);
-                return text + '</tbody></table>';
+                let data = {};
+                if (columns.length) data.Columns = columns;
+                if (formats.length) data.Formats = formats;
+                if (alignments.length) data.Alignments = alignments;
+
+                if ('type' in metadata) data.Type = metadata.type;
+                if ('structure' in metadata) data.Structure = metadata.structure;
+                if ('tabs' in metadata) data.Tabs = Object.keys(metadata.tabs);
+                if ('group_by' in metadata) data['Group By'] = metadata.group_by;
+                return m(Table, {attrsAll: {class: 'table-sm'}, data})
             };
 
-            let popoverContentVariable = (variable) => {
+            let popoverContentVariable = variable => {
                 let metadata = eventdata.genericMetadata[eventdata.selectedDataset];
-                let text = '<table class="table table-sm table-striped" style="margin-bottom:0"><tbody>';
-                let div = (name, val) =>
-                    text += `<tr><th>${name}</th><td><p class="text-left">${val}</p></td></tr>`;
-
-                if ('formats' in metadata) {
-                    let format = metadata['formats'][variable];
-                    format && div('Format', format);
-                }
-                if ('alignments' in metadata) {
-                    let alignment = metadata['alignments'][variable];
-                    alignment && div('Alignment', alignment);
-                }
-                if ('deconstruct' in metadata) {
-                    let deconstruct = metadata['deconstruct'][variable];
-                    deconstruct && div('Delimiter', deconstruct);
-                }
-                return text + '</tbody></table>';
+                let data = {};
+                if ('formats' in metadata && variable in metadata.formats)
+                    data.Format = metadata.formats[variable];
+                if ('alignments' in metadata && variable in metadata.alignments)
+                    data.Alignment = metadata.alignments[variable];
+                if ('deconstruct' in metadata && metadata.deconstruct[variable])
+                    data.Delimiter = metadata.deconstruct[variable];
+                return m(Table, {attrsAll: {class: 'table-sm'}, data})
             };
 
             let matchedVariables = eventdata.genericMetadata[eventdata.selectedDataset]['columns']
@@ -385,13 +373,14 @@ export default class Body_EventData {
                                 value: eventdata.variableSearch,
                                 oninput: eventdata.setVariableSearch
                             }),
-                            m('div', {style: {height: 'calc(100% - 44px)', overflow: 'auto'}},
+                            m('div', {style: {height: 'calc(100% - 61px)', overflow: 'auto'}},
                                 m(PanelList, {
                                     id: 'variablesList',
                                     items: matchedVariables,
                                     colors: {[common.selVarColor]: eventdata.selectedVariables},
                                     callback: eventdata.toggleSelectedVariable,
-                                    popup: {content: popoverContentVariable},
+                                    popup: popoverContentVariable,
+                                    popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
                                     attrsItems: {
                                         'data-placement': 'right',
                                         'data-container': '#variablesList'
@@ -421,7 +410,8 @@ export default class Body_EventData {
                                         items: subsetLists[key],
                                         colors: {[common.selVarColor]: eventdata.selectedCanvas === 'Custom' ? ['Custom'] : [eventdata.selectedSubsetName]},
                                         callback: (subset) => (subset === 'Custom' ? eventdata.setSelectedCanvas : eventdata.setSelectedSubsetName)(subset),
-                                        popup: {content: popoverContentSubset},
+                                        popup: popoverContentSubset,
+                                        popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
                                         attrsItems: {
                                             'data-placement': 'right',
                                             'data-container': '#subsetsMenu',
@@ -527,9 +517,9 @@ export default class Body_EventData {
                 sections: [
                     {
                         value: 'Subsets',
-                        contents: (manipulations.eventdata.length + (eventdata.selectedMode === 'subset' ? looseSteps['pendingSubset'].abstractQuery.length : 0)) ? [
-                            ...manipulations.eventdata.map(step => m(TreeSubset, {isQuery: true, step, pipelineId: 'eventdata', editable: false})),
-                            m(TreeSubset, {step: looseSteps['pendingSubset'], pipelineId: 'pendingSubset', editable: true})
+                        contents: (eventdata.manipulations.length + (eventdata.selectedMode === 'subset' ? looseSteps['pendingSubset'].abstractQuery.length : 0)) ? [
+                            ...eventdata.manipulations.map(step => m(TreeSubset, {isQuery: true, step, editable: false})),
+                            m(TreeSubset, {step: looseSteps['pendingSubset'], editable: true})
                         ] : [
                             m('div[style=font-style:italic]', 'Match all records'),
                             looseSteps['pendingSubset'].abstractQuery.length !== 0 && m('div[style=font-style:italic]', 'Some pending constraints are hidden. Update from subset menu to apply them.')
@@ -571,7 +561,7 @@ export default class Body_EventData {
                 eventdata.selectedMode === 'subset' && m(Button, {
                     id: 'btnAddGroup',
                     style: {float: 'left'},
-                    onclick: () => queryAbstract.addGroup('eventdata', looseSteps['pendingSubset'])
+                    onclick: () => queryAbstract.addGroup(looseSteps['pendingSubset'])
                 }, 'Group'),
 
                 m(Button, {
@@ -610,7 +600,7 @@ export default class Body_EventData {
                     };
 
                     // cannot await for promise resolution from here in the mithril vdom, so I moved the misc wrappings for menu loading into its own function
-                    eventdata.loadMenuEventData(manipulations.eventdata, newMenu);
+                    eventdata.loadMenuEventData(eventdata.manipulations, newMenu);
                 }
 
                 return m('#loading.loader', {
@@ -636,6 +626,7 @@ export default class Body_EventData {
                 subsetName: eventdata.selectedSubsetName,
                 data: eventdata.subsetData[eventdata.selectedSubsetName],
                 preferences: eventdata.subsetPreferences[eventdata.selectedSubsetName],
+                pipeline: eventdata.manipulations,
                 metadata: eventdata.genericMetadata[eventdata.selectedDataset]['subsets'][eventdata.selectedSubsetName],
                 formats: eventdata.genericMetadata[eventdata.selectedDataset]['formats'],
                 alignments: eventdata.genericMetadata[eventdata.selectedDataset]['alignments'],
@@ -653,7 +644,7 @@ export default class Body_EventData {
             'Results': CanvasResults
         }[eventdata.selectedCanvas], {
             mode: eventdata.selectedMode,
-            pipeline: manipulations.eventdata,
+            pipeline: eventdata.manipulations,
             preferences: eventdata.canvasPreferences[eventdata.selectedCanvas],
             redraw: eventdata.canvasRedraw[eventdata.selectedCanvas],
             setRedraw: (state) => eventdata.setCanvasRedraw(eventdata.selectedCanvas, state)
@@ -694,7 +685,7 @@ export default class Body_EventData {
             eventdata.showSaveQuery && eventdata.selectedMode !== 'Home' && m(ModalVanilla, {
                 id: 'SaveQuery',
                 setDisplay: eventdata.setShowSaveQuery,
-                contents: m(SaveQuery, {pipeline: manipulations.eventdata, preferences: eventdata.saveQuery[eventdata.selectedMode]})
+                contents: m(SaveQuery, {pipeline: eventdata.manipulations, preferences: eventdata.saveQuery[eventdata.selectedMode]})
             }),
 
             eventdata.showAlignmentLog && logLength !== 0 && m(ModalVanilla, {
@@ -746,7 +737,7 @@ export default class Body_EventData {
                     eventdata.setAggregationStaged(true);
 
                     // add a constraint to either the 'pendingSubset' or 'eventdataAggregate' pipeline step, given the menu state and menu metadata
-                    queryAbstract.addConstraint('eventdata', step, preferences, metadata, name);
+                    queryAbstract.addConstraint(step, preferences, metadata, name);
                     common.setPanelOpen('right');
                 }
             }, 'Stage'),

@@ -1,7 +1,5 @@
 import m from "mithril";
 
-// scope creep
-import * as eventdata from "../eventdata/eventdata";
 import {alertError, alertLog} from "../app";
 
 // constraint trees used for subset and aggregate
@@ -23,7 +21,7 @@ import {alertError, alertLog} from "../app";
 //     cancellable: false       // If exists and false, disable the delete button
 // }
 
-export function addGroup(pipelineId, step) {
+export function addGroup(step) {
 
     // When the query argument is set, groups will be included under a 'query group'
     let movedChildren = [];
@@ -64,13 +62,12 @@ export function addGroup(pipelineId, step) {
 }
 
 /**
- * @param pipelineId: the ID of the pipeline in manipulations
  * @param step: pipeline stepID
  * @param preferences: menu state
  * @param metadata: menu type, column names, etc.
  * @param name: name displayed on constraint in menu
  */
-export function addConstraint(pipelineId, step, preferences, metadata, name) {
+export function addConstraint(step, preferences, metadata, name) {
 
     // extract information from menu state and format as a branch. The branch will be added to the abstract query
     let abstractBranch = makeAbstractBranch(step, preferences, metadata, name);
@@ -99,10 +96,6 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
         step.abstractQuery.push(abstractBranch);
 
         m.redraw();
-        if (IS_EVENTDATA_DOMAIN) {
-            let subsetTree = $('#subsetTree' + pipelineId + eventdata.eventdataSubsetCount); // the pending tree
-            subsetTree.tree('closeNode', subsetTree.tree('getNodeById', abstractBranch['id']), false);
-        }
     }
 
     if (step.type === 'aggregate' && metadata.measureType === 'unit') {
@@ -484,6 +477,7 @@ function makeAbstractBranch(step, preferences, metadata, name) {
             name: 'Latitude',
             column: metadata['columns'][0],
             // negate: 'false',
+            show_op: false,
             children: []
         };
 
@@ -501,6 +495,7 @@ function makeAbstractBranch(step, preferences, metadata, name) {
             id: String(step.nodeId++) + measureId,
             name: 'Longitude',
             operation: 'and',
+            show_op: false,
             column: metadata['columns'][1],
             children: []
         };

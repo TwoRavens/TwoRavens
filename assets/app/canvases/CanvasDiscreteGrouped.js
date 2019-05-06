@@ -3,6 +3,7 @@ import * as common from '../../common/common';
 
 import PlotBars from "./views/PlotBars";
 import {alignmentData, formattingData} from "../app";
+import Icon from "../views/Icon";
 
 let getLabel = (format, key) => {
     if (!(format in formattingData)) return '';
@@ -157,8 +158,7 @@ export default class CanvasDiscreteGrouped {
                                 },
                                 onclick: () => preferences['plotted_grouped'] = !preferences['plotted_grouped']
                             },
-                            m(`span.glyphicon.glyphicon-resize-${preferences['plotted_grouped'] ? 'small' : 'full'}`,
-                                {style: {"color": "#818181"}})),
+                            m(Icon, {name: preferences['plotted_grouped'] ? 'chevron-up' : 'chevron-down'})),
 
                         m("button.btn.btn-default[data-toggle='tooltip'][type='button']", {
                             style: {
@@ -198,8 +198,7 @@ export default class CanvasDiscreteGrouped {
                                 },
                                 onclick: () => preferences['plotted_subgroups'][subGroupName] = !preferences['plotted_subgroups'][subGroupName]
                             },
-                            m(`span.glyphicon.glyphicon-resize-${preferences['plotted_subgroups'][subGroupName] ? 'small' : 'full'}`,
-                                {style: {"color": "#818181"}})),
+                            m(Icon, {name: preferences['plotted_subgroups'][subGroupName] ? 'chevron-up' : 'chevron-down'})),
 
                         m("button.btn.btn-default[data-toggle='tooltip'][type='button']", {
                             style: {

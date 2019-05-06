@@ -2,6 +2,8 @@ import m from 'mithril';
 import * as d3 from "d3";
 import * as common from '../../../common/common';
 
+import $ from 'jquery';
+
 // This shuffle is biased towards elements at the start of the color scheme. But that's just fine, the first colors are better
 export let nodeColors = d3.scaleOrdinal(d3.schemeCategory10.sort(() => .5 - Math.random()));
 const dyadNodeRadius = 40; //various definitions for node display

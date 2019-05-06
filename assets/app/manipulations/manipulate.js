@@ -25,7 +25,7 @@ import {alertLog, alertError} from "../app";
 import Icon from "../views/Icon";
 import Table from "../../common/views/Table";
 
-export function menu(compoundPipeline, pipelineId) {
+export function menu(compoundPipeline) {
 
     return [
         // stage button
@@ -58,7 +58,6 @@ export function menu(compoundPipeline, pipelineId) {
                         : constraintMetadata.type + ': ' + constraintMetadata.columns[0];
 
                     let success = queryAbstract.addConstraint(
-                        pipelineId,
                         constraintMenu.step,  // the step the user is currently editing
                         constraintPreferences,  // the menu state for the constraint the user currently editing
                         constraintMetadata,  // info used to draw the menu (variables, menu type),
@@ -259,18 +258,15 @@ export function rightpanel() {
             }
         }, m(PipelineFlowchart, {
             compoundPipeline: app.getSelectedDataset().hardManipulations,
-            pipelineId: app.selectedDataset,
+            pipeline: app.getSelectedDataset().hardManipulations,
             editable: true
         }));
 }
 
 export class PipelineFlowchart {
     view(vnode) {
-        // compoundPipeline is used for queries
-        // pipelineId is edited and passed into the trees
-        let {compoundPipeline, pipelineId, editable, aggregate} = vnode.attrs;
-
-        let pipeline = app.manipulations[pipelineId];
+        // compoundPipeline is used for queries, pipeline is the array to be edited
+        let {compoundPipeline, pipeline, editable, aggregate} = vnode.attrs;
 
         let plus = m(Icon, {name: 'plus'});
         let warn = (text) => m('[style=color:#dc3545;display:inline-block;]', text);
@@ -317,7 +313,7 @@ export class PipelineFlowchart {
                         content = m('div', {style: {'text-align': 'left'}},
                             deleteButton,
                             m('h4[style=font-size:16px;margin-left:0.5em]', 'Transformations'),
-                            m(TreeTransform, {pipelineId, step, editable, redraw, setRedraw}),
+                            m(TreeTransform, {step, editable, redraw, setRedraw}),
                             // Enable to only show button if last element: pipeline.length - 1 === i &&
                             editable && m(Button, {
                                 id: 'btnAddTransform',
@@ -337,7 +333,7 @@ export class PipelineFlowchart {
                         content = m('div', {style: {'text-align': 'left'}},
                             deleteButton,
                             m('h4[style=font-size:16px;margin-left:0.5em]', 'Subset'),
-                            m(TreeSubset, {pipelineId, step, editable, redraw, setRedraw}),
+                            m(TreeSubset, {step, editable, redraw, setRedraw}),
 
                             editable && [
                                 m(Button, {
@@ -357,7 +353,7 @@ export class PipelineFlowchart {
                                     disabled: !step.abstractQuery.filter(constraint => constraint.type === 'rule').length,
                                     onclick: () => {
                                         setQueryUpdated(true);
-                                        queryAbstract.addGroup(pipelineId, step);
+                                        queryAbstract.addGroup(step);
                                     }
                                 }, plus, ' Group')
                             ]
@@ -417,7 +413,6 @@ export class PipelineFlowchart {
                             m('h4[style=font-size:16px;margin-left:0.5em]', 'Imputation'),
 
                             step.imputations.length !== 0 && m(TreeImputation, {
-                                pipelineId,
                                 step,
                                 editable
                             }),

@@ -74,7 +74,6 @@ export let leftpanel = () => {
                                     id: 'pipelineTable',
                                     headers: ['Solution', 'Score'],
                                     data: Object.keys(resultsProblem.solutions.d3m)
-                                        .filter(pipelineId => pipelineId !== 'rookpipe')
                                         .map(pipelineId => [pipelineId, resultsProblem.solutions.d3m[pipelineId].score]),
                                     sortHeader: 'Score',
                                     sortFunction: app.sortPipelineTable,
@@ -693,26 +692,26 @@ let makeIntervals = ({values, variances, statistic, type, family, alpha, n, ddof
         .map((val, i) => [-1, 1].map(sign => invLink(val + sign * statValue * stdErr[i])).sort())
 };
 
-// ~~~~ compute confidence intervals
-console.warn('GLM Bands');
-console.log(makeGLMBands(cov, coefs, predictor, constants, {
-    type: 'mean',
-    statistic: 'workingHotelling',
-    family: 'gaussian',
-    alpha: .05,
-    n: 2500,
-    MSE: 1.2
-}));
-
-console.warn('Set of intervals for coefficients');
-console.log(makeIntervals({
-    values: coefs.map(coef => coef[0]),
-    variances: cov.map((_, i) => cov[i][i]),
-    statistic: 'bonferroni',
-    type: 'mean',
-    family: 'gaussian',
-    alpha: .05,
-    n: 2500,
-    ddof: 1,
-    MSE: 1.2
-}));
+// // ~~~~ compute confidence intervals
+// console.warn('GLM Bands');
+// console.log(makeGLMBands(cov, coefs, predictor, constants, {
+//     type: 'mean',
+//     statistic: 'workingHotelling',
+//     family: 'gaussian',
+//     alpha: .05,
+//     n: 2500,
+//     MSE: 1.2
+// }));
+//
+// console.warn('Set of intervals for coefficients');
+// console.log(makeIntervals({
+//     values: coefs.map(coef => coef[0]),
+//     variances: cov.map((_, i) => cov[i][i]),
+//     statistic: 'bonferroni',
+//     type: 'mean',
+//     family: 'gaussian',
+//     alpha: .05,
+//     n: 2500,
+//     ddof: 1,
+//     MSE: 1.2
+// }));

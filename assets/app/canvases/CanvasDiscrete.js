@@ -182,7 +182,7 @@ export default class CanvasDiscrete {
             }),
             m(TextField, {
                 placeholder: 'Enter variable values',
-                style: {display: 'inline', width: 'calc(100% - 12em)', 'margin-left': '2em'},
+                style: {display: 'inline', width: 'calc(100% - 14em)', 'margin-left': '2em'},
                 value: preferences['selections_temp'],
                 oninput: value => {
                     preferences['selections_temp'] = value;

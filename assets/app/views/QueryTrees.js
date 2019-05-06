@@ -7,7 +7,7 @@ import * as queryMongo from "../manipulations/queryMongo";
 import * as manipulate from "../manipulations/manipulate";
 
 import * as eventdata from "../eventdata/eventdata";
-import {alertError, alertLog, manipulations} from "../app";
+import {alertError} from "../app";
 import TreeRender from "./TreeRender";
 
 // I'm being lazy here, the state between trees is shared globally.
@@ -32,7 +32,7 @@ export class TreeVariables {
 }
 
 export class TreeTransform {
-    buildTreeData(pipelineId, step, editable) {
+    buildTreeData(step, editable) {
         return [
             ...step.transforms.map(transform => ({
                 id: transform.name,
@@ -122,10 +122,10 @@ export class TreeTransform {
     }
 
     view({attrs}) {
-        let {pipelineId, step, editable} = attrs;
+        let {step, editable} = attrs;
 
         return m(TreeRender, {
-            data: this.buildTreeData(pipelineId, step, editable),
+            data: this.buildTreeData(step, editable),
             state: treeState,
             callbacks: {
                 cancel: datum => {
@@ -156,7 +156,7 @@ export class TreeSubset {
 
     view({attrs}) {
 
-        let {pipelineId, step, isQuery, editable} = attrs;
+        let {step, isQuery, editable} = attrs;
         let data = isQuery ? [{
                 name: 'Query ' + step.id,
                 id: step.id + '-root',
@@ -313,14 +313,14 @@ export class TreeSubset {
                     if (!IS_EVENTDATA_DOMAIN) manipulate.setQueryUpdated(true);
 
                     if (IS_EVENTDATA_DOMAIN && datum.type === 'query') {
-                        manipulations[pipelineId].splice(manipulations[pipelineId].indexOf(step), 1);
+                        eventdata.manipulations.splice(eventdata.manipulations.indexOf(step), 1);
                         let newMenu = {
                             type: 'menu',
                             name: eventdata.selectedSubsetName,
                             metadata: eventdata.genericMetadata[eventdata.selectedDataset]['subsets'][eventdata.selectedSubsetName],
                             preferences: eventdata.subsetPreferences[eventdata.selectedSubsetName]
                         };
-                        eventdata.loadMenuEventData(manipulations[pipelineId], newMenu, {recount: true}).then(() => {
+                        eventdata.loadMenuEventData(eventdata.manipulations, newMenu, {recount: true}).then(() => {
                             // clear all subset data. Note this is intentionally mutating the object, not rebinding it
                             Object.keys(eventdata.subsetData)
                                 .filter(subset => subset !== eventdata.selectedSubsetName)
@@ -375,7 +375,7 @@ export class TreeAggregate {
 }
 
 export class TreeImputation {
-    buildTreeData(pipelineId, step, editable) {
+    buildTreeData(step, editable) {
         return step.imputations.map((imputation, i) => ({
             id: imputation.id,
             name: `${i + 1}: ${imputation.imputationMode} ${imputation.nullValue}`,
@@ -425,10 +425,10 @@ export class TreeImputation {
     }
 
     view({attrs}) {
-        let {pipelineId, step, editable} = attrs;
+        let {step, editable} = attrs;
 
         return m(TreeRender, {
-            data: this.buildTreeData(pipelineId, step, editable),
+            data: this.buildTreeData(step, editable),
             state: treeState,
             callbacks: {
                 cancel: datum => {

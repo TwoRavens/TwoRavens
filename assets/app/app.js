@@ -163,24 +163,6 @@ export let datamartURL = '/datamart/api/';
 // this contains an object of abstract descriptions of pipelines of manipulations for eventdata
 export let eventDataPipeline;
 
-// The JQtrees can't store references to objects within their callbacks.
-// The manipulations proxy allows manipulations pipelines to be stored inside problems (where they belong!)
-export let manipulations = new Proxy({}, {
-    ownKeys() {
-        // if no dataset selected, then there are no manipulations
-        return selectedDataset
-            ? [selectedDataset, ...Object.keys(datasets[selectedDataset].problems)]
-            : []
-    },
-    has(_, key) {
-        return key in datasets || key in (datasets[selectedDataset] || {}).problems
-    },
-    get(obj, manipulationID) {
-        if (IS_EVENTDATA_DOMAIN && manipulationID === 'eventdata') return eventDataPipeline;
-        return selectedDataset && datasets[selectedDataset].problems[manipulationID].manipulations;
-    }
-});
-
 // Holds steps that aren't part of a pipeline (for example, pending subset or aggregation in eventdata)
 export let looseSteps = {};
 
@@ -233,8 +215,9 @@ export function set_mode(mode) {
     mode = mode ? mode.toLowerCase() : 'model';
 
     // remove empty steps when leaving manipulate mode
-    if (selectedDataset && (domainIdentifier || {}).name in manipulations && is_manipulate_mode && mode !== 'manipulate') {
-        manipulations[domainIdentifier.name] = manipulations[domainIdentifier.name].filter(step => {
+    let selectedDataset = getSelectedDataset();
+    if (selectedDataset && is_manipulate_mode && mode !== 'manipulate') {
+        selectedDataset.hardManipulations = selectedDataset.hardManipulations.filter(step => {
             if (step.type === 'subset' && step.abstractQuery.length === 0) return false;
             if (step.type === 'aggregate' && step.measuresAccum.length === 0) return false;
             if (step.type === 'transform' && ['transforms', 'expansions', 'binnings', 'manual']
@@ -417,9 +400,10 @@ export let setFocusedPanel = side => focusedPanel = side;
 updateRightPanelWidth();
 updateLeftPanelWidth();
 
-common.setPanelCallback('right', updateRightPanelWidth);
-common.setPanelCallback('left', updateLeftPanelWidth);
-
+if (!IS_EVENTDATA_DOMAIN) {
+    common.setPanelCallback('right', updateRightPanelWidth);
+    common.setPanelCallback('left', updateLeftPanelWidth);
+}
 
 //-------------------------------------------------
 // Initialize a websocket for this page
@@ -2678,13 +2662,12 @@ export async function callSolver(prob, datasetPath=undefined) {
     setSolverPending(false);
     let dataset = getSelectedDataset();
 
-    let hasManipulation = prob.problemID in manipulations && manipulations[prob.problemID].length > 0;
+    let hasManipulation = [...dataset.hardManipulations, ...prob.manipulations].length > 0;
     let hasNominal = [prob.targets, ...prob.predictors].some(variable => zparams.znom.includes(variable));
 
     if (!datasetPath)
         datasetPath = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : dataset.datasetUrl;
 
-    let solutions = getResultsProblem().solutions;
     // solutions.rook[ravenID] = cachedResponse;
     let params = {
         regression: [
@@ -2737,9 +2720,9 @@ export async function callSolver(prob, datasetPath=undefined) {
             })
 
         // add to rook solutions
-        Object.assign(solutions.rook, response.results)
+        Object.assign(prob.solutions.rook, response.results)
         let selectedPipelines = getSelectedSolutions();
-        if (selectedPipelines.length === 0) setSelectedSolution(prob, 'rook', Object.keys(solutions.rook)[0]);
+        if (selectedPipelines.length === 0) setSelectedSolution(prob, 'rook', Object.keys(prob.solutions.rook)[0]);
         m.redraw()
     })
 

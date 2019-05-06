@@ -3,6 +3,7 @@ import {grayColor, panelMargin} from '../../common/common';
 import ButtonRadio from "../../common/views/ButtonRadio";
 import Button from "../../common/views/Button";
 import TextField from '../../common/views/TextField';
+import Popper from '../../common/views/Popper';
 
 import PlotDyad from './views/PlotDyad';
 import * as eventdata from "../eventdata/eventdata";
@@ -124,10 +125,10 @@ export default class CanvasDyad {
                 },
                 m("[id='linkTitle']",
                     [
-                        m("h3#linkTitleLeft.panel-title.text-center",
+                        m("h4#linkTitleLeft.panel-title.text-center",
                             "Sources"
                         ),
-                        m("h3#linkTitleRight.panel-title.text-center",
+                        m("h4#linkTitleRight.panel-title.text-center",
                             "Targets"
                         )
                     ]
@@ -159,6 +160,13 @@ export default class CanvasDyad {
         let metadataMonad = metadata['tabs'][preferences['current_tab']];
         let currentTab = preferences['current_tab'];
 
+        let getTranslation = (column, value) => (value === undefined || value === '')
+                ? ''
+                : 'full_token' in metadataMonad
+                    ? value.match(new RegExp(metadataMonad['full_token'], 'g'))
+                        .map(token => (formattingData[formats[column]] || {})[token] || '?').join(' ')
+                    : (formattingData[formats[column]] || {})[value];
+
         preferencesMonad['full_limit'] = preferencesMonad['full_limit'] || this.defaultPageSize;
 
         let toggleFull = (entry) => preferencesMonad['node']['selected'].has(entry)
@@ -172,30 +180,6 @@ export default class CanvasDyad {
 
             clearTimeout(this.searchTimeout);
             this.searchTimeout = setTimeout(() => this.search(pipeline, subsetName, currentTab, preferences, metadata), searchLag);
-        };
-
-        let popupAttributes = (column, value) => formats[column] && {
-            'data-container': 'body',
-            'data-toggle': 'popover',
-            'data-placement': 'right',
-            'data-trigger': 'hover',
-            'onmouseover': function (e) {
-                e.redraw = false;
-                let translation = (value === undefined || value === '')
-                    ? ''
-                    : 'full_token' in metadataMonad
-                        ? value.match(new RegExp(metadataMonad['full_token'], 'g'))
-                            .map(token => formattingData[formats[column]][token] || '?').join(' ')
-                        : formattingData[formats[column]][value];
-                if (translation) {
-                    $(this).attr('data-content', translation);
-                    setTimeout(() => $(this).popover("show"), 200);
-                }
-            },
-            'onmouseout': function (e) {
-                e.redraw = false;
-                setTimeout(() => $(".popover").remove(), 200);
-            }
         };
 
         // I avoided the usual declarative filtering constructs here because this loop has a sweet early exit, usually around 100 elements
@@ -232,17 +216,22 @@ export default class CanvasDyad {
                         }
                     },
                     this.waitForQuery === 0 && getTopValues().map(entry =>
-                        m('div', popupAttributes(metadataMonad['full'], entry),
-                            m(`input.monad-chk[type=checkbox]`, {
-                                checked: preferencesMonad['node']['selected'].has(entry),
-                                onclick: () => toggleFull(entry)
-                            }),
-                            m('label', {onclick: () => toggleFull(entry)}, entry)))
+                        m(Popper, {
+                                content: () => getTranslation(metadataMonad['full'], entry),
+                                // options: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}}
+                            },
+                            m('div',
+                                // popupAttributes(metadataMonad['full'], entry),
+                                m(`input.monad-chk[type=checkbox]`, {
+                                    checked: preferencesMonad['node']['selected'].has(entry),
+                                    onclick: () => toggleFull(entry)
+                                }),
+                                m('label', {onclick: () => toggleFull(entry)}, entry))))
                 )
             ),
             m('#actorRight.monad-right',
 
-                m(`button#clearAllActors.btn.btn-default.monad-clear[type='button']`, {
+                m(`button#clearAllActors.btn.btn-secondary.monad-clear[type='button']`, {
                         title: 'Clear search text and filters',
                         onclick: () => {
                             preferencesMonad['search'] = '';
@@ -274,14 +263,17 @@ export default class CanvasDyad {
                         }, m("b", filter)),
                         preferencesMonad['filters'][filter]['expanded'] && dataMonad['filters'][filter]
                             .filter(actor => actor && actor.includes(preferencesMonad['search']))
-                            .map(actor => m('div',
-                                popupAttributes(filter, actor),
+                            .map(actor => m(Popper, {
+                                content: () => getTranslation(filter, actor),
+                                // options: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}}
+                            }, m('div#test',
+                                // popupAttributes(filter, actor),
                                 m(`input.monad-chk[type=checkbox]`, {
                                     checked: preferencesMonad['filters'][filter]['selected'].has(actor),
                                     onclick: () => toggleFilter(filter, actor)
                                 }),
                                 m('label', {onclick: () => toggleFilter(filter, actor)}, actor)
-                            ))
+                            )))
                     ])
                 )
             )
@@ -293,7 +285,7 @@ export default class CanvasDyad {
         return [
             m(".card-header.text-center[id='dyadSelectionTitle']", {style: {"padding-bottom": "5px"}},
                 m("[id='dyadPanelTitleDiv']",
-                    m("h3.panel-title", {style: {'padding-top': '2px', 'padding-bottom': '2px'}}, "Dyad Selection"))
+                    m("h4.panel-title", {style: {'padding-top': '2px', 'padding-bottom': '2px'}}, "Dyad Selection"))
             ),
             m(ButtonRadio, {
                 id: 'dyadTab',

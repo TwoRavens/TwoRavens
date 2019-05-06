@@ -132,14 +132,14 @@ main#EventData .monad-right {
 main#EventData .monad-full-list {
     display: inline-block;
     width: 100%;
-    height: calc(100% - 54px);
+    height: calc(100% - 110px);
     overflow-x: auto;
     overflow-y: scroll;
     white-space: nowrap;
 }
 main#EventData .monad-filter-list {
     width: 100%;
-    height: calc(100% - 54px);
+    height: calc(100% - 110px);
     margin-top: 3px;
     overflow-x: auto;
     overflow-y: scroll;
@@ -149,7 +149,6 @@ main#EventData .monad-clear {
     display: block;
     margin: 5px 38px 5px 5px;
     width: calc(100% - 43px);
-    height: 30px;
 }
 main#EventData #dyadLinkDiv {
     float: left;
