@@ -1930,16 +1930,26 @@ export async function estimate() {
     buttonLadda.btnEstimate = true;
     m.redraw();
 
-    ROOKPIPE_FROM_REQUEST = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);        // parse the center panel data into a formula like construction
+    let dataset = getSelectedDataset();
 
-    if (!ROOKPIPE_FROM_REQUEST) {
-        estimated = true;
-        buttonLadda.btnEstimate = false;
-        m.redraw();
-        return;
+    try {
+        resultsProblem.dvvalues = await manipulate.getData({
+            method: 'aggregate',
+            query: JSON.stringify(queryMongo.buildPipeline(
+                [...dataset.hardManipulations, ...resultsProblem.manipulations, {
+                    type: 'menu',
+                    metadata: {
+                        type: 'data',
+                        variables: ['d3mIndex', resultsProblem.targets],
+                        sample: 1000
+                    }
+                }],
+                dataset.variablesInitial)['pipeline'])
+        })
+    } catch(err) {
+        alertWarn('Dependent variables have not been loaded. Some plots will not load.')
     }
 
-    // ROOKPIPE_FROM_REQUEST.predictors && setxTable(ROOKPIPE_FROM_REQUEST.predictors);
     let searchTimeLimit = 5;
     let searchSolutionParams = CreatePipelineDefinition(resultsProblem, searchTimeLimit);
 
@@ -1951,7 +1961,7 @@ export async function estimate() {
 
     let needsProblemCopy = hasManipulation || hasNominal;
 
-    let datasetPath = getSelectedDataset().datasetUrl;
+    let datasetPath = dataset.datasetUrl;
     // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
     if (needsProblemCopy) {
         let {data_path, metadata_path} = await manipulate.buildProblemUrl(resultsProblem);
@@ -2479,7 +2489,7 @@ export let setModelComparison = state => {
     let selectedSolutions = getSelectedSolutions();
 
     if (selectedSolutions.length > 1 && !state)
-        setSelectedSolution(getResultsProblem, selectedSolutions[0].source, selectedSolution[0])
+        setSelectedSolution(getResultsProblem, selectedSolutions[0].source, selectedSolutions[0])
 
     modelComparison = state;
 };
@@ -2710,6 +2720,7 @@ export async function callSolver(prob, datasetPath=undefined) {
     for (let param of params) await makeRequest(ROOK_SVC_URL + 'solverapp', Object.assign({
         problem: probReduced,
         dataset_path: datasetPath,
+        samples: prob.dvvalues && prob.dvvalues.map(point => point.d3mIndex)
     }, param)).then(response => {
 
         // assign source and remove errant fits

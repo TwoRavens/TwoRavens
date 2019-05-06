@@ -622,6 +622,7 @@ class Body {
 
         let selectedDataset = app.getSelectedDataset();
         let selectedProblem = app.getSelectedProblem();
+        let resultsProblem = app.getResultsProblem();
 
         return m('main',
             m(Modal),
@@ -689,7 +690,7 @@ class Body {
                     }
                 },
                 m(Canvas,
-                    app.is_results_mode && m(results.CanvasSolutions, {problem: selectedProblem}),
+                    app.is_results_mode && m(results.CanvasSolutions, {problem: resultsProblem}),
                     app.is_explore_mode && [variate === 'problem' ?
                     m('',
                         m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),

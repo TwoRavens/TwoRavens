@@ -144,7 +144,7 @@ export class CanvasSolutions {
     predictionSummary(problem, summaries) {
 
         let setConfusionFactor = factor => this.confusionFactor = factor === 'undefined' ? undefined : factor;
-
+        summaries = summaries.filter(summary => summary.fittedValues || summary.actualValues);
         if (problem.task === 'regression') {
             let xData = summaries.reduce((out, summary) =>
                 Object.assign(out, {[summary.name]: summary.fittedValues}), {});
@@ -279,6 +279,7 @@ export class CanvasSolutions {
 
     view(vnode) {
         let {problem} = vnode.attrs;
+        if (!problem) return;
 
         let problemSummary = m(Subpanel, {
             style: {margin: '0px 1em'},
@@ -350,6 +351,8 @@ export class CanvasSolutions {
                     data: firstSolution.models[target].coefficientCovarianceMatrix,
                     startColor: '#e9ede8',
                     endColor: '#5770b0',
+                    xLabel: '',
+                    yLabel: '',
                     classes: ['intercept', ...problem.predictors],
                     margin: {left: 10, right: 10, top: 50, bottom: 10},
                     attrsAll: {style: {height: '600px'}}
@@ -412,17 +415,8 @@ export class CanvasSolutions {
 
 
 let solutionAdapter = (problem, solution) => {
-    let solver = {
-        'rook': solverRook,
-        'd3m': solverD3M
-    }[solution.source];
+    let solver = {rook: solverRook, d3m: solverD3M}[solution.source];
     let target = problem.targets[0];
-
-
-    if (solution.source === 'd3m') {
-        if (!((problem.solutions.d3m.rookpipe || {}).warning)) return;
-        if ('warning' in problem.solutions.d3m.rookpipe) return;
-    }
 
     return {
         name: solver.getName(problem, solution),

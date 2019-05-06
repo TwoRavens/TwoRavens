@@ -33,12 +33,13 @@ export default class ConfusionMatrix {
         this.plot(vnode)
     }
 
-    plot({dom, attrs}) {
+    plot(vnode) {
 
         let {
             id, data, classes, title,
-            margin, startColor, endColor
-        } = attrs;
+            margin, startColor, endColor,
+            xLabel, yLabel
+        } = vnode.attrs;
 
         this.id = id;
 
@@ -46,7 +47,7 @@ export default class ConfusionMatrix {
 
         if (data === undefined) return;
 
-        let container = d3.select(dom);
+        let container = d3.select(vnode.dom);
         container.html('');
 
         let maxValue = d3.max(data, function (layer) {
@@ -64,7 +65,7 @@ export default class ConfusionMatrix {
         let heightLabels = 15 + 7 * longestLabel * .86602; // # of pixels the column labels need
 
         // set the dimensions and margins of the graph
-        let bound = dom.getBoundingClientRect();
+        let bound = vnode.dom.getBoundingClientRect();
         let width = bound.width - widthLegend - 20;
         let height = bound.height;
 
@@ -72,7 +73,7 @@ export default class ConfusionMatrix {
         let numcols = data[0].length;
 
         // legend
-        let key = d3.select(dom)
+        let key = d3.select(vnode.dom)
             .append("svg")
             .attr("width", widthLegend)
             .attr("height", height);
@@ -120,7 +121,7 @@ export default class ConfusionMatrix {
             .call(yAxis);
 
         // matrix
-        let svg = d3.select(dom).append("svg")
+        let svg = d3.select(vnode.dom).append("svg")
             .attr("width", width)
             .attr("height", height)
             .attr("display", 'inline-block')
@@ -243,7 +244,7 @@ export default class ConfusionMatrix {
         svg.append("text")
             .attr("transform", "translate(" + ((width + widthLegend) / 2) + " ," + (0 - 10) + ")")
             .style("text-anchor", "middle")
-            .text("Predicted Class");
+            .text(xLabel || "Predicted Class");
 
         svg.append("text")
             .attr("transform", "translate(" + ((width + widthLegend) / 2) + " ," + (0 - 30) + ")")
@@ -257,7 +258,7 @@ export default class ConfusionMatrix {
             .attr("y", -10 - widthLabels)
             //.attr("dy", "1em")
             .style("text-anchor", "middle")
-            .text("Actual Class");
+            .text(yLabel || "Actual Class");
     }
 
     view({attrs}) {

@@ -1261,7 +1261,7 @@ export let vegaScatter = (xData, yData, xName, yName, title, legendName) => {
         "title": title,
         "data": {
             "values": Object.keys(xData).reduce((out, groupName) =>
-                out.concat(xData[groupName].map((_, i) => ({
+                out.concat((xData[groupName] || []).map((_, i) => ({
                     [xName]: xData[groupName][i],
                     [yName]: yData[groupName][i],
                     [legendName]: groupName,

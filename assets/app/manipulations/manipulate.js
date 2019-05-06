@@ -698,7 +698,7 @@ export let getData = async body => m.request({
         collection_name: app.selectedDataset // collection/dataset name
     }, body)
 }).then(response => {
-    console.log(' -- manipulate.js geData --');
+    console.log('-- manipulate.js getData --');
     if (!response.success) throw response;
 
     // parse Infinity, -Infinity, NaN from unambiguous string literals. Coding handled in python function 'json_comply'

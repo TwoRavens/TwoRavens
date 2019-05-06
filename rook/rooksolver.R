@@ -117,7 +117,6 @@ isBinary <- function(v) {
 
 solver <- function(everything) {
 
-  print(everything)
   if (is.null(everything[['dataset_path']]))
     return(error("'dataset_path' is null"))
   datasetPath <- everything[['dataset_path']]
@@ -132,9 +131,6 @@ solver <- function(everything) {
 
   if (is.null(problem[['metric']]) || !(problem[['metric']] %in% metrics[[problem[['task']]]]))
     problem[['metric']] <- metrics[[problem[['task']]]][[1]]
-  
-  print('metric')
-  print(problem[['metric']])
 
   hyperparameters <- list()
   if (!is.null(everything[['hyperparameters']])) {
@@ -171,6 +167,9 @@ solver <- function(everything) {
   # use same samples for every target
   n <- length(rownames(data))
   samples <- if (n < observationLimit) 1:n else sort(sample(1:n, observationLimit))
+  # if sample d3mIndex indices are provided, overwrite data sample indices
+  if (everything[['samples']])
+    samples <- which(data[,'d3mIndex'] %in% everything[['samples']])
 
   methods <- everything[['method']]
   if (is.null(methods)) {
@@ -257,7 +256,7 @@ solver <- function(everything) {
         task=jsonlite::unbox(problem[['task']]),
         library=methodInfo$library, # R library used
         tags=methodInfo$tags,
-        actualValues=data[samples,problem[['targets']]]
+        actualValues=if (!is.na(everything[['samples']])) data[samples,problem[['targets']]]
       )
     )
   }, methods, hyperparameters, SIMPLIFY=FALSE)
@@ -270,7 +269,6 @@ solver <- function(everything) {
   )
 }
 
-
 # wrapper <- solver(list(
 #   dataset_path='/ravens_volume/test_data/185_baseball/TRAIN/dataset_TRAIN/tables/learningData.csv',
 #   problem=list(
@@ -280,9 +278,10 @@ solver <- function(everything) {
 #       "Triples", "Home_runs", "RBIs", "Walks", "Strikeouts", "Batting_average",
 #       "On_base_pct", "Slugging_pct", "Fielding_ave", "Position"),
 #     task="classification"),
-#   method=c("rpart", "multinom")
+#   method=c("rpart"),
+#   samples=c(2, 5)
 # ))
-# 
+
 # wrapper$results$CART$models$Hall_of_Fame$gridResults
 
 

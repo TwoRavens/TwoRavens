@@ -13,9 +13,13 @@ import * as app from '../app.js';
 
 
 export let getName = (problem, solution) => solution.pipelineId;
-export let getActualValues = (problem, solution, target) => problem.solutions.d3m.rookpipe.dvvalues;
-export let getFittedValues = (problem, solution, target) => (solution.predictedValues || {}).success && solution.predictedValues.data
-    .map(item => parseFloat(item[solution.depvar] || item[solution['0']]));
+export let getActualValues = (problem, solution, target) => problem.dvvalues && problem.dvvalues.map(point => point[target]);
+export let getFittedValues = (problem, solution, target) => {
+    if (!(solution.predictedValues || {}).success) return;
+    let samples = problem.dvvalues.map(point => point.d3mIndex);
+    let fittedMap = solution.predictedValues.data.reduce((out, point) => Object.assign(out, {[point.d3mIndex || point['']]: point[target] || point['0']}), {})
+    return samples.map(sample => fittedMap[sample]).map(datum => parseFloat(datum) || datum);
+};
 export let getScore = (problem, solution, target) => solution.score;
 export let getDescription = (problem, solution) => solution.description;
 export let getTask = (problem, solution) => solution.status;
@@ -264,9 +268,9 @@ export async function handleGetSearchSolutionResultsResponse(response1) {
     // ----------------------------------------
     // (2) Update or Create the Pipeline
     // ----------------------------------------
-    if (!ROOKPIPE_FROM_REQUEST) {
-        console.warn('---------- ERROR: ROOKPIPE_FROM_REQUEST not set!!!');
-    }
+    // if (!ROOKPIPE_FROM_REQUEST) {
+    //     console.warn('---------- ERROR: ROOKPIPE_FROM_REQUEST not set!!!');
+    // }
 
     response1.source = 'd3m';
 
@@ -290,7 +294,7 @@ export async function handleGetSearchSolutionResultsResponse(response1) {
     // }
 
     //adding rookpipe to the set of d3m solutions for the problem
-    solutions.rookpipe = Object.assign({}, ROOKPIPE_FROM_REQUEST);                // This is setting rookpipe for the entire table, but when there are multiple CreatePipelines calls, this is only recording latest values
+    // solutions.rookpipe = Object.assign({}, ROOKPIPE_FROM_REQUEST);                // This is setting rookpipe for the entire table, but when there are multiple CreatePipelines calls, this is only recording latest values
 
     // VJD: this is a third core API call that is currently unnecessary
     //let pipelineid = PipelineCreateResult.pipelineid;

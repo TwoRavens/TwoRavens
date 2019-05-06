@@ -1,6 +1,6 @@
 
 export let getName = (problem, solution) => solution.meta.label;
-export let getActualValues = (problem, solution, target) => solution.meta.actualValues;
+export let getActualValues = (problem, solution, target) => problem.dvvalues && problem.dvvalues.map(point => point[target]) || solution.meta.actualValues;
 export let getFittedValues = (problem, solution, target) => solution.models[target].fittedValues.map(parseFloat);
 export let getScore = (problem, solution, target) => {
     target = target || Object.keys(solution.models)[0];
