@@ -1822,7 +1822,7 @@ export function downloadIncomplete() {
 */
 export async function estimate() {
     if (solverProblem.d3m) {
-        alertWarn('Another problem is still being solved. Please wait until the solver for ', solverProblem.d3m.problemId, ' is complete.')
+        alertWarn('Another problem is still being solved. Please wait until the solver for ' + solverProblem.d3m.problemId + ' is complete.')
         return;
     }
     // return if current problem already has solutions
@@ -2671,7 +2671,7 @@ export let solverProblem = {
 // takes as input problem, calls rooksolver, and stores result
 export async function callSolver(prob, datasetPath=undefined) {
     if (solverProblem.rook) {
-        alertWarn('Another problem is still being solved. Please wait until the solver for ', solverProblem.rook.problemId, ' is complete.')
+        alertWarn('Another problem is still being solved. Please wait until the solver for ' + solverProblem.rook.problemId + ' is complete.')
         return;
     }
     setSolverPending(false);
