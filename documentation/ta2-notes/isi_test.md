@@ -8,7 +8,7 @@
 
 ```
 docker login registry.datadrivendiscovery.org
-docker pull registry.datadrivendiscovery.org/kyao/ta2-isi/ta3ta2-image:latest
+docker pull registry.datadrivendiscovery.org/kyao/ta3ta2/ta3ta2-image:latest
 ```
 
 ## Run it with env variable

@@ -35,3 +35,7 @@ For each command below, **FIRST**:
     ```
     fab run_rook
     ```
+
+## Open Browser
+
+Open browser to <http://localhost:8080/>
