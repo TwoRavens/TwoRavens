@@ -60,7 +60,7 @@
           "colIndex": 7,
           "colName": "war",
           "colType": "integer",
-          "role": ["suggestedTarget"]
+          "role": ["attribute"]
         },
         {
           "colIndex": 8,
@@ -72,7 +72,7 @@
           "colIndex": 9,
           "colName": "onset",
           "colType": "integer",
-          "role": ["attribute"]
+          "role": ["suggestedTarget"]
         },
         {
           "colIndex": 10,

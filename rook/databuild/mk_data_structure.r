@@ -140,7 +140,7 @@ seed_skeleton <- function(data, name, fraction=0.2, ID=NULL, citation="", descri
 
 
 fldata <- read.dta("repdata.dta")
-seed_skeleton(data=fldata, name="TR1_Greed_Versus_Grievance", depvarname="war", ID="Greed_Versus_Grievance", description="Replication data for Fearon and Laitin greed versus grievance analysis", taskType="classification", taskSubType="binary", metric="f1Macro")
+seed_skeleton(data=fldata, name="TR1_Greed_Versus_Grievance", depvarname="onset", ID="Greed_Versus_Grievance", description="Replication data for Fearon and Laitin greed versus grievance analysis", taskType="classification", taskSubType="binary", metric="f1Macro")
 
 chdata <- read.dta("sxprepdata.dta")
 seed_skeleton(data=chdata, name="TR2_Resource_Curse", depvarname="chwars", ID="Resource_Curse", description="Replication data for Collier and Hoeffler resource curse analysis", taskType="classification", taskSubType="multiClass", metric="f1Macro")
