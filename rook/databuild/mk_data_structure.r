@@ -15,6 +15,9 @@ seed_skeleton <- function(data, name, fraction=0.2, ID=NULL, citation="", descri
     ID=name
   }
 
+  myTargetIndex <- 0
+  myresID <- "0"
+
 
   ## add d3mIndex
 
@@ -114,7 +117,7 @@ seed_skeleton <- function(data, name, fraction=0.2, ID=NULL, citation="", descri
   ## Write various versions of datasetDoc.json
 
   problemdoclist <- list(about=list(problemID=paste(name,"_problem",sep=""), problemName=ID, problemDescription=description, taskType=taskType, taskSubType=taskSubType, problemVersion="1.0", problemSchemaVersion="3.0"), 
-    inputs=list(data=list(list(datasetID=datasetID, targets=list(list(colIndex=depvarColIndex, colName=depvarname)) )), 
+    inputs=list(data=list(list(datasetID=datasetID, targets=list(list(targetIndex= myTargetIndex, resID=myresID, colIndex=depvarColIndex, colName=depvarname)) )), 
     dataSplits=list(method="holdOut", testSize=fraction), performanceMetrics=list(list(metric=metric))), 
     expectedOutputs=list(predictionsFile="predictions.csv"))
 
