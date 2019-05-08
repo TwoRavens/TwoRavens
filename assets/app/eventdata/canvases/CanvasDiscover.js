@@ -89,7 +89,7 @@ console.log(eventdata.discoveryData[eventdata.selectedDataset]["data"]);
                     "mark": "line",
                     "encoding": {
                         "x": {"field": "date", "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
-                        "y": {"field": "value", "type": "quantitative"},
+                        "y": {"field": "value", "type": "quantitative", "axis": {"title": "Monthly Counts"}},
                         "color": {"field": "variable", "type": "nominal"}
                     }
                 };
@@ -104,7 +104,7 @@ console.log(eventdata.discoveryData[eventdata.selectedDataset]["data"]);
                     "mark": "line",
                     "encoding": {
                         "x": {"field": "date", "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
-                        "y": {"field": "value", "type": "quantitative"},
+                        "y": {"field": "value", "type": "quantitative", "axis": {"title": "Monthly Counts"}},
                         "color": {"field": "variable", "type": "nominal"}
                     }
                 };
