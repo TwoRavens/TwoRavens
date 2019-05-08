@@ -1,6 +1,6 @@
 {
     "about": {
-        "problemID": "TR7_Greed_Versus_Grievance_problem-augmented-yybcvx_problem",
+        "problemID": "TR7_Greed_Versus_Grievance_problem-augmented_problem",
         "problemName": "Greed_Versus_Grievance (augmented)_problem",
         "problemDescription": "Condensed replication data for Fearon and Laitin greed versus grievance analysis",
         "taskType": "classification",
@@ -11,7 +11,7 @@
     "inputs": {
         "data": [
             {
-                "datasetID": "TR7_Greed_Versus_Grievance_problem-augmented-yybcvx",
+                "datasetID": "TR7_Greed_Versus_Grievance_problem-augmented",
                 "targets": [
                     {
                         "targetIndex": 0,
