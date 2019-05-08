@@ -93,7 +93,8 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
 
     @staticmethod
     def datamart_upload(index):
-
+        """Index a user submitted dataset"""
+        print('datamart_upload, index', index)
         try:
             response = requests.post(
                 get_isi_url() + '/new/upload_metadata_list',
@@ -390,7 +391,7 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
                           'right_columns': right_columns,
                           'exact_match': exact_match},
                     verify=False,
-                    timeout=settings.DATAMART_LONG_TIMEOUT)
+                    timeout=settings.DATAMART_VERY_LONG_TIMEOUT)
 
         except requests.exceptions.Timeout as err_obj:
             return err_resp('Request timed out. responded with: %s' % err_obj)
