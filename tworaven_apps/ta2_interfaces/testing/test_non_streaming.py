@@ -331,6 +331,7 @@ class NonStreamingTests(TestCase):
         #
         json_resp = response.json()
         print('json_resp', json_resp)
+        # print('json_resp', json.dumps(json_resp, indent=4))
 
         self.assertTrue(json_resp['success'])
         self.assertTrue('data' in json_resp)
@@ -338,7 +339,7 @@ class NonStreamingTests(TestCase):
         self.assertTrue(json_resp['data']['request_type'] == \
                         'GetSearchSolutionsResults')
         self.assertTrue(json_resp['data']['responses']['count'] == 1)
-        self.assertTrue(json_resp['data']['responses']['unread_count'] == 1)
+        self.assertTrue(json_resp['data']['responses']['unread_count'] == 0)
         self.assertTrue('list' in json_resp['data']['responses'])
 
 
@@ -370,7 +371,7 @@ class NonStreamingTests(TestCase):
         self.assertTrue(json_resp['data']['request_type'] == \
                         'GetScoreSolutionResults')
         self.assertTrue(json_resp['data']['responses']['count'] == 1)
-        self.assertTrue(json_resp['data']['responses']['unread_count'] == 1)
+        self.assertTrue(json_resp['data']['responses']['unread_count'] == 0)
         self.assertTrue('list' in json_resp['data']['responses'])
 
 
@@ -403,7 +404,7 @@ class NonStreamingTests(TestCase):
         self.assertTrue(json_resp['data']['request_type'] == \
                         'GetFitSolutionResults')
         self.assertTrue(json_resp['data']['responses']['count'] == 1)
-        self.assertTrue(json_resp['data']['responses']['unread_count'] == 1)
+        self.assertTrue(json_resp['data']['responses']['unread_count'] == 0)
         self.assertTrue('list' in json_resp['data']['responses'])
 
 
@@ -435,5 +436,5 @@ class NonStreamingTests(TestCase):
         self.assertTrue(json_resp['data']['request_type'] == \
                         'GetProduceSolutionResults')
         self.assertTrue(json_resp['data']['responses']['count'] == 1)
-        self.assertTrue(json_resp['data']['responses']['unread_count'] == 1)
+        self.assertTrue(json_resp['data']['responses']['unread_count'] == 0)
         self.assertTrue('list' in json_resp['data']['responses'])

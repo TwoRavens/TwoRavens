@@ -88,9 +88,12 @@ class AppConfiguration(TimeStampedModel):
         self.d3m_svc_url = remove_trailing_slash(self.d3m_svc_url)
 
         if self.is_active:
+            if not self.id:
+                super(AppConfiguration, self).save(*args, **kwargs)
+
             # If this is active, set everything else to inactive
-            AppConfiguration.objects.filter(\
-                    is_active=True\
+            AppConfiguration.objects.exclude(id=self.id\
+                    ).filter(is_active=True\
                     ).update(is_active=False)
         super(AppConfiguration, self).save(*args, **kwargs)
 

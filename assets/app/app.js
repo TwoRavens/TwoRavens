@@ -8,6 +8,7 @@ import * as common from "../common/common";
 import * as manipulate from './manipulations/manipulate';
 
 import {setModal, locationReload} from '../common/views/Modal';
+import Table from "../common/views/Table";
 
 import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
 import {elem} from './utils';
@@ -97,7 +98,6 @@ export async function resetPeek(pipeline) {
 }
 
 export async function updatePeek(pipeline) {
-
     if (peekIsLoading || peekIsExhausted || pipeline === undefined)
         return;
 
@@ -349,6 +349,7 @@ streamSocket.onmessage = function(e) {
 
     return;
   }
+  console.log('full data: ' + JSON.stringify(msg_data));
 
   console.log('Got it! Message type: ' + msg_data.msg_type);
   //JSON.stringify(msg_data));
@@ -382,6 +383,13 @@ streamSocket.onmessage = function(e) {
 
     handleENDGetSearchSolutionsResults();
 
+  } else if (msg_data.msg_type === 'DATAMART_MATERIALIZE_PROCESS'){
+    console.log(msg_data.msg_type + ' recognized!');
+    handleMaterializeDataMessage(msg_data);
+
+  } else if (msg_data.msg_type === 'DATAMART_AUGMENT_PROCESS'){
+    console.log(msg_data.msg_type + ' recognized!');
+    handleAugmentDataMessage(msg_data);
 
   } else {
     console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
@@ -506,24 +514,27 @@ export let zparams = {
     zusername: ''
 };
 
-// export let augmentState = {
-//     dataset: {
-//         keywords: []
-//     }
-// };
+// menu state within datamart component
+export let datamartPreferences = {
+    // default state for query
+    query: {
+        dataset: {
+            about: '',
+            keywords: []
+        }
+    },
+    // potential new indices to submit to datamart
+    indices: [],
 
-
-export let augmentState = {
-    dataset: {
-        about: '',
-        keywords: []
-    }
-};
-export let augmentResults = [];
-export let augmentIndexState = {
-    title: '',
-    description: '',
-    url: ''
+    // search results
+    results: {
+        ISI: [],
+        NYU: []
+    },
+    // one of 'augment', 'preview', 'metadata', undefined
+    modalShown: undefined,
+    // stores paths to data and metadata, as well as a data preview and metadata (datasetDoc.json) for materialized datasets
+    cached: {}
 };
 
 // list of variable strings (same as Object.keys(preprocess))
@@ -621,7 +632,7 @@ export let d3mProblemDescription = {
     name: "",
     description: "",
     taskType: "taskTypeUndefined",
-    taskSubtype: "taskSubtypeUndefined",
+    // taskSubtype: "taskSubtypeUndefined",
     performanceMetrics: [{metric: "metricUndefined"}]
 };
 
@@ -795,25 +806,74 @@ export let lockTour = {
   11. Call layout() and start up
 */
 async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL) {
+    console.log('---------------------------------------');
+    console.log('-- initial load, app.js - load() --');
     if (!IS_D3M_DOMAIN) {
         return;
     }
 
-    let d3m_config_url = "/config/d3m-config/json/latest";
-    //let d3m_config_eval_url = "/config/d3m-config/json/eval/latest";
-
+    // ---------------------------------------
     // 1. Retrieve the configuration information
-    let res = await m.request({
+    //  dev view: http://127.0.0.1:8080/user-workspaces/d3m-configs/json/latest?pretty
+    // ---------------------------------------
+    console.log('---------------------------------------');
+    console.log('-- 1. Retrieve the configuration information --');
+
+    let d3m_config_url = '/user-workspaces/d3m-configs/json/latest';
+
+    let config_result = await m.request({
         method: "POST",
         url: d3m_config_url
     });
-    console.log("this is config file:");
-    console.log(res);
-    datasetdocurl = res.dataset_schema;
 
+    console.log(JSON.stringify(config_result));
+
+    if (!config_result.success){
+      setModal(config_result.message, "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
+    }
+
+    if (!config_result.data){
+      setModal('No configurations in list!', "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
+    }
+
+    // ------------------------------------
+    // Find the current workspace in the list
+    // ------------------------------------
+    let configurations;
+    for (const one_config of config_result.data) {
+        if (one_config.is_current_workspace){
+          configurations = one_config;
+          break;
+        }
+    }
+    if (!configurations){
+        setModal('No current workspace config in list!', "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
+    }
+
+    // Take the 1st configuration from the list -- for now...
+    //let configurations = config_result.data[0]
+
+    // console.log("this is the config file:");
+    // console.log(configurations);
+
+    // ---------------------------------------
     // 2. Set 'configurations'
-    configurations = JSON.parse(JSON.stringify(res)); // this is just copying res
-    d3mRootPath = configurations.training_data_root.replace(/\/data/,'');
+    // ---------------------------------------
+    console.log('---------------------------------------');
+    console.log('-- 2. Set "configurations" --');
+
+    $('#user-workspace-id').html('(ws:' + configurations.user_workspace_id +')');
+
+    datasetdocurl = configurations.dataset_schema;
+
+    if (configurations.d3m_input_dir){
+      // 2019 config
+      d3mRootPath = configurations.d3m_input_dir;
+    }else{
+      // 2018 config
+      d3mRootPath = configurations.training_data_root.replace(/\/data/,'');
+    }
+
     d3mDataName = configurations.name;
 
     // scopes at app.js level; used for saving workspace
@@ -822,18 +882,31 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
                         description: 'D3M config file'};
                         //id: configurations.id};
 
-    d3mPS = "/config/d3m-config/get-problem-schema/json";
-    d3mDS = "/config/d3m-config/get-dataset-schema/json";
-    console.log("Configurations: ", configurations);
+    // url example: /config/d3m-config/get-problem-schema/json/39
+    //
+    d3mPS = configurations.problem_schema_url;
+    // url example: /config/d3m-config/get-dataset-schema/json/39
+    //
+    d3mDS = configurations.dataset_schema_url;
+
+    // need to change?
+    //
     d3mPreprocess = pURL = `rook-custom/rook-files/${d3mDataName}/preprocess/preprocess.json`;
     console.log(d3mPreprocess);
 
+    // ---------------------------------------
     // 3. Read the problem schema and set 'd3mProblemDescription'
     // ...and make a call to Hello to check TA2 is up.  If we get this far, data are guaranteed to exist for the frontend
+    // ---------------------------------------
+    console.log('---------------------------------------');
+    console.log("-- 3. Read the problem schema and set 'd3mProblemDescription' --");
 
-    res = await m.request("/config/d3m-config/get-problem-data-file-info");
+    //url example: /config/d3m-config/get-problem-data-file-info/39
+    //
+    let problem_info_result = await m.request(configurations.problem_data_info);
+
     console.log("result from problem data file info:");
-    console.log(res);
+    console.log(problem_info_result);
 
     // The result of this call is similar to below:
     // example:
@@ -857,10 +930,10 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // Loop through the response above and
     // pick the first "path" where "exists" is true
     //
-    // Note: if data files have "exists" as false, stay as default which is null
+    // Note: if data files have "exists" as false, stay at default which is null
     //
-    let set_d3m_data_path = (field, val) => res.data[field].exists ? res.data[field].path :
-        res.data[field + '.gz'].exists ? res.data[field + '.gz'].path :
+    let set_d3m_data_path = (field, val) => problem_info_result.data[field].exists ? problem_info_result.data[field].path :
+        problem_info_result.data[field + '.gz'].exists ? problem_info_result.data[field + '.gz'].path :
         val;
 
     zparams.zd3mdata = d3mData = set_d3m_data_path('learningData.csv', d3mData);
@@ -869,18 +942,17 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // If this is the D3M domain; d3mData MUST be set to an actual value
     //
     if ((IS_D3M_DOMAIN)&&(d3mData == null)){
-        const d3m_path_err = 'NO VALID d3mData path!! ' + JSON.stringify(res)
+        const d3m_path_err = 'NO VALID d3mData path!! ' + JSON.stringify(problem_info_result)
         console.log(d3m_path_err);
         alertError('debug (be more graceful): ' + d3m_path_err);
     }
 
-    // hardcoding this, once get-problem-data-file-info is revised this hardcode can go away and use the previous two LOC
-    //  zparams.zd3mdata = d3mData = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
-    //  zparams.zd3mtarget = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
-
-    res = await m.request(d3mPS);
+    // ---------------------------------------
+    // Retrieve the problem schema....
+    // ---------------------------------------
+    let res = await m.request(d3mPS);
     // console.log("prob schema data: ", res);
-    if(typeof res.success=='undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
+    if(typeof res.success === 'undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
         // This is a Task 2 assignment
         // console.log("DID WE GET HERE?");
         task1_finished = true;
@@ -907,8 +979,13 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         //   alertError('problem schema not available: ' + res.message);
         //   return
         // }
+        console.log('problemDoc res: ', res);
 
         mytargetdefault = res.inputs.data[0].targets[0].colName; // easier way to access target name?
+
+        if (typeof res.inputs.data[0].targets[0] !== 'undefined') {
+            d3mProblemDescription.firstTarget=res.inputs.data[0].targets[0];
+        }
         if (typeof res.about.problemID !== 'undefined') {
             d3mProblemDescription.id=res.about.problemID;
         }
@@ -925,14 +1002,34 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             d3mProblemDescription.taskType=res.about.taskType;
         }
         if (typeof res.about.taskSubType !== 'undefined') {
+          console.log('taskSubType set to ?', res.about.taskSubType);
             d3mProblemDescription.taskSubtype=res.about.taskSubType;
+        }else{
+           console.log('taskSubTypeset to none');
+            d3mProblemDescription.taskSubtype = 'subtypeNone';
         }
         if (typeof res.inputs.performanceMetrics[0].metric !== 'undefined') {
             d3mProblemDescription.performanceMetrics = res.inputs.performanceMetrics;   // or? res.inputs.performanceMetrics[0].metric;
         }
 
+        manipulations[res.about.problemID] = [];
+        defaultProblem = {
+            problemID: res.about.problemID,
+            system: 'auto',
+            description: res.about.problemDescription,
+            target: res.inputs.data[0].targets[0].colName,
+            firstTarget: res.inputs.data[0].targets[0],
+            predictors: [],
+            get pipeline() {return manipulations[this.problemID]},
+            metric: res.inputs.performanceMetrics[0].metric,
+            model: 'modelUndefined',
+            task: res.about.taskType,
+            subTask: d3mProblemDescription.taskSubtype,
+            meaningful: false
+        };
+
         // making it case insensitive because the case seems to disagree all too often
-        if (failset.includes(d3mProblemDescription.taskType.toUpperCase())) {
+        if (failset.includes(defaultProblem.task.toUpperCase())) {
             if(IS_D3M_DOMAIN){
               console.log('D3M WARNING: failset  task type found');
             }
@@ -940,12 +1037,18 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
     }else{
         console.log("Task 1: No Problem Doc");
-        d3mProblemDescription.id="Task1";
-        d3mProblemDescription.name="Task1";
-        d3mProblemDescription.description = "Discovered Problems";
-    };
+        defaultProblem.description = 'Initial discovered problem';
+        // d3mProblemDescription.id="Task1";
+        // d3mProblemDescription.name="Task1";
+        // d3mProblemDescription.description = "Discovered Problems";
+    }
 
-    // 4. Read the data document and set 'datadocument'
+    /**
+     * 4. Read the data document and set 'datadocument'
+     */
+   console.log('---------------------------------------');
+    console.log("-- 4. Read the data document and set 'datadocument' --");
+
     datadocument = await m.request(d3mDS);
 
     // if no columns in the datadocument, go to swandive
@@ -1018,8 +1121,14 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
     console.log("data schema data: ", datadocument);
 
-    // 5. Read in zelig models (not for d3m)
-    // 6. Read in zeligchoice models (not for d3m)
+    /**
+     * 5. Read in zelig models (not for d3m)
+     * 6. Read in zeligchoice models (not for d3m)
+     */
+    console.log('---------------------------------------');
+    console.log("-- 5. Read in zelig models (not for d3m) --");
+    console.log("-- 6. Read in zeligchoice models (not for d3m) --");
+
     if (!IS_D3M_DOMAIN){
       for (let field of ['zelig5models', 'zelig5choicemodels']) {
           try {
@@ -1033,8 +1142,14 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
           }
       }
     }
-    // 7. Start the user session
-    // rpc rpc Hello (HelloRequest) returns (HelloResponse) {}
+
+    /**
+     * 7. Start the user session
+     * rpc rpc Hello (HelloRequest) returns (HelloResponse) {}
+     */
+    console.log('---------------------------------------');
+    console.log("-- 7. Start the user session /Hello --");
+
     res = await makeRequest(D3M_SVC_URL + '/Hello', {});
     if (res) {
       console.log(res)
@@ -1069,17 +1184,25 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         hopscotch.startTour(mytour);
     }
 
-    // 8. read preprocess data or (if necessary) run preprocess
-    // NOTE: preprocess.json is now guaranteed to exist...
-    let read = res => {
+    /**
+     * 8. read preprocess data or (if necessary) run preprocess
+     * NOTE: preprocess.json is now guaranteed to exist...
+     */
+    console.log('---------------------------------------');
+    console.log("-- 8. read preprocess data or (if necessary) run preprocess --");
+
+    // Function to load retreived preprocess data
+    //
+    let loadPreprocessData = res => {
         priv = res.dataset.private || priv;
         Object.keys(res.variables).forEach(k => preprocess[k] = res.variables[k]);
         if("problems" in res){Object.keys(res.problems).forEach(k => problems_in_preprocess[k] = res.problems[k].description.problem_id);} // storing all the problem id's present in preprocess
         return res;
     };
+
     try {
         console.log('attempt to read preprocess file (which may not exist): ' + pURL);
-        res = read(await m.request(pURL));
+        res = loadPreprocessData(await m.request(pURL));
     } catch(_) {
         console.log("Ok, preprocess not found, try to RUN THE PREPROCESSAPP");
         let url = ROOK_SVC_URL + 'preprocessapp';
@@ -1089,28 +1212,60 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
           //
           json_input = {data: d3mData, datastub: d3mDataName};
         }else{
-         json_input = {data: dataloc, target: targetloc, datastub: datastub};
+          json_input = {data: dataloc, target: targetloc, datastub: datastub};
         }
 
-        console.log('json_input: ', json_input);
-        console.log('url: ', url);
         try {
-            res = read(await m.request({method: 'POST', url: url, data: json_input}));
+            // res = read(await m.request({method: 'POST', url: url, data: json_input}));
+            let preprocess_info = await m.request({method: 'POST', url: url, data: json_input});
+            console.log('preprocess_info: ', preprocess_info);
+            console.log('preprocess_info message: ' + preprocess_info.message);
+            if (preprocess_info.success){
+              res = loadPreprocessData(preprocess_info.data);
+
+            }else{
+              setModal(m('div', m('p', "Preprocess failed: "  + preprocess_info.message),
+                                m('p', '(May be a serious problem)')),
+                       "Failed to load basic data.",
+                       true,
+                       "Try to Reload Page",
+                       false,
+                       locationReload);
+
+              //alertError('Preprocess failed: ' + preprocess_info.message);
+              // endsession();
+              return;
+            }
         } catch(_) {
             console.log('preprocess failed');
-            alertError('preprocess failed. ending user session.');
-            endsession();
+            // alertError('preprocess failed. ending user session.');
+            setModal(m('div', m('p', "Preprocess failed."),
+                              m('p', '(p: 2)')),
+                     "Failed to load basic data.",
+                     true,
+                     "Reload Page",
+                     false,
+                     locationReload);
+            // endsession();
+            return;
         }
     }
 
 
-    // console.log("is this preprocess?")
-    // console.log(res);
-    // console.log(preprocess);
+    console.log("is this preprocess?")
+    console.log(res);
+    console.log(preprocess);
 
-    // 9. Build allNodes[] using preprocessed information
-    // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
-    // such as setx values (if the user has selected them) and pebble coordinates
+    /**
+     * 9. Build allNodes[] using preprocessed information
+     * contains all the preprocessed data we have for the variable,
+     * as well as UI data pertinent to that variable,
+     *
+     * such as setx values (if the user has selected them) and pebble coordinates
+     **/
+     console.log('---------------------------------------');
+     console.log("-- 9. Build allNodes[] using preprocessed information --");
+
     setValueKey(Object.keys(preprocess));
     setAllNodes(valueKey.map((variable, i) => jQuery.extend(true, {
         id: i,
@@ -1133,15 +1288,33 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         forefront: false
     }, preprocess[variable])));
 
-    // 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN)
+    /**
+     * 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN)
+     */
+    console.log('---------------------------------------');
+    console.log("-- 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN) --");
     if(!swandive) {
-        datadocument_columns.forEach(v => findNode(v.colName).d3mDescription = v);
+        console.log('datadocument_columns: ' + JSON.stringify(datadocument_columns));
+
+        console.log('allnodes: ' + JSON.stringify(allNodes));
+
+        //datadocument_columns.forEach(v => findNode(v.colName).d3mDescription = v);
+        datadocument_columns.forEach(function(v){
+          console.log('v: ' + v);
+          console.log('v.colName: ' + v.colName);
+          findNode(v.colName).d3mDescription = v
+        });
+
         console.log("all nodes:");
         console.log(allNodes);
     }
 
-    // 10b. Call problem discovery
-    // Requires that `res` built in 8. above still exists.  Should make this better.
+    /**
+     * 10b. Call problem discovery
+     * Requires that `res` built in 8. above still exists.  Should make this better.
+     */
+    console.log('---------------------------------------');
+    console.log("-- 10b. Call problem discovery --");
     if(!swandive) {
         disco = discovery(res);
 
@@ -1156,25 +1329,21 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
     }
 
-    // 11. Call layout() and start up
+    /**
+     * 11. Call layout() and start up
+     */
+    console.log('---------------------------------------');
+    console.log('-- 11. Call layout() and start up --');
     layout(false, true);
     IS_D3M_DOMAIN ? zPop() : dataDownload();
 
-    manipulations['defaultProblem'] = [];
-    defaultProblem = {
-        problemID: 'defaultProblem',
-        system: 'auto',
-        description: 'default dataset configuration from datasetDoc.json',
-        target: zparams.zdv[0],
-        predictors: [...zparams.zgroup1],
-        get pipeline() {return manipulations['defaultProblem']},
-        metric: 'meanSquaredError',
-        model: 'modelUndefined',
-        task: findNode(zparams.zdv[0]).plottype === "bar" ? 'classification' : 'regression',
-        subTask: 'taskSubtypeUndefined',
-        meaningful: false
-    };
+    defaultProblem.predictors = [...zparams.zgroup1];
     disco.unshift(defaultProblem);
+
+    /**
+     * Note: mongodb data retrieval initiated here
+     *   setSelectedProblem -> loadMenu (manipulate.js) -> getData (manipulate.js)
+     */
     setSelectedProblem(getProblemCopy(defaultProblem));
 
     setTimeout(loadResult, 10000);
@@ -2573,9 +2742,7 @@ function CreatePipelineData(predictors, depvar, aux) {
 // Update of old CreatePipelineData function that creates problem definition for SearchSolutions call.
 function CreateProblemDefinition(depvar, aux) {
 
-    let targetFeatures = [{ 'resource_id': "0", 'feature_name': depvar[0] }];    // not presently being used in this function
-    let my_target = depvar[0];
-
+    let resourceIdFromProblemDoc = d3mProblemDescription.firstTarget.resID;
 
     if(typeof aux==="undefined") { //default behavior for creating pipeline data
         let problem = {
@@ -2587,14 +2754,17 @@ function CreateProblemDefinition(depvar, aux) {
             taskSubtype: d3mTaskSubtype[d3mProblemDescription.taskSubtype][1],
             performanceMetrics: [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ]  // need to generalize to case with multiple metrics.  only passes on first presently.
         };
+
+        if (d3mProblemDescription.taskSubtype === 'taskSubtypeUndefined') delete problem.taskSubtype;
         let inputs =  [
             {
                 datasetId: datadocument.about.datasetID,
                 targets: [
                     {
-                        resourceId: '0',
-                        columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
-                        columnName: my_target
+                        //resourceId: '0', # 'learningData in aug datasets'
+                        resourceId: resourceIdFromProblemDoc,
+                        columnIndex: valueKey.indexOf(depvar[0]),  // Adjusted to match dataset doc
+                        columnName: depvar[0]
                     }
                 ]}];
 
@@ -2602,12 +2772,12 @@ function CreateProblemDefinition(depvar, aux) {
     } else { //creating pipeline data for problem discovery using aux inputs from disco line
 
         let problem = {
-            id: aux.problem_id,
+            id: aux.problemID,
             version: '1.0',
-            name: aux.problem_id,
+            name: aux.problemID,
             description: aux.description,
             taskType: d3mTaskType[aux.task][1],
-            taskSubtype: 'TASK_SUBTYPE_UNDEFINED',
+            // taskSubtype: 'TASK_SUBTYPE_UNDEFINED',
             performanceMetrics: [{metric: d3mMetrics[aux.metric][1]}]  // need to generalize to case with multiple metrics.  only passes on first presently.
         };
         let inputs =  [
@@ -2615,8 +2785,8 @@ function CreateProblemDefinition(depvar, aux) {
                 datasetId: datadocument.about.datasetID,
                 targets: [
                     {
-                        resourceId: '0',
-                        columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        resourceId: resourceIdFromProblemDoc,
+                        columnIndex: valueKey.indexOf(my_target),  // Adjusted to match dataset doc
                         columnName: my_target
                     }
                 ]}];
@@ -2627,11 +2797,15 @@ function CreateProblemDefinition(depvar, aux) {
 
 // Create a problem description that follows the Problem Schema, for the Task 1 output.
 function CreateProblemSchema(aux){
+
+
+    let resourceIdFromDatasetDoc = datadocument.dataResources[0].resID;
+
     let my_target = aux.target;
 
     let my_about = {
-        problemID: aux.problem_id,
-        problemName: aux.problem_id,
+        problemID: aux.problemID,
+        problemName: aux.problemID,
         problemDescription: aux.description,
         taskType: d3mTaskType[aux.task][1],
         problemVersion: '1.0',
@@ -2643,8 +2817,8 @@ function CreateProblemSchema(aux){
                 datasetId: datadocument.about.datasetID,
                 targets: [
                     {
-                        resourceId: '0',
-                        columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        resourceId: resourceIdFromDatasetDoc,
+                        columnIndex: valueKey.indexOf(my_target),  // Adjusted to match dataset doc
                         columnName: my_target
                     }
                 ]}],
@@ -2675,7 +2849,16 @@ function CreatePipelineDefinition(predictors, depvar, timeBound, aux) {
     //console.log(my_problem);
     let my_dataseturi = 'file://' + datasetdocurl;
     // console.log(my_dataseturi);
-    return {userAgent: my_userAgent, version: my_version, timeBound: my_timeBound, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, template: my_template, inputs: [{dataset_uri: my_dataseturi}] };
+    return {
+        userAgent: my_userAgent,
+        version: my_version,
+        timeBound: my_timeBound,
+        priority: 1,
+        allowedValueTypes: my_allowedValueTypes,
+        problem: my_problem,
+        template: my_template,
+        inputs: [{dataset_uri: my_dataseturi}]
+    };
 }
 
 
@@ -2699,7 +2882,7 @@ export function getFitSolutionDefaultParameters(datasetDocUrl){
   let my_exposeOutputs = ['outputs.0'];
 
   let my_exposeValueTypes = ['CSV_URI'];
-  let my_users = [{id: 'TwoRavens', choosen: false, reason: ''}];
+  let my_users = [{id: 'TwoRavens', chosen: false, reason: ''}];
   return {
       inputs: my_inputs,
       exposeOutputs: my_exposeOutputs,
@@ -2728,12 +2911,12 @@ export function getFitSolutionDefaultParameters(datasetDocUrl){
 //     "users": [
 //         {
 //             "id": "uuid of user",
-//             "choosen": true,
+//             "chosen": true,
 //             "reason": "best solution"
 //         },
 //         {
 //             "id": "uuid of user",
-//             "choosen": false,
+//             "chosen": false,
 //             "reason": ""
 //         }
 //     ]
@@ -2787,8 +2970,12 @@ function getScoreSolutionDefaultParameters(datasetDocUrl){
   let my_dataseturi = 'file://' + datasetDocUrl;
   let my_inputs = [{dataset_uri: my_dataseturi}];
   let my_performanceMetrics = [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ];  // need to generalize to case with multiple metrics.  only passes on first presently.;
-  let my_users = [{id: 'TwoRavens', choosen: false, reason: ""}];
-  let my_configuration = {method: 'HOLDOUT', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
+  let my_users = [{id: 'TwoRavens', chosen: false, reason: ""}];
+
+  // let my_configuration = {method: 'HOLDOUT', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
+
+  // note: FL only using KFOLD in latest iteration (3/8/2019)
+  let my_configuration = {method: 'K_FOLD', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
 
   return {inputs: my_inputs, performanceMetrics: my_performanceMetrics, users: my_users, configuration: my_configuration};
 
@@ -2810,6 +2997,15 @@ export function downloadIncomplete() {
 export async function estimate() {
     resultsProblem = getProblemCopy(selectedProblem);
     disco.unshift(resultsProblem);
+
+    Object.assign(d3mProblemDescription, {
+        taskType: resultsProblem.task,
+        taskSubtype: resultsProblem.subTask,
+        id: resultsProblem.problemID,
+        name: resultsProblem.name || '',
+        description: resultsProblem.description || '',
+        performanceMetrics: [{metric: resultsProblem.metric}]
+    });
 
     if (!IS_D3M_DOMAIN){
         // let userUsg = 'This code path is no longer used.  (Formerly, it used Zelig.)';
@@ -2908,8 +3104,9 @@ export async function estimate() {
             estimateLadda.stop();
         } else {
             ROOKPIPE_FROM_REQUEST.predictors && setxTable(ROOKPIPE_FROM_REQUEST.predictors);
+            let searchTimeLimit = 5;
             let searchSolutionParams = CreatePipelineDefinition(ROOKPIPE_FROM_REQUEST.predictors,
-                ROOKPIPE_FROM_REQUEST.depvar,10);
+                ROOKPIPE_FROM_REQUEST.depvar,searchTimeLimit);
 
             let hasManipulation = resultsProblem.problemID in manipulations && manipulations[resultsProblem.problemID].length > 0;
             let hasNominal = [resultsProblem.target, ...resultsProblem.predictors]
@@ -2927,6 +3124,8 @@ export async function estimate() {
 
             makeRequest(ROOK_SVC_URL + 'solverapp', {prob: resultsProblem, dataset_path: datasetPath})
                 .then(response => {
+                    if ('warning' in response)
+                        return;
                     let ravenID = 'raven ' + ravenPipelineID++;
                     ravenPipelineInfo[ravenID] = response;
                     if (selectedPipelines.size === 0) setSelectedPipeline(ravenID);
@@ -2945,7 +3144,6 @@ export async function estimate() {
             if (res===undefined){
               handleENDGetSearchSolutionsResults();
               alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
-
               return;
             }else if(!res.success){
               handleENDGetSearchSolutionsResults();
@@ -3083,7 +3281,7 @@ export async function makeRequest(url, data) {
         res = await m.request(url, {method: 'POST', data: data});
         // console.log('response:', res);
         if (Object.keys(res)[0] === 'warning') {
-            alertWarn('Warning: ' + res.warning);
+            // alertWarn('Warning: ' + res.warning);
             end_ta3_search(false, res.warning);
         }
     } catch(err) {
@@ -3547,8 +3745,9 @@ export async function endsession() {
 
     let chosenSolutionId = allPipelineInfo[[...selectedPipelines][0]].response.solutionId;
 
-    // calling exportpipeline
-    let end = await exportpipeline(chosenSolutionId);
+    // calling exportSolution
+    //
+    let end = await exportSolution(chosenSolutionId);
 
    // makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
     //let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
@@ -3822,33 +4021,41 @@ export function setxTable(features) {
 
 /**
   rpc SolutionExport (SolutionExportRequest) returns (SolutionExportResponse) {}
+
+   Example call:
+  {
+       "fittedSolutionId": "solutionId_gtk2c2",
+       "rank": 0.122
+       "searchId": "17"
+  }
+
+  Note: "searchId" is not part of the gRPC call but used for server
+        side tracking.
+
 */
-
-// Example call:
-// {
-//     "fittedSolutionId": "solutionId_gtk2c2",
-//     "rank": 0.122
-// }
-
-
-export async function exportpipeline(pipelineId) {
+export async function exportSolution(solutionId) {
     exportCount++;
     let res;
     let my_rank = 1.01 - 0.01 * exportCount;   // ranks always gets smaller each call
 
-    let params = {pipelineId: pipelineId, rank: my_rank};
-    res = await makeRequest(D3M_SVC_URL + '/SolutionExport2', params);
+    let params = {solutionId: solutionId,
+                  rank: my_rank,
+                  searchId: (allsearchId.length) ? allsearchId[0] : null};
+    res = await makeRequest(D3M_SVC_URL + '/SolutionExport3', params);
 
-    // we need standardized status messages...
-    let mystatus = res.status;
     console.log(res);
-    if (typeof mystatus !== 'undefined') {
-        if(mystatus.code=="FAILED_PRECONDITION") {
-            console.log("TA2 has not written the executable.");    // was alert(), but testing on NIST infrastructure suggests these are getting written but triggering alert.
-        }else{
-            console.log(`Executable for solution ${pipelineId} with fittedsolution ${finalFittedId} has been written`);
-        }
+    if (typeof res === 'undefined') {
+        console.log('Failed to write executable for solutionId:' + solutionId);
+        return res;
     }
+
+    if (res.success === false) {
+        // console.log('Successful Augment.  Try to reload now!!');
+        console.log(msg_data.message);
+        setModal(res.message,
+                 "Solution export failed", true, false, false, locationReload);
+    }
+
     return res;
 }
 
@@ -4162,6 +4369,7 @@ export let resultsProblem;
 export let selectedProblem;
 
 export function setSelectedProblem(problem) {
+    console.log('-- setSelectedProblem --')
     if (typeof problem === 'string') problem = disco.find(prob => prob.problemID === problem);
     if (!problem || selectedProblem === problem) return;
 
@@ -4492,6 +4700,8 @@ function primitiveStepRemoveColumns (aux) {
     return {primitive:step};
 }
 
+
+
 /**
   Handle a websocket sent GetSearchSolutionResultsResponse
   wrapped in a StoredResponse object
@@ -4651,6 +4861,111 @@ async function handleENDGetSearchSolutionsResults(){
 
   // stop the interval process
 }
+
+export function xhandleAugmentDataMessage(msg_data){
+
+  if (!msg_data) {
+      console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
+      return;
+  }
+  if (msg_data.success === true) {
+      console.log('Successful Augment.  Try to reload now!!');
+      console.log(msg_data.user_message);
+
+      setModal("Successful data augmentation. Please reload the page. ",
+               "Data Augmentation", true, "Reload", false, locationReload);
+
+      return
+  }
+
+  setModal("Data augmentation error: " + msg_data.user_message,
+           "Data Augmentation Failed", true, "Close", true);
+
+}
+
+/**
+ * handleMaterializeDataMessage()
+ *  - Processes a websocket message based on clicking Datamart "Preview"
+ *  - On success, displays a modal window with a preview of the data.
+ *  - Example of successful response:
+ *  {
+       "msg_type":"DATAMART_MATERIALIZE_PROCESS",
+       "timestamp":"2019-03-12T10:50:06",
+       "success":true,
+       "user_message":"The dataset has been materialized",
+       "data":{
+          "datamart_id":"287260000",
+          "data_path":"/ravens_volume/test_output/185_baseball/additional_inputs/materialize/287260000/materialize/learningData.csv",
+          "filesize":2114303,
+          "metadata_path":null,
+          "data_preview":"source,subject_label,category,prop_value,value_label\nhttp://www.wikidata.org/entity/Q5661707,Harold McCarthy,human,http://www.wikidata.org/entity/Q82133,Bodleian Library
+          human,http://www.wikidata.org/entity/Q148554,National Museum of Natural History\n [TRUNCATED - GIVES UP TO 100 PREVIEW ROWS]",
+      "metadata":null
+       }
+    }
+ */
+export function handleMaterializeDataMessage(msg_data){
+
+  if (!msg_data) {
+      console.log('handleMaterializeDataMessage: Error.  "msg_data" undefined');
+      return;
+  }
+  if (msg_data.success === false) {
+    setModal("Data preview error: " + msg_data.user_message,
+             "Data materialization Failed", true, "Close", true);
+    return;
+  }
+
+  console.log('datamart_id: ' + msg_data.data.datamart_id);
+  console.log('filesize: ' + msg_data.data.filesize);
+
+  // Save the data in the datamartPreferences object
+  //
+  const previewDatamartId = msg_data.data.datamart_id;
+  datamartPreferences.cached[previewDatamartId] = msg_data.data;
+
+  // Format the data_preview
+  //
+  datamartPreferences.cached[previewDatamartId].data_preview =   datamartPreferences.cached[previewDatamartId].data_preview.split('\n').map(line => line.split(','));
+
+  // Set the modal type
+  datamartPreferences.modalShown = 'preview';
+
+  // Set user message
+  const userMsg = 'File preview complete.'
+  datamartPreferences.success[msg_data.data.source_mode] = userMsg;
+
+  // Refresh the display
+  m.redraw();
+
+
+} // end handleMaterializeDataMessage
+
+export function handleAugmentDataMessage(msg_data){
+
+  if (!msg_data) {
+      console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
+      return;
+  }
+
+  // Hide the modal
+  datamartPreferences.modalShown = undefined;
+
+  if (msg_data.success === false) {
+    setModal("Error: " + msg_data.user_message,
+             "Data Augmentation Failed", true, "Close", true);
+    return;
+  }
+
+  setModal("Success: " + msg_data.user_message,
+           "Data Augmentation Succeeded!", true, "Reload", false, locationReload);
+
+
+  // console.log('datamart_id: ' + msg_data.data.datamart_id);
+  // console.log('filesize: ' + msg_data.data.filesize);
+
+} // end: handleAugmentDataMessage
+
 
 export function loadResult(my_disco) {
     (my_disco || disco).forEach((problem, i) => {

@@ -1,4 +1,5 @@
 import json
+import logging
 
 from django.conf import settings
 from django.shortcuts import render
@@ -6,13 +7,15 @@ from django.db import IntegrityError
 from django.http import \
     (JsonResponse, HttpResponse)
 from django.views.decorators.csrf import csrf_exempt
+
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
      get_json_error,
      get_json_success,
      get_common_view_info)
 from tworaven_apps.utils.json_helper import format_pretty_from_dict, json_comply
-
+from tworaven_apps.utils.view_helper import \
+    (get_authenticated_user,)
 from tworaven_apps.eventdata_queries.event_job_util import EventJobUtil
 from tworaven_apps.eventdata_queries.forms import \
     (EventDataSavedQueryForm,
@@ -22,6 +25,8 @@ from tworaven_apps.eventdata_queries.forms import \
 from tworaven_apps.eventdata_queries.models import \
     (EventDataSavedQuery,
      SEARCH_PARAMETERS, SEARCH_KEY_NAME, SEARCH_KEY_DESCRIPTION)
+
+LOGGER = logging.getLogger(__name__)
 
 
 def view_eventdata_api_info(request):
@@ -421,21 +426,46 @@ def api_get_metadata(request):
 
 @csrf_exempt
 def api_get_data(request):
-    """Retrieve data MongoDB"""
+    """Retrieve data from MongoDB
+    Example input:
+      {
+        "datafile": "/ravens_volume/test_data/196_autoMpg/TRAIN/dataset_TRAIN/tables/learningData.csv",
+        "collection_name": "196_ag_dataset_TRAIN",
+        "method": "aggregate",
+        "query": "[{\"$count\":\"total\"}]"
+      }
+
+    """
+    LOGGER.info('--- api_get_data: Retrieve data from MongoDB ---')
+
     success, json_req_obj = get_request_body_as_json(request)
 
+    #import json
+    #print('json_req_obj', json.dumps(json_req_obj, indent=4))
     if not success:
         return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
 
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    user_obj = user_info.result_obj
+
     # check if data is valid
+    #
     try:
         form = EventDataGetManipulationForm(json_req_obj)
         if not form.is_valid():
-            return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
-    except json.decoder.JSONDecodeError as err:
-        return JsonResponse({"success": False, "message": str(err)})
+            err_info = get_json_error("invalid_input",
+                                      errors=form.errors.as_json())
+            return JsonResponse(err_info)
+    except json.decoder.JSONDecodeError as err_obj:
+        return JsonResponse(get_json_error('JSONDecodeError: %s' % (err_obj)))
 
     # ensure the dataset is present
+    #
+    LOGGER.info('--- api_get_data: ensure the dataset is present ---')
+    #
     EventJobUtil.import_dataset(
         settings.TWORAVENS_MONGO_DB_NAME,
         json_req_obj['collection_name'],
@@ -443,6 +473,9 @@ def api_get_data(request):
         reload=json_req_obj.get('reload', None))
 
     # apply the manipulations
+    #
+    LOGGER.info('--- api_get_data: apply any manipulations ---')
+    #
     success, results_obj_err = EventJobUtil.get_data(
         settings.TWORAVENS_MONGO_DB_NAME,
         settings.MONGO_COLLECTION_PREFIX + json_req_obj['collection_name'],
@@ -454,17 +487,24 @@ def api_get_data(request):
         return JsonResponse(get_json_error(results_obj_err))
 
     if json_req_obj.get('export') == 'dataset':
-        success, results_obj_err = EventJobUtil.export_dataset(
+        success, results_obj_err = EventJobUtil.export_dataset(\
+            user_obj,
             settings.MONGO_COLLECTION_PREFIX + json_req_obj['collection_name'],
             results_obj_err)
 
     if json_req_obj.get('export') == 'problem':
-        success, results_obj_err = EventJobUtil.export_problem(
+        success, results_obj_err = EventJobUtil.export_problem(\
+            user_obj,
             results_obj_err,
             json.loads(json_req_obj['metadata']))
 
-    return JsonResponse(
-        {'success': success, 'data': json_comply(results_obj_err)} if success else get_json_error(results_obj_err))
+    if not success:
+        return JsonResponse(get_json_error(results_obj_err))
+
+    LOGGER.info('--- api_get_data: returning data... ---')
+    return JsonResponse(\
+                get_json_success('it worked',
+                                 data=json_comply(results_obj_err)))
 
 
 @csrf_exempt

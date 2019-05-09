@@ -14,7 +14,9 @@
         "datasetID": "Resource_Curse_dataset",
         "targets": [
           {
-            "colIndex": 19,
+            "targetIndex": 0,
+            "resID": "0",
+            "colIndex": 18,
             "colName": "chwars"
           }
         ]

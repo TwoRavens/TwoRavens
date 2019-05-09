@@ -6,10 +6,11 @@ from tworaven_apps.ta2_interfaces.basic_problem_writer import BasicProblemWriter
 from tworaven_apps.ta2_interfaces.static_vals import KEY_DATA
 from tworaven_apps.utils import random_info
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
-from tworaven_apps.configurations.utils import \
-    (get_latest_d3m_config,)
+from tworaven_apps.user_workspaces.utils import \
+    (get_latest_d3m_user_config,)
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
+
 
 class UtilDataWriter(BasicErrCheck):
     """
@@ -17,11 +18,11 @@ class UtilDataWriter(BasicErrCheck):
     (2) Converted to .csv
     (3) Saved in the "temp_storage_root" as specified in the search_config.json
     """
-    def __init__(self, json_data, filename=None):
+    def __init__(self, user_obj, json_data, filename=None):
         """
         json_data - look for "data" key
         """
-
+        self.user_obj = user_obj
         self.filename = filename
         self.json_data = json_data
         self.write_directory = None
@@ -87,7 +88,8 @@ class UtilDataWriter(BasicErrCheck):
         Use the BasicProblemWriter to write the file
         """
         params = dict(write_directory=self.write_directory)
-        bpw = BasicProblemWriter(self.filename,
+        bpw = BasicProblemWriter(self.user_obj,
+                                 self.filename,
                                  self.csv_data,
                                  **params)
 
@@ -104,14 +106,15 @@ class UtilDataWriter(BasicErrCheck):
         """
         Create a subdirectory under temp_storage_root
         """
-        d3m_config = get_latest_d3m_config()
-        if not d3m_config:
+        d3m_config_info = get_latest_d3m_user_config(self.user_obj)
+        if not d3m_config_info.success:
             user_msg = ('Couldn\'t create directory.'
                         ' No D3M config available to'
                         ' get the temp_storage_root')
             self.add_error_message(user_msg)
             return
 
+        d3m_config = d3m_config_info.result_obj
         if not d3m_config.temp_storage_root:
             user_msg = ('Couldn\'t create directory.'
                         ' No temp_storage_root in the D3M config')

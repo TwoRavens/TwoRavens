@@ -100,7 +100,7 @@ class MongoRetrieveUtil(BasicErrCheck):
                     elif '$date' in query[key]:
                         if isinstance(query[key]['$date'], dict) \
                             and host == 'UTDallas':
-                            query[key]['$date'] = '$date(%s)' % (query[key]['$date'],)#query[key] = '$date(%s)' % (query[key]['$date'],) # attempt to work with this: https://github.com/Sayeedsalam/spec-event-data-server/blob/920c6b83f121587cfeedbb34516a1b8213ec6092/app_v2.py#L125
+                            query[key]['$date'] = '$date(%s)' % (query[key]['$date'],) # attempt to work with this: https://github.com/Sayeedsalam/spec-event-data-server/blob/920c6b83f121587cfeedbb34516a1b8213ec6092/app_v2.py#L125
                         if type(query[key]['$date']) is dict \
                             and '$numberLong' in query[key]['$date']:
                             query[key] = datetime.fromtimestamp(Int64(query[key]['$numberLong']))

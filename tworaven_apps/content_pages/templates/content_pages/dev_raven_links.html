@@ -45,8 +45,17 @@
               <li><a href="{% url 'view_show_pipeline_steps' %}">Pipeline steps from DescribeSolution</a>
                 <br />(Note: May have stale data. To clear it:
                 <br /><code>fab clear_ta2_stored_requests</code>)</li>
+            </ul>
+            <hr />
+            <ul>
+              <li><a href="{% url 'view_grpc_stored_history_no_id' %}">
+                gRPC search history page</a></li>
+              <li><a href="{% url 'view_grpc_search_history_json_no_id' %}">
+                gRPC search history JSON</a></li>
+              {#<li><a href="{% url 'view_clear_grpc_stored_history' %}">  caution: Erases all saved gRPC calls</a></li>#}
 
             </ul>
+
         </div>
       </div>
       <br />
@@ -89,9 +98,16 @@
 
       <!-- D3M config info -->
       <div class="card">
-        <div class="card-header"><b>D3M config info</b></div>
+        <div class="card-header"><b>D3M config info / User Workspaces</b></div>
         <div class="card-body">
           <ul>
+            <li><b>Current User Workspaces</b>
+              <ul>
+                <li>Workspaces configs: <a href="{% url 'view_latest_user_configs' %}?pretty">view</a></li>
+                <li>Reset workspaces configs: <a href="{% url 'view_reset_user_configs' %}?pretty">view</a></li>
+                <li><a href="{% url 'clear_user_workspaces' %}">Clear user workspaces + return to pebbles page</a></li>
+              </ul>
+
             <li><a href="{% url 'view_d3m_list' %}">
                   D3M configs in the database</a>
                   <p>Includes API endpoints to retrieve JSON config info,

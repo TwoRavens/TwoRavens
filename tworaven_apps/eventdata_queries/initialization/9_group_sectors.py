@@ -32,7 +32,7 @@ for collection in db.collection_names():
             remap = json.load(infile)
 
         def combine(text):
-            return ','.join(sorted(set([remap[x] for x in text.split(',') if x in remap])))
+            return ','.join(sorted(set(remap[x] for x in text.split(',') if x in remap)))
 
         query = {"$or": [{outcol: {"$exists": 0}} for col, outcol in zip(columns, outcolumns)]}
 
@@ -53,7 +53,7 @@ for collection in db.collection_names():
             remap = json.load(infile)
 
         def combine(text):
-            return ','.join(sorted(set([y for x in text.split(';') if x in remap for y in remap[x]])))
+            return ','.join(sorted(set(y for x in text.split(';') if x in remap for y in remap[x])))
 
         query = {"$or": [{outcol: {"$exists": 0}} for outcol in outcolumns]}
 

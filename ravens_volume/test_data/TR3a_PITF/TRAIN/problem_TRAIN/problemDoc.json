@@ -14,7 +14,9 @@
         "datasetID": "Forecasting_Political_Instability_dataset",
         "targets": [
           {
-            "colIndex": 2,
+            "targetIndex": 0,
+            "resID": "0",
+            "colIndex": 1,
             "colName": "sftpcons"
           }
         ]

@@ -50,6 +50,13 @@ TEST_KEY_FILE_URI = 'FILE_URI'
 D3M_OUTPUT_DIR = '/output'
 
 # ------------------------------------------
+# gRPC call types
+# ------------------------------------------
+SEARCH_SOLUTIONS = 'SearchSolutions'
+GET_SEARCH_SOLUTIONS_RESULTS = 'GetSearchSolutionsResults'
+SOLUTION_EXPORT = 'SolutionExport'
+
+# ------------------------------------------
 # params sent from the UI
 # ------------------------------------------
 ENDGetSearchSolutionsResults = 'ENDGetSearchSolutionsResults'
@@ -59,7 +66,7 @@ KEY_FIT_SOLUTION_DEFAULT_PARAMS = 'fitSolutionDefaultParams'
 KEY_SCORE_SOLUTION_DEFAULT_PARAMS = 'scoreSolutionDefaultParams'
 KEY_PRODUCE_SOLUTION_DEFAULT_PARAMS = 'produceSolutionDefaultParams'
 
-REQUIRED_INPUT_KEYS = [(KEY_SEARCH_SOLUTION_PARAMS, 'SearchSolutions'),
+REQUIRED_INPUT_KEYS = [(KEY_SEARCH_SOLUTION_PARAMS, SEARCH_SOLUTIONS),
                        (KEY_FIT_SOLUTION_DEFAULT_PARAMS, 'FitSolution'),
                        (KEY_PRODUCE_SOLUTION_DEFAULT_PARAMS, 'ProduceSolution'),
                        (KEY_SCORE_SOLUTION_DEFAULT_PARAMS, 'ScoreSolution')]

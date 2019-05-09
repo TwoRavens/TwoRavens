@@ -1,0 +1,769 @@
+{
+   "source":"ISI",
+   "search_result":{
+      "summary":" - Most Recent Cohorts Scorecard Elements -\n    * Datamart ID: 291780000\n    * Score: 20.522137\n    * Description: scorecard\n    * URL: https://ed-public-download.app.cloud.gov/downloads/Most-Recent-Cohorts-Scorecard-Elements.csv\n    * Columns: \n\t[0] UNITID \n\t[1] OPEID \n\t[2] OPEID6 \n\t[3] INSTNM \n\t[4] CITY \n\t ... \n\t[119] GRAD_DEBT_MDN_SUPP \n\t[120] GRAD_DEBT_MDN10YR_SUPP \n\t[121] RPY_3YR_RT_SUPP \n\t[122] C150_L4_POOLED_SUPP \n\t[123] C150_4_POOLED_SUPP \n    * Recommend Join Columns: None\n        ",
+      "score":20.522137,
+      "metadata":{
+         "variables":[
+            {
+               "name":"UNITID",
+               "description":"column name: UNITID, dtype: int64",
+               "datamart_id":291780001
+            },
+            {
+               "name":"OPEID",
+               "description":"column name: OPEID, dtype: int64",
+               "datamart_id":291780002
+            },
+            {
+               "name":"OPEID6",
+               "description":"column name: OPEID6, dtype: int64",
+               "datamart_id":291780003
+            },
+            {
+               "name":"INSTNM",
+               "description":"column name: INSTNM, dtype: object",
+               "datamart_id":291780004
+            },
+            {
+               "name":"CITY",
+               "description":"column name: CITY, dtype: object",
+               "datamart_id":291780005
+            },
+            {
+               "name":"STABBR",
+               "description":"column name: STABBR, dtype: object",
+               "datamart_id":291780006
+            },
+            {
+               "name":"INSTURL",
+               "description":"column name: INSTURL, dtype: object",
+               "datamart_id":291780007
+            },
+            {
+               "name":"NPCURL",
+               "description":"column name: NPCURL, dtype: object",
+               "datamart_id":291780008
+            },
+            {
+               "name":"HCM2",
+               "description":"column name: HCM2, dtype: int64",
+               "datamart_id":291780009
+            },
+            {
+               "name":"PREDDEG",
+               "description":"column name: PREDDEG, dtype: int64",
+               "datamart_id":291780010
+            },
+            {
+               "name":"HIGHDEG",
+               "description":"column name: HIGHDEG, dtype: int64",
+               "datamart_id":291780011
+            },
+            {
+               "name":"CONTROL",
+               "description":"column name: CONTROL, dtype: int64",
+               "datamart_id":291780012
+            },
+            {
+               "name":"LOCALE",
+               "description":"column name: LOCALE, dtype: float64",
+               "datamart_id":291780013
+            },
+            {
+               "name":"HBCU",
+               "description":"column name: HBCU, dtype: float64",
+               "datamart_id":291780014
+            },
+            {
+               "name":"PBI",
+               "description":"column name: PBI, dtype: float64",
+               "datamart_id":291780015
+            },
+            {
+               "name":"ANNHI",
+               "description":"column name: ANNHI, dtype: float64",
+               "datamart_id":291780016
+            },
+            {
+               "name":"TRIBAL",
+               "description":"column name: TRIBAL, dtype: float64",
+               "datamart_id":291780017
+            },
+            {
+               "name":"AANAPII",
+               "description":"column name: AANAPII, dtype: float64",
+               "datamart_id":291780018
+            },
+            {
+               "name":"HSI",
+               "description":"column name: HSI, dtype: float64",
+               "datamart_id":291780019
+            },
+            {
+               "name":"NANTI",
+               "description":"column name: NANTI, dtype: float64",
+               "datamart_id":291780020
+            },
+            {
+               "name":"MENONLY",
+               "description":"column name: MENONLY, dtype: float64",
+               "datamart_id":291780021
+            },
+            {
+               "name":"WOMENONLY",
+               "description":"column name: WOMENONLY, dtype: float64",
+               "datamart_id":291780022
+            },
+            {
+               "name":"RELAFFIL",
+               "description":"column name: RELAFFIL, dtype: float64",
+               "datamart_id":291780023
+            },
+            {
+               "name":"SATVR25",
+               "description":"column name: SATVR25, dtype: float64",
+               "datamart_id":291780024
+            },
+            {
+               "name":"SATVR75",
+               "description":"column name: SATVR75, dtype: float64",
+               "datamart_id":291780025
+            },
+            {
+               "name":"SATMT25",
+               "description":"column name: SATMT25, dtype: float64",
+               "datamart_id":291780026
+            },
+            {
+               "name":"SATMT75",
+               "description":"column name: SATMT75, dtype: float64",
+               "datamart_id":291780027
+            },
+            {
+               "name":"SATWR25",
+               "description":"column name: SATWR25, dtype: float64",
+               "datamart_id":291780028
+            },
+            {
+               "name":"SATWR75",
+               "description":"column name: SATWR75, dtype: float64",
+               "datamart_id":291780029
+            },
+            {
+               "name":"SATVRMID",
+               "description":"column name: SATVRMID, dtype: float64",
+               "datamart_id":291780030
+            },
+            {
+               "name":"SATMTMID",
+               "description":"column name: SATMTMID, dtype: float64",
+               "datamart_id":291780031
+            },
+            {
+               "name":"SATWRMID",
+               "description":"column name: SATWRMID, dtype: float64",
+               "datamart_id":291780032
+            },
+            {
+               "name":"ACTCM25",
+               "description":"column name: ACTCM25, dtype: float64",
+               "datamart_id":291780033
+            },
+            {
+               "name":"ACTCM75",
+               "description":"column name: ACTCM75, dtype: float64",
+               "datamart_id":291780034
+            },
+            {
+               "name":"ACTEN25",
+               "description":"column name: ACTEN25, dtype: float64",
+               "datamart_id":291780035
+            },
+            {
+               "name":"ACTEN75",
+               "description":"column name: ACTEN75, dtype: float64",
+               "datamart_id":291780036
+            },
+            {
+               "name":"ACTMT25",
+               "description":"column name: ACTMT25, dtype: float64",
+               "datamart_id":291780037
+            },
+            {
+               "name":"ACTMT75",
+               "description":"column name: ACTMT75, dtype: float64",
+               "datamart_id":291780038
+            },
+            {
+               "name":"ACTWR25",
+               "description":"column name: ACTWR25, dtype: float64",
+               "datamart_id":291780039
+            },
+            {
+               "name":"ACTWR75",
+               "description":"column name: ACTWR75, dtype: float64",
+               "datamart_id":291780040
+            },
+            {
+               "name":"ACTCMMID",
+               "description":"column name: ACTCMMID, dtype: float64",
+               "datamart_id":291780041
+            },
+            {
+               "name":"ACTENMID",
+               "description":"column name: ACTENMID, dtype: float64",
+               "datamart_id":291780042
+            },
+            {
+               "name":"ACTMTMID",
+               "description":"column name: ACTMTMID, dtype: float64",
+               "datamart_id":291780043
+            },
+            {
+               "name":"ACTWRMID",
+               "description":"column name: ACTWRMID, dtype: float64",
+               "datamart_id":291780044
+            },
+            {
+               "name":"SAT_AVG",
+               "description":"column name: SAT_AVG, dtype: float64",
+               "datamart_id":291780045
+            },
+            {
+               "name":"SAT_AVG_ALL",
+               "description":"column name: SAT_AVG_ALL, dtype: float64",
+               "datamart_id":291780046
+            },
+            {
+               "name":"PCIP01",
+               "description":"column name: PCIP01, dtype: float64",
+               "datamart_id":291780047
+            },
+            {
+               "name":"PCIP03",
+               "description":"column name: PCIP03, dtype: float64",
+               "datamart_id":291780048
+            },
+            {
+               "name":"PCIP04",
+               "description":"column name: PCIP04, dtype: float64",
+               "datamart_id":291780049
+            },
+            {
+               "name":"PCIP05",
+               "description":"column name: PCIP05, dtype: float64",
+               "datamart_id":291780050
+            },
+            {
+               "name":"PCIP09",
+               "description":"column name: PCIP09, dtype: float64",
+               "datamart_id":291780051
+            },
+            {
+               "name":"PCIP10",
+               "description":"column name: PCIP10, dtype: float64",
+               "datamart_id":291780052
+            },
+            {
+               "name":"PCIP11",
+               "description":"column name: PCIP11, dtype: float64",
+               "datamart_id":291780053
+            },
+            {
+               "name":"PCIP12",
+               "description":"column name: PCIP12, dtype: float64",
+               "datamart_id":291780054
+            },
+            {
+               "name":"PCIP13",
+               "description":"column name: PCIP13, dtype: float64",
+               "datamart_id":291780055
+            },
+            {
+               "name":"PCIP14",
+               "description":"column name: PCIP14, dtype: float64",
+               "datamart_id":291780056
+            },
+            {
+               "name":"PCIP15",
+               "description":"column name: PCIP15, dtype: float64",
+               "datamart_id":291780057
+            },
+            {
+               "name":"PCIP16",
+               "description":"column name: PCIP16, dtype: float64",
+               "datamart_id":291780058
+            },
+            {
+               "name":"PCIP19",
+               "description":"column name: PCIP19, dtype: float64",
+               "datamart_id":291780059
+            },
+            {
+               "name":"PCIP22",
+               "description":"column name: PCIP22, dtype: float64",
+               "datamart_id":291780060
+            },
+            {
+               "name":"PCIP23",
+               "description":"column name: PCIP23, dtype: float64",
+               "datamart_id":291780061
+            },
+            {
+               "name":"PCIP24",
+               "description":"column name: PCIP24, dtype: float64",
+               "datamart_id":291780062
+            },
+            {
+               "name":"PCIP25",
+               "description":"column name: PCIP25, dtype: float64",
+               "datamart_id":291780063
+            },
+            {
+               "name":"PCIP26",
+               "description":"column name: PCIP26, dtype: float64",
+               "datamart_id":291780064
+            },
+            {
+               "name":"PCIP27",
+               "description":"column name: PCIP27, dtype: float64",
+               "datamart_id":291780065
+            },
+            {
+               "name":"PCIP29",
+               "description":"column name: PCIP29, dtype: float64",
+               "datamart_id":291780066
+            },
+            {
+               "name":"PCIP30",
+               "description":"column name: PCIP30, dtype: float64",
+               "datamart_id":291780067
+            },
+            {
+               "name":"PCIP31",
+               "description":"column name: PCIP31, dtype: float64",
+               "datamart_id":291780068
+            },
+            {
+               "name":"PCIP38",
+               "description":"column name: PCIP38, dtype: float64",
+               "datamart_id":291780069
+            },
+            {
+               "name":"PCIP39",
+               "description":"column name: PCIP39, dtype: float64",
+               "datamart_id":291780070
+            },
+            {
+               "name":"PCIP40",
+               "description":"column name: PCIP40, dtype: float64",
+               "datamart_id":291780071
+            },
+            {
+               "name":"PCIP41",
+               "description":"column name: PCIP41, dtype: float64",
+               "datamart_id":291780072
+            },
+            {
+               "name":"PCIP42",
+               "description":"column name: PCIP42, dtype: float64",
+               "datamart_id":291780073
+            },
+            {
+               "name":"PCIP43",
+               "description":"column name: PCIP43, dtype: float64",
+               "datamart_id":291780074
+            },
+            {
+               "name":"PCIP44",
+               "description":"column name: PCIP44, dtype: float64",
+               "datamart_id":291780075
+            },
+            {
+               "name":"PCIP45",
+               "description":"column name: PCIP45, dtype: float64",
+               "datamart_id":291780076
+            },
+            {
+               "name":"PCIP46",
+               "description":"column name: PCIP46, dtype: float64",
+               "datamart_id":291780077
+            },
+            {
+               "name":"PCIP47",
+               "description":"column name: PCIP47, dtype: float64",
+               "datamart_id":291780078
+            },
+            {
+               "name":"PCIP48",
+               "description":"column name: PCIP48, dtype: float64",
+               "datamart_id":291780079
+            },
+            {
+               "name":"PCIP49",
+               "description":"column name: PCIP49, dtype: float64",
+               "datamart_id":291780080
+            },
+            {
+               "name":"PCIP50",
+               "description":"column name: PCIP50, dtype: float64",
+               "datamart_id":291780081
+            },
+            {
+               "name":"PCIP51",
+               "description":"column name: PCIP51, dtype: float64",
+               "datamart_id":291780082
+            },
+            {
+               "name":"PCIP52",
+               "description":"column name: PCIP52, dtype: float64",
+               "datamart_id":291780083
+            },
+            {
+               "name":"PCIP54",
+               "description":"column name: PCIP54, dtype: float64",
+               "datamart_id":291780084
+            },
+            {
+               "name":"DISTANCEONLY",
+               "description":"column name: DISTANCEONLY, dtype: float64",
+               "datamart_id":291780085
+            },
+            {
+               "name":"UGDS",
+               "description":"column name: UGDS, dtype: float64",
+               "datamart_id":291780086
+            },
+            {
+               "name":"UGDS_WHITE",
+               "description":"column name: UGDS_WHITE, dtype: float64",
+               "datamart_id":291780087
+            },
+            {
+               "name":"UGDS_BLACK",
+               "description":"column name: UGDS_BLACK, dtype: float64",
+               "datamart_id":291780088
+            },
+            {
+               "name":"UGDS_HISP",
+               "description":"column name: UGDS_HISP, dtype: float64",
+               "datamart_id":291780089
+            },
+            {
+               "name":"UGDS_ASIAN",
+               "description":"column name: UGDS_ASIAN, dtype: float64",
+               "datamart_id":291780090
+            },
+            {
+               "name":"UGDS_AIAN",
+               "description":"column name: UGDS_AIAN, dtype: float64",
+               "datamart_id":291780091
+            },
+            {
+               "name":"UGDS_NHPI",
+               "description":"column name: UGDS_NHPI, dtype: float64",
+               "datamart_id":291780092
+            },
+            {
+               "name":"UGDS_2MOR",
+               "description":"column name: UGDS_2MOR, dtype: float64",
+               "datamart_id":291780093
+            },
+            {
+               "name":"UGDS_NRA",
+               "description":"column name: UGDS_NRA, dtype: float64",
+               "datamart_id":291780094
+            },
+            {
+               "name":"UGDS_UNKN",
+               "description":"column name: UGDS_UNKN, dtype: float64",
+               "datamart_id":291780095
+            },
+            {
+               "name":"PPTUG_EF",
+               "description":"column name: PPTUG_EF, dtype: float64",
+               "datamart_id":291780096
+            },
+            {
+               "name":"CURROPER",
+               "description":"column name: CURROPER, dtype: int64",
+               "datamart_id":291780097
+            },
+            {
+               "name":"NPT4_PUB",
+               "description":"column name: NPT4_PUB, dtype: float64",
+               "datamart_id":291780098
+            },
+            {
+               "name":"NPT4_PRIV",
+               "description":"column name: NPT4_PRIV, dtype: float64",
+               "datamart_id":291780099
+            },
+            {
+               "name":"NPT41_PUB",
+               "description":"column name: NPT41_PUB, dtype: float64",
+               "datamart_id":291780100
+            },
+            {
+               "name":"NPT42_PUB",
+               "description":"column name: NPT42_PUB, dtype: float64",
+               "datamart_id":291780101
+            },
+            {
+               "name":"NPT43_PUB",
+               "description":"column name: NPT43_PUB, dtype: float64",
+               "datamart_id":291780102
+            },
+            {
+               "name":"NPT44_PUB",
+               "description":"column name: NPT44_PUB, dtype: float64",
+               "datamart_id":291780103
+            },
+            {
+               "name":"NPT45_PUB",
+               "description":"column name: NPT45_PUB, dtype: float64",
+               "datamart_id":291780104
+            },
+            {
+               "name":"NPT41_PRIV",
+               "description":"column name: NPT41_PRIV, dtype: float64",
+               "datamart_id":291780105
+            },
+            {
+               "name":"NPT42_PRIV",
+               "description":"column name: NPT42_PRIV, dtype: float64",
+               "datamart_id":291780106
+            },
+            {
+               "name":"NPT43_PRIV",
+               "description":"column name: NPT43_PRIV, dtype: float64",
+               "datamart_id":291780107
+            },
+            {
+               "name":"NPT44_PRIV",
+               "description":"column name: NPT44_PRIV, dtype: float64",
+               "datamart_id":291780108
+            },
+            {
+               "name":"NPT45_PRIV",
+               "description":"column name: NPT45_PRIV, dtype: float64",
+               "datamart_id":291780109
+            },
+            {
+               "name":"PCTPELL",
+               "description":"column name: PCTPELL, dtype: float64",
+               "datamart_id":291780110
+            },
+            {
+               "name":"RET_FT4_POOLED_SUPP",
+               "description":"column name: RET_FT4_POOLED_SUPP, dtype: object",
+               "datamart_id":291780111
+            },
+            {
+               "name":"RET_FTL4_POOLED_SUPP",
+               "description":"column name: RET_FTL4_POOLED_SUPP, dtype: object",
+               "datamart_id":291780112
+            },
+            {
+               "name":"RET_PT4_POOLED_SUPP",
+               "description":"column name: RET_PT4_POOLED_SUPP, dtype: object",
+               "datamart_id":291780113
+            },
+            {
+               "name":"RET_PTL4_POOLED_SUPP",
+               "description":"column name: RET_PTL4_POOLED_SUPP, dtype: object",
+               "datamart_id":291780114
+            },
+            {
+               "name":"PCTFLOAN",
+               "description":"column name: PCTFLOAN, dtype: float64",
+               "datamart_id":291780115
+            },
+            {
+               "name":"UG25ABV",
+               "description":"column name: UG25ABV, dtype: float64",
+               "datamart_id":291780116
+            },
+            {
+               "name":"MD_EARN_WNE_P10",
+               "description":"column name: MD_EARN_WNE_P10, dtype: object",
+               "datamart_id":291780117
+            },
+            {
+               "name":"GT_25K_P6",
+               "description":"column name: GT_25K_P6, dtype: object",
+               "datamart_id":291780118
+            },
+            {
+               "name":"GT_28K_P6",
+               "description":"column name: GT_28K_P6, dtype: object",
+               "datamart_id":291780119
+            },
+            {
+               "name":"GRAD_DEBT_MDN_SUPP",
+               "description":"column name: GRAD_DEBT_MDN_SUPP, dtype: object",
+               "datamart_id":291780120
+            },
+            {
+               "name":"GRAD_DEBT_MDN10YR_SUPP",
+               "description":"column name: GRAD_DEBT_MDN10YR_SUPP, dtype: object",
+               "datamart_id":291780121
+            },
+            {
+               "name":"RPY_3YR_RT_SUPP",
+               "description":"column name: RPY_3YR_RT_SUPP, dtype: object",
+               "datamart_id":291780122
+            },
+            {
+               "name":"C150_L4_POOLED_SUPP",
+               "description":"column name: C150_L4_POOLED_SUPP, dtype: object",
+               "datamart_id":291780123
+            },
+            {
+               "name":"C150_4_POOLED_SUPP",
+               "description":"column name: C150_4_POOLED_SUPP, dtype: object",
+               "datamart_id":291780124
+            }
+         ],
+         "materialization":{
+            "python_path":"general_materializer",
+            "arguments":{
+               "index":0,
+               "url":"https://ed-public-download.app.cloud.gov/downloads/Most-Recent-Cohorts-Scorecard-Elements.csv"
+            }
+         },
+         "keywords":[
+            "UNITID",
+            "OPEID",
+            "OPEID6",
+            "INSTNM",
+            "CITY",
+            "STABBR",
+            "INSTURL",
+            "NPCURL",
+            "HCM2",
+            "PREDDEG",
+            "HIGHDEG",
+            "CONTROL",
+            "LOCALE",
+            "HBCU",
+            "PBI",
+            "ANNHI",
+            "TRIBAL",
+            "AANAPII",
+            "HSI",
+            "NANTI",
+            "MENONLY",
+            "WOMENONLY",
+            "RELAFFIL",
+            "SATVR25",
+            "SATVR75",
+            "SATMT25",
+            "SATMT75",
+            "SATWR25",
+            "SATWR75",
+            "SATVRMID",
+            "SATMTMID",
+            "SATWRMID",
+            "ACTCM25",
+            "ACTCM75",
+            "ACTEN25",
+            "ACTEN75",
+            "ACTMT25",
+            "ACTMT75",
+            "ACTWR25",
+            "ACTWR75",
+            "ACTCMMID",
+            "ACTENMID",
+            "ACTMTMID",
+            "ACTWRMID",
+            "SAT_AVG",
+            "SAT_AVG_ALL",
+            "PCIP01",
+            "PCIP03",
+            "PCIP04",
+            "PCIP05",
+            "PCIP09",
+            "PCIP10",
+            "PCIP11",
+            "PCIP12",
+            "PCIP13",
+            "PCIP14",
+            "PCIP15",
+            "PCIP16",
+            "PCIP19",
+            "PCIP22",
+            "PCIP23",
+            "PCIP24",
+            "PCIP25",
+            "PCIP26",
+            "PCIP27",
+            "PCIP29",
+            "PCIP30",
+            "PCIP31",
+            "PCIP38",
+            "PCIP39",
+            "PCIP40",
+            "PCIP41",
+            "PCIP42",
+            "PCIP43",
+            "PCIP44",
+            "PCIP45",
+            "PCIP46",
+            "PCIP47",
+            "PCIP48",
+            "PCIP49",
+            "PCIP50",
+            "PCIP51",
+            "PCIP52",
+            "PCIP54",
+            "DISTANCEONLY",
+            "UGDS",
+            "UGDS_WHITE",
+            "UGDS_BLACK",
+            "UGDS_HISP",
+            "UGDS_ASIAN",
+            "UGDS_AIAN",
+            "UGDS_NHPI",
+            "UGDS_2MOR",
+            "UGDS_NRA",
+            "UGDS_UNKN",
+            "PPTUG_EF",
+            "CURROPER",
+            "NPT4_PUB",
+            "NPT4_PRIV",
+            "NPT41_PUB",
+            "NPT42_PUB",
+            "NPT43_PUB",
+            "NPT44_PUB",
+            "NPT45_PUB",
+            "NPT41_PRIV",
+            "NPT42_PRIV",
+            "NPT43_PRIV",
+            "NPT44_PRIV",
+            "NPT45_PRIV",
+            "PCTPELL",
+            "RET_FT4_POOLED_SUPP",
+            "RET_FTL4_POOLED_SUPP",
+            "RET_PT4_POOLED_SUPP",
+            "RET_PTL4_POOLED_SUPP",
+            "PCTFLOAN",
+            "UG25ABV",
+            "MD_EARN_WNE_P10",
+            "GT_25K_P6",
+            "GT_28K_P6",
+            "GRAD_DEBT_MDN_SUPP",
+            "GRAD_DEBT_MDN10YR_SUPP",
+            "RPY_3YR_RT_SUPP",
+            "C150_L4_POOLED_SUPP",
+            "C150_4_POOLED_SUPP"
+         ],
+         "description":"scorecard",
+         "title":"Most Recent Cohorts Scorecard Elements",
+         "datamart_id":291780000,
+         "url":"https://ed-public-download.app.cloud.gov/downloads/Most-Recent-Cohorts-Scorecard-Elements.csv"
+      },
+      "datamart_id":"291780000"
+   }
+}

@@ -38,7 +38,7 @@ import TextField from '../common/views/TextField';
 import MenuHeaders from "../common/views/MenuHeaders";
 import Subpanel2 from '../common/views/Subpanel';
 
-import Datamart from "../common/TwoRavens/Datamart";
+import Datamart, {ModalDatamart} from "../common/TwoRavens/Datamart";
 
 // EVENTDATA
 import Body_EventData from './eventdata/Body_EventData';
@@ -274,9 +274,7 @@ function leftpanel(mode) {
             {
                 value: 'Augment',
                 contents: m(Datamart, {
-                    augmentState: app.augmentState,
-                    augmentResults: app.augmentResults,
-                    indexState: app.augmentIndexState,
+                    preferences: app.datamartPreferences,
                     dataPath: app.zparams.zd3mdata,
                     endpoint: app.datamartURL,
                     labelWidth: '10em'
@@ -475,12 +473,13 @@ function rightpanel(mode) {
             //     'byudml': common.dvColor,
             //     'sklearn_wrap': common.csColor
             // }[pipeStep.primitive.python_path.split('.')[2]] || common.grayColor,
+            // the table is overkill, but we could certainly add more info here
             summary: m(Table, {
                 id: 'pipelineFlowchartSummary' + i,
                 abbreviation: 40,
                 data: {
                     'Name': pipeStep['primitive']['primitive'].name,
-                    'Method': pipeStep['primitive']['primitive']['pythonPath'].split('.').slice(-1)[0]
+                    // 'Method': pipeStep['primitive']['primitive']['pythonPath'].split('.').slice(-1)[0]
                 },
                 attrsAll: {style: {'margin-bottom': 0, padding: '1em'}}
             }),
@@ -938,6 +937,12 @@ class Body {
                         m('col', {span: 1}))
                 })
             ]),
+            m(ModalDatamart, {
+                preferences: app.datamartPreferences,
+                endpoint: app.datamartURL,
+                dataPath: app.zparams.zd3mdata
+            }),
+
             this.header(app.currentMode),
             this.footer(app.currentMode),
             leftpanel(app.currentMode),
@@ -1246,12 +1251,14 @@ class Body {
             m("span", {"class": "footer-info-break"}, "|"),
             m("span", {"style": "color:#337ab7"}, `TA3 API: ${TA3TA2_API_VERSION}`),
             m("span", {"class": "footer-info-break"}, "|"),
+            m("span", {"class": "footer-info", "id": "user-workspace-id"}, '(ws)'),
+            m("span", {"class": "footer-info-break"}, "|"),
+
             m(Button, {
                 style: {'margin-left': '1em'},
                 title: 'alerts',
                 onclick: () => app.setAlertsShown(true)
             }, glyph2('alert', {style: {color: app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}})),
-
             m('div.btn.btn-group', {style: 'float: right; padding: 0px'},
                 m(Button, {
                     class: app.peekInlineShown && ['active'],
@@ -1280,14 +1287,41 @@ if (IS_EVENTDATA_DOMAIN) {
 else {
     m.route(document.body, '/model', {
         '/datamart': {
-            render: () => m(Datamart, {
-                augmentState: app.augmentState,
-                augmentResults: app.augmentResults,
-                indexState: app.augmentIndexState,
-                dataPath: app.zparams.zd3mdata,
-                endpoint: app.datamartURL,
-                labelWidth: '10em'
-            })
+            render: () => [
+                m(Header, {
+                    image: '/static/images/TwoRavens.png',
+                    aboutText: 'TwoRavens, ISI',
+                }, [
+                    m('img#ISILogo', {
+                        src: '/static/images/formal_viterbi_card_black_on_white.jpg',
+                        style: {
+                            'max-width': '140px',
+                            'max-height': '62px'
+                        }
+                    }),
+                    m('div', {style: {'flex-grow': 1}}),
+                    m('img#datamartLogo', {
+                        src: '/static/images/datamart_logo.png',
+                        style: {
+                            'max-width': '140px',
+                            'max-height': '62px'
+                        }
+                    }),
+                    m('div', {style: {'flex-grow': 1}}),
+                ]),
+                m('div', {style: {margin: 'auto', 'margin-top': '1em', 'max-width': '1000px'}},
+                    m(Datamart, {
+                        preferences: app.datamartPreferences,
+                        dataPath: app.zparams.zd3mdata,
+                        endpoint: app.datamartURL,
+                        labelWidth: '10em'
+                    })),
+                m(ModalDatamart, {
+                    preferences: app.datamartPreferences,
+                    endpoint: app.datamartURL,
+                    dataPath: app.zparams.zd3mdata
+                })
+            ]
         },
         '/explore/:variate/:vars...': Body,
         '/data': {render: () => m(Peek, {id: app.peekId, image: '/static/images/TwoRavens.png'})},

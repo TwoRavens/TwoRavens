@@ -48,6 +48,7 @@ data/d3m/o_196seed/data/.Rapp.history
 setup/r-setup/RINSTALL.*.LOG
 
 ravens_volume/test_output/*
+!ravens_volume/test_output/placeholder.md
 ravens_volume/manipulation_data/*
 ravens_volume/config_*.json
 ravens_volume/32_wikiqa
@@ -56,11 +57,14 @@ rook/rook-files/o_185/preprocess/preprocess.json
 assets/pkgs/swagger-ui/dist/*.map
 .Rhistory
 ravens_volume/test_data/*/search_config.json
-ravens_volume/2ravens_local_setup
+ravens_volume/test_data/*/search_config.json
+#ravens_volume/test_data/01_TEST_SOURCE/placeholder.md
 
 
 # IDE
 .idea/
+ravens_volume/db_mongo
+
 rook/preprocess/.Rapp.history
 
 # files related to eventdata preprocessing

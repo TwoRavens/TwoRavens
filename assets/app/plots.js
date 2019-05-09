@@ -4,12 +4,14 @@ import {alertLog, alertWarn, alertError} from "./app";
 
 import vegaEmbed from 'vega-embed';
 import * as scatterPE from './vega-schemas/scatterPE';
+import * as app from './app';
 
 let d3Color = '#1f77b4'; // d3's default blue
 export let selVarColor = '#fa8072'; // d3.rgb("salmon");
 
 // function to use d3 to graph density plots with preprocessed data
 export function density(node, div, priv) {
+    if (app.allNodes.length > 100) return;
     div = {setxLeft: '#setxLeft', setxLeftTopRight: '#setxLeftTopRight', Summary: '#tabSummary', explore: '#plot'}[div];
 
     if (!div) return alertError("Error: incorrect div selected for plots: " + div);
@@ -332,6 +334,7 @@ export function density(node, div, priv) {
 }
 
 export function bars(node, div, priv) {
+    if (app.allNodes.length > 100) return;
     // Histogram spacing
     var barPadding = .015; // Space between bars
     var topScale = 1.2; // Multiplicative factor to assign space at top within graph - currently removed from implementation
@@ -497,7 +500,7 @@ export function bars(node, div, priv) {
             .style("height", height + margin.top + margin.bottom)
             .append("g")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-    };
+    }
 
     var rectWidth = x(minX + 0.5 - 2 * barPadding); //the "width" is the coordinate of the end of the first bar
 
@@ -1094,6 +1097,7 @@ export function barsSubset(node) {
 }
 
 export function densityNode(node, obj, radius, explore) {
+    if (app.nodes.length > 100) return;
     var myname = node.name.toString().concat("nodeplot");
 
     d3.select(obj).selectAll("svg").remove();
@@ -1155,6 +1159,8 @@ export function densityNode(node, obj, radius, explore) {
 }
 
 export function barsNode(node, obj, radius, explore) {
+    if (app.nodes.length > 100) return;
+
     var myname = node.name.toString().concat("nodeplot");
 
     d3.select(obj).selectAll("svg").remove();

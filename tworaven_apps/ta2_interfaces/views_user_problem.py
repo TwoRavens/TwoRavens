@@ -4,7 +4,10 @@ from django.conf import settings
 from django.http import JsonResponse    #, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-from tworaven_apps.utils.view_helper import get_request_body_as_json
+from tworaven_apps.utils.view_helper import \
+    (get_request_body_as_json,
+     get_authenticated_user)
+
 from tworaven_apps.ta2_interfaces.user_problem_helper import UserProblemHelper
 from tworaven_apps.ta2_interfaces.util_data_writer import UtilDataWriter
 from tworaven_apps.ta2_interfaces.basic_problem_writer import BasicProblemWriter
@@ -16,12 +19,16 @@ from tworaven_apps.utils.view_helper import \
     (get_request_body,
      get_json_error,
      get_json_success)
-
+from tworaven_apps.utils.view_helper import \
+    (get_authenticated_user,)
 
 
 @login_required
 def view_save_problem_form(request):
     """View test form"""
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
 
     info_dict = dict()
     if request.POST:
@@ -29,7 +36,8 @@ def view_save_problem_form(request):
         if save_problem_form.is_valid():
             content = save_problem_form.cleaned_data
 
-            bpw = BasicProblemWriter(content[PROBLEM_REQ_FILENAME],
+            bpw = BasicProblemWriter(user_info.result_obj,
+                                     content[PROBLEM_REQ_FILENAME],
                                      content[PROBLEM_REQ_DATA])
 
             if bpw.has_error():
@@ -70,6 +78,11 @@ def view_store_ta2ta3_data(request):
 
     req_json = req_info.result_obj
 
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+    user_obj = user_info.result_obj
+
     if not PROBLEM_REQ_DATA in req_json:
         user_msg = ('The request did not a "%s" value') % PROBLEM_REQ_DATA
         return JsonResponse(get_json_error(user_msg))
@@ -78,7 +91,8 @@ def view_store_ta2ta3_data(request):
     if PROBLEM_REQ_FILENAME in req_json:
         filename = req_json[PROBLEM_REQ_FILENAME]
 
-    udw = UtilDataWriter(req_json[PROBLEM_REQ_DATA],
+    udw = UtilDataWriter(user_obj,
+                         req_json[PROBLEM_REQ_DATA],
                          filename)
 
     if udw.has_error():
@@ -97,6 +111,10 @@ def view_store_basic_problem(request):
     (1) Try: "output/problems" + ....
     (2) Try: config.temp_storage_root  + "problems" + .....
     """
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
     req_info = get_request_body_as_json(request)
     if not req_info.success:
         #user_msg = ('The request did not contain problem data')
@@ -112,7 +130,8 @@ def view_store_basic_problem(request):
         user_msg = ('The request did not a "%s" value') % PROBLEM_REQ_DATA
         return JsonResponse(get_json_error(user_msg))
 
-    bpw = BasicProblemWriter(req_json[PROBLEM_REQ_FILENAME],
+    bpw = BasicProblemWriter(user_info.result_obj,
+                             req_json[PROBLEM_REQ_FILENAME],
                              req_json[PROBLEM_REQ_DATA])
 
     if bpw.has_error():
@@ -124,6 +143,7 @@ def view_store_basic_problem(request):
 
     info = get_json_success('file created!',
                             data=data_info)
+
     return JsonResponse(info)
 
 
@@ -141,7 +161,12 @@ def view_write_user_problem(request):
 
     problem_updates = dict_info_or_err
 
-    problem_helper = UserProblemHelper(problem_updates)
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+
+    problem_helper = UserProblemHelper(user_info.result_obj, problem_updates)
     if problem_helper.has_error:
         return JsonResponse(\
                 dict(success=False,
@@ -161,12 +186,16 @@ def view_format_retrieve_user_problem(request):
     """
     success, dict_info_or_err = get_request_body_as_json(request)
     if not success:
-        return JsonResponse(dict(success=False,
-                                 message=dict_info_or_err))
+        return JsonResponse(get_json_error(dict_info_or_err))
 
     problem_updates = dict_info_or_err
 
-    problem_helper = UserProblemHelper(problem_updates,
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    problem_helper = UserProblemHelper(user_info.result_obj,
+                                       problem_updates,
                                        save_schema_to_file=False)
 
     if problem_helper.has_error:

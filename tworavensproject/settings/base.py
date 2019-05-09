@@ -82,7 +82,7 @@ INSTALLED_APPS = [
     'tworaven_apps.api_docs',
     'tworaven_apps.call_captures', # capture data sent from UI out to rook/TA2
     'tworaven_apps.eventdata_queries', # eventdata API services
-    'tworaven_common_apps.datamart_endpoints',
+    'tworaven_common_apps.datamart_endpoints', # Datamart connections
 
     # webpack!
     'webpack_loader',
@@ -257,6 +257,44 @@ SESSION_SAVE_EVERY_REQUEST = True
 
 SERVER_SCHEME = 'http'  # or https
 
+
+
+# ---------------------------
+# D3M - Config Settings - started winter 2019
+# ---------------------------
+# This switches between 2019 config (True)
+# and the older "search_config.json" file
+#
+D3M_USE_2019_CONFIG = strtobool(os.environ.get('D3M_USE_2019_CONFIG', 'True'))
+
+# D3MRUN - A label what is the setting under which the pod is being run; possible values: ta2, ta2ta3; this variable is available only for informative purposes but it is not used anymore to change an overall mode of operation of TA2 system because now TA2 evaluation will happen through TA2-TA3 API as well
+D3MRUN = os.environ.get('D3MRUN', 'ta2ta3')
+
+# D3MINPUTDIR - a location of dataset(s), can contain multiple datasets in arbitrary directory structure, read-only
+D3MINPUTDIR = os.environ.get('D3MINPUTDIR', None)
+
+# D3MPROBLEMPATH - a location to problem description to use (should be under D3MINPUTDIR), datasets are linked from the problem description using IDs, those datasets should exist inside D3MINPUTDIR
+D3MPROBLEMPATH = os.environ.get('D3MPROBLEMPATH', None)
+
+# D3MOUTPUTDIR - a location of output files, shared by TA2 and TA3 pods (and probably data mart)
+D3MOUTPUTDIR = os.environ.get('D3MOUTPUTDIR', None)
+
+# D3MLOCALDIR - a local-to-host directory provided; used by memory sharing mechanisms
+D3MLOCALDIR = os.environ.get('D3MLOCALDIR', None)
+
+# D3MSTATICDIR - a path to the volume with primitives' static files
+D3MSTATICDIR = os.environ.get('D3MSTATICDIR', None)
+
+# D3MCPU - available CPU units in Kubernetes specification
+D3MCPU = os.environ.get('D3MCPU', None)
+
+# D3MRAM - available memory units in Kubernetes specification
+D3MRAM = os.environ.get('D3MRAM', None)
+
+# D3MTIMEOUT - time limit for the search phase (available to the pod), in seconds
+D3MTIMEOUT = os.environ.get('D3MTIMEOUT', None)
+
+
 # ---------------------------
 # D3M - TA2 settings
 # ---------------------------
@@ -325,3 +363,11 @@ EVENTDATA_PRODUCTION_SERVER_ADDRESS = os.environ.get('EVENTDATA_PRODUCTION_SERVE
 EVENTDATA_DEFAULT_API_KEY = 'api_key=CD75737EF4CAC292EE17B85AAE4B6'
 EVENTDATA_SERVER_API_KEY = os.environ.get('EVENTDATA_SERVER_API_KEY', EVENTDATA_DEFAULT_API_KEY)
 EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
+
+
+# -------------------------
+# Datamart related
+# -------------------------
+DATAMART_SHORT_TIMEOUT = 10 # seconds
+DATAMART_LONG_TIMEOUT = 5 * 60 # 5 minutes
+DATAMART_VERY_LONG_TIMEOUT = 10 * 60 # 8 minutes

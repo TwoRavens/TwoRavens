@@ -24,6 +24,8 @@ is_binary <- function(v) {
 }
 
 solver.app <- function(env) {
+    print(paste("--- solver.app ---", sep=""))
+
     print(env)
     production <- FALSE
     result <- list()
@@ -39,8 +41,7 @@ solver.app <- function(env) {
     }
 
     everything <- jsonlite::fromJSON(request$POST()$solaJSON, flatten = TRUE)
-    print("everything: ")
-    print(everything)
+    print(paste("everything: ", everything, sep=""))
 
     dataurl <- everything$dataset_path
     if (is.null(dataurl)) {
@@ -52,6 +53,8 @@ solver.app <- function(env) {
     }
 
     task <- everything$prob$task
+    print(paste("task: ", task, sep=""))
+
     if (is.null(task)) {
         return(send(list(warning = "No defined task.")))
     }
@@ -68,8 +71,12 @@ solver.app <- function(env) {
 
     vars <- c(target, predictors)
 
+
     separator <- if (endsWith(dataurl, 'csv'))',' else '\t'
+    print(paste("Pre Reading table, separator: ", separator, sep=""))
+
     mydata <- read.table(dataurl, sep = separator, header = TRUE, fileEncoding = 'UTF-8')
+    print(paste("POST Reading table", sep=""))
 
     tryCatch({
 

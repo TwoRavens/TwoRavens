@@ -38,7 +38,8 @@ from tworaven_apps.utils.number_formatting import add_commas_to_number
 from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
 from tworaven_apps.ta2_interfaces.static_vals import D3M_OUTPUT_DIR
 from tworaven_apps.utils.json_helper import json_loads
-from tworaven_apps.configurations.utils import get_latest_d3m_config
+from tworaven_apps.raven_auth.models import User
+from tworaven_apps.user_workspaces.utils import get_latest_d3m_user_config
 
 KEY_ERR_CODE = 'err_code'
 ERR_CODE_FILE_URI_NOT_SET = 'FILE_URI_NOT_SET'
@@ -63,8 +64,9 @@ class FileEmbedUtil(object):
         - convert it to JSON
         - embed the JSON in the orginal message
     """
-    def __init__(self, data_pointer):
+    def __init__(self, data_pointer, user):
 
+        self.user = user
         self.data_pointer = data_pointer
         self.final_results = None
 
@@ -85,6 +87,9 @@ class FileEmbedUtil(object):
 
     def process_file(self):
         """Go through it"""
+        if not isinstance(self.user, User):
+            self.add_err_msg('user must be a "User" object, not: "%s"' % self.user)
+            return
 
         self.final_results = self.get_embed_result(self.data_pointer)
 
@@ -95,16 +100,6 @@ class FileEmbedUtil(object):
                 ' First check the "has_error" attribute')
 
         return self.final_results
-
-    '''
-    def xget_final_results_as_dict(self):
-        """Return the formatted_results"""
-        assert not self.has_error, \
-               ('(!) Do not use this method if an error has been detected.'
-                ' First check the "has_error" attribute')
-
-        return json.loads(self.final_results, object_pairs_hook=OrderedDict)
-    '''
 
 
     def get_embed_result(self, file_uri, is_second_try=False):
@@ -220,13 +215,14 @@ class FileEmbedUtil(object):
         """quick hack for local testing.
         If the TA2 returns a file with file:///output/...,
         then attempt to map it back to the local directory"""
-        d3m_config = get_latest_d3m_config()
-        if not d3m_config:
+        d3m_config_info = get_latest_d3m_user_config(self.user)
+        if not d3m_config_info.success:
             err_msg = ('No D3M config found and file'
                        ' not found: %s') % fpath
             return self.format_embed_err(ERR_CODE_FILE_NOT_FOUND,
                                          err_msg)
 
+        d3m_config = d3m_config_info.result_obj
         # Make sure (1) there's a "d3m_config.root_output_directory"
         # and (2) it DOES NOT start with "/output"
         #
