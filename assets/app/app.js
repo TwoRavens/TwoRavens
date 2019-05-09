@@ -325,9 +325,7 @@ export let panelWidth = {
 //-------------------------------------------------
 export let wsLink = WEBSOCKET_PREFIX + window.location.host +
                '/ws/connect/' + username + '/';
-console.log('streamSocket connection made: ' + wsLink);
-export let streamSocket = new WebSocket(wsLink);
-
+export let streamSocket;
 export let streamMsgCnt = 0;
 //  messages received.
 //
@@ -347,59 +345,82 @@ streamSocket.onmessage = function(e) {
     console.log('full data: ' + JSON.stringify(msg_data));
     console.log('---------------------------------------------');
 
-    return;
-  }
-  console.log('full data: ' + JSON.stringify(msg_data));
+if (!IS_EVENTDATA_DOMAIN){
+  console.log('Attempt streamSocket connection: ' + wsLink);
 
-  console.log('Got it! Message type: ' + msg_data.msg_type);
-  //JSON.stringify(msg_data));
+  streamSocket = new WebSocket(wsLink);
 
-  if (msg_data.msg_type === 'GetSearchSolutionsResults'){
-    console.log(msg_data.msg_type + ' recognized!');
+  //  messages received.
+  //
+  streamSocket.onmessage = function(e) {
+     streamMsgCnt++;
+     console.log(streamMsgCnt + ') message received! '  + e);
+     // parse the data into JSON
+     let msg_obj = JSON.parse(e.data);
+     //console.log('data:' + JSON.stringify(msg_obj));
+     let msg_data = msg_obj['message'];
 
-    handleGetSearchSolutionResultsResponse(msg_data.data);
+    if(typeof msg_data.msg_type===undefined){
+      console.log('streamSocket.onmessage: Error, "msg_data.msg_type" not specified!');
+      return;
+    } else if(typeof msg_data.data===undefined){
+      console.log('streamSocket.onmessage: Error, "msg_data.data" type not specified!');
+      console.log('full data: ' + JSON.stringify(msg_data));
+      console.log('---------------------------------------------');
 
-  } else if (msg_data.msg_type === 'DescribeSolution'){
-    console.log(msg_data.msg_type + ' recognized!');
+      return;
+    }
+    console.log('full data: ' + JSON.stringify(msg_data));
 
-    handleDescribeSolutionResponse(msg_data.data);
+    console.log('Got it! Message type: ' + msg_data.msg_type);
+    //JSON.stringify(msg_data));
 
-  } else if (msg_data.msg_type === 'GetScoreSolutionResults'){
-    console.log(msg_data.msg_type + ' recognized!');
-    handleGetScoreSolutionResultsResponse(msg_data.data);
+    if (msg_data.msg_type === 'GetSearchSolutionsResults'){
+      console.log(msg_data.msg_type + ' recognized!');
 
-  } else if (msg_data.msg_type === 'GetProduceSolutionResults'){
-    console.log(msg_data.msg_type + ' recognized!');
+      handleGetSearchSolutionResultsResponse(msg_data.data);
 
-    handleGetProduceSolutionResultsResponse(msg_data.data);
+    } else if (msg_data.msg_type === 'DescribeSolution'){
+      console.log(msg_data.msg_type + ' recognized!');
 
-  } else if (msg_data.msg_type === 'GetFitSolutionResults'){
-    console.log(msg_data.msg_type + ' recognized!');
+      handleDescribeSolutionResponse(msg_data.data);
 
-    console.log('No handler: Currently not using GetFitSolutionResultsResponse...');
+    } else if (msg_data.msg_type === 'GetScoreSolutionResults'){
+      console.log(msg_data.msg_type + ' recognized!');
+      handleGetScoreSolutionResultsResponse(msg_data.data);
 
-  } else if (msg_data.msg_type === 'ENDGetSearchSolutionsResults'){
-    console.log(msg_data.msg_type + ' recognized!');
+    } else if (msg_data.msg_type === 'GetProduceSolutionResults'){
+      console.log(msg_data.msg_type + ' recognized!');
 
-    handleENDGetSearchSolutionsResults();
+      handleGetProduceSolutionResultsResponse(msg_data.data);
 
-  } else if (msg_data.msg_type === 'DATAMART_MATERIALIZE_PROCESS'){
-    console.log(msg_data.msg_type + ' recognized!');
-    handleMaterializeDataMessage(msg_data);
+    } else if (msg_data.msg_type === 'GetFitSolutionResults'){
+      console.log(msg_data.msg_type + ' recognized!');
 
-  } else if (msg_data.msg_type === 'DATAMART_AUGMENT_PROCESS'){
-    console.log(msg_data.msg_type + ' recognized!');
-    handleAugmentDataMessage(msg_data);
+      console.log('No handler: Currently not using GetFitSolutionResultsResponse...');
 
-  } else {
-    console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
-  }
-};
-streamSocket.onclose = function(e) {
-      console.error('streamSocket closed unexpectedly');
-};
+    } else if (msg_data.msg_type === 'ENDGetSearchSolutionsResults'){
+      console.log(msg_data.msg_type + ' recognized!');
+
+      handleENDGetSearchSolutionsResults();
+
+    } else if (msg_data.msg_type === 'DATAMART_MATERIALIZE_PROCESS'){
+      console.log(msg_data.msg_type + ' recognized!');
+      handleMaterializeDataMessage(msg_data);
+
+    } else if (msg_data.msg_type === 'DATAMART_AUGMENT_PROCESS'){
+      console.log(msg_data.msg_type + ' recognized!');
+      handleAugmentDataMessage(msg_data);
+
+    } else {
+      console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
+    }
+  };
+  streamSocket.onclose = function(e) {
+        console.error('streamSocket closed unexpectedly. (ok for eventdata)');
+  };
 //-------------------------------------------------
-
+}
 
 
 export let updateRightPanelWidth = () => {
