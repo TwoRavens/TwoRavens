@@ -52,10 +52,10 @@ class DatamartScrapeForm(forms.Form):
 
 class DatamartIndexForm(DatamartSourceBaseForm):
 
-    index = forms.CharField(required=True, widget=forms.Textarea)
+    indices = forms.CharField(required=True, widget=forms.Textarea)
 
     def clean_index(self):
-        return json.loads(self.cleaned_data.get('index'))
+        return json.loads(self.cleaned_data.get('indices'))
 
 
 class DatamartSearchForm(DatamartSourceBaseForm):
