@@ -68,6 +68,32 @@ def view_rook_preprocess(request):
 
 
 @csrf_exempt
+def view_rook_healthcheck(request):
+    """Ping rook to make sure it's receiving/responding to requests"""
+    # get the app info
+    #
+    rook_app_info = RookAppInfo.get_appinfo_from_url('healthcheckapp')
+    if rook_app_info is None:
+        raise Http404(('unknown rook app: "{0}" (please add "{0}" to '
+                       ' "tworaven_apps/rook_services/app_names.py")').format(\
+                       app_name_in_url))
+
+    rook_svc_url = rook_app_info.get_rook_server_url()
+
+    # Call R services
+    #
+    try:
+        rservice_req = requests.post(rook_svc_url,)# data=app_data)
+    except ConnectionError as err_obj:
+        err_msg = f'R Server not responding: {rook_svc_url} ({err_obj})'
+        resp_dict = dict(message=err_msg)
+        return JsonResponse(resp_dict)
+
+    print('status code from rook call: %d' % rservice_req.status_code)
+
+    return HttpResponse(rservice_req.text)
+
+@csrf_exempt
 def view_rook_route(request, app_name_in_url):
     """Route TwoRavens calls to Rook
         orig: TwoRavens -> Rook
