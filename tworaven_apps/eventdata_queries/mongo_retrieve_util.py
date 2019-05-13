@@ -70,6 +70,16 @@ class MongoRetrieveUtil(BasicErrCheck):
 
         server_info = cli.server_info()
 
+        mongo_attrs_to_share = ['version', 'gitVersion',
+                                'system', 'ok',
+                                'bits', 'maxBsonObjectSize']
+
+        # only return some of th server information
+        #
+        [server_info.pop(k)
+         for k in list(server_info.keys())
+         if not k in mongo_attrs_to_share]
+
         return ok_resp(server_info)
 
     def basic_check(self):
