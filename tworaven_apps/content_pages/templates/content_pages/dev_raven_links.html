@@ -65,12 +65,12 @@
         <div class="card-body">
           <ul>
             <li><b>python app:</b> <a href="{% url 'view_monitoring_alive' %}">python app health monitoring</a></li>
-            </li>
 
             <li><b>rook app:</b> <a href="{% url 'view_rook_route' 'healthcheckapp' %}">rook server health check</a></li>
-            </li>
 
             <li><b>TA2:</b> <a href="{% url 'view_hello_heartbeat' %}">TA2 hello heartbeat</a></li>
+
+            <li><b>Mongo:</b> <a href="{% url 'api_mongo_healthcheck' %}">Mongo healthcheck</a></li>
           </ul>
         </div>
       </div>

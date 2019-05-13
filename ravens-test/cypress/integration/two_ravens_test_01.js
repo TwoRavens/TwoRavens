@@ -40,7 +40,16 @@ describe('TwoRavens system status', function() {
   })
 
 
-
+  it('Is the Mongo server running and accessible via the TA3?', function() {
+    cy
+      .request('GET', APP_HOST + '/eventdata/api/mongo-healthcheck', {})
+      .then((response) => {
+        // response.body is automatically serialized into JSON
+        expect(response.body).to.have.property('success', true) // true
+        expect(response.body.data).to.have.property('version')
+        expect(response.body.data).to.have.property('ok', 1.0)
+    })
+  })
 
 
 })

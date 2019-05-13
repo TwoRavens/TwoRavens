@@ -56,6 +56,22 @@ class MongoRetrieveUtil(BasicErrCheck):
 
         self.basic_check()
 
+    @staticmethod
+    def run_tworavens_healthcheck():
+        """Healthcheck which runs a server_info() check against the Mongo server
+        e.g. It simply instantiates a MongoRetrieveUtil, which itself
+        does a server_info check.
+        """
+        util = MongoRetrieveUtil(settings.TWORAVENS_MONGO_DB_NAME)
+        if util.has_error():
+            return err_resp(util.get_error_message())
+
+        cli = util.get_mongo_client().result_obj # assuming ok b/c no error
+
+        server_info = cli.server_info()
+
+        return ok_resp(server_info)
+
     def basic_check(self):
         """Run some basic checks"""
         #if not self.collection_name:
@@ -286,17 +302,17 @@ class MongoRetrieveUtil(BasicErrCheck):
             self.mongo_client = MongoClient(\
                     mongo_url,
                     serverSelectionTimeoutMS=conn_timeout_ms)
-            self.mongo_client.server_info() # too prompt connection errors
+            self.mongo_client.server_info() # to prompt connection errors
         except ConfigurationError as err_obj:
-            #
-            return err_resp(self.get_conn_error_msg(err_obj))
-        except ConnectionFailure as err_obj:
             #
             return err_resp(self.get_conn_error_msg(err_obj))
         except OperationFailure as err_obj:
             #
             return err_resp(self.get_conn_error_msg(err_obj))
         except ServerSelectionTimeoutError as err_obj:
+            #
+            return err_resp(self.get_conn_error_msg(err_obj))
+        except ConnectionFailure as err_obj:
             #
             return err_resp(self.get_conn_error_msg(err_obj))
         except PyMongoError as err_obj:

@@ -77,4 +77,8 @@ urlpatterns = [
          views.api_import_dataset,
          name='api_import_dataset'),
 
+    path(r'api/mongo-healthcheck',
+         views.api_mongo_healthcheck,
+         name='api_mongo_healthcheck'),
+
 ]
