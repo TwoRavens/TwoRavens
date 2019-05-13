@@ -64,11 +64,13 @@
         <div class="card-header"><b>Health/Monitoring checks</b></div>
         <div class="card-body">
           <ul>
-            <li><b>python app:</b> <a href="{% url 'view_monitoring_alive' %}">{% url 'view_monitoring_alive' %}</a></li>
+            <li><b>python app:</b> <a href="{% url 'view_monitoring_alive' %}">python app health monitoring</a></li>
             </li>
 
-            <li><b>rook app:</b> <a href="{% url 'view_rook_route' 'healthcheckapp' %}">{% url 'view_rook_route' 'healthcheckapp' %}</a></li>
+            <li><b>rook app:</b> <a href="{% url 'view_rook_route' 'healthcheckapp' %}">rook server health check</a></li>
             </li>
+
+            <li><b>TA2:</b> <a href="{% url 'view_hello_heartbeat' %}">TA2 hello heartbeat</a></li>
           </ul>
         </div>
       </div>

@@ -1,0 +1,14 @@
+{
+  "name": "ravens-test",
+  "version": "1.0.0",
+  "description": "Basic cypress tests for the TwoRavens system",
+  "main": "index.js",
+  "scripts": {
+    "cypress:open": "cypress open"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "cypress": "^3.2.0"
+  }
+}
