@@ -45,7 +45,7 @@ after_success:
   # -------------------------------------
   # Temp push, to test new k8s deploy
   # -------------------------------------
-  - if [ "$TRAVIS_BRANCH" == "556-ci-2" ]; then
+  - if [ "$TRAVIS_BRANCH" == "x556-ci-2" ]; then
     cd ravens-test;
     docker build -t tworavens/tworavens-test-runner:latest .;
     cd ../;
