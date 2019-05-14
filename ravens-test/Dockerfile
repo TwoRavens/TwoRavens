@@ -24,6 +24,7 @@ RUN npm i
 # -------------------------------------
 COPY ./cypress/ ./cypress/
 COPY ./cypress.json ./cypress.json
+COPY ./README.md ./README.md
 
 # -------------------------------------
 # Set the env variable

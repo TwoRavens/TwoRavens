@@ -45,10 +45,12 @@ after_success:
   # -------------------------------------
   # Temp push, to test new k8s deploy
   # -------------------------------------
-  - if [ "$TRAVIS_BRANCH" == "x542-aug" ]; then
-    docker build -t tworavens/ravens-main:latest .;
+  - if [ "$TRAVIS_BRANCH" == "556-ci-2" ]; then
+    cd ravens-test;
+    docker build -t tworavens/tworavens-test-runner:latest .;
+    cd ../;
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-    docker push tworavens/ravens-main:latest;
+    docker push tworavens/tworavens-test-runner:latest;
     fi
   - if [ "$TRAVIS_BRANCH" == "EventData_generalization" ]; then
     cd setup/nginx/;

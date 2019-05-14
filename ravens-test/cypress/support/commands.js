@@ -23,3 +23,5 @@
 //
 // -- This is will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
+// a useful command to log message with arguments to the left
+// UI panel.
