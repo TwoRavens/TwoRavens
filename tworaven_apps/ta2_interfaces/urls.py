@@ -68,6 +68,11 @@ urlpatterns = (
          views_non_streaming_requests.view_hello,
          name='Hello'),
 
+    path(r'ta2-hello-heartbeat',
+         views_non_streaming_requests.view_hello_heartbeat,
+         name='view_hello_heartbeat'),
+
+
     path(r'SearchDescribeFitScoreSolutions',
          views_non_streaming_requests.view_search_describe_fit_score_solutions,
          name='SearchDescribeFitScoreSolutions'),
