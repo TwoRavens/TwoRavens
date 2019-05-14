@@ -27,8 +27,12 @@ COPY ./cypress.json ./cypress.json
 
 # -------------------------------------
 # Set the env variable
+#  NOTE: Within cypress, the "CYPRESS_" prefix is dropped.
+#   e.g. CYPRESS_TWO_RAVENS_BASE_URL -> TWO_RAVENS_BASE_URL
+#   e.g. CYPRESS_TA3TA2_API_VERSION -> TA3TA2_API_VERSION
 # -------------------------------------
-env APP_BASE_URL=http://2ravens.org
+env CYPRESS_TWO_RAVENS_BASE_URL=http://2ravens.org
+env CYPRESS_TA3TA2_API_VERSION=2019.2.27
 
 # --------------------------------------------------------
 # When the pod is, tests within /e2e/cypress/integration will be run

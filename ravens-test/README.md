@@ -13,7 +13,7 @@ docker run  -it -v $PWD:/e2e -w /e2e cypress/included:3.2.0 run --spec "cypress/
 #
 docker run  -it\
  -v $PWD:/e2e\
- -e APP_BASE_URL=http://metadata.2ravens.org\
+ -e TWO_RAVENS_BASE_URL=http://metadata.2ravens.org\
  --network="host"\
  -w /e2e cypress/included:3.2.0\
  run\
@@ -36,4 +36,7 @@ docker run --rm --name raven_ci_test raven-test:latest --spec "cypress/integrati
 # Run against Dockerhub image from TwoRavens
 #
 docker run --rm --name raven_ci_test tworavens/tworavens-test-runner:latest --spec "cypress/integration/two_ravens_test_01.js"
+
+docker run --env CYPRESS_TWO_RAVENS_BASE_URL=http://metadata.2ravens.org  --rm --name raven_ci_test tworavens/tworavens-test-runner:latest
+
 ```
