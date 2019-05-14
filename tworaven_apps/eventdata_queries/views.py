@@ -25,9 +25,22 @@ from tworaven_apps.eventdata_queries.forms import \
 from tworaven_apps.eventdata_queries.models import \
     (EventDataSavedQuery,
      SEARCH_PARAMETERS, SEARCH_KEY_NAME, SEARCH_KEY_DESCRIPTION)
+from tworaven_apps.eventdata_queries.mongo_retrieve_util import \
+    MongoRetrieveUtil
 
 LOGGER = logging.getLogger(__name__)
 
+
+def api_mongo_healthcheck(request):
+    """Mongo healthcheck"""
+    mongo_check = MongoRetrieveUtil.run_tworavens_healthcheck()
+
+    if mongo_check.success:
+        return JsonResponse(get_json_success(\
+                            'Mongo is running',
+                            data=mongo_check.result_obj))
+
+    return JsonResponse(get_json_error(mongo_check.err_msg))
 
 def view_eventdata_api_info(request):
     """List some API info, for developers"""

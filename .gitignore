@@ -65,3 +65,5 @@ ravens_volume/test_data/*/search_config.json
 .idea/
 rook/preprocess/.Rapp.history
 ravens_volume/db_mongo
+ravens-test/cypress/videos/
+ravens-test/cypress/screenshots/

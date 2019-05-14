@@ -37,6 +37,29 @@ from tworaven_apps.ta2_interfaces.ta2_search_solutions_helper import \
 
 
 @csrf_exempt
+def view_hello_heartbeat(request):
+    """Hello to TA2 with no logging.  Used for testing"""
+    # Let's call the TA2!
+    #
+    resp_info = ta2_hello()
+    if not resp_info.success:
+        return JsonResponse(get_json_error(resp_info.err_msg))
+
+    json_str = resp_info.result_obj
+
+    # Convert JSON str to python dict - err catch here
+    #  - let it blow up for now--should always return JSON
+    json_format_info = json_loads(json_str)
+    if not json_format_info.success:
+        return JsonResponse(get_json_error(json_format_info.err_msg))
+
+    json_info = get_json_success('success!',
+                                 data=json_format_info.result_obj)
+
+    return JsonResponse(json_info)
+
+
+@csrf_exempt
 def view_hello(request):
     """gRPC: Call from UI as a hearbeat"""
     session_key = get_session_key(request)
