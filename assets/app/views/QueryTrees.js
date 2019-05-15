@@ -164,6 +164,8 @@ export class TreeSubset {
                 type: 'query'
             }] : step.abstractQuery;
 
+
+
         return m(TreeRender, {
             data,
             state: treeState,

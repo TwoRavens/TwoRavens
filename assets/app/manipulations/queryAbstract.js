@@ -483,12 +483,16 @@ function makeAbstractBranch(step, preferences, metadata, name) {
 
         latitude.children.push({
             id: String(step.nodeId++) + measureId,
-            name: valUpper > valLower ? valUpper : valLower
+            name: valUpper > valLower ? valUpper : valLower,
+            show_op: false,
+            cancellable: false
         });
 
         latitude.children.push({
             id: String(step.nodeId++) + measureId,
-            name: valUpper < valLower ? valUpper : valLower
+            name: valUpper < valLower ? valUpper : valLower,
+            show_op: false,
+            cancellable: false
         });
 
         let longitude = {
@@ -502,12 +506,16 @@ function makeAbstractBranch(step, preferences, metadata, name) {
 
         longitude.children.push({
             id: String(step.nodeId++) + measureId,
-            name: valLeft > valRight ? valLeft : valRight
+            name: valLeft > valRight ? valLeft : valRight,
+            show_op: false,
+            cancellable: false
         });
 
         longitude.children.push({
             id: String(step.nodeId++) + measureId,
-            name: valLeft < valRight ? valLeft : valRight
+            name: valLeft < valRight ? valLeft : valRight,
+            show_op: false,
+            cancellable: false
         });
 
         subset.children.push(latitude);

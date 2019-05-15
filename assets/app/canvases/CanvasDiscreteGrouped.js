@@ -116,7 +116,7 @@ export default class CanvasDiscreteGrouped {
 
                 m('#topBar', {style: {height: '34px'}},
                     m(".card-header.text-center[id='regionLabel']", {style: {"float": "left", "padding-top": "9px"}},
-                        m("h3.card-title", name)
+                        m("h4.card-title", name)
                     ),
                     buttons),
                 shown && graph
@@ -234,10 +234,10 @@ export default class CanvasDiscreteGrouped {
                     }
                 },
                 [
-                    m("selectedCategoriesHeader", {style: {"width": "250px", "display": "inline-block"}},
+                    m("#selectedCategoriesHeader", {style: {"width": "250px", "display": "inline-block"}},
                         [
 
-                            m("h3.card-title", {
+                            m("h4.card-title", {
                                 style: {
                                     "padding-left": "10px",
                                     "padding-top": "12px",
@@ -264,10 +264,9 @@ export default class CanvasDiscreteGrouped {
 
                     m("div", {
                             style: {
-                                "position": "fixed",
-                                "height": "calc(100% - 168px)",
+                                "height": "calc(100% - 58px)",
                                 "max-height": "386px",
-                                "overflow-y": "scroll",
+                                "overflow-y": "auto",
                                 "margin-left": "5px",
                                 "width": "243px"
                             }

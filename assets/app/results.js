@@ -155,10 +155,12 @@ export class CanvasSolutions {
             let title = 'Fitted vs. Actuals';
             let legendName = 'Solution Name';
 
-            return m(PlotVegaLite, {
+            return m('div', {
+                style: {'height': '500px'}
+            }, m(PlotVegaLite, {
                 specification: plots.vegaScatter(xData, yData, xName, yName, title, legendName),
                 data: summaries
-            })
+            }))
         }
 
         if (problem.task === 'classification') {
@@ -184,13 +186,15 @@ export class CanvasSolutions {
                     data: generatePerformanceData(confusionInstance.data),
                     attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
                 }),
-                confusionInstance.data.length < 100 ? m(ConfusionMatrix, Object.assign({}, confusionInstance, {
+                confusionInstance.data.length < 100 ? m('div', {
+                    style: {'min-height': '500px'}
+                }, m(ConfusionMatrix, Object.assign({}, confusionInstance, {
                     id: 'resultsConfusionMatrixContainer' + confusionInstance.pipelineID,
                     title: "Confusion Matrix: Pipeline " + confusionInstance.pipelineID,
                     startColor: '#ffffff', endColor: '#e67e22',
                     margin: {left: 10, right: 10, top: 50, bottom: 10},
                     attrsAll: {style: {height: '600px'}}
-                })) : 'Too many classes for confusion matrix!'
+                }))) : 'Too many classes for confusion matrix!'
             ])
         }
     };
@@ -244,7 +248,7 @@ export class CanvasSolutions {
             ];
         };
 
-        return m('div', {
+        return solution.pipeline && m('div', {
                 style: {
                     width: '70%',
                     height: 'calc(100% - 30px)',
@@ -282,7 +286,9 @@ export class CanvasSolutions {
 
         let problemSummary = m(Subpanel, {
             style: {margin: '0px 1em'},
-            header: 'Problem Description'
+            header: 'Problem Description',
+            shown: resultsSubpanels['Problem Description'],
+            setShown: state => resultsSubpanels['Problem Description'] = state
         }, m(Table, {
             headers: ['Variable', 'Data'],
             data: [
@@ -293,16 +299,19 @@ export class CanvasSolutions {
             ]
         }));
 
-        let selectedSolutions = app.getSelectedSolutions();
+        let selectedSolutions = app.getSolutions(problem);
         if (selectedSolutions.length === 0)
-            return problemSummary;
+            return m('div', {style: {margin: '1em 0px'}}, problemSummary);
+
         let solutionSummaries = selectedSolutions
             .map(solution => solutionAdapter(problem, solution)).filter(_=>_);
         let firstSolution = selectedSolutions[0];
 
         let solutionSummary = selectedSolutions.length === 1 && m(Subpanel, {
             style: {margin: '0px 1em'},
-            header: 'Solution Description'
+            header: 'Solution Description',
+            shown: resultsSubpanels['Solution Description'],
+            setShown: state => resultsSubpanels['Solution Description'] = state
         }, m(Table, {
             headers: ['Variable', 'Data'],
             data: [
@@ -316,12 +325,16 @@ export class CanvasSolutions {
 
         let predictionSummary = m(Subpanel, {
             style: {margin: '0px 1em'},
-            header: 'Prediction Summary'
+            header: 'Prediction Summary',
+            shown: resultsSubpanels['Prediction Summary'],
+            setShown: state => resultsSubpanels['Prediction Summary'] = state
         }, this.predictionSummary(problem, solutionSummaries));
 
         let visualizePipeline = selectedSolutions.length === 1 && firstSolution.source === 'd3m' && m(Subpanel, {
             style: {margin: '0px 1em'},
-            header: 'Visualize Pipeline'
+            header: 'Visualize Pipeline',
+            shown: resultsSubpanels['Visualize Pipeline'],
+            setShown: state => resultsSubpanels['Visualize Pipeline'] = state
         }, this.visualizePipeline(firstSolution));
 
         let performanceStatsContents = firstSolution.source === 'rook' && Object.keys(firstSolution.models)
@@ -333,7 +346,9 @@ export class CanvasSolutions {
                 })));
         let performanceStats = performanceStatsContents.length > 0 && m(Subpanel, {
             style: {margin: '0px 1em'},
-            header: 'Performance Statistics'
+            header: 'Performance Statistics',
+            shown: resultsSubpanels['Performance Statistics'],
+            setShown: state => resultsSubpanels['Performance Statistics'] = state
         }, performanceStatsContents);
 
         let coefficientsContents = firstSolution.source === 'rook' && Object.keys(firstSolution.models)
@@ -358,7 +373,9 @@ export class CanvasSolutions {
                 })));
         let coefficientMatrix = coefficientsContents.length > 0 && m(Subpanel, {
             style: {margin: '0px 1em'},
-            header: 'Coefficients'
+            header: 'Coefficients',
+            shown: resultsSubpanels['Coefficients'],
+            setShown: state => resultsSubpanels['Coefficients'] = state
         }, coefficientsContents);
 
 
@@ -380,7 +397,9 @@ export class CanvasSolutions {
                 m(Table, {data: prepareANOVA(firstSolution.models[target].anova)})));
         let anovaTables = (anovaTablesContent || []).length > 0 && m(Subpanel, {
             style: {margin: '0px 1em'},
-            header: 'ANOVA Tables'
+            header: 'ANOVA Tables',
+            shown: resultsSubpanels['ANOVA Tables'],
+            setShown: state => resultsSubpanels['ANOVA Tables'] = state
         }, anovaTablesContent);
 
         let VIFContents = firstSolution.source === 'rook' && Object.keys(firstSolution.models)
@@ -394,7 +413,9 @@ export class CanvasSolutions {
                 })));
         let VIF = (VIFContents || []).length === 1 && m(Subpanel, {
             style: {margin: '0px 1em'},
-            header: 'Variance Inflation'
+            header: 'Variance Inflation',
+            shown: resultsSubpanels['Variance Inflation'],
+            setShown: state => resultsSubpanels['Variance Inflation'] = state
         }, VIFContents);
 
 
@@ -432,6 +453,17 @@ let solutionAdapter = (problem, solution) => {
 
 let leftTabResults = 'Solutions';
 let setLeftTabResults = tab => leftTabResults = tab;
+
+let resultsSubpanels = {
+    'Prediction Summary': true,
+    'Variance Inflation': false,
+    'ANOVA Tables': false,
+    'Coefficients': false,
+    'Performance Statistics': false,
+    'Visualize Pipeline': false,
+    'Solution Description': false,
+    'Problem Description': false
+};
 
 export let forceDiagramStateResults = {
     builders: [pebbleBuilder, groupBuilder, linkBuilder, groupLinkBuilder],

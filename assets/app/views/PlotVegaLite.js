@@ -9,7 +9,7 @@ import vegaEmbed from "vega-embed";
 
 export default class PlotVegaLite {
     view() {
-        return m('')
+        return m('div', {style: {width: '100%', height: '100%'}})
     }
 
     static plot(vnode, heightOffset) {

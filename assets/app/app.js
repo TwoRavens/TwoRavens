@@ -25,6 +25,7 @@ import {
     handleGetSearchSolutionResultsResponse,
     makePipelineTemplate
 } from "./solvers/d3m";
+import {buildDatasetUrl} from "./manipulations/manipulate";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -154,6 +155,18 @@ export async function updatePeek(pipeline) {
     // stop blocking new requests
     peekIsLoading = false;
     m.redraw();
+}
+
+export let downloadPeek = async () => {
+    let problem = getSelectedProblem();
+    let datasetUrl = await buildDatasetUrl(problem)
+
+    console.warn("#debug datasetUrl");
+    console.log(datasetUrl);
+    let link = document.createElement("a");
+    link.setAttribute("href", datasetUrl);
+    link.setAttribute("download", datasetUrl);
+    link.click();
 }
 
 // ~~~~ MANIPULATIONS STATE ~~~~
@@ -1809,17 +1822,18 @@ export async function estimate() {
         alertWarn('Another problem is still being solved. Please wait until the solver for ' + solverProblem.d3m.problemId + ' is complete.')
         return;
     }
-    // return if current problem already has solutions
-    if (getSelectedSolutions().length > 0) return;
-
     let selectedProblem = getSelectedProblem();
-    selectedProblem.pending = false; // a problem with solutions is no longer pending
-    let resultsProblem = getProblemCopy(selectedProblem);
-    resultsProblem.system = 'results';
-    getSelectedDataset().problems[resultsProblem.problemID] = resultsProblem;
-    getSelectedDataset().resultsProblem = resultsProblem.problemID;
 
-    solverProblem.d3m = resultsProblem;
+    // return if current problem already has solutions
+    if (getSolutions(copiedProblem).length > 0) return;
+
+    selectedProblem.pending = false; // a problem with solutions is no longer pending
+    let copiedProblem = getProblemCopy(selectedProblem);
+    getSelectedDataset().problems[copiedProblem.problemID] = copiedProblem;
+    getSelectedDataset().resultsProblem = selectedProblem.problemID;
+
+    solverProblem.d3m = selectedProblem;
+    selectedProblem.solved = true;
 
     if (!IS_D3M_DOMAIN){
         // let userUsg = 'This code path is no longer used.  (Formerly, it used Zelig.)';
@@ -1917,14 +1931,14 @@ export async function estimate() {
     let dataset = getSelectedDataset();
 
     try {
-        resultsProblem.dvvalues = await manipulate.getData({
+        selectedProblem.dvvalues = await manipulate.getData({
             method: 'aggregate',
             query: JSON.stringify(queryMongo.buildPipeline(
-                [...dataset.hardManipulations, ...resultsProblem.manipulations, {
+                [...dataset.hardManipulations, ...selectedProblem.manipulations, {
                     type: 'menu',
                     metadata: {
                         type: 'data',
-                        variables: ['d3mIndex', ...resultsProblem.targets],
+                        variables: ['d3mIndex', ...selectedProblem.targets],
                         sample: 1000
                     }
                 }],
@@ -1935,12 +1949,12 @@ export async function estimate() {
     }
 
     let searchTimeLimit = 5;
-    let searchSolutionParams = CreatePipelineDefinition(resultsProblem, searchTimeLimit);
+    let searchSolutionParams = CreatePipelineDefinition(selectedProblem, searchTimeLimit);
 
-    let nominalVars = new Set(getNominalVariables(resultsProblem));
+    let nominalVars = new Set(getNominalVariables(selectedProblem));
 
-    let hasManipulation = resultsProblem.manipulations.length > 0;
-    let hasNominal = [...resultsProblem.targets, ...resultsProblem.predictors]
+    let hasManipulation = selectedProblem.manipulations.length > 0;
+    let hasNominal = [...selectedProblem.targets, ...selectedProblem.predictors]
         .some(variable => nominalVars.has(variable));
 
     let needsProblemCopy = hasManipulation || hasNominal;
@@ -1948,21 +1962,21 @@ export async function estimate() {
     let datasetPath = dataset.datasetUrl;
     // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
     if (needsProblemCopy) {
-        let {data_path, metadata_path} = await manipulate.buildProblemUrl(resultsProblem);
-        resultsProblem.datasetDocPath = metadata_path;
+        let {data_path, metadata_path} = await manipulate.buildProblemUrl(selectedProblem);
+        selectedProblem.datasetDocPath = metadata_path;
         datasetPath = data_path;
-    } else delete resultsProblem.datasetDocPath;
+    } else delete selectedProblem.datasetDocPath;
 
     // initiate rook solver
-    callSolver(resultsProblem, datasetPath);
+    callSolver(selectedProblem, datasetPath);
 
-    let datasetDocPath = resultsProblem.datasetDocPath || getSelectedDataset().datasetDocPath;
+    let datasetDocPath = selectedProblem.datasetDocPath || getSelectedDataset().datasetDocPath;
 
     let allParams = {
         searchSolutionParams: searchSolutionParams,
         fitSolutionDefaultParams: getFitSolutionDefaultParameters(datasetDocPath),
         produceSolutionDefaultParams: getProduceSolutionDefaultParameters(datasetDocPath),
-        scoreSolutionDefaultParams: getScoreSolutionDefaultParameters(resultsProblem, datasetDocPath)
+        scoreSolutionDefaultParams: getScoreSolutionDefaultParameters(selectedProblem, datasetDocPath)
     };
 
     //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
@@ -2080,13 +2094,15 @@ export let hexToRgba = (hex, alpha) => {
    EndSession(SessionContext) returns (Response) {}
 */
 export async function endsession() {
-    let solutions = getResultsProblem().solutions;
+    let resultsProblem = getResultsProblem();
+
+    let solutions = resultsProblem.solutions;
     if(Object.keys(solutions.d3m).length === 0) {
         alertError("No pipelines exist. Cannot mark problem as complete.");
         return;
     }
 
-    let selectedPipelines = getSelectedSolutions('d3m');
+    let selectedPipelines = getSolutions(resultsProblem, 'd3m');
     if (selectedPipelines.size === 0) {
         alertWarn("No pipelines exist. Cannot mark problem as complete");
         return;
@@ -2397,16 +2413,15 @@ export let getSelectedDataset = () => datasets[selectedDataset];
 export let getSelectedProblem = () => selectedDataset && getSelectedDataset().problems[getSelectedDataset().selectedProblem];
 export let getResultsProblem = () => selectedDataset && getSelectedDataset().problems[getSelectedDataset().resultsProblem];
 
-export let getSelectedSolutions = source => {
-    let resultsProblem = getResultsProblem();
-    if (!resultsProblem) return [];
+export let getSolutions = (problem, source) => {
+    if (!problem) return [];
 
-    if (!source) return Object.keys(resultsProblem.selectedSolutions)
-        .flatMap(source => resultsProblem.selectedSolutions[source]
-            .map(id => resultsProblem.solutions[source][id]))
+    if (!source) return Object.keys(problem.selectedSolutions)
+        .flatMap(source => problem.selectedSolutions[source]
+            .map(id => problem.solutions[source][id])).filter(_=>_)
 
-    return resultsProblem.selectedSolutions[source]
-        .map(id => resultsProblem.solutions[source][id])
+    return problem.selectedSolutions[source]
+        .map(id => problem.solutions[source][id]).filter(_=>_)
 };
 
 export let getNominalVariables = problem => {
@@ -2454,7 +2469,6 @@ export function setSelectedProblem(problemID) {
 }
 
 export function setResultsProblem(problemID) {
-    if (!problemID || getSelectedDataset().resultsProblem === problemID) return;
     getSelectedDataset().resultsProblem = problemID;
 }
 
@@ -2470,10 +2484,11 @@ export function getProblemCopy(problemSource) {
 // When enabled, multiple pipelineTable pipelineIDs may be selected at once
 export let modelComparison = false;
 export let setModelComparison = state => {
-    let selectedSolutions = getSelectedSolutions();
+    let resultsProblem = getResultsProblem();
+    let selectedSolutions = getSolutions(resultsProblem);
 
     if (selectedSolutions.length > 1 && !state)
-        setSelectedSolution(getResultsProblem, selectedSolutions[0].source, selectedSolutions[0])
+        setSelectedSolution(resultsProblem, selectedSolutions[0].source, selectedSolutions[0])
 
     modelComparison = state;
 };
@@ -2721,7 +2736,7 @@ export async function callSolver(prob, datasetPath=undefined) {
 
         // add to rook solutions
         Object.assign(prob.solutions.rook, response.results)
-        let selectedPipelines = getSelectedSolutions();
+        let selectedPipelines = getSolutions(prob);
         if (selectedPipelines.length === 0) setSelectedSolution(prob, 'rook', Object.keys(prob.solutions.rook)[0]);
         m.redraw()
     })

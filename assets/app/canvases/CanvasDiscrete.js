@@ -173,10 +173,16 @@ export default class CanvasDiscrete {
                 sections: [{value: 'all'}, {value: 'none'}],
                 activeSection: {0: 'none', [data.length]: 'all'}[preferences.selections.size] || 'intermediate',
                 onclick: state => {
-                    if (state === 'none')
+                    if (state === 'none') {
                         preferences.selections = new Set();
-                    if (state === 'all')
-                        preferences.selections = data.reduce((out, entry) => out.add(entry[metadata.columns[0]]), new Set())
+                        preferences.selections_temp = '';
+                    }
+                    if (state === 'all') {
+                        preferences.selections = [];
+                        data.forEach(entry => preferences.selections.push(entry[metadata.columns[0]]));
+                        preferences.selections = new Set(preferences.selections.sort());
+                        preferences.selections_temp = [...preferences.selections].join(delimiter);
+                    }
                 },
                 attrsAll: {style: {width: '10em'}}
             }),

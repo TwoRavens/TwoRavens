@@ -274,8 +274,12 @@ export async function handleGetSearchSolutionResultsResponse(response1) {
 
     response1.source = 'd3m';
 
-    let solutionProblem = app.solverProblem.d3m;
-    let solutions = solutionProblem.solutions.d3m;
+    let solverProblem = app.solverProblem.d3m;
+    if (!solverProblem) {
+        alertError('TA2 solution arrived for an unknown problem. Please end the TA2 solution search.');
+        return;
+    }
+    let solutions = solverProblem.solutions.d3m;
 
     // Need to deal with (exclude) pipelines that are reported, but failed.  For approach, see below.
     if (response1.id in solutions)
@@ -301,9 +305,9 @@ export async function handleGetSearchSolutionResultsResponse(response1) {
     // getexecutepipelineresults is the third to be called
     //  makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(solutions)});
 
-    let selectedSolutions = app.getSelectedSolutions();
+    let selectedSolutions = app.getSolutions(solverProblem);
 
-    if (selectedSolutions.size === 0) setSelectedSolution(solutionProblem, 'd3m', response1.id);
+    if (selectedSolutions.size === 0) setSelectedSolution(solverProblem, 'd3m', response1.id);
 
     // Add pipeline descriptions
     // TODO: this is redundant, check if can be deleted
@@ -333,6 +337,11 @@ export async function handleDescribeSolutionResponse(response) {
     // -------------------------------
     let pipelineId = response.pipelineId;
     let solverProblem = app.solverProblem.d3m;
+    if (!solverProblem) {
+        alertError('TA2 solution arrived for an unknown problem. Please end the TA2 solution search.');
+        return;
+    }
+
     let solutions = solverProblem.solutions.d3m;
 
     Object.assign(solutions[pipelineId], response);
@@ -368,6 +377,11 @@ export async function handleGetScoreSolutionResultsResponse(response) {
     // Note: what's now the "res4DataId" needs to be sent to this function
     //
     let solverProblem = app.solverProblem.d3m;
+    if (!solverProblem) {
+        alertError('TA2 solution arrived for an unknown problem. Please end the TA2 solution search.');
+        return;
+    }
+
     let solutions = solverProblem.solutions.d3m;
     solutions[response.pipelineId].score = myscore;
     m.redraw();
@@ -405,9 +419,14 @@ export async function handleGetProduceSolutionResultsResponse(response) {
     let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
     let hold3 = hold2.csvUri;
 
-    let responseOutputData = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
 
     let solverProblem = app.solverProblem.d3m;
+    if (!solverProblem)  {
+        alertError('TA2 solution arrived for an unknown problem. Please end the TA2 solution search.');
+        return;
+    }
+
+    let responseOutputData = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
     let solutions = solverProblem.solutions.d3m;
     solutions[response.pipelineId].predictedValues = responseOutputData;
 
