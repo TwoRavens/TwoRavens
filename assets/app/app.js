@@ -1059,6 +1059,16 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             swandive = true;
         }
 
+        // -----------------------------
+        // Check with MS, quick hack to get resId working
+        // -----------------------------
+        let firstTarget;
+        if (typeof problemDoc.inputs.data[0].targets[0] !== 'undefined') {
+            firstTarget = problemDoc.inputs.data[0].targets[0];
+        }
+        // -----------------------------
+
+
         // create the default problem provided by d3m
         let targets = problemDoc.inputs.data
             .flatMap(source => source.targets.map(targ => targ.colName));
@@ -1071,11 +1081,14 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
                     .filter(column => column.role[0] !== 'index' && !targets.includes(column.colName))
                     .map(column => column.colName));
 
+        console.log('pdoc targets: ' + JSON.stringify(targets));
+
         let defaultProblem = {
             problemID: problemDoc.about.problemID,
             system: 'auto',
             version: problemDoc.about.version,
             predictors: predictors,
+            firstTarget: firstTarget,
             targets: targets,
             description: problemDoc.about.problemDescription,
             metric: problemDoc.inputs.performanceMetrics[0].metric,
@@ -1622,7 +1635,8 @@ function CreatePipelineData(dataset, problem) {
 
 // create problem definition for SearchSolutions call
 function CreateProblemDefinition(problem) {
-    // let resourceIdFromProblemDoc = d3mProblemDescription.firstTarget.resID;
+    console.log('problem: ' + JSON.stringify(problem));
+    let resourceIdFromProblemDoc = problem.firstTarget.resID;
     let problemSpec = {
         id: problem.problemID,
         version: problem.version || '1.0',
@@ -1637,7 +1651,7 @@ function CreateProblemDefinition(problem) {
         {
             datasetId: selectedDataset,
             targets: problem.targets.map((target, resourceId) => ({
-                // resourceId: resourceIdFromProblemDoc,
+                resourceId: resourceIdFromProblemDoc,
                 columnIndex: Object.keys(variableSummaries).indexOf(target),  // Adjusted to match dataset doc
                 columnName: target
             }))
