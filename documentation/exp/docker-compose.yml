@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  nginx:
+    build:
+      context: ./setup/nginx
+      dockerfile: Dockerfile
+    links:
+      - rook-service:rook-service
+      - tworavens:tworavens
+    ports:
+      - 80:80
+    depends_on:
+      - tworavens
+      - rook-service
+  rook-service:
+    build:
+      context: ./
+      dockerfile: Dockerfile-r-service
+    ports:
+      - 8000
+  tworavens:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    links:
+      - rook-service
+    ports:
+      - 8080
+      - 45042:45042
+      # 45042 is for gRPC communication
