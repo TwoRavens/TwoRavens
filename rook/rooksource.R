@@ -9,9 +9,12 @@
 ## Also set `production` toggle:  TRUE - Production, FALSE - Local Development.
 source("rookconfig.R")
 
+print(paste("production: ", production, sep=""))
 
 if(!production){
-    packageList.rooksolver <- c('caret', 'R.utils', "rpart", "ranger", "naivebayes")
+  print(paste("load packages...", sep=""))
+
+    packageList.rooksolver <- c('caret', 'R.utils', "rpart", "ranger", "naivebayes", "stargazer", "doParallel")
     packageList<-c("Rcpp","VGAM", "dplyr", "Amelia", "Rook", "jsonlite","rjson", "devtools", "DescTools", "nloptr", "XML", packageList.rooksolver)
 
     # Find an available repository on CRAN
@@ -20,12 +23,12 @@ if(!production){
     useRepos <- sample(availableRepos$URL[flag],1)
 
     ## install missing packages, and update if newer version available
-    # for(i in 1:length(packageList)){
-    #    if (!require(packageList[i],character.only = TRUE)){
-    #        install.packages(packageList[i], repos=useRepos)
-    #    }
-    # }
-    # update.packages(ask = FALSE, dependencies = c('Suggests'), oldPkgs=packageList, repos=useRepos)
+    for(i in 1:length(packageList)){
+        if (!require(packageList[i],character.only = TRUE)){
+            install.packages(packageList[i], repos=useRepos)
+        }
+     }
+    update.packages(ask = FALSE, dependencies = c('Suggests'), oldPkgs=packageList, repos=useRepos)
 }
 
 library(Rook)
