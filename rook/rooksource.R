@@ -31,6 +31,10 @@ if(!production){
 library(Rook)
 library(rjson)
 library(jsonlite)
+
+# library(lazyeval) # added 5/21/2019
+# library(processx) # added 5/21/2019
+
 library(devtools)
 library(DescTools)
 library(rpart)

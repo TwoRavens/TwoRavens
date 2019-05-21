@@ -617,15 +617,15 @@ export let d3mTaskType = {
 };
 
 export let d3mTaskSubtype = {
-    taskSubtypeUndefined:["description", "TASK_SUBTYPE_UNDEFINED", 0],
-    subtypeNone:["description","NONE",1],
-    binary:["description", "BINARY" , 2],
-    multiClass:["description", "MULTICLASS" , 3],
-    multiLabel:["description", "MULTILABEL" , 4],
-    univariate:["description", "UNIVARIATE" , 5],
-    multivariate:["description", "MULTIVARIATE" , 6],
-    overlapping:["description", "OVERLAPPING" , 7],
-    nonOverlapping:["description", "NONOVERLAPPING" , 8]
+    taskSubtypeUndefined: ["description", "TASK_SUBTYPE_UNDEFINED", 0],
+    subtypeNone: ["description", "NONE",1],
+    binary: ["description", "BINARY" , 2],
+    multiClass: ["description", "MULTICLASS" , 3],
+    multiLabel: ["description", "MULTILABEL" , 4],
+    univariate: ["description", "UNIVARIATE" , 5],
+    multivariate: ["description", "MULTIVARIATE" , 6],
+    overlapping: ["description", "OVERLAPPING" , 7],
+    nonOverlapping: ["description", "NONOVERLAPPING" , 8]
 };
 /*export let d3mOutputType = {
     outputUndefined:["description","OUTPUT_TYPE_UNDEFINED ", 0],
@@ -1624,7 +1624,7 @@ function CreatePipelineData(dataset, problem) {
         // }],
         targetFeatures: problem.targets.map((target, i) => ({resource_id: i, feature_name: target})),
         task: problem.task,
-        taskSubtype: problem.subTask,
+        taskSubtype: problem.subTask || d3mTaskSubtype.subtypeNone[1],
         taskDescription: problem.description,
         metrics: [problem.metrics],
         maxPipelines: 1
@@ -1642,7 +1642,9 @@ function CreateProblemDefinition(problem) {
         version: problem.version || '1.0',
         name: problem.problemID,
         taskType: d3mTaskType[problem.task][1],
-        taskSubtype: problem.taskSubtype, // TODO: MULTICLASS designation
+        // taskSubtype: problem.taskSubtype, // TODO: MULTICLASS designation
+        taskSubtype: problem.taskSubtype || d3mTaskSubtype.subtypeNone[1],
+
         performanceMetrics: [{metric: d3mMetrics[problem.metric][1]}]  // need to generalize to case with multiple metrics.  only passes on first presently.
     };
     if (problemSpec.taskSubtype === 'taskSubtypeUndefined') delete problemSpec.taskSubtype;
