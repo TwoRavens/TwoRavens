@@ -4,8 +4,9 @@
 ##  1. caret doesn't support a multivariate response. Each target is fit as a univariate model
 ##  2. caret doesn't support partial results under a timeout. Timeouts are returned empty
 ##
+source("rookconfig.R")
 
-production <- FALSE
+# production <- FALSE
 timeout <- 20 # maximum time to spend on a univariate fit
 
 # limit on number of fitted values to return to frontend
@@ -145,7 +146,7 @@ solver <- function(everything) {
 
   if (!(crossValidation %in% c('cv', 'timeslice')))
     return(list(error = paste0('Invalid crossValidation "', crossValidation, '"')))
-  
+
   # load data
   data <- tryCatch({
     # TODO: use library for loading data, don't rely on extension
@@ -210,7 +211,7 @@ solver <- function(everything) {
       ))),
       error=function(err) error(paste0("R solver failed fitting model (", err, ")")))
     if (names(caretWrapper) == c("error")) return(caretWrapper)
-    
+
     # analyze model
     analysis <- tryCatch({
 
@@ -233,11 +234,11 @@ solver <- function(everything) {
 
     analysis
   }
-  
+
   names(methods) <- sapply(methods, function(method) caret::getModelInfo()[[method]]$label)
-  
+
   results <- mapply(function(method, hyperparams) {
-    
+
     # exit if package is not installed, to prevent thread block on caret's user prompt to install package
     methodInfo <- caret::getModelInfo()[[method]]
     if (is.null(methodInfo)) return(error(paste0("'", method, "' is not a valid method.")))
@@ -245,7 +246,7 @@ solver <- function(everything) {
       if (inherits(try(library(package, character.only = TRUE)), 'try-error'))
         return(error(paste0("Dependency '", package, "' is not installed for caret method '", methods, "'. Please contact us to add the dependency.")))
     }
-  
+
     list(
       models=sapply(problem[['targets']], function(target) {
         R.utils::withTimeout(solver.univariate(target, method, hyperparams), timeout=timeout)
