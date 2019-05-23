@@ -1984,7 +1984,8 @@ export async function estimate() {
     } else delete selectedProblem.datasetDocPath;
 
     // initiate rook solver
-    callSolver(selectedProblem, datasetPath);
+    // - TO-FIX 5/22/2019
+    // callSolver(selectedProblem, datasetPath);
 
     let datasetDocPath = selectedProblem.datasetDocPath || getSelectedDataset().datasetDocPath;
 
