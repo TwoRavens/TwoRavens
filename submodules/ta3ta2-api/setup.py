@@ -1,4 +1,5 @@
 import os
+import os.path
 import sys
 from setuptools import setup, find_packages
 
@@ -23,6 +24,11 @@ def read_package_variable(key):
     raise KeyError("'{0}' not found in '{1}'".format(key, module_path))
 
 
+def read_readme():
+    with open(os.path.join(os.path.dirname(__file__), 'README.md'), encoding='utf8') as file:
+        return file.read()
+
+
 check_python_version()
 version = read_package_variable('__version__')
 
@@ -33,12 +39,11 @@ setup(
     author='DARPA D3M Program',
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
     install_requires=[
-        'd3m==2019.2.18',
+        'd3m==2019.4.4',
         'grpcio',
         'grpcio-tools',
     ],
     url='https://gitlab.com/datadrivendiscovery/ta3ta2-api',
-    dependency_links=[
-        'git+https://gitlab.com/datadrivendiscovery/d3m.git@devel#egg=d3m-devel',
-    ],
+    long_description=read_readme(),
+    long_description_content_type='text/markdown',
 )

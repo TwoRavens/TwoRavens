@@ -383,10 +383,10 @@ def run_rook():
     """Run the rook server via the command line"""
     local(get_run_rook_cmd())
 
-@task
-def run_with_rook():
-    """In addition to the django dev server and webpack, run rook via the Terminal"""
-    run(with_rook=True)
+#@task
+#def run_with_rook():
+#    """In addition to the django dev server and webpack, run rook via the Terminal"""
+#    run(with_rook=True)
 
 @task
 def run_with_ta2():

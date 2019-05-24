@@ -14,16 +14,14 @@ from google.protobuf import descriptor_pb2
 _sym_db = _symbol_database.Default()
 
 
-from google.protobuf import descriptor_pb2 as google_dot_protobuf_dot_descriptor__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='problem.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\rproblem.proto\x1a google/protobuf/descriptor.proto\"\\\n\x18ProblemPerformanceMetric\x12\"\n\x06metric\x18\x01 \x01(\x0e\x32\x12.PerformanceMetric\x12\t\n\x01k\x18\x02 \x01(\x05\x12\x11\n\tpos_label\x18\x03 \x01(\t\"\xd3\x01\n\x07Problem\x12\x0e\n\x02id\x18\x01 \x01(\tB\x02\x18\x01\x12\x13\n\x07version\x18\x02 \x01(\tB\x02\x18\x01\x12\x10\n\x04name\x18\x03 \x01(\tB\x02\x18\x01\x12\x17\n\x0b\x64\x65scription\x18\x04 \x01(\tB\x02\x18\x01\x12\x1c\n\ttask_type\x18\x05 \x01(\x0e\x32\t.TaskType\x12\"\n\x0ctask_subtype\x18\x06 \x01(\x0e\x32\x0c.TaskSubtype\x12\x36\n\x13performance_metrics\x18\x07 \x03(\x0b\x32\x19.ProblemPerformanceMetric\"~\n\rProblemTarget\x12\x14\n\x0ctarget_index\x18\x01 \x01(\x05\x12\x13\n\x0bresource_id\x18\x02 \x01(\t\x12\x14\n\x0c\x63olumn_index\x18\x03 \x01(\x05\x12\x13\n\x0b\x63olumn_name\x18\x04 \x01(\t\x12\x17\n\x0f\x63lusters_number\x18\x05 \x01(\x05\"C\n\x0cProblemInput\x12\x12\n\ndataset_id\x18\x01 \x01(\t\x12\x1f\n\x07targets\x18\x02 \x03(\x0b\x32\x0e.ProblemTarget\"4\n\x10\x44\x61taAugmentation\x12\x0e\n\x06\x64omain\x18\x01 \x03(\t\x12\x10\n\x08keywords\x18\x02 \x03(\t\"\xcc\x01\n\x12ProblemDescription\x12\x19\n\x07problem\x18\x01 \x01(\x0b\x32\x08.Problem\x12\x1d\n\x06inputs\x18\x02 \x03(\x0b\x32\r.ProblemInput\x12\n\n\x02id\x18\x03 \x01(\t\x12\x0f\n\x07version\x18\x04 \x01(\t\x12\x0c\n\x04name\x18\x05 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x06 \x01(\t\x12\x0e\n\x06\x64igest\x18\x07 \x01(\t\x12,\n\x11\x64\x61ta_augmentation\x18\x08 \x03(\x0b\x32\x11.DataAugmentation*\x96\x02\n\x08TaskType\x12\x17\n\x13TASK_TYPE_UNDEFINED\x10\x00\x12\x12\n\x0e\x43LASSIFICATION\x10\x01\x12\x0e\n\nREGRESSION\x10\x02\x12\x0e\n\nCLUSTERING\x10\x03\x12\x13\n\x0fLINK_PREDICTION\x10\x04\x12\x15\n\x11VERTEX_NOMINATION\x10\x05\x12\x17\n\x13\x43OMMUNITY_DETECTION\x10\x06\x12\x14\n\x10GRAPH_CLUSTERING\x10\x07\x12\x12\n\x0eGRAPH_MATCHING\x10\x08\x12\x1b\n\x17TIME_SERIES_FORECASTING\x10\t\x12\x1b\n\x17\x43OLLABORATIVE_FILTERING\x10\n\x12\x14\n\x10OBJECT_DETECTION\x10\x0b*\xa6\x01\n\x0bTaskSubtype\x12\x1a\n\x16TASK_SUBTYPE_UNDEFINED\x10\x00\x12\x08\n\x04NONE\x10\x01\x12\n\n\x06\x42INARY\x10\x02\x12\x0e\n\nMULTICLASS\x10\x03\x12\x0e\n\nMULTILABEL\x10\x04\x12\x0e\n\nUNIVARIATE\x10\x05\x12\x10\n\x0cMULTIVARIATE\x10\x06\x12\x0f\n\x0bOVERLAPPING\x10\x07\x12\x12\n\x0eNONOVERLAPPING\x10\x08*\xb2\x03\n\x11PerformanceMetric\x12\x14\n\x10METRIC_UNDEFINED\x10\x00\x12\x0c\n\x08\x41\x43\x43URACY\x10\x01\x12\r\n\tPRECISION\x10\x02\x12\n\n\x06RECALL\x10\x03\x12\x06\n\x02\x46\x31\x10\x04\x12\x0c\n\x08\x46\x31_MICRO\x10\x05\x12\x0c\n\x08\x46\x31_MACRO\x10\x06\x12\x0b\n\x07ROC_AUC\x10\x07\x12\x11\n\rROC_AUC_MICRO\x10\x08\x12\x11\n\rROC_AUC_MACRO\x10\t\x12\x16\n\x12MEAN_SQUARED_ERROR\x10\n\x12\x1b\n\x17ROOT_MEAN_SQUARED_ERROR\x10\x0b\x12\x1f\n\x1bROOT_MEAN_SQUARED_ERROR_AVG\x10\x0c\x12\x17\n\x13MEAN_ABSOLUTE_ERROR\x10\r\x12\r\n\tR_SQUARED\x10\x0e\x12!\n\x1dNORMALIZED_MUTUAL_INFORMATION\x10\x0f\x12\x1c\n\x18JACCARD_SIMILARITY_SCORE\x10\x10\x12\x16\n\x12PRECISION_AT_TOP_K\x10\x11\x12&\n\"OBJECT_DETECTION_AVERAGE_PRECISION\x10\x12\x12\x08\n\x04LOSS\x10\x64\x42\nZ\x08pipelineb\x06proto3')
-  ,
-  dependencies=[google_dot_protobuf_dot_descriptor__pb2.DESCRIPTOR,])
+  serialized_pb=_b('\n\rproblem.proto\"\\\n\x18ProblemPerformanceMetric\x12\"\n\x06metric\x18\x01 \x01(\x0e\x32\x12.PerformanceMetric\x12\t\n\x01k\x18\x02 \x01(\x05\x12\x11\n\tpos_label\x18\x03 \x01(\t\"\x83\x01\n\x07Problem\x12\x1c\n\ttask_type\x18\x05 \x01(\x0e\x32\t.TaskType\x12\"\n\x0ctask_subtype\x18\x06 \x01(\x0e\x32\x0c.TaskSubtype\x12\x36\n\x13performance_metrics\x18\x07 \x03(\x0b\x32\x19.ProblemPerformanceMetric\"~\n\rProblemTarget\x12\x14\n\x0ctarget_index\x18\x01 \x01(\x05\x12\x13\n\x0bresource_id\x18\x02 \x01(\t\x12\x14\n\x0c\x63olumn_index\x18\x03 \x01(\x05\x12\x13\n\x0b\x63olumn_name\x18\x04 \x01(\t\x12\x17\n\x0f\x63lusters_number\x18\x05 \x01(\x05\"v\n\x15ProblemPrivilegedData\x12\x1d\n\x15privileged_data_index\x18\x01 \x01(\x05\x12\x13\n\x0bresource_id\x18\x02 \x01(\t\x12\x14\n\x0c\x63olumn_index\x18\x03 \x01(\x05\x12\x13\n\x0b\x63olumn_name\x18\x04 \x01(\t\"t\n\x0cProblemInput\x12\x12\n\ndataset_id\x18\x01 \x01(\t\x12\x1f\n\x07targets\x18\x02 \x03(\x0b\x32\x0e.ProblemTarget\x12/\n\x0fprivileged_data\x18\x03 \x03(\x0b\x32\x16.ProblemPrivilegedData\"4\n\x10\x44\x61taAugmentation\x12\x0e\n\x06\x64omain\x18\x01 \x03(\t\x12\x10\n\x08keywords\x18\x02 \x03(\t\"\xe1\x01\n\x12ProblemDescription\x12\x19\n\x07problem\x18\x01 \x01(\x0b\x32\x08.Problem\x12\x1d\n\x06inputs\x18\x02 \x03(\x0b\x32\r.ProblemInput\x12\n\n\x02id\x18\x03 \x01(\t\x12\x0f\n\x07version\x18\x04 \x01(\t\x12\x0c\n\x04name\x18\x05 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x06 \x01(\t\x12\x0e\n\x06\x64igest\x18\x07 \x01(\t\x12,\n\x11\x64\x61ta_augmentation\x18\x08 \x03(\x0b\x32\x11.DataAugmentation\x12\x13\n\x0bother_names\x18\t \x03(\t*\xdd\x02\n\x08TaskType\x12\x17\n\x13TASK_TYPE_UNDEFINED\x10\x00\x12\x12\n\x0e\x43LASSIFICATION\x10\x01\x12\x0e\n\nREGRESSION\x10\x02\x12\x0e\n\nCLUSTERING\x10\x03\x12\x13\n\x0fLINK_PREDICTION\x10\x04\x12\x15\n\x11VERTEX_NOMINATION\x10\x05\x12\x19\n\x15VERTEX_CLASSIFICATION\x10\x06\x12\x17\n\x13\x43OMMUNITY_DETECTION\x10\x07\x12\x12\n\x0eGRAPH_MATCHING\x10\x08\x12\x1b\n\x17TIME_SERIES_FORECASTING\x10\t\x12\x1b\n\x17\x43OLLABORATIVE_FILTERING\x10\n\x12\x14\n\x10OBJECT_DETECTION\x10\x0b\x12!\n\x1dSEMISUPERVISED_CLASSIFICATION\x10\x0c\x12\x1d\n\x19SEMISUPERVISED_REGRESSION\x10\r*\xa6\x01\n\x0bTaskSubtype\x12\x1a\n\x16TASK_SUBTYPE_UNDEFINED\x10\x00\x12\x08\n\x04NONE\x10\x01\x12\n\n\x06\x42INARY\x10\x02\x12\x0e\n\nMULTICLASS\x10\x03\x12\x0e\n\nMULTILABEL\x10\x04\x12\x0e\n\nUNIVARIATE\x10\x05\x12\x10\n\x0cMULTIVARIATE\x10\x06\x12\x0f\n\x0bOVERLAPPING\x10\x07\x12\x12\n\x0eNONOVERLAPPING\x10\x08*\xad\x03\n\x11PerformanceMetric\x12\x14\n\x10METRIC_UNDEFINED\x10\x00\x12\x0c\n\x08\x41\x43\x43URACY\x10\x01\x12\r\n\tPRECISION\x10\x02\x12\n\n\x06RECALL\x10\x03\x12\x06\n\x02\x46\x31\x10\x04\x12\x0c\n\x08\x46\x31_MICRO\x10\x05\x12\x0c\n\x08\x46\x31_MACRO\x10\x06\x12\x0b\n\x07ROC_AUC\x10\x07\x12\x11\n\rROC_AUC_MICRO\x10\x08\x12\x11\n\rROC_AUC_MACRO\x10\t\x12\x16\n\x12MEAN_SQUARED_ERROR\x10\n\x12\x1b\n\x17ROOT_MEAN_SQUARED_ERROR\x10\x0b\x12\x17\n\x13MEAN_ABSOLUTE_ERROR\x10\x0c\x12\r\n\tR_SQUARED\x10\r\x12!\n\x1dNORMALIZED_MUTUAL_INFORMATION\x10\x0e\x12\x1c\n\x18JACCARD_SIMILARITY_SCORE\x10\x0f\x12\x16\n\x12PRECISION_AT_TOP_K\x10\x11\x12&\n\"OBJECT_DETECTION_AVERAGE_PRECISION\x10\x12\x12\x10\n\x0cHAMMING_LOSS\x10\x13\x12\x08\n\x04RANK\x10\x63\x12\x08\n\x04LOSS\x10\x64\x42\nZ\x08pipelineb\x06proto3')
+)
 
 _TASKTYPE = _descriptor.EnumDescriptor(
   name='TaskType',
@@ -56,11 +54,11 @@ _TASKTYPE = _descriptor.EnumDescriptor(
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='COMMUNITY_DETECTION', index=6, number=6,
+      name='VERTEX_CLASSIFICATION', index=6, number=6,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='GRAPH_CLUSTERING', index=7, number=7,
+      name='COMMUNITY_DETECTION', index=7, number=7,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
@@ -79,11 +77,19 @@ _TASKTYPE = _descriptor.EnumDescriptor(
       name='OBJECT_DETECTION', index=11, number=11,
       options=None,
       type=None),
+    _descriptor.EnumValueDescriptor(
+      name='SEMISUPERVISED_CLASSIFICATION', index=12, number=12,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='SEMISUPERVISED_REGRESSION', index=13, number=13,
+      options=None,
+      type=None),
   ],
   containing_type=None,
   options=None,
-  serialized_start=818,
-  serialized_end=1096,
+  serialized_start=894,
+  serialized_end=1243,
 )
 _sym_db.RegisterEnumDescriptor(_TASKTYPE)
 
@@ -133,8 +139,8 @@ _TASKSUBTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=1099,
-  serialized_end=1265,
+  serialized_start=1246,
+  serialized_end=1412,
 )
 _sym_db.RegisterEnumDescriptor(_TASKSUBTYPE)
 
@@ -194,42 +200,46 @@ _PERFORMANCEMETRIC = _descriptor.EnumDescriptor(
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='ROOT_MEAN_SQUARED_ERROR_AVG', index=12, number=12,
+      name='MEAN_ABSOLUTE_ERROR', index=12, number=12,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='MEAN_ABSOLUTE_ERROR', index=13, number=13,
+      name='R_SQUARED', index=13, number=13,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='R_SQUARED', index=14, number=14,
+      name='NORMALIZED_MUTUAL_INFORMATION', index=14, number=14,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='NORMALIZED_MUTUAL_INFORMATION', index=15, number=15,
+      name='JACCARD_SIMILARITY_SCORE', index=15, number=15,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='JACCARD_SIMILARITY_SCORE', index=16, number=16,
+      name='PRECISION_AT_TOP_K', index=16, number=17,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='PRECISION_AT_TOP_K', index=17, number=17,
+      name='OBJECT_DETECTION_AVERAGE_PRECISION', index=17, number=18,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='OBJECT_DETECTION_AVERAGE_PRECISION', index=18, number=18,
+      name='HAMMING_LOSS', index=18, number=19,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='LOSS', index=19, number=100,
+      name='RANK', index=19, number=99,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='LOSS', index=20, number=100,
       options=None,
       type=None),
   ],
   containing_type=None,
   options=None,
-  serialized_start=1268,
-  serialized_end=1702,
+  serialized_start=1415,
+  serialized_end=1844,
 )
 _sym_db.RegisterEnumDescriptor(_PERFORMANCEMETRIC)
 
@@ -240,12 +250,14 @@ REGRESSION = 2
 CLUSTERING = 3
 LINK_PREDICTION = 4
 VERTEX_NOMINATION = 5
-COMMUNITY_DETECTION = 6
-GRAPH_CLUSTERING = 7
+VERTEX_CLASSIFICATION = 6
+COMMUNITY_DETECTION = 7
 GRAPH_MATCHING = 8
 TIME_SERIES_FORECASTING = 9
 COLLABORATIVE_FILTERING = 10
 OBJECT_DETECTION = 11
+SEMISUPERVISED_CLASSIFICATION = 12
+SEMISUPERVISED_REGRESSION = 13
 TASK_SUBTYPE_UNDEFINED = 0
 NONE = 1
 BINARY = 2
@@ -267,13 +279,14 @@ ROC_AUC_MICRO = 8
 ROC_AUC_MACRO = 9
 MEAN_SQUARED_ERROR = 10
 ROOT_MEAN_SQUARED_ERROR = 11
-ROOT_MEAN_SQUARED_ERROR_AVG = 12
-MEAN_ABSOLUTE_ERROR = 13
-R_SQUARED = 14
-NORMALIZED_MUTUAL_INFORMATION = 15
-JACCARD_SIMILARITY_SCORE = 16
+MEAN_ABSOLUTE_ERROR = 12
+R_SQUARED = 13
+NORMALIZED_MUTUAL_INFORMATION = 14
+JACCARD_SIMILARITY_SCORE = 15
 PRECISION_AT_TOP_K = 17
 OBJECT_DETECTION_AVERAGE_PRECISION = 18
+HAMMING_LOSS = 19
+RANK = 99
 LOSS = 100
 
 
@@ -318,8 +331,8 @@ _PROBLEMPERFORMANCEMETRIC = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=51,
-  serialized_end=143,
+  serialized_start=17,
+  serialized_end=109,
 )
 
 
@@ -331,49 +344,21 @@ _PROBLEM = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='id', full_name='Problem.id', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\030\001')), file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='version', full_name='Problem.version', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\030\001')), file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='name', full_name='Problem.name', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\030\001')), file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='description', full_name='Problem.description', index=3,
-      number=4, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\030\001')), file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='task_type', full_name='Problem.task_type', index=4,
+      name='task_type', full_name='Problem.task_type', index=0,
       number=5, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='task_subtype', full_name='Problem.task_subtype', index=5,
+      name='task_subtype', full_name='Problem.task_subtype', index=1,
       number=6, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='performance_metrics', full_name='Problem.performance_metrics', index=6,
+      name='performance_metrics', full_name='Problem.performance_metrics', index=2,
       number=7, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -391,8 +376,8 @@ _PROBLEM = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=146,
-  serialized_end=357,
+  serialized_start=112,
+  serialized_end=243,
 )
 
 
@@ -450,8 +435,60 @@ _PROBLEMTARGET = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=359,
-  serialized_end=485,
+  serialized_start=245,
+  serialized_end=371,
+)
+
+
+_PROBLEMPRIVILEGEDDATA = _descriptor.Descriptor(
+  name='ProblemPrivilegedData',
+  full_name='ProblemPrivilegedData',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='privileged_data_index', full_name='ProblemPrivilegedData.privileged_data_index', index=0,
+      number=1, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='resource_id', full_name='ProblemPrivilegedData.resource_id', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='column_index', full_name='ProblemPrivilegedData.column_index', index=2,
+      number=3, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='column_name', full_name='ProblemPrivilegedData.column_name', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=373,
+  serialized_end=491,
 )
 
 
@@ -476,6 +513,13 @@ _PROBLEMINPUT = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='privileged_data', full_name='ProblemInput.privileged_data', index=2,
+      number=3, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -488,8 +532,8 @@ _PROBLEMINPUT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=487,
-  serialized_end=554,
+  serialized_start=493,
+  serialized_end=609,
 )
 
 
@@ -526,8 +570,8 @@ _DATAAUGMENTATION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=556,
-  serialized_end=608,
+  serialized_start=611,
+  serialized_end=663,
 )
 
 
@@ -594,6 +638,13 @@ _PROBLEMDESCRIPTION = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='other_names', full_name='ProblemDescription.other_names', index=8,
+      number=9, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -606,8 +657,8 @@ _PROBLEMDESCRIPTION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=611,
-  serialized_end=815,
+  serialized_start=666,
+  serialized_end=891,
 )
 
 _PROBLEMPERFORMANCEMETRIC.fields_by_name['metric'].enum_type = _PERFORMANCEMETRIC
@@ -615,12 +666,14 @@ _PROBLEM.fields_by_name['task_type'].enum_type = _TASKTYPE
 _PROBLEM.fields_by_name['task_subtype'].enum_type = _TASKSUBTYPE
 _PROBLEM.fields_by_name['performance_metrics'].message_type = _PROBLEMPERFORMANCEMETRIC
 _PROBLEMINPUT.fields_by_name['targets'].message_type = _PROBLEMTARGET
+_PROBLEMINPUT.fields_by_name['privileged_data'].message_type = _PROBLEMPRIVILEGEDDATA
 _PROBLEMDESCRIPTION.fields_by_name['problem'].message_type = _PROBLEM
 _PROBLEMDESCRIPTION.fields_by_name['inputs'].message_type = _PROBLEMINPUT
 _PROBLEMDESCRIPTION.fields_by_name['data_augmentation'].message_type = _DATAAUGMENTATION
 DESCRIPTOR.message_types_by_name['ProblemPerformanceMetric'] = _PROBLEMPERFORMANCEMETRIC
 DESCRIPTOR.message_types_by_name['Problem'] = _PROBLEM
 DESCRIPTOR.message_types_by_name['ProblemTarget'] = _PROBLEMTARGET
+DESCRIPTOR.message_types_by_name['ProblemPrivilegedData'] = _PROBLEMPRIVILEGEDDATA
 DESCRIPTOR.message_types_by_name['ProblemInput'] = _PROBLEMINPUT
 DESCRIPTOR.message_types_by_name['DataAugmentation'] = _DATAAUGMENTATION
 DESCRIPTOR.message_types_by_name['ProblemDescription'] = _PROBLEMDESCRIPTION
@@ -650,6 +703,13 @@ ProblemTarget = _reflection.GeneratedProtocolMessageType('ProblemTarget', (_mess
   ))
 _sym_db.RegisterMessage(ProblemTarget)
 
+ProblemPrivilegedData = _reflection.GeneratedProtocolMessageType('ProblemPrivilegedData', (_message.Message,), dict(
+  DESCRIPTOR = _PROBLEMPRIVILEGEDDATA,
+  __module__ = 'problem_pb2'
+  # @@protoc_insertion_point(class_scope:ProblemPrivilegedData)
+  ))
+_sym_db.RegisterMessage(ProblemPrivilegedData)
+
 ProblemInput = _reflection.GeneratedProtocolMessageType('ProblemInput', (_message.Message,), dict(
   DESCRIPTOR = _PROBLEMINPUT,
   __module__ = 'problem_pb2'
@@ -674,12 +734,4 @@ _sym_db.RegisterMessage(ProblemDescription)
 
 DESCRIPTOR.has_options = True
 DESCRIPTOR._options = _descriptor._ParseOptions(descriptor_pb2.FileOptions(), _b('Z\010pipeline'))
-_PROBLEM.fields_by_name['id'].has_options = True
-_PROBLEM.fields_by_name['id']._options = _descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\030\001'))
-_PROBLEM.fields_by_name['version'].has_options = True
-_PROBLEM.fields_by_name['version']._options = _descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\030\001'))
-_PROBLEM.fields_by_name['name'].has_options = True
-_PROBLEM.fields_by_name['name']._options = _descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\030\001'))
-_PROBLEM.fields_by_name['description'].has_options = True
-_PROBLEM.fields_by_name['description']._options = _descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\030\001'))
 # @@protoc_insertion_point(module_scope)

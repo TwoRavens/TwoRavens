@@ -1,0 +1,64 @@
+digraph G {
+  compound=true;
+
+  node [style="filled", fillcolor="#99aaff", shape="ellipse"];
+  Hello;
+  SearchSolutions;
+  DescribeSolution;
+  ScoreSolution;
+  FitSolution;
+  ProduceSolution;
+  SolutionExport;
+  UpdateProblem;
+  ListPrimitives;
+  SaveSolution;
+  LoadSolution;
+  SaveFittedSolution;
+  LoadFittedSolution;
+
+  node [style="filled", fillcolor="#ffdddd", shape="rectangle"];
+  "outputs";
+
+  subgraph cluster0 {
+      label="inputs";
+      style="filled";
+      fillcolor="#ffdddd";
+      shape="rectangle";
+      node [style="filled", fillcolor="#ffdddd", shape="rectangle"];
+      search;
+      train;
+      score;
+      test;
+  }
+
+  node [style="filled", fillcolor="#ffffff", shape="rectangle"];
+
+  Hello -> "user_agent, version, extensions";
+  template -> SearchSolutions;
+  problem -> SearchSolutions;
+  search -> SearchSolutions;
+  SearchSolutions -> solution_id [penwidth=3.0];
+  SearchSolutions -> scores [penwidth=3.0];
+  solution_id -> DescribeSolution;
+  DescribeSolution -> "pipeline description";
+  solution_id -> ScoreSolution;
+  score -> ScoreSolution;
+  metrics -> ScoreSolution;
+  ScoreSolution -> scores [penwidth=3.0];
+  solution_id -> FitSolution;
+  train -> FitSolution
+  FitSolution -> outputs [penwidth=3.0];
+  FitSolution -> fitted_solution_id;
+  fitted_solution_id -> ProduceSolution;
+  fitted_solution_id -> SaveFittedSolution;
+  LoadFittedSolution -> fitted_solution_id;
+  test -> ProduceSolution;
+  ProduceSolution -> outputs [penwidth=3.0];
+  fitted_solution_id -> SolutionExport;
+  solution_id -> SaveSolution;
+  LoadSolution -> solution_id;
+  rank -> SolutionExport
+  SearchSolutions -> UpdateProblem;
+  problem -> UpdateProblem;
+  ListPrimitives -> primitives;
+}

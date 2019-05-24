@@ -603,17 +603,20 @@ export let domainIdentifier = null; // available throughout apps js; used for sa
 // metrics, tasks, and subtasks as specified in D3M schemas
 // MEAN SQUARED ERROR IS SET TO SAME AS RMSE. MSE is in schema but not proto
 export let d3mTaskType = {
-    taskTypeUndefined: ["description", "TASK_TYPE_UNDEFINED", 0],
-    classification: ["description", "CLASSIFICATION" , 1],
-    regression: ["description", "REGRESSION" , 2],
-    clustering: ["description", "CLUSTERING", 3],
-    linkPrediction: ["description", "LINK_PREDICTION" , 4],
-    vertexNomination: ["description", "VERTEX_NOMINATION" , 5],
-    communityDetection: ["description", "COMMUNITY_DETECTION" , 6],
-    graphClustering: ["description", "GRAPH_CLUSTERING" , 7],
-    graphMatching: ["description", "GRAPH_MATCHING" , 8],
-    timeSeriesForecasting: ["description", "TIME_SERIES_FORECASTING" , 9],
-    collaborativeFiltering: ["description", "COLLABORATIVE_FILTERING" , 10]
+  taskTypeUndefined: ["description", "TASK_TYPE_UNDEFINED", 0],
+  classification: ["description", "CLASSIFICATION", 1],
+  regression: ["description", "REGRESSION", 2],
+  clustering: ["description", "CLUSTERING", 3],
+  linkPrediction: ["description", "LINK_PREDICTION", 4],
+  vertexNomination: ["description", "VERTEX_NOMINATION", 5],
+  vertexClassification: ["description", "VERTEX_CLASSIFICATION", 6],
+  communityDetection: ["description", "COMMUNITY_DETECTION", 7],
+  graphMatching: ["description", "GRAPH_MATCHING", 8],
+  timeSeriesForecasting: ["description", "TIME_SERIES_FORECASTING", 9],
+  collaborativeFiltering: ["description", "COLLABORATIVE_FILTERING", 10],
+  objectDetection: ["description", "OBJECT_DETECTION", 11],
+  semisupervisedClassification: ["description", "SEMISUPERVISED_CLASSIFICATION", 12],
+  semisupervisedRegression: ["description", "SEMISUPERVISED_REGRESSION", 13]
 };
 
 export let d3mTaskSubtype = {
@@ -633,22 +636,27 @@ export let d3mTaskSubtype = {
     scoresFile:["description","SCORES_FILE",2]
 }; */
 export let d3mMetrics = {
-    metricUndefined:["description", "METRIC_UNDEFINED" , 0],
-    executionTime:["description", "EXECUTION_TIME", 1],
-    accuracy : ["description", "ACCURACY" , 2],
-    f1:["description", "F1" , 3],
-    f1Micro:["description", "F1_MICRO" , 4],
-    f1Macro:["description", "F1_MACRO" , 5],
-    rocAuc:["description", "ROC_AUC" , 6],
-    rocAucMicro:["description", "ROC_AUC_MICRO" , 7],
-    rocAucMacro:["description", "ROC_AUC_MACRO" , 8],
-    meanSquaredError:["description", "MEAN_SQUARED_ERROR", 9],
-    rootMeanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR" , 10],
-    rootMeanSquaredErrorAvg:["description", "ROOT_MEAN_SQUARED_ERROR_AVG" , 11],
-    meanAbsoluteError:["description", "MEAN_ABSOLUTE_ERROR" , 12],
-    rSquared:["description", "R_SQUARED" , 13],
-    normalizedMutualInformation:["description", "NORMALIZED_MUTUAL_INFORMATION" , 14],
-    jaccardSimilarityScore:["description", "JACCARD_SIMILARITY_SCORE" , 15]
+    metricUndefined: ["description", "METRIC_UNDEFINED", 0],
+    accuracy: ["description", "ACCURACY", 1],
+    precision: ["description", "PRECISION", 2],
+    recall: ["description", "RECALL", 3],
+    f1: ["description", "F1", 4],
+    f1Micro: ["description", "F1_MICRO", 5],
+    f1Macro: ["description", "F1_MACRO", 6],
+    rocAuc: ["description", "ROC_AUC", 7],
+    rocAucMicro: ["description", "ROC_AUC_MICRO", 8],
+    rocAucMacro: ["description", "ROC_AUC_MACRO", 9],
+    meanSquaredError: ["description", "MEAN_SQUARED_ERROR", 10],
+    rootMeanSquaredError: ["description", "ROOT_MEAN_SQUARED_ERROR", 11],
+    meanAbsoluteError: ["description", "MEAN_ABSOLUTE_ERROR", 12],
+    rSquared: ["description", "R_SQUARED", 13],
+    normalizedMutualInformation: ["description", "NORMALIZED_MUTUAL_INFORMATION", 14],
+    jaccardSimilarityScore: ["description", "JACCARD_SIMILARITY_SCORE", 15],
+    precisionAtTopK: ["description", "PRECISION_AT_TOP_K", 17],
+    objectDetectionAveragePrecision: ["description", "OBJECT_DETECTION_AVERAGE_PRECISION", 18],
+    hammingLoss: ["description", "HAMMING_LOSS", 19],
+    rank: ["description", "RANK", 99],
+    loss: ["description", "LOSS", 100]
 };
 
 // available models from rookSolver
@@ -1638,9 +1646,9 @@ function CreateProblemDefinition(problem) {
     console.log('problem: ' + JSON.stringify(problem));
     let resourceIdFromProblemDoc = problem.firstTarget.resID;
     let problemSpec = {
-        id: problem.problemID,
-        version: problem.version || '1.0',
-        name: problem.problemID,
+        // id: problem.problemID,  // remove for API 2019.4.11
+        // version: problem.version, // remove for API 2019.4.11
+        // name: problem.problemID, // remove for API 2019.4.11
         taskType: d3mTaskType[problem.task][1],
         // taskSubtype: problem.taskSubtype, // TODO: MULTICLASS designation
         taskSubtype: problem.taskSubtype || d3mTaskSubtype.subtypeNone[1],
@@ -1704,7 +1712,7 @@ function CreatePipelineDefinition(problem, timeBound) {
     return {
         userAgent: TA3_GRPC_USER_AGENT, // set on django
         version: TA3TA2_API_VERSION, // set on django
-        timeBound: timeBound || 1,
+        timeBoundSearch: timeBound || 1,
         priority: 1,
         allowedValueTypes: ['DATASET_URI', 'CSV_URI'],
         problem: CreateProblemDefinition(problem),

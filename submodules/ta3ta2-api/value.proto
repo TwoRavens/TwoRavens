@@ -1,8 +1,6 @@
 syntax = "proto3";
 option go_package = "pipeline";
 
-import "google/protobuf/descriptor.proto";
-
 // All values are immutable and no files should be changed after a URI
 // is provided to the other system. When using shared file system, all
 // URIs should be absolute to the file system, for example

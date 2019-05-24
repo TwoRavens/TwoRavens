@@ -1,0 +1,25 @@
+Should you require to add your own "private" fields, you can allocate tags from
+those ranges, and be sure not to conflict with other TA2 or TA3 systems.
+
+If you are developing a TA2 or TA3 system and your name isn't on the list, feel
+free to report the error or add your organization via a merge request.
+
+20000-20999 John Hopkins University
+21000-21999 Brigham Young University
+22000-22999 SRI International
+23000-23999 University of California, Berkeley
+24000-24999 University of Chicago
+25000-25999 Stanford University
+26000-26999 Rensselaer Polytechnic Institute
+27000-27999 Massachusetts Institute of Technology
+28000-28999 Uncharted Software
+29000-29999 Texas A&M
+30000-30999 Charles River Analytics
+31000-31999 Brown University
+32000-32999 New York University
+33000-33999 USC Information Sciences Institute
+34000-34999 Harvard College
+35000-35999 Purdue University
+36000-36999 Tufts University
+37000-37999 Carnegie Mellon University
+38000-38999 Columbia University
