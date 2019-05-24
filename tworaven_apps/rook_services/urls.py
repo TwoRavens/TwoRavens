@@ -15,6 +15,10 @@ urlpatterns = (
         views.view_rook_preprocess,
         name='view_rook_preprocess'),
 
+    url(r'^healthcheckapp$',
+        views.view_rook_healthcheck,
+        name='view_rook_healthcheck'),
+
     url(r'^(?P<app_name_in_url>(\w|-){5,25})$',
         views.view_rook_route,
         name='view_rook_route'),

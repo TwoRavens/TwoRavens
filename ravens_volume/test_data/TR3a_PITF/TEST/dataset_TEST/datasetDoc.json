@@ -17,67 +17,67 @@
         {
           "colIndex": 0,
           "colName": "d3mIndex",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["index"]
         },
         {
           "colIndex": 1,
           "colName": "sftpcons",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["suggestedTarget"]
         },
         {
           "colIndex": 2,
           "colName": "sftptv2a3",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 3,
           "colName": "sftptv2a4",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 4,
           "colName": "sftptv2a5",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 5,
           "colName": "sftptv2a2",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 6,
           "colName": "sftptv2a6",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 7,
           "colName": "logim",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 8,
           "colName": "maccat",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 9,
           "colName": "disp4cat",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 10,
           "colName": "stratidc",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         }
       ]

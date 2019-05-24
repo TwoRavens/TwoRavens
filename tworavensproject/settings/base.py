@@ -370,3 +370,4 @@ EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
 # -------------------------
 DATAMART_SHORT_TIMEOUT = 10 # seconds
 DATAMART_LONG_TIMEOUT = 5 * 60 # 5 minutes
+DATAMART_VERY_LONG_TIMEOUT = 10 * 60 # 8 minutes

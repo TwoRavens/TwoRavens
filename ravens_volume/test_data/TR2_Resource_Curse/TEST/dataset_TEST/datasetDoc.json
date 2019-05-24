@@ -17,19 +17,19 @@
         {
           "colIndex": 0,
           "colName": "d3mIndex",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["index"]
         },
         {
           "colIndex": 1,
           "colName": "year",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 2,
           "colName": "ccode",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
@@ -47,121 +47,121 @@
         {
           "colIndex": 5,
           "colName": "id",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 6,
           "colName": "geogia",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 7,
           "colName": "sxp",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 8,
           "colName": "gy1",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 9,
           "colName": "lngdp_",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 10,
           "colName": "lnpop",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 11,
           "colName": "sxp2",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 12,
           "colName": "frac",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 13,
           "colName": "ssa",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 14,
           "colName": "warsa",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 15,
           "colName": "peace",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 16,
           "colName": "etdo4590",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 17,
           "colName": "chsamp",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 18,
           "colName": "chwars",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["suggestedTarget"]
         },
         {
           "colIndex": 19,
           "colName": "chonset",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 20,
           "colName": "ipeace",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 21,
           "colName": "fuelexp",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 22,
           "colName": "pop",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 23,
           "colName": "fuelwdi",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 24,
           "colName": "gdpen",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
@@ -173,169 +173,169 @@
         {
           "colIndex": 26,
           "colName": "lgdpenl1",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 27,
           "colName": "gdpenl",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 28,
           "colName": "lpopl1",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 29,
           "colName": "Oil",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 30,
           "colName": "isxp",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 31,
           "colName": "isxp2",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 32,
           "colName": "ifrac",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 33,
           "colName": "ietdom",
-          "colType": "categorical",
+          "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 34,
           "colName": "igeogia",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 35,
           "colName": "gdp",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 36,
           "colName": "lgdp",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 37,
           "colName": "lgdpl",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 38,
           "colName": "lpopl",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 39,
           "colName": "igy5",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 40,
           "colName": "igy3",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 41,
           "colName": "igyl4",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 42,
           "colName": "lisxp",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 43,
           "colName": "lsxp",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 44,
           "colName": "exports",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 45,
           "colName": "fuelgdp",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 46,
           "colName": "contract",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 47,
           "colName": "exprop",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 48,
           "colName": "acon",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 49,
           "colName": "alsxp",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 50,
           "colName": "algdpl",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 51,
           "colName": "aifuel",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 52,
           "colName": "aexprop",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 53,
           "colName": "ifuel",
-          "colType": "categorical",
+          "colType": "real",
           "role": ["attribute"]
         }
       ]

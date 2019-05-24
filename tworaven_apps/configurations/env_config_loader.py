@@ -305,7 +305,7 @@ class EnvConfigLoader(BasicErrCheck):
     def make_config_from_directory(fullpath, **kwargs):
         """Make a directory from an existing path"""
         if not isdir(fullpath):
-            return err_resp('Diretory not found: %s' % fullpath)
+            return err_resp('Directory not found: %s' % fullpath)
 
         info = SimpleNamespace()
 
