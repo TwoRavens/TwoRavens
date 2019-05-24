@@ -950,6 +950,7 @@ class Body {
             {title: "Log in", url: login_url},
             {title: "Sign up", url: signup_url}
         ] : [{title: "Workspaces", url: workspaces_url},
+            {title: "Clear Workspaces", url: '/user-workspaces/clear-user-workspaces'},
             {title: "Settings", url: settings_url},
             {title: "Links", url: devlinks_url},
             {title: "Logout", url: logout_url}];

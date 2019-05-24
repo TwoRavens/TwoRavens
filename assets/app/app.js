@@ -442,7 +442,10 @@ streamSocket.onmessage = function (e) {
         return;
     }
 
-    if (msg_data.data === undefined) {
+    console.warn("#debug msg_data");
+    console.log(msg_data);
+
+    if (msg_data.data === undefined && msg_data.msg_type !== 'DATAMART_AUGMENT_PROCESS') {
         console.log('streamSocket.onmessage: Error, "msg_data.data" type not specified!');
         console.log('full data: ' + JSON.stringify(msg_data));
         console.log('---------------------------------------------');
@@ -450,49 +453,44 @@ streamSocket.onmessage = function (e) {
     }
     console.log('full data: ' + JSON.stringify(msg_data));
 
-  console.log('Got it! Message type: ' + msg_data.msg_type);
-  //JSON.stringify(msg_data));
+    console.log('Got it! Message type: ' + msg_data.msg_type);
+    //JSON.stringify(msg_data));
 
-  if (msg_data.msg_type === 'GetSearchSolutionsResults'){
-    console.log(msg_data.msg_type + ' recognized!');
-
-    handleGetSearchSolutionResultsResponse(msg_data.data);
-
-  } else if (msg_data.msg_type === 'DescribeSolution'){
-    console.log(msg_data.msg_type + ' recognized!');
-
-    handleDescribeSolutionResponse(msg_data.data);
-
-  } else if (msg_data.msg_type === 'GetScoreSolutionResults'){
-    console.log(msg_data.msg_type + ' recognized!');
-    handleGetScoreSolutionResultsResponse(msg_data.data);
-
-  } else if (msg_data.msg_type === 'GetProduceSolutionResults'){
-    console.log(msg_data.msg_type + ' recognized!');
-
-    handleGetProduceSolutionResultsResponse(msg_data.data);
-
-  } else if (msg_data.msg_type === 'GetFitSolutionResults'){
-    console.log(msg_data.msg_type + ' recognized!');
-
-    console.log('No handler: Currently not using GetFitSolutionResultsResponse...');
-
-  } else if (msg_data.msg_type === 'ENDGetSearchSolutionsResults'){
-    console.log(msg_data.msg_type + ' recognized!');
-
-    handleENDGetSearchSolutionsResults();
-
-  } else if (msg_data.msg_type === 'DATAMART_MATERIALIZE_PROCESS'){
-    console.log(msg_data.msg_type + ' recognized!');
-    handleMaterializeDataMessage(msg_data);
-
-  } else if (msg_data.msg_type === 'DATAMART_AUGMENT_PROCESS'){
-    console.log(msg_data.msg_type + ' recognized!');
-    handleAugmentDataMessage(msg_data);
-
-  } else {
-    console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
-  }
+    if (msg_data.msg_type === 'GetSearchSolutionsResults') {
+        console.log(msg_data.msg_type + ' recognized!');
+        handleGetSearchSolutionResultsResponse(msg_data.data);
+    }
+    else if (msg_data.msg_type === 'DescribeSolution') {
+        console.log(msg_data.msg_type + ' recognized!');
+        handleDescribeSolutionResponse(msg_data.data);
+    }
+    else if (msg_data.msg_type === 'GetScoreSolutionResults') {
+        console.log(msg_data.msg_type + ' recognized!');
+        handleGetScoreSolutionResultsResponse(msg_data.data);
+    }
+    else if (msg_data.msg_type === 'GetProduceSolutionResults') {
+        console.log(msg_data.msg_type + ' recognized!');
+        handleGetProduceSolutionResultsResponse(msg_data.data);
+    }
+    else if (msg_data.msg_type === 'GetFitSolutionResults') {
+        console.log(msg_data.msg_type + ' recognized!');
+        console.log('No handler: Currently not using GetFitSolutionResultsResponse...');
+    }
+    else if (msg_data.msg_type === 'ENDGetSearchSolutionsResults') {
+        console.log(msg_data.msg_type + ' recognized!');
+        handleENDGetSearchSolutionsResults();
+    }
+    else if (msg_data.msg_type === 'DATAMART_MATERIALIZE_PROCESS') {
+        console.log(msg_data.msg_type + ' recognized!');
+        handleMaterializeDataMessage(msg_data);
+    }
+    else if (msg_data.msg_type === 'DATAMART_AUGMENT_PROCESS') {
+        console.log(msg_data.msg_type + ' recognized!');
+        handleAugmentDataMessage(msg_data);
+    }
+    else {
+        console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
+    }
 };
 streamSocket.onclose = function(e) {
       console.error('streamSocket closed unexpectedly');
@@ -1302,7 +1300,12 @@ export let setForceDiagramMode = mode => forceDiagramMode = mode;
 export let buildForceData = problem => {
 
     if (!problem) return;
-    let pebbles = [...problem.predictors, ...problem.targets, ...problem.tags.loose];
+    let predictors = problem.predictors;
+
+    // uncomment to combine predictor pebbles if length > n
+    // if (predictors.length > 50) predictors = [predictors.length + ' Predictors']
+
+    let pebbles = [...predictors, ...problem.targets, ...problem.tags.loose];
     let groups = [];
     let groupLinks = [];
 
@@ -1312,7 +1315,7 @@ export let buildForceData = problem => {
                 name: "Predictors",
                 color: common.gr1Color,
                 colorBackground: swandive && 'grey',
-                nodes: new Set(problem.predictors),
+                nodes: new Set(predictors),
                 opacity: 0.3
             },
             {
@@ -2137,11 +2140,7 @@ export async function endsession() {
         return;
     }
 
-    console.log("== this should be the selected solution ==");
-    console.log(solutions.d3m[[...selectedPipelines][0]]);
-    console.log(solutions.d3m[[...selectedPipelines][0]].response.solutionId);
-
-    let chosenSolutionId = solutions.d3m[[...selectedPipelines][0]].response.solutionId;
+    let chosenSolutionId = [...selectedPipelines][0].response.solutionId;
 
     // calling exportSolution
     //
