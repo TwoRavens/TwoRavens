@@ -3,6 +3,7 @@ import * as common from '../../common/common';
 
 import PlotBars from "./views/PlotBars";
 import {alignmentData, formattingData} from "../app";
+import Icon from "../views/Icon";
 
 let getLabel = (format, key) => {
     if (!(format in formattingData)) return '';
@@ -114,8 +115,8 @@ export default class CanvasDiscreteGrouped {
                 },
 
                 m('#topBar', {style: {height: '34px'}},
-                    m(".panel-heading.text-center[id='regionLabel']", {style: {"float": "left", "padding-top": "9px"}},
-                        m("h3.panel-title", name)
+                    m(".card-header.text-center[id='regionLabel']", {style: {"float": "left", "padding-top": "9px"}},
+                        m("h4.card-title", name)
                     ),
                     buttons),
                 shown && graph
@@ -157,8 +158,7 @@ export default class CanvasDiscreteGrouped {
                                 },
                                 onclick: () => preferences['plotted_grouped'] = !preferences['plotted_grouped']
                             },
-                            m(`span.glyphicon.glyphicon-resize-${preferences['plotted_grouped'] ? 'small' : 'full'}`,
-                                {style: {"color": "#818181"}})),
+                            m(Icon, {name: preferences['plotted_grouped'] ? 'chevron-up' : 'chevron-down'})),
 
                         m("button.btn.btn-default[data-toggle='tooltip'][type='button']", {
                             style: {
@@ -198,8 +198,7 @@ export default class CanvasDiscreteGrouped {
                                 },
                                 onclick: () => preferences['plotted_subgroups'][subGroupName] = !preferences['plotted_subgroups'][subGroupName]
                             },
-                            m(`span.glyphicon.glyphicon-resize-${preferences['plotted_subgroups'][subGroupName] ? 'small' : 'full'}`,
-                                {style: {"color": "#818181"}})),
+                            m(Icon, {name: preferences['plotted_subgroups'][subGroupName] ? 'chevron-up' : 'chevron-down'})),
 
                         m("button.btn.btn-default[data-toggle='tooltip'][type='button']", {
                             style: {
@@ -235,10 +234,10 @@ export default class CanvasDiscreteGrouped {
                     }
                 },
                 [
-                    m("selectedCategoriesHeader", {style: {"width": "250px", "display": "inline-block"}},
+                    m("#selectedCategoriesHeader", {style: {"width": "250px", "display": "inline-block"}},
                         [
 
-                            m("h3.panel-title", {
+                            m("h4.card-title", {
                                 style: {
                                     "padding-left": "10px",
                                     "padding-top": "12px",
@@ -265,10 +264,9 @@ export default class CanvasDiscreteGrouped {
 
                     m("div", {
                             style: {
-                                "position": "fixed",
-                                "height": "calc(100% - 168px)",
+                                "height": "calc(100% - 58px)",
                                 "max-height": "386px",
-                                "overflow-y": "scroll",
+                                "overflow-y": "auto",
                                 "margin-left": "5px",
                                 "width": "243px"
                             }

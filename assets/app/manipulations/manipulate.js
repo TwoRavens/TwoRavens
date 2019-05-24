@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {TreeAggregate, TreeSubset, TreeTransform, TreeImputation} from '../views/JQTrees';
+import {TreeAggregate, TreeSubset, TreeTransform, TreeImputation} from '../views/QueryTrees';
 import CanvasContinuous from '../canvases/CanvasContinuous';
 import CanvasDate from '../canvases/CanvasDate';
 import CanvasDiscrete from '../canvases/CanvasDiscrete';
@@ -22,19 +22,10 @@ import * as queryMongo from "./queryMongo";
 import hopscotch from 'hopscotch';
 import CanvasImputation from "../canvases/CanvasImputation";
 import {alertLog, alertError} from "../app";
+import Icon from "../views/Icon";
+import Table from "../../common/views/Table";
 
-// dataset name from app.datadocument.about.datasetID
-// variable names from the keys of the initial preprocess variables object
-
-
-// stores all variable data from preprocess on initial page load
-// when hard manipulations are applied, app.preprocess is overwritten,
-// but additional hard manipulations and pipeline construction still needs the original preprocess variables
-let variablesInitial;
-export let setVariablesInitial = vars => variablesInitial = vars;
-
-
-export function menu(compoundPipeline, pipelineId) {
+export function menu(compoundPipeline) {
 
     return [
         // stage button
@@ -67,7 +58,6 @@ export function menu(compoundPipeline, pipelineId) {
                         : constraintMetadata.type + ': ' + constraintMetadata.columns[0];
 
                     let success = queryAbstract.addConstraint(
-                        pipelineId,
                         constraintMenu.step,  // the step the user is currently editing
                         constraintPreferences,  // the menu state for the constraint the user currently editing
                         constraintMetadata,  // info used to draw the menu (variables, menu type),
@@ -103,7 +93,7 @@ function canvas(compoundPipeline) {
 
     if (!constraintMenu) return;
 
-    let {pipeline, variables} = queryMongo.buildPipeline(compoundPipeline, Object.keys(variablesInitial));
+    let {pipeline, variables} = queryMongo.buildPipeline(compoundPipeline, app.getSelectedDataset().variablesInitial);
 
     if (constraintMenu.type === 'transform') return m(CanvasTransform, {
         preferences: constraintPreferences,
@@ -163,7 +153,7 @@ export function leftpanel() {
 
 export function varList() {
 
-    let variables = Object.keys(variablesInitial);
+    let variables = app.getSelectedDataset().variablesInitial;
     let selectedVariables = (constraintMetadata || {}).columns || [];
 
     if (constraintMenu) {
@@ -182,10 +172,10 @@ export function varList() {
             if (constraintPreferences.type === 'Equation' && constraintPreferences.menus.Equation.usedTerms)
                 selectedVariables = [...constraintPreferences.menus.Equation.usedTerms.variables];
             if (constraintPreferences.type === 'Expansion') {
-                variables = [
-                    ...app.selectedProblem.predictorsInitial || app.selectedProblem.predictors,
+                variables = [...new Set([
+                    ...Object.keys(app.variableSummaries),
                     ...getTransformVariables(partialPipeline)
-                ];
+                ])];
                 selectedVariables = Object.keys(constraintPreferences.menus.Expansion.variables || {});
             }
             if (constraintPreferences.type === 'Binning') {
@@ -216,7 +206,8 @@ export function varList() {
             callback: ['transform', 'imputation'].includes(constraintMenu.type)
                 ? variable => constraintPreferences.select(variable) // the select function is defined inside CanvasTransform
                 : variable => setConstraintColumn(variable, constraintMenu.pipeline),
-            popup: variable => app.popoverContent(variableMetadata[variable]),
+            popup: x => m('div', m('h4', 'Summary Statistics for ' + x), m(Table, {attrsAll: {class: 'table-sm'}, data: app.getVarSummary(app.variableSummaries[x])})),
+            popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
             attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
             attrsAll: {
                 style: {
@@ -266,21 +257,18 @@ export function rightpanel() {
                 }
             }
         }, m(PipelineFlowchart, {
-            compoundPipeline: getPipeline(),
-            pipelineId: app.datadocument.about.datasetID,
+            compoundPipeline: app.getSelectedDataset().hardManipulations,
+            pipeline: app.getSelectedDataset().hardManipulations,
             editable: true
         }));
 }
 
 export class PipelineFlowchart {
     view(vnode) {
-        // compoundPipeline is used for queries
-        // pipelineId is edited and passed into the trees
-        let {compoundPipeline, pipelineId, editable, aggregate} = vnode.attrs;
+        // compoundPipeline is used for queries, pipeline is the array to be edited
+        let {compoundPipeline, pipeline, editable, aggregate} = vnode.attrs;
 
-        let pipeline = app.manipulations[pipelineId];
-
-        let plus = m(`span.glyphicon.glyphicon-plus[style=color: #818181; font-size: 1em; pointer-events: none]`);
+        let plus = m(Icon, {name: 'plus'});
         let warn = (text) => m('[style=color:#dc3545;display:inline-block;]', text);
 
         let currentStepNumber = pipeline.indexOf((constraintMenu || {}).step);
@@ -325,7 +313,7 @@ export class PipelineFlowchart {
                         content = m('div', {style: {'text-align': 'left'}},
                             deleteButton,
                             m('h4[style=font-size:16px;margin-left:0.5em]', 'Transformations'),
-                            m(TreeTransform, {pipelineId, step, editable, redraw, setRedraw}),
+                            m(TreeTransform, {step, editable, redraw, setRedraw}),
                             // Enable to only show button if last element: pipeline.length - 1 === i &&
                             editable && m(Button, {
                                 id: 'btnAddTransform',
@@ -345,7 +333,7 @@ export class PipelineFlowchart {
                         content = m('div', {style: {'text-align': 'left'}},
                             deleteButton,
                             m('h4[style=font-size:16px;margin-left:0.5em]', 'Subset'),
-                            m(TreeSubset, {pipelineId, step, editable, redraw, setRedraw}),
+                            m(TreeSubset, {step, editable, redraw, setRedraw}),
 
                             editable && [
                                 m(Button, {
@@ -365,7 +353,7 @@ export class PipelineFlowchart {
                                     disabled: !step.abstractQuery.filter(constraint => constraint.type === 'rule').length,
                                     onclick: () => {
                                         setQueryUpdated(true);
-                                        queryAbstract.addGroup(pipelineId, step);
+                                        queryAbstract.addGroup(step);
                                     }
                                 }, plus, ' Group')
                             ]
@@ -380,23 +368,15 @@ export class PipelineFlowchart {
                             step.measuresUnit.length !== 0 && [
                                 m('h5', 'Unit Measures'),
                                 m(TreeAggregate, {
-                                    pipelineId,
-                                    stepId: step.id,
-                                    measure: 'unit',
                                     data: step.measuresUnit,
-                                    editable,
-                                    redraw, setRedraw
+                                    editable
                                 }),
                             ],
                             step.measuresAccum.length !== 0 && [
                                 m('h5', 'Column Accumulations'),
                                 m(TreeAggregate, {
-                                    pipelineId,
-                                    stepId: step.id,
-                                    measure: 'unit',
                                     data: step.measuresAccum,
-                                    editable,
-                                    redraw, setRedraw
+                                    editable
                                 }),
                             ],
 
@@ -433,7 +413,6 @@ export class PipelineFlowchart {
                             m('h4[style=font-size:16px;margin-left:0.5em]', 'Imputation'),
 
                             step.imputations.length !== 0 && m(TreeImputation, {
-                                pipelineId,
                                 step,
                                 editable
                             }),
@@ -482,8 +461,9 @@ export class PipelineFlowchart {
                     onclick: () => pipeline.push({
                         type: 'subset',
                         abstractQuery: [],
+                        // abstractQuery: [{"id":"1","name":"continuous: Walks","type":"rule","subset":"continuous","column":"Walks","children":[{"id":"2","name":"From: 83.2675","fromLabel":83.2675,"cancellable":false,"show_op":false},{"id":"3","name":"To: 1281.18","toLabel":1281.18,"cancellable":false,"show_op":false}],"operation":"and","show_op":false}],
                         id: 'subset ' + pipeline.length,
-                        nodeId: 1,
+                        nodeId: 4,
                         groupId: 1,
                         queryId: 1
                     })
@@ -544,9 +524,7 @@ export let setQueryUpdated = async state => {
     if (app.is_manipulate_mode) {
         if (!pendingHardManipulation && state) {
             hopscotch.startTour(datasetChangedTour, 0);
-            Object.keys(app.manipulations)
-                .filter(key => key !== app.datadocument.about.datasetID)
-                .forEach(key => delete app.manipulations[key])
+            app.getSelectedDataset().problems = [];
         }
         pendingHardManipulation = state;
     }
@@ -554,17 +532,18 @@ export let setQueryUpdated = async state => {
     // if we have an edit to the problem manipulations
     if (!app.is_manipulate_mode) {
 
-        app.selectedProblem.predictors = [
-            ...app.selectedProblem.predictorsInitial,
-            ...getTransformVariables(app.selectedProblem.pipeline)
-        ];
+        let selectedDataset = app.getSelectedDataset();
+        let selectedProblem = app.getSelectedProblem();
 
-        // if the predictors changed, then redraw the force diagram
-        if (app.nodes.length !== app.selectedProblem.predictors.length || app.nodes.some(node => !app.selectedProblem.predictors.includes(node.name)))
-            app.redrawForce(app.selectedProblem);
+        selectedProblem.tags.transformed = [...getTransformVariables(selectedProblem.manipulations)];
+
+        app.buildProblemPreprocess(selectedDataset, selectedProblem)
+            .then(summaries => {
+                if (summaries) app.variableSummaries = summaries
+            }).then(m.redraw);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
-        loadMenu([...getPipeline(), ...app.selectedProblem.pipeline], countMenu).then(count => {
+        loadMenu([...selectedDataset.hardManipulations, ...selectedProblem.manipulations], countMenu).then(count => {
             setTotalSubsetRecords(count);
             m.redraw();
         });
@@ -572,19 +551,6 @@ export let setQueryUpdated = async state => {
         // will trigger the call to solver, if a menu that needs that info is shown
         app.setSolverPending(true);
     }
-};
-
-// returns the fragment of a pipeline representing a problem
-export let getProblemPipeline = problem => {
-    if (!problem) return;
-    if (!(problem.problemID in app.manipulations)) app.manipulations[problem.problemID] = [];
-
-    return app.manipulations[problem.problemID];
-};
-
-export let getPipeline = (problem) => {
-    if (!(app.datadocument.about.datasetID in app.manipulations)) app.manipulations[app.datadocument.about.datasetID] = [];
-    return [...app.manipulations[app.datadocument.about.datasetID], ...(getProblemPipeline(problem) || [])];
 };
 
 // when set, the constraint menu will rebuild non-mithril elements (like plots) on the next redraw
@@ -611,13 +577,10 @@ export let setConstraintMenu = async (menu) => {
         return;
     }
 
-    // ensure a version of the variables on page load is cached
-    if (!variablesInitial) setVariablesInitial(app.preprocess);
-
     // get the variables present at the new menu's position in the pipeline
     let variables = [...queryMongo.buildPipeline(
         menu.pipeline.slice(0, menu.pipeline.indexOf(menu.step)),
-        Object.keys(variablesInitial))['variables']];
+        app.getSelectedDataset().variablesInitial)['variables']];
 
     // update variable metadata
     if (!constraintMenu || (menu || {}).step !== constraintMenu.step) {
@@ -726,11 +689,11 @@ export let getData = async body => m.request({
     url: app.mongoURL + 'get-data',
     method: 'POST',
     data: Object.assign({
-        datafile: app.zparams.zd3mdata, // location of the dataset csv
-        collection_name: app.datadocument.about.datasetID // collection/dataset name
+        datafile: app.getSelectedDataset().datasetUrl, // location of the dataset csv
+        collection_name: app.selectedDataset // collection/dataset name
     }, body)
 }).then(response => {
-    console.log(' -- manipulate.js geData --');
+    console.log('-- manipulate.js getData --');
     if (!response.success) throw response;
 
     // parse Infinity, -Infinity, NaN from unambiguous string literals. Coding handled in python function 'json_comply'
@@ -757,11 +720,9 @@ export let getData = async body => m.request({
 // download data to display a menu
 export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { // the dict is for optional named arguments
 
-    if (!variablesInitial) setVariablesInitial(app.preprocess);
-
     // convert the pipeline to a mongo query. Note that passing menu extends the pipeline to collect menu data
     let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, menu],
-        Object.keys(variablesInitial))['pipeline']);
+        app.getSelectedDataset().variablesInitial)['pipeline']);
 
     console.log("Menu Query:");
     console.log(compiled);
@@ -771,7 +732,7 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
     // record count request
     if (recount) {
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
-        let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, countMenu], Object.keys(variablesInitial))['pipeline']);
+        let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, countMenu], app.getSelectedDataset().variablesInitial)['pipeline']);
 
         console.log("Count Query:");
         console.log(compiled);
@@ -833,84 +794,6 @@ let loadMenuManipulations = async (pipeline) => {
     m.redraw();
 };
 
-export let rebuildPreprocess = async () => {
-
-    let menuDownload = {
-        type: 'menu',
-        metadata: {
-            type: 'data'
-        }
-    };
-
-    let compiled = JSON.stringify(queryMongo.buildPipeline(
-        [...getPipeline(), menuDownload],
-        Object.keys(variablesInitial))['pipeline']);
-
-    let dataPath = await getData({
-        method: 'aggregate',
-        query: compiled,
-        export: 'dataset'
-    });
-
-    let targetPath = dataPath.split('/').slice(0, dataPath.split('/').length - 1).join('/') + '/preprocess.json';
-
-    let response = await m.request({
-        method: 'POST',
-        url: ROOK_SVC_URL + 'preprocessapp',
-        data: {
-            data: dataPath,
-            target: targetPath,
-            datastub: app.configurations.name,
-            delimiter: '\t'
-        }
-    });
-
-    console.log("preprocess response");
-    console.log(response);
-
-    if (!response) {
-        console.log('preprocess failed');
-        alertError('preprocess failed. ending user session.');
-        app.endsession();
-        return;
-    }
-
-    // update state with new preprocess metadata
-    response.dataset.private !== undefined && app.setPriv(response.dataset.private);
-
-    app.setPreprocess(response.variables);
-    app.setValueKey(Object.keys(response.variables));
-    app.setAllNodes(app.valueKey.map((variable, i) => jQuery.extend(true, {
-        id: i,
-        reflexive: false,
-        name: variable,
-        labl: 'no label',
-        data: [5, 15, 20, 0, 5, 15, 20],
-        count: [.6, .2, .9, .8, .1, .3, .4],
-        nodeCol: common.colors(i),
-        baseCol: common.colors(i),
-        strokeColor: common.selVarColor,
-        strokeWidth: "1",
-        subsetplot: false,
-        subsetrange: ["", ""],
-        setxplot: false,
-        setxvals: ["", ""],
-        grayout: false,
-        group1: false,
-        group2: false,
-        forefront: false
-    }, app.preprocess[variable])));
-
-    app.restart();
-    hopscotch.endTour();
-
-    app.setDisco(app.discovery(response));
-    app.setMytarget(app.disco[0].target);
-    app.setSelectedProblem(undefined);
-
-    setQueryUpdated(false);
-};
-
 // contains the menu state (which nominal variables are selected, ranges, etc.)
 export let constraintPreferences = {};
 
@@ -936,14 +819,18 @@ export async function buildDatasetUrl(problem) {
         type: 'menu',
         metadata: {
             type: 'data',
-            variables: [...problem.predictors, problem.target],
+            variables: [...problem.predictors, ...problem.targets],
             nominal: !app.is_manipulate_mode && app.nodes
                 .filter(node => node.nature === 'nominal')
                 .map(node => node.name)
         }
     };
 
-    let compiled = queryMongo.buildPipeline([...getPipeline(problem), problemStep], Object.keys(variablesInitial))['pipeline'];
+    let compiled = queryMongo.buildPipeline([
+        ...app.getSelectedDataset().hardManipulations,
+        ...problem.manipulations,
+        problemStep
+    ], app.getSelectedDataset().variablesInitial)['pipeline'];
 
     return await getData({
         method: 'aggregate',
@@ -954,12 +841,13 @@ export async function buildDatasetUrl(problem) {
 
 export async function buildProblemUrl(problem) {
     let abstractPipeline = [
-        ...getPipeline(problem),
+        ...app.getSelectedDataset().hardManipulations,
+        ...problem.manipulations,
         {
             type: 'menu',
             metadata: {
                 type: 'data',
-                variables: ['d3mIndex', ...problem.predictors, problem.target],
+                variables: ['d3mIndex', ...problem.predictors, ...problem.targets],
                 nominal: !app.is_manipulate_mode && app.nodes
                     .filter(node => node.nature === 'nominal')
                     .map(node => node.name)
@@ -967,8 +855,8 @@ export async function buildProblemUrl(problem) {
         }
     ];
 
-    let compiled = queryMongo.buildPipeline(abstractPipeline, Object.keys(variablesInitial))['pipeline'];
-    let metadata = queryMongo.translateDatasetDoc(compiled, app.datadocument, app.selectedProblem);
+    let compiled = queryMongo.buildPipeline(abstractPipeline, app.getSelectedDataset().variablesInitial)['pipeline'];
+    let metadata = queryMongo.translateDatasetDoc(compiled, app.getSelectedDataset().datasetDoc, problem);
 
     return await getData({
         method: 'aggregate',

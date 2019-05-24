@@ -1,6 +1,8 @@
 import m from 'mithril';
 
 import * as app from '../app';
+import * as common from "../../common/common";
+import {logArray} from "../inactive";
 
 class Subpanel {
     oninit(vnode) {
@@ -16,7 +18,7 @@ class Subpanel {
 
         return m(`#${legend ? "legend.legendary" : "logdiv.logbox"}.panel.panel-default`, {
             style: Object.assign({
-                display: legend && z.ztime.length + z.zcross.length + z.zdv.length + z.znom.length || !legend && app.logArray.length > 0 ? 'block' : 'none',
+                display: legend && z.ztime.length + z.zcross.length + z.zdv.length + z.znom.length || !legend && logArray.length > 0 ? 'block' : 'none',
                 [side]: app.panelWidth[side],
                 overflow: 'hidden'
             }, vnode.attrs.attrsStyle)},
@@ -27,14 +29,14 @@ class Subpanel {
                          style: 'cursor: pointer',
                          onclick: _ => this.hide = !this.hide}))),
                  m(`#${target}.panel-collapse.collapse.in`,
-                   m(".panel-body", !legend ? app.logArray.map(x => m('p', x)) : vnode.attrs.buttons.map(x => {
+                   m(".panel-body", !legend ? logArray.map(x => m('p', x)) : vnode.attrs.buttons.map(x => {
                        let [stroke, fill, op] =
-                           x[0] === 'dvButton' ? [app.dvColor, 'white', 1]
-                           : x[0] === 'csButton' ? [app.csColor, 'white', 1]
-                           : x[0] === 'timeButton' ? [app.timeColor, 'white', 1]
-                           : x[0] === 'nomButton' ? [app.nomColor, 'white', 1]
-                           : x[0] === 'gr1Button' ? [app.gr1Color, app.gr1Color, 0]
-                           : [app.gr2Color, app.gr2Color, 0];
+                           x[0] === 'dvButton' ? [common.dvColor, 'white', 1]
+                           : x[0] === 'csButton' ? [common.csColor, 'white', 1]
+                           : x[0] === 'timeButton' ? [common.timeColor, 'white', 1]
+                           : x[0] === 'nomButton' ? [common.nomColor, 'white', 1]
+                           : x[0] === 'gr1Button' ? [common.gr1Color, common.gr1Color, 0]
+                           : [common.gr2Color, common.gr2Color, 0];
                        return m(`#${x[0]}.clearfix.${z[x[1]].length === 0 ? "hide" : "show"}`,
                                 m(".rectColor",
                                   m("svg[style=width: 20px; height: 20px]",

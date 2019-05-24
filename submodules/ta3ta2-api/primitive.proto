@@ -1,8 +1,6 @@
 syntax = "proto3";
 option go_package = "pipeline";
 
-import "google/protobuf/descriptor.proto";
-
 // Description of the primitive.
 message Primitive {
     string id = 1;

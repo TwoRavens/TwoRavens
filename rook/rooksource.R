@@ -9,9 +9,13 @@
 ## Also set `production` toggle:  TRUE - Production, FALSE - Local Development.
 source("rookconfig.R")
 
+print(paste("production: ", production, sep=""))
 
 if(!production){
-    packageList<-c("Rcpp","VGAM", "dplyr", "Amelia", "Rook", "jsonlite","rjson", "devtools", "DescTools", "nloptr", "XML", "rpart", "stargazer", "ranger")
+  print(paste("load packages...", sep=""))
+
+    packageList.rooksolver <- c('caret', 'R.utils', "rpart", "ranger", "naivebayes", "stargazer", "doParallel")
+    packageList<-c("Rcpp","VGAM", "dplyr", "Amelia", "Rook", "jsonlite","rjson", "devtools", "DescTools", "nloptr", "XML", packageList.rooksolver)
 
     # Find an available repository on CRAN
     availableRepos <- getCRANmirrors()
@@ -20,16 +24,20 @@ if(!production){
 
     ## install missing packages, and update if newer version available
     for(i in 1:length(packageList)){
-       if (!require(packageList[i],character.only = TRUE)){
-           install.packages(packageList[i], repos=useRepos)
-       }
-    }
+        if (!require(packageList[i],character.only = TRUE)){
+            install.packages(packageList[i], repos=useRepos)
+        }
+     }
     update.packages(ask = FALSE, dependencies = c('Suggests'), oldPkgs=packageList, repos=useRepos)
 }
 
 library(Rook)
 library(rjson)
 library(jsonlite)
+
+# library(lazyeval) # added 5/21/2019
+# library(processx) # added 5/21/2019
+
 library(devtools)
 library(DescTools)
 library(rpart)

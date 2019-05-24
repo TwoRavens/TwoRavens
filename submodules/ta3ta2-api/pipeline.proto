@@ -1,7 +1,6 @@
 syntax = "proto3";
 option go_package = "pipeline";
 
-import "google/protobuf/descriptor.proto";
 import "google/protobuf/timestamp.proto";
 
 import "primitive.proto";

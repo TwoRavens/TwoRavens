@@ -1,3 +1,50 @@
+## v2019.4.11
+
+* Added support for custom metrics to Python utilities.
+  [#112](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/112)
+  [!138](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/138)
+* Added `DataAvailable` call which TA3 can use to notify TA2 about availability
+  of (new) datasets.
+  [#81](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/81)
+  [!97](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/97)
+* Fields in problem description deprecated in the previous version has now been
+  removed.
+  [#110](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/110)
+  [!134](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/134)
+* Added `RANK` metric (and corresponding `RANKING` evaluation method) to allow
+  ranking of found solutions for the purpose of TA2-only evaluation.
+  [!125](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/125)
+* Updated to new changes in the d3m v2019.4.4 core package release:
+
+    * Python package now requires pip 19+.
+    * `targets` and `dataset_id` fields have been removed from `Score` message.
+    * `random_seed` field was added to `Score` message.
+    * `TaskType` enumeration have been updated and renumbered.
+    * `PerformanceMetric` enumeration have been updated and renumbered.
+    * `ProblemInput` now has `privileged_data` field.
+    * `ProblemDescription` now has `other_names` field.
+
+    [#109](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/109)
+    [!133](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/133)
+
+* Python utility functions `encode_problem_description` and `decode_problem_description`
+  now accept and return instances of `Problem` class, respectively. Moreover, problem
+  description's digest is now the same whether problem description is loaded
+  from the file or transmitted over the TA3-TA2 API.
+  [#106](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/106)
+  [#107](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/107)
+  [!130](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/130)
+* Changed `time_bound` name to `time_bound_search` in `SearchSolutionsRequest`
+  and clarified description. Added `time_bound_run` to `SearchSolutionsRequest`
+  as place to specify anticipated limit on time to one pass of the pipeline run.
+  [#108](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/108)
+  [!131](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/131)
+  [!136](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/136)
+* Clarified that pipeline templates can accept multiple Dataset input vlues,
+  given that the input to the placeholder in the template is just one Dataset
+  input value.
+  [!128](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/128)
+
 ## v2019.2.27
 
 * Changed `SolutionExportRequest` message to use `solution_id` instead of
@@ -13,7 +60,6 @@
 * Doc change to update the flow diagram titled "API Structures" in the 
   documentation to include Save and Load procedures.
   [!126](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/126)
-
 
 ## v2019.1.22
 

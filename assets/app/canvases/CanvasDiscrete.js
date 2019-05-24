@@ -125,9 +125,9 @@ export default class CanvasDiscrete {
                         "margin-bottom": '10px'
                     }, getShape(format)),
                 },
-                m(".panel-heading.text-center", {
+                m(".card-header.text-center", {
                         style: {"float": "left", "padding-top": "9px"}
-                    }, m("h3.panel-title", format)
+                    }, m("h3.card-title", format)
                 ),
                 m("br"),
                 m('div', {'style': {'height': 'calc(100% - 40px)'}},
@@ -173,16 +173,22 @@ export default class CanvasDiscrete {
                 sections: [{value: 'all'}, {value: 'none'}],
                 activeSection: {0: 'none', [data.length]: 'all'}[preferences.selections.size] || 'intermediate',
                 onclick: state => {
-                    if (state === 'none')
+                    if (state === 'none') {
                         preferences.selections = new Set();
-                    if (state === 'all')
-                        preferences.selections = data.reduce((out, entry) => out.add(entry[metadata.columns[0]]), new Set())
+                        preferences.selections_temp = '';
+                    }
+                    if (state === 'all') {
+                        preferences.selections = [];
+                        data.forEach(entry => preferences.selections.push(entry[metadata.columns[0]]));
+                        preferences.selections = new Set(preferences.selections.sort());
+                        preferences.selections_temp = [...preferences.selections].join(delimiter);
+                    }
                 },
                 attrsAll: {style: {width: '10em'}}
             }),
             m(TextField, {
                 placeholder: 'Enter variable values',
-                style: {display: 'inline', width: 'calc(100% - 12em)', 'margin-left': '2em'},
+                style: {display: 'inline', width: 'calc(100% - 14em)', 'margin-left': '2em'},
                 value: preferences['selections_temp'],
                 oninput: value => {
                     preferences['selections_temp'] = value;
