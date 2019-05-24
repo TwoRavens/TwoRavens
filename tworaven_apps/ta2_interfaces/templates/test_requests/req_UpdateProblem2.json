@@ -1,0 +1,30 @@
+{
+  "searchId": "searchId_ec6y8l",
+  "problem": {
+    "problem": {
+      "taskType": "REGRESSION",
+      "taskSubtype": "MULTIVARIATE",
+      "performanceMetrics": [
+        {
+          "metric": "ROOT_MEAN_SQUARED_ERROR",
+          "k": 0,
+          "posLabel": ""
+        }
+      ]
+    },
+    "inputs": [
+      {
+        "datasetId": "dataset_123",
+        "targets": [
+          {
+            "resourceId": "r52",
+            "columnIndex": 3,
+            "columnName": "at_bats",
+            "targetIndex": 0,
+            "clustersNumber": 0
+          }
+        ]
+      }
+    ]
+  }
+}

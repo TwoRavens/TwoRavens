@@ -260,7 +260,7 @@ class NonStreamingTests(TestCase):
         #
         url = reverse('UpdateProblem')
 
-        req_str = render_to_string('test_requests/req_UpdateProblem.json',
+        req_str = render_to_string('test_requests/req_UpdateProblem2.json',
                                    {})
 
         response = self.client.post(url,
