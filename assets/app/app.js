@@ -1328,6 +1328,13 @@ export let buildForceData = problem => {
                 nodes: new Set(problem.targets),
                 opacity: 0.3
             },
+            {
+                name: "Loose",
+                color: common.selVarColor,
+                colorBackground: "transparent",
+                nodes: new Set(problem.tags.loose),
+                opacity: 0.0
+            },
             // {
             //     name: "Priors",
             //     color: common.warnColor,
@@ -1501,7 +1508,7 @@ export let mutateNodes = problem => (state, context) => {
         }));
 }
 
-export let forceDiagramLabels = problem => [
+export let forceDiagramLabels = problem => pebble => [
     {
         id: 'Group',
         name: 'Group',
@@ -2338,11 +2345,13 @@ export function discovery(problems) {
             })
         }
 
+        let coerceArray = data => Array.isArray(data) ? data : [data];
+
         out[problemID] = {
             problemID,
             system: "auto",
             description: undefined,
-            predictors: [...prob.predictors, ...getTransformVariables(manips)],
+            predictors: [...coerceArray(prob.predictors), ...getTransformVariables(manips)],
             targets: [prob.target],
             // NOTE: if the target is manipulated, the metric/task could be wrong
             metric: variableSummaries[prob.target].plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
