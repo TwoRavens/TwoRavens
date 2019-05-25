@@ -876,17 +876,19 @@ class Body {
                             if (groupId === 'Predictors' && !selectedProblem.predictors.includes(pebble.name)) {
                                 selectedProblem.predictors.push(pebble.name);
                                 app.remove(selectedProblem.targets, pebble.name);
+                                app.remove(selectedProblem.tags.loose, pebble.name);
                             }
-                            if (groupId === 'Dep Var' && !selectedProblem.targets.includes(pebble.name)) {
+                            if (groupId === 'Targets' && !selectedProblem.targets.includes(pebble.name)) {
                                 selectedProblem.targets.push(pebble.name);
                                 app.remove(selectedProblem.predictors, pebble.name);
+                                app.remove(selectedProblem.tags.loose, pebble.name);
                             }
                             m.redraw();
                         },
                         onDragAway: (pebble, groupId) => {
                             if (groupId === 'Predictors')
                                 app.remove(selectedProblem.predictors, pebble.name);
-                            if (groupId === 'Dep Var')
+                            if (groupId === 'Targets')
                                 app.remove(selectedProblem.targets, pebble.name);
                             if (!selectedProblem.tags.loose.includes(pebble.name))
                                 selectedProblem.tags.loose.push(pebble.name);

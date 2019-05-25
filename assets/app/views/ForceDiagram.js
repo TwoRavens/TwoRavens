@@ -12,6 +12,7 @@ export default class ForceDiagram {
         this.isDragging = false;
         this.selectedPebble = undefined;
         this.hoverPebble = undefined;
+        this.frozenGroups = {};
         this.nodes = {};
         this.selectors = {};
         this.filtered = {};  // a cleaned copy of the data passed for pebbles, groups, etc.
@@ -222,6 +223,10 @@ export default class ForceDiagram {
                 this.selectors.nodeDragLine.attr('display', 'none');
                 this.position = {};
             }
+
+            this.selectors.hulls.selectAll('text')
+                .attr("transform", d => `translate(${centroids[d.name][0] - d.name.length * 5},${centroids[d.name][1]})`)
+                // .attr('dy', d => centroids[d.name] - Math.min(...hullCoords[d.name].map(_ => _[1])))
         };
         this.force.on('tick', tick);
         this.force.alphaTarget( 1).restart();
@@ -250,16 +255,67 @@ export default class ForceDiagram {
                     if (!d3.event.active) this.force.alphaTarget(1).restart();
                     d3.event.subject.fx = d3.event.subject.x;
                     d3.event.subject.fy = d3.event.subject.y;
+                    m.redraw()
                 })
                 .on("drag", () => {
                     if (!this.isDragging) return;
                     d3.event.subject.fx = d3.event.x;
                     d3.event.subject.fy = d3.event.y;
+
+                    if (onDragOver) {
+
+                        let dragCoord = this.selectedPebble === d3.event.subject
+                            ? [d3.event.subject.fx, d3.event.subject.fy]
+                            : [d3.event.subject.x, d3.event.subject.y];
+
+                        let groupCoords = groups
+                            .reduce((out, group) => Object.assign(out, {
+                                [group.name]: [...group.nodes].map(node => [this.nodes[node].x, this.nodes[node].y])
+                            }), {});
+
+                        let hullCoords = groups.reduce((out, group) => group.nodes.length === 0 ? out
+                            : Object.assign(out, {
+                                [group.name]: d3.polygonHull(lengthen(groupCoords[group.name], attrs.hullRadius))
+                            }), {});
+
+                        // don't freeze own group
+                        groups
+                            .filter(group => group.nodes.has(d3.event.subject.name))
+                            .forEach(group => delete hullCoords[group.name]);
+
+                        Object.keys(hullCoords)
+                            .forEach(groupId => {
+                                let nodeNames = [...groups.find(group => group.name === groupId).nodes];
+                                if (isInside(dragCoord, hullCoords[groupId])) {
+                                    this.frozenGroups[groupId] = true;
+                                    nodeNames.forEach(node => {
+                                        this.nodes[node].fx = this.nodes[node].x;
+                                        this.nodes[node].fy = this.nodes[node].y;
+                                    })
+                                }
+                                else if (this.frozenGroups[groupId]) {
+                                    nodeNames.forEach(node => {
+                                        if (node === (this.selectedPebble || {}).name) return;
+                                        delete this.nodes[node].fx;
+                                        delete this.nodes[node].fy;
+                                    })
+                                }
+                            });
+                    }
                 })
                 .on("end", () => {
                     if (!this.isDragging) return;
                     this.isDragging = false;
                     if (!d3.event.active) this.force.alphaTarget(0);
+
+                    Object.keys(this.frozenGroups).forEach(groupId => {
+                        let nodeNames = [...groups.find(group => group.name === groupId).nodes];
+                        nodeNames.forEach(node => {
+                            if (node === (this.selectedPebble || {}).name) return;
+                            delete this.nodes[node].fx;
+                            delete this.nodes[node].fy;
+                        })
+                    });
 
                     let dragCoord = this.selectedPebble === d3.event.subject
                         ? [d3.event.subject.fx, d3.event.subject.fy]
@@ -504,7 +560,7 @@ function lengthen(coords, radius) {
         ]);
     }
     if (coords.length === 1) {
-        let delta = radius * 0.2;
+        let delta = radius * .3;
         coords.push([coords[0][0] + delta, coords[0][1] + delta]);
         coords.push([coords[0][0] - delta, coords[0][1] + delta]);
         coords.push([coords[0][0] + delta, coords[0][1] - delta]);
@@ -841,16 +897,17 @@ export let groupBuilder = (attrs, context) => {
         .style('opacity', group => group.opacity);
 
     // add new texts
-    // newHulls.append('text')
-    //     .attr('dy', -50)
-    //     .append('textPath')
-    //     .attr('alignment-baseline', 'top')
-    //     .attr('startOffset', '50%');
+    newHulls.append('text')
+        .style('font-weight', 'bold');
+        // .append('textPath')
+        // .attr('alignment-baseline', 'top')
+        // .attr('startOffset', '50%');
 
     // update all texts
-    // context.selectors.hulls.selectAll('text')
-    //     .attr('xlink:href', group => '#' + group.name + 'Hull')
-    //     .text(group => group.name);
+    context.selectors.hulls.selectAll('text')
+        .style('display', () => context.isDragging ? 'block' : 'none')
+        .attr('xlink:href', group => '#' + group.name + 'Hull')
+        .text(group => group.name);
 
     context.selectors.hullBackgrounds = context.selectors.hullBackgrounds.data(context.filtered.groups, group => group.name);
     context.selectors.hullBackgrounds.exit().remove();
