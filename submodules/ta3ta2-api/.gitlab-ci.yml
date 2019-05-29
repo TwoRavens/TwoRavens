@@ -19,10 +19,11 @@ compile:
       done
       (cd python/ta3ta2_api; sed -i -E 's/^import.*_pb2/from . \0/' *.py)
       echo "__version__ = '$(grep -oP '(?<=option \(protocol_version\) = ")[^"]+(?=";)' core.proto)'" >> python/ta3ta2_api/__init__.py
+      cp README.md python/README.md
       echo "Linting"
       protoc -I . -I /protoc3/include --lint_out=. *.proto
       echo "Installing and testing Python package"
-      pip3 install --process-dependency-links python/
+      pip3 install python/
       python3 -I ./run_tests.py
       if [ "${CI_COMMIT_REF_NAME}" = master -o "${CI_COMMIT_REF_NAME}" = devel ]; then
         if [ -n "${GIT_ACCESS_USER}" -a -n "${GIT_ACCESS_TOKEN}" ]; then

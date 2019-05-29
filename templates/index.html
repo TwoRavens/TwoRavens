@@ -2,14 +2,13 @@
 {% load render_bundle from webpack_loader %}
 {% load static %}
 {% block extra_css %}
-    <!-- bootstrap 3 -->
-    <link rel="stylesheet" href="{% static "pkgs/bootstrap/css/bootstrap.css" %}">
+    <!-- bootstrap 3 <link rel="stylesheet" href="{% static "pkgs/bootstrap/css/bootstrap.css" %}">-->
 {% endblock %}
 
 {% block extra_js %}
-    <!-- jquery 2.1.1 --><script src="{% static "js/jquery/jquery.min.js" %}"></script>
-    <!-- bootstrap 3 --><script src="{% static "pkgs/bootstrap/js/bootstrap.min.js" %}"></script>
-    <!-- d3 --><script src="{% static "js/d3/d3.v3.min.js" %}"></script>
+    <!-- jquery 2.1.1 <script src="{% static "js/jquery/jquery.min.js" %}"></script>-->
+    <!-- bootstrap 3 <script src="{% static "pkgs/bootstrap4/js/bootstrap.min.js" %}"></script>-->
+    <!-- d3 <script src="{% static "js/d3/d3.v3.min.js" %}"></script>-->
     <script>
 
           const WEBSOCKET_PREFIX = '{{ WEBSOCKET_PREFIX }}'; // 'ws:/ or ws://'

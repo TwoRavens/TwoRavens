@@ -14,16 +14,14 @@ from google.protobuf import descriptor_pb2
 _sym_db = _symbol_database.Default()
 
 
-from google.protobuf import descriptor_pb2 as google_dot_protobuf_dot_descriptor__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='value.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\x0bvalue.proto\x1a google/protobuf/descriptor.proto\"\x1d\n\nValueError\x12\x0f\n\x07message\x18\x01 \x01(\t\"%\n\tValueList\x12\x18\n\x05items\x18\x01 \x03(\x0b\x32\t.ValueRaw\"j\n\tValueDict\x12$\n\x05items\x18\x01 \x03(\x0b\x32\x15.ValueDict.ItemsEntry\x1a\x37\n\nItemsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x18\n\x05value\x18\x02 \x01(\x0b\x32\t.ValueRaw:\x02\x38\x01\"\xbb\x01\n\x08ValueRaw\x12\x1a\n\x04null\x18\x01 \x01(\x0e\x32\n.NullValueH\x00\x12\x10\n\x06\x64ouble\x18\x02 \x01(\x01H\x00\x12\x0f\n\x05int64\x18\x03 \x01(\x03H\x00\x12\x0e\n\x04\x62ool\x18\x04 \x01(\x08H\x00\x12\x10\n\x06string\x18\x05 \x01(\tH\x00\x12\x0f\n\x05\x62ytes\x18\x06 \x01(\x0cH\x00\x12\x1a\n\x04list\x18\x07 \x01(\x0b\x32\n.ValueListH\x00\x12\x1a\n\x04\x64ict\x18\x08 \x01(\x0b\x32\n.ValueDictH\x00\x42\x05\n\x03raw\"\xb4\x01\n\x05Value\x12\x1c\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0b.ValueErrorH\x00\x12\x18\n\x03raw\x18\x02 \x01(\x0b\x32\t.ValueRawH\x00\x12\x15\n\x0b\x64\x61taset_uri\x18\x03 \x01(\tH\x00\x12\x11\n\x07\x63sv_uri\x18\x04 \x01(\tH\x00\x12\x14\n\npickle_uri\x18\x05 \x01(\tH\x00\x12\x15\n\x0bpickle_blob\x18\x06 \x01(\x0cH\x00\x12\x13\n\tplasma_id\x18\x07 \x01(\x0cH\x00\x42\x07\n\x05value*\xa2\x01\n\tValueType\x12\x18\n\x14VALUE_TYPE_UNDEFINED\x10\x00\x12\x07\n\x03RAW\x10\x01\x12\x0f\n\x0b\x44\x41TASET_URI\x10\x02\x12\x0b\n\x07\x43SV_URI\x10\x03\x12\x0e\n\nPICKLE_URI\x10\x04\x12\x0f\n\x0bPICKLE_BLOB\x10\x05\x12\r\n\tPLASMA_ID\x10\x06\x12\r\n\tLARGE_RAW\x10\x07\x12\x15\n\x11LARGE_PICKLE_BLOB\x10\x08*\x1b\n\tNullValue\x12\x0e\n\nNULL_VALUE\x10\x00\x42\nZ\x08pipelineb\x06proto3')
-  ,
-  dependencies=[google_dot_protobuf_dot_descriptor__pb2.DESCRIPTOR,])
+  serialized_pb=_b('\n\x0bvalue.proto\"\x1d\n\nValueError\x12\x0f\n\x07message\x18\x01 \x01(\t\"%\n\tValueList\x12\x18\n\x05items\x18\x01 \x03(\x0b\x32\t.ValueRaw\"j\n\tValueDict\x12$\n\x05items\x18\x01 \x03(\x0b\x32\x15.ValueDict.ItemsEntry\x1a\x37\n\nItemsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x18\n\x05value\x18\x02 \x01(\x0b\x32\t.ValueRaw:\x02\x38\x01\"\xbb\x01\n\x08ValueRaw\x12\x1a\n\x04null\x18\x01 \x01(\x0e\x32\n.NullValueH\x00\x12\x10\n\x06\x64ouble\x18\x02 \x01(\x01H\x00\x12\x0f\n\x05int64\x18\x03 \x01(\x03H\x00\x12\x0e\n\x04\x62ool\x18\x04 \x01(\x08H\x00\x12\x10\n\x06string\x18\x05 \x01(\tH\x00\x12\x0f\n\x05\x62ytes\x18\x06 \x01(\x0cH\x00\x12\x1a\n\x04list\x18\x07 \x01(\x0b\x32\n.ValueListH\x00\x12\x1a\n\x04\x64ict\x18\x08 \x01(\x0b\x32\n.ValueDictH\x00\x42\x05\n\x03raw\"\xb4\x01\n\x05Value\x12\x1c\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0b.ValueErrorH\x00\x12\x18\n\x03raw\x18\x02 \x01(\x0b\x32\t.ValueRawH\x00\x12\x15\n\x0b\x64\x61taset_uri\x18\x03 \x01(\tH\x00\x12\x11\n\x07\x63sv_uri\x18\x04 \x01(\tH\x00\x12\x14\n\npickle_uri\x18\x05 \x01(\tH\x00\x12\x15\n\x0bpickle_blob\x18\x06 \x01(\x0cH\x00\x12\x13\n\tplasma_id\x18\x07 \x01(\x0cH\x00\x42\x07\n\x05value*\xa2\x01\n\tValueType\x12\x18\n\x14VALUE_TYPE_UNDEFINED\x10\x00\x12\x07\n\x03RAW\x10\x01\x12\x0f\n\x0b\x44\x41TASET_URI\x10\x02\x12\x0b\n\x07\x43SV_URI\x10\x03\x12\x0e\n\nPICKLE_URI\x10\x04\x12\x0f\n\x0bPICKLE_BLOB\x10\x05\x12\r\n\tPLASMA_ID\x10\x06\x12\r\n\tLARGE_RAW\x10\x07\x12\x15\n\x11LARGE_PICKLE_BLOB\x10\x08*\x1b\n\tNullValue\x12\x0e\n\nNULL_VALUE\x10\x00\x42\nZ\x08pipelineb\x06proto3')
+)
 
 _VALUETYPE = _descriptor.EnumDescriptor(
   name='ValueType',
@@ -70,8 +68,8 @@ _VALUETYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=601,
-  serialized_end=763,
+  serialized_start=567,
+  serialized_end=729,
 )
 _sym_db.RegisterEnumDescriptor(_VALUETYPE)
 
@@ -89,8 +87,8 @@ _NULLVALUE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=765,
-  serialized_end=792,
+  serialized_start=731,
+  serialized_end=758,
 )
 _sym_db.RegisterEnumDescriptor(_NULLVALUE)
 
@@ -134,8 +132,8 @@ _VALUEERROR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=49,
-  serialized_end=78,
+  serialized_start=15,
+  serialized_end=44,
 )
 
 
@@ -165,8 +163,8 @@ _VALUELIST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=80,
-  serialized_end=117,
+  serialized_start=46,
+  serialized_end=83,
 )
 
 
@@ -203,8 +201,8 @@ _VALUEDICT_ITEMSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=170,
-  serialized_end=225,
+  serialized_start=136,
+  serialized_end=191,
 )
 
 _VALUEDICT = _descriptor.Descriptor(
@@ -233,8 +231,8 @@ _VALUEDICT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=119,
-  serialized_end=225,
+  serialized_start=85,
+  serialized_end=191,
 )
 
 
@@ -316,8 +314,8 @@ _VALUERAW = _descriptor.Descriptor(
       name='raw', full_name='ValueRaw.raw',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=228,
-  serialized_end=415,
+  serialized_start=194,
+  serialized_end=381,
 )
 
 
@@ -392,8 +390,8 @@ _VALUE = _descriptor.Descriptor(
       name='value', full_name='Value.value',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=418,
-  serialized_end=598,
+  serialized_start=384,
+  serialized_end=564,
 )
 
 _VALUELIST.fields_by_name['items'].message_type = _VALUERAW

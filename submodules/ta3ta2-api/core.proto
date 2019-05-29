@@ -17,7 +17,7 @@ extend google.protobuf.FileOptions {
 
 // Date-based version string. Use this to populate version field in "SearchSolutionsRequest"
 // and "SearchSolutionsResponse" messages.
-option (protocol_version) = "2019.2.27";
+option (protocol_version) = "2019.4.11";
 
 enum EvaluationMethod {
     // Default value. Not to be used.
@@ -27,6 +27,10 @@ enum EvaluationMethod {
     // to be supported for the "ScoreSolution" call.
     HOLDOUT = 1;
     K_FOLD = 2;
+
+    // This evaluation method can be used to ask TA2 to rank all found
+    // solutions. Only possible with "RANK" performance metric.
+    RANKING = 99;
 
     // The rest are defined to allow expressing internal evaluation
     // methods used by TA2 during solution search. If any method being used
@@ -63,11 +67,9 @@ message Score {
     // If scoring was not done as part of the cross-validation, then it can be returned
     // as the first and only fold, in which case the value of this field should be 0.
     int32 fold = 2;
-    // To which target or targets does this score apply?
-    repeated ProblemTarget targets = 3;
     Value value = 4;
-    // ID of the dataset which contain the targets for this score.
-    string dataset_id = 5;
+    // Random seed used to run a pipeline for this score to be obtained.
+    int32 random_seed = 5;
 }
 
 enum ProgressState {
@@ -130,7 +132,8 @@ message SearchSolutionsRequest {
     // Desired upper limit of time for solution search, expressed in minutes.
     // Is suggestion, and TA2's should attempt to obey, but TA3's should realize may be
     // violated. Default value of 0 (and any negative number) signifies no time bound.
-    double time_bound = 3;
+    // See also time_bound_run.
+    double time_bound_search = 3;
     // Value stating the priority of the search. If multiple searches are queued then highest
     // priority (largest number) should be started next by TA2. Primarily used to sort any
     // queue, but no further guarantee that TA2 can give more resources to high priority
@@ -165,6 +168,13 @@ message SearchSolutionsRequest {
     // values. Order matters as each input is mapped to a template's input in order. Optional
     // for templates without a placeholder and with all hyper-parameters fixed.
     repeated Value inputs = 8;
+    // Desire upper limit of time for one pass of the pipeline run expressed in minutes.
+    // Expressed at time of search, TA2's should limit the search to solutions
+    // that would not take longer than this for one pass of the pipeline run.
+    // Is suggestion, and TA2's should attempt to obey, but TA3's should realize may be
+    // violated. Default value of 0 (and any negative number) signifies no time bound.
+    // This can also functionally be used as the time bound for scoring also.
+    double time_bound_run = 9;
 }
 
 // Call returns immediately with the ID. Use "GetFoundSolutions" call to get results.
@@ -429,6 +439,25 @@ message SolutionExportRequest {
 
 message SolutionExportResponse {}
 
+// Inform TA2 about data being available, triggering any potential internal data processing by TA2.
+message DataAvailableRequest {
+    // Some string identifying the name and version of the TA3 system.
+    string user_agent = 1;
+    // Shall be set to "protocol_version" above.
+    string version = 2;
+    // Desired upper limit of time spend processing this data, expressed in minutes.
+    // Is suggestion, and TA2's should attempt to obey, but TA3's should realize may be
+    // violated. Default value of 0 (and any negative number) signifies no time bound.
+    double time_bound = 3;
+    // Value stating the priority for processing of this data. Larger number is higher
+    // priority. If unspecified, by default priority is 0. Negative numbers have
+    // still lower priority.
+    double priority = 4;
+    repeated Value data = 5;
+}
+
+message DataAvailableResponse {}
+
 // Save a solution that can be loaded later. (Pipeline description/ Pipeline run) Optional.
 message SaveSolutionRequest {
     // Id of solution to saved
@@ -524,6 +553,8 @@ service Core {
     rpc SolutionExport (SolutionExportRequest) returns (SolutionExportResponse) {}
 
     rpc UpdateProblem (UpdateProblemRequest) returns (UpdateProblemResponse) {}
+
+    rpc DataAvailable (DataAvailableRequest) returns (DataAvailableResponse) {}
 
     rpc ListPrimitives (ListPrimitivesRequest) returns (ListPrimitivesResponse) {}
 

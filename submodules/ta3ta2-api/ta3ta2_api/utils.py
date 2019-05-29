@@ -37,7 +37,7 @@ import frozendict
 import pandas
 from google.protobuf import timestamp_pb2
 
-from d3m import container, exceptions, runtime as runtime_module, utils as d3m_utils
+from d3m import container, exceptions, utils as d3m_utils
 from d3m.container import dataset as dataset_module
 from d3m.metadata import base as metadata_base, pipeline as pipeline_module, problem as problem_module
 
@@ -332,7 +332,7 @@ def encode_problem_description(problem_description):
 
     Parameters
     ----------
-    problem_description : Dict
+    problem_description : Problem
         A problem description.
 
     Returns
@@ -346,11 +346,6 @@ def encode_problem_description(problem_description):
         performance_metrics.append(encode_performance_metric(performance_metric))
 
     problem = problem_pb2.Problem(
-        # TODO: Remove deprecated fields in a future version.
-        id=problem_description['problem'].get('id', None),
-        version=problem_description['problem'].get('version', None),
-        name=problem_description['problem'].get('name', None),
-        description=problem_description['problem'].get('description', None),
         task_type=problem_description['problem']['task_type'].value,
         task_subtype=problem_description['problem']['task_subtype'].value,
         performance_metrics=performance_metrics,
@@ -370,8 +365,19 @@ def encode_problem_description(problem_description):
                 ),
             )
 
+        privileged_data = []
+        for privileged_data_item in problem_input.get('privileged_data', []):
+            privileged_data.append(
+                problem_pb2.ProblemPrivilegedData(
+                    privileged_data_index=privileged_data_item['privileged_data_index'],
+                    resource_id=privileged_data_item['resource_id'],
+                    column_index=privileged_data_item['column_index'],
+                    column_name=privileged_data_item['column_name'],
+                ),
+            )
+
         inputs.append(
-            problem_pb2.ProblemInput(dataset_id=problem_input['dataset_id'], targets=targets),
+            problem_pb2.ProblemInput(dataset_id=problem_input['dataset_id'], targets=targets, privileged_data=privileged_data),
         )
 
     data_augmentation = []
@@ -391,10 +397,11 @@ def encode_problem_description(problem_description):
         description=problem_description.get('description', None),
         digest=problem_description.get('digest', None),
         data_augmentation=data_augmentation,
+        other_names=problem_description.get('other_names', [])
     )
 
 
-def decode_problem_description(problem_description, *, strict_digest=False):
+def decode_problem_description(problem_description, *, strict_digest=False, problem_class=None):
     """
     Decodes a GRPC message into a problem description.
 
@@ -404,21 +411,25 @@ def decode_problem_description(problem_description, *, strict_digest=False):
         A GRPC message.
     strict_digest : bool
         If computed digest does not match the one provided in message, raise an exception?
+    problem_class : type
+        A problem class to use. By default, `d3m.metadata.problem.Problem`.
 
     Returns
     -------
-    Union[Dict, None]
+    Union[Problem, None]
         A problem description, or ``None`` if problem is not defined.
     """
 
     if problem_description.problem.task_type == problem_pb2.TaskType.Value('TASK_TYPE_UNDEFINED') and problem_description.problem.task_subtype == problem_pb2.TaskSubtype.Value('TASK_SUBTYPE_UNDEFINED'):
         return None
 
+    if problem_class is None:
+        problem_class = problem_module.Problem
+
     description = {
-        # TODO: Remove deprecated fields in a future version.
-        'id': problem_description.id or problem_description.problem.id,
-        'version': problem_description.version or problem_description.problem.version,
-        'name': problem_description.name or problem_description.problem.name,
+        'id': problem_description.id,
+        'version': problem_description.version,
+        'name': problem_description.name,
         'schema': problem_module.PROBLEM_SCHEMA_VERSION,
         'problem': {
             'task_type': problem_module.TaskType(problem_description.problem.task_type),
@@ -428,9 +439,9 @@ def decode_problem_description(problem_description, *, strict_digest=False):
 
     if problem_description.description:
         description['description'] = problem_description.description
-    # TODO: Remove deprecated fields in a future version.
-    elif problem_description.problem.description:
-        description['description'] = problem_description.problem.description
+
+    if problem_description.other_names:
+        description['other_names'] = problem_description.other_names
 
     if problem_description.data_augmentation:
         description['data_augmentation'] = []
@@ -471,6 +482,17 @@ def decode_problem_description(problem_description, *, strict_digest=False):
             if target.clusters_number:
                 targets[-1]['clusters_number'] = target.clusters_number
 
+        privileged_data = []
+        for privileged_data_item in problem_input.privileged_data:
+            privileged_data.append(
+                {
+                    'target_index': privileged_data_item.target_index,
+                    'resource_id': privileged_data_item.resource_id,
+                    'column_index': privileged_data_item.column_index,
+                    'column_name': privileged_data_item.column_name,
+                },
+            )
+
         problem_input = {
             'dataset_id': problem_input.dataset_id,
         }
@@ -478,14 +500,15 @@ def decode_problem_description(problem_description, *, strict_digest=False):
         if targets:
             problem_input['targets'] = targets
 
+        if privileged_data:
+            problem_input['privileged_data'] = privileged_data
+
         inputs.append(problem_input)
 
     if inputs:
         description['inputs'] = inputs
 
-    description['digest'] = d3m_utils.compute_digest(d3m_utils.to_json_structure(description))
-
-    problem_module.PROBLEM_SCHEMA_VALIDATOR.validate(description)
+    description['digest'] = d3m_utils.compute_digest(d3m_utils.to_json_structure(problem_class._canonical_problem_description(description)))
 
     if problem_description.digest:
         if description['digest'] != problem_description.digest:
@@ -507,7 +530,7 @@ def decode_problem_description(problem_description, *, strict_digest=False):
                     },
                 )
 
-    return description
+    return problem_class(description)
 
 
 def encode_pipeline_description(pipeline, allowed_value_types, scratch_dir, *, plasma_put=None, validate_uri=None):
@@ -855,7 +878,8 @@ def encode_performance_metric(metric):
     ----------
     metric : Dict
         A dict with fields ``metric`` and ``params``, where ``metric``
-        is a ``PerformanceMetric`` enumeration value.
+        is a ``PerformanceMetric`` enumeration value or a constant string
+        for custom metrics (those not available as `PerformanceMetric`).
 
     Returns
     -------
@@ -863,8 +887,15 @@ def encode_performance_metric(metric):
         A GRPC message.
     """
 
+    if isinstance(metric['metric'], problem_module.PerformanceMetric):
+        metric_value = metric['metric'].value
+    elif isinstance(metric['metric'], str):
+        metric_value = metric['metric']
+    else:
+        raise exceptions.InvalidArgumentTypeError("Metric is not enumeration or a string.")
+
     return problem_pb2.ProblemPerformanceMetric(
-        metric=metric['metric'].value,
+        metric=metric_value,
         k=metric.get('params', {}).get('k', None),
         pos_label=metric.get('params', {}).get('pos_label', None),
     )
@@ -883,7 +914,8 @@ def decode_performance_metric(metric):
     -------
     Dict
         A dict with fields ``metric`` and ``params``, where ``metric``
-        is a ``PerformanceMetric`` enumeration value.
+        is a ``PerformanceMetric`` enumeration value or a constant string
+        for custom metrics (those not available as `PerformanceMetric`).
     """
 
     params = {}
@@ -893,9 +925,13 @@ def decode_performance_metric(metric):
     if metric.pos_label:
         params['pos_label'] = metric.pos_label
 
+    try:
+        metric_value = problem_module.PerformanceMetric(metric.metric)
+    except ValueError:
+        metric_value = problem_pb2.PerformanceMetric.Name(metric.metric)
+
     return {
-        # TODO: Support additional metrics like "LOSS".
-        'metric': problem_module.PerformanceMetric(metric.metric),
+        'metric': metric_value,
         'params': params,
     }
 
@@ -907,8 +943,7 @@ def encode_score(score, allowed_value_types, scratch_dir, *, plasma_put=None, va
     Parameters
     ----------
     score : Dict
-        A score description is a dict with fields: ``metric``
-        ``fold``, ``targets``, ``value``, ``dataset_id``.
+        A score description is a dict with fields: ``metric``, ``fold``, ``value``, ``random_seed``.
     allowed_value_types : Sequence[ValueType]
         A list of allowed value types to encode this value as. This
         list is tried in order until encoding succeeds.
@@ -931,9 +966,8 @@ def encode_score(score, allowed_value_types, scratch_dir, *, plasma_put=None, va
     return core_pb2.Score(
         metric=encode_performance_metric(score['metric']),
         fold=score['fold'],
-        targets=[problem_pb2.ProblemTarget(target_index=target['target_index'], resource_id=target['resource_id'], column_index=target['column_index'], column_name=target['column_name']) for target in score['targets']],
         value=encode_value({'type': 'object', 'value': score['value']}, allowed_value_types, scratch_dir, plasma_put=plasma_put, validate_uri=validate_uri),
-        dataset_id=score['dataset_id'],
+        random_seed=score['random_seed'],
     )
 
 
@@ -1160,8 +1194,11 @@ def save_value(value, allowed_value_types, scratch_dir, *, plasma_put=None, rais
                     csv_file_descriptor, csv_path = tempfile.mkstemp(suffix='.csv', dir=scratch_dir)
                     try:
                         os.chmod(csv_path, 0o644)
-                        with open(csv_file_descriptor, 'w') as csv_file:
-                            runtime_module.export_dataframe(dataframe_value, csv_file)
+                        # Using mode "m" to never override any file.
+                        with open(csv_file_descriptor, 'x') as csv_file:
+                            # Container type DataFrame "to_csv" method is extended to output
+                            # column names based on metadata so we can directly call it here.
+                            dataframe_value.to_csv(csv_file)
                         uri = _fix_uri(os.path.abspath(csv_path))
                         return {
                             'type': 'csv_uri',

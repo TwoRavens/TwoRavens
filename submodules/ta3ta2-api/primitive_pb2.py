@@ -13,16 +13,14 @@ from google.protobuf import descriptor_pb2
 _sym_db = _symbol_database.Default()
 
 
-from google.protobuf import descriptor_pb2 as google_dot_protobuf_dot_descriptor__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='primitive.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\x0fprimitive.proto\x1a google/protobuf/descriptor.proto\"[\n\tPrimitive\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x13\n\x0bpython_path\x18\x03 \x01(\t\x12\x0c\n\x04name\x18\x04 \x01(\t\x12\x0e\n\x06\x64igest\x18\x05 \x01(\tB\nZ\x08pipelineb\x06proto3')
-  ,
-  dependencies=[google_dot_protobuf_dot_descriptor__pb2.DESCRIPTOR,])
+  serialized_pb=_b('\n\x0fprimitive.proto\"[\n\tPrimitive\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x13\n\x0bpython_path\x18\x03 \x01(\t\x12\x0c\n\x04name\x18\x04 \x01(\t\x12\x0e\n\x06\x64igest\x18\x05 \x01(\tB\nZ\x08pipelineb\x06proto3')
+)
 
 
 
@@ -81,8 +79,8 @@ _PRIMITIVE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=53,
-  serialized_end=144,
+  serialized_start=19,
+  serialized_end=110,
 )
 
 DESCRIPTOR.message_types_by_name['Primitive'] = _PRIMITIVE

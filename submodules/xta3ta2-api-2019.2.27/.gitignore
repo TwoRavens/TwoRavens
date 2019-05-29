@@ -1,0 +1,5 @@
+.idea
+__pycache__
+*.pb.go
+ta3ta2_api/*_pb2.py
+ta3ta2_api/*_pb2_grpc.py

@@ -15,6 +15,7 @@ div#leftpanel .popover-content {
     background-color: transparent;
     border-color: slategray;
     color: lightgray;
+    box-shadow: inset 0px 0px 8px #d1d1d1 !important;
 }
 @keyframes spin {
     0% { transform: rotate(0deg); }
@@ -131,14 +132,14 @@ main#EventData .monad-right {
 main#EventData .monad-full-list {
     display: inline-block;
     width: 100%;
-    height: calc(100% - 54px);
+    height: calc(100% - 110px);
     overflow-x: auto;
     overflow-y: scroll;
     white-space: nowrap;
 }
 main#EventData .monad-filter-list {
     width: 100%;
-    height: calc(100% - 54px);
+    height: calc(100% - 110px);
     margin-top: 3px;
     overflow-x: auto;
     overflow-y: scroll;
@@ -148,7 +149,6 @@ main#EventData .monad-clear {
     display: block;
     margin: 5px 38px 5px 5px;
     width: calc(100% - 43px);
-    height: 30px;
 }
 main#EventData #dyadLinkDiv {
     float: left;

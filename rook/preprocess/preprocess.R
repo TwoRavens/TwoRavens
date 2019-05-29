@@ -172,7 +172,18 @@ preprocess<-function(hostname=NULL, fileid=NULL, testdata=NULL, types=NULL, file
         # Add problems that use discovered splits and constructed variables
         mydisco2 <- tryCatch(disco2(mydata2, top=3), error=function(e) NULL)
         mydisco3 <- tryCatch(disco3(mydata2, top=3), error=function(e) NULL)
-        mydisco <- c(mydisco, mydisco2, mydisco3) 
+        mydisco <- c(mydisco, mydisco2, mydisco3)
+
+        # # TODO: using plottype to determine task/metric seems sketchy
+        # for (problem in mydisco) {
+        #     if (hold[[problem$target]]$plottype == 'bar') {
+        #         problem$task <- 'classification'
+        #         problem$metric <- 'f1Macro'
+        #     } else {
+        #         problem$task <- 'regression'
+        #         problem$metric <- 'meanSquaredError'
+        #     }
+        # }
         cat("Successfully completed problem discovery \n") 
 
     }else{

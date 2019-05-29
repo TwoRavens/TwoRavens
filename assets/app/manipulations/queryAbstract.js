@@ -1,7 +1,5 @@
 import m from "mithril";
 
-// scope creep
-import * as eventdata from "../eventdata/eventdata";
 import {alertError, alertLog} from "../app";
 
 // constraint trees used for subset and aggregate
@@ -15,7 +13,7 @@ import {alertError, alertLog} from "../app";
 //     type: 'rule' || 'query' || 'group
 //     subset: 'date' || 'dyad' || 'discrete' || 'discrete_grouped' || 'coordinates' || 'custom' (if this.type === 'rule')
 //     name: '[title]',         // 'Subsets', 'Group #', '[Selection] Subset' or tag name
-//     show_op: true,           // If true, show operation menu element
+//     show_op: false,           // If false, operation button ('and', 'or') will not be rendered
 //     operation: 'and',        // Stores preference of operation menu element
 //     children: [],            // If children exist
 //     negate: false,           // If exists, have a negation button
@@ -23,19 +21,7 @@ import {alertError, alertLog} from "../app";
 //     cancellable: false       // If exists and false, disable the delete button
 // }
 
-// don't show operator button on first element of any group
-export function hideFirst(data) {
-    for (let child_id in data) {
-        let child = data[child_id];
-        if ('children' in child) {
-            child.children = hideFirst(child.children);
-        }
-        child['show_op'] = child_id !== "0";
-    }
-    return data;
-}
-
-export function addGroup(pipelineId, step) {
+export function addGroup(step) {
 
     // When the query argument is set, groups will be included under a 'query group'
     let movedChildren = [];
@@ -57,9 +43,6 @@ export function addGroup(pipelineId, step) {
             removeIds.push(child_id);
         }
     }
-    if (movedChildren.length > 0) {
-        movedChildren[0]['show_op'] = false;
-    }
 
     // Delete elements from root directory that are moved
     for (let i = removeIds.length - 1; i >= 0; i--) {
@@ -75,21 +58,16 @@ export function addGroup(pipelineId, step) {
         show_op: step.abstractQuery.length > 0
     });
 
-    hideFirst(step.abstractQuery);
     m.redraw();
-
-    let qtree = $('#subsetTree' + pipelineId + String(step.id));
-    qtree.tree('openNode', qtree.tree('getNodeById', step.nodeId - 1), true);
 }
 
 /**
- * @param pipelineId: the ID of the pipeline in manipulations
  * @param step: pipeline stepID
  * @param preferences: menu state
  * @param metadata: menu type, column names, etc.
  * @param name: name displayed on constraint in menu
  */
-export function addConstraint(pipelineId, step, preferences, metadata, name) {
+export function addConstraint(step, preferences, metadata, name) {
 
     // extract information from menu state and format as a branch. The branch will be added to the abstract query
     let abstractBranch = makeAbstractBranch(step, preferences, metadata, name);
@@ -115,18 +93,9 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
     }
 
     if (step.type === 'subset') {
-
-        // Don't show the boolean operator on the first element
-        if (step.abstractQuery.length === 0)
-            abstractBranch['show_op'] = false;
-
         step.abstractQuery.push(abstractBranch);
 
         m.redraw();
-        if (IS_EVENTDATA_DOMAIN) {
-            let subsetTree = $('#subsetTree' + pipelineId + eventdata.eventdataSubsetCount); // the pending tree
-            subsetTree.tree('closeNode', subsetTree.tree('getNodeById', abstractBranch['id']), false);
-        }
     }
 
     if (step.type === 'aggregate' && metadata.measureType === 'unit') {
@@ -311,7 +280,6 @@ function makeAbstractBranch(step, preferences, metadata, name) {
             let link = {
                 id: String(step.nodeId++) + measureId,
                 name: 'Link ' + String(linkId),
-                show_op: linkId !== '0',
                 operation: 'or',
                 subset: 'link',
                 children: [{
@@ -432,7 +400,7 @@ function makeAbstractBranch(step, preferences, metadata, name) {
                 {
                     id: String(step.nodeId++) + measureId,
                     name: 'From: ' + monthNames[preferences['userLower'].getMonth()] + ' ' + preferences['userLower'].getDate() + ' ' + String(preferences['userLower'].getFullYear()),
-                    fromDate: new Date(preferences['userLower'].getTime()),
+                    fromDate: preferences['userLower'].getTime(),
                     cancellable: false,
                     show_op: false,
                     column: metadata['columns'][0]
@@ -440,7 +408,7 @@ function makeAbstractBranch(step, preferences, metadata, name) {
                 {
                     id: String(step.nodeId++) + measureId,
                     name: 'To:   ' + monthNames[preferences['userUpper'].getMonth()] + ' ' + preferences['userUpper'].getDate() + ' ' + String(preferences['userUpper'].getFullYear()),
-                    toDate: new Date(preferences['userUpper'].getTime()),
+                    toDate: preferences['userUpper'].getTime(),
                     cancellable: false,
                     show_op: false,
                     // If the date is an interval, the last element will be different from the first
@@ -509,35 +477,45 @@ function makeAbstractBranch(step, preferences, metadata, name) {
             name: 'Latitude',
             column: metadata['columns'][0],
             // negate: 'false',
+            show_op: false,
             children: []
         };
 
         latitude.children.push({
             id: String(step.nodeId++) + measureId,
-            name: valUpper > valLower ? valUpper : valLower
+            name: valUpper > valLower ? valUpper : valLower,
+            show_op: false,
+            cancellable: false
         });
 
         latitude.children.push({
             id: String(step.nodeId++) + measureId,
-            name: valUpper < valLower ? valUpper : valLower
+            name: valUpper < valLower ? valUpper : valLower,
+            show_op: false,
+            cancellable: false
         });
 
         let longitude = {
             id: String(step.nodeId++) + measureId,
             name: 'Longitude',
             operation: 'and',
+            show_op: false,
             column: metadata['columns'][1],
             children: []
         };
 
         longitude.children.push({
             id: String(step.nodeId++) + measureId,
-            name: valLeft > valRight ? valLeft : valRight
+            name: valLeft > valRight ? valLeft : valRight,
+            show_op: false,
+            cancellable: false
         });
 
         longitude.children.push({
             id: String(step.nodeId++) + measureId,
-            name: valLeft < valRight ? valLeft : valRight
+            name: valLeft < valRight ? valLeft : valRight,
+            show_op: false,
+            cancellable: false
         });
 
         subset.children.push(latitude);

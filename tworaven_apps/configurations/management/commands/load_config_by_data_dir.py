@@ -9,7 +9,7 @@ from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
 
 
 class Command(BaseCommand):
-    help = ('Create a D3MConfiguration object based on a diretory name.'
+    help = ('Create a D3MConfiguration object based on a directory name.'
             ' This is for working with local test data--not k8s')
 
     def add_arguments(self, parser):

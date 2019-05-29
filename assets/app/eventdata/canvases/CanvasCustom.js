@@ -40,13 +40,13 @@ export default class CanvasCustom {
         return m("#canvasCustom", {style: {height: '100%', 'padding-top': panelMargin}},
             [
                 // Header
-                m(".panel-heading.text-left[id='subsetCustomLabel']", {
+                m(".card-header.text-left[id='subsetCustomLabel']", {
                         style: {
                             "width": "14em",
                             "float": "left"
                         }
                     },
-                    m("h3.panel-title", "View Query String")
+                    m("h3.card-title", "View Query String")
                 ),
                 // Show rightpanel query Button
                 m("button.btn.btn-default[id='subsetCustomShowAll']", {

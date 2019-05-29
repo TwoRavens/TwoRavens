@@ -8,7 +8,7 @@ import unittest
 from d3m import container, index, utils as d3m_utils
 from d3m.metadata import pipeline as pipeline_module, problem as problem_module
 
-from ta3ta2_api import utils
+from ta3ta2_api import utils, problem_pb2
 
 TEST_PRIMITIVES_DIR = os.path.join(os.path.dirname(__file__), 'data', 'primitives')
 TEST_PROBLEMS_DIR = os.path.join(os.path.dirname(__file__), 'data', 'problems')
@@ -56,15 +56,13 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(primitive_description, utils.decode_primitive(primitive_description_message))
 
     def test_problem(self):
-        problem_description = problem_module.parse_problem_description(os.path.join(TEST_PROBLEMS_DIR, 'iris_problem_1', 'problemDoc.json'))
-
-        # TA2-TA3 API does not encode outputs.
-        del problem_description['outputs']
-        problem_description['digest'] = d3m_utils.compute_digest(d3m_utils.to_json_structure(problem_description))
+        problem_description = problem_module.Problem.load('file://' + os.path.abspath(os.path.join(TEST_PROBLEMS_DIR, 'iris_problem_1', 'problemDoc.json')))
 
         problem_message = utils.encode_problem_description(problem_description)
 
-        self.assertEqual(utils.decode_problem_description(problem_message, strict_digest=True), problem_description)
+        decoded_problem_description = utils.decode_problem_description(problem_message, strict_digest=True)
+
+        self.assertEqual(decoded_problem_description._canonical_problem_description(decoded_problem_description), problem_description._canonical_problem_description(problem_description))
 
     def test_pipeline(self):
         with open(os.path.join(TEST_PIPELINES_DIR, 'random-sample.yml'), 'r') as pipeline_file:
@@ -198,6 +196,35 @@ class TestUtils(unittest.TestCase):
                         ),
                         (value, allowed_value_type),
                     )
+
+    def test_performance_metric(self):
+        grpc_message = utils.encode_performance_metric({
+            'metric': 'RANK'
+        })
+
+        self.assertEqual(grpc_message.metric, problem_pb2.PerformanceMetric.Value('RANK'))
+
+        metric = utils.decode_performance_metric(grpc_message)
+
+        self.assertEqual(metric['metric'], 'RANK')
+
+        grpc_message = utils.encode_performance_metric({
+            # One should not really pass a string for non-custom metric, but it is supported.
+            'metric': 'F1_MICRO'
+        })
+
+        self.assertEqual(grpc_message.metric, problem_pb2.PerformanceMetric.Value('F1_MICRO'))
+
+        grpc_message = utils.encode_performance_metric({
+            'metric': problem_module.PerformanceMetric.F1_MICRO
+        })
+
+        self.assertEqual(grpc_message.metric, problem_pb2.PerformanceMetric.Value('F1_MICRO'))
+
+        metric = utils.decode_performance_metric(grpc_message)
+
+        self.assertIsInstance(metric['metric'], problem_module.PerformanceMetric)
+        self.assertIs(metric['metric'], problem_module.PerformanceMetric.F1_MICRO)
 
 
 if __name__ == '__main__':

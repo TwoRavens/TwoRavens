@@ -135,9 +135,6 @@ def make_d3m_config():
 def load_d3m_config_from_env():
     """1/27/2019 update. Load from env variables.
     - Look for an environment variable named "D3MINPUTDIR"
-        - This is the data directory which should include a file named
-            "search_config.json"
-        - Load "search_config.json" as the D3M config
     - If "D3MINPUTDIR" doesn't exist, display error message and keep running
     """
     from django.conf import settings
@@ -171,8 +168,8 @@ def load_d3m_config_from_env():
     else:
         print('This config file doesn\'t exist (or is not reachable): %s' % \
               config_file)
-    print('(2) Attempt to load 2019 config from environment variables')
 
+    print('(2) Attempt to load 2019 config from environment variables')
 
     from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
     loader = EnvConfigLoader.run_loader_from_env()
@@ -383,10 +380,10 @@ def run_rook():
     """Run the rook server via the command line"""
     local(get_run_rook_cmd())
 
-@task
-def run_with_rook():
-    """In addition to the django dev server and webpack, run rook via the Terminal"""
-    run(with_rook=True)
+#@task
+#def run_with_rook():
+#    """In addition to the django dev server and webpack, run rook via the Terminal"""
+#    run(with_rook=True)
 
 @task
 def run_with_ta2():

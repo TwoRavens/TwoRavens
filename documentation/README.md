@@ -88,6 +88,10 @@ Webpack files in the build directory are excluded from github.
   - **dev environment**: The `fab run` command generates new webpack build files and serves the via the django dev server
     - build files: `/assets/build/`
       - deleted and rebuilt with each `fab run`
+    - webpack automatically rebuilds when any source file is modified. On ubuntu, the file modifications may fail to prompt a rebuild
+      - to fix this/enable live code updates, increase the number of file watchers:
+        - `echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p`
+        - via https://stackoverflow.com/a/33537743/10221612 
   - **deploy environ**: Uses webpack dist files.  
     - dist files: `/assets/dist/`
     - these settings use the `dist` directory (src: `/tworavensproject/settings/dev_container2.py`)

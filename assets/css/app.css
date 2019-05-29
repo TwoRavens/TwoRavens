@@ -1,3 +1,43 @@
+/* BEGIN BOOTSWATCH MATERIA OVERRIDES */
+.btn.active {
+    background-color: #e8e8e8;
+    box-shadow: inset 0px 0px 8px #b0b0b0 !important;
+}
+input.form-control {
+    background-color: #00000012;
+    border-radius: 3px;
+    padding: 1rem;
+}
+.btn {
+    text-transform: none;
+    font-size: .9rem;
+    padding: 0.8rem;
+}
+.btn-sm {
+    padding: 0.4rem 0.6rem;
+    font-size: .85rem;
+    line-height: 1.5;
+    border-radius: 0.2rem;
+}
+.card-header {
+    background-color: transparent;
+}
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-size: .9rem;
+}
+:root{
+    --font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+.tooltip {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+.popover {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+/* END BOOTSWATCH MATERIA OVERRIDES */
+
 svg {
   background-color: transparent;
   cursor: default;
@@ -124,75 +164,6 @@ text.id {
     height: 62px;
 }
 
-#main svg {
-    width: 100%;
-    /*min-height: 200px;*/
-    height: 100%;
-}
-
-#leftpanel {
-    border: 1px solid #ADADAD;
-    position: fixed;
-    top: 72px;
-    left: 10px;
-    width: 300px;
-    height: calc(100% - 122px);
-    background: #F9F9F9;
-    padding: 0 16px 0 0;
-    z-index: 25;
-}
-
-/*#leftpanel #leftContentArea div {display:none;}*/
-#leftpanel #leftContentArea div.active {display:block;}
-#leftpanel.closepanel {width:1px;}
-#leftpanel.closepanel #leftpaneltitle, #leftpanel.closepanel div.btn-toolbar, #leftpanel.closepanel div.row-fluid.closepanel {display:none;}
-#leftpanel.expandpanel {width: 30%;}
-#leftpanel.expandpanelfull {width: calc(100% - 300px - 16px);}
-
-#rightpanel {
-    border: 1px solid #ADADAD;
-    position: fixed;
-    top: 72px;
-    right: 10px;
-    width: 300px;
-    height: calc(100% - 122px);
-    background: #F9F9F9;
-    padding: 0 0 0 16px;
-    z-index: 25;
-}
-
-#rightpanel #rightContentArea div {display:none;}
-#rightpanel #rightContentArea div.active {display:block;}
-#rightpanel.closepanel {width:1px;}
-#rightpanel.closepanel #rightpaneltitle, #rightpanel.closepanel div.btn-group-justified, #rightpanel.closepanel div.row-fluid.closepanel {display:none;}
-#rightpanel.expandpanel {width: 40%;}
-#rightpanel.expandpanelfull {width: calc(100% - 300px - 16px);}
-
-div.sidepanel div.panelbar {
-    position: absolute;
-    height: 100%;
-}
-
-#leftpanel div#toggleLpanelicon.panelbar {
-    left: calc(100% - 16px);
-}
-
-#rightpanel div#toggleRpanelicon.panelbar {
-    right: calc(100% - 16px);
-}
-
-div.sidepanel div.panelbar span {
-  display: flex;
-  width: 16px;
-  height: 100%;
-  position:relative;
-  justify-content:center;
-  align-items:center;
-  font-size: .75em;
-  color: #ADADAD;
-  background: #eee;
-}
-
 #main {
     width: 100%;
     height: calc(100% - 74px - 40px);
@@ -219,10 +190,6 @@ div.sidepanel div.panelbar span {
     margin-right: 10px;
     margin-top: 10px;
     position: absolute;
-}
-
-.spaceTool button:first-child {
-    margin-right:1em;
 }
 
 .spaceTool button span {
@@ -310,10 +277,6 @@ div.sidepanel div.panelbar span {
 }
 
 /* p { padding-left: 15px; } */
-
-path {
-    fill: steelblue;
-}
 
 .axis path,
 .axis line {
@@ -434,6 +397,15 @@ tr.item-lineout{
 .item-nominal {
     border: solid #ff6600;
 }
+.item-cross-section {
+    border: solid #419641;
+}
+.item-time {
+    border: solid #2d6ca2;
+}
+.item-weight {
+    border: solid #bf4d66;
+}
 .item-lineout{
     text-decoration:line-through;
 }
@@ -518,4 +490,11 @@ div#scatterplot .axis path {fill: none; stroke: #BDBDBD; shape-rendering: crispE
   margin-left: .5em;
   margin-right: .5em;
   color: #337ab7;
+}
+
+.btn-group-xs > .btn, .btn-xs {
+    padding: .25rem .4rem;
+    font-size: .875rem;
+    line-height: .5;
+    border-radius: .2rem;
 }

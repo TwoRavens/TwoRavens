@@ -395,11 +395,11 @@ function processRule(rule) {
                 column = child.column;
                 if ('fromDate' in child) {
                     child.fromDate = new Date(child.fromDate);
-                    rule_query_inner['$gte'] = {'$date': child.fromDate.toISOString().slice(0, 10)}
+                    rule_query_inner['$gte'] = {'$date': new Date(child.fromDate).toISOString().slice(0, 10)}
                 }
                 if ('toDate' in child) {
                     child.toDate = new Date(child.toDate);
-                    rule_query_inner['$lte'] = {'$date': child.toDate.toISOString().slice(0, 10)}
+                    rule_query_inner['$lte'] = {'$date': new Date(child.toDate).toISOString().slice(0, 10)}
                 }
             }
             rule_query[column] = {$or: [rule_query_inner, {column: {$exists: 0}}]};
@@ -411,7 +411,7 @@ function processRule(rule) {
                     [column]: rule.children.reduce((out, child) => {
                         let side = 'fromDate' in child ? 'fromDate' : 'toDate';
                         out[side === 'fromDate' ? '$gte' : '$lte'] = {
-                            '$date': child[side].toISOString().slice(0, 10)
+                            '$date': new Date(child[side]).toISOString().slice(0, 10)
                         }
                     }, {})
                 });
@@ -872,16 +872,29 @@ export function buildMenu(step) {
         let subset = [];
         if (metadata.skip) subset.push({$skip: metadata.skip});
         if (metadata.limit) subset.push({$limit: metadata.limit});
+        if (metadata.sample) subset.push({$sample: {size: metadata.sample}});
+
+        if (!metadata.variables && metadata.nominal && metadata.nominal.length > 0) return [
+            ...subset,
+            {
+                $addFields: metadata.nominal.reduce((out, entry) => {
+                    out[entry] = {'$toString': '$' + entry};
+                    return out;
+                }, {})
+            },
+            {$project: {_id: 0}}
+        ];
 
         return [
+            ...subset,
             {
                 $project: (metadata.variables || []).reduce((out, entry) => {
                     out[entry] = (metadata.nominal || []).includes(entry) ? {'$toString': '$' + entry} : 1;
                     return out;
                 }, {_id: 0})
-            },
-            ...subset
+            }
         ];
+
     }
 
     if (metadata.type === 'count') return [{
@@ -1027,7 +1040,7 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
     }, doc.dataResources[tableResourceIndex].columns)
         .map(struct => Object.assign(struct, { // relabel roles to reflect the proper target
             role: [
-                struct.colName === problem.target ? 'suggestedTarget'
+                problem.targets.includes(struct.colName) ? 'suggestedTarget'
                     : struct.colName === 'd3mIndex' ? 'index' : 'attribute'
             ]
         }));

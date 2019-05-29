@@ -79,6 +79,11 @@ class CoreStub(object):
         request_serializer=core__pb2.UpdateProblemRequest.SerializeToString,
         response_deserializer=core__pb2.UpdateProblemResponse.FromString,
         )
+    self.DataAvailable = channel.unary_unary(
+        '/Core/DataAvailable',
+        request_serializer=core__pb2.DataAvailableRequest.SerializeToString,
+        response_deserializer=core__pb2.DataAvailableResponse.FromString,
+        )
     self.ListPrimitives = channel.unary_unary(
         '/Core/ListPrimitives',
         request_serializer=core__pb2.ListPrimitivesRequest.SerializeToString,
@@ -206,6 +211,13 @@ class CoreServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def DataAvailable(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
   def ListPrimitives(self, request, context):
     # missing associated documentation comment in .proto file
     pass
@@ -315,6 +327,11 @@ def add_CoreServicer_to_server(servicer, server):
           servicer.UpdateProblem,
           request_deserializer=core__pb2.UpdateProblemRequest.FromString,
           response_serializer=core__pb2.UpdateProblemResponse.SerializeToString,
+      ),
+      'DataAvailable': grpc.unary_unary_rpc_method_handler(
+          servicer.DataAvailable,
+          request_deserializer=core__pb2.DataAvailableRequest.FromString,
+          response_serializer=core__pb2.DataAvailableResponse.SerializeToString,
       ),
       'ListPrimitives': grpc.unary_unary_rpc_method_handler(
           servicer.ListPrimitives,

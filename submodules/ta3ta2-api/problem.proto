@@ -1,8 +1,6 @@
 syntax = "proto3";
 option go_package = "pipeline";
 
-import "google/protobuf/descriptor.proto";
-
 // Top level classification of the problem.
 enum TaskType {
     // Default value. Not to be used.
@@ -13,12 +11,14 @@ enum TaskType {
     CLUSTERING = 3;
     LINK_PREDICTION = 4;
     VERTEX_NOMINATION = 5;
-    COMMUNITY_DETECTION = 6;
-    GRAPH_CLUSTERING = 7;
+    VERTEX_CLASSIFICATION = 6;
+    COMMUNITY_DETECTION = 7;
     GRAPH_MATCHING = 8;
     TIME_SERIES_FORECASTING = 9;
     COLLABORATIVE_FILTERING = 10;
     OBJECT_DETECTION = 11;
+    SEMISUPERVISED_CLASSIFICATION = 12;
+    SEMISUPERVISED_REGRESSION = 13;
 }
 
 // Secondary classification of the problem.
@@ -55,13 +55,20 @@ enum PerformanceMetric {
     ROC_AUC_MACRO = 9;
     MEAN_SQUARED_ERROR = 10;
     ROOT_MEAN_SQUARED_ERROR = 11;
-    ROOT_MEAN_SQUARED_ERROR_AVG = 12;
-    MEAN_ABSOLUTE_ERROR = 13;
-    R_SQUARED = 14;
-    NORMALIZED_MUTUAL_INFORMATION = 15;
-    JACCARD_SIMILARITY_SCORE = 16;
+    MEAN_ABSOLUTE_ERROR = 12;
+    R_SQUARED = 13;
+    NORMALIZED_MUTUAL_INFORMATION = 14;
+    JACCARD_SIMILARITY_SCORE = 15;
     PRECISION_AT_TOP_K = 17;
     OBJECT_DETECTION_AVERAGE_PRECISION = 18;
+    HAMMING_LOSS = 19;
+
+    // This metric can be used to ask TA2 to rank all found solutions
+    // using a floating-point rank. Lower numbers represent better solutions.
+    // Presently evaluation requirements are that ranks should be non-negative and that
+    // each ranked pipeline have a different rank.
+    // Only possible with "RANKING" evaluation method.
+    RANK = 99;
 
     // The rest are defined to allow expressing internal evaluation
     // scores used by TA2 during pipeline search. If any you are using
@@ -78,11 +85,6 @@ message ProblemPerformanceMetric {
 }
 
 message Problem {
-    // TODO: Remove deprecated fields in a future version.
-    string id = 1 [deprecated=true];
-    string version = 2 [deprecated=true];
-    string name = 3 [deprecated=true];
-    string description = 4 [deprecated=true];
     TaskType task_type = 5;
     TaskSubtype task_subtype = 6;
     repeated ProblemPerformanceMetric performance_metrics = 7;
@@ -96,6 +98,13 @@ message ProblemTarget {
     int32 clusters_number = 5;
 }
 
+message ProblemPrivilegedData {
+    int32 privileged_data_index = 1;
+    string resource_id = 2;
+    int32 column_index = 3;
+    string column_name = 4;
+}
+
 message ProblemInput {
     // Should match one of input datasets given to the pipeline search.
     // Every "Dataset" object has an "id" associated with it and is available
@@ -103,6 +112,9 @@ message ProblemInput {
     string dataset_id = 1;
     // Targets should resolve to columns in a given dataset.
     repeated ProblemTarget targets = 2;
+    // A list of privileged data columns related to unavailable attributes during testing.
+    // These columns do not have data available in the test split of a dataset.
+    repeated ProblemPrivilegedData privileged_data = 3;
 }
 
 message DataAugmentation {
@@ -126,4 +138,5 @@ message ProblemDescription {
     string description = 6;
     string digest = 7;
     repeated DataAugmentation data_augmentation = 8;
+    repeated string other_names = 9;
 }

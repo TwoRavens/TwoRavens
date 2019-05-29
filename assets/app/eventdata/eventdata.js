@@ -1,7 +1,7 @@
 import * as fileSaver from 'file-saver';
 import m from 'mithril';
 
-import {mongoURL, manipulations, looseSteps, alignmentData, formattingData, alertError} from "../app";
+import {mongoURL, looseSteps, alignmentData, formattingData, alertError} from "../app";
 import * as common from '../../common/common';
 
 import * as queryMongo from '../manipulations/queryMongo';
@@ -19,6 +19,8 @@ export let eventdataSubsetCount = 1;
 
 // metadata for all available eventdata datasets and type formats
 export let genericMetadata = {};
+
+export let manipulations = [];
 
 export let setMetadata = (data) => Object.keys(data).forEach(key =>
     Object.keys(data[key]).forEach(identifier => ({
@@ -60,7 +62,7 @@ export let setSelectedDataset = (key) => {
         preferencesLog = realignPreferences(previousSelectedDataset, selectedDataset);
         variablesLog = realignVariables(previousSelectedDataset, selectedDataset);
 
-        manipulations.eventdata.map(step => {
+        manipulations.map(step => {
 
             alignmentLog.push(...realignQuery(step, previousSelectedDataset, selectedDataset));
 
@@ -228,17 +230,19 @@ export function handleResize() {
     m.redraw();
 }
 
-window.addEventListener('resize', handleResize);
+if (IS_EVENTDATA_DOMAIN) {
+    window.addEventListener('resize', handleResize);
 
-common.setPanelCallback('right', () => {
-    common.setPanelOcclusion('right', `calc(${common.panelOpen['right'] ? '250px' : '16px'} + 2*${common.panelMargin})`);
-    handleResize();
-});
+    common.setPanelCallback('right', () => {
+        common.setPanelOcclusion('right', `calc(${common.panelOpen['right'] ? '250px' : '16px'} + 2*${common.panelMargin})`);
+        handleResize();
+    });
 
-common.setPanelCallback('left', () => {
-    common.setPanelOcclusion('left', `calc(${common.panelOpen['left'] ? '250px' : '16px'} + 2*${common.panelMargin})`);
-    handleResize();
-});
+    common.setPanelCallback('left', () => {
+        common.setPanelOcclusion('left', `calc(${common.panelOpen['left'] ? '250px' : '16px'} + 2*${common.panelMargin})`);
+        handleResize();
+    });
+}
 
 // percent of the canvas to cover with the aggregation table
 export let tableHeight = '20%';
@@ -304,7 +308,7 @@ async function updatePeek() {
         }
     };
 
-    let peekPipeline = queryMongo.buildPipeline([...manipulations.eventdata, peekMenu])['pipeline'];
+    let peekPipeline = queryMongo.buildPipeline([...manipulations, peekMenu])['pipeline'];
 
     console.log("Peek Query:");
     console.log(JSON.stringify(peekPipeline));
@@ -473,9 +477,9 @@ export async function submitSubset() {
         preferences: subsetPreferences[selectedSubsetName]
     };
 
-    let success = await loadMenuEventData([...manipulations.eventdata, looseSteps['pendingSubset']], newMenu, {recount: true, requireMatch: true});
+    let success = await loadMenuEventData([...manipulations, looseSteps['pendingSubset']], newMenu, {recount: true, requireMatch: true});
     if (success) {
-        manipulations.eventdata.push(looseSteps['pendingSubset']);
+        manipulations.push(looseSteps['pendingSubset']);
         looseSteps['pendingSubset'] = {
             type: 'subset',
             id: eventdataSubsetCount++,
@@ -501,9 +505,9 @@ export async function submitAggregation() {
 
     setLaddaSpinner('btnUpdate', true);
 
-    let cachedPipeline = queryMongo.buildPipeline([...manipulations.eventdata, looseSteps['eventdataAggregate']]);
+    let cachedPipeline = queryMongo.buildPipeline([...manipulations, looseSteps['eventdataAggregate']]);
 
-    let data = await loadMenu(manipulations.eventdata, looseSteps['eventdataAggregate']);
+    let data = await loadMenu(manipulations, looseSteps['eventdataAggregate']);
     if (data) {
         tableData = data;
         let {units, accumulators, labels} = cachedPipeline;
@@ -543,7 +547,7 @@ export async function download(collection_name, query) {
 export async function reset() {
 
     let scorchTheEarth = () => {
-        manipulations.eventdata.length = 0;
+        manipulations.length = 0;
 
         selectedVariables.clear();
         resetPeek();
@@ -577,7 +581,7 @@ export async function reset() {
     };
 
     // suppress server queries from the reset button when the webpage is already reset
-    if (manipulations.eventdata.length === 0) {
+    if (manipulations.length === 0) {
         scorchTheEarth();
         return;
     }
