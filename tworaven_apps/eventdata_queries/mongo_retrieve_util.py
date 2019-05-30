@@ -93,17 +93,13 @@ class MongoRetrieveUtil(BasicErrCheck):
             self.add_err_msg(cli.err_msg)
 
     def run_query(self, query, method, distinct=None):
-        """Run the query.  This needs fixes!
-        e.g. "host" is not defined, etc
+        """Run the query.
         """
         if self.has_error():
             return err_resp(self.get_error_message())
 
         # replace extended query operators like $oid, $date and $numberLong with objects
         def reformat(query):
-            # ---------------------------
-            # temp var setting to avoid error:
-            host = None
             # ---------------------------
             if issubclass(type(query), list):
                 for stage in query:
@@ -125,7 +121,7 @@ class MongoRetrieveUtil(BasicErrCheck):
                     # Convert date strings to datetime objects
                     elif '$date' in query[key]:
                         if isinstance(query[key]['$date'], dict) \
-                            and host == 'UTDallas':
+                            and self.host == 'UTDallas':
                             query[key]['$date'] = '$date(%s)' % (query[key]['$date'],) # attempt to work with this: https://github.com/Sayeedsalam/spec-event-data-server/blob/920c6b83f121587cfeedbb34516a1b8213ec6092/app_v2.py#L125
                         if type(query[key]['$date']) is dict \
                             and '$numberLong' in query[key]['$date']:
