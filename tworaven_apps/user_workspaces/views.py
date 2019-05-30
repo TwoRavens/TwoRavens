@@ -106,6 +106,35 @@ def view_delete_config(request, user_workspace_id):
     # user_workspace    ws_dict = ws_info.result_obj.to_dict()
 
 
+@csrf_exempt
+def view_user_raven_config(request, user_workspace_id):
+    """Retrieve information for a single workspace"""
+    # Get the user
+    #
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    user = user_info.result_obj
+
+    ws_info = get_user_workspace_config(user, user_workspace_id)
+    if not ws_info.success:
+        user_msg = 'No active workspaces found for user: %s and id: %s' % \
+                    (user.username, user_workspace_id)
+        return JsonResponse(get_json_error(user_msg))
+
+    ws_dict = ws_info.result_obj.to_dict_v2()
+
+    json_msg = get_json_success('Workspace found.',
+                                data=ws_dict)
+
+    if 'pretty' in request.GET:
+        fmt_info = format_pretty_from_dict(json_msg)
+        if not fmt_info.success:
+            return JsonResponse(get_json_error(fmt_info.err_msg))
+        return HttpResponse('<pre>%s</pre>' % fmt_info.result_obj)
+
+    return JsonResponse(json_msg)
 
 @csrf_exempt
 def view_user_workspace_config(request, user_workspace_id):
@@ -133,6 +162,35 @@ def view_user_workspace_config(request, user_workspace_id):
         fmt_info = format_pretty_from_dict(json_msg)
         if not fmt_info.success:
             return JsonResponse(get_json_error(fmt_info.err_msg))
+        return HttpResponse('<pre>%s</pre>' % fmt_info.result_obj)
+
+    return JsonResponse(json_msg)
+
+
+@csrf_exempt
+def view_latest_raven_configs(request):
+    """View config list with d3mconfig as separate object"""
+    # Get the user
+    #
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    user = user_info.result_obj
+    workspace_info = get_user_workspaces_as_dict(user, use_version2_json=True)
+
+    if not workspace_info.success:
+        return JsonResponse(get_json_error(workspace_info.err_msg))
+
+    json_msg = get_json_success(\
+                'Workspaces found: %d' % len(workspace_info.result_obj),
+                data=workspace_info.result_obj)
+
+    if 'pretty' in request.GET:
+        fmt_info = format_pretty_from_dict(json_msg)
+        if not fmt_info.success:
+            return JsonResponse(get_json_error(fmt_info.err_msg))
+
         return HttpResponse('<pre>%s</pre>' % fmt_info.result_obj)
 
     return JsonResponse(json_msg)

@@ -19,12 +19,25 @@ class UserWorkspace(TimeStampedModel):
     user = models.ForeignKey(User,
                              on_delete=models.CASCADE)
 
+    name = models.CharField(\
+                            max_length=255,
+                            blank=True,
+                            help_text='Auto-filled if a ravens-config exists')
+
     orig_dataset_id = models.CharField(\
                         max_length=255,
                         help_text='From D3MConfiguration orig_dataset_id')
 
     d3m_config = models.ForeignKey(D3MConfiguration,
                                    on_delete=models.CASCADE)
+
+    raven_config = jsonfield.JSONField(\
+                        blank=True,
+                        help_text='JSON data for the frontend',
+                        load_kwargs=dict(object_pairs_hook=OrderedDict))
+
+    slug = models.SlugField(blank=True,
+                            help_text='auto-filled on save')
 
     is_current_workspace = models.BooleanField(\
                                 default=False,
@@ -63,11 +76,33 @@ class UserWorkspace(TimeStampedModel):
             #.filter(orig_dataset_id=self.orig_dataset_id)
             qs.update(is_current_workspace=False)
 
+        self.format_name()
+
         super(UserWorkspace, self).save(*args, **kwargs)
+
+    def format_name(self):
+        """Format the workspace name"""
+        # Is there a raven's config?
+        # Yes, then use the name there
+        #
+        if self.raven_config:
+            try:
+                self.name = self.raven_config['name']
+            except KeyError:
+                pass
+
+        # Has a name been set?  (raven_config or user set)
+        #  No? Then add a default
+        #
+        if not self.name:
+            self.name = f'{self.d3m_config}'
+
 
     def get_absolute_url(self):
         """url for info in JSON format"""
-        if not self.id:
+        return self.get_json_url(self, use_pretty=True)
+
+        """if not self.id:
             return 'UserWorkspace not yet saved'
 
         ws_url = '%s?pretty' % \
@@ -75,12 +110,64 @@ class UserWorkspace(TimeStampedModel):
                         kwargs=dict(user_workspace_id=self.id))
 
         return ws_url
+        """
 
-    def to_dict(self):
+    def get_json_url(self, use_pretty=False):
+        """url for info in JSON format"""
+        if not self.id:
+            return 'UserWorkspace not yet saved'
+
+
+        ws_url = '%s' % \
+                reverse('view_user_workspace_config',
+                        kwargs=dict(user_workspace_id=self.id))
+
+        if use_pretty:
+            ws_url = f'{ws_url}?pretty'
+
+        return ws_url
+
+
+    def to_dict_v2(self):
+        """This version embeds the D3M config info"""
+        info_dict = OrderedDict()
+
+        info_dict['user_workspace_id'] = self.id
+        info_dict['user_workspace_url'] = self.get_json_url()
+
+        info_dict['user_workspace_url_v2'] = reverse(\
+                                        'view_user_raven_config',
+                                        kwargs=dict(user_workspace_id=self.id))
+
+        info_dict['is_current_workspace'] = self.is_current_workspace
+
+        info_dict['d3m_config'] = self.d3m_config.to_dict()
+
+        if not self.raven_config:
+            info_dict['raven_config'] = None
+        else:
+            info_dict['raven_config'] = self.raven_config
+
+        return info_dict
+
+    def to_dict(self, with_raven_config=False):
         """Convert to dict for API calls"""
         info_dict = self.d3m_config.to_dict()
+
         info_dict['user_workspace_id'] = self.id
         info_dict['is_current_workspace'] = self.is_current_workspace
+        info_dict['user_workspace_url'] = self.get_json_url()
+        info_dict['user_workspace_url_v2'] = reverse(\
+                                        'view_user_raven_config',
+                                        kwargs=dict(user_workspace_id=self.id))
+
+        if with_raven_config:
+            if not self.raven_config:
+                info_dict['raven_config'] = None
+            else:
+                info_dict['raven_config'] = self.raven_config
+
+            info_dict.move_to_end('raven_config', last=False)
 
         info_dict.move_to_end('is_current_workspace', last=False)
         info_dict.move_to_end('user_workspace_id', last=False)
