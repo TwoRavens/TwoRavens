@@ -137,15 +137,22 @@ def create_new_user_workspace(user, d3m_config, **kwargs):
 
     return ok_resp(new_workspace)
 
-def get_user_workspaces_as_dict(user, create_if_not_found=True):
+def get_user_workspaces_as_dict(user, **kwargs):
     """Get UserWorkspace list based on the active D3M config, as dicts"""
+
+    create_if_not_found = kwargs.get('create_if_not_found', True)
+    use_version2_json = kwargs.get('use_version2_json', False)
+
     ws_info = get_user_workspaces(user, create_if_not_found)
     if not ws_info.success:
         return ws_info
 
     ws_list = ws_info.result_obj
 
-    ws_list_fmt = [ws.to_dict() for ws in ws_list]
+    if use_version2_json:
+        ws_list_fmt = [ws.to_dict_v2() for ws in ws_list]
+    else:
+        ws_list_fmt = [ws.to_dict() for ws in ws_list]
 
     return ok_resp(ws_list_fmt)
 
