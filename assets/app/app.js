@@ -35,13 +35,15 @@ import "core-js/fn/array/flat-map";
 //    Developers, see /template/index.html
 //-------------------------------------------------
 
+let RAVEN_CONFIG_VERSION = 1;
+
 // ~~~~~ PEEK ~~~~~
 // for the second-window data preview
 window.addEventListener('storage', (e) => {
     if (e.key !== 'peekMore' + peekId || peekIsLoading) return;
     if (localStorage.getItem('peekMore' + peekId) !== 'true' || peekIsExhausted) return;
     localStorage.setItem('peekMore' + peekId, 'false');
-    updatePeek([...getSelectedDataset().hardManipulations, ...getSelectedProblem().manipulations]);
+    updatePeek([...getRavenConfig().hardManipulations, ...getSelectedProblem().manipulations]);
 });
 
 // for the draggable within-window data preview
@@ -231,8 +233,8 @@ export function set_mode(mode) {
     mode = mode ? mode.toLowerCase() : 'model';
 
     // remove empty steps when leaving manipulate mode
-    let selectedDataset = getSelectedDataset();
-    if (selectedDataset && is_manipulate_mode && mode !== 'manipulate') {
+    let selectedDataset = getSelectedWorkspace();
+    if (getSelectedWorkspace() && is_manipulate_mode && mode !== 'manipulate') {
         selectedDataset.hardManipulations = selectedDataset.hardManipulations.filter(step => {
             if (step.type === 'subset' && step.abstractQuery.length === 0) return false;
             if (step.type === 'aggregate' && step.measuresAccum.length === 0) return false;
@@ -249,12 +251,12 @@ export function set_mode(mode) {
 
     if (currentMode !== mode) {
         if (mode === 'model' && manipulate.pendingHardManipulation) {
-            let dataset = getSelectedDataset();
-            buildDatasetPreprocess(dataset).then(response => {
+            let ravenConfig = getRavenConfig();
+            buildDatasetPreprocess(ravenConfig).then(response => {
                 if (!response.success) alertLog(response.message)
                 else {
                     setVariableSummaries(response.data.variables);
-                    dataset.problems = discovery(response.data.dataset.discovery);
+                    ravenConfig.problems = discovery(response.data.dataset.discovery);
                 }
             });
         }
@@ -279,27 +281,27 @@ export function set_mode(mode) {
 }
 
 // TODO: should have an early exit if the manipulations are empty
-export let buildDatasetPreprocess = async dataset => await getData({
+export let buildDatasetPreprocess = async ravenConfig => await getData({
     method: 'aggregate',
     query: JSON.stringify(queryMongo.buildPipeline(
-        dataset.hardManipulations,
-        dataset.variablesInitial)['pipeline']),
+        ravenConfig.hardManipulations,
+        ravenConfig.variablesInitial)['pipeline']),
     export: 'dataset'
 }).then(url => m.request({
     method: 'POST',
     url: ROOK_SVC_URL + 'preprocessapp',
     data: {
         data: url,
-        datastub: selectedDataset
+        datastub: selectedWorkspace
     }
 }));
 
-export let buildProblemPreprocess = async (dataset, problem) => problem.manipulations.length === 0
+export let buildProblemPreprocess = async (ravenConfig, problem) => problem.manipulations.length === 0
     ? variableSummaries
     : await getData({
         method: 'aggregate',
         query: JSON.stringify(queryMongo.buildPipeline(
-            [...dataset.hardManipulations, ...problem.manipulations, {
+            [...ravenConfig.hardManipulations, ...problem.manipulations, {
                 type: 'menu',
                 metadata: {
                     type: 'data',
@@ -307,14 +309,14 @@ export let buildProblemPreprocess = async (dataset, problem) => problem.manipula
                     sample: 5000
                 }
             }],
-            dataset.variablesInitial)['pipeline']),
+            ravenConfig.variablesInitial)['pipeline']),
         export: 'dataset'
     }).then(url => m.request({
         method: 'POST',
         url: ROOK_SVC_URL + 'preprocessapp',
         data: {
             data: url,
-            datastub: selectedDataset
+            datastub: selectedWorkspace
         }
     })).then(response => {
         if (!response.success) alertError(response.message);
@@ -757,147 +759,73 @@ export let lockTour = {
 };
 
 /**
-  called by main
-  Loads all external data in the following order (logic is not included):
-  1. Retrieve the configuration information
-  2. Set 'configurations'
-  3. Read the data document and set 'datadocument'
-  4. Read preprocess data or (if necessary) run preprocess
-  5. Read the d3m problem schema and add to problems
-  6. Read in zelig models (not for d3m)
-  7. Read in zeligchoice models (not for d3m)
-*/
-async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL) {
-    console.log('---------------------------------------');
-    console.log('-- initial load, app.js - load() --');
-    if (!IS_D3M_DOMAIN) {
-        return;
-    }
+ 1. Load datasetDoc
+ 2. Load datasetUrl
+ 3. Read preprocess data or (if necessary) run preprocess
+ 4. Create raven_config if undefined
+    a. Assign discovered problems into raven_config
+    b. Read the d3m problem schema and add to problems
+ */
 
-    // ---------------------------------------
-    // 1. Retrieve the configuration information
-    //  dev view: http://127.0.0.1:8080/user-workspaces/d3m-configs/json/latest?pretty
-    // ---------------------------------------
-    console.log('---------------------------------------');
-    console.log('-- 1. Retrieve the configuration information --');
-
-    let d3m_config_url = '/user-workspaces/d3m-configs/json/latest';
-
-    let config_result = await m.request({
-        method: "POST",
-        url: d3m_config_url
-    });
-
-    console.log(JSON.stringify(config_result));
-
-    if (!config_result.success){
-      setModal(config_result.message, "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
-    }
-
-    if (!config_result.data){
-      setModal('No configurations in list!', "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
-    }
-
-    // ------------------------------------
-    // Find the current workspace in the list
-    // ------------------------------------
-    let configurations;
-    for (const one_config of config_result.data) {
-        if (one_config.is_current_workspace){
-          configurations = one_config;
-          break;
-        }
-    }
-    if (!configurations){
-        setModal('No current workspace config in list!', "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
-    }
-
-    // Take the 1st configuration from the list -- for now...
-    //let configurations = config_result.data[0]
-
-    // console.log("this is the config file:");
-    // console.log(configurations);
-
-    // ---------------------------------------
-    // 2. Set 'configurations'
-    // ---------------------------------------
-    console.log('---------------------------------------');
-    console.log('-- 2. Set "configurations" --');
-
-    $('#user-workspace-id').html('(ws:' + configurations.user_workspace_id +')');
-
-    if (configurations.d3m_input_dir){
-      // 2019 config
-      d3mRootPath = configurations.d3m_input_dir;
-    }else{
-      // 2018 config
-      d3mRootPath = configurations.training_data_root.replace(/\/data/,'');
-    }
-
-    d3mDataName = configurations.name;
+let loadWorkspace = async workspace => {
 
     // scopes at app.js level; used for saving workspace
-    domainIdentifier = {name: configurations.name,
-                        source_url: configurations.config_url,
-                        description: 'D3M config file'};
-                        //id: configurations.id};
+    domainIdentifier = {
+        name: workspace.d3m_config.name,
+        source_url: workspace.d3m_config.config_url,
+        description: 'D3M config file',
+        // id: workspace.d3m_config.id
+    };
 
-    // url example: /config/d3m-config/get-problem-schema/json/39
-    //
-    d3mPS = configurations.problem_schema_url;
-    // url example: /config/d3m-config/get-dataset-schema/json/39
-    //
-    d3mDS = configurations.dataset_schema_url;
+    $('#user-workspace-id').html('(ws:' + workspace.user_workspace_id +')');
 
-    // need to change?
-    //
-    d3mPreprocess = pURL = `rook-custom/rook-files/${d3mDataName}/preprocess/preprocess.json`;
-    console.log(d3mPreprocess);
-
+    workspaces[workspace.d3m_config.name] = workspace;
+    setSelectedWorkspace(workspace.d3m_config.name);
 
     /**
-     * 3. Read the data document and set 'datadocument'
+     * 1. Load 'datasetDoc'
      */
     console.log('---------------------------------------');
-    console.log("-- 3. Read the data document and set 'datadocument' --");
+    console.log("-- Workspace: 1. Load 'datasetDoc' --");
+    // url example: /config/d3m-config/get-dataset-schema/json/39
+    //
+    workspace.datasetDoc = await m.request(workspace.d3m_config.dataset_schema_url);
 
-    let resDataDocument = await m.request(d3mDS);
-    // sets the dataset, which prepares internal state
-    setSelectedDataset(resDataDocument.about.datasetID);
-    let selectedDataset = getSelectedDataset();
-    selectedDataset.datasetDoc = resDataDocument;
-    selectedDataset.datasetDocPath = configurations.dataset_schema;
-
-    // 3. Set datadocument columns!
-
-    let datadocument_columns = (resDataDocument.dataResources.find(resource => resource.columns) || {}).columns;
+    let datadocument_columns = (workspace.datasetDoc.dataResources.find(resource => resource.columns) || {}).columns;
     if (datadocument_columns === undefined) {
         console.log('D3M WARNING: datadocument.dataResources[x].columns is undefined.');
         swandive = true;
     }
 
-    if (!IS_D3M_DOMAIN) {
-        // Note: presently xml is no longer being read from Dataverse metadata anywhere
-        let temp = xml.documentElement.getElementsByTagName("fileName");
-        zparams.zdata = temp[0].childNodes[0].nodeValue;
-        let cite = xml.documentElement.getElementsByTagName("biblCit");
-        // clean citation so POST is valid json
-        zparams.zdatacite = cite[0].childNodes[0].nodeValue
-            .replace(/\&/g, "and")
-            .replace(/\;/g, ",")
-            .replace(/\%/g, "-");
-        // fill in citation in header
-        byId('cite').children[0].textContent = zparams.zdatacite;
-    }
-
     if (swandive)
         alertWarn('Exceptional data detected.  Please check the logs for "D3M WARNING"');
 
-    console.log("data schema data: ", selectedDataset.datasetDoc);
+    console.log("data schema data: ", workspace.datasetDoc);
 
+    //
+    // if (!IS_D3M_DOMAIN) {
+    //     // Note: presently xml is no longer being read from Dataverse metadata anywhere
+    //     let temp = xml.documentElement.getElementsByTagName("fileName");
+    //     zparams.zdata = temp[0].childNodes[0].nodeValue;
+    //     let cite = xml.documentElement.getElementsByTagName("biblCit");
+    //     // clean citation so POST is valid json
+    //     zparams.zdatacite = cite[0].childNodes[0].nodeValue
+    //         .replace(/\&/g, "and")
+    //         .replace(/\;/g, ",")
+    //         .replace(/\%/g, "-");
+    //     // fill in citation in header
+    //     byId('cite').children[0].textContent = zparams.zdatacite;
+    // }
+
+
+    /**
+     * 2. Load 'datasetUrl'
+     */
+    console.log('---------------------------------------');
+    console.log("-- Workspace: 2. Load 'datasetUrl' --");
     //url example: /config/d3m-config/get-problem-data-file-info/39
     //
-    let problem_info_result = await m.request(configurations.problem_data_info);
+    let problem_info_result = await m.request(workspace.d3m_config.problem_data_info);
 
     console.log("result from problem data file info:");
     console.log(problem_info_result);
@@ -926,42 +854,41 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     //
     // Note: if data files have "exists" as false, stay at default which is null
     //
-    let set_d3m_data_path = (field, val) => problem_info_result.data[field].exists
+    let set_d3m_data_path = field => problem_info_result.data[field].exists
         ? problem_info_result.data[field].path
         : problem_info_result.data[field + '.gz'].exists
             ? problem_info_result.data[field + '.gz'].path
-            : val;
+            : undefined;
 
 
-    selectedDataset.datasetUrl = d3mData = set_d3m_data_path('learningData.csv', d3mData);
-    // zparams.zd3mtarget = set_d3m_data_path('learningData.csv', d3mData);
+    workspace.datasetUrl = set_d3m_data_path('learningData.csv');
 
-    // If this is the D3M domain; d3mData MUST be set to an actual value
+    // If this is the D3M domain; workspace.datasetUrl MUST be set to an actual value
     //
-    if ((IS_D3M_DOMAIN)&&(d3mData == null)){
-        const d3m_path_err = 'NO VALID d3mData path!! ' + JSON.stringify(problem_info_result)
+    if (IS_D3M_DOMAIN && !workspace.datasetUrl) {
+        const d3m_path_err = 'NO VALID datasetUrl! ' + JSON.stringify(problem_info_result)
         console.log(d3m_path_err);
         alertError('debug (be more graceful): ' + d3m_path_err);
     }
 
 
     /**
-     * 4. read preprocess data or (if necessary) run preprocess
+     * 3. read preprocess data or (if necessary) run preprocess
      * NOTE: preprocess.json is now guaranteed to exist...
      */
     console.log('---------------------------------------');
-    console.log("-- 4. read preprocess data or (if necessary) run preprocess --");
+    console.log("-- Workspace: 3. read preprocess data or (if necessary) run preprocess --");
 
     // Function to load retreived preprocess data
     //
     let loadPreprocessData = res => {
         priv = res.data.dataset.private || priv;
-        setVariableSummaries(res.data.variables);
         return res.data;
     };
 
     let resPreprocess;
     try {
+        let pURL = `rook-custom/rook-files/${workspace.d3m_config.name}/preprocess/preprocess.json`
         console.log('attempt to read preprocess file (which may not exist): ' + pURL);
         resPreprocess = loadPreprocessData(await m.request(pURL));
     } catch(_) {
@@ -969,12 +896,12 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         let url = ROOK_SVC_URL + 'preprocessapp';
         // For D3M inputs, change the preprocess input data
         let json_input = IS_D3M_DOMAIN
-            ? {data: d3mData, datastub: d3mDataName}
+            ? {data: workspace.datasetUrl, datastub: workspace.d3m_config.name}
             : {data: dataloc, target: targetloc, datastub}; // TODO: these are not defined
 
         try {
             // res = read(await m.request({method: 'POST', url: url, data: json_input}));
-            let preprocess_info = await m.request({method: 'POST', url: url, data: json_input});
+            let preprocess_info = await m.request({method: 'POST', url, data: json_input});
             console.log('preprocess_info: ', preprocess_info);
             console.log('preprocess_info message: ' + preprocess_info.message);
             if (preprocess_info.success){
@@ -1007,33 +934,58 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             return;
         }
     }
+    setVariableSummaries(resPreprocess.variables);
 
     /**
-     * 4b. Call problem discovery
+     * 4. Create 'raven_config' if undefined
      */
     console.log('---------------------------------------');
-    console.log("-- 4b. Call problem discovery --");
+    console.log("-- Workspace: 4. Create 'raven_config' if undefined --");
+    if (workspace.raven_config) return;
+
+    workspace.raven_config = {
+        ravenConfigVersion: RAVEN_CONFIG_VERSION,
+        hardManipulations: [],
+        problems: {},
+        tags: {
+            transformed: [],
+            weights: [], // only one variable can be a weight
+            crossSection: [],
+            time: [],
+            nominal: [],
+            loose: [] // variables displayed in the force diagram, but not in any groups
+        }
+    }
+
+    /**
+     * 4.a. Assign problem discovery to raven_config
+     */
+    console.log('---------------------------------------');
+    console.log("-- Workspace: 4.a. Assign problem discovery to raven_config --");
 
     if(!swandive && resPreprocess) {
-        let dataset = getSelectedDataset();
         // assign discovered problems into problems set, keeping the d3m problem
-        Object.assign(dataset.problems, discovery(resPreprocess.dataset.discovery));
-        dataset.variablesInitial = Object.keys(variableSummaries);
+        Object.assign(workspace.raven_config.problems, discovery(resPreprocess.dataset.discovery));
+        workspace.raven_config.variablesInitial = Object.keys(variableSummaries);
 
         // Kick off discovery button as green for user guidance
         if (!task1_finished) buttonClasses.btnDiscover = 'btn-success'
     }
 
     // ---------------------------------------
-    // 5. Read the d3m problem schema and add to problems
+    // 4.b. Read the d3m problem schema and add to problems
     // ...and make a call to Hello to check TA2 is up.  If we get this far, data are guaranteed to exist for the frontend
     // ---------------------------------------
     console.log('---------------------------------------');
-    console.log("-- 5. Read the d3m problem schema and add to problems --");
+    console.log("-- Workspace: 4.b. Read the d3m problem schema and add to problems --");
 
     // ---------------------------------------
     // Retrieve the problem schema....
     // ---------------------------------------
+
+    // url example: /config/d3m-config/get-problem-schema/json/39
+    //
+    let d3mPS = workspace.d3m_config.problem_schema_url;
     let problemDoc = await m.request(d3mPS);
     // console.log("prob schema data: ", res);
     if(typeof problemDoc.success === 'undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
@@ -1063,7 +1015,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         // making it case insensitive because the case seems to disagree all too often
         if (failset.includes(problemDoc.about.taskType.toUpperCase())) {
             if(IS_D3M_DOMAIN){
-              console.log('D3M WARNING: failset  task type found');
+                console.log('D3M WARNING: failset  task type found');
             }
             swandive = true;
         }
@@ -1084,7 +1036,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         let predictors = swandive
             ? Object.keys(variableSummaries)
                 .filter(column => column !== 'd3mIndex' && !targets.includes(column))
-            : resDataDocument.dataResources // if swandive false, then datadoc has column labeling
+            : workspace.datasetDoc.dataResources // if swandive false, then datadoc has column labeling
                 .filter(resource => resource.resType === 'table')
                 .flatMap(resource => resource.columns
                     .filter(column => column.role[0] !== 'index' && !targets.includes(column.colName))
@@ -1127,8 +1079,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         // add the default problems to the list of problems
         let problemCopy = getProblemCopy(defaultProblem);
 
-        getSelectedDataset().problems[problemDoc.about.problemID] = defaultProblem;
-        getSelectedDataset().problems[problemCopy.problemID] = problemCopy;
+        workspace.raven_config.problems[problemDoc.about.problemID] = defaultProblem;
+        workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
         /**
          * Note: mongodb data retrieval initiated here
          *   setSelectedProblem -> loadMenu (manipulate.js) -> getData (manipulate.js)
@@ -1136,37 +1088,102 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         setSelectedProblem(problemCopy.problemID);
 
     } else console.log("Task 1: No Problem Doc");
+}
 
-    /**
-     * 6. Read in zelig models (not for d3m)
-     * 7. Read in zeligchoice models (not for d3m)
-     */
+/**
+ called by main
+ Loads all external data in the following order (logic is not included):
+ 1. Retrieve the configuration information
+ 2. Load workspace
+ 3. Read in zelig models (not for d3m)
+ 4. Read in zeligchoice models (not for d3m)
+ 5. Start the user session /Hello
+ */
+
+async function load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL) {
     console.log('---------------------------------------');
-    console.log("-- 6. Read in zelig models (not for d3m) --");
-    console.log("-- 7. Read in zeligchoice models (not for d3m) --");
-
-    if (!IS_D3M_DOMAIN){
-      for (let field of ['zelig5models', 'zelig5choicemodels']) {
-          try {
-              problemDoc = await m.request(`data/${field}.json`);
-              cdb(field + ' json: ', problemDoc);
-              problemDoc[field]
-                  .filter(key => problemDoc[field].hasOwnProperty(key))
-                  .forEach(key => mods[key.name[0]] = key.description[0]);
-          } catch(_) {
-              console.log("can't load " + field);
-          }
-      }
+    console.log('-- initial load, app.js - load() --');
+    if (!IS_D3M_DOMAIN) {
+        return;
     }
 
+    // ---------------------------------------
+    // 1. Retrieve the configuration information
+    //  dev view: http://127.0.0.1:8080/user-workspaces/d3m-configs/json/latest?pretty
+    // ---------------------------------------
+    console.log('---------------------------------------');
+    console.log('-- 1. Retrieve the configuration information --');
+
+    // let d3m_config_url = '/user-workspaces/d3m-configs/json/latest';
+    let raven_config_url = '/user-workspaces/raven-configs/json/list';
+    let config_result = await m.request({
+        method: "POST",
+        url: raven_config_url
+    });
+
+    console.log(JSON.stringify(config_result));
+
+    if (!config_result.success){
+      setModal(config_result.message, "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
+    }
+
+    if (!config_result.data){
+      setModal('No configurations in list!', "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
+    }
+
+    // ------------------------------------
+    // Find the current workspace in the list
+    // ------------------------------------
+    let workspace = config_result.data.find(config => config.is_current_workspace);
+
+    if (!workspace){
+        setModal('No current workspace config in list!', "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
+    }
+
+    // Take the 1st configuration from the list -- for now...
+    //let configurations = config_result.data[0]
+
+    // console.log("this is the config file:");
+    // console.log(configurations);
+
+    // ---------------------------------------
+    // 2. Load workspace
+    // ---------------------------------------
+    console.log('---------------------------------------');
+    console.log('-- 2. Load workspace --');
+
+    await loadWorkspace(workspace)
+
+    // /**
+    //  * 3. Read in zelig models (not for d3m)
+    //  * 4. Read in zeligchoice models (not for d3m)
+    //  */
+    // console.log('---------------------------------------');
+    // console.log("-- 3. Read in zelig models (not for d3m) --");
+    // console.log("-- 4. Read in zeligchoice models (not for d3m) --");
+    //
+    // if (!IS_D3M_DOMAIN){
+    //   for (let field of ['zelig5models', 'zelig5choicemodels']) {
+    //       try {
+    //           problemDoc = await m.request(`data/${field}.json`);
+    //           cdb(field + ' json: ', problemDoc);
+    //           problemDoc[field]
+    //               .filter(key => problemDoc[field].hasOwnProperty(key))
+    //               .forEach(key => mods[key.name[0]] = key.description[0]);
+    //       } catch(_) {
+    //           console.log("can't load " + field);
+    //       }
+    //   }
+    // }
+
     /**
-     * 8. Start the user session
+     * 5. Start the user session
      * rpc rpc Hello (HelloRequest) returns (HelloResponse) {}
      */
     console.log('---------------------------------------');
-    console.log("-- 8. Start the user session /Hello --");
+    console.log("-- 5. Start the user session /Hello --");
 
-    problemDoc = await makeRequest(D3M_SVC_URL + '/Hello', {});
+    let problemDoc = await makeRequest(D3M_SVC_URL + '/Hello', {});
     if (problemDoc) {
       console.log(problemDoc)
       if (problemDoc.success != true){
@@ -1235,9 +1252,6 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     // ind1 = indicator(1);
     // ind2 = indicator(1.2);
 
-    // from .csv
-    let [hold, lablArray] = [[], []];
-
     // assume locations are consistent based on d3m directory structure
     let d3mRootPath = '';
     let d3mDataName = '';
@@ -1257,7 +1271,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     } else if (!PRODUCTION) {
         zparams.zdataurl = 'data/fearonLaitin.tsv';
     }
-    load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL);
+    load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL);
 }
 
 /**
@@ -1672,7 +1686,7 @@ function CreateProblemDefinition(problem) {
 
     let inputSpec =  [
         {
-            datasetId: selectedDataset,
+            datasetId: selectedWorkspace,
             targets: problem.targets.map((target, resourceId) => ({
                 resourceId: resourceIdFromProblemDoc,
                 columnIndex: Object.keys(variableSummaries).indexOf(target),  // Adjusted to match dataset doc
@@ -1698,7 +1712,7 @@ function CreateProblemSchema(problem){
         inputs: {
             data: [
                 {
-                    datasetId: selectedDataset,
+                    datasetId: selectedWorkspace,
                     targets: problem.targets.map((target, resourceId) => ({
                         // resourceId: resourceIdFromDatasetDoc,
                         columnIndex: Object.keys(variableSummaries).indexOf(target),
@@ -1730,7 +1744,7 @@ function CreatePipelineDefinition(problem, timeBound) {
         allowedValueTypes: ['DATASET_URI', 'CSV_URI'],
         problem: CreateProblemDefinition(problem),
         template: makePipelineTemplate(problem),
-        inputs: [{dataset_uri: 'file://' + getSelectedDataset().datasetDocPath}]
+        inputs: [{dataset_uri: 'file://' + getSelectedWorkspace().d3m_config.dataset_schema}]
     };
 }
 
@@ -1859,15 +1873,20 @@ export async function estimate() {
         alertWarn('Another problem is still being solved. Please wait until the solver for ' + solverProblem.d3m.problemId + ' is complete.')
         return;
     }
+
+    let workspace = getSelectedWorkspace();
     let selectedProblem = getSelectedProblem();
 
     // return if current problem already has solutions
     if (getSolutions(copiedProblem).length > 0) return;
 
     selectedProblem.pending = false; // a problem with solutions is no longer pending
+
     let copiedProblem = getProblemCopy(selectedProblem);
-    getSelectedDataset().problems[copiedProblem.problemID] = copiedProblem;
-    getSelectedDataset().resultsProblem = selectedProblem.problemID;
+    let ravenConfig = getRavenConfig();
+
+    ravenConfig.problems[copiedProblem.problemID] = copiedProblem;
+    ravenConfig.resultsProblem = selectedProblem.problemID;
 
     solverProblem.d3m = selectedProblem;
     selectedProblem.solved = true;
@@ -1965,13 +1984,11 @@ export async function estimate() {
     buttonLadda.btnEstimate = true;
     m.redraw();
 
-    let dataset = getSelectedDataset();
-
     try {
         selectedProblem.dvvalues = await manipulate.getData({
             method: 'aggregate',
             query: JSON.stringify(queryMongo.buildPipeline(
-                [...dataset.hardManipulations, ...selectedProblem.manipulations, {
+                [...ravenConfig.hardManipulations, ...selectedProblem.manipulations, {
                     type: 'menu',
                     metadata: {
                         type: 'data',
@@ -1979,7 +1996,7 @@ export async function estimate() {
                         sample: 1000
                     }
                 }],
-                dataset.variablesInitial)['pipeline'])
+                ravenConfig.variablesInitial)['pipeline'])
         })
     } catch(err) {
         alertWarn('Dependent variables have not been loaded. Some plots will not load.')
@@ -1996,7 +2013,7 @@ export async function estimate() {
 
     let needsProblemCopy = hasManipulation || hasNominal;
 
-    let datasetPath = dataset.datasetUrl;
+    let datasetPath = workspace.datasetUrl;
     // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
     if (needsProblemCopy) {
         let {data_path, metadata_path} = await manipulate.buildProblemUrl(selectedProblem);
@@ -2008,7 +2025,7 @@ export async function estimate() {
     // - TO-FIX 5/22/2019
     // callSolver(selectedProblem, datasetPath);
 
-    let datasetDocPath = selectedProblem.datasetDocPath || getSelectedDataset().datasetDocPath;
+    let datasetDocPath = selectedProblem.datasetDocPath || workspace.d3m_config.dataset_schema;
 
     let allParams = {
         searchSolutionParams: searchSolutionParams,
@@ -2288,7 +2305,7 @@ export function record_user_metadata(){
   let workspace_data = {
       'app_domain': APP_DOMAIN,
       domain_identifier,
-      datasets,
+      datasets: workspaces,
   };
 
         //console.log('workspace_data: ' + workspace_data);
@@ -2385,7 +2402,7 @@ export function discovery(problems) {
 // creates a new problem from the force diagram problem space and adds to disco
 export async function addProblemFromForceDiagram() {
     let problemCopy = getProblemCopy(getSelectedProblem());
-    getSelectedDataset().problems[problemCopy.problemID] = problemCopy;
+    getRavenConfig().problems[problemCopy.problemID] = problemCopy;
 
     setSelectedProblem(problemCopy.problemID);
     setLeftTab('Discover');
@@ -2411,8 +2428,8 @@ export function connectAllForceDiagram() {
     m.redraw();
 }
 
-export let datasets = {};
-export let selectedDataset;
+export let workspaces = {};
+export let selectedWorkspace;
 
 // TODO: apply label in this setter?
 export let setVariableSummaries = state => {
@@ -2423,31 +2440,23 @@ export let setVariableSummaries = state => {
 }
 export let variableSummaries = {};
 
-export let setSelectedDataset = datasetID => {
-    if (!(datasetID in datasets)) {
-        datasets[datasetID] = {
-            hardManipulations: [],
-            problems: {},
-            tags: {
-                transformed: [],
-                weights: [], // only one variable can be a weight
-                crossSection: [],
-                time: [],
-                nominal: [],
-                loose: [] // variables displayed in the force diagram, but not in any groups
-            }
-        }
-    }
-    selectedDataset = datasetID;
+export let setSelectedWorkspace = workspaceId => {
+    selectedWorkspace = workspaceId;
     // update page title shown on tab
-    d3.select("title").html("TwoRavens " + selectedDataset);
+    d3.select("title").html("TwoRavens " + selectedWorkspace);
+
+    // TODO: just call updatePeek?
     // will trigger further mongo calls if the secondary peek page is open
-    localStorage.setItem('peekHeader' + peekId, "TwoRavens " + selectedDataset);
+    localStorage.setItem('peekHeader' + peekId, "TwoRavens " + selectedWorkspace);
 };
 
-export let getSelectedDataset = () => datasets[selectedDataset];
-export let getSelectedProblem = () => selectedDataset && getSelectedDataset().problems[getSelectedDataset().selectedProblem];
-export let getResultsProblem = () => selectedDataset && getSelectedDataset().problems[getSelectedDataset().resultsProblem];
+export let getSelectedWorkspace = () => workspaces[selectedWorkspace];
+
+export let getD3MConfig = () => (getSelectedWorkspace() || {}).d3m_config;
+export let getRavenConfig = () => (getSelectedWorkspace() || {}).raven_config;
+
+export let getSelectedProblem = () => selectedWorkspace && getRavenConfig().problems[getRavenConfig().selectedProblem];
+export let getResultsProblem = () => selectedWorkspace && getRavenConfig().problems[getRavenConfig().resultsProblem];
 
 export let getSolutions = (problem, source) => {
     if (!problem) return [];
@@ -2474,9 +2483,10 @@ export let getBaselineModels = problem => {
 }
 
 export function setSelectedProblem(problemID) {
-    if (!problemID || getSelectedDataset().selectedProblem === problemID) return;
-    let dataset = getSelectedDataset();
-    dataset.selectedProblem = problemID;
+    let ravenConfig = getRavenConfig();
+
+    if (!problemID || ravenConfig.selectedProblem === problemID) return;
+    ravenConfig.selectedProblem = problemID;
     let problem = getSelectedProblem();
 
     updateRightPanelWidth();
@@ -2484,7 +2494,7 @@ export function setSelectedProblem(problemID) {
     // if a constraint is being staged, delete it
     manipulate.setConstraintMenu(undefined);
 
-    let problemPipeline = [...getSelectedDataset().hardManipulations, ...getSelectedProblem().manipulations];
+    let problemPipeline = [...ravenConfig.hardManipulations, ...problem.manipulations];
     let countMenu = {type: 'menu', metadata: {type: 'count'}};
 
     // update number of records
@@ -2493,7 +2503,7 @@ export function setSelectedProblem(problemID) {
         .then(m.redraw);
 
     // update preprocess
-    buildProblemPreprocess(dataset, problem)
+    buildProblemPreprocess(ravenConfig, problem)
         .then(setVariableSummaries)
         .then(m.redraw);
 
@@ -2505,7 +2515,7 @@ export function setSelectedProblem(problemID) {
 }
 
 export function setResultsProblem(problemID) {
-    getSelectedDataset().resultsProblem = problemID;
+    getRavenConfig().resultsProblem = problemID;
 }
 
 export function getProblemCopy(problemSource) {
@@ -2530,16 +2540,16 @@ export let setModelComparison = state => {
 };
 
 export let setCheckedDiscoveryProblem = (status, problemID) => {
-    let dataset = getSelectedDataset();
+    let ravenConfig = getRavenConfig();
     if (problemID)
-        dataset.problems[problemID].meaningful = status;
+        ravenConfig.problems[problemID].meaningful = status;
     else
-        Object.keys(dataset.problems)
-            .forEach(problemID => dataset.problems[problemID].meaningful = status)
+        Object.keys(ravenConfig.problems)
+            .forEach(problemID => ravenConfig.problems[problemID].meaningful = status)
 };
 
 export async function submitDiscProb() {
-    let problems = getSelectedDataset().problems;
+    let problems = getRavenConfig().problems;
     buttonLadda['btnSubmitDisc'] = true;
     m.redraw()
 
@@ -2688,7 +2698,10 @@ export function handleAugmentDataMessage(msg_data){
   }
 
   setModal("Success: " + msg_data.user_message,
-           "Data Augmentation Succeeded!", true, "Reload", false, locationReload);
+           "Data Augmentation Succeeded!", true, "Switch to augmented dataset", false, () => {
+      setModal(undefined, undefined, false)
+      load()
+      });
 
 
   // console.log('datamart_id: ' + msg_data.data.datamart_id);
@@ -2711,13 +2724,13 @@ export async function callSolver(prob, datasetPath=undefined) {
         return;
     }
     setSolverPending(false);
-    let dataset = getSelectedDataset();
+    let workspace = getSelectedWorkspace();
 
     let hasManipulation = [...dataset.hardManipulations, ...prob.manipulations].length > 0;
     let hasNominal = [prob.targets, ...prob.predictors].some(variable => zparams.znom.includes(variable));
 
     if (!datasetPath)
-        datasetPath = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : dataset.datasetUrl;
+        datasetPath = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : workspace.datasetUrl;
 
     // solutions.rook[ravenID] = cachedResponse;
     let params = {

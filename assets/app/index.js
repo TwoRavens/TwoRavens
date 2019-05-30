@@ -71,9 +71,10 @@ function leftpanel(mode) {
     if (mode === 'results')
         return results.leftpanel();
 
-    let selectedDataset = app.getSelectedDataset();
+    let ravenConfig = app.getRavenConfig();
     let selectedProblem = app.getSelectedProblem();
-    if (!selectedDataset) return;
+
+    if (!ravenConfig) return;
 
     let sections = [];
 
@@ -170,7 +171,7 @@ function leftpanel(mode) {
     }
 
     // DISCOVERY TAB
-    let problems = selectedDataset.problems;
+    let problems = ravenConfig.problems;
 
     // let allMeaningful = Object.keys(problems).every(probID => problems[probID].meaningful);
     // let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
@@ -179,9 +180,9 @@ function leftpanel(mode) {
     //     title: `mark ${allMeaningful ? 'no' : 'all'} problems as meaningful`
     // });
 
-    let resultsProblems = Object.keys(selectedDataset.problems)
-        .filter(problemId => selectedDataset.problems[problemId].solved)
-        .map(problemId => selectedDataset.problems[problemId]);
+    let resultsProblems = Object.keys(ravenConfig.problems)
+        .filter(problemId => ravenConfig.problems[problemId].solved)
+        .map(problemId => ravenConfig.problems[problemId]);
 
     let discoveryHeaders = [
         'Name',
@@ -235,14 +236,14 @@ function leftpanel(mode) {
                             class: 'btn-sm',
                             onclick: () => {
                                 let problemCopy = app.getProblemCopy(app.getSelectedProblem());
-                                selectedDataset.problems[problemCopy.problemID] = problemCopy;
+                                ravenConfig.problems[problemCopy.problemID] = problemCopy;
                             }
                         }, 'Save')),
                     m(Table, {
                         id: 'discoveryTableManipulations',
                         headers: discoveryHeaders,
                         data: [formatProblem(selectedProblem)],
-                        activeRow: selectedDataset.selectedProblem,
+                        activeRow: ravenConfig.selectedProblem,
                         // showUID: false,
                         abbreviation: 40
                     }),
@@ -257,7 +258,7 @@ function leftpanel(mode) {
                         ...Object.values(problems).filter(prob => prob.system === 'user' && !prob.solved),
                         ...Object.values(problems).filter(prob => prob.system !== 'user' && !prob.solved)
                     ].map(formatProblem),
-                    activeRow: selectedDataset.resultsProblem,
+                    activeRow: ravenConfig.resultsProblem,
                     onclick: problemID => {
                         if (selectedProblem.problemID === problemID) return;
                         delete problems[selectedProblem.problemID];
@@ -276,7 +277,7 @@ function leftpanel(mode) {
                         id: 'resultsTable',
                         headers: discoveryHeaders,
                         data: resultsProblems.map(formatProblem),
-                        activeRow: selectedDataset.resultsProblem,
+                        activeRow: ravenConfig.resultsProblem,
                         onclick: problemID => {
                             let resultsProblem = app.getResultsProblem();
                             if (resultsProblem.problemID === problemID) return;
@@ -354,7 +355,7 @@ function leftpanel(mode) {
                 value: 'Augment',
                 contents: m(Datamart, {
                     preferences: app.datamartPreferences,
-                    dataPath: selectedDataset.datasetUrl,
+                    dataPath: ravenConfig.datasetUrl,
                     endpoint: app.datamartURL,
                     labelWidth: '10em'
                 })
@@ -387,11 +388,13 @@ function rightpanel(mode) {
 
     let sections = [];
 
-    let selectedDataset = app.getSelectedDataset();
+    let ravenConfig = app.getRavenConfig();
     let selectedProblem = app.getSelectedProblem();
 
+    if (!ravenConfig) return;
+
     // PROBLEM TAB
-    selectedDataset && selectedProblem && sections.push({
+    selectedProblem && sections.push({
         value: 'Problem',
         idSuffix: 'Type',
         contents: [
@@ -443,18 +446,18 @@ function rightpanel(mode) {
     });
 
     // MANIPULATE TAB
-    selectedDataset && selectedProblem && sections.push({
+    selectedProblem && sections.push({
         value: 'Manipulate',
         title: 'Apply transformations and subsets to a problem',
         contents: m(MenuHeaders, {
             id: 'aggregateMenu',
             attrsAll: {style: {height: '100%', overflow: 'auto'}},
             sections: [
-                app.getSelectedDataset().hardManipulations.length !== 0 && {
+                ravenConfig.hardManipulations.length !== 0 && {
                     value: 'Dataset Pipeline',
                     contents: m(manipulate.PipelineFlowchart, {
-                        compoundPipeline: app.getSelectedDataset().hardManipulations,
-                        pipeline: app.getSelectedDataset().hardManipulations,
+                        compoundPipeline: ravenConfig.hardManipulations,
+                        pipeline: ravenConfig.hardManipulations,
                         editable: false
                     })
                 },
@@ -463,7 +466,7 @@ function rightpanel(mode) {
                     contents: [
                         m(manipulate.PipelineFlowchart, {
                             compoundPipeline: [
-                                ...app.getSelectedDataset().hardManipulations,
+                                ...ravenConfig.hardManipulations,
                                 ...selectedProblem.manipulations
                             ],
                             pipeline: selectedProblem.manipulations,
@@ -489,7 +492,7 @@ function rightpanel(mode) {
         })
     });
 
-    return selectedDataset && m(Panel, {
+    return m(Panel, {
             side: 'right',
             label: 'Model Selection',
             hover: true,
@@ -653,7 +656,8 @@ class Body {
         let discovery = app.leftTab === 'Discover';
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
 
-        let selectedDataset = app.getSelectedDataset();
+        let workspace = app.getSelectedWorkspace();
+        let ravenConfig = app.getRavenConfig();
         let selectedProblem = app.getSelectedProblem();
         let resultsProblem = app.getResultsProblem();
 
@@ -691,10 +695,10 @@ class Body {
                         m('col', {span: 1}))
                 })
             ]),
-            selectedDataset && m(ModalDatamart, {
+            workspace && m(ModalDatamart, {
                 preferences: app.datamartPreferences,
                 endpoint: app.datamartURL,
-                dataPath: selectedDataset.datasetUrl
+                dataPath: workspace.datasetUrl
             }),
 
             this.header(app.currentMode),
@@ -704,8 +708,8 @@ class Body {
 
             // manipulations menu
             (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu([
-                ...app.getSelectedDataset().hardManipulations,
-                ...(app.is_model_mode ? app.getSelectedProblem().manipulations : [])
+                ...ravenConfig.hardManipulations,
+                ...(app.is_model_mode ? selectedProblem.manipulations : [])
             ]),  // the identifier for which pipeline to edit
 
             // peek
@@ -757,7 +761,7 @@ class Body {
                                 classes: 'btn-success',
                                 onclick: _ => {
                                     let variate = app.exploreVariate.toLowerCase();
-                                    let selected = discovery ? [app.getSelectedDataset().selectedProblem] : exploreVariables;
+                                    let selected = discovery ? [ravenConfig.selectedProblem] : exploreVariables;
                                     let len = selected.length;
                                     if (variate === 'univariate' && len != 1
                                         || variate === 'problem' && len != 1
@@ -773,13 +777,13 @@ class Body {
 
                             m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
                                 // x could either be a problemID or a variable name
-                                (discovery ? Object.keys(app.getSelectedDataset().problems) : Object.keys(app.variableSummaries)).map(x => {
+                                (discovery ? Object.keys(ravenConfig.problems) : Object.keys(app.variableSummaries)).map(x => {
                                     let selected = discovery
                                         ? x === selectedProblem.problemID
                                         : exploreVariables.includes(x);
 
                                     let targetName = discovery
-                                        ? app.getSelectedDataset().problems[x].targets[0]
+                                        ? ravenConfig.problems[x].targets[0]
                                         : x;
 
                                     let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
@@ -835,7 +839,7 @@ class Body {
                                             },
                                             onupdate(vnode) {
                                                 let targetName = discovery
-                                                    ? app.getSelectedDataset().problems[x].targets[0]
+                                                    ? ravenConfig.problems[x].targets[0]
                                                     : x;
                                                 let node = app.variableSummaries[targetName];
                                                 if (node && node !== this.node) {
@@ -869,8 +873,6 @@ class Body {
                             app.remove(selectedProblem.predictors, pebble);
                             app.remove(selectedProblem.targets, pebble);
                             m.redraw();
-                            console.warn("#debug pebble");
-                            console.log(pebble);
                         },
                         onDragOver: (pebble, groupId) => {
                             if (groupId === 'Predictors' && !selectedProblem.predictors.includes(pebble.name)) {
@@ -892,6 +894,7 @@ class Body {
                                 app.remove(selectedProblem.targets, pebble.name);
                             if (!selectedProblem.tags.loose.includes(pebble.name))
                                 selectedProblem.tags.loose.push(pebble.name);
+                            m.redraw();
                         },
 
                         labels: app.forceDiagramLabels(selectedProblem),
@@ -980,13 +983,14 @@ class Body {
             {title: "Logout", url: logout_url}];
 
 
+        let workspace = app.getSelectedWorkspace();
         let resultsProblem = app.getResultsProblem();
         let selectedProblem = app.getSelectedProblem();
 
         let path = [
             m(Popper, {
-                content: () => IS_D3M_DOMAIN && m(Table, {data: app.getSelectedDataset().datasetDoc.about})
-            }, m('h4#dataName[style=display: inline-block; margin: .25em 1em]', app.selectedDataset || 'Dataset Name')),
+                content: () => IS_D3M_DOMAIN && m(Table, {data: workspace.datasetDoc.about})
+            }, m('h4#dataName[style=display: inline-block; margin: .25em 1em]', app.selectedWorkspace || 'Dataset Name')),
         ];
 
         let pathProblem = {
@@ -1077,7 +1081,7 @@ class Body {
 
     peekTable() {
         let pipeline = [
-            ...app.getSelectedDataset().hardManipulations,
+            ...app.getRavenConfig().hardManipulations,
             ...(app.is_model_mode ? app.getSelectedProblem().manipulations : [])
         ];
         if (app.peekInlineShown && !app.peekData && !app.peekIsExhausted) app.resetPeek(pipeline);
@@ -1202,14 +1206,14 @@ let standaloneDatamart = () => {
         m('div', {style: {margin: 'auto', 'margin-top': '1em', 'max-width': '1000px'}},
             m(Datamart, {
                 preferences: app.datamartPreferences,
-                dataPath: selectedDataset.datasetUrl,
+                dataPath: selectedWorkspace.datasetUrl,
                 endpoint: app.datamartURL,
                 labelWidth: '10em'
             })),
         m(ModalDatamart, {
             preferences: app.datamartPreferences,
             endpoint: app.datamartURL,
-            dataPath: selectedDataset.datasetUrl
+            dataPath: selectedWorkspace.datasetUrl
         })
     ]
 };

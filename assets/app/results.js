@@ -25,7 +25,7 @@ import * as solverD3M from './solvers/d3m';
 
 export let leftpanel = () => {
 
-    let selectedDataset = app.getSelectedDataset();
+    let ravenConfig = app.getRavenConfig();
     let resultsProblem = app.getResultsProblem();
 
     if (!resultsProblem) return;
@@ -47,10 +47,10 @@ export let leftpanel = () => {
                 m('div', {style: {display: 'inline-block', margin: '1em'}},
                     m(Dropdown, {
                         id: 'pipelineDropdown',
-                        items: Object.keys(selectedDataset.problems).filter(key =>
-                            Object.keys(selectedDataset.problems[key].solutions)
-                                .reduce((sum, source) => sum + Object.keys(selectedDataset.problems[key].solutions[source]).length, 0)),
-                        activeItem: selectedDataset.resultsProblem,
+                        items: Object.keys(ravenConfig.problems).filter(key =>
+                            Object.keys(ravenConfig.problems[key].solutions)
+                                .reduce((sum, source) => sum + Object.keys(ravenConfig.problems[key].solutions[source]).length, 0)),
+                        activeItem: ravenConfig.resultsProblem,
                         onclickChild: app.setResultsProblem
                     })),
                 m('div#modelComparisonOption', {style: {display: 'inline-block'}},

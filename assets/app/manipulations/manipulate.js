@@ -93,7 +93,7 @@ function canvas(compoundPipeline) {
 
     if (!constraintMenu) return;
 
-    let {pipeline, variables} = queryMongo.buildPipeline(compoundPipeline, app.getSelectedDataset().variablesInitial);
+    let {pipeline, variables} = queryMongo.buildPipeline(compoundPipeline, app.getRavenConfig().variablesInitial);
 
     if (constraintMenu.type === 'transform') return m(CanvasTransform, {
         preferences: constraintPreferences,
@@ -153,7 +153,8 @@ export function leftpanel() {
 
 export function varList() {
 
-    let variables = app.getSelectedDataset().variablesInitial;
+    let ravenConfig = app.getRavenConfig();
+    let variables = a.variablesInitial;
     let selectedVariables = (constraintMetadata || {}).columns || [];
 
     if (constraintMenu) {
@@ -257,8 +258,8 @@ export function rightpanel() {
                 }
             }
         }, m(PipelineFlowchart, {
-            compoundPipeline: app.getSelectedDataset().hardManipulations,
-            pipeline: app.getSelectedDataset().hardManipulations,
+            compoundPipeline: app.getRavenConfig().hardManipulations,
+            pipeline: app.getRavenConfig().hardManipulations,
             editable: true
         }));
 }
@@ -524,7 +525,7 @@ export let setQueryUpdated = async state => {
     if (app.is_manipulate_mode) {
         if (!pendingHardManipulation && state) {
             hopscotch.startTour(datasetChangedTour, 0);
-            app.getSelectedDataset().problems = [];
+            app.getRavenConfig().problems = [];
         }
         pendingHardManipulation = state;
     }
@@ -532,18 +533,19 @@ export let setQueryUpdated = async state => {
     // if we have an edit to the problem manipulations
     if (!app.is_manipulate_mode) {
 
-        let selectedDataset = app.getSelectedDataset();
         let selectedProblem = app.getSelectedProblem();
+
+        let ravenConfig = app.getRavenConfig();
 
         selectedProblem.tags.transformed = [...getTransformVariables(selectedProblem.manipulations)];
 
-        app.buildProblemPreprocess(selectedDataset, selectedProblem)
+        app.buildProblemPreprocess(ravenConfig, selectedProblem)
             .then(summaries => {
                 if (summaries) app.variableSummaries = summaries
             }).then(m.redraw);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
-        loadMenu([...selectedDataset.hardManipulations, ...selectedProblem.manipulations], countMenu).then(count => {
+        loadMenu([...ravenConfig.hardManipulations, ...selectedProblem.manipulations], countMenu).then(count => {
             setTotalSubsetRecords(count);
             m.redraw();
         });
@@ -580,7 +582,7 @@ export let setConstraintMenu = async (menu) => {
     // get the variables present at the new menu's position in the pipeline
     let variables = [...queryMongo.buildPipeline(
         menu.pipeline.slice(0, menu.pipeline.indexOf(menu.step)),
-        app.getSelectedDataset().variablesInitial)['variables']];
+        app.getRavenConfig().variablesInitial)['variables']];
 
     // update variable metadata
     if (!constraintMenu || (menu || {}).step !== constraintMenu.step) {
@@ -689,8 +691,8 @@ export let getData = async body => m.request({
     url: app.mongoURL + 'get-data',
     method: 'POST',
     data: Object.assign({
-        datafile: app.getSelectedDataset().datasetUrl, // location of the dataset csv
-        collection_name: app.selectedDataset // collection/dataset name
+        datafile: app.getSelectedWorkspace().datasetUrl, // location of the dataset csv
+        collection_name: app.selectedWorkspace // collection/dataset name
     }, body)
 }).then(response => {
     console.log('-- manipulate.js getData --');
@@ -720,9 +722,10 @@ export let getData = async body => m.request({
 // download data to display a menu
 export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { // the dict is for optional named arguments
 
+    let ravenConfig = app.getRavenConfig();
     // convert the pipeline to a mongo query. Note that passing menu extends the pipeline to collect menu data
     let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, menu],
-        app.getSelectedDataset().variablesInitial)['pipeline']);
+        ravenConfig.variablesInitial)['pipeline']);
 
     console.log("Menu Query:");
     console.log(compiled);
@@ -732,7 +735,7 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
     // record count request
     if (recount) {
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
-        let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, countMenu], app.getSelectedDataset().variablesInitial)['pipeline']);
+        let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, countMenu], ravenConfig.variablesInitial)['pipeline']);
 
         console.log("Count Query:");
         console.log(compiled);
@@ -815,6 +818,7 @@ export let totalSubsetRecords;
 export let setTotalSubsetRecords = records => totalSubsetRecords = records;
 
 export async function buildDatasetUrl(problem) {
+    let ravenConfig = app.getRavenConfig();
     let problemStep = {
         type: 'menu',
         metadata: {
@@ -827,10 +831,10 @@ export async function buildDatasetUrl(problem) {
     };
 
     let compiled = queryMongo.buildPipeline([
-        ...app.getSelectedDataset().hardManipulations,
+        ...ravenConfig.hardManipulations,
         ...problem.manipulations,
         problemStep
-    ], app.getSelectedDataset().variablesInitial)['pipeline'];
+    ], ravenConfig.variablesInitial)['pipeline'];
 
     return await getData({
         method: 'aggregate',
@@ -840,8 +844,11 @@ export async function buildDatasetUrl(problem) {
 }
 
 export async function buildProblemUrl(problem) {
+    let workspace = app.getSelectedWorkspace();
+    let ravenConfig = app.getRavenConfig();
+
     let abstractPipeline = [
-        ...app.getSelectedDataset().hardManipulations,
+        ...ravenConfig.hardManipulations,
         ...problem.manipulations,
         {
             type: 'menu',
@@ -855,8 +862,8 @@ export async function buildProblemUrl(problem) {
         }
     ];
 
-    let compiled = queryMongo.buildPipeline(abstractPipeline, app.getSelectedDataset().variablesInitial)['pipeline'];
-    let metadata = queryMongo.translateDatasetDoc(compiled, app.getSelectedDataset().datasetDoc, problem);
+    let compiled = queryMongo.buildPipeline(abstractPipeline, ravenConfig.variablesInitial)['pipeline'];
+    let metadata = queryMongo.translateDatasetDoc(compiled, workspace.datasetDoc, problem);
 
     return await getData({
         method: 'aggregate',
