@@ -27,6 +27,9 @@ import {
 } from "./solvers/d3m";
 import {buildDatasetUrl} from "./manipulations/manipulate";
 
+// polyfill for flatmap (could potentially be included as a webpack entrypoint)
+import "core-js/fn/array/flat-map";
+
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
 //    Developers, see /template/index.html
