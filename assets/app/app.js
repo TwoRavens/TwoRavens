@@ -2680,6 +2680,7 @@ export function handleAugmentDataMessage(msg_data){
 
   // Hide the modal
   datamartPreferences.modalShown = undefined;
+  datamartPreferences.isAugmenting = false;
 
   if (msg_data.success === false) {
     setModal("Error: " + msg_data.user_message,

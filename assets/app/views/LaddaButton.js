@@ -11,7 +11,7 @@ export default class ButtonLadda {
     onupdate(vnode) {
         if (this.activeLadda === vnode.attrs.activeLadda) return;
         this.activeLadda = vnode.attrs.activeLadda;
-        this.activeLadda ? this.button.start() : this.button.stop()
+        this.activeLadda ? this.button.start() : this.button.stop();
     }
 
     view({attrs, children}) {
