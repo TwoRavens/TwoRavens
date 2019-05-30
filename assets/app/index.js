@@ -864,12 +864,36 @@ class Body {
                     app.is_model_mode && selectedProblem && m(ForceDiagram, Object.assign(app.forceDiagramState,{
                         nodes: app.forceDiagramNodesReadOnly,
                         // these attributes may change dynamically, (the problem could change)
-                        onDragAway: pebble => {
+                        onDragOut: pebble => {
                             app.remove(selectedProblem.tags.loose, pebble);
                             app.remove(selectedProblem.predictors, pebble);
                             app.remove(selectedProblem.targets, pebble);
                             m.redraw();
+                            console.warn("#debug pebble");
+                            console.log(pebble);
                         },
+                        onDragOver: (pebble, groupId) => {
+                            if (groupId === 'Predictors' && !selectedProblem.predictors.includes(pebble.name)) {
+                                selectedProblem.predictors.push(pebble.name);
+                                app.remove(selectedProblem.targets, pebble.name);
+                                app.remove(selectedProblem.tags.loose, pebble.name);
+                            }
+                            if (groupId === 'Targets' && !selectedProblem.targets.includes(pebble.name)) {
+                                selectedProblem.targets.push(pebble.name);
+                                app.remove(selectedProblem.predictors, pebble.name);
+                                app.remove(selectedProblem.tags.loose, pebble.name);
+                            }
+                            m.redraw();
+                        },
+                        onDragAway: (pebble, groupId) => {
+                            if (groupId === 'Predictors')
+                                app.remove(selectedProblem.predictors, pebble.name);
+                            if (groupId === 'Targets')
+                                app.remove(selectedProblem.targets, pebble.name);
+                            if (!selectedProblem.tags.loose.includes(pebble.name))
+                                selectedProblem.tags.loose.push(pebble.name);
+                        },
+
                         labels: app.forceDiagramLabels(selectedProblem),
                         mutateNodes: app.mutateNodes(selectedProblem),
                         summaries: app.variableSummaries

@@ -12,6 +12,7 @@ export default class ForceDiagram {
         this.isDragging = false;
         this.selectedPebble = undefined;
         this.hoverPebble = undefined;
+        this.frozenGroups = {};
         this.nodes = {};
         this.selectors = {};
         this.filtered = {};  // a cleaned copy of the data passed for pebbles, groups, etc.
@@ -24,6 +25,10 @@ export default class ForceDiagram {
         let {
             pebbles, pebbleLinks,
             groups, groupLinks
+        } = attrs;
+
+        let {
+            setSelectedPebble, onDragOut, onDragAway, onDragOver
         } = attrs;
 
         let pebbleSet = new Set(pebbles);
@@ -143,7 +148,7 @@ export default class ForceDiagram {
                     [group.name]: d3.polygonHull(lengthen(groupCoords[group.name], attrs.hullRadius))
                 }), {});
 
-            this.selectors.hulls
+            this.selectors.hulls.selectAll('path')
                 .attr('d', d => `M${hullCoords[d.name].join('L')}Z`);
             this.selectors.hullBackgrounds
                 .attr('d', d => `M${hullCoords[d.name].join('L')}Z`);
@@ -218,6 +223,10 @@ export default class ForceDiagram {
                 this.selectors.nodeDragLine.attr('display', 'none');
                 this.position = {};
             }
+
+            this.selectors.hulls.selectAll('text')
+                .attr("transform", d => `translate(${centroids[d.name][0] - d.name.length * 5},${centroids[d.name][1]})`)
+                // .attr('dy', d => centroids[d.name] - Math.min(...hullCoords[d.name].map(_ => _[1])))
         };
         this.force.on('tick', tick);
         this.force.alphaTarget( 1).restart();
@@ -231,11 +240,135 @@ export default class ForceDiagram {
         d3.select(dom)
             .on('mousemove', attrs.contextPebble && updatePosition)
             .on('click', () => attrs.contextPebble = undefined);
+
+
+        d3.select(dom)
+            .call(d3.drag()
+                .container(dom)
+                .subject(() => this.force.find(d3.event.x, d3.event.y))
+                .on("start", () => {
+                    if (Math.sqrt(Math.pow(d3.event.sourceEvent.x - d3.event.subject.x, 2) + Math.pow(d3.event.sourceEvent.y - d3.event.subject.y - 100, 2)) > d3.event.subject.radius * 2) {
+                        setSelectedPebble(undefined);
+                        return;
+                    }
+                    this.isDragging = true;
+                    if (!d3.event.active) this.force.alphaTarget(1).restart();
+                    d3.event.subject.fx = d3.event.subject.x;
+                    d3.event.subject.fy = d3.event.subject.y;
+                    m.redraw()
+                })
+                .on("drag", () => {
+                    if (!this.isDragging) return;
+                    d3.event.subject.fx = d3.event.x;
+                    d3.event.subject.fy = d3.event.y;
+
+                    if (onDragOver) {
+
+                        let dragCoord = this.selectedPebble === d3.event.subject
+                            ? [d3.event.subject.fx, d3.event.subject.fy]
+                            : [d3.event.subject.x, d3.event.subject.y];
+
+                        let groupCoords = groups
+                            .reduce((out, group) => Object.assign(out, {
+                                [group.name]: [...group.nodes].map(node => [this.nodes[node].x, this.nodes[node].y])
+                            }), {});
+
+                        let hullCoords = groups.reduce((out, group) => group.nodes.length === 0 ? out
+                            : Object.assign(out, {
+                                [group.name]: d3.polygonHull(lengthen(groupCoords[group.name], attrs.hullRadius))
+                            }), {});
+
+                        // don't freeze own group
+                        groups
+                            .filter(group => group.nodes.has(d3.event.subject.name))
+                            .forEach(group => delete hullCoords[group.name]);
+
+                        Object.keys(hullCoords)
+                            .forEach(groupId => {
+                                let nodeNames = [...groups.find(group => group.name === groupId).nodes];
+                                if (isInside(dragCoord, hullCoords[groupId])) {
+                                    this.frozenGroups[groupId] = true;
+                                    nodeNames.forEach(node => {
+                                        this.nodes[node].fx = this.nodes[node].x;
+                                        this.nodes[node].fy = this.nodes[node].y;
+                                    })
+                                }
+                                else if (this.frozenGroups[groupId]) {
+                                    nodeNames.forEach(node => {
+                                        if (node === (this.selectedPebble || {}).name) return;
+                                        delete this.nodes[node].fx;
+                                        delete this.nodes[node].fy;
+                                    })
+                                }
+                            });
+                    }
+                })
+                .on("end", () => {
+                    if (!this.isDragging) return;
+                    this.isDragging = false;
+                    if (!d3.event.active) this.force.alphaTarget(0);
+
+                    Object.keys(this.frozenGroups).forEach(groupId => {
+                        let nodeNames = [...groups.find(group => group.name === groupId).nodes];
+                        nodeNames.forEach(node => {
+                            if (node === (this.selectedPebble || {}).name) return;
+                            delete this.nodes[node].fx;
+                            delete this.nodes[node].fy;
+                        })
+                    });
+
+                    let dragCoord = this.selectedPebble === d3.event.subject
+                        ? [d3.event.subject.fx, d3.event.subject.fy]
+                        : [d3.event.subject.x, d3.event.subject.y];
+
+                    if (onDragOut) // hook for when a node is dragged out of the scene
+                        if (dragCoord[0] < 0 || dragCoord[0] > width || dragCoord[1] < 0 || dragCoord[1] > height)
+                            onDragOut(d3.event.subject.name);
+
+                    let groupCoords, hullCoords;
+                    if (onDragOver || onDragAway) {
+                        groupCoords = groups
+                            .reduce((out, group) => Object.assign(out, {
+                                [group.name]: [...group.nodes].map(node => [this.nodes[node].x, this.nodes[node].y])
+                            }), {});
+
+                        hullCoords = groups.reduce((out, group) => group.nodes.length === 0 ? out
+                            : Object.assign(out, {
+                                [group.name]: d3.polygonHull(lengthen(groupCoords[group.name], attrs.hullRadius))
+                            }), {});
+                    }
+
+                    if (onDragOver) {
+                        Object.keys(hullCoords).filter(groupId => isInside(dragCoord, hullCoords[groupId]))
+                            .forEach(groupId => onDragOver(d3.event.subject, groupId))
+                    }
+
+                    if (onDragAway) {
+                        groups
+                            .filter(group => group.nodes.has(d3.event.subject.name))
+                            .filter(group => {
+                                let reducedHull = hullCoords[group.name]
+                                    .filter(coord => coord[0] !== dragCoord[0] && coord[1] !== dragCoord[1]);
+                                let centroidReduced = jamescentroid(reducedHull);
+                                let distanceDragged = mag(sub(dragCoord, centroidReduced));
+
+                                return !reducedHull
+                                    .some(coord => mag(sub(coord, centroidReduced)) * 5 > distanceDragged);
+                            })
+                            .forEach(group => onDragAway(d3.event.subject, group.name))
+                    }
+
+                    if (this.isPinned || d3.event.subject.name === this.hoverPebble || d3.event.subject.name === this.selectedPebble) return;
+                    d3.event.subject.x = dragCoord[0];
+                    d3.event.subject.y = dragCoord[1];
+                    delete d3.event.subject.fx;
+                    delete d3.event.subject.fy;
+                    m.redraw();
+                }));
     }
 
     oncreate({attrs: state, dom}) {
-        let {nodes, setSelectedPebble, onDragAway} = state;
-        let {width, height} = dom.getBoundingClientRect();
+        let {nodes} = state;
 
         let svg = d3.select(dom);
         this.nodes = nodes || this.nodes;
@@ -295,39 +428,6 @@ export default class ForceDiagram {
             .attr('d', 'M0,0L0,0');
 
         this.force = d3.forceSimulation([...Object.values(this.nodes)]);
-
-        d3.select(dom)
-            .call(d3.drag()
-                .container(dom)
-                .subject(() => this.force.find(d3.event.x, d3.event.y))
-                .on("start", () => {
-                    if (Math.sqrt(Math.pow(d3.event.sourceEvent.x - d3.event.subject.x, 2) + Math.pow(d3.event.sourceEvent.y - d3.event.subject.y - 100, 2)) > d3.event.subject.radius) {
-                        setSelectedPebble(undefined);
-                        return;
-                    }
-                    this.isDragging = true;
-                    if (!d3.event.active) this.force.alphaTarget(1).restart();
-                    d3.event.subject.fx = d3.event.subject.x;
-                    d3.event.subject.fy = d3.event.subject.y;
-                })
-                .on("drag", () => {
-                    if (!this.isDragging) return;
-                    d3.event.subject.fx = d3.event.x;
-                    d3.event.subject.fy = d3.event.y;
-                })
-                .on("end", () => {
-                    if (!this.isDragging) return;
-                    this.isDragging = false;
-                    if (!d3.event.active) this.force.alphaTarget(0);
-
-                    if (onDragAway) // hook for when a node is dragged out of the scene
-                        if (d3.event.subject.fx < 0 || d3.event.subject.fx > width || d3.event.subject.fy < 0 || d3.event.subject.fy > height)
-                            onDragAway(d3.event.subject.name);
-
-                    if (this.isPinned || d3.event.subject.name === this.hoverPebble || d3.event.subject.name === this.selectedPebble) return;
-                    delete d3.event.subject.fx;
-                    delete d3.event.subject.fy;
-                }));
 
         this.onupdate({attrs: state, dom});
     }
@@ -415,24 +515,52 @@ let intersectLineLine = (p1, p2, p3, p4) => {
     }
 };
 
+function isInside(point, vs) {
+    // ray-casting algorithm based on
+    // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+
+    var x = point[0], y = point[1];
+
+    var inside = false;
+    for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        var xi = vs[i][0], yi = vs[i][1];
+        var xj = vs[j][0], yj = vs[j][1];
+
+        var intersect = ((yi > y) != (yj > y))
+            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+
+    return inside;
+}
+
 
 function lengthen(coords, radius) {
     // d3.geom.hull returns null for two points, and fails if three points are in a line,
     // so this puts a couple points slightly off the line for two points, or around a singleton.
+    let magnitude = 1 / 8;
     if (coords.length === 2) {
         let deltax = coords[0][0] - coords[1][0];
         let deltay = coords[0][1] - coords[1][1];
         coords.push([
-            (coords[0][0] + coords[1][0]) / 2 + deltay / 20,
-            (coords[0][1] + coords[1][1]) / 2 + deltax / 20
+            (coords[0][0] + coords[1][0]) / 2 + deltay * magnitude,
+            (coords[0][1] + coords[1][1]) / 2 + deltax * magnitude
         ]);
         coords.push([
-            (coords[0][0] + coords[1][0]) / 2 - deltay / 20,
-            (coords[0][1] + coords[1][1]) / 2 - deltax / 20
+            (coords[0][0] + coords[1][0]) / 2 - deltay * magnitude,
+            (coords[0][1] + coords[1][1]) / 2 - deltax * magnitude
+        ]);
+        coords.push([
+            (coords[0][0] + coords[1][0]) / 2 + deltax * magnitude,
+            (coords[0][1] + coords[1][1]) / 2 + deltay * magnitude
+        ]);
+        coords.push([
+            (coords[0][0] + coords[1][0]) / 2 - deltax * magnitude,
+            (coords[0][1] + coords[1][1]) / 2 - deltay * magnitude
         ]);
     }
     if (coords.length === 1) {
-        let delta = radius * 0.2;
+        let delta = radius * .3;
         coords.push([coords[0][0] + delta, coords[0][1] + delta]);
         coords.push([coords[0][0] - delta, coords[0][1] + delta]);
         coords.push([coords[0][0] + delta, coords[0][1] - delta]);
@@ -480,7 +608,7 @@ let pebbleBuilderArcs = (state, context, newPebbles) => {
     // construct and update arcs for hovered/selected pebbles
     context.selectors.pebbles
         .selectAll('g.arc').filter(d => d === state.hoverPebble || d === state.selectedPebble).each(function (pebble) {
-        let data = {name: '', children: state.labels};
+        let data = {name: '', children: state.labels(pebble)};
         let setWidths = node => {
             if ('children' in node) node.value = node.children.reduce((sum, child) => sum + setWidths(child), 0);
             else node.value = node.name.length + 5;
@@ -526,7 +654,10 @@ let pebbleBuilderArcs = (state, context, newPebbles) => {
             .append('text')
             .attr("id", label => 'arcText' + label.data.id + pebble)
             .attr("x", 6)
-            .attr("dy", 11.5)
+            .attr("dy", d => {
+                let center = (d.x0 + d.x1) / 2;
+                return center > .25 && center < .75 ? -4 : 11.5;
+            })
             .attr('opacity', 0.8)
             .append("textPath")
             .attr("xlink:href", label => '#arc' + label.data.id + pebble)
@@ -540,7 +671,16 @@ let pebbleBuilderArcs = (state, context, newPebbles) => {
             .on('contextmenu', () => state.pebbleEvents.contextmenu(pebble))
             .transition()  // Animate transitions between styles
             .duration(state.selectTransitionDuration)
-            .attr("d", arc)
+            .attr("d", d => {
+                let center = (d.x0 + d.x1) / 2;
+                if (center > .25 && center < .75) {
+                    Object.assign(d, {
+                        x0: d.x1,
+                        x1: d.x0
+                    })
+                }
+                return arc(d);
+            })
             .style("fill", d => {
                 if (d.depth === 0) return 'transparent';
                 return d3.rgb(d.data.attrs.fill)
@@ -738,15 +878,36 @@ export let pebbleBuilderLabeled = (attrs, context) => {
 export let groupBuilder = (attrs, context) => {
     context.selectors.hulls = context.selectors.hulls.data(context.filtered.groups, group => group.name);
     context.selectors.hulls.exit().remove();
-    context.selectors.hulls = context.selectors.hulls.enter()
-        .append("path")
+    let newHulls = context.selectors.hulls.enter()
+        .append('svg:g')
+        .attr('id', group => group.name + 'group');
+
+    context.selectors.hulls = context.selectors.hulls.merge(newHulls);
+
+    // add new paths
+    newHulls.append("path")
         .attr("id", group => group.name + 'Hull')
+        .style('stroke-linejoin', 'round');
+
+    // update all paths
+    context.selectors.hulls.selectAll('path')
         .style("fill", group => group.color)
         .style("stroke", group => group.color)
         .style("stroke-width", 2.5 * attrs.hullRadius)
-        .style('stroke-linejoin', 'round')
-        .style('opacity', group => group.opacity)
-        .merge(context.selectors.hulls);
+        .style('opacity', group => group.opacity);
+
+    // add new texts
+    newHulls.append('text')
+        .style('font-weight', 'bold');
+        // .append('textPath')
+        // .attr('alignment-baseline', 'top')
+        // .attr('startOffset', '50%');
+
+    // update all texts
+    context.selectors.hulls.selectAll('text')
+        .style('display', () => context.isDragging ? 'block' : 'none')
+        .attr('xlink:href', group => '#' + group.name + 'Hull')
+        .text(group => group.name);
 
     context.selectors.hullBackgrounds = context.selectors.hullBackgrounds.data(context.filtered.groups, group => group.name);
     context.selectors.hullBackgrounds.exit().remove();
