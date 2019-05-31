@@ -63,12 +63,21 @@ export function density(node, div, priv) {
     var yAxis = d3.axisLeft()
         .scale(y);
     let rangeX = x.range();
+    let rangeY = y.range();
+
+    console.warn("#debug rangeX");
+    console.log(rangeX);
+
+    console.warn("#debug node.subsetrange");
+    console.log(node);
     var brush = d3.brushX()
-        .extent([[rangeX[0], node.subsetrange[0]], rangeX[1], node.subsetrange[1]])
+        .extent([[rangeX[0], rangeY[0]], rangeX[1], rangeY[1]])
+        // .extent([[rangeX[0], node.subsetrange[0]], rangeX[1], node.subsetrange[1]])
         .on("brush", brushed);
     var brush2 = d3.brushX()
         // possibly broken in transition to D3 V4
-        .extent([[rangeX[0], node.subsetrange[0]], rangeX[1], node.subsetrange[1]])
+        .extent([[rangeX[0], rangeY[0]], rangeX[1], rangeY[1]])
+        // .extent([[rangeX[0], node.subsetrange[0]], rangeX[1], node.subsetrange[1]])
         .on("brush", brushed2);
     var area = d3.area()
         .curve(d3.curveMonotoneX)
@@ -107,6 +116,7 @@ export function density(node, div, priv) {
     plotsvg.append("path")
         .datum(xVals.map((x, i) => ({x: +x, y: +node.ploty[i]})))
         .attr("class", "area")
+        .style('fill', 'steelblue')
         .attr("d", area);
 
     //add upper bound
