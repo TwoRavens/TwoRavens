@@ -317,13 +317,15 @@ export default class ForceDiagram {
                         })
                     });
 
+                    if (onDragOut) // hook for when a node is dragged out of the scene
+                        if (d3.event.subject.fx < 0 || d3.event.subject.fx > width || d3.event.subject.fy < 0 || d3.event.subject.fy > height) {
+                            onDragOut(d3.event.subject.name);
+                            return;
+                        }
+
                     let dragCoord = this.selectedPebble === d3.event.subject
                         ? [d3.event.subject.fx, d3.event.subject.fy]
                         : [d3.event.subject.x, d3.event.subject.y];
-
-                    if (onDragOut) // hook for when a node is dragged out of the scene
-                        if (dragCoord[0] < 0 || dragCoord[0] > width || dragCoord[1] < 0 || dragCoord[1] > height)
-                            onDragOut(d3.event.subject.name);
 
                     let groupCoords, hullCoords;
                     if (onDragOver || onDragAway) {

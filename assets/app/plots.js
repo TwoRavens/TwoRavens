@@ -65,11 +65,6 @@ export function density(node, div, priv) {
     let rangeX = x.range();
     let rangeY = y.range();
 
-    console.warn("#debug rangeX");
-    console.log(rangeX);
-
-    console.warn("#debug node.subsetrange");
-    console.log(node);
     var brush = d3.brushX()
         .extent([[rangeX[0], rangeY[0]], rangeX[1], rangeY[1]])
         // .extent([[rangeX[0], node.subsetrange[0]], rangeX[1], node.subsetrange[1]])
