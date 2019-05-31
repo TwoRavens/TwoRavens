@@ -22,11 +22,61 @@ from tworaven_apps.user_workspaces import static_vals as uw_static
 from tworaven_apps.user_workspaces.utils import \
     (get_user_workspaces,
      get_user_workspaces_as_dict,
-     delete_user_workspaces,
-     get_user_workspace_config)
+     get_user_workspace_config,
+     get_saved_workspace_by_request_and_id,
+     delete_user_workspaces,)
+
 from tworaven_apps.configurations.models_d3m import D3MConfiguration
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
+
+
+@csrf_exempt
+def save_raven_config_to_existing_workspace(request, workspace_id):
+    """Save a new raven config to an existing workspace
+    POST request containing JSON with new request
+    """
+
+    # Get the workspace, checking if the user in the request
+    #   is the one in the workspace
+    #
+    ws_info = get_saved_workspace_by_request_and_id(request, workspace_id)
+    if not ws_info.success:
+        print('save_raven_config_to_existing_workspace 1')
+        return JsonResponse(get_json_error(ws_info.err_msg))
+    user_workspace = ws_info.result_obj
+
+    # Get the Ravens config from the POST
+    #
+    raven_config_info = get_request_body_as_json(request)
+    if not raven_config_info.success:
+        print('save_raven_config_to_existing_workspace 2')
+        return JsonResponse(get_json_error(raven_config_info.err_msg))
+
+    raven_config = raven_config_info.result_obj
+
+    # Check for the 'name' key (other checks can be added...)
+    #
+    if not uw_static.KEY_RAVEN_CONFIG_NAME in raven_config:
+        print('save_raven_config_to_existing_workspace 3')
+        user_msg = (f'The workspace could not be saved.'
+                    f' (The raven_config did not contain a'
+                    f' "{uw_static.KEY_RAVEN_CONFIG_NAME}" key)')
+
+        print('user_msg', user_msg)
+        return JsonResponse(get_json_error(user_msg))
+
+    user_workspace.raven_config = raven_config
+    user_workspace.save()
+
+    ws_dict = user_workspace.to_dict()
+
+    json_msg = get_json_success('Workspace saved.',
+                                data=ws_dict)
+
+    print('save_raven_config_to_existing_workspace 4', json_msg)
+
+    return JsonResponse(json_msg)
 
 
 @csrf_exempt

@@ -549,6 +549,8 @@ class Body {
     }
 
     view(vnode) {
+        //app.alertLog(m(TextField, {value: JSON.stringify(app.workspaces)}));
+
         let {mode, variate, vars} = vnode.attrs;
 
         // after calling m.route.set, the params for mode, variate, vars don't update in the first redraw.
@@ -1139,7 +1141,9 @@ class Body {
                     onclick: _ => hopscotch.startTour(app.mytour(), 0)
                 }, 'Help Tour ', m(Icon, {name: 'milestone'})),
                 m(Button, {id: 'btnTA2', class: 'btn-sm', onclick: _ => app.helpmaterials('video')}, 'Video ', m(Icon, {name: 'file-media'})),
-                m(Button, {id: 'btnTA2', class: 'btn-sm', onclick: _ => app.helpmaterials('manual')}, 'Manual ', m(Icon, {name: 'file-pdf'}))),
+                m(Button, {id: 'btnTA2', class: 'btn-sm', onclick: _ => app.helpmaterials('manual')}, 'Manual ', m(Icon, {name: 'file-pdf'})),
+
+                m(Button, {id: 'btnSaveWorkspace', class: 'btn-sm', onclick: _ => app.saveUserWorkspace()}, 'Save ', m(Icon, {name: 'thumbsup'}))),
 
             m("span", {"class": "footer-info-break"}, "|"),
             m("a", {"href" : "/dev-raven-links", "target": "=_blank"}, "raven-links"),

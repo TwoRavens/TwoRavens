@@ -1088,6 +1088,7 @@ let loadWorkspace = async workspace => {
         setSelectedProblem(problemCopy.problemID);
 
     } else console.log("Task 1: No Problem Doc");
+
 }
 
 /**
@@ -2451,6 +2452,39 @@ export let setSelectedWorkspace = workspaceId => {
 };
 
 export let getSelectedWorkspace = () => workspaces[selectedWorkspace];
+
+/*
+  Save the current user workspace
+ */
+export let saveUserWorkspace = () => {
+
+  let workspace_info = getSelectedWorkspace();
+  if(!workspace_info.hasOwnProperty("user_workspace_id")) {
+    console.log('Can save workspace. No id.');
+    return;
+  }
+  let raven_config_save_url = '/user-workspaces/raven-configs/json/save/' + workspace_info.user_workspace_id;
+
+  console.log('bleh....');
+  console.log('data to save: ' + JSON.stringify(workspace_info.raven_config))
+
+  m.request({
+      method: "POST",
+      url: raven_config_save_url,
+      data: workspace_info.raven_config
+  })
+  .then(function(save_result) {
+    if (save_result.success){
+      console.log('Workspace saved')
+    }else{
+      console.log('Workspace save error:' + save_result.messge);
+    }
+  })
+
+  // console.log('Save result: ' + JSON.stringify(save_result.success));
+
+
+};
 
 export let getD3MConfig = () => (getSelectedWorkspace() || {}).d3m_config;
 export let getRavenConfig = () => (getSelectedWorkspace() || {}).raven_config;

@@ -42,6 +42,35 @@ def get_user_workspace_by_id(user_workspace_id):
 
     return ok_resp(user_ws)
 
+
+def get_saved_workspace_by_request_and_id(request, user_workspace_id):
+    """Retrieve a specific workspace by request, checking that it
+    is owned by the correct user"""
+
+    # Get the User
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return err_resp(user_info.err_msg)
+    user = user_info.result_obj
+
+    # Get the workspace
+    #
+    ws_info = get_user_workspace_config(user, user_workspace_id)
+    if not ws_info.success:
+        return err_resp(ws_info.err_msg)
+    user_workspace = ws_info.result_obj
+
+    # Does the user in the request match the one in the workspace
+    #   - Later add additional permissions here for sharing
+    #
+    if not user.is_superuser:
+        if not user == user_workspace.user:
+            err_msg = (f'Sorry! User {user} does not have permission for '
+                       f' workspace id: {user_workspace_id}.')
+            return err_resp(err_msg)
+
+    return ok_resp(user_workspace)
+
 def get_user_workspace_config(user, user_workspace_id):
     """Retrieve a specific UserWorkspace"""
 
@@ -67,6 +96,7 @@ def get_latest_d3m_user_config_by_request(request):
 
     user = user_info.result_obj
     return get_latest_d3m_user_config(user)
+
 
 def get_latest_user_workspace(request):
     """Get latest user workspace"""
