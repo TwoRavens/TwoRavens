@@ -912,13 +912,13 @@ let loadWorkspace = async workspace => {
                     m('p', '(May be a serious problem)')),
                     "Failed to load basic data.",
                     true,
-                    "Try to Reload Page",
+                    "Reload Page",
                     false,
                     locationReload);
+                return false;
 
                 //alertError('Preprocess failed: ' + preprocess_info.message);
                 // endsession();
-                return;
             }
         } catch(_) {
             console.log('preprocess failed');
@@ -931,7 +931,7 @@ let loadWorkspace = async workspace => {
                 false,
                 locationReload);
             // endsession();
-            return;
+            return false;
         }
     }
     setVariableSummaries(resPreprocess.variables);
@@ -1088,6 +1088,8 @@ let loadWorkspace = async workspace => {
         setSelectedProblem(problemCopy.problemID);
 
     } else console.log("Task 1: No Problem Doc");
+
+    return true;
 }
 
 /**
@@ -1152,7 +1154,8 @@ async function load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3m
     console.log('---------------------------------------');
     console.log('-- 2. Load workspace --');
 
-    await loadWorkspace(workspace)
+    let success = await loadWorkspace(workspace);
+    if (!success) return;
 
     // /**
     //  * 3. Read in zelig models (not for d3m)
@@ -1314,6 +1317,8 @@ export let toggle = (collection, obj) => {
 export let forceDiagramMode = 'variables';
 export let setForceDiagramMode = mode => forceDiagramMode = mode;
 
+export let groupNames = [];
+
 export let buildForceData = problem => {
 
     if (!problem) return;
@@ -1369,12 +1374,16 @@ export let buildForceData = problem => {
     }
 
     // collapse groups with more than maxNodes into a single node
-    let maxNodes = 50;
+    let maxNodes = 10;
     groups.filter(group => group.nodes.size > maxNodes).forEach(group => {
         pebbles = pebbles.filter(node => !group.nodes.has(node)); // remove nodes from said group
         pebbles.push(group.name); // add one node to represent all the nodes
+        group.childNodes = group.nodes; // know which elemments are inside the group pebble
         group.nodes = [group.name]; // redefine the group to only contain the new node
     });
+
+    // to identify which collapsed pebbles represent groups
+    groupNames = groups.map(group => group.name);
 
     return {pebbles, groups, groupLinks};
 };
@@ -1503,9 +1512,16 @@ export let mutateNodes = problem => (state, context) => {
 
     // set the base color of each node
     pebbles.forEach(pebble => {
-        context.nodes[pebble].strokeWidth = 1;
-        context.nodes[pebble].nodeCol = colors(generateID(pebble));
-        context.nodes[pebble].strokeColor = 'transparent';
+        if (groupNames.includes(pebble)) {
+            context.nodes[pebble].strokeWidth = 0;
+            context.nodes[pebble].nodeCol = 'transparent';
+            context.nodes[pebble].strokeColor = 'transparent';
+        }
+        else {
+            context.nodes[pebble].strokeWidth = 1;
+            context.nodes[pebble].nodeCol = colors(generateID(pebble));
+            context.nodes[pebble].strokeColor = 'transparent';
+        }
     });
 
     // set additional styling for each node
@@ -2452,8 +2468,16 @@ export let getSelectedWorkspace = () => workspaces[selectedWorkspace];
 export let getD3MConfig = () => (getSelectedWorkspace() || {}).d3m_config;
 export let getRavenConfig = () => (getSelectedWorkspace() || {}).raven_config;
 
-export let getSelectedProblem = () => selectedWorkspace && getRavenConfig().problems[getRavenConfig().selectedProblem];
-export let getResultsProblem = () => selectedWorkspace && getRavenConfig().problems[getRavenConfig().resultsProblem];
+export let getSelectedProblem = () => {
+    let ravenConfig = getRavenConfig();
+    if (!ravenConfig) return;
+    return ravenConfig.problems[ravenConfig.selectedProblem];
+}
+export let getResultsProblem = () => {
+    let ravenConfig = getRavenConfig();
+    if (!ravenConfig) return;
+    return ravenConfig.problems[ravenConfig.resultsProblem];
+}
 
 export let getSolutions = (problem, source) => {
     if (!problem) return [];

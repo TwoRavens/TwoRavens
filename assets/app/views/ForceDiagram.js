@@ -1,6 +1,8 @@
 import * as d3 from "d3";
 import 'd3-selection-multi';
 
+import * as jStat from 'jstat';
+
 import * as common from "../../common/common";
 import m from "mithril";
 
@@ -701,7 +703,7 @@ let pebbleBuilderCircles = (attrs, context, newPebbles) => {
 
     // update existing nodes
     context.selectors.pebbles
-        .selectAll('circle')
+        .selectAll('circle.node')
         .style('fill', pebble => d3.rgb(context.nodes[pebble].nodeCol))
         .style('stroke', pebble => d3.rgb(context.nodes[pebble].strokeColor))
         .style('stroke-width', pebble => context.nodes[pebble].strokeWidth)
@@ -711,7 +713,7 @@ let pebbleBuilderCircles = (attrs, context, newPebbles) => {
 
     // bind all events to the plot
     Object.keys(attrs.pebbleEvents)
-        .forEach(event => context.selectors.pebbles.selectAll('circle')
+        .forEach(event => context.selectors.pebbles.selectAll('circle.node')
             .on(event, attrs.pebbleEvents[event]));
 };
 
@@ -731,6 +733,10 @@ let pebbleBuilderLabels = (attrs, context, newPebbles) => {
         .style('font-size', pebble => context.nodes[pebble].radius * .175 + 7 + 'px');
 };
 
+let colors = d3.scaleOrdinal(d3.schemeCategory20);
+let speckCoords = Array.from({length: 100})
+    .map((_, i) => ({id: i, x: jStat.normal.sample(0, 1), y: jStat.normal.sample(0, 1)}));
+
 let pebbleBuilderPlots = (attrs, context, newPebbles) => {
     newPebbles
         .append('g')
@@ -743,9 +749,27 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
 
     context.selectors.pebbles
         .select('g.speck-plot').each(function (pebble) {
-            // TODO: draw random space filling deterministic circles
-            // let dimension = context.nodes[pebble].radius * 1.5;
-            // Array.from({length: attrs.filtered.groups[pebble].nodes.size}).map()
+        let groupSpeckCoords = speckCoords.slice(0, attrs.groups.find(group => group.name === pebble).childNodes.size);
+
+        let width = context.nodes[pebble].radius * 1.5;
+        let height = context.nodes[pebble].radius * 1.5;
+
+        let x = d3.scaleLinear().range([0, width]).domain([-2, 2]);
+        let y = d3.scaleLinear().range([height + 20, 20]).domain([-2, 2]);
+
+        let circleSelection = d3.select(this).selectAll("circle.embedded-plot").data(groupSpeckCoords);
+        circleSelection.exit().remove();
+        circleSelection.enter().append("circle").attr('class', 'embedded-plot');
+
+        d3.select(this).selectAll("circle.embedded-plot").data(groupSpeckCoords)
+            .transition()
+            .duration(attrs.selectTransitionDuration)
+            .attr("r", 5)
+            .attr("cx", function(d) { return x(d.x); })
+            .attr("cy", function(d) { return y(d.y); })
+            .attr("fill", d => colors(d.id))
+            .attr("transform", "translate(" + (-width / 2) + "," + (-height) + ")");
+
     });
 
     context.selectors.pebbles
