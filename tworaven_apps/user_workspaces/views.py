@@ -40,33 +40,32 @@ def save_raven_config_to_existing_workspace(request, workspace_id):
     # Get the workspace, checking if the user in the request
     #   is the one in the workspace
     #
-    ws_info = get_saved_workspace_by_request_and_id(request, workspace_id)
+    ws_info = get_saved_workspace_by_request_and_id(request, -1)#workspace_id)
     if not ws_info.success:
-        print('save_raven_config_to_existing_workspace 1')
         return JsonResponse(get_json_error(ws_info.err_msg))
     user_workspace = ws_info.result_obj
 
     # Get the Ravens config from the POST
     #
-    raven_config_info = get_request_body_as_json(request)
-    if not raven_config_info.success:
+    update_info = get_request_body_as_json(request)
+    if not update_info.success:
         print('save_raven_config_to_existing_workspace 2')
-        return JsonResponse(get_json_error(raven_config_info.err_msg))
+        return JsonResponse(get_json_error(update_info.err_msg))
 
-    raven_config = raven_config_info.result_obj
+    update_dict = update_info.result_obj
 
-    # Check for the 'name' key (other checks can be added...)
+    # Check for the 'raven_config' key
     #
-    if not uw_static.KEY_RAVEN_CONFIG_NAME in raven_config:
+    if not uw_static.KEY_RAVEN_CONFIG in update_dict:
         print('save_raven_config_to_existing_workspace 3')
         user_msg = (f'The workspace could not be saved.'
-                    f' (The raven_config did not contain a'
-                    f' "{uw_static.KEY_RAVEN_CONFIG_NAME}" key)')
+                    f' (The update information did not contain a'
+                    f' "{uw_static.KEY_RAVEN_CONFIG}" key)')
 
         print('user_msg', user_msg)
         return JsonResponse(get_json_error(user_msg))
 
-    user_workspace.raven_config = raven_config
+    user_workspace.raven_config = update_dict[uw_static.KEY_RAVEN_CONFIG]
     user_workspace.save()
 
     ws_dict = user_workspace.to_dict()
