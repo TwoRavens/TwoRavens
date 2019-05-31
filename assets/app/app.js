@@ -1319,9 +1319,6 @@ export let buildForceData = problem => {
     if (!problem) return;
     let predictors = problem.predictors;
 
-    // uncomment to combine predictor pebbles if length > n
-    // if (predictors.length > 50) predictors = [predictors.length + ' Predictors']
-
     let pebbles = [...predictors, ...problem.targets, ...problem.tags.loose];
     let groups = [];
     let groupLinks = [];
@@ -1372,10 +1369,10 @@ export let buildForceData = problem => {
     }
 
     // collapse groups with more than maxNodes into a single node
-    let maxNodes = 100;
-    groups.filter(group => group.nodes.length > maxNodes).forEach(group => {
-        pebbles = pebbles.filter(node => !group.nodes.has(node.name)); // remove nodes from said group
-        pebbles.push({id: normalize(group.name), name: group.name}); // add one node to represent all the nodes
+    let maxNodes = 50;
+    groups.filter(group => group.nodes.size > maxNodes).forEach(group => {
+        pebbles = pebbles.filter(node => !group.nodes.has(node)); // remove nodes from said group
+        pebbles.push(group.name); // add one node to represent all the nodes
         group.nodes = [group.name]; // redefine the group to only contain the new node
     });
 
@@ -1522,7 +1519,7 @@ export let mutateNodes = problem => (state, context) => {
         }));
 }
 
-export let forceDiagramLabels = problem => pebble => [
+export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Targets'].includes(pebble) ? [] : [
     {
         id: 'Group',
         name: 'Group',

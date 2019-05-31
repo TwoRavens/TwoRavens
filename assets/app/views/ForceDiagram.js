@@ -736,9 +736,17 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
         .append('g')
         .attr('class', pebble => ({
             'continuous': 'density-plot',
-            'bar': 'bar-plot'
-        }[attrs.summaries[pebble].plottype]))
+            'bar': 'bar-plot',
+            undefined: 'speck-plot'
+        }[(attrs.summaries[pebble] || {}).plottype || 'undefined']))
         .attr('opacity', 0.4);
+
+    context.selectors.pebbles
+        .select('g.speck-plot').each(function (pebble) {
+            // TODO: draw random space filling deterministic circles
+            // let dimension = context.nodes[pebble].radius * 1.5;
+            // Array.from({length: attrs.filtered.groups[pebble].nodes.size}).map()
+    });
 
     context.selectors.pebbles
         .select('g.density-plot').each(function (pebble) {
