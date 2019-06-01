@@ -133,6 +133,7 @@ class UserWorkspace(TimeStampedModel):
         info_dict = OrderedDict()
 
         info_dict['user_workspace_id'] = self.id
+        info_dict['name'] = self.name
         info_dict['user_workspace_url'] = self.get_json_url()
 
         info_dict['user_workspace_url_v2'] = reverse(\
@@ -154,7 +155,10 @@ class UserWorkspace(TimeStampedModel):
         """Convert to dict for API calls"""
         info_dict = self.d3m_config.to_dict()
 
+        info_dict['DEPRECATED'] = 'STOP USING!'
+
         info_dict['user_workspace_id'] = self.id
+        info_dict['name'] = self.name
         info_dict['is_current_workspace'] = self.is_current_workspace
         info_dict['user_workspace_url'] = self.get_json_url()
         info_dict['user_workspace_url_v2'] = reverse(\
@@ -170,6 +174,7 @@ class UserWorkspace(TimeStampedModel):
             info_dict.move_to_end('raven_config', last=False)
 
         info_dict.move_to_end('is_current_workspace', last=False)
+        info_dict.move_to_end('name', last=False)
         info_dict.move_to_end('user_workspace_id', last=False)
 
         return info_dict

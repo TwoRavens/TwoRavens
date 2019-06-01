@@ -17,6 +17,7 @@ from tworaven_apps.user_workspaces.models import \
 from tworaven_apps.configurations.models_d3m import D3MConfiguration
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
+from tworaven_apps.user_workspaces import static_vals as uw_static
 
 def get_default_workspace_params(**kwargs):
     """Make sure workspace is active"""
@@ -70,6 +71,20 @@ def get_saved_workspace_by_request_and_id(request, user_workspace_id):
             return err_resp(err_msg)
 
     return ok_resp(user_workspace)
+
+def is_existing_workspace_name(user, workspace_name):
+    """Check if the workspace name already exists for this user"""
+    # Note: The database doesn't enforce this property and it
+    #   shouldn't break anything if duplicate names are saved,
+    #   except for confusing the user
+
+    params = dict(user=user,
+                  name=workspace_name)
+
+    if UserWorkspace.objects.filter(**params).count() > 0:
+        return True
+
+    return False
 
 def get_user_workspace_config(user, user_workspace_id):
     """Retrieve a specific UserWorkspace"""
@@ -234,3 +249,29 @@ def delete_user_workspaces(user):
     workspaces.delete()
 
     return ok_resp('Workspaces cleared. %d deleted' % cnt)
+
+def duplicate_user_workspace(new_name, existing_workspace, **kwargs):
+    """Duplicate and save a UserWorkspace using a new name
+    This becomes the new current workspace
+    """
+    if not isinstance(existing_workspace, UserWorkspace):
+        return err_resp('existing_workspace must be a "UserWorkspace" object')
+
+    new_ws = UserWorkspace(\
+                    name=new_name,
+                    user=existing_workspace.user,
+                    orig_dataset_id=existing_workspace.orig_dataset_id,
+                    d3m_config=existing_workspace.d3m_config,
+                    raven_config=existing_workspace.raven_config,
+                    is_active=existing_workspace.is_active,
+                    is_current_workspace=existing_workspace.is_current_workspace,
+                    description=existing_workspace.description)
+
+    # Update the raven_config if there is one
+    #
+    if uw_static.KEY_RAVEN_CONFIG in kwargs:
+        new_ws.__dict__[uw_static.KEY_RAVEN_CONFIG] = kwargs[uw_static.KEY_RAVEN_CONFIG]
+
+    new_ws.save()
+
+    return ok_resp(new_ws)

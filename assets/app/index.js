@@ -1143,7 +1143,9 @@ class Body {
                 m(Button, {id: 'btnTA2', class: 'btn-sm', onclick: _ => app.helpmaterials('video')}, 'Video ', m(Icon, {name: 'file-media'})),
                 m(Button, {id: 'btnTA2', class: 'btn-sm', onclick: _ => app.helpmaterials('manual')}, 'Manual ', m(Icon, {name: 'file-pdf'})),
 
-                m(Button, {id: 'btnSaveWorkspace', class: 'btn-sm', onclick: _ => app.saveUserWorkspace()}, 'Save ', m(Icon, {name: 'thumbsup'}))),
+                m(Button, {id: 'btnSaveWorkspace', class: 'btn-sm', onclick: _ => app.saveUserWorkspace()}, 'Save ', m(Icon, {name: 'thumbsup'})),
+
+                m(Button, {id: 'btnSaveAsNewWorkspace', class: 'btn-sm', onclick: _ => app.saveAsNewWorkspace()}, 'Save As New ', m(Icon, {name: 'thumbsup'}))),
 
             m("span", {"class": "footer-info-break"}, "|"),
             m("a", {"href" : "/dev-raven-links", "target": "=_blank"}, "raven-links"),
