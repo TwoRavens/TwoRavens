@@ -2487,6 +2487,7 @@ export let getSelectedWorkspace = () => workspaces[selectedWorkspace];
  */
 export let saveUserWorkspace = () => {
   console.log('-- saveUserWorkspace --');
+  console.log('NOTE: step of loading from a saved raven_config needs work')
 
   let workspace_info = getSelectedWorkspace();
   if(!('user_workspace_id' in workspace_info)) {
@@ -2524,6 +2525,8 @@ export let saveUserWorkspace = () => {
   */
  export let saveAsNewWorkspace = () => {
    console.log('-- saveAsNewWorkspace --');
+
+   console.log('!!NOTE: step of loading from a saved raven_config needs work')
 
    let workspace_info = getSelectedWorkspace();
    if(!('user_workspace_id' in workspace_info)) {
