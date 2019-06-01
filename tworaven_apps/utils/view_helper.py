@@ -70,7 +70,7 @@ def get_request_body_as_json(request):
         return err_resp('request is None')
 
     # ----------------------------------
-    # Make sure user is authenticated
+    # next call also check if user is authenticated
     # ----------------------------------
     resp_info = get_request_body(request)
     if not resp_info.success:

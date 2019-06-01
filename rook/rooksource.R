@@ -11,7 +11,7 @@ source("rookconfig.R")
 
 print(paste("production: ", production, sep=""))
 
-if(!production){
+if(production){
   print(paste("load packages...", sep=""))
 
     packageList.rooksolver <- c('caret', 'R.utils', "rpart", "ranger", "naivebayes", "stargazer", "doParallel")

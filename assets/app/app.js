@@ -767,6 +767,11 @@ export let lockTour = {
     b. Read the d3m problem schema and add to problems
  */
 
+let updateWorkspaceIdInFooter = (user_workspace_id) => {
+
+  $('#user-workspace-id').html('(ws:' + user_workspace_id +')');
+}
+
 let loadWorkspace = async workspace => {
 
     // scopes at app.js level; used for saving workspace
@@ -777,7 +782,7 @@ let loadWorkspace = async workspace => {
         // id: workspace.d3m_config.id
     };
 
-    $('#user-workspace-id').html('(ws:' + workspace.user_workspace_id +')');
+    updateWorkspaceIdInFooter(workspace.user_workspace_id);
 
     workspaces[workspace.d3m_config.name] = workspace;
     setSelectedWorkspace(workspace.d3m_config.name);
@@ -941,21 +946,26 @@ let loadWorkspace = async workspace => {
      */
     console.log('---------------------------------------');
     console.log("-- Workspace: 4. Create 'raven_config' if undefined --");
-    if (workspace.raven_config) return;
+    if (workspace.raven_config){
+      console.log('workspace.raven_config found! ' + workspace.user_workspace_id);
+      console.log('exiting create raven_config (was running into render errs here)')
+      return;
+    }
 
     workspace.raven_config = {
-        ravenConfigVersion: RAVEN_CONFIG_VERSION,
-        hardManipulations: [],
-        problems: {},
-        tags: {
-            transformed: [],
-            weights: [], // only one variable can be a weight
-            crossSection: [],
-            time: [],
-            nominal: [],
-            loose: [] // variables displayed in the force diagram, but not in any groups
-        }
-    }
+          ravenConfigVersion: RAVEN_CONFIG_VERSION,
+          hardManipulations: [],
+          problems: {},
+          tags: {
+              transformed: [],
+              weights: [], // only one variable can be a weight
+              crossSection: [],
+              time: [],
+              nominal: [],
+              loose: [] // variables displayed in the force diagram, but not in any groups
+          }
+      }
+
 
     /**
      * 4.a. Assign problem discovery to raven_config
@@ -1089,6 +1099,7 @@ let loadWorkspace = async workspace => {
 
     } else console.log("Task 1: No Problem Doc");
 
+
     return true;
 }
 
@@ -1155,7 +1166,11 @@ async function load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3m
     console.log('-- 2. Load workspace --');
 
     let success = await loadWorkspace(workspace);
-    if (!success) return;
+    if (!success){
+      // alertError('Failed to load workspace');
+      return;
+    }
+    // m.redraw();
 
     // /**
     //  * 3. Read in zelig models (not for d3m)
@@ -2464,6 +2479,106 @@ export let setSelectedWorkspace = workspaceId => {
 };
 
 export let getSelectedWorkspace = () => workspaces[selectedWorkspace];
+
+/*
+ *  saveUserWorkspace() save the current
+ *  ravens_config data to the user workspace.
+ *    e.g. updates the workspace saved in the database
+ */
+export let saveUserWorkspace = () => {
+  console.log('-- saveUserWorkspace --');
+  console.log('NOTE: step of loading from a saved raven_config needs work')
+
+  let workspace_info = getSelectedWorkspace();
+  if(!('user_workspace_id' in workspace_info)) {
+    alertError('Cannot save the workspace. The workspace id was not found. (saveUserWorkspace)');
+    return;
+  }
+
+  let raven_config_save_url = '/user-workspaces/raven-configs/json/save/' + workspace_info.user_workspace_id;
+
+  console.log('data to save: ' + JSON.stringify(workspace_info.raven_config))
+
+  m.request({
+      method: "POST",
+      url: raven_config_save_url,
+      data: {raven_config: workspace_info.raven_config}
+  })
+  .then(function(save_result) {
+    console.log(save_result);
+    if (save_result.success){
+      console.log('Workspace saved')
+    }else{
+      alertError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
+    }
+  })
+};
+/*
+ * END: saveUserWorkspace
+ */
+
+
+ /*
+  *  saveAsNewWorkspace() save the current
+  *  workspace as new one, with a new name.
+  *    - placeholder with random name
+  */
+ export let saveAsNewWorkspace = () => {
+   console.log('-- saveAsNewWorkspace --');
+
+   console.log('!!NOTE: step of loading from a saved raven_config needs work')
+
+   let workspace_info = getSelectedWorkspace();
+   if(!('user_workspace_id' in workspace_info)) {
+     alertError('Cannot save the workspace. The workspace id was not found. (saveAsNewWorkspace)');
+     return;
+   }
+
+   let raven_config_save_url = '/user-workspaces/raven-configs/json/save-as-new/' + workspace_info.user_workspace_id;
+
+   // placeholder name, will be user entered
+   //
+   let new_workspace_name = 'new_ws_' + Math.random().toString(36).substring(7);
+
+   // console.log('data to save: ' + JSON.stringify(workspace_info.raven_config))
+
+   m.request({
+       method: "POST",
+       url: raven_config_save_url,
+       data: {new_workspace_name: new_workspace_name,
+              raven_config: workspace_info.raven_config}
+   })
+   .then(function(save_result) {
+     console.log(save_result);
+
+    /*
+     *  Failed, show error and return
+     */
+    if (!save_result.success){
+       alertError('Failed to save the workspace. ' + save_result.message + ' (saveAsNewWorkspace)');
+       return;
+     }
+
+    /*
+     * Update the current workspace entry
+     */
+
+    // Retrieve it again (needed?)
+    //
+    let workspace_info = getSelectedWorkspace();
+
+    // Update the name and the workspace id
+    //
+    workspace_info.user_workspace_id = save_result.data.user_workspace_id;
+    workspace_info.name = save_result.data.name;
+    updateWorkspaceIdInFooter(workspace_info.user_workspace_id);
+
+   })
+ };
+ /*
+  * END: saveAsNewWorkspace
+  */
+
 
 export let getD3MConfig = () => (getSelectedWorkspace() || {}).d3m_config;
 export let getRavenConfig = () => (getSelectedWorkspace() || {}).raven_config;

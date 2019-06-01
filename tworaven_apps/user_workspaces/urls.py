@@ -3,6 +3,14 @@ from tworaven_apps.user_workspaces import views
 
 urlpatterns = (
 
+    url(r'^raven-configs/json/save/(?P<workspace_id>\d{1,7})$',
+        views.save_raven_config_to_existing_workspace,
+        name='save_raven_config_to_existing_workspace'),
+
+    url(r'^raven-configs/json/save-as-new/(?P<workspace_id>\d{1,7})$',
+        views.save_raven_config_as_new_workspace,
+        name='save_raven_config_as_new_workspace'),
+
     url(r'^raven-configs/json/list$',
         views.view_latest_raven_configs,
         name='view_latest_raven_configs'),
