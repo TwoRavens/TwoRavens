@@ -1523,6 +1523,7 @@ export async function estimate() {
     if (!res || !res.success) {
         solverD3M.handleENDGetSearchSolutionsResults();
         alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
+        m.redraw();
         return;
     }
 
