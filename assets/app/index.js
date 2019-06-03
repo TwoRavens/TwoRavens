@@ -63,458 +63,6 @@ export let link = url => m('a', {href: url, style: {color: 'darkblue'}, target: 
 let version = 1;
 let exploreVariables = [];
 
-function leftpanel(mode) {
-
-    if (mode === 'manipulate')
-        return manipulate.leftpanel();
-
-    if (mode === 'results')
-        return results.leftpanel();
-
-    let ravenConfig = app.getRavenConfig();
-    let selectedProblem = app.getSelectedProblem();
-
-    if (!ravenConfig) return;
-
-    let sections = [];
-
-    // VARIABLES TAB
-    if (selectedProblem) {
-        // base dataset variables, then transformed variables from the problem
-        let leftpanelVariables = Object.keys(app.variableSummaries);
-
-        // if no search string, match nothing
-        let matchedVariables = app.variableSearchText.length === 0 ? []
-            : leftpanelVariables.filter(variable => variable.toLowerCase().includes(app.variableSearchText)
-                || (app.variableSummaries.label || "").toLowerCase().includes(app.variableSearchText));
-
-        // reorder leftpanel variables
-        leftpanelVariables = [
-            ...matchedVariables,
-            ...leftpanelVariables.filter(variable => !matchedVariables.includes(variable))
-        ];
-
-        let nominalVariables = app.getNominalVariables();
-
-        sections.push({
-            value: 'Variables',
-            title: 'Click variable name to add or remove the variable pebble from the modeling space.',
-            contents: app.is_model_mode && app.rightTab === 'Manipulate' && manipulate.constraintMenu
-                ? manipulate.varList()
-                : [
-                    m(TextField, {
-                        id: 'searchVar',
-                        placeholder: 'Search variables and labels',
-                        oninput: app.setVariableSearchText,
-                        onblur: app.setVariableSearchText,
-                        value: app.variableSearchText
-                    }),
-                    m(PanelList, {
-                        id: 'varList',
-                        items: leftpanelVariables,
-                        colors: {
-                            [app.hexToRgba(common.selVarColor)]: app.is_explore_mode ? selectedProblem.loose : exploreVariables,
-                            [app.hexToRgba(common.gr1Color, .25)]: selectedProblem.predictors,
-                            [app.hexToRgba(common.selVarColor, .5)]: selectedProblem.tags.loose,
-                            [app.hexToRgba(common.taggedColor)]: app.is_explore_mode ? [] : selectedProblem.targets
-                        },
-                        classes: {
-                            'item-dependent': app.is_explore_mode ? [] : selectedProblem.targets,
-                            'item-nominal': nominalVariables,
-                            'item-bordered': matchedVariables,
-                            'item-cross-section': selectedProblem.tags.crossSection,
-                            'item-time': selectedProblem.tags.time,
-                            'item-weight': selectedProblem.tags.weights
-                        },
-                        callback: x => {
-                            let selectedProblem = app.getSelectedProblem();
-
-                            if (selectedProblem.predictors.includes(x))
-                                app.remove(selectedProblem.predictors, x);
-                            else if (selectedProblem.targets.includes(x))
-                                app.remove(selectedProblem.targets, x);
-                            else if (selectedProblem.tags.loose.includes(x))
-                                app.remove(selectedProblem.tags.loose, x);
-                            else selectedProblem.tags.loose.push(x);
-                        },
-                        popup: x => m('div', m('h4', 'Summary Statistics for ' + x), m(Table, {attrsAll: {class: 'table-sm'}, data: app.getVarSummary(app.variableSummaries[x])})),
-                        popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
-                    }),
-                    m(Button, {
-                        id: 'btnCreateVariable',
-                        style: {width: '100%', 'margin-top': '10px'},
-                        onclick: async () => {
-
-                            let problemPipeline = app.getSelectedProblem().manipulations;
-                            if ((problemPipeline[problemPipeline.length - 1] || {}).type !== 'transform') {
-                                problemPipeline.push({
-                                    type: 'transform',
-                                    id: 'transform ' + problemPipeline.length,
-                                    transforms: [],
-                                    expansions: [],
-                                    binnings: [],
-                                    manual: []
-                                })
-                            }
-                            app.setRightTab('Manipulate');
-                            manipulate.setConstraintMenu({
-                                type: 'transform',
-                                step: problemPipeline[problemPipeline.length - 1],
-                                pipeline: problemPipeline
-                            });
-                            common.setPanelOpen('left');
-                            app.setLeftTab('Variables');
-                        }
-                    }, 'Create New Variable'),
-                ]
-        })
-    }
-
-    // DISCOVERY TAB
-    let problems = ravenConfig.problems;
-
-    // let allMeaningful = Object.keys(problems).every(probID => problems[probID].meaningful);
-    // let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
-    //     onclick: m.withAttr("checked", app.setCheckedDiscoveryProblem),
-    //     checked: allMeaningful,
-    //     title: `mark ${allMeaningful ? 'no' : 'all'} problems as meaningful`
-    // });
-
-    let resultsProblems = Object.keys(ravenConfig.problems)
-        .filter(problemId => ravenConfig.problems[problemId].solved)
-        .map(problemId => ravenConfig.problems[problemId]);
-
-    let discoveryHeaders = [
-        'Name',
-        // m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
-        'User', 'Target', 'Predictors',
-        'Task',
-        Object.values(problems).some(prob => prob.subTask !== 'taskSubtypeUndefined') ? 'Subtask' : '',
-        'Metric', 'Manipulations'
-    ];
-
-    let formatProblem = problem => [
-        problem.problemID, // this is masked as the UID
-        problem.system === 'user' && m('div[title="user created problem"]', m(Icon, {name: 'person'})),
-        problem.targets.join(', '),
-        problem.predictors.join(', '),
-        problem.task,
-        problem.subTask === 'taskSubtypeUndefined' ? '' : problem.subTask, // ignore taskSubtypeUndefined
-        problem.metric,
-        m('',
-            problem.manipulations.length !== 0 && m(
-                'div[style=width:100%;text-align:center]', m(Button, {
-                    class: 'btn-sm',
-                    disabled: problem === selectedProblem && app.rightTab === 'Manipulate' && common.panelOpen['right'],
-                    title: `view manipulations for ${problem.problemID}`,
-                    onclick: () => {
-                        app.setRightTab('Manipulate');
-                        common.setPanelOpen('right');
-                    }
-                }, 'View'))
-        )
-    ];
-    sections.push({
-        value: 'Discover',
-        attrsInterface: {class: app.buttonClasses.btnDiscover}, // passed into button
-        contents: [
-            m('div#discoveryTablesContainer', {
-                    style: {
-                        height: '80%',
-                        overflow: 'auto',
-                        display: 'block',
-                        'margin-bottom': 0,
-                        'max-width': (window.innerWidth - 90) + 'px'
-                    }
-                },
-                selectedProblem && [
-                    m('h4.card-header.clearfix',
-                        m('div[style=height:50px;display:inline]', 'Current Problem'),
-                        m(Button, {
-                            id: 'btnSaveProblem',
-                            style: {float: 'right', margin: '-5px', 'margin-right': '22px'},
-                            class: 'btn-sm',
-                            onclick: () => {
-                                let problemCopy = app.getProblemCopy(app.getSelectedProblem());
-                                ravenConfig.problems[problemCopy.problemID] = problemCopy;
-                            }
-                        }, 'Save')),
-                    m(Table, {
-                        id: 'discoveryTableManipulations',
-                        headers: discoveryHeaders,
-                        data: [formatProblem(selectedProblem)],
-                        activeRow: ravenConfig.selectedProblem,
-                        // showUID: false,
-                        abbreviation: 40
-                    }),
-                    m('h4.card-header', 'All Problems')
-                ],
-
-                // all problems
-                m(Table, {
-                    id: 'discoveryTable',
-                    headers: discoveryHeaders,
-                    data: [ // I would sort system via (a, b) => a.system === b.system ? 0 : a.system === 'user' ? -1 : 1, but javascript sort isn't stable
-                        ...Object.values(problems).filter(prob => prob.system === 'user' && !prob.solved),
-                        ...Object.values(problems).filter(prob => prob.system !== 'user' && !prob.solved)
-                    ].map(formatProblem),
-                    activeRow: ravenConfig.resultsProblem,
-                    onclick: problemID => {
-                        if (selectedProblem.problemID === problemID) return;
-                        delete problems[selectedProblem.problemID];
-                        let copiedProblem = app.getProblemCopy(problems[problemID]);
-                        problems[copiedProblem.problemID] = copiedProblem;
-                        app.setSelectedProblem(copiedProblem.problemID);
-                    },
-                    // showUID: false,
-                    abbreviation: 40,
-                    sortable: true
-                }),
-                // results problems
-                resultsProblems.length > 0 && [
-                    m('h4.card-header', 'Results Problems'),
-                    m(Table, {
-                        id: 'resultsTable',
-                        headers: discoveryHeaders,
-                        data: resultsProblems.map(formatProblem),
-                        activeRow: ravenConfig.resultsProblem,
-                        onclick: problemID => {
-                            let resultsProblem = app.getResultsProblem();
-                            if (resultsProblem.problemID === problemID) return;
-                            app.setResultsProblem(problemID);
-                            app.set_mode('results');
-                        },
-                        // showUID: false,
-                        abbreviation: 40,
-                        sortable: true
-                    })
-                ]
-            ),
-
-
-            selectedProblem && [
-                m(TextField, {
-                    id: 'discoveryInput',
-                    textarea: true,
-                    style: {width: '100%', height: 'calc(20% - 60px)', overflow: 'auto'},
-                    value: selectedProblem.description || app.getDescription(selectedProblem), // description is autogenerated if not edited
-                    oninput: value => selectedProblem.description = value,
-                    onblur: value => selectedProblem.description = value
-                }),
-                m('div', {style: {display: 'inline-block', margin: '.75em'}},
-                    m('input[type=checkbox]', {
-                        onclick: m.withAttr("checked", checked => app.setCheckedDiscoveryProblem(checked, selectedProblem.problemID)),
-                        checked: selectedProblem.meaningful
-                    }), m('label[style=margin-left:1em]', `Mark ${selectedProblem.problemID} as meaningful`)),
-                m(Button, {
-                    id: 'btnDelete',
-                    disabled: selectedProblem || selectedProblem.system === 'auto',
-                    style: 'float:right',
-                    onclick: () => setTimeout(() => app.deleteProblem(selectedProblem.problemID, version, 'id_000003'), 500),
-                    title: 'Delete the user created problem'
-                }, 'Delete Problem')
-            ],
-            !app.is_explore_mode && m(ButtonLadda, {
-                id: 'btnSubmitDisc',
-                class: app.buttonClasses.btnSubmitDisc,
-                activeLadda: app.buttonLadda.btnSubmitDisc,
-                style: {float: 'right'},
-                onclick: app.submitDiscProb,
-                title: 'Submit all checked discovered problems'
-            }, 'Submit Disc. Probs.')
-        ]
-    });
-
-    return m(Panel, {
-        side: 'left',
-        label: 'Data Selection',
-        hover: app.is_model_mode && !manipulate.constraintMenu,
-        width: app.modelLeftPanelWidths[app.leftTab],
-        attrsAll: {
-            onclick: () => app.setFocusedPanel('left'),
-            style: {
-                'z-index': 100 + (app.focusedPanel === 'left'),
-                background: 'rgb(249, 249, 249, .8)',
-                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
-            }
-        }
-    }, m(MenuTabbed, {
-        id: 'leftpanelMenu',
-        attrsAll: {style: {height: 'calc(100% - 50px)'}},
-        currentTab: app.leftTab,
-        callback: app.setLeftTab,
-        sections: sections.concat([
-            {
-                value: app.preprocessTabName,
-                id: 'preprocessInfoTab',
-                display: 'none',
-                title: 'Data Log',
-                contents: m(PreprocessInfo,{})
-            },
-            {
-                value: 'Augment',
-                contents: m(Datamart, {
-                    preferences: app.datamartPreferences,
-                    dataPath: ravenConfig.datasetUrl,
-                    endpoint: app.datamartURL,
-                    labelWidth: '10em'
-                })
-            },
-            {
-                value: 'Summary',
-                title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
-                display: 'none',
-                contents: (app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble) && [
-                    m('center',
-                        m('b', app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble),
-                        m('br'),
-                        m('i', (app.variableSummaries[app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble] || {}).labl)),
-                    m(Table, {
-                        id: 'varSummaryTable',
-                        data: app.getVarSummary(app.variableSummaries[app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble])
-                    })
-                ]
-            }
-        ])
-    }));
-}
-
-function rightpanel(mode) {
-    if (mode === 'results') return; // returns undefined, which mithril ignores
-    if (mode === 'explore') return;
-    if (mode === 'manipulate') return manipulate.rightpanel();
-
-    // mode == null (model mode)
-
-    let sections = [];
-
-    let ravenConfig = app.getRavenConfig();
-    let selectedProblem = app.getSelectedProblem();
-
-    if (!ravenConfig) return;
-
-    // PROBLEM TAB
-    selectedProblem && sections.push({
-        value: 'Problem',
-        idSuffix: 'Type',
-        contents: [
-            m(`button#btnLock.btn.btn-default`, {
-                class: app.lockToggle ? 'active' : '',
-                onclick: () => app.setLockToggle(!app.lockToggle),
-                title: 'Lock selection of problem description',
-                style: 'float: right',
-            }, m(Icon, {name: app.lockToggle ? 'lock' : 'pencil'})),
-            m('', {style: 'float: left'},
-                m(Dropdown, {
-                    id: 'taskType',
-                    items: Object.keys(app.d3mTaskType),
-                    activeItem: selectedProblem.task,
-                    onclickChild: child => {
-                        selectedProblem.task = child;
-                        // will trigger the call to solver, if a menu that needs that info is shown
-                        app.setSolverPending(true);
-                    },
-                    style: {'margin-bottom': '1em'},
-                    disabled: app.lockToggle
-                }),
-                m(Dropdown, {
-                    id: 'taskSubType',
-                    items: Object.keys(app.d3mTaskSubtype),
-                    activeItem: selectedProblem.subTask,
-                    onclickChild: child => {
-                        selectedProblem.subTask = child;
-                        // will trigger the call to solver, if a menu that needs that info is shown
-                        app.setSolverPending(true);
-                    },
-                    style: {'margin-bottom': '1em'},
-                    disabled: app.lockToggle
-                }),
-                m(Dropdown, {
-                    id: 'performanceMetrics',
-                    items: Object.keys(app.d3mMetrics),
-                    activeItem: selectedProblem.metric,
-                    onclickChild: child => {
-                        selectedProblem.metric = child;
-                        // will trigger the call to solver, if a menu that needs that info is shown
-                        app.setSolverPending(true);
-                    },
-                    style: {'margin-bottom': '1em'},
-                    disabled: app.lockToggle
-                })
-            )
-        ]
-    });
-
-    // MANIPULATE TAB
-    selectedProblem && sections.push({
-        value: 'Manipulate',
-        title: 'Apply transformations and subsets to a problem',
-        contents: m(MenuHeaders, {
-            id: 'aggregateMenu',
-            attrsAll: {style: {height: '100%', overflow: 'auto'}},
-            sections: [
-                ravenConfig.hardManipulations.length !== 0 && {
-                    value: 'Dataset Pipeline',
-                    contents: m(manipulate.PipelineFlowchart, {
-                        compoundPipeline: ravenConfig.hardManipulations,
-                        pipeline: ravenConfig.hardManipulations,
-                        editable: false
-                    })
-                },
-                {
-                    value: 'Problem Pipeline',
-                    contents: [
-                        m(manipulate.PipelineFlowchart, {
-                            compoundPipeline: [
-                                ...ravenConfig.hardManipulations,
-                                ...selectedProblem.manipulations
-                            ],
-                            pipeline: selectedProblem.manipulations,
-                            editable: true,
-                            aggregate: false
-                        }),
-                        selectedProblem.tags.nominal.length > 0 && m(Flowchart, {
-                            attrsAll: {style: {height: 'calc(100% - 87px)', overflow: 'auto'}},
-                            labelWidth: '5em',
-                            steps: [{
-                                key: 'Nominal',
-                                color: common.nomColor,
-                                content: m('div', {style: {'text-align': 'left'}},
-                                    m(ListTags, {
-                                        tags: selectedProblem.tags.nominal,
-                                        ondelete: name => app.remove(selectedProblem.tags.nominal, name)
-                                    }))
-                            }]
-                        })
-                    ]
-                },
-            ]
-        })
-    });
-
-    return m(Panel, {
-            side: 'right',
-            label: 'Model Selection',
-            hover: true,
-            width: app.modelRightPanelWidths[app.rightTab],
-            attrsAll: {
-                onclick: () => app.setFocusedPanel('right'),
-                style: {
-                    'z-index': 100 + (app.focusedPanel === 'right'),
-                    height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`,
-                }
-            }
-        },
-        sections.length > 0 && m(MenuTabbed, {
-            id: 'rightpanelMenu',
-            currentTab: app.rightTab,
-            callback: app.setRightTab,
-            sections,
-            attrsAll: {style: {height: 'calc(100% - 50px)'}}
-        })
-    );
-}
-
 class Body {
     oninit() {
         app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
@@ -658,63 +206,19 @@ class Body {
         let discovery = app.leftTab === 'Discover';
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
 
-        let workspace = app.getSelectedWorkspace();
-        let ravenConfig = app.getRavenConfig();
+        let ravenConfig = (app.workspace || {}).raven_config;
         let selectedProblem = app.getSelectedProblem();
         let resultsProblem = app.getResultsProblem();
 
         return m('main',
-            m(Modal),
-            app.alertsShown && m(ModalVanilla, {
-                id: 'alertsModal',
-                setDisplay: () => {
-                    app.alertsLastViewed.setTime(new Date().getTime());
-                    app.setAlertsShown(false)
-                }
-            },[
-                m('h4[style=width:3em;display:inline-block]', 'Alerts'),
-                m(Button, {
-                    title: 'Clear Alerts',
-                    style: {display: 'inline-block', 'margin-right': '0.75em'},
-                    onclick: () => app.alerts.length = 0,
-                    disabled: app.alerts.length === 0
-                }, m(Icon, {name: 'check'})),
-                app.alerts.length === 0 && italicize('No alerts recorded.'),
-                app.alerts.length > 0 && m(Table, {
-                    data: [...app.alerts].reverse().map(alert => [
-                        alert.time > app.alertsLastViewed && m(Icon, {name: 'primitive-dot'}),
-                        m(`div[style=background:${app.hexToRgba({
-                            'log': common.menuColor,
-                            'warn': common.warnColor,
-                            'error': common.errorColor
-                        }[alert.type], .5)}]`, alert.time.toLocaleTimeString().replace(/([\d]+:[\d]{2})(:[\d]{2})(.*)/, "$1$3")),
-                        alert.description
-                    ]),
-                    attrsAll: {style: {'margin-top': '1em'}},
-                    tableTags: m('colgroup',
-                        m('col', {span: 1, width: '10px'}),
-                        m('col', {span: 1, width: '75px'}),
-                        m('col', {span: 1}))
-                })
-            ]),
-            workspace && m(ModalDatamart, {
-                preferences: app.datamartPreferences,
-                endpoint: app.datamartURL,
-                dataPath: workspace.datasetUrl
-            }),
 
+            this.modals(),
             this.header(app.currentMode),
             this.footer(app.currentMode),
-            leftpanel(app.currentMode),
-            rightpanel(app.currentMode),
+            app.workspace && this.leftpanel(app.currentMode),
+            app.workspace && this.rightpanel(app.currentMode),
+            app.workspace && this.manipulations(),
 
-            // manipulations menu
-            (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu([
-                ...ravenConfig.hardManipulations,
-                ...(app.is_model_mode ? selectedProblem.manipulations : [])
-            ]),  // the identifier for which pipeline to edit
-
-            // peek
             app.peekInlineShown && this.peekTable(),
 
             m(`#main`, {
@@ -984,33 +488,35 @@ class Body {
             {title: "Links", url: devlinks_url},
             {title: "Logout", url: logout_url}];
 
-
-        let workspace = app.getSelectedWorkspace();
         let resultsProblem = app.getResultsProblem();
         let selectedProblem = app.getSelectedProblem();
 
-        let path = [
-            m(Popper, {
-                content: () => IS_D3M_DOMAIN && m(Table, {data: workspace.datasetDoc.about})
-            }, m('h4#dataName[style=display: inline-block; margin: .25em 1em]', app.selectedWorkspace || 'Dataset Name')),
-        ];
+        let createBreadcrumb = () => {
+            let path = [
+                m(Popper, {
+                    content: () => IS_D3M_DOMAIN && m(Table, {data: app.workspace.datasetDoc.about})
+                }, m('h4#dataName[style=display: inline-block; margin: .25em 1em]', app.workspace.d3m_config.name || 'Dataset Name')),
+            ];
 
-        let pathProblem = {
-            'model': selectedProblem, 'results': resultsProblem
-        }[app.currentMode];
+            let pathProblem = {
+                'model': selectedProblem, 'results': resultsProblem
+            }[app.currentMode];
 
-        if (pathProblem) path.push(m(Icon, {name: 'chevron-right'}), m(Popper, {
-            content: () => m(Table, {
+            if (pathProblem) path.push(m(Icon, {name: 'chevron-right'}), m(Popper, {
+                content: () => m(Table, {
                     data: {'targets': pathProblem.targets, 'predictors': pathProblem.predictors,'description': pathProblem.description}
                 })
-        }, m('h4[style=display: inline-block; margin: .25em 1em]', pathProblem.problemID)));
+            }, m('h4[style=display: inline-block; margin: .25em 1em]', pathProblem.problemID)));
 
-        let selectedSolutions = app.getSolutions(resultsProblem);
-        if (app.is_results_mode && selectedSolutions.length === 1 && selectedSolutions[0]) {
-            path.push(m(Icon, {name: 'chevron-right'}), m('h4[style=display: inline-block; margin: .25em 1em]', ({
-                'rook': solverRook, 'd3m': solverD3M
-            })[selectedSolutions[0].source].getName(pathProblem, selectedSolutions[0])))
-        }
+            let selectedSolutions = app.getSolutions(resultsProblem);
+            if (app.is_results_mode && selectedSolutions.length === 1 && selectedSolutions[0]) {
+                path.push(m(Icon, {name: 'chevron-right'}), m('h4[style=display: inline-block; margin: .25em 1em]', ({
+                    'rook': solverRook, 'd3m': solverD3M
+                })[selectedSolutions[0].source].getName(pathProblem, selectedSolutions[0])))
+            }
+
+            return path;
+        };
 
         return m(Header, {
                 image: '/static/images/TwoRavens.png',
@@ -1023,7 +529,7 @@ class Body {
             },
             m('div', {style: {'flex-grow': 1}}),
 
-            path,
+            app.workspace && createBreadcrumb(),
 
             m('div', {style: {'flex-grow': 1}}),
 
@@ -1083,7 +589,7 @@ class Body {
 
     peekTable() {
         let pipeline = [
-            ...app.getRavenConfig().hardManipulations,
+            ...app.workspace.raven_config.hardManipulations,
             ...(app.is_model_mode ? app.getSelectedProblem().manipulations : [])
         ];
         if (app.peekInlineShown && !app.peekData && !app.peekIsExhausted) app.resetPeek(pipeline);
@@ -1154,7 +660,7 @@ class Body {
             m("span", {"class": "footer-info-break"}, "|"),
             m("span", {"style": "color:#337ab7"}, `TA3 API: ${TA3TA2_API_VERSION}`),
             m("span", {"class": "footer-info-break"}, "|"),
-            m("span", {"class": "footer-info", "id": "user-workspace-id"}, '(ws)'),
+            m("span", {"class": "footer-info", "id": "user-workspace-id"}, app.workspace ? `(ws: ${app.workspace.user_workspace_id})` : '(ws)'),
             m("span", {"class": "footer-info-break"}, "|"),
 
             m(Button, {
@@ -1182,6 +688,508 @@ class Body {
                 }
             }, manipulate.totalSubsetRecords + ' Records')
         ]);
+    }
+
+    modals() {
+        return [
+            m(Modal),
+            app.alertsShown && m(ModalVanilla, {
+                id: 'alertsModal',
+                setDisplay: () => {
+                    app.alertsLastViewed.setTime(new Date().getTime());
+                    app.setAlertsShown(false)
+                }
+            }, [
+                m('h4[style=width:3em;display:inline-block]', 'Alerts'),
+                m(Button, {
+                    title: 'Clear Alerts',
+                    style: {display: 'inline-block', 'margin-right': '0.75em'},
+                    onclick: () => app.alerts.length = 0,
+                    disabled: app.alerts.length === 0
+                }, m(Icon, {name: 'check'})),
+                app.alerts.length === 0 && italicize('No alerts recorded.'),
+                app.alerts.length > 0 && m(Table, {
+                    data: [...app.alerts].reverse().map(alert => [
+                        alert.time > app.alertsLastViewed && m(Icon, {name: 'primitive-dot'}),
+                        m(`div[style=background:${app.hexToRgba({
+                            'log': common.menuColor,
+                            'warn': common.warnColor,
+                            'error': common.errorColor
+                        }[alert.type], .5)}]`, alert.time.toLocaleTimeString().replace(/([\d]+:[\d]{2})(:[\d]{2})(.*)/, "$1$3")),
+                        alert.description
+                    ]),
+                    attrsAll: {style: {'margin-top': '1em'}},
+                    tableTags: m('colgroup',
+                        m('col', {span: 1, width: '10px'}),
+                        m('col', {span: 1, width: '75px'}),
+                        m('col', {span: 1}))
+                })
+            ]),
+            app.workspace && m(ModalDatamart, {
+                preferences: app.datamartPreferences,
+                endpoint: app.datamartURL,
+                dataPath: app.workspace.datasetUrl
+            })
+        ]
+    }
+
+    leftpanel(mode) {
+
+        if (mode === 'manipulate')
+            return manipulate.leftpanel();
+
+        if (mode === 'results')
+            return results.leftpanel();
+
+        let ravenConfig = app.workspace.raven_config;
+        let selectedProblem = app.getSelectedProblem();
+
+        if (!ravenConfig) return;
+
+        let sections = [];
+
+        // VARIABLES TAB
+        if (selectedProblem) {
+            // base dataset variables, then transformed variables from the problem
+            let leftpanelVariables = Object.keys(app.variableSummaries);
+
+            // if no search string, match nothing
+            let matchedVariables = app.variableSearchText.length === 0 ? []
+                : leftpanelVariables.filter(variable => variable.toLowerCase().includes(app.variableSearchText)
+                    || (app.variableSummaries.label || "").toLowerCase().includes(app.variableSearchText));
+
+            // reorder leftpanel variables
+            leftpanelVariables = [
+                ...matchedVariables,
+                ...leftpanelVariables.filter(variable => !matchedVariables.includes(variable))
+            ];
+
+            let nominalVariables = app.getNominalVariables();
+
+            sections.push({
+                value: 'Variables',
+                title: 'Click variable name to add or remove the variable pebble from the modeling space.',
+                contents: app.is_model_mode && app.rightTab === 'Manipulate' && manipulate.constraintMenu
+                    ? manipulate.varList()
+                    : [
+                        m(TextField, {
+                            id: 'searchVar',
+                            placeholder: 'Search variables and labels',
+                            oninput: app.setVariableSearchText,
+                            onblur: app.setVariableSearchText,
+                            value: app.variableSearchText
+                        }),
+                        m(PanelList, {
+                            id: 'varList',
+                            items: leftpanelVariables,
+                            colors: {
+                                [app.hexToRgba(common.selVarColor)]: app.is_explore_mode ? selectedProblem.loose : exploreVariables,
+                                [app.hexToRgba(common.gr1Color, .25)]: selectedProblem.predictors,
+                                [app.hexToRgba(common.selVarColor, .5)]: selectedProblem.tags.loose,
+                                [app.hexToRgba(common.taggedColor)]: app.is_explore_mode ? [] : selectedProblem.targets
+                            },
+                            classes: {
+                                'item-dependent': app.is_explore_mode ? [] : selectedProblem.targets,
+                                'item-nominal': nominalVariables,
+                                'item-bordered': matchedVariables,
+                                'item-cross-section': selectedProblem.tags.crossSection,
+                                'item-time': selectedProblem.tags.time,
+                                'item-weight': selectedProblem.tags.weights
+                            },
+                            callback: x => {
+                                let selectedProblem = app.getSelectedProblem();
+
+                                if (selectedProblem.predictors.includes(x))
+                                    app.remove(selectedProblem.predictors, x);
+                                else if (selectedProblem.targets.includes(x))
+                                    app.remove(selectedProblem.targets, x);
+                                else if (selectedProblem.tags.loose.includes(x))
+                                    app.remove(selectedProblem.tags.loose, x);
+                                else selectedProblem.tags.loose.push(x);
+                            },
+                            popup: x => m('div', m('h4', 'Summary Statistics for ' + x), m(Table, {attrsAll: {class: 'table-sm'}, data: app.getVarSummary(app.variableSummaries[x])})),
+                            popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
+                        }),
+                        m(Button, {
+                            id: 'btnCreateVariable',
+                            style: {width: '100%', 'margin-top': '10px'},
+                            onclick: async () => {
+
+                                let problemPipeline = app.getSelectedProblem().manipulations;
+                                if ((problemPipeline[problemPipeline.length - 1] || {}).type !== 'transform') {
+                                    problemPipeline.push({
+                                        type: 'transform',
+                                        id: 'transform ' + problemPipeline.length,
+                                        transforms: [],
+                                        expansions: [],
+                                        binnings: [],
+                                        manual: []
+                                    })
+                                }
+                                app.setRightTab('Manipulate');
+                                manipulate.setConstraintMenu({
+                                    type: 'transform',
+                                    step: problemPipeline[problemPipeline.length - 1],
+                                    pipeline: problemPipeline
+                                });
+                                common.setPanelOpen('left');
+                                app.setLeftTab('Variables');
+                            }
+                        }, 'Create New Variable'),
+                    ]
+            })
+        }
+
+        // DISCOVERY TAB
+        let problems = ravenConfig.problems;
+
+        // let allMeaningful = Object.keys(problems).every(probID => problems[probID].meaningful);
+        // let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
+        //     onclick: m.withAttr("checked", app.setCheckedDiscoveryProblem),
+        //     checked: allMeaningful,
+        //     title: `mark ${allMeaningful ? 'no' : 'all'} problems as meaningful`
+        // });
+
+        let resultsProblems = Object.keys(ravenConfig.problems)
+            .filter(problemId => ravenConfig.problems[problemId].solved)
+            .map(problemId => ravenConfig.problems[problemId]);
+
+        let discoveryHeaders = [
+            'Name',
+            // m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
+            'User', 'Target', 'Predictors',
+            'Task',
+            Object.values(problems).some(prob => prob.subTask !== 'taskSubtypeUndefined') ? 'Subtask' : '',
+            'Metric', 'Manipulations'
+        ];
+
+        let formatProblem = problem => [
+            problem.problemID, // this is masked as the UID
+            problem.system === 'user' && m('div[title="user created problem"]', m(Icon, {name: 'person'})),
+            problem.targets.join(', '),
+            problem.predictors.join(', '),
+            problem.task,
+            problem.subTask === 'taskSubtypeUndefined' ? '' : problem.subTask, // ignore taskSubtypeUndefined
+            problem.metric,
+            m('',
+                problem.manipulations.length !== 0 && m(
+                'div[style=width:100%;text-align:center]', m(Button, {
+                    class: 'btn-sm',
+                    disabled: problem === selectedProblem && app.rightTab === 'Manipulate' && common.panelOpen['right'],
+                    title: `view manipulations for ${problem.problemID}`,
+                    onclick: () => {
+                        app.setRightTab('Manipulate');
+                        common.setPanelOpen('right');
+                    }
+                }, 'View'))
+            )
+        ];
+        sections.push({
+            value: 'Discover',
+            attrsInterface: {class: app.buttonClasses.btnDiscover}, // passed into button
+            contents: [
+                m('div#discoveryTablesContainer', {
+                        style: {
+                            height: '80%',
+                            overflow: 'auto',
+                            display: 'block',
+                            'margin-bottom': 0,
+                            'max-width': (window.innerWidth - 90) + 'px'
+                        }
+                    },
+                    selectedProblem && [
+                        m('h4.card-header.clearfix',
+                            m('div[style=height:50px;display:inline]', 'Current Problem'),
+                            m(Button, {
+                                id: 'btnSaveProblem',
+                                style: {float: 'right', margin: '-5px', 'margin-right': '22px'},
+                                class: 'btn-sm',
+                                onclick: () => {
+                                    let problemCopy = app.getProblemCopy(app.getSelectedProblem());
+                                    ravenConfig.problems[problemCopy.problemID] = problemCopy;
+                                }
+                            }, 'Save')),
+                        m(Table, {
+                            id: 'discoveryTableManipulations',
+                            headers: discoveryHeaders,
+                            data: [formatProblem(selectedProblem)],
+                            activeRow: ravenConfig.selectedProblem,
+                            // showUID: false,
+                            abbreviation: 40
+                        }),
+                        m('h4.card-header', 'All Problems')
+                    ],
+
+                    // all problems
+                    m(Table, {
+                        id: 'discoveryTable',
+                        headers: discoveryHeaders,
+                        data: [ // I would sort system via (a, b) => a.system === b.system ? 0 : a.system === 'user' ? -1 : 1, but javascript sort isn't stable
+                            ...Object.values(problems).filter(prob => prob.system === 'user' && !prob.solved),
+                            ...Object.values(problems).filter(prob => prob.system !== 'user' && !prob.solved)
+                        ].map(formatProblem),
+                        activeRow: ravenConfig.resultsProblem,
+                        onclick: problemID => {
+                            if (selectedProblem.problemID === problemID) return;
+                            delete problems[selectedProblem.problemID];
+                            let copiedProblem = app.getProblemCopy(problems[problemID]);
+                            problems[copiedProblem.problemID] = copiedProblem;
+                            app.setSelectedProblem(copiedProblem.problemID);
+                        },
+                        // showUID: false,
+                        abbreviation: 40,
+                        sortable: true
+                    }),
+                    // results problems
+                    resultsProblems.length > 0 && [
+                        m('h4.card-header', 'Results Problems'),
+                        m(Table, {
+                            id: 'resultsTable',
+                            headers: discoveryHeaders,
+                            data: resultsProblems.map(formatProblem),
+                            activeRow: ravenConfig.resultsProblem,
+                            onclick: problemID => {
+                                let resultsProblem = app.getResultsProblem();
+                                if (resultsProblem.problemID === problemID) return;
+                                app.setResultsProblem(problemID);
+                                app.set_mode('results');
+                            },
+                            // showUID: false,
+                            abbreviation: 40,
+                            sortable: true
+                        })
+                    ]
+                ),
+
+
+                selectedProblem && [
+                    m(TextField, {
+                        id: 'discoveryInput',
+                        textarea: true,
+                        style: {width: '100%', height: 'calc(20% - 60px)', overflow: 'auto'},
+                        value: selectedProblem.description || app.getDescription(selectedProblem), // description is autogenerated if not edited
+                        oninput: value => selectedProblem.description = value,
+                        onblur: value => selectedProblem.description = value
+                    }),
+                    m('div', {style: {display: 'inline-block', margin: '.75em'}},
+                        m('input[type=checkbox]', {
+                            onclick: m.withAttr("checked", checked => app.setCheckedDiscoveryProblem(checked, selectedProblem.problemID)),
+                            checked: selectedProblem.meaningful
+                        }), m('label[style=margin-left:1em]', `Mark ${selectedProblem.problemID} as meaningful`)),
+                    m(Button, {
+                        id: 'btnDelete',
+                        disabled: selectedProblem || selectedProblem.system === 'auto',
+                        style: 'float:right',
+                        onclick: () => setTimeout(() => app.deleteProblem(selectedProblem.problemID, version, 'id_000003'), 500),
+                        title: 'Delete the user created problem'
+                    }, 'Delete Problem')
+                ],
+                !app.is_explore_mode && m(ButtonLadda, {
+                    id: 'btnSubmitDisc',
+                    class: app.buttonClasses.btnSubmitDisc,
+                    activeLadda: app.buttonLadda.btnSubmitDisc,
+                    style: {float: 'right'},
+                    onclick: app.submitDiscProb,
+                    title: 'Submit all checked discovered problems'
+                }, 'Submit Disc. Probs.')
+            ]
+        });
+
+        return m(Panel, {
+            side: 'left',
+            label: 'Data Selection',
+            hover: app.is_model_mode && !manipulate.constraintMenu,
+            width: app.modelLeftPanelWidths[app.leftTab],
+            attrsAll: {
+                onclick: () => app.setFocusedPanel('left'),
+                style: {
+                    'z-index': 100 + (app.focusedPanel === 'left'),
+                    background: 'rgb(249, 249, 249, .8)',
+                    height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
+                }
+            }
+        }, m(MenuTabbed, {
+            id: 'leftpanelMenu',
+            attrsAll: {style: {height: 'calc(100% - 50px)'}},
+            currentTab: app.leftTab,
+            callback: app.setLeftTab,
+            sections: sections.concat([
+                {
+                    value: app.preprocessTabName,
+                    id: 'preprocessInfoTab',
+                    display: 'none',
+                    title: 'Data Log',
+                    contents: m(PreprocessInfo,{})
+                },
+                {
+                    value: 'Augment',
+                    contents: m(Datamart, {
+                        preferences: app.datamartPreferences,
+                        dataPath: ravenConfig.datasetUrl,
+                        endpoint: app.datamartURL,
+                        labelWidth: '10em'
+                    })
+                },
+                {
+                    value: 'Summary',
+                    title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
+                    display: 'none',
+                    contents: (app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble) && [
+                        m('center',
+                            m('b', app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble),
+                            m('br'),
+                            m('i', (app.variableSummaries[app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble] || {}).labl)),
+                        m(Table, {
+                            id: 'varSummaryTable',
+                            data: app.getVarSummary(app.variableSummaries[app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble])
+                        })
+                    ]
+                }
+            ])
+        }));
+    }
+
+    rightpanel(mode) {
+        if (mode === 'results') return; // returns undefined, which mithril ignores
+        if (mode === 'explore') return;
+        if (mode === 'manipulate') return manipulate.rightpanel();
+
+        // mode == null (model mode)
+
+        let sections = [];
+
+        let ravenConfig = app.workspace.raven_config;
+        let selectedProblem = app.getSelectedProblem();
+
+        if (!ravenConfig) return;
+
+        // PROBLEM TAB
+        selectedProblem && sections.push({
+            value: 'Problem',
+            idSuffix: 'Type',
+            contents: [
+                m(`button#btnLock.btn.btn-default`, {
+                    class: app.lockToggle ? 'active' : '',
+                    onclick: () => app.setLockToggle(!app.lockToggle),
+                    title: 'Lock selection of problem description',
+                    style: 'float: right',
+                }, m(Icon, {name: app.lockToggle ? 'lock' : 'pencil'})),
+                m('', {style: 'float: left'},
+                    m(Dropdown, {
+                        id: 'taskType',
+                        items: Object.keys(app.d3mTaskType),
+                        activeItem: selectedProblem.task,
+                        onclickChild: child => {
+                            selectedProblem.task = child;
+                            // will trigger the call to solver, if a menu that needs that info is shown
+                            app.setSolverPending(true);
+                        },
+                        style: {'margin-bottom': '1em'},
+                        disabled: app.lockToggle
+                    }),
+                    m(Dropdown, {
+                        id: 'taskSubType',
+                        items: Object.keys(app.d3mTaskSubtype),
+                        activeItem: selectedProblem.subTask,
+                        onclickChild: child => {
+                            selectedProblem.subTask = child;
+                            // will trigger the call to solver, if a menu that needs that info is shown
+                            app.setSolverPending(true);
+                        },
+                        style: {'margin-bottom': '1em'},
+                        disabled: app.lockToggle
+                    }),
+                    m(Dropdown, {
+                        id: 'performanceMetrics',
+                        items: Object.keys(app.d3mMetrics),
+                        activeItem: selectedProblem.metric,
+                        onclickChild: child => {
+                            selectedProblem.metric = child;
+                            // will trigger the call to solver, if a menu that needs that info is shown
+                            app.setSolverPending(true);
+                        },
+                        style: {'margin-bottom': '1em'},
+                        disabled: app.lockToggle
+                    })
+                )
+            ]
+        });
+
+        // MANIPULATE TAB
+        selectedProblem && sections.push({
+            value: 'Manipulate',
+            title: 'Apply transformations and subsets to a problem',
+            contents: m(MenuHeaders, {
+                id: 'aggregateMenu',
+                attrsAll: {style: {height: '100%', overflow: 'auto'}},
+                sections: [
+                    ravenConfig.hardManipulations.length !== 0 && {
+                        value: 'Dataset Pipeline',
+                        contents: m(manipulate.PipelineFlowchart, {
+                            compoundPipeline: ravenConfig.hardManipulations,
+                            pipeline: ravenConfig.hardManipulations,
+                            editable: false
+                        })
+                    },
+                    {
+                        value: 'Problem Pipeline',
+                        contents: [
+                            m(manipulate.PipelineFlowchart, {
+                                compoundPipeline: [
+                                    ...ravenConfig.hardManipulations,
+                                    ...selectedProblem.manipulations
+                                ],
+                                pipeline: selectedProblem.manipulations,
+                                editable: true,
+                                aggregate: false
+                            }),
+                            selectedProblem.tags.nominal.length > 0 && m(Flowchart, {
+                                attrsAll: {style: {height: 'calc(100% - 87px)', overflow: 'auto'}},
+                                labelWidth: '5em',
+                                steps: [{
+                                    key: 'Nominal',
+                                    color: common.nomColor,
+                                    content: m('div', {style: {'text-align': 'left'}},
+                                        m(ListTags, {
+                                            tags: selectedProblem.tags.nominal,
+                                            ondelete: name => app.remove(selectedProblem.tags.nominal, name)
+                                        }))
+                                }]
+                            })
+                        ]
+                    },
+                ]
+            })
+        });
+
+        return m(Panel, {
+                side: 'right',
+                label: 'Model Selection',
+                hover: true,
+                width: app.modelRightPanelWidths[app.rightTab],
+                attrsAll: {
+                    onclick: () => app.setFocusedPanel('right'),
+                    style: {
+                        'z-index': 100 + (app.focusedPanel === 'right'),
+                        height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`,
+                    }
+                }
+            },
+            sections.length > 0 && m(MenuTabbed, {
+                id: 'rightpanelMenu',
+                currentTab: app.rightTab,
+                callback: app.setRightTab,
+                sections,
+                attrsAll: {style: {height: 'calc(100% - 50px)'}}
+            })
+        );
+    }
+
+    manipulations() {
+        return (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu([
+            ...app.workspace.raven_config.hardManipulations,
+            ...(app.is_model_mode ? selectedProblem.manipulations : [])
+        ])  // the identifier for which pipeline to edit
     }
 }
 
@@ -1212,14 +1220,14 @@ let standaloneDatamart = () => {
         m('div', {style: {margin: 'auto', 'margin-top': '1em', 'max-width': '1000px'}},
             m(Datamart, {
                 preferences: app.datamartPreferences,
-                dataPath: selectedWorkspace.datasetUrl,
+                dataPath: app.workspace.datasetUrl,
                 endpoint: app.datamartURL,
                 labelWidth: '10em'
             })),
         m(ModalDatamart, {
             preferences: app.datamartPreferences,
             endpoint: app.datamartURL,
-            dataPath: selectedWorkspace.datasetUrl
+            dataPath: app.workspace.datasetUrl
         })
     ]
 };

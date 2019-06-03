@@ -46,12 +46,16 @@ export function makePipelineTemplate(problem) {
     let outputs = [];
     let steps = [];
 
-    // if (problem) {
-    //     inputs = [{name: "dataset"}];
-    //     outputs = [{name: "dataset", data: "produce"}];
-    //     // write the primitive object to remove columns, then generic step to be filled in
-    //     steps = [primitiveStepRemoveColumns(problem), placeholderStep()];
-    // }
+    if (problem) {
+        inputs = [{name: "dataset"}];
+        outputs = [{name: "dataset", data: "produce"}];
+        // TODO: debug primitive calls
+        steps = [
+            ...buildPipeline(problem.manipulations),
+            primitiveStepRemoveColumns(problem),
+            placeholderStep()
+        ];
+    }
     return {inputs, outputs, steps};
 
     // example template: leave here for reference
