@@ -32,6 +32,9 @@ import Icon from "../../common/views/Icon";
 
 export function menu(compoundPipeline) {
 
+    console.warn("#debug compoundPipeline");
+    console.log(compoundPipeline);
+
     return [
         // stage button
         constraintMenu && [
@@ -351,7 +354,7 @@ export class PipelineFlowchart {
                                         common.setPanelOpen('left');
                                     }
                                 }, plus, ' Constraint'),
-                                m(Button, {
+                                !IS_D3M_DOMAIN && m(Button, {
                                     id: 'btnAddGroup',
                                     class: ['btn-sm'],
                                     style: {margin: '0.5em'},
@@ -444,7 +447,8 @@ export class PipelineFlowchart {
                 })
             }),
             editable && [
-                m(Button, {
+                // D3M primitives don't support transforms
+                !IS_D3M_DOMAIN && m(Button, {
                     id: 'btnAddTransform',
                     title: 'construct new columns',
                     disabled: !isEnabled(),
@@ -473,7 +477,8 @@ export class PipelineFlowchart {
                         queryId: 1
                     })
                 }, plus, ' Subset Step'),
-                aggregate !== false && m(Button, {
+                // D3M primitives don't support aggregations
+                !IS_D3M_DOMAIN && aggregate !== false && m(Button, {
                     id: 'btnAddAggregate',
                     title: 'group rows that match criteria',
                     disabled: !isEnabled(),

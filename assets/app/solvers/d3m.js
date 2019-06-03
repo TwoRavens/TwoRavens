@@ -60,16 +60,16 @@ export function GRPC_PipelineDescription(problem) {
     let outputs = [];
     let steps = [];
 
-    // if (problem) {
-    //     inputs = [{name: "dataset"}];
-    //     outputs = [{name: "dataset", data: "produce"}];
-    //     // TODO: debug primitive calls
-    //     steps = [
-    //         ...buildPipeline(problem.manipulations),
-    //         primitiveStepRemoveColumns(problem),
-    //         placeholderStep()
-    //     ];
-    // }
+    if (problem) {
+        inputs = [{name: "dataset"}];
+        outputs = [{name: "dataset", data: "produce"}];
+        // TODO: debug primitive calls
+        steps = [
+            // ...buildPipeline(problem.manipulations),
+            primitiveStepRemoveColumns(problem),
+            placeholderStep()
+        ];
+    }
     return {inputs, outputs, steps};
 
     // example template: leave here for reference
@@ -239,6 +239,72 @@ function primitiveStepRemoveColumns(problem) {
     };
 }
 
+// construct a d3m primitives pipeline from the manipulations
+function buildPipeline(manipulations) {
+    return manipulations
+    // only subset and impute have d3m primitives
+        .filter(step => ['subset', 'impute'].includes(step.type))
+        // expand abstract steps into a primitive pipeline
+        .reduce((out, step) => [...out, ...({
+            subset: primitiveStepSubset,
+            impute: primitiveStepImputation
+        })[step.type](step)], [])
+}
+
+function primitiveStepSubset(abstractStep) {
+    let primitiveContinuous= {
+        "id": "8c246c78-3082-4ec9-844e-5c98fcc76f9d",
+        "version": "0.1.0",
+        "python_path": "d3m.primitives.data_preprocessing.numeric_range_filter.DataFrameCommon",
+        "name": "Numeric range filter",
+        "digest": "4900597ee5ad1c5401979b8f047d083fe01d0336a54f27e95e9258e637c54350"
+    };
+
+    let primitiveDiscrete = {
+        "id": "a6b27300-4625-41a9-9e91-b4338bfc219b",
+        "version": "0.1.0",
+        "name": "Term list dataset filter",
+        "python_path": "d3m.primitives.data_preprocessing.term_filter.DataFrameCommon",
+        "digest": "f24a0a0f5133a21d90eeaeddb7ebb85c5651df16d66f310a257d2e2918274d29"
+    };
+
+    let columns = Object.keys(app.variableSummaries);
+
+    return abstractStep.abstractQuery.map(constraint => {
+        let hyperparams;
+
+        if (constraint.subset === 'discrete') hyperparams = {
+            column: columns.indexOf(constraint.column),
+            inclusive: constraint.negate === 'false',
+            min: (constraint.children.find(child => 'fromLabel' in child) || {}).fromLabel,
+            max: (constraint.children.find(child => 'toLabel' in child) || {}).toLabel,
+        };
+        if (constraint.subset === 'continuous') hyperparams = {
+            column: columns.indexOf(constraint.column),
+            inclusive: constraint.negate === 'false',
+            terms: constraint.children.map(child => child.value),
+            match_whole: true
+        };
+
+        return {
+            primitive: {
+                primitive: {
+                    continuous: primitiveContinuous,
+                    discrete: primitiveDiscrete
+                }[constraint.subset],
+                arguments: {inputs: {container: {data: "inputs.0"}}},
+                outputs: [{id: "produce"}],
+                hyperparams,
+                users: []
+            }
+        }
+    });
+}
+
+function primitiveStepImputation(abstractStep) {
+    // noop until a recoding/imputer primitive is found
+    return [];
+}
 
 // ------------------------------------------
 //      create search request
@@ -372,7 +438,6 @@ export function GRPC_ScoreSolutionRequest(problem, datasetDocUrl) {
 // ------------------------------------------
 //      websocket response handlers
 // ------------------------------------------
-
 /**
  Handle a websocket sent GetSearchSolutionResultsResponse
  wrapped in a StoredResponse object

@@ -57,8 +57,8 @@ export let renderNodeFactory = callbacks => (datum, data) => m('div', {
         oncreate({dom}) {dom.style.border = '3px solid transparent'}
     },
     datum.editable !== false ? [
-        // logical button
-        data.indexOf(datum) !== 0 && datum.show_op !== false && m(Button, {
+        // logical button (d3m doesn't support and/or?)
+        !IS_D3M_DOMAIN && data.indexOf(datum) !== 0 && datum.show_op !== false && m(Button, {
             'class': 'btn-xs',
             style: 'margin:1px',
             onclick: callbacks.logical && (() => callbacks.logical(datum, data))
