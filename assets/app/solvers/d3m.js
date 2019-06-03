@@ -242,7 +242,7 @@ function primitiveStepRemoveColumns(problem) {
 // construct a d3m primitives pipeline from the manipulations
 function buildPipeline(manipulations) {
     return manipulations
-    // only subset and impute have d3m primitives
+        // only subset and impute have d3m primitives
         .filter(step => ['subset', 'impute'].includes(step.type))
         // expand abstract steps into a primitive pipeline
         .reduce((out, step) => [...out, ...({
@@ -438,6 +438,7 @@ export function GRPC_ScoreSolutionRequest(problem, datasetDocUrl) {
 // ------------------------------------------
 //      websocket response handlers
 // ------------------------------------------
+
 /**
  Handle a websocket sent GetSearchSolutionResultsResponse
  wrapped in a StoredResponse object
