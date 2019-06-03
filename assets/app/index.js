@@ -665,6 +665,34 @@ class Body {
 
         return m('main',
             m(Modal),
+            // Modal component for saving a workspace with
+            //  a new name
+            //
+            app.isSaveNameModelOpen && m(ModalVanilla, {
+                id: "modalNewWorkspacename",
+                setDisplay: () => {
+                  app.setSaveNameModalOpen(false);
+                },
+              },
+              [
+                m('div', {'class': 'row'},
+                  m('div', {'class': 'col-md'},
+                    'Please enter a new workspace name.')
+                ),
+                m(TextField, {
+                  id: 'newNameModal',
+                  placeholder: 'New Workspace Name',
+                  oninput: app.setNewWorkspaceName,
+                  onblur: app.setNewWorkspaceName,
+                  value: app.newWorkspaceName
+                }),
+                m(Button, {
+                  id: 'btnSaveAsNewWorkspace',
+                  class: 'btn-sm',
+                  onclick: _ => console.log('bleh-save')},
+                  'Save'),
+              ]
+            ),
             app.alertsShown && m(ModalVanilla, {
                 id: 'alertsModal',
                 setDisplay: () => {

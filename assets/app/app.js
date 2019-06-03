@@ -946,9 +946,10 @@ let loadWorkspace = async workspace => {
      */
     console.log('---------------------------------------');
     console.log("-- Workspace: 4. Create 'raven_config' if undefined --");
+
     if (workspace.raven_config){
-      console.log('workspace.raven_config found! ' + workspace.user_workspace_id);
-      console.log('exiting create raven_config (was running into render errs here)')
+      // An existing raven_config was found, redraw the workspace
+      m.redraw();
       return;
     }
 
@@ -2480,6 +2481,7 @@ export let setSelectedWorkspace = workspaceId => {
 
 export let getSelectedWorkspace = () => workspaces[selectedWorkspace];
 
+
 /*
  *  saveUserWorkspace() save the current
  *  ravens_config data to the user workspace.
@@ -2487,7 +2489,6 @@ export let getSelectedWorkspace = () => workspaces[selectedWorkspace];
  */
 export let saveUserWorkspace = () => {
   console.log('-- saveUserWorkspace --');
-  console.log('NOTE: step of loading from a saved raven_config needs work')
 
   let workspace_info = getSelectedWorkspace();
   if(!('user_workspace_id' in workspace_info)) {
@@ -2518,6 +2519,15 @@ export let saveUserWorkspace = () => {
  */
 
 
+export let isSaveNameModelOpen = false;
+export let newWorkspaceName = '';
+export let setNewWorkspaceName = (newName) => newWorkspaceName = newName;
+export let getNewWorkspaceName = () => { return newWorkspaceName; };
+
+export let setSaveNameModalOpen = (boolVal) => isSaveNameModelOpen = boolVal;
+
+// set Modal
+
  /*
   *  saveAsNewWorkspace() save the current
   *  workspace as new one, with a new name.
@@ -2535,6 +2545,8 @@ export let saveUserWorkspace = () => {
    }
 
    let raven_config_save_url = '/user-workspaces/raven-configs/json/save-as-new/' + workspace_info.user_workspace_id;
+
+   isSaveNameModelOpen = true;
 
    // placeholder name, will be user entered
    //

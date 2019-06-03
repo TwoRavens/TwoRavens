@@ -1,3 +1,4 @@
+import re
 from django.shortcuts import render
 
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
@@ -60,7 +61,8 @@ def save_raven_config_as_new_workspace(request, workspace_id):
     # Check for the 'new_workspace_name' key
     #   and make sure it's not a duplicate
     #
-    if not uw_static.KEY_NEW_WORKSPACE_NAME in update_dict:
+    if (not uw_static.KEY_NEW_WORKSPACE_NAME in update_dict) or \
+        (not update_dict[uw_static.KEY_NEW_WORKSPACE_NAME]):
         user_msg = (f'The workspace could not be saved.'
                     f' (The update information did not contain a'
                     f' "{uw_static.KEY_NEW_WORKSPACE_NAME}" key)')
@@ -68,7 +70,19 @@ def save_raven_config_as_new_workspace(request, workspace_id):
         print('user_msg', user_msg)
         return JsonResponse(get_json_error(user_msg))
 
-    new_workspace_name = update_dict[uw_static.KEY_NEW_WORKSPACE_NAME]
+    new_workspace_name = update_dict[uw_static.KEY_NEW_WORKSPACE_NAME].strip()
+    fmt_workspace_name = re.sub(r"[^a-zA-Z0-9 _\-]+", '', new_workspace_name)
+
+    if new_workspace_name != fmt_workspace_name:
+        user_msg = (f'The workspace name can only use letters,'
+                    f' hyphens, or underscores.  You used "{new_workspace_name}"'
+                    f' corrected: {fmt_workspace_name}')
+        return JsonResponse(get_json_error(user_msg))
+
+    if len(new_workspace_name) < 6:
+        user_msg = (f'The workspace name must be at least 6 characters long.')
+        return JsonResponse(get_json_error(user_msg))
+
 
     if is_existing_workspace_name(user_workspace.user, new_workspace_name):
         user_msg = (f'The workspace name "{new_workspace_name}" is'
