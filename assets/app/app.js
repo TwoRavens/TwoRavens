@@ -292,7 +292,7 @@ export let buildDatasetPreprocess = async ravenConfig => await getData({
     url: ROOK_SVC_URL + 'preprocessapp',
     data: {
         data: url,
-        datastub: app.workspace.d3m_config.name
+        datastub: workspace.d3m_config.name
     }
 }));
 
@@ -316,7 +316,7 @@ export let buildProblemPreprocess = async (ravenConfig, problem) => problem.mani
         url: ROOK_SVC_URL + 'preprocessapp',
         data: {
             data: url,
-            datastub: app.workspace.d3m_config.name
+            datastub: workspace.d3m_config.name
         }
     })).then(response => {
         if (!response.success) alertError(response.message);
@@ -949,23 +949,24 @@ let loadWorkspace = async newWorkspace => {
     if (newWorkspace.raven_config) {
         console.log('workspace.raven_config found! ' + newWorkspace.user_workspace_id);
         console.log('exiting create raven_config (was running into render errs here)')
-        m.redraw;
-        return;
+        m.redraw();
+        return true;
     }
 
     newWorkspace.raven_config = {
-          ravenConfigVersion: RAVEN_CONFIG_VERSION,
-          hardManipulations: [],
-          problems: {},
-          tags: {
-              transformed: [],
-              weights: [], // only one variable can be a weight
-              crossSection: [],
-              time: [],
-              nominal: [],
-              loose: [] // variables displayed in the force diagram, but not in any groups
-          }
-      }
+        problemCount: 0, // used for generating new problem ID's
+        ravenConfigVersion: RAVEN_CONFIG_VERSION,
+        hardManipulations: [],
+        problems: {},
+        tags: {
+            transformed: [],
+            weights: [], // only one variable can be a weight
+            crossSection: [],
+            time: [],
+            nominal: [],
+            loose: [] // variables displayed in the force diagram, but not in any groups
+        }
+    }
 
 
     /**
@@ -1171,6 +1172,9 @@ async function load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3m
       // alertError('Failed to load workspace');
       return;
     }
+
+    console.warn("#debug workspace");
+    console.log(workspace);
     // m.redraw();
 
     // /**
@@ -1715,7 +1719,7 @@ function CreateProblemDefinition(problem) {
 
     let inputSpec =  [
         {
-            datasetId: app.workspace.d3m_config.name,
+            datasetId: workspace.d3m_config.name,
             targets: problem.targets.map((target, resourceId) => ({
                 resourceId: resourceIdFromProblemDoc,
                 columnIndex: Object.keys(variableSummaries).indexOf(target),  // Adjusted to match dataset doc
@@ -2370,7 +2374,7 @@ export function discovery(problems) {
                 rook: undefined
             },
             tags: {
-                transformed: manipulate.getTransformVariables(manips), // this is used when updating manipulations pipeline
+                transformed: [...manipulate.getTransformVariables(manips)], // this is used when updating manipulations pipeline
                 weights: [], // singleton list
                 crossSection: [],
                 time: [],
@@ -2586,7 +2590,7 @@ export function setSelectedProblem(problemID) {
 }
 
 export function setResultsProblem(problemID) {
-    getRavenConfig().resultsProblem = problemID;
+    workspace.raven_config.resultsProblem = problemID;
 }
 
 export function getProblemCopy(problemSource) {
@@ -2879,8 +2883,7 @@ export function formatPrecision(value, precision=4) {
     return (digits <= precision || precision === 0) ? numeric : numeric.toPrecision(precision) * 1
 }
 
-let problemCount = 0;
-let generateProblemID = () => 'problem ' + problemCount++;
+let generateProblemID = () => 'problem ' + workspace.raven_config.problemCount++;
 
 // generate a number from text (cheap hash)
 let generateID = text => Array.from({length: text.length})
