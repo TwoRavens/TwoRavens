@@ -62,13 +62,16 @@ export function GRPC_PipelineDescription(problem) {
 
     if (problem) {
         inputs = [{name: "dataset"}];
-        outputs = [{name: "dataset", data: "produce"}];
         // TODO: debug primitive calls
         steps = [
-            // ...buildPipeline(problem.manipulations),
+            ...buildPipeline(problem.manipulations),
             primitiveStepRemoveColumns(problem),
             placeholderStep()
         ];
+        outputs = [{
+            name: "dataset",
+            data: `steps.${steps.length - 1}.produce`
+        }];
     }
     return {inputs, outputs, steps};
 
@@ -242,7 +245,7 @@ function primitiveStepRemoveColumns(problem) {
 // construct a d3m primitives pipeline from the manipulations
 function buildPipeline(manipulations) {
     return manipulations
-        // only subset and impute have d3m primitives
+    // only subset and impute have d3m primitives
         .filter(step => ['subset', 'impute'].includes(step.type))
         // expand abstract steps into a primitive pipeline
         .reduce((out, step) => [...out, ...({
@@ -273,14 +276,14 @@ function primitiveStepSubset(abstractStep) {
     return abstractStep.abstractQuery.map(constraint => {
         let hyperparams;
 
-        if (constraint.subset === 'discrete') hyperparams = {
+        if (constraint.subset === 'continuous') hyperparams = {
             column: columns.indexOf(constraint.column),
             inclusive: constraint.negate === 'false',
             min: (constraint.children.find(child => 'fromLabel' in child) || {}).fromLabel,
             max: (constraint.children.find(child => 'toLabel' in child) || {}).toLabel,
         };
-        if (constraint.subset === 'continuous') hyperparams = {
-            column: columns.indexOf(constraint.column),
+        if (constraint.subset === 'discrete') hyperparams = {
+            column: {int64: columns.indexOf(constraint.column)},
             inclusive: constraint.negate === 'false',
             terms: constraint.children.map(child => child.value),
             match_whole: true
