@@ -534,6 +534,8 @@ class Body {
 
             m('div', {style: {'flex-grow': 1}}),
 
+
+
             currentMode === 'results' && resultsProblem && Object.keys(resultsProblem.solutions.d3m).length > 0 && m(Button, {
                 id: 'btnEndSession',
                 class: 'ladda-label ladda-button',
@@ -650,27 +652,45 @@ class Body {
                 m(Button, {id: 'btnTA2', class: 'btn-sm', onclick: _ => app.helpmaterials('video')}, 'Video ', m(Icon, {name: 'file-media'})),
                 m(Button, {id: 'btnTA2', class: 'btn-sm', onclick: _ => app.helpmaterials('manual')}, 'Manual ', m(Icon, {name: 'file-pdf'})),
 
-                m(Button, {id: 'btnSaveWorkspace', class: 'btn-sm', onclick: _ => app.saveUserWorkspace()}, 'Save ', m(Icon, {name: 'thumbsup'})),
+                m(Button, {
+                    id: 'btnAPIInfoWindow',
+                    class: 'btn-sm',
+                    // class: `btn-sm ${app.isAPIInfoWindowOpen ? 'active' : ''}`,
+                    onclick: _ => app.setAPIInfoWindowOpen(true),
+                    //style: `background-color: ${app.isAPIInfoWindowOpen ? common.selVarColor : '#fcfcfc'}`,
+                  },
+                    'API Info'
+                  ),
 
-                m(Button, {id: 'btnSaveAsNewWorkspace', class: 'btn-sm', onclick: _ => app.setSaveNameModalOpen(true)}, 'Save As New ', m(Icon, {name: 'thumbsup'}))),
+                m("span", {"class": "footer-info footer-info-break"}, ''),
 
-            m("span", {"class": "footer-info-break"}, "|"),
-            m("a", {"href" : "/dev-raven-links", "target": "=_blank"}, "raven-links"),
-            m("span", {"class": "footer-info-break"}, "|"),
-            m("span", {"class": "footer-info", "id": "ta2-server-name"}, `TA2: ${TA2_SERVER}`),
-            m("span", {"class": "footer-info-break"}, "|"),
-            m("span", {"style": "color:#337ab7"}, `TA3 API: ${TA3TA2_API_VERSION}`),
-            m("span", {"class": "footer-info-break"}, "|"),
-            m("span", {"class": "footer-info", "id": "user-workspace-id"}, app.workspace ? `(ws: ${app.workspace.user_workspace_id})` : '(ws)'),
-            m("span", {"class": "footer-info-break"}, "|"),
+                m(Button, {id: 'btnSaveWorkspace', class: 'btn-sm', onclick: _ => app.saveUserWorkspace()}, 'Save '),
 
-            m(Button, {
-                style: {'margin': '8px'},
-                title: 'alerts',
-                class: ['btn-sm'],
-                onclick: () => app.setAlertsShown(true)
-            }, m(Icon, {name: 'bell', style: `color: ${app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}`})),
+                m(Button, {
+                  id: 'btnSaveAsNewWorkspace',
+                  class: 'btn-sm',
+                  onclick: _ => app.setSaveNameModalOpen(true)},
+                  'Save As New ',
+                  //m(Icon, {name: 'thumbsup'})
+                ),
+
+                  m(Button, {
+                      style: {'margin': '8px'},
+                      title: 'alerts',
+                      class: ['btn-sm'],
+                      onclick: () => app.setAlertsShown(true)
+                  }, m(Icon, {name: 'bell', style: `color: ${app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}`})),
+              ),
+
+            // m("span", {"class": "footer-info-break"}, "|"),
+            // m("a", {"href" : "/dev-raven-links", "target": "=_blank"}, "raven-links"),
+            m("span", {"class": "footer-info footer-info-break", "id": "user-workspace-id"},
+              app.workspace ? `(ws: ${app.workspace.user_workspace_id})` : '(ws ?)'),
+
+
             m('div.btn.btn-group', {style: 'float: right; padding: 0px;margin:5px'},
+
+
                 // m(Button, {
                 //     class: 'btn-sm',
                 //     onclick: app.downloadPeek
@@ -741,6 +761,43 @@ class Body {
                 dataPath: app.workspace.datasetUrl
             }),
             /*
+             * Show basic API and Workspace Info
+             */
+            app.isAPIInfoWindowOpen && m(ModalVanilla, {
+                id: "modalAPIInfo",
+                setDisplay: () => {
+                  app.setAPIInfoWindowOpen(false);
+                },
+              },
+              m('div', {'class': 'row'},
+                m('div', {'class': 'col-sm'},
+                  [
+                    m('h3', {}, 'Basic Information'),
+                    m('hr'),
+                    m('p', [
+                        m('b', 'Workspace Id: '),
+                        m('span',
+                        (app.workspace.user_workspace_id !== undefined) ? app.workspace.user_workspace_id : '(unknown)')
+                      ]),
+                      m('p', [
+                          m('b', 'Workspace Name: '),
+                          m('span',
+                          (app.workspace.name !== undefined) ? app.workspace.name : '(not set)')
+                        ]),
+                    m('hr'),
+                    m('p', [
+                        m('b', 'TA2: '),
+                        m('span', app.TA2ServerInfo)
+                      ]),
+                    m('p', [
+                        m('b', 'TA3 API: '),
+                        m('span', `${TA3TA2_API_VERSION}`)
+                      ]),
+                  ]
+                )
+              )
+            ),
+            /*
              * Save as new workspace modal.
              *  - prompt user for new workspace name
              */
@@ -755,6 +812,8 @@ class Body {
                     [
                       m('h3', {}, 'Save as a New Workspace.'),
                       m('p', {}, 'Please enter a new workspace name.'),
+
+                      // Text field to enter new workspace name
                       m(TextField, {
                         id: 'newNameModal',
                         placeholder: 'New Workspace Name',
@@ -762,29 +821,46 @@ class Body {
                         onblur: app.setNewWorkspaceName,
                         value: app.newWorkspaceName
                       }),
+
+                      // Display user messages
                       m('div', {
-                          id: 'newNameErrMsg',
-                          class: 'text-danger',
+                          id: 'newNameMessage',
                           style: 'padding:20px 0;'
                         },
                         app.getnewWorkspaceMessage()
                       ),
-                  m('div', {'class': 'row'},
+
+                  // Button Row
+                  m('div', {
+                      id: 'rowSaveWorkspaceButtons',
+                      class: 'row'
+                    },
                     m('div', {'class': 'col-sm'},
+
+                      // Cancel button
                       m(ButtonPlain, {
                         id: 'btnModalCancelSaveAsNewWorkspace',
                         class: 'btn-sm btn-secondary',
-                        style: 'margin-right:15px;',
-                        onclick: _ => {app.setSaveNameModalOpen(false);},
+                        style: 'margin-right: 15px;',
+                        onclick: _ => {
+                          app.setNewWorkspaceName('');
+                          app.setSaveNameModalOpen(false);},
                         },
                         'Cancel'),
+
+                      // Save Button
                       m(ButtonPlain, {
                         id: 'btnModalSaveAsNewWorkspace',
                         class: 'btn-sm btn-primary',
                         onclick: _ => {
-                          console.log('do save, error check, etc');
+                          console.log('save clicked...');
+
                           // clear any error messages
-                          app.setNewWorkspaceMessageSuccess('')
+                          app.setNewWorkspaceMessageSuccess('Attempting to save...')
+
+                          // hide this button
+                          app.testVisible = false;
+
                           // attempt to save the name
                           app.saveAsNewWorkspace();
                           },
@@ -792,9 +868,12 @@ class Body {
                         'Save'),
                     )
                   )
-                    ]),
-              )
-            ),
+              /*
+               * END: Save as new workspace modal.
+               */
+              ]),
+            )
+          ),
         ]
     }
 

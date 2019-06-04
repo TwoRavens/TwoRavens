@@ -86,6 +86,10 @@ export let setPeekInlineIsResizing = state => peekInlineIsResizing = state;
 export let peekInlineShown = false;
 export let setPeekInlineShown = state => peekInlineShown = state;
 
+// TA2 server information for display in modal
+export let TA2ServerInfo = (TA2_SERVER !== undefined ) ? TA2_SERVER : '(TA2 unknown)';
+export let setTA2ServerInfo = (infoStr) => TA2ServerInfo = infoStr;
+
 export async function resetPeek(pipeline) {
     peekData = undefined;
     peekSkip = 0;
@@ -1226,6 +1230,7 @@ async function load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3m
             if (ta2Version){
               ta2Name += ' (API: ' + ta2Version + ')';
             }
+            setTA2ServerInfo(ta2Name);
             $('#ta2-server-name').html('TA2: ' + ta2Name);
 
         }
@@ -2459,26 +2464,40 @@ export let saveUserWorkspace = () => {
  * END: saveUserWorkspace
  */
 
+ /*
+ *  Variables related to API info window
+ */
+export let isAPIInfoWindowOpen = false;
+// Open/close modal window
+export let setAPIInfoWindowOpen = (boolVal) => isAPIInfoWindowOpen = boolVal;
 
+
+/*
+*  Variables related to saving a new user workspace
+*/
+
+// Name of Modal window
 export let isSaveNameModelOpen = false;
+
+// Open/close modal window
 export let setSaveNameModalOpen = (boolVal) => isSaveNameModelOpen = boolVal;
 
+// set/get new workspace name
 export let newWorkspaceName = '';
 export let setNewWorkspaceName = (newName) => newWorkspaceName = newName;
 export let getNewWorkspaceName = () => { return newWorkspaceName; };
 
+// set/get user messages for new workspace
 export let newWorkspaceMessage = '';
-
+// success message
 export let setNewWorkspaceMessageSuccess = (errMsg) => {
   newWorkspaceMessage = m('p', {class: 'text-success'}, errMsg);
 }
+// error message
 export let setNewWorkspaceMessageError = (errMsg) => {
   newWorkspaceMessage = m('p', {class: 'text-danger'}, errMsg);
 }
-
 export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
-
-// set Modal
 
  /*
   *  saveAsNewWorkspace() save the current
@@ -2488,31 +2507,28 @@ export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
  export async function saveAsNewWorkspace(){
    console.log('-- saveAsNewWorkspace --');
 
-   /*return {
-           success: false,
-           message: 'Cannot save the workspace. The workspace' +
-                    ' id was not found. (saveAsNewWorkspace)'
-          };*/
+   // get the current workspace id
    if(!('user_workspace_id' in workspace)) {
      return {
              success: false,
              message: 'Cannot save the workspace. The workspace' +
                       ' id was not found. (saveAsNewWorkspace)'
             };
-     //alertError('Cannot save the workspace. The workspace id was not found. (saveAsNewWorkspace)');
-     //return;
    }
 
-   let raven_config_save_url = '/user-workspaces/raven-configs/json/save-as-new/' + workspace.user_workspace_id;
-
-   isSaveNameModelOpen = true;
-
-   // placeholder name, will be user entered
-   //
+   // new workspace name
    // let new_workspace_name = 'new_ws_' + Math.random().toString(36).substring(7);
    let new_workspace_name = getNewWorkspaceName();
 
+   if (!new_workspace_name){
+     setNewWorkspaceMessageError('Please enter a new workspace name.');
+     return;
+   }
+
    console.log('new_workspace_name: ' + new_workspace_name);
+
+   // save url
+   let raven_config_save_url = '/user-workspaces/raven-configs/json/save-as-new/' + workspace.user_workspace_id;
 
    await m.request({
        method: "POST",
@@ -2521,29 +2537,18 @@ export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
               raven_config: workspace.raven_config}
    })
    .then(function(save_result) {
-     console.log('save_result: ' + JSON.stringify(save_result));
-     console.log('save_result.success: ' + save_result.success);
-     console.log('save_result.message: ' + save_result.message);
-     console.log('typeof(save_result): ' + typeof(save_result));
+     console.log('save_result: ' + JSON.stringify(save_result.success));
+      // Failed! show error and return
+      if (!save_result.success){
+         setNewWorkspaceMessageError(save_result.message);
+         return;
+      }
 
-    /*
-     *  Failed, show error and return
-     */
-    if (!save_result.success){
-       setNewWorkspaceMessageError(save_result.message);
-       return;
-    }
+      // Success! Update the name and the workspace id
+      workspace.user_workspace_id = save_result.data.user_workspace_id;
+      workspace.name = save_result.data.name;
 
-    /*
-     * Update the current workspace entry
-     */
-
-    // Update the name and the workspace id
-    //
-    workspace.user_workspace_id = save_result.data.user_workspace_id;
-    workspace.name = save_result.data.name;
-
-    setNewWorkspaceMessageSuccess('Looks good!');
+      setNewWorkspaceMessageSuccess('The new workspace name has been saved');
    })
  };
  /*
