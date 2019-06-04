@@ -24,6 +24,7 @@ import Icon from './views/Icon';
 import * as common from '../common/common';
 import ButtonRadio from '../common/views/ButtonRadio';
 import Button from '../common/views/Button';
+import ButtonPlain from '../common/views/ButtonPlain';
 import Dropdown from '../common/views/Dropdown';
 import Footer from '../common/views/Footer';
 import Header from '../common/views/Header';
@@ -768,9 +769,18 @@ class Body {
                         },
                         app.getnewWorkspaceMessage()
                       ),
-                      m(Button, {
+                  m('div', {'class': 'row'},
+                    m('div', {'class': 'col-sm'},
+                      m(ButtonPlain, {
+                        id: 'btnModalCancelSaveAsNewWorkspace',
+                        class: 'btn-sm btn-secondary',
+                        style: 'margin-right:15px;',
+                        onclick: _ => {app.setSaveNameModalOpen(false);},
+                        },
+                        'Cancel'),
+                      m(ButtonPlain, {
                         id: 'btnModalSaveAsNewWorkspace',
-                        class: 'btn-sm',
+                        class: 'btn-sm btn-primary',
                         onclick: _ => {
                           console.log('do save, error check, etc');
                           // clear any error messages
@@ -780,6 +790,8 @@ class Body {
                           },
                         },
                         'Save'),
+                    )
+                  )
                     ]),
               )
             ),
