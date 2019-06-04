@@ -78,10 +78,17 @@ def save_raven_config_as_new_workspace(request, workspace_id):
                     f' hyphens ("-"), or underscores ("_").')
         return JsonResponse(get_json_error(user_msg))
 
-    if len(new_workspace_name) < 6:
-        user_msg = (f'The workspace name must be at least 6 characters long.')
+
+    if len(new_workspace_name) < uw_static.MIN_WORKSPACE_NAME_LENGTH:
+        user_msg = (f'The workspace name must be at least'
+                    f' {uw_static.MIN_WORKSPACE_NAME_LENGTH} characters long.')
         return JsonResponse(get_json_error(user_msg))
 
+
+    if len(new_workspace_name) > uw_static.MAX_WORKSPACE_NAME_LENGTH:
+        user_msg = (f'The workspace name cannot be more than'
+                    f' {uw_static.MAX_WORKSPACE_NAME_LENGTH}  characters long.')
+        return JsonResponse(get_json_error(user_msg))
 
     if is_existing_workspace_name(user_workspace.user, new_workspace_name):
         user_msg = (f'The workspace name "{new_workspace_name}" is'

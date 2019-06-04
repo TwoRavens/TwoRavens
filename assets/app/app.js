@@ -772,6 +772,13 @@ export let lockTour = {
  */
 export let workspace;
 
+export let getCurrentWorkspaceName = () => {
+    return (workspace === undefined || workspace.name === undefined) ? '(no workspace name)' : workspace.name;
+}
+export let getCurrentWorkspaceId = () => {
+    return (workspace === undefined || workspace.user_workspace_id === undefined) ? '(no id)' : workspace.user_workspace_id;
+}
+
 let loadWorkspace = async newWorkspace => {
 
     // scopes at app.js level; used for saving workspace
@@ -2479,8 +2486,38 @@ export let setAPIInfoWindowOpen = (boolVal) => isAPIInfoWindowOpen = boolVal;
 // Name of Modal window
 export let isSaveNameModelOpen = false;
 
-// Open/close modal window
-export let setSaveNameModalOpen = (boolVal) => isSaveNameModelOpen = boolVal;
+/*
+ * open/close the modal window
+ */
+export let setSaveNameModalOpen = (boolVal) => {
+  isSaveNameModelOpen = boolVal;
+
+  // Reset the modal window
+  if (boolVal){
+    // clear any workspace names in the input box
+    setNewWorkspaceName('');
+
+    // clear any user messages
+    setNewWorkspaceMessageSuccess('');
+
+    // show save/cancel buttons
+    setDisplaySaveNameButtonRow(true);
+
+    // hide close button
+    setDisplayCloseButtonRow(false);
+  }
+}
+
+// Display for the Cancel/Save button row
+export let displaySaveNameButtonRow = true;
+export let setDisplaySaveNameButtonRow = (boolVal) => {
+  displaySaveNameButtonRow = boolVal;
+}
+// Display for the Close Modal success
+export let displayCloseButtonRow = true;
+export let setDisplayCloseButtonRow = (boolVal) => {
+  displayCloseButtonRow = boolVal;
+}
 
 // set/get new workspace name
 export let newWorkspaceName = '';
@@ -2507,8 +2544,15 @@ export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
  export async function saveAsNewWorkspace(){
    console.log('-- saveAsNewWorkspace --');
 
+   // hide save/cancel buttons
+   setDisplaySaveNameButtonRow(false);
+
    // get the current workspace id
    if(!('user_workspace_id' in workspace)) {
+
+     // show save/cancel buttons
+     setDisplaySaveNameButtonRow(true);
+
      return {
              success: false,
              message: 'Cannot save the workspace. The workspace' +
@@ -2521,6 +2565,10 @@ export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
    let new_workspace_name = getNewWorkspaceName();
 
    if (!new_workspace_name){
+
+     // show save/cancel buttons
+     setDisplaySaveNameButtonRow(true);
+
      setNewWorkspaceMessageError('Please enter a new workspace name.');
      return;
    }
@@ -2540,6 +2588,9 @@ export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
      console.log('save_result: ' + JSON.stringify(save_result.success));
       // Failed! show error and return
       if (!save_result.success){
+         // show save/cancel buttons
+         setDisplaySaveNameButtonRow(true);
+
          setNewWorkspaceMessageError(save_result.message);
          return;
       }
@@ -2548,12 +2599,14 @@ export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
       workspace.user_workspace_id = save_result.data.user_workspace_id;
       workspace.name = save_result.data.name;
 
-      setNewWorkspaceMessageSuccess('The new workspace name has been saved');
+      setNewWorkspaceMessageSuccess('The new workspace name has been saved!');
+      setDisplayCloseButtonRow(true);
    })
  };
  /*
   * END: saveAsNewWorkspace
   */
+
 
 
 export let getD3MConfig = () => (workspace || {}).d3m_config;

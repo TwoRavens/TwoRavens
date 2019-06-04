@@ -659,7 +659,7 @@ class Body {
                     onclick: _ => app.setAPIInfoWindowOpen(true),
                     //style: `background-color: ${app.isAPIInfoWindowOpen ? common.selVarColor : '#fcfcfc'}`,
                   },
-                    'API Info'
+                    `Basic Info (id: ${app.getCurrentWorkspaceId()})`
                   ),
 
                 m("span", {"class": "footer-info footer-info-break"}, ''),
@@ -769,6 +769,7 @@ class Body {
                   app.setAPIInfoWindowOpen(false);
                 },
               },
+              // Row 1 - info
               m('div', {'class': 'row'},
                 m('div', {'class': 'col-sm'},
                   [
@@ -776,13 +777,11 @@ class Body {
                     m('hr'),
                     m('p', [
                         m('b', 'Workspace Id: '),
-                        m('span',
-                        (app.workspace.user_workspace_id !== undefined) ? app.workspace.user_workspace_id : '(unknown)')
+                        m('span', app.getCurrentWorkspaceId())
                       ]),
                       m('p', [
                           m('b', 'Workspace Name: '),
-                          m('span',
-                          (app.workspace.name !== undefined) ? app.workspace.name : '(not set)')
+                          m('span', app.getCurrentWorkspaceName())
                         ]),
                     m('hr'),
                     m('p', [
@@ -793,10 +792,24 @@ class Body {
                         m('b', 'TA3 API: '),
                         m('span', `${TA3TA2_API_VERSION}`)
                       ]),
+                    m('hr'),
                   ]
+                ),
+              ),
+              // Row 2 - info
+              m('div', {'class': 'row'},
+                m('div', {'class': 'col-sm text-left'},
+                  // Close
+                  m(ButtonPlain, {
+                    id: 'btnInfoCloseModalButton',
+                    class: 'btn-sm btn-primary',
+                    onclick: _ => {
+                      app.setAPIInfoWindowOpen(false);},
+                    },
+                    'Close'),
+                  )
                 )
-              )
-            ),
+              ),
             /*
              * Save as new workspace modal.
              *  - prompt user for new workspace name
@@ -811,7 +824,14 @@ class Body {
                   m('div', {'class': 'col-sm'},
                     [
                       m('h3', {}, 'Save as a New Workspace.'),
+
                       m('p', {}, 'Please enter a new workspace name.'),
+
+                      m('p', {},
+                        m('b', '- Current workspace name: '),
+                        m('span', `"${app.getCurrentWorkspaceName()}"`),
+                        m('span', ` (id: ${app.getCurrentWorkspaceId()})`),
+                      ),
 
                       // Text field to enter new workspace name
                       m(TextField, {
@@ -829,40 +849,54 @@ class Body {
                         },
                         app.getnewWorkspaceMessage()
                       ),
-
-                  // Button Row
-                  m('div', {
-                      id: 'rowSaveWorkspaceButtons',
-                      class: 'row'
-                    },
-                    m('div', {'class': 'col-sm'},
-
-                      // Cancel button
-                      m(ButtonPlain, {
-                        id: 'btnModalCancelSaveAsNewWorkspace',
-                        class: 'btn-sm btn-secondary',
-                        style: 'margin-right: 15px;',
-                        onclick: _ => {
-                          app.setNewWorkspaceName('');
-                          app.setSaveNameModalOpen(false);},
+                      // Close Button Row
+                      app.displayCloseButtonRow && m('div', {
+                          id: 'rowCloseModalButton',
+                          class: 'row',
                         },
-                        'Cancel'),
+                        m('div', {'class': 'col-sm'},
+                          // Close
+                          m(ButtonPlain, {
+                            id: 'btnRowCloseModalButton',
+                            class: 'btn-sm btn-primary',
+                            onclick: _ => {
+                              app.setSaveNameModalOpen(false);},
+                            },
+                            'Close'),
+                          )
+                      ),
 
-                      // Save Button
-                      m(ButtonPlain, {
-                        id: 'btnModalSaveAsNewWorkspace',
-                        class: 'btn-sm btn-primary',
-                        onclick: _ => {
-                          console.log('save clicked...');
 
-                          // clear any error messages
-                          app.setNewWorkspaceMessageSuccess('Attempting to save...')
+                      // Button Row
+                      app.displaySaveNameButtonRow && m('div', {
+                          id: 'rowSaveWorkspaceButtons',
+                          class: 'row',
+                        },
+                        m('div', {'class': 'col-sm'},
 
-                          // hide this button
-                          app.testVisible = false;
+                          // Cancel button
+                          m(ButtonPlain, {
+                            id: 'btnModalCancelSaveAsNewWorkspace',
+                            class: 'btn-sm btn-secondary',
+                            style: 'margin-right: 15px;',
+                            onclick: _ => {
+                              app.setNewWorkspaceName('');
+                              app.setSaveNameModalOpen(false);},
+                            },
+                            'Cancel'),
 
-                          // attempt to save the name
-                          app.saveAsNewWorkspace();
+                          // Save Button
+                          m(ButtonPlain, {
+                            id: 'btnModalSaveAsNewWorkspace',
+                            class: 'btn-sm btn-primary',
+                            onclick: _ => {
+                              console.log('save clicked...');
+
+                              // clear any error messages
+                              app.setNewWorkspaceMessageSuccess('Attempting to save...')
+
+                              // attempt to save the name
+                              app.saveAsNewWorkspace();
                           },
                         },
                         'Save'),
