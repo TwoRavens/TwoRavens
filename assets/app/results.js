@@ -25,7 +25,7 @@ import * as solverD3M from './solvers/d3m';
 
 export let leftpanel = () => {
 
-    let ravenConfig = app.getRavenConfig();
+    let ravenConfig = app.workspace.raven_config;
     let resultsProblem = app.getResultsProblem();
 
     if (!resultsProblem) return;

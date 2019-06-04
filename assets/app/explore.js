@@ -1687,7 +1687,7 @@ export async function plot(plotNodes, plottype="", problem={}) {
         plottype = getPlotType(plottype,mypn); // VJD: second element in array tags the variables for the plot e.g., qq means quantitative,quantitative; qn means quantitative,nominal
         console.log(mypn);
         let plotvars = getNames(mypn);
-        let zd3mdata = app.getSelectedWorkspace().datasetUrl;
+        let zd3mdata = app.workspace.datasetUrl;
         let jsonout = {plottype, plotvars, zd3mdata};
         console.log(jsonout);
 
