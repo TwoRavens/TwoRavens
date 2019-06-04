@@ -74,9 +74,8 @@ def save_raven_config_as_new_workspace(request, workspace_id):
     fmt_workspace_name = re.sub(r"[^a-zA-Z0-9 _\-]+", '', new_workspace_name)
 
     if new_workspace_name != fmt_workspace_name:
-        user_msg = (f'The workspace name can only use letters,'
-                    f' hyphens, or underscores.  You used "{new_workspace_name}"'
-                    f' corrected: {fmt_workspace_name}')
+        user_msg = (f'The workspace name can only use letters, numbers,'
+                    f' hyphens ("-"), or underscores ("_").')
         return JsonResponse(get_json_error(user_msg))
 
     if len(new_workspace_name) < 6:
