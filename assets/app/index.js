@@ -670,28 +670,33 @@ class Body {
             //
             app.isSaveNameModelOpen && m(ModalVanilla, {
                 id: "modalNewWorkspacename",
+                style: 'width: 50%;',
                 setDisplay: () => {
                   app.setSaveNameModalOpen(false);
                 },
               },
-              [
                 m('div', {'class': 'row'},
-                  m('div', {'class': 'col-md'},
-                    'Please enter a new workspace name.')
-                ),
-                m(TextField, {
-                  id: 'newNameModal',
-                  placeholder: 'New Workspace Name',
-                  oninput: app.setNewWorkspaceName,
-                  onblur: app.setNewWorkspaceName,
-                  value: app.newWorkspaceName
-                }),
-                m(Button, {
-                  id: 'btnSaveAsNewWorkspace',
-                  class: 'btn-sm',
-                  onclick: _ => console.log('bleh-save')},
-                  'Save'),
-              ]
+                  m('div', {'class': 'col-sm'},
+                    [
+                      m('p', {}, 'Please enter a new workspace name.'),
+                      m(TextField, {
+                        id: 'newNameModal',
+                        placeholder: 'New Workspace Name',
+                        oninput: app.setNewWorkspaceName,
+                        onblur: app.setNewWorkspaceName,
+                        value: app.newWorkspaceName
+                      }),
+                      m(Button, {
+                        id: 'btnSaveAsNewWorkspace',
+                        class: 'btn-sm',
+                        onclick: _ => {
+                          console.log('do save, error check, etc');
+                          console.log(app.getNewWorkspaceName());
+                          },
+                        },
+                        'Save'),
+                    ]),
+              )
             ),
             app.alertsShown && m(ModalVanilla, {
                 id: 'alertsModal',
