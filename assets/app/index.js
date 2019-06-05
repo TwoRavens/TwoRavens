@@ -654,24 +654,28 @@ class Body {
 
                 m(Button, {
                     id: 'btnAPIInfoWindow',
-                    class: 'btn-sm',
-                    // class: `btn-sm ${app.isAPIInfoWindowOpen ? 'active' : ''}`,
+                    class: `btn-sm ${app.isAPIInfoWindowOpen ? 'active' : ''}`,
                     onclick: _ => app.setAPIInfoWindowOpen(true),
-                    //style: `background-color: ${app.isAPIInfoWindowOpen ? common.selVarColor : '#fcfcfc'}`,
                   },
                     `Basic Info (id: ${app.getCurrentWorkspaceId()})`
                   ),
 
                 m("span", {"class": "footer-info footer-info-break"}, ''),
 
-                m(Button, {id: 'btnSaveWorkspace', class: 'btn-sm', onclick: _ => app.saveUserWorkspace()}, 'Save '),
+                m(ButtonPlain, {
+                    id: 'btnSaveWorkspace',
+                    class: `btn-sm btn-secondary ${app.saveCurrentWorkspaceWindowOpen ? 'active' : ''}`,
+                    onclick: _ => app.saveUserWorkspace()
+                  },
+                  'Save '),
 
-                m(Button, {
-                  id: 'btnSaveAsNewWorkspace',
-                  class: 'btn-sm',
-                  onclick: _ => app.setSaveNameModalOpen(true)},
+                m(ButtonPlain, {
+                    id: 'btnSaveAsNewWorkspace',
+                    // 'aria-pressed': `${app.isSaveNameModelOpen ? 'true' : 'false'}`,
+                    class: `btn-sm btn-secondary ${app.isSaveNameModelOpen ? 'active' : ''}`,
+                    onclick: _ => app.setSaveNameModalOpen(true)
+                  },
                   'Save As New ',
-                  //m(Icon, {name: 'thumbsup'})
                 ),
 
                   m(Button, {
@@ -684,9 +688,6 @@ class Body {
 
             // m("span", {"class": "footer-info-break"}, "|"),
             // m("a", {"href" : "/dev-raven-links", "target": "=_blank"}, "raven-links"),
-            m("span", {"class": "footer-info footer-info-break", "id": "user-workspace-id"},
-              app.workspace ? `(ws: ${app.workspace.user_workspace_id})` : '(ws ?)'),
-
 
             m('div.btn.btn-group', {style: 'float: right; padding: 0px;margin:5px'},
 
@@ -717,6 +718,7 @@ class Body {
     construct_modals() {
         return [
             m(Modal),
+            this.modalSaveCurrentWorkspace(),
             /*
              * Alerts modal.  Displays the list of alerts, if any.
              */
@@ -760,56 +762,10 @@ class Body {
                 endpoint: app.datamartURL,
                 dataPath: app.workspace.datasetUrl
             }),
-            /*
-             * Show basic API and Workspace Info
-             */
-            app.isAPIInfoWindowOpen && m(ModalVanilla, {
-                id: "modalAPIInfo",
-                setDisplay: () => {
-                  app.setAPIInfoWindowOpen(false);
-                },
-              },
-              // Row 1 - info
-              m('div', {'class': 'row'},
-                m('div', {'class': 'col-sm'},
-                  [
-                    m('h3', {}, 'Basic Information'),
-                    m('hr'),
-                    m('p', [
-                        m('b', 'Workspace Id: '),
-                        m('span', app.getCurrentWorkspaceId())
-                      ]),
-                      m('p', [
-                          m('b', 'Workspace Name: '),
-                          m('span', app.getCurrentWorkspaceName())
-                        ]),
-                    m('hr'),
-                    m('p', [
-                        m('b', 'TA2: '),
-                        m('span', app.TA2ServerInfo)
-                      ]),
-                    m('p', [
-                        m('b', 'TA3 API: '),
-                        m('span', `${TA3TA2_API_VERSION}`)
-                      ]),
-                    m('hr'),
-                  ]
-                ),
-              ),
-              // Row 2 - info
-              m('div', {'class': 'row'},
-                m('div', {'class': 'col-sm text-left'},
-                  // Close
-                  m(ButtonPlain, {
-                    id: 'btnInfoCloseModalButton',
-                    class: 'btn-sm btn-primary',
-                    onclick: _ => {
-                      app.setAPIInfoWindowOpen(false);},
-                    },
-                    'Close'),
-                  )
-                )
-              ),
+
+            // Show basic API and Workspace Info
+            this.modalBasicInfo(),
+
             /*
              * Save as new workspace modal.
              *  - prompt user for new workspace name
@@ -847,9 +803,9 @@ class Body {
                           id: 'newNameMessage',
                           style: 'padding:20px 0;'
                         },
-                        app.getnewWorkspaceMessage()
+                        m('p', {class: "lead"}, app.getnewWorkspaceMessage())
                       ),
-                      // Close Button Row
+                      // Close Button Row - used if save is successful
                       app.displayCloseButtonRow && m('div', {
                           id: 'rowCloseModalButton',
                           class: 'row',
@@ -911,6 +867,115 @@ class Body {
         ]
     }
 
+    /*
+     * Show basic API and Workspace Info
+     */
+    modalBasicInfo(){
+
+      return app.isAPIInfoWindowOpen && m(ModalVanilla, {
+          id: "modalAPIInfo",
+          setDisplay: () => {
+            app.setAPIInfoWindowOpen(false);
+          },
+        },
+        // Row 1 - info
+        m('div', {'class': 'row'},
+          m('div', {'class': 'col-sm'},
+            [
+              m('h3', {}, 'Basic Information'),
+              m('hr'),
+              m('p', [
+                  m('b', 'Workspace Id: '),
+                  m('span', app.getCurrentWorkspaceId())
+                ]),
+                m('p', [
+                    m('b', 'Workspace Name: '),
+                    m('span', app.getCurrentWorkspaceName())
+                  ]),
+              m('hr'),
+              m('p', [
+                  m('b', 'TA2: '),
+                  m('span', app.TA2ServerInfo)
+                ]),
+              m('p', [
+                  m('b', 'TA3 API: '),
+                  m('span', `${TA3TA2_API_VERSION}`)
+                ]),
+              m('hr'),
+            ]
+          ),
+        ),
+        // Row 2 - info
+        m('div', {'class': 'row'},
+          m('div', {'class': 'col-sm text-left'},
+            // Close
+            m(ButtonPlain, {
+              id: 'btnInfoCloseModalButton',
+              class: 'btn-sm btn-primary',
+              onclick: _ => {
+                app.setAPIInfoWindowOpen(false);},
+              },
+              'Close'),
+            )
+          )
+        )
+    } // end: modalBasicInfo
+
+    /*
+     * Save current workspace modal.
+     */
+    modalSaveCurrentWorkspace(){
+
+      return app.saveCurrentWorkspaceWindowOpen && m(ModalVanilla, {
+          id: "modalCurrentWorkspaceMessage",
+          setDisplay: () => {
+            app.setSaveCurrentWorkspaceWindowOpen(false);
+          },
+        },
+        m('div', {'class': 'row'},
+          m('div', {'class': 'col-sm'},
+              [
+                m('h3', {}, 'Save Current Workspace'),
+                m('hr'),
+                m('p', {},
+                  m('b', '- Current workspace name: '),
+                  m('span', `"${app.getCurrentWorkspaceName()}"`),
+                  m('span', ` (id: ${app.getCurrentWorkspaceId()})`),
+                ),
+
+                // Display user messages
+                m('div', {
+                    id: 'divSaveCurrentMessage',
+                    style: 'padding:20px 0;'
+                  },
+                  m('p', {class: "lead"}, app.getCurrentWorkspaceMessage())
+                ),
+                m('hr'),
+            ]
+          )
+        ),
+          // Close Button Row
+          m('div', {
+              id: 'rowCloseModalButton',
+              class: 'row',
+            },
+            m('div', {'class': 'col-sm'},
+              // Close
+              m(ButtonPlain, {
+                id: 'btnRowCloseModalButton',
+                class: 'btn-sm btn-primary',
+                onclick: _ => {
+                  app.setSaveCurrentWorkspaceWindowOpen(false);},
+                },
+                'Close'),
+              )
+          ),
+        );
+      /*
+       * END: Save current workspace modal.
+       */
+
+    }
 
     /*
      * End: Construct potential modal boxes for the page.

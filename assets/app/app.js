@@ -2436,6 +2436,35 @@ export let setVariableSummaries = state => {
 }
 export let variableSummaries = {};
 
+
+/*
+ *  'Save' button - Variables related to displaying a modal message
+ */
+export let saveCurrentWorkspaceWindowOpen = false;
+// Open/close modal window
+export let setSaveCurrentWorkspaceWindowOpen = (boolVal) => {
+  saveCurrentWorkspaceWindowOpen = boolVal;
+}
+
+/*
+ *  'Save' button - Message to display in the modal window
+ */
+
+// set/get user messages for new workspace
+export let currentWorkspaceSaveMsg = '';
+
+// success message
+export let setCurrentWorkspaceMessageSuccess = (errMsg) => {
+  currentWorkspaceSaveMsg = m('p', {class: 'text-success'}, errMsg);
+}
+
+// error message
+export let setCurrentWorkspaceMessageError = (errMsg) => {
+  currentWorkspaceSaveMsg = m('p', {class: 'text-danger'}, errMsg);
+}
+export let getCurrentWorkspaceMessage = () => { return currentWorkspaceSaveMsg; };
+
+
 /*
  *  saveUserWorkspace() save the current
  *  ravens_config data to the user workspace.
@@ -2444,8 +2473,14 @@ export let variableSummaries = {};
 export let saveUserWorkspace = () => {
   console.log('-- saveUserWorkspace --');
 
+  // clear modal message
+  setSaveCurrentWorkspaceWindowOpen(false);
+  setCurrentWorkspaceMessageSuccess('');
+
+
   if(!('user_workspace_id' in workspace)) {
-    alertError('Cannot save the workspace. The workspace id was not found. (saveUserWorkspace)');
+    setCurrentWorkspaceMessageError('Cannot save the workspace. The workspace id was not found. (saveUserWorkspace)');
+    setSaveCurrentWorkspaceWindowOpen(true);
     return;
   }
 
@@ -2461,10 +2496,11 @@ export let saveUserWorkspace = () => {
   .then(function(save_result) {
     console.log(save_result);
     if (save_result.success){
-      console.log('Workspace saved')
-    }else{
-      alertError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
+      setCurrentWorkspaceMessageSuccess('The workspace was saved!')
+    } else {
+      setCurrentWorkspaceMessageError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
     }
+    setSaveCurrentWorkspaceWindowOpen(true);
   })
 };
 /*
