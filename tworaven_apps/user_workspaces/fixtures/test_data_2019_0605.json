@@ -1,0 +1,20 @@
+[
+  {
+    "model": "raven_auth.user",
+    "pk": 2,
+    "fields": {
+        "password": "pbkdf2_sha256$120000$4zNNfhTGXSTK$FDAhJloCxd69k1wcdK2NaWFT+sSueH/GGqq4L4spnHw=",
+        "last_login": "2019-05-24T15:16:57.192Z",
+        "is_superuser": false,
+        "username": "test_user",
+        "first_name": "Test",
+        "last_name": "User",
+        "email": "",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2019-05-24T14:44:49.715Z",
+        "groups": [],
+        "user_permissions": []
+    }
+  }
+]
