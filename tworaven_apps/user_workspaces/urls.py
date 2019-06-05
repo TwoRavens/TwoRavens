@@ -15,6 +15,14 @@ urlpatterns = (
         views.view_latest_raven_configs,
         name='view_latest_raven_configs'),
 
+    url(r'^raven-configs/json/list$',
+        views.view_latest_raven_configs,
+        name='view_latest_raven_configs'),
+
+    url(r'^raven-configs/json/list/summaries$',
+        views.view_latest_raven_config_summaries,
+        name='view_latest_raven_config_summaries'),
+
     url(r'^raven-configs/json/(?P<user_workspace_id>\d{1,7})$',
         views.view_user_raven_config,
         name='view_user_raven_config'),

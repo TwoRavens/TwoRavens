@@ -187,13 +187,19 @@ def get_user_workspaces_as_dict(user, **kwargs):
 
     create_if_not_found = kwargs.get('create_if_not_found', True)
 
+    # Return only the id, name, url, etc of the workspace
+    summary_only = kwargs.get('summary_only', False)
+
     ws_info = get_user_workspaces(user, create_if_not_found)
     if not ws_info.success:
         return ws_info
 
     ws_list = ws_info.result_obj
 
-    ws_list_fmt = [ws.to_dict() for ws in ws_list]
+    if summary_only:
+        ws_list_fmt = [ws.to_dict_summary() for ws in ws_list]
+    else:
+        ws_list_fmt = [ws.to_dict() for ws in ws_list]
 
     return ok_resp(ws_list_fmt)
 

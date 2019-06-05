@@ -277,7 +277,7 @@ def view_user_raven_config(request, user_workspace_id):
     return JsonResponse(json_msg)
 
 @csrf_exempt
-def view_latest_raven_configs(request):
+def view_latest_raven_configs(request, summary_only=False):
     """View config list with d3mconfig as separate object"""
     # Get the user
     #
@@ -286,7 +286,9 @@ def view_latest_raven_configs(request):
         return JsonResponse(get_json_error(user_info.err_msg))
 
     user = user_info.result_obj
-    workspace_info = get_user_workspaces_as_dict(user)
+
+    params = dict(summary_only=summary_only)
+    workspace_info = get_user_workspaces_as_dict(user, **params)
 
     if not workspace_info.success:
         return JsonResponse(get_json_error(workspace_info.err_msg))
@@ -303,6 +305,14 @@ def view_latest_raven_configs(request):
         return HttpResponse('<pre>%s</pre>' % fmt_info.result_obj)
 
     return JsonResponse(json_msg)
+
+
+
+@csrf_exempt
+def view_latest_raven_config_summaries(request):
+    """View summary config list with names/ids"""
+
+    return view_latest_raven_configs(request, summary_only=True)
 
 
 @csrf_exempt
