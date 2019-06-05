@@ -773,10 +773,11 @@ export let lockTour = {
 export let workspace;
 
 export let getCurrentWorkspaceName = () => {
-    return (workspace === undefined || workspace.name === undefined) ? '(no workspace name)' : workspace.name;
+    return (workspace || {}).name || '(no workspace name)';
 }
 export let getCurrentWorkspaceId = () => {
-    return (workspace === undefined || workspace.user_workspace_id === undefined) ? '(no id)' : workspace.user_workspace_id;
+  return (workspace || {}).user_workspace_id || '(no id)';
+  //return (workspace === undefined || workspace.user_workspace_id === undefined) ? '(no id)' : workspace.user_workspace_id;
 }
 
 let loadWorkspace = async newWorkspace => {
@@ -1238,7 +1239,7 @@ async function load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3m
               ta2Name += ' (API: ' + ta2Version + ')';
             }
             setTA2ServerInfo(ta2Name);
-            $('#ta2-server-name').html('TA2: ' + ta2Name);
+            // $('#ta2-server-name').html('TA2: ' + ta2Name);
 
         }
     }
