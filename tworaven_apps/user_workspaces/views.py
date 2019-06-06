@@ -67,7 +67,7 @@ def save_raven_config_as_new_workspace(request, workspace_id):
                     f' (The update information did not contain a'
                     f' "{uw_static.KEY_NEW_WORKSPACE_NAME}" key)')
 
-        print('user_msg', user_msg)
+        #print('user_msg', user_msg)
         return JsonResponse(get_json_error(user_msg))
 
     new_workspace_name = update_dict[uw_static.KEY_NEW_WORKSPACE_NAME].strip()
@@ -98,13 +98,12 @@ def save_raven_config_as_new_workspace(request, workspace_id):
 
     # Check for the 'raven_config' key
     #
-    if not uw_static.KEY_RAVEN_CONFIG in update_dict:
-        print('save_raven_config_to_existing_workspace 3')
+    if (not uw_static.KEY_RAVEN_CONFIG in update_dict) or \
+        (not update_dict[uw_static.KEY_RAVEN_CONFIG]):
         user_msg = (f'The workspace could not be saved.'
-                    f' (The update information did not contain a'
-                    f' "{uw_static.KEY_RAVEN_CONFIG}" key)')
+                    f' (Please include Raven Config information'
+                    f' using the key "{uw_static.KEY_RAVEN_CONFIG}")')
 
-        print('user_msg', user_msg)
         return JsonResponse(get_json_error(user_msg))
 
     new_ws_info = duplicate_user_workspace(\
@@ -120,7 +119,7 @@ def save_raven_config_as_new_workspace(request, workspace_id):
     json_msg = get_json_success(user_msg,
                                 data=new_ws_info.result_obj.to_dict())
 
-    print('save_raven_config_to_existing_workspace 4', json_msg)
+    #print('save_raven_config_to_existing_workspace 4', json_msg)
 
     return JsonResponse(json_msg)
 
@@ -150,12 +149,13 @@ def save_raven_config_to_existing_workspace(request, workspace_id):
 
     # Check for the 'raven_config' key
     #
-    if not uw_static.KEY_RAVEN_CONFIG in update_dict:
+    if (not uw_static.KEY_RAVEN_CONFIG in update_dict) or \
+        (not update_dict[uw_static.KEY_RAVEN_CONFIG]):
         user_msg = (f'The workspace could not be saved.'
-                    f' (The update information did not contain a'
-                    f' "{uw_static.KEY_RAVEN_CONFIG}" key)')
+                    f' (Please include Raven Config information'
+                    f' using the key "{uw_static.KEY_RAVEN_CONFIG}")')
 
-        print('user_msg', user_msg)
+        # print('user_msg', user_msg)
         return JsonResponse(get_json_error(user_msg))
 
     user_workspace.raven_config = update_dict[uw_static.KEY_RAVEN_CONFIG]

@@ -45,8 +45,6 @@ class WorkspaceEndpointTests(TestCase):
 
         resp = client.get(url).json()
 
-        print('resp', resp)
-
         self.assertTrue(not resp['success'])
 
     def test_20_list_workspaces_valid_user(self):
@@ -55,23 +53,30 @@ class WorkspaceEndpointTests(TestCase):
 
         user = User.objects.get(username='test_user')
 
-        for d3m_config in D3MConfiguration.objects.all():
-            print('d3m_config', d3m_config.is_default)
-
+        #
+        print('\n -- Retrieve the user workspaces.  Do NOT create a default one')
+        #
         ws_info = ws_utils.get_user_workspaces(user, create_if_not_found=False)
         self.assertTrue(not ws_info.success)
 
+        #
+        print(('\n -- Retrieve the user workspaces.'
+               ' Create if one not found. (This is the default behavior)'))
+        #
         ws_info2 = ws_utils.get_user_workspaces(user)
         self.assertTrue(ws_info2.success)
-        print(ws_info2)
+        self.assertEqual(len(ws_info2.result_obj), 1)
 
+        #
+        print(('\n -- Retrieve the user workspaces as list of dicts.'))
+        #
         ws_info3 = ws_utils.get_user_workspaces_as_dict(user)
         self.assertTrue(ws_info3.success)
-
+        self.assertEqual(len(ws_info3.result_obj), 1)
 
 
     def test_30_workspace_by_view(self):
-        """(30) Get workspace JSON via view"""
+        """(30) List workspaces, Save workspace, Save as new workspace"""
         msgt(self.test_30_workspace_by_view.__doc__)
 
         user = User.objects.get(username='test_user')
@@ -80,13 +85,17 @@ class WorkspaceEndpointTests(TestCase):
         client = Client()
         client.force_login(user)
 
-        # retrieve the workspace
+        # --------------------------------------
+        # Retrieve the workspace, should have no
+        # raven_config
+        # --------------------------------------
+        print('\n -- Retrieve the workspace, should have no raven_config')
+
         url = reverse('view_latest_raven_configs',
                       kwargs=dict())
 
         resp = client.get(url).json()
-
-        print('resp', resp)
+        # print('resp', resp)
 
         # check success messages
         self.assertTrue(resp['success'])
@@ -108,8 +117,13 @@ class WorkspaceEndpointTests(TestCase):
         #
         self.assertTrue(selected_ws['raven_config'] is None)
 
+        selected_ws = None
+
+        # --------------------------------------
         # Save workspace with a Raven Config
-        #
+        # --------------------------------------
+        print('\n -- Save workspace with a Raven Config')
+
         url = reverse('save_raven_config_to_existing_workspace',
                       kwargs=dict(workspace_id=user_workspace_id))
 
@@ -120,17 +134,246 @@ class WorkspaceEndpointTests(TestCase):
         # success should be true and `raven_config` parameter should have
         # data!
         self.assertTrue(resp['success'])
-        selected_ws2 = resp['data'][0]
+        selected_ws = resp['data']
 
-        self.assertTrue('raven_config' in selected_ws2)
-        self.assertTrue(selected_ws2['raven_config'] is not None)
+        self.assertTrue('raven_config' in selected_ws)
+        self.assertTrue(selected_ws['raven_config'] is not None)
 
-        self.assertTrue('problems' in selected_ws2['raven_config'])
+        self.assertTrue('problems' in selected_ws['raven_config'])
 
-        #print('resp', resp)
-        #print('resp.status_code', resp.status_code)
-        #print('resp.content', resp.content)
+        selected_ws = None
+        # --------------------------------------
+        # Save workspace with a new name
+        # --------------------------------------
+        print('\n -- Save workspace with a new name')
 
+        new_workspace_name = 'giraffe'
+        url = reverse('save_raven_config_as_new_workspace',
+                      kwargs=dict(workspace_id=user_workspace_id))
+
+        params = {'raven_config': self.get_sample_raven_config(),
+                  'new_workspace_name': new_workspace_name}
+
+        resp = client.post(url, params, content_type='application/json').json()
+
+        # success should be true and workspace name should be updated
+        #
+        self.assertTrue(resp['success'])
+        selected_ws = resp['data']
+
+        self.assertTrue('raven_config' in selected_ws)
+        self.assertTrue(selected_ws['raven_config'] is not None)
+
+        self.assertEqual(selected_ws['name'], new_workspace_name)
+
+        selected_ws = None
+
+        # --------------------------------------
+        # Now there should be 2 workspaces...
+        # --------------------------------------
+        print('\n -- Now there should be 2 workspaces...')
+
+        url = reverse('view_latest_raven_configs',
+                      kwargs=dict())
+
+        resp = client.get(url).json()
+
+        # check success messages
+        self.assertTrue(resp['success'])
+
+        # should have 2 workspaces!
+        self.assertEqual(len(resp['data']), 2)
+
+        selected_ws = resp['data'][0]
+
+        # The selected workspace should be "giraffe"
+        self.assertTrue(selected_ws['is_current_workspace'])
+        self.assertEqual(selected_ws['name'], new_workspace_name)
+
+        new_workspace_id = selected_ws['user_workspace_id']
+
+        selected_ws = None
+        # --------------------------------------
+        # Retrieve the current workspace by its id
+        # --------------------------------------
+        print('\n -- Retrieve the current workspace by its id')
+
+        url = reverse('view_user_raven_config',
+                      kwargs=dict(user_workspace_id=new_workspace_id))
+
+        resp = client.get(url).json()
+
+        # check success messages
+        self.assertTrue(resp['success'])
+
+        # check thaat workspace is retrieved
+        self.assertEqual(resp['data']['user_workspace_id'], new_workspace_id)
+        self.assertTrue('raven_config' in resp['data'])
+
+        # --------------------------------------
+        # Save workspace with a new name - AGAIN!
+        # --------------------------------------
+        print('\n -- Save workspace with a new name - AGAIN!')
+        new_workspace_name = 'going to the country--gonna__'
+        url = reverse('save_raven_config_as_new_workspace',
+                      kwargs=dict(workspace_id=new_workspace_id))
+
+        params = {'raven_config': self.get_sample_raven_config(),
+                  'new_workspace_name': new_workspace_name}
+
+        resp = client.post(url, params, content_type='application/json').json()
+
+        # success should be true and workspace name should be updated
+        #
+        self.assertTrue(resp['success'])
+        selected_ws = resp['data']
+
+        self.assertTrue('raven_config' in selected_ws)
+        self.assertTrue(selected_ws['raven_config'] is not None)
+
+        self.assertEqual(selected_ws['name'], new_workspace_name)
+
+        selected_ws = None
+
+
+    def test_40_save_workspace_errors(self):
+        """(40) Trying saving workspaces with bad params"""
+        msgt(self.test_40_save_workspace_errors.__doc__)
+
+        user = User.objects.get(username='test_user')
+
+        # create a web client
+        client = Client()
+        client.force_login(user)
+
+        # --------------------------------------
+        # Retrieve the workspace, should have no
+        # raven_config
+        # --------------------------------------
+        url = reverse('view_latest_raven_configs',
+                      kwargs=dict())
+
+        resp = client.get(url).json()
+
+        # check success messages
+        self.assertTrue(resp['success'])
+
+        selected_ws = resp['data'][0]
+        user_workspace_id = selected_ws['user_workspace_id']
+        current_workspace_name =  selected_ws['name']
+
+        # --------------------------------------
+        # Save with bad id
+        # --------------------------------------
+        print('\n-- Save with bad id --')
+        bad_id = 500
+        url = reverse('save_raven_config_to_existing_workspace',
+                      kwargs=dict(workspace_id=bad_id))
+
+        params = {'raven_config': self.get_sample_raven_config()}
+
+        resp = client.post(url, params, content_type='application/json').json()
+
+        self.assertEqual(resp['success'], False)
+        self.assertTrue('message' in resp)
+
+        # --------------------------------------
+        # Save with no raven config
+        # --------------------------------------
+        print('\n-- Save with no raven config --')
+
+        url = reverse('save_raven_config_to_existing_workspace',
+                      kwargs=dict(workspace_id=user_workspace_id))
+
+        params = {}   # {'raven_config': self.get_sample_raven_config()}
+
+        resp = client.post(url, params, content_type='application/json').json()
+
+        self.assertEqual(resp['success'], False)
+        self.assertTrue('message' in resp)
+
+        # --------------------------------------
+        # Save with null raven config
+        # --------------------------------------
+        print('\n-- Save with null raven config --')
+
+        url = reverse('save_raven_config_to_existing_workspace',
+                      kwargs=dict(workspace_id=user_workspace_id))
+
+        params = {'raven_config': None}
+
+        resp = client.post(url, params, content_type='application/json').json()
+
+        self.assertEqual(resp['success'], False)
+        self.assertTrue('message' in resp)
+
+        # --------------------------------------
+        # Save workspace with a new name -- but don't send the name
+        # --------------------------------------
+        print('\n-- Save new workspace w/o a name --')
+
+        new_workspace_name = 'giraffe'
+        url = reverse('save_raven_config_as_new_workspace',
+                      kwargs=dict(workspace_id=user_workspace_id))
+
+        params = {'raven_config': self.get_sample_raven_config(),
+                  # 'new_workspace_name': new_workspace_name
+                  }
+
+        resp = client.post(url, params, content_type='application/json').json()
+        self.assertEqual(resp['success'], False)
+        self.assertTrue('message' in resp)
+
+        # --------------------------------------
+        # Save workspace with a new name -- but an invalid name
+        # --------------------------------------
+        print('\n-- Save workspace with a new name -- but an invalid name --')
+        new_workspace_name = 'NumberLetter_-butnoothers#$@#$'
+
+        url = reverse('save_raven_config_as_new_workspace',
+                      kwargs=dict(workspace_id=user_workspace_id))
+
+        params = {'raven_config': self.get_sample_raven_config(),
+                  'new_workspace_name': new_workspace_name
+                  }
+
+        resp = client.post(url, params, content_type='application/json').json()
+        self.assertEqual(resp['success'], False)
+        self.assertTrue('message' in resp)
+
+        # --------------------------------------
+        # Save workspace with same name -- also invalid
+        # --------------------------------------
+        print('\n-- Save workspace with same name -- also invalid --')
+
+        url = reverse('save_raven_config_as_new_workspace',
+                      kwargs=dict(workspace_id=user_workspace_id))
+
+        params = {'raven_config': self.get_sample_raven_config(),
+                  'new_workspace_name': current_workspace_name
+                  }
+
+        resp = client.post(url, params, content_type='application/json').json()
+        self.assertEqual(resp['success'], False)
+        self.assertTrue('message' in resp)
+
+        # --------------------------------------
+        # Save workspace with too short a name
+        # --------------------------------------
+        print('\n-- Save workspace with too short a name --')
+
+        new_workspace_name = 'meep'
+
+        url = reverse('save_raven_config_as_new_workspace',
+                      kwargs=dict(workspace_id=user_workspace_id))
+
+        params = {'raven_config': self.get_sample_raven_config(),
+                  'new_workspace_name': new_workspace_name
+                  }
+
+        resp = client.post(url, params, content_type='application/json').json()
+        self.assertEqual(resp['success'], False)
+        self.assertTrue('message' in resp)
 
     def get_sample_raven_config(self):
         """Return valid raven config for testing"""
