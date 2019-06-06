@@ -15,7 +15,6 @@ from tworaven_apps.rook_services.app_names import \
 from tworaven_apps.rook_services.preprocess_util import \
     (PreprocessUtil,)
 
-from tworaven_apps.workspaces.workspace_util import WorkspaceUtil
 from tworaven_apps.utils.view_helper import get_session_key
 
 from tworaven_apps.utils.view_helper import \
@@ -106,9 +105,6 @@ def view_rook_route(request, app_name_in_url):
         raise Http404(('unknown rook app: "{0}" (please add "{0}" to '
                        ' "tworaven_apps/rook_services/app_names.py")').format(\
                        app_name_in_url))
-
-    # record session metadata, if appropriate
-    WorkspaceUtil.record_state(request)
 
     # look for the "solaJSON" variable in the POST
     #
