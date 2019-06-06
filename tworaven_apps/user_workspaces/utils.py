@@ -186,7 +186,9 @@ def get_user_workspaces_as_dict(user, **kwargs):
     """Get UserWorkspace list based on the active D3M config, as dicts"""
 
     create_if_not_found = kwargs.get('create_if_not_found', True)
-    use_version2_json = kwargs.get('use_version2_json', False)
+
+    # Return only the id, name, url, etc of the workspace
+    summary_only = kwargs.get('summary_only', False)
 
     ws_info = get_user_workspaces(user, create_if_not_found)
     if not ws_info.success:
@@ -194,8 +196,8 @@ def get_user_workspaces_as_dict(user, **kwargs):
 
     ws_list = ws_info.result_obj
 
-    if use_version2_json:
-        ws_list_fmt = [ws.to_dict_v2() for ws in ws_list]
+    if summary_only:
+        ws_list_fmt = [ws.to_dict_summary() for ws in ws_list]
     else:
         ws_list_fmt = [ws.to_dict() for ws in ws_list]
 

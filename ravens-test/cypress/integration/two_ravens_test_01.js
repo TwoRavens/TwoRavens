@@ -9,7 +9,7 @@
  *          - The 'CYPRESS_' prefix is removed
  */
 const TWO_RAVENS_BASE_URL = Cypress.env('TWO_RAVENS_BASE_URL') || 'http://2ravens.org'
-const TA3TA2_API_VERSION = Cypress.env('TA3TA2_API_VERSION') || '2019.2.27'
+const TA3TA2_API_VERSION = Cypress.env('TA3TA2_API_VERSION') || '2019.4.11'
 
 let APP_TEST_URL;
 

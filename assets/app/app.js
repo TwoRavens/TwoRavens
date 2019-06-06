@@ -773,10 +773,11 @@ export let lockTour = {
 export let workspace;
 
 export let getCurrentWorkspaceName = () => {
-    return (workspace === undefined || workspace.name === undefined) ? '(no workspace name)' : workspace.name;
+    return (workspace || {}).name || '(no workspace name)';
 }
 export let getCurrentWorkspaceId = () => {
-    return (workspace === undefined || workspace.user_workspace_id === undefined) ? '(no id)' : workspace.user_workspace_id;
+  return (workspace || {}).user_workspace_id || '(no id)';
+  //return (workspace === undefined || workspace.user_workspace_id === undefined) ? '(no id)' : workspace.user_workspace_id;
 }
 
 let loadWorkspace = async newWorkspace => {
@@ -1238,7 +1239,7 @@ async function load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3m
               ta2Name += ' (API: ' + ta2Version + ')';
             }
             setTA2ServerInfo(ta2Name);
-            $('#ta2-server-name').html('TA2: ' + ta2Name);
+            // $('#ta2-server-name').html('TA2: ' + ta2Name);
 
         }
     }
@@ -2436,6 +2437,35 @@ export let setVariableSummaries = state => {
 }
 export let variableSummaries = {};
 
+
+/*
+ *  'Save' button - Variables related to displaying a modal message
+ */
+export let saveCurrentWorkspaceWindowOpen = false;
+// Open/close modal window
+export let setSaveCurrentWorkspaceWindowOpen = (boolVal) => {
+  saveCurrentWorkspaceWindowOpen = boolVal;
+}
+
+/*
+ *  'Save' button - Message to display in the modal window
+ */
+
+// set/get user messages for new workspace
+export let currentWorkspaceSaveMsg = '';
+
+// success message
+export let setCurrentWorkspaceMessageSuccess = (errMsg) => {
+  currentWorkspaceSaveMsg = m('p', {class: 'text-success'}, errMsg);
+}
+
+// error message
+export let setCurrentWorkspaceMessageError = (errMsg) => {
+  currentWorkspaceSaveMsg = m('p', {class: 'text-danger'}, errMsg);
+}
+export let getCurrentWorkspaceMessage = () => { return currentWorkspaceSaveMsg; };
+
+
 /*
  *  saveUserWorkspace() save the current
  *  ravens_config data to the user workspace.
@@ -2444,8 +2474,14 @@ export let variableSummaries = {};
 export let saveUserWorkspace = () => {
   console.log('-- saveUserWorkspace --');
 
+  // clear modal message
+  setSaveCurrentWorkspaceWindowOpen(false);
+  setCurrentWorkspaceMessageSuccess('');
+
+
   if(!('user_workspace_id' in workspace)) {
-    alertError('Cannot save the workspace. The workspace id was not found. (saveUserWorkspace)');
+    setCurrentWorkspaceMessageError('Cannot save the workspace. The workspace id was not found. (saveUserWorkspace)');
+    setSaveCurrentWorkspaceWindowOpen(true);
     return;
   }
 
@@ -2461,10 +2497,11 @@ export let saveUserWorkspace = () => {
   .then(function(save_result) {
     console.log(save_result);
     if (save_result.success){
-      console.log('Workspace saved')
-    }else{
-      alertError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
+      setCurrentWorkspaceMessageSuccess('The workspace was saved!')
+    } else {
+      setCurrentWorkspaceMessageError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
     }
+    setSaveCurrentWorkspaceWindowOpen(true);
   })
 };
 /*
