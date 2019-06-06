@@ -83,6 +83,8 @@ INSTALLED_APPS = [
     'tworaven_apps.eventdata_queries', # eventdata API services
     'tworaven_common_apps.datamart_endpoints', # Datamart connections
 
+    'tworaven_apps.behavioral_logs', # record user behavior
+
     # webpack!
     'webpack_loader',
 ]
