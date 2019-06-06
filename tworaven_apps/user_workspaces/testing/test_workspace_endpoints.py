@@ -16,6 +16,11 @@ from tworaven_apps.user_workspaces import utils as ws_utils
 from tworaven_apps.raven_auth.models import User
 from tworaven_apps.configurations.models_d3m import D3MConfiguration
 
+CURRENT_DIR = dirname(abspath(__file__))
+TEST_RAVEN_CONFIG_FILE = join(CURRENT_DIR, 'data', 'raven_config_valid.json')
+
+assert isfile(TEST_RAVEN_CONFIG_FILE), \
+        f'File not found: {TEST_RAVEN_CONFIG_FILE}'
 
 
 class WorkspaceEndpointTests(TestCase):
@@ -83,15 +88,51 @@ class WorkspaceEndpointTests(TestCase):
 
         print('resp', resp)
 
+        # check success messages
         self.assertTrue(resp['success'])
+
+        # should have 1 workspace, created on call
         self.assertEqual(len(resp['data']), 1)
 
+        # The workspace should contain the following variables:
+        #   user_workspace_id, is_current_workspace, d3m_config, raven_config
+        #
         selected_ws = resp['data'][0]
-        self.assertEqual(selected_ws['user_workspace_id'], 1)
+        user_workspace_id = selected_ws['user_workspace_id']
+        self.assertEqual(user_workspace_id, 1)
         self.assertTrue(selected_ws['is_current_workspace'])
         self.assertTrue('d3m_config' in selected_ws)
         self.assertTrue('raven_config' in selected_ws)
+
+        # The raven_config should be empty as nothing has been saved yet
+        #
         self.assertTrue(selected_ws['raven_config'] is None)
 
-        # Save Raven Config, retrieve it
-        # Save Raven Config with new name
+        # Save workspace with a Raven Config
+        #
+        url = reverse('save_raven_config_to_existing_workspace',
+                      kwargs=dict(workspace_id=user_workspace_id))
+
+        params = {'raven_config': self.get_sample_raven_config()}
+
+        resp = client.post(url, params, content_type='application/json').json()
+
+        # success should be true and `raven_config` parameter should have
+        # data!
+        self.assertTrue(resp['success'])
+        selected_ws2 = resp['data'][0]
+
+        self.assertTrue('raven_config' in selected_ws2)
+        self.assertTrue(selected_ws2['raven_config'] is not None)
+
+        self.assertTrue('problems' in selected_ws2['raven_config'])
+
+        #print('resp', resp)
+        #print('resp.status_code', resp.status_code)
+        #print('resp.content', resp.content)
+
+
+    def get_sample_raven_config(self):
+        """Return valid raven config for testing"""
+        fcontents = open(TEST_RAVEN_CONFIG_FILE, 'r').read()
+        return json.loads(fcontents)
