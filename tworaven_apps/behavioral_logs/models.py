@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from django.db import models
 from django.conf import settings
 
@@ -70,6 +72,28 @@ class BehavioralLogEntry(TimeStampedModel):
 
         super(BehavioralLogEntry, self).save(*args, **kwargs)
 
+    def to_dict(self, **kwargs):
+        """Convert to python dict"""
+        if not self.id:
+            return dict(message='BehavioralLogEntry not saved')
+    
+        info_dict = OrderedDict()
+
+        info_dict['id'] = self.id
+        info_dict['user'] = self.user.username
+        info_dict['session_key'] = self.session_key
+        info_dict['is_optional'] = self.is_optional
+
+        info_dict['type'] = self.type
+        info_dict['feature_id'] = self.feature_id
+        info_dict['activity_l1'] = self.activity_l1
+        info_dict['activity_l2'] = self.activity_l2
+        info_dict['path'] = self.path
+
+        info_dict['modified'] = self.modified
+        info_dict['created'] = self.created
+
+        return info_dict
 
     def construct_feature_id(self):
         """Construct feature id

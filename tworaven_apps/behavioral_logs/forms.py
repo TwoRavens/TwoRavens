@@ -7,5 +7,10 @@ class BehavioralLogEntryForm(ModelForm):
     """Behavioral Log entry form"""
 
     class Meta:
+        """set model and fields"""
         model = BehavioralLogEntry
-        fields = ['type', 'activity_l1', 'activity_l2', 'path']
+        fields = ['type',
+                  'activity_l1', 'activity_l2',
+                  'path',         # (optional)
+                  'session_key',  # (optional)
+                  ]

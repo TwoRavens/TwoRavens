@@ -19,18 +19,25 @@ from tworaven_apps.utils.view_helper import \
 from tworaven_apps.behavioral_logs.forms import BehavioralLogEntryForm
 from tworaven_apps.behavioral_logs.models import BehavioralLogEntry
 
+from tworaven_apps.utils.view_helper import get_session_key
 
-def view_new_log_entry(request):
+
+def view_create_log_entry_verbose(request):
+    """Create a new BehavioralLogEntry.  Return the JSON version of the entry"""
+    return view_create_log_entry(request, is_verbose=True)
+
+def view_create_log_entry(request, is_verbose=False):
     """Make log entry endpoint"""
 
     # ----------------------------------------
-    # Get the user
+    # Get the user and session_key
     # ----------------------------------------
     user_info = get_authenticated_user(request)
     if not user_info.success:
         return JsonResponse(get_json_error(user_info.err_msg))
 
     user = user_info.result_obj
+    session_key = get_session_key(request)
 
     # ----------------------------------------
     # Get the log data
@@ -40,6 +47,7 @@ def view_new_log_entry(request):
         return JsonResponse(get_json_error(json_info.err_msg))
 
     log_data = json_info.result_obj
+    log_data.update(dict(session_key=session_key))
 
     # ----------------------------------------
     # Validate the data
@@ -66,4 +74,11 @@ def view_new_log_entry(request):
 
     new_entry.save()
 
-    return JsonResponse(get_json_success('log entry saved!'))
+    user_msg = 'Log entry saved!'
+
+    if is_verbose:
+        return JsonResponse(get_json_success(\
+                                user_msg,
+                                data=new_entry.to_dict()))
+
+    return JsonResponse(get_json_success(user_msg))
