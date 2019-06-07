@@ -33,7 +33,7 @@ Jinja2==2.10.1
 
 # for eventdata
 #
-pandas==0.22.0
+pandas==0.23.4
 
 # django channels/daphne
 #  note on http2: https://github.com/django/daphne#http2-support

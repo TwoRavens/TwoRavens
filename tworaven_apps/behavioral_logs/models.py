@@ -47,6 +47,7 @@ class BehavioralLogEntry(TimeStampedModel):
 
     class Meta:
         ordering = ('-created', 'user', 'session_key')
+        verbose_name_plural = 'Behavioral log entries'
 
     def __str__(self):
         """str repr"""

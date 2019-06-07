@@ -1406,7 +1406,7 @@ export let buildForceData = problem => {
     }
 
     // collapse groups with more than maxNodes into a single node
-    let maxNodes = 10;
+    let maxNodes = 20;
     groups.filter(group => group.nodes.size > maxNodes).forEach(group => {
         pebbles = pebbles.filter(node => !group.nodes.has(node)); // remove nodes from said group
         pebbles.push(group.name); // add one node to represent all the nodes
