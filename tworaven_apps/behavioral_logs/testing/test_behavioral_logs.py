@@ -54,7 +54,7 @@ class BehavioralLogTests(TestCase):
                            params,
                            content_type='application/json').json()
 
-        print('resp', resp)
+        #print('resp', resp)
         self.assertTrue(not resp['success'])
 
     def test_20_log_entry_valid(self):
@@ -82,7 +82,7 @@ class BehavioralLogTests(TestCase):
                            params,
                            content_type='application/json').json()
 
-        print('resp', resp)
+        #print('resp', resp)
         self.assertTrue(resp['success'])
         self.assertTrue(resp['data']['id'])
 
@@ -115,10 +115,22 @@ class BehavioralLogTests(TestCase):
         self.assertTrue(not resp['success'])
 
         err_dict = resp['errors']
-        self.assertTrue('type' in err_dict)
-        self.assertTrue('activity_l1' in err_dict)
-        self.assertTrue('path' in err_dict)
 
+        valid_choice_msg = 'Select a valid choice'
+
+        # check type error message
+        self.assertTrue('type' in err_dict)
+        self.assertTrue(err_dict['type'][0].find(valid_choice_msg) != -1)
+
+        # check activity_l1 error message
+        self.assertTrue('activity_l1' in err_dict)
+        self.assertTrue(err_dict['activity_l1'][0].find(valid_choice_msg) != -1)
+
+        char_msg = 'Ensure this value has at most 255 characters'
+
+        # check path error message
+        self.assertTrue('path' in err_dict)
+        self.assertTrue(err_dict['path'][0].find(char_msg) != -1)
 
 
     def get_test_params_as_dict(self, fname):
