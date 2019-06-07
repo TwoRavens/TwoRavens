@@ -18,21 +18,16 @@ from tworaven_apps.raven_auth.models import User
 
 from tworaven_apps.behavioral_logs.models import BehavioralLogEntry
 from tworaven_apps.behavioral_logs.forms import BehavioralLogEntryForm
-from tworaven_apps.behavioral_logs.log_util import BehavioralLogUtil as LogUtil
+from tworaven_apps.behavioral_logs.log_formatter import \
+    BehavioralLogFormatter as LogFormatter
 from tworaven_apps.behavioral_logs import static_vals as bl_static
 
 CURRENT_DIR = dirname(abspath(__file__))
 TEST_DATA_DIR = join(CURRENT_DIR, 'data')
-#TEST_RAVEN_CONFIG_FILE = join(CURRENT_DIR, 'data', 'raven_config_valid.json')
-
-#assert isfile(TEST_RAVEN_CONFIG_FILE), \
-#        f'File not found: {TEST_RAVEN_CONFIG_FILE}'
-
 
 class BehavioralLogTests(TestCase):
 
     fixtures = ['test_user_info_2019_0607.json',]
-    #'test_d3m_config_2019_0605']
 
     def setUp(self):
         # test client

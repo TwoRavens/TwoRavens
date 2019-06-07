@@ -26,6 +26,7 @@ def view_create_log_entry_verbose(request):
     """Create a new BehavioralLogEntry.  Return the JSON version of the entry"""
     return view_create_log_entry(request, is_verbose=True)
 
+
 def view_create_log_entry(request, is_verbose=False):
     """Make log entry endpoint"""
 

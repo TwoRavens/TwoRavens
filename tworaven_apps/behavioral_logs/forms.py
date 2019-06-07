@@ -13,4 +13,5 @@ class BehavioralLogEntryForm(ModelForm):
                   'activity_l1', 'activity_l2',
                   'path',         # (optional)
                   'session_key',  # (optional)
+                  'feature_id',   # (optional)
                   ]

@@ -47,6 +47,9 @@ from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 from tworaven_apps.ta2_interfaces.ta2_fit_solution_helper import FitSolutionHelper
 from tworaven_apps.ta2_interfaces.ta2_score_solution_helper import ScoreSolutionHelper
 #
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
+from tworaven_apps.behavioral_logs import static_vals as bl_static
+#
 import core_pb2
 import grpc
 from google.protobuf.json_format import \
@@ -131,6 +134,12 @@ class SearchSolutionsHelper(BasicErrCheck):
                         is_finished=False,
                         request=all_params[KEY_SEARCH_SOLUTION_PARAMS])
         stored_request.save()
+
+        log_data = dict(feature_id=SEARCH_SOLUTIONS,
+                        activity_l1=bl_static.L1_ACTIVITY_MODEL_SELECTION,
+                        activity_l2='MODEL_SEARCH')
+
+        LogEntryMaker.create_ta2ta3_entry(user_obj, log_data)
 
         # Run SearchSolutions against the TA2
         #

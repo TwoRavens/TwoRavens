@@ -7,7 +7,7 @@ from tworaven_apps.behavioral_logs import static_vals as bl_static
 from tworaven_apps.behavioral_logs.models import BehavioralLogEntry
 
 
-class BehavioralLogUtil():
+class BehavioralLogFormatter:
     """Methods for working with BehavioralLogEntry objects"""
 
     def __init__(self):
@@ -40,7 +40,7 @@ class BehavioralLogUtil():
                     'activity_l2',
                     'mandatory']
 
-        return BehavioralLogUtil.format_items_as_csv_string(csv_data)
+        return BehavioralLogFormatter.format_items_as_csv_string(csv_data)
 
     @staticmethod
     def get_csv_line(log_entry):
@@ -61,4 +61,4 @@ class BehavioralLogUtil():
                     'F' if log_entry.is_optional else 'T'
                     ]
 
-        return BehavioralLogUtil.format_items_as_csv_string(csv_data)
+        return BehavioralLogFormatter.format_items_as_csv_string(csv_data)

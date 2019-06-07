@@ -18,16 +18,17 @@ except Exception as e:
 
 from tworaven_apps.behavioral_logs.models import BehavioralLogEntry
 from tworaven_apps.behavioral_logs.forms import BehavioralLogEntryForm
-from tworaven_apps.behavioral_logs.log_util import BehavioralLogUtil as LogUtil
+from tworaven_apps.behavioral_logs.log_formatter \
+    import BehavioralLogFormatter as LogFormatter
 from tworaven_apps.behavioral_logs import static_vals as bl_static
 
 
 def test_write():
     """Test some basic functions"""
     entry = BehavioralLogEntry.objects.all()
-    csv_lines = [LogUtil.get_header_line()]
+    csv_lines = [LogFormatter.get_header_line()]
     for item in entry:
-        csv_lines.append(LogUtil.get_csv_line(item))
+        csv_lines.append(LogFormatter.get_csv_line(item))
 
     print(''.join(csv_lines))
 

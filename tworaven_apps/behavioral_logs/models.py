@@ -64,7 +64,8 @@ class BehavioralLogEntry(TimeStampedModel):
         if not self.id:
             super(BehavioralLogEntry, self).save(*args, **kwargs)
 
-        self.feature_id = self.construct_feature_id()
+        if not self.feature_id:
+            self.feature_id = self.construct_feature_id()
 
         #if not self.hash_id:
         #    hash_str = '%s %s' % (self.id, self.created)
@@ -76,7 +77,7 @@ class BehavioralLogEntry(TimeStampedModel):
         """Convert to python dict"""
         if not self.id:
             return dict(message='BehavioralLogEntry not saved')
-    
+
         info_dict = OrderedDict()
 
         info_dict['id'] = self.id
@@ -110,7 +111,8 @@ class BehavioralLogEntry(TimeStampedModel):
         # TA23API
         #
         if self.type == bl_static.ENTRY_TYPE_TA23API:
-            return bl_static.ENTRY_TYPE_TA23API
+            return 'Error should be name of TA23API call)'
+            # bl_static.ENTRY_TYPE_TA23API
 
         # DATAMART
         #
