@@ -14,8 +14,26 @@ class LogEntryMaker:
     def __init__(self,):
         pass
 
+
+    @staticmethod
+    def create_system_entry(user, log_data):
+        """Add a TA2TA3 entry"""
+        return LogEntryMaker.create_log_entry(\
+                        user,
+                        bl_static.ENTRY_TYPE_SYSTEM,
+                        log_data)
+
     @staticmethod
     def create_ta2ta3_entry(user, log_data):
+        """Add a TA2TA3 entry"""
+        return LogEntryMaker.create_log_entry(\
+                        user,
+                        bl_static.ENTRY_TYPE_TA23API,
+                        log_data)
+
+
+    @staticmethod
+    def create_log_entry(user, entry_type, log_data):
         """Add a TA2TA3 entry"""
         assert isinstance(user, User), \
             "user must be a User object"
@@ -23,7 +41,7 @@ class LogEntryMaker:
             "log_data must be a dict object"
 
         # set entry type
-        log_data['type'] = bl_static.ENTRY_TYPE_TA23API
+        log_data['type'] = entry_type
 
         f = BehavioralLogEntryForm(log_data)
         if not f.is_valid():

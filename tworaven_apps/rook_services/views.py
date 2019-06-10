@@ -22,7 +22,13 @@ from tworaven_apps.utils.view_helper import \
      get_request_body_as_json)
 from tworaven_apps.utils.view_helper import \
     (get_json_error,
-     get_json_success)
+     get_json_success,
+     get_authenticated_user)
+
+from tworaven_apps.ta2_interfaces import static_vals as ta2_static
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
+from tworaven_apps.behavioral_logs import static_vals as bl_static
+from tworaven_apps.rook_services import static_vals as rook_static
 
 LOGGER = logging.getLogger(__name__)
 
@@ -36,6 +42,12 @@ def view_rook_preprocess(request):
           "datastub": "196_ag_problem_TRAIN"
         }
     """
+    # used for logging
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+
     json_info = get_request_body_as_json(request)
     if not json_info.success:
         return JsonResponse(get_json_error(json_info.err_msg))
@@ -55,6 +67,17 @@ def view_rook_preprocess(request):
                    f' in the preprocess request')
         return JsonResponse(get_json_error(err_msg))
 
+    # --------------------------------
+    # Behavioral logging
+    # --------------------------------
+    log_data = dict(session_key=get_session_key(request),
+                    feature_id=rook_static.PREPROCESS_DATA,
+                    activity_l1=bl_static.L1_DATA_PREPARATION,
+                    activity_l2=bl_static.L2_ACTIVITY_BLANK)
+
+    LogEntryMaker.create_system_entry(user_info.result_obj, log_data)
+
+
     putil = PreprocessUtil(json_data[KEY_DATA],
                            datastub=json_data[KEY_DATASTUB])
     if putil.has_error():
@@ -73,9 +96,9 @@ def view_rook_healthcheck(request):
     #
     rook_app_info = RookAppInfo.get_appinfo_from_url('healthcheckapp')
     if rook_app_info is None:
-        raise Http404(('unknown rook app: "{0}" (please add "{0}" to '
-                       ' "tworaven_apps/rook_services/app_names.py")').format(\
-                       app_name_in_url))
+        raise Http404((f'unknown rook app: "{app_name_in_url}"'
+                       f' (please add "{app_name_in_url}" to '
+                       f' "tworaven_apps/rook_services/app_names.py")'))
 
     rook_svc_url = rook_app_info.get_rook_server_url()
 
