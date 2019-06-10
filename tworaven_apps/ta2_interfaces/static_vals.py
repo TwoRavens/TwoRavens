@@ -67,6 +67,9 @@ GET_PRODUCE_SOLUTION_RESULTS = 'GetProduceSolutionResults'
 SCORE_SOLUTION = 'ScoreSolution'
 GET_SCORE_SOLUTION_RESULTS = 'GetScoreSolutionResults'
 
+STOP_SEARCH_SOLUTIONS = 'StopSearchSolutions'
+END_SEARCH_SOLUTIONS = 'EndSearchSolutions'
+
 SOLUTION_EXPORT = 'SolutionExport'
 
 # ------------------------------------------

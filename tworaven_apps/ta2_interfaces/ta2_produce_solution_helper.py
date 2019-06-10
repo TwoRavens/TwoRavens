@@ -45,6 +45,7 @@ class ProduceSolutionHelper(BasicErrCheck):
 
         self.produce_params = produce_params
         self.search_id = kwargs.get('search_id', None)
+        self.session_key = kwargs.get('session_key', None)
 
         self.get_user()
         self.check_produce_params()
@@ -150,7 +151,8 @@ class ProduceSolutionHelper(BasicErrCheck):
         # --------------------------------
         # (2a) Behavioral logging
         # --------------------------------
-        log_data = dict(feature_id=ta2_static.PRODUCE_SOLUTION,
+        log_data = dict(session_key=self.session_key,
+                        feature_id=ta2_static.PRODUCE_SOLUTION,
                         activity_l1=bl_static.L1_MODEL_SELECTION,
                         activity_l2=bl_static.L2_MODEL_EXPLANATION)
 
@@ -269,7 +271,8 @@ class ProduceSolutionHelper(BasicErrCheck):
         # --------------------------------
         # (2a) Behavioral logging
         # --------------------------------
-        log_data = dict(feature_id=ta2_static.GET_PRODUCE_SOLUTION_RESULTS,
+        log_data = dict(session_key=self.session_key,
+                        feature_id=ta2_static.GET_PRODUCE_SOLUTION_RESULTS,
                         activity_l1=bl_static.L1_MODEL_SELECTION,
                         activity_l2=bl_static.L2_MODEL_EXPLANATION)
 

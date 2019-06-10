@@ -34,7 +34,6 @@ LOGGER = logging.getLogger(__name__)
 
 class FitSolutionHelper(BasicErrCheck):
     """Helper class to run TA2 call sequence"""
-    GRCP_FIT_SOLUTION = 'FitSolution'
 
     def __init__(self, pipeline_id, websocket_id, user_id, fit_params, **kwargs):
         """initial params"""
@@ -47,6 +46,7 @@ class FitSolutionHelper(BasicErrCheck):
 
         self.search_id = kwargs.get('search_id', None)
         self.produce_params = kwargs.get('produce_params', None)
+        self.session_key = kwargs.get('session_key', '')
 
         self.get_user()
         self.check_fit_params()
@@ -106,7 +106,7 @@ class FitSolutionHelper(BasicErrCheck):
                         (pipeline_id, fit_helper.get_error_message())
 
             ws_msg = WebsocketMessage.get_fail_message(\
-                        FitSolutionHelper.GRCP_FIT_SOLUTION, user_msg)
+                        ta2_static.FIT_SOLUTION, user_msg)
 
             ws_msg.send_message(websocket_id)
             LOGGER.error(user_msg)
@@ -145,7 +145,8 @@ class FitSolutionHelper(BasicErrCheck):
         # --------------------------------
         # (2a) Behavioral logging
         # --------------------------------
-        log_data = dict(feature_id=ta2_static.FIT_SOLUTION,
+        log_data = dict(session_key=self.session_key,
+                        feature_id=ta2_static.FIT_SOLUTION,
                         activity_l1=bl_static.L1_MODEL_SELECTION,
                         activity_l2=bl_static.L2_MODEL_EXPLANATION)
 
@@ -261,7 +262,8 @@ class FitSolutionHelper(BasicErrCheck):
         # --------------------------------
         # (2a) Behavioral logging
         # --------------------------------
-        log_data = dict(feature_id=ta2_static.GET_FIT_SOLUTION_RESULTS,
+        log_data = dict(session_key=self.session_key,
+                        feature_id=ta2_static.GET_FIT_SOLUTION_RESULTS,
                         activity_l1=bl_static.L1_MODEL_SELECTION,
                         activity_l2=bl_static.L2_MODEL_EXPLANATION)
 
@@ -426,4 +428,5 @@ class FitSolutionHelper(BasicErrCheck):
                                     self.websocket_id,
                                     self.user_id,
                                     prod_params,
-                                    search_id=self.search_id)
+                                    search_id=self.search_id,
+                                    session_key=self.session_key)

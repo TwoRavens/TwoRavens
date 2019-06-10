@@ -22,6 +22,7 @@ from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.json_helper import json_loads, json_dumps
 from tworaven_apps.utils.proto_util import message_to_json
+from tworaven_apps.utils.view_helper import SESSION_KEY
 
 from tworaven_apps.ta2_interfaces import static_vals as ta2_static
 from tworaven_apps.ta2_interfaces.models import \
@@ -64,6 +65,7 @@ class SearchSolutionsHelper(BasicErrCheck):
         self.user_object = None
 
         self.all_search_params = kwargs.get('all_search_params', {})
+        self.session_key = kwargs.get(SESSION_KEY)
 
         self.get_user()
         self.run_process()
@@ -96,7 +98,7 @@ class SearchSolutionsHelper(BasicErrCheck):
 
 
     @staticmethod
-    def make_search_solutions_call(all_params, websocket_id, user_id):
+    def make_search_solutions_call(all_params, websocket_id, user_id, **kwargs):
         """Return the result of a SearchSolutions call.
         If successful, an async process is kicked off"""
         if not websocket_id:
@@ -132,7 +134,10 @@ class SearchSolutionsHelper(BasicErrCheck):
         # --------------------------------
         # (2a) Behavioral logging
         # --------------------------------
-        log_data = dict(feature_id=ta2_static.SEARCH_SOLUTIONS,
+        session_key = kwargs.get(SESSION_KEY, None)
+
+        log_data = dict(session_key=session_key,
+                        feature_id=ta2_static.SEARCH_SOLUTIONS,
                         activity_l1=bl_static.L1_MODEL_SELECTION,
                         activity_l2=bl_static.L2_MODEL_SEARCH)
 
@@ -171,9 +176,12 @@ class SearchSolutionsHelper(BasicErrCheck):
                                             search_id=search_id)
         # Async task to run GetSearchSolutionsResults
         #
+        extra_params = {SESSION_KEY: session_key}
+
         SearchSolutionsHelper.kick_off_solution_results.delay(\
                         search_id, websocket_id, user_id,
-                        all_search_params=all_params)
+                        all_search_params=all_params,
+                        **extra_params)
 
         # Back to the UI, looking good
         #
@@ -267,7 +275,8 @@ class SearchSolutionsHelper(BasicErrCheck):
         # --------------------------------
         # (2a) Behavioral logging
         # --------------------------------
-        log_data = dict(feature_id=ta2_static.GET_SEARCH_SOLUTIONS_RESULTS,
+        log_data = dict(session_key=self.session_key,
+                        feature_id=ta2_static.GET_SEARCH_SOLUTIONS_RESULTS,
                         activity_l1=bl_static.L1_MODEL_SELECTION,
                         activity_l2=bl_static.L2_MODEL_SEARCH)
 
@@ -281,7 +290,6 @@ class SearchSolutionsHelper(BasicErrCheck):
             return err_resp(err_msg)
 
         msg_cnt = 0
-        grpc_call_name = 'GetSearchSolutionsResults'
         try:
             # -----------------------------------------
             # Iterate through the streaming responses
@@ -448,7 +456,8 @@ class SearchSolutionsHelper(BasicErrCheck):
                                     self.websocket_id,
                                     self.user_id,
                                     score_params,
-                                    search_id=self.search_id)
+                                    search_id=self.search_id,
+                                    session_key=self.session_key)
 
     def run_fit_solution(self, pipeline_id, solution_id):
         """async: Run FitSolution and GetFitSolutionResults"""
@@ -471,7 +480,9 @@ class SearchSolutionsHelper(BasicErrCheck):
                                     self.user_id,
                                     fit_params,
                                     search_id=self.search_id,
-                                    produce_params=produce_params)
+                                    produce_params=produce_params,
+                                    session_key=self.session_key)
+
 
     def run_describe_solution(self, pipeline_id, solution_id, msg_cnt=-1):
         """sync: Run a DescribeSolution call for each solution_id"""
@@ -503,7 +514,8 @@ class SearchSolutionsHelper(BasicErrCheck):
         # --------------------------------
         # (2a) Behavioral logging
         # --------------------------------
-        log_data = dict(feature_id=ta2_static.DESCRIBE_SOLUTION,
+        log_data = dict(session_key=self.session_key,
+                        feature_id=ta2_static.DESCRIBE_SOLUTION,
                         activity_l1=bl_static.L1_MODEL_SELECTION,
                         activity_l2=bl_static.L2_MODEL_SUMMARIZATION)
 
