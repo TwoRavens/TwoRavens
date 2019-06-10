@@ -320,7 +320,9 @@ export let buildProblemPreprocess = async (ravenConfig, problem) => problem.mani
         url: ROOK_SVC_URL + 'preprocessapp',
         data: {
             data: url,
-            datastub: workspace.d3m_config.name
+            datastub: workspace.d3m_config.name,
+            l1_activity: 'PROBLEM_DEFINITION',
+            l2_activity: 'PROBLEM_SPECIFICATION'
         }
     })).then(response => {
         if (!response.success) alertError(response.message);
@@ -2067,7 +2069,7 @@ export async function estimate() {
 
     // initiate rook solver
     // - TO-FIX 5/22/2019
-    // callSolver(selectedProblem, datasetPath);
+    //callSolver(selectedProblem, datasetPath);
 
     let datasetDocPath = selectedProblem.datasetDocPath || workspace.d3m_config.dataset_schema;
 
@@ -2929,7 +2931,7 @@ export async function callSolver(prob, datasetPath=undefined) {
     }
     setSolverPending(false);
 
-    let hasManipulation = [...dataset.hardManipulations, ...prob.manipulations].length > 0;
+    let hasManipulation = [...workspace.raven_config.hardManipulations, ...prob.manipulations].length > 0;
     let hasNominal = [prob.targets, ...prob.predictors].some(variable => zparams.znom.includes(variable));
 
     if (!datasetPath)

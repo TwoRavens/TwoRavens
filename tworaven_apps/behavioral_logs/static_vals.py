@@ -2,6 +2,9 @@
 # Behavioral log values
 #
 
+KEY_L1_ACTIVITY = 'l1_activity'
+KEY_L2_ACTIVITY = 'l2_activity'
+
 # -------------------------
 # "type" values
 # -------------------------
@@ -36,6 +39,8 @@ L1_ACTIVITY_CHOICES = ((x, x) for x in L1_ACTIVITIES)
 # "activity_l2" values
 # -------------------------
 L2_ACTIVITY_BLANK = '(blank)'
+
+L2_DATA_EXPLORE = 'DATA_EXPLORE'
 
 L2_LAUNCH_TA3 = 'LAUNCH_TA3'
 
