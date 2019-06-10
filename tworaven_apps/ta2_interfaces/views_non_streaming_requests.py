@@ -30,10 +30,13 @@ from tworaven_apps.utils.view_helper import \
      get_json_success)
 from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.utils.view_helper import get_session_key
-from tworaven_apps.ta2_interfaces.static_vals import \
-    (SEARCH_SOLUTIONS,)
+
 from tworaven_apps.ta2_interfaces.ta2_search_solutions_helper import \
         SearchSolutionsHelper
+
+from tworaven_apps.ta2_interfaces import static_vals as ta2_static
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
+from tworaven_apps.behavioral_logs import static_vals as bl_static
 
 
 @csrf_exempt
@@ -62,7 +65,21 @@ def view_hello_heartbeat(request):
 @csrf_exempt
 def view_hello(request):
     """gRPC: Call from UI as a hearbeat"""
-    session_key = get_session_key(request)
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+
+    # --------------------------------
+    # Behavioral logging
+    # --------------------------------
+    log_data = dict(session_key=get_session_key(request),
+                    feature_id=ta2_static.HELLO,
+                    activity_l1=bl_static.L1_SYSTEM_ACTIVITY,
+                    activity_l2=bl_static.L2_LAUNCH_TA3)
+
+    LogEntryMaker.create_ta2ta3_entry(user_info.result_obj, log_data)
+
 
     # note: this is just a heartbeat, so no params are sent
     #
@@ -150,7 +167,7 @@ def view_search_solutions(request):
     if ServiceCallEntry.record_d3m_call():
         call_entry = ServiceCallEntry.get_dm3_entry(\
                         request_obj=request,
-                        call_type=SEARCH_SOLUTIONS,
+                        call_type=ta2_static.SEARCH_SOLUTIONS,
                         request_msg=req_body_info.result_obj)
 
     # Let's call the TA2!

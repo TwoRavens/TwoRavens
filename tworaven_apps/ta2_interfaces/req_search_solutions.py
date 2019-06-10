@@ -16,7 +16,7 @@ from tworaven_apps.ta2_interfaces.models import StoredRequest, StoredResponse
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json
 from tworaven_apps.ta2_interfaces.static_vals import \
-    (GRPC_GET_FIT_SOLUTION_RESULTS,
+    (GET_FIT_SOLUTION_RESULTS,
      SEARCH_SOLUTIONS,
      KEY_SEARCH_ID,
      KEY_PIPELINE_ID, KEY_RANK, KEY_FITTED_SOLUTION_ID)
@@ -452,7 +452,7 @@ def solution_export_with_saved_response(raven_json):
     #   entry but may be changed in the future
     #
     params = dict(pipeline_id=raven_json[KEY_PIPELINE_ID],
-                  stored_request__request_type=GRPC_GET_FIT_SOLUTION_RESULTS,
+                  stored_request__request_type=GET_FIT_SOLUTION_RESULTS,
                   is_finished=True)
 
     # Go through the results, looking for one with a fittedSolutionId

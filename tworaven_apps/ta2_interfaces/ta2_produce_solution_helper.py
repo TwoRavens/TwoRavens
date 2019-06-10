@@ -18,10 +18,11 @@ from tworaven_apps.utils.proto_util import message_to_json
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 from tworaven_apps.ta2_interfaces.req_search_solutions import produce_solution
-from tworaven_apps.ta2_interfaces.static_vals import \
-        (KEY_FITTED_SOLUTION_ID, KEY_PIPELINE_ID,
-         KEY_PROGRESS, KEY_PROGRESS_STATE, KEY_PROGRESS_COMPLETED,
-         KEY_REQUEST_ID, KEY_SEARCH_ID, KEY_SOLUTION_ID)
+
+from tworaven_apps.ta2_interfaces import static_vals as ta2_static
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
+from tworaven_apps.behavioral_logs import static_vals as bl_static
+
 from tworaven_apps.ta2_interfaces.models import \
         (StoredRequest, StoredResponse)
 import core_pb2
@@ -34,8 +35,6 @@ LOGGER = logging.getLogger(__name__)
 
 class ProduceSolutionHelper(BasicErrCheck):
     """Helper class to run TA2 call sequence"""
-    GRCP_PRODUCE_SOLUTION = 'ProduceSolution'
-    GRPC_GET_PRODUCE_SOLUTION_RESULTS = 'GetProduceSolutionResults'
 
     def __init__(self, pipeline_id, websocket_id, user_id, produce_params, **kwargs):
         """initial params"""
@@ -77,14 +76,14 @@ class ProduceSolutionHelper(BasicErrCheck):
 
         # Iterate through the expectd keys
         #
-        expected_keys = [KEY_FITTED_SOLUTION_ID, 'inputs',
+        expected_keys = [ta2_static.KEY_FITTED_SOLUTION_ID, 'inputs',
                          'exposeOutputs', 'exposeValueTypes']
 
         for key in expected_keys:
             if not key in self.produce_params:
                 user_msg = ('produce_params for pipeline "%s" is missing key: %s') % \
                             (self.pipeline_id, key)
-                self.send_websocket_err_msg(self.GRCP_PRODUCE_SOLUTION, user_msg)
+                self.send_websocket_err_msg(ta2_static.PRODUCE_SOLUTION, user_msg)
                 return False
 
         return True
@@ -141,12 +140,21 @@ class ProduceSolutionHelper(BasicErrCheck):
         # --------------------------------
         stored_request = StoredRequest(\
                         user=self.user_object,
-                        request_type=self.GRCP_PRODUCE_SOLUTION,
+                        request_type=ta2_static.PRODUCE_SOLUTION,
                         pipeline_id=self.pipeline_id,
                         search_id=self.search_id,
                         is_finished=False,
                         request=self.produce_params)
         stored_request.save()
+
+        # --------------------------------
+        # (2a) Behavioral logging
+        # --------------------------------
+        log_data = dict(feature_id=ta2_static.PRODUCE_SOLUTION,
+                        activity_l1=bl_static.L1_MODEL_SELECTION,
+                        activity_l2=bl_static.L2_MODEL_EXPLANATION)
+
+        LogEntryMaker.create_ta2ta3_entry(self.user_object, log_data)
 
         # ----------------------------------
         # Run FitSolution
@@ -156,19 +164,19 @@ class ProduceSolutionHelper(BasicErrCheck):
             StoredResponse.add_err_response(stored_request,
                                             produce_info.err_msg)
 
-            self.send_websocket_err_msg(self.GRCP_PRODUCE_SOLUTION,
+            self.send_websocket_err_msg(ta2_static.PRODUCE_SOLUTION,
                                         produce_info.err_msg)
             return
 
         # ----------------------------------
-        # Parse the FitSolutionResponse
+        # Parse the ProduceSolutionResponse
         # ----------------------------------
         response_info = json_loads(produce_info.result_obj)
         if not response_info.success:
             StoredResponse.add_err_response(stored_request,
                                             response_info.err_msg)
 
-            self.send_websocket_err_msg(self.GRCP_PRODUCE_SOLUTION,
+            self.send_websocket_err_msg(ta2_static.PRODUCE_SOLUTION,
                                         response_info.err_msg)
             return
 
@@ -177,14 +185,14 @@ class ProduceSolutionHelper(BasicErrCheck):
         # ----------------------------------
         # Get the requestId
         # ----------------------------------
-        if not KEY_REQUEST_ID in result_json:
+        if not ta2_static.KEY_REQUEST_ID in result_json:
             user_msg = (' "%s" not found in response to JSON: %s') % \
-                        (KEY_REQUEST_ID, result_json)
+                        (ta2_static.KEY_REQUEST_ID, result_json)
             #
             StoredResponse.add_err_response(stored_request,
                                             user_msg)
             #
-            self.send_websocket_err_msg(self.GRCP_PRODUCE_SOLUTION, user_msg)
+            self.send_websocket_err_msg(ta2_static.PRODUCE_SOLUTION, user_msg)
             return
 
         # Store success response
@@ -192,7 +200,7 @@ class ProduceSolutionHelper(BasicErrCheck):
         StoredResponse.add_success_response(stored_request, result_json)
 
 
-        self.run_get_produce_solution_responses(result_json[KEY_REQUEST_ID])
+        self.run_get_produce_solution_responses(result_json[ta2_static.KEY_REQUEST_ID])
 
 
     def send_websocket_err_msg(self, grpc_call, user_msg=''):
@@ -227,14 +235,14 @@ class ProduceSolutionHelper(BasicErrCheck):
             return
 
         if not request_id:
-            self.send_websocket_err_msg(self.GRPC_GET_PRODUCE_SOLUTION_RESULTS,
+            self.send_websocket_err_msg(ta2_static.GET_PRODUCE_SOLUTION_RESULTS,
                                         'request_id must be set')
             return
 
         # -----------------------------------
         # (1) make GRPC request object
         # -----------------------------------
-        params_dict = {KEY_REQUEST_ID: request_id}
+        params_dict = {ta2_static.KEY_REQUEST_ID: request_id}
         params_info = json_dumps(params_dict)
 
         try:
@@ -242,7 +250,7 @@ class ProduceSolutionHelper(BasicErrCheck):
                              core_pb2.GetProduceSolutionResultsRequest())
         except ParseError as err_obj:
             err_msg = ('Failed to convert JSON to gRPC: %s') % (err_obj)
-            self.send_websocket_err_msg(self.GRPC_GET_PRODUCE_SOLUTION_RESULTS,
+            self.send_websocket_err_msg(ta2_static.GET_PRODUCE_SOLUTION_RESULTS,
                                         err_msg)
             return
 
@@ -251,12 +259,21 @@ class ProduceSolutionHelper(BasicErrCheck):
         # --------------------------------
         stored_request = StoredRequest(\
                         user=self.user_object,
-                        request_type=self.GRPC_GET_PRODUCE_SOLUTION_RESULTS,
+                        request_type=ta2_static.GET_PRODUCE_SOLUTION_RESULTS,
                         pipeline_id=self.pipeline_id,
                         search_id=self.search_id,
                         is_finished=False,
                         request=params_dict)
         stored_request.save()
+
+        # --------------------------------
+        # (2a) Behavioral logging
+        # --------------------------------
+        log_data = dict(feature_id=ta2_static.GET_PRODUCE_SOLUTION_RESULTS,
+                        activity_l1=bl_static.L1_MODEL_SELECTION,
+                        activity_l2=bl_static.L2_MODEL_EXPLANATION)
+
+        LogEntryMaker.create_ta2ta3_entry(self.user_object, log_data)
 
         # --------------------------------
         # (3) Make the gRPC request
@@ -292,7 +309,7 @@ class ProduceSolutionHelper(BasicErrCheck):
                                             stored_request, err_msg)
 
                     self.send_websocket_err_msg(\
-                            self.GRPC_GET_PRODUCE_SOLUTION_RESULTS,
+                            ta2_static.GET_PRODUCE_SOLUTION_RESULTS,
                             err_msg)
                     # Wait for next response....
                     continue
@@ -316,7 +333,7 @@ class ProduceSolutionHelper(BasicErrCheck):
                                 stored_request, stored_resp_info.err_msg)
 
                     self.send_websocket_err_msg(\
-                                    self.GRPC_GET_PRODUCE_SOLUTION_RESULTS,
+                                    ta2_static.GET_PRODUCE_SOLUTION_RESULTS,
                                     stored_resp_info.err_msg)
                     continue
 
@@ -332,17 +349,18 @@ class ProduceSolutionHelper(BasicErrCheck):
                 # ---------------------------------------------
                 progress_val = get_dict_value(\
                                 result_json,
-                                [KEY_PROGRESS, KEY_PROGRESS_STATE])
+                                [ta2_static.KEY_PROGRESS,
+                                 ta2_static.KEY_PROGRESS_STATE])
 
                 if (not progress_val.success) or \
-                   (progress_val.result_obj != KEY_PROGRESS_COMPLETED):
+                   (progress_val.result_obj != ta2_static.KEY_PROGRESS_COMPLETED):
                     user_msg = 'GetProduceSolutionResultsResponse is not yet complete'
                     LOGGER.info(user_msg)
                     # wait for next message...
                     continue
 
                 ws_msg = WebsocketMessage.get_success_message(\
-                            self.GRPC_GET_PRODUCE_SOLUTION_RESULTS,
+                            ta2_static.GET_PRODUCE_SOLUTION_RESULTS,
                             'it worked.',
                             msg_cnt=msg_cnt,
                             data=stored_response.as_dict())

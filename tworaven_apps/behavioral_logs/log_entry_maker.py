@@ -28,7 +28,8 @@ class LogEntryMaker:
         f = BehavioralLogEntryForm(log_data)
         if not f.is_valid():
             err_msg = 'Log entry params are not valid: %s' % \
-                        dict(f.errors())
+                        (dict(f.errors))
+            print(f'ERROR!: {err_msg}')
             return err_resp(err_msg)
 
         new_entry = BehavioralLogEntry(**log_data)

@@ -35,7 +35,7 @@ def test_write():
 def test_form():
     """Test form input"""
     params = dict(type=bl_static.ENTRY_TYPE_TA23API,
-                  activity_l1=bl_static.L1_ACTIVITY_DATA_PREPARATION,
+                  activity_l1=bl_static.L1_DATA_PREPARATION,
                   activity_l2='lookin_good',
                   path='ze-path')
 

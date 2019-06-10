@@ -13,10 +13,14 @@ class BehavioralLogEntryAdmin(admin.ModelAdmin):
                     'type',
                     'activity_l1',
                     'activity_l2',
+                    'created',
                     )
 
     list_filter = ('is_optional',
-                   'type',)
+                   'type',
+                   'activity_l1',
+                   'activity_l2')
+
     readonly_fields = ('modified', 'created')
-    
+
 admin.site.register(BehavioralLogEntry, BehavioralLogEntryAdmin)
