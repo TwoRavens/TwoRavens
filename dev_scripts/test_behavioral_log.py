@@ -1,9 +1,10 @@
 import os, sys
 import json
-from os.path import abspath, dirname, join
+from os.path import abspath, dirname, isdir, join
 
-sys.path.append(dirname(abspath(__file__)))
-sys.path.append(dirname(dirname(abspath(__file__))))
+CURRENT_DIR = dirname(abspath(__file__))
+sys.path.append(CURRENT_DIR)
+sys.path.append(dirname(CURRENT_DIR))
 
 os.environ.setdefault('TA2_STATIC_TEST_MODE',
                       'False')
@@ -19,18 +20,27 @@ except Exception as e:
 from tworaven_apps.behavioral_logs.models import BehavioralLogEntry
 from tworaven_apps.behavioral_logs.forms import BehavioralLogEntryForm
 from tworaven_apps.behavioral_logs.log_formatter \
-    import BehavioralLogFormatter as LogFormatter
+    import BehavioralLogFormatter
 from tworaven_apps.behavioral_logs import static_vals as bl_static
 
 
 def test_write():
     """Test some basic functions"""
-    entry = BehavioralLogEntry.objects.all()
-    csv_lines = [LogFormatter.get_header_line()]
-    for item in entry:
-        csv_lines.append(LogFormatter.get_csv_line(item))
+    entries = BehavioralLogEntry.objects.all()
+    blf = BehavioralLogFormatter(log_entries=entries)
+    if blf.has_error():
+        print('error: ', blf.get_error_message())
+    else:
+        csv_output = blf.get_csv_content()
 
-    print(''.join(csv_lines))
+    print(csv_output)
+    output_dir = join(CURRENT_DIR, 'output')
+    if not isdir(output_dir):
+        os.makedirs(output_dir)
+
+    fname = join(output_dir, 'test_output.csv')
+    open(fname, 'w').write(csv_output)
+    print('file written: ', fname)
 
 def test_form():
     """Test form input"""
@@ -51,5 +61,5 @@ def test_form():
 
 
 if __name__ == '__main__':
-    # test_write()
-    test_form()
+    test_write()
+    # test_form()
