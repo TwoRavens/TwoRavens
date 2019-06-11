@@ -4,6 +4,7 @@ import CanvasContinuous from '../canvases/CanvasContinuous';
 import CanvasDate from '../canvases/CanvasDate';
 import CanvasDiscrete from '../canvases/CanvasDiscrete';
 import CanvasTransform from '../canvases/CanvasTransform';
+import CanvasImputation from "../canvases/CanvasImputation";
 
 import Flowchart from '../views/Flowchart';
 
@@ -13,17 +14,20 @@ import PanelList from "../../common/views/PanelList";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import Panel from "../../common/views/Panel";
 import Canvas from "../../common/views/Canvas";
+import Table from "../../common/views/Table";
+
 import * as common from '../../common/common';
 
+import {alertLog, alertError} from "../app";
 import * as app from '../app';
 
 import * as queryAbstract from './queryAbstract';
 import * as queryMongo from "./queryMongo";
 import hopscotch from 'hopscotch';
-import CanvasImputation from "../canvases/CanvasImputation";
-import {alertLog, alertError} from "../app";
+
+import {formatVariableSummary} from '../views/VariableSummary';
 import Icon from "../views/Icon";
-import Table from "../../common/views/Table";
+
 
 export function menu(compoundPipeline) {
 
@@ -206,7 +210,7 @@ export function varList() {
             callback: ['transform', 'imputation'].includes(constraintMenu.type)
                 ? variable => constraintPreferences.select(variable) // the select function is defined inside CanvasTransform
                 : variable => setConstraintColumn(variable, constraintMenu.pipeline),
-            popup: x => m('div', m('h4', 'Summary Statistics for ' + x), m(Table, {attrsAll: {class: 'table-sm'}, data: app.getVarSummary(app.variableSummaries[x])})),
+            popup: x => m('div', m('h4', 'Summary Statistics for ' + x), m(Table, {attrsAll: {class: 'table-sm'}, data: formatVariableSummary(app.variableSummaries[x])})),
             popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
             attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
             attrsAll: {
@@ -540,7 +544,7 @@ export let setQueryUpdated = async state => {
 
         app.buildProblemPreprocess(ravenConfig, selectedProblem)
             .then(summaries => {
-                if (summaries) app.variableSummaries = summaries
+                if (summaries) app.setVariableSummaries(summaries)
             }).then(m.redraw);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
