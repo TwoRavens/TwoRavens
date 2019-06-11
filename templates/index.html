@@ -1,8 +1,14 @@
 {% extends 'base.html' %}
 {% load render_bundle from webpack_loader %}
 {% load static %}
+
+{% block block_css_bundle %}
+  <!-- bundle for the main app -->
+  {% render_bundle 'main' 'css' %}
+{% endblock %}
+
 {% block extra_css %}
-    <!-- bootstrap 3 <link rel="stylesheet" href="{% static "pkgs/bootstrap/css/bootstrap.css" %}">-->
+  {# -- empty block -- #}
 {% endblock %}
 
 {% block extra_js %}
@@ -75,6 +81,7 @@
 
           const devlinks_url = "{% url 'view_dev_raven_links' %}";
           const settings_url = "{% url 'view_d3m_list' %}"; // D3M configs
+          const behavioral_log_url = "{% url 'view_show_log_onscreen' %}"; // D3M configs
 
           {% else %}
           // --------------------------
@@ -86,6 +93,7 @@
           const workspaces_url = '';
           const devlinks_url = '';
           const settings_url = ''; // D3M configs
+          const behavioral_log_url = ''; // D3M configs
           {% endif %}
           // --------------------------
           // Sign up / Log in / Log out

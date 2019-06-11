@@ -67,3 +67,4 @@ rook/preprocess/.Rapp.history
 ravens_volume/db_mongo
 ravens-test/cypress/screenshots/
 ravens-test/cypress/videos/
+dev_scripts/output

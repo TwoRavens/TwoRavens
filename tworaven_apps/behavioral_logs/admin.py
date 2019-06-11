@@ -8,6 +8,7 @@ class BehavioralLogEntryAdmin(admin.ModelAdmin):
     # search_fields = ('',)
     list_display = ('user',
                     'session_key',
+                    'other',
                     'is_optional',
                     'feature_id',
                     'type',

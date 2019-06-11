@@ -10,14 +10,17 @@ from tworaven_apps.utils.basic_response import (ok_resp,
 
 class LogEntryMaker:
     """util for creating BehavioralLogEntry objects"""
-
     def __init__(self,):
         pass
-
 
     @staticmethod
     def create_system_entry(user, log_data):
         """Add a TA2TA3 entry"""
+        assert isinstance(log_data, dict),\
+            'log_data must be a python dict. (create_system_entry)'
+
+        log_data['is_optional'] = True
+
         return LogEntryMaker.create_log_entry(\
                         user,
                         bl_static.ENTRY_TYPE_SYSTEM,
@@ -26,6 +29,9 @@ class LogEntryMaker:
     @staticmethod
     def create_ta2ta3_entry(user, log_data):
         """Add a TA2TA3 entry"""
+        assert isinstance(log_data, dict),\
+            'log_data must be a python dict. (create_ta2ta3_entry)'
+
         return LogEntryMaker.create_log_entry(\
                         user,
                         bl_static.ENTRY_TYPE_TA23API,
