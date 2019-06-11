@@ -23,8 +23,8 @@ urlpatterns = (
 
     # View the user's log for this session
     #
-    #url(r'^export-log/csv$',
-    #    views.view_export_log_csv,
-    #    name='view_export_log_csv'),
+    url(r'^export-log/csv$',
+        views.view_export_log_csv,
+        name='view_export_log_csv'),
 
 )

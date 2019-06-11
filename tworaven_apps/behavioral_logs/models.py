@@ -81,10 +81,12 @@ class BehavioralLogEntry(TimeStampedModel):
 
     def format_other_entry(self):
         """The "other entry", a bit TBD"""
-        if self.session_key:
+        info = {}
+
+        if self.id and self.session_key:
             info = dict(id=self.id,
                         session_key=self.session_key)
-        else:
+        elif self.id:
             info = dict(id=self.id)
 
         return json.dumps(info)

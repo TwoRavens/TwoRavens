@@ -28,17 +28,20 @@
 
         <div class="card-body">
             {% if log_entries %}
-            <p>
-                <b>{{ log_entries.count }} log entr{{ log_entries|pluralize:"y,ies"}}</b>
+            <ul>
+                <li><b>{{ log_entries.count }} log entr{{ log_entries|pluralize:"y,ies"}}</b>
                   {{ log_entries|pluralize:"was,were"}} found for
                 {% if session_key %}
-                  this session key. (Session key:  <code>{{ session_key }}</code>).
+                  this session key. (Session key:  <code>{{ session_key }}</code>).</li>
                 {% else %}
-                  user <b>{{ user }}</b>.
+                  user <b>{{ user }}</b>.</li>
 
-                  <br />Note: Log entries for this session were not found.
+                  <li>Note: Log entries for this session were not found.</li>
                 {% endif %}
-            </p>
+                <li>
+                Download the log as a .csv file:
+                <a style="text-decoration:none;" href="{% url 'view_export_log_csv' %}" target="_blank" class="btn btn-sm btn-primary">Download</a></li>
+            </ul>
             {% else %}
                 <div class="alert alert-info" role="alert">
                   No logs were found for this user or session.
@@ -56,7 +59,7 @@
       {#  <div class="card-header"><b>Behavioral Logs</b></div> #}
 
         <div class="card-body">
-            {% if log_entries %}
+            {% if log_entries %}            
               {% include "behavioral_logs/log_table.html" %}
             {% else %}
               <p>No log entries found</p>

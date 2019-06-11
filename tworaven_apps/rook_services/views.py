@@ -211,11 +211,13 @@ def view_rook_route(request, app_name_in_url):
     # Behavioral logging
     # --------------------------------
     print('rook_app_info.name:', rook_app_info.name)
+    featurd_id = rook_app_info.name
     if rook_app_info.name == app_names.EXPLORE_APP:
         activity_l1 = bl_static.L1_DATA_PREPARATION
         activity_l2 = bl_static.L2_DATA_EXPLORE
 
     elif rook_app_info.name == app_names.PLOTDATA_APP:
+        feature_id = 'EXPLORE_VIEW_PLOTS'
         activity_l1 = bl_static.L1_DATA_PREPARATION
         activity_l2 = bl_static.L2_DATA_EXPLORE
     else:
@@ -223,7 +225,7 @@ def view_rook_route(request, app_name_in_url):
         activity_l2 = bl_static.L2_ACTIVITY_BLANK
 
     log_data = dict(session_key=session_key,
-                    feature_id=rook_app_info.name,
+                    feature_id=feature_id,
                     activity_l1=activity_l1,
                     activity_l2=activity_l2)
 

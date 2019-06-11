@@ -18,8 +18,12 @@ from tworaven_apps.utils.view_helper import \
 
 from tworaven_apps.behavioral_logs.forms import BehavioralLogEntryForm
 from tworaven_apps.behavioral_logs.models import BehavioralLogEntry
+from tworaven_apps.behavioral_logs.log_formatter \
+    import BehavioralLogFormatter
 
 from tworaven_apps.utils.view_helper import get_session_key
+from tworaven_apps.utils.random_info import get_timestamp_string
+
 
 
 def view_show_log_onscreen(request):
@@ -35,26 +39,55 @@ def view_show_log_onscreen(request):
     user = user_info.result_obj
     session_key = get_session_key(request)
 
+    log_entry_info = BehavioralLogFormatter.get_log_entries(user, session_key)
+    if not log_entry_info.success:
+        return HttpResponse(log_entry_info.err_msg)
 
     dinfo = dict(user=user,
                  session_key=session_key,
-                 log_entries=None)
-
-    # Try to retrieve logs by session_key
-    # If none, exist, try by user object
-    #
-    log_entries = None
-    if session_key:
-        log_entries = BehavioralLogEntry.objects.filter(session_key=session_key)
-
-    if not log_entries:
-        log_entries = BehavioralLogEntry.objects.filter(user=user)
-
-    dinfo['log_entries'] = log_entries
+                 log_entries=log_entry_info.result_obj)
 
     return render(request,
                   'behavioral_logs/view_user_log.html',
                   dinfo)
+
+def view_export_log_csv(request):
+    """Export the behavioral log as a .csv"""
+    # ----------------------------------------
+    # Get the user and session_key
+    # ----------------------------------------
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        # If not logged in, you end up on the log in page
+        return HttpResponseRedirect(reverse('home'))
+
+    user = user_info.result_obj
+    session_key = get_session_key(request)
+
+    log_entry_info = BehavioralLogFormatter.get_log_entries(user, session_key)
+    if not log_entry_info.success:
+        return HttpResponse(log_entry_info.err_msg)
+
+
+    # Create the HttpResponse object with the appropriate CSV header.
+    #
+    response = HttpResponse(content_type='text/csv')
+    log_fname = f'behavioral_log_{get_timestamp_string()}.csv'
+    response['Content-Disposition'] = f'attachment; filename="{log_fname}"'
+
+    blf = BehavioralLogFormatter(csv_output_object=response,
+                                 log_entries=log_entry_info.result_obj)
+
+    if blf.has_error():
+        user_msg = 'Error: %s' % blf.get_error_message()
+        return HttpResponse(user_msg)
+
+    #writer = csv.writer(response)
+    #writer.writerow(['First row', 'Foo', 'Bar', 'Baz'])
+    #writer.writerow(['Second row', 'A', 'B', 'C', '"Testing"', "Here's a quote"])
+
+    return blf.get_csv_output_object()
+
 
 def view_create_log_entry_verbose(request):
     """Create a new BehavioralLogEntry.  Return the JSON version of the entry"""
