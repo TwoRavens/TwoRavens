@@ -351,6 +351,14 @@ export default class ForceDiagram {
                         groups
                             .filter(group => group.nodes.has(d3.event.subject.name))
                             .filter(group => {
+                                if (group.nodes.size === 2) {
+                                    console.warn("#debug hullCoords[group.name]");
+                                    console.log(hullCoords);
+                                    console.warn("#debug mag(sub(...hullCoords[group.name]))");
+                                    console.log(mag(sub(...hullCoords[group.name])));
+                                    return mag(sub(...hullCoords[group.name])) > 4000;
+                                }
+
                                 let reducedHull = hullCoords[group.name]
                                     .filter(coord => coord[0] !== dragCoord[0] && coord[1] !== dragCoord[1]);
                                 let centroidReduced = jamescentroid(reducedHull);
@@ -555,11 +563,11 @@ function lengthen(coords, radius) {
             (coords[0][1] + coords[1][1]) / 2 - deltax * magnitude
         ]);
         coords.push([
-            (coords[0][0] + coords[1][0]) / 2 + deltax * magnitude,
+            (coords[0][0] + coords[1][0]) / 2 - deltax * magnitude,
             (coords[0][1] + coords[1][1]) / 2 + deltay * magnitude
         ]);
         coords.push([
-            (coords[0][0] + coords[1][0]) / 2 - deltax * magnitude,
+            (coords[0][0] + coords[1][0]) / 2 + deltax * magnitude,
             (coords[0][1] + coords[1][1]) / 2 - deltay * magnitude
         ]);
     }
@@ -743,13 +751,14 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
         .attr('class', pebble => ({
             'continuous': 'density-plot',
             'bar': 'bar-plot',
-            undefined: 'speck-plot'
-        }[(attrs.summaries[pebble] || {}).plottype || 'undefined']))
+            'collapsed': 'speck-plot'
+        }[(attrs.summaries[pebble] || {}).plottype]))
         .attr('opacity', 0.4);
 
     context.selectors.pebbles
         .select('g.speck-plot').each(function (pebble) {
-        let groupSpeckCoords = speckCoords.slice(0, attrs.groups.find(group => group.name === pebble).childNodes.size);
+
+        let groupSpeckCoords = speckCoords.slice(0, attrs.summaries[pebble].childNodes.size);
 
         let width = context.nodes[pebble].radius * 1.5;
         let height = context.nodes[pebble].radius * 1.5;
