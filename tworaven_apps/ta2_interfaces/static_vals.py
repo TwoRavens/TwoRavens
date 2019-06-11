@@ -5,7 +5,6 @@ Many are keys sent from the UI
 """
 # form name
 
-GRPC_GET_FIT_SOLUTION_RESULTS = 'GetFitSolutionResults'
 
 
 KEY_GRPC_JSON = 'grpcrequest'
@@ -52,8 +51,27 @@ D3M_OUTPUT_DIR = '/output'
 # ------------------------------------------
 # gRPC call types
 # ------------------------------------------
+HELLO = 'Hello'
+LIST_PRIMITIVES = 'ListPrimitives'
+UPDATE_PROBLEM = 'UpdateProblem'
+
 SEARCH_SOLUTIONS = 'SearchSolutions'
 GET_SEARCH_SOLUTIONS_RESULTS = 'GetSearchSolutionsResults'
+
+DESCRIBE_SOLUTION = 'DescribeSolution'
+
+FIT_SOLUTION = 'FitSolution'
+GET_FIT_SOLUTION_RESULTS = 'GetFitSolutionResults'
+
+PRODUCE_SOLUTION = 'ProduceSolution'
+GET_PRODUCE_SOLUTION_RESULTS = 'GetProduceSolutionResults'
+
+SCORE_SOLUTION = 'ScoreSolution'
+GET_SCORE_SOLUTION_RESULTS = 'GetScoreSolutionResults'
+
+STOP_SEARCH_SOLUTIONS = 'StopSearchSolutions'
+END_SEARCH_SOLUTIONS = 'EndSearchSolutions'
+
 SOLUTION_EXPORT = 'SolutionExport'
 
 # ------------------------------------------

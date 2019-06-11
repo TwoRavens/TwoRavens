@@ -5,11 +5,12 @@ Constants used to track the app names and url between the frontend and rook
 SOLA_JSON_KEY = 'solaJSON'
 HEALTH_CHECK_APP = 'HEALTH_CHECK_APP'
 MKDOCS_APP = 'MKDOCS_APP'
+
 MKDOCS_ROOK_APP_NAME = 'mkdocsapp'
 PREPROCESS_ROOK_APP_NAME = 'preprocessapp'
 
-KEY_DATA = 'data'
-KEY_DATASTUB = 'datastub'
+EXPLORE_APP = 'EXPLORE_APP'
+PLOTDATA_APP = 'PLOTDATA_APP'
 
 # Used for tracking rook routing.
 #
@@ -24,11 +25,16 @@ ROOK_APP_NAMES = [('DATA_APP', 'dataapp', 'dataapp'),       # session id?
                   (MKDOCS_APP, MKDOCS_ROOK_APP_NAME, MKDOCS_ROOK_APP_NAME), # subset file
                   ('SUBSET_APP', 'subsetapp', 'subsetapp'), # subset file
                   ('TRANSFORM_APP', 'transformapp', 'transformapp'), # transfor file
-                  ('PREPROCESS_APP', PREPROCESS_ROOK_APP_NAME, PREPROCESS_ROOK_APP_NAME), # preprocess
+
+                  # preprocess
+                  ('PREPROCESS_APP',
+                   PREPROCESS_ROOK_APP_NAME,
+                   PREPROCESS_ROOK_APP_NAME),
+
                   ('PIPELINE_APP', 'pipelineapp', 'pipelineapp'), # format pipeline
-                  ('EXPLORE_APP', 'exploreapp', 'exploreapp'),
+                  (EXPLORE_APP, 'exploreapp', 'exploreapp'),
                   ('SOLVER_APP', 'solverapp', 'solverapp'),
-                  ('PLOTDATA_APP', 'plotdataapp', 'plotdataapp'),
+                  (PLOTDATA_APP, 'plotdataapp', 'plotdataapp'),
                   ('TREE_APP', 'treeapp', 'treeapp'),
                   (HEALTH_CHECK_APP, 'healthcheckapp', 'healthcheckapp'), # healthcheckapp
                   #('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models

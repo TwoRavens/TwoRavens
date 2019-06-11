@@ -1,40 +1,30 @@
+"""Views for User Workspaces"""
 import re
 from django.shortcuts import render
 
-from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
-#from django.contrib.auth.decorators import login_required
-from django.conf import settings
 from django.urls import reverse
 
 from tworaven_apps.utils.view_helper import \
-    (get_request_body,
-     get_request_body_as_json,
+    (get_request_body_as_json,
      get_json_error,
      get_json_success)
 from tworaven_apps.utils.json_helper import format_pretty_from_dict
 
-from tworaven_apps.configurations.utils import get_latest_d3m_config
-
-from tworaven_apps.user_workspaces.models import \
-    (UserWorkspace,)
 from tworaven_apps.user_workspaces import static_vals as uw_static
 
 from tworaven_apps.user_workspaces.utils import \
     (duplicate_user_workspace,
-     get_user_workspaces,
+     # get_user_workspaces,
      get_user_workspaces_as_dict,
      get_user_workspace_config,
      get_saved_workspace_by_request_and_id,
      is_existing_workspace_name,
      delete_user_workspaces,)
 
-from tworaven_apps.configurations.models_d3m import D3MConfiguration
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
-
-
-
 
 @csrf_exempt
 def save_raven_config_as_new_workspace(request, workspace_id):

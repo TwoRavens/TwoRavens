@@ -10,16 +10,17 @@ from tworaven_apps.raven_auth.models import User
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.random_info import get_alphanumeric_string
 from tworaven_apps.utils.json_helper import json_dumps, json_loads
+from tworaven_apps.utils.view_helper import SESSION_KEY
 from tworaven_apps.utils.proto_util import message_to_json
 
 from tworaven_apps.ta2_interfaces.models import StoredRequest, StoredResponse
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json
-from tworaven_apps.ta2_interfaces.static_vals import \
-    (GRPC_GET_FIT_SOLUTION_RESULTS,
-     SEARCH_SOLUTIONS,
-     KEY_SEARCH_ID,
-     KEY_PIPELINE_ID, KEY_RANK, KEY_FITTED_SOLUTION_ID)
+
+
+from tworaven_apps.ta2_interfaces import static_vals as ta2_static
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
+from tworaven_apps.behavioral_logs import static_vals as bl_static
 
 import core_pb2
 #import core_pb2_grpc
@@ -436,30 +437,30 @@ def solution_export_with_saved_response(raven_json):
                    ' be a dict')
         return err_resp(err_msg)
 
-    if not KEY_PIPELINE_ID in raven_json:
+    if not ta2_static.KEY_PIPELINE_ID in raven_json:
         err_msg = ('The key "%s" must be included for the'
                    ' SolutionExportRequest--in order to find'
-                   ' the SavedResponse') % (KEY_PIPELINE_ID,)
+                   ' the SavedResponse') % (ta2_static.KEY_PIPELINE_ID,)
         return err_resp(err_msg)
 
-    if not KEY_RANK in raven_json:
+    if not ta2_static.KEY_RANK in raven_json:
         err_msg = ('The key "%s" must be included for the'
-                   ' SolutionExportRequest') % (KEY_RANK,)
+                   ' SolutionExportRequest') % (ta2_static.KEY_RANK,)
         return err_resp(err_msg)
 
     # Filtering params
     # - decision here not to use 'sent_to_user' which would id the right
     #   entry but may be changed in the future
     #
-    params = dict(pipeline_id=raven_json[KEY_PIPELINE_ID],
-                  stored_request__request_type=GRPC_GET_FIT_SOLUTION_RESULTS,
+    params = dict(pipeline_id=raven_json[ta2_static.KEY_PIPELINE_ID],
+                  stored_request__request_type=ta2_static.GET_FIT_SOLUTION_RESULTS,
                   is_finished=True)
 
     # Go through the results, looking for one with a fittedSolutionId
     #
     fitted_solution_id = None
     for saved_resp in StoredResponse.objects.filter(**params):
-        info = saved_resp.get_value_by_key(KEY_FITTED_SOLUTION_ID)
+        info = saved_resp.get_value_by_key(ta2_static.KEY_FITTED_SOLUTION_ID)
         if info.success:
             fitted_solution_id = info.result_obj
             break
@@ -469,13 +470,16 @@ def solution_export_with_saved_response(raven_json):
     if not fitted_solution_id:
         user_msg = ('A StoredResponse containing a "%s"'
                     ' was not found for %s "%s".') % \
-                    (KEY_FITTED_SOLUTION_ID, KEY_PIPELINE_ID, raven_json[KEY_PIPELINE_ID])
+                    (ta2_static.KEY_FITTED_SOLUTION_ID,
+                     ta2_static.KEY_PIPELINE_ID,
+                     raven_json[ta2_static.KEY_PIPELINE_ID])
+
         return err_resp(user_msg)
 
     # Got it, prepare info for the TA2 call
     #
-    params = {KEY_FITTED_SOLUTION_ID: fitted_solution_id,
-              KEY_RANK: raven_json[KEY_RANK]}
+    params = {ta2_static.KEY_FITTED_SOLUTION_ID: fitted_solution_id,
+              ta2_static.KEY_RANK: raven_json[ta2_static.KEY_RANK]}
 
     json_info = json_dumps(params)
     if not json_info.success:
@@ -540,7 +544,7 @@ def solution_export(raven_json_str=None):
 
 
 
-def solution_export3(user, raven_json):
+def solution_export3(user, raven_json, **kwargs):
     """
     Send a SolutionExportRequest to the SolutionExport command
     """
@@ -552,13 +556,14 @@ def solution_export3(user, raven_json):
         err_msg = 'raven_dict must be a python dict'
         return err_resp(err_msg)
 
-    if not KEY_SEARCH_ID in raven_json:
-        err_msg = (f'Key: "{KEY_SEARCH_ID}" not found in the'
+    if not ta2_static.KEY_SEARCH_ID in raven_json:
+        err_msg = (f'Key: "{ta2_static.KEY_SEARCH_ID}" not found in the'
                    f' "raven_json" dict.  (solution_export3)')
         return err_resp(err_msg)
 
-    search_id = raven_json.pop(KEY_SEARCH_ID)   # not needed for GRPC call
+    search_id = raven_json.pop(ta2_static.KEY_SEARCH_ID)   # not needed for GRPC call
 
+    session_key = kwargs.get(SESSION_KEY, '')
 
     # --------------------------------
     # Convert dict to string
@@ -597,10 +602,21 @@ def solution_export3(user, raven_json):
                     user=user,
                     search_id=search_id,
                     workspace='(not specified)',
-                    request_type='SolutionExport',
+                    request_type=ta2_static.SOLUTION_EXPORT,
                     is_finished=False,
                     request=raven_json)
     stored_request.save()
+
+    # --------------------------------
+    # Behavioral logging
+    # --------------------------------
+    log_data = dict(session_key=session_key,
+                    feature_id=ta2_static.SOLUTION_EXPORT,
+                    activity_l1=bl_static.L1_MODEL_SELECTION,
+                    activity_l2=bl_static.L2_MODEL_EXPORT)
+
+    LogEntryMaker.create_ta2ta3_entry(user, log_data)
+
 
     # --------------------------------
     # Send the gRPC request

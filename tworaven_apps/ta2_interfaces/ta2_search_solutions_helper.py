@@ -22,23 +22,15 @@ from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.json_helper import json_loads, json_dumps
 from tworaven_apps.utils.proto_util import message_to_json
-from tworaven_apps.ta2_interfaces.static_vals import \
-        (ENDGetSearchSolutionsResults,
-         KEY_PIPELINE_ID, KEY_SEARCH_ID,
-         KEY_SOLUTION_ID,
-         KEY_SEARCH_SOLUTION_PARAMS,
-         KEY_FIT_SOLUTION_DEFAULT_PARAMS,
-         KEY_PRODUCE_SOLUTION_DEFAULT_PARAMS,
-         KEY_SCORE_SOLUTION_DEFAULT_PARAMS,
-         REQUIRED_INPUT_KEYS)
+from tworaven_apps.utils.view_helper import SESSION_KEY
+
+from tworaven_apps.ta2_interfaces import static_vals as ta2_static
 from tworaven_apps.ta2_interfaces.models import \
         (StoredRequest, StoredResponse)
 
 from tworaven_apps.ta2_interfaces.req_search_solutions import \
         (search_solutions, describe_solution)
-from tworaven_apps.ta2_interfaces.static_vals import \
-        (SEARCH_SOLUTIONS,
-         GET_SEARCH_SOLUTIONS_RESULTS)
+
 
 from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
@@ -46,6 +38,9 @@ from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 #
 from tworaven_apps.ta2_interfaces.ta2_fit_solution_helper import FitSolutionHelper
 from tworaven_apps.ta2_interfaces.ta2_score_solution_helper import ScoreSolutionHelper
+#
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
+from tworaven_apps.behavioral_logs import static_vals as bl_static
 #
 import core_pb2
 import grpc
@@ -70,6 +65,7 @@ class SearchSolutionsHelper(BasicErrCheck):
         self.user_object = None
 
         self.all_search_params = kwargs.get('all_search_params', {})
+        self.session_key = kwargs.get(SESSION_KEY)
 
         self.get_user()
         self.run_process()
@@ -81,7 +77,7 @@ class SearchSolutionsHelper(BasicErrCheck):
         if not isinstance(all_params, dict):
             return err_resp('all_params must be a python dict')
 
-        for req_key, grpc_call in REQUIRED_INPUT_KEYS:
+        for req_key, grpc_call in ta2_static.REQUIRED_INPUT_KEYS:
 
             if not req_key in all_params:
                 user_msg = ('"all_params" must contain the key %s for'
@@ -102,7 +98,7 @@ class SearchSolutionsHelper(BasicErrCheck):
 
 
     @staticmethod
-    def make_search_solutions_call(all_params, websocket_id, user_id):
+    def make_search_solutions_call(all_params, websocket_id, user_id, **kwargs):
         """Return the result of a SearchSolutions call.
         If successful, an async process is kicked off"""
         if not websocket_id:
@@ -123,18 +119,33 @@ class SearchSolutionsHelper(BasicErrCheck):
             return err_resp(user_msg)
 
 
+        # --------------------------------
+        # (2) Logging
+        # --------------------------------
         stored_request = StoredRequest(\
                         user=user_obj,
                         # search_id=self.search_id,
                         workspace='(not specified)',
-                        request_type=SEARCH_SOLUTIONS,
+                        request_type=ta2_static.SEARCH_SOLUTIONS,
                         is_finished=False,
-                        request=all_params[KEY_SEARCH_SOLUTION_PARAMS])
+                        request=all_params[ta2_static.KEY_SEARCH_SOLUTION_PARAMS])
         stored_request.save()
+
+        # --------------------------------
+        # (2a) Behavioral logging
+        # --------------------------------
+        session_key = kwargs.get(SESSION_KEY, None)
+
+        log_data = dict(session_key=session_key,
+                        feature_id=ta2_static.SEARCH_SOLUTIONS,
+                        activity_l1=bl_static.L1_MODEL_SELECTION,
+                        activity_l2=bl_static.L2_MODEL_SEARCH)
+
+        LogEntryMaker.create_ta2ta3_entry(user_obj, log_data)
 
         # Run SearchSolutions against the TA2
         #
-        search_info = search_solutions(all_params[KEY_SEARCH_SOLUTION_PARAMS])
+        search_info = search_solutions(all_params[ta2_static.KEY_SEARCH_SOLUTION_PARAMS])
         if not search_info.success:
             StoredResponse.add_err_response(stored_request,
                                             search_info.err_msg)
@@ -152,7 +163,7 @@ class SearchSolutionsHelper(BasicErrCheck):
 
         print('make_search_solutions_call 3')
 
-        if not KEY_SEARCH_ID in search_info_data:
+        if not ta2_static.KEY_SEARCH_ID in search_info_data:
             user_msg = 'searchId not found in the SearchSolutionsResponse'
             StoredResponse.add_err_response(stored_request,
                                             user_msg)
@@ -165,9 +176,12 @@ class SearchSolutionsHelper(BasicErrCheck):
                                             search_id=search_id)
         # Async task to run GetSearchSolutionsResults
         #
+        extra_params = {SESSION_KEY: session_key}
+
         SearchSolutionsHelper.kick_off_solution_results.delay(\
                         search_id, websocket_id, user_id,
-                        all_search_params=all_params)
+                        all_search_params=all_params,
+                        **extra_params)
 
         # Back to the UI, looking good
         #
@@ -231,7 +245,7 @@ class SearchSolutionsHelper(BasicErrCheck):
         params_info = json_dumps(params_dict)
         if not params_info.success:
             self.send_websocket_err_msg(\
-                    GET_SEARCH_SOLUTIONS_RESULTS,
+                    ta2_static.GET_SEARCH_SOLUTIONS_RESULTS,
                     params_info.err_msg)
             return
 
@@ -242,7 +256,7 @@ class SearchSolutionsHelper(BasicErrCheck):
             err_msg = ('GetSearchSolutionsResultsRequest: Failed to'
                        ' convert JSON to gRPC: %s') % (err_obj)
             self.send_websocket_err_msg(\
-                    GET_SEARCH_SOLUTIONS_RESULTS,
+                    ta2_static.GET_SEARCH_SOLUTIONS_RESULTS,
                     params_info.err_msg)
             return
 
@@ -253,10 +267,20 @@ class SearchSolutionsHelper(BasicErrCheck):
                         user=self.user_object,
                         search_id=self.search_id,
                         workspace='(not specified)',
-                        request_type=GET_SEARCH_SOLUTIONS_RESULTS,
+                        request_type=ta2_static.GET_SEARCH_SOLUTIONS_RESULTS,
                         is_finished=False,
                         request=params_dict)
         stored_request.save()
+
+        # --------------------------------
+        # (2a) Behavioral logging
+        # --------------------------------
+        log_data = dict(session_key=self.session_key,
+                        feature_id=ta2_static.GET_SEARCH_SOLUTIONS_RESULTS,
+                        activity_l1=bl_static.L1_MODEL_SELECTION,
+                        activity_l2=bl_static.L2_MODEL_SEARCH)
+
+        LogEntryMaker.create_ta2ta3_entry(self.user_object, log_data)
 
         # --------------------------------
         # (3) Make the gRPC request
@@ -266,7 +290,6 @@ class SearchSolutionsHelper(BasicErrCheck):
             return err_resp(err_msg)
 
         msg_cnt = 0
-        grpc_call_name = 'GetSearchSolutionsResults'
         try:
             # -----------------------------------------
             # Iterate through the streaming responses
@@ -288,7 +311,7 @@ class SearchSolutionsHelper(BasicErrCheck):
                                msg_json_info.err_msg
 
                     self.send_websocket_err_msg(\
-                                    GET_SEARCH_SOLUTIONS_RESULTS,
+                                    ta2_static.GET_SEARCH_SOLUTIONS_RESULTS,
                                     user_msg)
 
                     StoredResponse.add_stream_err_response(\
@@ -298,15 +321,15 @@ class SearchSolutionsHelper(BasicErrCheck):
 
                 result_json = msg_json_info.result_obj
 
-                if not KEY_SOLUTION_ID in result_json:
+                if not ta2_static.KEY_SOLUTION_ID in result_json:
                     user_msg = '"%s" not found in response to JSON: %s' % \
-                               (KEY_SOLUTION_ID, result_json)
+                               (ta2_static.KEY_SOLUTION_ID, result_json)
 
                     StoredResponse.add_stream_err_response(\
                                         stored_response, user_msg)
 
                     self.send_websocket_err_msg(\
-                                    GET_SEARCH_SOLUTIONS_RESULTS,
+                                    ta2_static.GET_SEARCH_SOLUTIONS_RESULTS,
                                     user_msg)
 
                     # Wait for next response....
@@ -314,7 +337,7 @@ class SearchSolutionsHelper(BasicErrCheck):
 
                 # Solution id used for DescribeSolution...
                 #
-                solution_id = result_json[KEY_SOLUTION_ID]
+                solution_id = result_json[ta2_static.KEY_SOLUTION_ID]
 
                 # -----------------------------------------
                 # Looks good, save the response
@@ -330,14 +353,14 @@ class SearchSolutionsHelper(BasicErrCheck):
                     # send a message to the user...
                     #
                     user_msg = 'Failed to store response from %s: %s' % \
-                                (GET_SEARCH_SOLUTIONS_RESULTS,
+                                (ta2_static.GET_SEARCH_SOLUTIONS_RESULTS,
                                  msg_json_info.err_msg)
 
                     StoredResponse.add_stream_err_response(\
                                         stored_response, user_msg)
 
                     self.send_websocket_err_msg(\
-                                    GET_SEARCH_SOLUTIONS_RESULTS,
+                                    ta2_static.GET_SEARCH_SOLUTIONS_RESULTS,
                                     user_msg)
 
                     # Wait for the next response...
@@ -357,7 +380,7 @@ class SearchSolutionsHelper(BasicErrCheck):
                 # send responses back to WebSocket
                 # ---------------------------------------------
                 ws_msg = WebsocketMessage.get_success_message(\
-                            GET_SEARCH_SOLUTIONS_RESULTS,
+                            ta2_static.GET_SEARCH_SOLUTIONS_RESULTS,
                             'it worked',
                             msg_cnt=msg_cnt,
                             data=stored_response.as_dict())
@@ -397,7 +420,7 @@ class SearchSolutionsHelper(BasicErrCheck):
             # All results arrived, send message to UI
             # -----------------------------------------------
             ws_msg = WebsocketMessage.get_success_message(\
-                        ENDGetSearchSolutionsResults,
+                        ta2_static.ENDGetSearchSolutionsResults,
                         'it worked')
 
             print('ws_msg: %s' % ws_msg)
@@ -421,8 +444,8 @@ class SearchSolutionsHelper(BasicErrCheck):
         # ----------------------------------
         # Create the input
         # ----------------------------------
-        score_params = self.all_search_params[KEY_SCORE_SOLUTION_DEFAULT_PARAMS]
-        score_params[KEY_SOLUTION_ID] = solution_id
+        score_params = self.all_search_params[ta2_static.KEY_SCORE_SOLUTION_DEFAULT_PARAMS]
+        score_params[ta2_static.KEY_SOLUTION_ID] = solution_id
 
         # ----------------------------------
         # Start the async process
@@ -433,18 +456,19 @@ class SearchSolutionsHelper(BasicErrCheck):
                                     self.websocket_id,
                                     self.user_id,
                                     score_params,
-                                    search_id=self.search_id)
+                                    search_id=self.search_id,
+                                    session_key=self.session_key)
 
     def run_fit_solution(self, pipeline_id, solution_id):
         """async: Run FitSolution and GetFitSolutionResults"""
         # ----------------------------------
         # Create the input
         # ----------------------------------
-        fit_params = self.all_search_params[KEY_FIT_SOLUTION_DEFAULT_PARAMS]
-        fit_params[KEY_SOLUTION_ID] = solution_id
+        fit_params = self.all_search_params[ta2_static.KEY_FIT_SOLUTION_DEFAULT_PARAMS]
+        fit_params[ta2_static.KEY_SOLUTION_ID] = solution_id
         #fit_params.move_to_end(KEY_SOLUTION_ID, last=False)
 
-        produce_params = self.all_search_params[KEY_PRODUCE_SOLUTION_DEFAULT_PARAMS]
+        produce_params = self.all_search_params[ta2_static.KEY_PRODUCE_SOLUTION_DEFAULT_PARAMS]
 
 
         # ----------------------------------
@@ -456,7 +480,9 @@ class SearchSolutionsHelper(BasicErrCheck):
                                     self.user_id,
                                     fit_params,
                                     search_id=self.search_id,
-                                    produce_params=produce_params)
+                                    produce_params=produce_params,
+                                    session_key=self.session_key)
+
 
     def run_describe_solution(self, pipeline_id, solution_id, msg_cnt=-1):
         """sync: Run a DescribeSolution call for each solution_id"""
@@ -464,7 +490,7 @@ class SearchSolutionsHelper(BasicErrCheck):
         # ----------------------------------
         # Create the input
         # ----------------------------------
-        req_params = {KEY_SOLUTION_ID: solution_id}
+        req_params = {ta2_static.KEY_SOLUTION_ID: solution_id}
         json_str_info = json_dumps(req_params)
         if not json_str_info.success:
             self.add_err_msg(json_str_info.err_msg)
@@ -472,15 +498,29 @@ class SearchSolutionsHelper(BasicErrCheck):
 
         json_str_input = json_str_info.result_obj
 
+        # --------------------------------
+        # (2) Save request
+        # --------------------------------
         stored_request = StoredRequest(\
                         user=self.user_object,
                         search_id=self.search_id,
                         pipeline_id=pipeline_id,
                         workspace='(not specified)',
-                        request_type='DescribeSolution',
+                        request_type=ta2_static.DESCRIBE_SOLUTION,
                         is_finished=False,
                         request=req_params)
         stored_request.save()
+
+        # --------------------------------
+        # (2a) Behavioral logging
+        # --------------------------------
+        log_data = dict(session_key=self.session_key,
+                        feature_id=ta2_static.DESCRIBE_SOLUTION,
+                        activity_l1=bl_static.L1_MODEL_SELECTION,
+                        activity_l2=bl_static.L2_MODEL_SUMMARIZATION)
+
+        LogEntryMaker.create_ta2ta3_entry(self.user_object, log_data)
+
 
         print(f'run_describe_solution 2. stored_request.pipeline_id: {stored_request.pipeline_id}')
 
@@ -511,8 +551,8 @@ class SearchSolutionsHelper(BasicErrCheck):
         # -----------------------------------------------
         describe_data = describe_data_info.result_obj
 
-        describe_data[KEY_PIPELINE_ID] = pipeline_id
-        describe_data.move_to_end(KEY_PIPELINE_ID, last=False)
+        describe_data[ta2_static.KEY_PIPELINE_ID] = pipeline_id
+        describe_data.move_to_end(ta2_static.KEY_PIPELINE_ID, last=False)
 
         # params = dict()
         # if not stored_request.pipeline_id:

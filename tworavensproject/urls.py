@@ -12,8 +12,6 @@ urlpatterns = [
 
     url(r'^auth/', include('tworaven_apps.raven_auth.urls')),
 
-    url(r'^workspaces/', include('tworaven_apps.workspaces.urls')),
-
     url(r'^rook-custom/', include('tworaven_apps.rook_services.urls')),
 
     url(r'^config/', include('tworaven_apps.configurations.urls')),
@@ -27,6 +25,8 @@ urlpatterns = [
     url(r'^datamart/', include('tworaven_common_apps.datamart_endpoints.urls')),
 
     url(r'^user-workspaces/', include('tworaven_apps.user_workspaces.urls')),
+
+    url(r'^logging/', include('tworaven_apps.behavioral_logs.urls')),
 
     #url(r'^data/', include('tworaven_apps.test_data.urls')),
 

@@ -11,7 +11,7 @@ from tworaven_apps.utils.view_helper import \
     (get_session_key, get_authenticated_user)
 
 from tworaven_apps.ta2_interfaces.static_vals import \
-    (GRPC_GET_FIT_SOLUTION_RESULTS,)
+    (GET_FIT_SOLUTION_RESULTS,)
 from tworaven_apps.ta2_interfaces.req_stream_search_solutions import \
  (get_search_solutions_results)
 from tworaven_apps.ta2_interfaces.req_stream_score_solutions import \
@@ -142,7 +142,7 @@ def view_fit_solution_results(request):
     if ServiceCallEntry.record_d3m_call():
         call_entry = ServiceCallEntry.get_dm3_entry(\
                         request_obj=request,
-                        call_type=GRPC_GET_FIT_SOLUTION_RESULTS,
+                        call_type=GET_FIT_SOLUTION_RESULTS,
                         request_msg=req_body_info.result_obj)
 
     # Let's call the TA2!

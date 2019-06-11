@@ -1,0 +1,6 @@
+{
+    "type": "TA23API",
+    "activity_l1": "DATA_PREPARATION",
+    "activity_l2": "lookin_good",
+    "path": "/search/path"
+}

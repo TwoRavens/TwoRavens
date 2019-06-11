@@ -71,7 +71,8 @@
           const isAuthenticated = true;
           const username = "{{ user.username }}";
           //
-          const workspaces_url = "{% url 'view_workspace_info' %}";
+          const workspaces_url = "{% url 'view_latest_raven_configs' %}?pretty";
+
           const devlinks_url = "{% url 'view_dev_raven_links' %}";
           const settings_url = "{% url 'view_d3m_list' %}"; // D3M configs
 
