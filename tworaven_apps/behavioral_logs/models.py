@@ -1,5 +1,5 @@
 from collections import OrderedDict
-
+import json
 from django.db import models
 from django.conf import settings
 
@@ -47,6 +47,10 @@ class BehavioralLogEntry(TimeStampedModel):
                         default=bl_static.L2_ACTIVITY_BLANK,
                         help_text='"activity_l2" in spec')
 
+    other = models.CharField(max_length=255,
+                             blank=True,
+                             help_text=('Optional field'))
+
     class Meta:
         ordering = ('-created',)
         verbose_name_plural = 'Behavioral log entries'
@@ -67,11 +71,23 @@ class BehavioralLogEntry(TimeStampedModel):
         if not self.feature_id:
             self.feature_id = self.construct_feature_id()
 
+        if not self.other:
+            self.other = self.format_other_entry()
         #if not self.hash_id:
         #    hash_str = '%s %s' % (self.id, self.created)
         #    self.hash_id = hashlib.sha224(hash_str.encode('utf-8')).hexdigest()
 
         super(BehavioralLogEntry, self).save(*args, **kwargs)
+
+    def format_other_entry(self):
+        """The "other entry", a bit TBD"""
+        if self.session_key:
+            info = dict(id=self.id, session_key=self.session_key)
+        else:
+            info = dict(id=self.id)
+
+        return json.dumps(info)
+
 
     def to_dict(self, **kwargs):
         """Convert to python dict"""

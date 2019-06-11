@@ -17,7 +17,9 @@
     <link rel="stylesheet" href="{% static "css/non_app.css" %}">
     {% endblock %}
 
-    {% render_bundle 'main' 'css' %}
+    {% block block_css_bundle %}
+      {# -- empty block; bundle used for the main app -- #}
+    {% endblock %}
 
     <script src="{% static "pkgs/Ladda/dist/spin.min.js" %}"></script>
     <script src="{% static "pkgs/Ladda/dist/ladda.min.js" %}"></script>
@@ -54,14 +56,20 @@
           {{ user.username }}
         </a>
         <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+          <a class="dropdown-item" href="{% url 'home' %}">Main Workspace</a>
+          <a class="dropdown-item" href="{% url 'logout' %}">Log out</a>
+          {% comment %}
           <a class="dropdown-item" href="#">Profile?</a>
           <a class="dropdown-item" href="#">Saved metadata?</a>
           <a class="dropdown-item" href="#">Something else here</a>
+          {% endcomment %}
         </div>
       </li>
+        {% comment %}
       <li class="nav-item">
         <a class="nav-link" href="{% url 'logout' %}">Log out</a>
       </li>
+      {% endcomment %}
       {% else %}
       <li class="nav-item">
         <a class="nav-link" href="{% url 'signup' %}">Sign Up</a>

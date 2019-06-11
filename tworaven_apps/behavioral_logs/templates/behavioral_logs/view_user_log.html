@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load static %}
+
+  {% block block_css_bundle %}
+  {% endblock %}
+
+  {% block main_content %}
+  <div class="row">
+    <div class="col-12 col-md-6">
+
+      {% if user.is_authenticated %}
+      <div class="alert alert-info" role="alert">
+        Welcome, {{ user.username }}.
+      </div>
+      {% else %}
+      <div class="alert alert-error" role="alert">
+        (Log in required to use this page)
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 col-md-12">
+      <div class="card">
+
+        <div class="card-header"><b>Behavioral Logs</b></div>
+
+        <div class="card-body">
+            {% if log_entries %}
+            <p>
+                <b>{{ log_entries.count }} log entr{{ log_entries|pluralize:"y,ies"}}</b>
+                  {{ log_entries|pluralize:"was,were"}} found for
+                {% if session_key %}
+                  this session key. (Session key:  <code>{{ session_key }}</code>).
+                {% else %}
+                  user <b>{{ user }}</b>.
+
+                  <br />Note: Log entries for this session were not found.
+                {% endif %}
+            </p>
+            {% else %}
+                <div class="alert alert-info" role="alert">
+                  No logs were found for this user or session.
+                </div>
+            {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <br />
+  <div class="row">
+    <div class="col-12 col-md-12">
+      <div class="card">
+
+      {#  <div class="card-header"><b>Behavioral Logs</b></div> #}
+
+        <div class="card-body">
+            {% if log_entries %}
+              {% include "behavioral_logs/log_table.html" %}
+            {% else %}
+              <p>No log entries found</p>
+            {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}

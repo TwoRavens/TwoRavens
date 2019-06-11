@@ -22,6 +22,40 @@ from tworaven_apps.behavioral_logs.models import BehavioralLogEntry
 from tworaven_apps.utils.view_helper import get_session_key
 
 
+def view_show_log_onscreen(request):
+    """View a log base on the user's session_id, or just username"""
+    # ----------------------------------------
+    # Get the user and session_key
+    # ----------------------------------------
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        # If not logged in, you end up on the log in page
+        return HttpResponseRedirect(reverse('home'))
+
+    user = user_info.result_obj
+    session_key = get_session_key(request)
+
+
+    dinfo = dict(user=user,
+                 session_key=session_key,
+                 log_entries=None)
+
+    # Try to retrieve logs by session_key
+    # If none, exist, try by user object
+    #
+    log_entries = None
+    if session_key:
+        log_entries = BehavioralLogEntry.objects.filter(session_key=session_key)
+
+    if not log_entries:
+        log_entries = BehavioralLogEntry.objects.filter(user=user)
+
+    dinfo['log_entries'] = log_entries
+
+    return render(request,
+                  'behavioral_logs/view_user_log.html',
+                  dinfo)
+
 def view_create_log_entry_verbose(request):
     """Create a new BehavioralLogEntry.  Return the JSON version of the entry"""
     return view_create_log_entry(request, is_verbose=True)

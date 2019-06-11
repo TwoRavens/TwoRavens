@@ -487,6 +487,7 @@ class Body {
             {title: "Clear Workspaces", url: '/user-workspaces/clear-user-workspaces'},
             {title: "Settings", url: settings_url},
             {title: "Links", url: devlinks_url},
+            {title: "Behavioral Logs", url: behavioral_log_url},
             {title: "Logout", url: logout_url}];
 
         let resultsProblem = app.getResultsProblem();

@@ -1,0 +1,41 @@
+
+<table class="table table-bordered table-hover table-responsive">
+  <caption>Behavioral log entries</caption>
+
+  <thead class="thead-light">
+    <th>Cnt</th>
+    <th>Timestamp</th>
+    <th>Feature Id</th>
+    <th>Type</th>
+    <th>Activity L1</th>
+    <th>Activity L2</th>
+    <th>Other</th>
+  </thead>
+  <tbody>
+    {% for entry in log_entries %}
+      <tr>
+        <td>{{ forloop.revcounter }}</td>
+
+        <td>{{ entry.created }}</td>
+        <td>{{ entry.feature_id }}</td>
+
+        {# Determine cell color #}
+        {% if entry.type == 'TA23API' %}
+          <td class="table-default">
+        {% elif entry.type == 'SYSTEM' %}
+          <td class="table-info">
+        {% elif entry.type == 'ENTRY_TYPE_DATAMART' %}
+          <td class="table-primary">
+        {% elif entry.type == 'UNKNOWN' %}
+          <td class="table-warning">
+        {% endif %}
+          {{ entry.type }}
+        </td>
+
+        <td>{{ entry.activity_l1 }}</td>
+        <td>{{ entry.activity_l2 }}</td>
+        <td>{{ entry.other }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
