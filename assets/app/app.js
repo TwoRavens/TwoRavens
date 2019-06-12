@@ -879,7 +879,7 @@ export let loadWorkspace = async newWorkspace => {
         ? problem_info_result.data[field].path
         : problem_info_result.data[field + '.gz'].exists
             ? problem_info_result.data[field + '.gz'].path
-            : undefined;
+            : undefined
 
 
     workspace.datasetUrl = set_d3m_data_path('learningData.csv');
