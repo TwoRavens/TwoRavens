@@ -97,11 +97,11 @@ export let setPeekInlineShown = state => {
  */
 export let logEntryPeekUsed = is_external => {
 
-  let logSample = {feature_id: 'PEEK', activity_l1: 'DATA_PREPARATION'};
+  let logParams = {feature_id: 'PEEK', activity_l1: 'DATA_PREPARATION'};
   if (is_external){
-    logSample.feature_id = 'PEEK_NEW_WINDOW';
+    logParams.feature_id = 'PEEK_NEW_WINDOW';
   }
-  saveSystemLogEntry(logSample);
+  saveSystemLogEntry(logParams);
 }
 
 // TA2 server information for display in modal
@@ -271,6 +271,19 @@ export function set_mode(mode) {
     is_explore_mode = mode === 'explore';
     is_results_mode = mode === 'results';
     is_manipulate_mode = mode === 'manipulate';
+
+    // make an entry in the behavioral logs
+    let logParams = {
+                      feature_id: mode.toUpperCase(),
+                      activity_l2: 'SWITCH_MODE'
+                    };
+    if (is_model_mode){ logParams.activity_l1 = 'MODEL_SELECTION'};
+    if (is_explore_mode){ logParams.activity_l1 = 'DATA_PREPARATION'};
+    if (is_results_mode){ logParams.activity_l1 = 'MODEL_EXPLANATION'};
+    if (is_manipulate_mode){ logParams.activity_l1 = 'DATA_PREPARATION'};
+
+    saveSystemLogEntry(logParams);
+
 
     if (currentMode !== mode) {
         if (mode === 'model' && manipulate.pendingHardManipulation) {
