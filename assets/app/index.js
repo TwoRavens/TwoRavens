@@ -511,14 +511,15 @@ class Body {
 
         let createBreadcrumb = () => {
             let path = [
-                m(Popper, {
-                    content: () => IS_D3M_DOMAIN && m(Table, {data: app.workspace.datasetDoc.about})
-                }, m('h4#dataName', {
+                m('h4#dataName.hoverable', {
                         style: {display: 'inline-block', margin: '.25em 1em'},
                         onclick: () => app.setShowModalWorkspace(true)
                     },
-                    app.workspace.d3m_config.name || 'Dataset Name'
-                )),
+                    app.workspace.d3m_config.name || 'Dataset Name', m('br'),
+                    app.workspace.name !== app.workspace.d3m_config.name && m('div', {style: {
+                            'font-style': 'italic', float: 'right', 'font-size': '14px',
+                        }}, `workspace: ${app.workspace.name}`)
+                ),
             ];
 
             let pathProblem = {
@@ -678,8 +679,8 @@ class Body {
                     `Basic Info (id: ${app.getCurrentWorkspaceId()})`
                 )
             ),
-            m('div.btn.btn-group[style=margin:5px;padding:0px]',
-                m(ButtonPlain, {
+            app.workspace && m('div.btn.btn-group[style=margin:5px;padding:0px]',
+                !app.workspace.is_original && m(ButtonPlain, {
                     id: 'btnSaveWorkspace',
                     class: `btn-sm btn-secondary ${app.saveCurrentWorkspaceWindowOpen ? 'active' : ''}`,
                     onclick: _ => app.saveUserWorkspace()
