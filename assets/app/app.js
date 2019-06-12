@@ -298,34 +298,32 @@ export let buildDatasetPreprocess = async ravenConfig => await getData({
     }
 }));
 
-export let buildProblemPreprocess = async (ravenConfig, problem) => problem.manipulations.length === 0
-    ? variableSummaries
-    : await getData({
-        method: 'aggregate',
-        query: JSON.stringify(queryMongo.buildPipeline(
-            [...ravenConfig.hardManipulations, ...problem.manipulations, {
-                type: 'menu',
-                metadata: {
-                    type: 'data',
-                    nominal: problem.tags.nominal,
-                    sample: 5000
-                }
-            }],
-            ravenConfig.variablesInitial)['pipeline']),
-        export: 'dataset'
-    }).then(url => m.request({
-        method: 'POST',
-        url: ROOK_SVC_URL + 'preprocessapp',
-        data: {
-            data: url,
-            datastub: workspace.d3m_config.name,
-            l1_activity: 'PROBLEM_DEFINITION',
-            l2_activity: 'PROBLEM_SPECIFICATION'
-        }
-    })).then(response => {
-        if (!response.success) alertError(response.message);
-        else return response.data.variables
-    });
+export let buildProblemPreprocess = async (ravenConfig, problem) => await getData({
+    method: 'aggregate',
+    query: JSON.stringify(queryMongo.buildPipeline(
+        [...ravenConfig.hardManipulations, ...problem.manipulations, {
+            type: 'menu',
+            metadata: {
+                type: 'data',
+                nominal: problem.tags.nominal,
+                sample: 5000
+            }
+        }],
+        ravenConfig.variablesInitial)['pipeline']),
+    export: 'dataset'
+}).then(url => m.request({
+    method: 'POST',
+    url: ROOK_SVC_URL + 'preprocessapp',
+    data: {
+        data: url,
+        datastub: workspace.d3m_config.name,
+        l1_activity: 'PROBLEM_DEFINITION',
+        l2_activity: 'PROBLEM_SPECIFICATION'
+    }
+})).then(response => {
+    if (!response.success) alertError(response.message);
+    else return response.data.variables
+});
 
 // for debugging - if not in PRODUCTION, prints args
 export let cdb = _ => PRODUCTION || console.log(...arguments);
@@ -511,7 +509,6 @@ export let lockToggle = true;
 export let setLockToggle = state => lockToggle = state;
 
 export let priv = true;
-export let setPriv = state => priv = state;
 
 // if no columns in the datasetDoc, swandive is enabled
 // swandive set to true if task is in failset
@@ -900,48 +897,30 @@ export let loadWorkspace = async newWorkspace => {
     console.log('---------------------------------------');
     console.log("-- Workspace: 3. read preprocess data or (if necessary) run preprocess --");
 
-    // Function to load retreived preprocess data
-    //
-    let loadPreprocessData = res => {
-        priv = res.data.dataset.private || priv;
-        return res.data;
-    };
-
     let resPreprocess;
 
     if (workspace.raven_config)
         setVariableSummaries(await buildProblemPreprocess(workspace.raven_config, getSelectedProblem()));
-
     else {
         let url = ROOK_SVC_URL + 'preprocessapp';
         // For D3M inputs, change the preprocess input data
-        let json_input = IS_D3M_DOMAIN
-            ? {data: workspace.datasetUrl, datastub: workspace.d3m_config.name}
-            : {data: dataloc, target: targetloc, datastub}; // TODO: these are not defined
+        let json_input = {
+            data: workspace.datasetUrl,
+            datastub: IS_D3M_DOMAIN ? workspace.d3m_config.name : workspace.name
+        };
 
         try {
             // res = read(await m.request({method: 'POST', url: url, data: json_input}));
             let preprocess_info = await m.request({method: 'POST', url, data: json_input});
+
             console.log('preprocess_info: ', preprocess_info);
             console.log('preprocess_info message: ' + preprocess_info.message);
-            if (preprocess_info.success){
-                resPreprocess = loadPreprocessData(preprocess_info);
+            if (!preprocess_info.success) throw "Preprocess failed";
+            resPreprocess = preprocess_info.data;
 
-            }else{
-                setModal(m('div', m('p', "Preprocess failed: "  + preprocess_info.message),
-                    m('p', '(May be a serious problem)')),
-                    "Failed to load basic data.",
-                    true,
-                    "Reload Page",
-                    false,
-                    locationReload);
-                return false;
+            priv = resPreprocess.dataset.private || priv
 
-                //alertError('Preprocess failed: ' + preprocess_info.message);
-                // endsession();
-            }
         } catch(_) {
-            console.log('preprocess failed');
             // alertError('preprocess failed. ending user session.');
             setModal(m('div', m('p', "Preprocess failed."),
                 m('p', '(p: 2)')),
@@ -955,6 +934,8 @@ export let loadWorkspace = async newWorkspace => {
         }
         setVariableSummaries(resPreprocess.variables);
     }
+    console.warn("#debug variableSummaries");
+    console.log(variableSummaries);
 
     /**
      * 4. Create 'raven_config' if undefined
@@ -991,8 +972,8 @@ export let loadWorkspace = async newWorkspace => {
 
     if(!swandive && resPreprocess) {
         // assign discovered problems into problems set, keeping the d3m problem
-        Object.assign(newWorkspace.raven_config.problems, discovery(resPreprocess.dataset.discovery));
-        newWorkspace.raven_config.variablesInitial = Object.keys(variableSummaries);
+        Object.assign(workspace.raven_config.problems, discovery(resPreprocess.dataset.discovery));
+        workspace.raven_config.variablesInitial = Object.keys(variableSummaries);
 
         // Kick off discovery button as green for user guidance
         if (!task1_finished) buttonClasses.btnDiscover = 'btn-success'
@@ -1011,7 +992,7 @@ export let loadWorkspace = async newWorkspace => {
 
     // url example: /config/d3m-config/get-problem-schema/json/39
     //
-    let d3mPS = newWorkspace.d3m_config.problem_schema_url;
+    let d3mPS = workspace.d3m_config.problem_schema_url;
     let problemDoc = await m.request(d3mPS);
     // console.log("prob schema data: ", res);
     if(typeof problemDoc.success === 'undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
@@ -1046,15 +1027,9 @@ export let loadWorkspace = async newWorkspace => {
             swandive = true;
         }
 
-        // -----------------------------
-        // Check with MS, quick hack to get resId working
-        // -----------------------------
-        let firstTarget;
-        if (typeof problemDoc.inputs.data[0].targets[0] !== 'undefined') {
-            firstTarget = problemDoc.inputs.data[0].targets[0];
-        }
-        // -----------------------------
-
+        // store the resourceId of the table being used in the raven_config (must persist)
+        workspace.raven_config.resourceId = workspace.datasetDoc.dataResources
+            .find(resource => resource.resType === 'table').resID;
 
         // create the default problem provided by d3m
         let targets = problemDoc.inputs.data
@@ -1075,7 +1050,6 @@ export let loadWorkspace = async newWorkspace => {
             system: 'auto',
             version: problemDoc.about.version,
             predictors: predictors,
-            firstTarget: firstTarget,
             targets: targets,
             description: problemDoc.about.problemDescription,
             metric: problemDoc.inputs.performanceMetrics[0].metric,
@@ -1105,8 +1079,8 @@ export let loadWorkspace = async newWorkspace => {
         // add the default problems to the list of problems
         let problemCopy = getProblemCopy(defaultProblem);
 
-        newWorkspace.raven_config.problems[problemDoc.about.problemID] = defaultProblem;
-        newWorkspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+        workspace.raven_config.problems[problemDoc.about.problemID] = defaultProblem;
+        workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
         /**
          * Note: mongodb data retrieval initiated here
          *   setSelectedProblem -> loadMenu (manipulate.js) -> getData (manipulate.js)
@@ -1824,7 +1798,7 @@ function CreatePipelineData(dataset, problem) {
 // create problem definition for SearchSolutions call
 function CreateProblemDefinition(problem) {
     console.log('problem: ' + JSON.stringify(problem));
-    let resourceIdFromProblemDoc = problem.firstTarget.resID;
+    let resourceIdFromProblemDoc = workspace.raven_config.resourceId;
     let problemSpec = {
         // id: problem.problemID,  // remove for API 2019.4.11
         // version: problem.version, // remove for API 2019.4.11
