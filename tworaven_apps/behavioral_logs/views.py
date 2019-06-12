@@ -20,10 +20,34 @@ from tworaven_apps.behavioral_logs.forms import BehavioralLogEntryForm
 from tworaven_apps.behavioral_logs.models import BehavioralLogEntry
 from tworaven_apps.behavioral_logs.log_formatter \
     import BehavioralLogFormatter
+from tworaven_apps.behavioral_logs import static_vals as bl_static
 
 from tworaven_apps.utils.view_helper import get_session_key
 from tworaven_apps.utils.random_info import get_timestamp_string
 
+
+def view_clear_logs_for_user(request):
+    """Delete logs for the current user"""
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        # If not logged in, you end up on the log in page
+        return JsonResponse(get_json_error("Not logged in"))
+
+    log_entry_info = BehavioralLogFormatter.get_log_entries(user_info.result_obj)
+    if not log_entry_info.success:
+        return JsonResponse(get_json_error(log_entry_info.err_msg))
+
+    log_entries = log_entry_info.result_obj
+
+    num_entries = log_entries.count()
+
+    if num_entries > 0:
+        log_entries.delete()
+        user_msg = 'count of deleted log entries: %s' % num_entries
+    else:
+        user_msg = 'No log entries to delete'
+
+    return JsonResponse(get_json_success(user_msg))
 
 
 def view_show_log_onscreen(request):
@@ -51,6 +75,7 @@ def view_show_log_onscreen(request):
                   'behavioral_logs/view_user_log.html',
                   dinfo)
 
+@csrf_exempt
 def view_export_log_csv(request):
     """Export the behavioral log as a .csv"""
     # ----------------------------------------
@@ -89,11 +114,13 @@ def view_export_log_csv(request):
     return blf.get_csv_output_object()
 
 
+@csrf_exempt
 def view_create_log_entry_verbose(request):
     """Create a new BehavioralLogEntry.  Return the JSON version of the entry"""
     return view_create_log_entry(request, is_verbose=True)
 
 
+@csrf_exempt
 def view_create_log_entry(request, is_verbose=False):
     """Make log entry endpoint"""
 
@@ -117,6 +144,12 @@ def view_create_log_entry(request, is_verbose=False):
     log_data = json_info.result_obj
     log_data.update(dict(session_key=session_key))
 
+    # Default L2 to unkown
+    #
+    if not bl_static.KEY_L2_ACTIVITY in log_data:
+        log_data[bl_static.KEY_L2_ACTIVITY] = bl_static.L2_ACTIVITY_BLANK
+
+    print('log_data', log_data)
     # ----------------------------------------
     # Validate the data
     # ----------------------------------------

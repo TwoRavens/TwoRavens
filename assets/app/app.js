@@ -84,7 +84,25 @@ export let setPeekInlineIsResizing = state => peekInlineIsResizing = state;
 
 // true if within-page data preview is enabled
 export let peekInlineShown = false;
-export let setPeekInlineShown = state => peekInlineShown = state;
+export let setPeekInlineShown = state => {
+  peekInlineShown = state;
+  if (peekInlineShown){
+    logEntryPeekUsed();
+  }
+}
+
+/**
+ *  Log when Peek is used.
+ *    set 'is_external' to True if a new window is opened
+ */
+export let logEntryPeekUsed = is_external => {
+
+  let logSample = {feature_id: 'PEEK', activity_l1: 'DATA_PREPARATION'};
+  if (is_external){
+    logSample.feature_id = 'PEEK_NEW_WINDOW';
+  }
+  saveSystemLogEntry(logSample);
+}
 
 // TA2 server information for display in modal
 export let TA2ServerInfo = (TA2_SERVER !== undefined ) ? TA2_SERVER : '(TA2 unknown)';
@@ -102,6 +120,7 @@ export async function resetPeek(pipeline) {
 }
 
 export async function updatePeek(pipeline) {
+
     if (peekIsLoading || peekIsExhausted || pipeline === undefined)
         return;
 
@@ -300,6 +319,36 @@ export let buildDatasetPreprocess = async ravenConfig => await getData({
     }
 }));
 
+export let saveSystemLogEntry = async logData => {
+  logData.type = 'SYSTEM';
+  saveLogEntry(logData);
+}
+
+/*
+ * Behavioral logging.  Method to save a log entry to the database
+ */
+export let saveLogEntry = async logData => {
+
+    let save_log_entry_url = '/logging/create-new-entry';
+
+    m.request({
+        method: "POST",
+        url: save_log_entry_url,
+        data: logData
+    })
+    .then(function(save_result) {
+      console.log(save_result);
+      /*
+      if (save_result.success){
+        setCurrentWorkspaceMessageSuccess('The workspace was saved!')
+      } else {
+        setCurrentWorkspaceMessageError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
+      }
+      setSaveCurrentWorkspaceWindowOpen(true);
+      */
+    })
+}
+
 export let buildProblemPreprocess = async (ravenConfig, problem) => problem.manipulations.length === 0
     ? variableSummaries
     : await getData({
@@ -321,8 +370,8 @@ export let buildProblemPreprocess = async (ravenConfig, problem) => problem.mani
         data: {
             data: url,
             datastub: workspace.d3m_config.name,
-            l1_activity: 'PROBLEM_DEFINITION',
-            l2_activity: 'PROBLEM_SPECIFICATION'
+            activity_l1: 'PROBLEM_DEFINITION',
+            activity_l2: 'PROBLEM_SPECIFICATION'
         }
     })).then(response => {
         if (!response.success) alertError(response.message);

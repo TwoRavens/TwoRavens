@@ -592,6 +592,7 @@ class Body {
     }
 
     peekTable() {
+
         let pipeline = [
             ...app.workspace.raven_config.hardManipulations,
             ...(app.is_model_mode ? app.getSelectedProblem().manipulations : [])
@@ -701,7 +702,12 @@ class Body {
                     class: 'btn-sm' + (app.peekInlineShown ? ' active' : ''),
                     onclick: () => app.setPeekInlineShown(!app.peekInlineShown)
                 }, 'Peek'),
-                m(Button, {onclick: () => window.open('#!/data', 'data'), class: 'btn-sm'}, m(Icon, {name: 'link-external'}))),
+                m(Button,{
+                    onclick: () => window.open('#!/data', 'data') && app.logEntryPeekUsed(true),
+                    class: 'btn-sm'
+                  },
+                  m(Icon, {name: 'link-external'}))
+                ),
             manipulate.totalSubsetRecords !== undefined && m("span.badge.badge-pill.badge-secondary#recordCount", {
                 style: {
                     float: 'right',

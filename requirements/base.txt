@@ -21,7 +21,7 @@ grpcio-tools==1.12.0
 
 # For long-running GRPC requests
 #
-celery==4.2.1
+celery==4.3.0
 # redis==2.10.6
 redis==3.2.0
 

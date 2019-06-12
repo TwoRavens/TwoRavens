@@ -27,4 +27,10 @@ urlpatterns = (
         views.view_export_log_csv,
         name='view_export_log_csv'),
 
+    # View the user's log for this session
+    #
+    url(r'^clear-logs/current-user$',
+        views.view_clear_logs_for_user,
+        name='view_clear_logs_for_user'),
+
 )
