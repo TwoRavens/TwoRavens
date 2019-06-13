@@ -85,7 +85,25 @@ export let setPeekInlineIsResizing = state => peekInlineIsResizing = state;
 
 // true if within-page data preview is enabled
 export let peekInlineShown = false;
-export let setPeekInlineShown = state => peekInlineShown = state;
+export let setPeekInlineShown = state => {
+  peekInlineShown = state;
+  if (peekInlineShown){
+    logEntryPeekUsed();
+  }
+}
+
+/**
+ *  Log when Peek is used.
+ *    set 'is_external' to True if a new window is opened
+ */
+export let logEntryPeekUsed = is_external => {
+
+  let logParams = {feature_id: 'PEEK', activity_l1: 'DATA_PREPARATION'};
+  if (is_external){
+    logParams.feature_id = 'PEEK_NEW_WINDOW';
+  }
+  saveSystemLogEntry(logParams);
+}
 
 // TA2 server information for display in modal
 export let TA2ServerInfo = (TA2_SERVER !== undefined ) ? TA2_SERVER : '(TA2 unknown)';
@@ -103,6 +121,7 @@ export async function resetPeek(pipeline) {
 }
 
 export async function updatePeek(pipeline) {
+
     if (peekIsLoading || peekIsExhausted || pipeline === undefined)
         return;
 
@@ -251,6 +270,21 @@ export function set_mode(mode) {
     is_results_mode = mode === 'results';
     is_manipulate_mode = mode === 'manipulate';
 
+    /*
+     * Make an entry in the behavioral logs
+     */
+    let logParams = {
+                      feature_id: mode.toUpperCase(),
+                      activity_l2: 'SWITCH_MODE'
+                    };
+    if (is_model_mode){ logParams.activity_l1 = 'MODEL_SELECTION'};
+    if (is_explore_mode){ logParams.activity_l1 = 'DATA_PREPARATION'};
+    if (is_results_mode){ logParams.activity_l1 = 'MODEL_EXPLANATION'};
+    if (is_manipulate_mode){ logParams.activity_l1 = 'DATA_PREPARATION'};
+
+    saveSystemLogEntry(logParams);
+
+
     if (currentMode !== mode) {
         if (mode === 'model' && manipulate.pendingHardManipulation) {
             let ravenConfig = workspace.raven_config;
@@ -297,6 +331,36 @@ export let buildDatasetPreprocess = async ravenConfig => await getData({
         datastub: workspace.d3m_config.name
     }
 }));
+
+export let saveSystemLogEntry = async logData => {
+  logData.type = 'SYSTEM';
+  saveLogEntry(logData);
+}
+
+/*
+ * Behavioral logging.  Method to save a log entry to the database
+ */
+export let saveLogEntry = async logData => {
+
+    let save_log_entry_url = '/logging/create-new-entry';
+
+    m.request({
+        method: "POST",
+        url: save_log_entry_url,
+        data: logData
+    })
+    .then(function(save_result) {
+      console.log(save_result);
+      /*
+      if (save_result.success){
+        setCurrentWorkspaceMessageSuccess('The workspace was saved!')
+      } else {
+        setCurrentWorkspaceMessageError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
+      }
+      setSaveCurrentWorkspaceWindowOpen(true);
+      */
+    })
+}
 
 export let buildProblemPreprocess = async (ravenConfig, problem) => await getData({
     method: 'aggregate',
@@ -1751,7 +1815,24 @@ export function helpmaterials(type) {
 
 // when selected, the key/value [mode]: [pipelineID] is set.
 export let setSelectedSolution = (problem, source, solutionId) => {
+    console.log('problem: ' + JSON.stringify(problem));
+    console.log('source: ' + source);
+    console.log('solutionId: ' + solutionId);
     solutionId = String(solutionId);
+
+    /*
+     * behavioral logging
+     */
+    let logParams = {
+                  feature_id: 'RESULTS_SELECT_SOLUTION',
+                  activity_l1: 'MODEL_SELECTION',
+                  activity_l2: 'MODEL_COMPARISON',
+                  other: {solutionId: solutionId}
+                };
+    saveSystemLogEntry(logParams);
+
+
+//-------------
 
     if (!problem) return;
     let pipelineIds = problem.selectedSolutions[source];

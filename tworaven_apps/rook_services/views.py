@@ -68,6 +68,24 @@ def view_rook_preprocess(request):
         return JsonResponse(get_json_error(err_msg))
 
 
+    log_preprocess_call(user_info.result_obj,
+                        json_data,
+                        get_session_key(request))
+
+
+    putil = PreprocessUtil(json_data[rook_static.KEY_DATA],
+                           datastub=json_data[rook_static.KEY_DATASTUB])
+    if putil.has_error():
+        return JsonResponse(get_json_error(putil.get_error_message()))
+
+    info = get_json_success('it worked',
+                            data=putil.get_preprocess_data())
+
+    return JsonResponse(info)
+
+
+def log_preprocess_call(user, json_data, session_id=''):
+    """Note: The preprocess call also does problem discovery."""
     # --------------------------------
     # Behavioral logging
     # --------------------------------
@@ -83,24 +101,21 @@ def view_rook_preprocess(request):
                       if bl_static.KEY_L2_ACTIVITY in json_data \
                       else bl_static.L2_ACTIVITY_BLANK
 
-    log_data = dict(session_key=get_session_key(request),
+    log_data = dict(session_key=session_id,
                     feature_id=rook_static.PREPROCESS_DATA,
                     activity_l1=activity_l1_val,
                     activity_l2=activity_l2_val)
 
-    LogEntryMaker.create_system_entry(user_info.result_obj, log_data)
+    LogEntryMaker.create_system_entry(user, log_data)
 
+    # Log the discovery activity
+    #
+    log_data2 = dict(session_key=session_id,
+                    feature_id=rook_static.PROBLEM_DISCOVERY,
+                    activity_l1=bl_static.L1_PROBLEM_DEFINITION,
+                    activity_l2=activity_l2_val)
 
-    putil = PreprocessUtil(json_data[rook_static.KEY_DATA],
-                           datastub=json_data[rook_static.KEY_DATASTUB])
-    if putil.has_error():
-        return JsonResponse(get_json_error(putil.get_error_message()))
-
-    info = get_json_success('it worked',
-                            data=putil.get_preprocess_data())
-
-    return JsonResponse(info)
-
+    LogEntryMaker.create_system_entry(user, log_data2)
 
 @csrf_exempt
 def view_rook_healthcheck(request):

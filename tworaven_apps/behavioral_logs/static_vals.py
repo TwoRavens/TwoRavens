@@ -2,8 +2,8 @@
 # Behavioral log values
 #
 
-KEY_L1_ACTIVITY = 'l1_activity'
-KEY_L2_ACTIVITY = 'l2_activity'
+KEY_L1_ACTIVITY = 'activity_l1'
+KEY_L2_ACTIVITY = 'activity_l2'
 
 # -------------------------
 # "type" values

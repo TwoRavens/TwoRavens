@@ -47,13 +47,16 @@ class BehavioralLogEntry(TimeStampedModel):
                         default=bl_static.L2_ACTIVITY_BLANK,
                         help_text='"activity_l2" in spec')
 
-    other = models.CharField(max_length=255,
-                             blank=True,
-                             help_text=('Optional field'))
+    other = jsonfield.JSONField(\
+                blank=True,
+                help_text='Additional info',
+                load_kwargs=dict(object_pairs_hook=OrderedDict))
+
 
     class Meta:
         ordering = ('-created',)
         verbose_name_plural = 'Behavioral log entries'
+
 
     def __str__(self):
         """str repr"""
@@ -79,17 +82,27 @@ class BehavioralLogEntry(TimeStampedModel):
 
         super(BehavioralLogEntry, self).save(*args, **kwargs)
 
+    def other_to_string(self):
+        """Format other as a JSON string"""
+        if not self.other:
+            return json.dumps(self.other)
+
+        return json.dumps(self.other)
+
     def format_other_entry(self):
         """The "other entry", a bit TBD"""
-        info = {}
+        if self.other:
+            info = self.other
+        else:
+            info = {}
 
         if self.id and self.session_key:
-            info = dict(id=self.id,
-                        session_key=self.session_key)
+            info.update(dict(id=self.id,
+                             session_key=self.session_key))
         elif self.id:
-            info = dict(id=self.id)
+            info.update(dict(id=self.id))
 
-        return json.dumps(info)
+        return info
 
 
     def to_dict(self, **kwargs):
@@ -109,6 +122,7 @@ class BehavioralLogEntry(TimeStampedModel):
         info_dict['activity_l1'] = self.activity_l1
         info_dict['activity_l2'] = self.activity_l2
         info_dict['path'] = self.path
+        info_dict['other'] = self.other
 
         info_dict['modified'] = self.modified
         info_dict['created'] = self.created
