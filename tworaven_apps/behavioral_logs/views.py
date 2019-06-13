@@ -150,9 +150,15 @@ def view_create_log_entry(request, is_verbose=False):
     if not bl_static.KEY_L2_ACTIVITY in log_data:
         log_data[bl_static.KEY_L2_ACTIVITY] = bl_static.L2_ACTIVITY_BLANK
 
-    if not 'type' in log_data:
-        user_msg = 'Log entry error. The "type" must be included.'
-        return JsonResponse(get_json_error(user_msg))
+    # Note: this form is also used by the LogEntryMaker
+    #   - redundant but ok for now, want to return form errors
+    #       in a separate field
+    #
+    f = BehavioralLogEntryForm(log_data)
+    if not f.is_valid():
+        user_msg = 'Error found in log entry.'
+        return JsonResponse(get_json_error(user_msg, errors=f.errors))
+
 
     log_create_info = LogEntryMaker.create_log_entry(user, log_data['type'], log_data)
     if not log_create_info.success:
