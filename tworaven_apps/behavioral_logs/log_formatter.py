@@ -142,7 +142,7 @@ class BehavioralLogFormatter(BasicErrCheck):
                     log_entry.type,
                     log_entry.activity_l1,
                     log_entry.activity_l2,
-                    log_entry.other,
+                    log_entry.other_to_string(),
                     'F' if log_entry.is_optional else 'T'
                     ]
 

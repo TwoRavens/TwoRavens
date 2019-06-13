@@ -288,7 +288,18 @@ export class CanvasSolutions {
             style: {margin: '0px 1em'},
             header: 'Problem Description',
             shown: resultsSubpanels['Problem Description'],
-            setShown: state => resultsSubpanels['Problem Description'] = state
+            setShown: state => {
+               resultsSubpanels['Problem Description'] = state;
+               if(state){
+                 // behavioral logging
+                 let logParams = {
+                               feature_id: 'VIEW_PROBLEM_DESCRIPTION',
+                               activity_l1: 'MODEL_SELECTION',
+                               activity_l2: 'MODEL_EXPLANATION'
+                             };
+                 app.saveSystemLogEntry(logParams);
+               }
+            }
         }, m(Table, {
             headers: ['Variable', 'Data'],
             data: [
@@ -311,7 +322,18 @@ export class CanvasSolutions {
             style: {margin: '0px 1em'},
             header: 'Solution Description',
             shown: resultsSubpanels['Solution Description'],
-            setShown: state => resultsSubpanels['Solution Description'] = state
+            setShown: state => {
+              resultsSubpanels['Solution Description'] = state;
+              if(state){
+                // behavioral logging
+                let logParams = {
+                              feature_id: 'VIEW_SOLUTION_DESCRIPTION',
+                              activity_l1: 'MODEL_SELECTION',
+                              activity_l2: 'MODEL_EXPLANATION'
+                            };
+                app.saveSystemLogEntry(logParams);
+              }
+            }
         }, m(Table, {
             headers: ['Variable', 'Data'],
             data: [
@@ -327,14 +349,36 @@ export class CanvasSolutions {
             style: {margin: '0px 1em'},
             header: 'Prediction Summary',
             shown: resultsSubpanels['Prediction Summary'],
-            setShown: state => resultsSubpanels['Prediction Summary'] = state
+            setShown: state => {
+              resultsSubpanels['Prediction Summary'] = state;
+              if(state){
+                // behavioral logging
+                let logParams = {
+                              feature_id: 'VIEW_PREDICTION_SUMMARY',
+                              activity_l1: 'MODEL_SELECTION',
+                              activity_l2: 'MODEL_EXPLANATION'
+                            };
+                app.saveSystemLogEntry(logParams);
+              }
+            }
         }, this.predictionSummary(problem, solutionSummaries));
 
-        let visualizePipeline = selectedSolutions.length === 1 && firstSolution.source === 'd3m' && m(Subpanel, {
+        let visualizePipelinePanel = selectedSolutions.length === 1 && firstSolution.source === 'd3m' && m(Subpanel, {
             style: {margin: '0px 1em'},
             header: 'Visualize Pipeline',
             shown: resultsSubpanels['Visualize Pipeline'],
-            setShown: state => resultsSubpanels['Visualize Pipeline'] = state
+            setShown: state => {
+              resultsSubpanels['Visualize Pipeline'] = state;
+              if(state){
+                // behavioral logging
+                let logParams = {
+                              feature_id: 'VIEW_VISUALIZE_PIPELINE',
+                              activity_l1: 'MODEL_SELECTION',
+                              activity_l2: 'MODEL_EXPLANATION'
+                            };
+                app.saveSystemLogEntry(logParams);
+              }
+            }
         }, this.visualizePipeline(firstSolution));
 
         let performanceStatsContents = firstSolution.source === 'rook' && Object.keys(firstSolution.models)
@@ -424,7 +468,7 @@ export class CanvasSolutions {
             problemSummary,
             solutionSummary,
             predictionSummary,
-            visualizePipeline,
+            visualizePipelinePanel,
             performanceStats,
             coefficientMatrix,
             anovaTables,

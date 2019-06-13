@@ -41,10 +41,11 @@ class LogEntryMaker:
     @staticmethod
     def create_log_entry(user, entry_type, log_data):
         """Add a TA2TA3 entry"""
-        assert isinstance(user, User), \
-            "user must be a User object"
-        assert isinstance(log_data, dict), \
-            "log_data must be a dict object"
+        if not isinstance(user, User):
+            return err_resp("user must be a User object")
+
+        if not isinstance(log_data, dict):
+            return err_resp("log_data must be a dict object")
 
         # set entry type
         log_data['type'] = entry_type
@@ -56,11 +57,11 @@ class LogEntryMaker:
             print(f'ERROR!: {err_msg}')
             return err_resp(err_msg)
 
-        new_entry = BehavioralLogEntry(**log_data)
+        new_entry = BehavioralLogEntry(**f.cleaned_data)
         new_entry.user = user
 
         new_entry.save()
 
-        user_msg = 'Log entry saved!'
+        # user_msg = 'Log entry saved!'
 
         return ok_resp(new_entry)

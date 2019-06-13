@@ -37,7 +37,7 @@
 
         <td>{{ entry.activity_l1 }}</td>
         <td>{{ entry.activity_l2 }}</td>
-        <td>{{ entry.other }}</td>
+        <td>{{ entry.other_to_string|safe }}</td>
       </tr>
     {% endfor %}
   </tbody>

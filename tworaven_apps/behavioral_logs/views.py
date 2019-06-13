@@ -18,6 +18,7 @@ from tworaven_apps.utils.view_helper import \
 
 from tworaven_apps.behavioral_logs.forms import BehavioralLogEntryForm
 from tworaven_apps.behavioral_logs.models import BehavioralLogEntry
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
 from tworaven_apps.behavioral_logs.log_formatter \
     import BehavioralLogFormatter
 from tworaven_apps.behavioral_logs import static_vals as bl_static
@@ -149,37 +150,19 @@ def view_create_log_entry(request, is_verbose=False):
     if not bl_static.KEY_L2_ACTIVITY in log_data:
         log_data[bl_static.KEY_L2_ACTIVITY] = bl_static.L2_ACTIVITY_BLANK
 
-    print('log_data', log_data)
-    # ----------------------------------------
-    # Validate the data
-    # ----------------------------------------
-    log_form = BehavioralLogEntryForm(log_data)
+    if not 'type' in log_data:
+        user_msg = 'Log entry error. The "type" must be included.'
+        return JsonResponse(get_json_error(user_msg))
 
-    if not log_form.is_valid():
-        msg = 'There were errors in the log entry'
-
-        # Example dict(log_form.errors) value:
-        #
-        # {'activity_l1': ['Select a valid choice.
-        #                   bleh is not one of the available choices.']}
-        #
-        json_err = get_json_error(msg, errors=dict(log_form.errors))
-
-        return JsonResponse(json_err)
-
-    # ----------------------------------------
-    # Save it!
-    # ----------------------------------------
-    new_entry = BehavioralLogEntry(**log_data)
-    new_entry.user = user
-
-    new_entry.save()
+    log_create_info = LogEntryMaker.create_log_entry(user, log_data['type'], log_data)
+    if not log_create_info.success:
+        return JsonResponse(get_json_error(log_create_info.err_msg))
 
     user_msg = 'Log entry saved!'
 
     if is_verbose:
         return JsonResponse(get_json_success(\
                                 user_msg,
-                                data=new_entry.to_dict()))
+                                data=log_create_info.result_obj.to_dict()))
 
     return JsonResponse(get_json_success(user_msg))

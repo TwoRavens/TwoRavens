@@ -272,7 +272,9 @@ export function set_mode(mode) {
     is_results_mode = mode === 'results';
     is_manipulate_mode = mode === 'manipulate';
 
-    // make an entry in the behavioral logs
+    /*
+     * Make an entry in the behavioral logs
+     */
     let logParams = {
                       feature_id: mode.toUpperCase(),
                       activity_l2: 'SWITCH_MODE'
@@ -1733,7 +1735,24 @@ export function helpmaterials(type) {
 
 // when selected, the key/value [mode]: [pipelineID] is set.
 export let setSelectedSolution = (problem, source, solutionId) => {
+    console.log('problem: ' + JSON.stringify(problem));
+    console.log('source: ' + source);
+    console.log('solutionId: ' + solutionId);
     solutionId = String(solutionId);
+
+    /*
+     * behavioral logging
+     */
+    let logParams = {
+                  feature_id: 'RESULTS_SELECT_SOLUTION',
+                  activity_l1: 'MODEL_SELECTION',
+                  activity_l2: 'MODEL_COMPARISON',
+                  other: {solutionId: solutionId}
+                };
+    saveSystemLogEntry(logParams);
+
+
+//-------------
 
     if (!problem) return;
     let pipelineIds = problem.selectedSolutions[source];
