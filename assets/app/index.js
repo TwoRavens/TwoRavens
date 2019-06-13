@@ -1,5 +1,3 @@
-// import 'bootstrap/dist/css/bootstrap.css';
-
 import 'bootstrap';
 import 'bootswatch/dist/materia/bootstrap.css';
 import '../css/app.css';
@@ -15,6 +13,9 @@ import * as plots from './plots';
 import * as results from './results';
 
 import * as manipulate from './manipulations/manipulate';
+
+import * as solverRook from "./solvers/rook";
+import * as solverD3M from "./solvers/d3m";
 
 import PanelButton from './views/PanelButton';
 import Subpanel from './views/Subpanel';
@@ -38,22 +39,23 @@ import Table from '../common/views/Table';
 import ListTags from "../common/views/ListTags";
 import TextField from '../common/views/TextField';
 import MenuHeaders from "../common/views/MenuHeaders";
+import Canvas from "../common/views/Canvas";
+
 import Subpanel2 from '../common/views/Subpanel';
 
 import Popper from '../common/views/Popper';
-
 import Datamart, {ModalDatamart} from "../common/TwoRavens/Datamart";
-// EVENTDATA
-import Body_EventData from './eventdata/Body_EventData';
 
 import PreprocessInfo from "./views/PreprocessInfo";
+
 import ForceDiagram from "./views/ForceDiagram";
 import ButtonLadda from "./views/LaddaButton";
-import {exploreVariate} from "./app";
-import Canvas from "../common/views/Canvas";
-import {currentMode} from "./app";
-import * as solverRook from "./solvers/rook";
-import * as solverD3M from "./solvers/d3m";
+import ModalWorkspace from "./views/ModalWorkspace";
+import VariableSummary, {formatVariableSummary} from "./views/VariableSummary";
+
+// EVENTDATA
+import Body_EventData from './eventdata/Body_EventData';
+import TextFieldSuggestion from "../common/views/TextFieldSuggestion";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -68,9 +70,6 @@ class Body {
     oninit() {
         app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
         app.set_mode('model');
-
-        this.cite = false;
-        this.citeHidden = false;
     }
 
     oncreate() {
@@ -82,8 +81,8 @@ class Body {
             val = idx > 0 ? val.substring(0, idx) : val;
             val = val.replace('#!/model', '');
             console.log(name, ': ', val);
-            return replace ?
-                val
+            return replace
+                ? val
                     .replace(/%25/g, '%')
                     .replace(/%3A/g, ':')
                     .replace(/%2F/g, '/')
@@ -211,12 +210,15 @@ class Body {
         let selectedProblem = app.getSelectedProblem();
         let resultsProblem = app.getResultsProblem();
 
+        let drawForceDiagram = app.is_model_mode && selectedProblem && Object.keys(app.variableSummaries).length > 0;
+        let forceData = drawForceDiagram && app.buildForceData(selectedProblem);
+
         return m('main',
 
             this.construct_modals(),
             this.header(app.currentMode),
             this.footer(app.currentMode),
-            app.workspace && this.leftpanel(app.currentMode),
+            app.workspace && this.leftpanel(app.currentMode, drawForceDiagram && forceData),
             app.workspace && this.rightpanel(app.currentMode),
             app.workspace && this.manipulations(),
 
@@ -305,7 +307,7 @@ class Body {
                                                     return;
                                                 }
 
-                                                if (exploreVariate === 'Multivariate') {
+                                                if (app.exploreVariate === 'Multivariate') {
                                                     exploreVariables.includes(x)
                                                         ? app.remove(exploreVariables, x) : exploreVariables.push(x);
                                                     return;
@@ -372,42 +374,57 @@ class Body {
                                     return tile;
                                 }))
                         )],
-                    app.is_model_mode && selectedProblem && m(ForceDiagram, Object.assign(app.forceDiagramState,{
+                    drawForceDiagram && m(ForceDiagram, Object.assign(app.forceDiagramState,{
                         nodes: app.forceDiagramNodesReadOnly,
                         // these attributes may change dynamically, (the problem could change)
                         onDragOut: pebble => {
-                            app.remove(selectedProblem.tags.loose, pebble);
-                            app.remove(selectedProblem.predictors, pebble);
-                            app.remove(selectedProblem.targets, pebble);
+                            let pebbles = forceData.summaries[pebble].plottype === 'collapsed'
+                                ? forceData.summaries[pebble].childNodes : [pebble];
+
+                            pebbles.forEach(pebble => {
+                                app.remove(selectedProblem.tags.loose, pebble);
+                                app.remove(selectedProblem.predictors, pebble);
+                                app.remove(selectedProblem.targets, pebble);
+                            });
                             m.redraw();
                         },
                         onDragOver: (pebble, groupId) => {
-                            if (groupId === 'Predictors' && !selectedProblem.predictors.includes(pebble.name)) {
-                                selectedProblem.predictors.push(pebble.name);
-                                app.remove(selectedProblem.targets, pebble.name);
-                                app.remove(selectedProblem.tags.loose, pebble.name);
-                            }
-                            if (groupId === 'Targets' && !selectedProblem.targets.includes(pebble.name)) {
-                                selectedProblem.targets.push(pebble.name);
-                                app.remove(selectedProblem.predictors, pebble.name);
-                                app.remove(selectedProblem.tags.loose, pebble.name);
-                            }
+
+                            let pebbles = forceData.summaries[pebble.name].plottype === 'collapsed'
+                                ? forceData.summaries[pebble.name].childNodes : [pebble.name];
+
+                            pebbles.forEach(pebble => {
+                                if (groupId === 'Predictors' && !selectedProblem.predictors.includes(pebble)) {
+                                    selectedProblem.predictors.push(pebble);
+                                    app.remove(selectedProblem.targets, pebble);
+                                    app.remove(selectedProblem.tags.loose, pebble);
+                                }
+                                if (groupId === 'Targets' && !selectedProblem.targets.includes(pebble)) {
+                                    selectedProblem.targets.push(pebble);
+                                    app.remove(selectedProblem.predictors, pebble);
+                                    app.remove(selectedProblem.tags.loose, pebble);
+                                }
+                            });
                             m.redraw();
                         },
                         onDragAway: (pebble, groupId) => {
-                            if (groupId === 'Predictors')
-                                app.remove(selectedProblem.predictors, pebble.name);
-                            if (groupId === 'Targets')
-                                app.remove(selectedProblem.targets, pebble.name);
-                            if (!selectedProblem.tags.loose.includes(pebble.name))
-                                selectedProblem.tags.loose.push(pebble.name);
+                            let pebbles = forceData.summaries[pebble.name].plottype === 'collapsed'
+                                ? forceData.summaries[pebble.name].childNodes : [pebble.name];
+
+                            pebbles.forEach(pebble => {
+                                if (groupId === 'Predictors')
+                                    app.remove(selectedProblem.predictors, pebble);
+                                if (groupId === 'Targets')
+                                    app.remove(selectedProblem.targets, pebble);
+                                if (!selectedProblem.tags.loose.includes(pebble))
+                                    selectedProblem.tags.loose.push(pebble);
+                            });
                             m.redraw();
                         },
 
                         labels: app.forceDiagramLabels(selectedProblem),
-                        mutateNodes: app.mutateNodes(selectedProblem),
-                        summaries: app.variableSummaries
-                    }, app.buildForceData(selectedProblem)))),
+                        mutateNodes: app.mutateNodes(selectedProblem)
+                    }, forceData))),
 
                 app.is_model_mode && !app.swandive && m("#spacetools.spaceTool", {
                     style: {right: app.panelWidth.right,'z-index': 16}
@@ -495,9 +512,15 @@ class Body {
 
         let createBreadcrumb = () => {
             let path = [
-                m(Popper, {
-                    content: () => IS_D3M_DOMAIN && m(Table, {data: app.workspace.datasetDoc.about})
-                }, m('h4#dataName[style=display: inline-block; margin: .25em 1em]', app.workspace.d3m_config.name || 'Dataset Name')),
+                m('h4#dataName.hoverable', {
+                        style: {display: 'inline-block', margin: '.25em 1em'},
+                        onclick: () => app.setShowModalWorkspace(true)
+                    },
+                    app.workspace.d3m_config.name || 'Dataset Name', m('br'),
+                    app.workspace.name !== app.workspace.d3m_config.name && m('div', {style: {
+                            'font-style': 'italic', float: 'right', 'font-size': '14px',
+                        }}, `workspace: ${app.workspace.name}`)
+                ),
             ];
 
             let pathProblem = {
@@ -537,7 +560,7 @@ class Body {
 
 
 
-            currentMode === 'results' && resultsProblem && Object.keys(resultsProblem.solutions.d3m).length > 0 && m(Button, {
+            app.currentMode === 'results' && resultsProblem && Object.keys(resultsProblem.solutions.d3m).length > 0 && m(Button, {
                 id: 'btnEndSession',
                 class: 'ladda-label ladda-button',
                 onclick: app.endsession,
@@ -646,25 +669,20 @@ class Body {
     footer() {
 
         return m(Footer, [
-            m('div.btn-group.btn-group-toggle[data-toggle=buttons][style=margin:.25em 1em]',
-                m('button.btn.btn-secondary.btn-sm', {
-                    id: 'btnTA2',
-                    onclick: _ => hopscotch.startTour(app.mytour(), 0)
-                }, 'Help Tour ', m(Icon, {name: 'milestone'})),
+            m('div.btn.btn-group[style=margin:5px;padding:0px]',
+                m(Button, {id: 'btnTA2',class: 'btn-sm', onclick: _ => hopscotch.startTour(app.mytour(), 0)}, 'Help Tour ', m(Icon, {name: 'milestone'})),
                 m(Button, {id: 'btnTA2', class: 'btn-sm', onclick: _ => app.helpmaterials('video')}, 'Video ', m(Icon, {name: 'file-media'})),
                 m(Button, {id: 'btnTA2', class: 'btn-sm', onclick: _ => app.helpmaterials('manual')}, 'Manual ', m(Icon, {name: 'file-pdf'})),
-
                 m(Button, {
-                    id: 'btnAPIInfoWindow',
-                    class: `btn-sm ${app.isAPIInfoWindowOpen ? 'active' : ''}`,
-                    onclick: _ => app.setAPIInfoWindowOpen(true),
-                  },
+                        id: 'btnAPIInfoWindow',
+                        class: `btn-sm ${app.isAPIInfoWindowOpen ? 'active' : ''}`,
+                        onclick: _ => app.setAPIInfoWindowOpen(true),
+                    },
                     `Basic Info (id: ${app.getCurrentWorkspaceId()})`
-                  ),
-
-                m("span", {"class": "footer-info footer-info-break"}, ''),
-
-                m(ButtonPlain, {
+                )
+            ),
+            app.workspace && m('div.btn.btn-group[style=margin:5px;padding:0px]',
+                !app.workspace.is_original && m(ButtonPlain, {
                     id: 'btnSaveWorkspace',
                     class: `btn-sm btn-secondary ${app.saveCurrentWorkspaceWindowOpen ? 'active' : ''}`,
                     onclick: _ => app.saveUserWorkspace()
@@ -678,15 +696,14 @@ class Body {
                     onclick: _ => app.setSaveNameModalOpen(true)
                   },
                   'Save As New ',
-                ),
-
-                  m(Button, {
-                      style: {'margin': '8px'},
-                      title: 'alerts',
-                      class: ['btn-sm'],
-                      onclick: () => app.setAlertsShown(true)
-                  }, m(Icon, {name: 'bell', style: `color: ${app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}`})),
+                )
               ),
+            m(Button, {
+                style: {'margin': '8px'},
+                title: 'alerts',
+                class: 'btn-sm',
+                onclick: () => app.setAlertsShown(true)
+            }, m(Icon, {name: 'bell', style: `color: ${app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}`})),
 
             // m("span", {"class": "footer-info-break"}, "|"),
             // m("a", {"href" : "/dev-raven-links", "target": "=_blank"}, "raven-links"),
@@ -726,6 +743,12 @@ class Body {
         return [
             m(Modal),
             this.modalSaveCurrentWorkspace(),
+            app.showModalWorkspace && m(ModalWorkspace, {
+                    workspace: app.workspace,
+                    setDisplay: app.setShowModalWorkspace,
+                    loadWorkspace: app.loadWorkspace
+                }
+            ),
             /*
              * Alerts modal.  Displays the list of alerts, if any.
              */
@@ -988,7 +1011,7 @@ class Body {
      * End: Construct potential modal boxes for the page.
      */
 
-    leftpanel(mode) {
+    leftpanel(mode, forceData) {
 
         if (mode === 'manipulate')
             return manipulate.leftpanel();
@@ -1062,7 +1085,7 @@ class Body {
                                     app.remove(selectedProblem.tags.loose, x);
                                 else selectedProblem.tags.loose.push(x);
                             },
-                            popup: x => m('div', m('h4', 'Summary Statistics for ' + x), m(Table, {attrsAll: {class: 'table-sm'}, data: app.getVarSummary(app.variableSummaries[x])})),
+                            popup: x => m('div', m('h4', 'Summary Statistics for ' + x), m(Table, {attrsAll: {class: 'table-sm'}, data: formatVariableSummary(app.variableSummaries[x])})),
                             popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
                         }),
                         m(Button, {
@@ -1250,6 +1273,49 @@ class Body {
             ]
         });
 
+        let summaryPebble = app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble;
+        let summaryContent;
+
+        if (summaryPebble && forceData.pebbles.includes(summaryPebble)) {
+            // if hovered over a collapsed pebble, then expand summaryPebble into all children pebbles
+            let summaryPebbles = forceData.summaries[summaryPebble].plottype === 'collapsed'
+                ? [...forceData.summaries[summaryPebble].childNodes]
+                : [summaryPebble];
+
+            summaryContent = summaryPebbles.sort(app.omniSort)
+                .map(variableName => m(Subpanel2, {
+                    id: 'subpanel' + variableName,
+                    header: variableName,
+                    attrsBody: {style: {padding: '0.5em'}},
+                    defaultShown: false,
+                    shown: summaryPebbles.length === 1 || undefined
+                }, m(TextFieldSuggestion, {
+                        id: 'groupSuggestionBox',
+                        suggestions: [
+                            !selectedProblem.tags.loose.includes(variableName) && 'Loose',
+                            !selectedProblem.targets.includes(variableName) && 'Targets',
+                            !selectedProblem.predictors.includes(variableName) && 'Predictors'
+                        ].filter(_=>_),
+                        enforce: true,
+                        attrsAll: {placeholder: 'add to group'},
+                        oninput: value => app.setGroup(value, variableName),
+                        onblur: value => app.setGroup(value, variableName),
+                    }),
+                    m('div', {style: {width: '100%'}}, bold('Member of: '), m(ListTags, {
+                        tags: [
+                            // selectedProblem.tags.loose.includes(variableName) && 'Loose',
+                            selectedProblem.targets.includes(variableName) && 'Targets',
+                            selectedProblem.predictors.includes(variableName) && 'Predictors'
+                        ].filter(_=>_),
+                        ondelete: tag => app.remove({
+                            'Loose': selectedProblem.tags.loose,
+                            'Targets': selectedProblem.targets,
+                            'Predictors': selectedProblem.predictors
+                        }[tag], variableName)
+                    })),
+                    m(VariableSummary, {variable: app.variableSummaries[variableName]})));
+        }
+
         return m(Panel, {
             side: 'left',
             label: 'Data Selection',
@@ -1289,16 +1355,7 @@ class Body {
                     value: 'Summary',
                     title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
                     display: 'none',
-                    contents: (app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble) && [
-                        m('center',
-                            m('b', app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble),
-                            m('br'),
-                            m('i', (app.variableSummaries[app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble] || {}).labl)),
-                        m(Table, {
-                            id: 'varSummaryTable',
-                            data: app.getVarSummary(app.variableSummaries[app.forceDiagramState.hoverPebble || app.forceDiagramState.selectedPebble])
-                        })
-                    ]
+                    contents: summaryContent
                 }
             ])
         }));
@@ -1441,6 +1498,7 @@ class Body {
     }
 
     manipulations() {
+        let selectedProblem = app.getSelectedProblem();
         return (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu([
             ...app.workspace.raven_config.hardManipulations,
             ...(app.is_model_mode ? selectedProblem.manipulations : [])

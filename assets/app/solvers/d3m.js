@@ -4,7 +4,6 @@ import {
     buttonClasses,
     buttonLadda,
     makeRequest,
-    ROOKPIPE_FROM_REQUEST,
     setSelectedSolution,
 } from "../app";
 import m from "mithril";
@@ -245,8 +244,8 @@ function primitiveStepRemoveColumns(problem) {
  Handle a websocket sent GetSearchSolutionResultsResponse
  wrapped in a StoredResponse object
  */
-export async function handleGetSearchSolutionResultsResponse(response1) {
-    if (response1 === undefined) {
+export async function handleGetSearchSolutionResultsResponse(response) {
+    if (response === undefined) {
         console.log('GetSearchSolutionResultsResponse: Error.  "response1" undefined');
         return;
     }
@@ -259,11 +258,11 @@ export async function handleGetSearchSolutionResultsResponse(response1) {
     // Note: the response.id becomes the Pipeline id
     //
     //
-    if (response1.id === undefined) {
+    if (response.id === undefined) {
         console.warn('GetSearchSolutionResultsResponse: Error.  "response1.id" undefined');
         return;
     }
-    if (response1.response.solutionId === undefined) {
+    if (response.response.solutionId === undefined) {
         console.warn('GetSearchSolutionResultsResponse: Error.  "response1.response.solutionId" undefined');
         return;
     }
@@ -272,11 +271,9 @@ export async function handleGetSearchSolutionResultsResponse(response1) {
     // ----------------------------------------
     // (2) Update or Create the Pipeline
     // ----------------------------------------
-    // if (!ROOKPIPE_FROM_REQUEST) {
-    //     console.warn('---------- ERROR: ROOKPIPE_FROM_REQUEST not set!!!');
-    // }
 
-    response1.source = 'd3m';
+
+    response.source = 'd3m';
 
     let solverProblem = app.solverProblem.d3m;
     if (!solverProblem) {
@@ -284,13 +281,14 @@ export async function handleGetSearchSolutionResultsResponse(response1) {
         return;
     }
     let solutions = solverProblem.solutions.d3m;
-
+    console.warn("#debug response");
+    console.log(response);
     // Need to deal with (exclude) pipelines that are reported, but failed.  For approach, see below.
-    if (response1.id in solutions)
-        Object.assign(solutions[response1.id], response1);
+    if (response.id in solutions)
+        Object.assign(solutions[response.id], response);
     else {
-        solutions[response1.id] = response1;
-        solutions[response1.id].score = 'scoring';
+        solutions[response.id] = response;
+        solutions[response.id].score = 'scoring';
     }
 
     // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
@@ -301,9 +299,6 @@ export async function handleGetSearchSolutionResultsResponse(response1) {
     //     continue;
     // }
 
-    //adding rookpipe to the set of d3m solutions for the problem
-    // solutions.rookpipe = Object.assign({}, ROOKPIPE_FROM_REQUEST);                // This is setting rookpipe for the entire table, but when there are multiple CreatePipelines calls, this is only recording latest values
-
     // VJD: this is a third core API call that is currently unnecessary
     //let pipelineid = PipelineCreateResult.pipelineid;
     // getexecutepipelineresults is the third to be called
@@ -311,11 +306,11 @@ export async function handleGetSearchSolutionResultsResponse(response1) {
 
     let selectedSolutions = app.getSolutions(solverProblem);
 
-    if (selectedSolutions.size === 0) setSelectedSolution(solverProblem, 'd3m', response1.id);
+    if (selectedSolutions.size === 0) setSelectedSolution(solverProblem, 'd3m', response.id);
 
     // Add pipeline descriptions
     // TODO: this is redundant, check if can be deleted
-    Object.assign(solutions[response1.id], response1.data);
+    Object.assign(solutions[response.id], response.data);
 
     m.redraw();
 }

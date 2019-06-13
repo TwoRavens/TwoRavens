@@ -30,107 +30,111 @@ export let leftpanel = () => {
 
     if (!resultsProblem) return;
 
-    let sections = [
-        {
-            value: 'Problem',
-            contents: [
-                m('div', {style: {height: '100%'}}, m(ForceDiagram, Object.assign(forceDiagramStateResults,{
-                    mutateNodes: app.mutateNodes(resultsProblem),
-                    summaries: app.variableSummaries
-                }, app.buildForceData(resultsProblem)))),
-                // m(Table, {data: resultsProblem})
-            ]
-        },
-        {
-            value: 'Solutions',
-            contents: [
-                m('div', {style: {display: 'inline-block', margin: '1em'}},
-                    m(Dropdown, {
-                        id: 'pipelineDropdown',
-                        items: Object.keys(ravenConfig.problems).filter(key =>
-                            Object.keys(ravenConfig.problems[key].solutions)
-                                .reduce((sum, source) => sum + Object.keys(ravenConfig.problems[key].solutions[source]).length, 0)),
-                        activeItem: ravenConfig.resultsProblem,
-                        onclickChild: app.setResultsProblem
-                    })),
-                m('div#modelComparisonOption', {style: {display: 'inline-block'}},
-                    m('input#modelComparisonCheck[type=checkbox]', {
-                        onclick: m.withAttr("checked", app.setModelComparison),
-                        checked: app.modelComparison,
-                        style: {margin: '.25em'}
-                    }),
-                    m('label#modelComparisonLabel', {
-                        title: 'select multiple models to compare',
-                        style: {display: 'inline-block'}
-                    }, 'Model Comparison')
-                ),
-                m(MenuHeaders, {
-                    id: 'pipelineMenu',
-                    sections: [
-                        {
-                            value: 'Discovered Solutions',
-                            contents:
-                                m(Table, {
-                                    id: 'pipelineTable',
-                                    headers: ['Solution', 'Score'],
-                                    data: Object.keys(resultsProblem.solutions.d3m)
-                                        .map(pipelineId => [pipelineId, resultsProblem.solutions.d3m[pipelineId].score]),
-                                    sortHeader: 'Score',
-                                    sortFunction: app.sortPipelineTable,
-                                    activeRow: new Set(resultsProblem.selectedSolutions.d3m),
-                                    onclick: pipelineId => app.setSelectedSolution(resultsProblem, 'd3m', pipelineId),
-                                    tableTags: m('colgroup',
-                                        m('col', {span: 1}),
-                                        m('col', {span: 1, width: '30%'}))
-                                })
-                        },
-                        {
-                            value: 'Baselines',
-                            contents: [
-                                // m(Subpanel, {
-                                //     id: 'addModelSubpanel',
-                                //     onclick: app.setResultsProblem
-                                // }),
+    let resultsContent = [
+        m('div', {style: {display: 'inline-block', margin: '1em'}},
+            m(Dropdown, {
+                id: 'pipelineDropdown',
+                items: Object.keys(ravenConfig.problems).filter(key =>
+                    Object.keys(ravenConfig.problems[key].solutions)
+                        .reduce((sum, source) => sum + Object.keys(ravenConfig.problems[key].solutions[source]).length, 0)),
+                activeItem: ravenConfig.resultsProblem,
+                onclickChild: app.setResultsProblem
+            })),
+        m('div#modelComparisonOption', {style: {display: 'inline-block'}},
+            m('input#modelComparisonCheck[type=checkbox]', {
+                onclick: m.withAttr("checked", app.setModelComparison),
+                checked: app.modelComparison,
+                style: {margin: '.25em'}
+            }),
+            m('label#modelComparisonLabel', {
+                title: 'select multiple models to compare',
+                style: {display: 'inline-block'}
+            }, 'Model Comparison')
+        ),
+        m(MenuHeaders, {
+            id: 'pipelineMenu',
+            sections: [
+                {
+                    value: 'Discovered Solutions',
+                    contents:
+                        m(Table, {
+                            id: 'pipelineTable',
+                            headers: ['Solution', 'Score'],
+                            data: Object.keys(resultsProblem.solutions.d3m)
+                                .map(pipelineId => [pipelineId, resultsProblem.solutions.d3m[pipelineId].score]),
+                            sortHeader: 'Score',
+                            sortFunction: app.sortPipelineTable,
+                            activeRow: new Set(resultsProblem.selectedSolutions.d3m),
+                            onclick: pipelineId => app.setSelectedSolution(resultsProblem, 'd3m', pipelineId),
+                            tableTags: m('colgroup',
+                                m('col', {span: 1}),
+                                m('col', {span: 1, width: '30%'}))
+                        })
+                },
+                {
+                    value: 'Baselines',
+                    contents: [
+                        // m(Subpanel, {
+                        //     id: 'addModelSubpanel',
+                        //     onclick: app.setResultsProblem
+                        // }),
 
-                                m(Table, {
-                                    id: 'pipelineTable',
-                                    headers: ['Solution', 'Score'],
-                                    data: Object.keys(resultsProblem.solutions.rook)
-                                        .map(solutionId => [
-                                            solutionId,
-                                            solverRook.getScore(resultsProblem, resultsProblem.solutions.rook[solutionId])
-                                        ]),
-                                    sortHeader: 'Score',
-                                    sortFunction: app.sortPipelineTable,
-                                    activeRow: new Set(resultsProblem.selectedSolutions.rook),
-                                    onclick: pipelineId => app.setSelectedSolution(resultsProblem, 'rook', pipelineId),
-                                    tableTags: m('colgroup',
-                                        m('col', {span: 1}),
-                                        m('col', {span: 1, width: '30%'}))
-                                })
-                            ]
-                        }
+                        m(Table, {
+                            id: 'pipelineTable',
+                            headers: ['Solution', 'Score'],
+                            data: Object.keys(resultsProblem.solutions.rook)
+                                .map(solutionId => [
+                                    solutionId,
+                                    solverRook.getScore(resultsProblem, resultsProblem.solutions.rook[solutionId])
+                                ]),
+                            sortHeader: 'Score',
+                            sortFunction: app.sortPipelineTable,
+                            activeRow: new Set(resultsProblem.selectedSolutions.rook),
+                            onclick: pipelineId => app.setSelectedSolution(resultsProblem, 'rook', pipelineId),
+                            tableTags: m('colgroup',
+                                m('col', {span: 1}),
+                                m('col', {span: 1, width: '30%'}))
+                        })
                     ]
-                })
+                }
             ]
-        }
+        })
     ];
 
+    // use this object instead of resultsContent for a tabbed leftpanel results menu
+    // let tabbedResults = m(MenuTabbed, {
+    //     id: 'resultsMenu',
+    //     currentTab: leftTabResults,
+    //     callback: setLeftTabResults,
+    //     sections: [
+    //         {
+    //             value: 'Problem',
+    //             contents: [
+    //                 m('div', {style: {height: '100%'}}, m(ForceDiagram, Object.assign(forceDiagramStateResults,{
+    //                     mutateNodes: app.mutateNodes(resultsProblem),
+    //                     summaries: app.variableSummaries
+    //                 }, app.buildForceData(resultsProblem)))),
+    //                 m(Table, {data: resultsProblem})
+    //             ]
+    //         },
+    //         {
+    //             value: 'Solutions',
+    //             contents: resultsContent
+    //         }
+    //     ]
+    // });
+
     return m(Panel, {
-        side: 'left',
-        label: 'Results',
-        hover: false,
-        width: '600px'
-    },
-    // there seems to be a strange mithril bug here - when returning back to model from results,
-    // the dom element for MenuTabbed is reused, but the state is incorrectly transitioned, leaving an invalid '[' key.
-    // "Fixed" by wrapping in a div, to prevent the dom reuse optimization
-    m('div', {style: {height: 'calc(100% - 50px)'}}, m(MenuTabbed, {
-        id: 'resultsMenu',
-        currentTab: leftTabResults,
-        callback: setLeftTabResults,
-        sections
-    })))
+            side: 'left',
+            label: 'Results',
+            hover: false,
+            width: '600px'
+        },
+        // there seems to be a strange mithril bug here - when returning back to model from results,
+        // the dom element for MenuTabbed is reused, but the state is incorrectly transitioned, leaving an invalid '[' key.
+        // "Fixed" by wrapping in a div, to prevent the dom reuse optimization
+        m('div', {style: {height: 'calc(100% - 50px)'}},
+            resultsContent))
 };
 
 export class CanvasSolutions {

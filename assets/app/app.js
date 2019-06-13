@@ -29,6 +29,7 @@ import {buildDatasetUrl} from "./manipulations/manipulate";
 
 // polyfill for flatmap (could potentially be included as a webpack entrypoint)
 import "core-js/fn/array/flat-map";
+import PlotVegaLite from "./views/PlotVegaLite";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -189,8 +190,6 @@ export let downloadPeek = async () => {
     let problem = getSelectedProblem();
     let datasetUrl = await buildDatasetUrl(problem)
 
-    console.warn("#debug datasetUrl");
-    console.log(datasetUrl);
     let link = document.createElement("a");
     link.setAttribute("href", datasetUrl);
     link.setAttribute("download", datasetUrl);
@@ -248,7 +247,6 @@ export let is_model_mode = true;
 export let is_explore_mode = false;
 export let is_results_mode = false;
 export let is_manipulate_mode = false;
-export let ROOKPIPE_FROM_REQUEST;  // rookpipe needed within websocket handler functions
 
 let exportCount = 0;
 
@@ -364,34 +362,32 @@ export let saveLogEntry = async logData => {
     })
 }
 
-export let buildProblemPreprocess = async (ravenConfig, problem) => problem.manipulations.length === 0
-    ? variableSummaries
-    : await getData({
-        method: 'aggregate',
-        query: JSON.stringify(queryMongo.buildPipeline(
-            [...ravenConfig.hardManipulations, ...problem.manipulations, {
-                type: 'menu',
-                metadata: {
-                    type: 'data',
-                    nominal: problem.tags.nominal,
-                    sample: 5000
-                }
-            }],
-            ravenConfig.variablesInitial)['pipeline']),
-        export: 'dataset'
-    }).then(url => m.request({
-        method: 'POST',
-        url: ROOK_SVC_URL + 'preprocessapp',
-        data: {
-            data: url,
-            datastub: workspace.d3m_config.name,
-            activity_l1: 'PROBLEM_DEFINITION',
-            activity_l2: 'PROBLEM_SPECIFICATION'
-        }
-    })).then(response => {
-        if (!response.success) alertError(response.message);
-        else return response.data.variables
-    });
+export let buildProblemPreprocess = async (ravenConfig, problem) => await getData({
+    method: 'aggregate',
+    query: JSON.stringify(queryMongo.buildPipeline(
+        [...ravenConfig.hardManipulations, ...problem.manipulations, {
+            type: 'menu',
+            metadata: {
+                type: 'data',
+                nominal: problem.tags.nominal,
+                sample: 5000
+            }
+        }],
+        ravenConfig.variablesInitial)['pipeline']),
+    export: 'dataset'
+}).then(url => m.request({
+    method: 'POST',
+    url: ROOK_SVC_URL + 'preprocessapp',
+    data: {
+        data: url,
+        datastub: workspace.d3m_config.name,
+        l1_activity: 'PROBLEM_DEFINITION',
+        l2_activity: 'PROBLEM_SPECIFICATION'
+    }
+})).then(response => {
+    if (!response.success) alertError(response.message);
+    else return response.data.variables
+});
 
 // for debugging - if not in PRODUCTION, prints args
 export let cdb = _ => PRODUCTION || console.log(...arguments);
@@ -577,7 +573,6 @@ export let lockToggle = true;
 export let setLockToggle = state => lockToggle = state;
 
 export let priv = true;
-export let setPriv = state => priv = state;
 
 // if no columns in the datasetDoc, swandive is enabled
 // swandive set to true if task is in failset
@@ -836,6 +831,7 @@ export let lockTour = {
     a. Assign discovered problems into raven_config
     b. Read the d3m problem schema and add to problems
  */
+
 export let workspace;
 
 export let getCurrentWorkspaceName = () => {
@@ -846,7 +842,10 @@ export let getCurrentWorkspaceId = () => {
   //return (workspace === undefined || workspace.user_workspace_id === undefined) ? '(no id)' : workspace.user_workspace_id;
 }
 
-let loadWorkspace = async newWorkspace => {
+export let setShowModalWorkspace = state => showModalWorkspace = state;
+export let showModalWorkspace = false;
+
+export let loadWorkspace = async newWorkspace => {
 
     // scopes at app.js level; used for saving workspace
     domainIdentifier = {
@@ -872,9 +871,9 @@ let loadWorkspace = async newWorkspace => {
     console.log("-- Workspace: 1. Load 'datasetDoc' --");
     // url example: /config/d3m-config/get-dataset-schema/json/39
     //
-    newWorkspace.datasetDoc = await m.request(newWorkspace.d3m_config.dataset_schema_url);
+    workspace.datasetDoc = await m.request(workspace.d3m_config.dataset_schema_url);
 
-    let datadocument_columns = (newWorkspace.datasetDoc.dataResources.find(resource => resource.columns) || {}).columns;
+    let datadocument_columns = (workspace.datasetDoc.dataResources.find(resource => resource.columns) || {}).columns;
     if (datadocument_columns === undefined) {
         console.log('D3M WARNING: datadocument.dataResources[x].columns is undefined.');
         swandive = true;
@@ -883,7 +882,7 @@ let loadWorkspace = async newWorkspace => {
     if (swandive)
         alertWarn('Exceptional data detected.  Please check the logs for "D3M WARNING"');
 
-    console.log("data schema data: ", newWorkspace.datasetDoc);
+    console.log("data schema data: ", workspace.datasetDoc);
 
     //
     // if (!IS_D3M_DOMAIN) {
@@ -908,7 +907,7 @@ let loadWorkspace = async newWorkspace => {
     console.log("-- Workspace: 2. Load 'datasetUrl' --");
     //url example: /config/d3m-config/get-problem-data-file-info/39
     //
-    let problem_info_result = await m.request(newWorkspace.d3m_config.problem_data_info);
+    let problem_info_result = await m.request(workspace.d3m_config.problem_data_info);
 
     console.log("result from problem data file info:");
     console.log(problem_info_result);
@@ -941,14 +940,14 @@ let loadWorkspace = async newWorkspace => {
         ? problem_info_result.data[field].path
         : problem_info_result.data[field + '.gz'].exists
             ? problem_info_result.data[field + '.gz'].path
-            : undefined;
+            : undefined
 
 
-    newWorkspace.datasetUrl = set_d3m_data_path('learningData.csv');
+    workspace.datasetUrl = set_d3m_data_path('learningData.csv');
 
     // If this is the D3M domain; workspace.datasetUrl MUST be set to an actual value
     //
-    if (IS_D3M_DOMAIN && !newWorkspace.datasetUrl) {
+    if (IS_D3M_DOMAIN && !workspace.datasetUrl) {
         const d3m_path_err = 'NO VALID datasetUrl! ' + JSON.stringify(problem_info_result)
         console.log(d3m_path_err);
         alertError('debug (be more graceful): ' + d3m_path_err);
@@ -962,49 +961,30 @@ let loadWorkspace = async newWorkspace => {
     console.log('---------------------------------------');
     console.log("-- Workspace: 3. read preprocess data or (if necessary) run preprocess --");
 
-    // Function to load retreived preprocess data
-    //
-    let loadPreprocessData = res => {
-        priv = res.data.dataset.private || priv;
-        return res.data;
-    };
-
     let resPreprocess;
-    try {
-        let pURL = `rook-custom/rook-files/${newWorkspace.d3m_config.name}/preprocess/preprocess.json`
-        console.log('attempt to read preprocess file (which may not exist): ' + pURL);
-        resPreprocess = loadPreprocessData(await m.request(pURL));
-    } catch(_) {
-        console.log("Ok, preprocess not found, try to RUN THE PREPROCESSAPP");
+
+    if (workspace.raven_config)
+        setVariableSummaries(await buildProblemPreprocess(workspace.raven_config, getSelectedProblem()));
+    else {
         let url = ROOK_SVC_URL + 'preprocessapp';
         // For D3M inputs, change the preprocess input data
-        let json_input = IS_D3M_DOMAIN
-            ? {data: newWorkspace.datasetUrl, datastub: newWorkspace.d3m_config.name}
-            : {data: dataloc, target: targetloc, datastub}; // TODO: these are not defined
+        let json_input = {
+            data: workspace.datasetUrl,
+            datastub: IS_D3M_DOMAIN ? workspace.d3m_config.name : workspace.name
+        };
 
         try {
             // res = read(await m.request({method: 'POST', url: url, data: json_input}));
             let preprocess_info = await m.request({method: 'POST', url, data: json_input});
+
             console.log('preprocess_info: ', preprocess_info);
             console.log('preprocess_info message: ' + preprocess_info.message);
-            if (preprocess_info.success){
-                resPreprocess = loadPreprocessData(preprocess_info);
+            if (!preprocess_info.success) throw "Preprocess failed";
+            resPreprocess = preprocess_info.data;
 
-            }else{
-                setModal(m('div', m('p', "Preprocess failed: "  + preprocess_info.message),
-                    m('p', '(May be a serious problem)')),
-                    "Failed to load basic data.",
-                    true,
-                    "Reload Page",
-                    false,
-                    locationReload);
-                return false;
+            priv = resPreprocess.dataset.private || priv
 
-                //alertError('Preprocess failed: ' + preprocess_info.message);
-                // endsession();
-            }
         } catch(_) {
-            console.log('preprocess failed');
             // alertError('preprocess failed. ending user session.');
             setModal(m('div', m('p', "Preprocess failed."),
                 m('p', '(p: 2)')),
@@ -1016,21 +996,23 @@ let loadWorkspace = async newWorkspace => {
             // endsession();
             return false;
         }
+        setVariableSummaries(resPreprocess.variables);
     }
-    setVariableSummaries(resPreprocess.variables);
+    console.warn("#debug variableSummaries");
+    console.log(variableSummaries);
 
     /**
      * 4. Create 'raven_config' if undefined
      */
     console.log('---------------------------------------');
     console.log("-- Workspace: 4. Create 'raven_config' if undefined --");
-    if (newWorkspace.raven_config) {
-        console.log('workspace.raven_config found! ' + newWorkspace.user_workspace_id);
+    if (workspace.raven_config) {
+        console.log('workspace.raven_config found! ' + workspace.user_workspace_id);
         m.redraw();
         return true;
     }
 
-    newWorkspace.raven_config = {
+    workspace.raven_config = {
         problemCount: 0, // used for generating new problem ID's
         ravenConfigVersion: RAVEN_CONFIG_VERSION,
         hardManipulations: [],
@@ -1054,8 +1036,8 @@ let loadWorkspace = async newWorkspace => {
 
     if(!swandive && resPreprocess) {
         // assign discovered problems into problems set, keeping the d3m problem
-        Object.assign(newWorkspace.raven_config.problems, discovery(resPreprocess.dataset.discovery));
-        newWorkspace.raven_config.variablesInitial = Object.keys(variableSummaries);
+        Object.assign(workspace.raven_config.problems, discovery(resPreprocess.dataset.discovery));
+        workspace.raven_config.variablesInitial = Object.keys(variableSummaries);
 
         // Kick off discovery button as green for user guidance
         if (!task1_finished) buttonClasses.btnDiscover = 'btn-success'
@@ -1074,7 +1056,7 @@ let loadWorkspace = async newWorkspace => {
 
     // url example: /config/d3m-config/get-problem-schema/json/39
     //
-    let d3mPS = newWorkspace.d3m_config.problem_schema_url;
+    let d3mPS = workspace.d3m_config.problem_schema_url;
     let problemDoc = await m.request(d3mPS);
     // console.log("prob schema data: ", res);
     if(typeof problemDoc.success === 'undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
@@ -1109,15 +1091,9 @@ let loadWorkspace = async newWorkspace => {
             swandive = true;
         }
 
-        // -----------------------------
-        // Check with MS, quick hack to get resId working
-        // -----------------------------
-        let firstTarget;
-        if (typeof problemDoc.inputs.data[0].targets[0] !== 'undefined') {
-            firstTarget = problemDoc.inputs.data[0].targets[0];
-        }
-        // -----------------------------
-
+        // store the resourceId of the table being used in the raven_config (must persist)
+        workspace.raven_config.resourceId = workspace.datasetDoc.dataResources
+            .find(resource => resource.resType === 'table').resID;
 
         // create the default problem provided by d3m
         let targets = problemDoc.inputs.data
@@ -1138,7 +1114,6 @@ let loadWorkspace = async newWorkspace => {
             system: 'auto',
             version: problemDoc.about.version,
             predictors: predictors,
-            firstTarget: firstTarget,
             targets: targets,
             description: problemDoc.about.problemDescription,
             metric: problemDoc.inputs.performanceMetrics[0].metric,
@@ -1168,8 +1143,8 @@ let loadWorkspace = async newWorkspace => {
         // add the default problems to the list of problems
         let problemCopy = getProblemCopy(defaultProblem);
 
-        newWorkspace.raven_config.problems[problemDoc.about.problemID] = defaultProblem;
-        newWorkspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+        workspace.raven_config.problems[problemDoc.about.problemID] = defaultProblem;
+        workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
         /**
          * Note: mongodb data retrieval initiated here
          *   setSelectedProblem -> loadMenu (manipulate.js) -> getData (manipulate.js)
@@ -1250,8 +1225,6 @@ async function load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3m
       return;
     }
 
-    console.warn("#debug workspace");
-    console.log(workspace);
     // m.redraw();
 
     // /**
@@ -1411,18 +1384,39 @@ export let toggle = (collection, obj) => {
         collection.has(obj) ? collection.delete(obj) : collection.add(obj)
 };
 
+const k_combinations = (list, k) => {
+    if (k > list.length || k <= 0) return []; // no valid combinations of size k
+    if (k === list.length) return [list]; // one valid combination of size k
+    if (k === 1) return list.reduce((acc, cur) => [...acc, [cur]], []); // k combinations of size k
+
+    let combinations = [];
+
+    for (let i = 0; i <= list.length - k + 1; i++) {
+        let subcombinations = k_combinations(list.slice(i + 1), k - 1);
+        for (let j = 0; j < subcombinations.length; j++) {
+            combinations.push([list[i], ...subcombinations[j]])
+        }
+    }
+
+    return combinations
+};
+
+// used to compute interaction terms of degree lte k
+const lte_k_combinations = (set, k) =>
+    Array(k).fill(null).reduce((acc, _, idx) => [...acc, ...k_combinations(set, idx + 1)], []);
+
+const intersect = sets => sets.reduce((a, b) => new Set([...a].filter(x => b.has(x))));
+
+
 // layout for force diagram pebbles. Can be 'variables', 'pca', 'clustering' etc. (ideas)
 export let forceDiagramMode = 'variables';
 export let setForceDiagramMode = mode => forceDiagramMode = mode;
 
-export let groupNames = [];
-
 export let buildForceData = problem => {
 
     if (!problem) return;
-    let predictors = problem.predictors;
 
-    let pebbles = [...predictors, ...problem.targets, ...problem.tags.loose];
+    let pebbles = [...problem.predictors, ...problem.targets, ...problem.tags.loose];
     let groups = [];
     let groupLinks = [];
 
@@ -1432,7 +1426,7 @@ export let buildForceData = problem => {
                 name: "Predictors",
                 color: common.gr1Color,
                 colorBackground: swandive && 'grey',
-                nodes: new Set(predictors),
+                nodes: new Set(problem.predictors),
                 opacity: 0.3
             },
             {
@@ -1452,7 +1446,8 @@ export let buildForceData = problem => {
             // {
             //     name: "Priors",
             //     color: common.warnColor,
-            //     nodes: new Set(['At_bats', 'Hits', 'RBIs']),
+            //     colorBackground: "transparent",
+            //     nodes: new Set(['INSTM', 'pctfedited^2', 'test', 'PCTFLOAN^3']),
             //     opacity: 0.4
             // }
         ];
@@ -1471,20 +1466,98 @@ export let buildForceData = problem => {
 
     }
 
-    // collapse groups with more than maxNodes into a single node
+    let summaries = Object.assign({}, variableSummaries);
+
+    // collapse group intersections with more than maxNodes into a single node
     let maxNodes = 20;
-    groups.filter(group => group.nodes.size > maxNodes).forEach(group => {
-        pebbles = pebbles.filter(node => !group.nodes.has(node)); // remove nodes from said group
-        pebbles.push(group.name); // add one node to represent all the nodes
-        group.childNodes = group.nodes; // know which elemments are inside the group pebble
-        group.nodes = [group.name]; // redefine the group to only contain the new node
-    });
+    let collapsedGroups = [];
 
-    // to identify which collapsed pebbles represent groups
-    groupNames = groups.map(group => group.name);
+    let removedPebbles = new Set();
+    let addedPebbles = new Set();
 
-    return {pebbles, groups, groupLinks};
+    let combinedGroups = common.deepCopy(groups)
+        .reduce((out, group) => Object.assign(out, {[group.name]: group}), {});
+
+    // TODO: can be linearized with a hashmap
+    // for any combination of groups, collapse their intersection if their intersection is large enough
+    // https://stackoverflow.com/questions/12303989/cartesian-product-of-multiple-arrays-in-javascript
+    const f = (a, b) => [].concat(...a.map(d => b.map(e => [].concat(d, e))));
+    const cartesian = (a, b, ...c) => (b ? cartesian(f(a, b), ...c) : a);
+
+    cartesian(...groups.map(group => [{group, include: true}, {group, include: false}]))
+        .forEach(combination => {
+
+            let includedGroups = combination
+                .filter(comb => comb.include)
+                .map(comb => comb.group);
+            if (includedGroups.length === 0) return;
+
+            let partition = new Set([
+                ...intersect(includedGroups.map(group => group.nodes))
+            ].filter(pebble => !combination
+                .filter(comb => !comb.include)
+                .some(comb => comb.group.nodes.has(pebble))));
+
+            let mergedName = includedGroups.map(group => group.name).join(' & ');
+
+            if (partition.size > maxNodes) {
+
+                addedPebbles.add(mergedName);
+                let partitionArray = [...partition];
+                partitionArray.forEach(pebble => removedPebbles.add(pebble));
+
+                // remove pebbles that were collapsed from their parent groups
+                includedGroups
+                    .forEach(group => combinedGroups[group.name].nodes = new Set([...group.nodes].filter(node => !partition.has(node))));
+                // add the pebble that represents the merge to each parent group
+                includedGroups
+                    .forEach(group => combinedGroups[group.name].nodes.add(mergedName));
+
+                summaries[mergedName] = {
+                    plottype: 'collapsed',
+                    childNodes: partition
+                }
+
+                // when merging, attempt to use the positions of existing modes
+                if (!(mergedName in forceDiagramNodesReadOnly)) {
+                    let preexistingPebbles = partitionArray.filter(pebble => pebble in forceDiagramNodesReadOnly)
+                    if (preexistingPebbles.length > 0) forceDiagramNodesReadOnly[mergedName] = {
+                        id: mergedName.replace(/\W/g,'_'),
+                        name: mergedName,
+                        x: preexistingPebbles.reduce((sum, pebble) => sum + forceDiagramNodesReadOnly[pebble].x, 0) / preexistingPebbles.length,
+                        y: preexistingPebbles.reduce((sum, pebble) => sum + forceDiagramNodesReadOnly[pebble].y, 0) / preexistingPebbles.length
+                    }
+                }
+            }
+        });
+
+    pebbles = [...pebbles.filter(pebble => !removedPebbles.has(pebble)), ...addedPebbles];
+    groups = Object.values(combinedGroups);
+
+    return {pebbles, groups, groupLinks, summaries};
 };
+
+
+export let setGroup = (group, name) => {
+    let selectedProblem = getSelectedProblem();
+    ({
+        'Loose': () => {
+            !selectedProblem.tags.loose.includes(name) && selectedProblem.tags.loose.push(name);
+            remove(selectedProblem.targets, name);
+            remove(selectedProblem.predictors, name);
+        },
+        'Predictors': () => {
+            !selectedProblem.predictors.includes(name) && selectedProblem.predictors.push(name);
+            remove(selectedProblem.targets, name);
+            remove(selectedProblem.tags.loose, name);
+        },
+        'Targets': () => {
+            !selectedProblem.targets.includes(name) && selectedProblem.targets.push(name);
+            remove(selectedProblem.predictors, name);
+            remove(selectedProblem.tags.loose, name);
+        }
+    }[group] || Function)()
+}
 
 export let forceDiagramNodesReadOnly = {};
 
@@ -1525,6 +1598,8 @@ Object.assign(forceDiagramState, {
             clearTimeout(forceDiagramState.hoverTimeout);
             forceDiagramState.hoverTimeout = setTimeout(() => {
                 forceDiagramState.hoverPebble = pebble;
+                leftTab !== 'Summary' && setLeftTabHidden(leftTab);
+                setLeftTab('Summary');
                 m.redraw()
             }, forceDiagramState.hoverTimeoutDuration)
         },
@@ -1532,6 +1607,11 @@ Object.assign(forceDiagramState, {
             clearTimeout(forceDiagramState.hoverTimeout);
             forceDiagramState.hoverTimeout = setTimeout(() => {
                 forceDiagramState.hoverPebble = undefined;
+                if (!forceDiagramState.selectedPebble) {
+                    setLeftTab(leftTabHidden);
+                    setLeftTabHidden(undefined);
+                }
+
                 m.redraw()
             }, forceDiagramState.hoverTimeoutDuration)
         },
@@ -1610,7 +1690,7 @@ export let mutateNodes = problem => (state, context) => {
 
     // set the base color of each node
     pebbles.forEach(pebble => {
-        if (groupNames.includes(pebble)) {
+        if (state.summaries[pebble].plottype === 'collapsed') {
             context.nodes[pebble].strokeWidth = 0;
             context.nodes[pebble].nodeCol = 'transparent';
             context.nodes[pebble].strokeColor = 'transparent';
@@ -1799,7 +1879,7 @@ function CreatePipelineData(dataset, problem) {
 // create problem definition for SearchSolutions call
 function CreateProblemDefinition(problem) {
     console.log('problem: ' + JSON.stringify(problem));
-    let resourceIdFromProblemDoc = problem.firstTarget.resID;
+    let resourceIdFromProblemDoc = workspace.raven_config.resourceId;
     let problemSpec = {
         // id: problem.problemID,  // remove for API 2019.4.11
         // version: problem.version, // remove for API 2019.4.11
@@ -2229,39 +2309,6 @@ export let erase = () => {
         nominal: [],
         loose: [] // variables displayed in the force diagram, but not in any groups
     }
-}
-
-// d is a node from allNodes or nodes
-// updates the summary variable, which is rendered in the hidden summary tab in the leftpanel;
-export function getVarSummary(d) {
-    if (!d) return {};
-
-    // d3 significant digit formatter
-    let rint = d3.format('r');
-    const precision = 4;
-    let data = {
-        'Mean': formatPrecision(d.mean, precision) + (d.meanCI
-            ? ` (${formatPrecision(d.meanCI.lowerBound, precision)}, ${formatPrecision(d.meanCI.upperBound, precision)})`
-            : ''),
-        'Median': formatPrecision(d.median, precision),
-        'Most Freq': rint(d.mode),
-        'Most Freq Occurrences': rint(d.freqmode),
-        'Median Freq': d.mid,
-        'Mid Freq Occurrences': rint(d.freqmid),
-        'Least Freq': d.fewest,
-        'Least Freq Occurrences': rint(d.freqfewest),
-        'Std Dev (Sample)': formatPrecision(d.sd, precision),
-        'Minimum': formatPrecision(d.min, precision),
-        'Maximum': formatPrecision(d.max, precision),
-        'Invalid': rint(d.invalid),
-        'Valid': rint(d.valid),
-        'Uniques': rint(d.uniques),
-        'Herfindahl': formatPrecision(d.herfindahl)
-    };
-
-    return Object.keys(data)
-        .filter(key => data[key] !== "" && data[key] !== undefined && !isNaN(data[key])) // drop all keys with nonexistent values
-        .reduce((out, key) => Object.assign(out, {[key]: data[key]}), {})
 }
 
 /**
