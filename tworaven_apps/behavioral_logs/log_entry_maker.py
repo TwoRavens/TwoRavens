@@ -27,6 +27,19 @@ class LogEntryMaker:
                         log_data)
 
     @staticmethod
+    def create_datamart_entry(user, log_data):
+        """Add a TA2TA3 entry"""
+        assert isinstance(log_data, dict),\
+            'log_data must be a python dict. (create_datamart_entry)'
+
+        print('log_data', log_data)
+
+        return LogEntryMaker.create_log_entry(\
+                        user,
+                        bl_static.ENTRY_TYPE_DATAMART,
+                        log_data)
+
+    @staticmethod
     def create_ta2ta3_entry(user, log_data):
         """Add a TA2TA3 entry"""
         assert isinstance(log_data, dict),\

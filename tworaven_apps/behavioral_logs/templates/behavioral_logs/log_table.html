@@ -1,6 +1,6 @@
 
 <p>
-  <a href="{% url 'view_clear_logs_for_user' %}" class="btn btn-sm btn-secondary" target="_blank" style="text-decoration:none;">Delete Entries</a>
+  <a href="{% url 'view_clear_logs_for_user' %}" class="btn btn-sm btn-secondary" style="text-decoration:none;">Delete Entries</a>
 </p>
 <table class="table table-bordered table-hover table-responsive">
   <caption>Behavioral log entries</caption>
@@ -27,17 +27,20 @@
           <td class="table-default">
         {% elif entry.type == 'SYSTEM' %}
           <td class="table-info">
-        {% elif entry.type == 'ENTRY_TYPE_DATAMART' %}
+        {% elif entry.type == 'DATAMART' %}
           <td class="table-primary">
         {% elif entry.type == 'UNKNOWN' %}
           <td class="table-warning">
+        {% else %}
+          <td>
         {% endif %}
           {{ entry.type }}
         </td>
 
         <td>{{ entry.activity_l1 }}</td>
         <td>{{ entry.activity_l2 }}</td>
-        <td>{{ entry.other_to_string|safe }}</td>
+        <td>{{ entry.other_to_string|safe }}&nbsp;
+        </td>
       </tr>
     {% endfor %}
   </tbody>

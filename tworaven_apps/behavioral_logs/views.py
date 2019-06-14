@@ -26,9 +26,13 @@ from tworaven_apps.behavioral_logs import static_vals as bl_static
 from tworaven_apps.utils.view_helper import get_session_key
 from tworaven_apps.utils.random_info import get_timestamp_string
 
+def view_clear_logs_for_user_json(request):
+    """Return a JSON response"""
+    return view_clear_logs_for_user(request, json_resp=True)
 
-def view_clear_logs_for_user(request):
-    """Delete logs for the current user"""
+def view_clear_logs_for_user(request, json_resp=False):
+    """Delete logs for the current user and return to the logs page.
+    Unless there's an error, then you get a JSON response..."""
     user_info = get_authenticated_user(request)
     if not user_info.success:
         # If not logged in, you end up on the log in page
@@ -48,8 +52,10 @@ def view_clear_logs_for_user(request):
     else:
         user_msg = 'No log entries to delete'
 
-    return JsonResponse(get_json_success(user_msg))
+    if json_resp:
+        return JsonResponse(get_json_success(user_msg))
 
+    return HttpResponseRedirect(reverse('view_show_log_onscreen'))
 
 def view_show_log_onscreen(request):
     """View a log base on the user's session_id, or just username"""

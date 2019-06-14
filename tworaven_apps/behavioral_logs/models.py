@@ -74,8 +74,7 @@ class BehavioralLogEntry(TimeStampedModel):
         if not self.feature_id:
             self.feature_id = self.construct_feature_id()
 
-        if not self.other:
-            self.other = self.format_other_entry()
+        self.other = self.format_other_entry()
         #if not self.hash_id:
         #    hash_str = '%s %s' % (self.id, self.created)
         #    self.hash_id = hashlib.sha224(hash_str.encode('utf-8')).hexdigest()

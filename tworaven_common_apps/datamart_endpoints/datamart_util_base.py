@@ -1,4 +1,5 @@
 """Common methods for DatamartJobUtilISI and DatamartJobUtilNYU"""
+from abc import ABC, abstractmethod
 
 import json
 from collections import OrderedDict
@@ -17,8 +18,13 @@ from tworaven_common_apps.datamart_endpoints.static_vals import \
      KEY_DATA,
      NUM_PREVIEW_ROWS)
 
-class DatamartJobUtilBase(object):
+class DatamartJobUtilBase(ABC):
     """Base class for other DatamartJobUtil objects"""
+
+    @abstractmethod
+    def get_datamart_source(self):
+        """Return the datamart.  e.g. ISI, NYU, etc"""
+        pass
 
     @staticmethod
     def get_output_filepath(user_workspace, datamart_id, dir_type='materialize'):
