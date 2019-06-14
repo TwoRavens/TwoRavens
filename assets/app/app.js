@@ -513,7 +513,6 @@ streamSocket.onmessage = function (e) {
         return;
     }
 
-    console.warn("#debug msg_data");
     console.log(msg_data);
 
     if (msg_data.data === undefined && msg_data.msg_type !== 'DATAMART_AUGMENT_PROCESS') {
@@ -1820,30 +1819,35 @@ export let setSelectedSolution = (problem, source, solutionId) => {
     console.log('solutionId: ' + solutionId);
     solutionId = String(solutionId);
 
-    /*
-     * behavioral logging
-     */
+    // set behavioral logging
     let logParams = {
-                  feature_id: 'RESULTS_SELECT_SOLUTION',
-                  activity_l1: 'MODEL_SELECTION',
-                  activity_l2: 'MODEL_COMPARISON',
-                  other: {solutionId: solutionId}
-                };
-    saveSystemLogEntry(logParams);
-
-
-//-------------
+                      activity_l1: 'MODEL_SELECTION',
+                      other: {solutionId: solutionId}
+                    };
 
     if (!problem) return;
     let pipelineIds = problem.selectedSolutions[source];
-    if (modelComparison) problem.selectedSolutions[source].includes(solutionId)
+    if (modelComparison){
+        problem.selectedSolutions[source].includes(solutionId)
         ? remove(problem.selectedSolutions[source], solutionId)
-        : problem.selectedSolutions[source].push(solutionId)
-    else {
+        : problem.selectedSolutions[source].push(solutionId);
+
+        // set behavioral logging
+        logParams.feature_id = 'RESULTS_COMPARE_SOLUTIONS';
+        logParams.activity_l2 = 'MODEL_COMPARISON';
+    } else {
         problem.selectedSolutions = Object.keys(problem.selectedSolutions)
             .reduce((out, source) => Object.assign(out, {[source]: []}, {}), {})
         problem.selectedSolutions[source] = [solutionId]
+
+        // set behavioral logging
+        logParams.feature_id = 'RESULTS_SELECT_SOLUTION';
+        logParams.activity_l2 = 'MODEL_SUMMARIZATION';       
     }
+
+    // record behavioral logging
+    saveSystemLogEntry(logParams);
+
 };
 
 function CreatePipelineData(dataset, problem) {
@@ -2866,8 +2870,9 @@ export let setModelComparison = state => {
     let resultsProblem = getResultsProblem();
     let selectedSolutions = getSolutions(resultsProblem);
 
-    if (selectedSolutions.length > 1 && !state)
-        setSelectedSolution(resultsProblem, selectedSolutions[0].source, selectedSolutions[0])
+    if (selectedSolutions.length > 1 && !state){
+        setSelectedSolution(resultsProblem, selectedSolutions[0].source, selectedSolutions[0]);
+    }
 
     modelComparison = state;
 };

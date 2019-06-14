@@ -33,4 +33,10 @@ urlpatterns = (
         views.view_clear_logs_for_user,
         name='view_clear_logs_for_user'),
 
+    # View the user's log for this session
+    #
+    url(r'^clear-logs/current-user-json$',
+        views.view_clear_logs_for_user_json,
+        name='view_clear_logs_for_user_json'),
+
 )
