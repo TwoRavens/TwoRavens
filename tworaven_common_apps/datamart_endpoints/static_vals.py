@@ -20,9 +20,12 @@ KEY_DATA_PATH = 'data_path'
 
 NUM_PREVIEW_ROWS = 100
 
-# DATAMART_ISI_URL = 'https://localhost:9001'
-xDATAMART_ISI_URL = 'https://dsbox02.isi.edu:9000'
-xDATAMART_NYU_URL = 'https://datamart.d3m.vida-nyu.org'
+"""
+For behavioral logs
+"""
+ISI_DATAMART_SEARCH = 'ISI_DATAMART_SEARCH'
+NYU_DATAMART_SEARCH = 'NYU_DATAMART_SEARCH'
+
 
 cached_response = '''[{
       "summary": " - SUMMARY OF THE DATAMART DATASET -atamart ID: 127860000core: 84.735825itle: FIFA World Cupescription: FIFA World CupRL: https://www.football-data.orgolumns: ] id ] season_id ] season_startDate ] season_endDate ] season_currentMatchday ] utcDate ] status ] matchday ] stage ] group 0] lastUpdated 1] score_winner 2] score_duration 3] score_fullTime_homeTeam 4] score_fullTime_awayTeam 5] score_halfTime_homeTeam 6] score_halfTime_awayTeam 7] score_extraTime_homeTeam 8] score_extraTime_awayTeam 9] score_penalties_homeTeam 0] score_penalties_awayTeam 1] homeTeam_id 2] homeTeam_name (Egypt, Uruguay, Colombia ...)3] awayTeam_id 4] awayTeam_name (Uruguay, Egypt, Colombia ...)5] referees_0_id 6] referees_0_name (Bjrn Kuipers, Enrique Cceres, Malang Didhiou ...)7] referees_0_nationality 8] referees_1_id 9] referees_1_name (Bahattin Duran, Joe Fletcher, Jure Praprotnik ...)0] referees_1_nationality 1] referees_2_id 2] referees_2_name (Marcelo Carvalho Van Gasse, Frank Anderson, Tark Ongun ...)3] referees_2_nationality 4] referees_3_id 5] referees_3_name (Norbert Hauata, John Pitti, Bjrn Kuipers ...)6] referees_3_nationality 7] referees_4_id 8] referees_4_name (Hiroshi Yamauchi, Bahattin Duran, Massimiliano Irrati ...)9] referees_4_nationality 0] referees_5_id 1] referees_5_name (Artur Soares Dias, Mauro Vigliano, Clment Turpin ...)2] referees_5_nationality 3] referees_6_id 4] referees_6_name (Artur Soares Dias, Bastian Dankert, Carlos Astroza ...)5] referees_6_nationality 6] referees_7_id 7] referees_7_name (Artur Soares Dias, Bastian Dankert, Carlos Astroza ...)8] referees_7_nationality 9] referees_8_id 0] referees_8_name (Artur Soares Dias, Bastian Dankert, Sandro Ricci ...)1] referees_8_nationality ecommend Join Columns:   Original Columns <-> datamart.Dataset Columns               [3] <-> [24]                               [4] <-> [22]                    ",

@@ -7,7 +7,7 @@ from tworaven_apps.utils.view_helper import \
      get_common_view_info)
 from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 from tworaven_apps.utils.json_helper import json_loads #(json_dumps, json_loads)
-
+from tworaven_apps.utils.view_helper import get_authenticated_user
 from tworaven_common_apps.datamart_endpoints.static_vals import \
     (DATAMART_ISI_NAME, DATAMART_NYU_NAME)
 from tworaven_common_apps.datamart_endpoints.datamart_util_isi import \
@@ -22,6 +22,9 @@ from tworaven_common_apps.datamart_endpoints.forms import (DatamartSearchForm,
                                                            DatamartIndexForm,
                                                            DatamartScrapeForm,
                                                            DatamartUploadForm, DatamartCustomForm)
+
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
+from tworaven_apps.behavioral_logs import static_vals as bl_static
 
 from tworaven_common_apps.datamart_endpoints.tasks import \
     (make_materialize_call,
@@ -137,6 +140,13 @@ def api_index(request):
 
 @csrf_exempt
 def api_search(request):
+    """Search the datamart with a JSON request.  The 'source' will
+    determine which datamart to search"""
+    # for logging
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
     success, json_req_obj = get_request_body_as_json(request)
 
     if not success:
@@ -162,14 +172,16 @@ def api_search(request):
     job_util_info = get_datamart_job_util(form.cleaned_data['source'])
     if not job_util_info.success:
         return JsonResponse(get_json_error(job_util_info.err_msg))
-    else:
-        DatamartJobUtil = job_util_info.result_obj # e.g. DatamartJobUtilISI, DatamartJobUtilNYU
+
+    # e.g. DatamartJobUtilISI, DatamartJobUtilNYU
+    DatamartJobUtil = job_util_info.result_obj
 
     data_path = json_req_obj['data_path'] if 'data_path' in json_req_obj else None
 
     success, results_obj_err = DatamartJobUtil.datamart_search(\
                                     json_req_obj['query'],
-                                    data_path)
+                                    data_path,
+                                    **dict(user=user_info.result_obj))
     if not success:
         return JsonResponse(get_json_error(results_obj_err))
 

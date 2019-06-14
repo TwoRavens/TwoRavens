@@ -12,15 +12,8 @@ from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.random_info import get_timestamp_string_readable
 from tworaven_apps.utils.json_helper import (json_dumps, json_loads)
 from tworaven_apps.utils.dict_helper import (clear_dict,)
-from tworaven_common_apps.datamart_endpoints.static_vals import \
-    (DATAMART_NYU_NAME,
-     KEY_NYU_DATAMART_ID,
-     KEY_DATA,
-     KEY_AUGMENT,
-     KEY_MATERIALIZE,
-     NUM_PREVIEW_ROWS,
-     cached_response,
-     cached_response_baseball)
+from tworaven_common_apps.datamart_endpoints import static_vals as dm_static
+
 from tworaven_common_apps.datamart_endpoints.datamart_info_util import \
     (get_nyu_url,)
 from tworaven_common_apps.datamart_endpoints.datamart_util_base import \
@@ -30,6 +23,8 @@ from tworaven_apps.utils.file_util import \
 import requests
 import logging
 import os
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
+from tworaven_apps.behavioral_logs import static_vals as bl_static
 
 LOGGER = logging.getLogger(__name__)
 
@@ -39,6 +34,10 @@ PREVIEW_SIZE = 100
 # based on documentation here:
 # https://gitlab.com/ViDA-NYU/datamart/datamart/blob/master/examples/rest-api-fifa2018_manofmatch.ipynb
 class DatamartJobUtilNYU(DatamartJobUtilBase):
+
+    def get_datamart_source(self):
+        """Return the datamart.  e.g. ISI, NYU, etc"""
+        return dm_static.DATAMART_NYU_NAME
 
     @staticmethod
     def datamart_upload(data):
@@ -55,7 +54,7 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
         return ok_resp(response['data'])
 
     @staticmethod
-    def datamart_search(query_str, data_path=None, limit=False):
+    def datamart_search(query_str, data_path=None, **kwargs):
         """Search the NYU datamart"""
         query_info_json = json_loads(query_str)
         if not query_info_json.success:
@@ -82,9 +81,22 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
         if data_path and os.path.exists(data_path):
             payload['file'] = open(data_path, 'r')
 
+        # --------------------------------
+        # (2a) Behavioral logging
+        # --------------------------------
+        search_url = get_nyu_url() + '/search'
+
+        if 'user' in kwargs:
+            log_data = dict(feature_id=f'POST|{search_url}',
+                            activity_l1=bl_static.L1_DATA_PREPARATION,
+                            activity_l2=bl_static.L2_DATA_SEARCH,
+                            path=search_url)
+
+            LogEntryMaker.create_datamart_entry(kwargs['user'], log_data)
+
         try:
             response = requests.post(\
-                        get_nyu_url() + '/search',
+                        search_url,
                         files=payload,
                         stream=True,
                         timeout=settings.DATAMART_LONG_TIMEOUT)
@@ -118,21 +130,21 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
         print('\nsearch_result', search_result)
         print('\nsearch_result.keys()', search_result.keys())
-        if not KEY_NYU_DATAMART_ID in search_result:
+        if not dm_static.KEY_NYU_DATAMART_ID in search_result:
             user_msg = (f'"search_result" did not contain'
-                        f' "{KEY_NYU_DATAMART_ID}" key')
+                        f' "{dm_static.KEY_NYU_DATAMART_ID}" key')
             return err_resp(user_msg)
 
         # -----------------------------------------
         # Format output file path
         # -----------------------------------------
         LOGGER.info('(1) build path')
-        datamart_id = search_result[KEY_NYU_DATAMART_ID]
+        datamart_id = search_result[dm_static.KEY_NYU_DATAMART_ID]
 
         dest_folderpath_info = DatamartJobUtilNYU.get_output_folderpath(\
                                         user_workspace,
                                         datamart_id,
-                                        dir_type=KEY_MATERIALIZE)
+                                        dir_type=dm_static.KEY_MATERIALIZE)
 
         if not dest_folderpath_info.success:
             return err_resp(dest_folderpath_info.err_msg)
@@ -156,14 +168,14 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
             # Get preview rows
             #
-            preview_info = read_file_rows(dest_filepath, NUM_PREVIEW_ROWS)
+            preview_info = read_file_rows(dest_filepath, dm_static.NUM_PREVIEW_ROWS)
             if not preview_info.success:
                 user_msg = (f'Failed to retrieve preview rows.'
                             f' {preview_info.err_msg}')
                 return err_resp(user_msg)
 
             info_dict = DatamartJobUtilNYU.format_materialize_response(\
-                            datamart_id, DATAMART_NYU_NAME,
+                            datamart_id, dm_static.DATAMART_NYU_NAME,
                             dest_filepath, preview_info)
 
             return ok_resp(info_dict)
@@ -207,14 +219,14 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
         # Get preview rows
         #
-        preview_info = read_file_rows(dest_filepath, NUM_PREVIEW_ROWS)
+        preview_info = read_file_rows(dest_filepath, dm_static.NUM_PREVIEW_ROWS)
         if not preview_info.success:
             user_msg = (f'Failed to retrieve preview rows.'
                         f' {preview_info.err_msg}')
             return err_resp(user_msg)
 
         info_dict = DatamartJobUtilNYU.format_materialize_response(\
-                        datamart_id, DATAMART_NYU_NAME,
+                        datamart_id, dm_static.DATAMART_NYU_NAME,
                         dest_filepath, preview_info)
 
         return ok_resp(info_dict)
@@ -235,16 +247,16 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
         # Make sure the NYU datamart id is in the search_result
         #
-        if not KEY_NYU_DATAMART_ID in search_result:
+        if not dm_static.KEY_NYU_DATAMART_ID in search_result:
             user_msg = (f'"search_result" did not contain'
-                        f' "{KEY_NYU_DATAMART_ID}" key')
+                        f' "{dm_static.KEY_NYU_DATAMART_ID}" key')
             return err_resp(user_msg)
-        datamart_id = search_result[KEY_NYU_DATAMART_ID]
+        datamart_id = search_result[dm_static.KEY_NYU_DATAMART_ID]
 
         # Ready the query parameters
         #
         # search_result['join_columns'] = [['INSTNM', 'INSTNM']]
-        
+
         search_result_str = json.dumps(search_result)
         print('search_result_str', search_result_str)
 
@@ -279,7 +291,7 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
         dest_folderpath_info = DatamartJobUtilNYU.get_output_folderpath(\
                                         user_workspace,
                                         datamart_id,
-                                        dir_type=KEY_AUGMENT)
+                                        dir_type=dm_static.KEY_AUGMENT)
 
         if not dest_folderpath_info.success:
             return err_resp(dest_folderpath_info.err_msg)
@@ -306,7 +318,7 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
         # preview rows
         #
-        preview_info = read_file_rows(dest_filepath, NUM_PREVIEW_ROWS)
+        preview_info = read_file_rows(dest_filepath, dm_static.NUM_PREVIEW_ROWS)
         if not preview_info.success:
             user_msg = (f'Failed to retrieve preview rows.'
                         f' {preview_info.err_msg}')
@@ -315,7 +327,7 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
         # Format/return reponse
         #
         info_dict = DatamartJobUtilNYU.format_materialize_response(\
-                        datamart_id, DATAMART_NYU_NAME,
+                        datamart_id, dm_static.DATAMART_NYU_NAME,
                         dest_filepath, preview_info)
 
         return ok_resp(info_dict)

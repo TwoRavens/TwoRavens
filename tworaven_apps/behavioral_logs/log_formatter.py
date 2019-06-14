@@ -58,8 +58,8 @@ class BehavioralLogFormatter(BasicErrCheck):
             return err_resp(user_msg)
 
         params = dict(user=user)
-        if session_key:
-            params['session_key'] = session_key
+        #if session_key:
+        #    params['session_key'] = session_key
 
         return ok_resp(BehavioralLogEntry.objects.filter(**params))
 
