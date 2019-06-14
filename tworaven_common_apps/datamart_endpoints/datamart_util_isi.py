@@ -27,6 +27,8 @@ from tworaven_common_apps.datamart_endpoints.datamart_info_util import \
      get_nyu_url)
 from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
 from tworaven_apps.behavioral_logs import static_vals as bl_static
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
+from tworaven_apps.behavioral_logs import static_vals as bl_static
 
 
 import requests
@@ -288,8 +290,20 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
         # can this be streamed to a file?
 
         LOGGER.info('(2b) attempting download')
+
+        # ----------------------------
+        # Behavioral logging
+        # ----------------------------
+        isi_materialize_url = get_isi_url() + '/new/materialize_data'
+
+        log_data = dict(feature_id=f'GET|{isi_materialize_url}',
+                        activity_l1=bl_static.L1_DATA_PREPARATION,
+                        activity_l2=bl_static.L2_DATA_DOWNLOAD,
+                        path=isi_materialize_url)
+
+        LogEntryMaker.create_datamart_entry(user_workspace.user, log_data)
+
         try:
-            isi_materialize_url = get_isi_url() + '/new/materialize_data'
             print('isi_materialize_url', isi_materialize_url)
             response = requests.get(\
                         isi_materialize_url,
@@ -397,9 +411,22 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
             'exact_match': exact_match
         })
 
+        augment_url = get_isi_url() + '/new/join_data'
+
+        # ----------------------------
+        # Behavioral logging
+        # ----------------------------
+        log_data = dict(feature_id=f'POST|{augment_url}',
+                        activity_l1=bl_static.L1_DATA_PREPARATION,
+                        activity_l2=bl_static.L2_DATA_AUGMENT,
+                        path=augment_url)
+
+        LogEntryMaker.create_datamart_entry(user_workspace.user, log_data)
+        # ----------------------------
+
         try:
             response = requests.post(\
-                    get_isi_url() + '/new/join_data',
+                    augment_url,
                     files={'left_data': open(data_path, 'r')},
                     data={'right_data': datamart_id,
                           'left_columns': left_columns,

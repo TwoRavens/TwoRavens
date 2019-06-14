@@ -194,6 +194,16 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
         download_url = f"{get_nyu_url()}/download/{search_result['id']}"
 
+        # ----------------------------
+        # Behavioral logging
+        # ----------------------------
+        log_data = dict(feature_id=f'GET|{download_url}',
+                        activity_l1=bl_static.L1_DATA_PREPARATION,
+                        activity_l2=bl_static.L2_DATA_DOWNLOAD,
+                        path=download_url)
+
+        LogEntryMaker.create_datamart_entry(user_workspace.user, log_data)
+
         try:
             response = requests.get(\
                         download_url,
@@ -268,6 +278,17 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
         # Make the augment request
         #
         augment_url = f"{ get_nyu_url() }/augment"
+
+        # ----------------------------
+        # Behavioral logging
+        # ----------------------------
+        log_data = dict(feature_id=f'POST|{augment_url}',
+                        activity_l1=bl_static.L1_DATA_PREPARATION,
+                        activity_l2=bl_static.L2_DATA_AUGMENT,
+                        path=augment_url)
+
+        LogEntryMaker.create_datamart_entry(user_workspace.user, log_data)
+        # ----------------------------
 
         try:
             response = requests.post(augment_url,

@@ -192,7 +192,6 @@ def api_search(request):
 @csrf_exempt
 def api_augment_async(request):
     """Run steps of augment, create new dataset folder structure, etc"""
-
     # Get the latest UserWorkspace
     #
     ws_info = get_latest_user_workspace(request)
