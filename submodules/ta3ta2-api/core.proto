@@ -17,7 +17,7 @@ extend google.protobuf.FileOptions {
 
 // Date-based version string. Use this to populate version field in "SearchSolutionsRequest"
 // and "SearchSolutionsResponse" messages.
-option (protocol_version) = "2019.4.11";
+option (protocol_version) = "2019.6.11";
 
 enum EvaluationMethod {
     // Default value. Not to be used.
@@ -28,8 +28,12 @@ enum EvaluationMethod {
     HOLDOUT = 1;
     K_FOLD = 2;
 
-    // This evaluation method can be used to ask TA2 to rank all found
-    // solutions. Only possible with "RANK" performance metric.
+    // This evaluation method can be used to ask TA2 to rank a
+    // solution as part of all found solutions of a given
+    // "SearchSolutions" call. Invalid to use before the
+    // "SearchSolutions" call, of which the solution is part of,
+    // has successfully completed or has been stopped.
+    // Only possible with "RANK" performance metric.
     RANKING = 99;
 
     // The rest are defined to allow expressing internal evaluation
@@ -70,6 +74,8 @@ message Score {
     Value value = 4;
     // Random seed used to run a pipeline for this score to be obtained.
     int32 random_seed = 5;
+    // The normalized value of the scoring metric. Value is from the [0, 1] interval, where higher is better. Optional.
+    Value normalized = 6;
 }
 
 enum ProgressState {
@@ -175,6 +181,26 @@ message SearchSolutionsRequest {
     // violated. Default value of 0 (and any negative number) signifies no time bound.
     // This can also functionally be used as the time bound for scoring also.
     double time_bound_run = 9;
+    // Suggested maximum number of solutions to rank. Default is 0. If it is 0, it means
+    // no ranking of found solutions is done and no limit on number of found solutions is set.
+    // TA2 can still provide "RANK" score as part of "scores" field if ranking approach
+    // TA2 uses still allows to stream found solutions as they are found.
+    // If value of this field is not 0, the behavior of this call changes:
+    //  - "time_bound_search" becomes a time bound for both search and ranking.
+    //    TA2 decides how to divide the time between searching and ranking.
+    //  - TA2 is required to provide "RANK" score as part of "scores" field in
+    //    messages "GetSearchSolutionsResultsResponse".
+    //  - TA2 can make all found solutions available only at the end of the call.
+    //    If ranking approach used by TA2 allows for that, TA2 can still stream
+    //    found solutions (and their ranks) during whole call.
+    //  - Calling "StopSearchSolutions" stops both search and ranking processes,
+    //    but TA2 can quickly return ranked solutions up to that point, if possible,
+    //    before closing the "GetSearchSolutionsResults" stream. Similarly
+    //    for "EndSearchSolutions", but that is less useful.
+    //  - TA2 can still return more solutions than the limit. The limit only signals
+    //    that TA2 does not have to rank and return more solutions than the limit,
+    //    which is useful when ranking is an expensive operation.
+    int32 rank_solutions_limit = 10;
 }
 
 // Call returns immediately with the ID. Use "GetFoundSolutions" call to get results.

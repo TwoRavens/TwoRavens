@@ -1,3 +1,26 @@
+## v2019.6.11
+
+* Updating d3m core package dependency to v2019.6.7.
+
+## v2019.5.23
+
+* Removing list of minimally required primitives that TA2s need to support
+  as whitelisting/blacklisting is no longer considered best practice.
+  [#115](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/115)
+  [!147](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/147)
+* `PipelineContext` has been deprecated.
+  `normalized` field has been added to `Score` message.
+  `PipelineSource.pipelines` is now a list of `PipelineDescription`s and not
+  string pipeline IDs.
+  [!140](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/140)
+* `SearchSolutions` call has now additional `rank_solutions_limit` field
+  which allows requesting both searching and ranking at the same time.
+  [!141](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/142)
+* Documented that DataFrame and list values should be represented as container
+  types and have metadata. Updated Python utility functions to adhere to that.
+  [!143](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/143)
+  [!145](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/145)
+
 ## v2019.4.11
 
 * Added support for custom metrics to Python utilities.
