@@ -7,7 +7,7 @@ from os.path import abspath, dirname, realpath
 
 proj_dir = dirname(dirname(dirname(realpath(__file__))))
 print(proj_dir)
-sys.path.append(proj_dir) #here store is root folder(means parent).
+sys.path.append(proj_dir) # here store is root folder(means parent).
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tworavensproject.settings.local_settings")
 django.setup()
@@ -16,8 +16,8 @@ import json
 from django.conf import settings
 import core_pb2
 # data flow
-import dataflow_ext_pb2
-import dataflow_ext_pb2_grpc
+#import dataflow_ext_pb2
+#import dataflow_ext_pb2_grpc
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_failed_precondition_response
 from google.protobuf.json_format import MessageToJson,\
@@ -387,6 +387,55 @@ def get_dataflow_results():
         print('-' * 40)
     print('\n'.join(module_list))
 
+
+def test_search_solution():
+    """SearchSolutionsRequest"""
+
+    json_str = """{
+    "userAgent": "TwoRavens",
+    "version": "2019.6.11",
+    "timeBoundSearch": 10,
+    "priority": 101,
+    "allowedValueTypes": [
+        "DATASET_URI",
+        "CSV_URI"
+    ],
+    "problem": {
+        "problem": {
+            "taskType": "REGRESSION",
+            "taskSubtype": "MULTIVARIATE",
+            "performanceMetrics": [
+                {
+                    "metric": "ROOT_MEAN_SQUARED_ERROR"
+                }
+            ]
+        },
+        "inputs": [
+            {
+                "datasetId": "dataset_123",
+                "targets": [
+                    {
+                        "resourceId": "r52",
+                        "columnIndex": 3,
+                        "columnName": "at_bats"
+                    }
+                ]
+            }
+        ]
+    },
+    "template" : [],
+    "inputs": [
+        {
+            "dataset_uri": "file:///input/TRAIN/dataset_TRAIN/datasetDoc.json"
+        }
+    ]
+}"""
+
+
+    print('gRPC:\n')
+    req = json_parse(json_str, core_pb2.SearchSolutionsRequest)
+    print('-' * 40)
+
 def set_problem_doc():
     """...SetProblemDocRequest"""
 
@@ -438,7 +487,8 @@ def set_problem_doc():
 
 
 if __name__ == '__main__':
-    set_problem_doc()
+    test_search_solution()
+    #set_problem_doc()
 
     #get_dataflow_results()
     #describe_data_flow()
