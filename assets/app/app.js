@@ -279,7 +279,7 @@ export function set_mode(mode) {
                     };
     if (is_model_mode){ logParams.activity_l1 = 'MODEL_SELECTION'};
     if (is_explore_mode){ logParams.activity_l1 = 'DATA_PREPARATION'};
-    if (is_results_mode){ logParams.activity_l1 = 'MODEL_EXPLANATION'};
+    if (is_results_mode){ logParams.activity_l1 = 'MODEL_SELECTION'};
     if (is_manipulate_mode){ logParams.activity_l1 = 'DATA_PREPARATION'};
 
     saveSystemLogEntry(logParams);
@@ -1842,7 +1842,7 @@ export let setSelectedSolution = (problem, source, solutionId) => {
 
         // set behavioral logging
         logParams.feature_id = 'RESULTS_SELECT_SOLUTION';
-        logParams.activity_l2 = 'MODEL_SUMMARIZATION';       
+        logParams.activity_l2 = 'MODEL_SUMMARIZATION';
     }
 
     // record behavioral logging

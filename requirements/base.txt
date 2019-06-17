@@ -16,8 +16,8 @@ Fabric3==1.13.1.post1
 
 # gRPC packages for D3M
 #
-grpcio==1.12.0
-grpcio-tools==1.12.0
+grpcio==1.21.1
+grpcio-tools==1.21.1
 
 # For long-running GRPC requests
 #

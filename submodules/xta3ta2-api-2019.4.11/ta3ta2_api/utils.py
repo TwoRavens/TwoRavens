@@ -137,7 +137,10 @@ def _fix_uri(uri):
         A fixed URI.
     """
 
-    return d3m_utils.fix_uri(uri, allow_relative_path=False)
+    if not uri.startswith('file://') and uri.startswith('/'):
+        uri = 'file://{uri}'.format(uri=uri)
+
+    return uri
 
 
 def _open_file_uri(uri, mode='r', encoding=None, validate_uri=None):
@@ -561,7 +564,7 @@ def encode_pipeline_description(pipeline, allowed_value_types, scratch_dir, *, p
         source = pipeline_pb2.PipelineSource(
             name=pipeline.source.get('name', None),
             contact=pipeline.source.get('contact', None),
-            pipelines=[pipeline_pb2.PipelineDescription(id=p['id'], digest=p.get('digest', None)) for p in pipeline.source.get('from', {}).get('pipelines', []) if pipeline.source.get('from', {}).get('type', None) == 'PIPELINE'],
+            pipelines=[p['id'] for p in pipeline.source.get('from', {}).get('pipelines', []) if pipeline.source.get('from', {}).get('type', None) == 'PIPELINE'],
         )
     else:
         source = None
@@ -680,6 +683,7 @@ def encode_pipeline_description(pipeline, allowed_value_types, scratch_dir, *, p
         id=pipeline.id,
         source=source,
         created=encode_timestamp(pipeline.created),
+        context=pipeline.context.value,
         name=pipeline.name,
         description=pipeline.description,
         users=[pipeline_pb2.PipelineDescriptionUser(id=user['id'], reason=user.get('reason', None), rationale=user.get('rationale', None)) for user in pipeline.users],
@@ -732,7 +736,7 @@ def decode_pipeline_description(pipeline_description, resolver, *, pipeline_clas
         A pipeline instance, or ``None`` if pipeline is not defined.
     """
 
-    if not pipeline_description.steps:
+    if pipeline_description.context == pipeline_pb2.PipelineContext.Value('PIPELINE_CONTEXT_UNKNOWN') and not pipeline_description.steps:
         return None
 
     if pipeline_class is None:
@@ -744,22 +748,16 @@ def decode_pipeline_description(pipeline_description, resolver, *, pipeline_clas
     if pipeline_description.source.contact:
         source['contact'] = pipeline_description.source.contact
     if pipeline_description.source.pipelines:
-        source_pipelines = []
-        for source_pipeline in pipeline_description.source.pipelines:
-            source_pipelines.append({'id': source_pipeline.id})
-            if source_pipeline.digest:
-                source_pipelines[-1]['digest'] = source_pipeline.digest
-
         source['from'] = {
             'type': 'PIPELINE',
-            'pipelines': source_pipelines,
+            'pipelines': [{'id': pipeline_id} for pipeline_id in pipeline_description.source.pipelines],
         }
 
     if not source:
         source = None
 
     pipeline = pipeline_class(
-        pipeline_id=pipeline_description.id,
+        pipeline_id=pipeline_description.id, context=metadata_base.Context(pipeline_description.context),
         created=decode_timestamp(pipeline_description.created), source=source,
         name=(pipeline_description.name or None), description=(pipeline_description.description or None),
     )
@@ -932,14 +930,10 @@ def decode_performance_metric(metric):
     except ValueError:
         metric_value = problem_pb2.PerformanceMetric.Name(metric.metric)
 
-    decoded_metric = {
+    return {
         'metric': metric_value,
+        'params': params,
     }
-
-    if params:
-        decoded_metric['params'] = params
-
-    return decoded_metric
 
 
 def encode_score(score, allowed_value_types, scratch_dir, *, plasma_put=None, validate_uri=None):
@@ -949,8 +943,7 @@ def encode_score(score, allowed_value_types, scratch_dir, *, plasma_put=None, va
     Parameters
     ----------
     score : Dict
-        A score description is a dict with fields: ``metric``, ``fold``, ``value``,
-        ``random_seed``, and optionally ``normalized``.
+        A score description is a dict with fields: ``metric``, ``fold``, ``value``, ``random_seed``.
     allowed_value_types : Sequence[ValueType]
         A list of allowed value types to encode this value as. This
         list is tried in order until encoding succeeds.
@@ -975,7 +968,6 @@ def encode_score(score, allowed_value_types, scratch_dir, *, plasma_put=None, va
         fold=score['fold'],
         value=encode_value({'type': 'object', 'value': score['value']}, allowed_value_types, scratch_dir, plasma_put=plasma_put, validate_uri=validate_uri),
         random_seed=score['random_seed'],
-        normalized=encode_value({'type': 'object', 'value': score['normalized']}, allowed_value_types, scratch_dir, plasma_put=plasma_put, validate_uri=validate_uri) if 'normalized' in score else None,
     )
 
 
@@ -1008,7 +1000,8 @@ def encode_raw_value(value):
         return value_pb2.ValueRaw(bytes=value)
     elif isinstance(value, (dict, frozendict.frozendict)):
         return value_pb2.ValueRaw(dict=value_pb2.ValueDict(items={key: encode_raw_value(val) for key, val in value.items()}))
-    elif isinstance(value, (list, tuple)):
+    # We do not want to encode container type "List" as raw value to not lose metadata.
+    elif isinstance(value, (list, tuple)) and not isinstance(value, container.List):
         return value_pb2.ValueRaw(list=value_pb2.ValueList(items=[encode_raw_value(item) for item in value]))
     else:
         raise exceptions.InvalidArgumentTypeError("Unsupported type '{value_type}' for raw value.".format(value_type=type(value)))
@@ -1279,10 +1272,7 @@ def save_value(value, allowed_value_types, scratch_dir, *, plasma_put=None, rais
                 'value': str(last_error),
             }
 
-    error_message = "None of the allowed value types {allowed_value_types} could encode the value of type '{value_type}'.".format(
-        allowed_value_types=allowed_value_types,
-        value_type=type(value),
-    )
+    error_message = "None of the allowed value types could encode the value of type '{value_type}'.".format(value_type=type(value))
 
     if raise_error:
         raise ValueError(error_message)
@@ -1344,7 +1334,7 @@ def load_value(value, *, plasma_get=None, validate_uri=None,
             encoding='utf8',
             low_memory=False,
         )
-        return container.DataFrame(data, generate_metadata=True)
+        return container.DataFrame(data)
     elif value['type'] == 'pickle_uri':
         uri = _fix_uri(value['value'])
         with _open_file_uri(uri, 'rb', validate_uri=validate_uri) as file:
@@ -1498,10 +1488,7 @@ def encode_value(value, allowed_value_types, scratch_dir, *, plasma_put=None, va
         )
 
     return value_pb2.Value(
-        error=value_pb2.ValueError(message="None of the allowed value types {allowed_value_types} could encode the value of type '{value_type}'.".format(
-            allowed_value_types=allowed_value_types,
-            value_type=type(value),
-        )),
+        error=value_pb2.ValueError(message="None of the allowed value types could encode the value of type '{value_type}'.".format(value_type=type(value))),
     )
 
 
@@ -1547,8 +1534,6 @@ def decode_value(value, *, validate_uri=None, raise_error=True):
             }
     elif value_type == 'raw':
         value = decode_raw_value(value.raw)
-        if isinstance(value, list):
-            value = container.List(value, generate_metadata=True)
         return {
             'type': 'object',
             'value': value,
