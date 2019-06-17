@@ -29,7 +29,7 @@ export default class ModalWorkspace {
                     data: this.summaries.map(summary => ({
                         id: summary.user_workspace_id,
                         name: m('', {title: 'Workspace ID:' + summary.user_workspace_id}, summary.name),
-                        dataset: summary.orig_dataset_id,
+                        original: summary.is_original_workspace ? 'YES' : '--',
                         created: new Date(summary.created).toUTCString(),
                         modified: new Date(summary.modified).toUTCString(),
                         '': m(Button, {

@@ -139,8 +139,7 @@ def get_latest_d3m_user_config(user, create_if_not_found=True, **kwargs):
         return err_resp('No default D3MConfiguration set.')
 
     params = dict(user=user,
-                  is_current_workspace=True,
-                  orig_dataset_id=d3m_config.orig_dataset_id)
+                  is_current_workspace=True,)
 
     params = get_default_workspace_params(**params)
 
@@ -170,14 +169,25 @@ def create_new_user_workspace(user, d3m_config, **kwargs):
     if not isinstance(d3m_config, D3MConfiguration):
         return err_resp('"d3m_config" is not a D3MConfiguration object')
 
+    previous_workspace = kwargs.get('previous_workspace')
+
     params = dict(user=user,
                   is_current_workspace=True,
-                  d3m_config=d3m_config,
-                  orig_dataset_id=d3m_config.orig_dataset_id)
+                  d3m_config=d3m_config)
 
     params = get_default_workspace_params(**params)
 
     new_workspace = UserWorkspace(**params)
+    new_workspace.save()
+
+    if previous_workspace:
+        # At least the 2nd workspace, set pointers for previous and original
+        new_workspace.previous_workspace = previous_workspace
+        new_workspace.original_workspace = previous_workspace.original_workspace
+    else:
+        # Brand new, the original points back to itself
+        new_workspace.original_workspace = new_workspace
+
     new_workspace.save()
 
     return ok_resp(new_workspace)
@@ -212,8 +222,7 @@ def get_user_workspaces(user, create_if_not_found=True):
     if not d3m_config:
         return err_resp('No default D3MConfiguration set.')
 
-    params = dict(user=user,
-                  orig_dataset_id=d3m_config.orig_dataset_id)
+    params = dict(user=user)
 
     params = get_default_workspace_params(**params)
 
@@ -243,8 +252,7 @@ def delete_user_workspaces(user):
     if not d3m_config:
         return err_resp('No default D3MConfiguration set.')
 
-    params = dict(user=user,
-                  orig_dataset_id=d3m_config.orig_dataset_id)
+    params = dict(user=user)
 
     workspaces = UserWorkspace.objects.filter(**params)
     cnt = workspaces.count()
@@ -262,12 +270,15 @@ def duplicate_user_workspace(new_name, existing_workspace, **kwargs):
     new_ws = UserWorkspace(\
                     name=new_name,
                     user=existing_workspace.user,
-                    orig_dataset_id=existing_workspace.orig_dataset_id,
                     d3m_config=existing_workspace.d3m_config,
                     raven_config=existing_workspace.raven_config,
                     is_active=existing_workspace.is_active,
                     is_current_workspace=existing_workspace.is_current_workspace,
-                    description=existing_workspace.description)
+                    description=existing_workspace.description,
+                    #
+                    previous_workspace=existing_workspace,
+                    original_workspace=existing_workspace.original_workspace
+                    )
 
     # Update the raven_config if there is one
     #
