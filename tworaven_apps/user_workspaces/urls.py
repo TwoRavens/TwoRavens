@@ -22,6 +22,13 @@ urlpatterns = (
         views.view_user_raven_config,
         name='view_user_raven_config'),
 
+
+    # Shared workspace
+    url(r'^raven-configs/json/shared/(?P<hash_id>[\w]{40,200})$',
+        views.view_shared_workspace_by_hash_id,
+        name='view_shared_workspace_by_hash_id'),
+
+
     # ----------------------------
     # Save user workspaces
     # ----------------------------

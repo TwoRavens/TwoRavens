@@ -26,6 +26,23 @@ from tworaven_apps.user_workspaces.utils import \
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
 
+
+
+@csrf_exempt
+def view_shared_workspace_by_hash_id(request, hash_id):
+    """Set a shared workspace to the user's current workspace and
+    redirecto to the pebbles home page.
+    Basic sequence:
+    - Is it a public workspace?
+    - Does the shared workspace.user match the logged in user?
+      - Yes: Proceed as if loading a regular workspace
+    - No:
+        - Does the logged in user already have this workspace?  (e.g. as an original)
+            - Yes: Load the workspace
+            - No: Create a new workspace, copying the data from the shared workspaces
+    """
+    return JsonResponse(get_json_success('ok'))
+
 @csrf_exempt
 def save_raven_config_as_new_workspace(request, workspace_id):
     """Save a new raven config to an existing workspace

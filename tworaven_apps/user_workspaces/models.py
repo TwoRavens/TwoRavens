@@ -189,9 +189,21 @@ class UserWorkspace(TimeStampedModel):
         info_dict['user_workspace_id'] = self.id
         info_dict['name'] = self.name
         info_dict['user_workspace_url'] = self.get_json_url()
+
         info_dict['is_original_workspace'] = self.is_original_workspace()
         info_dict['is_current_workspace'] = self.is_current_workspace
         info_dict['description'] = self.description
+
+
+        sharing = OrderedDict()
+        sharing['is_public'] = self.is_public
+        if self.is_public:
+            sharing['shared_workspace_url'] = \
+                                    reverse('view_shared_workspace_by_hash_id',
+                                            kwargs=dict(hash_id=self.hash_id))
+        else:
+            sharing['shared_workspace_url'] = None
+        info_dict['sharing'] = sharing
 
         ws_history = OrderedDict()
 
