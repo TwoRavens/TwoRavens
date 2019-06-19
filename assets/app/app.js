@@ -997,7 +997,7 @@ export let loadWorkspace = async newWorkspace => {
         }
         setVariableSummaries(resPreprocess.variables);
     }
-    console.warn("#debug variableSummaries");
+    console.log("#debug variableSummaries");
     console.log(variableSummaries);
 
     /**
@@ -1206,12 +1206,6 @@ async function load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3m
         setModal('No current workspace config in list!', "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
     }
 
-    // Take the 1st configuration from the list -- for now...
-    //let configurations = config_result.data[0]
-
-    // console.log("this is the config file:");
-    // console.log(configurations);
-
     // ---------------------------------------
     // 2. Load workspace
     // ---------------------------------------
@@ -1223,30 +1217,6 @@ async function load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3m
       // alertError('Failed to load workspace');
       return;
     }
-
-    // m.redraw();
-
-    // /**
-    //  * 3. Read in zelig models (not for d3m)
-    //  * 4. Read in zeligchoice models (not for d3m)
-    //  */
-    // console.log('---------------------------------------');
-    // console.log("-- 3. Read in zelig models (not for d3m) --");
-    // console.log("-- 4. Read in zeligchoice models (not for d3m) --");
-    //
-    // if (!IS_D3M_DOMAIN){
-    //   for (let field of ['zelig5models', 'zelig5choicemodels']) {
-    //       try {
-    //           problemDoc = await m.request(`data/${field}.json`);
-    //           cdb(field + ' json: ', problemDoc);
-    //           problemDoc[field]
-    //               .filter(key => problemDoc[field].hasOwnProperty(key))
-    //               .forEach(key => mods[key.name[0]] = key.description[0]);
-    //       } catch(_) {
-    //           console.log("can't load " + field);
-    //       }
-    //   }
-    // }
 
     /**
      * 5. Start the user session
@@ -1281,12 +1251,12 @@ async function load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3m
 
         }
     }
-
     // hopscotch tutorial
     if (tutorial_mode) {
         console.log('Starting Hopscotch Tour');
         hopscotch.startTour(mytour());
     }
+
 }
 
 /**
@@ -1345,6 +1315,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         zparams.zdataurl = 'data/fearonLaitin.tsv';
     }
     load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL);
+
 }
 
 /**
@@ -2247,7 +2218,7 @@ export async function estimate() {
 
     //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
     let res = await makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', allParams);
-    console.log(JSON.stringify(res));
+    // console.log(JSON.stringify(res));
     if (res === undefined) {
         handleENDGetSearchSolutionsResults();
         alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
@@ -2568,6 +2539,7 @@ export let setVariableSummaries = state => {
 
     // quality of life
     Object.keys(variableSummaries).forEach(variable => variableSummaries[variable].name = variable);
+
 }
 export let variableSummaries = {};
 
@@ -2766,11 +2738,22 @@ export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
          return;
       }
 
-      // Success! Update the name and the workspace id
-      workspace.user_workspace_id = save_result.data.user_workspace_id;
-      workspace.name = save_result.data.name;
+      /*
+       * Success! Update the workspace data,
+       *  but keep the datasetDoc
+       */
 
-      setNewWorkspaceMessageSuccess('The new workspace name has been saved!');
+      // point to the existing DatasetDoc
+      let currentDatasetDoc = workspace.datasetDoc;
+
+      // load the new workspace
+      workspace = save_result.data;
+
+      // attach the existing dataseDoc
+      workspace.datasetDoc = currentDatasetDoc;
+
+      //console.log(save_result.data);
+      setNewWorkspaceMessageSuccess('The new workspace has been saved!');
       setDisplayCloseButtonRow(true);
    })
  };

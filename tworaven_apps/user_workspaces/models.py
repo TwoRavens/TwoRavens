@@ -2,6 +2,7 @@
 NOTE: Make UserWorkspace objects and changes through
     tworaven_apps.user_workspaces.utils
 """
+import hashlib
 from collections import OrderedDict
 
 from django.db import models
@@ -24,9 +25,9 @@ class UserWorkspace(TimeStampedModel):
                             blank=True,
                             help_text='Auto-filled if a ravens-config exists')
 
-    orig_dataset_id = models.CharField(\
-                        max_length=255,
-                        help_text='From D3MConfiguration orig_dataset_id')
+    is_public = models.BooleanField(\
+                            default=False,
+                            help_text='Share this workspace with others')
 
     d3m_config = models.ForeignKey(D3MConfiguration,
                                    on_delete=models.CASCADE)
@@ -48,8 +49,27 @@ class UserWorkspace(TimeStampedModel):
 
     description = models.TextField('optional description', blank=True)
 
-    def __str__(self):
+    started_as_shared_workspace = models.BooleanField(\
+                                        default=False,
+                                        help_text='auto-filled on save')
 
+    original_workspace = models.ForeignKey('UserWorkspace',
+                                           related_name='orig_workspace+',
+                                           on_delete=models.CASCADE,
+                                           blank=True,
+                                           null=True)
+
+    previous_workspace = models.ForeignKey('UserWorkspace',
+                                           related_name='prev_workspace+',
+                                           on_delete=models.CASCADE,
+                                           blank=True,
+                                           null=True)
+
+    hash_id = models.CharField(help_text='(auto-generated)',
+                               max_length=255,
+                               blank=True)
+
+    def __str__(self):
         return '%s - %s...' % (self.user, self.d3m_config)
 
     class Meta:
@@ -73,12 +93,37 @@ class UserWorkspace(TimeStampedModel):
             # Make sure all other workspaces are not current
             #
             qs = UserWorkspace.objects.exclude(id=self.id)
-            #.filter(orig_dataset_id=self.orig_dataset_id)
+
             qs.update(is_current_workspace=False)
 
         self.format_name()
 
+        if not self.hash_id:
+            hash_str = '%s %s' % (self.id, self.created)
+            self.hash_id = hashlib.sha224(hash_str.encode('utf-8')).hexdigest()
+
+        # Was this originally a shared workspace?
+        if self.original_workspace and \
+            not self.user == self.original_workspace.user:
+
+            # Yes, users don't match, it was shared...
+            self.started_as_shared_workspace = True
+        else:
+            self.started_as_shared_workspace = False
+
         super(UserWorkspace, self).save(*args, **kwargs)
+
+
+    def is_original_workspace(self):
+        """Is this the original workspace?"""
+        if not self.id:
+            return False
+
+        if self.original_workspace and \
+            self.id == self.original_workspace.id:
+            return True
+
+        return False
 
     def format_name(self):
         """Format the workspace name"""
@@ -108,6 +153,9 @@ class UserWorkspace(TimeStampedModel):
         if not self.id:
             return 'UserWorkspace not yet saved'
 
+        return self.get_workspace_url_by_id(self.id, use_pretty)
+
+        """
         ws_url = '%s' % \
                 reverse('view_user_raven_config',
                         kwargs=dict(user_workspace_id=self.id))
@@ -116,6 +164,22 @@ class UserWorkspace(TimeStampedModel):
             ws_url = f'{ws_url}?pretty'
 
         return ws_url
+        """
+
+    def get_workspace_url_by_id(self, ws_id, use_pretty=False):
+        """Basically the reverse for 'view_user_raven_config' """
+        if not ws_id:
+            return 'workspace id not specified! (get_workspace_url_by_id)'
+
+        ws_url = '%s' % \
+                reverse('view_user_raven_config',
+                        kwargs=dict(user_workspace_id=ws_id))
+
+        if use_pretty:
+            ws_url = f'{ws_url}?pretty'
+
+        return ws_url
+
 
 
     def to_dict_summary(self):
@@ -129,13 +193,60 @@ class UserWorkspace(TimeStampedModel):
         summary_only = kwargs.get('summary_only', False)
 
         info_dict = OrderedDict()
+        if not self.id:
+            info_dict['message'] = ('Workspace is not yet saved.'
+                                    ' API not available.')
+            return info_dict
 
         info_dict['user_workspace_id'] = self.id
         info_dict['name'] = self.name
         info_dict['user_workspace_url'] = self.get_json_url()
+
+        info_dict['is_original_workspace'] = self.is_original_workspace()
+        info_dict['started_as_shared_workspace'] = self.started_as_shared_workspace
+
         info_dict['is_current_workspace'] = self.is_current_workspace
         info_dict['description'] = self.description
-        info_dict['orig_dataset_id'] = self.orig_dataset_id
+
+
+        sharing = OrderedDict()
+        sharing['is_public'] = self.is_public
+        if self.is_public:
+            sharing['shared_workspace_url'] = \
+                                    reverse('view_shared_workspace_by_hash_id',
+                                            kwargs=dict(hash_id=self.hash_id))
+        else:
+            sharing['shared_workspace_url'] = None
+        info_dict['sharing'] = sharing
+
+        ws_history = OrderedDict()
+
+        # ------------------------------
+        # Previous workspace info
+        # ------------------------------
+        if self.previous_workspace:
+            prev_ws_id = self.previous_workspace.id
+            ws_history['previous_workspace_id'] = prev_ws_id
+            ws_history['previous_workspace_url'] = self.get_workspace_url_by_id(\
+                                                        prev_ws_id)
+        else:
+            ws_history['previous_workspace_id'] = None
+            ws_history['previous_workspace_url'] = None
+
+        # ------------------------------
+        # Original workspace info
+        # ------------------------------
+        if self.original_workspace:
+            orig_ws_id = self.original_workspace.id
+            ws_history['original_workspace_id'] = orig_ws_id
+            ws_history['original_workspace_url'] = self.get_workspace_url_by_id(\
+                                                        orig_ws_id)
+        else:
+            ws_history['original_workspace_id'] = None
+            ws_history['original_workspace_url'] = None
+
+
+        info_dict['history'] = ws_history
 
         info_dict['modified'] = self.modified
         info_dict['created'] = self.created
