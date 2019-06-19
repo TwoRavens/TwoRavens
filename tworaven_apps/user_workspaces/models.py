@@ -49,6 +49,10 @@ class UserWorkspace(TimeStampedModel):
 
     description = models.TextField('optional description', blank=True)
 
+    started_as_shared_workspace = models.BooleanField(\
+                                        default=False,
+                                        help_text='auto-filled on save')
+
     original_workspace = models.ForeignKey('UserWorkspace',
                                            related_name='orig_workspace+',
                                            on_delete=models.CASCADE,
@@ -98,6 +102,14 @@ class UserWorkspace(TimeStampedModel):
             hash_str = '%s %s' % (self.id, self.created)
             self.hash_id = hashlib.sha224(hash_str.encode('utf-8')).hexdigest()
 
+        # Was this originally a shared workspace?
+        if self.original_workspace and \
+            not self.user == self.original_workspace.user:
+
+            # Yes, users don't match, it was shared...
+            self.started_as_shared_workspace = True
+        else:
+            self.started_as_shared_workspace = False
 
         super(UserWorkspace, self).save(*args, **kwargs)
 
@@ -191,6 +203,8 @@ class UserWorkspace(TimeStampedModel):
         info_dict['user_workspace_url'] = self.get_json_url()
 
         info_dict['is_original_workspace'] = self.is_original_workspace()
+        info_dict['started_as_shared_workspace'] = self.started_as_shared_workspace
+
         info_dict['is_current_workspace'] = self.is_current_workspace
         info_dict['description'] = self.description
 

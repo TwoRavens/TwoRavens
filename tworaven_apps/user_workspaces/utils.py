@@ -93,7 +93,8 @@ def set_shared_workspace_by_hash_id(request, hash_id):
     new_workspace = UserWorkspace(**params)
     new_workspace.save()
 
-
+    # new_workspace.original_workspace = new_workspace
+    # new_workspace.save()
 
     return ok_resp(new_workspace)
 

@@ -94,8 +94,18 @@ export default class ModalWorkspace {
                                 loadWorkspace(response.data);
                             }
                         }, workspace.user_workspace_id === summary.user_workspace_id ? 'Revert' : 'Load'),
-                          summary.is_original_workspace && m('br'),
-                          summary.is_original_workspace && m('span', {class: 'badge badge-success'}, 'Original')
+
+                          // original badge
+                          summary.is_original_workspace && [m('br'),
+                            m('span', {class: 'badge badge-success'}, 'original')],
+
+                          // original badge
+                          summary.started_as_shared_workspace && [m('br'),
+                            m('span', {class: 'badge badge-success'},
+                            'started as shared')],
+
+
+
                         ]),
 
                         Created: new Date(summary.created).toUTCString(),
