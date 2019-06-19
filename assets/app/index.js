@@ -682,10 +682,18 @@ class Body {
                 )
             ),
             app.workspace && m('div.btn.btn-group[style=margin:5px;padding:0px]',
-                !app.workspace.is_original && m(ButtonPlain, {
+                m(ButtonPlain, {
                     id: 'btnSaveWorkspace',
                     class: `btn-sm btn-secondary ${app.saveCurrentWorkspaceWindowOpen ? 'active' : ''}`,
-                    onclick: _ => app.saveUserWorkspace()
+                    onclick: _ => {                      
+                      if (app.workspace.is_original_workspace){
+                        // we want to preserve the original, so force
+                        // it to be a new workspace
+                        app.setSaveNameModalOpen(true);
+                      }else{
+                         app.saveUserWorkspace();
+                      }
+                    }
                   },
                   'Save '),
 
@@ -809,9 +817,11 @@ class Body {
                 m('div', {'class': 'row'},
                   m('div', {'class': 'col-sm'},
                     [
-                      m('h3', {}, 'Save as a New Workspace.'),
+                      app.workspace.is_original_workspace &&  m('h3', {}, 'Save Workspace.'),
 
-                      m('p', {}, 'Please enter a new workspace name.'),
+                      !app.workspace.is_original_workspace &&  m('h3', {}, 'Save as a New Workspace.'),
+
+                      m('p', {}, 'Please enter a workspace name.'),
 
                       m('p', {},
                         m('b', '- Current workspace name: '),

@@ -51,13 +51,13 @@ class UserWorkspace(TimeStampedModel):
 
     original_workspace = models.ForeignKey('UserWorkspace',
                                            related_name='orig_workspace+',
-                                           on_delete=models.PROTECT,
+                                           on_delete=models.CASCADE,
                                            blank=True,
                                            null=True)
 
     previous_workspace = models.ForeignKey('UserWorkspace',
                                            related_name='prev_workspace+',
-                                           on_delete=models.PROTECT,
+                                           on_delete=models.CASCADE,
                                            blank=True,
                                            null=True)
 

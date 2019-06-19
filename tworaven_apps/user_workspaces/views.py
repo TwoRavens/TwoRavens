@@ -192,6 +192,75 @@ def clear_user_workspaces(request):
     return HttpResponseRedirect(reverse('home'))
 
 
+
+@csrf_exempt
+def view_deactivate_shared_workspace(request, user_workspace_id):
+    """Set the UserWorkspace to private (NOT is_public)"""
+    # Get the user
+    #
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    user = user_info.result_obj
+
+    ws_info = get_saved_workspace_by_request_and_id(request, user_workspace_id)
+    if not ws_info.success:
+        user_msg = 'No active workspaces found for user: %s and id: %d' % \
+                    (user.username, user_workspace_id)
+        return JsonResponse(get_json_error(user_msg))
+
+    workspace = ws_info.result_obj
+
+    if not workspace.is_public:
+        # Consider it a success if the workspace is already public
+        #
+        user_msg = 'Workspace is already private'
+    else:
+        user_msg = 'Workspace is now private'
+        workspace.is_public = False
+        workspace.save()
+
+    return JsonResponse(\
+                get_json_success(user_msg,
+                                 data=workspace.to_dict()))
+
+
+@csrf_exempt
+def view_activate_shared_workspace(request, user_workspace_id):
+    """Set the UserWorkspace to public"""
+    # Get the user
+    #
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    user = user_info.result_obj
+
+    ws_info = get_saved_workspace_by_request_and_id(request, user_workspace_id)
+    if not ws_info.success:
+        user_msg = 'No active workspaces found for user: %s and id: %d' % \
+                    (user.username, user_workspace_id)
+        return JsonResponse(get_json_error(user_msg))
+
+    workspace = ws_info.result_obj
+
+    if workspace.is_public:
+        # Consider it a success if the workspace is already public
+        #
+        user_msg = 'Workspace is already public'
+    else:
+        user_msg = 'Workspace is now public'
+        workspace.is_public = True
+        workspace.save()
+
+    return JsonResponse(\
+                get_json_success(user_msg,
+                                 data=workspace.to_dict()))
+
+
+
+
 @csrf_exempt
 def view_set_current_config(request, user_workspace_id):
     # Get the user
