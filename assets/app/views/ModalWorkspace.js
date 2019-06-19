@@ -13,24 +13,27 @@ let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-right:1
 
 export default class ModalWorkspace {
     oncreate() {
+
+        /*
+         *  Variables used to display the shared url message
+         */
         this.showUserMessage = false;
         this.sharedURL = '';
         this.sharedURLMessage = () => {
             //return 'bleh!';
             return [m('h1', 'Share Workspace'),
                     m('hr'),
-                    m('p', m('i', 'URL Copied to Clipboard!')),
-                    m('p', 'You may share this workspace by giving a user the url below:'),
-                    m('textarea',
-                      {
-                        rows: 4,
-                        cols: 70
-                      },
-                      this.sharedURL),
+                    m('p', 'You may share this workspace by giving a user the link below:'),
+                    m('p',
+                      m('code', this.sharedURL)),
+                    m('p', {class: 'text-success'}, m('i', 'URL Copied to Clipboard!')),
                     ];
         };
         this.showUserMessageOpen = (boolVal) => this.showUserMessage = boolVal;
 
+        /*
+         *  Retrieve a list of User Workspace summaries for display
+         */
         m.request('/user-workspaces/raven-configs/json/list/summaries').then(response => {
             if (!response.success) this.error = response.message;
             else this.summaries = response.data;
@@ -70,14 +73,12 @@ export default class ModalWorkspace {
                 m(Table, {
                     data: this.summaries.map(summary => ({
                         'Id': `${summary.user_workspace_id}`,
+
                         Name: m('', {title: 'Workspace ID:' + summary.user_workspace_id}, summary.name),
 
-                        Created: new Date(summary.created).toUTCString(),
-                        'Last Saved': new Date(summary.modified).toUTCString(),
-
                         // Button to load a previous workspace
-                        'Restore': m('', [m(Button, {
-                            class: 'btn-sm',
+                        'Restore': m('', [m(ButtonPlain, {
+                            class: 'btn-sm btn-primary',
                             onclick: async () => {
                                 // Retrieve the data
                                 let response = await m.request('/user-workspaces/raven-configs/json/' + summary.user_workspace_id);
@@ -95,6 +96,28 @@ export default class ModalWorkspace {
                           summary.is_original_workspace && m('br'),
                           summary.is_original_workspace && m('span', {class: 'badge badge-success'}, 'Original')
                         ]),
+
+                        Created: new Date(summary.created).toUTCString(),
+                        'Last Saved': new Date(summary.modified).toUTCString(),
+
+                        //  column
+                        'Sharing': m('div', [ summary.sharing.is_public === true &&
+                                m(ButtonPlain, {
+                                    class: 'btn-sm btn-success',
+                                    onclick: async => {
+                                      this.sharedURL = `${window.location.origin}${summary.sharing.shared_workspace_url}`;
+                                      console.log(this.sharedURL);
+
+                                      copyToClipboard(this.sharedURL);
+
+                                      this.showUserMessageOpen(true);
+                                      //m.redraw();
+                                    }
+                                  },
+                                  'Get Workspace Link'),
+                             !summary.sharing.is_public &&
+                                m('span', {class: 'badge badge-secondary'}, 'Not-Shared'),
+                          ]),
 
                         // Button to share/stop sharing a workspace
                         'Share': m('', [
@@ -135,27 +158,10 @@ export default class ModalWorkspace {
                                         m.redraw();
 
                                     }
-                                  }, 'Share'),
+                                  }, 'Start Sharing'),
                             ]),
 
-                        // share workspace column
-                        'Sharing': m('', [ summary.sharing.is_public === true &&
-                                m('ButtonPlain', {
-                                    class: 'btn-sm btn-success badge badge-success',
-                                    onclick: async => {
-                                      this.sharedURL = `${window.location.origin}${summary.sharing.shared_workspace_url}`;
-                                      console.log(this.sharedURL);
 
-                                      copyToClipboard(this.sharedURL);
-
-                                      this.showUserMessageOpen(true);
-                                      //m.redraw();
-                                    }
-                                  },
-                                  'Copy Share URL'),
-                             !summary.sharing.is_public &&
-                                m('span', {class: 'badge badge-secondary'}, 'Not-Shared'),
-                          ]),
                     })),
                     activeRow: workspace.user_workspace_id,
                     showUID: false

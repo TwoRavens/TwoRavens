@@ -43,6 +43,60 @@ def get_user_workspace_by_id(user_workspace_id):
 
     return ok_resp(user_ws)
 
+def set_shared_workspace_by_hash_id(request, hash_id):
+    """Retrieve a shared workspace
+    Basic sequence:
+    - Is it a public workspace?
+    - Does the shared workspace.user match the logged in user?
+      - Yes: Proceed as if loading a regular workspace
+    - No:
+        - Does the logged in user already have this workspace?  (e.g. as an original)
+            - Yes: Tell them to load it directly
+            - No: Create a new workspace, copying the data from the shared workspaces
+    """
+    # Get the User
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return err_resp(user_info.err_msg)
+    user = user_info.result_obj
+
+    try:
+        workspace = UserWorkspace.objects.get(hash_id=hash_id)
+    except UserWorkspace.DoesNotExist:
+        user_msg = 'No workspaces found for hash_id: %s' % \
+                    (hash_id)
+        return err_resp(user_msg)
+
+    if not workspace.is_public:
+        user_msg = 'No public workspaces found for hash_id: %s' % \
+                    (hash_id)
+        return err_resp(user_msg)
+
+    if workspace.user == user:
+        user_msg = ('This is your workspace.  Please access it directly'
+                    ' through your list of workspaces--not a shared link')
+        return err_resp(user_msg)
+
+    # Create a new workspace, based on the shared workspace
+    #
+    params = dict(user=user,
+                  name=workspace.name,
+                  is_current_workspace=True,
+                  is_public=False,
+                  d3m_config=workspace.d3m_config,
+                  raven_config=workspace.raven_config,
+                  original_workspace=workspace.original_workspace,
+                  previous_workspace=workspace)
+
+    params = get_default_workspace_params(**params)
+
+    new_workspace = UserWorkspace(**params)
+    new_workspace.save()
+
+
+
+    return ok_resp(new_workspace)
+
 
 def get_saved_workspace_by_request_and_id(request, user_workspace_id):
     """Retrieve a specific workspace by request, checking that it

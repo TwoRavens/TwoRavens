@@ -14,14 +14,7 @@ from tworaven_apps.utils.json_helper import format_pretty_from_dict
 
 from tworaven_apps.user_workspaces import static_vals as uw_static
 
-from tworaven_apps.user_workspaces.utils import \
-    (duplicate_user_workspace,
-     # get_user_workspaces,
-     get_user_workspaces_as_dict,
-     get_user_workspace_config,
-     get_saved_workspace_by_request_and_id,
-     is_existing_workspace_name,
-     delete_user_workspaces,)
+from tworaven_apps.user_workspaces import utils as ws_util
 
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
@@ -41,7 +34,13 @@ def view_shared_workspace_by_hash_id(request, hash_id):
             - Yes: Load the workspace
             - No: Create a new workspace, copying the data from the shared workspaces
     """
-    return JsonResponse(get_json_success('ok'))
+    ws_info = ws_util.set_shared_workspace_by_hash_id(request, hash_id)
+    if not ws_info.success:
+        return JsonResponse(get_json_error(ws_info.err_msg))
+
+    # looks good!  Redirect to home page where new workspace should load
+    return HttpResponseRedirect(reverse('home'))
+    #return JsonResponse(get_json_success('ok'))
 
 @csrf_exempt
 def save_raven_config_as_new_workspace(request, workspace_id):
@@ -52,7 +51,7 @@ def save_raven_config_as_new_workspace(request, workspace_id):
     # Get the workspace, checking if the user in the request
     #   is the one in the workspace
     #
-    ws_info = get_saved_workspace_by_request_and_id(request, workspace_id)
+    ws_info = ws_util.get_saved_workspace_by_request_and_id(request, workspace_id)
     if not ws_info.success:
         return JsonResponse(get_json_error(ws_info.err_msg))
     user_workspace = ws_info.result_obj
@@ -97,7 +96,7 @@ def save_raven_config_as_new_workspace(request, workspace_id):
                     f' {uw_static.MAX_WORKSPACE_NAME_LENGTH}  characters long.')
         return JsonResponse(get_json_error(user_msg))
 
-    if is_existing_workspace_name(user_workspace.user, new_workspace_name):
+    if ws_util.is_existing_workspace_name(user_workspace.user, new_workspace_name):
         user_msg = (f'The workspace name "{new_workspace_name}" is'
                     f' already being used. Please choose another.')
         return JsonResponse(get_json_error(user_msg))
@@ -113,7 +112,7 @@ def save_raven_config_as_new_workspace(request, workspace_id):
 
         return JsonResponse(get_json_error(user_msg))
 
-    new_ws_info = duplicate_user_workspace(\
+    new_ws_info = ws_util.duplicate_user_workspace(\
                         new_workspace_name,
                         user_workspace,
                         raven_config=update_dict[uw_static.KEY_RAVEN_CONFIG])
@@ -140,7 +139,7 @@ def save_raven_config_to_existing_workspace(request, workspace_id):
     # Get the workspace, checking if the user in the request
     #   is the one in the workspace
     #
-    ws_info = get_saved_workspace_by_request_and_id(request, workspace_id)
+    ws_info = ws_util.get_saved_workspace_by_request_and_id(request, workspace_id)
     if not ws_info.success:
         return JsonResponse(get_json_error(ws_info.err_msg))
     user_workspace = ws_info.result_obj
@@ -185,7 +184,7 @@ def clear_user_workspaces(request):
         return JsonResponse(get_json_error(user_info.err_msg))
 
     user = user_info.result_obj
-    delete_info = delete_user_workspaces(user)
+    delete_info = ws_util.delete_user_workspaces(user)
     if not delete_info.success:
         return JsonResponse(get_json_error(delete_info.err_msg))
 
@@ -204,7 +203,7 @@ def view_deactivate_shared_workspace(request, user_workspace_id):
 
     user = user_info.result_obj
 
-    ws_info = get_saved_workspace_by_request_and_id(request, user_workspace_id)
+    ws_info = ws_util.get_saved_workspace_by_request_and_id(request, user_workspace_id)
     if not ws_info.success:
         user_msg = 'No active workspaces found for user: %s and id: %d' % \
                     (user.username, user_workspace_id)
@@ -237,7 +236,7 @@ def view_activate_shared_workspace(request, user_workspace_id):
 
     user = user_info.result_obj
 
-    ws_info = get_saved_workspace_by_request_and_id(request, user_workspace_id)
+    ws_info = ws_util.get_saved_workspace_by_request_and_id(request, user_workspace_id)
     if not ws_info.success:
         user_msg = 'No active workspaces found for user: %s and id: %d' % \
                     (user.username, user_workspace_id)
@@ -271,7 +270,7 @@ def view_set_current_config(request, user_workspace_id):
 
     user = user_info.result_obj
 
-    ws_info = get_user_workspace_config(user, user_workspace_id)
+    ws_info = ws_util.get_user_workspace_config(user, user_workspace_id)
     if not ws_info.success:
         user_msg = 'No active workspaces found for user: %s and id: %d' % \
                     (user.username, user_workspace_id)
@@ -298,7 +297,7 @@ def view_delete_config(request, user_workspace_id):
 
     user = user_info.result_obj
 
-    ws_info = get_user_workspace_config(user, user_workspace_id)
+    ws_info = ws_util.get_user_workspace_config(user, user_workspace_id)
     if not ws_info.success:
         user_msg = 'No active workspaces found for user: %s and id: %s' % \
                     (user.username, user_workspace_id)
@@ -333,7 +332,7 @@ def view_user_raven_config(request, user_workspace_id):
 
     user = user_info.result_obj
 
-    ws_info = get_user_workspace_config(user, user_workspace_id)
+    ws_info = ws_util.get_user_workspace_config(user, user_workspace_id)
     if not ws_info.success:
         user_msg = 'No active workspaces found for user: %s and id: %s' % \
                     (user.username, user_workspace_id)
@@ -364,7 +363,7 @@ def view_latest_raven_configs(request, summary_only=False):
     user = user_info.result_obj
 
     params = dict(summary_only=summary_only)
-    workspace_info = get_user_workspaces_as_dict(user, **params)
+    workspace_info = ws_util.get_user_workspaces_as_dict(user, **params)
 
     if not workspace_info.success:
         return JsonResponse(get_json_error(workspace_info.err_msg))
@@ -403,7 +402,7 @@ def view_reset_user_configs(request):
     # Delete workspaces (if any)
     #
     user = user_info.result_obj
-    delete_info = delete_user_workspaces(user)
+    delete_info = ws_util.delete_user_workspaces(user)
     if not delete_info.success:
         return JsonResponse(get_json_error(delete_info.err_msg))
 
