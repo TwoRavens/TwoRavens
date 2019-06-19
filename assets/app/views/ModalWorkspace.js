@@ -51,12 +51,14 @@ export default class ModalWorkspace {
             IS_D3M_DOMAIN && m(Table, {data: workspace.datasetDoc.about}),
 
             this.summaries && [
+                // Intro text to the Saved Workspaces modal
                 m('h4', 'Saved Workspaces'),
                 (this.summaries.length > 0) && m('ul',
                   m('li', 'Click "Load" to ' +
                   ' restore a previous workspace or "Revert" to return' +
                   ' to the last saved version.'),),
 
+                  // Modal for displaying a shared workspace link
                   this.showUserMessage && m(ModalVanilla,
                         {
                           setDisplay: () => {
@@ -65,15 +67,14 @@ export default class ModalWorkspace {
                         },
                         this.sharedURLMessage()),
 
-                  /*this.showUserMessage && m('div', {
-                        class: "alert alert-primary alert-dismissible fade show",
-                        role: "alert"
-                      }, [this.userMsg]),*/
-
+                // Table describing the shared workspaces
                 m(Table, {
                     data: this.summaries.map(summary => ({
+
+                        // Id column
                         'Id': `${summary.user_workspace_id}`,
 
+                        // Name column
                         Name: m('', {title: 'Workspace ID:' + summary.user_workspace_id}, summary.name),
 
                         // Button to load a previous workspace
@@ -100,7 +101,8 @@ export default class ModalWorkspace {
                         Created: new Date(summary.created).toUTCString(),
                         'Last Saved': new Date(summary.modified).toUTCString(),
 
-                        //  column
+                        //  Sharing column.  If shared, clicking pops
+                        //  up the modal with the shared url
                         'Sharing': m('div', [ summary.sharing.is_public === true &&
                                 m(ButtonPlain, {
                                     class: 'btn-sm btn-success',
@@ -119,14 +121,19 @@ export default class ModalWorkspace {
                                 m('span', {class: 'badge badge-secondary'}, 'Not-Shared'),
                           ]),
 
-                        // Button to share/stop sharing a workspace
+                        // --------------------------------------------
+                        // Buttons to start/stop sharing a workspace
+                        // --------------------------------------------
                         'Share': m('', [
-                            // Stop sharing button
+                          // --------------------------------------------
+                          // (1) Stop sharing button
+                          // --------------------------------------------
                           summary.sharing.is_public === true &&
                             m(ButtonPlain, {
                                 class: 'btn-sm btn-secondary',
                                 onclick: async () => {
                                   // Activate sharing
+                                  //
                                   let response = await m.request('/user-workspaces/raven-configs/deactivate-share/' + summary.user_workspace_id);
 
                                   if (!response.success) {
@@ -140,7 +147,9 @@ export default class ModalWorkspace {
                                 }
                             }, 'Stop Sharing'),
 
-                            // Share!
+                            // --------------------------------------------
+                            // (2) Start sharing button
+                            // --------------------------------------------
                             !summary.sharing.is_public &&
                                 m(ButtonPlain,
                                   {

@@ -2766,11 +2766,22 @@ export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
          return;
       }
 
-      // Success! Update the name and the workspace id
-      workspace.user_workspace_id = save_result.data.user_workspace_id;
-      workspace.name = save_result.data.name;
+      /*
+       * Success! Update the workspace data,
+       *  but keep the datasetDoc
+       */
 
-      setNewWorkspaceMessageSuccess('The new workspace name has been saved!');
+      // point to the existing DatasetDoc
+      let currentDatasetDoc = workspace.datasetDoc;
+
+      // load the new workspace
+      workspace = save_result.data;
+
+      // attach the existing dataseDoc
+      workspace.datasetDoc = currentDatasetDoc;
+      
+      //console.log(save_result.data);
+      setNewWorkspaceMessageSuccess('The new workspace has been saved!');
       setDisplayCloseButtonRow(true);
    })
  };

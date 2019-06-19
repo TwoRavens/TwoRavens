@@ -685,13 +685,13 @@ class Body {
                 m(ButtonPlain, {
                     id: 'btnSaveWorkspace',
                     class: `btn-sm btn-secondary ${app.saveCurrentWorkspaceWindowOpen ? 'active' : ''}`,
-                    onclick: _ => {                      
+                    onclick: _ => {
                       if (app.workspace.is_original_workspace){
-                        // we want to preserve the original, so force
-                        // it to be a new workspace
-                        app.setSaveNameModalOpen(true);
+                          // we want to preserve the original, so force
+                          // it to be a new workspace
+                          app.setSaveNameModalOpen(true);
                       }else{
-                         app.saveUserWorkspace();
+                          app.saveUserWorkspace();
                       }
                     }
                   },
