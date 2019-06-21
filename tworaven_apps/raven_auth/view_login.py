@@ -21,4 +21,11 @@ class LoginViewExtraContext(LoginView):
         context['just_logged_out'] = 'just_logged_out' in self.request.GET
         context['ALLOW_SOCIAL_AUTH'] = settings.ALLOW_SOCIAL_AUTH
 
+        # for redirects
+        if 'next_page' in self.request.GET:
+            context['next_page'] = self.request.GET['next_page']
+
+        print('context', context)
+        print('self.request.GET', self.request.GET)
+
         return context

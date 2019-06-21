@@ -41,6 +41,10 @@
 
       {% include "registration/generic_form_render.html" %}
 
+      {% if next_page %}
+      <input type="hidden" name="next" value="{{ next_page }}">
+      {% endif %}
+
       <div class="row">
         <div class="col-6">
           <a href="{% url 'password_reset' %}">Forgot password?</a>

@@ -4,6 +4,9 @@ from django.shortcuts import render
 
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect
+
 from django.urls import reverse
 
 from tworaven_apps.utils.view_helper import \
@@ -20,7 +23,6 @@ from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
 
 
-
 @csrf_exempt
 def view_shared_workspace_by_hash_id(request, hash_id):
     """Set a shared workspace to the user's current workspace and
@@ -34,6 +36,14 @@ def view_shared_workspace_by_hash_id(request, hash_id):
             - Yes: Load the workspace
             - No: Create a new workspace, copying the data from the shared workspaces
     """
+    if not request.user.is_authenticated:
+        next_url = reverse('view_shared_workspace_by_hash_id',
+                           kwargs=dict(hash_id=hash_id))
+
+        redirect_url = '%s?next_page=%s' % (reverse('signin'), next_url)
+        print('redirect_url', redirect_url)
+        return redirect(redirect_url)
+
     ws_info = ws_util.set_shared_workspace_by_hash_id(request, hash_id)
     if not ws_info.success:
         return JsonResponse(get_json_error(ws_info.err_msg))

@@ -73,10 +73,11 @@ def set_shared_workspace_by_hash_id(request, hash_id):
         return err_resp(user_msg)
 
     if workspace.user == user:
-        user_msg = ('This is your workspace.  Please access it directly'
-                    ' through your list of workspaces--not a shared link')
-        return err_resp(user_msg)
-
+        # Make this the current workspace
+        workspace.is_current_workspace = True
+        workspace.save()
+        return ok_resp(workspace)
+    
     # Create a new workspace, based on the shared workspace
     #
     params = dict(user=user,
