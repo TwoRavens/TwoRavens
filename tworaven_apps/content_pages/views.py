@@ -124,6 +124,15 @@ def view_d3m_config_error(request):
                   'content_pages/no_config_error.html',
                   dinfo)
 
+def view_general_error(request, err_msg, err_title='Error'):
+    """Used to pass general errors to a page. Doesn't have a related url"""
+    dinfo = dict(title=err_title,
+                 err_msg=err_msg)
+
+    return render(request,
+                  'content_pages/view_general_error.html',
+                  dinfo)
+
 def view_d3m_config_error_test(request):
     """Show the error page w/o an actual check"""
 

@@ -22,6 +22,7 @@ from tworaven_apps.user_workspaces import utils as ws_util
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
 
+from tworaven_apps.content_pages.views import view_general_error
 
 @csrf_exempt
 def view_shared_workspace_by_hash_id(request, hash_id):
@@ -46,7 +47,10 @@ def view_shared_workspace_by_hash_id(request, hash_id):
 
     ws_info = ws_util.set_shared_workspace_by_hash_id(request, hash_id)
     if not ws_info.success:
-        return JsonResponse(get_json_error(ws_info.err_msg))
+        user_msg = ws_info
+        return view_general_error(request,
+                                  ws_info.err_msg,
+                                  err_title='Error loading saved workspace')
 
     # looks good!  Redirect to home page where new workspace should load
     return HttpResponseRedirect(reverse('home'))
