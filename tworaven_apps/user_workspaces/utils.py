@@ -51,7 +51,7 @@ def set_shared_workspace_by_hash_id(request, hash_id):
       - Yes: Proceed as if loading a regular workspace
     - No:
         - Does the logged in user already have this workspace?  (e.g. as an original)
-            - Yes: Tell them to load it directly
+            - Yes: load it directly
             - No: Create a new workspace, copying the data from the shared workspaces
     """
     # Get the User
@@ -63,19 +63,23 @@ def set_shared_workspace_by_hash_id(request, hash_id):
     try:
         workspace = UserWorkspace.objects.get(hash_id=hash_id)
     except UserWorkspace.DoesNotExist:
-        user_msg = 'No workspaces found for hash_id: %s' % \
+        user_msg = ('No public workspaces were found for this shared link.'
+                    ' <br /><br />(id: hash_id: %s)') % \
                     (hash_id)
         return err_resp(user_msg)
 
     if not workspace.is_public:
-        user_msg = 'No public workspaces found for hash_id: %s' % \
+        user_msg = ('No public workspaces were found for this shared link.'
+                    '<br /><br />Note: The workspace may have been made private.'
+                    ' <br /><br />(id: hash_id: %s)') % \
                     (hash_id)
         return err_resp(user_msg)
 
     if workspace.user == user:
-        user_msg = ('This is your workspace.  Please access it directly'
-                    ' through your list of workspaces--not a shared link')
-        return err_resp(user_msg)
+        # Make this the current workspace
+        workspace.is_current_workspace = True
+        workspace.save()
+        return ok_resp(workspace)
 
     # Create a new workspace, based on the shared workspace
     #

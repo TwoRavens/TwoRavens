@@ -4,6 +4,9 @@ from django.shortcuts import render
 
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect
+
 from django.urls import reverse
 
 from tworaven_apps.utils.view_helper import \
@@ -19,7 +22,7 @@ from tworaven_apps.user_workspaces import utils as ws_util
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
 
-
+from tworaven_apps.content_pages.views import view_general_error
 
 @csrf_exempt
 def view_shared_workspace_by_hash_id(request, hash_id):
@@ -34,9 +37,20 @@ def view_shared_workspace_by_hash_id(request, hash_id):
             - Yes: Load the workspace
             - No: Create a new workspace, copying the data from the shared workspaces
     """
+    if not request.user.is_authenticated:
+        next_url = reverse('view_shared_workspace_by_hash_id',
+                           kwargs=dict(hash_id=hash_id))
+
+        redirect_url = '%s?next_page=%s' % (reverse('signin'), next_url)
+        print('redirect_url', redirect_url)
+        return redirect(redirect_url)
+
     ws_info = ws_util.set_shared_workspace_by_hash_id(request, hash_id)
     if not ws_info.success:
-        return JsonResponse(get_json_error(ws_info.err_msg))
+        user_msg = ws_info
+        return view_general_error(request,
+                                  ws_info.err_msg,
+                                  err_title='Error loading saved workspace')
 
     # looks good!  Redirect to home page where new workspace should load
     return HttpResponseRedirect(reverse('home'))
