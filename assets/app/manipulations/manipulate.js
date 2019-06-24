@@ -18,7 +18,7 @@ import Table from "../../common/views/Table";
 
 import * as common from '../../common/common';
 
-import {alertLog, alertError} from "../app";
+import {alertLog, alertError, getPredictorVariables} from "../app";
 import * as app from '../app';
 
 import * as queryAbstract from './queryAbstract';
@@ -766,8 +766,7 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
     let success = true;
     let onError = err => {
         if (err === 'no records matched') alertError("No records match your subset. Plots will not be updated.");
-        else console.error(err);
-        alertError(err.message);
+        else alertError(err.message);
         success = false;
     };
 
@@ -826,7 +825,7 @@ export async function buildDatasetUrl(problem) {
         type: 'menu',
         metadata: {
             type: 'data',
-            variables: [...problem.predictors, ...problem.targets],
+            variables: [...getPredictorVariables(problem), ...problem.targets],
             nominal: !app.is_manipulate_mode && app.nodes
                 .filter(node => node.nature === 'nominal')
                 .map(node => node.name)
@@ -857,7 +856,7 @@ export async function buildProblemUrl(problem) {
             type: 'menu',
             metadata: {
                 type: 'data',
-                variables: ['d3mIndex', ...problem.predictors, ...problem.targets],
+                variables: ['d3mIndex', ...getPredictorVariables(problem), ...problem.targets],
                 nominal: !app.is_manipulate_mode && app.nodes
                     .filter(node => node.nature === 'nominal')
                     .map(node => node.name)

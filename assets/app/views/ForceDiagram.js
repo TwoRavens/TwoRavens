@@ -25,8 +25,8 @@ export default class ForceDiagram {
 
         // data
         let {
-            pebbles, pebbleLinks,
-            groups, groupLinks
+            pebbles=[], pebbleLinks=[],
+            groups=[], groupLinks=[]
         } = attrs;
 
         let {
@@ -351,13 +351,8 @@ export default class ForceDiagram {
                         groups
                             .filter(group => group.nodes.has(d3.event.subject.name))
                             .filter(group => {
-                                if (group.nodes.size === 2) {
-                                    console.warn("#debug hullCoords[group.name]");
-                                    console.log(hullCoords);
-                                    console.warn("#debug mag(sub(...hullCoords[group.name]))");
-                                    console.log(mag(sub(...hullCoords[group.name])));
+                                if (group.nodes.size === 2)
                                     return mag(sub(...hullCoords[group.name])) > 4000;
-                                }
 
                                 let reducedHull = hullCoords[group.name]
                                     .filter(coord => coord[0] !== dragCoord[0] && coord[1] !== dragCoord[1]);
@@ -980,9 +975,7 @@ export let linkBuilder = (attrs, context) => {
         .classed('selected', () => null)
         .style('marker-start', marker('left'))
         .style('marker-end', marker('right'))
-        .on('mousedown', d => // mutate the original pebbleLinks, not the filtered. part of the reason why this is confusing is because the callback should be state
-            attrs.pebbleLinks.some(link => d.source === link.source && d.target === link.target && (remove(attrs.pebbleLinks, link) || true))
-        )
+        .on('mousedown', attrs.onclickLink || Function)
         .merge(context.selectors.links);
 
     // update existing links

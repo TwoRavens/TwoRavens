@@ -30,6 +30,8 @@ import {buildDatasetUrl} from "./manipulations/manipulate";
 // polyfill for flatmap (could potentially be included as a webpack entrypoint)
 import "core-js/fn/array/flat-map";
 import PlotVegaLite from "./views/PlotVegaLite";
+import {loadMenu} from "./manipulations/manipulate";
+import {setTotalSubsetRecords} from "./manipulations/manipulate";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -37,6 +39,10 @@ import PlotVegaLite from "./views/PlotVegaLite";
 //-------------------------------------------------
 
 let RAVEN_CONFIG_VERSION = 1;
+
+let TA2DebugMode = false;
+export let debugLog = TA2DebugMode ? console.log : _ => _;
+
 
 // ~~~~~ PEEK ~~~~~
 // for the second-window data preview
@@ -130,7 +136,7 @@ export async function updatePeek(pipeline) {
 
     if (is_model_mode){
         let problem = getSelectedProblem();
-        variables = [...problem.predictors, ...problem.targets];
+        variables = [...getPredictorVariables(problem), ...problem.targets];
     }
 
     let previewMenu = {
@@ -152,6 +158,8 @@ export async function updatePeek(pipeline) {
             : pipeline,
         previewMenu
     );
+
+    if (!data) return;
 
     peekSkip += data.length;
 
@@ -390,7 +398,7 @@ export let buildProblemPreprocess = async (ravenConfig, problem) => await getDat
 });
 
 // for debugging - if not in PRODUCTION, prints args
-export let cdb = _ => PRODUCTION || console.log(...arguments);
+export let cdb = _ => PRODUCTION || console.log(_);
 
 export let k = 4; // strength parameter for group attraction/repulsion
 let tutorial_mode = localStorage.getItem('tutorial_mode') !== 'false';
@@ -451,7 +459,10 @@ export let setLeftTab = (tab) => {
     setFocusedPanel('left');
 };
 
-export let setLeftTabHidden = tab => leftTabHidden = tab;
+export let setLeftTabHidden = tab => {
+    if (tab === 'Summary' || !tab) return;
+    leftTabHidden = tab;
+}
 
 export let panelWidth = {
     'left': '0',
@@ -502,7 +513,7 @@ export let streamMsgCnt = 0;
 //
 streamSocket.onmessage = function (e) {
     streamMsgCnt++;
-    console.log(streamMsgCnt + ') message received! ' + e);
+    debugLog(streamMsgCnt + ') message received! ' + e);
     // parse the data into JSON
     let msg_obj = JSON.parse(e.data);
     //console.log('data:' + JSON.stringify(msg_obj));
@@ -513,17 +524,14 @@ streamSocket.onmessage = function (e) {
         return;
     }
 
-    console.log(msg_data);
-
     if (msg_data.data === undefined && msg_data.msg_type !== 'DATAMART_AUGMENT_PROCESS') {
         console.log('streamSocket.onmessage: Error, "msg_data.data" type not specified!');
         console.log('full data: ' + JSON.stringify(msg_data));
         console.log('---------------------------------------------');
         return;
     }
-    console.log('full data: ' + JSON.stringify(msg_data));
-
-    console.log('Got it! Message type: ' + msg_data.msg_type);
+    debugLog('full data: ' + JSON.stringify(msg_data));
+    debugLog('Got it! Message type: ' + msg_data.msg_type);
     //JSON.stringify(msg_data));
 
     if (msg_data.msg_type === 'GetSearchSolutionsResults') {
@@ -581,16 +589,16 @@ let failset = ["TIME_SERIES_FORECASTING","GRAPH_MATCHING","LINK_PREDICTION","tim
 // replacement for javascript's blocking 'alert' function, draws a popup similar to 'alert'
 export let alertLog = (value, shown) => {
     alerts.push({type: 'log', time: new Date(), description: value});
-    alertsShown = shown !== false; // Default is 'true'
+    showModalAlerts = shown !== false; // Default is 'true'
 };
 export let alertWarn = (value, shown) => {
     alerts.push({type: 'warn', time: new Date(), description: value});
-    alertsShown = shown !== false; // Default is 'true'
+    showModalAlerts = shown !== false; // Default is 'true'
     console.trace('warning: ', value);
 };
 export let alertError = (value, shown) => {
     alerts.push({type: 'error', time: new Date(), description: value});
-    alertsShown = shown !== false; // Default is 'true'
+    showModalAlerts = shown !== false; // Default is 'true'
     console.trace('error: ', value);
 };
 
@@ -598,8 +606,11 @@ export let alertError = (value, shown) => {
 export let alerts = [];
 export let alertsLastViewed = new Date();
 
-export let alertsShown = false;
-export let setAlertsShown = state => alertsShown = state;
+export let showModalAlerts = false;
+export let setShowModalAlerts = state => showModalAlerts = state;
+
+export let showModalTA2Debug = false;
+export let setShowModalTA2Debug = state => showModalTA2Debug = state;
 
 export let zparams = {
     zdata: [],
@@ -962,6 +973,7 @@ export let loadWorkspace = async newWorkspace => {
 
     let resPreprocess;
 
+    // update preprocess
     if (workspace.raven_config)
         setVariableSummaries(await buildProblemPreprocess(workspace.raven_config, getSelectedProblem()));
     else {
@@ -997,9 +1009,17 @@ export let loadWorkspace = async newWorkspace => {
         }
         setVariableSummaries(resPreprocess.variables);
     }
-    console.log("#debug variableSummaries");
-    console.log(variableSummaries);
 
+    if (workspace.raven_config) {
+        // update total subset records
+        let countMenu = {type: 'menu', metadata: {type: 'count'}};
+        manipulate.loadMenu([...workspace.raven_config.hardManipulations, ...getSelectedProblem().manipulations], countMenu).then(count => {
+            manipulate.setTotalSubsetRecords(count);
+            m.redraw();
+        });
+        // update peek
+        resetPeek();
+    }
     /**
      * 4. Create 'raven_config' if undefined
      */
@@ -1187,7 +1207,7 @@ async function load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3m
         url: raven_config_url
     });
 
-    console.log(JSON.stringify(config_result));
+    // console.log(JSON.stringify(config_result));
 
     if (!config_result.success){
       setModal(config_result.message, "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
@@ -1510,6 +1530,7 @@ export let buildForceData = problem => {
 
 export let setGroup = (group, name) => {
     let selectedProblem = getSelectedProblem();
+    delete selectedProblem.unedited;
     ({
         'Loose': () => {
             !selectedProblem.tags.loose.includes(name) && selectedProblem.tags.loose.push(name);
@@ -1527,13 +1548,13 @@ export let setGroup = (group, name) => {
             remove(selectedProblem.tags.loose, name);
         }
     }[group] || Function)()
+    resetPeek();
 }
 
 export let forceDiagramNodesReadOnly = {};
 
 export let forceDiagramState = {
     builders: [pebbleBuilderLabeled, groupBuilder, linkBuilder, groupLinkBuilder],
-    pebbleLinks: [],
     hoverPebble: undefined,
     contextPebble: undefined,
     selectedPebble: undefined,
@@ -1546,16 +1567,35 @@ export let forceDiagramState = {
     arcHeight: 16,
     arcGap: 1
 }
+let setContextPebble = pebble => {
+    let selectedProblem = getSelectedProblem();
+
+    delete selectedProblem.unedited;
+    d3.event.preventDefault(); // block browser context menu
+    if (forceDiagramState.contextPebble) {
+
+        if (forceDiagramState.contextPebble !== pebble) {
+            selectedProblem.pebbleLinks = selectedProblem.pebbleLinks || [];
+            selectedProblem.pebbleLinks.push({
+                source: forceDiagramState.contextPebble,
+                target: pebble,
+                right: true
+            });
+        }
+        forceDiagramState.contextPebble = undefined;
+    } else forceDiagramState.contextPebble = pebble;
+    resetPeek();
+    m.redraw();
+}
 
 let setSelectedPebble = pebble => {
     forceDiagramState.selectedPebble = pebble;
 
     if (pebble) {
-        leftTab !== 'Summary' && setLeftTabHidden(leftTab);
+        setLeftTabHidden(leftTab);
         setLeftTab('Summary');
     } else if (leftTabHidden) {
         setLeftTab(leftTabHidden);
-        setLeftTabHidden(undefined);
     }
     m.redraw();
 }
@@ -1563,12 +1603,15 @@ let setSelectedPebble = pebble => {
 Object.assign(forceDiagramState, {
     setSelectedPebble,
     pebbleEvents: {
-        click: setSelectedPebble,
+        click: pebble => {
+            if (forceDiagramState.contextPebble) setContextPebble(pebble);
+            else setSelectedPebble(pebble)
+        },
         mouseover: pebble => {
             clearTimeout(forceDiagramState.hoverTimeout);
             forceDiagramState.hoverTimeout = setTimeout(() => {
                 forceDiagramState.hoverPebble = pebble;
-                leftTab !== 'Summary' && setLeftTabHidden(leftTab);
+                if (leftTab !== 'Summary') setLeftTabHidden(leftTab);
                 setLeftTab('Summary');
                 m.redraw()
             }, forceDiagramState.hoverTimeoutDuration)
@@ -1577,26 +1620,13 @@ Object.assign(forceDiagramState, {
             clearTimeout(forceDiagramState.hoverTimeout);
             forceDiagramState.hoverTimeout = setTimeout(() => {
                 forceDiagramState.hoverPebble = undefined;
-                if (!forceDiagramState.selectedPebble) {
-                    setLeftTab(leftTabHidden);
-                    setLeftTabHidden(undefined);
-                }
+                if (!forceDiagramState.selectedPebble)
+                    setLeftTab(leftTabHidden)
 
                 m.redraw()
             }, forceDiagramState.hoverTimeoutDuration)
         },
-        contextmenu: pebble => {
-            d3.event.preventDefault(); // block browser context menu
-            if (forceDiagramState.contextPebble) {
-                if (forceDiagramState.contextPebble !== pebble) forceDiagramState.pebbleLinks.push({
-                    source: forceDiagramState.contextPebble,
-                    target: pebble,
-                    right: true
-                });
-                forceDiagramState.contextPebble = undefined;
-            } else forceDiagramState.contextPebble = pebble;
-            m.redraw();
-        }
+        contextmenu: setContextPebble
     }
 })
 
@@ -1694,10 +1724,12 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                 name: 'Predictor',
                 attrs: {fill: common.gr1Color},
                 onclick: d => {
+                    delete problem.unedited;
                     toggle(problem.tags.loose, d);
                     remove(problem.targets, d);
                     toggle(problem.predictors, d);
                     forceDiagramState.setSelectedPebble(d);
+                    resetPeek();
                 }
             },
             {
@@ -1705,10 +1737,12 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                 name: 'Dep Var',
                 attrs: {fill: common.dvColor},
                 onclick: d => {
+                    delete problem.unedited;
                     toggle(problem.tags.loose, d);
                     remove(problem.predictors, d);
                     toggle(problem.targets, d);
                     forceDiagramState.setSelectedPebble(d);
+                    resetPeek();
                 }
             }
         ]
@@ -1724,8 +1758,10 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                 name: 'Nom',
                 attrs: {fill: common.nomColor},
                 onclick: d => {
+                    delete problem.unedited;
                     toggle(problem.tags.nominal, d);
                     forceDiagramState.setSelectedPebble(d);
+                    resetPeek()
                 }
             },
             {
@@ -1733,8 +1769,10 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                 name: 'Time',
                 attrs: {fill: common.timeColor},
                 onclick: d => {
+                    delete problem.unedited;
                     toggle(problem.tags.time, d);
                     forceDiagramState.setSelectedPebble(d);
+                    resetPeek()
                 }
             },
             {
@@ -1742,8 +1780,10 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                 name: 'Cross',
                 attrs: {fill: common.csColor},
                 onclick: d => {
+                    delete problem.unedited;
                     toggle(problem.tags.crossSection, d);
                     forceDiagramState.setSelectedPebble(d);
+                    resetPeek()
                 }
             },
             {
@@ -1751,6 +1791,7 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                 name: 'Weight',
                 attrs: {fill: common.weightColor},
                 onclick: d => {
+                    delete problem.unedited;
                     if (problem.tags.weights.includes(d))
                         problem.tags.weights = [];
                     else {
@@ -1761,6 +1802,7 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                         remove(problem.tags.crossSection, d);
                     }
                     forceDiagramState.setSelectedPebble(d);
+                    resetPeek()
                 }
             }
         ]
@@ -1834,7 +1876,7 @@ function CreatePipelineData(dataset, problem) {
         //     "resource_id": "0",
         //     "feature_name": "RBIs"
         // }],
-        predictFeatures: problem.predictors.map((predictor, i) => ({resource_id: i, feature_name: predictor})),
+        predictFeatures: getPredictorVariables(problem).map((predictor, i) => ({resource_id: i, feature_name: predictor})),
         // Example:
         // "targetFeatures": [{
         //     "resource_id": "0",
@@ -1853,8 +1895,6 @@ function CreatePipelineData(dataset, problem) {
 
 // create problem definition for SearchSolutions call
 function CreateProblemDefinition(problem) {
-    console.log('problem: ' + JSON.stringify(problem));
-    let resourceIdFromProblemDoc = workspace.raven_config.resourceId;
     let problemSpec = {
         // id: problem.problemID,  // remove for API 2019.4.11
         // version: problem.version, // remove for API 2019.4.11
@@ -1871,7 +1911,7 @@ function CreateProblemDefinition(problem) {
         {
             datasetId: workspace.d3m_config.name,
             targets: problem.targets.map((target, resourceId) => ({
-                resourceId: resourceIdFromProblemDoc,
+                resourceId: workspace.raven_config.resourceId,
                 columnIndex: Object.keys(variableSummaries).indexOf(target),  // Adjusted to match dataset doc
                 columnName: target
             }))
@@ -1918,7 +1958,7 @@ function CreateProblemSchema(problem){
     };
 }
 
-function CreatePipelineDefinition(problem, timeBound) {
+export function CreatePipelineDefinition(problem, timeBound) {
     return {
         userAgent: TA3_GRPC_USER_AGENT, // set on django
         version: TA3TA2_API_VERSION, // set on django
@@ -2026,7 +2066,7 @@ function CreateScoreDefinition(res){
   Return the default parameters used for a ProduceSolution call.
   This DOES NOT include the solutionId
 */
-function getScoreSolutionDefaultParameters(problem, datasetDocUrl) {
+export function getScoreSolutionDefaultParameters(problem, datasetDocUrl) {
     return {
         inputs: [{dataset_uri: 'file://' + datasetDocUrl}],
         performanceMetrics: [
@@ -2071,7 +2111,7 @@ export async function estimate() {
     ravenConfig.resultsProblem = selectedProblem.problemID;
 
     solverProblem.d3m = selectedProblem;
-    selectedProblem.solved = true;
+    selectedProblem.system = 'solved';
 
     if (!IS_D3M_DOMAIN){
         // let userUsg = 'This code path is no longer used.  (Formerly, it used Zelig.)';
@@ -2190,7 +2230,9 @@ export async function estimate() {
     let nominalVars = new Set(getNominalVariables(selectedProblem));
 
     let hasManipulation = selectedProblem.manipulations.length > 0;
-    let hasNominal = [...selectedProblem.targets, ...selectedProblem.predictors]
+
+    let allPredictors = getPredictorVariables(selectedProblem);
+    let hasNominal = [...selectedProblem.targets, ...allPredictors]
         .some(variable => nominalVars.has(variable));
 
     let needsProblemCopy = hasManipulation || hasNominal;
@@ -2215,6 +2257,9 @@ export async function estimate() {
         produceSolutionDefaultParams: getProduceSolutionDefaultParameters(datasetDocPath),
         scoreSolutionDefaultParams: getScoreSolutionDefaultParameters(selectedProblem, datasetDocPath)
     };
+
+    console.warn("#debug allParams");
+    console.log(allParams);
 
     //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
     let res = await makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', allParams);
@@ -2274,6 +2319,7 @@ export async function makeRequest(url, data) {
 export let erase = () => {
     let problem = getSelectedProblem();
     problem.predictors = [];
+    problem.pebbleLinks = [];
     problem.targets = [];
     problem.manipulations = [];
     problem.tags = {
@@ -2422,7 +2468,8 @@ function apiSession(context) {
 
 export function getDescription(problem) {
     if (problem.description) return problem.description;
-    return `${problem.targets} is predicted by ${problem.predictors.slice(0, -1).join(", ")} ${problem.predictors.length > 1 ? 'and ' : ''}${problem.predictors[problem.predictors.length - 1]}`;
+    let predictors = getPredictorVariables(problem);
+    return `${problem.targets} is predicted by ${predictors.slice(0, -1).join(", ")} ${predictors.length > 1 ? 'and ' : ''}${predictors[predictors.length - 1]}`;
 }
 
 export function discovery(problems) {
@@ -2517,15 +2564,16 @@ export async function addProblemFromForceDiagram() {
 export function connectAllForceDiagram() {
     let problem = getSelectedProblem();
 
+    problem.pebbleLinks = problem.pebbleLinks || [];
     if (is_explore_mode) {
         let pebbles = [...problem.predictors, ...problem.targets];
-        forceDiagramState.pebbleLinks = pebbles
+        problem.pebbleLinks = pebbles
             .flatMap((pebble1, i) => pebbles.slice(i + 1, pebbles.length)
                 .map(pebble2 => ({
                     source: pebble1, target: pebble2
                 })))
     }
-    else forceDiagramState.pebbleLinks = problem.predictors
+    else problem.pebbleLinks = problem.predictors
         .flatMap(source => problem.targets
             .map(target => ({
                 source, target, right: true
@@ -2627,13 +2675,13 @@ export let setAPIInfoWindowOpen = (boolVal) => isAPIInfoWindowOpen = boolVal;
 */
 
 // Name of Modal window
-export let isSaveNameModelOpen = false;
+export let showModalSaveName = false;
 
 /*
  * open/close the modal window
  */
-export let setSaveNameModalOpen = (boolVal) => {
-  isSaveNameModelOpen = boolVal;
+export let setShowModalSaveName = (boolVal) => {
+  showModalSaveName = boolVal;
 
   // Reset the modal window
   if (boolVal){
@@ -2789,6 +2837,16 @@ export let getSolutions = (problem, source) => {
         .map(id => problem.solutions[source][id]).filter(_=>_)
 };
 
+// get all predictors, including those that only have an arrow to a target
+export let getPredictorVariables = problem => {
+    let arrowPredictors = (problem.pebbleLinks || [])
+        .filter(link => problem.targets.includes(link.target) && link.right)
+        .map(link => link.source)
+
+    // union arrow predictors with predictor group
+    return [...new Set([...problem.predictors, ...arrowPredictors])]
+};
+
 export let getNominalVariables = problem => {
     let selectedProblem = problem || getSelectedProblem();
     return [...new Set([
@@ -2843,6 +2901,8 @@ export function getProblemCopy(problemSource) {
     return Object.assign($.extend(true, {}, problemSource), {
         problemID: generateProblemID(),
         provenanceID: problemSource.problemID,
+        unedited: true,
+        pending: true,
         system: 'user'
     });
 }
@@ -2906,20 +2966,6 @@ export async function submitDiscProb() {
 
     if (!problemDocExists)
         setModal("Your discovered problems have been submitted.", "Task Complete", true, false, false, locationReload);
-}
-
-export function deleteProblem(preprocessID, version, problemID) {
-    console.log("Delete problem clicked")
-    setSelectedProblem(undefined);
-    m.request({
-        method: "POST",
-        url: "http://127.0.0.1:4354/preprocess/problem-section-delete",
-        data: {preprocessID, version, problemID}
-    })
-        .then(function(result) {
-            console.log(result)
-        })
-
 }
 
 export function xhandleAugmentDataMessage(msg_data) {
@@ -3048,7 +3094,7 @@ export async function callSolver(prob, datasetPath=undefined) {
     setSolverPending(false);
 
     let hasManipulation = [...workspace.raven_config.hardManipulations, ...prob.manipulations].length > 0;
-    let hasNominal = [prob.targets, ...prob.predictors].some(variable => zparams.znom.includes(variable));
+    let hasNominal = [prob.targets, ...getPredictorVariables(prob)].some(variable => zparams.znom.includes(variable));
 
     if (!datasetPath)
         datasetPath = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : workspace.datasetUrl;
