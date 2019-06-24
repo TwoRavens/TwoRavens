@@ -7,8 +7,20 @@ import * as app from '../app';
 
 
 export default class BodyDataset {
-    oninit() {
-        app.load().then(m.redraw)
+    async oninit() {
+        await app.load();
+
+        let response = await m.request({
+            method: 'POST',
+            url: ROOK_SVC_URL + 'reportGeneratorApp',
+            data: {
+                dataset: app.datasetSummary,
+                variables: app.variableSummaries
+            }
+        });
+
+        this.reportURL = ROOK_SVC_URL + response.report_url;
+        m.redraw()
     }
 
     view(vnode) {
@@ -21,25 +33,42 @@ export default class BodyDataset {
                 m('div', {style: {'flex-grow': 1}}),
             ]),
             m(Canvas, {
-                attrsAll: {
-                    id: 'canvas' + id,
-                    style: {
-                        'padding-left': 0,
-                        'padding-right': 0,
-                        'margin-top': heightHeader + 'px',
-                        height: `calc(100% - ${heightHeader})`
+                    attrsAll: {
+                        id: 'canvas' + id,
+                        style: {
+                            'padding-left': 0,
+                            'padding-right': 0,
+                            'margin-top': heightHeader + 'px',
+                            height: `calc(100% - ${heightHeader})`
+                        }
                     }
-                }
-            }, app.workspace && m('div', {
-                style: {
-                    'max-width': '1000px',
-                    'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
-                    margin: '1em auto'
-                }
-            }, m(Table, {
-                data: app.workspace.datasetDoc.about,
-            }))
-            )
+                },
+                app.workspace && m('div', {
+                    style: {
+                        'max-width': '1000px',
+                        'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
+                        margin: '1em auto'
+                    }
+                },
+                m(Table, {
+                    data: app.workspace.datasetDoc.about,
+                })),
+
+
+                this.error,
+                this.reportURL && m("object", {
+                    "id": "pdf-viewer-object",
+                    "type": "application/pdf",
+                    "alt": "pdf",
+                    "pluginspage": "http://www.adobe.com/products/acrobat/readstep2.html",
+                    "width": "100%",
+                    "height": "100%",
+                    data: this.reportURL
+                },
+                m("p", "It appears you don't have a PDF plugin for this browser.",
+                    m("a", {"id": "pdf-alternate-url", href: this.reportURL},
+                        "Click here to download the PDF file.")
+                )))
         ]
     }
 }

@@ -26,6 +26,12 @@ RUN apt-get update && \
     apt-get -y install libcurl4-openssl-dev
 
 # -------------------------------------
+# Install Tex
+# -------------------------------------
+RUN apt-get -y install pandoc texlive-full
+RUN tlmgr init-usertree
+
+# -------------------------------------
 # Install R packages for TwoRavens
 # -------------------------------------
 RUN  R -e 'install.packages("Rcpp", repos="http://cran.rstudio.org")' && \

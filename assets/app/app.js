@@ -1008,6 +1008,7 @@ export let loadWorkspace = async newWorkspace => {
             return false;
         }
         setVariableSummaries(resPreprocess.variables);
+        setDatasetSummary(resPreprocess.dataset);
     }
 
     if (workspace.raven_config) {
@@ -1020,6 +1021,7 @@ export let loadWorkspace = async newWorkspace => {
         // update peek
         resetPeek();
     }
+
     /**
      * 4. Create 'raven_config' if undefined
      */
@@ -2581,7 +2583,6 @@ export function connectAllForceDiagram() {
     m.redraw();
 }
 
-// TODO: apply label in this setter?
 export let setVariableSummaries = state => {
     variableSummaries = state;
 
@@ -2590,6 +2591,9 @@ export let setVariableSummaries = state => {
 
 }
 export let variableSummaries = {};
+
+export let setDatasetSummary = state => datasetSummary = state;
+export let datasetSummary = {};
 
 
 /*

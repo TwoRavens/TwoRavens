@@ -36,6 +36,8 @@ ROOK_APP_NAMES = [('DATA_APP', 'dataapp', 'dataapp'),       # session id?
                   ('SOLVER_APP', 'solverapp', 'solverapp'),
                   (PLOTDATA_APP, 'plotdataapp', 'plotdataapp'),
                   ('TREE_APP', 'treeapp', 'treeapp'),
+                  ('ROOK_REPORT_APP', 'reportGeneratorApp', 'reportGeneratorApp'),
+                  ('ROOK_FILES_APP', 'rook-files', 'rook-files'),
                   (HEALTH_CHECK_APP, 'healthcheckapp', 'healthcheckapp'), # healthcheckapp
                   #('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models
                  ]

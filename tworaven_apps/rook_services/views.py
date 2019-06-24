@@ -226,7 +226,7 @@ def view_rook_route(request, app_name_in_url):
     # Behavioral logging
     # --------------------------------
     print('rook_app_info.name:', rook_app_info.name)
-    featurd_id = rook_app_info.name
+    feature_id = rook_app_info.name
     if rook_app_info.name == app_names.EXPLORE_APP:
         activity_l1 = bl_static.L1_DATA_PREPARATION
         activity_l2 = bl_static.L2_DATA_EXPLORE
