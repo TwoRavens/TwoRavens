@@ -1186,7 +1186,7 @@ export let loadWorkspace = async newWorkspace => {
  5. Start the user session /Hello
  */
 
-async function load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL) {
+export async function load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL) {
     console.log('---------------------------------------');
     console.log('-- initial load, app.js - load() --');
     if (!IS_D3M_DOMAIN) {

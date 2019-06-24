@@ -64,6 +64,7 @@ import {getScoreSolutionDefaultParameters} from "./app";
 import {makeRequest} from "./app";
 import {CreatePipelineDefinition} from "./app";
 import {resetPeek} from "./app";
+import BodyDataset from "./views/BodyDataset";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -580,7 +581,7 @@ class Body {
             m('div', {style: {'flex-grow': 1}}),
 
             m(Button, {
-                onclick: () => console.log()
+                onclick: () => window.open('/#!/dataset')
             }, 'Dataset Description'),
             app.workspace && createBreadcrumb(),
 
@@ -1704,12 +1705,7 @@ if (IS_EVENTDATA_DOMAIN) {
 }
 else {
     m.route(document.body, '/model', {
-        '/popper': {
-            render: () => m(Popper, {
-                content: m("div", "popper content"),
-                options: {trigger: 'hover'}
-            }, m(Button, 'test button'))
-        },
+        '/dataset': {render: () => m(BodyDataset, {image: '/static/images/TwoRavens.png'})},
         '/datamart': {render: standaloneDatamart},
         '/explore/:variate/:vars...': Body,
         '/data': {render: () => m(Peek, {id: app.peekId, image: '/static/images/TwoRavens.png'})},
