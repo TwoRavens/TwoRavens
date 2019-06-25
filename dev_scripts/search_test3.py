@@ -62,14 +62,8 @@ def run_augment_test():
 
     task_data['augmentation'] = {\
                     'type': 'join',
-                    'left_columns': [(0,)],
-                    'right_columns': [(0,)]
-                    #'left_columns': [('0', 0)],
-                    #'right_columns': [('0', 0)]
-                    #'left_columns': ['Medallion_Number'],
-                    #'right_columns': ['Medallion_Number']
-                    #'left_columns': [('Medallion_Number', 0)],
-                    #'right_columns': [('Medallion_Number', 0)]
+                    'left_columns': [(0,), (2,)],
+                    'right_columns': [(0,), (3,)]
                     }
 
     # syntax check
@@ -79,7 +73,7 @@ def run_augment_test():
     # Base file to augment.  Has two columns: Medallion_Number, Earnings
     #       2 columns x 20 rows
     #
-    input_fpath = join(INPUT_DIR, 'medallion-test-file.csv')
+    input_fpath = join(INPUT_DIR, 'medallion-test-file3.csv')
     assert isfile(input_fpath), f'File not found: {input_fpath}'
 
     # Augment url
@@ -116,7 +110,7 @@ def run_augment_test():
         return
 
     print('augment success!')
-    return
+
 
     data_foldername = join(OUTPUT_DIR, 'augment-results',)
     if not isdir(data_foldername):
