@@ -235,6 +235,7 @@ function makeAbstractBranch(step, preferences, metadata, name) {
         if (preferences.imputationMode === 'Replace') {
             Object.assign(branch, {
                 replacementValues: preferences.getReplacementValue(preferences),
+                statisticMode: preferences.statisticMode,
                 replacementMode: preferences.replacementMode
             });
 
