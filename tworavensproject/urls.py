@@ -22,7 +22,7 @@ urlpatterns = [
 
     url(r'^ws-views/', include('tworaven_apps.websocket_views.urls')),
 
-    url(r'^datamart/', include('tworaven_common_apps.datamart_endpoints.urls')),
+    url(r'^datamart/', include('tworaven_apps.datamart_endpoints.urls')),
 
     url(r'^user-workspaces/', include('tworaven_apps.user_workspaces.urls')),
 

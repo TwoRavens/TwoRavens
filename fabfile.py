@@ -352,12 +352,12 @@ def check_config():
 @task
 def check_datamarts():
     """If there aren't any db configurations, then load the fixtures"""
-    from tworaven_common_apps.datamart_endpoints.models import DatamartInfo
+    from tworaven_apps.datamart_endpoints.models import DatamartInfo
 
     config_cnt = DatamartInfo.objects.count()
     if config_cnt == 0:
         local(('python manage.py loaddata'
-               ' tworaven_common_apps/datamart_endpoints/'
+               ' tworaven_apps/datamart_endpoints/'
                'fixtures/initial_datamarts.json'))
     else:
         print('Configs exist in the db: %d' % config_cnt)
