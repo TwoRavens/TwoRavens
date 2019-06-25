@@ -1673,7 +1673,7 @@ export async function plot(plotNodes, plottype="", problem={}) {
 
     if(plotNodes.length===0) {
         myy = app.variableSummaries[problem.targets[0]];
-        myx = problem.predictors.map(predictor => app.variableSummaries[predictor]);
+        myx = app.getPredictorVariables(problem).map(predictor => app.variableSummaries[predictor]);
     } else {
         myx[0] = "oneshot"; // necessary to work out the looping
         mypn=plotNodes;

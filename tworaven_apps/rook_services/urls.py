@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from tworaven_apps.rook_services import views, views_files, views_test
+from tworaven_apps.rook_services import views, views_files
 
 urlpatterns = (
 

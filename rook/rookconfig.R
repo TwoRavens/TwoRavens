@@ -21,6 +21,9 @@ addPrivacy<-TRUE      ## Toggle:  TRUE - Add .apps for differential privacy, FAL
 default_output_path <- paste(getwd(), "/rook-files/", sep="")
 PREPROCESS_OUTPUT_PATH <- Sys.getenv(x='PREPROCESS_OUTPUT_PATH', unset=default_output_path)
 
+default_report_path <- paste(getwd(), "/rook-files/reports/", sep="")
+REPORT_OUTPUT_PATH <- Sys.getenv(x='REPORT_OUTPUT_PATH', unset=default_report_path)
+
 # Make sure the path exists
 #
 if (nchar(PREPROCESS_OUTPUT_PATH)==0){

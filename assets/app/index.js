@@ -56,6 +56,15 @@ import VariableSummary, {formatVariableSummary} from "./views/VariableSummary";
 // EVENTDATA
 import Body_EventData from './eventdata/Body_EventData';
 import TextFieldSuggestion from "../common/views/TextFieldSuggestion";
+import {getFitSolutionDefaultParameters} from "./app";
+import {getProduceSolutionDefaultParameters} from "./app";
+import {getNominalVariables} from "./app";
+import {workspace} from "./app";
+import {getScoreSolutionDefaultParameters} from "./app";
+import {makeRequest} from "./app";
+import {CreatePipelineDefinition} from "./app";
+import {resetPeek} from "./app";
+import BodyDataset from "./views/BodyDataset";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -297,6 +306,7 @@ class Body {
 
                                     let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
                                     let [n0, n1, n2] = exploreVariables.map(variable => app.variableSummaries[variable]);
+                                    let predictorVariables = app.getPredictorVariables(problem);
 
                                     // tile for each variable or problem
                                     let tile = m('span#exploreNodeBox', {
@@ -363,9 +373,9 @@ class Body {
                                             show && n0 && n0.name === x ? `${x} (x)`
                                                 : show && n1 && n1.name === x ? `${x} (y)`
                                                 : show && n2 && n2.name === x ? `${x} (z)`
-                                                    : x.predictors ? [
+                                                    : predictorVariables ? [
                                                             m('b', x),
-                                                            m('p', x.predictors.join(', '))]
+                                                            m('p', predictorVariables.join(', '))]
                                                         : x)
                                     );
 
@@ -378,6 +388,8 @@ class Body {
                         nodes: app.forceDiagramNodesReadOnly,
                         // these attributes may change dynamically, (the problem could change)
                         onDragOut: pebble => {
+                            delete selectedProblem.unedited;
+
                             let pebbles = forceData.summaries[pebble].plottype === 'collapsed'
                                 ? forceData.summaries[pebble].childNodes : [pebble];
 
@@ -386,9 +398,13 @@ class Body {
                                 app.remove(selectedProblem.predictors, pebble);
                                 app.remove(selectedProblem.targets, pebble);
                             });
+                            selectedProblem.pebbleLinks = (selectedProblem.pebbleLinks || [])
+                                .filter(link => link.target !== pebble && link.source !== pebble);
+                            app.resetPeek();
                             m.redraw();
                         },
                         onDragOver: (pebble, groupId) => {
+                            delete selectedProblem.unedited;
 
                             let pebbles = forceData.summaries[pebble.name].plottype === 'collapsed'
                                 ? forceData.summaries[pebble.name].childNodes : [pebble.name];
@@ -405,9 +421,11 @@ class Body {
                                     app.remove(selectedProblem.tags.loose, pebble);
                                 }
                             });
+                            app.resetPeek();
                             m.redraw();
                         },
                         onDragAway: (pebble, groupId) => {
+                            delete selectedProblem.unedited;
                             let pebbles = forceData.summaries[pebble.name].plottype === 'collapsed'
                                 ? forceData.summaries[pebble.name].childNodes : [pebble.name];
 
@@ -419,11 +437,19 @@ class Body {
                                 if (!selectedProblem.tags.loose.includes(pebble))
                                     selectedProblem.tags.loose.push(pebble);
                             });
+                            app.resetPeek();
                             m.redraw();
                         },
 
                         labels: app.forceDiagramLabels(selectedProblem),
-                        mutateNodes: app.mutateNodes(selectedProblem)
+                        mutateNodes: app.mutateNodes(selectedProblem),
+                        pebbleLinks: selectedProblem.pebbleLinks,
+                        onclickLink: d => {
+                            let originalLink = selectedProblem.pebbleLinks.find(link =>  d.source === link.source && d.target === link.target);
+                            if (!originalLink) return;
+                            app.remove(selectedProblem.pebbleLinks, originalLink);
+                            resetPeek();
+                        }
                     }, forceData))),
 
                 app.is_model_mode && !app.swandive && m("#spacetools.spaceTool", {
@@ -441,7 +467,7 @@ class Body {
                 }, m(Icon, {name: 'link'})),
                 m(Button, {
                     id: 'btnDisconnect', style: {margin: '0px .5em'},
-                    onclick: () => app.forceDiagramState.pebbleLinks = [],
+                    onclick: () => selectedProblem.pebbleLinks = [],
                     title: 'delete all connections between nodes'
                 }, m(Icon, {name: 'circle-slash'})),
                 m(Button, {
@@ -472,7 +498,7 @@ class Body {
                     {id: "nomButton", vars: selectedProblem.tags.nominal, name: 'Nominal', borderColor: common.nomColor, innerColor: 'white', width: 1},
                     {id: "weightButton", vars: selectedProblem.tags.weights, name: 'Weight', borderColor: common.weightColor, innerColor: 'white', width: 1},
                     {id: "predButton", vars: selectedProblem.predictors, name: 'Predictors', borderColor: common.gr1Color, innerColor: common.gr1Color, width: 0},
-                    {id: "priorsButton", vars: selectedProblem.predictors, name: 'Priors', borderColor: common.warnColor, innerColor: common.warnColor, width: 0},
+                    // {id: "priorsButton", vars: selectedProblem.predictors, name: 'Priors', borderColor: common.warnColor, innerColor: common.warnColor, width: 0},
                 ].filter(group => group.vars.length > 0).map(group =>
                     m(`#${group.id}[style=width:100% !important]`,
                         m(".rectColor[style=display:inline-block]", m("svg[style=width: 20px; height: 20px]",
@@ -512,15 +538,15 @@ class Body {
 
         let createBreadcrumb = () => {
             let path = [
-                m('h4#dataName.hoverable', {
-                        style: {display: 'inline-block', margin: '.25em 1em'},
-                        onclick: () => app.setShowModalWorkspace(true)
-                    },
-                    app.workspace.d3m_config.name || 'Dataset Name', m('br'),
-                    app.workspace.name !== app.workspace.d3m_config.name && m('div', {style: {
-                            'font-style': 'italic', float: 'right', 'font-size': '14px',
-                        }}, `workspace: ${app.workspace.name}`)
-                ),
+                m(Popper, {content: () => m(Table, {data: app.workspace.datasetDoc.about})},
+                    m('h4#dataName', {
+                            style: {display: 'inline-block', margin: '.25em 1em'},
+                        },
+                        app.workspace.d3m_config.name || 'Dataset Name', m('br'),
+                        app.workspace.name !== app.workspace.d3m_config.name && m('div', {style: {
+                                'font-style': 'italic', float: 'right', 'font-size': '14px',
+                            }}, `workspace: ${app.workspace.name}`)
+                    ))
             ];
 
             let pathProblem = {
@@ -554,6 +580,9 @@ class Body {
             },
             m('div', {style: {'flex-grow': 1}}),
 
+            m(Button, {
+                onclick: () => window.open('/#!/dataset')
+            }, 'Dataset Description'),
             app.workspace && createBreadcrumb(),
 
             m('div', {style: {'flex-grow': 1}}),
@@ -700,18 +729,33 @@ class Body {
                 m(ButtonPlain, {
                     id: 'btnSaveAsNewWorkspace',
                     // 'aria-pressed': `${app.isSaveNameModelOpen ? 'true' : 'false'}`,
-                    class: `btn-sm btn-secondary ${app.isSaveNameModelOpen ? 'active' : ''}`,
-                    onclick: _ => app.setSaveNameModalOpen(true)
+                    class: `btn-sm btn-secondary ${app.showModalSaveName ? 'active' : ''}`,
+                    onclick: _ => app.setShowModalSaveName(true)
                   },
                   'Save As New ',
+                ),
+                m(ButtonPlain, {
+                        id: 'btnLoadWorkspace',
+                        // 'aria-pressed': `${app.isSaveNameModelOpen ? 'true' : 'false'}`,
+                        class: `btn-sm btn-secondary ${app.showModalWorkspace? 'active' : ''}`,
+                        onclick: () => app.setShowModalWorkspace(true)
+                    },
+                    'Load',
                 )
               ),
             m(Button, {
                 style: {'margin': '8px'},
                 title: 'alerts',
                 class: 'btn-sm',
-                onclick: () => app.setAlertsShown(true)
+                onclick: () => app.setShowModalAlerts(true)
             }, m(Icon, {name: 'bell', style: `color: ${app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}`})),
+
+            m(Button, {
+                style: {'margin': '8px'},
+                title: 'ta2 debugger',
+                class: 'btn-sm',
+                onclick: () => app.setShowModalTA2Debug(true)
+            }, m(Icon, {name: 'bug'})),
 
             // m("span", {"class": "footer-info-break"}, "|"),
             // m("a", {"href" : "/dev-raven-links", "target": "=_blank"}, "raven-links"),
@@ -748,6 +792,7 @@ class Body {
      * Start: Construct potential modal boxes for the page.
      */
     construct_modals() {
+        this.TA2URL = D3M_SVC_URL + '/SearchDescribeFitScoreSolutions';
         return [
             m(Modal),
             this.modalSaveCurrentWorkspace(),
@@ -760,11 +805,11 @@ class Body {
             /*
              * Alerts modal.  Displays the list of alerts, if any.
              */
-            app.alertsShown && m(ModalVanilla, {
+            app.showModalAlerts && m(ModalVanilla, {
                 id: 'alertsModal',
                 setDisplay: () => {
                     app.alertsLastViewed.setTime(new Date().getTime());
-                    app.setAlertsShown(false)
+                    app.setShowModalAlerts(false)
                 }
             }, [
                 m('h4[style=width:3em;display:inline-block]', 'Alerts'),
@@ -808,10 +853,10 @@ class Body {
              * Save as new workspace modal.
              *  - prompt user for new workspace name
              */
-            app.isSaveNameModelOpen && m(ModalVanilla, {
+            app.showModalSaveName && m(ModalVanilla, {
                 id: "modalNewWorkspacename",
                 setDisplay: () => {
-                  app.setSaveNameModalOpen(false);
+                  app.setShowModalSaveName(false);
                 },
               },
                 m('div', {'class': 'row'},
@@ -856,7 +901,7 @@ class Body {
                             id: 'btnRowCloseModalButton',
                             class: 'btn-sm btn-primary',
                             onclick: _ => {
-                              app.setSaveNameModalOpen(false);},
+                              app.setShowModalSaveName(false);},
                             },
                             'Close'),
                           )
@@ -877,7 +922,7 @@ class Body {
                             style: 'margin-right: 15px;',
                             onclick: _ => {
                               app.setNewWorkspaceName('');
-                              app.setSaveNameModalOpen(false);},
+                              app.setShowModalSaveName(false);},
                             },
                             'Cancel'),
 
@@ -904,6 +949,76 @@ class Body {
               ]),
             )
           ),
+
+            app.showModalTA2Debug && m(ModalVanilla, {
+                    id: 'modalTA2Debug',
+                    setDisplay: app.setShowModalTA2Debug
+                },
+                m('h4', 'TA2 System Debugger'),
+                m(Button, {
+                    style: {margin: '1em'},
+                    onclick: async () => {
+
+                        let selectedProblem = app.getSelectedProblem();
+                        let searchTimeLimit = 5;
+                        let searchSolutionParams = CreatePipelineDefinition(selectedProblem, searchTimeLimit);
+
+                        let nominalVars = new Set(getNominalVariables(selectedProblem));
+
+                        let hasManipulation = selectedProblem.manipulations.length > 0;
+                        let hasNominal = [...selectedProblem.targets, ...app.getPredictorVariables(selectedProblem)]
+                            .some(variable => nominalVars.has(variable));
+
+                        let needsProblemCopy = hasManipulation || hasNominal;
+
+                        // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
+                        if (needsProblemCopy) {
+                            let {metadata_path} = await manipulate.buildProblemUrl(selectedProblem);
+                            selectedProblem.datasetDocPath = metadata_path;
+                        } else delete selectedProblem.datasetDocPath;
+
+                        // initiate rook solver
+                        // - TO-FIX 5/22/2019
+                        //callSolver(selectedProblem, datasetPath);
+
+                        let datasetDocPath = selectedProblem.datasetDocPath || workspace.d3m_config.dataset_schema;
+
+                        this.TA2Post = JSON.stringify({
+                            searchSolutionParams: searchSolutionParams,
+                            fitSolutionDefaultParams: getFitSolutionDefaultParameters(datasetDocPath),
+                            produceSolutionDefaultParams: getProduceSolutionDefaultParameters(datasetDocPath),
+                            scoreSolutionDefaultParams: getScoreSolutionDefaultParameters(selectedProblem, datasetDocPath)
+                        });
+                        m.redraw()
+                    }
+                }, 'Prepare'),
+                m(Button, {
+                    style: {margin: '1em'},
+                    onclick: () => makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', JSON.parse(this.TA2Post))
+                        .then(response => this.TA2Response = response).then(m.redraw)
+                }, 'Send'),
+                m('div#URL', {style: {margin: '1em'}},
+                    'URL',
+                    m(TextField, {
+                        value: this.TA2URL,
+                        oninput: value => this.TA2URL = value,
+                        onblur: value => this.TA2URL = value
+                    })),
+                m('div#searchContainer', {style: {margin: '1em'}},
+                    'POST',
+                    m(TextField, {
+                        value: this.TA2Post,
+                        oninput: value => this.TA2Post = value,
+                        onblur: value => this.TA2Post = value
+                    })),
+                this.TA2Response && m('div#searchContainer', {style: {margin: '1em'}},
+                    'Response Successful: ' + this.TA2Response.success,
+                    m(TextField, {
+                        value: this.TA2Response.message,
+                        oninput: _ => _, onblur: _ => _
+                    })
+                )
+            )
         ]
     }
 
@@ -1086,6 +1201,7 @@ class Body {
                             },
                             callback: x => {
                                 let selectedProblem = app.getSelectedProblem();
+                                delete selectedProblem.unedited;
 
                                 if (selectedProblem.predictors.includes(x))
                                     app.remove(selectedProblem.predictors, x);
@@ -1094,6 +1210,8 @@ class Body {
                                 else if (selectedProblem.tags.loose.includes(x))
                                     app.remove(selectedProblem.tags.loose, x);
                                 else selectedProblem.tags.loose.push(x);
+
+                                app.resetPeek();
                             },
                             popup: x => m('div', m('h4', 'Summary Statistics for ' + x), m(Table, {attrsAll: {class: 'table-sm'}, data: formatVariableSummary(app.variableSummaries[x])})),
                             popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
@@ -1131,46 +1249,41 @@ class Body {
         // DISCOVERY TAB
         let problems = ravenConfig.problems;
 
-        // let allMeaningful = Object.keys(problems).every(probID => problems[probID].meaningful);
-        // let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
-        //     onclick: m.withAttr("checked", app.setCheckedDiscoveryProblem),
-        //     checked: allMeaningful,
-        //     title: `mark ${allMeaningful ? 'no' : 'all'} problems as meaningful`
-        // });
-
-        let resultsProblems = Object.keys(ravenConfig.problems)
-            .filter(problemId => ravenConfig.problems[problemId].solved)
-            .map(problemId => ravenConfig.problems[problemId]);
+        let allMeaningful = Object.keys(problems).every(probID => problems[probID].meaningful);
+        let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
+            onclick: m.withAttr("checked", app.setCheckedDiscoveryProblem),
+            checked: allMeaningful,
+            title: `mark ${allMeaningful ? 'no' : 'all'} problems as meaningful`
+        });
 
         let discoveryHeaders = [
             'Name',
-            // m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
-            'User', 'Target', 'Predictors',
+            m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
+            'Target', 'Predictors',
             'Task',
             Object.values(problems).some(prob => prob.subTask !== 'taskSubtypeUndefined') ? 'Subtask' : '',
-            'Metric', 'Manipulations'
+            'Metric'
         ];
+
+        let problemPartition = Object.keys(problems)
+            .filter(problemId => !problems[problemId].pending)
+            .reduce((out, problemId) => {
+                out[problems[problemId].system] = out[problems[problemId].system] || [];
+                out[problems[problemId].system].push(problems[problemId]);
+                return out;
+            }, {});
 
         let formatProblem = problem => [
             problem.problemID, // this is masked as the UID
-            problem.system === 'user' && m('div[title="user created problem"]', m(Icon, {name: 'person'})),
+            m('[style=text-align:center]', m('input[type=checkbox]', {
+                onclick: m.withAttr("checked", state => app.setCheckedDiscoveryProblem(state, problem.problemID)),
+                checked: problem.meaningful
+            })),
             problem.targets.join(', '),
-            problem.predictors.join(', '),
+            app.getPredictorVariables(problem).join(', '),
             problem.task,
             problem.subTask === 'taskSubtypeUndefined' ? '' : problem.subTask, // ignore taskSubtypeUndefined
-            problem.metric,
-            m('',
-                problem.manipulations.length !== 0 && m(
-                'div[style=width:100%;text-align:center]', m(Button, {
-                    class: 'btn-sm',
-                    disabled: problem === selectedProblem && app.rightTab === 'Manipulate' && common.panelOpen['right'],
-                    title: `view manipulations for ${problem.problemID}`,
-                    onclick: () => {
-                        app.setRightTab('Manipulate');
-                        common.setPanelOpen('right');
-                    }
-                }, 'View'))
-            )
+            problem.metric
         ];
         sections.push({
             value: 'Discover',
@@ -1193,60 +1306,70 @@ class Body {
                                 style: {float: 'right', margin: '-5px', 'margin-right': '22px'},
                                 class: 'btn-sm',
                                 onclick: () => {
-                                    let problemCopy = app.getProblemCopy(app.getSelectedProblem());
+                                    let problemCopy = app.getProblemCopy(selectedProblem);
+                                    selectedProblem.pending = false;
+
                                     ravenConfig.problems[problemCopy.problemID] = problemCopy;
+                                    app.setSelectedProblem(problemCopy.problemID);
                                 }
                             }, 'Save')),
                         m(Table, {
-                            id: 'discoveryTableManipulations',
+                            id: 'discoveryTableSelectedProblem',
                             headers: discoveryHeaders,
                             data: [formatProblem(selectedProblem)],
                             activeRow: ravenConfig.selectedProblem,
                             // showUID: false,
                             abbreviation: 40
-                        }),
-                        m('h4.card-header', 'All Problems')
+                        })
                     ],
 
-                    // all problems
-                    m(Table, {
-                        id: 'discoveryTable',
-                        headers: discoveryHeaders,
-                        data: [ // I would sort system via (a, b) => a.system === b.system ? 0 : a.system === 'user' ? -1 : 1, but javascript sort isn't stable
-                            ...Object.values(problems).filter(prob => prob.system === 'user' && !prob.solved),
-                            ...Object.values(problems).filter(prob => prob.system !== 'user' && !prob.solved)
-                        ].map(formatProblem),
-                        activeRow: ravenConfig.resultsProblem,
-                        onclick: problemID => {
-                            if (selectedProblem.problemID === problemID) return;
-                            delete problems[selectedProblem.problemID];
-                            let copiedProblem = app.getProblemCopy(problems[problemID]);
-                            problems[copiedProblem.problemID] = copiedProblem;
-                            app.setSelectedProblem(copiedProblem.problemID);
-                        },
-                        // showUID: false,
-                        abbreviation: 40,
-                        sortable: true
-                    }),
-                    // results problems
-                    resultsProblems.length > 0 && [
-                        m('h4.card-header', 'Results Problems'),
+                    // Object.keys(problemPartition)
+                    ['user', 'auto', 'solved'].filter(key => key in problemPartition).map(partition => [
+                        m('h4.card-header', `${{
+                            'user': 'Custom',
+                            'auto': 'Discovered',
+                            'solved': 'Solved'
+                        }[partition]} Problems`),
                         m(Table, {
-                            id: 'resultsTable',
+                            id: 'discoveryTable' + partition,
                             headers: discoveryHeaders,
-                            data: resultsProblems.map(formatProblem),
-                            activeRow: ravenConfig.resultsProblem,
+                            data: problemPartition[partition].map(formatProblem),
                             onclick: problemID => {
-                                let resultsProblem = app.getResultsProblem();
-                                if (resultsProblem.problemID === problemID) return;
-                                app.setResultsProblem(problemID);
-                                app.set_mode('results');
+                                if (selectedProblem.problemID === problemID) return;
+                                let clickedProblem = problems[problemID];
+
+                                if (clickedProblem.system === 'user') {
+                                    app.setSelectedProblem(problemID);
+                                    return;
+                                }
+
+                                if (clickedProblem.system === 'solved') {
+                                    app.setResultsProblem(problemID);
+                                    app.set_mode('results');
+                                    return;
+                                }
+
+                                // delete current problem if no changes were made
+                                if (selectedProblem.pending) {
+                                    if (selectedProblem.unedited)
+                                        delete problems[selectedProblem.problemID];
+                                    else if (confirm('You have unsaved changes in the previous problem, "' + selectedProblem.problemID + '". Would you like to save it before progressing?'))
+                                        selectedProblem.pending = false;
+                                    else delete problems[selectedProblem.problemID];
+                                }
+
+                                // create a copy of the autogenerated problem
+                                if (clickedProblem.system === 'auto') {
+                                    let copiedProblem = app.getProblemCopy(clickedProblem);
+                                    problems[copiedProblem.problemID] = copiedProblem;
+                                    app.setSelectedProblem(copiedProblem.problemID);
+                                }
                             },
-                            // showUID: false,
+                            activeRow: selectedProblem.problemID,
                             abbreviation: 40,
                             sortable: true
                         })
-                    ]
+                    ])
                 ),
 
 
@@ -1259,17 +1382,29 @@ class Body {
                         oninput: value => selectedProblem.description = value,
                         onblur: value => selectedProblem.description = value
                     }),
-                    m('div', {style: {display: 'inline-block', margin: '.75em'}},
-                        m('input[type=checkbox]', {
-                            onclick: m.withAttr("checked", checked => app.setCheckedDiscoveryProblem(checked, selectedProblem.problemID)),
-                            checked: selectedProblem.meaningful
-                        }), m('label[style=margin-left:1em]', `Mark ${selectedProblem.problemID} as meaningful`)),
-                    m(Button, {
+                    // m('div', {style: {display: 'inline-block', margin: '.75em'}},
+                    //     m('input[type=checkbox]', {
+                    //         onclick: m.withAttr("checked", checked => app.setCheckedDiscoveryProblem(checked, selectedProblem.problemID)),
+                    //         checked: selectedProblem.meaningful
+                    //     }), m('label[style=margin-left:1em]', `Mark ${selectedProblem.problemID} as meaningful`))
+                    selectedProblem.manipulations.length !== 0 && m(
+                        'div', m(Button, {
+                            style: {float: 'left'},
+                            disabled: app.rightTab === 'Manipulate' && common.panelOpen['right'],
+                            title: `view manipulations for ${selectedProblem.problemID}`,
+                            onclick: () => {
+                                app.setRightTab('Manipulate');
+                                common.setPanelOpen('right');
+                            }
+                        }, 'View Manipulations')
+                    ),
+                    !selectedProblem.pending && m(Button, {
                         id: 'btnDelete',
-                        disabled: selectedProblem || selectedProblem.system === 'auto',
-                        style: 'float:right',
-                        onclick: () => setTimeout(() => app.deleteProblem(selectedProblem.problemID, version, 'id_000003'), 500),
-                        title: 'Delete the user created problem'
+                        style: 'float:left',
+                        onclick: () => {
+                            selectedProblem.pending = true;
+                            selectedProblem.unedited = true;
+                        },
                     }, 'Delete Problem')
                 ],
                 !app.is_explore_mode && m(ButtonLadda, {
@@ -1317,11 +1452,15 @@ class Body {
                             selectedProblem.targets.includes(variableName) && 'Targets',
                             selectedProblem.predictors.includes(variableName) && 'Predictors'
                         ].filter(_=>_),
-                        ondelete: tag => app.remove({
-                            'Loose': selectedProblem.tags.loose,
-                            'Targets': selectedProblem.targets,
-                            'Predictors': selectedProblem.predictors
-                        }[tag], variableName)
+                        ondelete: tag => {
+                            delete selectedProblem.unedited;
+                            app.remove({
+                                'Loose': selectedProblem.tags.loose,
+                                'Targets': selectedProblem.targets,
+                                'Predictors': selectedProblem.predictors
+                            }[tag], variableName);
+                            app.resetPeek()
+                        }
                     })),
                     m(VariableSummary, {variable: app.variableSummaries[variableName]})));
         }
@@ -1403,6 +1542,7 @@ class Body {
                         activeItem: selectedProblem.task,
                         onclickChild: child => {
                             selectedProblem.task = child;
+                            delete selectedProblem.unedited;
                             // will trigger the call to solver, if a menu that needs that info is shown
                             app.setSolverPending(true);
                         },
@@ -1415,6 +1555,7 @@ class Body {
                         activeItem: selectedProblem.subTask,
                         onclickChild: child => {
                             selectedProblem.subTask = child;
+                            delete selectedProblem.unedited;
                             // will trigger the call to solver, if a menu that needs that info is shown
                             app.setSolverPending(true);
                         },
@@ -1427,6 +1568,7 @@ class Body {
                         activeItem: selectedProblem.metric,
                         onclickChild: child => {
                             selectedProblem.metric = child;
+                            delete selectedProblem.unedited;
                             // will trigger the call to solver, if a menu that needs that info is shown
                             app.setSolverPending(true);
                         },
@@ -1563,12 +1705,7 @@ if (IS_EVENTDATA_DOMAIN) {
 }
 else {
     m.route(document.body, '/model', {
-        '/popper': {
-            render: () => m(Popper, {
-                content: m("div", "popper content"),
-                options: {trigger: 'hover'}
-            }, m(Button, 'test button'))
-        },
+        '/dataset': {render: () => m(BodyDataset, {image: '/static/images/TwoRavens.png'})},
         '/datamart': {render: standaloneDatamart},
         '/explore/:variate/:vars...': Body,
         '/data': {render: () => m(Peek, {id: app.peekId, image: '/static/images/TwoRavens.png'})},

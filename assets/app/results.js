@@ -308,7 +308,7 @@ export class CanvasSolutions {
             headers: ['Variable', 'Data'],
             data: [
                 ['Dependent Variables', problem.targets],
-                ['Predictors', problem.predictors],
+                ['Predictors', app.getPredictorVariables(problem)],
                 ['Description', problem.description],
                 ['Task', problem.task]
             ]
@@ -403,7 +403,7 @@ export class CanvasSolutions {
             .filter(target => firstSolution.models[target].coefficients !== undefined)
             .map(target => m('div',
                 m('h5', target),
-                m(Table, {data: ['intercept', ...problem.predictors].map((predictor, i) => [
+                m(Table, {data: ['intercept', ...app.getPredictorVariables(problem)].map((predictor, i) => [
                         predictor,
                         firstSolution.models[target].coefficients[i]
                     ])}),
@@ -415,7 +415,7 @@ export class CanvasSolutions {
                     endColor: '#5770b0',
                     xLabel: '',
                     yLabel: '',
-                    classes: ['intercept', ...problem.predictors],
+                    classes: ['intercept', ...app.getPredictorVariables(problem)],
                     margin: {left: 10, right: 10, top: 50, bottom: 10},
                     attrsAll: {style: {height: '600px'}}
                 })));
@@ -427,7 +427,7 @@ export class CanvasSolutions {
         }, coefficientsContents);
 
 
-        let prepareANOVA = table => [...problem.predictors, 'Residuals']
+        let prepareANOVA = table => [...app.getPredictorVariables(problem), 'Residuals']
             .map(predictor => table.find(row => row._row === predictor))
             .map(row => ({
                 'Predictor': row._row,
@@ -492,7 +492,7 @@ let solutionAdapter = (problem, solution) => {
         fittedValues: solver.getFittedValues(problem, solution, target),
         score: solver.getScore(problem, solution, target),
         targets: problem.targets,
-        predictors: problem.predictors,
+        predictors: app.getPredictorVariables(problem),
         description: solver.getDescription(problem, solution),
         task: solver.getTask(problem, solution),
         model: solver.getModel(problem, solution)
@@ -515,7 +515,6 @@ let resultsSubpanels = {
 
 export let forceDiagramStateResults = {
     builders: [pebbleBuilder, groupBuilder, linkBuilder, groupLinkBuilder],
-    pebbleLinks: [],
     hoverPebble: undefined,
     contextPebble: undefined,
     selectedPebble: undefined,
@@ -551,18 +550,6 @@ Object.assign(forceDiagramStateResults, {
                 forceDiagramStateResults.hoverPebble = undefined;
                 m.redraw()
             }, forceDiagramStateResults.hoverTimeoutDuration)
-        },
-        contextmenu: pebble => {
-            d3.event.preventDefault(); // block browser context menu
-            if (forceDiagramStateResults.contextPebble) {
-                if (forceDiagramStateResults.contextPebble !== pebble) forceDiagramStateResults.pebbleLinks.push({
-                    source: forceDiagramStateResults.contextPebble,
-                    target: pebble,
-                    right: true
-                });
-                forceDiagramStateResults.contextPebble = undefined;
-            } else forceDiagramStateResults.contextPebble = pebble;
-            m.redraw();
         }
     }
 });

@@ -5,11 +5,11 @@ import {
     buttonLadda,
     makeRequest,
     setSelectedSolution,
+    debugLog
 } from "../app";
 import m from "mithril";
 
 import * as app from '../app.js';
-
 
 export let getName = (problem, solution) => solution.pipelineId;
 export let getActualValues = (problem, solution, target) => problem.dvvalues && problem.dvvalues.map(point => point[target]);
@@ -39,7 +39,7 @@ export async function stopAllSearches() {
  *  Function takes as input the pipeline template information (currently problem) and returns a valid pipline template in json. This json is to be inserted into SearchSolutions. e.g., problem = {...}, template = {...}, inputs = [dataset_uri]
  */
 export function makePipelineTemplate(problem) {
-    console.log('makePipelineTemplate problem:', problem);
+    debugLog('makePipelineTemplate problem:', problem);
 
     let inputs = [];
     let outputs = [];
@@ -206,7 +206,7 @@ function placeholderStep() {
 
 function primitiveStepRemoveColumns(problem) {
     // looks like some TA2s need "d3mIndex"
-    let keep = [...problem.predictors, ...problem.targets, "d3mIndex"];
+    let keep = [...app.getPredictorVariables(problem), ...problem.targets, "d3mIndex"];
 
     let indices = [];
     Object.keys(variableSummaries).forEach((variable, i) => keep.includes(variable) && indices.push(i));
@@ -226,15 +226,17 @@ function primitiveStepRemoveColumns(problem) {
     let hpvalue = {value: hpdata};
     let hyperparams = {columns: hpvalue};
 
-    let argdata = {data: "inputs.0"};
-    let argcontainer = {container: argdata};
-    let parguments = {inputs: argcontainer};
     return {
         primitive: {
-            primitive: primitive,
-            arguments: parguments,
+            primitive: {
+                "id": "3b09ba74-cc90-4f22-9e0a-0cf4f29a7e28",
+                "name": "Removes columns",
+                "python_path": "d3m.primitives.data_transformation.remove_columns.DataFrameCommon",
+                "version": "0.1.0"
+            },
+            arguments: {inputs: {container: {data: "inputs.0"}}},
             outputs: [{id: "produce"}],
-            hyperparams: hyperparams,
+            hyperparams: {columns: {value: {data: {raw: {list: {items: indicesD3M}}}}}},
             users: []
         }
     };
@@ -253,7 +255,7 @@ export async function handleGetSearchSolutionResultsResponse(response) {
     // ----------------------------------------
     // (1) Pull the solutionId
     // ----------------------------------------
-    console.log('(1) Pull the solutionId');
+    debugLog('(1) Pull the solutionId');
 
     // Note: the response.id becomes the Pipeline id
     //
@@ -328,8 +330,8 @@ export async function handleDescribeSolutionResponse(response) {
         console.log('handleDescribeSolutionResponse: Error.  "pipelineId" undefined');
         return;
     }
-    console.log('---- handleDescribeSolutionResponse -----');
-    console.log(JSON.stringify(response));
+    debugLog('---- handleDescribeSolutionResponse -----');
+    debugLog(JSON.stringify(response));
 
     // -------------------------------
     // Update pipeline info....
@@ -369,7 +371,7 @@ export async function handleGetScoreSolutionResultsResponse(response) {
         //
         myscore = response.response.scores[0].value.raw.double.toPrecision(3);
     } catch (error) {
-        console.log(JSON.stringify(response));
+        debugLog(JSON.stringify(response));
         alertError('Error in "handleGetScoreSolutionResultsResponse": ' + error);
         return;
     }
@@ -400,8 +402,8 @@ export async function handleGetProduceSolutionResultsResponse(response) {
         console.log('handleGetProduceSolutionResultsResponse: Error.  "pipelineId" undefined');
         return;
     }
-    console.log('---- handleGetProduceSolutionResultsResponse -----');
-    console.log(JSON.stringify(response));
+    debugLog('---- handleGetProduceSolutionResultsResponse -----');
+    debugLog(JSON.stringify(response));
 
     // Note: UI update logic moved from generatePredictions
     if (!response.is_finished) {
@@ -428,7 +430,6 @@ export async function handleGetProduceSolutionResultsResponse(response) {
     let responseOutputData = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
     let solutions = solverProblem.solutions.d3m;
     solutions[response.pipelineId].predictedValues = responseOutputData;
-
 }
 
 export async function handleENDGetSearchSolutionsResults() {
