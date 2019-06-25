@@ -209,58 +209,233 @@ function placeholderStep() {
     return {placeholder: step};
 }
 
-function primitiveStepRemoveColumns(problem) {
+/**
+ *  Function takes as input the pipeline template information (currently problem) and returns a valid pipline template in json. This json is to be inserted into SearchSolutions. e.g., problem = {...}, template = {...}, inputs = [dataset_uri]
+ */
+export function makePipelineTemplate(problem) {
+    debugLog('makePipelineTemplate problem:', problem);
+
+    let inputs = [];
+    let outputs = [];
+    let steps = [];
+
+    if (problem) {
+        inputs = [{name: "inputs"}];
+        steps = buildPipeline([
+            {type: 'denormalize'},
+            ...problem.manipulations,
+            {type: 'remove_columns', problem},
+            {type: 'placeholder'}
+        ]);
+        outputs = [{
+            name: "output",
+            data: getContainerId(steps.length)
+        }];
+    }
+    return {inputs, outputs, steps};
+}
+
+// example template: leave here for reference
+/*
+{
+  "template": {
+    "inputs": [
+      {
+        "name": "dataset"
+      }
+    ],
+    "outputs": [
+      {
+        "data": "produce",
+        "name": "dataset"
+      }
+    ],
+    "steps": [
+      {
+        "primitive": {
+          "arguments": {
+            "inputs": {
+              "container": {
+                "data": "inputs.0"
+              }
+            }
+          },
+          "hyperparams": {
+            "columns": {
+              "value": {
+                "data": {
+                  "raw": {
+                    "list": {
+                      "items": [
+                        {
+                          "int64": "2"
+                        },
+                        {
+                          "int64": "3"
+                        },
+                        {
+                          "int64": "4"
+                        },
+                        {
+                          "int64": "5"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "outputs": [
+            {
+              "id": "produce"
+            }
+          ],
+          "primitive": {
+            "digest": "85b946aa6123354fe51a288c3be56aaca82e76d4071c1edc13be6f9e0e100144",
+            "id": "2eeff053-395a-497d-88db-7374c27812e6",
+            "name": "Column remover",
+            "python_path": "d3m.primitives.datasets.RemoveColumns",
+            "version": "0.2.0"
+          },
+          "users": []
+        }
+      },
+      {
+        "placeholder": {
+          "inputs": [
+            {
+              "data": "steps.0.produce"
+            }
+          ],
+          "outputs": [
+            {
+              "id": "produce"
+            }
+          ]
+        }
+      }
+    ]
+  }
+>>>>>>> D3M buildPipeline with denormalization, imputer, mapping
+}
+*/
+
+let buildPipeline = abstractSteps => abstractSteps
+    // expand abstract steps into primitive pipeline
+    .reduce((template, step) => [...template, ...({
+        denormalize: stepDenormalize,
+        subset: stepSubset,
+        impute: stepImpute,
+        remove_columns: stepRemoveColumns,
+        placeholder: stepPlaceholder
+    })[step.type](step, template.length)], []);
+
+let getContainerId = pipelineLength => pipelineLength === 0
+    ? 'inputs.0'
+    : `steps.${pipelineLength - 1}.produce`;
+
+let stepMapper = (metadata, index) => ({
+    primitive: {
+        primitive: {
+            "id": "5bef5738-1638-48d6-9935-72445f0eecdc",
+            "version": "0.1.0",
+            "pythonPath": "d3m.primitives.operator.dataset_map.DataFrameCommon",
+            "name": "Map DataFrame resources to new resources using provided primitive",
+            "digest": "c0758e781e82970035775c84b80632a2fed86338ce6c8709d26c32de32ad4336"
+        },
+        arguments: {
+            inputs: {
+                container: {
+                    data: getContainerId(index)
+                }
+            }
+        },
+        hyperparams: {
+            primitive: {
+                data: (metadata || {index}).index
+            }
+        },
+        outputs: [{id: "produce"}],
+    }
+});
+
+let grpcWrap = value => ({value: {data: {raw: asType(value)}}});
+let asString = value => ({string: value});
+let asBool = value => ({bool: value});
+let asInt = value => ({int64: String(value)});
+let asDouble = value => ({double: value});
+let asList = value => ({list: value.map(elem => asType(elem))});
+
+let asType = value => {
+    if (Array.isArray(value)) return asList(value);
+    if (typeof value === 'number') return Number.isInteger(value) ? asInt(value) : asDouble(value)
+    if (typeof value === 'string') return asString(value);
+    if (typeof value === 'boolean') return asBool(value);
+
+    throw "Invalid type " + typeof value;
+};
+
+
+let stepDenormalize = (metadata, index) => [{
+    primitive: {
+        primitive: {
+            'id': 'f31f8c1f-d1c5-43e5-a4b2-2ae4a761ef2e',
+            'version': '0.2.0',
+            'name': "Denormalize datasets",
+            'python_path': 'd3m.primitives.data_transformation.denormalize.Common'
+        },
+        arguments: {
+            inputs: {
+                container: {
+                    data: getContainerId(index)
+                }
+            }
+        },
+        outputs: [
+            {id: 'produce'}
+        ]
+    }
+}];
+
+let stepRemoveColumns = (metadata, index) => {
+    let problem = metadata.problem;
     // looks like some TA2s need "d3mIndex"
     let keep = [...app.getPredictorVariables(problem), ...problem.targets, "d3mIndex"];
 
     let indices = [];
-    Object.keys(app.variableSummaries).forEach((variable, i) => keep.includes(variable) && indices.push(i));
 
-    let primitive = {
-        id: "2eeff053-395a-497d-88db-7374c27812e6",
-        version: "0.2.0",
-        python_path: "d3m.primitives.datasets.RemoveColumns",
-        name: "Column remover",
-        digest: "85b946aa6123354fe51a288c3be56aaca82e76d4071c1edc13be6f9e0e100144"
-    };
+    app.workspace.raven_config.variablesInitial.forEach((variable, i) => !keep.includes(variable) && indices.push(i));
 
-    let hpitems = {items: indices.map(index => ({int64: index.toString()}))};
-    let hplist = {list: hpitems};
-    let hpraw = {raw: hplist};
-    let hpdata = {data: hpraw};
-    let hpvalue = {value: hpdata};
-    let hyperparams = {columns: hpvalue};
+    if (indices.length === 0) return [];
 
-    return {
-        primitive: {
-            primitive,
-            arguments: {inputs: {container: {data: "inputs.0"}}},
-            outputs: [{id: "produce"}],
-            hyperparams,
-            users: []
-        }
-    };
-}
+    return [
+        {
+            primitive: {
+                primitive: {
+                    "id": "3b09ba74-cc90-4f22-9e0a-0cf4f29a7e28",
+                    "name": "Removes columns",
+                    "python_path": "d3m.primitives.data_transformation.remove_columns.DataFrameCommon",
+                    "version": "0.1.0"
+                },
+                // this will be set by the dataset_map primitive; it remains outside of the DAG
+                // arguments: {inputs: {container: {data: getContainerId(index)}}},
+                outputs: [{id: "produce"}],
+                hyperparams: {columns: grpcWrap(indices)},
+                users: []
+            }
+        },
+        stepMapper(undefined, index)
+    ];
+};
 
-// construct a d3m primitives pipeline from the manipulations
-function buildPipeline(manipulations) {
-    return manipulations
-    // only subset and impute have d3m primitives
-        .filter(step => ['subset', 'impute'].includes(step.type))
-        // expand abstract steps into a primitive pipeline
-        .reduce((out, step) => [...out, ...({
-            subset: primitiveStepSubset,
-            impute: primitiveStepImputation
-        })[step.type](step)], [])
-}
-
-function primitiveStepSubset(abstractStep) {
-    let primitiveContinuous= {
+let stepSubset = (step, index) => {
+    let primitiveContinuous = {
+        "digest": "b373c5ac56b40a0eb80d3e72a63d3f3804e5243024f1a4c535cd9caaa342179d",
         "id": "8c246c78-3082-4ec9-844e-5c98fcc76f9d",
-        "version": "0.1.0",
-        "python_path": "d3m.primitives.data_preprocessing.numeric_range_filter.DataFrameCommon",
         "name": "Numeric range filter",
-        "digest": "4900597ee5ad1c5401979b8f047d083fe01d0336a54f27e95e9258e637c54350"
+        "pythonPath": "d3m.primitives.data_preprocessing.numeric_range_filter.DataFrameCommon",
+        "version": "0.1.0"
     };
 
     let primitiveDiscrete = {
@@ -273,41 +448,82 @@ function primitiveStepSubset(abstractStep) {
 
     let columns = Object.keys(app.variableSummaries);
 
-    return abstractStep.abstractQuery.map(constraint => {
+    return step.flatMap((constraint, ravenIndex) => {
         let hyperparams;
 
         if (constraint.subset === 'continuous') hyperparams = {
-            column: columns.indexOf(constraint.column),
-            inclusive: constraint.negate === 'false',
-            min: (constraint.children.find(child => 'fromLabel' in child) || {}).fromLabel,
-            max: (constraint.children.find(child => 'toLabel' in child) || {}).toLabel,
+            column: grpcWrap(columns.indexOf(constraint.column)),
+            inclusive: grpcWrap(constraint.negate === 'false'),
+            min: grpcWrap((constraint.children.find(child => 'fromLabel' in child) || {}).fromLabel),
+            max: grpcWrap((constraint.children.find(child => 'toLabel' in child) || {}).toLabel),
         };
         if (constraint.subset === 'discrete') hyperparams = {
-            column: {int64: columns.indexOf(constraint.column)},
-            inclusive: constraint.negate === 'false',
-            terms: constraint.children.map(child => child.value),
-            match_whole: true
+            column: grpcWrap(columns.indexOf(constraint.column)),
+            inclusive: grpcWrap(constraint.negate === 'false'),
+            terms: grpcWrap(constraint.children.map(child => child.value)),
+            match_whole: grpcWrap(true)
         };
 
-        return {
+        return [
+            {
+                primitive: {
+                    primitive: {
+                        continuous: primitiveContinuous,
+                        discrete: primitiveDiscrete
+                    }[constraint.subset],
+                    arguments: {inputs: {container: {data: getContainerId(index + ravenIndex * 2)}}},
+                    outputs: [{id: "produce"}],
+                    hyperparams,
+                    users: []
+                }
+            },
+            stepMapper(undefined, index + ravenIndex * 2)
+        ]
+    });
+};
+
+// noop until a recoding/imputer primitive is found
+let stepImpute = (metadata, index) => metadata.imputations.flatMap((imputation, ravenIndex) => {
+    let hyperparams = {};
+    if (imputation.replacementMode === 'Statistic') {
+        hyperparams.strategy = ({
+            'Mean': 'mean',
+            'Median': 'median',
+            'Most Frequent': 'most_frequent'
+        })[imputation.statisticMode]
+    }
+    else if (imputation.replacementMode === 'Custom') {
+        hyperparams.strategy = 'constant';
+        // all values of the replacementValues object will be the same under these circumstances
+        hyperparams.fill_value = imputation.replacementValues[Object.keys(imputation.replacementValues)[0]]
+    }
+    hyperparams.use_columns = [];
+    Object.keys(app.variableSummaries)
+        .forEach((keep, name, i) => (name in imputation.replacementValues) && hyperparams.use_columns.push(i), []);
+
+    return [
+        {
             primitive: {
                 primitive: {
-                    continuous: primitiveContinuous,
-                    discrete: primitiveDiscrete
-                }[constraint.subset],
-                arguments: {inputs: {container: {data: "inputs.0"}}},
-                outputs: [{id: "produce"}],
-                hyperparams,
-                users: []
+                    "digest": "d6902b0ef72b4cd6fc5f79054f7a534404c708e1244e94a2713a9dd525c78eed",
+                    "id": "d016df89-de62-3c53-87ed-c06bb6a23cde",
+                    "name": "sklearn.impute.SimpleImputer",
+                    "pythonPath": "d3m.primitives.data_cleaning.imputer.SKlearn",
+                    "version": "2019.6.7"
+                },
+                hyperparams
             }
-        }
-    });
-}
+        },
+        stepMapper(undefined, index + ravenIndex * 2)
+    ]
+});
 
-function primitiveStepImputation(abstractStep) {
-    // noop until a recoding/imputer primitive is found
-    return [];
-}
+let stepPlaceholder = (metadata, index) => [{
+    placeholder: {
+        inputs: [{data: getContainerId(index)}],
+        outputs: [{id: "produce"}]
+    }
+}];
 
 // ------------------------------------------
 //      create search request

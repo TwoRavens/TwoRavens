@@ -66,7 +66,10 @@ export default class CanvasImputation {
             }
             if (prefs.replacementMode === 'Custom') {
                 let replacementValue = prefs.customValueType === 'numeric'
-                    ? parseFloat(prefs.customValue) : prefs.customValue;
+                    ? parseFloat(prefs.customValue)
+                    : IS_D3M_DOMAIN
+                        ? 'missing_value'
+                        : prefs.customValue;
 
                 return [...prefs.selectedVariables].reduce((out, variable) => {
                     out[variable] = replacementValue;
@@ -76,7 +79,7 @@ export default class CanvasImputation {
             if (prefs.replacementMode === 'Statistic') {
                 return [...prefs.selectedVariables].reduce((out, variable) => {
                     out[variable] = prefs.variableSummary[variable][{
-                        'Mean': 'mean', 'Minimum': 'min', 'Maximum': 'max'
+                        'Mean': 'mean', 'Minimum': 'min', 'Maximum': 'max', 'Median': 'median', 'Most Frequent': 'mode'
                     }[prefs.statisticMode]];
                     return out;
                 }, {})
@@ -140,7 +143,8 @@ export default class CanvasImputation {
                     onclickChild: value => preferences.nullValueType = value
                 }))),
 
-            m('div',
+            // D3M sklearn imputer doesn't support listwise deletion
+            !IS_D3M_DOMAIN && m('div',
                 m(`label#imputationModeLabel[style=width:${labelOffset}]`, 'Action to take:'),
                 m(ButtonRadio, {
                     id: 'imputationModeButtonBar',
@@ -169,14 +173,15 @@ export default class CanvasImputation {
                     })),
 
                 preferences.replacementMode === 'Custom' && [
-                    m('div',
+                    // D3M sklearn imputer doesn't support custom string replacements
+                    (!IS_D3M_DOMAIN || preferences.customValueType !== 'character') &&  m('div',
                         m(`label#nullValueLabel[style=width:${labelOffset}]`, 'Replacement value:'),
                         m(TextField, {
                             id: 'customValueTextField',
                             oninput: value => preferences.customValue = value,
                             style: {width: `calc(100% - ${labelOffset})`, display: 'inline-block'}
                         })),
-                    m('div',
+                    !IS_D3M_DOMAIN && m('div',
                         m(`label#customValueTypeLabel[style=width:${labelOffset}]`, 'Replacement type:'),
                         m('[style=display:inline-block]', m(Dropdown, {
                             id: 'customValueType',
@@ -193,11 +198,15 @@ export default class CanvasImputation {
                             id: 'statisticModeButtonBar',
                             onclick: mode => preferences.statisticMode = mode,
                             activeSection: preferences.statisticMode,
-                            sections: [
-                                {value: 'Mean', title: 'replace the null value with the mean of the column'},
-                                {value: 'Minimum', title: 'replace the null value with the minimum of the column'},
-                                {value: 'Maximum', title: 'replace the null value with the maximum of the column'}
-                            ],
+                            sections: IS_D3M_DOMAIN ? [
+                                    {value: 'Mean', title: 'replace the null value with the mean of the column'},
+                                    {value: 'Median', title: 'replace the null value with the median of the column'},
+                                    {value: 'Most Frequent', title: 'replace the null value with the most frequent value of the column'},
+                                ] : [
+                                    {value: 'Mean', title: 'replace the null value with the mean of the column'},
+                                    {value: 'Minimum', title: 'replace the null value with the minimum of the column'},
+                                    {value: 'Maximum', title: 'replace the null value with the maximum of the column'}
+                                ],
                             attrsAll: {style: {'margin-top': '1em', width: 'auto', display: 'inline-block'}},
                         })),
                 ]

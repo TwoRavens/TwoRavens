@@ -25,6 +25,10 @@ from ta3ta2_api import utils
 from google.protobuf.json_format import MessageToJson
 import json
 
+# original example pipeline is here:
+# https://docs.datadrivendiscovery.org/devel/pipeline.html
+
+
 # populates d3m.primitives namespace with primitives from installed packages (slow)
 d3m.index.load_all()
 
@@ -60,12 +64,56 @@ pipeline_description.add_output(name='output', data_reference='steps.2.produce')
 # serialization
 # pipeline_description.to_json_structure()
 
-GRPC_types = [
-    utils.ValueType.RAW,
-    utils.ValueType.CSV_URI,
-    utils.ValueType.DATASET_URI,
-    utils.ValueType.PICKLE_BLOB,
-    utils.ValueType.PICKLE_URI,
-]
+GRPC_types = [utils.ValueType.RAW, utils.ValueType.CSV_URI, utils.ValueType.DATASET_URI, utils.ValueType.PICKLE_BLOB, utils.ValueType.PICKLE_URI]
 template = MessageToJson(utils.encode_pipeline_description(pipeline_description, GRPC_types, '/working_dir'))
 json.dumps(json.loads(template))
+
+
+
+# Continuous subset
+pipeline_description = Pipeline()
+pipeline_description.add_input(name='inputs')
+
+step_subset = PrimitiveStep(primitive=d3m.primitives.data_preprocessing.numeric_range_filter.DataFrameCommon)
+# step_mapper.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='inputs.0')
+step_subset.add_hyperparameter(name="column", argument_type=ArgumentType.VALUE, data=1)
+step_subset.add_hyperparameter(name="min", argument_type=ArgumentType.VALUE, data=23.23)
+step_subset.add_hyperparameter(name="max", argument_type=ArgumentType.VALUE, data=47.58)
+step_subset.add_hyperparameter(name="inclusive", argument_type=ArgumentType.VALUE, data=True)
+# step_subset.add_output('produce')
+pipeline_description.add_step(step_subset)
+
+template = MessageToJson(utils.encode_pipeline_description(pipeline_description, GRPC_types, '/working_dir'))
+json.dumps(json.loads(template))
+
+# Term filter
+pipeline_description = Pipeline()
+pipeline_description.add_input(name='inputs')
+
+step_subset = PrimitiveStep(primitive=d3m.primitives.data_preprocessing.term_filter.DataFrameCommon)
+# step_mapper.add_argument(name='inputs', argument_type=ArgumentType.CONTAINER, data_reference='inputs.0')
+step_subset.add_hyperparameter(name="column", argument_type=ArgumentType.VALUE, data=1)
+step_subset.add_hyperparameter(name="terms", argument_type=ArgumentType.VALUE, data=['test0', 'test'])
+step_subset.add_hyperparameter(name="match_whole", argument_type=ArgumentType.VALUE, data=True)
+step_subset.add_hyperparameter(name="inclusive", argument_type=ArgumentType.VALUE, data=True)
+# step_subset.add_output('produce')
+pipeline_description.add_step(step_subset)
+
+template = MessageToJson(utils.encode_pipeline_description(pipeline_description, GRPC_types, '/working_dir'))
+json.dumps(json.loads(template))
+
+# Imputer
+pipeline_description = Pipeline()
+pipeline_description.add_input(name='inputs')
+
+step_impute = PrimitiveStep(primitive=d3m.primitives.data_cleaning.imputer.SKlearn)
+# step_impute.add_hyperparameter(name="missing_values", argument_type=ArgumentType.VALUE, data=0)
+step_impute.add_hyperparameter(name="return_result", argument_type=ArgumentType.VALUE, data="replace")
+step_impute.add_hyperparameter(name="fill_value", argument_type=ArgumentType.VALUE, data=23)
+step_impute.add_hyperparameter(name="strategy", argument_type=ArgumentType.VALUE, data="constant")
+step_impute.add_hyperparameter(name="use_columns", argument_type=ArgumentType.VALUE, data=[1, 2])
+pipeline_description.add_step(step_impute)
+
+template = MessageToJson(utils.encode_pipeline_description(pipeline_description, GRPC_types, '/working_dir'))
+json.dumps(json.loads(template))
+
