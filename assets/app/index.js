@@ -44,7 +44,7 @@ import Canvas from "../common/views/Canvas";
 import Subpanel2 from '../common/views/Subpanel';
 
 import Popper from '../common/views/Popper';
-import Datamart, {ModalDatamart} from "../common/TwoRavens/Datamart";
+import Datamart, {ModalDatamart} from "./datamart/Datamart";
 
 import PreprocessInfo from "./views/PreprocessInfo";
 
