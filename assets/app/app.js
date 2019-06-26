@@ -640,10 +640,12 @@ export let zparams = {
 export let datamartPreferences = {
     // default state for query
     query: {
+      keywords: [],
+        /*
         dataset: {
             about: '',
             keywords: []
-        }
+        }*/
     },
     // potential new indices to submit to datamart
     indices: [],
@@ -656,7 +658,12 @@ export let datamartPreferences = {
     // one of 'augment', 'preview', 'metadata', undefined
     modalShown: undefined,
     // stores paths to data and metadata, as well as a data preview and metadata (datasetDoc.json) for materialized datasets
-    cached: {}
+    cached: {},
+    // track preview button state
+    previewButtonState: {
+      ISI: [],
+      NYU: []
+    }
 };
 
 

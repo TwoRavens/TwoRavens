@@ -1,3 +1,6 @@
+/*
+ *  Datamart UI component and API calls
+ */
 import m from 'mithril';
 
 import JSONSchema from "../../common/views/JSONSchema";
@@ -7,478 +10,17 @@ import Table from "../../common/views/Table";
 import ListTags from "../../common/views/ListTags";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import * as app from "../app";
+import {numberWithCommas} from '../utils';
 import ModalVanilla from "../../common/views/ModalVanilla";
 import PanelList from "../../common/views/PanelList";
 import TextField from "../../common/views/TextField";
 import Dropdown from "../../common/views/Dropdown";
 import Icon from "../views/Icon";
 import ButtonLadda from "../views/LaddaButton";
-
+import {datamartQueryInputSchema} from "./query_input_schema_2019_06";
+import {datamartDatasetIndexSchema} from "./dataset_schema_2019_01";
 // maximum number of records to display at once
 let resultLimit = 100;
-
-let inputSchema = {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://gitlab.com/datadrivendiscovery/datamart-api/query_input_schema.json",
-  "title": "DataMart Query Schema",
-  "description": "JSON object that specifies queries for searching datasets in DataMart.",
-  "type": "object",
-  "definitions": {
-    "temporal_variable": {
-      "type": "object",
-      "description": "Describes columns containing temporal information.",
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "temporal_variable"
-          ]
-        },
-        "start": {
-          "type": "string",
-          "description": "Requested dates are more recent than this date."
-        },
-        "end": {
-          "type": "string",
-          "description": "Requested dates are older than this date."
-        },
-        "granularity": {
-          "type": "string",
-          "description": "Requested dates should match the requested granularity. For example, if 'day' is requested, the best match is a dataset with dates; however a dataset with hours is relevant too as hourly data can be aggregated into days.",
-          "enum": [
-            "year",
-            "month",
-            "day",
-            "hour",
-            "second"
-          ]
-        }
-      },
-      "required": [
-        "type"
-      ]
-    },
-    "geospatial_variable": {
-      "type": "object",
-      "description": "Describes columns containing geospatial entities.",
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "geospatial_variable"
-          ]
-        },
-        "latitude1":{
-          "type": "number",
-          "description": "The latitude of the top left point."
-        },
-        "longitude1":{
-          "type": "number",
-          "description": "The longitude of the top left point."
-        },
-        "latitude2":{
-          "type": "number",
-          "description": "The latitude of the bottom right point."
-        },
-        "longitude2":{
-          "type": "number",
-          "description": "The longitude of the bottom right point."
-        },
-        "granularity": {
-          "type": "string",
-          "description": "The granularity of the entities contained in a bounding box.",
-          "enum": [
-            "country",
-            "state",
-            "city",
-            "county",
-            "postal_code"
-          ]
-        }
-      },
-      "required": [
-        "type"
-      ]
-    },
-    "tabular_variable": {
-      "type": "object",
-      "description": "Describe columns that a matching dataset should have in terms of columns of the supplied dataset.",
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "dataframe_variable"
-          ]
-        },
-        "columns": {
-          "type": "array",
-          "description": "A set of indices that identifies a set of columns in the supplied dataset. When multiple indices are provided, the matching dataset should contain columns corresponding to each of the given columns."
-        },
-        "relationship": {
-          "type": "string",
-          "description": "The relationship between a column in the supplied dataset and a column in a matching dataset. The default is 'contains'.",
-          "enum": [
-            "contains",
-            "similar",
-            "correlated",
-            "anti-correlated",
-            "mutually-informative",
-            "mutually-uninformative"
-          ]
-        }
-      },
-      "required": [
-        "type"
-      ]
-    },
-    "named_entity_variable": {
-      "type": "object",
-      "description": "Describes a set of named entities that a matching dataset must contain.",
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "named_entity_variable"
-          ]
-        },
-        "entities": {
-          "type": "array",
-          "description": "A set of entity names. A matching dataset should contain a column with the requested names. "
-        }
-      },
-      "required": [
-        "type"
-      ]
-    }
-  },
-  "properties": {
-    "keywords": {
-      "type": "array",
-      "description": "Keywords that match a dataset. The keywords can be matched against the dataset title, dataset description, dataset column names, etc."
-    },
-    "variables": {
-      "type": "array",
-      "description": "Describes a set of features (variables) that a matching dataset must have. Datasets with more features will be ranked higher.",
-      "items": {
-        "oneOf": [
-          {
-            "$ref": "#/definitions/temporal_variable"
-          },
-          {
-            "$ref": "#/definitions/geospatial_variable"
-          },
-          {
-            "$ref": "#/definitions/tabular_variable"
-          },
-          {
-            "$ref": "#/definitions/named_entity_variable"
-          }
-        ]
-      }
-    }
-  }
-}
-
-let indexSchema = {
-    "$schema": "http://json-schema.org/draft-06/schema#",
-    "$id": "http://datamart.datadrivendiscovery.org/dataset.schema.json",
-    "title": "dataset",
-    "description": "Metadata describing an entire dataset",
-    "type": "object",
-    "properties": {
-        "materialization_arguments": {
-            "description": "Arguments for the method to retrieve the dataset or parts of the dataset",
-            "type": "object",
-            "properties": {
-                "url": {
-                    "type": "string"
-                },
-                "file_type": {
-                    "enum": ["csv", "html", "json", "excel"]
-                }
-            },
-            "required": ["url"]
-        },
-        "title": {
-            "description": "A short description of the dataset",
-            "type": [
-                "string",
-                "null"
-            ]
-        },
-        "description": {
-            "description": "A long description of the dataset",
-            "type": [
-                "string",
-                "null"
-            ]
-        },
-        "url": {
-            "description": "A url on the web where users can find more info if applicable",
-            "type": [
-                "string",
-                "null"
-            ],
-            "format": "uri"
-        },
-        "keywords": {
-            "description": "Any keywords or text useful for indexing and retrieval",
-            "type": [
-                "array",
-                "null"
-            ],
-            "items": {
-                "type": "string"
-            }
-        },
-        "date_published": {
-            "description": "Original publication date",
-            "anyOf": [
-                {
-                    "type": "string",
-                    "format": "date-time"
-                },
-                {
-                    "type": "string",
-                    "format": "date"
-                },
-                {
-                    "type": "null"
-                }
-            ]
-        },
-        "date_updated": {
-            "description": "Last updated date",
-            "anyOf": [
-                {
-                    "type": "string",
-                    "format": "date-time"
-                },
-                {
-                    "type": "string",
-                    "format": "date"
-                },
-                {
-                    "type": "null"
-                }
-            ]
-        },
-        "license": {
-            "description": "License under which the dataset is released (TBD)",
-            "type": [
-                "object",
-                "null"
-            ]
-        },
-        "provenance": {
-            "description": "Provenance of the dataset (TBD)",
-            "type": [
-                "null",
-                "object"
-            ]
-        },
-        "original_identifier": {
-            "description": "Original global unique id associate with the dataset if applicable, like id in wikidata",
-            "type": [
-                "string",
-                "null"
-            ]
-        },
-        "implicit_variables": {
-            "description": "Description of each implicit variable of the dataset",
-            "type": "array",
-            "items": {
-                "implicit_variable": {
-                    "description": "implicit variables about the whole dataset, like the time coverage and entity coverage of the entire dataset. eg. A dataset from trading economics is about certain stocktickers, cannot be known from the dataset, should put it here",
-                    "type": "object",
-                    "properties": {
-                        "name": {
-                            "description": "name of the variable",
-                            "type": "string"
-                        },
-                        "value": {
-                            "description": "value of the variable",
-                            "type": "string"
-                        },
-                        "semantic_type": {
-                            "description": "List of D3M semantic types",
-                            "type": [
-                                "array",
-                                "null"
-                            ],
-                            "items": {
-                                "type": "string",
-                                "format": "uri"
-                            }
-                        }
-                    }
-                },
-            }
-        },
-        "additional_info": {
-            "description": "Any other information which is useful",
-            "type": [
-                "object",
-                "null"
-            ]
-        }
-    },
-    "required": [
-        "materialization_arguments"
-    ],
-    "definitions": {
-        "implicit_variable": {
-            "description": "implicit variables about the whole dataset, like the time coverage and entity coverage of the entire dataset. eg. A dataset from trading economics is about certain stocktickers, cannot be known from the dataset, should put it here",
-            "type": "object",
-            "properties": {
-                "name": {
-                    "description": "name of the variable",
-                    "type": "string"
-                },
-                "value": {
-                    "description": "value of the variable",
-                    "type": "string"
-                },
-                "semantic_type": {
-                    "description": "List of D3M semantic types",
-                    "type": [
-                        "array",
-                        "null"
-                    ],
-                    "items": {
-                        "type": "string",
-                        "format": "uri"
-                    }
-                }
-            }
-        },
-        "variable_metadata": {
-            "description": "Metadata describing a variable/column",
-            "type": "object",
-            "properties": {
-                "name": {
-                    "description": "The name given in the original dataset",
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "semantic_type": {
-                    "description": "List of D3M semantic types",
-                    "type": [
-                        "array",
-                        "null"
-                    ],
-                    "items": {
-                        "type": "string",
-                        "format": "uri"
-                    }
-                },
-                "named_entities": {
-                    "description": "List of named entities referenced in column values",
-                    "type": [
-                        "array",
-                        "null"
-                    ],
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "temporal_coverage": {
-                    "description": "Temporal extent",
-                    "type": [
-                        "object",
-                        "null"
-                    ],
-                    "properties": {
-                        "start": {
-                            "description": "Start of temporal coverage",
-                            "anyOf": [
-                                {
-                                    "type": "string",
-                                    "format": "date-time"
-                                },
-                                {
-                                    "type": "string",
-                                    "format": "date"
-                                },
-                                {
-                                    "type": "null"
-                                }
-                            ]
-                        },
-                        "end": {
-                            "description": "End of temporal coverage",
-                            "anyOf": [
-                                {
-                                    "type": "string",
-                                    "format": "date-time"
-                                },
-                                {
-                                    "type": "string",
-                                    "format": "date"
-                                },
-                                {
-                                    "type": "null"
-                                }
-                            ]
-                        }
-                    }
-                },
-                "spatial_coverage": {
-                    "description": "Spatial extent",
-                    "type": [
-                        "object",
-                        "null"
-                    ]
-                }
-            }
-        }
-    }
-};
-
-
-let joinSchema = {
-    "$schema": "http://json-schema.org/draft-06/schema#",
-    "$id": "http://datamart.datadrivendiscovery.org/implicit.schema.json",
-    "title": "implicit variables",
-    "description": "Metadata describing a join's implicit variables",
-    "type": "object",
-    "properties": {
-        "implicit_variables": {
-            "description": "Description of each implicit variable of the dataset",
-            "type": "array",
-            "items": {
-                "implicit_variable": {
-                    "description": "implicit variables about the whole dataset, like the time coverage and entity coverage of the entire dataset. eg. A dataset from trading economics is about certain stocktickers, cannot be known from the dataset, should put it here",
-                    "type": "object",
-                    "properties": {
-                        "name": {
-                            "description": "name of the variable",
-                            "type": "string"
-                        },
-                        "value": {
-                            "description": "value of the variable",
-                            "type": "string"
-                        },
-                        "semantic_type": {
-                            "description": "List of D3M semantic types",
-                            "type": [
-                                "array",
-                                "null"
-                            ],
-                            "items": {
-                                "type": "string",
-                                "format": "uri"
-                            }
-                        }
-                    }
-                },
-            }
-        }
-    }
-};
-
 
 let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
 let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-right:1em;]', text);
@@ -495,6 +37,7 @@ export default class Datamart {
                 'name': ['metadata', 'name'],
                 'score': ['score'],
                 'description': ['metadata', 'description'],
+                'size': ['metadata', 'size'],
                 'keywords': undefined,
                 'data': ['metadata'],
                 'join_columns': ['join_columns'],
@@ -505,6 +48,7 @@ export default class Datamart {
                 'name': ['metadata', 'title'],
                 'score': ['score'],
                 'description': ['metadata', 'description'],
+                'size': ['metadata', 'size'],
                 'keywords': ['metadata', 'keywords'],
                 'data': ['metadata'],
                 'join_columns': ['join_columns'],
@@ -515,6 +59,14 @@ export default class Datamart {
             let path = preferences.infoPaths[preferences.sourceMode][attribute];
             return path && path.reduce((out, term) => term in out && out[term], result)
         });
+        /*
+        setDefault(preferences, 'getPreviewButtonState', (idx) => {
+            return preferences.previewButtonState[idx];
+        });
+        setDefault(preferences, 'setPreviewButtonState', (idx, val) => {
+            preferences.previewButtonState[idx] = val;
+        });
+        */
 
         // set default menu state
         setDefault(preferences, 'datamartMode', 'Search');
@@ -523,7 +75,9 @@ export default class Datamart {
         setDefault(preferences, 'error', {ISI: undefined, NYU: undefined});
         setDefault(preferences, 'success', {ISI: undefined, NYU: undefined});
 
+        // Set ISI or NYU
         setDefault(preferences, 'sourceMode', 'NYU');
+
         setDefault(preferences, 'leftJoinVariables', new Set());
         setDefault(preferences, 'rightJoinVariables', new Set());
 
@@ -543,16 +97,16 @@ export default class Datamart {
     view(vnode) {
         let {
             preferences,
-            dataPath, // where to load data from, to augment with
+            dataPath,   // where to load data from, to augment with
             labelWidth, // width of titles on left side of cards
-            endpoint, // Django app url
+            endpoint,   // Django app url
         } = vnode.attrs;
 
         let {
-            query, // https://datadrivendiscovery.org/wiki/display/work/Datamart+Query+API
-            results, // list of matched metadata
-            indices, // data to be attached to the upload
-            cached, // summary info and paths related to materialized datasets
+            query,    // https://datadrivendiscovery.org/wiki/display/work/Datamart+Query+API
+            results,  // list of matched metadata
+            indices,  // data to be attached to the upload
+            cached,   // summary info and paths related to materialized datasets
             getData
         } = preferences;
 
@@ -600,37 +154,48 @@ export default class Datamart {
                 m('td', {style: {width: 'calc(100% - 2em)'}}, summary))
         );
 
+        /**
+         *  Materialize: download a dataset based on a specific search result
+         */
         let materializeData = async i => {
+            console.log(`materializeData ${i}`);
+            // Get the search result and find the dataset id.
+            //  May differ between Datamart.  See "infoPaths" above
+            //
             let id = getData(results[preferences.sourceMode][i], 'id');
 
             preferences.selectedResult = results[preferences.sourceMode][i];
 
             if (!(id in cached)) {
                 let sourceMode = preferences.sourceMode;
+
+                // Use the materialize endpoint.
+                //  Note: the materialized data is returned through websockets
+                //    but an intial message relays if the request worked.
+                //
                 let response = await m.request(endpoint + 'materialize-async', {
                     method: 'POST',
                     data: {
                         search_result: JSON.stringify(preferences.selectedResult),
                         source: preferences.sourceMode
+                      //  workspace_id: app.workspace.user_workspace_id
+                        //problem_id:
                     }
                 });
                 if (response.success) {
-                    /*
-                      - data now returned async
-                    console.log('materializeData response.data:', response.data);
-                    cached[id] = response.data;
-                    cached[id].data_preview = cached[id].data_preview
-                        .split('\n').map(line => line.split(','));
-
-                    // console.log('Materialized:', response.data);
-                    */
                     preferences.success[sourceMode] = 'Preview initiated ...';
                     delete preferences.error[sourceMode];
                 } else {
+                    // show the response error message
                     delete preferences.success[sourceMode];
                     preferences.error[sourceMode] = response.message;
                 }
             }
+
+            // turn ladda off
+            //preferences.setPreviewButtonState(i, false);
+            console.log('turn ladda off');
+
             m.redraw();
         };
 
@@ -685,6 +250,8 @@ export default class Datamart {
                     preferences.modalShown = 'augment';
 
                 if (preferences.sourceMode === 'NYU') {
+                    preferences.modalShown = 'augment';
+                    /*
                     let response = await m.request(endpoint + 'augment', {
                         method: 'POST',
                         data: {
@@ -696,6 +263,7 @@ export default class Datamart {
 
                     if (!response.success)
                         this.error = response.data;
+                    */
                 }
             }
         }, 'Augment');
@@ -708,20 +276,26 @@ export default class Datamart {
             }
         }, 'Metadata');
 
-        let buttonPreview = i => m(Button, {
+        let buttonPreview = i => m(ButtonLadda, {
             id: 'buttonPreview' + i,
-            class: 'ladda-label ladda-button',
+            //class: 'ladda-label ladda-button',
+            //activeLadda: preferences.previewButtonState[i],
+            //disabled: preferences.previewButtonState[i] === true,
+
             style: {'margin': '0em 0.25em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'},
             onclick: async () => {
+                console.log('turn ladda on');
+              //  preferences.setPreviewButtonState(i, true);
+
+
                 let id = getData(results[preferences.sourceMode][i], 'id');
                 preferences.selectedResult = results[preferences.sourceMode][i];
-                let ladda = Ladda.create(document.getElementById('buttonPreview' + i));
-                ladda.start();
+
                 await materializeData(i);
-                ladda.stop();
 
                 if (id in cached)
                     preferences.modalShown = 'preview';
+
                 m.redraw();
             }
         }, 'Preview');
@@ -774,7 +348,7 @@ export default class Datamart {
             preferences.datamartMode === 'Search' && [
                 m(`div[style=background:${common.menuColor}]`, m(JSONSchema, {
                     data: query,
-                    schema: inputSchema
+                    schema: datamartQueryInputSchema
                 })),
 
                 m(ButtonRadio, {
@@ -866,6 +440,7 @@ export default class Datamart {
                             m(Table, {
                                 data: {
                                     description: getData(result, 'description'),
+                                    'size (bytes)': numberWithCommas(getData(result, 'size')),
                                     keywords: getData(result, 'keywords') && m(ListTags, {
                                         tags: getData(result, 'keywords'),
                                         readonly: true
@@ -973,7 +548,7 @@ export default class Datamart {
 
                 indices.map(index => m(`div[style=background:${common.menuColor}]`, m(JSONSchema, {
                     data: index,
-                    schema: indexSchema
+                    schema: datamartDatasetIndexSchema
                 }))),
 
                 indices.length > 0 && m(Button, {
@@ -1148,7 +723,11 @@ export class ModalDatamart {
                             let sourceMode = preferences.sourceMode;
 
                             let originalLeftColumns = app.workspace.raven_config.variablesInitial;
-                            let originalRightColumns = preferences.selectedResult.metadata.variables.map(row => row.name);
+
+                            // For ISI, this "preferences.selectedResult.metadata.columns" is
+                            //    "preferences.selectedResult.metadata.variables"
+                            //
+                            let originalRightColumns = preferences.selectedResult.metadata.columns.map(row => row.name);
 
                             let joinLeftColumns = [];
                             let joinRightColumns = [];
@@ -1162,18 +741,21 @@ export class ModalDatamart {
 
                             // console.warn("#debug implicitVariables");
                             // console.log(implicitVariables);
+                            let augment_api_data = {
+                                data_path: dataPath,
+                                search_result: JSON.stringify(preferences.selectedResult),
+                                source: preferences.sourceMode,
+                                left_columns: JSON.stringify(joinLeftColumns),
+                                right_columns: JSON.stringify(joinRightColumns),
+                                exact_match: preferences.exactMatch,
+                                // left_meta: JSON.stringify(implicitVariables)
+                            }
+
+                            console.log(augment_api_data);
 
                             let response = await m.request(endpoint + 'augment', {
                                 method: 'POST',
-                                data: {
-                                    data_path: dataPath,
-                                    search_result: JSON.stringify(preferences.selectedResult),
-                                    source: preferences.sourceMode,
-                                    left_columns: JSON.stringify(joinLeftColumns),
-                                    right_columns: JSON.stringify(joinRightColumns),
-                                    exact_match: preferences.exactMatch,
-                                    // left_meta: JSON.stringify(implicitVariables)
-                                }
+                                data: augment_api_data
                             });
 
                             if (response.success) {
@@ -1189,11 +771,6 @@ export class ModalDatamart {
                             console.log(response);
                         }
                     }, 'Augment')),
-
-                // m(`div[style=background:${common.menuColor}]`, m(JSONSchema, {
-                //     data: implicitVariables,
-                //     schema: joinSchema
-                // })),
 
                 m('h4[style=width:calc(50% - 1em);display:inline-block]', 'Left Join Columns'),
                 m('h4[style=width:calc(50% - 1em);display:inline-block]', 'Right Join Columns'),
@@ -1226,7 +803,11 @@ export class ModalDatamart {
                 m('div', {style: {width: 'calc(50% - 1em)', display: 'inline-block', 'vertical-align': 'top'}},
                     m(PanelList, {
                         id: 'rightColumns',
-                        items: selectedResult.metadata.variables.map(variable => variable.name),
+
+                        // For ISI, this "preferences.selectedResult.metadata.columns" is
+                        //    "preferences.selectedResult.metadata.variables"
+                        //
+                        items: selectedResult.metadata.columns.map(variable => variable.name),
                         colors: {
                             [app.hexToRgba(preferences.isAugmenting ? common.grayColor : common.selVarColor)]: [...preferences.rightJoinVariables]
                         },
