@@ -1,12 +1,16 @@
+from os.path import isdir, join
+from os import makedirs
 import requests
 import json
 import logging
 from requests.exceptions import ConnectionError
+from tworaven_apps.utils.basic_response import ok_resp, err_resp
 
 from django.http import JsonResponse, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 
-from tworaven_apps.call_captures.models import ServiceCallEntry
+from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
+from tworaven_apps.user_workspaces.models import UserWorkspace
 
 from tworaven_apps.rook_services.rook_app_info import RookAppInfo
 from tworaven_apps.rook_services.models import UI_KEY_SOLA_JSON, ROOK_ZESSIONID
@@ -24,6 +28,8 @@ from tworaven_apps.utils.view_helper import \
     (get_json_error,
      get_json_success,
      get_authenticated_user)
+from tworaven_apps.utils.random_info import get_timestamp_string
+from tworaven_apps.utils.file_util import create_directory
 
 from tworaven_apps.ta2_interfaces import static_vals as ta2_static
 from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
@@ -122,10 +128,10 @@ def view_rook_healthcheck(request):
     """Ping rook to make sure it's receiving/responding to requests"""
     # get the app info
     #
-    rook_app_info = RookAppInfo.get_appinfo_from_url('healthcheckapp')
-    if rook_app_info is None:
-        raise Http404((f'unknown rook app: "{app_name_in_url}"'
-                       f' (please add "{app_name_in_url}" to '
+    rook_app_info = RookAppInfo.get_appinfo_from_name(app_names.HEALTH_CHECK_APP)
+    if not rook_app_info:
+        raise Http404((f'unknown rook app: "{app_names.HEALTH_CHECK_APP}"'
+                       f' (please add "{app_names.HEALTH_CHECK_APP}" to '
                        f' "tworaven_apps/rook_services/app_names.py")'))
 
     rook_svc_url = rook_app_info.get_rook_server_url()
@@ -133,7 +139,7 @@ def view_rook_healthcheck(request):
     # Call R services
     #
     try:
-        rservice_req = requests.post(rook_svc_url,)# data=app_data)
+        rservice_req = requests.post(rook_svc_url)
     except ConnectionError as err_obj:
         err_msg = f'R Server not responding: {rook_svc_url} ({err_obj})'
         resp_dict = dict(message=err_msg)
@@ -143,41 +149,84 @@ def view_rook_healthcheck(request):
 
     return HttpResponse(rservice_req.text)
 
+
+def create_partials_destination_directory(user_workspace):
+    """Used to add a write directory for the partials app"""
+    if not isinstance(user_workspace, UserWorkspace):
+        return err_resp('Error "user_workspace" must be a UserWorkspace object.')
+
+    # build destination path for partials app
+    dest_dir_path = join(user_workspace.d3m_config.additional_inputs,
+                         'partials',
+                         f'ws_{user_workspace.id}',
+                         get_timestamp_string())
+
+    new_dir_info = create_directory(dest_dir_path)
+    if not new_dir_info.success:
+        return err_resp(f' {new_dir_info.err_msg} ({dest_dir_path})')
+
+    return ok_resp(dest_dir_path)
+
+
 @csrf_exempt
 def view_rook_route(request, app_name_in_url):
     """Route TwoRavens calls to Rook
         orig: TwoRavens -> Rook
         view: TwoRavens -> Django 2ravens -> Rook
+
+    This is a bit messy.  Still trying to handle two UI calls:
+    - old ones, form POSTs sent with solaJSON key
+    - new ones, straight JSON requests
     """
+    # -----------------------------
     # get the app info
-    #
+    # -----------------------------
     rook_app_info = RookAppInfo.get_appinfo_from_url(app_name_in_url)
     if rook_app_info is None:
         raise Http404(('unknown rook app: "{0}" (please add "{0}" to '
                        ' "tworaven_apps/rook_services/app_names.py")').format(\
                        app_name_in_url))
 
-    # used for logging
-    user_info = get_authenticated_user(request)
-    if not user_info.success:
-        return JsonResponse(get_json_error(user_info.err_msg))
+    # -----------------------------
+    # Used for logging
+    # -----------------------------
+    user_workspace_info = get_latest_user_workspace(request)
+    if not user_workspace_info.success:
+        return JsonResponse(get_json_error(user_workspace_info.err_msg))
 
+    user_workspace = user_workspace_info.result_obj
+
+
+    # -----------------------------
+    # additional params
+    # -----------------------------
+    raven_data_text = {}    # default
+    additional_params = {}  # params to add to a JSON call, e.g. for PARTIALS_APP
+
+    # -----------------------------
     # look for the "solaJSON" variable in the POST
-    #
-    if rook_app_info.is_health_check():
+    # -----------------------------
+    if rook_app_info.is_partials_app():
         # this is a health check
-        raven_data_text = 'healthcheck'
+        dest_dir_info = create_partials_destination_directory(user_workspace)
+        if not dest_dir_info.success:
+            return JsonResponse(get_json_error(dest_dir_info.err_msg))
+
+        additional_params['data_loc'] = dest_dir_info.result_obj
+
     elif request.POST and UI_KEY_SOLA_JSON in request.POST:
         # this is a POST with a JSON string under the key solaJSON key
         raven_data_text = request.POST[UI_KEY_SOLA_JSON]
     else:
         # See if the body is JSON format
-        req_found, raven_data_text = get_request_body_as_json(request)
-        if not req_found:   # Nope, send an error
+        raven_data_info = get_request_body_as_json(request)
+        if not raven_data_info.success:
             err_msg = ("Neither key '%s' found in POST"
                        " nor JSON in request.body") % UI_KEY_SOLA_JSON
             return JsonResponse(dict(status="ERROR",
                                      message=err_msg))
+
+        raven_data_text = raven_data_info.result_obj
 
     # Retrieve post data and attempt to insert django session id
     # (if none exists)
@@ -204,6 +253,9 @@ def view_rook_route(request, app_name_in_url):
         elif ROOK_ZESSIONID not in raven_data_text:
             raven_data_text[ROOK_ZESSIONID] = session_key
 
+        # Add the additional params
+        raven_data_text.update(additional_params)
+
         try:
             raven_data_text = json.dumps(raven_data_text)
         except TypeError:
@@ -217,6 +269,7 @@ def view_rook_route(request, app_name_in_url):
                                     ).replace('&', '%26'\
                                     ).replace('=', '%3D')
 
+    # print('raven_data_text', raven_data_text)
 
     app_data = dict(solaJSON=raven_data_text)
 
@@ -244,7 +297,7 @@ def view_rook_route(request, app_name_in_url):
                     activity_l1=activity_l1,
                     activity_l2=activity_l2)
 
-    LogEntryMaker.create_system_entry(user_info.result_obj, log_data)
+    LogEntryMaker.create_system_entry(user_workspace.user, log_data)
 
     # Call R services
     #

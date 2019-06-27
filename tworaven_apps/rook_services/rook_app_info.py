@@ -2,8 +2,9 @@
 Help with zelig app names, including routing to the Rook server
 """
 from django.conf import settings
-from tworaven_apps.rook_services.app_names import ROOK_APP_NAMES,\
-    ROOK_APP_FRONTEND_LU, HEALTH_CHECK_APP
+from tworaven_apps.rook_services import app_names
+from tworaven_apps.rook_services.app_names import \
+     HEALTH_CHECK_APP
 
 
 
@@ -36,9 +37,17 @@ class RookAppInfo(object):
     def is_health_check(self):
         """Is this a call to the health check app?"""
         if self.name:
-            if self.name == HEALTH_CHECK_APP:
+            if self.name == app_names.HEALTH_CHECK_APP:
                 return True
         return False
+
+    def is_partials_app(self):
+        """Is this a call to the health check app?"""
+        return self.name and self.name == app_names.PARTIALS_APP
+        #if self.name:
+        #    if self.name == app_names.PARTIALS_APP:
+        #        return True
+        #return False
 
 
     def get_rook_server_url(self):
@@ -48,11 +57,23 @@ class RookAppInfo(object):
 
     @staticmethod
     def get_appinfo_from_url(frontend_name):
-        """e.g. given 'zelig' in url, return ZELIG_APP
+        """e.g. given 'zelig' in url, return the RookAppInfo using zelig info
         Used for logging/tracking
         """
 
-        info = ROOK_APP_FRONTEND_LU.get(frontend_name, None)
+        info = app_names.ROOK_APP_FRONTEND_LU.get(frontend_name, None)
+        if info:
+            return RookAppInfo(info)
+
+        return None
+
+
+    @staticmethod
+    def get_appinfo_from_name(app_name):
+        """e.g. given 'zelig' in url, return ZELIG_APP
+        Used for logging/tracking
+        """
+        info = app_names.ROOK_APP_NAME_LOOKUP.get(app_name, None)
         if info:
             return RookAppInfo(info)
 
