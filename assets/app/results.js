@@ -1,13 +1,11 @@
 import m from 'mithril';
 import * as jStat from 'jstat';
-import * as d3 from "d3";
 
 import * as app from "./app";
 import * as plots from "./plots";
 
 import * as common from "./../common/common";
 import Table from "./../common/views/Table";
-import MenuTabbed from "./../common/views/MenuTabbed";
 import Dropdown from "./../common/views/Dropdown";
 import Panel from "../common/views/Panel";
 import MenuHeaders from "../common/views/MenuHeaders";
@@ -21,6 +19,7 @@ import Subpanel from "../common/views/Subpanel";
 
 import * as solverRook from './solvers/rook';
 import * as solverD3M from './solvers/d3m';
+import {getSelectedProblem} from "./app";
 
 
 export let leftpanel = () => {
@@ -29,6 +28,16 @@ export let leftpanel = () => {
     let resultsProblem = app.getResultsProblem();
 
     if (!resultsProblem) return;
+
+    let loader = id => m(`#loading${id}.loader-small`, {
+        style: {
+            display: 'inline-block',
+            margin: 'auto',
+            position: 'relative',
+            top: '40%',
+            transform: 'translateY(-50%)'
+        }
+    });
 
     let resultsContent = [
         m('div', {style: {display: 'inline-block', margin: '1em'}},
@@ -55,24 +64,27 @@ export let leftpanel = () => {
             id: 'pipelineMenu',
             sections: [
                 {
-                    value: 'Discovered Solutions',
-                    contents:
-                        m(Table, {
-                            id: 'pipelineTable',
-                            headers: ['Solution', 'Score'],
-                            data: Object.keys(resultsProblem.solutions.d3m)
-                                .map(pipelineId => [pipelineId, resultsProblem.solutions.d3m[pipelineId].score]),
-                            sortHeader: 'Score',
-                            sortFunction: app.sortPipelineTable,
-                            activeRow: new Set(resultsProblem.selectedSolutions.d3m),
-                            onclick: pipelineId => app.setSelectedSolution(resultsProblem, 'd3m', pipelineId),
-                            tableTags: m('colgroup',
-                                m('col', {span: 1}),
-                                m('col', {span: 1, width: '30%'}))
-                        })
+                    idSuffix: 'DiscoveredSolutions',
+                    value: [m('[style=display:inline-block;margin-right:1em]', 'Discovered Solutions'), app.solverProblem.d3m === app.getResultsProblem() && loader('D3M')],
+                    contents: m(Table, {
+                        id: 'pipelineTable',
+                        data: Object.keys(resultsProblem.solutions.d3m)
+                            .map(pipelineId => Object.assign({Solution: pipelineId}, extractD3MScores(resultsProblem.solutions.d3m[pipelineId]))),
+                        sortable: true,
+                        sortHeader: selectedMetric.d3m,
+                        setSortHeader: header => {
+                            console.warn("#debug header");
+                            console.log(header);
+                            selectedMetric.d3m = header === 'Solution' ? selectedMetric.d3m : header
+                        },
+                        sortFunction: sortPipelineTable,
+                        activeRow: new Set(resultsProblem.selectedSolutions.d3m),
+                        onclick: pipelineId => app.setSelectedSolution(resultsProblem, 'd3m', pipelineId)
+                    })
                 },
                 {
-                    value: 'Baselines',
+                    idSuffix: 'BaselineSolutions',
+                    value: [m('[style=display:inline-block;margin-right:1em]', 'Baselines'), app.solverProblem.rook === app.getResultsProblem() && loader('Rook')],
                     contents: [
                         // m(Subpanel, {
                         //     id: 'addModelSubpanel',
@@ -88,7 +100,7 @@ export let leftpanel = () => {
                                     solverRook.getScore(resultsProblem, resultsProblem.solutions.rook[solutionId])
                                 ]),
                             sortHeader: 'Score',
-                            sortFunction: app.sortPipelineTable,
+                            sortFunction: sortPipelineTable,
                             activeRow: new Set(resultsProblem.selectedSolutions.rook),
                             onclick: pipelineId => app.setSelectedSolution(resultsProblem, 'rook', pipelineId),
                             tableTags: m('colgroup',
@@ -133,7 +145,7 @@ export let leftpanel = () => {
         // there seems to be a strange mithril bug here - when returning back to model from results,
         // the dom element for MenuTabbed is reused, but the state is incorrectly transitioned, leaving an invalid '[' key.
         // "Fixed" by wrapping in a div, to prevent the dom reuse optimization
-        m('div', {style: {height: 'calc(100% - 50px)'}},
+        m('div', {style: {height: 'calc(100% - 50px)', overflow: 'auto'}},
             resultsContent))
 };
 
@@ -169,10 +181,10 @@ export class CanvasSolutions {
 
         if (problem.task === 'classification') {
             let confusionData = summaries
-                .map(summary => Object.assign({pipelineId: summary.pipelineID},
+                .map(summary => Object.assign({name: summary.name},
                     generateConfusionData(summary.actualValues, summary.fittedValues, this.confusionFactor) || {}))
                 .filter(instance => 'data' in instance)
-                .sort((a, b) => app.sortPipelineTable(a.score, b.score));
+                .sort((a, b) => sortPipelineTable(a.score, b.score));
 
             return confusionData.map((confusionInstance, i) => [
                 i === 0 && m('div[style=margin-top:.5em]',
@@ -193,8 +205,8 @@ export class CanvasSolutions {
                 confusionInstance.data.length < 100 ? m('div', {
                     style: {'min-height': '500px'}
                 }, m(ConfusionMatrix, Object.assign({}, confusionInstance, {
-                    id: 'resultsConfusionMatrixContainer' + confusionInstance.pipelineID,
-                    title: "Confusion Matrix: Pipeline " + confusionInstance.pipelineID,
+                    id: 'resultsConfusionMatrixContainer' + confusionInstance.name,
+                    title: "Confusion Matrix: Solution " + confusionInstance.name,
                     startColor: '#ffffff', endColor: '#e67e22',
                     margin: {left: 10, right: 10, top: 50, bottom: 10},
                     attrsAll: {style: {height: '600px'}}
@@ -263,7 +275,7 @@ export class CanvasSolutions {
             m(Table, {
                 id: 'pipelineOverviewTable',
                 data: Object.keys(solution.pipeline).reduce((out, entry) => {
-                    if (['inputs', 'steps', 'outputs'].indexOf(entry) === -1)
+                    if (!['inputs', 'steps', 'outputs', 'id', 'users', 'digest'].includes(entry))
                         out[entry] = solution.pipeline[entry];
                     return out;
                 }, {}),
@@ -346,6 +358,10 @@ export class CanvasSolutions {
                 ['Label', firstSolution.meta.label],
                 ['Caret/R Method', firstSolution.meta.method],
                 ['Tags', firstSolution.meta.tags]
+            ] : firstSolution.source === 'd3m' ? [
+                ['Pipeline ID', firstSolution.pipelineId],
+                ['Status', firstSolution.status],
+                ['Created', new Date(firstSolution.created).toUTCString()]
             ] : [])
         }));
 
@@ -502,6 +518,27 @@ let solutionAdapter = (problem, solution) => {
 let leftTabResults = 'Solutions';
 let setLeftTabResults = tab => leftTabResults = tab;
 
+let selectedMetric = {
+    d3m: undefined,
+    rook: undefined
+};
+
+// array of metrics to sort low to high
+export let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSquaredErrorAvg", "meanAbsoluteError"]
+    .map(metric => app.d3mMetrics[metric]);
+
+/**
+ Sort the Pipeline table, putting the highest score at the top
+ */
+export function sortPipelineTable(a, b) {
+    if (a === b) return 0;
+    if (a === "scoring") return 100;
+    if (b === "scoring") return -100;
+    if (a === "no score") return 1000;
+    if (b === "no score") return -1000;
+    return (parseFloat(b) - parseFloat(a)) * (reverseSet.includes(getSelectedProblem().metric) ? -1 : 1);
+}
+
 let resultsSubpanels = {
     'Prediction Summary': true,
     'Variance Inflation': false,
@@ -617,6 +654,10 @@ export function generatePerformanceData(confusionData2x2) {
         // 'false negative rate': round(fn / (fn + tp), 2), // miss rate
     }
 }
+
+export let extractD3MScores = solution => 'scores' in solution
+    ? solution.scores.reduce((out, score) => Object.assign(out, {[score.metric.metric]: app.formatPrecision(score.value.raw.double)}), {})
+    : {};
 
 
 // STATISTICS HELPER FUNCTIONS

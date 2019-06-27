@@ -3,35 +3,22 @@
 */
 import hopscotch from 'hopscotch';
 import m from 'mithril';
-import * as common from "../common/common";
-
-import * as manipulate from './manipulations/manipulate';
-import {getData, getTransformVariables} from './manipulations/manipulate';
-
-import {locationReload, setModal} from '../common/views/Modal';
-import {elem} from './utils';
 
 import $ from 'jquery';
 import * as d3 from 'd3';
-import * as queryMongo from "./manipulations/queryMongo";
-import {groupBuilder, groupLinkBuilder, linkBuilder, pebbleBuilderLabeled} from "./views/ForceDiagram";
-import {
-    end_ta3_search,
-    endAllSearches,
-    handleDescribeSolutionResponse,
-    handleENDGetSearchSolutionsResults,
-    handleGetProduceSolutionResultsResponse,
-    handleGetScoreSolutionResultsResponse,
-    handleGetSearchSolutionResultsResponse,
-    makePipelineTemplate
-} from "./solvers/d3m";
-import {buildDatasetUrl} from "./manipulations/manipulate";
 
 // polyfill for flatmap (could potentially be included as a webpack entrypoint)
 import "core-js/fn/array/flat-map";
-import PlotVegaLite from "./views/PlotVegaLite";
-import {loadMenu} from "./manipulations/manipulate";
-import {setTotalSubsetRecords} from "./manipulations/manipulate";
+
+import * as common from "../common/common";
+
+import {locationReload, setModal} from '../common/views/Modal';
+
+import * as queryMongo from "./manipulations/queryMongo";
+import * as solverD3M from './solvers/d3m';
+import * as manipulate from './manipulations/manipulate';
+
+import {groupBuilder, groupLinkBuilder, linkBuilder, pebbleBuilderLabeled} from "./views/ForceDiagram";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -110,10 +97,6 @@ export let logEntryPeekUsed = is_external => {
   }
   saveSystemLogEntry(logParams);
 }
-
-// TA2 server information for display in modal
-export let TA2ServerInfo = (TA2_SERVER !== undefined ) ? TA2_SERVER : '(TA2 unknown)';
-export let setTA2ServerInfo = (infoStr) => TA2ServerInfo = infoStr;
 
 export async function resetPeek(pipeline) {
     peekData = undefined;
@@ -196,7 +179,7 @@ export async function updatePeek(pipeline) {
 
 export let downloadPeek = async () => {
     let problem = getSelectedProblem();
-    let datasetUrl = await buildDatasetUrl(problem)
+    let datasetUrl = await manipulate.buildDatasetUrl(problem)
 
     let link = document.createElement("a");
     link.setAttribute("href", datasetUrl);
@@ -325,7 +308,7 @@ export function set_mode(mode) {
 }
 
 // TODO: should have an early exit if the manipulations are empty
-export let buildDatasetPreprocess = async ravenConfig => await getData({
+export let buildDatasetPreprocess = async ravenConfig => await manipulate.getData({
     method: 'aggregate',
     query: JSON.stringify(queryMongo.buildPipeline(
         ravenConfig.hardManipulations,
@@ -358,7 +341,7 @@ export let saveLogEntry = async logData => {
         data: logData
     })
     .then(function(save_result) {
-      console.log(save_result);
+      // console.log(save_result);
       /*
       if (save_result.success){
         setCurrentWorkspaceMessageSuccess('The workspace was saved!')
@@ -370,7 +353,7 @@ export let saveLogEntry = async logData => {
     })
 }
 
-export let buildProblemPreprocess = async (ravenConfig, problem) => await getData({
+export let buildProblemPreprocess = async (ravenConfig, problem) => await manipulate.getData({
     method: 'aggregate',
     query: JSON.stringify(queryMongo.buildPipeline(
         [...ravenConfig.hardManipulations, ...problem.manipulations, {
@@ -530,25 +513,26 @@ streamSocket.onmessage = function (e) {
         console.log('---------------------------------------------');
         return;
     }
-    debugLog('full data: ' + JSON.stringify(msg_data));
+
     debugLog('Got it! Message type: ' + msg_data.msg_type);
+    debugLog('full data: ' + JSON.stringify(msg_data));
     //JSON.stringify(msg_data));
 
     if (msg_data.msg_type === 'GetSearchSolutionsResults') {
         console.log(msg_data.msg_type + ' recognized!');
-        handleGetSearchSolutionResultsResponse(msg_data.data);
+        solverD3M.handleGetSearchSolutionResultsResponse(msg_data.data);
     }
     else if (msg_data.msg_type === 'DescribeSolution') {
         console.log(msg_data.msg_type + ' recognized!');
-        handleDescribeSolutionResponse(msg_data.data);
+        solverD3M.handleDescribeSolutionResponse(msg_data.data);
     }
     else if (msg_data.msg_type === 'GetScoreSolutionResults') {
         console.log(msg_data.msg_type + ' recognized!');
-        handleGetScoreSolutionResultsResponse(msg_data.data);
+        solverD3M.handleGetScoreSolutionResultsResponse(msg_data.data);
     }
     else if (msg_data.msg_type === 'GetProduceSolutionResults') {
         console.log(msg_data.msg_type + ' recognized!');
-        handleGetProduceSolutionResultsResponse(msg_data.data);
+        solverD3M.handleGetProduceSolutionResultsResponse(msg_data.data);
     }
     else if (msg_data.msg_type === 'GetFitSolutionResults') {
         console.log(msg_data.msg_type + ' recognized!');
@@ -556,7 +540,7 @@ streamSocket.onmessage = function (e) {
     }
     else if (msg_data.msg_type === 'ENDGetSearchSolutionsResults') {
         console.log(msg_data.msg_type + ' recognized!');
-        handleENDGetSearchSolutionsResults();
+        solverD3M.handleENDGetSearchSolutionsResults();
     }
     else if (msg_data.msg_type === 'DATAMART_MATERIALIZE_PROCESS') {
         console.log(msg_data.msg_type + ' recognized!');
@@ -612,30 +596,6 @@ export let setShowModalAlerts = state => showModalAlerts = state;
 export let showModalTA2Debug = false;
 export let setShowModalTA2Debug = state => showModalTA2Debug = state;
 
-export let zparams = {
-    zdata: [],
-    zedges: [],
-    ztime: [],
-    znom: [],
-    zcross: [],
-    zmodel: "",
-    zvars: [],
-    zdv: [],
-    zgroup1: [],
-    zgroup2: [], // hard coding to two groups for present experiments, but will eventually make zgroup array of arrays, with zgroup.length the number of groups
-    zdataurl: "",
-    zd3mdata: "", //these take the place of zdataurl for d3m, because data is in two placees. eventually will generalize
-    zd3mtarget: "",
-    zsubset: [],
-    zsetx: [],
-    zmodelcount: 0,
-    zplot: [],
-    zsessionid: "",
-    zdatacite: '...',
-    zcrosstab: [],
-    zusername: ''
-};
-
 // menu state within datamart component
 export let datamartPreferences = {
     // default state for query
@@ -670,7 +630,6 @@ export let links = [];
 let mods = {};
 let estimated = false;
 let selInteract = false;
-export let callHistory = []; // transform and subset calls
 
 
 export let configurations = {};
@@ -681,61 +640,62 @@ export let domainIdentifier = null; // available throughout apps js; used for sa
 // metrics, tasks, and subtasks as specified in D3M schemas
 // MEAN SQUARED ERROR IS SET TO SAME AS RMSE. MSE is in schema but not proto
 export let d3mTaskType = {
-  taskTypeUndefined: ["description", "TASK_TYPE_UNDEFINED", 0],
-  classification: ["description", "CLASSIFICATION", 1],
-  regression: ["description", "REGRESSION", 2],
-  clustering: ["description", "CLUSTERING", 3],
-  linkPrediction: ["description", "LINK_PREDICTION", 4],
-  vertexNomination: ["description", "VERTEX_NOMINATION", 5],
-  vertexClassification: ["description", "VERTEX_CLASSIFICATION", 6],
-  communityDetection: ["description", "COMMUNITY_DETECTION", 7],
-  graphMatching: ["description", "GRAPH_MATCHING", 8],
-  timeSeriesForecasting: ["description", "TIME_SERIES_FORECASTING", 9],
-  collaborativeFiltering: ["description", "COLLABORATIVE_FILTERING", 10],
-  objectDetection: ["description", "OBJECT_DETECTION", 11],
-  semisupervisedClassification: ["description", "SEMISUPERVISED_CLASSIFICATION", 12],
-  semisupervisedRegression: ["description", "SEMISUPERVISED_REGRESSION", 13]
+    taskTypeUndefined: "TASK_TYPE_UNDEFINED",
+    classification: "CLASSIFICATION",
+    regression: "REGRESSION",
+    clustering: "CLUSTERING",
+    linkPrediction: "LINK_PREDICTION",
+    vertexNomination: "VERTEX_NOMINATION",
+    vertexClassification: "VERTEX_CLASSIFICATION",
+    communityDetection: "COMMUNITY_DETECTION",
+    graphMatching: "GRAPH_MATCHING",
+    timeSeriesForecasting: "TIME_SERIES_FORECASTING",
+    collaborativeFiltering: "COLLABORATIVE_FILTERING",
+    objectDetection: "OBJECT_DETECTION",
+    semisupervisedClassification: "SEMISUPERVISED_CLASSIFICATION",
+    semisupervisedRegression: "SEMISUPERVISED_REGRESSION",
 };
 
 export let d3mTaskSubtype = {
-    taskSubtypeUndefined: ["description", "TASK_SUBTYPE_UNDEFINED", 0],
-    subtypeNone: ["description", "NONE",1],
-    binary: ["description", "BINARY" , 2],
-    multiClass: ["description", "MULTICLASS" , 3],
-    multiLabel: ["description", "MULTILABEL" , 4],
-    univariate: ["description", "UNIVARIATE" , 5],
-    multivariate: ["description", "MULTIVARIATE" , 6],
-    overlapping: ["description", "OVERLAPPING" , 7],
-    nonOverlapping: ["description", "NONOVERLAPPING" , 8]
+    taskSubtypeUndefined: "TASK_SUBTYPE_UNDEFINED",
+    subtypeNone: "NONE",
+    binary: "BINARY",
+    multiClass: "MULTICLASS",
+    multiLabel: "MULTILABEL",
+    univariate: "UNIVARIATE",
+    multivariate: "MULTIVARIATE",
+    overlapping: "OVERLAPPING",
+    nonOverlapping: "NONOVERLAPPING",
 };
-/*export let d3mOutputType = {
-    outputUndefined:["description","OUTPUT_TYPE_UNDEFINED ", 0],
-    predictionsFile:["description","PREDICTIONS_FILE",1],
-    scoresFile:["description","SCORES_FILE",2]
-}; */
+
 export let d3mMetrics = {
-    metricUndefined: ["description", "METRIC_UNDEFINED", 0],
-    accuracy: ["description", "ACCURACY", 1],
-    precision: ["description", "PRECISION", 2],
-    recall: ["description", "RECALL", 3],
-    f1: ["description", "F1", 4],
-    f1Micro: ["description", "F1_MICRO", 5],
-    f1Macro: ["description", "F1_MACRO", 6],
-    rocAuc: ["description", "ROC_AUC", 7],
-    rocAucMicro: ["description", "ROC_AUC_MICRO", 8],
-    rocAucMacro: ["description", "ROC_AUC_MACRO", 9],
-    meanSquaredError: ["description", "MEAN_SQUARED_ERROR", 10],
-    rootMeanSquaredError: ["description", "ROOT_MEAN_SQUARED_ERROR", 11],
-    meanAbsoluteError: ["description", "MEAN_ABSOLUTE_ERROR", 12],
-    rSquared: ["description", "R_SQUARED", 13],
-    normalizedMutualInformation: ["description", "NORMALIZED_MUTUAL_INFORMATION", 14],
-    jaccardSimilarityScore: ["description", "JACCARD_SIMILARITY_SCORE", 15],
-    precisionAtTopK: ["description", "PRECISION_AT_TOP_K", 17],
-    objectDetectionAveragePrecision: ["description", "OBJECT_DETECTION_AVERAGE_PRECISION", 18],
-    hammingLoss: ["description", "HAMMING_LOSS", 19],
-    rank: ["description", "RANK", 99],
-    loss: ["description", "LOSS", 100]
+    metricUndefined: "METRIC_UNDEFINED",
+    accuracy: "ACCURACY",
+    precision: "PRECISION",
+    recall: "RECALL",
+    f1: "F1",
+    f1Micro: "F1_MICRO",
+    f1Macro: "F1_MACRO",
+    rocAuc: "ROC_AUC",
+    rocAucMicro: "ROC_AUC_MICRO",
+    rocAucMacro: "ROC_AUC_MACRO",
+    meanSquaredError: "MEAN_SQUARED_ERROR",
+    rootMeanSquaredError: "ROOT_MEAN_SQUARED_ERROR",
+    meanAbsoluteError: "MEAN_ABSOLUTE_ERROR",
+    rSquared: "R_SQUARED",
+    normalizedMutualInformation: "NORMALIZED_MUTUAL_INFORMATION",
+    jaccardSimilarityScore: "JACCARD_SIMILARITY_SCORE",
+    precisionAtTopK: "PRECISION_AT_TOP_K",
+    objectDetectionAveragePrecision: "OBJECT_DETECTION_AVERAGE_PRECISION",
+    hammingLoss: "HAMMING_LOSS",
+    rank: "RANK",
+    loss: "LOSS",
 };
+
+export let d3mEvaluationMethods = {
+    holdout: "HOLDOUT",
+    kFold: "K_FOLD"
+}
 
 // available models from rookSolver
 export let baselineModelTypes = {
@@ -752,7 +712,7 @@ export let byId = id => document.getElementById(id);
    page reload linked to btnReset
 */
 export const reset = async function reloadPage() {
-    endAllSearches();
+    solverD3M.endAllSearches();
     byId("btnModel").click();
     //clearInterval(interiorIntervalId);
     //clearInterval(requestIntervalId);
@@ -1141,6 +1101,7 @@ export let loadWorkspace = async newWorkspace => {
             task: problemDoc.about.taskType,
             subTask: problemDoc.about.taskSubType,
             meaningful: false,
+            evaluationMethod: 'kFold',
             manipulations: [],
             solutions: {
                 d3m: {},
@@ -1255,7 +1216,6 @@ export async function load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3m
         setModal(user_err_msg, "Error Connecting to TA2", true, "Reset", false, locationReload);
         return;
       } else {
-            zparams.zsessionid = "no session id in this API version";   // remove this eventually
 
             // ----------------------------------------------
             // Format and show the TA2 name in the footer
@@ -1333,8 +1293,6 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
 
     if (IS_D3M_DOMAIN) {
         pURL = d3mPreprocess;
-    } else if (!PRODUCTION) {
-        zparams.zdataurl = 'data/fearonLaitin.tsv';
     }
     load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL);
 
@@ -1829,9 +1787,6 @@ export function helpmaterials(type) {
 
 // when selected, the key/value [mode]: [pipelineID] is set.
 export let setSelectedSolution = (problem, source, solutionId) => {
-    console.log('problem: ' + JSON.stringify(problem));
-    console.log('source: ' + source);
-    console.log('solutionId: ' + solutionId);
     solutionId = String(solutionId);
 
     // set behavioral logging
@@ -1865,233 +1820,19 @@ export let setSelectedSolution = (problem, source, solutionId) => {
 
 };
 
-function CreatePipelineData(dataset, problem) {
-
-    let pipelineSpec = Object.assign({
-        context: apiSession(zparams.zsessionid),
-        // uriCsv is also valid, but not currently accepted by ISI TA2
-        dataset_uri: dataset.datasetUrl.substring(0, dataset.datasetUrl.lastIndexOf("/tables")) + "/datasetDoc.json",
-        // valid values will come in future API
-        output: "OUTPUT_TYPE_UNDEFINED",
-        // Example:
-        // "predictFeatures": [{
-        //     "resource_id": "0",
-        //     "feature_name": "RBIs"
-        // }],
-        predictFeatures: getPredictorVariables(problem).map((predictor, i) => ({resource_id: i, feature_name: predictor})),
-        // Example:
-        // "targetFeatures": [{
-        //     "resource_id": "0",
-        //     "feature_name": "At_bats"
-        // }],
-        targetFeatures: problem.targets.map((target, i) => ({resource_id: i, feature_name: target})),
-        task: problem.task,
-        taskSubtype: problem.subTask || d3mTaskSubtype.subtypeNone[1],
-        taskDescription: problem.description,
-        metrics: [problem.metrics],
-        maxPipelines: 1
-    });
-    if (!pipelineSpec.subTask) delete pipelineSpec.subTask;
-    return pipelineSpec;
-}
-
-// create problem definition for SearchSolutions call
-function CreateProblemDefinition(problem) {
-    let problemSpec = {
-        // id: problem.problemID,  // remove for API 2019.4.11
-        // version: problem.version, // remove for API 2019.4.11
-        // name: problem.problemID, // remove for API 2019.4.11
-        taskType: d3mTaskType[problem.task][1],
-        // taskSubtype: problem.taskSubtype, // TODO: MULTICLASS designation
-        taskSubtype: problem.taskSubtype || d3mTaskSubtype.subtypeNone[1],
-
-        performanceMetrics: [{metric: d3mMetrics[problem.metric][1]}]  // need to generalize to case with multiple metrics.  only passes on first presently.
-    };
-    if (problemSpec.taskSubtype === 'taskSubtypeUndefined') delete problemSpec.taskSubtype;
-
-    let inputSpec =  [
-        {
-            datasetId: workspace.d3m_config.name,
-            targets: problem.targets.map((target, resourceId) => ({
-                resourceId: workspace.raven_config.resourceId,
-                columnIndex: Object.keys(variableSummaries).indexOf(target),  // Adjusted to match dataset doc
-                columnName: target
-            }))
-        }
-    ];
-
-    return {problem: problemSpec, inputs: inputSpec};
-}
-
-// Create a problem description that follows the Problem Schema, for the Task 1 output.
-function CreateProblemSchema(problem){
-    return {
-        about: {
-            problemID: problem.problemID,
-            problemName: problem.problemID,
-            problemDescription: problem.description,
-            taskType: d3mTaskType[problem.task][1],
-            problemVersion: '1.0',
-            problemSchemaVersion: '3.1.1'
-        },
-        inputs: {
-            data: [
-                {
-                    datasetId: workspace.d3m_config.name,
-                    targets: problem.targets.map((target, resourceId) => ({
-                        // resourceId: resourceIdFromDatasetDoc,
-                        columnIndex: Object.keys(variableSummaries).indexOf(target),
-                        columnName: target
-                    }))
-                }],
-            dataSplits: {
-                method: 'holdOut',
-                testSize: 0.2,
-                stratified: true,
-                numRepeats: 0,
-                randomSeed: 123,
-                splitsFile: 'dataSplits.csv'
-            },
-            performanceMetrics: [{metric: d3mMetrics[problem.metric][1]}]
-        },
-        expectedOutputs: {
-            predictionsFile: 'predictions.csv'
-        }
-    };
-}
-
-export function CreatePipelineDefinition(problem, timeBound) {
-    return {
-        userAgent: TA3_GRPC_USER_AGENT, // set on django
-        version: TA3TA2_API_VERSION, // set on django
-        timeBoundSearch: timeBound || 1,
-        priority: 1,
-        allowedValueTypes: ['DATASET_URI', 'CSV_URI'],
-        problem: CreateProblemDefinition(problem),
-        template: makePipelineTemplate(problem),
-        inputs: [{dataset_uri: 'file://' + workspace.d3m_config.dataset_schema}]
-    };
-}
-
-
-
-function CreateFitDefinition(datasetDocUrl, solutionId) {
-    return Object.assign(
-        getFitSolutionDefaultParameters(datasetDocUrl),
-        {solutionId}
-    );
-}
-
-/**
-    Return the default parameters used for a FitSolution call.
-    This DOES NOT include the solutionID
- */
-export function getFitSolutionDefaultParameters(datasetDocUrl) {
-    return {
-        inputs: [
-            {dataset_uri: 'file://' + datasetDocUrl}
-        ],
-        exposeOutputs: ['outputs.0'],
-        exposeValueTypes: ['CSV_URI'],
-        users: [
-            {id: 'TwoRavens', chosen: false, reason: ''}
-        ]
-    };
-}
-
-// {
-//     "fittedSolutionId": "solutionId_yztf3r",
-//     "inputs": [
-//         {
-//             "csvUri": "file://uri/to-a/csv"
-//         },
-//         {
-//             "datasetUri": "file://uri/to-a/dataset"
-//         }
-//     ],
-//     "exposeOutputs": [
-//         "steps.1.steps.4.produce"
-//     ],
-//     "exposeValueTypes": [
-//         "PICKLE_URI",
-//         "PLASMA_ID"
-//     ],
-//     "users": [
-//         {
-//             "id": "uuid of user",
-//             "chosen": true,
-//             "reason": "best solution"
-//         },
-//         {
-//             "id": "uuid of user",
-//             "chosen": false,
-//             "reason": ""
-//         }
-//     ]
-// }
-
-function CreateProduceDefinition(fittedSolutionId) {
-    return Object.assign(
-        getProduceSolutionDefaultParameters(),
-        {fittedSolutionId}
-    );
-}
-
-/*
-  Return the default parameters used for a ProduceSolution call.
-  This DOES NOT include the fittedSolutionId
-*/
-export function getProduceSolutionDefaultParameters(datasetDocUrl){
-    return {
-        inputs: [{dataset_uri: 'file://' + datasetDocUrl}],
-        exposeOutputs: ['outputs.0'],
-        exposeValueTypes: ['CSV_URI']
-    };
-}
-
-
-
-function CreateScoreDefinition(res){
-
-  if (res.response.solutionId === undefined){
-      let errMsg = 'ERROR: CreateScoreDefinition. solutionId not set.';
-      console.log(errMsg);
-      return {errMsg};
-  }
-
-  return Object.assign(
-      getScoreSolutionDefaultParameters(getResultsProblem()),
-      {solutionId: res.response.solutionId});
-}
-
-/*
-  Return the default parameters used for a ProduceSolution call.
-  This DOES NOT include the solutionId
-*/
-export function getScoreSolutionDefaultParameters(problem, datasetDocUrl) {
-    return {
-        inputs: [{dataset_uri: 'file://' + datasetDocUrl}],
-        performanceMetrics: [
-            {metric: d3mMetrics[problem.metric][1]}
-        ],
-        users: [{id: 'TwoRavens', chosen: false, reason: ""}],
-        // note: FL only using KFOLD in latest iteration (3/8/2019)
-        configuration: {method: 'K_FOLD', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false}
-    };
-}
-
 
 
 export function downloadIncomplete() {
-    if (PRODUCTION && zparams.zsessionid === '') {
-        alertWarn('Warning: Data download is not complete. Try again soon.');
-        return true;
-    }
+    // TODO: session id is no longer used, so there is no check
+    // if (PRODUCTION && zparams.zsessionid === '') {
+    //     alertWarn('Warning: Data download is not complete. Try again soon.');
+    //     return true;
+    // }
     return false;
 }
 
 /**
-    called by clicking 'Solve This Problem' in model mode
+    called by switching to results mode
 */
 export async function estimate() {
     if (solverProblem.d3m) {
@@ -2188,7 +1929,6 @@ export async function estimate() {
 
     // IS_D3M_DOMAIN and swandive is true
     if (swandive) {
-        zparams.callHistory = callHistory;
 
         buttonLadda.btnEstimate = false;
 
@@ -2201,7 +1941,6 @@ export async function estimate() {
     // we are in IS_D3M_DOMAIN no swandive
     // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
     // zPop();
-    zparams.callHistory = callHistory;
 
     // pipelineapp is a rook application that returns the dependent variable, the DV values, and the predictors. can think of it was a way to translate the potentially complex grammar from the UI
 
@@ -2226,9 +1965,6 @@ export async function estimate() {
         alertWarn('Dependent variables have not been loaded. Some plots will not load.')
     }
 
-    let searchTimeLimit = 5;
-    let searchSolutionParams = CreatePipelineDefinition(selectedProblem, searchTimeLimit);
-
     let nominalVars = new Set(getNominalVariables(selectedProblem));
 
     let hasManipulation = selectedProblem.manipulations.length > 0;
@@ -2248,16 +1984,15 @@ export async function estimate() {
     } else delete selectedProblem.datasetDocPath;
 
     // initiate rook solver
-    // - TO-FIX 5/22/2019
-    //callSolver(selectedProblem, datasetPath);
+    callSolver(selectedProblem, datasetPath);
 
     let datasetDocPath = selectedProblem.datasetDocPath || workspace.d3m_config.dataset_schema;
 
     let allParams = {
-        searchSolutionParams: searchSolutionParams,
-        fitSolutionDefaultParams: getFitSolutionDefaultParameters(datasetDocPath),
-        produceSolutionDefaultParams: getProduceSolutionDefaultParameters(datasetDocPath),
-        scoreSolutionDefaultParams: getScoreSolutionDefaultParameters(selectedProblem, datasetDocPath)
+        searchSolutionParams: solverD3M.GRPC_SearchSolutionsRequest(selectedProblem),
+        fitSolutionDefaultParams: solverD3M.GRPC_GetFitSolutionRequest(datasetDocPath),
+        produceSolutionDefaultParams: solverD3M.GRPC_ProduceSolutionRequest(datasetDocPath),
+        scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath)
     };
 
     console.warn("#debug allParams");
@@ -2267,11 +2002,11 @@ export async function estimate() {
     let res = await makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', allParams);
     // console.log(JSON.stringify(res));
     if (res === undefined) {
-        handleENDGetSearchSolutionsResults();
+        solverD3M.handleENDGetSearchSolutionsResults();
         alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
         return;
     } else if (!res.success) {
-        handleENDGetSearchSolutionsResults();
+        solverD3M.handleENDGetSearchSolutionsResults();
         alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
         return;
     }
@@ -2289,10 +2024,10 @@ export async function makeRequest(url, data) {
         // console.log('response:', res);
         if (Object.keys(res)[0] === 'warning') {
             // alertWarn('Warning: ' + res.warning);
-            end_ta3_search(false, res.warning);
+            solverD3M.end_ta3_search(false, res.warning);
         }
     } catch(err) {
-        end_ta3_search(false, err);
+        solverD3M.end_ta3_search(false, err);
         cdb(err);
         alertError(`Error: call to ${url} failed`);
     }
@@ -2305,7 +2040,7 @@ export async function makeRequest(url, data) {
     if(isd3mcall) {
         let mystatus = res.responseInfo.status.code.toUpperCase();
         if(mystatus != "OK") {
-            end_ta3_search(false, "grpc response status not ok");
+            solverD3M.end_ta3_search(false, "grpc response status not ok");
         }
     }
     */
@@ -2341,132 +2076,6 @@ export let hexToRgba = (hex, alpha) => {
     let int = parseInt(hex.replace('#', ''), 16);
     return `rgba(${[(int >> 16) & 255, (int >> 8) & 255, int & 255, alpha || '0.5'].join(',')})`;
 };
-
-/**
-   EndSession(SessionContext) returns (Response) {}
-*/
-export async function endsession() {
-    let resultsProblem = getResultsProblem();
-
-    let solutions = resultsProblem.solutions;
-    if(Object.keys(solutions.d3m).length === 0) {
-        alertError("No pipelines exist. Cannot mark problem as complete.");
-        return;
-    }
-
-    let selectedPipelines = getSolutions(resultsProblem, 'd3m');
-    if (selectedPipelines.size === 0) {
-        alertWarn("No pipelines exist. Cannot mark problem as complete");
-        return;
-    }
-    if (selectedPipelines.size > 1) {
-        alertWarn("More than one pipeline selected. Please select one discovered pipeline");
-        return;
-    }
-
-    let chosenSolutionId = [...selectedPipelines][0].response.solutionId;
-
-    // calling exportSolution
-    //
-    let end = await exportSolution(chosenSolutionId);
-
-   // makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
-    //let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
-    endAllSearches()
-    //let mystatus = res.status.code.toUpperCase();
-    //if(mystatus == "OK") {
-        end_ta3_search(true, "Problem marked as complete.");
-        setModal("Your selected pipeline has been submitted.", "Task Complete", true, false, false, locationReload);
-    //}
-}
-
-export let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSquaredErrorAvg", "meanAbsoluteError"];  // array of metrics to sort low to high
-
-/**
- Sort the Pipeline table, putting the highest score at the top
- */
-export function sortPipelineTable(a, b) {
-    if (a === b) return 0;
-    if (a === "scoring") return 100;
-    if (b === "scoring") return -100;
-    if (a === "no score") return 1000;
-    if (b === "no score") return -1000;
-    return (parseFloat(b) - parseFloat(a)) * (reverseSet.includes(getSelectedProblem().metric) ? -1 : 1);
-}
-
-/**
-  rpc SolutionExport (SolutionExportRequest) returns (SolutionExportResponse) {}
-
-   Example call:
-  {
-       "fittedSolutionId": "solutionId_gtk2c2",
-       "rank": 0.122
-       "searchId": "17"
-  }
-
-  Note: "searchId" is not part of the gRPC call but used for server
-        side tracking.
-
-*/
-export async function exportSolution(solutionId) {
-    exportCount++;
-    let res;
-    let my_rank = 1.01 - 0.01 * exportCount;   // ranks always gets smaller each call
-
-    let params = {solutionId: solutionId,
-                  rank: my_rank,
-                  searchId: (allsearchId.length) ? allsearchId[0] : null};
-    res = await makeRequest(D3M_SVC_URL + '/SolutionExport3', params);
-
-    console.log(res);
-    if (typeof res === 'undefined') {
-        console.log('Failed to write executable for solutionId:' + solutionId);
-        return res;
-    }
-
-    if (res.success === false) {
-        // console.log('Successful Augment.  Try to reload now!!');
-        console.log(msg_data.message);
-        setModal(res.message,
-                 "Solution export failed", true, false, false, locationReload);
-    }
-
-    return res;
-}
-
-/** needs doc */
-export function deletepipeline() {
-    console.log("DELETE CALLED");
-}
-
-/**
-   D3M API HELPERS
-   because these get built in various places, pulling them out for easy manipulation
-*/
-function apiFeature (vars, uri) {
-    let out = [];
-    for(let i = 0; i < vars.length; i++) {
-        out.push({featureId:vars[i],dataUri:uri});
-    }
-    return out;
-}
-
-/** needs doc */
-function apiFeatureShortPath (vars, uri) {
-    let out = [];
-    let shortUri = uri.substring(0, uri.lastIndexOf("/"));
-    for(let i = 0; i < vars.length; i++) {
-        out.push({featureId:vars[i],dataUri:shortUri});
-    }
-    return out;
-}
-
-/**
-   silly but perhaps useful if in the future SessionContext requires more things (as suggest by core)
-*/
-function apiSession(context) {
-    return {session_id: context};
-}
 
 export function getDescription(problem) {
     if (problem.description) return problem.description;
@@ -2529,6 +2138,7 @@ export function discovery(problems) {
             task: variableSummaries[prob.target].plottype === "bar" ? 'classification' : 'regression',
             subTask: 'taskSubtypeUndefined',
             meaningful: false,
+            evaluationMethod: 'kFold',
             manipulations: manips,
             solutions: {
                 d3m: {},
@@ -2540,7 +2150,7 @@ export function discovery(problems) {
                 rook: undefined
             },
             tags: {
-                transformed: [...manipulate.getTransformVariables(manips)], // this is used when updating manipulations pipeline
+                transformed: [...getTransformVariables(manips)], // this is used when updating manipulations pipeline
                 weights: [], // singleton list
                 crossSection: [],
                 time: [],
@@ -2673,6 +2283,10 @@ export let isAPIInfoWindowOpen = false;
 // Open/close modal window
 export let setAPIInfoWindowOpen = (boolVal) => isAPIInfoWindowOpen = boolVal;
 
+
+// TA2 server information for display in modal
+export let TA2ServerInfo = (TA2_SERVER !== undefined ) ? TA2_SERVER : '(TA2 unknown)';
+export let setTA2ServerInfo = (infoStr) => TA2ServerInfo = infoStr;
 
 /*
 *  Variables related to saving a new user workspace
@@ -2859,10 +2473,16 @@ export let getNominalVariables = problem => {
     ];
 };
 
-export let getBaselineModels = problem => {
-    // TODO: filter found models with a trivial hyperparameter grid
-    return [...baselineModelTypes[problem.task], 'modelUndefined']
-}
+export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
+    if (step.type !== 'transform') return out;
+
+    step.transforms.forEach(transform => out.add(transform.name));
+    step.expansions.forEach(expansion => queryMongo.expansionTerms(expansion).forEach(term => out.add(term)));
+    step.binnings.forEach(binning => out.add(binning.name));
+    step.manual.forEach(manual => out.add(manual.name));
+
+    return out;
+}, new Set());
 
 export function setSelectedProblem(problemID) {
     let ravenConfig = workspace.raven_config;
@@ -2944,8 +2564,8 @@ export async function submitDiscProb() {
 
         if(problem.manipulations.length === 0){
             // construct and write out the api call and problem description for each discovered problem
-            let problemApiCall = CreatePipelineDefinition(problem, 10);
-            let problemProblemSchema = CreateProblemSchema(problem);
+            let problemApiCall = solverD3M.GRPC_SearchSolutionsRequest(problem, 10);
+            let problemProblemSchema = solverD3M.CreateProblemSchema(problem);
             let filename_api = problem.problemID + '/ss_api.json';
             let filename_ps = problem.problemID + '/schema.json';
             makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
@@ -3098,7 +2718,7 @@ export async function callSolver(prob, datasetPath=undefined) {
     setSolverPending(false);
 
     let hasManipulation = [...workspace.raven_config.hardManipulations, ...prob.manipulations].length > 0;
-    let hasNominal = [prob.targets, ...getPredictorVariables(prob)].some(variable => zparams.znom.includes(variable));
+    let hasNominal = getNominalVariables(prob).length > 0;
 
     if (!datasetPath)
         datasetPath = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : workspace.datasetUrl;
