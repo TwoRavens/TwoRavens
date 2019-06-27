@@ -118,28 +118,19 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
         return ok_resp(response['data'])
 
     @staticmethod
-    def datamart_search(query_str, **kwargs):
+    def datamart_search(query_dict, **kwargs):
         """Search the ISI datamart"""
+        if not isinstance(query_dict, dict):
+            user_msg = ('There is something wrong with the search parameters.'
+                        ' Please try again. (expected a dictionary)')
+            return err_resp(user_msg)
+
         limit = kwargs.get('limit', 100)
         if not isinstance(limit, int):
             user_msg = ('The results limit must be an'
                         ' integer (datamart_search)')
             return err_resp(user_msg)
 
-
-        query_info_json = json_loads(query_str)
-        if not query_info_json.success:
-            user_msg = ('There is something wrong with the search parameters.'
-                        ' (expected a JSON string)')
-            return err_resp(user_msg)
-
-        query_dict = query_info_json.result_obj
-
-        clear_dict(query_dict)
-        if not query_dict:
-            no_params_msg = ('There are no search parameters.'
-                             ' You must have at least 1.')
-            return err_resp(no_params_msg)
 
         formatted_json_info = json_dumps(query_dict)
         if not formatted_json_info.success:
