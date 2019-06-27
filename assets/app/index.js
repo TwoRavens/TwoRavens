@@ -1595,28 +1595,35 @@ class Body {
                         m(TextField, {
                             id: 'timeBoundOption',
                             value: selectedProblem.timeBound || '',
-                            oninput: !app.lockToggle && (value => selectedProblem.timeBound = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
+                            disabled: app.lockToggle,
+                            oninput: !app.lockToggle && (value => selectedProblem.timeBound = value.replace(/[^\d.-]/g, '')),
+                            onblur: !app.lockToggle && (value => selectedProblem.timeBound = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
                             style: {'margin-bottom': '1em'}
                         }),
                         m('label', 'Approximate time bound for predicting with a single pipeline, in minutes. Leave empty for unlimited time.'),
                         m(TextField, {
                             id: 'timeBoundPipelineOption',
+                            disabled: app.lockToggle,
                             value: selectedProblem.timeBoundRun || '',
-                            oninput: !app.lockToggle && (value => selectedProblem.timeBoundRun = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
+                            oninput: !app.lockToggle && (value => selectedProblem.timeBoundRun = value.replace(/[^\d.-]/g, '')),
+                            onblur: !app.lockToggle && (value => selectedProblem.timeBoundRun = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
                             style: {'margin-bottom': '1em'}
                         }),
                         m('label', 'Priority'),
                         m(TextField, {
                             id: 'priorityOption',
+                            disabled: app.lockToggle,
                             value: selectedProblem.priority || '',
-                            oninput: !app.lockToggle && (value => selectedProblem.priority = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
+                            oninput: !app.lockToggle && (value => selectedProblem.priority = value.replace(/[^\d.-]/g, '')),
+                            onblur: !app.lockToggle && (value => selectedProblem.priority = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
                             style: {'margin-bottom': '1em'}
                         }),
                         m('label', 'Limit on number of solutions'),
                         m(TextField, {
-                            id: 'timeBoundPipelineOption',
+                            id: 'solutionsLimitOption',
+                            disabled: app.lockToggle,
                             value: selectedProblem.solutionsLimit || '',
-                            oninput: !app.lockToggle && (value => selectedProblem.solutionsLimit = parseFloat(value.replace(/\D/g,'')) || undefined),
+                            oninput: !app.lockToggle && (value => selectedProblem.solutionsLimit = Math.max(0, parseInt(value.replace(/\D/g,''))) || undefined),
                             style: {'margin-bottom': '1em'}
                         })
                     ),
@@ -1643,6 +1650,7 @@ class Body {
                             m('label[style=margin-top:0.5em]', 'Number of Folds'),
                             m(TextField, {
                                 id: 'foldsScoringOption',
+                                disabled: app.lockToggle,
                                 value: selectedProblem.folds || '',
                                 oninput: !app.lockToggle && (value => selectedProblem.folds = parseFloat(value.replace(/\D/g,'')) || undefined),
                                 style: {'margin-bottom': '1em'}
@@ -1650,15 +1658,23 @@ class Body {
                             m('label', 'Stratified Folds'),
                             m(ButtonRadio, {
                                 id: 'shuffleScoringOption',
-                                onclick: !app.lockToggle && (value => selectedProblem.stratified = value === 'True'),
+                                onclick: value => {
+                                    console.warn("#debug value");
+                                    console.log(value);
+                                    console.warn("#debug selectedProblem.stratified");
+                                    console.log(selectedProblem.stratified);
+                                    if (app.lockToggle) return;
+                                    selectedProblem.stratified = value === 'True';
+                                },
                                 activeSection: selectedProblem.stratified ? 'True' : 'False',
-                                sections: ['True', 'False'].map(type => ({value: type, disabled: !app.lockToggle}))
+                                sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: app.lockToggle}}))
                             }),
                         ],
                         selectedProblem.evaluationMethod === 'holdout' && [
                             m('label[style=margin-top:0.5em]', 'Train/Test Ratio'),
                             m(TextField, {
                                 id: 'ratioOption',
+                                disabled: app.lockToggle,
                                 value: selectedProblem.trainTestRatio || 0,
                                 onblur: !app.lockToggle && (value => selectedProblem.trainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
                                 style: {'margin-bottom': '1em'}
@@ -1669,12 +1685,13 @@ class Body {
                             id: 'shuffleScoringOption',
                             onclick: !app.lockToggle && (value => selectedProblem.shuffle = value === 'True'),
                             activeSection: selectedProblem.shuffle ? 'True' : 'False',
-                            sections: ['True', 'False'].map(type => ({value: type, disabled: !app.lockToggle}))
+                            sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: app.lockToggle}}))
                         }),
                         selectedProblem.shuffle && [
                             m('label[style=margin-top:0.5em]', 'Shuffle random seed'),
                             m(TextField, {
                                 id: 'shuffleSeedScoringOption',
+                                disabled: app.lockToggle,
                                 value: selectedProblem.shuffleRandomSeed || 0,
                                 oninput: !app.lockToggle && (value => selectedProblem.shuffleRandomSeed = parseFloat(value.replace(/\D/g,'')) || undefined),
                                 style: {'margin-bottom': '1em'}
