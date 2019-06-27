@@ -32,6 +32,7 @@ ROOK_APP_NAMES = [('DATA_APP', 'dataapp', 'dataapp'),       # session id?
                   ('TREE_APP', 'treeapp', 'treeapp'),
                   (HEALTH_CHECK_APP, 'healthcheckapp', 'healthcheckapp'), # healthcheckapp
                   #('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models
+                  ('PARTIALS_APP', 'partialsapp', 'partialsapp'),  # construct partials dataset 
                  ]
 
 ROOK_APP_NAMES += [\
