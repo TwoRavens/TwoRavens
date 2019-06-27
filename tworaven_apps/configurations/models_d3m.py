@@ -186,6 +186,8 @@ class D3MConfiguration(TimeStampedModel):
                             help_text='auto-filled on save')
 
     def __str__(self):
+        if self.id:
+            return f'{self.name} (id: {self.id})'
         return self.name
 
     class Meta:

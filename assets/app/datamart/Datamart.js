@@ -16,7 +16,7 @@ import ModalVanilla from "../../common/views/ModalVanilla";
 import PanelList from "../../common/views/PanelList";
 import TextField from "../../common/views/TextField";
 import Dropdown from "../../common/views/Dropdown";
-import Icon from "../views/Icon";
+import Icon from "../../common/views/Icon";
 import ButtonLadda from "../views/LaddaButton";
 import {datamartQueryInputSchema} from "./query_input_schema_2019_06";
 import {datamartDatasetIndexSchema} from "./dataset_schema_2019_01";
