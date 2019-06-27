@@ -1098,6 +1098,7 @@ export let loadWorkspace = async newWorkspace => {
             targets: targets,
             description: problemDoc.about.problemDescription,
             metric: problemDoc.inputs.performanceMetrics[0].metric,
+            metrics: [],
             task: problemDoc.about.taskType,
             subTask: problemDoc.about.taskSubType,
             meaningful: false,
@@ -2135,6 +2136,7 @@ export function discovery(problems) {
             targets: [prob.target],
             // NOTE: if the target is manipulated, the metric/task could be wrong
             metric: variableSummaries[prob.target].plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
+            metrics: [], // secondary evaluation metrics
             task: variableSummaries[prob.target].plottype === "bar" ? 'classification' : 'regression',
             subTask: 'taskSubtypeUndefined',
             meaningful: false,

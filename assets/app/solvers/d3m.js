@@ -260,11 +260,11 @@ function GRPC_ProblemDescription(problem) {
     let GRPC_Problem = {
         taskType: d3mTaskType[problem.task],
         taskSubtype: problem.taskSubtype || d3mTaskSubtype.subtypeNone,
-        performanceMetrics: [{metric: d3mMetrics[problem.metric]}]  // need to generalize to case with multiple metrics.  only passes on first presently.
+        performanceMetrics: [{metric: d3mMetrics[problem.metric]}]
     };
     if (GRPC_Problem.taskSubtype === 'taskSubtypeUndefined') delete GRPC_Problem.taskSubtype;
 
-    let GRPC_ProblemInput =  [
+    let GRPC_ProblemInput = [
         {
             datasetId: workspace.d3m_config.name,
             targets: problem.targets.map(target => ({
@@ -365,9 +365,7 @@ export function GRPC_ProduceSolutionRequest(datasetDocUrl){
 export function GRPC_ScoreSolutionRequest(problem, datasetDocUrl) {
     return {
         inputs: [{dataset_uri: 'file://' + datasetDocUrl}],
-        performanceMetrics: [
-            {metric: d3mMetrics[problem.metric]}
-        ],
+        performanceMetrics: problem.metrics.map(metric => ({metric: d3mMetrics[metric]})),
         users: [{id: 'TwoRavens', chosen: false, reason: ""}],
         // note: FL only using KFOLD in latest iteration (3/8/2019)
         configuration: {

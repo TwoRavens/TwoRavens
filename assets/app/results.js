@@ -72,11 +72,7 @@ export let leftpanel = () => {
                             .map(pipelineId => Object.assign({Solution: pipelineId}, extractD3MScores(resultsProblem.solutions.d3m[pipelineId]))),
                         sortable: true,
                         sortHeader: selectedMetric.d3m,
-                        setSortHeader: header => {
-                            console.warn("#debug header");
-                            console.log(header);
-                            selectedMetric.d3m = header === 'Solution' ? selectedMetric.d3m : header
-                        },
+                        setSortHeader: header => selectedMetric.d3m = header === 'Solution' ? selectedMetric.d3m : header,
                         sortFunction: sortPipelineTable,
                         activeRow: new Set(resultsProblem.selectedSolutions.d3m),
                         onclick: pipelineId => app.setSelectedSolution(resultsProblem, 'd3m', pipelineId)

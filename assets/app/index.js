@@ -1323,17 +1323,17 @@ class Body {
                             headers: discoveryHeaders,
                             data: problemPartition[partition].map(formatProblem),
                             onclick: problemID => {
-                                if (selectedProblem.problemID === problemID) return;
+
                                 let clickedProblem = problems[problemID];
-
-                                if (clickedProblem.system === 'user') {
-                                    app.setSelectedProblem(problemID);
-                                    return;
-                                }
-
                                 if (clickedProblem.system === 'solved') {
                                     app.setResultsProblem(problemID);
                                     app.set_mode('results');
+                                    return;
+                                }
+                                if (selectedProblem.problemID === problemID) return;
+
+                                if (clickedProblem.system === 'user') {
+                                    app.setSelectedProblem(problemID);
                                     return;
                                 }
 
@@ -1517,13 +1517,15 @@ class Body {
             value: 'Problem',
             idSuffix: 'Type',
             contents: [
-                m(`button#btnLock.btn.btn-default`, {
+                m(Button, {
+                    id: 'btnLock',
                     class: app.lockToggle ? 'active' : '',
                     onclick: () => app.setLockToggle(!app.lockToggle),
                     title: 'Lock selection of problem description',
-                    style: 'float: right;margin:0.5em',
+                    style: 'right:2em;position:fixed;z-index:1000;margin:0.5em',
                 }, m(Icon, {name: app.lockToggle ? 'lock' : 'pencil'})),
                 m('', {style: 'float: left'},
+                    m('label', 'Task Type'),
                     m(Dropdown, {
                         id: 'taskType',
                         items: Object.keys(app.d3mTaskType),
@@ -1537,6 +1539,7 @@ class Body {
                         style: {'margin': '1em', 'margin-top': '0'},
                         disabled: app.lockToggle
                     }),
+                    m('label', 'Task Subtype'),
                     m(Dropdown, {
                         id: 'taskSubType',
                         items: Object.keys(app.d3mTaskSubtype),
@@ -1550,12 +1553,17 @@ class Body {
                         style: {'margin': '1em', 'margin-top': '0'},
                         disabled: app.lockToggle
                     }),
+                    m('label', 'Primary Performance Metric'),
                     m(Dropdown, {
-                        id: 'performanceMetrics',
+                        id: 'performanceMetric',
+                        // TODO: filter based on https://datadrivendiscovery.org/wiki/display/work/Matrix+of+metrics
                         items: Object.keys(app.d3mMetrics),
                         activeItem: selectedProblem.metric,
-                        onclickChild: child => {
-                            selectedProblem.metric = child;
+                        onclickChild: metric => {
+                            if (selectedProblem.metric === metric) return;
+                            if (selectedProblem.metrics.includes(metric)) selectedProblem.metrics.push(selectedProblem.metric);
+                            selectedProblem.metric = metric;
+                            app.remove(selectedProblem.metrics, metric);
                             delete selectedProblem.unedited;
                             // will trigger the call to solver, if a menu that needs that info is shown
                             app.setSolverPending(true);
@@ -1563,6 +1571,21 @@ class Body {
                         style: {'margin': '1em', 'margin-top': '0'},
                         disabled: app.lockToggle
                     }),
+                    m(Dropdown, {
+                        id: 'performanceMetrics',
+                        items: Object.keys(app.d3mMetrics).filter(metric => metric !== selectedProblem.metric && !selectedProblem.metrics.includes(metric)),
+                        activeItem: 'Add Secondary Metric',
+                        onclickChild: metric => {
+                            selectedProblem.metrics = [...selectedProblem.metrics, metric].sort(app.omniSort);
+                            delete selectedProblem.unedited;
+                            // will trigger the call to solver, if a menu that needs that info is shown
+                            app.setSolverPending(true);
+                        },
+                        style: {'margin': '1em', 'margin-top': '0'},
+                        disabled: app.lockToggle
+                    }),
+                    selectedProblem.metrics.length > 0 && m('label', 'Secondary Performance Metrics'),
+                    m(ListTags, {tags: selectedProblem.metrics, ondelete: metric => app.remove(selectedProblem.metrics, metric)}),
                     m(Subpanel, {
                         header: 'Search Options',
                         defaultShown: false,
