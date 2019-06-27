@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {TreeAggregate, TreeSubset, TreeTransform, TreeImputation} from '../views/QueryTrees';
+import {TreeAggregate, TreeImputation, TreeSubset, TreeTransform} from '../views/QueryTrees';
 import CanvasContinuous from '../canvases/CanvasContinuous';
 import CanvasDate from '../canvases/CanvasDate';
 import CanvasDiscrete from '../canvases/CanvasDiscrete';
@@ -18,15 +18,15 @@ import Table from "../../common/views/Table";
 
 import * as common from '../../common/common';
 
-import {alertLog, alertError, getPredictorVariables} from "../app";
-import * as app from '../app';
+import * as app from "../app";
+import {alertError, alertLog} from "../app";
 
 import * as queryAbstract from './queryAbstract';
 import * as queryMongo from "./queryMongo";
 import hopscotch from 'hopscotch';
 
 import {formatVariableSummary} from '../views/VariableSummary';
-import Icon from "../views/Icon";
+import Icon from "../../common/views/Icon";
 
 
 export function menu(compoundPipeline) {
@@ -178,7 +178,7 @@ export function varList() {
             if (constraintPreferences.type === 'Expansion') {
                 variables = [...new Set([
                     ...Object.keys(app.variableSummaries),
-                    ...getTransformVariables(partialPipeline)
+                    ...app.getTransformVariables(partialPipeline)
                 ])];
                 selectedVariables = Object.keys(constraintPreferences.menus.Expansion.variables || {});
             }
@@ -540,7 +540,7 @@ export let setQueryUpdated = async state => {
 
         let ravenConfig = app.workspace.raven_config;
 
-        selectedProblem.tags.transformed = [...getTransformVariables(selectedProblem.manipulations)];
+        selectedProblem.tags.transformed = [...app.getTransformVariables(selectedProblem.manipulations)];
 
         app.buildProblemPreprocess(ravenConfig, selectedProblem)
             .then(summaries => {
@@ -825,7 +825,7 @@ export async function buildDatasetUrl(problem) {
         type: 'menu',
         metadata: {
             type: 'data',
-            variables: [...getPredictorVariables(problem), ...problem.targets],
+            variables: [...app.getPredictorVariables(problem), ...problem.targets],
             nominal: !app.is_manipulate_mode && app.nodes
                 .filter(node => node.nature === 'nominal')
                 .map(node => node.name)
@@ -856,7 +856,7 @@ export async function buildProblemUrl(problem) {
             type: 'menu',
             metadata: {
                 type: 'data',
-                variables: ['d3mIndex', ...getPredictorVariables(problem), ...problem.targets],
+                variables: ['d3mIndex', ...app.getPredictorVariables(problem), ...problem.targets],
                 nominal: !app.is_manipulate_mode && app.nodes
                     .filter(node => node.nature === 'nominal')
                     .map(node => node.name)
@@ -874,14 +874,3 @@ export async function buildProblemUrl(problem) {
         metadata: JSON.stringify(metadata)
     });
 }
-
-export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
-    if (step.type !== 'transform') return out;
-
-    step.transforms.forEach(transform => out.add(transform.name));
-    step.expansions.forEach(expansion => queryMongo.expansionTerms(expansion).forEach(term => out.add(term)));
-    step.binnings.forEach(binning => out.add(binning.name));
-    step.manual.forEach(manual => out.add(manual.name));
-
-    return out;
-}, new Set());

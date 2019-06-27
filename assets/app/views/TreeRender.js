@@ -1,5 +1,5 @@
 import m from 'mithril';
-import Icon from "./Icon";
+import Icon from "../../common/views/Icon";
 import Button from "../../common/views/Button";
 
 export default class TreeRender {

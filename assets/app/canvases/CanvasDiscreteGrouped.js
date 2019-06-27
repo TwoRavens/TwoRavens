@@ -3,7 +3,7 @@ import * as common from '../../common/common';
 
 import PlotBars from "./views/PlotBars";
 import {alignmentData, formattingData} from "../app";
-import Icon from "../views/Icon";
+import Icon from "../../common/views/Icon";
 
 let getLabel = (format, key) => {
     if (!(format in formattingData)) return '';

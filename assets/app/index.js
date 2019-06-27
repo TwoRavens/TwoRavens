@@ -17,11 +17,6 @@ import * as manipulate from './manipulations/manipulate';
 import * as solverRook from "./solvers/rook";
 import * as solverD3M from "./solvers/d3m";
 
-import PanelButton from './views/PanelButton';
-import Subpanel from './views/Subpanel';
-import Flowchart from './views/Flowchart';
-import Icon from './views/Icon';
-
 import * as common from '../common/common';
 import ButtonRadio from '../common/views/ButtonRadio';
 import Button from '../common/views/Button';
@@ -40,14 +35,14 @@ import ListTags from "../common/views/ListTags";
 import TextField from '../common/views/TextField';
 import MenuHeaders from "../common/views/MenuHeaders";
 import Canvas from "../common/views/Canvas";
-
-import Subpanel2 from '../common/views/Subpanel';
-
+import Subpanel from '../common/views/Subpanel';
 import Popper from '../common/views/Popper';
 import Datamart, {ModalDatamart} from "./datamart/Datamart";
 
 import PreprocessInfo from "./views/PreprocessInfo";
-
+import PanelButton from './views/PanelButton';
+import Flowchart from './views/Flowchart';
+import Icon from '../common/views/Icon';
 import ForceDiagram from "./views/ForceDiagram";
 import ButtonLadda from "./views/LaddaButton";
 import ModalWorkspace from "./views/ModalWorkspace";
@@ -56,15 +51,10 @@ import VariableSummary, {formatVariableSummary} from "./views/VariableSummary";
 // EVENTDATA
 import Body_EventData from './eventdata/Body_EventData';
 import TextFieldSuggestion from "../common/views/TextFieldSuggestion";
-import {getFitSolutionDefaultParameters} from "./app";
-import {getProduceSolutionDefaultParameters} from "./app";
-import {getNominalVariables} from "./app";
-import {workspace} from "./app";
-import {getScoreSolutionDefaultParameters} from "./app";
-import {makeRequest} from "./app";
-import {CreatePipelineDefinition} from "./app";
-import {resetPeek} from "./app";
 import BodyDataset from "./views/BodyDataset";
+import {setConstraintType} from "./manipulations/manipulate";
+import {constraintMenu} from "./manipulations/manipulate";
+import {constraintMetadata} from "./manipulations/manipulate";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -72,7 +62,6 @@ export let link = url => m('a', {href: url, style: {color: 'darkblue'}, target: 
 
 
 // adding problemID and version for Preprocess API part
-let version = 1;
 let exploreVariables = [];
 
 class Body {
@@ -306,7 +295,7 @@ class Body {
 
                                     let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
                                     let [n0, n1, n2] = exploreVariables.map(variable => app.variableSummaries[variable]);
-                                    let predictorVariables = app.getPredictorVariables(problem);
+                                    let predictorVariables = app.getPredictorVariables(selectedProblem);
 
                                     // tile for each variable or problem
                                     let tile = m('span#exploreNodeBox', {
@@ -448,7 +437,7 @@ class Body {
                             let originalLink = selectedProblem.pebbleLinks.find(link =>  d.source === link.source && d.target === link.target);
                             if (!originalLink) return;
                             app.remove(selectedProblem.pebbleLinks, originalLink);
-                            resetPeek();
+                            app.resetPeek();
                         }
                     }, forceData))),
 
@@ -480,10 +469,9 @@ class Body {
                     onclick: app.erase,
                     title: 'wipe all variables from the modeling space'
                 }, m(Icon, {name: 'trashcan'}))),
-                !app.is_manipulate_mode && m(Subpanel, {title: "History"}),
 
 
-                app.is_model_mode && selectedProblem && m(Subpanel2, {
+                app.is_model_mode && selectedProblem && m(Subpanel, {
                     id: 'legend', header: 'Legend', class: 'legend',
                     style: {
                         right: app.panelWidth['right'],
@@ -506,7 +494,7 @@ class Body {
                         m(".rectLabel[style=display:inline-block;vertical-align:text-bottom;margin-left:.5em]", group.name)))
                 ),
 
-                selectedProblem && selectedProblem.manipulations.filter(step => step.type === 'subset').length !== 0 && m(Subpanel2, {
+                selectedProblem && selectedProblem.manipulations.filter(step => step.type === 'subset').length !== 0 && m(Subpanel, {
                     id: 'subsetSubpanel',
                     header: 'Subsets',
                     style: {
@@ -592,7 +580,7 @@ class Body {
             app.currentMode === 'results' && resultsProblem && Object.keys(resultsProblem.solutions.d3m).length > 0 && m(Button, {
                 id: 'btnEndSession',
                 class: 'ladda-label ladda-button',
-                onclick: app.endsession,
+                onclick: solverD3M.endsession,
                 style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
             }, 'Mark Problem Finished'),
 
@@ -960,10 +948,9 @@ class Body {
                     onclick: async () => {
 
                         let selectedProblem = app.getSelectedProblem();
-                        let searchTimeLimit = 5;
-                        let searchSolutionParams = CreatePipelineDefinition(selectedProblem, searchTimeLimit);
+                        let searchSolutionParams = solverD3M.GRPC_SearchSolutionsRequest(selectedProblem);
 
-                        let nominalVars = new Set(getNominalVariables(selectedProblem));
+                        let nominalVars = new Set(app.getNominalVariables(selectedProblem));
 
                         let hasManipulation = selectedProblem.manipulations.length > 0;
                         let hasNominal = [...selectedProblem.targets, ...app.getPredictorVariables(selectedProblem)]
@@ -981,20 +968,20 @@ class Body {
                         // - TO-FIX 5/22/2019
                         //callSolver(selectedProblem, datasetPath);
 
-                        let datasetDocPath = selectedProblem.datasetDocPath || workspace.d3m_config.dataset_schema;
+                        let datasetDocPath = selectedProblem.datasetDocPath || app.workspace.d3m_config.dataset_schema;
 
                         this.TA2Post = JSON.stringify({
                             searchSolutionParams: searchSolutionParams,
-                            fitSolutionDefaultParams: getFitSolutionDefaultParameters(datasetDocPath),
-                            produceSolutionDefaultParams: getProduceSolutionDefaultParameters(datasetDocPath),
-                            scoreSolutionDefaultParams: getScoreSolutionDefaultParameters(selectedProblem, datasetDocPath)
+                            fitSolutionDefaultParams: solverD3M.GRPC_GetFitSolutionRequest(datasetDocPath),
+                            produceSolutionDefaultParams: solverD3M.GRPC_ProduceSolutionRequest(datasetDocPath),
+                            scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath)
                         });
                         m.redraw()
                     }
                 }, 'Prepare'),
                 m(Button, {
                     style: {margin: '1em'},
-                    onclick: () => makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', JSON.parse(this.TA2Post))
+                    onclick: () => app.makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', JSON.parse(this.TA2Post))
                         .then(response => this.TA2Response = response).then(m.redraw)
                 }, 'Send'),
                 m('div#URL', {style: {margin: '1em'}},
@@ -1335,17 +1322,17 @@ class Body {
                             headers: discoveryHeaders,
                             data: problemPartition[partition].map(formatProblem),
                             onclick: problemID => {
-                                if (selectedProblem.problemID === problemID) return;
+
                                 let clickedProblem = problems[problemID];
-
-                                if (clickedProblem.system === 'user') {
-                                    app.setSelectedProblem(problemID);
-                                    return;
-                                }
-
                                 if (clickedProblem.system === 'solved') {
                                     app.setResultsProblem(problemID);
                                     app.set_mode('results');
+                                    return;
+                                }
+                                if (selectedProblem.problemID === problemID) return;
+
+                                if (clickedProblem.system === 'user') {
+                                    app.setSelectedProblem(problemID);
                                     return;
                                 }
 
@@ -1428,7 +1415,7 @@ class Body {
                 : [summaryPebble];
 
             summaryContent = summaryPebbles.sort(app.omniSort)
-                .map(variableName => m(Subpanel2, {
+                .map(variableName => m(Subpanel, {
                     id: 'subpanel' + variableName,
                     header: variableName,
                     attrsBody: {style: {padding: '0.5em'}},
@@ -1529,13 +1516,15 @@ class Body {
             value: 'Problem',
             idSuffix: 'Type',
             contents: [
-                m(`button#btnLock.btn.btn-default`, {
+                m(Button, {
+                    id: 'btnLock',
                     class: app.lockToggle ? 'active' : '',
                     onclick: () => app.setLockToggle(!app.lockToggle),
                     title: 'Lock selection of problem description',
-                    style: 'float: right',
+                    style: 'right:2em;position:fixed;z-index:1000;margin:0.5em',
                 }, m(Icon, {name: app.lockToggle ? 'lock' : 'pencil'})),
                 m('', {style: 'float: left'},
+                    m('label', 'Task Type'),
                     m(Dropdown, {
                         id: 'taskType',
                         items: Object.keys(app.d3mTaskType),
@@ -1546,9 +1535,10 @@ class Body {
                             // will trigger the call to solver, if a menu that needs that info is shown
                             app.setSolverPending(true);
                         },
-                        style: {'margin-bottom': '1em'},
+                        style: {'margin': '1em', 'margin-top': '0'},
                         disabled: app.lockToggle
                     }),
+                    m('label', 'Task Subtype'),
                     m(Dropdown, {
                         id: 'taskSubType',
                         items: Object.keys(app.d3mTaskSubtype),
@@ -1559,22 +1549,154 @@ class Body {
                             // will trigger the call to solver, if a menu that needs that info is shown
                             app.setSolverPending(true);
                         },
-                        style: {'margin-bottom': '1em'},
+                        style: {'margin': '1em', 'margin-top': '0'},
                         disabled: app.lockToggle
                     }),
+                    m('label', 'Primary Performance Metric'),
                     m(Dropdown, {
-                        id: 'performanceMetrics',
+                        id: 'performanceMetric',
+                        // TODO: filter based on https://datadrivendiscovery.org/wiki/display/work/Matrix+of+metrics
                         items: Object.keys(app.d3mMetrics),
                         activeItem: selectedProblem.metric,
-                        onclickChild: child => {
-                            selectedProblem.metric = child;
+                        onclickChild: metric => {
+                            if (selectedProblem.metric === metric) return;
+                            if (selectedProblem.metrics.includes(metric)) selectedProblem.metrics.push(selectedProblem.metric);
+                            selectedProblem.metric = metric;
+                            app.remove(selectedProblem.metrics, metric);
                             delete selectedProblem.unedited;
                             // will trigger the call to solver, if a menu that needs that info is shown
                             app.setSolverPending(true);
                         },
-                        style: {'margin-bottom': '1em'},
+                        style: {'margin': '1em', 'margin-top': '0'},
                         disabled: app.lockToggle
-                    })
+                    }),
+                    m(Dropdown, {
+                        id: 'performanceMetrics',
+                        items: Object.keys(app.d3mMetrics).filter(metric => metric !== selectedProblem.metric && !selectedProblem.metrics.includes(metric)),
+                        activeItem: 'Add Secondary Metric',
+                        onclickChild: metric => {
+                            selectedProblem.metrics = [...selectedProblem.metrics, metric].sort(app.omniSort);
+                            delete selectedProblem.unedited;
+                            // will trigger the call to solver, if a menu that needs that info is shown
+                            app.setSolverPending(true);
+                        },
+                        style: {'margin': '1em', 'margin-top': '0'},
+                        disabled: app.lockToggle
+                    }),
+                    selectedProblem.metrics.length > 0 && m('label', 'Secondary Performance Metrics'),
+                    m(ListTags, {tags: selectedProblem.metrics, ondelete: metric => app.remove(selectedProblem.metrics, metric)}),
+                    m(Subpanel, {
+                        header: 'Search Options',
+                        defaultShown: false,
+                        style: {margin: '1em'}
+                    },
+                        m('label', 'Approximate time bound for overall pipeline search, in minutes. Leave empty for unlimited time.'),
+                        m(TextField, {
+                            id: 'timeBoundOption',
+                            value: selectedProblem.timeBound || '',
+                            disabled: app.lockToggle,
+                            oninput: !app.lockToggle && (value => selectedProblem.timeBound = value.replace(/[^\d.-]/g, '')),
+                            onblur: !app.lockToggle && (value => selectedProblem.timeBound = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
+                            style: {'margin-bottom': '1em'}
+                        }),
+                        m('label', 'Approximate time bound for predicting with a single pipeline, in minutes. Leave empty for unlimited time.'),
+                        m(TextField, {
+                            id: 'timeBoundPipelineOption',
+                            disabled: app.lockToggle,
+                            value: selectedProblem.timeBoundRun || '',
+                            oninput: !app.lockToggle && (value => selectedProblem.timeBoundRun = value.replace(/[^\d.-]/g, '')),
+                            onblur: !app.lockToggle && (value => selectedProblem.timeBoundRun = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
+                            style: {'margin-bottom': '1em'}
+                        }),
+                        m('label', 'Priority'),
+                        m(TextField, {
+                            id: 'priorityOption',
+                            disabled: app.lockToggle,
+                            value: selectedProblem.priority || '',
+                            oninput: !app.lockToggle && (value => selectedProblem.priority = value.replace(/[^\d.-]/g, '')),
+                            onblur: !app.lockToggle && (value => selectedProblem.priority = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
+                            style: {'margin-bottom': '1em'}
+                        }),
+                        m('label', 'Limit on number of solutions'),
+                        m(TextField, {
+                            id: 'solutionsLimitOption',
+                            disabled: app.lockToggle,
+                            value: selectedProblem.solutionsLimit || '',
+                            oninput: !app.lockToggle && (value => selectedProblem.solutionsLimit = Math.max(0, parseInt(value.replace(/\D/g,''))) || undefined),
+                            style: {'margin-bottom': '1em'}
+                        })
+                    ),
+                    m(Subpanel, {
+                        header: 'Scoring Options',
+                        defaultShown: false,
+                        style: {margin: '1em'}
+                    },
+                        m('label', 'Evaluation Method'),
+                        m(Dropdown, {
+                            id: 'evaluationMethodScoringOption',
+                            items: Object.keys(app.d3mEvaluationMethods),
+                            activeItem: selectedProblem.evaluationMethod,
+                            onclickChild: child => {
+                                selectedProblem.evaluationMethod = child;
+                                delete selectedProblem.unedited;
+                                // will trigger the call to solver, if a menu that needs that info is shown
+                                app.setSolverPending(true);
+                            },
+                            style: {'margin-bottom': '1em'},
+                            disabled: app.lockToggle
+                        }),
+                        selectedProblem.evaluationMethod === 'kFold' && [
+                            m('label[style=margin-top:0.5em]', 'Number of Folds'),
+                            m(TextField, {
+                                id: 'foldsScoringOption',
+                                disabled: app.lockToggle,
+                                value: selectedProblem.folds || '',
+                                oninput: !app.lockToggle && (value => selectedProblem.folds = parseFloat(value.replace(/\D/g,'')) || undefined),
+                                style: {'margin-bottom': '1em'}
+                            }),
+                            m('label', 'Stratified Folds'),
+                            m(ButtonRadio, {
+                                id: 'shuffleScoringOption',
+                                onclick: value => {
+                                    console.warn("#debug value");
+                                    console.log(value);
+                                    console.warn("#debug selectedProblem.stratified");
+                                    console.log(selectedProblem.stratified);
+                                    if (app.lockToggle) return;
+                                    selectedProblem.stratified = value === 'True';
+                                },
+                                activeSection: selectedProblem.stratified ? 'True' : 'False',
+                                sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: app.lockToggle}}))
+                            }),
+                        ],
+                        selectedProblem.evaluationMethod === 'holdout' && [
+                            m('label[style=margin-top:0.5em]', 'Train/Test Ratio'),
+                            m(TextField, {
+                                id: 'ratioOption',
+                                disabled: app.lockToggle,
+                                value: selectedProblem.trainTestRatio || 0,
+                                onblur: !app.lockToggle && (value => selectedProblem.trainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
+                                style: {'margin-bottom': '1em'}
+                            })
+                        ],
+                        m('label[style=margin-top:0.5em]', 'Shuffle'),
+                        m(ButtonRadio, {
+                            id: 'shuffleScoringOption',
+                            onclick: !app.lockToggle && (value => selectedProblem.shuffle = value === 'True'),
+                            activeSection: selectedProblem.shuffle ? 'True' : 'False',
+                            sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: app.lockToggle}}))
+                        }),
+                        selectedProblem.shuffle && [
+                            m('label[style=margin-top:0.5em]', 'Shuffle random seed'),
+                            m(TextField, {
+                                id: 'shuffleSeedScoringOption',
+                                disabled: app.lockToggle,
+                                value: selectedProblem.shuffleRandomSeed || 0,
+                                oninput: !app.lockToggle && (value => selectedProblem.shuffleRandomSeed = parseFloat(value.replace(/\D/g,'')) || undefined),
+                                style: {'margin-bottom': '1em'}
+                            })
+                        ],
+                    ),
                 )
             ]
         });

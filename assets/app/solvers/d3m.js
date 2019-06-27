@@ -1,23 +1,32 @@
 import {
     alertError,
+    alertWarn,
     allsearchId,
     buttonClasses,
     buttonLadda,
+    d3mMetrics,
+    d3mTaskSubtype,
+    d3mTaskType,
+    debugLog,
+    getPredictorVariables,
+    getResultsProblem,
+    getSolutions,
     makeRequest,
     setSelectedSolution,
-    debugLog
+    variableSummaries,
+    workspace
 } from "../app";
 import m from "mithril";
 
 import * as app from '../app.js';
+import {locationReload, setModal} from "../../common/views/Modal";
 
 export let getName = (problem, solution) => solution.pipelineId;
 export let getActualValues = (problem, solution, target) => problem.dvvalues && problem.dvvalues.map(point => point[target]);
 export let getFittedValues = (problem, solution, target) => {
     if (!(solution.predictedValues || {}).success) return;
     let samples = problem.dvvalues.map(point => point.d3mIndex);
-    let fittedMap = solution.predictedValues.data.reduce((out, point) => Object.assign(out, {[point.d3mIndex || point['']]: point[target] || point['0']}), {})
-    return samples.map(sample => fittedMap[sample]).map(datum => parseFloat(datum) || datum);
+    return samples.map(sample => solution.predictedValues[sample]).map(datum => parseFloat(datum) || datum);
 };
 export let getScore = (problem, solution, target) => solution.score;
 export let getDescription = (problem, solution) => solution.description;
@@ -35,10 +44,14 @@ export async function stopAllSearches() {
 }
 
 
+// ------------------------------------------
+//      create pipeline template
+// ------------------------------------------
+
 /**
  *  Function takes as input the pipeline template information (currently problem) and returns a valid pipline template in json. This json is to be inserted into SearchSolutions. e.g., problem = {...}, template = {...}, inputs = [dataset_uri]
  */
-export function makePipelineTemplate(problem) {
+export function GRPC_PipelineDescription(problem) {
     debugLog('makePipelineTemplate problem:', problem);
 
     let inputs = [];
@@ -228,19 +241,148 @@ function primitiveStepRemoveColumns(problem) {
 
     return {
         primitive: {
-            primitive: {
-                "id": "3b09ba74-cc90-4f22-9e0a-0cf4f29a7e28",
-                "name": "Removes columns",
-                "python_path": "d3m.primitives.data_transformation.remove_columns.DataFrameCommon",
-                "version": "0.1.0"
-            },
+            primitive,
             arguments: {inputs: {container: {data: "inputs.0"}}},
             outputs: [{id: "produce"}],
-            hyperparams: {columns: {value: {data: {raw: {list: {items: indicesD3M}}}}}},
+            hyperparams,
             users: []
         }
     };
 }
+
+
+// ------------------------------------------
+//      create search request
+// ------------------------------------------
+
+// create problem definition for SearchSolutions call
+function GRPC_ProblemDescription(problem) {
+    let GRPC_Problem = {
+        taskType: d3mTaskType[problem.task],
+        taskSubtype: problem.taskSubtype || d3mTaskSubtype.subtypeNone,
+        performanceMetrics: [{metric: d3mMetrics[problem.metric]}]
+    };
+    if (GRPC_Problem.taskSubtype === 'taskSubtypeUndefined') delete GRPC_Problem.taskSubtype;
+
+    let GRPC_ProblemInput = [
+        {
+            datasetId: workspace.d3m_config.name,
+            targets: problem.targets.map(target => ({
+                resourceId: workspace.raven_config.resourceId,
+                columnIndex: Object.keys(variableSummaries).indexOf(target),  // Adjusted to match dataset doc
+                columnName: target
+            }))
+        }
+    ];
+
+    return {
+        problem: GRPC_Problem,
+        inputs: GRPC_ProblemInput,
+        description: app.getDescription(problem),
+        name: problem.problemID
+    };
+}
+
+export function GRPC_SearchSolutionsRequest(problem) {
+    return {
+        userAgent: TA3_GRPC_USER_AGENT, // set on django
+        version: TA3TA2_API_VERSION, // set on django
+        timeBoundSearch: problem.timeBound || 5,
+        timeBoundRun: problem.timeBoundRun || 0,
+        rankSolutionsLimit: problem.solutionsLimit || 0,
+        priority: problem.priority || 0,
+        allowedValueTypes: ['DATASET_URI', 'CSV_URI'],
+        problem: GRPC_ProblemDescription(problem),
+        template: GRPC_PipelineDescription(problem),
+        inputs: [{dataset_uri: 'file://' + workspace.d3m_config.dataset_schema}]
+    };
+}
+
+/**
+ Return the default parameters used for a FitSolution call.
+ This DOES NOT include the solutionID
+ */
+export function GRPC_GetFitSolutionRequest(datasetDocUrl) {
+    return {
+        inputs: [
+            {dataset_uri: 'file://' + datasetDocUrl}
+        ],
+        exposeOutputs: ['outputs.0'],
+        exposeValueTypes: ['CSV_URI'],
+        users: [
+            {id: 'TwoRavens', chosen: false, reason: ''}
+        ]
+    };
+}
+
+// {
+//     "fittedSolutionId": "solutionId_yztf3r",
+//     "inputs": [
+//         {
+//             "csvUri": "file://uri/to-a/csv"
+//         },
+//         {
+//             "datasetUri": "file://uri/to-a/dataset"
+//         }
+//     ],
+//     "exposeOutputs": [
+//         "steps.1.steps.4.produce"
+//     ],
+//     "exposeValueTypes": [
+//         "PICKLE_URI",
+//         "PLASMA_ID"
+//     ],
+//     "users": [
+//         {
+//             "id": "uuid of user",
+//             "chosen": true,
+//             "reason": "best solution"
+//         },
+//         {
+//             "id": "uuid of user",
+//             "chosen": false,
+//             "reason": ""
+//         }
+//     ]
+// }
+
+/*
+  Return the default parameters used for a ProduceSolution call.
+  This DOES NOT include the fittedSolutionId
+*/
+export function GRPC_ProduceSolutionRequest(datasetDocUrl){
+    return {
+        inputs: [{dataset_uri: 'file://' + datasetDocUrl}],
+        exposeOutputs: ['outputs.0'],
+        exposeValueTypes: ['CSV_URI']
+    };
+}
+
+/*
+  Return the default parameters used for a ProduceSolution call.
+  This DOES NOT include the solutionId
+*/
+export function GRPC_ScoreSolutionRequest(problem, datasetDocUrl) {
+    return {
+        inputs: [{dataset_uri: 'file://' + datasetDocUrl}],
+        performanceMetrics: problem.metrics.map(metric => ({metric: d3mMetrics[metric]})),
+        users: [{id: 'TwoRavens', chosen: false, reason: ""}],
+        // note: FL only using KFOLD in latest iteration (3/8/2019)
+        configuration: {
+            method: app.d3mEvaluationMethods[problem.evaluationMethod] || "K_FOLD",
+            folds: problem.folds || 0,
+            trainTestRatio: problem.trainTestRatio || 0,
+            shuffle: problem.shuffle || false,
+            randomSeed: problem.shuffleRandomSeed || 0,
+            stratified: problem.stratified || false
+        }
+    };
+}
+
+
+// ------------------------------------------
+//      websocket response handlers
+// ------------------------------------------
 
 /**
  Handle a websocket sent GetSearchSolutionResultsResponse
@@ -256,6 +398,9 @@ export async function handleGetSearchSolutionResultsResponse(response) {
     // (1) Pull the solutionId
     // ----------------------------------------
     debugLog('(1) Pull the solutionId');
+
+    console.warn('handleGetSearchSolutionResultsResponse');
+    console.log(JSON.stringify(response));
 
     // Note: the response.id becomes the Pipeline id
     //
@@ -273,18 +418,16 @@ export async function handleGetSearchSolutionResultsResponse(response) {
     // ----------------------------------------
     // (2) Update or Create the Pipeline
     // ----------------------------------------
-
-
     response.source = 'd3m';
 
     let solverProblem = app.solverProblem.d3m;
     if (!solverProblem) {
-        alertError('TA2 solution arrived for an unknown problem. Please end the TA2 solution search.');
+        endAllSearches();
+        alertError('Solution arrived for an unknown problem. Ending the previous search.');
         return;
     }
     let solutions = solverProblem.solutions.d3m;
-    console.warn("#debug response");
-    console.log(response);
+    console.log(JSON.stringify(response));
     // Need to deal with (exclude) pipelines that are reported, but failed.  For approach, see below.
     if (response.id in solutions)
         Object.assign(solutions[response.id], response);
@@ -308,11 +451,7 @@ export async function handleGetSearchSolutionResultsResponse(response) {
 
     let selectedSolutions = app.getSolutions(solverProblem);
 
-    if (selectedSolutions.size === 0) setSelectedSolution(solverProblem, 'd3m', response.id);
-
-    // Add pipeline descriptions
-    // TODO: this is redundant, check if can be deleted
-    Object.assign(solutions[response.id], response.data);
+    if (selectedSolutions.length === 0) setSelectedSolution(solverProblem, 'd3m', response.id);
 
     m.redraw();
 }
@@ -343,9 +482,11 @@ export async function handleDescribeSolutionResponse(response) {
         return;
     }
 
-    let solutions = solverProblem.solutions.d3m;
+    // this steps seems to be a useless copy with missing information. The steps are really stored in 'response.pipeline.steps'
+    delete response.steps;
 
-    Object.assign(solutions[pipelineId], response);
+
+    Object.assign(solverProblem.solutions.d3m[pipelineId], response);
 }
 
 /**
@@ -363,18 +504,8 @@ export async function handleGetScoreSolutionResultsResponse(response) {
         return;
     }
     if (!response.is_finished) return;
+    if (response.is_error) return;
 
-    let myscore;
-
-    try {
-        // This is very specific, the potential responses may vary greatly
-        //
-        myscore = response.response.scores[0].value.raw.double.toPrecision(3);
-    } catch (error) {
-        debugLog(JSON.stringify(response));
-        alertError('Error in "handleGetScoreSolutionResultsResponse": ' + error);
-        return;
-    }
     // Note: what's now the "res4DataId" needs to be sent to this function
     //
     let solverProblem = app.solverProblem.d3m;
@@ -383,8 +514,10 @@ export async function handleGetScoreSolutionResultsResponse(response) {
         return;
     }
 
-    let solutions = solverProblem.solutions.d3m;
-    solutions[response.pipelineId].score = myscore;
+    let solution = solverProblem.solutions.d3m[response.pipelineId];
+    solution.scores = solution.scores || [];
+    solution.scores.push(...response.response.scores);
+
     m.redraw();
 }
 
@@ -395,11 +528,11 @@ export async function handleGetScoreSolutionResultsResponse(response) {
 export async function handleGetProduceSolutionResultsResponse(response) {
 
     if (response === undefined) {
-        console.log('handleGetProduceSolutionResultsResponse: Error.  "response" undefined');
+        debugLog('handleGetProduceSolutionResultsResponse: Error.  "response" undefined');
         return;
     }
     if (response.pipelineId === undefined) {
-        console.log('handleGetProduceSolutionResultsResponse: Error.  "pipelineId" undefined');
+        debugLog('handleGetProduceSolutionResultsResponse: Error.  "pipelineId" undefined');
         return;
     }
     debugLog('---- handleGetProduceSolutionResultsResponse -----');
@@ -407,12 +540,12 @@ export async function handleGetProduceSolutionResultsResponse(response) {
 
     // Note: UI update logic moved from generatePredictions
     if (!response.is_finished) {
-        console.log('-- GetProduceSolutionResultsResponse not finished yet... (returning) --');
+        debugLog('-- GetProduceSolutionResultsResponse not finished yet... (returning) --');
         return;
     } else if (response.is_error) {
-        console.log('-- GetProduceSolutionResultsResponse has error --')
-        console.log('response: ' + JSON.stringify(response));
-        console.log('----------------------------------------------');
+        debugLog('-- GetProduceSolutionResultsResponse has error --')
+        debugLog('response: ' + JSON.stringify(response));
+        debugLog('----------------------------------------------');
         return;
     }
 
@@ -428,8 +561,11 @@ export async function handleGetProduceSolutionResultsResponse(response) {
     }
 
     let responseOutputData = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
-    let solutions = solverProblem.solutions.d3m;
-    solutions[response.pipelineId].predictedValues = responseOutputData;
+
+    let predictedValues = responseOutputData.data
+        .reduce((out, point) => Object.assign(out, {[point['']]: point['0']}), {});
+
+    solverProblem.solutions.d3m[response.pipelineId].predictedValues = predictedValues;
 }
 
 export async function handleENDGetSearchSolutionsResults() {
@@ -440,8 +576,120 @@ export async function handleENDGetSearchSolutionsResults() {
     buttonClasses.btnEstimate = 'btn-secondary';
 
     app.solverProblem.d3m = undefined;
-
-    m.redraw();
-
     app.setTask2_finished(true);
+    m.redraw();
+}
+
+/**
+ EndSession(SessionContext) returns (Response) {}
+ */
+export async function endsession() {
+    let resultsProblem = getResultsProblem();
+
+    let solutions = resultsProblem.solutions;
+    if (Object.keys(solutions.d3m).length === 0) {
+        alertError("No pipelines exist. Cannot mark problem as complete.");
+        return;
+    }
+
+    let selectedPipelines = getSolutions(resultsProblem, 'd3m');
+    if (selectedPipelines.size === 0) {
+        alertWarn("No pipelines exist. Cannot mark problem as complete");
+        return;
+    }
+    if (selectedPipelines.size > 1) {
+        alertWarn("More than one pipeline selected. Please select one discovered pipeline");
+        return;
+    }
+
+    let chosenSolutionId = [...selectedPipelines][0].response.solutionId;
+
+    // calling exportSolution
+    //
+    let end = await exportSolution(chosenSolutionId);
+
+    // makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
+    //let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
+    endAllSearches()
+    //let mystatus = res.status.code.toUpperCase();
+    //if(mystatus == "OK") {
+    end_ta3_search(true, "Problem marked as complete.");
+    setModal("Your selected pipeline has been submitted.", "Task Complete", true, false, true, locationReload);
+    //}
+}
+
+
+
+/**
+ rpc SolutionExport (SolutionExportRequest) returns (SolutionExportResponse) {}
+
+ Example call:
+ {
+       "fittedSolutionId": "solutionId_gtk2c2",
+       "rank": 0.122
+       "searchId": "17"
+  }
+
+ Note: "searchId" is not part of the gRPC call but used for server
+ side tracking.
+
+ */
+export async function exportSolution(solutionId) {
+    exportCount++;
+    let res;
+    let my_rank = 1.01 - 0.01 * exportCount;   // ranks always gets smaller each call
+
+    let params = {solutionId: solutionId,
+        rank: my_rank,
+        searchId: (allsearchId.length) ? allsearchId[0] : null};
+    res = await makeRequest(D3M_SVC_URL + '/SolutionExport3', params);
+
+    console.log(res);
+    if (typeof res === 'undefined') {
+        console.log('Failed to write executable for solutionId:' + solutionId);
+        return res;
+    }
+
+    if (res.success === false) {
+        // console.log('Successful Augment.  Try to reload now!!');
+        console.log(msg_data.message);
+        setModal(res.message,
+            "Solution export failed", true, false, false, locationReload);
+    }
+
+    return res;
+}
+
+/** needs doc */
+export function deletepipeline() {
+    console.log("DELETE CALLED");
+}
+
+/**
+ D3M API HELPERS
+ because these get built in various places, pulling them out for easy manipulation
+ */
+function apiFeature (vars, uri) {
+    let out = [];
+    for(let i = 0; i < vars.length; i++) {
+        out.push({featureId:vars[i],dataUri:uri});
+    }
+    return out;
+}
+
+/** needs doc */
+function apiFeatureShortPath (vars, uri) {
+    let out = [];
+    let shortUri = uri.substring(0, uri.lastIndexOf("/"));
+    for(let i = 0; i < vars.length; i++) {
+        out.push({featureId:vars[i],dataUri:shortUri});
+    }
+    return out;
+}
+
+/**
+ silly but perhaps useful if in the future SessionContext requires more things (as suggest by core)
+ */
+function apiSession(context) {
+    return {session_id: context};
 }
