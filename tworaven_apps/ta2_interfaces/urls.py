@@ -121,14 +121,6 @@ urlpatterns = (
          views_streaming_requests.view_get_produce_solution_results,
          name='GetProduceSolutionResults'),
 
-    #path(r'SolutionExport',
-    #     views_non_streaming_requests.view_solution_export,
-    #     name='SolutionExport'),
-
-    #path(r'SolutionExport2',
-    #     views_non_streaming_requests.view_solution_export2,
-    #     name='SolutionExport2'),
-
     path(r'SolutionExport3',
          views_non_streaming_requests.view_solution_export3,
          name='SolutionExport3'),

@@ -20,18 +20,16 @@ from tworaven_apps.utils.basic_response import (ok_resp,
 from tworaven_apps.utils.dict_helper import (clear_dict,)
 from tworaven_common_apps.datamart_endpoints.datamart_util_base import \
     (DatamartJobUtilBase,)
-from tworaven_common_apps.datamart_endpoints.static_vals import \
-    (DATAMART_ISI_NAME,
-     KEY_ISI_DATAMART_ID,
-     KEY_DATA,
-     KEY_AUGMENT,
-     KEY_MATERIALIZE,
-     NUM_PREVIEW_ROWS,
-     cached_response,
-     cached_response_baseball)
+
+from tworaven_common_apps.datamart_endpoints import static_vals as dm_static
 from tworaven_common_apps.datamart_endpoints.datamart_info_util import \
     (get_isi_url,
      get_nyu_url)
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
+from tworaven_apps.behavioral_logs import static_vals as bl_static
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
+from tworaven_apps.behavioral_logs import static_vals as bl_static
+
 
 import requests
 import logging
@@ -43,6 +41,10 @@ PREVIEW_SIZE = 100
 
 
 class DatamartJobUtilISI(DatamartJobUtilBase):
+
+    def get_datamart_source(self):
+        """Return the datamart.  e.g. ISI, NYU, etc"""
+        return dm_static.DATAMART_ISI_NAME
 
     @staticmethod
     def datamart_scrape(url):
@@ -116,11 +118,14 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
         return ok_resp(response['data'])
 
     @staticmethod
-    def datamart_search(query_str, data_path=None, limit=None):
-        # TODO disable #debug
-        # return ok_resp(json.loads(cached_response_baseball))
-        # TODO: respect limit
-        limit = 100
+    def datamart_search(query_str, data_path=None, **kwargs):
+        """Search the ISI datamart"""
+        limit = kwargs.get('limit', 100)
+        if not isinstance(limit, int):
+            user_msg = ('The results limit must be an'
+                        ' integer (datamart_search)')
+            return err_resp(user_msg)
+
 
         query_info_json = json_loads(query_str)
         if not query_info_json.success:
@@ -152,9 +157,21 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
         if limit:
             params['max_return_docs'] = limit
 
-        print('start search')
+        # --------------------------------
+        # (2a) Behavioral logging
+        # --------------------------------
+        isi_search_url = get_isi_url() + '/new/search_data'
+
+        if 'user' in kwargs:
+            log_data = dict(feature_id=f'POST|{isi_search_url}',
+                            activity_l1=bl_static.L1_DATA_PREPARATION,
+                            activity_l2=bl_static.L2_DATA_SEARCH,
+                            path=isi_search_url)
+
+            log_info = LogEntryMaker.create_datamart_entry(kwargs['user'], log_data)
+            print('log_info', log_info)
+            print('id', log_info.result_obj.id)
         try:
-            isi_search_url = get_isi_url() + '/new/search_data'
             print('isi_search_url', isi_search_url)
             response = requests.post(\
                     isi_search_url,
@@ -223,16 +240,16 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
         if not isinstance(search_result, dict):
             return err_resp('search_result must be a python dictionary')
 
-        if not KEY_ISI_DATAMART_ID in search_result:
+        if not dm_static.KEY_ISI_DATAMART_ID in search_result:
             user_msg = (f'"search_result" did not contain'
-                        f' "{KEY_ISI_DATAMART_ID}" key')
+                        f' "{dm_static.KEY_ISI_DATAMART_ID}" key')
             return err_resp(user_msg)
 
         # -----------------------------------------
         # Format output file path
         # -----------------------------------------
         LOGGER.info('(1) build path')
-        datamart_id = search_result[KEY_ISI_DATAMART_ID]
+        datamart_id = search_result[dm_static.KEY_ISI_DATAMART_ID]
 
         dest_filepath_info = DatamartJobUtilISI.get_output_filepath(\
                                         user_workspace,
@@ -255,14 +272,14 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
 
             # Get preview rows
             #
-            preview_info = read_file_rows(dest_filepath, NUM_PREVIEW_ROWS)
+            preview_info = read_file_rows(dest_filepath, dm_static.NUM_PREVIEW_ROWS)
             if not preview_info.success:
                 user_msg = (f'Failed to retrieve preview rows.'
                             f' {preview_info.err_msg}')
                 return err_resp(user_msg)
 
             info_dict = DatamartJobUtilISI.format_materialize_response(\
-                            datamart_id, DATAMART_ISI_NAME,
+                            datamart_id, dm_static.DATAMART_ISI_NAME,
                             dest_filepath, preview_info)
 
             return ok_resp(info_dict)
@@ -273,12 +290,24 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
         # can this be streamed to a file?
 
         LOGGER.info('(2b) attempting download')
+
+        # ----------------------------
+        # Behavioral logging
+        # ----------------------------
+        isi_materialize_url = get_isi_url() + '/new/materialize_data'
+
+        log_data = dict(feature_id=f'GET|{isi_materialize_url}',
+                        activity_l1=bl_static.L1_DATA_PREPARATION,
+                        activity_l2=bl_static.L2_DATA_DOWNLOAD,
+                        path=isi_materialize_url)
+
+        LogEntryMaker.create_datamart_entry(user_workspace.user, log_data)
+
         try:
-            isi_materialize_url = get_isi_url() + '/new/materialize_data'
             print('isi_materialize_url', isi_materialize_url)
             response = requests.get(\
                         isi_materialize_url,
-                        params={KEY_ISI_DATAMART_ID: datamart_id},
+                        params={dm_static.KEY_ISI_DATAMART_ID: datamart_id},
                         verify=False,
                         timeout=settings.DATAMART_LONG_TIMEOUT)
         except requests.exceptions.Timeout as err_obj:
@@ -297,8 +326,8 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
                 user_msg += ' %s' % resp_json['message']
                 return err_resp(user_msg)
 
-        if not KEY_DATA in resp_json:
-            user_msg = (f'Key "{KEY_DATA}" not found in the'
+        if not dm_static.KEY_DATA in resp_json:
+            user_msg = (f'Key "{dm_static.KEY_DATA}" not found in the'
                         f' materialize response')
             return err_resp(user_msg)
 
@@ -309,7 +338,7 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
         # -----------------------------------------
         save_info = DatamartJobUtilISI.save_datamart_file(\
                         dest_filepath,
-                        resp_json[KEY_DATA])
+                        resp_json[dm_static.KEY_DATA])
 
         if not save_info.success:
             return err_resp(save_info.err_msg)
@@ -318,14 +347,14 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
 
         # Get preview rows
         #
-        preview_info = read_file_rows(dest_filepath, NUM_PREVIEW_ROWS)
+        preview_info = read_file_rows(dest_filepath, dm_static.NUM_PREVIEW_ROWS)
         if not preview_info.success:
             user_msg = (f'Failed to retrieve preview rows.'
                         f' {preview_info.err_msg}')
             return err_resp(user_msg)
 
         info_dict = DatamartJobUtilISI.format_materialize_response(\
-                        datamart_id, DATAMART_ISI_NAME,
+                        datamart_id, dm_static.DATAMART_ISI_NAME,
                         dest_filepath, preview_info)
 
         return ok_resp(info_dict)
@@ -337,16 +366,16 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
         if not isinstance(user_workspace, UserWorkspace):
             return err_resp('user_workspace must be a UserWorkspace')
 
-        if not KEY_ISI_DATAMART_ID in search_result:
+        if not dm_static.KEY_ISI_DATAMART_ID in search_result:
             user_msg = (f'"search_result" did not contain'
-                        f' "{KEY_ISI_DATAMART_ID}" key')
+                        f' "{dm_static.KEY_ISI_DATAMART_ID}" key')
             return err_resp(user_msg)
 
         if not isfile(data_path):
             user_msg = f'Original data file not found: {data_path}'
             return err_resp(user_msg)
 
-        datamart_id = search_result[KEY_ISI_DATAMART_ID]
+        datamart_id = search_result[dm_static.KEY_ISI_DATAMART_ID]
 
         # ----------------------------
         # mock call
@@ -361,12 +390,12 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
         """
         # ----------------------------
         LOGGER.info('(1) build path')
-        datamart_id = search_result[KEY_ISI_DATAMART_ID]
+        datamart_id = search_result[dm_static.KEY_ISI_DATAMART_ID]
 
         dest_filepath_info = DatamartJobUtilISI.get_output_filepath(\
                                     user_workspace,
                                     f'{datamart_id}-{get_timestamp_string()}',
-                                    dir_type=KEY_AUGMENT)
+                                    dir_type=dm_static.KEY_AUGMENT)
 
         if not dest_filepath_info.success:
             return err_resp(dest_filepath_info.err_msg)
@@ -382,9 +411,22 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
             'exact_match': exact_match
         })
 
+        augment_url = get_isi_url() + '/new/join_data'
+
+        # ----------------------------
+        # Behavioral logging
+        # ----------------------------
+        log_data = dict(feature_id=f'POST|{augment_url}',
+                        activity_l1=bl_static.L1_DATA_PREPARATION,
+                        activity_l2=bl_static.L2_DATA_AUGMENT,
+                        path=augment_url)
+
+        LogEntryMaker.create_datamart_entry(user_workspace.user, log_data)
+        # ----------------------------
+
         try:
             response = requests.post(\
-                    get_isi_url() + '/new/join_data',
+                    augment_url,
                     files={'left_data': open(data_path, 'r')},
                     data={'right_data': datamart_id,
                           'left_columns': left_columns,

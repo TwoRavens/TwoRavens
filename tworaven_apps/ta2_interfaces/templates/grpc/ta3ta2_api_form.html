@@ -239,7 +239,7 @@
 
           <tr>
             <td colspan="2">
-              <a onclick="sendData()" class="btn btn-default">send data</a>
+              <a onclick="sendData()" class="btn btn-primary text-white">send data</a>
               <!--input type="submit" value="Submit" /-->
             </td>
           </tr>
@@ -248,7 +248,7 @@
 
       <hr />
       {% if TA2_STATIC_TEST_MODE %}
-       <span class="btn btn-primary">TEST MODE</span>
+       <span class="badge badge-pill badge-info">TEST MODE</span>
         <br /><b>TA2 test server</b>: None
         <br />
         <br />
@@ -259,7 +259,7 @@
            <li><b>Source of "static" responses</b>: <code>/ta2_interfaces/templates/test_responses</code></li>
         </ul>
        {% else %}
-         <span class="btn btn-success">External TA2 Server</span>
+         <span class="badge badge-pill badge-success">External TA2 Server</span>
          <br /><b>TA2 test server</b>: {{ TA2_TEST_SERVER_URL }}
 
            <br />

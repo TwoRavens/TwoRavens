@@ -20,7 +20,7 @@
   * Merge `devel` into `master` branch: `git merge devel`
   * `git push`
   * Wait for CI to run tests successfully.
-  * Tag with version prefixed with `v`, e.g., for version `2017.9.20`: `git tag v2017.9.20`
+  * Tag with version prefixed with `v`, e.g., for version `2019.5.23`: `git tag v2019.5.23`
   * `git push` & `git push --tags`
 * On `devel` branch:
   * `git merge master` to make sure `devel` is always on top of `master`.

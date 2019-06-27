@@ -43,6 +43,65 @@ def get_user_workspace_by_id(user_workspace_id):
 
     return ok_resp(user_ws)
 
+def set_shared_workspace_by_hash_id(request, hash_id):
+    """Retrieve a shared workspace
+    Basic sequence:
+    - Is it a public workspace?
+    - Does the shared workspace.user match the logged in user?
+      - Yes: Proceed as if loading a regular workspace
+    - No:
+        - Does the logged in user already have this workspace?  (e.g. as an original)
+            - Yes: load it directly
+            - No: Create a new workspace, copying the data from the shared workspaces
+    """
+    # Get the User
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return err_resp(user_info.err_msg)
+    user = user_info.result_obj
+
+    try:
+        workspace = UserWorkspace.objects.get(hash_id=hash_id)
+    except UserWorkspace.DoesNotExist:
+        user_msg = ('No public workspaces were found for this shared link.'
+                    ' <br /><br />(id: hash_id: %s)') % \
+                    (hash_id)
+        return err_resp(user_msg)
+
+    if not workspace.is_public:
+        user_msg = ('No public workspaces were found for this shared link.'
+                    '<br /><br />Note: The workspace may have been made private.'
+                    ' <br /><br />(id: hash_id: %s)') % \
+                    (hash_id)
+        return err_resp(user_msg)
+
+    if workspace.user == user:
+        # Make this the current workspace
+        workspace.is_current_workspace = True
+        workspace.save()
+        return ok_resp(workspace)
+
+    # Create a new workspace, based on the shared workspace
+    #
+    params = dict(user=user,
+                  name=workspace.name,
+                  is_current_workspace=True,
+                  is_public=False,
+                  d3m_config=workspace.d3m_config,
+                  raven_config=workspace.raven_config,
+                  original_workspace=workspace.original_workspace,
+                  previous_workspace=workspace)
+
+    params = get_default_workspace_params(**params)
+
+    new_workspace = UserWorkspace(**params)
+    new_workspace.save()
+
+    # new_workspace.original_workspace = new_workspace
+    # new_workspace.save()
+
+    return ok_resp(new_workspace)
+
 
 def get_saved_workspace_by_request_and_id(request, user_workspace_id):
     """Retrieve a specific workspace by request, checking that it
@@ -139,8 +198,7 @@ def get_latest_d3m_user_config(user, create_if_not_found=True, **kwargs):
         return err_resp('No default D3MConfiguration set.')
 
     params = dict(user=user,
-                  is_current_workspace=True,
-                  orig_dataset_id=d3m_config.orig_dataset_id)
+                  is_current_workspace=True,)
 
     params = get_default_workspace_params(**params)
 
@@ -170,14 +228,25 @@ def create_new_user_workspace(user, d3m_config, **kwargs):
     if not isinstance(d3m_config, D3MConfiguration):
         return err_resp('"d3m_config" is not a D3MConfiguration object')
 
+    previous_workspace = kwargs.get('previous_workspace')
+
     params = dict(user=user,
                   is_current_workspace=True,
-                  d3m_config=d3m_config,
-                  orig_dataset_id=d3m_config.orig_dataset_id)
+                  d3m_config=d3m_config)
 
     params = get_default_workspace_params(**params)
 
     new_workspace = UserWorkspace(**params)
+    new_workspace.save()
+
+    if previous_workspace:
+        # At least the 2nd workspace, set pointers for previous and original
+        new_workspace.previous_workspace = previous_workspace
+        new_workspace.original_workspace = previous_workspace.original_workspace
+    else:
+        # Brand new, the original points back to itself
+        new_workspace.original_workspace = new_workspace
+
     new_workspace.save()
 
     return ok_resp(new_workspace)
@@ -212,8 +281,7 @@ def get_user_workspaces(user, create_if_not_found=True):
     if not d3m_config:
         return err_resp('No default D3MConfiguration set.')
 
-    params = dict(user=user,
-                  orig_dataset_id=d3m_config.orig_dataset_id)
+    params = dict(user=user)
 
     params = get_default_workspace_params(**params)
 
@@ -243,8 +311,7 @@ def delete_user_workspaces(user):
     if not d3m_config:
         return err_resp('No default D3MConfiguration set.')
 
-    params = dict(user=user,
-                  orig_dataset_id=d3m_config.orig_dataset_id)
+    params = dict(user=user)
 
     workspaces = UserWorkspace.objects.filter(**params)
     cnt = workspaces.count()
@@ -262,12 +329,15 @@ def duplicate_user_workspace(new_name, existing_workspace, **kwargs):
     new_ws = UserWorkspace(\
                     name=new_name,
                     user=existing_workspace.user,
-                    orig_dataset_id=existing_workspace.orig_dataset_id,
                     d3m_config=existing_workspace.d3m_config,
                     raven_config=existing_workspace.raven_config,
                     is_active=existing_workspace.is_active,
                     is_current_workspace=existing_workspace.is_current_workspace,
-                    description=existing_workspace.description)
+                    description=existing_workspace.description,
+                    #
+                    previous_workspace=existing_workspace,
+                    original_workspace=existing_workspace.original_workspace
+                    )
 
     # Update the raven_config if there is one
     #

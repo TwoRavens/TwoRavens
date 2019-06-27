@@ -1,13 +1,11 @@
 import m from 'mithril';
 import * as jStat from 'jstat';
-import * as d3 from "d3";
 
 import * as app from "./app";
 import * as plots from "./plots";
 
 import * as common from "./../common/common";
 import Table from "./../common/views/Table";
-import MenuTabbed from "./../common/views/MenuTabbed";
 import Dropdown from "./../common/views/Dropdown";
 import Panel from "../common/views/Panel";
 import MenuHeaders from "../common/views/MenuHeaders";
@@ -21,6 +19,7 @@ import Subpanel from "../common/views/Subpanel";
 
 import * as solverRook from './solvers/rook';
 import * as solverD3M from './solvers/d3m';
+import {getSelectedProblem} from "./app";
 
 
 export let leftpanel = () => {
@@ -30,107 +29,120 @@ export let leftpanel = () => {
 
     if (!resultsProblem) return;
 
-    let sections = [
-        {
-            value: 'Problem',
-            contents: [
-                m('div', {style: {height: '100%'}}, m(ForceDiagram, Object.assign(forceDiagramStateResults,{
-                    mutateNodes: app.mutateNodes(resultsProblem),
-                    summaries: app.variableSummaries
-                }, app.buildForceData(resultsProblem)))),
-                // m(Table, {data: resultsProblem})
-            ]
-        },
-        {
-            value: 'Solutions',
-            contents: [
-                m('div', {style: {display: 'inline-block', margin: '1em'}},
-                    m(Dropdown, {
-                        id: 'pipelineDropdown',
-                        items: Object.keys(ravenConfig.problems).filter(key =>
-                            Object.keys(ravenConfig.problems[key].solutions)
-                                .reduce((sum, source) => sum + Object.keys(ravenConfig.problems[key].solutions[source]).length, 0)),
-                        activeItem: ravenConfig.resultsProblem,
-                        onclickChild: app.setResultsProblem
-                    })),
-                m('div#modelComparisonOption', {style: {display: 'inline-block'}},
-                    m('input#modelComparisonCheck[type=checkbox]', {
-                        onclick: m.withAttr("checked", app.setModelComparison),
-                        checked: app.modelComparison,
-                        style: {margin: '.25em'}
-                    }),
-                    m('label#modelComparisonLabel', {
-                        title: 'select multiple models to compare',
-                        style: {display: 'inline-block'}
-                    }, 'Model Comparison')
-                ),
-                m(MenuHeaders, {
-                    id: 'pipelineMenu',
-                    sections: [
-                        {
-                            value: 'Discovered Solutions',
-                            contents:
-                                m(Table, {
-                                    id: 'pipelineTable',
-                                    headers: ['Solution', 'Score'],
-                                    data: Object.keys(resultsProblem.solutions.d3m)
-                                        .map(pipelineId => [pipelineId, resultsProblem.solutions.d3m[pipelineId].score]),
-                                    sortHeader: 'Score',
-                                    sortFunction: app.sortPipelineTable,
-                                    activeRow: new Set(resultsProblem.selectedSolutions.d3m),
-                                    onclick: pipelineId => app.setSelectedSolution(resultsProblem, 'd3m', pipelineId),
-                                    tableTags: m('colgroup',
-                                        m('col', {span: 1}),
-                                        m('col', {span: 1, width: '30%'}))
-                                })
-                        },
-                        {
-                            value: 'Baselines',
-                            contents: [
-                                // m(Subpanel, {
-                                //     id: 'addModelSubpanel',
-                                //     onclick: app.setResultsProblem
-                                // }),
-
-                                m(Table, {
-                                    id: 'pipelineTable',
-                                    headers: ['Solution', 'Score'],
-                                    data: Object.keys(resultsProblem.solutions.rook)
-                                        .map(solutionId => [
-                                            solutionId,
-                                            solverRook.getScore(resultsProblem, resultsProblem.solutions.rook[solutionId])
-                                        ]),
-                                    sortHeader: 'Score',
-                                    sortFunction: app.sortPipelineTable,
-                                    activeRow: new Set(resultsProblem.selectedSolutions.rook),
-                                    onclick: pipelineId => app.setSelectedSolution(resultsProblem, 'rook', pipelineId),
-                                    tableTags: m('colgroup',
-                                        m('col', {span: 1}),
-                                        m('col', {span: 1, width: '30%'}))
-                                })
-                            ]
-                        }
-                    ]
-                })
-            ]
+    let loader = id => m(`#loading${id}.loader-small`, {
+        style: {
+            display: 'inline-block',
+            margin: 'auto',
+            position: 'relative',
+            top: '40%',
+            transform: 'translateY(-50%)'
         }
+    });
+
+    let resultsContent = [
+        m('div', {style: {display: 'inline-block', margin: '1em'}},
+            m(Dropdown, {
+                id: 'pipelineDropdown',
+                items: Object.keys(ravenConfig.problems).filter(key =>
+                    Object.keys(ravenConfig.problems[key].solutions)
+                        .reduce((sum, source) => sum + Object.keys(ravenConfig.problems[key].solutions[source]).length, 0)),
+                activeItem: ravenConfig.resultsProblem,
+                onclickChild: app.setResultsProblem
+            })),
+        m('div#modelComparisonOption', {style: {display: 'inline-block'}},
+            m('input#modelComparisonCheck[type=checkbox]', {
+                onclick: m.withAttr("checked", app.setModelComparison),
+                checked: app.modelComparison,
+                style: {margin: '.25em'}
+            }),
+            m('label#modelComparisonLabel', {
+                title: 'select multiple models to compare',
+                style: {display: 'inline-block'}
+            }, 'Model Comparison')
+        ),
+        m(MenuHeaders, {
+            id: 'pipelineMenu',
+            sections: [
+                {
+                    idSuffix: 'DiscoveredSolutions',
+                    value: [m('[style=display:inline-block;margin-right:1em]', 'Discovered Solutions'), app.solverProblem.d3m === app.getResultsProblem() && loader('D3M')],
+                    contents: m(Table, {
+                        id: 'pipelineTable',
+                        data: Object.keys(resultsProblem.solutions.d3m)
+                            .map(pipelineId => Object.assign({Solution: pipelineId}, extractD3MScores(resultsProblem.solutions.d3m[pipelineId]))),
+                        sortable: true,
+                        sortHeader: selectedMetric.d3m,
+                        setSortHeader: header => selectedMetric.d3m = header === 'Solution' ? selectedMetric.d3m : header,
+                        sortFunction: sortPipelineTable,
+                        activeRow: new Set(resultsProblem.selectedSolutions.d3m),
+                        onclick: pipelineId => app.setSelectedSolution(resultsProblem, 'd3m', pipelineId)
+                    })
+                },
+                {
+                    idSuffix: 'BaselineSolutions',
+                    value: [m('[style=display:inline-block;margin-right:1em]', 'Baselines'), app.solverProblem.rook === app.getResultsProblem() && loader('Rook')],
+                    contents: [
+                        // m(Subpanel, {
+                        //     id: 'addModelSubpanel',
+                        //     onclick: app.setResultsProblem
+                        // }),
+
+                        m(Table, {
+                            id: 'pipelineTable',
+                            headers: ['Solution', 'Score'],
+                            data: Object.keys(resultsProblem.solutions.rook)
+                                .map(solutionId => [
+                                    solutionId,
+                                    solverRook.getScore(resultsProblem, resultsProblem.solutions.rook[solutionId])
+                                ]),
+                            sortHeader: 'Score',
+                            sortFunction: sortPipelineTable,
+                            activeRow: new Set(resultsProblem.selectedSolutions.rook),
+                            onclick: pipelineId => app.setSelectedSolution(resultsProblem, 'rook', pipelineId),
+                            tableTags: m('colgroup',
+                                m('col', {span: 1}),
+                                m('col', {span: 1, width: '30%'}))
+                        })
+                    ]
+                }
+            ]
+        })
     ];
 
+    // use this object instead of resultsContent for a tabbed leftpanel results menu
+    // let tabbedResults = m(MenuTabbed, {
+    //     id: 'resultsMenu',
+    //     currentTab: leftTabResults,
+    //     callback: setLeftTabResults,
+    //     sections: [
+    //         {
+    //             value: 'Problem',
+    //             contents: [
+    //                 m('div', {style: {height: '100%'}}, m(ForceDiagram, Object.assign(forceDiagramStateResults,{
+    //                     mutateNodes: app.mutateNodes(resultsProblem),
+    //                     summaries: app.variableSummaries
+    //                 }, app.buildForceData(resultsProblem)))),
+    //                 m(Table, {data: resultsProblem})
+    //             ]
+    //         },
+    //         {
+    //             value: 'Solutions',
+    //             contents: resultsContent
+    //         }
+    //     ]
+    // });
+
     return m(Panel, {
-        side: 'left',
-        label: 'Results',
-        hover: false,
-        width: '600px'
-    },
-    // there seems to be a strange mithril bug here - when returning back to model from results,
-    // the dom element for MenuTabbed is reused, but the state is incorrectly transitioned, leaving an invalid '[' key.
-    // "Fixed" by wrapping in a div, to prevent the dom reuse optimization
-    m('div', {style: {height: 'calc(100% - 50px)'}}, m(MenuTabbed, {
-        id: 'resultsMenu',
-        currentTab: leftTabResults,
-        callback: setLeftTabResults,
-        sections
-    })))
+            side: 'left',
+            label: 'Results',
+            hover: false,
+            width: '600px'
+        },
+        // there seems to be a strange mithril bug here - when returning back to model from results,
+        // the dom element for MenuTabbed is reused, but the state is incorrectly transitioned, leaving an invalid '[' key.
+        // "Fixed" by wrapping in a div, to prevent the dom reuse optimization
+        m('div', {style: {height: 'calc(100% - 50px)', overflow: 'auto'}},
+            resultsContent))
 };
 
 export class CanvasSolutions {
@@ -165,10 +177,10 @@ export class CanvasSolutions {
 
         if (problem.task === 'classification') {
             let confusionData = summaries
-                .map(summary => Object.assign({pipelineId: summary.pipelineID},
+                .map(summary => Object.assign({name: summary.name},
                     generateConfusionData(summary.actualValues, summary.fittedValues, this.confusionFactor) || {}))
                 .filter(instance => 'data' in instance)
-                .sort((a, b) => app.sortPipelineTable(a.score, b.score));
+                .sort((a, b) => sortPipelineTable(a.score, b.score));
 
             return confusionData.map((confusionInstance, i) => [
                 i === 0 && m('div[style=margin-top:.5em]',
@@ -189,8 +201,8 @@ export class CanvasSolutions {
                 confusionInstance.data.length < 100 ? m('div', {
                     style: {'min-height': '500px'}
                 }, m(ConfusionMatrix, Object.assign({}, confusionInstance, {
-                    id: 'resultsConfusionMatrixContainer' + confusionInstance.pipelineID,
-                    title: "Confusion Matrix: Pipeline " + confusionInstance.pipelineID,
+                    id: 'resultsConfusionMatrixContainer' + confusionInstance.name,
+                    title: "Confusion Matrix: Solution " + confusionInstance.name,
                     startColor: '#ffffff', endColor: '#e67e22',
                     margin: {left: 10, right: 10, top: 50, bottom: 10},
                     attrsAll: {style: {height: '600px'}}
@@ -259,7 +271,7 @@ export class CanvasSolutions {
             m(Table, {
                 id: 'pipelineOverviewTable',
                 data: Object.keys(solution.pipeline).reduce((out, entry) => {
-                    if (['inputs', 'steps', 'outputs'].indexOf(entry) === -1)
+                    if (!['inputs', 'steps', 'outputs', 'id', 'users', 'digest'].includes(entry))
                         out[entry] = solution.pipeline[entry];
                     return out;
                 }, {}),
@@ -288,12 +300,23 @@ export class CanvasSolutions {
             style: {margin: '0px 1em'},
             header: 'Problem Description',
             shown: resultsSubpanels['Problem Description'],
-            setShown: state => resultsSubpanels['Problem Description'] = state
+            setShown: state => {
+               resultsSubpanels['Problem Description'] = state;
+               if(state){
+                 // behavioral logging
+                 let logParams = {
+                               feature_id: 'VIEW_PROBLEM_DESCRIPTION',
+                               activity_l1: 'MODEL_SELECTION',
+                               activity_l2: 'MODEL_EXPLANATION'
+                             };
+                 app.saveSystemLogEntry(logParams);
+               }
+            }
         }, m(Table, {
             headers: ['Variable', 'Data'],
             data: [
                 ['Dependent Variables', problem.targets],
-                ['Predictors', problem.predictors],
+                ['Predictors', app.getPredictorVariables(problem)],
                 ['Description', problem.description],
                 ['Task', problem.task]
             ]
@@ -311,7 +334,18 @@ export class CanvasSolutions {
             style: {margin: '0px 1em'},
             header: 'Solution Description',
             shown: resultsSubpanels['Solution Description'],
-            setShown: state => resultsSubpanels['Solution Description'] = state
+            setShown: state => {
+              resultsSubpanels['Solution Description'] = state;
+              if(state){
+                // behavioral logging
+                let logParams = {
+                              feature_id: 'VIEW_SOLUTION_DESCRIPTION',
+                              activity_l1: 'MODEL_SELECTION',
+                              activity_l2: 'MODEL_EXPLANATION'
+                            };
+                app.saveSystemLogEntry(logParams);
+              }
+            }
         }, m(Table, {
             headers: ['Variable', 'Data'],
             data: [
@@ -320,6 +354,10 @@ export class CanvasSolutions {
                 ['Label', firstSolution.meta.label],
                 ['Caret/R Method', firstSolution.meta.method],
                 ['Tags', firstSolution.meta.tags]
+            ] : firstSolution.source === 'd3m' ? [
+                ['Pipeline ID', firstSolution.pipelineId],
+                ['Status', firstSolution.status],
+                ['Created', new Date(firstSolution.created).toUTCString()]
             ] : [])
         }));
 
@@ -327,14 +365,36 @@ export class CanvasSolutions {
             style: {margin: '0px 1em'},
             header: 'Prediction Summary',
             shown: resultsSubpanels['Prediction Summary'],
-            setShown: state => resultsSubpanels['Prediction Summary'] = state
+            setShown: state => {
+              resultsSubpanels['Prediction Summary'] = state;
+              if(state){
+                // behavioral logging
+                let logParams = {
+                              feature_id: 'VIEW_PREDICTION_SUMMARY',
+                              activity_l1: 'MODEL_SELECTION',
+                              activity_l2: 'MODEL_EXPLANATION'
+                            };
+                app.saveSystemLogEntry(logParams);
+              }
+            }
         }, this.predictionSummary(problem, solutionSummaries));
 
-        let visualizePipeline = selectedSolutions.length === 1 && firstSolution.source === 'd3m' && m(Subpanel, {
+        let visualizePipelinePanel = selectedSolutions.length === 1 && firstSolution.source === 'd3m' && m(Subpanel, {
             style: {margin: '0px 1em'},
             header: 'Visualize Pipeline',
             shown: resultsSubpanels['Visualize Pipeline'],
-            setShown: state => resultsSubpanels['Visualize Pipeline'] = state
+            setShown: state => {
+              resultsSubpanels['Visualize Pipeline'] = state;
+              if(state){
+                // behavioral logging
+                let logParams = {
+                              feature_id: 'VIEW_VISUALIZE_PIPELINE',
+                              activity_l1: 'MODEL_SELECTION',
+                              activity_l2: 'MODEL_EXPLANATION'
+                            };
+                app.saveSystemLogEntry(logParams);
+              }
+            }
         }, this.visualizePipeline(firstSolution));
 
         let performanceStatsContents = firstSolution.source === 'rook' && Object.keys(firstSolution.models)
@@ -355,7 +415,7 @@ export class CanvasSolutions {
             .filter(target => firstSolution.models[target].coefficients !== undefined)
             .map(target => m('div',
                 m('h5', target),
-                m(Table, {data: ['intercept', ...problem.predictors].map((predictor, i) => [
+                m(Table, {data: ['intercept', ...app.getPredictorVariables(problem)].map((predictor, i) => [
                         predictor,
                         firstSolution.models[target].coefficients[i]
                     ])}),
@@ -367,7 +427,7 @@ export class CanvasSolutions {
                     endColor: '#5770b0',
                     xLabel: '',
                     yLabel: '',
-                    classes: ['intercept', ...problem.predictors],
+                    classes: ['intercept', ...app.getPredictorVariables(problem)],
                     margin: {left: 10, right: 10, top: 50, bottom: 10},
                     attrsAll: {style: {height: '600px'}}
                 })));
@@ -379,7 +439,7 @@ export class CanvasSolutions {
         }, coefficientsContents);
 
 
-        let prepareANOVA = table => [...problem.predictors, 'Residuals']
+        let prepareANOVA = table => [...app.getPredictorVariables(problem), 'Residuals']
             .map(predictor => table.find(row => row._row === predictor))
             .map(row => ({
                 'Predictor': row._row,
@@ -424,7 +484,7 @@ export class CanvasSolutions {
             problemSummary,
             solutionSummary,
             predictionSummary,
-            visualizePipeline,
+            visualizePipelinePanel,
             performanceStats,
             coefficientMatrix,
             anovaTables,
@@ -444,7 +504,7 @@ let solutionAdapter = (problem, solution) => {
         fittedValues: solver.getFittedValues(problem, solution, target),
         score: solver.getScore(problem, solution, target),
         targets: problem.targets,
-        predictors: problem.predictors,
+        predictors: app.getPredictorVariables(problem),
         description: solver.getDescription(problem, solution),
         task: solver.getTask(problem, solution),
         model: solver.getModel(problem, solution)
@@ -453,6 +513,27 @@ let solutionAdapter = (problem, solution) => {
 
 let leftTabResults = 'Solutions';
 let setLeftTabResults = tab => leftTabResults = tab;
+
+let selectedMetric = {
+    d3m: undefined,
+    rook: undefined
+};
+
+// array of metrics to sort low to high
+export let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSquaredErrorAvg", "meanAbsoluteError"]
+    .map(metric => app.d3mMetrics[metric]);
+
+/**
+ Sort the Pipeline table, putting the highest score at the top
+ */
+export function sortPipelineTable(a, b) {
+    if (a === b) return 0;
+    if (a === "scoring") return 100;
+    if (b === "scoring") return -100;
+    if (a === "no score") return 1000;
+    if (b === "no score") return -1000;
+    return (parseFloat(b) - parseFloat(a)) * (reverseSet.includes(getSelectedProblem().metric) ? -1 : 1);
+}
 
 let resultsSubpanels = {
     'Prediction Summary': true,
@@ -467,7 +548,6 @@ let resultsSubpanels = {
 
 export let forceDiagramStateResults = {
     builders: [pebbleBuilder, groupBuilder, linkBuilder, groupLinkBuilder],
-    pebbleLinks: [],
     hoverPebble: undefined,
     contextPebble: undefined,
     selectedPebble: undefined,
@@ -503,18 +583,6 @@ Object.assign(forceDiagramStateResults, {
                 forceDiagramStateResults.hoverPebble = undefined;
                 m.redraw()
             }, forceDiagramStateResults.hoverTimeoutDuration)
-        },
-        contextmenu: pebble => {
-            d3.event.preventDefault(); // block browser context menu
-            if (forceDiagramStateResults.contextPebble) {
-                if (forceDiagramStateResults.contextPebble !== pebble) forceDiagramStateResults.pebbleLinks.push({
-                    source: forceDiagramStateResults.contextPebble,
-                    target: pebble,
-                    right: true
-                });
-                forceDiagramStateResults.contextPebble = undefined;
-            } else forceDiagramStateResults.contextPebble = pebble;
-            m.redraw();
         }
     }
 });
@@ -582,6 +650,10 @@ export function generatePerformanceData(confusionData2x2) {
         // 'false negative rate': round(fn / (fn + tp), 2), // miss rate
     }
 }
+
+export let extractD3MScores = solution => 'scores' in solution
+    ? solution.scores.reduce((out, score) => Object.assign(out, {[score.metric.metric]: app.formatPrecision(score.value.raw.double)}), {})
+    : {};
 
 
 // STATISTICS HELPER FUNCTIONS

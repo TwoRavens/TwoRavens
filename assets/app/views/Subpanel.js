@@ -2,7 +2,7 @@ import m from 'mithril';
 
 import * as app from '../app';
 import * as common from "../../common/common";
-import {logArray} from "../inactive";
+import {logArray, zparams} from "../inactive";
 
 class Subpanel {
     oninit(vnode) {
@@ -13,7 +13,7 @@ class Subpanel {
         let title = vnode.attrs.title;
         let legend = title === 'Legend';
         let target = 'collapse' + title;
-        let z = app.zparams;
+        let z = zparams;
         let side = legend ? 'right' : 'left';
 
         return m(`#${legend ? "legend.legendary" : "logdiv.logbox"}.panel.panel-default`, {

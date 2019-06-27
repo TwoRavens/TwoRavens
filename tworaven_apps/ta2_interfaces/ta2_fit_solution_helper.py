@@ -18,14 +18,12 @@ from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 from tworaven_apps.ta2_interfaces.req_search_solutions import fit_solution
 from tworaven_apps.ta2_interfaces.ta2_produce_solution_helper import ProduceSolutionHelper
-from tworaven_apps.ta2_interfaces.static_vals import \
-        (GRPC_GET_FIT_SOLUTION_RESULTS,
-         KEY_FITTED_SOLUTION_ID, KEY_PIPELINE_ID,
-         KEY_PROGRESS, KEY_PROGRESS_STATE, KEY_PROGRESS_COMPLETED,
-         KEY_REQUEST_ID,
-         KEY_SEARCH_ID, KEY_SOLUTION_ID)
 from tworaven_apps.ta2_interfaces.models import \
         (StoredRequest, StoredResponse)
+from tworaven_apps.ta2_interfaces import static_vals as ta2_static
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
+from tworaven_apps.behavioral_logs import static_vals as bl_static
+
 import core_pb2
 import grpc
 from google.protobuf.json_format import \
@@ -36,7 +34,6 @@ LOGGER = logging.getLogger(__name__)
 
 class FitSolutionHelper(BasicErrCheck):
     """Helper class to run TA2 call sequence"""
-    GRCP_FIT_SOLUTION = 'FitSolution'
 
     def __init__(self, pipeline_id, websocket_id, user_id, fit_params, **kwargs):
         """initial params"""
@@ -49,6 +46,7 @@ class FitSolutionHelper(BasicErrCheck):
 
         self.search_id = kwargs.get('search_id', None)
         self.produce_params = kwargs.get('produce_params', None)
+        self.session_key = kwargs.get('session_key', '')
 
         self.get_user()
         self.check_fit_params()
@@ -80,14 +78,14 @@ class FitSolutionHelper(BasicErrCheck):
 
         # Iterate through the expectd keys
         #
-        expected_keys = [KEY_SOLUTION_ID, 'inputs', 'exposeOutputs',
+        expected_keys = [ta2_static.KEY_SOLUTION_ID, 'inputs', 'exposeOutputs',
                          'exposeValueTypes', 'users']
 
         for key in expected_keys:
             if not key in self.fit_params:
                 user_msg = ('fit_params is missing key: %s') % \
                             (self.pipeline_id, key)
-                self.send_websocket_err_msg(self.GRCP_FIT_SOLUTION, user_msg)
+                self.send_websocket_err_msg(ta2_static.FIT_SOLUTION, user_msg)
                 return False
 
         return True
@@ -108,7 +106,7 @@ class FitSolutionHelper(BasicErrCheck):
                         (pipeline_id, fit_helper.get_error_message())
 
             ws_msg = WebsocketMessage.get_fail_message(\
-                        FitSolutionHelper.GRCP_FIT_SOLUTION, user_msg)
+                        ta2_static.FIT_SOLUTION, user_msg)
 
             ws_msg.send_message(websocket_id)
             LOGGER.error(user_msg)
@@ -139,17 +137,27 @@ class FitSolutionHelper(BasicErrCheck):
                         search_id=self.search_id,
                         pipeline_id=self.pipeline_id,
                         workspace='(not specified)',
-                        request_type=self.GRCP_FIT_SOLUTION,
+                        request_type=ta2_static.FIT_SOLUTION,
                         is_finished=False,
                         request=self.fit_params)
         stored_request.save()
+
+        # --------------------------------
+        # (2a) Behavioral logging
+        # --------------------------------
+        log_data = dict(session_key=self.session_key,
+                        feature_id=ta2_static.FIT_SOLUTION,
+                        activity_l1=bl_static.L1_MODEL_SELECTION,
+                        activity_l2=bl_static.L2_MODEL_EXPLANATION)
+
+        LogEntryMaker.create_ta2ta3_entry(self.user_object, log_data)
 
         # ----------------------------------
         # Run FitSolution
         # ----------------------------------
         fit_info = fit_solution(json_str_input)
         if not fit_info.success:
-            self.send_websocket_err_msg(self.GRCP_FIT_SOLUTION,
+            self.send_websocket_err_msg(ta2_static.FIT_SOLUTION,
                                         fit_info.err_msg)
             StoredResponse.add_err_response(\
                     stored_request,
@@ -164,7 +172,7 @@ class FitSolutionHelper(BasicErrCheck):
             StoredResponse.add_err_response(\
                     stored_request,
                     response_info.err_msg)
-            self.send_websocket_err_msg(self.GRCP_FIT_SOLUTION, response_info.err_msg)
+            self.send_websocket_err_msg(ta2_static.FIT_SOLUTION, response_info.err_msg)
             return
 
         result_json = response_info.result_obj
@@ -173,19 +181,19 @@ class FitSolutionHelper(BasicErrCheck):
         # ----------------------------------
         # Get the requestId
         # ----------------------------------
-        if not KEY_REQUEST_ID in result_json:
+        if not ta2_static.KEY_REQUEST_ID in result_json:
             user_msg = (' "%s" not found in response to JSON: %s') % \
-                        (KEY_REQUEST_ID, result_json)
+                        (ta2_static.KEY_REQUEST_ID, result_json)
             #
             StoredResponse.add_err_response(stored_request, user_msg)
             #
-            self.send_websocket_err_msg(self.GRCP_FIT_SOLUTION, user_msg)
+            self.send_websocket_err_msg(ta2_static.FIT_SOLUTION, user_msg)
             return
 
         StoredResponse.add_success_response(stored_request,
                                             result_json)
 
-        self.run_get_fit_solution_responses(result_json[KEY_REQUEST_ID])
+        self.run_get_fit_solution_responses(result_json[ta2_static.KEY_REQUEST_ID])
 
 
     def send_websocket_err_msg(self, grpc_call, user_msg=''):
@@ -220,14 +228,14 @@ class FitSolutionHelper(BasicErrCheck):
             return
 
         if not request_id:
-            self.send_websocket_err_msg(GRPC_GET_FIT_SOLUTION_RESULTS,
+            self.send_websocket_err_msg(ta2_static.GET_FIT_SOLUTION_RESULTS,
                                         'request_id must be set')
             return
 
         # -----------------------------------
         # (1) make GRPC request object
         # -----------------------------------
-        params_dict = {KEY_REQUEST_ID: request_id}
+        params_dict = {ta2_static.KEY_REQUEST_ID: request_id}
         params_info = json_dumps(params_dict)
 
         try:
@@ -235,7 +243,7 @@ class FitSolutionHelper(BasicErrCheck):
                              core_pb2.GetFitSolutionResultsRequest())
         except ParseError as err_obj:
             err_msg = ('Failed to convert JSON to gRPC: %s') % (err_obj)
-            self.send_websocket_err_msg(GRPC_GET_FIT_SOLUTION_RESULTS,
+            self.send_websocket_err_msg(ta2_static.GET_FIT_SOLUTION_RESULTS,
                                         err_msg)
             return
 
@@ -244,12 +252,22 @@ class FitSolutionHelper(BasicErrCheck):
         # --------------------------------
         stored_request = StoredRequest(\
                         user=self.user_object,
-                        request_type=GRPC_GET_FIT_SOLUTION_RESULTS,
+                        request_type=ta2_static.GET_FIT_SOLUTION_RESULTS,
                         pipeline_id=self.pipeline_id,
                         search_id=self.search_id,
                         is_finished=False,
                         request=params_dict)
         stored_request.save()
+
+        # --------------------------------
+        # (2a) Behavioral logging
+        # --------------------------------
+        log_data = dict(session_key=self.session_key,
+                        feature_id=ta2_static.GET_FIT_SOLUTION_RESULTS,
+                        activity_l1=bl_static.L1_MODEL_SELECTION,
+                        activity_l2=bl_static.L2_MODEL_EXPLANATION)
+
+        LogEntryMaker.create_ta2ta3_entry(self.user_object, log_data)
 
         # --------------------------------
         # (3) Make the gRPC request
@@ -285,27 +303,27 @@ class FitSolutionHelper(BasicErrCheck):
                                         stored_request, err_msg)
 
                     self.send_websocket_err_msg(\
-                            GRPC_GET_FIT_SOLUTION_RESULTS,
+                            ta2_static.GET_FIT_SOLUTION_RESULTS,
                             err_msg)
                     # Wait for next response....
                     continue
 
                 result_json = msg_json_info.result_obj
 
-                if not KEY_FITTED_SOLUTION_ID in result_json:
+                if not ta2_static.KEY_FITTED_SOLUTION_ID in result_json:
                     user_msg = '"%s" not found in response to JSON: %s' % \
-                               (KEY_FITTED_SOLUTION_ID, result_json)
+                               (ta2_static.KEY_FITTED_SOLUTION_ID, result_json)
 
                     StoredResponse.add_stream_err_response(\
                                         stored_request, err_msg)
 
                     self.send_websocket_err_msg(\
-                            GRPC_GET_FIT_SOLUTION_RESULTS,
+                            ta2_static.GET_FIT_SOLUTION_RESULTS,
                             err_msg)
                     # Wait for next response....
                     continue
 
-                fitted_solution_id = result_json[KEY_FITTED_SOLUTION_ID]
+                fitted_solution_id = result_json[ta2_static.KEY_FITTED_SOLUTION_ID]
 
                 # -----------------------------------------
                 # Looks good, save the response
@@ -331,10 +349,10 @@ class FitSolutionHelper(BasicErrCheck):
                 # ---------------------------------------------
                 progress_val = get_dict_value(\
                                 result_json,
-                                [KEY_PROGRESS, KEY_PROGRESS_STATE])
+                                [ta2_static.KEY_PROGRESS, ta2_static.KEY_PROGRESS_STATE])
 
                 if (not progress_val.success) or \
-                   (progress_val.result_obj != KEY_PROGRESS_COMPLETED):
+                   (progress_val.result_obj != ta2_static.KEY_PROGRESS_COMPLETED):
                     user_msg = 'GetFitSolutionResultsResponse is not yet complete'
                     LOGGER.info(user_msg)
                     # wait for next message...
@@ -342,7 +360,7 @@ class FitSolutionHelper(BasicErrCheck):
 
 
                 ws_msg = WebsocketMessage.get_success_message(\
-                            GRPC_GET_FIT_SOLUTION_RESULTS,
+                            ta2_static.GET_FIT_SOLUTION_RESULTS,
                             'it worked',
                             msg_cnt=msg_cnt,
                             data=stored_response.as_dict())
@@ -382,10 +400,11 @@ class FitSolutionHelper(BasicErrCheck):
         # --------------------------------------------
         progress_val = get_dict_value(\
                         result_json,
-                        [KEY_PROGRESS, KEY_PROGRESS_STATE])
+                        [ta2_static.KEY_PROGRESS,
+                         ta2_static.KEY_PROGRESS_STATE])
 
         if (not progress_val.success) or \
-           (progress_val.result_obj != KEY_PROGRESS_COMPLETED):
+           (progress_val.result_obj != ta2_static.KEY_PROGRESS_COMPLETED):
             user_msg = 'FitSolutionResultsResponse is not yet complete'
             LOGGER.info(user_msg)
             return
@@ -396,17 +415,18 @@ class FitSolutionHelper(BasicErrCheck):
         if not self.produce_params:
             user_msg = 'No default params available for ProduceSolution'
             self.send_websocket_err_msg(\
-                            GRPC_GET_FIT_SOLUTION_RESULTS,
+                            ta2_static.GET_FIT_SOLUTION_RESULTS,
                             user_msg)
             LOGGER.error(user_msg)
             return
 
         prod_params = dict(self.produce_params)
-        prod_params[KEY_FITTED_SOLUTION_ID] = fitted_solution_id
+        prod_params[ta2_static.KEY_FITTED_SOLUTION_ID] = fitted_solution_id
 
         ProduceSolutionHelper.make_produce_solution_call.delay(\
                                     self.pipeline_id,
                                     self.websocket_id,
                                     self.user_id,
                                     prod_params,
-                                    search_id=self.search_id)
+                                    search_id=self.search_id,
+                                    session_key=self.session_key)

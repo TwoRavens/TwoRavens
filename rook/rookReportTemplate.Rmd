@@ -1,0 +1,113 @@
+---
+params:
+  title: "Dataset Summary Statistics"
+  author: "TwoRavens"
+  date:
+  path:
+
+title: "`r params$title`"
+author: "`r params$author`"
+date: "`r if(is.null(params$date)) format(Sys.time(), '%d %B, %Y') else params$date`"
+output:
+  pdf_document:
+    toc: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+# hide report generation code from output
+knitr::opts_chunk$set(echo = FALSE)
+
+library(ggplot2)
+
+# xtable generates latex tables
+options(xtable.comment = FALSE)
+
+# load data
+preprocess <- if (is.null(params$metadata)) jsonlite::fromJSON(params$path) else params$metadata
+```
+
+```{r helpers, include=FALSE}
+
+```
+
+# Dataset
+
+```{r dataset, results='asis'}
+
+variableNames <- names(preprocess$variables)
+variableNames <- variableNames[variableNames != 'd3mIndex']
+if (length(variableNames) < 20) {
+  
+  continuousVars <- variableNames[sapply(variableNames, function(name) preprocess$variables[[name]]$numchar == 'numeric')]
+  dataCorrelation <- matrix(preprocess$dataset$covarianceMatrix, nrow=length(continuousVars))
+
+  rownames(dataCorrelation) <- continuousVars
+  colnames(dataCorrelation) <- continuousVars
+
+  cat('## Covariance Matrix \n')
+
+  dataCorrelation[lower.tri(dataCorrelation)] <- NA
+  ggplot2::ggplot(data = reshape2::melt(dataCorrelation, na.rm = TRUE),
+         ggplot2::aes(x=Var1, y=Var2, fill=value)) + ggplot2::geom_tile()
+}
+```
+
+
+# Variables
+
+```{r variables, results='asis', fig.width=8, fig.height=4}
+renderVariable <- function(variableName) {
+  cat(paste('##', variableName, '\n'))
+  variable <- preprocess$variables[[variableName]]
+  attributes <- names(variable)
+  
+  plotLeft <- grid::nullGrob()
+  plotRight <- grid::nullGrob()
+  if (variable$plottype == 'continuous') {
+    dataPlot <- data.frame(
+      x=variable$plotx,
+      y=variable$ploty)
+    plotLeft <- ggplot() + geom_area(aes(y = y, x = x), data = dataPlot,
+        stat="identity") + ggtitle('Probability Density')
+  }
+  else if (variable$plottype == 'bar' && length(variable$plotvalues) < 20) {
+    dataPlot <- data.frame(
+      x=names(variable$plotvalues),
+      y=as.vector(unlist(variable$plotvalues)))
+    plotLeft <- ggplot() + geom_bar(aes(y = y, x = x), data = dataPlot,
+        stat="identity") + ggtitle('Probability Density')
+  }
+
+  if (variable$cdfplottype == 'continuous') {
+    dataPlot <- data.frame(
+      x=variable$cdfplotx,
+      y=variable$cdfploty)
+    plotRight <- ggplot() + geom_area(aes(y = y, x = x), data = dataPlot,
+        stat="identity") + ggtitle('Cumulative Density')
+  }
+  else if (variable$cdfplottype == 'bar') {
+    dataPDF <- data.frame(
+      x=preprocess$variables[[variableName]]$cdfplotx,
+      y=preprocess$variables[[variableName]]$cdfploty)
+    plotRight <- ggplot() + geom_bar(aes(y = y, x = x), data = dataPDF,
+        stat="identity") + ggtitle('Cumulative Density')
+  }
+  gridExtra::grid.arrange(plotLeft, plotRight, nrow = 1)
+  cat('\n')
+  cat('\n')
+  
+  statistics <- sapply(keepStatistics, function(statisticName) variable[[statisticName]])
+  names(statistics) <- keepStatistics
+  
+  print(xtable::xtable(as.data.frame(statistics)))
+  cat('\n')
+  cat('\n')
+}
+
+keepStatistics <- c('binary', 'fewest', 'freqfewest', 'freqmid', 'freqmode', 'herfindahl', 'interval', 'invalid', 'max', 'mean', 'median', 'mid', 'mode', 'nature', 'numchar', 'sd', 'uniques', 'valid')
+
+for (variableName in variableNames) renderVariable(variableName)
+```
+
+

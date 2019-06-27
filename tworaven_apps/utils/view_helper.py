@@ -6,6 +6,7 @@ import json
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.json_helper import json_loads
 
+SESSION_KEY = 'session_key'
 
 def get_common_view_info(request):
     """For all pages, e.g. is user logged in, etc"""

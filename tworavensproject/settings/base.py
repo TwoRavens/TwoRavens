@@ -73,7 +73,6 @@ INSTALLED_APPS = [
     'social_django',    # social auth
     'tworaven_apps.raven_auth', # user model
     'tworaven_apps.user_workspaces', # save session state
-    'tworaven_apps.workspaces', # save session state
 
     'tworaven_apps.configurations', # UI domain/mode configuration
     'tworaven_apps.ta2_interfaces', # sending UI through to TA2 and back again
@@ -83,6 +82,8 @@ INSTALLED_APPS = [
     'tworaven_apps.call_captures', # capture data sent from UI out to rook/TA2
     'tworaven_apps.eventdata_queries', # eventdata API services
     'tworaven_common_apps.datamart_endpoints', # Datamart connections
+
+    'tworaven_apps.behavioral_logs', # record user behavior
 
     # webpack!
     'webpack_loader',

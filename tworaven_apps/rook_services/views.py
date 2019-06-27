@@ -10,12 +10,11 @@ from tworaven_apps.call_captures.models import ServiceCallEntry
 
 from tworaven_apps.rook_services.rook_app_info import RookAppInfo
 from tworaven_apps.rook_services.models import UI_KEY_SOLA_JSON, ROOK_ZESSIONID
-from tworaven_apps.rook_services.app_names import \
-    (KEY_DATA, KEY_DATASTUB)
+from tworaven_apps.rook_services import app_names
+
 from tworaven_apps.rook_services.preprocess_util import \
     (PreprocessUtil,)
 
-from tworaven_apps.workspaces.workspace_util import WorkspaceUtil
 from tworaven_apps.utils.view_helper import get_session_key
 
 from tworaven_apps.utils.view_helper import \
@@ -23,7 +22,13 @@ from tworaven_apps.utils.view_helper import \
      get_request_body_as_json)
 from tworaven_apps.utils.view_helper import \
     (get_json_error,
-     get_json_success)
+     get_json_success,
+     get_authenticated_user)
+
+from tworaven_apps.ta2_interfaces import static_vals as ta2_static
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
+from tworaven_apps.behavioral_logs import static_vals as bl_static
+from tworaven_apps.rook_services import static_vals as rook_static
 
 LOGGER = logging.getLogger(__name__)
 
@@ -37,6 +42,12 @@ def view_rook_preprocess(request):
           "datastub": "196_ag_problem_TRAIN"
         }
     """
+    # used for logging
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+
     json_info = get_request_body_as_json(request)
     if not json_info.success:
         return JsonResponse(get_json_error(json_info.err_msg))
@@ -46,18 +57,24 @@ def view_rook_preprocess(request):
     LOGGER.info('view_rook_preprocess input: %s', json_data)
     print('json_data', json_data)
 
-    if not KEY_DATA in json_data:
-        err_msg = (f'The key "{KEY_DATA}" was not found'
+    if not rook_static.KEY_DATA in json_data:
+        err_msg = (f'The key "{rook_static.KEY_DATA}" was not found'
                    f' in the preprocess request')
         return JsonResponse(get_json_error(err_msg))
 
-    if not KEY_DATASTUB in json_data:
-        err_msg = (f'The key "{KEY_DATASTUB}" was not found'
+    if not rook_static.KEY_DATASTUB in json_data:
+        err_msg = (f'The key "{rook_static.KEY_DATASTUB}" was not found'
                    f' in the preprocess request')
         return JsonResponse(get_json_error(err_msg))
 
-    putil = PreprocessUtil(json_data[KEY_DATA],
-                           datastub=json_data[KEY_DATASTUB])
+
+    log_preprocess_call(user_info.result_obj,
+                        json_data,
+                        get_session_key(request))
+
+
+    putil = PreprocessUtil(json_data[rook_static.KEY_DATA],
+                           datastub=json_data[rook_static.KEY_DATASTUB])
     if putil.has_error():
         return JsonResponse(get_json_error(putil.get_error_message()))
 
@@ -67,6 +84,39 @@ def view_rook_preprocess(request):
     return JsonResponse(info)
 
 
+def log_preprocess_call(user, json_data, session_id=''):
+    """Note: The preprocess call also does problem discovery."""
+    # --------------------------------
+    # Behavioral logging
+    # --------------------------------
+    # Check the request for an l1_activity, default to DATA_PREPARATION
+    #
+    activity_l1_val = json_data[bl_static.KEY_L1_ACTIVITY] \
+                      if bl_static.KEY_L1_ACTIVITY in json_data \
+                      else bl_static.L1_DATA_PREPARATION
+
+    # Check the request for an l1_activity, default to DATA_PREPARATION
+    #
+    activity_l2_val = json_data[bl_static.KEY_L2_ACTIVITY] \
+                      if bl_static.KEY_L2_ACTIVITY in json_data \
+                      else bl_static.L2_ACTIVITY_BLANK
+
+    log_data = dict(session_key=session_id,
+                    feature_id=rook_static.PREPROCESS_DATA,
+                    activity_l1=activity_l1_val,
+                    activity_l2=activity_l2_val)
+
+    LogEntryMaker.create_system_entry(user, log_data)
+
+    # Log the discovery activity
+    #
+    log_data2 = dict(session_key=session_id,
+                    feature_id=rook_static.PROBLEM_DISCOVERY,
+                    activity_l1=bl_static.L1_PROBLEM_DEFINITION,
+                    activity_l2=activity_l2_val)
+
+    LogEntryMaker.create_system_entry(user, log_data2)
+
 @csrf_exempt
 def view_rook_healthcheck(request):
     """Ping rook to make sure it's receiving/responding to requests"""
@@ -74,9 +124,9 @@ def view_rook_healthcheck(request):
     #
     rook_app_info = RookAppInfo.get_appinfo_from_url('healthcheckapp')
     if rook_app_info is None:
-        raise Http404(('unknown rook app: "{0}" (please add "{0}" to '
-                       ' "tworaven_apps/rook_services/app_names.py")').format(\
-                       app_name_in_url))
+        raise Http404((f'unknown rook app: "{app_name_in_url}"'
+                       f' (please add "{app_name_in_url}" to '
+                       f' "tworaven_apps/rook_services/app_names.py")'))
 
     rook_svc_url = rook_app_info.get_rook_server_url()
 
@@ -107,8 +157,10 @@ def view_rook_route(request, app_name_in_url):
                        ' "tworaven_apps/rook_services/app_names.py")').format(\
                        app_name_in_url))
 
-    # record session metadata, if appropriate
-    WorkspaceUtil.record_state(request)
+    # used for logging
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
 
     # look for the "solaJSON" variable in the POST
     #
@@ -168,51 +220,44 @@ def view_rook_route(request, app_name_in_url):
 
     app_data = dict(solaJSON=raven_data_text)
 
-    rook_svc_url = rook_app_info.get_rook_server_url()
 
-    #print('raven_data_text', raven_data_text)
-    # Begin object to capture request
-    #
-    call_entry = None
-    if rook_app_info.record_this_call():
-        call_entry = ServiceCallEntry.get_rook_entry(\
-                        request_obj=request,
-                        call_type=rook_app_info.name,
-                        outgoing_url=rook_svc_url,
-                        request_msg=raven_data_text)
 
-    #print('app_data: %s' % app_data)
+    # --------------------------------
+    # Behavioral logging
+    # --------------------------------
+    print('rook_app_info.name:', rook_app_info.name)
+    feature_id = rook_app_info.name
+    if rook_app_info.name == app_names.EXPLORE_APP:
+        activity_l1 = bl_static.L1_DATA_PREPARATION
+        activity_l2 = bl_static.L2_DATA_EXPLORE
+
+    elif rook_app_info.name == app_names.PLOTDATA_APP:
+        feature_id = 'EXPLORE_VIEW_PLOTS'
+        activity_l1 = bl_static.L1_DATA_PREPARATION
+        activity_l2 = bl_static.L2_DATA_EXPLORE
+    else:
+        activity_l1 = bl_static.L1_PROBLEM_DEFINITION
+        activity_l2 = bl_static.L2_ACTIVITY_BLANK
+
+    log_data = dict(session_key=session_key,
+                    feature_id=feature_id,
+                    activity_l1=activity_l1,
+                    activity_l2=activity_l2)
+
+    LogEntryMaker.create_system_entry(user_info.result_obj, log_data)
 
     # Call R services
     #
+    rook_svc_url = rook_app_info.get_rook_server_url()
+
     try:
         rservice_req = requests.post(rook_svc_url,
                                      data=app_data)
     except ConnectionError:
         err_msg = 'R Server not responding: %s' % rook_svc_url
-        if rook_app_info.record_this_call():
-            call_entry.add_error_message(err_msg)
-            call_entry.save()
         resp_dict = dict(message=err_msg)
         return JsonResponse(resp_dict)
 
-    # Save request result
-    #
-    if rook_app_info.record_this_call():
-        if rservice_req.status_code == 200:
-            call_entry.add_success_message(rservice_req.text,
-                                           rservice_req.status_code)
-        else:
-            call_entry.add_error_message(rservice_req.text,
-                                         rservice_req.status_code)
-        call_entry.save()
-
-    # Return the response to the user
-    #
-    #print(40 * '=')
-    #print(r.text)
-    #d = r.json()
-    #print(json.dumps(d, indent=4))
     print('status code from rook call: %d' % rservice_req.status_code)
 
     return HttpResponse(rservice_req.text)

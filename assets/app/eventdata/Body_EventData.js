@@ -37,7 +37,7 @@ import CanvasResults from "./canvases/CanvasResults";
 
 import SaveQuery from "./SaveQuery";
 import {TreeAggregate, TreeSubset, TreeVariables} from "../views/QueryTrees";
-import Icon from "../views/Icon";
+import Icon from "../../common/views/Icon";
 
 export default class Body_EventData {
 

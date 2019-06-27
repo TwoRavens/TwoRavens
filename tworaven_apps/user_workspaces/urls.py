@@ -22,6 +22,22 @@ urlpatterns = (
         views.view_user_raven_config,
         name='view_user_raven_config'),
 
+
+    # Shared workspace
+    url(r'^raven-configs/share/(?P<hash_id>[\w]{40,200})$',
+        views.view_shared_workspace_by_hash_id,
+        name='view_shared_workspace_by_hash_id'),
+
+    # Set workspace to public
+    url(r'^raven-configs/activate-share/(?P<user_workspace_id>\d{1,7})$',
+        views.view_activate_shared_workspace,
+        name='view_activate_shared_workspace'),
+
+    # Set workspace to private (default)
+    url(r'^raven-configs/deactivate-share/(?P<user_workspace_id>\d{1,7})$',
+        views.view_deactivate_shared_workspace,
+        name='view_deactivate_shared_workspace'),
+
     # ----------------------------
     # Save user workspaces
     # ----------------------------

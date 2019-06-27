@@ -1,9 +1,10 @@
 import m from 'mithril';
-import {TreeAggregate, TreeSubset, TreeTransform, TreeImputation} from '../views/QueryTrees';
+import {TreeAggregate, TreeImputation, TreeSubset, TreeTransform} from '../views/QueryTrees';
 import CanvasContinuous from '../canvases/CanvasContinuous';
 import CanvasDate from '../canvases/CanvasDate';
 import CanvasDiscrete from '../canvases/CanvasDiscrete';
 import CanvasTransform from '../canvases/CanvasTransform';
+import CanvasImputation from "../canvases/CanvasImputation";
 
 import Flowchart from '../views/Flowchart';
 
@@ -13,17 +14,20 @@ import PanelList from "../../common/views/PanelList";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import Panel from "../../common/views/Panel";
 import Canvas from "../../common/views/Canvas";
+import Table from "../../common/views/Table";
+
 import * as common from '../../common/common';
 
-import * as app from '../app';
+import * as app from "../app";
+import {alertError, alertLog} from "../app";
 
 import * as queryAbstract from './queryAbstract';
 import * as queryMongo from "./queryMongo";
 import hopscotch from 'hopscotch';
-import CanvasImputation from "../canvases/CanvasImputation";
-import {alertLog, alertError} from "../app";
-import Icon from "../views/Icon";
-import Table from "../../common/views/Table";
+
+import {formatVariableSummary} from '../views/VariableSummary';
+import Icon from "../../common/views/Icon";
+
 
 export function menu(compoundPipeline) {
 
@@ -174,7 +178,7 @@ export function varList() {
             if (constraintPreferences.type === 'Expansion') {
                 variables = [...new Set([
                     ...Object.keys(app.variableSummaries),
-                    ...getTransformVariables(partialPipeline)
+                    ...app.getTransformVariables(partialPipeline)
                 ])];
                 selectedVariables = Object.keys(constraintPreferences.menus.Expansion.variables || {});
             }
@@ -206,7 +210,7 @@ export function varList() {
             callback: ['transform', 'imputation'].includes(constraintMenu.type)
                 ? variable => constraintPreferences.select(variable) // the select function is defined inside CanvasTransform
                 : variable => setConstraintColumn(variable, constraintMenu.pipeline),
-            popup: x => m('div', m('h4', 'Summary Statistics for ' + x), m(Table, {attrsAll: {class: 'table-sm'}, data: app.getVarSummary(app.variableSummaries[x])})),
+            popup: x => m('div', m('h4', 'Summary Statistics for ' + x), m(Table, {attrsAll: {class: 'table-sm'}, data: formatVariableSummary(app.variableSummaries[x])})),
             popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
             attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
             attrsAll: {
@@ -536,11 +540,11 @@ export let setQueryUpdated = async state => {
 
         let ravenConfig = app.workspace.raven_config;
 
-        selectedProblem.tags.transformed = [...getTransformVariables(selectedProblem.manipulations)];
+        selectedProblem.tags.transformed = [...app.getTransformVariables(selectedProblem.manipulations)];
 
         app.buildProblemPreprocess(ravenConfig, selectedProblem)
             .then(summaries => {
-                if (summaries) app.variableSummaries = summaries
+                if (summaries) app.setVariableSummaries(summaries)
             }).then(m.redraw);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
@@ -762,8 +766,7 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
     let success = true;
     let onError = err => {
         if (err === 'no records matched') alertError("No records match your subset. Plots will not be updated.");
-        else console.error(err);
-        alertError(err.message);
+        else alertError(err.message);
         success = false;
     };
 
@@ -822,7 +825,7 @@ export async function buildDatasetUrl(problem) {
         type: 'menu',
         metadata: {
             type: 'data',
-            variables: [...problem.predictors, ...problem.targets],
+            variables: [...app.getPredictorVariables(problem), ...problem.targets],
             nominal: !app.is_manipulate_mode && app.nodes
                 .filter(node => node.nature === 'nominal')
                 .map(node => node.name)
@@ -853,7 +856,7 @@ export async function buildProblemUrl(problem) {
             type: 'menu',
             metadata: {
                 type: 'data',
-                variables: ['d3mIndex', ...problem.predictors, ...problem.targets],
+                variables: ['d3mIndex', ...app.getPredictorVariables(problem), ...problem.targets],
                 nominal: !app.is_manipulate_mode && app.nodes
                     .filter(node => node.nature === 'nominal')
                     .map(node => node.name)
@@ -871,14 +874,3 @@ export async function buildProblemUrl(problem) {
         metadata: JSON.stringify(metadata)
     });
 }
-
-export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
-    if (step.type !== 'transform') return out;
-
-    step.transforms.forEach(transform => out.add(transform.name));
-    step.expansions.forEach(expansion => queryMongo.expansionTerms(expansion).forEach(term => out.add(term)));
-    step.binnings.forEach(binning => out.add(binning.name));
-    step.manual.forEach(manual => out.add(manual.name));
-
-    return out;
-}, new Set());

@@ -8,7 +8,11 @@ from django.conf import settings
 from django.template.loader import render_to_string
 
 from tworaven_apps.ta2_interfaces.ta2_util import format_info_for_request
+from tworaven_apps.ta2_interfaces import static_vals as ta2_static
+
 from tworaven_apps.ta2_interfaces.grpc_util import TA3TA2Util
+
+from tworaven_apps.behavioral_logs.models import BehavioralLogEntry
 from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.raven_auth.models import User
 
@@ -56,6 +60,10 @@ class NonStreamingTests(TestCase):
 
         self.assertTrue('userAgent' in json_resp['data'])
         self.assertTrue('version' in json_resp['data'])
+
+        # check the log
+        self.assertEqual(BehavioralLogEntry.objects.filter(\
+                            feature_id=ta2_static.HELLO).count(), 1)
 
     def test_020_SearchSolutions(self):
         """(20) Test SearchSolutions"""
@@ -111,6 +119,8 @@ class NonStreamingTests(TestCase):
         self.assertTrue(json_resp['success'])
         self.assertTrue('data' in json_resp)
 
+        self.assertEqual(BehavioralLogEntry.objects.filter(\
+                            feature_id=ta2_static.END_SEARCH_SOLUTIONS).count(), 1)
 
 
     def test_040_StopSearchSolutions(self):
@@ -137,6 +147,10 @@ class NonStreamingTests(TestCase):
 
         self.assertTrue(json_resp['success'])
         self.assertTrue('data' in json_resp)
+
+        self.assertEqual(BehavioralLogEntry.objects.filter(\
+                            feature_id=ta2_static.STOP_SEARCH_SOLUTIONS).count(), 1)
+
 
     def test_050_DescribeSolution(self):
         """(50) Test DescribeSolution"""
@@ -280,6 +294,8 @@ class NonStreamingTests(TestCase):
         self.assertTrue('data' in json_resp)
         self.assertEqual(json_resp['data'], {})
 
+        self.assertEqual(BehavioralLogEntry.objects.filter(\
+                            feature_id=ta2_static.UPDATE_PROBLEM).count(), 1)
 
     def test_100_ListPrimitives(self):
         """(100) Test ListPrimitives"""
@@ -307,7 +323,11 @@ class NonStreamingTests(TestCase):
         self.assertTrue(json_resp['success'])
         self.assertTrue('data' in json_resp)
         self.assertTrue('primitives' in json_resp['data'])
-        self.assertTrue(len(json_resp['data']['primitives'])==3)
+        self.assertEqual(len(json_resp['data']['primitives']), 3)
+
+        # check the log
+        self.assertEqual(BehavioralLogEntry.objects.filter(\
+                            feature_id=ta2_static.LIST_PRIMITIVES).count(), 1)
 
 
     def test_110_GetSearchSolutionsResults(self):

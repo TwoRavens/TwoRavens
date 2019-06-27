@@ -25,8 +25,8 @@ export default class ForceDiagram {
 
         // data
         let {
-            pebbles, pebbleLinks,
-            groups, groupLinks
+            pebbles=[], pebbleLinks=[],
+            groups=[], groupLinks=[]
         } = attrs;
 
         let {
@@ -351,6 +351,9 @@ export default class ForceDiagram {
                         groups
                             .filter(group => group.nodes.has(d3.event.subject.name))
                             .filter(group => {
+                                if (group.nodes.size === 2)
+                                    return mag(sub(...hullCoords[group.name])) > 4000;
+
                                 let reducedHull = hullCoords[group.name]
                                     .filter(coord => coord[0] !== dragCoord[0] && coord[1] !== dragCoord[1]);
                                 let centroidReduced = jamescentroid(reducedHull);
@@ -555,11 +558,11 @@ function lengthen(coords, radius) {
             (coords[0][1] + coords[1][1]) / 2 - deltax * magnitude
         ]);
         coords.push([
-            (coords[0][0] + coords[1][0]) / 2 + deltax * magnitude,
+            (coords[0][0] + coords[1][0]) / 2 - deltax * magnitude,
             (coords[0][1] + coords[1][1]) / 2 + deltay * magnitude
         ]);
         coords.push([
-            (coords[0][0] + coords[1][0]) / 2 - deltax * magnitude,
+            (coords[0][0] + coords[1][0]) / 2 + deltax * magnitude,
             (coords[0][1] + coords[1][1]) / 2 - deltay * magnitude
         ]);
     }
@@ -743,13 +746,14 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
         .attr('class', pebble => ({
             'continuous': 'density-plot',
             'bar': 'bar-plot',
-            undefined: 'speck-plot'
-        }[(attrs.summaries[pebble] || {}).plottype || 'undefined']))
+            'collapsed': 'speck-plot'
+        }[(attrs.summaries[pebble] || {}).plottype]))
         .attr('opacity', 0.4);
 
     context.selectors.pebbles
         .select('g.speck-plot').each(function (pebble) {
-        let groupSpeckCoords = speckCoords.slice(0, attrs.groups.find(group => group.name === pebble).childNodes.size);
+
+        let groupSpeckCoords = speckCoords.slice(0, attrs.summaries[pebble].childNodes.size);
 
         let width = context.nodes[pebble].radius * 1.5;
         let height = context.nodes[pebble].radius * 1.5;
@@ -971,9 +975,7 @@ export let linkBuilder = (attrs, context) => {
         .classed('selected', () => null)
         .style('marker-start', marker('left'))
         .style('marker-end', marker('right'))
-        .on('mousedown', d => // mutate the original pebbleLinks, not the filtered. part of the reason why this is confusing is because the callback should be state
-            attrs.pebbleLinks.some(link => d.source === link.source && d.target === link.target && (remove(attrs.pebbleLinks, link) || true))
-        )
+        .on('mousedown', attrs.onclickLink || Function)
         .merge(context.selectors.links);
 
     // update existing links
