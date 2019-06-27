@@ -2487,7 +2487,8 @@ export function getDescription(problem) {
 export function discovery(problems) {
 
     // filter out problems with target of null
-    // e.g. [{"target":null,"predictors":null,"transform":0,"subsetObs":0,"subsetFeats":0},]
+    // e.g. [{"target":null, "predictors":null,"transform":0, ...},]
+    //
     problems = problems.filter(yeTarget => yeTarget.target)
 
 

@@ -238,39 +238,31 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
 
     @staticmethod
-    def datamart_augment(user_workspace, dataset_path, search_result, **kwargs):
+    def datamart_augment(user_workspace, dataset_path, task_data, **kwargs):
         """Augment the file via the NYU API"""
         if not isinstance(user_workspace, UserWorkspace):
             return err_resp('user_workspace must be a UserWorkspace')
 
-        # Make sure the soure file exitss
+        # Make sure the soure file exists
         #
         if not isfile(dataset_path):
             user_msg = f'Original data file not found: {dataset_path}'
             return err_resp(user_msg)
 
-        # Make sure the NYU datamart id is in the search_result
+        # Make sure the NYU datamart id is in the task_data
         #
-        if not dm_static.KEY_NYU_DATAMART_ID in search_result:
-            user_msg = (f'"search_result" did not contain'
+        if not dm_static.KEY_NYU_DATAMART_ID in task_data:
+            user_msg = (f'"task_data" did not contain'
                         f' "{dm_static.KEY_NYU_DATAMART_ID}" key')
             return err_resp(user_msg)
-        datamart_id = search_result[dm_static.KEY_NYU_DATAMART_ID]
 
-        # Ready the query parameters
+        # used for folder naming
         #
-        # search_result['join_columns'] = [['INSTNM', 'INSTNM']]
+        datamart_id = task_data[dm_static.KEY_NYU_DATAMART_ID]
 
-        search_result_str = json.dumps(search_result)
-        print('search_result_str', search_result_str)
-
-        files_info = dict(data=open(dataset_path, 'rb'),
-                          task=('task.json',
-                                search_result_str,
-                                'application/json'))
-
-        # Make the augment request
-        #
+        # ---------------------------------
+        # The augment url...
+        # ---------------------------------
         augment_url = f"{ get_nyu_url() }/augment"
 
         # ----------------------------
@@ -284,10 +276,22 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
         LogEntryMaker.create_datamart_entry(user_workspace.user, log_data)
         # ----------------------------
 
+        # ---------------------------------
+        # Ready the query parameters
+        # ---------------------------------
+        data_params = dict(data=open(dataset_path, 'rb'),
+                           task=json.dumps(task_data))
+
+
+        # ---------------------------------
+        # Make the augment request
+        # ---------------------------------
         try:
             response = requests.post(augment_url,
-                                     files=files_info,
+                                     files=data_params,
                                      stream=True,
+                                     allow_redirects=True,
+                                     verify=False,
                                      timeout=settings.DATAMART_LONG_TIMEOUT)
         except requests.exceptions.Timeout as err_obj:
             return err_resp('Request timed out. responded with: %s' % err_obj)

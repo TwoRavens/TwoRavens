@@ -5,6 +5,7 @@ import m from 'mithril';
 
 import JSONSchema from "../../common/views/JSONSchema";
 import Button from "../../common/views/Button";
+import ButtonPlain from "../../common/views/ButtonPlain";
 import * as common from "../../common/common";
 import Table from "../../common/views/Table";
 import ListTags from "../../common/views/ListTags";
@@ -276,7 +277,7 @@ export default class Datamart {
             }
         }, 'Metadata');
 
-        let buttonPreview = i => m(ButtonLadda, {
+        let buttonPreview = i => m(Button, {
             id: 'buttonPreview' + i,
             //class: 'ladda-label ladda-button',
             //activeLadda: preferences.previewButtonState[i],
@@ -683,9 +684,19 @@ export class ModalDatamart {
                 ])),
 
                 m('div',
-                    m(Button, {
+                    m('p', "Please choose the variables to connect your dataset" +
+                           " from the found dataset.")),
+
+                m('hr'),
+
+
+                m('div',
+                    m(ButtonPlain, {
                         style: {margin: '1em'},
                         title: 'supply variables from both the left and right datasets',
+
+                        class: `${(!preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting === true) ? 'btn-default' : 'btn-primary active'}`,
+
                         disabled: !preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting === true,
                         onclick: () => {
                             if (!preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting)
@@ -716,6 +727,9 @@ export class ModalDatamart {
                         id: 'augmentButton',
                         style: {margin: '1em', float: 'right'},
                         activeLadda: preferences.isAugmenting,
+
+                        class: `${(!preferences.joinPairs.length || preferences.isAugmenting === true) ? 'btn-default' : 'btn-primary active'}`,
+
                         disabled: !preferences.joinPairs.length || preferences.isAugmenting === true,
                         onclick: async () => {
                             preferences.isAugmenting = true;
@@ -772,8 +786,8 @@ export class ModalDatamart {
                         }
                     }, 'Augment')),
 
-                m('h4[style=width:calc(50% - 1em);display:inline-block]', 'Left Join Columns'),
-                m('h4[style=width:calc(50% - 1em);display:inline-block]', 'Right Join Columns'),
+                m('h4[style=width:calc(50% - 1em);display:inline-block]', 'Your Dataset Variables'),
+                m('h4[style=width:calc(50% - 1em);display:inline-block]', 'Found Dataset Variables'),
 
                 m('div', {style: {width: 'calc(50% - 1em)', display: 'inline-block', 'vertical-align': 'top'}},
                     m(PanelList, {

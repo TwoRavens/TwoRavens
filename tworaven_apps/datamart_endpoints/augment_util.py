@@ -184,19 +184,50 @@ class AugmentUtil(BasicErrCheck):
         # -----------------------------
         # TEMPORARILY DISABLED
         # -----------------------------
-        err_msg = ('NYU augment functionality is currently disabled')
-        self.add_err_msg(err_msg)
-        return False
+        #err_msg = ('NYU augment functionality is currently disabled')
+        #self.add_err_msg(err_msg)
+        #return False
 
         # user_workspace, data_path, search_result, left_columns,
         # right_columns, exact_match=False, **kwargs
-        search_result_info = json_loads(self.augment_params['search_result'])
-        if not search_result_info.success:
-            err_msg = (f"Failed to load augment_params['search_result']"
-                       f" as JSON: {search_result_info.err_msg}")
-            self.add_err_msg(err_msg)
+
+        print('augment_params', self.augment_params)
+        #err_msg = ('NYU augment functionality is currently disabled')
+        #self.add_err_msg(err_msg)
+        #return False
+
+        # Check for required keys and convert them python dicts
+        #
+        req_keys = ['search_result', 'left_columns', 'right_columns']
+        keys_not_found = []
+        jsonified_data = {}
+        for rk in req_keys:
+            if not rk in self.augment_params:
+                keys_not_found.append(rk)
+            else:
+                json_info = json_loads(self.augment_params[rk])
+                if not json_info.success:
+                    user_msg = (f'Sorry!  Augment failed.  (The data for'
+                                f' "{rk}" was not JSON)')
+                    self.add_err_msg(user_msg)
+                    return False
+                jsonified_data[rk] = json_info.result_obj
+
+        if keys_not_found:
+            user_msg = (f'Sorry! Augment failed.  (These required fields'
+                        f' weren\'t found: {req_keys})')
+            self.add_err_msg(user_msg)
             return
-        search_result_json = search_result_info.result_obj
+
+        # Format the task for augment submission
+        #
+        task_data = jsonified_data['search_result']
+
+        task_data['augmentation'] = {\
+                'type': 'join',
+                'left_columns': jsonified_data['left_columns'], # game id user's dataset
+                'right_columns': jsonified_data['right_columns'] # game id in datamart dataset
+                }
 
         extra_params = dict()   # none for now...
 
@@ -205,7 +236,7 @@ class AugmentUtil(BasicErrCheck):
         augment_info = self.datamart_util.datamart_augment(\
                             self.user_workspace,
                             self.augment_params['data_path'],
-                            search_result_json,
+                            task_data,
                             **extra_params)
 
         if not augment_info.success:

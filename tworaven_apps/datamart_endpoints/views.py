@@ -210,6 +210,8 @@ def api_augment_async(request):
 
     augment_params = json_req_info.result_obj
 
+    # print('augment_params', augment_params)
+
     augment_info = make_augment_call(user_workspace,
                                      augment_params)
 
@@ -219,47 +221,6 @@ def api_augment_async(request):
     return JsonResponse(get_json_success(augment_info.result_obj))
 
 
-
-@csrf_exempt
-def xapi_augment(request):
-    """removed for async version: api_augment_async"""
-    success, json_req_obj = get_request_body_as_json(request)
-
-    if not success:
-        return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
-
-    # check if data is valid
-    form = DatamartAugmentForm(json_req_obj)
-    if not form.is_valid():
-        return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
-
-    # Get the latest UserWorkspace
-    #
-    ws_info = get_latest_user_workspace(request)
-    if not ws_info.success:
-        user_msg = 'User workspace not found: %s' % ws_info.err_msg
-        return JsonResponse(get_json_error(user_msg))
-
-    user_workspace = ws_info.result_obj
-
-    if json_req_obj['source'] == DATAMART_ISI_NAME:
-        success, results_obj_err = DatamartJobUtilISI.datamart_augment(
-            user_workspace,
-            json_req_obj['data_path'],
-            form.cleaned_data['search_result'],
-            json_req_obj['left_columns'],
-            json_req_obj['right_columns'],
-            json_req_obj['exact_match'])
-
-    if json_req_obj['source'] == DATAMART_NYU_NAME:
-        success, results_obj_err = DatamartJobUtilNYU.datamart_augment(
-            json_req_obj['data_path'],
-            form.cleaned_data['search_result'],)
-
-    return JsonResponse({
-        "success": success,
-        "data": results_obj_err
-    })
 
 
 @csrf_exempt
