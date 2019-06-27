@@ -13,9 +13,7 @@ timeout <- 20 # maximum time to spend on a univariate fit
 observationLimit <- 10
 
 # parallelize grid search
-# allowParallel=TRUE
 allowParallel=FALSE
-
 if (allowParallel) {
   library(parallel)
   library(doParallel)
