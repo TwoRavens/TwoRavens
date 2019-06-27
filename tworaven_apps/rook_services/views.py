@@ -212,7 +212,7 @@ def view_rook_route(request, app_name_in_url):
         if not dest_dir_info.success:
             return JsonResponse(get_json_error(dest_dir_info.err_msg))
 
-        additional_params['data_loc'] = dest_dir_info.result_obj
+        additional_params['dataloc'] = dest_dir_info.result_obj
 
     elif request.POST and UI_KEY_SOLA_JSON in request.POST:
         # this is a POST with a JSON string under the key solaJSON key
@@ -269,7 +269,7 @@ def view_rook_route(request, app_name_in_url):
                                     ).replace('&', '%26'\
                                     ).replace('=', '%3D')
 
-    # print('raven_data_text', raven_data_text)
+    print('raven_data_text', raven_data_text)
 
     app_data = dict(solaJSON=raven_data_text)
 
