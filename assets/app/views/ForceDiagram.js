@@ -579,16 +579,6 @@ function lengthen(coords, radius) {
 // normalize: text -> html id
 let normalize = text => text.replace(/\W/g,'_');
 
-/**
- deletes the first instance of obj from arr
- @param {Object[]} arr - array
- @param {Object} [obj] - object
- */
-let remove = (arr, obj) => {
-    let idx = arr.indexOf(obj);
-    idx !== -1 && arr.splice(idx, 1);
-};
-
 // ~~~~~~~~~~~~~~~~~~~~~~~
 // BEGIN BUILDER FUNCTIONS
 
