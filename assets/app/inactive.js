@@ -2543,3 +2543,102 @@ function CreateScoreDefinition(res){
         GRPC_ScoreSolutionRequest(getResultsProblem()),
         {solutionId: res.response.solutionId});
 }
+
+function estimateNonD3M() {
+    // let userUsg = 'This code path is no longer used.  (Formerly, it used Zelig.)';
+    // console.log(userMsg);
+    // alert(userMsg);
+    // return;
+    //
+    // if (downloadIncomplete()) {
+    //     return;
+    // }
+    // zPop();
+    // // write links to file & run R CMD
+    // // package the output as JSON
+    // // add call history and package the zparams object as JSON
+    // zparams.callHistory = callHistory;
+    // zparams.allVars = valueKey.slice(10, 25); // because the URL is too long...
+    //
+    //
+    // laddaState['btnEstimate'] = true;
+    // m.redraw()
+    //
+    // let json = await makeRequest(ROOK_SVC_URL + 'zeligapp', zparams);
+    // if (!json) {
+    //     estimated = true;
+    // } else {
+    //     allResults.push(json);
+    //     if (!estimated) byId("tabResults").removeChild(byId("resultsHolder"));
+    //
+    //     estimated = true;
+    //     d3.select("#tabResults")
+    //         .style("display", "block");
+    //     d3.select("#resultsView")
+    //         .style("display", "block");
+    //     d3.select("#modelView")
+    //         .style("display", "block");
+    //
+    //     // programmatic click on Results button
+    //     trigger("btnSetx", "click"); // Was "btnResults" - changing to simplify user experience for testing.
+    //
+    //     let model = "Model".concat(modelCount = modelCount + 1);
+    //
+    //     function modCol() {
+    //         d3.select("#modelView")
+    //             .selectAll("p")
+    //             .style('background-color', hexToRgba(varColor));
+    //     }
+    //     modCol();
+    //
+    //     d3.select("#modelView")
+    //         .insert("p", ":first-child") // top stack for results
+    //         .attr("id", model)
+    //         .text(model)
+    //         .style('background-color', hexToRgba(common.selVarColor))
+    //         .on("click", function() {
+    //             var a = this.style.backgroundColor.replace(/\s*/g, "");
+    //             var b = hexToRgba(common.selVarColor).replace(/\s*/g, "");
+    //             if (a.substr(0, 17) == b.substr(0, 17))
+    //                 return; // escape function if displayed model is clicked
+    //             modCol();
+    //             d3.select(this)
+    //                 .style('background-color', hexToRgba(common.selVarColor));
+    //             viz(this.id);
+    //         });
+    //
+    //     let rCall = [json.call];
+    //     showLog('estimate', rCall);
+    //
+    //     viz(model);
+    // }
+}
+
+/**
+ D3M API HELPERS
+ because these get built in various places, pulling them out for easy manipulation
+ */
+function apiFeature (vars, uri) {
+    let out = [];
+    for(let i = 0; i < vars.length; i++) {
+        out.push({featureId:vars[i],dataUri:uri});
+    }
+    return out;
+}
+
+/** needs doc */
+function apiFeatureShortPath (vars, uri) {
+    let out = [];
+    let shortUri = uri.substring(0, uri.lastIndexOf("/"));
+    for(let i = 0; i < vars.length; i++) {
+        out.push({featureId:vars[i],dataUri:shortUri});
+    }
+    return out;
+}
+
+/**
+ silly but perhaps useful if in the future SessionContext requires more things (as suggest by core)
+ */
+function apiSession(context) {
+    return {session_id: context};
+}

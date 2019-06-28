@@ -552,6 +552,7 @@ class SearchSolutionsHelper(BasicErrCheck):
         describe_data = describe_data_info.result_obj
 
         describe_data[ta2_static.KEY_PIPELINE_ID] = pipeline_id
+        describe_data[ta2_static.KEY_SEARCH_ID] = self.search_id
         describe_data.move_to_end(ta2_static.KEY_PIPELINE_ID, last=False)
 
         # params = dict()

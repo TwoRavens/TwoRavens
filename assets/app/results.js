@@ -65,7 +65,7 @@ export let leftpanel = () => {
             sections: [
                 {
                     idSuffix: 'DiscoveredSolutions',
-                    value: [m('[style=display:inline-block;margin-right:1em]', 'Discovered Solutions'), app.solverProblem.d3m === app.getResultsProblem() && loader('D3M')],
+                    value: [m('[style=display:inline-block;margin-right:1em]', 'Discovered Solutions'), app.getResultsProblem().d3mSearchId !== undefined && loader('D3M')],
                     contents: m(Table, {
                         id: 'pipelineTable',
                         data: Object.keys(resultsProblem.solutions.d3m)
@@ -78,9 +78,9 @@ export let leftpanel = () => {
                         onclick: pipelineId => app.setSelectedSolution(resultsProblem, 'd3m', pipelineId)
                     })
                 },
-                {
+                app.callSolverEnabled && {
                     idSuffix: 'BaselineSolutions',
-                    value: [m('[style=display:inline-block;margin-right:1em]', 'Baselines'), app.solverProblem.rook === app.getResultsProblem() && loader('Rook')],
+                    value: [m('[style=display:inline-block;margin-right:1em]', 'Baselines'), app.workspace.raven_config.rook === app.getResultsProblem() && loader('Rook')],
                     contents: [
                         // m(Subpanel, {
                         //     id: 'addModelSubpanel',
@@ -478,8 +478,6 @@ export class CanvasSolutions {
             setShown: state => resultsSubpanels['Variance Inflation'] = state
         }, VIFContents);
 
-
-
         return m('div', {style: {margin: '1em 0px'}},
             problemSummary,
             solutionSummary,
@@ -514,25 +512,19 @@ let solutionAdapter = (problem, solution) => {
 let leftTabResults = 'Solutions';
 let setLeftTabResults = tab => leftTabResults = tab;
 
-let selectedMetric = {
+export let selectedMetric = {
     d3m: undefined,
     rook: undefined
 };
 
 // array of metrics to sort low to high
-export let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSquaredErrorAvg", "meanAbsoluteError"]
-    .map(metric => app.d3mMetrics[metric]);
+export let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSquaredErrorAvg", "meanAbsoluteError"];
 
 /**
  Sort the Pipeline table, putting the highest score at the top
  */
 export function sortPipelineTable(a, b) {
-    if (a === b) return 0;
-    if (a === "scoring") return 100;
-    if (b === "scoring") return -100;
-    if (a === "no score") return 1000;
-    if (b === "no score") return -1000;
-    return (parseFloat(b) - parseFloat(a)) * (reverseSet.includes(getSelectedProblem().metric) ? -1 : 1);
+    return (b - a) * (reverseSet.includes(getSelectedProblem().metric) ? -1 : 1);
 }
 
 let resultsSubpanels = {
@@ -593,10 +585,7 @@ Object.assign(forceDiagramStateResults, {
 export function generateConfusionData(Y_true, Y_pred, factor = undefined) {
     if (!Y_true || !Y_pred) return;
 
-    // dvvalues are generally numeric
     Y_true = Y_true.map(String);
-
-    // predvals are generally strings
     Y_pred = Y_pred.map(String);
 
     // combine actuals and predicted, and get all unique elements
@@ -652,7 +641,7 @@ export function generatePerformanceData(confusionData2x2) {
 }
 
 export let extractD3MScores = solution => 'scores' in solution
-    ? solution.scores.reduce((out, score) => Object.assign(out, {[score.metric.metric]: app.formatPrecision(score.value.raw.double)}), {})
+    ? solution.scores.reduce((out, score) => Object.assign(out, {[app.d3mMetricsInverted[score.metric.metric]]: app.formatPrecision(score.value.raw.double)}), {})
     : {};
 
 
