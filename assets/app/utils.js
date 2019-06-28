@@ -53,3 +53,7 @@ export const copyToClipboard = str => {
     document.getSelection().addRange(selected);   // Restore the original selection
   }
 };
+
+export const numberWithCommas = some_number => {
+    return some_number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}

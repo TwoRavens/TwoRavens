@@ -600,10 +600,12 @@ export let setShowModalTA2Debug = state => showModalTA2Debug = state;
 export let datamartPreferences = {
     // default state for query
     query: {
+      keywords: [],
+        /*
         dataset: {
             about: '',
             keywords: []
-        }
+        }*/
     },
     // potential new indices to submit to datamart
     indices: [],
@@ -616,7 +618,12 @@ export let datamartPreferences = {
     // one of 'augment', 'preview', 'metadata', undefined
     modalShown: undefined,
     // stores paths to data and metadata, as well as a data preview and metadata (datasetDoc.json) for materialized datasets
-    cached: {}
+    cached: {},
+    // track preview button state
+    previewButtonState: {
+      ISI: [],
+      NYU: []
+    }
 };
 
 
@@ -2084,7 +2091,17 @@ export function getDescription(problem) {
     return `${problem.targets} is predicted by ${predictors.slice(0, -1).join(", ")} ${predictors.length > 1 ? 'and ' : ''}${predictors[predictors.length - 1]}`;
 }
 
+/**
+ *  Process problems
+ */
 export function discovery(problems) {
+
+    // filter out problems with target of null
+    // e.g. [{"target":null, "predictors":null,"transform":0, ...},]
+    //
+    problems = problems.filter(yeTarget => yeTarget.target)
+
+
     return problems.reduce((out, prob) => {
         let problemID = generateProblemID();
         let manips = [];
@@ -2127,6 +2144,9 @@ export function discovery(problems) {
         // So R json libraries demote singletons to scalars in serialization.
         // coerceArray un-mangles data from R, in cases where you are expecting an array that could potentially be of length one
         let coerceArray = data => Array.isArray(data) ? data : [data];
+
+        console.log('variableSummaries:' + JSON.stringify(variableSummaries))
+        console.log('>> prob:' +  JSON.stringify(prob))
 
         out[problemID] = {
             problemID,

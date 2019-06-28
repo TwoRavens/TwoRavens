@@ -278,21 +278,24 @@ def get_user_workspaces(user, create_if_not_found=True):
         return err_resp('user must be a "User" object, not: "%s"' % user)
 
     d3m_config = get_latest_d3m_config()
+    print('d3m_config', d3m_config)
     if not d3m_config:
         return err_resp('No default D3MConfiguration set.')
 
     params = dict(user=user)
 
     params = get_default_workspace_params(**params)
-
+    params['d3m_config'] = d3m_config
+    print('params', params)
     workspaces = UserWorkspace.objects.filter(**params)
-
+    print('workspaces', workspaces)
     # Make sure the list has a current workspace
     #
     has_current_workspace = [ws for ws in workspaces if ws.is_current_workspace]
 
     if (not has_current_workspace) or (workspaces.count() == 0):
         if create_if_not_found:
+            print('make new one!')
             ws_info = create_new_user_workspace(user, d3m_config)
             if not ws_info.success:
                 return err_resp('%s (get_user_workspaces)' %\

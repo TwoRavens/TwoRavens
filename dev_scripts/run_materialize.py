@@ -17,11 +17,11 @@ try:
 except Exception as e:
     print("WARNING: Can't configure Django. %s" % e)
 
-from tworaven_common_apps.datamart_endpoints.static_vals import \
+from tworaven_apps.datamart_endpoints.static_vals import \
     (DATAMART_ISI_NAME,)
-from tworaven_common_apps.datamart_endpoints.materialize_util import \
+from tworaven_apps.datamart_endpoints.materialize_util import \
     (MaterializeUtil,)
-from tworaven_common_apps.datamart_endpoints.tasks import make_materialize_call
+from tworaven_apps.datamart_endpoints.tasks import make_materialize_call
 
 def test_materialize():
     """run materialize"""

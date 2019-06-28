@@ -37,8 +37,7 @@ import MenuHeaders from "../common/views/MenuHeaders";
 import Canvas from "../common/views/Canvas";
 import Subpanel from '../common/views/Subpanel';
 import Popper from '../common/views/Popper';
-
-import Datamart, {ModalDatamart} from "../common/TwoRavens/Datamart";
+import Datamart, {ModalDatamart} from "./datamart/Datamart";
 
 import PreprocessInfo from "./views/PreprocessInfo";
 import PanelButton from './views/PanelButton';

@@ -2,7 +2,7 @@
 import os
 from os.path import join, isfile
 import shutil
-
+from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
 
@@ -43,7 +43,26 @@ def move_file(src_file, dest_file):
 
     return ok_resp('File copied to: %s' % dest_file)
 
+def read_file_contents(fpath, as_dict=True):
+    """Given a valid filepath, read the file and return it.
+    Used for smaller files"""
+    if not isfile(fpath):
+        return err_resp(f'File doesn\'t exist: {fpath}')
 
+    try:
+        with open(fpath, "r") as fh:
+            contents = fh.read()
+    except IOError as err_obj:
+        user_msg = 'Failed to read file: %s\n%s' % \
+                    (fpath, err_obj)
+        return err_resp(user_msg)
+
+    if not as_dict:
+        return ok_resp(contents)
+
+    return json_loads(contents)
+
+    
 def read_file_rows(data_filepath, num_rows=100):
     """Initial use is for dataset preview"""
     if not isfile(data_filepath):

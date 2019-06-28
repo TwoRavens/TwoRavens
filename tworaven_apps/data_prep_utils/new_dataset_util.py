@@ -15,7 +15,7 @@ from tworaven_apps.utils.dict_helper import get_dict_value
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 #from tworaven_apps.utils.json_helper import json_loads, json_dumps
 from tworaven_apps.utils.file_util import \
-    (create_directory, move_file, write_file)
+    (create_directory, move_file, write_file, read_file_contents)
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.rook_services.make_datadocs_util import MakeDatadocsUtil
 from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
@@ -26,6 +26,8 @@ from tworaven_apps.configurations.utils import \
 from tworaven_apps.user_workspaces.utils import \
     (get_user_workspace_by_id,
      create_new_user_workspace)
+
+from tworaven_apps.datamart_endpoints import static_vals as dm_static
 
 from tworaven_apps.utils.random_info import \
     (get_alpha_string,)
@@ -55,6 +57,7 @@ class NewDatasetUtil(BasicErrCheck):
 
         self.dataset_id = None
         self.orig_source_file = source_file
+        self.orig_dataset_doc = kwargs.get(dm_static.KEY_DATASET_DOC_PATH, None)
 
         # optional for websocket messages
         #
@@ -66,7 +69,12 @@ class NewDatasetUtil(BasicErrCheck):
         self.tables_dir = None  # where source file is copied: learningData.csv
         self.dataset_dir = None
         self.problem_dir = None # where problem dir will be written
+
+        # destination for the self.orig_source_file
         self.new_source_file = None
+        # destination for the self.orig_dataset_doc
+        self.new_dataset_doc_file = None
+
         self.rook_params = None
         self.new_d3m_config = None
         self.new_workspace = None
@@ -134,6 +142,8 @@ class NewDatasetUtil(BasicErrCheck):
         print('\ntables dir', self.tables_dir)
         print('\nproblem dir', self.problem_dir)
         print('\nnew_source_file', self.new_source_file)
+        print('\nnew_dataset_doc_file', self.new_dataset_doc_file)
+
         if self.rook_params:
             print('rook_info keys', self.rook_params.keys())
             """
@@ -175,7 +185,7 @@ class NewDatasetUtil(BasicErrCheck):
 
     def run_construct_dataset(self):
         """Go through the steps...."""
-        LOGGER.info('run_construct_dataset')
+        LOGGER.info('>>> run_construct_dataset')
         if not isfile(self.orig_source_file):
             user_msg = 'File does not exists: %s' % self.orig_source_file
             self.send_websocket_err_msg(user_msg)
@@ -183,12 +193,16 @@ class NewDatasetUtil(BasicErrCheck):
 
         if not self.retrieve_workspace():
             return
+        LOGGER.info('  - workspace retrieved')
+
 
         if not self.construct_folders():
             return
+        LOGGER.info('  - folders constructed')
 
-        if not self.move_source_file():
+        if not self.move_source_files():
             return
+        LOGGER.info('  - source file(s) moved')
 
         if not self.create_problem_data_docs():
             return
@@ -289,6 +303,8 @@ class NewDatasetUtil(BasicErrCheck):
                                 'TRAIN',
                                 'problem_TRAIN')
 
+        LOGGER.info('       - dataset_root_dir: %s', self.dataset_root_dir)
+        LOGGER.info('       - problem_dir: %s', self.problem_dir)
         dir_info = create_directory(self.problem_dir)
         if not dir_info.success:
             self.send_websocket_err_msg(dir_info.err_msg)
@@ -301,6 +317,7 @@ class NewDatasetUtil(BasicErrCheck):
                                'TRAIN',
                                'dataset_TRAIN',
                                'tables')
+        LOGGER.info('       - tables_dir: %s', self.tables_dir)
 
         dir_info = create_directory(self.tables_dir)
         if not dir_info.success:
@@ -309,8 +326,10 @@ class NewDatasetUtil(BasicErrCheck):
         self.dataset_dir = dirname(self.tables_dir)
         return True
 
-    def move_source_file(self):
-        """Copy file to learningData.csv"""
+    def move_source_files(self):
+        """Copy file to learningData.csv
+        If it exists, also move the new dataset doc
+        """
         if self.has_error():
             return False
 
@@ -323,6 +342,32 @@ class NewDatasetUtil(BasicErrCheck):
         move_info = move_file(self.orig_source_file, self.new_source_file)
         if not move_info.success:
             self.send_websocket_err_msg('Failed to move data file: %s' % move_info.err_msg)
+            return False
+
+        # -----------------------------------------------------------
+        # Optional: move the dataset doc, if it exists
+        #   e.g. NYU augment includes a datasetDoc.json`
+        # -----------------------------------------------------------
+        if not self.orig_dataset_doc:
+            return True
+
+
+        if not isfile(self.orig_dataset_doc):
+            user_msg = (f'The new DatasetDoc was not found: '
+                        f' {self.orig_dataset_doc}')
+            self.send_websocket_err_msg(user_msg)
+            return False
+
+        # Set the destination as TRAIN/dataset_TRAIN
+        #  (tables_dir = .../TRAIN/dataset_TRAIN/tables)
+        #
+        self.new_dataset_doc_file = join(dirname(self.tables_dir),
+                                         'datasetDoc.json')
+
+        move_info2 = move_file(self.orig_dataset_doc, self.new_dataset_doc_file)
+        if not move_info2.success:
+            self.send_websocket_err_msg('Failed to move data file: %s' % \
+                                        move_info2.err_msg)
             return False
 
         return True
@@ -370,16 +415,27 @@ class NewDatasetUtil(BasicErrCheck):
         params['datasetid'] = self.dataset_id
 
         # --------------------------------
-        # get dataset doc info
+        # get dataset doc info. If one doesn't exist
+        #   from datamart, then make one
         # --------------------------------
-        dataset_doc = get_config_file_contents(self.d3m_config,
-                                               KEY_DATASET_SCHEMA)
-        if not dataset_doc.success:
-            user_msg = ('Failed to open the dataset doc. %s') % \
-                        (dataset_doc.err_msg,)
-            self.send_websocket_err_msg(user_msg)
-            return None
-        dataset_doc = dataset_doc.result_obj
+        if self.new_dataset_doc_file and isfile(self.new_dataset_doc_file):
+            read_info = read_file_contents(self.new_dataset_doc_file,
+                                           as_dict=True)
+            if not read_info.success:
+                user_msg = ('Failed to open the dataset doc. %s') % \
+                            (read_info.err_msg,)
+                self.send_websocket_err_msg(user_msg)
+                return None
+            dataset_doc = read_info.result_obj
+        else:
+            dataset_doc = get_config_file_contents(self.d3m_config,
+                                                   KEY_DATASET_SCHEMA)
+            if not dataset_doc.success:
+                user_msg = ('Failed to open the dataset doc. %s') % \
+                            (dataset_doc.err_msg,)
+                self.send_websocket_err_msg(user_msg)
+                return None
+            dataset_doc = dataset_doc.result_obj
 
         # name
         #

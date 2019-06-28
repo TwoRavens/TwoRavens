@@ -6,8 +6,6 @@ LABEL organization="Two Ravens" \
       2ra.vn.release-date="2019-01-4" \
       description="Image for the Two Ravens R service which runs on rook."
 
-RUN  R -e 'install.packages("doParallel", repos="http://cran.rstudio.org")'
-
 # -------------------------------------
 # Copy the repo over
 #   - future: ignore the tworavens django dirs
