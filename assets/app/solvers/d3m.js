@@ -241,7 +241,7 @@ function primitiveStepRemoveColumns(problem) {
 // ------------------------------------------
 
 // create problem definition for SearchSolutions call
-function GRPC_ProblemDescription(problem) {
+export function GRPC_ProblemDescription(problem) {
     let GRPC_Problem = {
         taskType: app.d3mTaskType[problem.task],
         taskSubtype: problem.taskSubtype || app.d3mTaskSubtype.subtypeNone,

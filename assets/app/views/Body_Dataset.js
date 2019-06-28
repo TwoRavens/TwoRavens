@@ -6,7 +6,7 @@ import {heightHeader} from "../../common/common";
 import * as app from '../app';
 
 
-export default class BodyDataset {
+export default class Body_Dataset {
     async oninit() {
         await app.load();
 

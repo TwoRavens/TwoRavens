@@ -18,8 +18,7 @@ import {locationReload, setModal} from '../common/views/Modal';
 import * as queryMongo from "./manipulations/queryMongo";
 import * as solverD3M from './solvers/d3m';
 import * as manipulate from './manipulations/manipulate';
-
-import {groupBuilder, groupLinkBuilder, linkBuilder, pebbleBuilderLabeled} from "./views/ForceDiagram";
+import * as model from './model';
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -382,52 +381,16 @@ export let cdb = _ => PRODUCTION || console.log(_);
 export let k = 4; // strength parameter for group attraction/repulsion
 let tutorial_mode = localStorage.getItem('tutorial_mode') !== 'false';
 
-// initial color scale used to establish the initial colors of nodes
-// allNodes.push() below establishes a field for the master node array allNodes called "nodeCol" and assigns a color from this scale to that field
-// everything there after should refer to the nodeCol and not the color scale, this enables us to update colors and pass the variable type to R based on its coloring
-export let colors = d3.scaleOrdinal(d3.schemeCategory20);
-
 export let leftTab = 'Variables'; // current tab in left panel
 export let leftTabHidden = 'Variables'; // stores the tab user was in before summary hover
 
 export let rightTab = 'Problem'; // current tab in right panel
-export let rightTabExplore = 'Univariate';
-
-export let preprocessTabName = 'Preprocess Log'
-
-export let isPreprocessTab = () => {
-    return leftTab === preprocessTabName;
-}
-export let setPreprocessTab = () =>{
-    isPreprocessTab() ? setLeftTab('Variables') : setLeftTab(preprocessTabName);
-}
-export let modelLeftPanelWidths = {
-    [preprocessTabName]: '500px',
-    'Variables': '300px',
-    'Discover': 'auto',
-    'Augment': '600px',
-    'Summary': '300px'
-};
-
-export let modelRightPanelWidths = {
-    Problem: '300px',
-    Manipulate: '485px',
-    // 'Set Covar.': '900px',
-    Results: '900px',
-    Discovery:'900px'
-};
-
-export let exploreRightPanelWidths = {
-    'Univariate': '700px',
-    'Bivariate': '75%'
-};
 
 export let setRightTab = tab => {
     rightTab = tab;
     updateRightPanelWidth();
     setFocusedPanel('right')
 };
-export let setRightTabExplore = (tab) => { rightTabExplore = tab; updateRightPanelWidth() };
 
 // call with a tab name to change the left tab in model mode
 export let setLeftTab = (tab) => {
@@ -453,8 +416,7 @@ export let updateRightPanelWidth = () => {
     // else if (is_model_mode && !selectedProblem) common.panelOcclusion.right = common.panelMargin;
     else if (common.panelOpen['right']) {
         let tempWidth = {
-            'model': modelRightPanelWidths[rightTab],
-            'explore': exploreRightPanelWidths[rightTabExplore]
+            'model': model.rightPanelWidths[rightTab],
         }[currentMode];
 
         panelWidth['right'] = `calc(${common.panelMargin}*2 + ${tempWidth})`;
@@ -463,7 +425,7 @@ export let updateRightPanelWidth = () => {
 };
 let updateLeftPanelWidth = () => {
     if (common.panelOpen['left'])
-        panelWidth['left'] = `calc(${common.panelMargin}*2 + ${modelLeftPanelWidths[leftTab]})`;
+        panelWidth['left'] = `calc(${common.panelMargin}*2 + ${model.leftPanelWidths[leftTab]})`;
     else panelWidth['left'] = `calc(${common.panelMargin}*2 + 16px)`;
 };
 
@@ -750,14 +712,8 @@ export let applicableMetrics = {
 export let byId = id => document.getElementById(id);
 // export let byId = id => {console.log(id); return document.getElementById(id);}
 
-/**
-   page reload linked to btnReset
-*/
 export const reset = async function reloadPage() {
     solverD3M.endAllSearches();
-    byId("btnModel").click();
-    //clearInterval(interiorIntervalId);
-    //clearInterval(requestIntervalId);
     location.reload();
 };
 
@@ -1386,445 +1342,6 @@ export let toggle = (collection, obj) => {
         collection.has(obj) ? collection.delete(obj) : collection.add(obj)
 };
 
-const k_combinations = (list, k) => {
-    if (k > list.length || k <= 0) return []; // no valid combinations of size k
-    if (k === list.length) return [list]; // one valid combination of size k
-    if (k === 1) return list.reduce((acc, cur) => [...acc, [cur]], []); // k combinations of size k
-
-    let combinations = [];
-
-    for (let i = 0; i <= list.length - k + 1; i++) {
-        let subcombinations = k_combinations(list.slice(i + 1), k - 1);
-        for (let j = 0; j < subcombinations.length; j++) {
-            combinations.push([list[i], ...subcombinations[j]])
-        }
-    }
-
-    return combinations
-};
-
-// used to compute interaction terms of degree lte k
-const lte_k_combinations = (set, k) =>
-    Array(k).fill(null).reduce((acc, _, idx) => [...acc, ...k_combinations(set, idx + 1)], []);
-
-const intersect = sets => sets.reduce((a, b) => new Set([...a].filter(x => b.has(x))));
-
-
-// layout for force diagram pebbles. Can be 'variables', 'pca', 'clustering' etc. (ideas)
-export let forceDiagramMode = 'variables';
-export let setForceDiagramMode = mode => forceDiagramMode = mode;
-
-export let buildForceData = problem => {
-
-    if (!problem) return;
-
-    let pebbles = [...problem.predictors, ...problem.targets, ...problem.tags.loose];
-    let groups = [];
-    let groupLinks = [];
-
-    if (forceDiagramMode === 'variables') {
-        groups = [
-            {
-                name: "Predictors",
-                color: common.gr1Color,
-                colorBackground: swandive && 'grey',
-                nodes: new Set(problem.predictors),
-                opacity: 0.3
-            },
-            {
-                name: "Targets",
-                color: common.gr2Color,
-                colorBackground: swandive && 'grey',
-                nodes: new Set(problem.targets),
-                opacity: 0.3
-            },
-            {
-                name: "Loose",
-                color: common.selVarColor,
-                colorBackground: "transparent",
-                nodes: new Set(problem.tags.loose),
-                opacity: 0.0
-            },
-            // {
-            //     name: "Priors",
-            //     color: common.warnColor,
-            //     colorBackground: "transparent",
-            //     nodes: new Set(['INSTM', 'pctfedited^2', 'test', 'PCTFLOAN^3']),
-            //     opacity: 0.4
-            // }
-        ];
-
-        groupLinks = [
-            {
-                color: common.gr1Color,
-                source: 'Predictors',
-                target: 'Targets'
-            }
-        ];
-    }
-
-    // TODO: if clustering information is present in the problem, this is where alternative views would be implemented
-    if (forceDiagramMode === 'clusters') {
-
-    }
-
-    let summaries = Object.assign({}, variableSummaries);
-
-    // collapse group intersections with more than maxNodes into a single node
-    let maxNodes = 20;
-    let collapsedGroups = [];
-
-    let removedPebbles = new Set();
-    let addedPebbles = new Set();
-
-    let combinedGroups = common.deepCopy(groups)
-        .reduce((out, group) => Object.assign(out, {[group.name]: group}), {});
-
-    // TODO: can be linearized with a hashmap
-    // for any combination of groups, collapse their intersection if their intersection is large enough
-    // https://stackoverflow.com/questions/12303989/cartesian-product-of-multiple-arrays-in-javascript
-    const f = (a, b) => [].concat(...a.map(d => b.map(e => [].concat(d, e))));
-    const cartesian = (a, b, ...c) => (b ? cartesian(f(a, b), ...c) : a);
-
-    cartesian(...groups.map(group => [{group, include: true}, {group, include: false}]))
-        .forEach(combination => {
-
-            let includedGroups = combination
-                .filter(comb => comb.include)
-                .map(comb => comb.group);
-            if (includedGroups.length === 0) return;
-
-            let partition = new Set([
-                ...intersect(includedGroups.map(group => group.nodes))
-            ].filter(pebble => !combination
-                .filter(comb => !comb.include)
-                .some(comb => comb.group.nodes.has(pebble))));
-
-            let mergedName = includedGroups.map(group => group.name).join(' & ');
-
-            if (partition.size > maxNodes) {
-
-                addedPebbles.add(mergedName);
-                let partitionArray = [...partition];
-                partitionArray.forEach(pebble => removedPebbles.add(pebble));
-
-                // remove pebbles that were collapsed from their parent groups
-                includedGroups
-                    .forEach(group => combinedGroups[group.name].nodes = new Set([...group.nodes].filter(node => !partition.has(node))));
-                // add the pebble that represents the merge to each parent group
-                includedGroups
-                    .forEach(group => combinedGroups[group.name].nodes.add(mergedName));
-
-                summaries[mergedName] = {
-                    plottype: 'collapsed',
-                    childNodes: partition
-                }
-
-                // when merging, attempt to use the positions of existing modes
-                if (!(mergedName in forceDiagramNodesReadOnly)) {
-                    let preexistingPebbles = partitionArray.filter(pebble => pebble in forceDiagramNodesReadOnly)
-                    if (preexistingPebbles.length > 0) forceDiagramNodesReadOnly[mergedName] = {
-                        id: mergedName.replace(/\W/g,'_'),
-                        name: mergedName,
-                        x: preexistingPebbles.reduce((sum, pebble) => sum + forceDiagramNodesReadOnly[pebble].x, 0) / preexistingPebbles.length,
-                        y: preexistingPebbles.reduce((sum, pebble) => sum + forceDiagramNodesReadOnly[pebble].y, 0) / preexistingPebbles.length
-                    }
-                }
-            }
-        });
-
-    pebbles = [...pebbles.filter(pebble => !removedPebbles.has(pebble)), ...addedPebbles];
-    groups = Object.values(combinedGroups);
-
-    return {pebbles, groups, groupLinks, summaries};
-};
-
-
-export let setGroup = (group, name) => {
-    let selectedProblem = getSelectedProblem();
-    delete selectedProblem.unedited;
-    ({
-        'Loose': () => {
-            !selectedProblem.tags.loose.includes(name) && selectedProblem.tags.loose.push(name);
-            remove(selectedProblem.targets, name);
-            remove(selectedProblem.predictors, name);
-        },
-        'Predictors': () => {
-            !selectedProblem.predictors.includes(name) && selectedProblem.predictors.push(name);
-            remove(selectedProblem.targets, name);
-            remove(selectedProblem.tags.loose, name);
-        },
-        'Targets': () => {
-            !selectedProblem.targets.includes(name) && selectedProblem.targets.push(name);
-            remove(selectedProblem.predictors, name);
-            remove(selectedProblem.tags.loose, name);
-        }
-    }[group] || Function)()
-    resetPeek();
-}
-
-export let forceDiagramNodesReadOnly = {};
-
-export let forceDiagramState = {
-    builders: [pebbleBuilderLabeled, groupBuilder, linkBuilder, groupLinkBuilder],
-    hoverPebble: undefined,
-    contextPebble: undefined,
-    selectedPebble: undefined,
-    hoverTimeout: undefined,
-    isPinned: false,
-    hullRadius: 40,
-    defaultPebbleRadius: 40,
-    hoverTimeoutDuration: 150, // milliseconds to wait before showing/hiding the pebble handles
-    selectTransitionDuration: 300, // milliseconds of pebble resizing animations
-    arcHeight: 16,
-    arcGap: 1
-}
-let setContextPebble = pebble => {
-    let selectedProblem = getSelectedProblem();
-
-    delete selectedProblem.unedited;
-    d3.event.preventDefault(); // block browser context menu
-    if (forceDiagramState.contextPebble) {
-
-        if (forceDiagramState.contextPebble !== pebble) {
-            selectedProblem.pebbleLinks = selectedProblem.pebbleLinks || [];
-            selectedProblem.pebbleLinks.push({
-                source: forceDiagramState.contextPebble,
-                target: pebble,
-                right: true
-            });
-        }
-        forceDiagramState.contextPebble = undefined;
-    } else forceDiagramState.contextPebble = pebble;
-    resetPeek();
-    m.redraw();
-}
-
-let setSelectedPebble = pebble => {
-    forceDiagramState.selectedPebble = pebble;
-
-    if (pebble) {
-        setLeftTabHidden(leftTab);
-        setLeftTab('Summary');
-    } else if (leftTabHidden) {
-        setLeftTab(leftTabHidden);
-    }
-    m.redraw();
-}
-
-Object.assign(forceDiagramState, {
-    setSelectedPebble,
-    pebbleEvents: {
-        click: pebble => {
-            if (forceDiagramState.contextPebble) setContextPebble(pebble);
-            else setSelectedPebble(pebble)
-        },
-        mouseover: pebble => {
-            clearTimeout(forceDiagramState.hoverTimeout);
-            forceDiagramState.hoverTimeout = setTimeout(() => {
-                forceDiagramState.hoverPebble = pebble;
-                if (leftTab !== 'Summary') setLeftTabHidden(leftTab);
-                setLeftTab('Summary');
-                m.redraw()
-            }, forceDiagramState.hoverTimeoutDuration)
-        },
-        mouseout: () => {
-            clearTimeout(forceDiagramState.hoverTimeout);
-            forceDiagramState.hoverTimeout = setTimeout(() => {
-                forceDiagramState.hoverPebble = undefined;
-                if (!forceDiagramState.selectedPebble)
-                    setLeftTab(leftTabHidden)
-
-                m.redraw()
-            }, forceDiagramState.hoverTimeoutDuration)
-        },
-        contextmenu: setContextPebble
-    }
-})
-
-export let mutateNodes = problem => (state, context) => {
-    let pebbles = Object.keys(context.nodes);
-
-    // set radius of each node. Members of groups are scaled down if group gets large.
-    pebbles.forEach(pebble => {
-        let upperSize = 10;
-        let maxNodeGroupSize = Math.max(...context.filtered.groups
-            .filter(group => group.nodes.has(pebble))
-            .map(group => group.nodes.size), upperSize);
-        context.nodes[pebble].radius = state.defaultPebbleRadius * Math.sqrt(upperSize / maxNodeGroupSize);
-
-        if (pebble === state.selectedPebble)
-            context.nodes[pebble].radius = Math.min(context.nodes[pebble].radius * 1.5, state.defaultPebbleRadius);
-    });
-
-    // if no search string, match nothing
-    let matchedVariables = variableSearchText.length === 0 ? []
-        : pebbles.filter(variable => variable.toLowerCase().includes(variableSearchText));
-
-    // the order of the keys indicates precedence, lower keys are more important
-    let params = {
-        predictors: new Set(problem.predictors),
-        loose: new Set(problem.tags.loose),
-        transformed: new Set(problem.tags.transformed),
-        crossSection: new Set(problem.tags.crossSection),
-        time: new Set(problem.tags.time),
-        nominal: new Set(getNominalVariables(problem)), // include both nominal-casted and string-type variables
-        weight: new Set(problem.tags.weights),
-        targets: new Set(problem.targets),
-        matched: new Set(matchedVariables),
-    };
-
-    let strokeWidths = {
-        matched: 4,
-        crossSection: 4,
-        time: 4,
-        nominal: 4,
-        targets: 4,
-        weight: 4
-    };
-
-    let nodeColors = {
-        crossSection: common.taggedColor,
-        time: common.taggedColor,
-        nominal: common.taggedColor,
-        targets: common.taggedColor,
-        weight: common.taggedColor,
-        loose: common.selVarColor,
-    };
-    let strokeColors = {
-        matched: 'black',
-        crossSection: common.csColor,
-        time: common.timeColor,
-        nominal: common.nomColor,
-        targets: common.dvColor,
-        weight: common.weightColor
-    };
-
-    // set the base color of each node
-    pebbles.forEach(pebble => {
-        if (state.summaries[pebble].plottype === 'collapsed') {
-            context.nodes[pebble].strokeWidth = 0;
-            context.nodes[pebble].nodeCol = 'transparent';
-            context.nodes[pebble].strokeColor = 'transparent';
-        }
-        else {
-            context.nodes[pebble].strokeWidth = 1;
-            context.nodes[pebble].nodeCol = colors(generateID(pebble));
-            context.nodes[pebble].strokeColor = 'transparent';
-        }
-    });
-
-    // set additional styling for each node
-    pebbles.forEach(pebble => Object.keys(params)
-    // only apply styles on classes the variable is a member of
-        .filter(label => params[label].has(pebble))
-        .forEach(label => {
-            if (label in strokeWidths) context.nodes[pebble].strokeWidth = strokeWidths[label];
-            if (label in nodeColors) context.nodes[pebble].nodeCol = nodeColors[label];
-            if (label in strokeColors) context.nodes[pebble].strokeColor = strokeColors[label];
-        }));
-}
-
-export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Targets'].includes(pebble) ? [] : [
-    {
-        id: 'Group',
-        name: 'Group',
-        attrs: {fill: common.gr1Color},
-        children: [
-            {
-                id: 'Predictor',
-                name: 'Predictor',
-                attrs: {fill: common.gr1Color},
-                onclick: d => {
-                    delete problem.unedited;
-                    toggle(problem.tags.loose, d);
-                    remove(problem.targets, d);
-                    toggle(problem.predictors, d);
-                    forceDiagramState.setSelectedPebble(d);
-                    resetPeek();
-                }
-            },
-            {
-                id: 'Dep',
-                name: 'Dep Var',
-                attrs: {fill: common.dvColor},
-                onclick: d => {
-                    delete problem.unedited;
-                    toggle(problem.tags.loose, d);
-                    remove(problem.predictors, d);
-                    toggle(problem.targets, d);
-                    forceDiagramState.setSelectedPebble(d);
-                    resetPeek();
-                }
-            }
-        ]
-    },
-    {
-        id: 'GroupLabel',
-        name: 'Labels',
-        attrs: {fill: common.nomColor},
-        onclick: forceDiagramState.setSelectedPebble,
-        children: [
-            {
-                id: 'Nominal',
-                name: 'Nom',
-                attrs: {fill: common.nomColor},
-                onclick: d => {
-                    delete problem.unedited;
-                    toggle(problem.tags.nominal, d);
-                    forceDiagramState.setSelectedPebble(d);
-                    resetPeek()
-                }
-            },
-            {
-                id: 'Time',
-                name: 'Time',
-                attrs: {fill: common.timeColor},
-                onclick: d => {
-                    delete problem.unedited;
-                    toggle(problem.tags.time, d);
-                    forceDiagramState.setSelectedPebble(d);
-                    resetPeek()
-                }
-            },
-            {
-                id: 'Cross',
-                name: 'Cross',
-                attrs: {fill: common.csColor},
-                onclick: d => {
-                    delete problem.unedited;
-                    toggle(problem.tags.crossSection, d);
-                    forceDiagramState.setSelectedPebble(d);
-                    resetPeek()
-                }
-            },
-            {
-                id: 'Weight',
-                name: 'Weight',
-                attrs: {fill: common.weightColor},
-                onclick: d => {
-                    delete problem.unedited;
-                    if (problem.tags.weights.includes(d))
-                        problem.tags.weights = [];
-                    else {
-                        problem.tags.weights = [d];
-                        remove(problem.targets, d);
-                        remove(problem.tags.time, d);
-                        remove(problem.tags.nominal, d);
-                        remove(problem.tags.crossSection, d);
-                    }
-                    forceDiagramState.setSelectedPebble(d);
-                    resetPeek()
-                }
-            }
-        ]
-    },
-];
-
-// Used for left panel variable search
-export let variableSearchText = "";
-export let setVariableSearchText = text => variableSearchText = text.toLowerCase();
-
 /** needs doc */
 export function helpmaterials(type) {
     if(type=="video"){
@@ -2043,12 +1560,6 @@ export let hexToRgba = (hex, alpha) => {
     return `rgba(${[(int >> 16) & 255, (int >> 8) & 255, int & 255, alpha || '0.5'].join(',')})`;
 };
 
-export function getDescription(problem) {
-    if (problem.description) return problem.description;
-    let predictors = getPredictorVariables(problem);
-    return `${problem.targets} is predicted by ${predictors.slice(0, -1).join(", ")} ${predictors.length > 1 ? 'and ' : ''}${predictors[predictors.length - 1]}`;
-}
-
 export function discovery(problems) {
     return problems.reduce((out, prob) => {
         let problemID = generateProblemID();
@@ -2129,36 +1640,6 @@ export function discovery(problems) {
         setTask(variableSummaries[prob.target].plottype === "bar" ? 'classification' : 'regression', out[problemID])
         return out;
     }, {});
-}
-
-// creates a new problem from the force diagram problem space and adds to disco
-export async function addProblemFromForceDiagram() {
-    let problemCopy = getProblemCopy(getSelectedProblem());
-    workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
-
-    setSelectedProblem(problemCopy.problemID);
-    setLeftTab('Discover');
-    m.redraw();
-}
-
-export function connectAllForceDiagram() {
-    let problem = getSelectedProblem();
-
-    problem.pebbleLinks = problem.pebbleLinks || [];
-    if (is_explore_mode) {
-        let pebbles = [...problem.predictors, ...problem.targets];
-        problem.pebbleLinks = pebbles
-            .flatMap((pebble1, i) => pebbles.slice(i + 1, pebbles.length)
-                .map(pebble2 => ({
-                    source: pebble1, target: pebble2
-                })))
-    }
-    else problem.pebbleLinks = problem.predictors
-        .flatMap(source => problem.targets
-            .map(target => ({
-                source, target, right: true
-            })))
-    m.redraw();
 }
 
 export let setVariableSummaries = state => {
@@ -2411,6 +1892,13 @@ export let getResultsProblem = () => {
     return ravenConfig.problems[ravenConfig.resultsProblem];
 }
 
+export function getDescription(problem) {
+    if (problem.description) return problem.description;
+    let predictors = getPredictorVariables(problem);
+    return `${problem.targets} is predicted by ${predictors.slice(0, -1).join(", ")} ${predictors.length > 1 ? 'and ' : ''}${predictors[predictors.length - 1]}`;
+}
+
+
 export let getSolutions = (problem, source) => {
     if (!problem) return [];
 
@@ -2565,45 +2053,6 @@ export let setCheckedDiscoveryProblem = (status, problemID) => {
         Object.keys(ravenConfig.problems)
             .forEach(problemID => ravenConfig.problems[problemID].meaningful = status)
 };
-
-export async function submitDiscProb() {
-    let problems = workspace.raven_config.problems;
-    buttonLadda['btnSubmitDisc'] = true;
-    m.redraw()
-
-    let outputCSV = Object.keys(problems).reduce((out, problemID) => {
-        let problem = problems[problemID];
-
-
-        if(problem.manipulations.length === 0){
-            // construct and write out the api call and problem description for each discovered problem
-            let problemApiCall = solverD3M.GRPC_SearchSolutionsRequest(problem, 10);
-            let problemProblemSchema = solverD3M.CreateProblemSchema(problem);
-            let filename_api = problem.problemID + '/ss_api.json';
-            let filename_ps = problem.problemID + '/schema.json';
-            makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
-            makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
-        } else {
-            console.log('omitting:');
-            console.log(problem);
-        }
-    });
-
-    // write the CSV file requested by NIST that describes properties of the solutions
-    console.log(outputCSV);
-    let res3 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: 'labels.csv', data: outputCSV});
-
-    buttonLadda.btnSubmitDisc = false;
-    buttonClasses.btnSubmitDisc = 'btn-secondary';
-    buttonClasses.btnDiscover = 'btn-secondary';
-    if (!task2_finished) buttonClasses.btnEstimate = 'btn-secondary';
-
-    task1_finished = true;
-    m.redraw()
-
-    if (!problemDocExists)
-        setModal("Your discovered problems have been submitted.", "Task Complete", true, false, false, locationReload);
-}
 
 export function xhandleAugmentDataMessage(msg_data) {
 
@@ -2804,7 +2253,7 @@ export function formatPrecision(value, precision=4) {
 let generateProblemID = () => 'problem ' + workspace.raven_config.problemCount++;
 
 // generate a number from text (cheap hash)
-let generateID = text => Array.from({length: text.length})
+export let generateID = text => Array.from({length: text.length})
     .reduce((hash, _, i) => ((hash << 5) - hash + text.charCodeAt(i)) | 0, 0);
 
 export let omniSort = (a, b) => {
