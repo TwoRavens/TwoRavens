@@ -14,12 +14,14 @@ import {bold} from "./index";
 import PlotVegaLite from "./views/PlotVegaLite";
 import ConfusionMatrix from "./views/ConfusionMatrix";
 import Flowchart from "./views/Flowchart";
-import ForceDiagram, {groupBuilder, groupLinkBuilder, linkBuilder, pebbleBuilder} from "./views/ForceDiagram";
 import Subpanel from "../common/views/Subpanel";
 
 import * as solverRook from './solvers/rook';
 import * as solverD3M from './solvers/d3m';
 import {getSelectedProblem} from "./app";
+import Button from "../common/views/Button";
+import Icon from "../common/views/Icon";
+import MenuTabbed from "../common/views/MenuTabbed";
 
 
 export let leftpanel = () => {
@@ -41,14 +43,16 @@ export let leftpanel = () => {
 
     let resultsContent = [
         m('div', {style: {display: 'inline-block', margin: '1em'}},
-            m(Dropdown, {
-                id: 'pipelineDropdown',
-                items: Object.keys(ravenConfig.problems).filter(key =>
-                    Object.keys(ravenConfig.problems[key].solutions)
-                        .reduce((sum, source) => sum + Object.keys(ravenConfig.problems[key].solutions[source]).length, 0)),
-                activeItem: ravenConfig.resultsProblem,
-                onclickChild: app.setResultsProblem
-            })),
+            m('h4', ravenConfig.resultsProblem),
+            // m(Dropdown, {
+            //     id: 'pipelineDropdown',
+            //     items: Object.keys(ravenConfig.problems).filter(key =>
+            //         Object.keys(ravenConfig.problems[key].solutions)
+            //             .reduce((sum, source) => sum + Object.keys(ravenConfig.problems[key].solutions[source]).length, 0)),
+            //     activeItem: ravenConfig.resultsProblem,
+            //     onclickChild: app.setResultsProblem
+            // })
+        ),
         m('div#modelComparisonOption', {style: {display: 'inline-block'}},
             m('input#modelComparisonCheck[type=checkbox]', {
                 onclick: m.withAttr("checked", app.setModelComparison),
@@ -110,27 +114,37 @@ export let leftpanel = () => {
     ];
 
     // use this object instead of resultsContent for a tabbed leftpanel results menu
-    // let tabbedResults = m(MenuTabbed, {
-    //     id: 'resultsMenu',
-    //     currentTab: leftTabResults,
-    //     callback: setLeftTabResults,
-    //     sections: [
-    //         {
-    //             value: 'Problem',
-    //             contents: [
-    //                 m('div', {style: {height: '100%'}}, m(ForceDiagram, Object.assign(forceDiagramStateResults,{
-    //                     mutateNodes: app.mutateNodes(resultsProblem),
-    //                     summaries: app.variableSummaries
-    //                 }, app.buildForceData(resultsProblem)))),
-    //                 m(Table, {data: resultsProblem})
-    //             ]
-    //         },
-    //         {
-    //             value: 'Solutions',
-    //             contents: resultsContent
-    //         }
-    //     ]
-    // });
+    let tabbedResults = m(MenuTabbed, {
+        id: 'resultsMenu',
+        currentTab: leftTabResults,
+        callback: setLeftTabResults,
+        sections: [
+            {
+                value: 'Problems',
+                contents: m(Table, {
+                    data: Object.keys(app.workspace.raven_config.problems)
+                        .filter(problemId => 'd3mSearchId' in app.workspace.raven_config.problems[problemId])
+                        .map(problemId => app.workspace.raven_config.problems[problemId])
+                        .map(problem => [
+                            problem.problemID,
+                            problem.d3mSearchId,
+                            m(Button, {
+                                title: 'stop the search',
+                                class: 'btn-sm',
+                                onclick: () => solverD3M.stopSearch(problem.d3mSearchId)
+                            }, m(Icon, {name: 'stop'}))
+                        ]),
+                    headers: ['Name', 'Search ID', 'Stop'],
+                    activeRow: app.workspace.raven_config.resultsProblem,
+                    onclick: app.setResultsProblem
+                })
+            },
+            {
+                value: 'Solutions',
+                contents: resultsContent
+            }
+        ]
+    });
 
     return m(Panel, {
             side: 'left',
@@ -142,7 +156,7 @@ export let leftpanel = () => {
         // the dom element for MenuTabbed is reused, but the state is incorrectly transitioned, leaving an invalid '[' key.
         // "Fixed" by wrapping in a div, to prevent the dom reuse optimization
         m('div', {style: {height: 'calc(100% - 50px)', overflow: 'auto'}},
-            resultsContent))
+            tabbedResults))
 };
 
 export class CanvasSolutions {
@@ -537,47 +551,6 @@ let resultsSubpanels = {
     'Solution Description': false,
     'Problem Description': false
 };
-
-export let forceDiagramStateResults = {
-    builders: [pebbleBuilder, groupBuilder, linkBuilder, groupLinkBuilder],
-    hoverPebble: undefined,
-    contextPebble: undefined,
-    selectedPebble: undefined,
-    hoverTimeout: undefined,
-    isPinned: false,
-    hullRadius: 40,
-    defaultPebbleRadius: 40,
-    hoverTimeoutDuration: 150, // milliseconds to wait before showing/hiding the pebble handles
-    selectTransitionDuration: 300, // milliseconds of pebble resizing animations
-    arcHeight: 16,
-    arcGap: 1
-};
-
-let setSelectedPebble = pebble => {
-    forceDiagramStateResults.selectedPebble = pebble;
-    m.redraw();
-};
-
-Object.assign(forceDiagramStateResults, {
-    setSelectedPebble,
-    pebbleEvents: {
-        click: setSelectedPebble,
-        mouseover: pebble => {
-            clearTimeout(forceDiagramStateResults.hoverTimeout);
-            forceDiagramStateResults.hoverTimeout = setTimeout(() => {
-                forceDiagramStateResults.hoverPebble = pebble;
-                m.redraw()
-            }, forceDiagramStateResults.hoverTimeoutDuration)
-        },
-        mouseout: () => {
-            clearTimeout(forceDiagramStateResults.hoverTimeout);
-            forceDiagramStateResults.hoverTimeout = setTimeout(() => {
-                forceDiagramStateResults.hoverPebble = undefined;
-                m.redraw()
-            }, forceDiagramStateResults.hoverTimeoutDuration)
-        }
-    }
-});
 
 /* Generates confusion table data and labels, given the expected and predicted values*/
 

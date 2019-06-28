@@ -1,4 +1,6 @@
 import vegaEmbed from 'vega-embed';
+import m from "mithril";
+
 
 import * as app from './app';
 import * as box2d from './vega-schemas/box2d';
@@ -39,6 +41,260 @@ import * as stackedbarnnn from './vega-schemas/trivariate/stackedbarnnn';
 import * as facetbox from './vega-schemas/trivariate/facetbox';
 import * as facetheatmap from './vega-schemas/trivariate/facetheatmap';
 import * as groupedbarnqq from './vega-schemas/trivariate/groupedbarnqq';
+
+
+import * as plots from "./plots";
+
+import * as common from "../common/common";
+import ButtonRadio from "../common/views/ButtonRadio";
+import Popper from "../common/views/Popper";
+
+import PanelButton from "./views/PanelButton";
+
+export let exploreVariables = [];
+
+export class CanvasExplore {
+    view(vnode) {
+        let {vars, variate} = vnode.attrs;
+
+        let expnodes = [];
+        vars = vars ? vars.split('/') : [];
+
+        let exploreVars = (() => {
+            vars.forEach(x => {
+                let node = app.variableSummaries[x];
+                node && expnodes.push(node);
+            });
+            if (variate === "problem") {
+                return m('', [
+                    m('#plot', {style: 'display: block', oncreate: _ => plot([], "", app.getSelectedProblem())})
+                ]);
+            }
+            if (!expnodes[0] && !expnodes[1]) {
+                return;
+            }
+
+            let plotMap = {
+                scatter: "Scatter Plot",
+                tableheat: "Heatmap",
+                line: "Line Chart",
+                stackedbar: "Stacked Bar",
+                box: "Box Plot",
+                groupedbar: "Grouped Bar",
+                strip: "Strip Plot",
+                aggbar: "Aggregate Bar",
+                binnedscatter: "Binned Scatter",
+                step: "Step Chart",
+                area: "Area Chart",
+                binnedtableheat: "Binned Heatmap",
+                averagediff: "Diff. from Avg.",
+                scattermeansd: "Scatter with Overlays",
+                scattermatrix: "Scatter Matrix",
+                simplebar: "Simple Bar Uni",
+                histogram: "Histogram Uni",
+                areauni: "Area Chart Uni",
+                histogrammean: "Histogram with Mean Uni",
+                trellishist: "Histogram Trellis",
+                interactivebarmean: "Interactive Bar with Mean",
+                dot: "Simple Dot Plot",
+                horizon: "Horizon Plot",
+                binnedcrossfilter: "Binned Cross Filter",
+                scattertri: "Scatterplot with Groups",
+                groupedbartri: "Grouped Bar",
+                horizgroupbar: "Horizontal Grouped Bar",
+                bubbletri: "Bubble Plot with Groups",
+                bubbleqqq: "Bubble Plot with Binned Groups",
+                scatterqqq: "Interactive Scatterplot with Binned Groups",
+                trellisscatterqqn: "Scatterplot Trellis",
+                heatmapnnq: "Heatmap with Mean Z",
+                dotdashqqn: "Dot-dash Plot",
+                tablebubblennq: "Table Bubble Plot",
+                stackedbarnnn: "Stacked Bar Plot",
+                facetbox: "Faceted Box Plot",
+                facetheatmap: "Faceted Heatmap",
+                groupedbarnqq: "Grouped Bar with Binned Z"
+            };
+            let schemas = {
+                univariate: 'areauni dot histogram histogrammean simplebar',
+                bivariate: 'aggbar area averagediff binnedscatter binnedtableheat box'
+                    + ' groupedbar horizon interactivebarmean line scatter scattermatrix scattermeansd stackedbar step strip tableheat trellishist',
+                trivariate: 'bubbletri groupedbartri horizgroupbar scattertri bubbleqqq scatterqqq trellisscatterqqn heatmapnnq dotdashqqn tablebubblennq stackedbarnnn facetbox facetheatmap groupedbarnqq',
+                multiple: 'binnedcrossfilter scattermatrix'
+            };
+            let filtered = schemas[variate];
+            if (variate === 'bivariate' || variate === 'trivariate') {
+                filtered = `${filtered} ${schemas.multiple}`;
+            }
+
+            let plot = expnodes[0] && expnodes[0].plottype === 'continuous' ? plots.density : plots.bars;
+
+            return m('div', [
+                m('div', {
+                        style: {
+                            'margin-bottom': '1em',
+                            'overflow-x': 'scroll',
+                            'white-space': 'nowrap',
+                            width: '100%'
+                        }
+                    },
+                    filtered.split(' ').map(x => {
+                        return m("figure", {style: 'display: inline-block'}, [
+                            m(`img#${x}_img[alt=${x}][height=140px][width=260px][src=/static/images/${x}.png]`, {
+                                onclick: _ => plot(expnodes, x),
+                                style: thumbsty(expnodes, x)
+//                              style: {border: "2px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}
+                            }),
+                            m("figcaption", {style: {"text-align": "center"}}, plotMap[x])
+                        ]);
+                    })),
+                m('#plot', {
+                    style: 'display: block',
+                    oncreate: _ => expnodes.length > 1 ? plot(expnodes) : plot(expnodes[0], 'explore', true)
+                })
+            ]);
+        })();
+
+        return [variate === 'problem' ?
+            m('',
+                m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
+                m('br'),
+                exploreVars)
+            : exploreVars ?
+                m('',
+                    m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
+                    m('br'),
+                    exploreVars)
+                : m('',
+                    m(ButtonRadio, {
+                        id: 'exploreButtonBar',
+                        attrsAll: {style: {width: '400px'}},
+                        attrsButtons: {class: ['btn-sm']},
+                        onclick: x => {
+                            app.setVariate(x);
+                            if (app.exploreVariate === 'Multivariate') return;
+                            let maxVariables = {
+                                Univariate: 1,
+                                Bivariate: 2,
+                                Trivariate: 3
+                            }[app.exploreVariate];
+                            exploreVariables = exploreVariables
+                                .slice(Math.max(0, exploreVariables.length - maxVariables));
+                        },
+                        activeSection: app.exploreVariate,
+                        sections: app.leftTab === 'Discover' ? [{value: 'Problem'}] : [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]
+                    }),
+                    m(PanelButton, {
+                        id: 'exploreGo',
+                        classes: 'btn-success',
+                        onclick: _ => {
+                            let variate = app.exploreVariate.toLowerCase();
+                            let selected = app.leftTab === 'Discover' ? [app.workspace.raven_config.selectedProblem] : exploreVariables;
+                            let len = selected.length;
+                            if (variate === 'univariate' && len != 1
+                                || variate === 'problem' && len != 1
+                                || variate === 'bivariate' && len != 2
+                                || variate === 'trivariate' && len != 3
+                                || variate === 'multiple' && len < 2) {
+                                return;
+                            }
+                            m.route.set(`/explore/${variate}/${selected.join('/')}`);
+                        }
+                    }, 'go'),
+                    m('br'),
+
+                    m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
+                        // x could either be a problemID or a variable name
+                        (app.leftTab === 'Discover' ? Object.keys(app.workspace.raven_config.problems) : Object.keys(app.variableSummaries)).map(x => {
+                            let selected = app.leftTab === 'Discover'
+                                ? x === selectedProblem.problemID
+                                : exploreVariables.includes(x);
+
+                            let targetName = app.leftTab === 'Discover'
+                                ? app.workspace.raven_config.problems[x].targets[0]
+                                : x;
+
+                            let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
+                            let [n0, n1, n2] = exploreVariables.map(variable => app.variableSummaries[variable]);
+                            let predictorVariables = app.getPredictorVariables(selectedProblem);
+
+                            // tile for each variable or problem
+                            let tile = m('span#exploreNodeBox', {
+                                    onclick: _ => {
+                                        if (app.leftTab === 'Discover') {
+                                            app.setSelectedProblem(x);
+                                            exploreVariables = [x];
+                                            return;
+                                        }
+
+                                        if (app.exploreVariate === 'Multivariate') {
+                                            exploreVariables.includes(x)
+                                                ? app.remove(exploreVariables, x) : exploreVariables.push(x);
+                                            return;
+                                        }
+
+                                        let maxVariables = {
+                                            'Univariate': 1,
+                                            'Bivariate': 2,
+                                            'Trivariate': 3
+                                        }[app.exploreVariate];
+
+                                        if (exploreVariables.includes(x)) app.remove(exploreVariables, x);
+                                        exploreVariables.push(x);
+                                        exploreVariables = exploreVariables
+                                            .slice(Math.max(0, exploreVariables.length - maxVariables));
+                                        exploreVariables = [...new Set(exploreVariables)];
+
+                                    },
+                                    style: {
+                                        // border: '1px solid rgba(0, 0, 0, .2)',
+                                        'border-radius': '5px',
+                                        'box-shadow': '1px 1px 4px rgba(0, 0, 0, 0.4)',
+                                        display: 'flex',
+                                        'flex-direction': 'column',
+                                        height: '250px',
+                                        margin: '.5em',
+                                        width: '250px',
+                                        'align-items': 'center',
+                                        'background-color': selected ? app.hexToRgba(common.selVarColor) : common.menuColor
+                                    }
+                                }, m('#exploreNodePlot', {
+                                    oninit() {
+                                        this.node = app.variableSummaries[x];
+                                    },
+                                    oncreate(vnode) {
+                                        let plot = (this.node || {}).plottype === 'continuous' ? plots.densityNode : plots.barsNode;
+                                        this.node && plot(this.node, vnode.dom, 110, true);
+                                    },
+                                    onupdate(vnode) {
+                                        let targetName = app.leftTab === 'Discover'
+                                            ? app.workspace.raven_config.problems[x].targets[0]
+                                            : x;
+                                        let node = app.variableSummaries[targetName];
+                                        if (node && node !== this.node) {
+                                            let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
+                                            plot(node, vnode.dom, 110, true);
+                                            this.node = node;
+                                        }
+                                    },
+                                    style: 'height: 65%'
+                                }),
+                                m('#exploreNodeLabel', {style: 'margin: 1em'},
+                                    show && n0 && n0.name === x ? `${x} (x)`
+                                        : show && n1 && n1.name === x ? `${x} (y)`
+                                        : show && n2 && n2.name === x ? `${x} (z)`
+                                            : predictorVariables ? [
+                                                    m('b', x),
+                                                    m('p', predictorVariables.join(', '))]
+                                                : x)
+                            );
+
+                            if (app.variableSummaries[targetName].labl)
+                                return m(Popper, {content: () => app.variableSummaries[targetName].labl}, tile);
+                            return tile;
+                        }))
+                )]
+    }
+}
 
 let approps = {
     qq: ["scatter", "line", "area", "binnedscatter", "binnedtableheat", "horizon", "scattermatrix", "scattermeansd", "step"],
