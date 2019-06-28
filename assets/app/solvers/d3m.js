@@ -1,32 +1,17 @@
-import {
-    alertError,
-    alertWarn,
-    allsearchId,
-    buttonClasses,
-    buttonLadda,
-    d3mMetrics,
-    d3mTaskSubtype,
-    d3mTaskType,
-    debugLog,
-    getPredictorVariables,
-    getResultsProblem,
-    getSolutions,
-    makeRequest,
-    setSelectedSolution,
-    variableSummaries,
-    workspace
-} from "../app";
 import m from "mithril";
 
 import * as app from '../app.js';
+import {alertError, alertWarn, debugLog} from "../app";
+
 import {locationReload, setModal} from "../../common/views/Modal";
 
+// functions to extract information from D3M response format
 export let getName = (problem, solution) => solution.pipelineId;
-export let getActualValues = (problem, solution, target) => problem.dvvalues && problem.dvvalues.map(point => point[target]);
+export let getActualValues = (problem, solution, target) => problem.actualValues && problem.actualValues.map(point => point[target]);
 export let getFittedValues = (problem, solution, target) => {
     if (!(solution.predictedValues || {}).success) return;
-    let samples = problem.dvvalues.map(point => point.d3mIndex);
-    return samples.map(sample => solution.predictedValues[sample]).map(datum => parseFloat(datum) || datum);
+    let samples = problem.actualValues.map(point => point.d3mIndex);
+    return samples.map(sample => solution.predictedValues[sample]);
 };
 export let getScore = (problem, solution, target) => solution.score;
 export let getDescription = (problem, solution) => solution.description;
@@ -34,15 +19,28 @@ export let getTask = (problem, solution) => solution.status;
 export let getModel = (problem, solution) => `${(solution.steps || []).length} steps`;
 
 
-export async function stopAllSearches() {
-    let res = await makeRequest(D3M_SVC_URL + '/StopSearchSolutions', {searchId: allsearchId[0]});
-    if (allsearchId.length > 1) {
-        for (let i = 1; i < allsearchId.length; i++) {
-            res = await makeRequest(D3M_SVC_URL + '/StopSearchSolutions', {searchId: allsearchId[i]});
-        }
-    }
-}
+// no new pipelines will be found under searchId
+// pipelines under searchId are also wiped/no longer accessible
+export let endSearch = async searchId => app.makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId})
+    .then(response => {
+        console.warn("#debug response endSearch");
+        console.log(response);
+    });
 
+// no new pipelines will be found under searchId
+// discovered pipelines will remain accessible for produce calls
+export let stopSearch = async searchId => app.makeRequest(D3M_SVC_URL + '/StopSearchSolutions', {searchId})
+    .then(response => {
+        console.warn("#debug response stopSearch");
+        console.log(response);
+    });
+
+export let endAllSearches = async () => Object.keys(app.workspace.raven_config.problems)
+    .map(problemId => app.workspace.raven_config.problems[problemId].d3mSearchId)
+    .forEach(endSearch);
+export let stopAllSearches = async () => Object.keys(app.workspace.raven_config.problems)
+    .map(problemId => app.workspace.raven_config.problems[problemId].d3mSearchId)
+    .forEach(stopSearch);
 
 // ------------------------------------------
 //      create pipeline template
@@ -199,19 +197,6 @@ export function end_ta3_search(is_success, user_msg) {
     */
 }
 
-export async function endAllSearches() {
-    console.log("Attempting to End All Searches");
-    console.log(allsearchId);
-    console.log(allsearchId[0]);
-    let res = await makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId: allsearchId[0]});
-    if (allsearchId.length > 1) {
-        for (let i = 1; i < allsearchId.length; i++) {
-            res = await makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId: allsearchId[i]});
-        }
-    }
-    //allsearchId = [];
-}
-
 function placeholderStep() {
     let step = {inputs: [{data: "steps.0.produce"}], outputs: [{id: "produce"}]};
     return {placeholder: step};
@@ -222,7 +207,7 @@ function primitiveStepRemoveColumns(problem) {
     let keep = [...app.getPredictorVariables(problem), ...problem.targets, "d3mIndex"];
 
     let indices = [];
-    Object.keys(variableSummaries).forEach((variable, i) => keep.includes(variable) && indices.push(i));
+    Object.keys(app.variableSummaries).forEach((variable, i) => keep.includes(variable) && indices.push(i));
 
     let primitive = {
         id: "2eeff053-395a-497d-88db-7374c27812e6",
@@ -258,18 +243,18 @@ function primitiveStepRemoveColumns(problem) {
 // create problem definition for SearchSolutions call
 function GRPC_ProblemDescription(problem) {
     let GRPC_Problem = {
-        taskType: d3mTaskType[problem.task],
-        taskSubtype: problem.taskSubtype || d3mTaskSubtype.subtypeNone,
-        performanceMetrics: [{metric: d3mMetrics[problem.metric]}]
+        taskType: app.d3mTaskType[problem.task],
+        taskSubtype: problem.taskSubtype || app.d3mTaskSubtype.subtypeNone,
+        performanceMetrics: [{metric: app.d3mMetrics[problem.metric]}]
     };
     if (GRPC_Problem.taskSubtype === 'taskSubtypeUndefined') delete GRPC_Problem.taskSubtype;
 
     let GRPC_ProblemInput = [
         {
-            datasetId: workspace.d3m_config.name,
+            datasetId: app.workspace.d3m_config.name,
             targets: problem.targets.map(target => ({
-                resourceId: workspace.raven_config.resourceId,
-                columnIndex: Object.keys(variableSummaries).indexOf(target),  // Adjusted to match dataset doc
+                resourceId: app.workspace.raven_config.resourceId,
+                columnIndex: Object.keys(app.variableSummaries).indexOf(target),  // Adjusted to match dataset doc
                 columnName: target
             }))
         }
@@ -294,7 +279,7 @@ export function GRPC_SearchSolutionsRequest(problem) {
         allowedValueTypes: ['DATASET_URI', 'CSV_URI'],
         problem: GRPC_ProblemDescription(problem),
         template: GRPC_PipelineDescription(problem),
-        inputs: [{dataset_uri: 'file://' + workspace.d3m_config.dataset_schema}]
+        inputs: [{dataset_uri: 'file://' + app.workspace.d3m_config.dataset_schema}]
     };
 }
 
@@ -365,7 +350,7 @@ export function GRPC_ProduceSolutionRequest(datasetDocUrl){
 export function GRPC_ScoreSolutionRequest(problem, datasetDocUrl) {
     return {
         inputs: [{dataset_uri: 'file://' + datasetDocUrl}],
-        performanceMetrics: problem.metrics.map(metric => ({metric: d3mMetrics[metric]})),
+        performanceMetrics: [problem.metric, ...problem.metrics].map(metric => ({metric: app.d3mMetrics[metric]})),
         users: [{id: 'TwoRavens', chosen: false, reason: ""}],
         // note: FL only using KFOLD in latest iteration (3/8/2019)
         configuration: {
@@ -387,54 +372,45 @@ export function GRPC_ScoreSolutionRequest(problem, datasetDocUrl) {
 /**
  Handle a websocket sent GetSearchSolutionResultsResponse
  wrapped in a StoredResponse object
+
+ contains initial pipeline
  */
 export async function handleGetSearchSolutionResultsResponse(response) {
+
     if (response === undefined) {
-        console.log('GetSearchSolutionResultsResponse: Error.  "response1" undefined');
+        console.warn('GetSearchSolutionResultsResponse: Error.  "response" undefined');
         return;
     }
 
-    // ----------------------------------------
-    // (1) Pull the solutionId
-    // ----------------------------------------
-    debugLog('(1) Pull the solutionId');
+    let problems = app.workspace.raven_config.problems;
+    let solvedProblemId = Object.keys(problems)
+        .find(problemId => problems[problemId].d3mSearchId === response.stored_request.search_id);
+    let solvedProblem = problems[solvedProblemId];
 
-    console.warn('handleGetSearchSolutionResultsResponse');
-    console.log(JSON.stringify(response));
-
-    // Note: the response.id becomes the Pipeline id
-    //
-    //
+    // end the search if it doesn't match any problem
+    if (!solvedProblem) {
+        console.warn('Attempting to end search ' + response.stored_request.search_id);
+        endSearch(response.stored_request.search_id);
+        return;
+    }
     if (response.id === undefined) {
-        console.warn('GetSearchSolutionResultsResponse: Error.  "response1.id" undefined');
+        console.warn('GetSearchSolutionResultsResponse: Error.  "response.id" undefined');
         return;
     }
-    if (response.response.solutionId === undefined) {
-        console.warn('GetSearchSolutionResultsResponse: Error.  "response1.response.solutionId" undefined');
-        return;
-    }
-    // let solutionId = response1.response.solutionId;
+    if (response.is_error) return;
 
     // ----------------------------------------
     // (2) Update or Create the Pipeline
     // ----------------------------------------
-    response.source = 'd3m';
 
-    let solverProblem = app.solverProblem.d3m;
-    if (!solverProblem) {
-        endAllSearches();
-        alertError('Solution arrived for an unknown problem. Ending the previous search.');
-        return;
-    }
-    let solutions = solverProblem.solutions.d3m;
-    console.log(JSON.stringify(response));
-    // Need to deal with (exclude) pipelines that are reported, but failed.  For approach, see below.
-    if (response.id in solutions)
-        Object.assign(solutions[response.id], response);
-    else {
-        solutions[response.id] = response;
-        solutions[response.id].score = 'scoring';
-    }
+    response.source = 'd3m';
+    delete response.response;
+    delete response.response_as_json;
+    delete response.stored_request;
+    delete response.pipeline_id;
+
+    // save the problem
+    Object.assign(solvedProblem.solutions.d3m, {[response.id]: response});
 
     // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
     // if(solutions[key].responseInfo.status.details == "Pipeline Failed")  {
@@ -447,11 +423,11 @@ export async function handleGetSearchSolutionResultsResponse(response) {
     // VJD: this is a third core API call that is currently unnecessary
     //let pipelineid = PipelineCreateResult.pipelineid;
     // getexecutepipelineresults is the third to be called
-    //  makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(solutions)});
+    //  app.makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(solutions)});
 
-    let selectedSolutions = app.getSolutions(solverProblem);
+    let selectedSolutions = app.getSolutions(solvedProblem);
 
-    if (selectedSolutions.length === 0) setSelectedSolution(solverProblem, 'd3m', response.id);
+    if (selectedSolutions.length === 0) app.setSelectedSolution(solvedProblem, 'd3m', response.id);
 
     m.redraw();
 }
@@ -465,6 +441,19 @@ export async function handleDescribeSolutionResponse(response) {
         console.log('handleDescribeSolutionResponse: Error.  "response" undefined');
         return;
     }
+
+    let problems = app.workspace.raven_config.problems;
+    let solvedProblemId = Object.keys(problems)
+        .find(problemId => problems[problemId].d3mSearchId === response.searchId);
+    let solvedProblem = problems[solvedProblemId];
+
+    // end the search if it doesn't match any problem
+    if (!solvedProblem) {
+        console.warn('Attempting to end search ' + response.searchId);
+        endSearch(response.searchId);
+        return;
+    }
+
     if (response.pipelineId === undefined) {
         console.log('handleDescribeSolutionResponse: Error.  "pipelineId" undefined');
         return;
@@ -472,21 +461,8 @@ export async function handleDescribeSolutionResponse(response) {
     debugLog('---- handleDescribeSolutionResponse -----');
     debugLog(JSON.stringify(response));
 
-    // -------------------------------
-    // Update pipeline info....
-    // -------------------------------
-    let pipelineId = response.pipelineId;
-    let solverProblem = app.solverProblem.d3m;
-    if (!solverProblem) {
-        alertError('TA2 solution arrived for an unknown problem. Please end the TA2 solution search.');
-        return;
-    }
-
-    // this steps seems to be a useless copy with missing information. The steps are really stored in 'response.pipeline.steps'
-    delete response.steps;
-
-
-    Object.assign(solverProblem.solutions.d3m[pipelineId], response);
+    // the pipeline template is the only useful information
+    solvedProblem.solutions.d3m[response.pipelineId].pipeline = response.pipeline;
 }
 
 /**
@@ -499,25 +475,27 @@ export async function handleGetScoreSolutionResultsResponse(response) {
         console.log('handleGetScoreSolutionResultsResponse: Error.  "response" undefined');
         return;
     }
+
+    let problems = app.workspace.raven_config.problems;
+    let solvedProblemId = Object.keys(problems)
+        .find(problemId => problems[problemId].d3mSearchId === response.stored_request.search_id);
+    let solvedProblem = problems[solvedProblemId];
+
+    // end the search if it doesn't match any problem
+    if (!solvedProblem) {
+        console.warn('Attempting to end search ' + response.stored_request.search_id);
+        endSearch(response.stored_request.search_id);
+        return;
+    }
+
     if (response.is_finished === undefined) {
-        console.log('handleGetScoreSolutionResultsResponse: Error.  "response.data.is_finished" undefined');
+        debugLog('handleGetScoreSolutionResultsResponse: Error.  "response.data.is_finished" undefined');
         return;
     }
     if (!response.is_finished) return;
     if (response.is_error) return;
 
-    // Note: what's now the "res4DataId" needs to be sent to this function
-    //
-    let solverProblem = app.solverProblem.d3m;
-    if (!solverProblem) {
-        alertError('TA2 solution arrived for an unknown problem. Please end the TA2 solution search.');
-        return;
-    }
-
-    let solution = solverProblem.solutions.d3m[response.pipelineId];
-    solution.scores = solution.scores || [];
-    solution.scores.push(...response.response.scores);
-
+    solvedProblem.solutions.d3m[response.pipelineId].scores = response.response.scores;
     m.redraw();
 }
 
@@ -531,6 +509,19 @@ export async function handleGetProduceSolutionResultsResponse(response) {
         debugLog('handleGetProduceSolutionResultsResponse: Error.  "response" undefined');
         return;
     }
+
+    let problems = app.workspace.raven_config.problems;
+    let solvedProblemId = Object.keys(problems)
+        .find(problemId => problems[problemId].d3mSearchId === response.stored_request.search_id);
+    let solvedProblem = problems[solvedProblemId];
+
+    // end the search if it doesn't match any problem
+    if (!solvedProblem) {
+        console.warn('Attempting to end search ' + response.stored_request.search_id);
+        endSearch(response.stored_request.search_id);
+        return;
+    }
+
     if (response.pipelineId === undefined) {
         debugLog('handleGetProduceSolutionResultsResponse: Error.  "pipelineId" undefined');
         return;
@@ -549,33 +540,23 @@ export async function handleGetProduceSolutionResultsResponse(response) {
         return;
     }
 
-    let hold = response.response.exposedOutputs;
-    let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
-    let hold3 = hold2.csvUri;
+    let data_pointer = Object.values(response.response.exposedOutputs)[0].csvUri;
+    let responseOutputData = await app.makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer});
 
-
-    let solverProblem = app.solverProblem.d3m;
-    if (!solverProblem)  {
-        alertError('TA2 solution arrived for an unknown problem. Please end the TA2 solution search.');
-        return;
-    }
-
-    let responseOutputData = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
-
+    // TODO: this is only index zero if there is one target
     let predictedValues = responseOutputData.data
-        .reduce((out, point) => Object.assign(out, {[point['']]: point['0']}), {});
+        .reduce((out, point) => Object.assign(out, {[point['']]: parseFloat(point['0']) || point['0']}), {});
 
-    solverProblem.solutions.d3m[response.pipelineId].predictedValues = predictedValues;
+    solvedProblem.solutions.d3m[response.pipelineId].predictedValues = predictedValues;
 }
 
 export async function handleENDGetSearchSolutionsResults() {
 
     // stop spinner
-    buttonLadda.btnEstimate = false;
+    app.buttonLadda.btnEstimate = false;
     // change status of buttons for estimating problem and marking problem as finished
-    buttonClasses.btnEstimate = 'btn-secondary';
+    app.buttonClasses.btnEstimate = 'btn-secondary';
 
-    app.solverProblem.d3m = undefined;
     app.setTask2_finished(true);
     m.redraw();
 }
@@ -584,7 +565,7 @@ export async function handleENDGetSearchSolutionsResults() {
  EndSession(SessionContext) returns (Response) {}
  */
 export async function endsession() {
-    let resultsProblem = getResultsProblem();
+    let resultsProblem = app.getResultsProblem();
 
     let solutions = resultsProblem.solutions;
     if (Object.keys(solutions.d3m).length === 0) {
@@ -592,24 +573,24 @@ export async function endsession() {
         return;
     }
 
-    let selectedPipelines = getSolutions(resultsProblem, 'd3m');
-    if (selectedPipelines.size === 0) {
+    let selectedPipelines = app.getSolutions(resultsProblem, 'd3m');
+    if (selectedPipelines.length === 0) {
         alertWarn("No pipelines exist. Cannot mark problem as complete");
         return;
     }
-    if (selectedPipelines.size > 1) {
+    if (selectedPipelines.length > 1) {
         alertWarn("More than one pipeline selected. Please select one discovered pipeline");
         return;
     }
 
-    let chosenSolutionId = [...selectedPipelines][0].response.solutionId;
+    let chosenSolutionId = selectedPipelines[0].response.solutionId;
 
     // calling exportSolution
     //
     let end = await exportSolution(chosenSolutionId);
 
-    // makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
-    //let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
+    // app.makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
+    //let res = await app.makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
     endAllSearches()
     //let mystatus = res.status.code.toUpperCase();
     //if(mystatus == "OK") {
@@ -634,62 +615,24 @@ export async function endsession() {
  side tracking.
 
  */
+let exportCount = 0;
 export async function exportSolution(solutionId) {
     exportCount++;
-    let res;
-    let my_rank = 1.01 - 0.01 * exportCount;   // ranks always gets smaller each call
 
-    let params = {solutionId: solutionId,
-        rank: my_rank,
-        searchId: (allsearchId.length) ? allsearchId[0] : null};
-    res = await makeRequest(D3M_SVC_URL + '/SolutionExport3', params);
+    let response = await app.makeRequest(D3M_SVC_URL + '/SolutionExport3', {
+        solutionId,
+        rank: 1.01 - 0.01 * exportCount,
+        searchId: app.getResultsProblem().d3mSearchId
+    });
 
-    console.log(res);
-    if (typeof res === 'undefined') {
-        console.log('Failed to write executable for solutionId:' + solutionId);
-        return res;
-    }
+    console.warn("#debug response exportSolution");
+    console.log(response);
 
-    if (res.success === false) {
-        // console.log('Successful Augment.  Try to reload now!!');
-        console.log(msg_data.message);
-        setModal(res.message,
-            "Solution export failed", true, false, false, locationReload);
-    }
+    if (response === undefined)
+        console.log('Failed to write executable for solutionId ' + solutionId);
 
-    return res;
-}
+    if (response.success === false)
+        setModal(response.message,"Solution export failed", true, false, false, locationReload);
 
-/** needs doc */
-export function deletepipeline() {
-    console.log("DELETE CALLED");
-}
-
-/**
- D3M API HELPERS
- because these get built in various places, pulling them out for easy manipulation
- */
-function apiFeature (vars, uri) {
-    let out = [];
-    for(let i = 0; i < vars.length; i++) {
-        out.push({featureId:vars[i],dataUri:uri});
-    }
-    return out;
-}
-
-/** needs doc */
-function apiFeatureShortPath (vars, uri) {
-    let out = [];
-    let shortUri = uri.substring(0, uri.lastIndexOf("/"));
-    for(let i = 0; i < vars.length; i++) {
-        out.push({featureId:vars[i],dataUri:shortUri});
-    }
-    return out;
-}
-
-/**
- silly but perhaps useful if in the future SessionContext requires more things (as suggest by core)
- */
-function apiSession(context) {
-    return {session_id: context};
+    return response;
 }

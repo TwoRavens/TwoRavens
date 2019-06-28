@@ -52,9 +52,11 @@ import VariableSummary, {formatVariableSummary} from "./views/VariableSummary";
 import Body_EventData from './eventdata/Body_EventData';
 import TextFieldSuggestion from "../common/views/TextFieldSuggestion";
 import BodyDataset from "./views/BodyDataset";
-import {setConstraintType} from "./manipulations/manipulate";
-import {constraintMenu} from "./manipulations/manipulate";
-import {constraintMetadata} from "./manipulations/manipulate";
+import {variableSummaries} from "./app";
+import {endAllSearches} from "./solvers/d3m";
+import {stopAllSearches} from "./solvers/d3m";
+import {endsession} from "./solvers/d3m";
+import {handleENDGetSearchSolutionsResults} from "./solvers/d3m";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -699,7 +701,7 @@ class Body {
                 )
             ),
             app.workspace && m('div.btn.btn-group[style=margin:5px;padding:0px]',
-                m(ButtonPlain, {
+                !app.workspace.is_original_workspace && m(ButtonPlain, {
                     id: 'btnSaveWorkspace',
                     class: `btn-sm btn-secondary ${app.saveCurrentWorkspaceWindowOpen ? 'active' : ''}`,
                     onclick: _ => {
@@ -744,6 +746,18 @@ class Body {
                 class: 'btn-sm',
                 onclick: () => app.setShowModalTA2Debug(true)
             }, m(Icon, {name: 'bug'})),
+
+            m(Button, {
+                style: {'margin': '8px'},
+                title: 'ta2 debugger',
+                class: 'btn-sm',
+                onclick: () => {
+                    solverD3M.endAllSearches();
+                    solverD3M.stopAllSearches();
+                    // solverD3M.endsession();
+                    // solverD3M.handleENDGetSearchSolutionsResults();
+                }
+            }, m(Icon, {name: 'stop'})),
 
             // m("span", {"class": "footer-info-break"}, "|"),
             // m("a", {"href" : "/dev-raven-links", "target": "=_blank"}, "raven-links"),
@@ -1247,8 +1261,8 @@ class Body {
             'Name',
             m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
             'Target', 'Predictors',
-            'Task',
             Object.values(problems).some(prob => prob.subTask !== 'taskSubtypeUndefined') ? 'Subtask' : '',
+            'Task',
             'Metric'
         ];
 
@@ -1268,8 +1282,8 @@ class Body {
             })),
             problem.targets.join(', '),
             app.getPredictorVariables(problem).join(', '),
+            problem.subTask === 'taskSubtypeUndefined' ? '' : app.getSubtask(problem),
             problem.task,
-            problem.subTask === 'taskSubtypeUndefined' ? '' : problem.subTask, // ignore taskSubtypeUndefined
             problem.metric
         ];
         sections.push({
@@ -1527,52 +1541,38 @@ class Body {
                     m('label', 'Task Type'),
                     m(Dropdown, {
                         id: 'taskType',
-                        items: Object.keys(app.d3mTaskType),
+                        items: app.supportedTasks,
                         activeItem: selectedProblem.task,
-                        onclickChild: child => {
-                            selectedProblem.task = child;
-                            delete selectedProblem.unedited;
-                            // will trigger the call to solver, if a menu that needs that info is shown
-                            app.setSolverPending(true);
-                        },
+                        onclickChild: task => app.setTask(task, selectedProblem),
                         style: {'margin': '1em', 'margin-top': '0'},
                         disabled: app.lockToggle
                     }),
-                    m('label', 'Task Subtype'),
-                    m(Dropdown, {
-                        id: 'taskSubType',
-                        items: Object.keys(app.d3mTaskSubtype),
-                        activeItem: selectedProblem.subTask,
-                        onclickChild: child => {
-                            selectedProblem.subTask = child;
-                            delete selectedProblem.unedited;
-                            // will trigger the call to solver, if a menu that needs that info is shown
-                            app.setSolverPending(true);
-                        },
-                        style: {'margin': '1em', 'margin-top': '0'},
-                        disabled: app.lockToggle
-                    }),
+                    Object.keys(app.applicableMetrics[selectedProblem.task]).length !== 1 && [
+                        m('label', 'Task Subtype'),
+                        m(Dropdown, {
+                            id: 'taskSubType',
+                            items: Object.keys(app.applicableMetrics[selectedProblem.task]),
+                            activeItem: app.getSubtask(selectedProblem),
+                            onclickChild: subTask => app.setSubTask(subTask, selectedProblem),
+                            style: {'margin': '1em', 'margin-top': '0'},
+                            disabled: app.lockToggle
+                        })
+                    ],
                     m('label', 'Primary Performance Metric'),
                     m(Dropdown, {
                         id: 'performanceMetric',
                         // TODO: filter based on https://datadrivendiscovery.org/wiki/display/work/Matrix+of+metrics
-                        items: Object.keys(app.d3mMetrics),
+                        items: app.applicableMetrics[selectedProblem.task][app.getSubtask(selectedProblem)],
                         activeItem: selectedProblem.metric,
-                        onclickChild: metric => {
-                            if (selectedProblem.metric === metric) return;
-                            if (selectedProblem.metrics.includes(metric)) selectedProblem.metrics.push(selectedProblem.metric);
-                            selectedProblem.metric = metric;
-                            app.remove(selectedProblem.metrics, metric);
-                            delete selectedProblem.unedited;
-                            // will trigger the call to solver, if a menu that needs that info is shown
-                            app.setSolverPending(true);
-                        },
+                        onclickChild: metric => app.setMetric(metric, selectedProblem),
                         style: {'margin': '1em', 'margin-top': '0'},
                         disabled: app.lockToggle
                     }),
-                    m(Dropdown, {
+
+                    app.applicableMetrics[selectedProblem.task][selectedProblem.subTask].length - 1 > selectedProblem.metrics.length && m(Dropdown, {
                         id: 'performanceMetrics',
-                        items: Object.keys(app.d3mMetrics).filter(metric => metric !== selectedProblem.metric && !selectedProblem.metrics.includes(metric)),
+                        items: app.applicableMetrics[selectedProblem.task][selectedProblem.subTask]
+                            .filter(metric => metric !== selectedProblem.metric && !selectedProblem.metrics.includes(metric)),
                         activeItem: 'Add Secondary Metric',
                         onclickChild: metric => {
                             selectedProblem.metrics = [...selectedProblem.metrics, metric].sort(app.omniSort);
@@ -1584,7 +1584,7 @@ class Body {
                         disabled: app.lockToggle
                     }),
                     selectedProblem.metrics.length > 0 && m('label', 'Secondary Performance Metrics'),
-                    m(ListTags, {tags: selectedProblem.metrics, ondelete: metric => app.remove(selectedProblem.metrics, metric)}),
+                    m(ListTags, {readonly: app.lockToggle, tags: selectedProblem.metrics, ondelete: metric => app.remove(selectedProblem.metrics, metric)}),
                     m(Subpanel, {
                         header: 'Search Options',
                         defaultShown: false,
@@ -1658,10 +1658,6 @@ class Body {
                             m(ButtonRadio, {
                                 id: 'shuffleScoringOption',
                                 onclick: value => {
-                                    console.warn("#debug value");
-                                    console.log(value);
-                                    console.warn("#debug selectedProblem.stratified");
-                                    console.log(selectedProblem.stratified);
                                     if (app.lockToggle) return;
                                     selectedProblem.stratified = value === 'True';
                                 },
