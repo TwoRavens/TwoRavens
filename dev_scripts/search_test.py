@@ -155,6 +155,6 @@ def run_download():
     msgt('files downloaded to %s' % data_foldername)
 
 if __name__ == '__main__':
-    #run_search()
-    run_download()
+    run_search()
+    #run_download()
     # run_download_post()

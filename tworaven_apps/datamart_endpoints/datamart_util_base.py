@@ -11,12 +11,8 @@ from django.conf import settings
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
 from tworaven_apps.user_workspaces.models import UserWorkspace
-from tworaven_apps.datamart_endpoints.static_vals import \
-    (DATAMART_ISI_NAME,
-     DATAMART_NYU_NAME,
-     KEY_ISI_DATAMART_ID,
-     KEY_DATA,
-     NUM_PREVIEW_ROWS)
+
+from tworaven_apps.datamart_endpoints import static_vals as dm_static
 
 class DatamartJobUtilBase(ABC):
     """Base class for other DatamartJobUtil objects"""
@@ -56,15 +52,22 @@ class DatamartJobUtilBase(ABC):
 
 
     @staticmethod
-    def format_materialize_response(datamart_id, datamart_name, dest_filepath, preview_info):
+    def format_materialize_response(datamart_id, datamart_name,
+                                    dest_filepath, preview_info, **kwargs):
         """Return the materialize response"""
+
+        datasetdoc_path = kwargs.get(dm_static.KEY_DATASET_DOC_PATH)
+
         info_dict = OrderedDict({ \
-                        KEY_ISI_DATAMART_ID: datamart_id,
-                        'source_mode': datamart_name,
-                        'data_path': dest_filepath,
-                        'filesize': os.stat(dest_filepath).st_size,
-                        'metadata_path': None,
-                        'data_preview': ''.join(preview_info.result_obj),
-                        'metadata': None})
+                    dm_static.KEY_ISI_DATAMART_ID: datamart_id,
+                    'source_mode': datamart_name,
+                    dm_static.KEY_DATA_PATH: dest_filepath,
+                    'filesize': os.stat(dest_filepath).st_size,
+                    'metadata_path': None,
+
+                    # Used if materialize also includes a datasetdoc
+                    dm_static.KEY_DATASET_DOC_PATH: kwargs.get(dm_static.KEY_DATASET_DOC_PATH),
+                    'data_preview': ''.join(preview_info.result_obj),
+                    'metadata': None})
 
         return info_dict

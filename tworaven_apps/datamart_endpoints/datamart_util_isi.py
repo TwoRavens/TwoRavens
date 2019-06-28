@@ -6,7 +6,6 @@ from os.path import dirname, join, isfile
 from django.conf import settings
 from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 
-from tworaven_apps.data_prep_utils.new_dataset_util import NewDatasetUtil
 from tworaven_apps.user_workspaces.models import UserWorkspace
 from tworaven_apps.data_prep_utils.duplicate_column_remover import DuplicateColumnRemover
 from tworaven_apps.configurations.utils import get_latest_d3m_config

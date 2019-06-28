@@ -5,13 +5,9 @@ from os.path import dirname, join, isfile
 
 from django.conf import settings
 import pandas as pd
-from tworaven_apps.data_prep_utils.new_dataset_util import NewDatasetUtil
 from tworaven_apps.user_workspaces.models import UserWorkspace
-from tworaven_apps.configurations.utils import get_latest_d3m_config
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.random_info import get_timestamp_string_readable
-from tworaven_apps.utils.json_helper import (json_dumps, json_loads)
-from tworaven_apps.utils.dict_helper import (clear_dict,)
 from tworaven_apps.datamart_endpoints import static_vals as dm_static
 
 from tworaven_apps.datamart_endpoints.datamart_info_util import \
@@ -217,11 +213,13 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
         if not save_info.success:
             return err_resp(save_info.err_msg)
+        save_info = save_info.result_obj
 
         # ----------------------------
         # Get preview rows
         # ----------------------------
-        preview_info = read_file_rows(dest_filepath, dm_static.NUM_PREVIEW_ROWS)
+        preview_info = read_file_rows(save_info[dm_static.KEY_DATA_PATH],
+                                      dm_static.NUM_PREVIEW_ROWS)
         if not preview_info.success:
             user_msg = (f'Failed to retrieve preview rows.'
                         f' {preview_info.err_msg}')
@@ -231,7 +229,8 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
                                         datamart_id,
                                         dm_static.DATAMART_NYU_NAME,
                                         dest_filepath,
-                                        preview_info)
+                                        preview_info,
+                                        **save_info)
 
         return ok_resp(info_dict)
 
@@ -330,6 +329,7 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
         if not save_info.success:
             return err_resp(save_info.err_msg)
+        save_info = save_info.result_obj
 
         # -----------------------------------------
         # Retrieve preview rows and return response
@@ -337,7 +337,8 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
         # preview rows
         #
-        preview_info = read_file_rows(dest_filepath, dm_static.NUM_PREVIEW_ROWS)
+        preview_info = read_file_rows(save_info[dm_static.KEY_DATA_PATH],
+                                      dm_static.NUM_PREVIEW_ROWS)
         if not preview_info.success:
             user_msg = (f'Failed to retrieve preview rows.'
                         f' {preview_info.err_msg}')
@@ -346,8 +347,11 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
         # Format/return reponse
         #
         info_dict = DatamartJobUtilNYU.format_materialize_response(\
-                        datamart_id, dm_static.DATAMART_NYU_NAME,
-                        dest_filepath, preview_info)
+                        datamart_id,
+                        dm_static.DATAMART_NYU_NAME,
+                        save_info[dm_static.KEY_DATA_PATH],
+                        preview_info,
+                        **save_info)
 
         return ok_resp(info_dict)
 
@@ -356,7 +360,8 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
     @staticmethod
     def save_datamart_file(data_foldername, file_data, **kwargs):
-        """Save materialize response as a file"""
+        """Save materialize response as a file.  This should be a .zip
+        containing both a datafile and a datasetDoc.json"""
         if not file_data:
             return err_resp('"file_data" must be specified')
 
@@ -375,9 +380,20 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
                         f' Error: %s') % (err_obj,)
             return err_resp(user_msg)
 
+        # Make sure that learningData.csv exists
+        #
         data_filepath = join(data_foldername, 'tables', 'learningData.csv')
         if not isfile(data_filepath):
-            user_msg = 'File not found in expected place: %s' % data_filepath
+            user_msg = ('File "learningData.csv" not found in expected'
+                        'place: %s') % data_filepath
+            return err_resp(user_msg)
+
+        # Make sure that the datasetDoc.json exists
+        #
+        datasetdoc_path = join(data_foldername, 'datasetdoc.json')
+        if not isfile(datasetdoc_path):
+            user_msg = ('File datasetDoc.json file not found in'
+                        ' expected place: %s') % datasetdoc_path
             return err_resp(user_msg)
 
         expected_filepath = kwargs.get('expected_filepath', None)
@@ -386,7 +402,8 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
                 user_msg = 'File not found on expected path: %s' % expected_filepath
                 return err_resp(user_msg)
 
-        return ok_resp(data_filepath)
+        return ok_resp({dm_static.KEY_DATA_PATH: data_filepath,
+                        dm_static.KEY_DATASET_DOC_PATH: datasetdoc_path})
 
 
     @staticmethod

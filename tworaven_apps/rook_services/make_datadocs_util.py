@@ -48,6 +48,10 @@ from tworaven_apps.rook_services.app_names import \
     (MKDOCS_ROOK_APP_NAME, SOLA_JSON_KEY)
 from tworaven_apps.utils.json_helper import json_dumps, json_loads
 
+import logging
+
+LOGGER = logging.getLogger(__name__)
+
 
 class MakeDatadocsUtil(BasicErrCheck):
     """Convenience class for rook preprocess"""
@@ -181,8 +185,9 @@ class MakeDatadocsUtil(BasicErrCheck):
 
         rook_svc_url = self.rook_app_info.get_rook_server_url()
 
-        #print('rook_svc_url:', rook_svc_url)
-        #print('call_data:', call_data)
+        LOGGER.info('--------- call rook mkdocs ----------')
+        LOGGER.info('rook_svc_url: %s', rook_svc_url)
+        LOGGER.info('call_data: %s', call_data)
 
         # Call R services
         #
@@ -200,9 +205,13 @@ class MakeDatadocsUtil(BasicErrCheck):
                         (rservice_req.status_code, rook_svc_url)
             self.add_err_msg(user_msg)
 
+        LOGGER.info('^' * 40)
+        LOGGER.info(rservice_req.text)
+        LOGGER.info('=' * 40)
+
         result_info = json_loads(rservice_req.text)
         if not result_info.success:
-            user_msg = ('Failed to convert datadoc info '
+            user_msg = ('Failed to convert mkdocs info '
                         ' to JSON: %s') % result_info.err_msg
             self.add_err_msg(user_msg)
             return

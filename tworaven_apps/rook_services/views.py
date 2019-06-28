@@ -55,7 +55,7 @@ def view_rook_preprocess(request):
     json_data = json_info.result_obj
 
     LOGGER.info('view_rook_preprocess input: %s', json_data)
-    print('json_data', json_data)
+    # print('json_data', json_data)
 
     if not rook_static.KEY_DATA in json_data:
         err_msg = (f'The key "{rook_static.KEY_DATA}" was not found'

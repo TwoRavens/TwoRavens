@@ -16,11 +16,8 @@ from tworaven_apps.data_prep_utils.new_dataset_util import NewDatasetUtil
 from tworaven_apps.user_workspaces.utils import \
     (get_user_workspace_by_id,)
 
-from tworaven_apps.datamart_endpoints.static_vals import \
-    (DATAMART_AUGMENT_PROCESS,
-     DATAMART_ISI_NAME,
-     DATAMART_NYU_NAME,
-     KEY_DATA_PATH)
+from tworaven_apps.datamart_endpoints import static_vals as dm_static
+
 from tworaven_apps.datamart_endpoints.datamart_util import \
     (get_datamart_job_util)
 
@@ -38,8 +35,8 @@ class AugmentUtil(BasicErrCheck):
         self.user_workspace = None
         self.augment_params = augment_params
 
-        print('self.augment_params', json.dumps(self.augment_params, indent=4))
-        print('augment keys', self.augment_params.keys())
+        # print('self.augment_params', json.dumps(self.augment_params, indent=4))
+        # print('augment keys', self.augment_params.keys())
         # optional for websocket messages
         #
         self.websocket_id = kwargs.get('websocket_id')
@@ -47,6 +44,7 @@ class AugmentUtil(BasicErrCheck):
         # to be created
         self.datamart_util = None
         self.augment_new_filepath = None   # file path
+        self.augment_new_datasetdoc = None # dataset doc path
         self.new_workspace = None
 
         self.run_augment_steps()
@@ -63,14 +61,16 @@ class AugmentUtil(BasicErrCheck):
         if not self.load_datamart_util():
             return
 
-        if self.datamart_name == DATAMART_ISI_NAME:
+        if self.datamart_name == dm_static.DATAMART_ISI_NAME:
             if not self.augment_isi_file():
                 return
-        elif self.datamart_name == DATAMART_NYU_NAME:
+        elif self.datamart_name == dm_static.DATAMART_NYU_NAME:
             if not self.augment_nyu_file():
                 return
         else:
-            self.add_err_msg('Materialize not implemented for NYU. (Only ISI)')
+            user_msg = (f'Materialize not implemented for this'
+                        f' datamart type: {self.datamart_name}')
+            self.add_err_msg(user_msg)
             return
 
         self.make_new_dataset()
@@ -81,11 +81,12 @@ class AugmentUtil(BasicErrCheck):
     def show_info(self):
         """Some debug print statements"""
         print('user_workspace_id', self.user_workspace_id)
-        print('augment_params', self.augment_params)
+        # print('augment_params', self.augment_params)
         if self.has_error():
             print('error', self.get_error_message())
         else:
             print('augment_new_filepath', self.augment_new_filepath)
+            print('augment_new_datasetdoc', self.augment_new_datasetdoc)
             print('new_workspace', self.new_workspace)
 
 
@@ -115,7 +116,7 @@ class AugmentUtil(BasicErrCheck):
         # ----------------------------------
         # Send Websocket message
         # ----------------------------------
-        ws_msg = WebsocketMessage.get_fail_message(DATAMART_AUGMENT_PROCESS,
+        ws_msg = WebsocketMessage.get_fail_message(dm_static.DATAMART_AUGMENT_PROCESS,
                                                    user_msg)
         print('send to websocket id: %s' % self.websocket_id)
         ws_msg.send_message(self.websocket_id)
@@ -188,13 +189,7 @@ class AugmentUtil(BasicErrCheck):
         #self.add_err_msg(err_msg)
         #return False
 
-        # user_workspace, data_path, search_result, left_columns,
-        # right_columns, exact_match=False, **kwargs
-
-        print('augment_params', self.augment_params)
-        #err_msg = ('NYU augment functionality is currently disabled')
-        #self.add_err_msg(err_msg)
-        #return False
+        #print('augment_params', self.augment_params)
 
         # Check for required keys and convert them python dicts
         #
@@ -235,7 +230,7 @@ class AugmentUtil(BasicErrCheck):
         #
         augment_info = self.datamart_util.datamart_augment(\
                             self.user_workspace,
-                            self.augment_params['data_path'],
+                            self.augment_params[dm_static.KEY_DATA_PATH],
                             task_data,
                             **extra_params)
 
@@ -243,23 +238,26 @@ class AugmentUtil(BasicErrCheck):
             self.add_err_msg(augment_info.err_msg)
             return False
 
-        # print('augment_info', augment_info.result_obj)
-
-        if not isinstance(augment_info.result_obj, dict):
-            self.add_err_msg('NYU augment info did not return a dict')
-            return False
-
+        # ----------------------------------------
+        # Looks like the augment worked.
+        #   It should have returned:
+        #   - a data file path
+        #   - a dataset doc path
+        # ----------------------------------------
         augment_dict = augment_info.result_obj
 
-        if not KEY_DATA_PATH in augment_dict:
-            user_msg = (f'Key "{KEY_DATA_PATH}" not found in the NYU'
-                        f' augment_dict.'
-                        f' Keys: {augment_dict.keys()}')
-            self.add_err_msg(user_msg)
-            return False
+        keys_to_check = [dm_static.KEY_DATA_PATH,
+                         dm_static.KEY_DATASET_DOC_PATH]
+        for key in keys_to_check:
+            if not key in augment_dict:
+                user_msg = (f'Key "{key}" not found in the NYU augment_dict.'
+                            f' Keys: {augment_dict.keys()}')
+                self.add_err_msg(user_msg)
+                return False
 
-        print('augment_dict', augment_dict)
-        self.augment_new_filepath = augment_dict[KEY_DATA_PATH]
+        self.augment_new_filepath = augment_dict[dm_static.KEY_DATA_PATH]
+        self.augment_new_datasetdoc = augment_dict[dm_static.KEY_DATASET_DOC_PATH]
+
         return True
 
     def make_new_dataset(self):
@@ -270,10 +268,14 @@ class AugmentUtil(BasicErrCheck):
         # Start process of creating new dataset...
         #   - This will send a websocket message when process complete
         #
+        extra_params = { \
+                'websocket_id': self.websocket_id,
+                dm_static.KEY_DATASET_DOC_PATH: self.augment_new_datasetdoc}
+
         new_dataset_util = NewDatasetUtil(\
                                     self.user_workspace.id,
                                     self.augment_new_filepath,
-                                    **dict(websocket_id=self.websocket_id))
+                                    **extra_params)
 
         if new_dataset_util.has_error():
             self.add_err_msg(new_dataset_util.get_error_message())
@@ -292,7 +294,7 @@ class AugmentUtil(BasicErrCheck):
 
         LOGGER.info('(5b) send the message!')
         ws_msg = WebsocketMessage.get_success_message(\
-                    DATAMART_AUGMENT_PROCESS,
+                    dm_static.DATAMART_AUGMENT_PROCESS,
                     ('The dataset has been augmented '
                      'and a new workspace created'))
         ws_msg.send_message(self.websocket_id)

@@ -15,8 +15,9 @@ KEY_DATA = 'data'
 # Used by NYU/ISI for directory construction
 #
 KEY_AUGMENT = 'augment'
-KEY_MATERIALIZE  = 'materialize'
+KEY_MATERIALIZE = 'materialize'
 KEY_DATA_PATH = 'data_path'
+KEY_DATASET_DOC_PATH = 'datasetdoc_path'
 
 NUM_PREVIEW_ROWS = 100
 
