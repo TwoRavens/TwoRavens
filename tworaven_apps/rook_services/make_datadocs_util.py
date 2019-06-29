@@ -146,6 +146,7 @@ class MakeDatadocsUtil(BasicErrCheck):
         #            datastub=self.datastub)
 
         json_str_info = json_dumps(self.rook_params)
+
         if json_str_info.success:
             app_data = {SOLA_JSON_KEY: json_str_info.result_obj}
             return app_data
@@ -187,13 +188,17 @@ class MakeDatadocsUtil(BasicErrCheck):
 
         LOGGER.info('--------- call rook mkdocs ----------')
         LOGGER.info('rook_svc_url: %s', rook_svc_url)
-        LOGGER.info('call_data: %s', call_data)
+        #LOGGER.info('call_data: %s', call_data)
 
+        reqt = requests.Request('POST',
+                                rook_svc_url,
+                                data=call_data)
         # Call R services
         #
         try:
             rservice_req = requests.post(rook_svc_url,
                                          data=call_data)
+
         except ConnectionError:
             err_msg = 'R Server not responding: %s' % rook_svc_url
             self.add_err_msg(err_msg)
@@ -205,9 +210,6 @@ class MakeDatadocsUtil(BasicErrCheck):
                         (rservice_req.status_code, rook_svc_url)
             self.add_err_msg(user_msg)
 
-        LOGGER.info('^' * 40)
-        LOGGER.info(rservice_req.text)
-        LOGGER.info('=' * 40)
 
         result_info = json_loads(rservice_req.text)
         if not result_info.success:

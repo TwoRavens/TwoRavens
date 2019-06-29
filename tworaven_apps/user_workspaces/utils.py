@@ -2,6 +2,8 @@
 Some utils for UserWorkspace calls
 """
 from django.conf import settings
+from django.db.models import Q
+
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
 
@@ -273,7 +275,11 @@ def get_user_workspaces_as_dict(user, **kwargs):
     return ok_resp(ws_list_fmt)
 
 def get_user_workspaces(user, create_if_not_found=True):
-    """Get UserWorkspace list based on the active D3M config"""
+    """Get UserWorkspace list based on the active D3M config
+        - This is trickier now.
+        - An augmented workspace may have the active D3M config as
+            the original_workspace
+    """
     if not isinstance(user, User):
         return err_resp('user must be a "User" object, not: "%s"' % user)
 
@@ -286,8 +292,12 @@ def get_user_workspaces(user, create_if_not_found=True):
 
     params = get_default_workspace_params(**params)
     params['d3m_config'] = d3m_config
-    print('params', params)
-    workspaces = UserWorkspace.objects.filter(**params)
+
+    params_original_ws = dict(original_workspace__d3m_config=d3m_config)
+
+    workspaces = UserWorkspace.objects.filter(\
+                            Q(**params) |
+                            Q(**params_original_ws))
     print('workspaces', workspaces)
     # Make sure the list has a current workspace
     #
