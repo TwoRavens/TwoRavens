@@ -1,0 +1,359 @@
+{
+    "datafile": "/ravens_volume/test_output/DA_fifa2018_manofmatch/additional_inputs/DA_fifa2018_manofmatch_problem_TRAIN-augmented-refdwo/TRAIN/dataset_TRAIN/tables/learningData.csv",
+    "datasetid": "DA_fifa2018_manofmatch_problem_TRAIN-augmented-refdwo",
+    "name": "a765b0686ed6473aa27e359e8f925149 (augmented)",
+    "description": "(augmented data)",
+    "citation": "(no citation)",
+    "taskType": "classification",
+    "taskSubType": "binary",
+    "targets": [
+        {
+            "targetIndex": 0,
+            "resID": "learningData",
+            "colIndex": 14,
+            "colName": "Man of the Match"
+        }
+    ],
+    "performanceMetrics": [
+        {
+            "metric": "f1",
+            "posLabel": "1"
+        }
+    ],
+    "problemDoc": {
+        "about": {
+            "problemID": "DA_fifa2018_manofmatch_problem_TRAIN",
+            "problemName": "learning challenge associated with DA_fifa2018_manofmatch prediction",
+            "problemDescription": "The task is to predict whether a team will have one of its players be Man of the Match based on team's statistics.",
+            "taskType": "classification",
+            "taskSubType": "binary",
+            "problemSchemaVersion": "3.2.0",
+            "problemVersion": "2.0"
+        },
+        "inputs": {
+            "data": [
+                {
+                    "datasetID": "DA_fifa2018_manofmatch_dataset_TRAIN",
+                    "targets": [
+                        {
+                            "targetIndex": 0,
+                            "resID": "learningData",
+                            "colIndex": 14,
+                            "colName": "Man of the Match"
+                        }
+                    ]
+                }
+            ],
+            "dataSplits": {
+                "method": "holdOut",
+                "testSize": 0.352,
+                "stratified": false,
+                "numRepeats": 0,
+                "splitsFile": "dataSplits.csv"
+            },
+            "performanceMetrics": [
+                {
+                    "metric": "f1",
+                    "posLabel": "1"
+                }
+            ]
+        },
+        "expectedOutputs": {
+            "predictionsFile": "predictions.csv"
+        },
+        "dataAugmentation": [
+            {
+                "domain": [
+                    "sports",
+                    "soccer"
+                ],
+                "keywords": [
+                    "soccer",
+                    "FIFA 2018",
+                    "statistics",
+                    "match data",
+                    "man of the match"
+                ]
+            }
+        ]
+    },
+    "datasetDoc": {
+        "about": {
+            "approximateSize": "38460 B",
+            "datasetID": "a765b0686ed6473aa27e359e8f925149",
+            "datasetName": "a765b0686ed6473aa27e359e8f925149",
+            "datasetSchemaVersion": "3.2.0",
+            "datasetVersion": "0.0",
+            "license": "unknown",
+            "redacted": false
+        },
+        "dataResources": [
+            {
+                "columns": [
+                    {
+                        "colIndex": 0,
+                        "colName": "d3mIndex",
+                        "colType": "integer",
+                        "role": [
+                            "index"
+                        ]
+                    },
+                    {
+                        "colIndex": 1,
+                        "colName": "GameID",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 2,
+                        "colName": "Date",
+                        "colType": "dateTime",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 3,
+                        "colName": "Team",
+                        "colType": "string",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 4,
+                        "colName": "Opponent",
+                        "colType": "string",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 5,
+                        "colName": "Ball Possession %",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 6,
+                        "colName": "Off-Target",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 7,
+                        "colName": "Blocked",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 8,
+                        "colName": "Offsides",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 9,
+                        "colName": "Saves",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 10,
+                        "colName": "Pass Accuracy %",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 11,
+                        "colName": "Passes",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 12,
+                        "colName": "Distance Covered (Kms)",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 13,
+                        "colName": "Yellow & Red",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 14,
+                        "colName": "Man of the Match",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 15,
+                        "colName": "1st Goal",
+                        "colType": "real",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 16,
+                        "colName": "Round",
+                        "colType": "string",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 17,
+                        "colName": "PSO",
+                        "colType": "string",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 18,
+                        "colName": "Goals in PSO",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 19,
+                        "colName": "Own goals",
+                        "colType": "real",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 20,
+                        "colName": "Goal Scored",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 21,
+                        "colName": "Attempts",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 22,
+                        "colName": "On-Target",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 23,
+                        "colName": "Corners",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 24,
+                        "colName": "Free Kicks",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 25,
+                        "colName": "Fouls Committed",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 26,
+                        "colName": "Yellow Card",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 27,
+                        "colName": "Red",
+                        "colType": "integer",
+                        "role": [
+                            "attribute"
+                        ]
+                    },
+                    {
+                        "colIndex": 28,
+                        "colName": "Own goal Time",
+                        "colType": "real",
+                        "role": [
+                            "attribute"
+                        ]
+                    }
+                ],
+                "isCollection": false,
+                "resFormat": [
+                    "text/csv"
+                ],
+                "resID": "learningData",
+                "resPath": "tables/learningData.csv",
+                "resType": "table"
+            }
+        ],
+        "qualities": [
+            {
+                "qualName": "augmentation_info",
+                "qualValue": {
+                    "augmentation_type": "join",
+                    "nb_rows_after": 83,
+                    "nb_rows_before": 83,
+                    "new_columns": [
+                        "Free Kicks",
+                        "Fouls Committed",
+                        "Goal Scored",
+                        "Yellow Card",
+                        "Attempts",
+                        "Red",
+                        "Corners",
+                        "Own goal Time",
+                        "On-Target"
+                    ],
+                    "removed_columns": []
+                },
+                "qualValueType": "dict"
+            }
+        ]
+    }
+}

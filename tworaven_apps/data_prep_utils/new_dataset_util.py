@@ -13,7 +13,7 @@ from collections import OrderedDict
 
 from tworaven_apps.utils.dict_helper import get_dict_value
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
-#from tworaven_apps.utils.json_helper import json_loads, json_dumps
+from tworaven_apps.utils.json_helper import json_dumps # json_loads
 from tworaven_apps.utils.file_util import \
     (create_directory, move_file, write_file, read_file_contents)
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
@@ -191,25 +191,26 @@ class NewDatasetUtil(BasicErrCheck):
             self.send_websocket_err_msg(user_msg)
             return
 
+        LOGGER.info('(1) retrieve workspace')
         if not self.retrieve_workspace():
             return
-        LOGGER.info('  - workspace retrieved')
 
-
+        LOGGER.info('(2) construct_folders')
         if not self.construct_folders():
             return
-        LOGGER.info('  - folders constructed')
 
+        LOGGER.info('(3) move_source_files')
         if not self.move_source_files():
             return
-        LOGGER.info('  - source file(s) moved')
 
+        LOGGER.info('(4) create problem docs (and dataset doc, if needed)')
         if not self.create_problem_data_docs():
             return
 
+        LOGGER.info('(5) create_new_config')
         self.create_new_config()
 
-        # self.send_websocket_err_msg('ha ha, your augment did not work')
+        # self.send_websocket_err_msg(':( - the augment did not work')
 
         if not self.has_error() and self.websocket_id:
             ws_msg = WebsocketMessage.get_success_message(\
@@ -250,9 +251,11 @@ class NewDatasetUtil(BasicErrCheck):
         # Create new UserWorkspace
         # ---------------------------
         print('create_new_config 4')
+        params = dict(previous_workspace=self.user_workspace)
         ws_info = create_new_user_workspace(\
                                     self.user_workspace.user,
-                                    self.new_d3m_config)
+                                    self.new_d3m_config,
+                                    **params)
         if not ws_info.success:
             self.send_websocket_err_msg('Error creating workspace: %s' % \
                              ws_info.err_msg)
@@ -522,6 +525,7 @@ class NewDatasetUtil(BasicErrCheck):
 
         return params
 
+
     def create_problem_data_docs(self):
         """Send params to rook app"""
         if self.has_error():
@@ -531,6 +535,87 @@ class NewDatasetUtil(BasicErrCheck):
         if not self.rook_params:
             return False
 
+        """
+        Warning: This is copying what is in mkdocs for now.
+         - The problem should be sourced from raven_config
+         - The target columns may not be the same as the original dataset
+            - To do: find correct column in new dataset doc
+        """
+        # -------------------------------------------------
+        # Update the index of the target variable to by
+        #  locating its position in the new datasetDoc
+        # -------------------------------------------------
+        print('type(self.rook_params)', type(self.rook_params))
+        dependent_varname = self.rook_params['targets'][0]['colName']
+        dependent_idx = None
+
+        # Iterate through columns until it is found
+        for col_info in self.rook_params['datasetDoc']['dataResources'][0]['columns']:
+            if col_info.get('colName') == dependent_varname:
+                dependent_idx = col_info['colIndex']
+
+        if not dependent_idx:
+            self.add_err_msg(\
+                    (f'Could not find "colIdx" of the target, within'
+                     f' the new datasetDoc.  colName: "{dependent_varname}"'))
+            return False
+
+        # Make the update
+        self.rook_params['targets'][0]['colIndex'] = dependent_idx
+
+        # ----------------------------------------
+        # Update the problemDoc
+        # ----------------------------------------
+        new_pdoc = self.rook_params['problemDoc']
+
+        new_pdoc['about']['problemID'] = '%s_problem' % self.rook_params['datasetid']
+
+        new_pdoc['about']['problemName'] = '%s_problem' % self.rook_params['name']
+
+        new_pdoc['about']['taskType'] = self.rook_params['taskType']
+
+        new_pdoc['about']['taskSubType'] = self.rook_params['taskSubType']
+
+        # May be incorrect, the column order may not have been kept
+        #
+        new_pdoc['inputs']['data'][0]['targets'] = self.rook_params['targets']
+
+        new_pdoc['inputs']['performanceMetrics'] = self.rook_params['performanceMetrics']
+
+        new_pdoc['inputs']['data'][0]['datasetID'] = self.rook_params['datasetid']
+
+        if new_pdoc['about']['taskSubType'] == "remove":
+            del new_pdoc['about']['taskSubType']
+
+        # -----------------------------
+        # write problemDoc
+        # -----------------------------
+        pdoc_json_info = json_dumps(new_pdoc, indent=4)
+        if not pdoc_json_info.success:
+            user_msg = 'Failed to convert the problemDoc to JSON. (augment id:5)'
+            self.send_websocket_err_msg(user_msg)
+            return False
+
+        problem_doc_path = join(self.problem_dir, 'problemDoc.json')
+        finfo2 = write_file(problem_doc_path, pdoc_json_info.result_obj)
+        if not finfo2.success:
+            self.send_websocket_err_msg(finfo2.err_msg)
+            return False
+
+        return True
+
+    def xcreate_problem_data_docs(self):
+        """Send params to rook app"""
+        if self.has_error():
+            return False
+
+        self.rook_params = self.get_makedoc_rook_params()
+        if not self.rook_params:
+            return False
+
+        import json
+        print('self.rook_params', json.dumps(self.rook_params, indent=4))
+
         md_util = MakeDatadocsUtil(rook_params=self.rook_params)
         if md_util.has_error():
             self.send_websocket_err_msg('Rook error. %s' % md_util.get_error_message())
@@ -539,17 +624,20 @@ class NewDatasetUtil(BasicErrCheck):
         # -----------------------------
         # write datasetDoc
         # -----------------------------
-        doc_info = md_util.get_dataset_doc_string()
-        if not doc_info.success:
-            self.send_websocket_err_msg('Rook datasetDoc error. %s' % \
-                             doc_info.err_msg)
-            return False
+        if self.new_dataset_doc_file and isfile(self.new_dataset_doc_file):
+            pass # use the datasetDoc.json from the datamart
+        else:
+            doc_info = md_util.get_dataset_doc_string()
+            if not doc_info.success:
+                self.send_websocket_err_msg('Rook datasetDoc error. %s' % \
+                                 doc_info.err_msg)
+                return False
 
-        dataset_doc_path = join(self.dataset_dir, 'datasetDoc.json')
-        finfo = write_file(dataset_doc_path, doc_info.result_obj)
-        if not finfo.success:
-            self.send_websocket_err_msg(finfo.err_msg)
-            return False
+            dataset_doc_path = join(self.dataset_dir, 'datasetDoc.json')
+            finfo = write_file(dataset_doc_path, doc_info.result_obj)
+            if not finfo.success:
+                self.send_websocket_err_msg(finfo.err_msg)
+                return False
 
         # -----------------------------
         # write problemDoc

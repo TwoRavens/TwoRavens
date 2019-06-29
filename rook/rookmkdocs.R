@@ -31,6 +31,7 @@ is_binary <- function(v) {
 
 
 makeDocs <- function(data, name, ID="", citation="", description="", targets=NULL, taskType=NULL, taskSubType=NULL, metric=NULL, problemDoc=NULL, dataDoc=NULL){
+    print('>>> makeDocs 1')
 
     n <- nrow(data)
 
@@ -42,6 +43,8 @@ makeDocs <- function(data, name, ID="", citation="", description="", targets=NUL
     columnlist = list()
     allNames <- names(data)
     locatedDV <- FALSE
+
+    print('>>> makeDocs 2')
 
     for(i in 1:ncol(data)){
     print(i)
@@ -71,6 +74,9 @@ makeDocs <- function(data, name, ID="", citation="", description="", targets=NUL
         columnlist[[i]]<- temp
     }
 
+    print('>>> makeDocs 3')
+
+
     if(!locatedDV){
         print("No variable name in dataset matched supplied `depvarname` argument.")
     }
@@ -82,6 +88,8 @@ makeDocs <- function(data, name, ID="", citation="", description="", targets=NUL
     dataDoc$about$description <- description
     dataDoc$about$citation <- citation
     dataDoc$dataResources$resFormat <- list(dataDoc$dataResources$resFormat) # this may vary based on how the json is read
+
+    print('>>> makeDocs 4')
 
   ## Write problemDoc json string
 
@@ -98,6 +106,8 @@ makeDocs <- function(data, name, ID="", citation="", description="", targets=NUL
     problemDoc$inputs$data$targets<-list(targets)
     problemDoc$inputs$performanceMetrics <- metric
     problemDoc$inputs$data$datasetID <- ID
+
+    print('>>> makeDocs 5')
 
     # removing taskSubType if "remove"
   if(problemDoc$about$taskSubType=="remove") problemDoc$about$taskSubType <- NULL
@@ -119,15 +129,25 @@ mkdocs.app <- function(env) {
     production <- FALSE
     result <- list()
 
+
     if (production) {
         sink(file = stderr(), type = "output")
     }
 
     request <- Request$new(env)
+
+    print('-----------------------')
+    print(request$POST())
+    print('-----------------------')
+
     valid <- jsonlite::validate(request$POST()$solaJSON)
+
+    print('+++ mkdocs.app 4')
     if (! valid) {
         return(send(list(warning = "The request is not valid json. Check for special characters.")))
     }
+
+    print('+++ mkdocs.app 5')
 
     everything <- jsonlite::fromJSON(request$POST()$solaJSON, flatten = TRUE)
     print("everything: ")
@@ -163,7 +183,7 @@ mkdocs.app <- function(env) {
     if (is.null(tasksubtype)) {
         tasksubtype <- "remove" # optional, and will remove when writing problem doc
     }
-    
+
     cites <- everything$citation
     if (is.null(cites)) {
         cites <- "No citation." # optional, and will remove when writing problem doc
