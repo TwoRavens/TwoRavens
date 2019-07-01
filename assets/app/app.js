@@ -11,14 +11,16 @@ import * as d3 from 'd3';
 import "core-js/fn/array/flat-map";
 
 import * as common from "../common/common";
-import * as results from "./results";
 
 import {locationReload, setModal} from '../common/views/Modal';
 
 import * as queryMongo from "./manipulations/queryMongo";
 import * as solverD3M from './solvers/d3m';
-import * as manipulate from './manipulations/manipulate';
+
 import * as model from './model';
+import * as manipulate from './manipulations/manipulate';
+import * as results from "./results";
+import * as explore from './explore';
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -49,7 +51,7 @@ export let peekMouseMove = (e) => {
     let menuId = is_manipulate_mode || (rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'canvas' : 'main';
     let percent = (1 - e.clientY / byId(menuId).clientHeight) * 100;
 
-    peekInlineHeight = `calc(${Math.max(percent, 0)}% + ${common.heightFooter})`;
+    setPeekInlineHeight(`calc(${Math.max(percent, 0)}% + ${common.heightFooter})`);
     m.redraw();
 };
 
@@ -57,7 +59,7 @@ export let peekMouseUp = () => {
     if (!peekInlineIsResizing) return;
     peekInlineIsResizing = false;
     document.body.classList.remove('no-select');
-}
+};
 
 export let peekData;
 export let peekId = 'tworavens';
@@ -82,7 +84,7 @@ export let setPeekInlineShown = state => {
   if (peekInlineShown){
     logEntryPeekUsed();
   }
-}
+};
 
 /**
  *  Log when Peek is used.
@@ -95,7 +97,7 @@ export let logEntryPeekUsed = is_external => {
     logParams.feature_id = 'PEEK_NEW_WINDOW';
   }
   saveSystemLogEntry(logParams);
-}
+};
 
 export async function resetPeek(pipeline) {
     peekData = undefined;
@@ -128,7 +130,8 @@ export async function updatePeek(pipeline) {
             skip: peekSkip,
             limit: peekLimit,
             variables,
-            nominal: !is_manipulate_mode && nodes
+            nominal: !is_manipulate_mode && variables
+                .map(variable => variableSummaries[variable])
                 .filter(node => node.nature === 'nominal')
                 .map(node => node.name)
         }
@@ -178,20 +181,17 @@ export async function updatePeek(pipeline) {
 
 export let downloadPeek = async () => {
     let problem = getSelectedProblem();
-    let datasetUrl = await manipulate.buildDatasetUrl(problem)
+    let datasetUrl = await buildDatasetUrl(problem);
 
     let link = document.createElement("a");
     link.setAttribute("href", datasetUrl);
     link.setAttribute("download", datasetUrl);
     link.click();
-}
+};
 
 // ~~~~ MANIPULATIONS STATE ~~~~
 export let mongoURL = '/eventdata/api/';
 export let datamartURL = '/datamart/api/';
-
-// this contains an object of abstract descriptions of pipelines of manipulations for eventdata
-export let eventDataPipeline;
 
 // Holds steps that aren't part of a pipeline (for example, pending subset or aggregation in eventdata)
 export let looseSteps = {};
@@ -213,22 +213,12 @@ export let buttonClasses = {
 export let solverPending = false;
 export let setSolverPending = state => solverPending = state;
 
-// determines which variable is selected for additional analysis in the classification results menu
-export let confusionFactor;
-export let setConfusionFactor = factor => confusionFactor = factor === 'undefined' ? undefined : factor;
-
-export let exploreVariate = 'Univariate';
-export function setVariate(variate) {
-    exploreVariate = variate;
-}
-
 export let task1_finished = false;
 export let task2_finished = false;
 export let setTask1_finished = state => task1_finished = state;
 export let setTask2_finished = state => task2_finished = state;
 
 export let problemDocExists = true;
-export let univariate_finished = false;
 
 export let currentMode;
 export let is_model_mode = true;
@@ -275,7 +265,7 @@ export function set_mode(mode) {
         if (mode === 'model' && manipulate.pendingHardManipulation) {
             let ravenConfig = workspace.raven_config;
             buildDatasetPreprocess(ravenConfig).then(response => {
-                if (!response.success) alertLog(response.message)
+                if (!response.success) alertLog(response.message);
                 else {
                     setVariableSummaries(response.data.variables);
                     ravenConfig.problems = discovery(response.data.dataset.discovery);
@@ -303,7 +293,7 @@ export function set_mode(mode) {
 }
 
 // TODO: should have an early exit if the manipulations are empty
-export let buildDatasetPreprocess = async ravenConfig => await manipulate.getData({
+export let buildDatasetPreprocess = async ravenConfig => await getData({
     method: 'aggregate',
     query: JSON.stringify(queryMongo.buildPipeline(
         ravenConfig.hardManipulations,
@@ -318,37 +308,7 @@ export let buildDatasetPreprocess = async ravenConfig => await manipulate.getDat
     }
 }));
 
-export let saveSystemLogEntry = async logData => {
-  logData.type = 'SYSTEM';
-  saveLogEntry(logData);
-}
-
-/*
- * Behavioral logging.  Method to save a log entry to the database
- */
-export let saveLogEntry = async logData => {
-
-    let save_log_entry_url = '/logging/create-new-entry';
-
-    m.request({
-        method: "POST",
-        url: save_log_entry_url,
-        data: logData
-    })
-    .then(function(save_result) {
-      // console.log(save_result);
-      /*
-      if (save_result.success){
-        setCurrentWorkspaceMessageSuccess('The workspace was saved!')
-      } else {
-        setCurrentWorkspaceMessageError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
-      }
-      setSaveCurrentWorkspaceWindowOpen(true);
-      */
-    })
-}
-
-export let buildProblemPreprocess = async (ravenConfig, problem) => await manipulate.getData({
+export let buildProblemPreprocess = async (ravenConfig, problem) => await getData({
     method: 'aggregate',
     query: JSON.stringify(queryMongo.buildPipeline(
         [...ravenConfig.hardManipulations, ...problem.manipulations, {
@@ -375,6 +335,127 @@ export let buildProblemPreprocess = async (ravenConfig, problem) => await manipu
     else return response.data.variables
 });
 
+
+export async function buildDatasetUrl(problem) {
+    let variables = [...getPredictorVariables(problem), ...problem.targets];
+    let problemStep = {
+        type: 'menu',
+        metadata: {
+            type: 'data',
+            variables,
+            nominal: !is_manipulate_mode && variables
+                .map(variable => variableSummaries[variable])
+                .filter(node => node.nature === 'nominal')
+                .map(node => node.name)
+        }
+    };
+
+    let compiled = queryMongo.buildPipeline([
+        ...workspace.raven_config.hardManipulations,
+        ...problem.manipulations,
+        problemStep
+    ], workspace.raven_config.variablesInitial)['pipeline'];
+
+    return await getData({
+        method: 'aggregate',
+        query: JSON.stringify(compiled),
+        export: 'dataset'
+    });
+}
+
+export async function buildProblemUrl(problem) {
+
+    let variables = ['d3mIndex', ...getPredictorVariables(problem), ...problem.targets];
+    let abstractPipeline = [
+        ...workspace.raven_config.hardManipulations,
+        ...problem.manipulations,
+        {
+            type: 'menu',
+            metadata: {
+                type: 'data',
+                variables,
+                nominal: !is_manipulate_mode && variables
+                    .map(variable => variableSummaries[variable])
+                    .filter(node => node.nature === 'nominal')
+                    .map(node => node.name)
+            }
+        }
+    ];
+
+    let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
+    let metadata = queryMongo.translateDatasetDoc(compiled, workspace.datasetDoc, problem);
+
+    return await getData({
+        method: 'aggregate',
+        query: JSON.stringify(compiled),
+        export: 'problem',
+        metadata: JSON.stringify(metadata)
+    });
+}
+
+export let getData = async body => m.request({
+    url: mongoURL + 'get-data',
+    method: 'POST',
+    data: Object.assign({
+        datafile: workspace.datasetUrl, // location of the dataset csv
+        collection_name: workspace.d3m_config.name // collection/dataset name
+    }, body)
+}).then(response => {
+    // console.log('-- getData --');
+    if (!response.success) throw response;
+
+    // parse Infinity, -Infinity, NaN from unambiguous string literals. Coding handled in python function 'json_comply'
+    let jsonParseLiteral = obj => {
+        if (obj === undefined || obj === null) return obj;
+        if (Array.isArray(obj)) return obj.map(jsonParseLiteral);
+
+        if (typeof obj === 'object') return Object.keys(obj).reduce((acc, key) => {
+            acc[key] = jsonParseLiteral(obj[key]);
+            return acc;
+        }, {});
+
+        if (typeof obj === 'string') {
+            if (obj === '***TWORAVENS_INFINITY***') return Infinity;
+            if (obj === '***TWORAVENS_NEGATIVE_INFINITY') return -Infinity;
+            if (obj === '***TWORAVENS_NAN***') return NaN;
+        }
+
+        return obj;
+    };
+    return jsonParseLiteral(response.data);
+});
+
+
+export let saveSystemLogEntry = async logData => {
+    logData.type = 'SYSTEM';
+    saveLogEntry(logData);
+};
+
+/*
+ * Behavioral logging.  Method to save a log entry to the database
+ */
+export let saveLogEntry = async logData => {
+
+    let save_log_entry_url = '/logging/create-new-entry';
+
+    m.request({
+        method: "POST",
+        url: save_log_entry_url,
+        data: logData
+    })
+        .then(function(save_result) {
+            // console.log(save_result);
+            /*
+            if (save_result.success){
+              setCurrentWorkspaceMessageSuccess('The workspace was saved!')
+            } else {
+              setCurrentWorkspaceMessageError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
+            }
+            setSaveCurrentWorkspaceWindowOpen(true);
+            */
+        })
+};
+
 // for debugging - if not in PRODUCTION, prints args
 export let cdb = _ => PRODUCTION || console.log(_);
 
@@ -397,7 +478,7 @@ export let setLeftTab = (tab) => {
     leftTab = tab;
     updateLeftPanelWidth();
     if (tab === 'Discover') buttonClasses.btnDiscover = 'btn-secondary';
-    exploreVariate = tab === 'Discover' ? 'Problem' : 'Univariate';
+    explore.setExploreVariate(tab === 'Discover' ? 'Problem' : 'Univariate');
     setFocusedPanel('left');
 };
 
@@ -577,21 +658,7 @@ export let datamartPreferences = {
     cached: {}
 };
 
-
-export let modelCount = 0;
-
-// list of result objects for one problem
-export let allResults = [];
-
-export let nodes = [];
-export let links = [];
-let mods = {};
-let estimated = false;
-let selInteract = false;
-
-
 export let configurations = {};
-
 export let domainIdentifier = null; // available throughout apps js; used for saving workspace
 
 // eventually read this from the schema with real descriptions
@@ -656,11 +723,11 @@ export let d3mMetricsInverted = Object.keys(d3mMetrics)
 export let d3mEvaluationMethods = {
     holdout: "HOLDOUT",
     kFold: "K_FOLD"
-}
+};
 
 export let supportedTasks = [
     'classification', 'regression', 'timeSeriesForecasting', 'semisupervisedClassification', 'semisupervisedRegression'
-]
+];
 
 export let applicableMetrics = {
     classification: {
@@ -707,7 +774,7 @@ export let applicableMetrics = {
         univariate: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared'],
         multivariate: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared']
     }
-}
+};
 
 export let byId = id => document.getElementById(id);
 // export let byId = id => {console.log(id); return document.getElementById(id);}
@@ -804,11 +871,11 @@ export let workspace;
 
 export let getCurrentWorkspaceName = () => {
     return (workspace || {}).name || '(no workspace name)';
-}
+};
 export let getCurrentWorkspaceId = () => {
   return (workspace || {}).user_workspace_id || '(no id)';
   //return (workspace === undefined || workspace.user_workspace_id === undefined) ? '(no id)' : workspace.user_workspace_id;
-}
+};
 
 export let setShowModalWorkspace = state => showModalWorkspace = state;
 export let showModalWorkspace = false;
@@ -1005,7 +1072,7 @@ export let loadWorkspace = async newWorkspace => {
             nominal: [],
             loose: [] // variables displayed in the force diagram, but not in any groups
         }
-    }
+    };
 
 
     /**
@@ -1145,7 +1212,7 @@ export let loadWorkspace = async newWorkspace => {
 
 
     return true;
-}
+};
 
 /**
  called by main
@@ -1157,7 +1224,7 @@ export let loadWorkspace = async newWorkspace => {
  5. Start the user session /Hello
  */
 
-export async function load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL) {
+export async function load() {
     console.log('---------------------------------------');
     console.log('-- initial load, app.js - load() --');
     if (!IS_D3M_DOMAIN) {
@@ -1219,7 +1286,7 @@ export async function load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3m
     let problemDoc = await makeRequest(D3M_SVC_URL + '/Hello', {});
     if (problemDoc) {
       console.log(problemDoc)
-      if (problemDoc.success != true){
+      if (problemDoc.success !== true){
         const user_err_msg = "Failed to make Hello connection with TA2! status code: " + problemDoc.message;
         setModal(user_err_msg, "Error Connecting to TA2", true, "Reset", false, locationReload);
         return;
@@ -1275,8 +1342,6 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     cdb('--dataurl: ' + dataurl);
     cdb('--dataverseurl: ' + dataverseurl);
 
-    let tempWidth = d3.select('#main').style('width');
-
     // indicators for showing membership above arcs
     // let indicator = (degree) => d3.svg.circle()
     //     .cx( RADIUS )//(RADIUS+35) * Math.sin(degree))
@@ -1295,7 +1360,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
 
     // default to Fearon Laitin
     let data = 'data/' + (false ? 'PUMS5small' : 'fearonLaitin');
-    let metadataurl = ddiurl || (fileid ? `${dataverseurl}/api/meta/datafile/${fileid}` : data + '.xml');
+    // let metadataurl = ddiurl || (fileid ? `${dataverseurl}/api/meta/datafile/${fileid}` : data + '.xml');
     // read pre-processed metadata and data
     let pURL = dataurl ? `${dataurl}&format=prep` : data + '.json';
 
@@ -1354,42 +1419,6 @@ export function helpmaterials(type) {
     console.log(type);
 }
 
-// when selected, the key/value [mode]: [pipelineID] is set.
-export let setSelectedSolution = (problem, source, solutionId) => {
-    solutionId = String(solutionId);
-
-    // set behavioral logging
-    let logParams = {
-                      activity_l1: 'MODEL_SELECTION',
-                      other: {solutionId: solutionId}
-                    };
-
-    if (!problem) return;
-    let pipelineIds = problem.selectedSolutions[source];
-    if (modelComparison){
-        problem.selectedSolutions[source].includes(solutionId)
-        ? remove(problem.selectedSolutions[source], solutionId)
-        : problem.selectedSolutions[source].push(solutionId);
-
-        // set behavioral logging
-        logParams.feature_id = 'RESULTS_COMPARE_SOLUTIONS';
-        logParams.activity_l2 = 'MODEL_COMPARISON';
-    } else {
-        problem.selectedSolutions = Object.keys(problem.selectedSolutions)
-            .reduce((out, source) => Object.assign(out, {[source]: []}, {}), {})
-        problem.selectedSolutions[source] = [solutionId]
-
-        // set behavioral logging
-        logParams.feature_id = 'RESULTS_SELECT_SOLUTION';
-        logParams.activity_l2 = 'MODEL_SUMMARIZATION';
-    }
-
-    // record behavioral logging
-    saveSystemLogEntry(logParams);
-
-};
-
-
 
 export function downloadIncomplete() {
     // TODO: session id is no longer used, so there is no check
@@ -1435,7 +1464,7 @@ export async function estimate() {
     m.redraw();
 
     // prepare expected/actual values for plotting of solution results (replaces rookpipe)
-    manipulate.getData({
+    getData({
         method: 'aggregate',
         query: JSON.stringify(queryMongo.buildPipeline(
             [...workspace.raven_config.hardManipulations, ...selectedProblem.manipulations, {
@@ -1462,7 +1491,7 @@ export async function estimate() {
     let datasetPath = workspace.datasetUrl;
     // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
     if (needsProblemCopy) {
-        let {data_path, metadata_path} = await manipulate.buildProblemUrl(selectedProblem);
+        let {data_path, metadata_path} = await buildProblemUrl(selectedProblem);
         selectedProblem.datasetDocPath = metadata_path;
         datasetPath = data_path;
     } else delete selectedProblem.datasetDocPath;
@@ -1535,6 +1564,78 @@ export async function makeRequest(url, data) {
     return res;
 }
 
+
+export let callSolverEnabled = false;
+// takes as input problem, calls rooksolver, and stores result
+export async function callSolver(prob, datasetPath=undefined) {
+    setSolverPending(false);
+
+    let hasManipulation = [...workspace.raven_config.hardManipulations, ...prob.manipulations].length > 0;
+    let hasNominal = getNominalVariables(prob).length > 0;
+
+    if (!datasetPath)
+        datasetPath = hasManipulation || hasNominal ? await buildDatasetUrl(prob) : workspace.datasetUrl;
+
+    // solutions.rook[ravenID] = cachedResponse;
+    let params = {
+        regression: [
+            {method: 'lm'}, // old faithful
+            {method: 'pcr'}, // principal components regression
+            {method: 'glmnet'}, // lasso/ridge
+            {method: 'rpart'}, // regression tree
+            {method: 'knn'}, // k nearest neighbors
+            {method: 'earth'}, // regression splines
+            {method: 'svmLinear'} // linear support vector regression
+        ],
+        classification: [
+            ...(variableSummaries[prob.targets[0]].unique == 2 ? [
+                {method: 'glm', hyperparameters: {family: 'binomial'}},
+                {method: 'glmnet', hyperparameters: {family: 'binomial'}},
+            ] : []),
+            {method: 'lda'}, // linear discriminant analysis
+            {method: 'qda'}, // quadratic discriminant analysis
+            {method: 'rpart'}, // decision tree
+            {method: 'svmLinear'}, // support vector machine
+            {method: 'naive_bayes'},
+            {method: 'knn'}
+        ]
+    }[prob.task];
+
+    // keep the problem light
+    let probReduced = Object.assign({}, prob);
+    delete probReduced.solutions;
+    delete probReduced.metric;
+
+    m.redraw();
+
+    for (let param of params) await makeRequest(ROOK_SVC_URL + 'solverapp', Object.assign({
+        problem: probReduced,
+        dataset_path: datasetPath,
+        samples: prob.actualValues && prob.actualValues.map(point => point.d3mIndex)
+    }, param)).then(response => {
+
+        // assign source and remove errant fits
+        Object.keys(response.results)
+            .forEach(result => {
+
+                response.results[result].source = 'rook';
+                if ('error' in response.results[result])
+                    delete response.results[result];
+                else if (Object.keys(response.results[result].models)
+                    .some(target => 'error' in response.results[result].models[target]))
+                    delete response.results[result]
+            });
+
+        // add to rook solutions
+        Object.assign(prob.solutions.rook, response.results);
+        let selectedPipelines = results.getSolutions(prob);
+        if (selectedPipelines.length === 0) results.setSelectedSolution(prob, 'rook', Object.keys(prob.solutions.rook)[0]);
+        m.redraw()
+    });
+
+    m.redraw();
+}
+
 // programmatically deselect every selected variable
 export let erase = () => {
     let problem = getSelectedProblem();
@@ -1550,7 +1651,7 @@ export let erase = () => {
         nominal: [],
         loose: [] // variables displayed in the force diagram, but not in any groups
     }
-}
+};
 
 /**
    converts color codes
@@ -1647,7 +1748,7 @@ export let setVariableSummaries = state => {
 
     // quality of life
     Object.keys(variableSummaries).forEach(variable => variableSummaries[variable].name = variable);
-}
+};
 export let variableSummaries = {};
 
 export let setDatasetSummary = state => datasetSummary = state;
@@ -1661,7 +1762,7 @@ export let saveCurrentWorkspaceWindowOpen = false;
 // Open/close modal window
 export let setSaveCurrentWorkspaceWindowOpen = (boolVal) => {
   saveCurrentWorkspaceWindowOpen = boolVal;
-}
+};
 
 /*
  *  'Save' button - Message to display in the modal window
@@ -1673,12 +1774,12 @@ export let currentWorkspaceSaveMsg = '';
 // success message
 export let setCurrentWorkspaceMessageSuccess = (errMsg) => {
   currentWorkspaceSaveMsg = m('p', {class: 'text-success'}, errMsg);
-}
+};
 
 // error message
 export let setCurrentWorkspaceMessageError = (errMsg) => {
   currentWorkspaceSaveMsg = m('p', {class: 'text-danger'}, errMsg);
-}
+};
 export let getCurrentWorkspaceMessage = () => { return currentWorkspaceSaveMsg; };
 
 
@@ -1769,12 +1870,12 @@ export let setShowModalSaveName = (boolVal) => {
 export let displaySaveNameButtonRow = true;
 export let setDisplaySaveNameButtonRow = (boolVal) => {
   displaySaveNameButtonRow = boolVal;
-}
+};
 // Display for the Close Modal success
 export let displayCloseButtonRow = true;
 export let setDisplayCloseButtonRow = (boolVal) => {
   displayCloseButtonRow = boolVal;
-}
+};
 
 // set/get new workspace name
 export let newWorkspaceName = '';
@@ -1786,11 +1887,11 @@ export let newWorkspaceMessage = '';
 // success message
 export let setNewWorkspaceMessageSuccess = (errMsg) => {
   newWorkspaceMessage = m('p', {class: 'text-success'}, errMsg);
-}
+};
 // error message
 export let setNewWorkspaceMessageError = (errMsg) => {
   newWorkspaceMessage = m('p', {class: 'text-danger'}, errMsg);
-}
+};
 export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
 
  /*
@@ -1876,39 +1977,24 @@ export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
   */
 
 
-
-export let getD3MConfig = () => (workspace || {}).d3m_config;
-
 export let getSelectedProblem = () => {
     if (!workspace) return;
     let ravenConfig = workspace.raven_config;
     if (!ravenConfig) return;
     return ravenConfig.problems[ravenConfig.selectedProblem];
-}
+};
 export let getResultsProblem = () => {
     if (!workspace) return;
     let ravenConfig = workspace.raven_config;
     if (!ravenConfig) return;
     return ravenConfig.problems[ravenConfig.resultsProblem];
-}
+};
 
 export function getDescription(problem) {
     if (problem.description) return problem.description;
     let predictors = getPredictorVariables(problem);
     return `${problem.targets} is predicted by ${predictors.slice(0, -1).join(", ")} ${predictors.length > 1 ? 'and ' : ''}${predictors[predictors.length - 1]}`;
 }
-
-
-export let getSolutions = (problem, source) => {
-    if (!problem) return [];
-
-    if (!source) return Object.keys(problem.selectedSolutions)
-        .flatMap(source => problem.selectedSolutions[source]
-            .map(id => problem.solutions[source][id])).filter(_=>_)
-
-    return problem.selectedSolutions[source]
-        .map(id => problem.solutions[source][id]).filter(_=>_)
-};
 
 export let setTask = (task, problem) => {
     if (task === problem.task || !(supportedTasks.includes(task))) return;
@@ -1923,7 +2009,7 @@ export let setTask = (task, problem) => {
     delete problem.unedited;
     // will trigger the call to solver, if a menu that needs that info is shown
     setSolverPending(true);
-}
+};
 
 export let setSubTask = (subTask, problem) => {
     if (subTask === problem.subTask || !Object.keys(applicableMetrics[problem.task]).includes(subTask))
@@ -1934,7 +2020,7 @@ export let setSubTask = (subTask, problem) => {
     delete problem.unedited;
     // will trigger the call to solver, if a menu that needs that info is shown
     setSolverPending(true);
-}
+};
 
 export let getSubtask = problem => {
     if (['regression', 'semisupervisedRegression'].includes(problem.task)) return getPredictorVariables(problem).length > 1 ? 'multivariate' : 'univariate';
@@ -1954,7 +2040,7 @@ export let setMetric = (metric, problem, all=false) => {
     delete problem.unedited;
     // will trigger the call to solver, if a menu that needs that info is shown
     setSolverPending(true);
-}
+};
 
 // get all predictors, including those that only have an arrow to a target
 export let getPredictorVariables = problem => {
@@ -2014,7 +2100,6 @@ export function setSelectedProblem(problemID) {
 
     // will trigger the call to solver, if a menu that needs that info is shown
     setSolverPending(true);
-    confusionFactor = undefined;
 }
 
 export function setResultsProblem(problemID) {
@@ -2032,19 +2117,6 @@ export function getProblemCopy(problemSource) {
     });
 }
 
-// When enabled, multiple pipelineTable pipelineIDs may be selected at once
-export let modelComparison = false;
-export let setModelComparison = state => {
-    let resultsProblem = getResultsProblem();
-    let selectedSolutions = getSolutions(resultsProblem);
-
-    if (selectedSolutions.length > 1 && !state){
-        setSelectedSolution(resultsProblem, selectedSolutions[0].source, selectedSolutions[0]);
-    }
-
-    modelComparison = state;
-};
-
 export let setCheckedDiscoveryProblem = (status, problemID) => {
     let ravenConfig = workspace.raven_config;
     if (problemID)
@@ -2053,27 +2125,6 @@ export let setCheckedDiscoveryProblem = (status, problemID) => {
         Object.keys(ravenConfig.problems)
             .forEach(problemID => ravenConfig.problems[problemID].meaningful = status)
 };
-
-export function xhandleAugmentDataMessage(msg_data) {
-
-    if (!msg_data) {
-        console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
-        return;
-    }
-    if (msg_data.success === true) {
-        console.log('Successful Augment.  Try to reload now!!');
-        console.log(msg_data.user_message);
-
-        setModal("Successful data augmentation. Please reload the page. ",
-            "Data Augmentation", true, "Reload", false, locationReload);
-
-        return
-    }
-
-    setModal("Data augmentation error: " + msg_data.user_message,
-        "Data Augmentation Failed", true, "Close", true);
-
-}
 
 
 /**
@@ -2162,79 +2213,6 @@ export function handleAugmentDataMessage(msg_data){
   // console.log('filesize: ' + msg_data.data.filesize);
 
 } // end: handleAugmentDataMessage
-
-let ravenPipelineID = 0;
-
-export let callSolverEnabled = false;
-// takes as input problem, calls rooksolver, and stores result
-export async function callSolver(prob, datasetPath=undefined) {
-    setSolverPending(false);
-
-    let hasManipulation = [...workspace.raven_config.hardManipulations, ...prob.manipulations].length > 0;
-    let hasNominal = getNominalVariables(prob).length > 0;
-
-    if (!datasetPath)
-        datasetPath = hasManipulation || hasNominal ? await manipulate.buildDatasetUrl(prob) : workspace.datasetUrl;
-
-    // solutions.rook[ravenID] = cachedResponse;
-    let params = {
-        regression: [
-            {method: 'lm'}, // old faithful
-            {method: 'pcr'}, // principal components regression
-            {method: 'glmnet'}, // lasso/ridge
-            {method: 'rpart'}, // regression tree
-            {method: 'knn'}, // k nearest neighbors
-            {method: 'earth'}, // regression splines
-            {method: 'svmLinear'} // linear support vector regression
-        ],
-        classification: [
-            ...(variableSummaries[prob.targets[0]].unique == 2 ? [
-                {method: 'glm', hyperparameters: {family: 'binomial'}},
-                {method: 'glmnet', hyperparameters: {family: 'binomial'}},
-            ] : []),
-            {method: 'lda'}, // linear discriminant analysis
-            {method: 'qda'}, // quadratic discriminant analysis
-            {method: 'rpart'}, // decision tree
-            {method: 'svmLinear'}, // support vector machine
-            {method: 'naive_bayes'},
-            {method: 'knn'}
-        ]
-    }[prob.task];
-
-    // keep the problem light
-    let probReduced = Object.assign({}, prob)
-    delete probReduced.solutions;
-    delete probReduced.metric;
-
-    m.redraw();
-
-    for (let param of params) await makeRequest(ROOK_SVC_URL + 'solverapp', Object.assign({
-        problem: probReduced,
-        dataset_path: datasetPath,
-        samples: prob.actualValues && prob.actualValues.map(point => point.d3mIndex)
-    }, param)).then(response => {
-
-        // assign source and remove errant fits
-        Object.keys(response.results)
-            .forEach(result => {
-
-                response.results[result].source = 'rook'
-                if ('error' in response.results[result])
-                    delete response.results[result]
-                else if (Object.keys(response.results[result].models)
-                    .some(target => 'error' in response.results[result].models[target]))
-                    delete response.results[result]
-            })
-
-        // add to rook solutions
-        Object.assign(prob.solutions.rook, response.results)
-        let selectedPipelines = getSolutions(prob);
-        if (selectedPipelines.length === 0) setSelectedSolution(prob, 'rook', Object.keys(prob.solutions.rook)[0]);
-        m.redraw()
-    })
-
-    m.redraw();
-}
 
 
 // pretty precision formatting- null and undefined are NaN, attempt to parse strings to float

@@ -5,9 +5,16 @@ import * as vega from 'vega';
 
 // m(PlotVegaLite, {
 //     specification: {...}, // an instance of this spec: https://vega.github.io/vega-lite/docs/spec.html,
-//     data: [...], // data that is rebound on update
+//
+//     data: [...], // optional: data that is rebound on update
+//     identifier: 'id', // optional: used for the data diff, unique identifier for each point
 //     *: any attrs may be passed
 // })
+
+// plot is automatically rebuilt whenever specification, data, or dimensions are changed
+// data attr may optionally be passed separately (alternative to including within the specification)
+//     if passed separately, then a diff is computed based on the identifier for each data point.
+//     the diff is applied to the existing plot as a vegalite changeset, instead of rebuilding the entire plot
 
 export default class PlotVegaLite {
     view() {
@@ -15,39 +22,47 @@ export default class PlotVegaLite {
     }
 
     plot(vnode) {
-        let {specification} = vnode.attrs;
+        let {data, specification} = vnode.attrs;
 
         let newSpecification = JSON.stringify(specification);
-        if (this.specification !== newSpecification) {
+        let {width, height} = vnode.dom.getBoundingClientRect();
+
+        if (this.specification !== newSpecification || this.width !== width || this.height !== height) {
 
             this.specification = newSpecification;
+            this.width = width;
+            this.height = height;
 
-            Object.assign(specification, {
-                autosize: {
-                    "type": "fit",
-                    "contains": "padding"
-                },
-                data: {name: 'embedded'}
-            });
+            specification.autosize = {"type": "fit", "contains": "padding"};
+            if (data) specification.data = 'embedded';
 
-            vegaEmbed(vnode.dom, specification, {
-                actions: false
-            }).then(result => {
-                this.instance = result.view;
-                this.dataKeys = new Set();
-                this.diff(vnode);
-                m.redraw()
-            })
+            // mask repeated warnings about outdated vega-lite specification
+            let tempWarn = console.warn;
+            console.warn = _ => _;
+
+            try {
+                vegaEmbed(vnode.dom, specification, {
+                    actions: false, width, height
+                }).then(result => {
+                    this.instance = result.view;
+                    if (data) {
+                        this.dataKeys = new Set();
+                        this.diff(vnode);
+                    }
+                    m.redraw()
+                })
+            } finally {
+                console.warn = tempWarn;
+            }
         }
 
-        // this is the optimized path
+        // this is the optimized path for the optional data attr
         // check for existence of dataKeys because the initial plotting is asynchronous
-        else if (this.dataKeys) this.diff(vnode);
+        else if (data && this.dataKeys) this.diff(vnode);
     }
 
     diff(vnode) {
         let {data, identifier} = vnode.attrs;
-
         let newData = data.filter(datum => !this.dataKeys.has(datum[identifier]));
 
         this.dataKeys = new Set(data.map(datum => datum[identifier]));
@@ -60,28 +75,6 @@ export default class PlotVegaLite {
             .run();
     }
 
-    oncreate(vnode) {
-
-        // mask repeated warnings about outdated vega-lite specification
-        let tempWarn = console.warn;
-        console.warn = _ => _;
-
-        try {
-            this.plot(vnode)
-        } finally {
-            console.warn = tempWarn;
-        }
-    }
-    onupdate(vnode) {
-
-        // mask repeated warnings about outdated vega-lite specification
-        let tempWarn = console.warn;
-        console.warn = _ => _;
-
-        try {
-            this.plot(vnode)
-        } finally {
-            console.warn = tempWarn;
-        }
-    }
+    oncreate(vnode) {this.plot(vnode)}
+    onupdate(vnode) {this.plot(vnode)}
 }
