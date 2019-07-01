@@ -78,12 +78,15 @@ class Body {
     view(vnode) {
         //app.alertLog(m(TextField, {value: JSON.stringify(app.workspaces)}));
 
-        let {mode} = vnode.attrs;
+        let {mode, vars, variate} = vnode.attrs;
 
         // after calling m.route.set, the params for mode, variate, vars don't update in the first redraw.
         // checking window.location.href is a workaround, permits changing mode from url bar
         if (window.location.href.includes(mode) && mode !== app.currentMode)
             app.set_mode(mode);
+
+        let exploreVariables = (vars ? vars.split('/') : [])
+            .filter(variable => variable in app.variableSummaries);
 
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
 
@@ -116,7 +119,7 @@ class Body {
                 },
                 m(Canvas,
                     app.is_results_mode && m(results.CanvasSolutions, {problem: resultsProblem}),
-                    app.is_explore_mode && m(explore.CanvasExplore, vnode.attrs),
+                    app.is_explore_mode && m(explore.CanvasExplore, {variables: exploreVariables, variate}),
                     app.is_model_mode && m(model.CanvasModel, {drawForceDiagram, forceData}))
             )
         );
@@ -159,7 +162,7 @@ class Body {
                 })
             }, m('h4[style=display: inline-block; margin: .25em 1em]', pathProblem.problemID)));
 
-            let selectedSolutions = app.getSolutions(resultsProblem);
+            let selectedSolutions = results.getSolutions(resultsProblem);
             if (app.is_results_mode && selectedSolutions.length === 1 && selectedSolutions[0]) {
                 path.push(m(Icon, {name: 'chevron-right'}), m('h4[style=display: inline-block; margin: .25em 1em]', ({
                     'rook': solverRook, 'd3m': solverD3M
@@ -572,7 +575,7 @@ class Body {
 
                         // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
                         if (needsProblemCopy) {
-                            let {metadata_path} = await manipulate.buildProblemUrl(selectedProblem);
+                            let {metadata_path} = await app.buildProblemUrl(selectedProblem);
                             selectedProblem.datasetDocPath = metadata_path;
                         } else delete selectedProblem.datasetDocPath;
 
@@ -734,7 +737,7 @@ class Body {
     static leftpanel(mode, forceData) {
         if (mode === 'manipulate') return manipulate.leftpanel();
         if (mode === 'results') return results.leftpanel();
-        if (mode === 'model') return model.leftpanel(forceData);
+        return model.leftpanel(forceData);
     }
 
     static rightpanel(mode) {

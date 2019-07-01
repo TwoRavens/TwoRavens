@@ -4,24 +4,23 @@ import * as jStat from 'jstat';
 import * as app from "./app";
 import * as plots from "./plots";
 
+import * as solverRook from './solvers/rook';
+import * as solverD3M from './solvers/d3m';
+
 import * as common from "./../common/common";
 import Table from "./../common/views/Table";
 import Dropdown from "./../common/views/Dropdown";
 import Panel from "../common/views/Panel";
+import Subpanel from "../common/views/Subpanel";
 import MenuHeaders from "../common/views/MenuHeaders";
+import Button from "../common/views/Button";
+import Icon from "../common/views/Icon";
+import MenuTabbed from "../common/views/MenuTabbed";
 
 import {bold} from "./index";
 import PlotVegaLite from "./views/PlotVegaLite";
 import ConfusionMatrix from "./views/ConfusionMatrix";
 import Flowchart from "./views/Flowchart";
-import Subpanel from "../common/views/Subpanel";
-
-import * as solverRook from './solvers/rook';
-import * as solverD3M from './solvers/d3m';
-import {getSelectedProblem} from "./app";
-import Button from "../common/views/Button";
-import Icon from "../common/views/Icon";
-import MenuTabbed from "../common/views/MenuTabbed";
 
 
 export let leftpanel = () => {
@@ -55,8 +54,8 @@ export let leftpanel = () => {
         ),
         m('div#modelComparisonOption', {style: {display: 'inline-block'}},
             m('input#modelComparisonCheck[type=checkbox]', {
-                onclick: m.withAttr("checked", app.setModelComparison),
-                checked: app.modelComparison,
+                onclick: m.withAttr("checked", setModelComparison),
+                checked: modelComparison,
                 style: {margin: '.25em'}
             }),
             m('label#modelComparisonLabel', {
@@ -79,7 +78,7 @@ export let leftpanel = () => {
                         setSortHeader: header => selectedMetric.d3m = header === 'Solution' ? selectedMetric.d3m : header,
                         sortFunction: sortPipelineTable,
                         activeRow: new Set(resultsProblem.selectedSolutions.d3m),
-                        onclick: pipelineId => app.setSelectedSolution(resultsProblem, 'd3m', pipelineId)
+                        onclick: pipelineId => setSelectedSolution(resultsProblem, 'd3m', pipelineId)
                     })
                 },
                 app.callSolverEnabled && {
@@ -102,7 +101,7 @@ export let leftpanel = () => {
                             sortHeader: 'Score',
                             sortFunction: sortPipelineTable,
                             activeRow: new Set(resultsProblem.selectedSolutions.rook),
-                            onclick: pipelineId => app.setSelectedSolution(resultsProblem, 'rook', pipelineId),
+                            onclick: pipelineId => setSelectedSolution(resultsProblem, 'rook', pipelineId),
                             tableTags: m('colgroup',
                                 m('col', {span: 1}),
                                 m('col', {span: 1, width: '30%'}))
@@ -185,7 +184,6 @@ export class CanvasSolutions {
                 style: {'height': '500px'}
             }, m(PlotVegaLite, {
                 specification: plots.vegaScatter(xData, yData, xName, yName, title, legendName),
-                data: summaries
             }))
         }
 
@@ -336,7 +334,7 @@ export class CanvasSolutions {
             ]
         }));
 
-        let selectedSolutions = app.getSolutions(problem);
+        let selectedSolutions = getSolutions(problem);
         if (selectedSolutions.length === 0)
             return m('div', {style: {margin: '1em 0px'}}, problemSummary);
 
@@ -538,7 +536,7 @@ export let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSq
  Sort the Pipeline table, putting the highest score at the top
  */
 export function sortPipelineTable(a, b) {
-    return (b - a) * (reverseSet.includes(getSelectedProblem().metric) ? -1 : 1);
+    return (b - a) * (reverseSet.includes(selectedMetric.d3m) ? -1 : 1);
 }
 
 let resultsSubpanels = {
@@ -550,6 +548,66 @@ let resultsSubpanels = {
     'Visualize Pipeline': false,
     'Solution Description': false,
     'Problem Description': false
+};
+
+
+// when selected, the key/value [mode]: [pipelineID] is set.
+export let setSelectedSolution = (problem, source, solutionId) => {
+    solutionId = String(solutionId);
+
+    // set behavioral logging
+    let logParams = {
+        activity_l1: 'MODEL_SELECTION',
+        other: {solutionId: solutionId}
+    };
+
+    if (!problem) return;
+
+    if (modelComparison) {
+        problem.selectedSolutions[source].includes(solutionId)
+            ? app.remove(problem.selectedSolutions[source], solutionId)
+            : problem.selectedSolutions[source].push(solutionId);
+
+        // set behavioral logging
+        logParams.feature_id = 'RESULTS_COMPARE_SOLUTIONS';
+        logParams.activity_l2 = 'MODEL_COMPARISON';
+    } else {
+        problem.selectedSolutions = Object.keys(problem.selectedSolutions)
+            .reduce((out, source) => Object.assign(out, {[source]: []}, {}), {});
+        problem.selectedSolutions[source] = [solutionId];
+
+        // set behavioral logging
+        logParams.feature_id = 'RESULTS_SELECT_SOLUTION';
+        logParams.activity_l2 = 'MODEL_SUMMARIZATION';
+    }
+
+    // record behavioral logging
+    app.saveSystemLogEntry(logParams);
+
+};
+
+
+export let getSolutions = (problem, source) => {
+    if (!problem) return [];
+
+    if (!source) return Object.keys(problem.selectedSolutions)
+        .flatMap(source => problem.selectedSolutions[source]
+            .map(id => problem.solutions[source][id])).filter(_=>_)
+
+    return problem.selectedSolutions[source]
+        .map(id => problem.solutions[source][id]).filter(_=>_)
+};
+
+// When enabled, multiple pipelineTable pipelineIDs may be selected at once
+export let modelComparison = false;
+export let setModelComparison = state => {
+    let resultsProblem = app.getResultsProblem();
+    let selectedSolutions = getSolutions(resultsProblem);
+
+    modelComparison = state;
+    if (selectedSolutions.length > 1 && !modelComparison)
+        setSelectedSolution(resultsProblem, selectedSolutions[0].source, selectedSolutions[0]);
+
 };
 
 /* Generates confusion table data and labels, given the expected and predicted values*/

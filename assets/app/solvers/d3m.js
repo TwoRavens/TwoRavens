@@ -1,6 +1,8 @@
 import m from "mithril";
 
 import * as app from '../app.js';
+import * as results from "../results";
+
 import {alertError, alertWarn, debugLog} from "../app";
 
 import {locationReload, setModal} from "../../common/views/Modal";
@@ -9,7 +11,9 @@ import {locationReload, setModal} from "../../common/views/Modal";
 export let getName = (problem, solution) => solution.pipelineId;
 export let getActualValues = (problem, solution, target) => problem.actualValues && problem.actualValues.map(point => point[target]);
 export let getFittedValues = (problem, solution, target) => {
-    if (!(solution.predictedValues || {}).success) return;
+    console.warn("#debug solution");
+    console.log(solution);
+    if (!solution.predictedValues) return;
     let samples = problem.actualValues.map(point => point.d3mIndex);
     return samples.map(sample => solution.predictedValues[sample]);
 };
@@ -425,9 +429,9 @@ export async function handleGetSearchSolutionResultsResponse(response) {
     // getexecutepipelineresults is the third to be called
     //  app.makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(solutions)});
 
-    let selectedSolutions = app.getSolutions(solvedProblem);
+    let selectedSolutions = results.getSolutions(solvedProblem);
 
-    if (selectedSolutions.length === 0) app.setSelectedSolution(solvedProblem, 'd3m', response.id);
+    if (selectedSolutions.length === 0) results.setSelectedSolution(solvedProblem, 'd3m', response.id);
 
     m.redraw();
 }
@@ -544,10 +548,8 @@ export async function handleGetProduceSolutionResultsResponse(response) {
     let responseOutputData = await app.makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer});
 
     // TODO: this is only index zero if there is one target
-    let predictedValues = responseOutputData.data
+    solvedProblem.solutions.d3m[response.pipelineId].predictedValues = responseOutputData.data
         .reduce((out, point) => Object.assign(out, {[point['']]: parseFloat(point['0']) || point['0']}), {});
-
-    solvedProblem.solutions.d3m[response.pipelineId].predictedValues = predictedValues;
 }
 
 export async function handleENDGetSearchSolutionsResults() {
@@ -573,7 +575,7 @@ export async function endsession() {
         return;
     }
 
-    let selectedPipelines = app.getSolutions(resultsProblem, 'd3m');
+    let selectedPipelines = results.getSolutions(resultsProblem, 'd3m');
     if (selectedPipelines.length === 0) {
         alertWarn("No pipelines exist. Cannot mark problem as complete");
         return;
@@ -591,7 +593,7 @@ export async function endsession() {
 
     // app.makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
     //let res = await app.makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
-    endAllSearches()
+    endAllSearches();
     //let mystatus = res.status.code.toUpperCase();
     //if(mystatus == "OK") {
     end_ta3_search(true, "Problem marked as complete.");

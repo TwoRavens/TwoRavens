@@ -18,6 +18,7 @@ import Table from "../../common/views/Table";
 
 import * as common from '../../common/common';
 
+import * as model from "../model";
 import * as app from "../app";
 import {alertError, alertLog} from "../app";
 
@@ -251,7 +252,7 @@ export function rightpanel() {
             side: 'right',
             label: 'Pipeline',
             hover: true,
-            width: app.modelRightPanelWidths['Manipulate'],
+            width: model.rightPanelWidths['Manipulate'],
             attrsAll: {
                 onclick: () => app.setFocusedPanel('right'),
                 style: {
@@ -690,38 +691,6 @@ export let setConstraintType = (type, pipeline) => {
     if (pipeline) loadMenuManipulations(pipeline);
 };
 
-export let getData = async body => m.request({
-    url: app.mongoURL + 'get-data',
-    method: 'POST',
-    data: Object.assign({
-        datafile: app.workspace.datasetUrl, // location of the dataset csv
-        collection_name: app.workspace.d3m_config.name // collection/dataset name
-    }, body)
-}).then(response => {
-    console.log('-- manipulate.js getData --');
-    if (!response.success) throw response;
-
-    // parse Infinity, -Infinity, NaN from unambiguous string literals. Coding handled in python function 'json_comply'
-    let jsonParseLiteral = obj => {
-        if (obj === undefined || obj === null) return obj;
-        if (Array.isArray(obj)) return obj.map(jsonParseLiteral);
-
-        if (typeof obj === 'object') return Object.keys(obj).reduce((acc, key) => {
-            acc[key] = jsonParseLiteral(obj[key]);
-            return acc;
-        }, {});
-
-        if (typeof obj === 'string') {
-            if (obj === '***TWORAVENS_INFINITY***') return Infinity;
-            if (obj === '***TWORAVENS_NEGATIVE_INFINITY') return -Infinity;
-            if (obj === '***TWORAVENS_NAN***') return NaN;
-        }
-
-        return obj;
-    };
-    return jsonParseLiteral(response.data);
-});
-
 // download data to display a menu
 export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { // the dict is for optional named arguments
 
@@ -743,7 +712,7 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
         console.log("Count Query:");
         console.log(compiled);
 
-        promises.push(getData({
+        promises.push(app.getData({
             method: 'aggregate',
             query: compiled
         }).then(response => {
@@ -756,7 +725,7 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
     }
 
     let data;
-    promises.push(getData({
+    promises.push(app.getData({
         method: 'aggregate',
         query: compiled
     })
@@ -818,59 +787,3 @@ export let variableSort = (a, b) => {
 
 export let totalSubsetRecords;
 export let setTotalSubsetRecords = records => totalSubsetRecords = records;
-
-export async function buildDatasetUrl(problem) {
-    let ravenConfig = app.workspace.raven_config;
-    let problemStep = {
-        type: 'menu',
-        metadata: {
-            type: 'data',
-            variables: [...app.getPredictorVariables(problem), ...problem.targets],
-            nominal: !app.is_manipulate_mode && app.nodes
-                .filter(node => node.nature === 'nominal')
-                .map(node => node.name)
-        }
-    };
-
-    let compiled = queryMongo.buildPipeline([
-        ...ravenConfig.hardManipulations,
-        ...problem.manipulations,
-        problemStep
-    ], ravenConfig.variablesInitial)['pipeline'];
-
-    return await getData({
-        method: 'aggregate',
-        query: JSON.stringify(compiled),
-        export: 'dataset'
-    });
-}
-
-export async function buildProblemUrl(problem) {
-
-    let ravenConfig = app.workspace.raven_config;
-
-    let abstractPipeline = [
-        ...ravenConfig.hardManipulations,
-        ...problem.manipulations,
-        {
-            type: 'menu',
-            metadata: {
-                type: 'data',
-                variables: ['d3mIndex', ...app.getPredictorVariables(problem), ...problem.targets],
-                nominal: !app.is_manipulate_mode && app.nodes
-                    .filter(node => node.nature === 'nominal')
-                    .map(node => node.name)
-            }
-        }
-    ];
-
-    let compiled = queryMongo.buildPipeline(abstractPipeline, app.workspace.raven_config.variablesInitial)['pipeline'];
-    let metadata = queryMongo.translateDatasetDoc(compiled, app.workspace.datasetDoc, problem);
-
-    return await getData({
-        method: 'aggregate',
-        query: JSON.stringify(compiled),
-        export: 'problem',
-        metadata: JSON.stringify(metadata)
-    });
-}

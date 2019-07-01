@@ -28,6 +28,7 @@ import {
 import {elem, fadeIn, fadeOut, fadeTo, remove, setAttrs} from "./utils";
 import * as scatterPE from "./vega-schemas/scatterPE";
 import vegaEmbed from "vega-embed";
+import {locationReload, setModal} from "../common/views/Modal";
 
 var callHistory = [];
 
@@ -3040,3 +3041,145 @@ export function barsSubset(node) {
         });
 }
 
+// INACTIVE COMPONENTS
+
+export let when = function(side, val, y='block', n='none') {
+    return app[side + 'tab'] === val ? y : n;
+};
+
+export class PanelButton {
+    view(vnode) {
+        let {id, id2, classes, onclick, style, title, is_explore_mode} = vnode.attrs;
+        let left = id2 ? true : false;
+        id2 = id2 || id;
+        let disabled = is_explore_mode && !app.explored;
+        return m(
+            `button#${id}.btn.${classes || when(left ? 'left' : 'right', id2, 'active', disabled ? 'btn.disabled' : 'btn-default')}[type=button]`, {
+                onclick: onclick || (_ => left ? app.probDiscView(id2) : disabled || app.tabRight(id2)),
+                style: style,
+                title: title
+            },
+            vnode.children);
+    }
+}
+
+
+export class Subpanel {
+    oninit(vnode) {
+        this.hide = false;
+    }
+
+    view(vnode) {
+        let title = vnode.attrs.title;
+        let legend = title === 'Legend';
+        let target = 'collapse' + title;
+        let z = zparams;
+        let side = legend ? 'right' : 'left';
+
+        return m(`#${legend ? "legend.legendary" : "logdiv.logbox"}.panel.panel-default`, {
+                style: Object.assign({
+                    display: legend && z.ztime.length + z.zcross.length + z.zdv.length + z.znom.length || !legend && logArray.length > 0 ? 'block' : 'none',
+                    [side]: app.panelWidth[side],
+                    overflow: 'hidden'
+                }, vnode.attrs.attrsStyle)},
+            m(".panel-heading",
+                m("h3.panel-title",
+                    title,
+                    m(`span.glyphicon.glyphicon-large.glyphicon-chevron-${this.hide ? 'up': 'down'}.pull-right[data-target=#${target}][data-toggle=collapse][href=#${target}]`, {
+                        style: 'cursor: pointer',
+                        onclick: _ => this.hide = !this.hide}))),
+            m(`#${target}.panel-collapse.collapse.in`,
+                m(".panel-body", !legend ? logArray.map(x => m('p', x)) : vnode.attrs.buttons.map(x => {
+                    let [stroke, fill, op] =
+                        x[0] === 'dvButton' ? [common.dvColor, 'white', 1]
+                            : x[0] === 'csButton' ? [common.csColor, 'white', 1]
+                            : x[0] === 'timeButton' ? [common.timeColor, 'white', 1]
+                                : x[0] === 'nomButton' ? [common.nomColor, 'white', 1]
+                                    : x[0] === 'gr1Button' ? [common.gr1Color, common.gr1Color, 0]
+                                        : [common.gr2Color, common.gr2Color, 0];
+                    return m(`#${x[0]}.clearfix.${z[x[1]].length === 0 ? "hide" : "show"}`,
+                        m(".rectColor",
+                            m("svg[style=width: 20px; height: 20px]",
+                                m(`circle[cx=10][cy=10][fill=${fill}][fill-opacity=0.6][r=9][stroke=${stroke}][stroke-opacity=${op}][stroke-width=2]`))),
+                        m(".rectLabel", x[2]));
+                }))));
+    }
+}
+
+
+export let getClasses = function(cls, panel, attrs) {
+    if (panel.closed) {
+        cls += '.closepanel';
+    } else if (attrs.is_explore_mode) {
+        if (app.righttab === 'btnUnivariate' && attrs.univariate_finished) {
+            cls += `[style=width: ${45}%]`;
+        } else if (app.righttab === 'btnBivariate') {
+            cls += `[style=width: ${75}%]`;
+        }
+    } else if (attrs.side === 'left' && app.lefttab === 'tab2') {
+        cls += '.expandpanelfull';
+    }
+    return cls;
+    ;
+};
+
+export class Panel {
+    oninit(vnode) {
+        this.closed = false;
+    }
+
+    view(vnode) {
+        let {side, title, buttons, is_explore_mode} = vnode.attrs;
+        let btns = buttons || [];
+        let dot = [m.trust('&#9679;'), m('br')];
+        let width = 100 / btns.length;
+        let expandwidth = 35;
+        let shrinkwidth = 65 / (btns.length - 1);
+        return m(
+            getClasses(`#${side}panel.sidepanel.container.clearfix`, this, vnode.attrs),
+            m(`#toggle${side === 'left' ? 'L' : 'R'}panelicon.panelbar[style=height: 100%]`,
+                m('span', {onclick: _ => this.closed = !this.closed}, dot, dot, dot, dot)),
+            m(`#${side}paneltitle.panel-heading.text-center`,
+                m("h3.panel-title", title)),
+            btns.length === 0 ? null : m(`ul${side === 'right' ? '#rightpanelbuttons' : ''}.accordion`,
+                btns.map(b => {
+                    b.attrs.style = b.attrs.style + '; width: 100%';
+                    b.attrs.is_explore_mode = is_explore_mode;
+                    let id = b.attrs.id;
+                    //let w = this.active_btn === id ? shrinkwidth :
+                    //this.active_btn === null ? width :
+                    //expandwidth;
+                    return m(
+                        'li',
+                        {style: {width: width + '%', 'max-width': '150px'},
+                            onmouseover: _ => this.active_btn = id,
+                            onmouseout: _ => this.active_btn = null},
+                        b);
+                })),
+            m('.row-fluid',
+                m(`#${side}panelcontent`,
+                    m(`#${side}ContentArea[style=height: calc(100vh - 213px); overflow: auto]`, vnode.children))));
+    }
+}
+
+
+export function xhandleAugmentDataMessage(msg_data) {
+
+    if (!msg_data) {
+        console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
+        return;
+    }
+    if (msg_data.success === true) {
+        console.log('Successful Augment.  Try to reload now!!');
+        console.log(msg_data.user_message);
+
+        setModal("Successful data augmentation. Please reload the page. ",
+            "Data Augmentation", true, "Reload", false, locationReload);
+
+        return
+    }
+
+    setModal("Data augmentation error: " + msg_data.user_message,
+        "Data Augmentation Failed", true, "Close", true);
+
+}
