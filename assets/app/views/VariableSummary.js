@@ -137,4 +137,4 @@ export let formatVariableSummary = variable => {
     return Object.keys(data)
         .filter(key => data[key] !== "" && data[key] !== undefined && !isNaN(data[key])) // drop all keys with nonexistent values
         .reduce((out, key) => Object.assign(out, {[key]: data[key]}), {})
-}
+};
