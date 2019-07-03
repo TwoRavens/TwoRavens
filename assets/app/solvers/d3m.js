@@ -11,8 +11,6 @@ import {locationReload, setModal} from "../../common/views/Modal";
 export let getName = (problem, solution) => solution.pipelineId;
 export let getActualValues = (problem, solution, target) => problem.actualValues && problem.actualValues.map(point => point[target]);
 export let getFittedValues = (problem, solution, target) => {
-    console.warn("#debug solution");
-    console.log(solution);
     if (!solution.predictedValues) return;
     let samples = problem.actualValues.map(point => point.d3mIndex);
     return samples.map(sample => solution.predictedValues[sample]);
@@ -60,178 +58,19 @@ export function GRPC_PipelineDescription(problem) {
     let outputs = [];
     let steps = [];
 
-    if (problem) {
-        inputs = [{name: "dataset"}];
-        // TODO: debug primitive calls
-        steps = [
-            ...buildPipeline(problem.manipulations),
-            primitiveStepRemoveColumns(problem),
-            placeholderStep()
-        ];
-        outputs = [{
-            name: "dataset",
-            data: `steps.${steps.length - 1}.produce`
-        }];
-    }
-    return {inputs, outputs, steps};
-
-    // example template: leave here for reference
-    /*
-"template": {
-    "inputs": [
-                {
-                    "name": "dataset"
-                }
-            ],
-    "outputs": [
-                {
-                    "name": "dataset",
-                    "data": "produce"
-                }
-            ],
-    "steps": [
-    {
-                    "primitive": {
-                    "primitive": {
-                        "id": "2eeff053-395a-497d-88db-7374c27812e6",
-                    "version": "0.2.0",
-                    "python_path": "d3m.primitives.datasets.RemoveColumns",
-                    "name": "Column remover",
-                    "digest": "85b946aa6123354fe51a288c3be56aaca82e76d4071c1edc13be6f9e0e100144"
-                        },
-                        "arguments": {
-                            "inputs": {
-                                "container": {
-                                    "data": "inputs.0"
-                                }
-                            }
-                        },
-                        "outputs": [
-                            {
-                                "id": "produce"
-                            }
-                        ],
-                        "hyperparams": {
-                        "columns": {
-  "value": {
-    "data": {
-      "raw": {
-        "list": {
-          "items": [
-            {
-              "int64": "2"
-            },
-            {
-              "int64": "3"
-            },
-            {
-              "int64": "4"
-            },
-            {
-              "int64": "5"
-            }
-          ]
-        }
-      }
-    }
-  }
-}
-                           },
-                        "users": []
-                }},{
-                    "placeholder": {
-                        "inputs": [{"data":"steps.0.produce"}],
-                        "outputs": [{"id":"produce"}]
-                    }
-                }]}
-                    */
-}/*
-  Triggered at the end of GetSearchSolutionsResults
-*/
-// function builds a step in a pipeline to remove indices
-// function builds a placeholder step for pipeline
-/**
- *  Send a status message to the TA3 console
- */
-export function ta3_search_message(user_msg) {
-    /*
-    let ta3_search_message = {'message': user_msg}
-
-    const end_search_url = 'ta3-search/send-reviewer-message';
-
-    try {
-        let res = m.request(end_search_url,
-                            {method: 'POST', data: ta3_search_message});
-        console.log('ta3_search_message succeeded:' + res);
-    } catch (err) {
-        console.log('ta3_search_message failed: ' + err);
-    }
-    */
-}
-
-export function test_msg_ta3_search() {
-    //end_ta3_search(true, 'it worked!');
-    //end_ta3_search(false, 'it failed!');
-    //ta3_search_message('just sending a message!');
-}
-
-/**
- *  End the TA3 search.  This sends a message
- *  to the ta3_search console as well as message
- *  for the console to exit with a:
- *  - return code 0 for success
- *  - return code -1 for failure
- *
- *  > is_success - boolean
- *  > user_msg - string sent to the console
- */
-export function end_ta3_search(is_success, user_msg) {
-
-    // 6/21/2018 - removed from eval
-    /*
-    let end_search_msg = {'is_success': is_success,
-                          'message': user_msg}
-
-    const end_search_url = 'ta3-search/end-search';
-
-    try {
-        let res = m.request(end_search_url,
-                            {method: 'POST', data: end_search_msg});
-        console.log('end_ta3_search succeeded:' + res);
-    } catch (err) {
-        console.log('end_ta3_search failed: ' + err);
-    }
-    */
-}
-
-function placeholderStep() {
-    let step = {inputs: [{data: "steps.0.produce"}], outputs: [{id: "produce"}]};
-    return {placeholder: step};
-}
-
-/**
- *  Function takes as input the pipeline template information (currently problem) and returns a valid pipline template in json. This json is to be inserted into SearchSolutions. e.g., problem = {...}, template = {...}, inputs = [dataset_uri]
- */
-export function makePipelineTemplate(problem) {
-    debugLog('makePipelineTemplate problem:', problem);
-
-    let inputs = [];
-    let outputs = [];
-    let steps = [];
-
-    if (problem) {
-        inputs = [{name: "inputs"}];
-        steps = buildPipeline([
-            {type: 'denormalize'},
-            ...problem.manipulations,
-            {type: 'remove_columns', problem},
-            {type: 'placeholder'}
-        ]);
-        outputs = [{
-            name: "output",
-            data: getContainerId(steps.length)
-        }];
-    }
+    // if (problem) {
+    //     inputs = [{name: "inputs"}];
+    //     steps = buildPipeline([
+    //         {type: 'denormalize'},
+    //         ...problem.manipulations,
+    //         {type: 'remove_columns', problem},
+    //         {type: 'placeholder'}
+    //     ]);
+    //     outputs = [{
+    //         name: "output",
+    //         data: getContainerId(steps.length)
+    //     }];
+    // }
     return {inputs, outputs, steps};
 }
 
@@ -317,7 +156,6 @@ export function makePipelineTemplate(problem) {
       }
     ]
   }
->>>>>>> D3M buildPipeline with denormalization, imputer, mapping
 }
 */
 
@@ -369,7 +207,7 @@ let asList = value => ({list: value.map(elem => asType(elem))});
 
 let asType = value => {
     if (Array.isArray(value)) return asList(value);
-    if (typeof value === 'number') return Number.isInteger(value) ? asInt(value) : asDouble(value)
+    if (typeof value === 'number') return Number.isInteger(value) ? asInt(value) : asDouble(value);
     if (typeof value === 'string') return asString(value);
     if (typeof value === 'boolean') return asBool(value);
 
@@ -666,6 +504,8 @@ export function GRPC_ScoreSolutionRequest(problem, datasetDocUrl) {
  */
 export async function handleGetSearchSolutionResultsResponse(response) {
 
+    console.warn("#debug handleGetSearchSolutionResultsResponse");
+    console.log(response);
     if (response === undefined) {
         console.warn('GetSearchSolutionResultsResponse: Error.  "response" undefined');
         return;

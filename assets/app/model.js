@@ -17,7 +17,6 @@ import TextFieldSuggestion from "../common/views/TextFieldSuggestion";
 import ListTags from "../common/views/ListTags";
 import Panel from "../common/views/Panel";
 import MenuTabbed from "../common/views/MenuTabbed";
-import Datamart from "./datamart/Datamart";
 import Dropdown from "../common/views/Dropdown";
 import ButtonRadio from "../common/views/ButtonRadio";
 import MenuHeaders from "../common/views/MenuHeaders";
@@ -27,6 +26,8 @@ import VariableSummary, {formatVariableSummary} from "./views/VariableSummary";
 import ButtonLadda from "./views/LaddaButton";
 import PreprocessInfo from "./views/PreprocessInfo";
 import Flowchart from "./views/Flowchart";
+
+import Datamart from "./datamart/Datamart";
 
 import {bold} from "./index";
 import {locationReload, setModal} from "../common/views/Modal";
@@ -177,9 +178,6 @@ export class CanvasModel {
 }
 
 export let preprocessTabName = 'Preprocess Log';
-export let isPreprocessTab = () => app.leftTab === preprocessTabName;
-export let setPreprocessTab = () => app.setLeftTab(isPreprocessTab() ? 'Variables' : preprocessTabName);
-
 
 export let leftPanelWidths = {
     [preprocessTabName]: '500px',

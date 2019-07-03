@@ -1616,88 +1616,11 @@ export async function callSolver(prob, datasetPath=undefined) {
 
     m.redraw();
 
-<<<<<<< HEAD
     for (let param of params) await makeRequest(ROOK_SVC_URL + 'solverapp', Object.assign({
         problem: probReduced,
         dataset_path: datasetPath,
         samples: prob.actualValues && prob.actualValues.map(point => point.d3mIndex)
     }, param)).then(response => {
-=======
-    try {
-        selectedProblem.dvvalues = await manipulate.getData({
-            method: 'aggregate',
-            query: JSON.stringify(queryMongo.buildPipeline(
-                [...ravenConfig.hardManipulations, ...selectedProblem.manipulations, {
-                    type: 'menu',
-                    metadata: {
-                        type: 'data',
-                        variables: ['d3mIndex', ...selectedProblem.targets],
-                        sample: 1000
-                    }
-                }],
-                ravenConfig.variablesInitial)['pipeline'])
-        })
-    } catch(err) {
-        alertWarn('Dependent variables have not been loaded. Some plots will not load.')
-    }
-
-    let searchTimeLimit = 5;
-    let searchSolutionParams = CreatePipelineDefinition(selectedProblem, searchTimeLimit);
-
-    let nominalVars = new Set(getNominalVariables(selectedProblem));
-
-    let hasManipulation = selectedProblem.manipulations.length > 0;
-
-    let allPredictors = getPredictorVariables(selectedProblem);
-    let hasNominal = [...selectedProblem.targets, ...allPredictors]
-        .some(variable => nominalVars.has(variable));
-
-    let needsProblemCopy = hasManipulation || hasNominal;
-
-    let datasetPath = workspace.datasetUrl;
-    // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
-    if (needsProblemCopy) {
-        let {data_path, metadata_path} = await manipulate.buildProblemUrl(selectedProblem);
-        selectedProblem.datasetDocPath = metadata_path;
-        datasetPath = data_path;
-    } else delete selectedProblem.datasetDocPath;
-
-    // initiate rook solver
-    // - TO-FIX 5/22/2019
-    //callSolver(selectedProblem, datasetPath);
-
-    let datasetDocPath = selectedProblem.datasetDocPath || workspace.d3m_config.dataset_schema;
-
-    let allParams = {
-        searchSolutionParams: searchSolutionParams,
-        fitSolutionDefaultParams: getFitSolutionDefaultParameters(datasetDocPath),
-        produceSolutionDefaultParams: getProduceSolutionDefaultParameters(datasetDocPath),
-        scoreSolutionDefaultParams: getScoreSolutionDefaultParameters(selectedProblem, datasetDocPath)
-    };
-
-    console.warn("#debug allParams");
-    console.log(allParams);
-
-    //let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
-    let res = await makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', allParams);
-    // console.log(JSON.stringify(res));
-    if (res === undefined) {
-        handleENDGetSearchSolutionsResults();
-        alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
-        m.redraw();
-        return;
-    } else if (!res.success) {
-        handleENDGetSearchSolutionsResults();
-        alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
-        m.redraw();
-        return;
-    }
-
-    let searchId = res.data.searchId;
-    allsearchId.push(searchId);
-}
->>>>>>> #592 primitive manipulations outline
-
         // assign source and remove errant fits
         Object.keys(response.results)
             .forEach(result => {
