@@ -93,7 +93,7 @@ class Body {
         let resultsProblem = app.getResultsProblem();
         let selectedProblem = app.getSelectedProblem();
 
-        let drawForceDiagram = app.is_model_mode && selectedProblem && Object.keys(app.variableSummaries).length > 0;
+        let drawForceDiagram = (app.is_model_mode || app.is_explore_mode) && selectedProblem && Object.keys(app.variableSummaries).length > 0;
         let forceData = drawForceDiagram && model.buildForceData(selectedProblem);
 
         return m('main',
@@ -101,7 +101,7 @@ class Body {
             this.construct_modals(),
             this.header(app.currentMode),
             this.footer(app.currentMode),
-            app.workspace && Body.leftpanel(app.currentMode, drawForceDiagram && forceData),
+            app.workspace && Body.leftpanel(app.currentMode, forceData),
             app.workspace && Body.rightpanel(app.currentMode),
             app.workspace && Body.manipulations(),
 
@@ -354,7 +354,7 @@ class Body {
 
             m(Button, {
                 style: {'margin': '8px'},
-                title: 'ta2 debugger',
+                title: 'ta2 stop searches',
                 class: 'btn-sm',
                 onclick: () => {
                     solverD3M.endAllSearches();
@@ -615,7 +615,10 @@ class Body {
                         value: this.TA2Response.message,
                         oninput: _ => _, onblur: _ => _
                     })
-                )
+                ),
+                m('div#solutions', {style: {margin: '1em'}},
+                    'Solutions',
+                    m(TextField, {value: JSON.stringify(app.getSelectedProblem().solutions.d3m)}))
             )
         ]
     }

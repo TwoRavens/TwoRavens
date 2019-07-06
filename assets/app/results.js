@@ -21,6 +21,7 @@ import {bold} from "./index";
 import PlotVegaLite from "./views/PlotVegaLite";
 import ConfusionMatrix from "./views/ConfusionMatrix";
 import Flowchart from "./views/Flowchart";
+import {omniSort} from "./app";
 
 
 export let leftpanel = () => {
@@ -42,7 +43,7 @@ export let leftpanel = () => {
 
     let resultsContent = [
         m('div', {style: {display: 'inline-block', margin: '1em'}},
-            m('h4', ravenConfig.resultsProblem),
+            m('h4', `${ravenConfig.resultsProblem} (${resultsProblem.targets.join(', ')})`),
             // m(Dropdown, {
             //     id: 'pipelineDropdown',
             //     items: Object.keys(ravenConfig.problems).filter(key =>
@@ -72,11 +73,13 @@ export let leftpanel = () => {
                     contents: m(Table, {
                         id: 'pipelineTable',
                         data: Object.keys(resultsProblem.solutions.d3m)
-                            .map(pipelineId => Object.assign({Solution: pipelineId}, extractD3MScores(resultsProblem.solutions.d3m[pipelineId]))),
+                            .map(pipelineId => Object.assign(
+                                {ID: pipelineId, Solution: extractD3MModel(resultsProblem.solutions.d3m[pipelineId])},
+                                extractD3MScores(resultsProblem.solutions.d3m[pipelineId]))),
                         sortable: true,
                         sortHeader: selectedMetric.d3m,
-                        setSortHeader: header => selectedMetric.d3m = header === 'Solution' ? selectedMetric.d3m : header,
-                        sortFunction: sortPipelineTable,
+                        setSortHeader: header => selectedMetric.d3m = header,
+                        sortDescending: !reverseSet.includes(selectedMetric.d3m),
                         activeRow: new Set(resultsProblem.selectedSolutions.d3m),
                         onclick: pipelineId => setSelectedSolution(resultsProblem, 'd3m', pipelineId)
                     })
@@ -112,7 +115,6 @@ export let leftpanel = () => {
         })
     ];
 
-    // use this object instead of resultsContent for a tabbed leftpanel results menu
     let tabbedResults = m(MenuTabbed, {
         id: 'resultsMenu',
         currentTab: leftTabResults,
@@ -126,6 +128,7 @@ export let leftpanel = () => {
                         .map(problemId => app.workspace.raven_config.problems[problemId])
                         .map(problem => [
                             problem.problemID,
+                            problem.targets.join(', '),
                             problem.d3mSearchId,
                             m(Button, {
                                 title: 'stop the search',
@@ -133,7 +136,7 @@ export let leftpanel = () => {
                                 onclick: () => solverD3M.stopSearch(problem.d3mSearchId)
                             }, m(Icon, {name: 'stop'}))
                         ]),
-                    headers: ['Name', 'Search ID', 'Stop'],
+                    headers: ['Name', 'Targets', 'Search ID', 'Stop'],
                     activeRow: app.workspace.raven_config.resultsProblem,
                     onclick: app.setResultsProblem
                 })
@@ -177,7 +180,7 @@ export class CanvasSolutions {
 
             let xName = 'Fitted Values';
             let yName = 'Actual Values';
-            let title = 'Fitted vs. Actuals';
+            let title = 'Fitted vs. Actuals for predicting ' + problem.targets.join(', ');
             let legendName = 'Solution Name';
 
             return m('div', {
@@ -214,7 +217,7 @@ export class CanvasSolutions {
                     style: {'min-height': '500px'}
                 }, m(ConfusionMatrix, Object.assign({}, confusionInstance, {
                     id: 'resultsConfusionMatrixContainer' + confusionInstance.name,
-                    title: "Confusion Matrix: Solution " + confusionInstance.name,
+                    title: `Confusion Matrix: Solution ${confusionInstance.name} for ${problem.targets.join(', ')}`,
                     startColor: '#ffffff', endColor: '#e67e22',
                     margin: {left: 10, right: 10, top: 50, bottom: 10},
                     attrsAll: {style: {height: '600px'}}
@@ -239,10 +242,10 @@ export class CanvasSolutions {
                 // the table is overkill, but we could certainly add more info here
                 summary: m(Table, {
                     id: 'pipelineFlowchartSummary' + i,
-                    abbreviation: 40,
+                    // abbreviation: 40,
                     data: {
                         'Name': pipeStep['primitive']['primitive'].name,
-                        // 'Method': pipeStep['primitive']['primitive']['pythonPath'].split('.').slice(-1)[0]
+                        'Method': pipeStep['primitive']['primitive']['pythonPath'].replace('d3m.primitives.', '')
                     },
                     attrsAll: {style: {'margin-bottom': 0, padding: '1em'}}
                 }),
@@ -274,7 +277,6 @@ export class CanvasSolutions {
 
         return solution.pipeline && m('div', {
                 style: {
-                    width: '70%',
                     height: 'calc(100% - 30px)',
                     overflow: 'auto'
                 }
@@ -533,11 +535,11 @@ export let selectedMetric = {
 export let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSquaredErrorAvg", "meanAbsoluteError"];
 
 /**
- Sort the Pipeline table, putting the highest score at the top
+ Sort the Pipeline table, putting the best score at the top
  */
-export function sortPipelineTable(a, b) {
-    return (b - a) * (reverseSet.includes(selectedMetric.d3m) ? -1 : 1);
-}
+let sortPipelineTable = (a, b) => typeof a === 'string'
+    ? omniSort(a, b)
+    : (b - a) * (reverseSet.includes(selectedMetric.d3m) ? -1 : 1);
 
 let resultsSubpanels = {
     'Prediction Summary': true,
@@ -674,6 +676,13 @@ export function generatePerformanceData(confusionData2x2) {
 export let extractD3MScores = solution => 'scores' in solution
     ? solution.scores.reduce((out, score) => Object.assign(out, {[app.d3mMetricsInverted[score.metric.metric]]: app.formatPrecision(score.value.raw.double)}), {})
     : {};
+
+export let extractD3MModel = solution => 'pipeline' in solution
+    ? solution.pipeline.steps
+        .filter(step => ['regression', 'classification'].includes(step.primitive.primitive.pythonPath.split('.')[2]))
+        .map(step => step.primitive.primitive.pythonPath.replace(new RegExp('d3m\\.primitives\\.(regression|classification)\\.'), ''))
+        .join()
+    : '';
 
 
 // STATISTICS HELPER FUNCTIONS

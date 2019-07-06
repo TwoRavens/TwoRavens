@@ -257,6 +257,7 @@ export default class ForceDiagram {
                     if (!d3.event.active) this.force.alphaTarget(1).restart();
                     d3.event.subject.fx = d3.event.subject.x;
                     d3.event.subject.fy = d3.event.subject.y;
+                    this.startDragLocation = [d3.event.subject.x, d3.event.subject.y];
                     m.redraw()
                 })
                 .on("drag", () => {
@@ -328,6 +329,9 @@ export default class ForceDiagram {
                     let dragCoord = this.selectedPebble === d3.event.subject
                         ? [d3.event.subject.fx, d3.event.subject.fy]
                         : [d3.event.subject.x, d3.event.subject.y];
+
+                    // prevent drag actions if the drag distance is too small
+                    if (Math.abs(mag(sub(dragCoord, this.startDragLocation))) < 50) return;
 
                     let groupCoords, hullCoords;
                     if (onDragOver || onDragAway) {

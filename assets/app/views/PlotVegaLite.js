@@ -28,22 +28,30 @@ export default class PlotVegaLite {
         let {width, height} = vnode.dom.getBoundingClientRect();
 
         if (this.specification !== newSpecification || this.width !== width || this.height !== height) {
-
             this.specification = newSpecification;
-            this.width = width;
-            this.height = height;
 
-            specification.autosize = {"type": "fit", "contains": "padding"};
-            if (data) specification.data = 'embedded';
+            // include padding in width/height calculations
+            specification.autosize = {
+                "type": "fit",
+                "contains": "padding"
+            };
+            if (data) specification.data = {name: 'embedded'};
+
+            let options = {actions: false};
+            if (width) options.width = width;
+            if (height) options.height = height;
 
             // mask repeated warnings about outdated vega-lite specification
             let tempWarn = console.warn;
             console.warn = _ => _;
 
             try {
-                vegaEmbed(vnode.dom, specification, {
-                    actions: false, width, height
-                }).then(result => {
+                vegaEmbed(vnode.dom, specification, options).then(result => {
+                    // vegalite only gets close to the width/height set in the config
+                    let {width, height} = vnode.dom.getBoundingClientRect();
+                    this.width = width;
+                    this.height = height;
+
                     this.instance = result.view;
                     if (data) {
                         this.dataKeys = new Set();
