@@ -810,7 +810,7 @@ export let mytour = () => ({
     showCloseButton: true,
     scrollDuration: 300,
     steps: [
-        step("dataName", "bottom", "Welcome to TwoRavens Solver",
+        step("dataName", "bottom", "Welcome to the TwoRavens Solver",
              `<p>This tool can guide you to solve an empirical problem in the dataset above.</p>
                       <p>These messages will teach you the steps to take to find and submit a solution.</p>`),
         step("btnReset", "bottom", "Restart Any Problem Here",
@@ -824,19 +824,19 @@ export let mytour = () => ({
         //     `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
         //     <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>
         //     <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
-        step("btnEstimate", "left", "Solve Task 2",
+        step("btnResults", "left", "Solve Task 2",
              `<p>This generally is the important step to follow for Task 2 - Build a Model.</p>
                       <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward, and this button will be Green when Task 1 is completed and Task 2 started.</p>
                       <p>Click this Solve button to tell the tool to find a solution to the problem, using the variables presented in the center panel.</p>`),
-        step(getSelectedProblem().targets.join(', ') + 'biggroup', "left", "Target Variable",
+        step('TargetsHull', "left", "Target Variable",
              `We are trying to predict ${getSelectedProblem().targets.join(', ')}.
                       This center panel graphically represents the problem currently being attempted.`),
-        step("gr1hull", "right", "Explanation Set", "This set of variables can potentially predict the target."),
-        step("displacement", "right", "Variable List",
+        step("PredictorsHull", "right", "Explanation Set", "This set of variables can potentially predict the target."),
+        step("tabVariables", "right", "Variable List",
              `<p>Click on any variable name here if you wish to remove it from the problem solution.</p>
                       <p>You likely do not need to adjust the problem representation in the center panel.</p>`),
-        step("btnEndSession", "bottom", "Finish Problem",
-             "If the solution reported back seems acceptable, then finish this problem by clicking this End Session button."),
+        // step("btnEndSession", "bottom", "Finish Problem",
+        //      "If the solution reported back seems acceptable, then finish this problem by clicking this End Session button."),
     ]
 });
 
@@ -1531,7 +1531,8 @@ export async function estimate() {
     results.selectedMetric.d3m = selectedProblem.metric;
 
     // route streamed responses with this searchId to this problem
-    selectedProblem.d3mSearchId = res.data.searchId
+    selectedProblem.d3mSearchId = res.data.searchId;
+    m.redraw()
 }
 
 export async function makeRequest(url, data) {

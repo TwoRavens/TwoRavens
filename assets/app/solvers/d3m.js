@@ -504,8 +504,6 @@ export function GRPC_ScoreSolutionRequest(problem, datasetDocUrl) {
  */
 export async function handleGetSearchSolutionResultsResponse(response) {
 
-    console.warn("#debug handleGetSearchSolutionResultsResponse");
-    console.log(response);
     if (response === undefined) {
         console.warn('GetSearchSolutionResultsResponse: Error.  "response" undefined');
         return;
