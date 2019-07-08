@@ -17,7 +17,7 @@ import TextFieldSuggestion from "../common/views/TextFieldSuggestion";
 import ListTags from "../common/views/ListTags";
 import Panel from "../common/views/Panel";
 import MenuTabbed from "../common/views/MenuTabbed";
-import Datamart from "../common/TwoRavens/Datamart";
+import Datamart from "./datamart/Datamart";
 import Dropdown from "../common/views/Dropdown";
 import ButtonRadio from "../common/views/ButtonRadio";
 import MenuHeaders from "../common/views/MenuHeaders";
