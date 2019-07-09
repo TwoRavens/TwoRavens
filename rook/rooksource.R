@@ -115,6 +115,7 @@ source("rooktree.R")
 source("rooksolver.R")
 source("rookreport.R")
 source("rookmkdocs.R")
+source("rookpdps.R")
 
 # -------------------------------------
 # end: Load modules for apps
@@ -165,6 +166,7 @@ R.server$add(app = plotdata.app, name="plotdataapp")
 R.server$add(app = tree.app, name="treeapp")
 R.server$add(app = solver.app, name="solverapp")
 R.server$add(app = mkdocs.app, name="mkdocsapp")
+R.server$add(app = pdps.app, name="pdpsapp")
 
 # Serve files directly from rook
 R.server$add(app = File$new(REPORT_OUTPUT_PATH), name = "rook-reports")

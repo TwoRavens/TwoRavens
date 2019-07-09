@@ -1533,6 +1533,26 @@ export async function estimate() {
     // route streamed responses with this searchId to this problem
     selectedProblem.d3mSearchId = res.data.searchId;
     m.redraw()
+    
+    ///////////////////////////////////////
+    // VJD: I don't know if the call to rook belongs here, or it should be a separate function that is called when switching to results mode, as estimate() is called.
+    
+    // using selectedProblem here, because this is the initial call. will have to use resultsProblem later
+    selectedProblem = getSelectedProblem();
+    let partialsDataset = await m.request(ROOK_SVC_URL + 'pdpsapp', {
+        method: 'POST',
+        data: {
+            partialTypes: ['ICE', 'PDP'],
+            datasetUrl: await buildDatasetUrl(selectedProblem),
+            variables: selectedProblem.predictors // only relevant for ICE
+        }
+    });
+    // from the context of solverD3M.handleGetProduceSolutionResultsResponse
+    //let solution = solvedProblem.solutions.d3m[response.pipelineId];
+    //solution.variableImportance = m.request(D3M_SVC_URL + '/variableImportance', {method: "POST", body: {data_pointer}});
+    
+    ///////////////////////////////////
+
 }
 
 export async function makeRequest(url, data) {

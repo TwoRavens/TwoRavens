@@ -22,7 +22,8 @@ PLOTDATA_APP = 'PLOTDATA_APP'
 #
 #                   standard     frontend   backend
 ROOK_APP_NAMES = [('DATA_APP', 'dataapp', 'dataapp'),       # session id?
-                  (MKDOCS_APP, MKDOCS_ROOK_APP_NAME, MKDOCS_ROOK_APP_NAME), # subset file
+                  (MKDOCS_APP, MKDOCS_ROOK_APP_NAME, MKDOCS_ROOK_APP_NAME),
+                  ('PDPS_APP', 'pdpsapp', 'pdpsapp'),
                   ('SUBSET_APP', 'subsetapp', 'subsetapp'), # subset file
                   ('TRANSFORM_APP', 'transformapp', 'transformapp'), # transfor file
 
