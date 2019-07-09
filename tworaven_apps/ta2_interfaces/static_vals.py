@@ -15,6 +15,7 @@ STATUS_VAL_FAILED_PRECONDITION = 'FAILED_PRECONDITION'
 
 KEY_DATA = 'data' # Used for the TA3 UI to retrieve data
 KEY_DATA_POINTER = 'data_pointer' # Used for the TA3 UI to retrieve data
+KEY_INDICES = 'indices'
 KEY_DATASET_URI = 'dataset_uri'
 
 KEY_FITTED_SOLUTION_ID = 'fittedSolutionId'
