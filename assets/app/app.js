@@ -1543,7 +1543,8 @@ export async function estimate() {
         data: {
             partialTypes: ['ICE', 'PDP'],
             datasetUrl: await buildDatasetUrl(selectedProblem),
-            variables: selectedProblem.predictors // only relevant for ICE
+            variables: selectedProblem.predictors, // only relevant for ICE
+            pdpVars: [1]
         }
     });
     // from the context of solverD3M.handleGetProduceSolutionResultsResponse

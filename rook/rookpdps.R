@@ -31,16 +31,37 @@ is_binary <- function(v) {
 # function to make the data for a predictor p
 makeData <- function(d, p){
     print('>>> makeData 1')
+    print(p)
 
+    # the cutoff at which to sample
+    cutoff <- 10000
+    
     myu <- unique(d[,p])
     myu <- myu[order(myu)]
-
-    for(i in 1:length(myu)) {
-        temp <- d[which(d[,p]==myu[i]),]
-        
+    newdata <- d[0,]
+    
+    datasize <- nrow(d)*length(myu)
+    
+    if(datasize < cutoff){
+        for(i in 1:length(myu)) {
+            temp <- d
+            temp[,p] <- myu[i]
+            newdata <- rbind(newdata,temp)
+        }
+    } else {
+        prob <- cutoff/datasize
+        mysize <- prob*nrow(d)
+        if(mysize > nrow(d)) mysize<-nrow(d)
+        index <- sample(1:nrow(d), mysize, replace=FALSE)
+        newd <- d[index,]
+        for(i in 1:length(myu)) {
+            temp <- newd
+            temp[,p] <- myu[i]
+            newdata <- rbind(newdata,temp)
+        }
     }
 
-    out <- list(data=d)
+    out <- list(data=newdata)
     return(out)
 }
 
@@ -78,13 +99,23 @@ pdps.app <- function(env) {
     if (is.null(dataurl)) {
         return(send(list(warning = "No datafile."))) # required
     }
+    
+    variables <- everything$variables
+    if (is.null(variables)) {
+        return(send(list(warning = "No variables."))) # required
+    }
+    
+    pdpVars <- everything$pdpVars
+    if (is.null(pdpVars)) {
+        return(send(list(warning = "No pdp variables."))) # required
+    }
 
     # reading in data
     separator <- if (endsWith(dataurl, 'csv'))',' else '\t'
     mydata <- read.table(dataurl, sep = separator, header = TRUE, fileEncoding = 'UTF-8')
 
     tryCatch({
-        data <- makeData(d=mydata)
+        data <- makeData(d=mydata, p=variables[pdpVars[1]])
         result <- data
       },
     error = function(err) {
