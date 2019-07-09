@@ -20,21 +20,12 @@
     }
   },
   "estimator": {
-    "estimator": "SGDRegressorEstimator",
+    "estimator": "",
     "params": {
-      "penalty": "elasticnet",
-      "learning_rate": "invscaling",
-      "alpha": 0.001,
-      "epsilon": 1.0,
-      "fit_intercept": true,
-      "l1_ratio": 0.1,
-      "power_t": 0.0,
-      "loss": "squared_loss",
-      "eta0": 0.001
     }
   },
   "performance": {
-    "metric": "meanSquaredError",
-    "cv_performance": 13.646296719946859
+    "metric": "accuracy",
+    "cv_performance": 0.51
   }
 }
