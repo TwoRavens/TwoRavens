@@ -1,43 +1,34 @@
 """
 8/2/2018 - Repurposed for the API changes.
+7/7/2019 - Repurposed from util_embed_results for generating statistics.
 
-Repurposed to handle single data pointers.  Currently handles:
+Handle single data pointers.  Currently handles:
 
 (1) file uri
     - example: file:///output/predictions/0001.csv
 When a PipelineExecuteResult (in JSON format) contains a result_uri list,
 read each of the files in that list and embed its results into the JSON
 
-Note: csv files are converted to JSON
-
 Example:
     - input: "file:///output/predictions/0001.csv"
 
 Output:
-        {
-            success: true:
-            data: [
-                { "preds": "36.17124" },
-                { "preds": "29.85256" },
-                { "preds": "30.35607" },
-                (etc. etc.)
-            ]
-        }
+        // TODO output example
 
 
 """
-import json
 from os.path import getsize, join, isfile
 from collections import OrderedDict
+import pandas as pd
+from sklearn.metrics.classification import confusion_matrix
 
 from django.conf import settings
 
-from tworaven_apps.utils.csv_to_json import convert_csv_file_to_json
+from tworaven_apps.eventdata_queries.mongo_retrieve_util import MongoRetrieveUtil
 from tworaven_apps.utils.url_helper import format_file_uri_to_path
 from tworaven_apps.utils.number_formatting import add_commas_to_number
 from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
 from tworaven_apps.ta2_interfaces.static_vals import D3M_OUTPUT_DIR
-from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.raven_auth.models import User
 from tworaven_apps.user_workspaces.utils import get_latest_d3m_user_config
 
@@ -49,6 +40,7 @@ ERR_CODE_UNHANDLED_FILE_TYPE = 'ERR_CODE_UNHANDLED_FILE_TYPE'
 ERR_CODE_FILE_NOT_REACHABLE = 'FILE_NOT_REACHABLE'
 ERR_CODE_FILE_NOT_EMBEDDABLE = 'FILE_NOT_EMBEDDABLE'
 ERR_CODE_FILE_INVALID_JSON = 'ERR_CODE_FILE_INVALID_JSON'
+ERR_CODE_FILE_INVALID_CSV = 'ERR_CODE_FILE_INVALID_CSV'
 ERR_CODE_FILE_TOO_LARGE_TO_EMBED = 'FILE_TOO_LARGE_TO_EMBED'
 ERR_CODE_FAILED_JSON_CONVERSION = 'FAILED_JSON_CONVERSION'
 
@@ -57,19 +49,19 @@ EXT_JSON = '.json'
 EMBEDDABLE_FILE_TYPES = ('.csv', EXT_JSON)
 
 
-class FileEmbedUtil(object):
+class FileStatisticsUtil(object):
     """For a list of given file uris
         - see if it's a .csv file:
         - open the file
         - convert it to JSON
         - embed the JSON in the orginal message
     """
-    def __init__(self, data_pointer, user, indices=None):
+    def __init__(self, data_pointer, metadata, user):
 
         self.user = user
         self.data_pointer = data_pointer
+        self.metadata = metadata
         self.final_results = None
-        self.indices = set(indices)
 
         # List of paths where attempted to read a file
         self.attempted_file_paths = []
@@ -92,39 +84,20 @@ class FileEmbedUtil(object):
             self.add_err_msg('user must be a "User" object, not: "%s"' % self.user)
             return
 
-        self.final_results = self.get_embed_result(self.data_pointer)
+        self.final_results = self.get_statistics_results(self.data_pointer)
 
     def get_final_results(self):
         """Return the formatted_results"""
         assert not self.has_error, \
-               ('(!) Do not use this method if an error has been detected.'
-                ' First check the "has_error" attribute')
+            ('(!) Do not use this method if an error has been detected.'
+             ' First check the "has_error" attribute')
 
         return self.final_results
 
-
-    def get_embed_result(self, file_uri, is_second_try=False):
+    def get_statistics_results(self, file_uri, is_second_try=False):
         """Get the content from the file and format a JSON snippet
-        that includes that content.
-
-        Example response 1:
-            {
-              "success":true,
-              "data":[
-                 {"preds":"36.17124"},
-                 {"preds":"29.85256"},
-                 {"preds":"30.85256"}
-              ]
-           }
-
-        Example response 2:
-          {
-              "success":false,
-              "err_code":"FILE_NOT_FOUND",
-              "message":"The file was not found."
-           }
+        that includes statistical summaries.
         """
-        py_list = None
 
         if not file_uri:
             err_code = ERR_CODE_FILE_URI_NOT_SET
@@ -137,7 +110,6 @@ class FileEmbedUtil(object):
         if err_msg:
             return self.format_embed_err(ERR_CODE_FILE_URI_BAD_FORMAT,
                                          err_msg)
-
 
         self.attempted_file_paths.append(fpath)
 
@@ -154,7 +126,7 @@ class FileEmbedUtil(object):
                     path_list = ['%s' % p for p in self.attempted_file_paths]
                     err_msg = ('File not found: %s'
                                ' (Paths attempted: %s)') % \
-                               (fpath, ', '.join(path_list))
+                              (fpath, ', '.join(path_list))
                 else:
                     err_msg = 'File not found: %s' % fpath
 
@@ -180,39 +152,94 @@ class FileEmbedUtil(object):
         # Is the file too large to embed?
         #
         if fsize > settings.MAX_EMBEDDABLE_FILE_SIZE:
-            err_msg = ('This file was too large to embed.'
-                       ' Size was %s bytes but the limit is %s bytes.') %\
-                       (add_commas_to_number(fsize),
-                        add_commas_to_number(settings.MAX_EMBEDDABLE_FILE_SIZE))
+            err_msg = ('This file was too large to embed.'  
+                       ' Size was %s bytes but the limit is %s bytes.') % \
+                      (add_commas_to_number(fsize),
+                       add_commas_to_number(settings.MAX_EMBEDDABLE_FILE_SIZE))
             return self.format_embed_err(ERR_CODE_FILE_TOO_LARGE_TO_EMBED,
                                          err_msg)
-
 
         # If it's a JSON file, read and return it
         #
         if self.is_json_file_type(fpath):
             # Return the file directly
-            response_data = self.load_and_return_json_file(fpath)
-            if not response_data.success:
-                return response_data
+            results_obj = self.load_and_return_json_file(fpath)
+            if results_obj.success:
+                fitted_values = results_obj.data
+            else:
+                return results_obj
 
-        # If it's a csv file, read, convert to JSON and return it
+        # If it's a csv file, read to dataframe
         #
         else:
-            (py_list, err_msg2) = convert_csv_file_to_json(fpath, to_string=False)
-            if err_msg2:
-                return self.format_embed_err(ERR_CODE_FAILED_JSON_CONVERSION,
-                                             err_msg2)
+            results_obj = self.load_and_return_csv_file(fpath)
+            if results_obj.success:
+                fitted_values = results_obj.data
+            else:
+                return results_obj
 
-            response_data = OrderedDict()
-            response_data[KEY_SUCCESS] = True
-            response_data[KEY_DATA] = py_list
+        # align joining column and avoid target collision in join
+        actual_target_name = self.metadata.targets[0]
+        fitted_target_name = 'fitted_' + actual_target_name
+        fitted_values.columns = ['d3mIndex', fitted_target_name]
 
-        # only return records that match indices. The d3mIndex is written out to the column ''
-        if self.indices:
-            response_data[KEY_DATA] = [i for i in response_data[KEY_DATA] if i[''] in self.indices]
+        util = MongoRetrieveUtil(settings.TWORAVENS_MONGO_DB_NAME, self.metadata.collectionName)
+        if util.has_error():
+            return OrderedDict({KEY_SUCCESS: False, KEY_DATA: util.get_error_message()})
 
-        return response_data
+        # TODO: exhausting this cursor is potentially a memory bomb
+        actual_values = pd.DataFrame(list(util.run_query([
+            *self.metadata.manipulations,
+            {'$project': {variable: 1 for variable in [*self.metadata.predictors, actual_target_name]}}
+        ], 'aggregate')))
+
+        results_values = actual_values.join(fitted_values, 'd3mIndex')
+
+        results = {}
+
+        if self.metadata.task in ['classification', 'semisupervisedClassification']:
+            labels = list({*pd.unique(results_values[actual_target_name]),
+                           *pd.unique(results_values[fitted_target_name])})
+
+            results['confusion_matrix'] = confusion_matrix(
+                results_values[actual_target_name],
+                results_values[fitted_target_name],
+                labels=labels)
+            results['labels'] = labels
+
+        # elif self.metadata.task in ['regression', 'semisupervisedRegression']:
+
+        def aggregate_target(variable):
+            if variable in self.metadata.nominal:
+                # bin counts by variable levels
+                return {level: {"$sum": {"$cond": [{"$eq": [f"${variable}", level]}, 1, 0]}}
+                        for level in self.metadata.summaries[variable].plotvalues.keys()}
+            else:
+                return {"average": {"$avg": f"${variable}"}}
+
+        def importance_target(variable):
+            return list(util.run_query([
+                *self.metadata.manipulations,
+                {"$facet": {
+                    predictor: [{
+                        "$bucketAuto": {
+                            "buckets": min(100, int(len(actual_values) / 10)),
+                            "groupBy": f"${predictor}",
+                            "output": aggregate_target(variable)
+                        }
+                    }]
+                    for predictor in self.metadata.predictors}}
+            ], 'aggregate'))[0]
+
+        results['importance'] = {}
+        for target in self.metadata.targets:
+            results['importance'][target] = importance_target(target)
+
+        # return OrderedDict({KEY_SUCCESS: False, KEY_DATA: f"Invalid task type: {self.metadata.task}"})
+
+        # Send back the data
+        #
+        return OrderedDict({KEY_SUCCESS: True, KEY_DATA: results})
 
 
     def attempt_test_output_directory(self, fpath):
@@ -231,10 +258,10 @@ class FileEmbedUtil(object):
         # and (2) it DOES NOT start with "/output"
         #
         if d3m_config.root_output_directory == D3M_OUTPUT_DIR or \
-           not d3m_config.root_output_directory:
+                not d3m_config.root_output_directory:
             err_msg = ('File not found: %s'
                        ' (Note: No alternate directory to try)') % \
-                       fpath
+                      fpath
             return self.format_embed_err(ERR_CODE_FILE_NOT_FOUND,
                                          err_msg)
 
@@ -257,20 +284,41 @@ class FileEmbedUtil(object):
         """Load a JSON file; assumes fpath exists and has undergone prelim checks"""
         assert isfile(fpath), "fpath must exist; check before using this method"
 
-        json_info = None
-        with open(fpath) as f:
-            fcontent = f.read()
-            json_info = json_loads(fcontent)
-
-        if not json_info.success:
+        try:
+            with open(fpath) as f:
+                fcontent = f.read()
+                dataframe = pd.read_json(fcontent)
+        # TODO: narrower exception catch
+        except Exception as err:
             return self.format_embed_err(ERR_CODE_FILE_INVALID_JSON,
-                                         json_info.err_msg)
+                                         str(err))
 
         embed_snippet = OrderedDict()
         embed_snippet[KEY_SUCCESS] = True
-        embed_snippet[KEY_DATA] = json_info.result_obj
+        embed_snippet[KEY_DATA] = dataframe
 
         return embed_snippet
+
+
+    def load_and_return_csv_file(self, fpath):
+        """Load a JSON file; assumes fpath exists and has undergone prelim checks"""
+        assert isfile(fpath), "fpath must exist; check before using this method"
+
+        try:
+            with open(fpath) as f:
+                fcontent = f.read()
+                dataframe = pd.read_csv(fcontent)
+        # TODO: narrower exception catch
+        except Exception as err:
+            return self.format_embed_err(ERR_CODE_FILE_INVALID_CSV,
+                                         str(err))
+
+        embed_snippet = OrderedDict()
+        embed_snippet[KEY_SUCCESS] = True
+        embed_snippet[KEY_DATA] = dataframe
+
+        return embed_snippet
+
 
 
     def format_file_key(self, file_num):
@@ -297,8 +345,8 @@ class FileEmbedUtil(object):
     def get_embed_file_type_err_msg(self):
         """Get the error message that the file type isn't recognized"""
         return ("The file doesn't appear to be one"
-                " of these types: %s" %\
-                  ', '.join(EMBEDDABLE_FILE_TYPES))
+                " of these types: %s" % \
+                ', '.join(EMBEDDABLE_FILE_TYPES))
 
 
     def is_json_file_type(self, file_uri):

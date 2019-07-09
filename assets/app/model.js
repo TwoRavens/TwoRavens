@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import m from "mithril";
+import hopscotch from 'hopscotch';
 
 import * as app from "./app";
 import * as manipulate from "./manipulations/manipulate";
@@ -34,6 +35,13 @@ import {locationReload, setModal} from "../common/views/Modal";
 
 
 export class CanvasModel {
+    // onbeforeremove(vnode) {
+    //     vnode.dom.classList.add("exit-left");
+    //     return new Promise(function(resolve) {
+    //         vnode.dom.addEventListener("animationend", resolve)
+    //     })
+    // }
+
     view(vnode) {
         let {drawForceDiagram, forceData} = vnode.attrs;
         let selectedProblem = app.getSelectedProblem();
@@ -266,7 +274,7 @@ export let leftpanel = forceData => {
                         popup: x => m('div', m('h4', 'Summary Statistics for ' + x), m(Table, {attrsAll: {class: 'table-sm'}, data: formatVariableSummary(app.variableSummaries[x])})),
                         popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
                     }),
-                    m(Button, {
+                    !IS_D3M_DOMAIN && m(Button, {
                         id: 'btnCreateVariable',
                         style: {width: '100%', 'margin-top': '10px'},
                         onclick: async () => {
@@ -337,7 +345,7 @@ export let leftpanel = forceData => {
     ];
     sections.push({
         value: 'Discover',
-        attrsInterface: {class: app.buttonClasses.btnDiscover}, // passed into button
+        attrsInterface: {class: (!isDiscoveryClicked && !app.task1_finished) ? 'btn-success' : 'btn-secondary'}, // passed into button
         contents: [
             m('div#discoveryTablesContainer', {
                     style: {
@@ -384,6 +392,10 @@ export let leftpanel = forceData => {
                         id: 'discoveryTable' + partition,
                         headers: discoveryHeaders,
                         data: problemPartition[partition].map(formatProblem),
+                        rowClasses: {
+                            'discovery-table-highlight': selectedProblem.provenanceID
+                                ? [selectedProblem.provenanceID] : []
+                        },
                         onclick: problemID => {
 
                             let clickedProblem = problems[problemID];
@@ -567,6 +579,8 @@ export let rightpanel = () => {
     let ravenConfig = app.workspace.raven_config;
     let selectedProblem = app.getSelectedProblem();
 
+    let isLocked = app.isLocked(selectedProblem);
+
     if (!ravenConfig) return;
 
     // PROBLEM TAB
@@ -576,12 +590,13 @@ export let rightpanel = () => {
         contents: [
             m(Button, {
                 id: 'btnLock',
-                class: app.lockToggle ? 'active' : '',
-                onclick: () => app.setLockToggle(!app.lockToggle),
+                class: isLocked ? 'active' : '',
+                onclick: () => app.setLockToggle(!isLocked),
                 title: 'Lock selection of problem description',
                 style: 'right:2em;position:fixed;z-index:1000;margin:0.5em',
-            }, m(Icon, {name: app.lockToggle ? 'lock' : 'pencil'})),
-            m('', {style: 'float: left'},
+                disabled: selectedProblem.system === 'solved'
+            }, m(Icon, {name: isLocked ? 'lock' : 'pencil'})),
+            m('div#problemConfiguration', {onclick: () => isLocked && hopscotch.startTour(app.lockTour(selectedProblem)), style: 'float: left'},
                 m('label', 'Task Type'),
                 m(Dropdown, {
                     id: 'taskType',
@@ -589,7 +604,7 @@ export let rightpanel = () => {
                     activeItem: selectedProblem.task,
                     onclickChild: task => app.setTask(task, selectedProblem),
                     style: {'margin': '1em', 'margin-top': '0'},
-                    disabled: app.lockToggle
+                    disabled: isLocked
                 }),
                 Object.keys(app.applicableMetrics[selectedProblem.task]).length !== 1 && [
                     m('label', 'Task Subtype'),
@@ -599,7 +614,7 @@ export let rightpanel = () => {
                         activeItem: app.getSubtask(selectedProblem),
                         onclickChild: subTask => app.setSubTask(subTask, selectedProblem),
                         style: {'margin': '1em', 'margin-top': '0'},
-                        disabled: app.lockToggle
+                        disabled: isLocked
                     })
                 ],
                 m('label', 'Primary Performance Metric'),
@@ -610,7 +625,7 @@ export let rightpanel = () => {
                     activeItem: selectedProblem.metric,
                     onclickChild: metric => app.setMetric(metric, selectedProblem),
                     style: {'margin': '1em', 'margin-top': '0'},
-                    disabled: app.lockToggle
+                    disabled: isLocked
                 }),
 
                 app.applicableMetrics[selectedProblem.task][selectedProblem.subTask].length - 1 > selectedProblem.metrics.length && m(Dropdown, {
@@ -625,10 +640,10 @@ export let rightpanel = () => {
                         app.setSolverPending(true);
                     },
                     style: {'margin': '1em', 'margin-top': '0'},
-                    disabled: app.lockToggle
+                    disabled: isLocked
                 }),
                 selectedProblem.metrics.length > 0 && m('label', 'Secondary Performance Metrics'),
-                m(ListTags, {readonly: app.lockToggle, tags: selectedProblem.metrics, ondelete: metric => app.remove(selectedProblem.metrics, metric)}),
+                m(ListTags, {readonly: isLocked, tags: selectedProblem.metrics, ondelete: metric => app.remove(selectedProblem.metrics, metric)}),
                 m(Subpanel, {
                         header: 'Search Options',
                         defaultShown: false,
@@ -638,35 +653,35 @@ export let rightpanel = () => {
                     m(TextField, {
                         id: 'timeBoundOption',
                         value: selectedProblem.timeBound || '',
-                        disabled: app.lockToggle,
-                        oninput: !app.lockToggle && (value => selectedProblem.timeBound = value.replace(/[^\d.-]/g, '')),
-                        onblur: !app.lockToggle && (value => selectedProblem.timeBound = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
+                        disabled: isLocked,
+                        oninput: !isLocked && (value => selectedProblem.timeBound = value.replace(/[^\d.-]/g, '')),
+                        onblur: !isLocked && (value => selectedProblem.timeBound = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
                         style: {'margin-bottom': '1em'}
                     }),
                     m('label', 'Approximate time bound for predicting with a single pipeline, in minutes. Leave empty for unlimited time.'),
                     m(TextField, {
                         id: 'timeBoundPipelineOption',
-                        disabled: app.lockToggle,
+                        disabled: isLocked,
                         value: selectedProblem.timeBoundRun || '',
-                        oninput: !app.lockToggle && (value => selectedProblem.timeBoundRun = value.replace(/[^\d.-]/g, '')),
-                        onblur: !app.lockToggle && (value => selectedProblem.timeBoundRun = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
+                        oninput: !isLocked && (value => selectedProblem.timeBoundRun = value.replace(/[^\d.-]/g, '')),
+                        onblur: !isLocked && (value => selectedProblem.timeBoundRun = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
                         style: {'margin-bottom': '1em'}
                     }),
                     m('label', 'Priority'),
                     m(TextField, {
                         id: 'priorityOption',
-                        disabled: app.lockToggle,
+                        disabled: isLocked,
                         value: selectedProblem.priority || '',
-                        oninput: !app.lockToggle && (value => selectedProblem.priority = value.replace(/[^\d.-]/g, '')),
-                        onblur: !app.lockToggle && (value => selectedProblem.priority = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
+                        oninput: !isLocked && (value => selectedProblem.priority = value.replace(/[^\d.-]/g, '')),
+                        onblur: !isLocked && (value => selectedProblem.priority = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
                         style: {'margin-bottom': '1em'}
                     }),
                     m('label', 'Limit on number of solutions'),
                     m(TextField, {
                         id: 'solutionsLimitOption',
-                        disabled: app.lockToggle,
+                        disabled: isLocked,
                         value: selectedProblem.solutionsLimit || '',
-                        oninput: !app.lockToggle && (value => selectedProblem.solutionsLimit = Math.max(0, parseInt(value.replace(/\D/g,''))) || undefined),
+                        oninput: !isLocked && (value => selectedProblem.solutionsLimit = Math.max(0, parseInt(value.replace(/\D/g,''))) || undefined),
                         style: {'margin-bottom': '1em'}
                     })
                 ),
@@ -687,52 +702,52 @@ export let rightpanel = () => {
                             app.setSolverPending(true);
                         },
                         style: {'margin-bottom': '1em'},
-                        disabled: app.lockToggle
+                        disabled: isLocked
                     }),
                     selectedProblem.evaluationMethod === 'kFold' && [
                         m('label[style=margin-top:0.5em]', 'Number of Folds'),
                         m(TextField, {
                             id: 'foldsScoringOption',
-                            disabled: app.lockToggle,
+                            disabled: isLocked,
                             value: selectedProblem.folds || '',
-                            oninput: !app.lockToggle && (value => selectedProblem.folds = parseFloat(value.replace(/\D/g,'')) || undefined),
+                            oninput: !isLocked && (value => selectedProblem.folds = parseFloat(value.replace(/\D/g,'')) || undefined),
                             style: {'margin-bottom': '1em'}
                         }),
                         m('label', 'Stratified Folds'),
                         m(ButtonRadio, {
                             id: 'shuffleScoringOption',
                             onclick: value => {
-                                if (app.lockToggle) return;
+                                if (isLocked) return;
                                 selectedProblem.stratified = value === 'True';
                             },
                             activeSection: selectedProblem.stratified ? 'True' : 'False',
-                            sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: app.lockToggle}}))
+                            sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
                         }),
                     ],
                     selectedProblem.evaluationMethod === 'holdout' && [
                         m('label[style=margin-top:0.5em]', 'Train/Test Ratio'),
                         m(TextField, {
                             id: 'ratioOption',
-                            disabled: app.lockToggle,
+                            disabled: isLocked,
                             value: selectedProblem.trainTestRatio || 0,
-                            onblur: !app.lockToggle && (value => selectedProblem.trainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
+                            onblur: !isLocked && (value => selectedProblem.trainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
                             style: {'margin-bottom': '1em'}
                         })
                     ],
                     m('label[style=margin-top:0.5em]', 'Shuffle'),
                     m(ButtonRadio, {
                         id: 'shuffleScoringOption',
-                        onclick: !app.lockToggle && (value => selectedProblem.shuffle = value === 'True'),
+                        onclick: !isLocked && (value => selectedProblem.shuffle = value === 'True'),
                         activeSection: selectedProblem.shuffle ? 'True' : 'False',
-                        sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: app.lockToggle}}))
+                        sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
                     }),
                     selectedProblem.shuffle && [
                         m('label[style=margin-top:0.5em]', 'Shuffle random seed'),
                         m(TextField, {
                             id: 'shuffleSeedScoringOption',
-                            disabled: app.lockToggle,
+                            disabled: isLocked,
                             value: selectedProblem.shuffleRandomSeed || 0,
-                            oninput: !app.lockToggle && (value => selectedProblem.shuffleRandomSeed = parseFloat(value.replace(/\D/g,'')) || undefined),
+                            oninput: !isLocked && (value => selectedProblem.shuffleRandomSeed = parseFloat(value.replace(/\D/g,'')) || undefined),
                             style: {'margin-bottom': '1em'}
                         })
                     ],
@@ -815,7 +830,7 @@ export let rightpanel = () => {
 // allNodes.push() below establishes a field for the master node array allNodes called "nodeCol" and assigns a color from this scale to that field
 // everything there after should refer to the nodeCol and not the color scale, this enables us to update colors and pass the variable type to R based on its coloring
 export let colors = d3.scaleOrdinal(d3.schemeCategory20);
-
+let isDiscoveryClicked = false;
 
 const k_combinations = (list, k) => {
     if (k > list.length || k <= 0) return []; // no valid combinations of size k
@@ -1099,7 +1114,7 @@ export let mutateNodes = problem => (state, context) => {
         transformed: new Set(problem.tags.transformed),
         crossSection: new Set(problem.tags.crossSection),
         time: new Set(problem.tags.time),
-        nominal: new Set(app.getNominalVariables(problem)), // include both nominal-casted and string-type variables
+        nominal: new Set(app.getNominalVariables(problem)),
         weight: new Set(problem.tags.weights),
         targets: new Set(problem.targets),
         matched: new Set(matchedVariables),
@@ -1201,6 +1216,10 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                 name: 'Nom',
                 attrs: {fill: common.nomColor},
                 onclick: d => {
+                    if (app.variableSummaries[d].numchar === 'character') {
+                        app.alertLog(`Cannot convert column "${d}" to numeric, because the column is character-based.`);
+                        return;
+                    }
                     delete problem.unedited;
                     app.toggle(problem.tags.nominal, d);
                     forceDiagramState.setSelectedPebble(d);
