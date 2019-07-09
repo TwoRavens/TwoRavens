@@ -21,6 +21,7 @@ import * as model from './model';
 import * as manipulate from './manipulations/manipulate';
 import * as results from "./results";
 import * as explore from './explore';
+import {getSolutions} from "./results";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -118,10 +119,10 @@ export async function updatePeek(pipeline) {
     peekIsLoading = true;
     let variables = [];
 
-    if (is_model_mode){
-        let problem = getSelectedProblem();
+    let problem = getSelectedProblem();
+    if (is_model_mode)
         variables = [...getPredictorVariables(problem), ...problem.targets];
-    }
+
 
     let previewMenu = {
         type: 'menu',
@@ -130,10 +131,8 @@ export async function updatePeek(pipeline) {
             skip: peekSkip,
             limit: peekLimit,
             variables,
-            nominal: !is_manipulate_mode && variables
-                .map(variable => variableSummaries[variable])
-                .filter(node => node.nature === 'nominal')
-                .map(node => node.name)
+            nominal: !is_manipulate_mode && getNominalVariables(problem)
+                .filter(variable => variables.includes(variable))
         }
     };
 
@@ -217,6 +216,7 @@ export let task1_finished = false;
 export let task2_finished = false;
 export let setTask1_finished = state => task1_finished = state;
 export let setTask2_finished = state => task2_finished = state;
+export let isResultsClicked = false;
 
 export let problemDocExists = true;
 
@@ -315,7 +315,7 @@ export let buildProblemPreprocess = async (ravenConfig, problem) => await getDat
             type: 'menu',
             metadata: {
                 type: 'data',
-                nominal: problem.tags.nominal,
+                nominal: getNominalVariables(problem),
                 sample: 5000
             }
         }],
@@ -343,10 +343,8 @@ export async function buildDatasetUrl(problem) {
         metadata: {
             type: 'data',
             variables,
-            nominal: !is_manipulate_mode && variables
-                .map(variable => variableSummaries[variable])
-                .filter(node => node.nature === 'nominal')
-                .map(node => node.name)
+            nominal: !is_manipulate_mode && getNominalVariables(problem)
+                .filter(variable => variables.includes(variable))
         }
     };
 
@@ -374,10 +372,8 @@ export async function buildProblemUrl(problem) {
             metadata: {
                 type: 'data',
                 variables,
-                nominal: !is_manipulate_mode && variables
-                    .map(variable => variableSummaries[variable])
-                    .filter(node => node.nature === 'nominal')
-                    .map(node => node.name)
+                nominal: !is_manipulate_mode && getNominalVariables(problem)
+                    .filter(variable => variables.includes(variable))
             }
         }
     ];
@@ -485,7 +481,7 @@ export let setLeftTab = (tab) => {
 export let setLeftTabHidden = tab => {
     if (tab === 'Summary' || !tab) return;
     leftTabHidden = tab;
-}
+};
 
 export let panelWidth = {
     'left': '0',
@@ -600,7 +596,12 @@ streamSocket.onclose = function(e) {
 
 // when set, a problem's Task, Subtask and Metric may not be edited
 export let lockToggle = true;
-export let setLockToggle = state => lockToggle = state;
+export let setLockToggle = state => {
+    let selectedProblem = getSelectedProblem();
+    if (state && selectedProblem.system === 'solved') hopscotch.startTour(lockTour(selectedProblem));
+    else lockToggle = state;
+};
+export let isLocked = problem => lockToggle || problem.system === 'solved';
 
 export let priv = true;
 
@@ -733,7 +734,9 @@ export let d3mEvaluationMethods = {
 };
 
 export let supportedTasks = [
-    'classification', 'regression', 'timeSeriesForecasting', 'semisupervisedClassification', 'semisupervisedRegression'
+    'classification', 'regression',
+    'timeSeriesForecasting',
+    'semisupervisedClassification', 'semisupervisedRegression'
 ];
 
 export let applicableMetrics = {
@@ -855,15 +858,17 @@ export let mytour3 = {
 };
 
 // appears when a user attempts to edit when the toggle is set
-export let lockTour = {
+export let lockTour = problem => ({
     id: "lock_toggle",
     i18n: {doneBtn:'Ok'},
     showCloseButton: true,
     scrollDuration: 300,
     steps: [
-        step("btnLock", "left", "Locked Mode", `<p>Click the lock button to enable editing.</p>`)
+        step("btnLock", "left", "Locked Mode", problem.system === 'solved'
+            ? `<p>This problem cannot be edited, because it already has solutions.</p>`
+            : `<p>Click the lock button to enable editing.</p>`)
     ]
-};
+});
 
 /**
  1. Load datasetDoc
@@ -1116,7 +1121,7 @@ export let loadWorkspace = async newWorkspace => {
     if(typeof problemDoc.success === 'undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
         // This is a Task 2 assignment
         // console.log("DID WE GET HERE?");
-        task1_finished = true;
+        setTask1_finished(true);
         buttonClasses.btnDiscover = 'btn-success';
         buttonClasses.btnSubmitDisc = 'btn-success';
         buttonClasses.btnEstimate = 'btn-success';
@@ -1191,7 +1196,8 @@ export let loadWorkspace = async newWorkspace => {
                 weights: [], // singleton list
                 crossSection: [],
                 time: [],
-                nominal: [],
+                nominal: Object.keys(variableSummaries)
+                    .filter(variable => variableSummaries[variable].nature === 'nominal'),
                 loose: [] // variables displayed in the force diagram, but not in any groups
             }
         };
@@ -1292,23 +1298,23 @@ export async function load() {
 
     let problemDoc = await makeRequest(D3M_SVC_URL + '/Hello', {});
     if (problemDoc) {
-      console.log(problemDoc)
-      if (problemDoc.success !== true){
-        const user_err_msg = "Failed to make Hello connection with TA2! status code: " + problemDoc.message;
-        setModal(user_err_msg, "Error Connecting to TA2", true, "Reset", false, locationReload);
-        return;
-      } else {
+        setTask1_finished(true);
+        if (problemDoc.success !== true) {
+            const user_err_msg = "Failed to make Hello connection with TA2! status code: " + problemDoc.message;
+            setModal(user_err_msg, "Error Connecting to TA2", true, "Reset", false, locationReload);
+            return;
+        } else {
 
             // ----------------------------------------------
             // Format and show the TA2 name in the footer
             // ----------------------------------------------
             let ta2Version;
-            if(typeof problemDoc.data.version !== 'undefined'){
-              ta2Version = problemDoc.data.version;
+            if (typeof problemDoc.data.version !== 'undefined') {
+                ta2Version = problemDoc.data.version;
             }
             let ta2Name = problemDoc.data.userAgent;
-            if (ta2Version){
-              ta2Name += ' (API: ' + ta2Version + ')';
+            if (ta2Version) {
+                ta2Name += ' (API: ' + ta2Version + ')';
             }
             setTA2ServerInfo(ta2Name);
             // $('#ta2-server-name').html('TA2: ' + ta2Name);
@@ -1440,6 +1446,7 @@ export function downloadIncomplete() {
     called by switching to results mode
 */
 export async function estimate() {
+    isResultsClicked = true;
 
     let selectedProblem = getSelectedProblem();
 
@@ -1479,7 +1486,7 @@ export async function estimate() {
                 metadata: {
                     type: 'data',
                     variables: ['d3mIndex', ...selectedProblem.targets],
-                    sample: 1000
+                    sample: results.recordLimit
                 }
             }],
             workspace.raven_config.variablesInitial)['pipeline'])
@@ -1754,7 +1761,8 @@ export function discovery(problems) {
                 weights: [], // singleton list
                 crossSection: [],
                 time: [],
-                nominal: [],
+                nominal: Object.keys(variableSummaries)
+                    .filter(variable => variableSummaries[variable].nature === 'nominal'),
                 loose: [] // variables displayed in the force diagram, but not in any groups
             },
             summaries: {} // this gets populated below
@@ -2076,9 +2084,11 @@ export let getPredictorVariables = problem => {
 export let getNominalVariables = problem => {
     let selectedProblem = problem || getSelectedProblem();
     return [...new Set([
-        ...Object.keys(variableSummaries).filter(variable => variableSummaries[variable].nature === 'nominal'),
-        ...selectedProblem.tags.nominal])
-    ];
+        ...selectedProblem.tags.nominal,
+        // targets in a classification problem are also nominal
+        ...['classification', 'semisupervisedClassification'].includes(selectedProblem.task)
+            ? selectedProblem.targets : []
+    ])];
 };
 
 export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {

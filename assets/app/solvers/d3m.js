@@ -2,8 +2,9 @@ import m from "mithril";
 
 import * as app from '../app.js';
 import * as results from "../results";
+import * as queryMongo from '../manipulations/queryMongo';
 
-import {alertError, alertWarn, debugLog} from "../app";
+import {alertError, alertWarn, buildDatasetUrl, debugLog} from "../app";
 
 import {locationReload, setModal} from "../../common/views/Modal";
 
@@ -668,11 +669,36 @@ export async function handleGetProduceSolutionResultsResponse(response) {
     }
 
     let data_pointer = Object.values(response.response.exposedOutputs)[0].csvUri;
-    let responseOutputData = await app.makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer});
 
-    // TODO: this is only index zero if there is one target
-    solvedProblem.solutions.d3m[response.pipelineId].predictedValues = responseOutputData.data
-        .reduce((out, point) => Object.assign(out, {[point['']]: parseFloat(point['0']) || point['0']}), {});
+    let reducedProblem = Object.assign({}, solvedProblem);
+    delete reducedProblem.solutions;
+
+    // TODO: check if String cast necessary
+    let d3mIndices = solvedProblem.actualValues.map(point => String(point.d3mIndex));
+    app.makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer, indices: d3mIndices})
+        .then(responseOutputData =>
+            // TODO: this is only index zero if there is one target
+            // TODO: multilabel problems will have d3mIndex collisions
+            solvedProblem.solutions.d3m[response.pipelineId].predictedValues = responseOutputData.data
+                .reduce((out, point) => Object.assign(out, {[point['']]: parseFloat(point['0']) || point['0']}), {}));
+
+    // let problemMetadata = {
+    //     dataset: app.workspace.d3m_config.name,
+    //     task: solvedProblem.task,
+    //     subTask: solvedProblem.subTask,
+    //     predictors: solvedProblem.predictors,
+    //     targets: solvedProblem.targets,
+    //     nominal: app.getNominalVariables(solvedProblem),
+    //     summaries: app.variableSummaries,
+    //     manipulations: queryMongo.buildPipeline([
+    //         ...solvedProblem.hardManipulations,
+    //         ...solvedProblem.manipulations
+    //     ]).pipeline
+    // };
+    //
+    // app.makeRequest(D3M_SVC_URL + `/retrieve-output-statistics`, {data_pointer, metadata: problemMetadata})
+    //     .then(responseStatistics =>
+    //         solvedProblem.solutions.d3m[response.pipelineId].statistics = responseStatistics.data)
 }
 
 export async function handleENDGetSearchSolutionsResults() {

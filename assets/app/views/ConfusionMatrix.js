@@ -24,12 +24,26 @@ export default class ConfusionMatrix {
         (vnode.attrs.id !== this.id || !this.classes || vnode.attrs.classes.length !== this.classes.size ||
          !vnode.attrs.classes.every(clss => this.classes.has(clss))) && this.plot(vnode)
 
+        let {width, height} = vnode.dom.getBoundingClientRect();
+        if (this.width !== width) {
+            this.width = width;
+            this.height = height;
+            this.plot(vnode);
+        }
+        if (this.height !== height) {
+            this.width = width;
+            this.height = height;
+            this.plot(vnode);
+        }
         // this is more aggressive about updates, but O(n^2) in a hot code path
         // (!this.data || this.data.length === vnode.attrs.data.length &&
         //  vnode.attrs.data.some((row, i) => row.some((cell, j) => cell !== this.data[i][j]))) && this.plot(vnode)
     }
 
     oncreate(vnode) {
+        let {width, height} = vnode.dom.getBoundingClientRect();
+        this.width = width;
+        this.height = height;
         this.plot(vnode)
     }
 
@@ -65,9 +79,10 @@ export default class ConfusionMatrix {
         let heightLabels = 15 + 7 * longestLabel * .86602; // # of pixels the column labels need
 
         // set the dimensions and margins of the graph
-        let bound = vnode.dom.getBoundingClientRect();
-        let width = bound.width - widthLegend - 20;
-        let height = bound.height;
+        let width = this.width - widthLegend - 20;
+        let height = this.height;
+
+        if (width < 0 || height < 0) return;
 
         let numrows = data.length;
         let numcols = data[0].length;
@@ -176,9 +191,8 @@ export default class ConfusionMatrix {
                 .attr("x", x.bandwidth() / 2)
                 .attr("y", y.bandwidth() / 2)
                 .attr("text-anchor", "middle")
-                .style("fill", function (d) {
-                    return d >= maxValue / 2 ? 'white' : 'black';
-                })
+                .attr("font-size", Math.round(46/Math.sqrt(numcols+1)))  // ramps from 27pt to 10pt font
+                .style("fill", d => d >= maxValue / 2 ? 'white' : 'black')
                 .text(d => d);
         }
 
@@ -211,6 +225,7 @@ export default class ConfusionMatrix {
         columnLabels.append("text")
             .attr("x", x.bandwidth() / 2)
             .attr("y", -10)
+            .attr("font-size", Math.max(10,Math.round(46/Math.sqrt(numcols+1))))
             //.attr("dy", "0.5em")
             .attr("text-anchor", "start")
             .attr("transform", "rotate(60," + x.bandwidth() / 2 + ",-10)")
@@ -235,6 +250,7 @@ export default class ConfusionMatrix {
         rowLabels.append("text")
             .attr("x", -8)
             .attr("y", y.bandwidth() / 2)
+            .attr("font-size", Math.max(10,Math.round(46/Math.sqrt(numcols+1))))
             .attr("dy", ".32em")
             .attr("text-anchor", "end")
             .text(function (d) {

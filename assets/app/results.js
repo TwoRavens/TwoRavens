@@ -23,6 +23,7 @@ import ConfusionMatrix from "./views/ConfusionMatrix";
 import Flowchart from "./views/Flowchart";
 import {omniSort} from "./app";
 
+export let recordLimit = 1000;
 
 export let leftpanel = () => {
 
@@ -197,32 +198,46 @@ export class CanvasSolutions {
                 .filter(instance => 'data' in instance)
                 .sort((a, b) => sortPipelineTable(a.score, b.score));
 
-            return confusionData.map((confusionInstance, i) => [
-                i === 0 && m('div[style=margin-top:.5em]',
+            // prevent invalid confusion matrix selections
+            if (this.confusionMatrixSolution === undefined || !confusionData.find(data => data.name === this.confusionMatrixSolution))
+                this.confusionMatrixSolution = (confusionData[0] || {}).name;
+
+            return [
+                confusionData.length > 0 && m('div[style=margin-bottom:1em]',
                     m('label#confusionFactorLabel', 'Confusion Matrix Factor: '),
                     m('[style=display:inline-block]', m(Dropdown, {
                         id: 'confusionFactorDropdown',
-                        items: ['undefined', ...confusionInstance.allClasses],
+                        items: ['undefined', ...confusionData[0].allClasses],
                         activeItem: this.confusionFactor,
                         onclickChild: setConfusionFactor,
                         style: {'margin-left': '1em'}
                     }))),
-                confusionInstance.data.length === 2 && m(Table, {
-                    id: 'resultsPerformanceTable',
-                    headers: ['metric', 'score'],
-                    data: generatePerformanceData(confusionInstance.data),
-                    attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
-                }),
-                confusionInstance.data.length < 100 ? m('div', {
-                    style: {'min-height': '500px'}
-                }, m(ConfusionMatrix, Object.assign({}, confusionInstance, {
-                    id: 'resultsConfusionMatrixContainer' + confusionInstance.name,
-                    title: `Confusion Matrix: Solution ${confusionInstance.name} for ${problem.targets.join(', ')}`,
-                    startColor: '#ffffff', endColor: '#e67e22',
-                    margin: {left: 10, right: 10, top: 50, bottom: 10},
-                    attrsAll: {style: {height: '600px'}}
-                }))) : 'Too many classes for confusion matrix!'
-            ])
+                m(MenuTabbed, {
+                    id: 'confusionMenu',
+                    currentTab: this.confusionMatrixSolution,
+                    callback: solutionId => this.confusionMatrixSolution = solutionId,
+                    sections: confusionData.map(confusionInstance => ({
+                        value: confusionInstance.name,
+                        contents: [
+                            confusionInstance.data.length === 2 && m(Table, {
+                                id: 'resultsPerformanceTable',
+                                headers: ['metric', 'score'],
+                                data: generatePerformanceData(confusionInstance.data),
+                                attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
+                            }),
+                            confusionInstance.data.length < 100 ? m('div', {
+                                style: {'min-height': '500px', 'min-width': '500px'}
+                            }, m(ConfusionMatrix, Object.assign({}, confusionInstance, {
+                                id: 'resultsConfusionMatrixContainer' + confusionInstance.name,
+                                title: `Confusion Matrix: Solution ${confusionInstance.name} for ${problem.targets[0]}`,
+                                startColor: '#ffffff', endColor: '#e67e22',
+                                margin: {left: 10, right: 10, top: 50, bottom: 10},
+                                attrsAll: {style: {height: '600px'}}
+                            }))) : 'Too many classes for confusion matrix!'
+                        ]
+                    }))
+                })
+            ]
         }
     };
 
@@ -532,7 +547,10 @@ export let selectedMetric = {
 };
 
 // array of metrics to sort low to high
-export let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSquaredErrorAvg", "meanAbsoluteError"];
+export let reverseSet = [
+    "accuracy", "precision", "recall",
+    "meanSquaredError", "rootMeanSquaredError", "meanAbsoluteError"
+];
 
 /**
  Sort the Pipeline table, putting the best score at the top
@@ -639,12 +657,24 @@ export function generateConfusionData(Y_true, Y_pred, factor = undefined) {
     let indexOf = classes.reduce((out, clss, i) => {
         out[clss] = i;
         return out
-    }, {})
+    }, {});
     // increment the data matrix at the class coordinates of true and pred
     Y_true.forEach((_, i) => data[indexOf[Y_true[i]]][indexOf[Y_pred[i]]]++);
 
     return {data, classes, allClasses};
 }
+
+export let confusionMatrixFactor = (matrix, labels, factor) => {
+    let collapsed = [[0, 0], [0, 0]];
+    labels.forEach((xLabel, x) => labels.forEach((yLabel, y) =>
+        collapsed[xLabel === factor ? 0 : 1][yLabel === factor ? 0 : 1] += matrix[x][y]
+    ));
+
+    return {
+        matrix: collapsed,
+        labels: [factor, 'not ' + factor]
+    }
+};
 
 /* generate an object containing accuracy, recall, precision, F1, given a 2x2 confusion data matrix */
 export function generatePerformanceData(confusionData2x2) {

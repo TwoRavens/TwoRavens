@@ -9,8 +9,10 @@ from django.conf import settings
 from django.http import JsonResponse    #, HttpResponse, Http404
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
+
+from tworaven_apps.ta2_interfaces.util_results_statistics import FileStatisticsUtil
 from tworaven_apps.ta2_interfaces.grpc_util import TA3TA2Util
-from tworaven_apps.ta2_interfaces.static_vals import KEY_DATA_POINTER
+from tworaven_apps.ta2_interfaces.static_vals import KEY_DATA_POINTER, KEY_INDICES
 from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
 from tworaven_apps.ta2_interfaces.util_pipeline_check import PipelineInfoUtil
 from tworaven_apps.utils.view_helper import \
@@ -38,6 +40,32 @@ def view_get_problem_schema(request):
 
 @csrf_exempt
 def view_retrieve_d3m_output_data(request):
+    """Expects a JSON request containing "data_pointer", and optionally indices
+    For example: { "data_pointer": "file:///output/predictions/0001.csv", "indices": [1,2,3,10]}
+    """
+    req_body_info = get_request_body_as_json(request)
+    if not req_body_info.success:
+        return JsonResponse(get_json_error(req_body_info.err_msg))
+
+    req_info = req_body_info.result_obj
+    if not KEY_DATA_POINTER in req_info:
+        user_msg = ('No key found: "%s"' % KEY_DATA_POINTER)
+        return JsonResponse(get_json_error(user_msg))
+
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    embed_util = FileEmbedUtil(req_info[KEY_DATA_POINTER],
+                               indices=req_info[KEY_INDICES] if KEY_INDICES in req_info else None,
+                               user=user_info.result_obj)
+    if embed_util.has_error:
+        return JsonResponse(get_json_error(embed_util.error_message))
+
+    return JsonResponse(embed_util.get_final_results())
+
+@csrf_exempt
+def view_retrieve_d3m_statistics_data(request):
     """Expects a JSON request containing "data_pointer"
     For example: { "data_pointer": "file:///output/predictions/0001.csv"}
     """
@@ -54,13 +82,13 @@ def view_retrieve_d3m_output_data(request):
     if not user_info.success:
         return JsonResponse(get_json_error(user_info.err_msg))
 
-    embed_util = FileEmbedUtil(req_info[KEY_DATA_POINTER],
-                               user=user_info.result_obj)
-    if embed_util.has_error:
-        return JsonResponse(get_json_error(embed_util.error_message))
+    statistics_util = FileStatisticsUtil(req_info[KEY_DATA_POINTER],
+                                         metadata=req_info['metadata'],
+                                         user=user_info.result_obj)
+    if statistics_util.has_error:
+        return JsonResponse(get_json_error(statistics_util.error_message))
 
-    return JsonResponse(embed_util.get_final_results())
-
+    return JsonResponse(statistics_util.get_final_results())
 
 def view_show_pipeline_steps(request):
     """If any are available, lists the pipeline steps in StoredResponse objects"""
