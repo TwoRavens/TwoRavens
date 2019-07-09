@@ -191,6 +191,7 @@ export default class ConfusionMatrix {
                 .attr("x", x.bandwidth() / 2)
                 .attr("y", y.bandwidth() / 2)
                 .attr("text-anchor", "middle")
+                .attr("font-size", Math.round(46/Math.sqrt(numcols+1)))  // ramps from 27pt to 10pt font
                 .style("fill", d => d >= maxValue / 2 ? 'white' : 'black')
                 .text(d => d);
         }
@@ -224,6 +225,7 @@ export default class ConfusionMatrix {
         columnLabels.append("text")
             .attr("x", x.bandwidth() / 2)
             .attr("y", -10)
+            .attr("font-size", Math.max(10,Math.round(46/Math.sqrt(numcols+1))))
             //.attr("dy", "0.5em")
             .attr("text-anchor", "start")
             .attr("transform", "rotate(60," + x.bandwidth() / 2 + ",-10)")
@@ -248,6 +250,7 @@ export default class ConfusionMatrix {
         rowLabels.append("text")
             .attr("x", -8)
             .attr("y", y.bandwidth() / 2)
+            .attr("font-size", Math.max(10,Math.round(46/Math.sqrt(numcols+1))))
             .attr("dy", ".32em")
             .attr("text-anchor", "end")
             .text(function (d) {
