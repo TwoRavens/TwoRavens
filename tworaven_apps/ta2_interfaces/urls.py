@@ -33,6 +33,10 @@ urlpatterns = (
          views_additional.view_retrieve_d3m_output_data,
          name='view_retrieve_d3m_output_data'),
 
+    path(r'retrieve-output-statistics',
+         views_additional.view_retrieve_d3m_statistics_data,
+         name='view_retrieve_d3m_statistics_data'),
+
     re_path((r'stored-request/(?P<hash_id>[\w]{40,200})$'),
             views_saved_requests.view_stored_request,
             name='view_stored_request'),

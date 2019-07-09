@@ -29,7 +29,6 @@ import ModalVanilla from "../common/views/ModalVanilla";
 import Peek from '../common/views/Peek';
 import Table from '../common/views/Table';
 import TextField from '../common/views/TextField';
-import Canvas from "../common/views/Canvas";
 import Popper from '../common/views/Popper';
 import Datamart, {ModalDatamart} from "./datamart/Datamart";
 
@@ -49,6 +48,10 @@ class Body {
     oninit() {
         app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
         app.set_mode('model');
+    }
+
+    onupdate(vnode) {
+        this.previousMode = vnode.attrs.mode;
     }
 
     oncreate() {
@@ -117,10 +120,12 @@ class Body {
                         'background-color': app.swandive ? 'grey' : 'transparent'
                     }
                 },
-                m(Canvas,
-                    app.is_results_mode && m(results.CanvasSolutions, {problem: resultsProblem}),
-                    app.is_explore_mode && m(explore.CanvasExplore, {variables: exploreVariables, variate}),
-                    app.is_model_mode && m(model.CanvasModel, {drawForceDiagram, forceData}))
+
+                m('div', {style: {width: '100%', height: '100%', position: 'relative'}},
+                    app.is_results_mode && m(MainCarousel, {previousMode: this.previousMode}, m(results.CanvasSolutions, {problem: resultsProblem})),
+                    app.is_explore_mode && m(MainCarousel, {previousMode: this.previousMode}, m(explore.CanvasExplore, {variables: exploreVariables, variate})),
+                    app.is_model_mode && m(MainCarousel, {previousMode: this.previousMode}, m(model.CanvasModel, {drawForceDiagram, forceData}))
+                )
             )
         );
     }
@@ -209,7 +214,11 @@ class Body {
                     style: {width: "auto"}},
                 onclick: app.set_mode,
                 activeSection: app.currentMode || 'model',
-                sections: ['Model', 'Explore', 'Results'].map(mode => ({value: mode})), // mode 'Manipulate' diabled
+                sections: [
+                    {value: 'Model'},
+                    {value: 'Explore'},
+                    {value: 'Results', attrsInterface: {class: (!app.isResultsClicked && app.task1_finished && !app.task2_finished) ? 'btn-success' : 'btn-secondary'}}
+                ], // mode 'Manipulate' diabled
 
                 // attrsButtons: {class: ['btn-sm']}, // if you'd like small buttons (btn-sm should be applied to individual buttons, not the entire component)
                 // attrsButtons: {style: {width: 'auto'}}
@@ -754,6 +763,38 @@ class Body {
             ...app.workspace.raven_config.hardManipulations,
             ...(app.is_model_mode ? selectedProblem.manipulations : [])
         ])  // the identifier for which pipeline to edit
+    }
+}
+
+
+class MainCarousel {
+    oninit(){
+        this.modeOrder = ['model', 'explore', 'results']
+    }
+    // NOTE: onbeforeremove must be leaky, because the state is not updated before passing
+    onbeforeremove(vnode) {
+        vnode.dom.classList.add(
+            this.modeOrder.indexOf(vnode.attrs.previousMode) < this.modeOrder.indexOf(app.currentMode)
+                ? 'exit-left' : 'exit-right');
+        return new Promise(function (resolve) {
+            vnode.dom.addEventListener("animationend", resolve)
+        })
+    }
+    oncreate(vnode) {
+        vnode.dom.classList.add(
+            this.modeOrder.indexOf(vnode.attrs.previousMode) < this.modeOrder.indexOf(app.currentMode)
+                ? 'enter-right' : 'enter-left');
+    }
+    view(vnode) {
+        return m('div', {
+            style: {
+                position: 'absolute',
+                width: '100%',
+                height: '100%',
+                'padding-left': common.panelOcclusion['left'],
+                'padding-right': common.panelOcclusion['right'],
+                overflow: 'auto'
+            }}, vnode.children)
     }
 }
 

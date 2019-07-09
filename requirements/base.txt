@@ -31,7 +31,7 @@ redis==3.2.0
 # for nist k8s templates
 Jinja2==2.10.1
 
-# for eventdata
+# for eventdata and d3m results joins
 #
 pandas==0.23.4
 
