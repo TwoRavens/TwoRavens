@@ -177,6 +177,31 @@ text.id {
     overflow: auto;
 }
 
+.enter-left {animation:enter-left-def 0.5s;overflow-x: hidden}
+@keyframes enter-left-def {
+    from {transform: translateX(-100%);}
+    to {transform: translateX(0%);}
+}
+.enter-right {animation:enter-right-def 0.5s;overflow-x: hidden}
+@keyframes enter-right-def {
+    from {transform: translateX(100%);}
+    to {transform: translateX(0%);}
+}
+.exit-left {animation:exit-left-def 0.5s;}
+@keyframes exit-left-def {
+    from {transform: translateX(0%);}
+    to {transform: translateX(-100%);}
+}
+.exit-right {animation:exit-right-def 0.5s;}
+@keyframes exit-right-def {
+    from {transform: translateX(0%);}
+    to {transform: translateX(100%);}
+}
+
+.discovery-table-highlight {
+    box-shadow: 0px 5px 5px rgba(0,0,0,.1);
+    outline: 1px solid #fa8072 !important;
+}
 #ticker {
     position: fixed;
     height: 40px;
