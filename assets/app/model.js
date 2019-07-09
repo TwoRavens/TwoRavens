@@ -764,6 +764,14 @@ export let rightpanel = () => {
             id: 'aggregateMenu',
             attrsAll: {style: {height: '100%', overflow: 'auto'}},
             sections: [
+                (ravenConfig.priorManipulations || []).length !== 0 && {
+                    value: 'Prior Pipeline',
+                    contents: m(manipulate.PipelineFlowchart, {
+                        compoundPipeline: ravenConfig.priorManipulations,
+                        pipeline: ravenConfig.priorManipulations,
+                        editable: false
+                    })
+                },
                 ravenConfig.hardManipulations.length !== 0 && {
                     value: 'Dataset Pipeline',
                     contents: m(manipulate.PipelineFlowchart, {
