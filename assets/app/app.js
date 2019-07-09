@@ -1535,7 +1535,6 @@ export async function estimate() {
     m.redraw()
     
     ///////////////////////////////////////
-    // VJD: I don't know if the call to rook belongs here, or it should be a separate function that is called when switching to results mode, as estimate() is called.
     
     // using selectedProblem here, because this is the initial call. will have to use resultsProblem later
     selectedProblem = getSelectedProblem();

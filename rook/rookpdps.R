@@ -28,11 +28,17 @@ is_binary <- function(v) {
 }
 
 
-# function to make the data
-makeData <- function(d){
+# function to make the data for a predictor p
+makeData <- function(d, p){
     print('>>> makeData 1')
 
-    n <- nrow(d)
+    myu <- unique(d[,p])
+    myu <- myu[order(myu)]
+
+    for(i in 1:length(myu)) {
+        temp <- d[which(d[,p]==myu[i]),]
+        
+    }
 
     out <- list(data=d)
     return(out)
