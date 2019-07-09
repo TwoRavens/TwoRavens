@@ -114,13 +114,13 @@ class NewDatasetUtil(BasicErrCheck):
     def create_dataset_id(old_id=None):
         """Construct an updated Dataset id"""
         if old_id:
-            return '%s-augmented-%s' % (old_id,
-                                        get_alpha_string(6))
+            return '%s-aug-%s' % (old_id,
+                                  get_alpha_string(6))
             #return '%s-%s-%s' % (old_id,
             #                     get_timestamp_string(no_breaks=True),
             #s                     get_alpha_string(6))
 
-        return 'augmented-%s' % (get_alpha_string(6),)
+        return 'aug-%s' % (get_alpha_string(6),)
                                  #get_timestamp_string(no_breaks=True))
 
 
@@ -574,7 +574,8 @@ class NewDatasetUtil(BasicErrCheck):
 
         new_pdoc['about']['taskType'] = self.rook_params['taskType']
 
-        new_pdoc['about']['taskSubType'] = self.rook_params['taskSubType']
+        if 'taskSubType' in new_pdoc['about']:
+            new_pdoc['about']['taskSubType'] = self.rook_params['taskSubType']
 
         # May be incorrect, the column order may not have been kept
         #
@@ -604,7 +605,7 @@ class NewDatasetUtil(BasicErrCheck):
 
         return True
 
-    def xcreate_problem_data_docs(self):
+    def create_problem_data_docs(self):
         """Send params to rook app"""
         if self.has_error():
             return False
