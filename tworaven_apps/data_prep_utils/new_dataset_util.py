@@ -114,6 +114,11 @@ class NewDatasetUtil(BasicErrCheck):
     def create_dataset_id(old_id=None):
         """Construct an updated Dataset id"""
         if old_id:
+            aug_idx = old_id.find('-aug-')
+            if aug_idx > 1:
+                # to stop appending multiple '-aug-rndchr' strings
+                old_id = old_id[:aug_idx]
+
             return '%s-aug-%s' % (old_id,
                                   get_alpha_string(6))
             #return '%s-%s-%s' % (old_id,
