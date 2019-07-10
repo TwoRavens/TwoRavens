@@ -20,9 +20,10 @@ LOGGER = logging.getLogger(__name__)
 class DuplicateColumnRemover(BasicErrCheck):
     """remove duplicate columns"""
 
-    def __init__(self, source_path):
+    def __init__(self, source_path, rewrite=False):
         """Remove duplicate column names from a file"""
         self.source_path = source_path
+        self.rewrite = rewrite
 
         self.orig_column_names = None
         self.csv_dialect = None
@@ -51,7 +52,7 @@ class DuplicateColumnRemover(BasicErrCheck):
         if not self.format_column_names():
             return
 
-        if self.column_change_needed is True:
+        if self.rewrite and self.column_change_needed is True:
             self.rewrite_file_header()
 
     def format_column_names(self):

@@ -2,11 +2,11 @@ import os
 import csv
 import json
 import logging
-import shutil
 
 from django.conf import settings
 from collections import OrderedDict
 
+from tworaven_apps.data_prep_utils.duplicate_column_remover import DuplicateColumnRemover
 from tworaven_apps.utils.view_helper import get_json_error
 from tworaven_apps.utils.mongo_util import infer_type, encode_variable
 from tworaven_apps.utils.basic_response import (ok_resp,
@@ -508,9 +508,16 @@ class EventJobUtil(object):
         if not os.path.exists(datafile):
             return err_resp(collection + ' not found')
 
+        dcr = DuplicateColumnRemover(datafile)
+
         with open(datafile, 'r') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
-            columns = [encode_variable(value) for value in next(csv_reader)]
+
+            # discard header
+            next(csv_reader)
+
+            # use duplicate column name removal headers instead
+            columns = [encode_variable(value) for value in dcr.updated_columns]
             for observation in csv_reader:
                 db[settings.MONGO_COLLECTION_PREFIX + collection].insert_one({
                     col: infer_type(val) for col, val in zip(columns, observation)
