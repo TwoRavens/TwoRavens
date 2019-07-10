@@ -617,7 +617,7 @@ export class ModalDatamart {
             dataPath, // where to load data from, to augment with
         } = vnode.attrs;
 
-        console.log('dataPath view 1: '+ dataPath);
+        // console.log('dataPath view 1: '+ dataPath);
 
         let {
             cached, // summary info and paths related to materialized datasets
@@ -774,7 +774,7 @@ export class ModalDatamart {
                             });
 
                             // console.warn("#debug implicitVariables");
-                            console.log('dataPath view 1: '+ dataPath);
+                            // console.log('dataPath view 1: '+ dataPath);
                             let augment_api_data = {
                                 data_path: dataPath,
                                 search_result: JSON.stringify(preferences.selectedResult),

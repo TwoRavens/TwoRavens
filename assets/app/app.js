@@ -2008,11 +2008,8 @@ export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
       // attach the existing dataseDoc
       workspace.datasetDoc = currentDatasetDoc;
 
-      console.log('save_result.data: ' + JSON.stringify(save_result.data));
 
       setDatasetUrl().then((urlAvailable) => {
-        console.log('urlAvailable: ' + urlAvailable);
-        console.log('workspace.datasetUrl: ' + workspace.datasetUrl);
 
         if (!urlAvailable){
             // shouldn't reach here, setDatasetUrl adds failure modal
@@ -2021,11 +2018,8 @@ export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
             setDisplayCloseButtonRow(true);
 
         } else {
-            console.log('new save message 1');
             setNewWorkspaceMessageSuccess('The new workspace has been saved!');
             setDisplayCloseButtonRow(true);
-            console.log('new save message 2');
-
         }
         m.redraw();
       })
