@@ -20,23 +20,19 @@ send <- function(res) {
     response$finish()
 }
 
-
-#  to check if the variable is binary
-is_binary <- function(v) {
-    x <- unique(v)
-    length(x) - sum(is.na(x)) == 2L
-}
-
-
-# function to make the data for a predictor p
-makeData <- function(d, p){
+# function to make the data for a predictor p, od for outputDirectory
+makeData <- function(d, p, od){
     print('>>> makeData 1')
     print(p)
 
     # the cutoff at which to sample
     cutoff <- 10000
     
+    pdpindex <- vector(length=0, mode="character")
+    iceindex <- vector(length=0, mode="numeric")
+    
     myu <- unique(d[,p])
+    myu <- myu[!is.na(myu)]
     myu <- myu[order(myu)]
     newdata <- d[0,]
     
@@ -47,6 +43,9 @@ makeData <- function(d, p){
             temp <- d
             temp[,p] <- myu[i]
             newdata <- rbind(newdata,temp)
+            tempindex <- as.character(myu[i])
+            pdpindex <- c(pdpindex, rep(tempindex, nrow(temp)))
+            iceindex <- c(iceindex, 1:nrow(temp))
         }
     } else {
         prob <- cutoff/datasize
@@ -58,10 +57,20 @@ makeData <- function(d, p){
             temp <- newd
             temp[,p] <- myu[i]
             newdata <- rbind(newdata,temp)
+            tempindex <- as.character(myu[i])
+            pdpindex <- c(pdpindex, rep(tempindex, nrow(temp)))
+            iceindex <- c(iceindex, 1:nrow(temp))
         }
     }
-
-    out <- list(data=newdata)
+    
+    datafile <- paste(od, "data.csv", sep="")
+    pdpfile <- paste(od, "pdpindex.csv", sep="")
+    icefile <- paste(od, "iceindex.csv", sep="")
+    write.csv(newdata, datafile)
+    write.table(pdpindex, pdpfile, row.names=FALSE, col.names=FALSE)
+    write.table(iceindex, icefile, row.names=FALSE, col.names=FALSE)
+    
+    out <- list(datafile=datafile, pdpfile=pdpfile, icefile=icefile, pdpVar=p)
     return(out)
 }
 
@@ -97,17 +106,22 @@ pdps.app <- function(env) {
     
     dataurl <- everything$datasetUrl
     if (is.null(dataurl)) {
-        return(send(list(warning = "No datafile."))) # required
+        return(send(list(warning = "No datafile.")))
     }
     
     variables <- everything$variables
     if (is.null(variables)) {
-        return(send(list(warning = "No variables."))) # required
+        return(send(list(warning = "No variables.")))
     }
     
     pdpVars <- everything$pdpVars
     if (is.null(pdpVars)) {
-        return(send(list(warning = "No pdp variables."))) # required
+        return(send(list(warning = "No pdp variables.")))
+    }
+    
+    outputDirectory <- everything$outputDirectory
+    if (is.null(outputDirectory)) {
+        return(send(list(warning = "No output directory.")))
     }
 
     # reading in data
@@ -115,8 +129,8 @@ pdps.app <- function(env) {
     mydata <- read.table(dataurl, sep = separator, header = TRUE, fileEncoding = 'UTF-8')
 
     tryCatch({
-        data <- makeData(d=mydata, p=variables[pdpVars[1]])
-        result <- data
+        paths <- makeData(d=mydata, p=variables[pdpVars[1]], od=outputdirectory)
+        result <- paths
       },
     error = function(err) {
         result <<- list(warning = paste("error: ", err))

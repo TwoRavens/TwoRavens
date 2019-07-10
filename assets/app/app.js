@@ -1534,25 +1534,25 @@ export async function estimate() {
     selectedProblem.d3mSearchId = res.data.searchId;
     m.redraw()
     
-    ///////////////////////////////////////
-    
-    // using selectedProblem here, because this is the initial call. will have to use resultsProblem later
+    // using selectedProblem here to use in rook to construct the pdp data
     selectedProblem = getSelectedProblem();
+    let pdpVars = [];
+    for (let i = 1; i <= selectedProblem.predictors.length; i++) {
+        pdpVars.push(i);
+    }
     let partialsDataset = await m.request(ROOK_SVC_URL + 'pdpsapp', {
         method: 'POST',
         data: {
             partialTypes: ['ICE', 'PDP'],
             datasetUrl: await buildDatasetUrl(selectedProblem),
             variables: selectedProblem.predictors, // only relevant for ICE
-            pdpVars: [1]
+            pdpVars: pdpVars
         }
     });
     // from the context of solverD3M.handleGetProduceSolutionResultsResponse
     //let solution = solvedProblem.solutions.d3m[response.pipelineId];
     //solution.variableImportance = m.request(D3M_SVC_URL + '/variableImportance', {method: "POST", body: {data_pointer}});
     
-    ///////////////////////////////////
-
 }
 
 export async function makeRequest(url, data) {
