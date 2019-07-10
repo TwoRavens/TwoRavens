@@ -1007,13 +1007,13 @@ export let loadWorkspace = async newWorkspace => {
     /**
      * 2. Load 'datasetUrl'
      */
-     setDatasetUrl().then((urlAvailable) => {
-        if (!urlAvailable && IS_D3M_DOMAIN){
-            // shouldn't reach here, setDatasetUrl adds failure modal
-            alertWarn('FAILED TO SET DATASET URL. Please check the logs.');
-            return;
-        }
-    })
+    let urlAvailable = await setDatasetUrl()
+
+    if (!urlAvailable && IS_D3M_DOMAIN){
+        // shouldn't reach here, setDatasetUrl adds failure modal
+        alertWarn('FAILED TO SET DATASET URL. Please check the logs.');
+        return;
+    }
 
 
     /**
@@ -2013,7 +2013,6 @@ export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
       setDatasetUrl().then((urlAvailable) => {
         console.log('urlAvailable: ' + urlAvailable);
         console.log('workspace.datasetUrl: ' + workspace.datasetUrl);
-        setNewWorkspaceMessageSuccess('The new workspace has been saved!');
 
         if (!urlAvailable){
             // shouldn't reach here, setDatasetUrl adds failure modal
@@ -2022,9 +2021,13 @@ export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
             setDisplayCloseButtonRow(true);
 
         } else {
+            console.log('new save message 1');
             setNewWorkspaceMessageSuccess('The new workspace has been saved!');
             setDisplayCloseButtonRow(true);
+            console.log('new save message 2');
+
         }
+        m.redraw();
       })
 
    })
