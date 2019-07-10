@@ -379,10 +379,10 @@ DATAMART_VERY_LONG_TIMEOUT = 10 * 60 # 8 minutes
 # -------------------------
 try:
     repo = Repo(BASE_DIR)
-    GIT_BRANCH_INFO = dict(name=repo.active_branch.name,
-                           commit=repo.head.commit.hexsha)
+    GIT_BRANCH_INFO = dict(name=repo.active_branch.name,)
+    # commit=repo.head.commit.hexsha)
 except InvalidGitRepositoryError:
-    GIT_BRANCH_INFO = dict(name='(not available)',
-                           commit='(not available)')
+    GIT_BRANCH_INFO = dict(name='(not available)',)
+    # commit='(not available)')
 
 # print('GIT_BRANCH_INFO', GIT_BRANCH_INFO)
