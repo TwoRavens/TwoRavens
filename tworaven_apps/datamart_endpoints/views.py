@@ -1,5 +1,5 @@
 from django.views.decorators.csrf import csrf_exempt
-from tworaven_apps.utils.json_helper import json_loads
+from tworaven_apps.utils.json_helper import json_loads, json_dumps
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
      get_json_error,
@@ -17,11 +17,13 @@ from tworaven_apps.datamart_endpoints.datamart_util_nyu import \
     (DatamartJobUtilNYU,)
 from tworaven_apps.datamart_endpoints.datamart_util import \
     (get_datamart_job_util,)
-from tworaven_apps.datamart_endpoints.forms import (DatamartSearchForm,
-                                                           DatamartMaterializeForm,
-                                                           DatamartIndexForm,
-                                                           DatamartScrapeForm,
-                                                           DatamartUploadForm, DatamartCustomForm)
+from tworaven_apps.datamart_endpoints.models import DatamartInfo
+from tworaven_apps.datamart_endpoints.forms import \
+  (DatamartSearchForm,
+   DatamartMaterializeForm,
+   DatamartIndexForm,
+   DatamartScrapeForm,
+   DatamartUploadForm, DatamartCustomForm)
 
 from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
 from tworaven_apps.behavioral_logs import static_vals as bl_static
@@ -35,6 +37,36 @@ from django.http import \
 
 import json
 
+
+def api_datamart_info(request):
+    """Return the current DatamartInfo objects"""
+    is_pretty = request.GET.get('pretty', False)
+
+    dm_list = DatamartInfo.active_objects.all()
+
+    cnt = dm_list.count()
+    if cnt == 0:
+        user_msg = 'No active DatamartInfo objects found'
+        json_resp = get_json_error(user_msg)
+    else:
+
+        dm_list_fmt = [dm.as_dict() for dm in dm_list]
+
+        json_resp = get_json_success(\
+                    'Datmart info objects found',
+                    data=dict(count=cnt,
+                              datamart_list=dm_list_fmt))
+
+    if is_pretty is not False:   # return this as a formatted string?
+        json_dump_info = json_dumps(json_resp, indent=4)
+
+        if json_dump_info.success:
+            dm_str = f'<pre>{json_dump_info.result_obj}<pre>'
+            return HttpResponse(dm_str)
+
+        return HttpResponse(json_dump_info.err_msg)
+
+    return JsonResponse(json_resp)
 
 @csrf_exempt
 def api_scrape(request):

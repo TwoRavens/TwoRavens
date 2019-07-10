@@ -12,6 +12,13 @@ KEY_ISI_DATAMART_ID = 'datamart_id'
 KEY_NYU_DATAMART_ID = 'id'
 KEY_DATA = 'data'
 
+# Env variables for loading ISI and NYU url
+#
+DATAMART_ENV_NYU_URL = 'DATAMART_NYU_URL'
+DATAMART_ENV_ISI_URL = 'DATAMART_ISI_URL'
+
+
+
 # Used by NYU/ISI for directory construction
 #
 KEY_AUGMENT = 'augment'

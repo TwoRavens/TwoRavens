@@ -13,6 +13,7 @@ import os
 import sys
 from os.path import abspath, dirname, join
 from distutils.util import strtobool
+from git import Repo, InvalidGitRepositoryError
 
 from django.urls import reverse_lazy
 
@@ -372,3 +373,19 @@ EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
 DATAMART_SHORT_TIMEOUT = 10 # seconds
 DATAMART_LONG_TIMEOUT = 5 * 60 # 5 minutes
 DATAMART_VERY_LONG_TIMEOUT = 10 * 60 # 8 minutes
+
+# -------------------------
+# Debug show branch name on page
+# -------------------------
+try:
+    repo = Repo(BASE_DIR)
+    GIT_BRANCH_INFO = dict(name=repo.active_branch.name,
+                           commit=repo.head.commit.hexsha)
+except InvalidGitRepositoryError:
+    GIT_BRANCH_INFO = dict(name='(not available)',
+                           commit='(not available)')
+except TypeError:
+    GIT_BRANCH_INFO = dict(name='(not available)',)
+
+
+# print('GIT_BRANCH_INFO', GIT_BRANCH_INFO)

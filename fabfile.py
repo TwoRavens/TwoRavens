@@ -10,7 +10,7 @@ from fabric.api import local, task, settings
 import django
 import subprocess
 import re
-
+import os
 
 # ----------------------------------------------------
 # Add this directory to the python system path
@@ -351,16 +351,28 @@ def check_config():
 
 @task
 def check_datamarts():
-    """If there aren't any db configurations, then load the fixtures"""
+    """If there aren't any db configurations, then load the fixtures
+    - Update the configurations from available env variables
+    """
     from tworaven_apps.datamart_endpoints.models import DatamartInfo
-
+    from tworaven_apps.datamart_endpoints import datamart_info_util
+    # Are any DatamartInfo objects in the database?
+    #
     config_cnt = DatamartInfo.objects.count()
+
+    # No.  Then load the default fixtures
+    #
     if config_cnt == 0:
         local(('python manage.py loaddata'
                ' tworaven_apps/datamart_endpoints/'
                'fixtures/initial_datamarts.json'))
     else:
         print('Configs exist in the db: %d' % config_cnt)
+
+    # If appropriate, override db settings with
+    # any environment variables
+    #
+    datamart_info_util.load_from_env_variables()
 
 
 @task
