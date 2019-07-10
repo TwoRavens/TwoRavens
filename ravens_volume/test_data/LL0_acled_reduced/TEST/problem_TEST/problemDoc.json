@@ -1,0 +1,41 @@
+{
+  "about": {
+    "problemID": "LL0_acled_reduced_problem_TEST",
+    "problemName": "acled",
+    "problemDescription": "This is a multi-class classification problem. Given a protest/political violence event, predict whether it was one of nine classes.",
+    "taskType": "classification",
+    "taskSubType": "multiClass",
+    "problemSchemaVersion": "3.2.0",
+    "problemVersion": "2.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "LL0_acled_reduced_dataset_TEST",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "learningData",
+            "colIndex": 6,
+            "colName": "event_type"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.4746,
+      "stratified": false,
+      "numRepeats": 0,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "accuracy"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

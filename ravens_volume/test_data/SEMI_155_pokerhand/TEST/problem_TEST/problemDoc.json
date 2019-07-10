@@ -1,0 +1,42 @@
+{
+  "about": {
+    "problemID": "SEMI_155_pokerhand_problem_TEST",
+    "problemName": "SEMI 155 pokerhand problem",
+    "problemDescription": "SEMI-SUPERVISED VERSION OF: **Author**:   \n**Source**: Unknown -   \n**Please cite**:   \n\nNormalized version of the pokerhand data set.\n\nAutomated file upload of pokerhand-normalized.arff",
+    "taskType": "semiSupervisedClassification",
+    "taskSubType": "multiClass",
+    "problemSchemaVersion": "3.3.1",
+    "problemVersion": "1.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "SEMI_155_pokerhand_dataset_TEST",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "learningData",
+            "colIndex": 11,
+            "colName": "class"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.2,
+      "stratified": true,
+      "numRepeats": 0,
+      "randomSeed": 42,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "f1Macro"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}
