@@ -13,6 +13,7 @@ import ButtonRadio from "../../common/views/ButtonRadio";
 import * as app from "../app";
 import {numberWithCommas} from '../utils';
 import ModalVanilla from "../../common/views/ModalVanilla";
+import {setModal} from '../../common/views/Modal';
 import PanelList from "../../common/views/PanelList";
 import TextField from "../../common/views/TextField";
 import Dropdown from "../../common/views/Dropdown";
@@ -102,6 +103,9 @@ export default class Datamart {
             labelWidth, // width of titles on left side of cards
             endpoint,   // Django app url
         } = vnode.attrs;
+
+      //  dataPath = app.workspace.dataset;
+
 
         let {
             query,    // https://datadrivendiscovery.org/wiki/display/work/Datamart+Query+API
@@ -219,7 +223,7 @@ export default class Datamart {
                 preferences.indices.length = 0;
                 preferences.indices.push(...response.data);
                 preferences.success[sourceMode] = `Found ${response.data.length} potential dataset${response.data.length === 1 ? '' : 's'}. Please review the details.`
-                console.warn("#debug after submission of new dataset, response.data");
+                console.log("#debug after submission of new dataset, response.data");
                 console.log(response.data);
             } else {
                 preferences.error[sourceMode] = response.message;
@@ -245,6 +249,20 @@ export default class Datamart {
         let buttonAugment = i => m(Button, {
             style: {'margin': '0em 0.25em'},
             onclick: async () => {
+
+                // Check if the workspace has been saved
+                if (app.workspace.is_original_workspace){
+
+                  setModal(m('div', m('p', 'Please click the "Save As New" button at the bottom of the page before augmenting your dataset.'),
+                      m('p', 'This will any save changes and allow you to return to this workspace.')),
+                      "Save Before Augmenting",
+                      true,
+                      "Close",
+                      true);
+
+                  return;
+                }
+
                 preferences.selectedResult = results[preferences.sourceMode][i];
 
                 if (preferences.sourceMode === 'ISI')
@@ -574,7 +592,7 @@ export default class Datamart {
                         preferences.indices = indices.filter((index, i) => !responses[i].success);
 
                         if (preferences.indices.length) {
-                            console.warn("#debug responses");
+                            console.log("#debug responses");
                             console.log(responses);
                             preferences.error[sourceMode] = 'Some datasets failed uploading to datamart. The failed datasets are listed below.';
                             delete preferences.success[sourceMode]
@@ -598,6 +616,8 @@ export class ModalDatamart {
             endpoint,
             dataPath, // where to load data from, to augment with
         } = vnode.attrs;
+
+        // console.log('dataPath view 1: '+ dataPath);
 
         let {
             cached, // summary info and paths related to materialized datasets
@@ -753,9 +773,6 @@ export class ModalDatamart {
                                     .map(rightCol => originalRightColumns.indexOf(rightCol)));
                             });
 
-                            // console.warn("#debug implicitVariables");
-                            // console.log(implicitVariables);
-
                             let augment_api_data = {
                                 data_path: dataPath,
                                 search_result: JSON.stringify(preferences.selectedResult),
@@ -766,7 +783,7 @@ export class ModalDatamart {
                                 // left_meta: JSON.stringify(implicitVariables)
                             }
 
-                            console.log(augment_api_data);
+                            console.log('augment_api_data: ' + JSON.stringify(augment_api_data));
 
                             let response = await m.request(endpoint + 'augment', {
                                 method: 'POST',
@@ -776,13 +793,24 @@ export class ModalDatamart {
                             if (response.success) {
                                 delete preferences.error[sourceMode];
                                 preferences.success[sourceMode] = response.message;
+                                preferences.success[sourceMode] = '';
                                 preferences.modalShown = false;
                             } else {
-                                preferences.error[sourceMode] = response.data;
+                              /*setModal(m('div', m('p', 'An error occurred:'),
+                                  m('p', response.data)),
+                                  "Sorry Augment Failed",
+                                  true,
+                                  "Close",
+                                  true);*/
+                                preferences.error[sourceMode] = m.trust(response.message);
+                                // turn off spinner
+                                preferences.isAugmenting = false;
                                 delete preferences.success[sourceMode]
+                                m.redraw()
+                                // preferences.isSearching[sourceMode] = false;
                             }
 
-                            console.warn("#debug response augment");
+                            console.log("#debug response augment");
                             console.log(response);
                         }
                     }, 'Augment')),

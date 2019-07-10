@@ -892,6 +892,77 @@ export let getCurrentWorkspaceId = () => {
 export let setShowModalWorkspace = state => showModalWorkspace = state;
 export let showModalWorkspace = false;
 
+export let showDatasetUrlFailModal = (msg) => {
+
+  setModal(m('div', [
+            m('p', {class: 'h5'}, "The dataset url was not found."),
+            m('p', 'Please try to reload the page using the button below.'),
+            m('hr'),
+            m('p', 'If it fails again, please contact the administrator.'),
+            m('p', msg)
+          ]),
+          "Severe Error. Failed to locate the dataset",
+          true,
+          "Reload Page",
+          false,
+          locationReload);
+}
+/*
+ * Set the workspace.datasetUrl using the workspace's d3m_config
+ *  - e.g. workspace.d3m_config.problem_data_info
+ *    - example of url in variable above
+ *        - /config/d3m-config/get-problem-data-file-info/39
+ */
+export let setDatasetUrl = async () => {
+
+  console.log("-- setDatasetUrl --");
+  //url example: /config/d3m-config/get-problem-data-file-info/39
+  //
+  let problem_info_result = await m.request(workspace.d3m_config.problem_data_info);
+
+  if (!problem_info_result.success){
+      showDatasetUrlFailModal('Error: ' + problem_info_result.message);
+
+      return false;
+  }
+  console.log("result from problem data file info:");
+  console.log(problem_info_result);
+
+  // Loop through the response above and
+  // pick the first "path" where "exists" is true
+  //
+  // Note: if data files have "exists" as false, stay at default which is null
+  //
+  let set_d3m_data_path = field => problem_info_result.data[field].exists
+      ? problem_info_result.data[field].path
+      : problem_info_result.data[field + '.gz'].exists
+          ? problem_info_result.data[field + '.gz'].path
+          : undefined
+
+  workspace.datasetUrl = set_d3m_data_path('learningData.csv');
+
+  if (workspace.datasetUrl === undefined){
+    console.log('Severe error.  Not able to set the datasetUrl. (p2)' +
+              ' (url: ' + workspace.d3m_config.problem_data_info + ')');
+
+    showDatasetUrlFailModal( '(url: ' + workspace.d3m_config.problem_data_info + ')');
+
+    return false;
+  }
+  if (IS_D3M_DOMAIN && !workspace.datasetUrl) {
+
+    console.log('Severe error.  Not able to set the datasetUrl. (p2)' +
+              ' (url: ' + workspace.d3m_config.problem_data_info + ')'+
+              ' Invalid data: ' + JSON.stringify(problem_info_result));
+
+    showDatasetUrlFailModal( 'Invalid data: ' + JSON.stringify(problem_info_result));
+
+    return false;
+ }
+
+  return true;
+}  // end setDatasetUrl
+
 export let loadWorkspace = async newWorkspace => {
 
     // scopes at app.js level; used for saving workspace
@@ -932,73 +1003,16 @@ export let loadWorkspace = async newWorkspace => {
 
     console.log("data schema data: ", workspace.datasetDoc);
 
-    //
-    // if (!IS_D3M_DOMAIN) {
-    //     // Note: presently xml is no longer being read from Dataverse metadata anywhere
-    //     let temp = xml.documentElement.getElementsByTagName("fileName");
-    //     zparams.zdata = temp[0].childNodes[0].nodeValue;
-    //     let cite = xml.documentElement.getElementsByTagName("biblCit");
-    //     // clean citation so POST is valid json
-    //     zparams.zdatacite = cite[0].childNodes[0].nodeValue
-    //         .replace(/\&/g, "and")
-    //         .replace(/\;/g, ",")
-    //         .replace(/\%/g, "-");
-    //     // fill in citation in header
-    //     byId('cite').children[0].textContent = zparams.zdatacite;
-    // }
-
 
     /**
      * 2. Load 'datasetUrl'
      */
-    console.log('---------------------------------------');
-    console.log("-- Workspace: 2. Load 'datasetUrl' --");
-    //url example: /config/d3m-config/get-problem-data-file-info/39
-    //
-    let problem_info_result = await m.request(workspace.d3m_config.problem_data_info);
+    let urlAvailable = await setDatasetUrl()
 
-    console.log("result from problem data file info:");
-    console.log(problem_info_result);
-
-    // The result of this call is similar to below:
-    // example:
-    /*  {
-             "success":true,
-             "data":{
-                "learningData.csv":{
-                   "exists":true,
-                   "size":11654,
-                   "path":"/inputs/dataset_TRAIN/tables/learningData.csv"
-                },
-                "learningData.csv.gz":{
-                   "exists":false,
-                   "size":-1,
-                   "path":"/inputs/dataset_TRAIN/tables/learningData.csv.gz"
-                }
-             }
-          }
-    */
-
-    // Loop through the response above and
-    // pick the first "path" where "exists" is true
-    //
-    // Note: if data files have "exists" as false, stay at default which is null
-    //
-    let set_d3m_data_path = field => problem_info_result.data[field].exists
-        ? problem_info_result.data[field].path
-        : problem_info_result.data[field + '.gz'].exists
-            ? problem_info_result.data[field + '.gz'].path
-            : undefined
-
-
-    workspace.datasetUrl = set_d3m_data_path('learningData.csv');
-
-    // If this is the D3M domain; workspace.datasetUrl MUST be set to an actual value
-    //
-    if (IS_D3M_DOMAIN && !workspace.datasetUrl) {
-        const d3m_path_err = 'NO VALID datasetUrl! ' + JSON.stringify(problem_info_result)
-        console.log(d3m_path_err);
-        alertError('debug (be more graceful): ' + d3m_path_err);
+    if (!urlAvailable && IS_D3M_DOMAIN){
+        // shouldn't reach here, setDatasetUrl adds failure modal
+        alertWarn('FAILED TO SET DATASET URL. Please check the logs.');
+        return;
     }
 
 
@@ -1304,8 +1318,20 @@ export async function load() {
     if (problemDoc) {
         setTask1_finished(true);
         if (problemDoc.success !== true) {
-            const user_err_msg = "Failed to make Hello connection with TA2! status code: " + problemDoc.message;
-            setModal(user_err_msg, "Error Connecting to TA2", true, "Reset", false, locationReload);
+          //  const user_err_msg = "We were unable to connect to the TA2 system.  It may not be ready.  Please try again.  (status code: " + problemDoc.message + ")";
+            setModal(
+                m('div', [
+                    m('p', {class: 'h5'}, "We were unable to connect to the TA2 system."),
+                    m('p', {class: 'h5'}, "It may not be ready."),
+                    m('p', {class: 'h5'}, "Please try again using the button below."),
+                    m('hr'),
+                    m('p', "Technical details: " + problemDoc.message),
+                  ]),
+                  "Error Connecting to the TA2",
+                  true,
+                  "Retry TA2 Connection",
+                  false,
+                  locationReload);
             return;
         } else {
 
@@ -1843,12 +1869,14 @@ export let saveUserWorkspace = () => {
  * END: saveUserWorkspace
  */
 
+
  /*
  *  Variables related to API info window
  */
 export let isAPIInfoWindowOpen = false;
 // Open/close modal window
 export let setAPIInfoWindowOpen = (boolVal) => isAPIInfoWindowOpen = boolVal;
+
 
 
 // TA2 server information for display in modal
@@ -1985,9 +2013,22 @@ export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
       // attach the existing dataseDoc
       workspace.datasetDoc = currentDatasetDoc;
 
-      //console.log(save_result.data);
-      setNewWorkspaceMessageSuccess('The new workspace has been saved!');
-      setDisplayCloseButtonRow(true);
+
+      setDatasetUrl().then((urlAvailable) => {
+
+        if (!urlAvailable){
+            // shouldn't reach here, setDatasetUrl adds failure modal
+            // alertWarn('FAILED TO SET DATASET URL. Please check the logs.');
+            setNewWorkspaceMessageError('An error occurred saving the new workspace.');
+            setDisplayCloseButtonRow(true);
+
+        } else {
+            setNewWorkspaceMessageSuccess('The new workspace has been saved!');
+            setDisplayCloseButtonRow(true);
+        }
+        m.redraw();
+      })
+
    })
  };
  /*
@@ -2205,7 +2246,13 @@ export function handleMaterializeDataMessage(msg_data){
 
 } // end handleMaterializeDataMessage
 
-export function handleAugmentDataMessage(msg_data){
+/**
+ *  After an augment:
+ *  - Load the new workspace
+ *  - Move the old selected problem manipulations to hardManipulations
+ *  - Set the old selected problem as the new selected problem (sans manipulations)
+ */
+export async function handleAugmentDataMessage(msg_data){
 
   if (!msg_data) {
       console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
@@ -2224,9 +2271,52 @@ export function handleAugmentDataMessage(msg_data){
 
   setModal("Success: " + msg_data.user_message,
            "Data Augmentation Succeeded!", true, "Switch to augmented dataset", false, () => {
+
+      /*
       setModal(undefined, undefined, false)
       load()
-      });
+      */
+      setModal(undefined, undefined, false)
+
+      // (1) Copy the current selected problem
+      //
+      let tempSelectedProblem = common.deepCopy(workspace.raven_config.problems[workspace.raven_config.selectedProblem]);
+
+      // (2) clear current problems
+      //
+      workspace.raven_config.problems = {};
+
+      // (2) load the new workspace
+      //
+      let ws_obj = JSON.parse(msg_data.data.workspace_json_string);
+      console.log('--- 2a new workspace: ' + JSON.stringify(ws_obj));
+
+      loadWorkspace(ws_obj).then(() => {
+
+          // (3) update new workspace manipulations
+          //
+
+          // - Copy manipulations from the orig selected problem to the
+          // workspace's hardManipulations.
+          // - Clear the orig. selected problem manipulations
+          workspace.raven_config.priorManipulations = common.deepCopy(tempSelectedProblem.manipulations);
+          tempSelectedProblem.manipulations = [];
+
+          console.log('--- 4 workspace.hardManipulations: ' + JSON.stringify(workspace.raven_config.hardManipulations));
+
+          // (4) update ids of the orig selected problem to avoid clashes
+          //
+          tempSelectedProblem.problemID = generateProblemID();
+          delete tempSelectedProblem.provenanceID;
+
+          // (5) add the old problem to the current problems list
+          //    and make it the selected problem
+          //
+          workspace.raven_config.problems[tempSelectedProblem.problemID] = tempSelectedProblem;
+
+          setSelectedProblem(tempSelectedProblem.problemID);
+      })
+  });
 
 
   // console.log('datamart_id: ' + msg_data.data.datamart_id);

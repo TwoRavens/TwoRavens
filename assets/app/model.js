@@ -559,7 +559,7 @@ export let leftpanel = forceData => {
                 value: 'Augment',
                 contents: m(Datamart, {
                     preferences: app.datamartPreferences,
-                    dataPath: ravenConfig.datasetUrl,
+                    dataPath: app.workspace.datasetUrl,
                     endpoint: app.datamartURL,
                     labelWidth: '10em'
                 })
