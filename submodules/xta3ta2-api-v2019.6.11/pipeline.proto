@@ -94,21 +94,16 @@ message PipelineSource {
     string name = 1;
     // An URI to contact the source.
     string contact = 2;
-    // A list of pipeline IDs used to derive the pipeline.
-    repeated string pipelines = 3;
+    // A list of pipelines used to derive the pipeline.
+    repeated PipelineDescription pipelines = 3;
 }
 
+// TODO: Deprecated. Remove.
 enum PipelineContext {
-    // Default value. Not to be used.
     PIPELINE_CONTEXT_UNKNOWN = 0;
-
-    // Pipeline was created during building/training of the system itself, e.g., during metalearning.
     PRETRAINING = 1;
-    // Pipeline was created during development or testing of the system itself, e.g., during debugging.
     TESTING = 2;
-    // Pipeline was created during evaluation of the system itself, e.g., NIST blind evaluation.
     EVALUATION = 3;
-    // Pipeline was created during regular (production) operation of the system.
     PRODUCTION = 4;
 }
 
@@ -209,10 +204,8 @@ message PipelineDescription {
     // TA2: Timestamp when created. Templates do not have this timestamp. TA3 might provide it for
     // a fully specified pipeline.
     google.protobuf.Timestamp created = 3;
-    // In which context a template or pipeline was made. This is helpful to distinguish evaluation
-    // context from other contexts. The value should not really influence different behavior from
-    // either system, but it is useful when recording metalearning information to understand this.
-    PipelineContext context = 4;
+    // TODO: Deprecated. Remove.
+    PipelineContext context = 4 [deprecated=true];
     // Human friendly name of the pipeline. For templates it can be a hint to
     // TA2 how to name found pipelines. Optional.
     string name = 5;
