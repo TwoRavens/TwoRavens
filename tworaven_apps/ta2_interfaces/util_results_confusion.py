@@ -18,6 +18,7 @@ Output:
 
 """
 from os.path import getsize, join, isfile
+import json
 from collections import OrderedDict
 import pandas as pd
 from sklearn.metrics.classification import confusion_matrix
@@ -49,7 +50,7 @@ EXT_JSON = '.json'
 EMBEDDABLE_FILE_TYPES = ('.csv', EXT_JSON)
 
 
-class FileStatisticsUtil(object):
+class ConfusionUtil(object):
     """For a list of given file uris
         - see if it's a .csv file:
         - open the file
@@ -164,8 +165,8 @@ class FileStatisticsUtil(object):
         if self.is_json_file_type(fpath):
             # Return the file directly
             results_obj = self.load_and_return_json_file(fpath)
-            if results_obj.success:
-                fitted_values = results_obj.data
+            if results_obj[KEY_SUCCESS]:
+                fitted_values = results_obj[KEY_DATA]
             else:
                 return results_obj
 
@@ -173,74 +174,43 @@ class FileStatisticsUtil(object):
         #
         else:
             results_obj = self.load_and_return_csv_file(fpath)
-            if results_obj.success:
-                fitted_values = results_obj.data
+            if results_obj[KEY_SUCCESS]:
+                fitted_values = results_obj[KEY_DATA]
             else:
                 return results_obj
 
         # align joining column and avoid target collision in join
-        actual_target_name = self.metadata.targets[0]
-        fitted_target_name = 'fitted_' + actual_target_name
-        fitted_values.columns = ['d3mIndex', fitted_target_name]
+        target_name = self.metadata['targets'][0]
+        fitted_values.columns = ['d3mIndex', target_name]
 
-        util = MongoRetrieveUtil(settings.TWORAVENS_MONGO_DB_NAME, self.metadata.collectionName)
+        util = MongoRetrieveUtil(
+            settings.TWORAVENS_MONGO_DB_NAME,
+            settings.MONGO_COLLECTION_PREFIX + self.metadata['collectionName'])
         if util.has_error():
             return OrderedDict({KEY_SUCCESS: False, KEY_DATA: util.get_error_message()})
 
         # TODO: exhausting this cursor is potentially a memory bomb
         actual_values = pd.DataFrame(list(util.run_query([
-            *self.metadata.manipulations,
-            {'$project': {variable: 1 for variable in [*self.metadata.predictors, actual_target_name]}}
-        ], 'aggregate')))
+            *json.loads(self.metadata['manipulations']),
+            {'$project': {target_name: 1, 'd3mIndex': 1, '_id': 0}}
+        ], 'aggregate'))[1])
 
-        results_values = actual_values.join(fitted_values, 'd3mIndex')
+        results_values = actual_values.join(fitted_values, on='d3mIndex', how='left', lsuffix='_actual', rsuffix='_fitted')
 
-        results = {}
+        labels = list({*pd.unique(results_values[target_name + '_actual']).tolist(),
+                       *pd.unique(results_values[target_name + '_fitted']).tolist()})
 
-        if self.metadata.task in ['classification', 'semisupervisedClassification']:
-            labels = list({*pd.unique(results_values[actual_target_name]),
-                           *pd.unique(results_values[fitted_target_name])})
-
-            results['confusion_matrix'] = confusion_matrix(
-                results_values[actual_target_name],
-                results_values[fitted_target_name],
-                labels=labels)
-            results['labels'] = labels
-
-        # elif self.metadata.task in ['regression', 'semisupervisedRegression']:
-
-        def aggregate_target(variable):
-            if variable in self.metadata.nominal:
-                # bin counts by variable levels
-                return {level: {"$sum": {"$cond": [{"$eq": [f"${variable}", level]}, 1, 0]}}
-                        for level in self.metadata.summaries[variable].plotvalues.keys()}
-            else:
-                return {"average": {"$avg": f"${variable}"}}
-
-        def importance_target(variable):
-            return list(util.run_query([
-                *self.metadata.manipulations,
-                {"$facet": {
-                    predictor: [{
-                        "$bucketAuto": {
-                            "buckets": min(100, int(len(actual_values) / 10)),
-                            "groupBy": f"${predictor}",
-                            "output": aggregate_target(variable)
-                        }
-                    }]
-                    for predictor in self.metadata.predictors}}
-            ], 'aggregate'))[0]
-
-        results['importance'] = {}
-        for target in self.metadata.targets:
-            results['importance'][target] = importance_target(target)
-
-        # return OrderedDict({KEY_SUCCESS: False, KEY_DATA: f"Invalid task type: {self.metadata.task}"})
+        results = {
+            'confusion_matrix': confusion_matrix(
+                results_values[target_name + '_actual'],
+                results_values[target_name + '_fitted'],
+                labels=labels).tolist(),
+            'labels': labels
+        }
 
         # Send back the data
         #
         return OrderedDict({KEY_SUCCESS: True, KEY_DATA: results})
-
 
     def attempt_test_output_directory(self, fpath):
         """quick hack for local testing.
@@ -285,9 +255,7 @@ class FileStatisticsUtil(object):
         assert isfile(fpath), "fpath must exist; check before using this method"
 
         try:
-            with open(fpath) as f:
-                fcontent = f.read()
-                dataframe = pd.read_json(fcontent)
+            dataframe = pd.read_json(fpath)
         # TODO: narrower exception catch
         except Exception as err:
             return self.format_embed_err(ERR_CODE_FILE_INVALID_JSON,
@@ -305,21 +273,13 @@ class FileStatisticsUtil(object):
         assert isfile(fpath), "fpath must exist; check before using this method"
 
         try:
-            with open(fpath) as f:
-                fcontent = f.read()
-                dataframe = pd.read_csv(fcontent)
+            dataframe = pd.read_csv(fpath)
         # TODO: narrower exception catch
         except Exception as err:
             return self.format_embed_err(ERR_CODE_FILE_INVALID_CSV,
                                          str(err))
 
-        embed_snippet = OrderedDict()
-        embed_snippet[KEY_SUCCESS] = True
-        embed_snippet[KEY_DATA] = dataframe
-
-        return embed_snippet
-
-
+        return OrderedDict({KEY_SUCCESS: True, KEY_DATA: dataframe})
 
     def format_file_key(self, file_num):
         """Format the key for an individual file embed"""

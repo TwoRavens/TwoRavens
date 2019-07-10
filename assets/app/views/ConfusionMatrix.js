@@ -25,6 +25,7 @@ export default class ConfusionMatrix {
          !vnode.attrs.classes.every(clss => this.classes.has(clss))) && this.plot(vnode)
 
         let {width, height} = vnode.dom.getBoundingClientRect();
+
         if (this.width !== width) {
             this.width = width;
             this.height = height;
@@ -85,7 +86,7 @@ export default class ConfusionMatrix {
 
         let fontSize = Math.max(10,Math.round(46/Math.sqrt(numcols+1)));
 
-        let longestLabel = Math.max(...classes.map(val => val.length));
+        let longestLabel = Math.max(...classes.map(val => String(val).length));
         let widthLabels = 15 + fontSize / 2 * longestLabel; // # number of pixels the row labels need
         let heightLabels = 15 + fontSize / 2 * longestLabel * .86602; // # of pixels the column labels need
 

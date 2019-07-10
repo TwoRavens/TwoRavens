@@ -1,6 +1,6 @@
 import m from 'mithril';
 import * as common from "../../common/common";
-import {getData} from "../manipulations/manipulate";
+import {getData} from "../app";
 import TextField from "../../common/views/TextField";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import Dropdown from "../../common/views/Dropdown";

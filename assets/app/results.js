@@ -3,6 +3,7 @@ import * as jStat from 'jstat';
 
 import * as app from "./app";
 import * as plots from "./plots";
+import * as queryMongo from "./manipulations/queryMongo";
 
 import * as solverRook from './solvers/rook';
 import * as solverD3M from './solvers/d3m';
@@ -21,9 +22,6 @@ import {bold} from "./index";
 import PlotVegaLite from "./views/PlotVegaLite";
 import ConfusionMatrix from "./views/ConfusionMatrix";
 import Flowchart from "./views/Flowchart";
-import {omniSort} from "./app";
-
-export let recordLimit = 1000;
 
 export let leftpanel = () => {
 
@@ -169,10 +167,15 @@ export class CanvasSolutions {
         app.updateRightPanelWidth()
     }
 
-    predictionSummary(problem, summaries) {
+    predictionSummary(problem, adapters) {
 
         let setConfusionFactor = factor => this.confusionFactor = factor === 'undefined' ? undefined : factor;
-        summaries = summaries.filter(summary => summary.fittedValues || summary.actualValues);
+        let summaries = adapters.map(adapter => ({
+            name: adapter.getName(),
+            fittedValues: adapter.getFittedValues(problem.targets[0]),
+            actualValues: adapter.getActualValues(problem.targets[0]),
+            confusionMatrix: adapter.getConfusionMatrix(problem.targets[0])
+        })).filter(summary => summary.fittedValues || summary.actualValues);
         if (problem.task === 'regression') {
             let xData = summaries.reduce((out, summary) =>
                 Object.assign(out, {[summary.name]: summary.fittedValues}), {});
@@ -192,44 +195,54 @@ export class CanvasSolutions {
         }
 
         if (problem.task === 'classification') {
-            let confusionData = summaries
-                .map(summary => Object.assign({name: summary.name},
-                    generateConfusionData(summary.actualValues, summary.fittedValues, this.confusionFactor) || {}))
-                .filter(instance => 'data' in instance)
-                .sort((a, b) => sortPipelineTable(a.score, b.score));
 
-            // prevent invalid confusion matrix selections
-            if (this.confusionMatrixSolution === undefined || !confusionData.find(data => data.name === this.confusionMatrixSolution))
-                this.confusionMatrixSolution = (confusionData[0] || {}).name;
+            // ignore summaries without confusion matrices
+            summaries = summaries.filter(summary => summary.confusionMatrix);
+            if (summaries.length === 0) return;
+
+            // collect classes from all summaries
+            let classes = [...new Set(summaries.flatMap(summary => summary.confusionMatrix.classes))]
+
+            // convert to 2x2 if factor is set
+            if (this.confusionFactor !== undefined)
+                summaries.forEach(summary => summary.confusionMatrix = confusionMatrixFactor(
+                    summary.confusionMatrix.data,
+                    summary.confusionMatrix.classes,
+                    this.confusionFactor));
+
+            // prevent invalid confusion matrix selection
+            if (this.confusionMatrixSolution === undefined || !summaries.find(summary => summary.name === this.confusionMatrixSolution))
+                this.confusionMatrixSolution = summaries[0].name;
 
             return [
-                confusionData.length > 0 && m('div[style=margin-bottom:1em]',
+                m('div[style=margin-bottom:1em]',
                     m('label#confusionFactorLabel', 'Confusion Matrix Factor: '),
                     m('[style=display:inline-block]', m(Dropdown, {
                         id: 'confusionFactorDropdown',
-                        items: ['undefined', ...confusionData[0].allClasses],
+                        items: ['undefined', ...classes],
                         activeItem: this.confusionFactor,
                         onclickChild: setConfusionFactor,
                         style: {'margin-left': '1em'}
                     }))),
+                m('label', 'Pipeline:'),
                 m(MenuTabbed, {
                     id: 'confusionMenu',
                     currentTab: this.confusionMatrixSolution,
                     callback: solutionId => this.confusionMatrixSolution = solutionId,
-                    sections: confusionData.map(confusionInstance => ({
-                        value: confusionInstance.name,
+                    sections: summaries.map(summary => ({
+                        value: summary.name,
                         contents: [
-                            confusionInstance.data.length === 2 && m(Table, {
+                            summary.confusionMatrix.classes.length === 2 && m(Table, {
                                 id: 'resultsPerformanceTable',
                                 headers: ['metric', 'score'],
-                                data: generatePerformanceData(confusionInstance.data),
+                                data: generatePerformanceData(summary.confusionMatrix.data),
                                 attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
                             }),
-                            confusionInstance.data.length < 100 ? m('div', {
+                            summary.confusionMatrix.data.length < 100 ? m('div', {
                                 style: {'min-height': '500px', 'min-width': '500px'}
-                            }, m(ConfusionMatrix, Object.assign({}, confusionInstance, {
-                                id: 'resultsConfusionMatrixContainer' + confusionInstance.name,
-                                title: `Confusion Matrix: Solution ${confusionInstance.name} for ${problem.targets[0]}`,
+                            }, m(ConfusionMatrix, Object.assign({}, summary.confusionMatrix, {
+                                id: 'resultsConfusionMatrixContainer' + summary.name,
+                                title: `Confusion Matrix for ${problem.targets[0]}`,
                                 startColor: '#ffffff', endColor: '#e67e22',
                                 margin: {left: 10, right: 10, top: 50, bottom: 10},
                                 attrsAll: {style: {height: '600px'}}
@@ -355,8 +368,8 @@ export class CanvasSolutions {
         if (selectedSolutions.length === 0)
             return m('div', {style: {margin: '1em 0px'}}, problemSummary);
 
-        let solutionSummaries = selectedSolutions
-            .map(solution => solutionAdapter(problem, solution)).filter(_=>_);
+        let solutionAdapters = selectedSolutions
+            .map(solution => getSolutionAdapter(problem, solution));
         let firstSolution = selectedSolutions[0];
 
         let solutionSummary = selectedSolutions.length === 1 && m(Subpanel, {
@@ -406,7 +419,7 @@ export class CanvasSolutions {
                 app.saveSystemLogEntry(logParams);
               }
             }
-        }, this.predictionSummary(problem, solutionSummaries));
+        }, this.predictionSummary(problem, solutionAdapters));
 
         let visualizePipelinePanel = selectedSolutions.length === 1 && firstSolution.source === 'd3m' && m(Subpanel, {
             style: {margin: '0px 1em'},
@@ -521,22 +534,9 @@ export class CanvasSolutions {
 }
 
 
-let solutionAdapter = (problem, solution) => {
-    let solver = {rook: solverRook, d3m: solverD3M}[solution.source];
-    let target = problem.targets[0];
-
-    return {
-        name: solver.getName(problem, solution),
-        actualValues: solver.getActualValues(problem, solution, target),
-        fittedValues: solver.getFittedValues(problem, solution, target),
-        score: solver.getScore(problem, solution, target),
-        targets: problem.targets,
-        predictors: app.getPredictorVariables(problem),
-        description: solver.getDescription(problem, solution),
-        task: solver.getTask(problem, solution),
-        model: solver.getModel(problem, solution)
-    };
-};
+let getSolutionAdapter = (problem, solution) => ({
+    rook: solverRook.getSolutionAdapter, d3m: solverD3M.getSolutionAdapter
+}[solution.source](problem, solution));
 
 let leftTabResults = 'Solutions';
 let setLeftTabResults = tab => leftTabResults = tab;
@@ -556,7 +556,7 @@ export let reverseSet = [
  Sort the Pipeline table, putting the best score at the top
  */
 let sortPipelineTable = (a, b) => typeof a === 'string'
-    ? omniSort(a, b)
+    ? app.omniSort(a, b)
     : (b - a) * (reverseSet.includes(selectedMetric.d3m) ? -1 : 1);
 
 let resultsSubpanels = {
@@ -671,12 +671,13 @@ export let confusionMatrixFactor = (matrix, labels, factor) => {
     ));
 
     return {
-        matrix: collapsed,
-        labels: [factor, 'not ' + factor]
+        data: collapsed,
+        classes: [factor, 'not ' + factor]
     }
 };
 
-/* generate an object containing accuracy, recall, precision, F1, given a 2x2 confusion data matrix */
+// generate an object containing accuracy, recall, precision, F1, given a 2x2 confusion data matrix
+// the positive class is the upper left block
 export function generatePerformanceData(confusionData2x2) {
 
     let tp = confusionData2x2[0][0];
