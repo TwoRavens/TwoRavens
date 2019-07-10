@@ -62,3 +62,6 @@ social-auth-core==1.7.0
 # debug
 #
 pylint>=2.3.1
+
+# to show git branch name on page
+GitPython==2.1.11

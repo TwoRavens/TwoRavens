@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from django.db import models
 from model_utils.models import TimeStampedModel
 
@@ -51,3 +52,23 @@ class DatamartInfo(TimeStampedModel):
             self.url = self.url[:-1]
 
         super(DatamartInfo, self).save(*args, **kwargs)
+
+    def as_dict(self, **kwargs):
+        """Convert to python dict"""
+        if not self.id:
+            return dict(message='DatamartInfo not saved')
+
+        info_dict = OrderedDict()
+
+        info_dict['id'] = self.id
+        info_dict['name'] = self.name
+        info_dict['display_name'] = self.display_name
+        info_dict['is_active'] = self.is_active
+
+        info_dict['url'] = self.url
+        info_dict['documentation_link'] = self.documentation_link
+        info_dict['description'] = self.description
+        info_dict['modified'] = self.modified
+        info_dict['created'] = self.created
+
+        return info_dict
