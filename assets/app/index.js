@@ -676,6 +676,25 @@ class Body {
                   m('span', `${GIT_BRANCH_INFO.commit}`)
                 ]),
               m('hr'),
+              m('p', [
+                  m('b', 'app.workspace.datasetUrl: '),
+                  m('span', `${app.workspace.datasetUrl}`)
+                ]),
+              m('hr'),
+                m('div', [
+                  m('b', 'datamartPreferences: '),
+                  m('div',
+                    m('pre', `${JSON.stringify(app.datamartPreferences, null, 4)}`)
+                  ),
+                ]),
+              m('hr'),
+              m('div', [
+                  m('b', 'Workspace: '),
+                  m('div',
+                    m('pre', `${JSON.stringify(app.workspace, null, 4)}`)
+                  ),
+                ]),
+              m('hr'),
             ]
           ),
         ),
@@ -809,6 +828,7 @@ class MainCarousel {
 
 
 let standaloneDatamart = () => {
+
     return [
         m(Header, {
             image: '/static/images/TwoRavens.png',

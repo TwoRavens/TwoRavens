@@ -104,6 +104,9 @@ export default class Datamart {
             endpoint,   // Django app url
         } = vnode.attrs;
 
+      //  dataPath = app.workspace.dataset;
+
+
         let {
             query,    // https://datadrivendiscovery.org/wiki/display/work/Datamart+Query+API
             results,  // list of matched metadata
@@ -614,6 +617,8 @@ export class ModalDatamart {
             dataPath, // where to load data from, to augment with
         } = vnode.attrs;
 
+        console.log('dataPath view 1: '+ dataPath);
+
         let {
             cached, // summary info and paths related to materialized datasets
             getData,
@@ -769,7 +774,7 @@ export class ModalDatamart {
                             });
 
                             // console.warn("#debug implicitVariables");
-                            // console.log(implicitVariables);
+                            console.log('dataPath view 1: '+ dataPath);
                             let augment_api_data = {
                                 data_path: dataPath,
                                 search_result: JSON.stringify(preferences.selectedResult),
