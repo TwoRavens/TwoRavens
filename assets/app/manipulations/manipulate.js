@@ -32,8 +32,6 @@ import Icon from "../../common/views/Icon";
 
 export function menu(compoundPipeline) {
 
-    console.warn("#debug compoundPipeline");
-    console.log(compoundPipeline);
 
     return [
         // stage button

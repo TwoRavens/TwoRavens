@@ -1489,22 +1489,6 @@ export async function estimate() {
 
     m.redraw();
 
-    // prepare expected/actual values for plotting of solution results (replaces rookpipe)
-    getData({
-        method: 'aggregate',
-        query: JSON.stringify(queryMongo.buildPipeline(
-            [...workspace.raven_config.hardManipulations, ...selectedProblem.manipulations, {
-                type: 'menu',
-                metadata: {
-                    type: 'data',
-                    variables: ['d3mIndex', ...selectedProblem.targets],
-                    sample: results.recordLimit
-                }
-            }],
-            workspace.raven_config.variablesInitial)['pipeline'])
-    }).then(data => selectedProblem.actualValues = data).then(m.redraw)
-        .catch(() => alertWarn('Dependent variables have not been loaded. Some plots will not load.'))
-
     let nominalVars = new Set(getNominalVariables(selectedProblem));
     let predictorVars = getPredictorVariables(selectedProblem);
 

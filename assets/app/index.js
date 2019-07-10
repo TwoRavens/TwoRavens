@@ -170,8 +170,8 @@ class Body {
             let selectedSolutions = results.getSolutions(resultsProblem);
             if (app.is_results_mode && selectedSolutions.length === 1 && selectedSolutions[0]) {
                 path.push(m(Icon, {name: 'chevron-right'}), m('h4[style=display: inline-block; margin: .25em 1em]', ({
-                    'rook': solverRook, 'd3m': solverD3M
-                })[selectedSolutions[0].source].getName(pathProblem, selectedSolutions[0])))
+                    rook: solverRook.getSolutionAdapter, d3m: solverD3M.getSolutionAdapter
+                })[selectedSolutions[0].source](pathProblem, selectedSolutions[0]).getName()))
             }
 
             return path;

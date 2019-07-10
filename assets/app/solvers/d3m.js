@@ -2,25 +2,201 @@ import m from "mithril";
 
 import * as app from '../app.js';
 import * as results from "../results";
-import * as queryMongo from '../manipulations/queryMongo';
 
-import {alertError, alertWarn, buildDatasetUrl, debugLog} from "../app";
+import {alertError, alertWarn, d3mMetricsInverted, debugLog} from "../app";
 
 import {locationReload, setModal} from "../../common/views/Modal";
+import * as queryMongo from "../manipulations/queryMongo";
 
 // functions to extract information from D3M response format
-export let getName = (problem, solution) => solution.pipelineId;
-export let getActualValues = (problem, solution, target) => problem.actualValues && problem.actualValues.map(point => point[target]);
-export let getFittedValues = (problem, solution, target) => {
-    if (!solution.predictedValues) return;
-    let samples = problem.actualValues.map(point => point.d3mIndex);
-    return samples.map(sample => solution.predictedValues[sample]);
-};
-export let getScore = (problem, solution, target) => solution.score;
-export let getDescription = (problem, solution) => solution.description;
-export let getTask = (problem, solution) => solution.status;
-export let getModel = (problem, solution) => `${(solution.steps || []).length} steps`;
+export let getSolutionAdapter = (problem, solution) => ({
+    getName: () => solution.pipelineId,
+    getActualValues: target => {
+        // lazy data loading
+        loadProblemData(problem);
 
+        let problemData = resultsData.problem;
+        // cached data is current, return it
+        return problemData && problemData.map(point => point[target]);
+    },
+    getFittedValues: target => {
+        // lazy data loading
+        loadSolutionData(problem, solution);
+
+        let problemData = resultsData.problem;
+        let solutionData = resultsData.fitted[solution.pipelineId];
+
+        if (!problemData || !solutionData) return;
+
+        // cached data is current, return it
+        let samples = problemData.map(point => point.d3mIndex);
+        return samples.map(sample => solutionData[sample])
+    },
+    getConfusionMatrix: target => {
+        loadConfusionData(problem, solution);
+        return resultsData.confusion[solution.pipelineId];
+    },
+    getScore: (target, metric) => {
+        let evaluation = solution.scores.find(score => d3mMetricsInverted[score.metric.metric] === metric);
+        if (evaluation) return evaluation.value.raw.double
+    },
+    getDescription: () => solution.description,
+    getTask: () => solution.status,
+    getModel: () => `${(solution.pipeline.steps || {pipeline: []}).length} steps`
+});
+
+
+// these variables hold indices, predictors, predicted and actual data
+export let resultsData = {
+    problem: undefined,
+    problemLoading: false,
+
+    fitted: {},
+    fittedLoading: {},
+
+    confusion: {},
+    confusionLoading: {},
+
+    importanceEFD: {},
+    importanceEFDLoading: {},
+
+    id: {
+        problemID: undefined,
+        query: []
+    }
+};
+export let resultsQuery = [];
+
+export let recordLimit = 1000;
+// get predictors, actual values, d3mIndices
+export let loadProblemData = async problem => {
+    let newID = {problemID: problem.problemID, query: resultsQuery};
+    if (JSON.stringify(resultsData.id) === JSON.stringify(newID))
+        return;
+
+    if (resultsData.problemLoading)
+        return;
+
+    resultsData.problem = undefined;
+    resultsData.problemLoading = true;
+
+    resultsData.fitted = {};
+    resultsData.fittedLoading = {};
+
+    resultsData.confusion = {};
+    resultsData.confusionLoading = {};
+
+    resultsData.importanceEFD = {};
+    resultsData.importanceEFDLoading = {};
+
+    try {
+        resultsData.problem = await app.getData({
+            method: 'aggregate',
+            query: JSON.stringify(queryMongo.buildPipeline(
+                [...workspace.raven_config.hardManipulations, ...problem.manipulations, {
+                    type: 'menu',
+                    metadata: {
+                        type: 'data',
+                        variables: ['d3mIndex', ...problem.targets],
+                        sample: recordLimit
+                    }
+                }],
+                workspace.raven_config.variablesInitial)['pipeline'])
+        })
+    } catch (err) {
+        app.alertWarn('Dependent variables have not been loaded. Some plots will not load.')
+    }
+
+    resultsData.id = newID;
+
+    resultsData.problemLoading = false;
+    m.redraw()
+};
+
+export let loadSolutionData = async (problem, solution) => {
+    if (!solution.data_pointer) return;
+
+    // don't load if systems are already in loading state
+    if (resultsData.problemLoading || resultsData.fittedLoading[solution.pipelineId])
+        return;
+
+    await loadProblemData(problem);
+
+    if (solution.pipelineId in resultsData.fitted) return;
+
+    resultsData.fittedLoading[solution.pipelineId] = true;
+
+    let d3mIndices = resultsData.problem.map(point => String(point.d3mIndex));
+    let response;
+    try {
+        response = await app.makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {
+            data_pointer: solution.data_pointer, indices: d3mIndices
+        });
+
+        if (!response.success) {
+            console.warn(response.data);
+            throw response.data;
+        }
+    } catch (err) {
+        app.alertWarn('Solution data has not been loaded. Some plots will not load.');
+        return;
+    }
+    // TODO: this is only index zero if there is one target
+    // TODO: multilabel problems will have d3mIndex collisions
+    resultsData.fitted[solution.pipelineId] = response.data
+        .reduce((out, point) => Object.assign(out, {[point['']]: isNaN(parseFloat(point['0'])) ? point['0'] : parseFloat(point['0'])}), {});
+    resultsData.fittedLoading[solution.pipelineId] = false;
+    m.redraw();
+};
+
+export let loadConfusionData = async (problem, solution) => {
+    if (!solution.data_pointer) return;
+    if (!['classification', 'semisupervisedClassification'].includes(problem.task)) return;
+
+    // don't load if systems are already in loading state
+    if (resultsData.confusionLoading[solution.pipelineId])
+        return;
+
+    if (solution.pipelineId in resultsData.confusion) return;
+
+    resultsData.confusionLoading[solution.pipelineId] = true;
+
+    let compiled = JSON.stringify(queryMongo.buildPipeline([
+        ...app.workspace.raven_config.hardManipulations,
+        ...problem.manipulations,
+        ...resultsQuery
+    ], app.workspace.raven_config.variablesInitial)['pipeline']);
+    let response;
+    try {
+        response = await app.makeRequest(D3M_SVC_URL + `/retrieve-output-confusion-data`, {
+            data_pointer: solution.data_pointer,
+            metadata: {
+                targets: problem.targets,
+                collectionName: app.workspace.d3m_config.name,
+                manipulations: compiled
+            }
+        });
+
+        if (!response.success) {
+            console.warn(response.data);
+            throw response.data;
+        }
+    } catch (err) {
+        console.warn("retrieve-output-confusion-data error");
+        console.log(err);
+        app.alertWarn('Confusion matrix data has not been loaded. Some plots will not load.');
+        return;
+    }
+
+    // TODO: this is only index zero if there is one target
+    // TODO: multilabel problems will have d3mIndex collisions
+    resultsData.confusion[solution.pipelineId] = {
+        data: response.data.confusion_matrix,
+        classes: response.data.labels
+    };
+    resultsData.confusionLoading[solution.pipelineId] = false;
+    m.redraw();
+};
 
 // no new pipelines will be found under searchId
 // pipelines under searchId are also wiped/no longer accessible
@@ -321,7 +497,6 @@ let stepSubset = (step, index) => {
     });
 };
 
-// noop until a recoding/imputer primitive is found
 let stepImpute = (metadata, index) => metadata.imputations.flatMap((imputation, ravenIndex) => {
     let hyperparams = {};
     if (imputation.replacementMode === 'Statistic') {
@@ -668,20 +843,9 @@ export async function handleGetProduceSolutionResultsResponse(response) {
         return;
     }
 
-    let data_pointer = Object.values(response.response.exposedOutputs)[0].csvUri;
+    solvedProblem.solutions.d3m[response.pipelineId].data_pointer = Object.values(response.response.exposedOutputs)[0].csvUri
 
-    let reducedProblem = Object.assign({}, solvedProblem);
-    delete reducedProblem.solutions;
-
-    // TODO: check if String cast necessary
-    let d3mIndices = solvedProblem.actualValues.map(point => String(point.d3mIndex));
-    app.makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer, indices: d3mIndices})
-        .then(responseOutputData =>
-            // TODO: this is only index zero if there is one target
-            // TODO: multilabel problems will have d3mIndex collisions
-            solvedProblem.solutions.d3m[response.pipelineId].predictedValues = responseOutputData.data
-                .reduce((out, point) => Object.assign(out, {[point['']]: parseFloat(point['0']) || point['0']}), {}));
-
+    m.redraw();
     // let problemMetadata = {
     //     dataset: app.workspace.d3m_config.name,
     //     task: solvedProblem.task,
