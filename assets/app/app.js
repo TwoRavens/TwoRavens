@@ -1300,8 +1300,20 @@ export async function load() {
     if (problemDoc) {
         setTask1_finished(true);
         if (problemDoc.success !== true) {
-            const user_err_msg = "Failed to make Hello connection with TA2! status code: " + problemDoc.message;
-            setModal(user_err_msg, "Error Connecting to TA2", true, "Reset", false, locationReload);
+          //  const user_err_msg = "We were unable to connect to the TA2 system.  It may not be ready.  Please try again.  (status code: " + problemDoc.message + ")";
+            setModal(
+                m('div', [
+                    m('p', {class: 'h5'}, "We were unable to connect to the TA2 system."),
+                    m('p', {class: 'h5'}, "It may not be ready."),
+                    m('p', {class: 'h5'}, "Please try again using the button below."),
+                    m('hr'),
+                    m('p', "Technical details: " + problemDoc.message),
+                  ]),
+                  "Error Connecting to the TA2",
+                  true,
+                  "Retry TA2 Connection",
+                  false,
+                  locationReload);
             return;
         } else {
 
@@ -1855,11 +1867,19 @@ export let saveUserWorkspace = () => {
  */
 
  /*
+ *  Variables related to Workspace info window
+ */
+export let isWorkspaceInfoWindowOpen = false;
+// Open/close modal window
+export let setWorkspaceInfoWindowOpen = (boolVal) => isWorkspaceInfoWindowOpen = boolVal;
+
+ /*
  *  Variables related to API info window
  */
 export let isAPIInfoWindowOpen = false;
 // Open/close modal window
 export let setAPIInfoWindowOpen = (boolVal) => isAPIInfoWindowOpen = boolVal;
+
 
 
 // TA2 server information for display in modal

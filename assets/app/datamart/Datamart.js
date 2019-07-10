@@ -780,7 +780,7 @@ export class ModalDatamart {
                                 // left_meta: JSON.stringify(implicitVariables)
                             }
 
-                            console.log(augment_api_data);
+                            console.log('augment_api_data: ' + JSON.stringify(augment_api_data));
 
                             let response = await m.request(endpoint + 'augment', {
                                 method: 'POST',
@@ -790,17 +790,21 @@ export class ModalDatamart {
                             if (response.success) {
                                 delete preferences.error[sourceMode];
                                 preferences.success[sourceMode] = response.message;
+                                preferences.success[sourceMode] = '';
                                 preferences.modalShown = false;
                             } else {
-                              setModal(m('div', m('p', 'An error occurred:'),
+                              /*setModal(m('div', m('p', 'An error occurred:'),
                                   m('p', response.data)),
-                                  "Sorry Augment Faild",
+                                  "Sorry Augment Failed",
                                   true,
                                   "Close",
-                                  true);
-                                preferences.error[sourceMode] = response.data;
+                                  true);*/
+                                preferences.error[sourceMode] = m.trust(response.message);
+                                // turn off spinner
+                                preferences.isAugmenting = false;
                                 delete preferences.success[sourceMode]
-                                preferences.isSearching[sourceMode] = false;
+                                m.redraw()
+                                // preferences.isSearching[sourceMode] = false;
                             }
 
                             console.log("#debug response augment");

@@ -663,8 +663,8 @@ class Body {
                   m('span', app.TA2ServerInfo)
                 ]),
               m('p', [
-                  m('b', 'TA3 API: '),
-                  m('span', `${TA3TA2_API_VERSION}`)
+                  m('b', 'TA3: '),
+                  m('span', `TwoRavens (API: ${TA3TA2_API_VERSION})`)
                 ]),
               m('hr'),
               m('p', [
