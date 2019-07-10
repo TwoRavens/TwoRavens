@@ -55,6 +55,8 @@ class PreprocessUtil(BasicErrCheck):
         self.rook_app_info = None
         self.preprocess_data = None
 
+        self.column_names = None
+
         self.set_rook_app_info()
         self.run_preprocess()
 
@@ -98,6 +100,9 @@ class PreprocessUtil(BasicErrCheck):
         info = dict(data=self.source_path,
                     datastub=self.datastub)
 
+        if self.column_names:
+            info['columns'] = self.column_names
+
         json_str_info = json_dumps(info)
         if json_str_info.success:
             app_data = {SOLA_JSON_KEY: json_str_info.result_obj}
@@ -125,6 +130,13 @@ class PreprocessUtil(BasicErrCheck):
         #
         if self.fix_duplicate_columns:
             dcr = DuplicateColumnRemover(self.source_path)
+            self.column_names = dcr.updated_columns
+
+            print('deduped colnames')
+            print(self.column_names)
+            print(dcr.orig_column_names)
+            print(self.source_path)
+
             if dcr.has_error():
                 user_msg = (f'Augment error during column checks: '
                             f'{dcr.get_error_message()}')

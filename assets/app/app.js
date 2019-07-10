@@ -1163,7 +1163,7 @@ export let loadWorkspace = async newWorkspace => {
             : newWorkspace.datasetDoc.dataResources // if swandive false, then datadoc has column labeling
                 .filter(resource => resource.resType === 'table')
                 .flatMap(resource => resource.columns
-                    .filter(column => column.role[0] !== 'index' && !targets.includes(column.colName))
+                    .filter(column => !column.role.includes('index') && !targets.includes(column.colName))
                     .map(column => column.colName));
 
         console.log('pdoc targets: ' + JSON.stringify(targets));
@@ -1195,7 +1195,11 @@ export let loadWorkspace = async newWorkspace => {
                 transformed: [],
                 weights: [], // singleton list
                 crossSection: [],
-                time: [],
+                time: swandive ? [] : newWorkspace.datasetDoc.dataResources // if swandive false, then datadoc has column labeling
+                    .filter(resource => resource.resType === 'table')
+                    .flatMap(resource => resource.columns
+                        .filter(column => column.role.includes('timeIndicator'))
+                        .map(column => column.colName)),
                 nominal: Object.keys(variableSummaries)
                     .filter(variable => variableSummaries[variable].nature === 'nominal'),
                 loose: [] // variables displayed in the force diagram, but not in any groups
@@ -1761,6 +1765,7 @@ export let setVariableSummaries = state => {
 
     // quality of life
     Object.keys(variableSummaries).forEach(variable => variableSummaries[variable].name = variable);
+    window.variableSummaries = variableSummaries;
 };
 export let variableSummaries = {};
 

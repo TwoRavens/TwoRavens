@@ -13,9 +13,13 @@ def json_loads(json_str):
         json_dict = json.loads(json_str,
                                object_pairs_hook=OrderedDict)
     except json.decoder.JSONDecodeError as err_obj:
+        print('Failed JSON string:')
+        print(json_str)
         err_msg = 'Failed to convert string to JSON: %s' % (err_obj)
         return err_resp(err_msg)
     except TypeError as err_obj:
+        print('Failed JSON string:')
+        print(json_str)
         err_msg = 'Failed to convert string to JSON: %s' % (err_obj)
         return err_resp(err_msg)
 

@@ -755,6 +755,7 @@ export class ModalDatamart {
 
                             // console.warn("#debug implicitVariables");
                             // console.log(implicitVariables);
+
                             let augment_api_data = {
                                 data_path: dataPath,
                                 search_result: JSON.stringify(preferences.selectedResult),

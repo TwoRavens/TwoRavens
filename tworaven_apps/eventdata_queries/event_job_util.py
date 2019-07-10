@@ -8,7 +8,7 @@ from django.conf import settings
 from collections import OrderedDict
 
 from tworaven_apps.utils.view_helper import get_json_error
-from tworaven_apps.utils.mongo_util import infer_type
+from tworaven_apps.utils.mongo_util import infer_type, encode_variable
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
 from tworaven_apps.eventdata_queries.models import \
@@ -510,7 +510,7 @@ class EventJobUtil(object):
 
         with open(datafile, 'r') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
-            columns = next(csv_reader)
+            columns = [encode_variable(value) for value in next(csv_reader)]
             for observation in csv_reader:
                 db[settings.MONGO_COLLECTION_PREFIX + collection].insert_one({
                     col: infer_type(val) for col, val in zip(columns, observation)
