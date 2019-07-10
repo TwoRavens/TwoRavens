@@ -8,13 +8,14 @@
     "source": "OpenML",
     "sourceURI": "http://www.openml.org/d/299",
     "approximateSize": "",
-    "datasetVersion": "1.0",
-    "datasetSchemaVersion": "3.1.1",
-    "redacted": false
+    "datasetVersion": "2.0",
+    "datasetSchemaVersion": "3.2.0",
+    "redacted": false,
+    "digest": "3830e46c75293f50ec4cb2d698f2a30ff6b708d9def99e1a9393b5b58569d588"
   },
   "dataResources": [
     {
-      "resID": "0",
+      "resID": "learningData",
       "resPath": "tables/learningData.csv",
       "resType": "table",
       "resFormat": [
@@ -753,7 +754,7 @@
         {
           "colIndex": 91,
           "colName": "class",
-          "colType": "real",
+          "colType": "categorical",
           "role": [
             "suggestedTarget"
           ]

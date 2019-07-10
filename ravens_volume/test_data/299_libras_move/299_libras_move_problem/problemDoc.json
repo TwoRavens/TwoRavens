@@ -1,12 +1,12 @@
 {
   "about": {
     "problemID": "299_libras_move_problem",
-    "problemName": "libras_move_problem",
+    "problemName": "libras_move",
     "problemDescription": "**Author**: Daniel Baptista Dias, Sarajane Marques Peres, Helton Hideraldo Biscaro  \nUniversity of Sao Paulo, School of Art, Sciences and Humanities, Sao Paulo, SP, Brazil  \n**Source**: Unknown - November 2008  \n**Please cite**:   \n\n### LIBRAS Movement Database\nLIBRAS, acronym of the Portuguese name \"LIngua BRAsileira de Sinais\", is the official brazilian sign language. The dataset (movement_libras) contains 15 classes of 24 instances each, where each class references to a hand movement type in LIBRAS. The hand movement is represented as a bidimensional curve performed by the hand in a period of time. The curves were obtained from videos of hand movements, with the Libras performance from 4 different people, during 2 sessions. Each video corresponds to only one hand movement and has about $7$ seconds. Each video corresponds to a function F in a functions space which is the continual version of the input dataset. In the video pre-processing, a time normalization is carried out selecting 45 frames from each video, in according to an uniform distribution. In each frame, the centroid pixels of the segmented objects (the hand) are found, which compose the discrete version of the curve F with 45 points. All curves are normalized in the unitary space.\nIn order to prepare these movements to be analysed by algorithms, we have carried out a mapping operation, that is, each curve F is mapped in a representation with 90 features, with representing the coordinates of movement. \nEach instance represents 45 points on a bi-dimensional space, which can be plotted in an ordered way (from 1 through 45 as the X coordinate) in order to draw the path of the movement.",
-    "taskType": "regression",
-    "taskSubType": "univariate",
-    "problemVersion": "1.0",
-    "problemSchemaVersion": "3.1.1"
+    "taskType": "classification",
+    "taskSubType": "multiClass",
+    "problemVersion": "2.0",
+    "problemSchemaVersion": "3.2.0"
   },
   "inputs": {
     "data": [
@@ -15,7 +15,7 @@
         "targets": [
           {
             "targetIndex": 0,
-            "resID": "0",
+            "resID": "learningData",
             "colIndex": 91,
             "colName": "class"
           }
@@ -23,16 +23,12 @@
       }
     ],
     "dataSplits": {
-      "method": "holdOut",
-      "testSize": 0.2,
-      "stratified": true,
-      "numRepeats": 0,
-      "randomSeed": 42,
-      "splitsFile": "dataSplits.csv"
+      "splitsFile": "dataSplits.csv",
+      "splitScript": "splitData.py"
     },
     "performanceMetrics": [
       {
-        "metric": "meanSquaredError"
+        "metric": "accuracy"
       }
     ]
   },

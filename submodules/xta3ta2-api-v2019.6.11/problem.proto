@@ -63,11 +63,13 @@ enum PerformanceMetric {
     OBJECT_DETECTION_AVERAGE_PRECISION = 18;
     HAMMING_LOSS = 19;
 
-    // This metric can be used to ask TA2 to rank all found solutions
-    // using a floating-point rank. Lower numbers represent better solutions.
-    // Presently evaluation requirements are that ranks should be non-negative and that
-    // each ranked pipeline have a different rank.
-    // Only possible with "RANKING" evaluation method.
+    // This metric can be used to ask TA2 to rank a solution as part of
+    // all found solutions of a given "SearchSolutions" call. Rank is a
+    // floating-point number. Lower numbers represent better solutions.
+    // Presently evaluation requirements are that ranks should be non-negative
+    // and that each ranked pipeline have a different rank (for all
+    // solutions of a given SearchSolutions call). Only possible with
+    // "RANKING" evaluation method.
     RANK = 99;
 
     // The rest are defined to allow expressing internal evaluation

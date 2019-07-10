@@ -56,7 +56,8 @@ def view_pebbles_home(request):
                  TA2_STATIC_TEST_MODE=settings.TA2_STATIC_TEST_MODE,
                  TA2_TEST_SERVER_URL=settings.TA2_TEST_SERVER_URL,
                  TA3_GRPC_USER_AGENT=settings.TA3_GRPC_USER_AGENT, TA3TA2_API_VERSION=TA3TA2Util.get_api_version(),
-                 WEBSOCKET_PREFIX=settings.WEBSOCKET_PREFIX)
+                 WEBSOCKET_PREFIX=settings.WEBSOCKET_PREFIX,
+                 GIT_BRANCH_INFO=settings.GIT_BRANCH_INFO)
 
     #print('-' * 40)
     #print(dinfo['app_config'])

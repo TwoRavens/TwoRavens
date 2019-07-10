@@ -2,6 +2,11 @@ from django.conf.urls import url
 from tworaven_apps.datamart_endpoints import views
 
 urlpatterns = (
+
+    url(r'^api/datamart-info$',
+        views.api_datamart_info,
+        name='api_datamart_info'),
+
     url(r'^api/get_metadata$',
         views.api_get_metadata,
         name='get_metadata'),
@@ -29,6 +34,7 @@ urlpatterns = (
     url(r'^api/augment$',
         views.api_augment_async,
         name='api_augment_async'),
+
 
     #url(r'^api/augment$',
     #    views.api_augment,

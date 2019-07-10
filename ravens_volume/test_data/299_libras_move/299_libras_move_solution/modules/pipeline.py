@@ -2,7 +2,7 @@ import os, sys, json
 import pandas as pd
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import SGDClassifier
-from sklearn.metrics import f1_score, mean_squared_error
+from sklearn.metrics import f1_score, mean_squared_error, accuracy_score
 
 here = os.path.dirname(os.path.abspath(__file__))
 
@@ -72,12 +72,12 @@ if __name__ == '__main__':
 	est_class = est['estimator']
 	est_params = est['params']
 
-	EST = eval(est_class)(**est_params)
+	EST = SGDClassifier(max_iter=100000, tol=1e-1, random_state=42)
 
 	## make a pipeline from the above three components
 	pipeline = Pipeline([
 		('vect', FE),
-		('sel', FS),
+		# ('sel', FS),
 		('clf', EST),
 	])
 
@@ -103,4 +103,8 @@ if __name__ == '__main__':
 			score = mean_squared_error(y_test, y_pred)
 			print('meanSquaredError', score)
 			scoresdf.loc[len(scoresdf)]=['meanSquaredError', score]
+		elif metric == 'accuracy':
+			score = accuracy_score(y_test, y_pred)
+			scoresdf.loc[len(scoresdf)]=['accuracy', score]
+	print(score)
 	scoresdf.to_csv(os.path.join('.','scores.csv'))

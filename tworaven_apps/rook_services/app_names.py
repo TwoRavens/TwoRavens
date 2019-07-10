@@ -11,6 +11,7 @@ PREPROCESS_ROOK_APP_NAME = 'preprocessapp'
 
 EXPLORE_APP = 'EXPLORE_APP'
 PLOTDATA_APP = 'PLOTDATA_APP'
+PARTIALS_APP = 'PARTIALS_APP'
 
 # Used for tracking rook routing.
 #
@@ -40,6 +41,7 @@ ROOK_APP_NAMES = [('DATA_APP', 'dataapp', 'dataapp'),       # session id?
                   ('ROOK_FILES_APP', 'rook-files', 'rook-files'),
                   (HEALTH_CHECK_APP, 'healthcheckapp', 'healthcheckapp'), # healthcheckapp
                   #('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models
+                  (PARTIALS_APP, 'partialsapp', 'partialsapp'),  # construct partials dataset
                  ]
 
 ROOK_APP_NAMES += [\
@@ -50,10 +52,13 @@ ROOK_APP_NAMES += [\
          'privateAccuraciesapp',
          'privateAccuraciesapp'),] # privacy 2
 
-# Look up by frontend name
+# Look up by frontend name, 2nd entry in triple
 #
 ROOK_APP_FRONTEND_LU = {info[1]: info for info in ROOK_APP_NAMES}
 
+# Look up by name name, 1st entry in triple
+#
+ROOK_APP_NAME_LOOKUP = {info[0]: info for info in ROOK_APP_NAMES}
 
 """
 Temp notes until new front end is integrated
