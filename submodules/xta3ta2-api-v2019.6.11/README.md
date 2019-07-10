@@ -182,8 +182,11 @@ pipeline is valid and return it for it to be directly executed (scored, fitted, 
 produce data). This allows fixed computations to be done on data, for example, the pipeline
 can consist of only one primitive with fixed hyper-parameters to execute that one primitive.
 Moreover, such fully specified pipelines with fixed hyper-parameters can have any
-inputs and any outputs. Otherwise pipelines have to be from a Dataset container value
-to predictions Pandas dataframe.
+inputs and any outputs. (Standard pipelines are from a Dataset container value
+to predictions Pandas dataframe.) When non-Dataset inputs are provided, TA2 should attempt
+to convert input value to closest container type value, e.g., GRPC `RAW` list value should
+be converted to `d3m.container.List` with generated metadata, CSV file read as Pandas
+DataFrame should be converted to `d3m.container.DataFrame` with generated metadata.
 
 Relaxation: Individual systems can support also pipelines with all primitives specified,
 but with free (available for tuning) hyper-parameters. In this case, TA2 will only tune
@@ -336,11 +339,6 @@ pipeline is full specified by a TA3 system so inputs and outputs can be anything
   ]
 }
 ```
-
-## Required primitives
-
-There is a [list of required primitives available](./required_primitives.txt). The list
-contains primitives that TA3 systems expect to be available for execution by any TA2 system.
 
 ## Standard port
 

@@ -9,7 +9,7 @@
   * Change a version (`protocol_version`) in `core.proto` to a version without `_pre`.
   * Change `vNEXT` in `HISTORY.md` to the to-be-released version, with `v` prefix.
   * Change Python dependency in `setup.py` for D3M core package from
-    `d3m @ git+https://gitlab.com/datadrivendiscovery/d3m.git@devel#egg=d3m-devel` to the
+    `d3m @ git+https://gitlab.com/datadrivendiscovery/d3m.git@devel#egg=d3m` to the
     current stable version (e.g., `d3m==2019.4.4). Do **not** start version with `v` for the D3M
     core package dependency.
   * Commit with message `Bumping version for release.`
@@ -27,7 +27,7 @@
   * Change a version (`protocol_version`) in `core.proto` to the next day (or next known release date) and append `_pre`.
   * Add a new empty `vNEXT` version on top of `HISTORY.md`.
   * Change Python dependency in `setup.py` for D3M core package to
-  `d3m @ git+https://gitlab.com/datadrivendiscovery/d3m.git@devel#egg=d3m-devel`.
+  `d3m @ git+https://gitlab.com/datadrivendiscovery/d3m.git@devel#egg=d3m`.
   * Commit with message `Version bump for development.`
   * `git push`
 * Close a milestone for the just released version.
