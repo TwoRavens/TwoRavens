@@ -24,6 +24,8 @@ partials.app <- function(env){
         sink(file = stderr(), type = "output")
     }
 
+    print("GOT HERE")
+
     request <- Request$new(env)
     response <- Response$new(headers = list( "Access-Control-Allow-Origin"="*"))
 
@@ -39,9 +41,10 @@ partials.app <- function(env){
     }
 
 	if(!warning){
-		mymetadata <- partialsParams$metadata
+        md <- list()   # rebuild to resemble original structure in metadata file
+        md$variables <- partialsParams$metadata
 
-        if(length(mymetadata) == 0){ 
+        if(length(md$variables) == 0){ 
                 warning <- TRUE
                 result <- list(warning="No metadata included.")
         }
@@ -56,21 +59,12 @@ partials.app <- function(env){
         }
     }
 
-    #if(!warning){
-    #    mydatastub <- preprocessParams$datastub
-    #    if(length(mydatastub) == 0){ # rewrite to check for data file?
-    #        warning <- TRUE
-    #        result <- list(warning="No dataset stub name.")
-    #    }
-    #}
-
     if(!warning){
         tryCatch({
 
             #########################################################
             ## Construct dataset of partials from metadata values
 
-            md <- jsonlite::fromJSON(mymetadata)
             k <- length(md$variables)
             s <- 10
 
@@ -143,9 +137,9 @@ partials.app <- function(env){
     ## Write dataset of partials to desired location
 
     if(!warning){
-        merge_name <- "partialsData.csv"
+        merge_name <- "/partialsData.csv"
         outdata <- paste(mydataloc, merge_name, sep="")
-        print(outdata)
+        print(outdata[1])
 
         # R won't write to a directory that doesn't exist.
         if (!dir.exists(mydataloc)){
@@ -154,6 +148,7 @@ partials.app <- function(env){
 
         write.csv(mydata, outdata[1], row.names=FALSE, col.names=TRUE)
         result <- outdata[1]  # Path to partials dataset
+        result <- jsonlite:::toJSON(result)
     }
 
 

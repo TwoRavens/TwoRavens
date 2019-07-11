@@ -1554,6 +1554,28 @@ export async function estimate() {
     // route streamed responses with this searchId to this problem
     selectedProblem.d3mSearchId = res.data.searchId;
     m.redraw()
+
+    console.log("Attempting partials call");
+
+    let smallPartialsDataset; 
+
+    try {
+        smallPartialsDataset = await m.request({
+            method: 'POST',
+            url: ROOK_SVC_URL + 'partialsapp',
+            data: {
+                metadata: variableSummaries
+            }
+        });
+    } catch(err) {
+        cdb(err);
+        alertError(`Error: call to partialsapp failed`);
+    }
+
+    console.log("Cleared partials call");
+
+    console.log(smallPartialsDataset);
+
 }
 
 export async function makeRequest(url, data) {
