@@ -2307,8 +2307,9 @@ export async function handleAugmentDataMessage(msg_data){
           // (4) update ids of the orig selected problem to avoid clashes
           //
           tempSelectedProblem.problemID = generateProblemID();
-          delete tempSelectedProblem.provenanceID;
-
+          if ('provenanceID' in tempSelectedProblem){
+            delete tempSelectedProblem.provenanceID;
+          }
           // (5) add the old problem to the current problems list
           //    and make it the selected problem
           //
