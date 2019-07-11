@@ -3,6 +3,7 @@ Convenience commands to run local TA2 docker images
 - Updated on 7/17/2018 for the TA2TA3 API
 """
 import os
+from datetime import datetime
 from os.path import isdir, isfile, join
 
 from django.core import management
@@ -12,6 +13,7 @@ from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.configurations.models_d3m import \
     (D3M_SEARCH_CONFIG_NAME,)
 from tworaven_apps.configurations.utils import get_latest_d3m_config
+from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
 
 
 RAVENS_DIR = '/ravens_volume/test_data'
@@ -71,6 +73,8 @@ class TA2Helper(BasicErrCheck):
         self.data_input_dir = data_input_dir
         self.data_output_dir = data_output_dir
         self.ta2_name = ta2_name
+
+        self.delete_if_exists = kwargs.get('delete_if_exists', True)
 
         self.basic_checks()
         self.load_d3m_config()
@@ -145,7 +149,11 @@ class TA2Helper(BasicErrCheck):
         # ------------------------------
         # Run the TA2
         # ------------------------------
-        ta2_helper = TA2Helper(ta2_name, data_dir_path, output_dir_path)
+        params = dict(delete_if_exists=False)
+        ta2_helper = TA2Helper(ta2_name,
+                               data_dir_path,
+                               output_dir_path,
+                               **params)
         if ta2_helper.has_error():
             return err_resp(ta2_helper.error_message)
 
@@ -218,12 +226,34 @@ class TA2Helper(BasicErrCheck):
         if self.has_error():
             return
 
+        params = dict(delete_if_exists=self.delete_if_exists,
+                      is_default_config=True)
+
+        loader_info = EnvConfigLoader.make_config_from_directory(\
+                            self.data_input_dir,
+                            **params)
+                            #{delete_if_exists=self.delete_if_exists,
+                            #is_default_config=True)
+
+        if not loader_info.success:
+            self.add_err_msg(loader_info.err_msg)
+            return
+
+        d3m_config = loader_info.result_obj
+
+        # It worked!!
+        #
+        success_msg = ('(%s) Successfully loaded new'
+                       ' D3M configuration: "%s"') %\
+                      (d3m_config, datetime.now())
+        print(success_msg)
+        """
         try:
             management.call_command('load_config_by_data_dir', self.data_input_dir)
         except management.base.CommandError as err_obj:
             user_msg = '> Failed to load D3M config.\n%s' % err_obj
             self.add_err_msg(user_msg)
-
+        """
 
     def basic_checks(self):
         """check basic paths, etc"""

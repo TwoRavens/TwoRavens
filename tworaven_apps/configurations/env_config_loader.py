@@ -54,6 +54,8 @@ class EnvConfigLoader(BasicErrCheck):
             '"env_config_vals" must be a dict or a SimpleNamespace'
 
         self.delete_if_exists = kwargs.get('delete_if_exists', False)
+        self.success_keeping_config = False
+
         self.is_default_config = kwargs.get('is_default_config', False)
 
         self.orig_dataset_id = kwargs.get('orig_dataset_id', None)
@@ -105,6 +107,10 @@ class EnvConfigLoader(BasicErrCheck):
             return
 
         self.build_config_entry()
+
+        # bit of a hack, condition where keep config
+        if self.success_keeping_config:
+            return
 
     def read_problem_doc(self):
         """Verify the problem path
@@ -205,14 +211,21 @@ class EnvConfigLoader(BasicErrCheck):
         # If it exists, delete it
         d3m_config = D3MConfiguration.objects.filter(name=name).first()
         if d3m_config:
+            print('-' * 40)
+            print('Found config with same name: %s' %  d3m_config)
             if self.delete_if_exists:
-                print('Found config with same name: %s' %  d3m_config)
                 print('Deleting it....')
                 d3m_config.delete()
             else:
-                user_msg = 'Config with same id (%s) and name (%s) exists.' % \
-                        (d3m_config.id, d3m_config.name)
-                self.add_err_msg(user_msg)
+                user_msg = ('Config with same name'
+                            ' (%s) exists. Keeping it.') % \
+                            (d3m_config.id,)
+
+                self.success_keeping_config = True
+                self.d3m_config = d3m_config
+                print(user_msg)
+                print('-' * 40)
+
                 return
 
         config_info['name'] = name
@@ -336,6 +349,9 @@ class EnvConfigLoader(BasicErrCheck):
 
         loader = EnvConfigLoader(info, **kwargs)
         if loader.has_error():
-            return err_resp(loader.get_error_message())
+            if loader.success_keeping_config:
+                return ok_resp(loader.get_d3m_config())
+            else:
+                return err_resp(loader.get_error_message())
         else:
             return ok_resp(loader.get_d3m_config())
