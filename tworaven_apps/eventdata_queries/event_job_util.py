@@ -488,7 +488,7 @@ class EventJobUtil(object):
 
 
     @staticmethod
-    def import_dataset(database, collection, datafile, reload=False):
+    def import_dataset(database, collection, datafile, reload=False, column_names=None):
         """Key method to load a Datafile (csv) into Mongo as a new collection"""
         retrieve_util = MongoRetrieveUtil(database, collection)
         db_info = retrieve_util.get_mongo_db(database)
@@ -521,7 +521,7 @@ class EventJobUtil(object):
             next(csv_reader)
 
             # use duplicate column name removal headers instead
-            columns = [encode_variable(value) for value in dcr.updated_columns]
+            columns = [encode_variable(value) for value in column_names or dcr.updated_columns]
             for observation in csv_reader:
                 db[settings.MONGO_COLLECTION_PREFIX + collection].insert_one({
                     col: infer_type(val) for col, val in zip(columns, observation)
@@ -529,6 +529,16 @@ class EventJobUtil(object):
 
         return ok_resp({'collection': settings.MONGO_COLLECTION_PREFIX + collection})
 
+    @staticmethod
+    def delete_dataset(database, collection):
+        retrieve_util = MongoRetrieveUtil(database, collection)
+        db_info = retrieve_util.get_mongo_db(database)
+        if not db_info.success:
+            return err_resp(db_info.err_msg)
+
+        db = db_info.result_obj
+
+        db[collection].drop()
 
     @staticmethod
     def export_dataset(user_obj, collection, data):

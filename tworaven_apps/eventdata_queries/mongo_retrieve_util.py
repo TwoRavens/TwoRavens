@@ -116,7 +116,7 @@ class MongoRetrieveUtil(BasicErrCheck):
 
             if issubclass(type(query), dict):
                 # mutate query in-place
-                query_temp = {encode_variable(key): query[key] for key in query}
+                query_temp = {encode_variable(key): encode(query[key]) for key in query}
                 query.clear()
                 query.update(query_temp)
 

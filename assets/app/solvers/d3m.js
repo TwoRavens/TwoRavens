@@ -208,8 +208,9 @@ export let loadConfusionData = async (problem, solution) => {
 
 // importance from empirical first differences
 export let loadImportanceEFDData = async (problem, solution, predictor) => {
-    if (!solution.data_pointer) return;
-
+    // results file must have been set by TA2
+    if (!solution.data_pointer)
+        return;
     // don't load if systems are already in loading state
     if (resultsData.importanceEFDLoading[solution.pipelineId])
         return;
@@ -220,7 +221,7 @@ export let loadImportanceEFDData = async (problem, solution, predictor) => {
     resultsData.importanceEFDLoading[solution.pipelineId] = resultsData.importanceEFDLoading[solution.pipelineId] || {};
     resultsData.importanceEFDLoading[solution.pipelineId][predictor] = true;
 
-    // actual values after manipulations
+    // how to construct actual values after manipulations
     let compiled = JSON.stringify(queryMongo.buildPipeline([
         ...app.workspace.raven_config.hardManipulations,
         ...problem.manipulations,
@@ -229,13 +230,22 @@ export let loadImportanceEFDData = async (problem, solution, predictor) => {
 
     let response;
     try {
-        response = await app.makeRequest(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
-            data_pointer: solution.data_pointer,
-            metadata: {
-
-                targets: problem.targets,
-                collectionName: app.workspace.d3m_config.name,
-                manipulations: compiled
+        response = await m.request(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
+            method: 'POST',
+            data: {
+                data_pointer: solution.data_pointer,
+                metadata: {
+                    solutionId: solution.pipelineId,
+                    levels: app.getNominalVariables(problem)
+                        .map(variable => {
+                            if (app.variableSummaries[variable] === 'nominal')
+                                return {[variable]: Object.keys(app.variableSummaries[variable].plotvalues)}
+                        }).reduce((out, variable) => Object.assign(out, variable), {}),
+                    targets: problem.targets,
+                    predictors: problem.predictors,
+                    collectionName: app.workspace.d3m_config.name,
+                    query: compiled
+                }
             }
         });
 

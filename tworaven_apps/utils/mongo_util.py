@@ -44,8 +44,16 @@ def infer_type(value):
 
 
 def encode_variable(name):
-    return name.replace("\\", "\\\\").replace("\$", "\\u0024").replace(".", "\\u002e")
+    return name\
+        .replace("\\.", "escaped_dot_symbol")\
+        .replace("\\", "\\\\")\
+        .replace("\$", "\\u0024")\
+        .replace(".", "\\u002e")\
+        .replace("escaped_dot_symbol", ".")
 
 
 def decode_variable(name):
-    return name.replace("\\u002e", ".").replace("\\u0024", "\$").replace("\\\\", "\\")
+    return name\
+        .replace("\\u002e", ".")\
+        .replace("\\u0024", "\$")\
+        .replace("\\\\", "\\")
