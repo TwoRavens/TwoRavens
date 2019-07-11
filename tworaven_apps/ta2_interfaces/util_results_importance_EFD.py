@@ -24,6 +24,7 @@ from sklearn.metrics.classification import confusion_matrix
 
 from django.conf import settings
 
+from tworaven_apps.eventdata_queries.event_job_util import EventJobUtil
 from tworaven_apps.eventdata_queries.mongo_retrieve_util import MongoRetrieveUtil
 from tworaven_apps.utils.url_helper import format_file_uri_to_path
 from tworaven_apps.utils.number_formatting import add_commas_to_number
@@ -94,10 +95,7 @@ class ImportanceEFDUtil(object):
 
         return self.final_results
 
-    def get_statistics_results(self, file_uri, is_second_try=False):
-        """Get the content from the file and format a JSON snippet
-        that includes statistical summaries.
-        """
+    def load_results_into_mongo(self, file_uri, collection_name, target_names, is_second_try=False):
 
         if not file_uri:
             err_code = ERR_CODE_FILE_URI_NOT_SET
@@ -140,114 +138,135 @@ class ImportanceEFDUtil(object):
             return self.format_embed_err(ERR_CODE_UNHANDLED_FILE_TYPE,
                                          err_msg)
 
-        # Attempt to get the file size, which may throw an
-        # error if the file is not reachable
-        try:
-            fsize = getsize(fpath)
-        except OSError as ex_obj:
-            err_msg = 'Not able to open file: %s' % fpath
-            return self.format_embed_err(ERR_CODE_FILE_NOT_REACHABLE,
-                                         err_msg)
+        EventJobUtil.import_dataset(
+            settings.TWORAVENS_MONGO_DB_NAME,
+            collection_name,
+            datafile=fpath,
+            reload=True,
+            column_names=['d3mIndex', *target_names])
 
-        # Is the file too large to embed?
-        #
-        if fsize > settings.MAX_EMBEDDABLE_FILE_SIZE:
-            err_msg = ('This file was too large to embed.'
-                       ' Size was %s bytes but the limit is %s bytes.') % \
-                      (add_commas_to_number(fsize),
-                       add_commas_to_number(settings.MAX_EMBEDDABLE_FILE_SIZE))
-            return self.format_embed_err(ERR_CODE_FILE_TOO_LARGE_TO_EMBED,
-                                         err_msg)
+        return OrderedDict({KEY_SUCCESS: True})
 
-        # If it's a JSON file, read and return it
-        #
-        if self.is_json_file_type(fpath):
-            # Return the file directly
-            results_obj = self.load_and_return_json_file(fpath)
-            if results_obj.success:
-                fitted_values = results_obj.data
-            else:
-                return results_obj
-
-        # If it's a csv file, read to dataframe
-        #
-        else:
-            results_obj = self.load_and_return_csv_file(fpath)
-            if results_obj.success:
-                fitted_values = results_obj.data
-            else:
-                return results_obj
+    def get_statistics_results(self, file_uri, is_second_try=False):
+        """Get the content from the file and format a JSON snippet
+        that includes statistical summaries.
+        """
 
         # align joining column and avoid target collision in join
-        actual_target_name = self.metadata['targets'][0]
-        fitted_target_name = 'fitted_' + actual_target_name
-        fitted_values.columns = ['d3mIndex', fitted_target_name]
+        fitted_target_names = ['fitted_' + name for name in self.metadata['targets']]
+        results_collection_name = self.metadata['collectionName'] + \
+                                  '_solution_' + str(self.metadata['solutionId'])
 
-        util = MongoRetrieveUtil(settings.TWORAVENS_MONGO_DB_NAME, self.metadata['collectionName'])
+        util = MongoRetrieveUtil(
+            settings.TWORAVENS_MONGO_DB_NAME,
+            settings.MONGO_COLLECTION_PREFIX + self.metadata['collectionName'])
         if util.has_error():
             return OrderedDict({KEY_SUCCESS: False, KEY_DATA: util.get_error_message()})
 
-        # TODO: exhausting this cursor is potentially a memory bomb
-        actual_values = pd.DataFrame(list(util.run_query([
-            *self.metadata['manipulations'],
-            {'$project': {variable: 1 for variable in [*self.metadata['predictors'], actual_target_name]}}
-        ], 'aggregate')))
+        # populate levels if not passed (for example, numeric column tagged as categorical)
+        for key in self.metadata['levels']:
+            print(key)
+            if not self.metadata['levels'][key]:
+                response = util.run_query([
+                    *self.metadata['query'],
+                    {"$group": {"_id": f"${key}"}},
+                ], 'aggregate')
 
-        results_values = actual_values.join(fitted_values, 'd3mIndex')
+                if not response[0]:
+                    return OrderedDict({KEY_SUCCESS: False, KEY_DATA: response[1]})
+                self.metadata['levels'][key] = [doc['_id'] for doc in response[1]]
 
-        results = {}
+        def is_categorical(variable, levels):
+            return variable in levels
 
-        if self.metadata['task'] in ['classification', 'semisupervisedClassification']:
-            labels = list({*pd.unique(results_values[actual_target_name]),
-                           *pd.unique(results_values[fitted_target_name])})
+        def branch_target(variable, levels):
+            if is_categorical(variable, levels):
+                return {f'discrete-{variable}-{level}': {
+                "$sum": {"$cond": [{"$eq": [f"${variable}", level]}, 1, 0]}
+            } for level in self.metadata['levels'][variable]}
+            return {f'continuous-{variable}': {"$avg": f'${variable}'}}
 
-            results['confusion_matrix'] = confusion_matrix(
-                results_values[actual_target_name],
-                results_values[fitted_target_name],
-                labels=labels)
-            results['labels'] = labels
+        def aggregate_targets(variables, levels):
+            return {k: v for d in [
+                branch_target(target, levels) for target in variables
+            ] for k, v in d.items()}
 
-        # elif self.metadata.task in ['regression', 'semisupervisedRegression']:
-
-        def aggregate_target(variable):
-            if variable in self.metadata['nominal']:
-                # bin counts by variable levels
-                return {level: {"$sum": {"$cond": [{"$eq": [f"${variable}", level]}, 1, 0]}}
-                        for level in self.metadata['summaries'][variable].plotvalues.keys()}
-            else:
-                return {"average": {"$avg": f"${variable}"}}
-
-        def importance_target(variable):
-            return list(util.run_query([
-                *self.metadata['manipulations'],
-                {"$facet": {
-                    predictor: [{
-                        "$bucketAuto": {
-                            "buckets": min(100, int(len(actual_values) / 10)),
-                            "groupBy": f"${predictor}",
-                            "output": aggregate_target(variable)
+        query = [
+            *self.metadata['query'],
+            {
+                "$lookup": {
+                    "from": settings.MONGO_COLLECTION_PREFIX + results_collection_name,
+                    "localField": "d3mIndex",
+                    "foreignField": "d3mIndex",
+                    "as": "results_collection"
+                }
+            },
+            {
+                "$unwind": "$results_collection"
+            },
+            {"$project": {
+                **{
+                    name: f"$results_collection\\.{name}" for name in fitted_target_names
+                },
+                **{
+                    name: 1 for name in [*self.metadata['targets'], *self.metadata['predictors']]
+                },
+                **{"_id": 0}}
+            },
+            {
+                "$facet": {
+                    predictor: [
+                        {
+                            "$group": {
+                                **{"_id": f'${predictor}'},
+                                **aggregate_targets(self.metadata['targets'], self.metadata['levels'])
+                            }
+                        },
+                        # {
+                        #     "$rename": {f"_id.{predictor}": predictor}
+                        # },
+                    ] if is_categorical(predictor, self.metadata['levels']) else [
+                        {
+                            "$bucketAuto": {
+                                "groupBy": f'${predictor}',
+                                "buckets": 100,
+                                "output": aggregate_targets(self.metadata['targets'], self.metadata['levels'])
+                            }
                         }
-                    }]
-                    for predictor in self.metadata['predictors']}}
-            ], 'aggregate'))[0]
+                    ] for predictor in self.metadata['predictors']
+                }
+            },
+        ]
 
-        results['importance'] = {}
-        for target in self.metadata['targets']:
-            results['importance'][target] = importance_target(target)
+        # print(query)
+        try:
+            status = self.load_results_into_mongo(
+                file_uri,
+                results_collection_name,
+                fitted_target_names,
+                is_second_try)
 
-        # return OrderedDict({KEY_SUCCESS: False, KEY_DATA: f"Invalid task type: {self.metadata.task}"})
+            if not status['success']:
+                return status
 
-        # Send back the data
-        #
-        return OrderedDict({KEY_SUCCESS: True, KEY_DATA: results})
+            response = list(util.run_query(query, method='aggregate'))
 
+        finally:
+            EventJobUtil.delete_dataset(
+                settings.TWORAVENS_MONGO_DB_NAME,
+                results_collection_name)
+
+        if not response[0]:
+            return OrderedDict({KEY_SUCCESS: response[0], KEY_DATA: response[1]})
+
+        return OrderedDict({KEY_SUCCESS: response[0], KEY_DATA: response[1][0]})
 
     def attempt_test_output_directory(self, fpath):
         """quick hack for local testing.
         If the TA2 returns a file with file:///output/...,
         then attempt to map it back to the local directory"""
         d3m_config_info = get_latest_d3m_user_config(self.user)
-        if not d3m_config_info.success:
+        if not d3m_config_info['success']:
             err_msg = ('No D3M config found and file'
                        ' not found: %s') % fpath
             return self.format_embed_err(ERR_CODE_FILE_NOT_FOUND,
@@ -285,9 +304,7 @@ class ImportanceEFDUtil(object):
         assert isfile(fpath), "fpath must exist; check before using this method"
 
         try:
-            with open(fpath) as f:
-                fcontent = f.read()
-                dataframe = pd.read_json(fcontent)
+            dataframe = pd.read_json(fpath)
         # TODO: narrower exception catch
         except Exception as err:
             return self.format_embed_err(ERR_CODE_FILE_INVALID_JSON,
@@ -305,9 +322,7 @@ class ImportanceEFDUtil(object):
         assert isfile(fpath), "fpath must exist; check before using this method"
 
         try:
-            with open(fpath) as f:
-                fcontent = f.read()
-                dataframe = pd.read_csv(fcontent)
+            dataframe = pd.read_csv(fpath)
         # TODO: narrower exception catch
         except Exception as err:
             return self.format_embed_err(ERR_CODE_FILE_INVALID_CSV,

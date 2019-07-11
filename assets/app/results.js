@@ -463,16 +463,16 @@ export class CanvasSolutions {
             header: 'Prediction Summary',
             shown: resultsSubpanels['Prediction Summary'],
             setShown: state => {
-              resultsSubpanels['Prediction Summary'] = state;
-              if(state){
-                // behavioral logging
-                let logParams = {
-                              feature_id: 'VIEW_PREDICTION_SUMMARY',
-                              activity_l1: 'MODEL_SELECTION',
-                              activity_l2: 'MODEL_EXPLANATION'
-                            };
-                app.saveSystemLogEntry(logParams);
-              }
+                resultsSubpanels['Prediction Summary'] = state;
+                if (state) {
+                    // behavioral logging
+                    let logParams = {
+                        feature_id: 'VIEW_PREDICTION_SUMMARY',
+                        activity_l1: 'MODEL_SELECTION',
+                        activity_l2: 'MODEL_EXPLANATION'
+                    };
+                    app.saveSystemLogEntry(logParams);
+                }
             }
         }, resultsSubpanels['Prediction Summary'] && this.predictionSummary(problem, solutionAdapters));
 
@@ -607,7 +607,6 @@ export class CanvasSolutions {
         );
     }
 }
-
 
 let getSolutionAdapter = (problem, solution) => ({
     rook: solverRook.getSolutionAdapter, d3m: solverD3M.getSolutionAdapter

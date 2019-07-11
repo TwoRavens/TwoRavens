@@ -48,6 +48,7 @@ class Body {
     oninit() {
         app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
         app.set_mode('model');
+        this.TA2URL = D3M_SVC_URL + '/SearchDescribeFitScoreSolutions';
     }
 
     onupdate(vnode) {
@@ -408,7 +409,6 @@ class Body {
      * Start: Construct potential modal boxes for the page.
      */
     construct_modals() {
-        this.TA2URL = D3M_SVC_URL + '/SearchDescribeFitScoreSolutions';
         return [
             m(Modal),
             this.modalSaveCurrentWorkspace(),
@@ -601,8 +601,16 @@ class Body {
                 }, 'Prepare'),
                 m(Button, {
                     style: {margin: '1em'},
-                    onclick: () => app.makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', JSON.parse(this.TA2Post))
-                        .then(response => this.TA2Response = response).then(m.redraw)
+                    onclick: () => {
+                        m.request('/d3m-service/retrieve-output-EFD-data', {
+                            method: "POST",
+                            data: JSON.parse(this.TA2Post)
+                        })
+                        // m.request(this.TA2URL, {method: 'POST', data: JSON.parse(this.TA2Post)})
+                            .then(response => {
+                                console.log(response)
+                            }).then(m.redraw)
+                    }
                 }, 'Send'),
                 m('div#URL', {style: {margin: '1em'}},
                     'URL',
