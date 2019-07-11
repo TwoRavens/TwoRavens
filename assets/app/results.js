@@ -3,7 +3,6 @@ import * as jStat from 'jstat';
 
 import * as app from "./app";
 import * as plots from "./plots";
-import * as queryMongo from "./manipulations/queryMongo";
 
 import * as solverRook from './solvers/rook';
 import * as solverD3M from './solvers/d3m';
@@ -226,7 +225,7 @@ export class CanvasSolutions {
                         onclickChild: setConfusionFactor,
                         style: {'margin-left': '1em'}
                     }))),
-                m('div',
+                summaries.length > 1 && m('div',
                     m('label', 'Confusion Matrix Mode:'),
                     m(ButtonRadio, {
                         id: 'confusionModeButtonBar',
@@ -267,6 +266,47 @@ export class CanvasSolutions {
             ]
         }
     };
+
+    variableImportance(problem, adapter) {
+
+        // ensure valid state of importance predictor
+        if (!problem.predictors.includes(importancePreferences.predictor))
+            importancePreferences.predictor = problem.predictors[0]
+
+        let getEFDContent = () => {
+            let EFDData = adapter.getImportanceEFD(importancePreferences.predictor);
+            return EFDData && m(PlotVegaLite, {
+                data: EFDData,
+                specification: plots.vegaLine()
+            })
+        };
+
+        let getPDPContent = () => {};
+
+        return [
+            m('label', 'Variable importance mode:'),
+            m(ButtonRadio, {
+                id: 'modeImportanceButtonBar',
+                onclick: mode => importancePreferences.mode = mode,
+                activeSection: importancePreferences.mode,
+                sections: [
+                    {value: 'EFD', title: 'empirical first differences'},
+                    {value: 'PDP', title: 'partial dependency plot'}
+                ]
+            }),
+            m('label', 'Importance for predictor:'),
+            m(Dropdown, {
+                id: 'predictorImportanceDropdown',
+                items: problem.predictors,
+                onclickChild: mode => importancePreferences.predictor = mode,
+                activeItem: importancePreferences.predictor,
+            }),
+            ({
+                EFD: getEFDContent,
+                PDP: getPDPContent
+            }[importancePreferences.mode])()
+        ]
+    }
 
     visualizePipeline(solution) {
 
@@ -384,6 +424,7 @@ export class CanvasSolutions {
 
         let solutionAdapters = selectedSolutions
             .map(solution => getSolutionAdapter(problem, solution));
+        let firstAdapter = solutionAdapters[0];
         let firstSolution = selectedSolutions[0];
 
         let solutionSummary = selectedSolutions.length === 1 && m(Subpanel, {
@@ -433,7 +474,26 @@ export class CanvasSolutions {
                 app.saveSystemLogEntry(logParams);
               }
             }
-        }, this.predictionSummary(problem, solutionAdapters));
+        }, resultsSubpanels['Prediction Summary'] && this.predictionSummary(problem, solutionAdapters));
+
+
+        let variableImportance = firstAdapter && firstAdapter.getSource() === 'd3m' && m(Subpanel, {
+            style: {margin: '0px 1em'},
+            header: 'Variable Importance',
+            shown: resultsSubpanels['Variable Importance'],
+            setShown: state => {
+                resultsSubpanels['Variable Importance'] = state;
+                if(state){
+                    // behavioral logging
+                    let logParams = {
+                        feature_id: 'VIEW_VARIABLE_IMPORTANCE',
+                        activity_l1: 'MODEL_SELECTION',
+                        activity_l2: 'MODEL_EXPLANATION'
+                    };
+                    app.saveSystemLogEntry(logParams);
+                }
+            }
+        }, resultsSubpanels['Variable Importance'] && this.variableImportance(problem, firstAdapter));
 
         let visualizePipelinePanel = selectedSolutions.length === 1 && firstSolution.source === 'd3m' && m(Subpanel, {
             style: {margin: '0px 1em'},
@@ -451,7 +511,7 @@ export class CanvasSolutions {
                 app.saveSystemLogEntry(logParams);
               }
             }
-        }, this.visualizePipeline(firstSolution));
+        }, resultsSubpanels['Visualize Pipeline'] && this.visualizePipeline(firstSolution));
 
         let performanceStatsContents = firstSolution.source === 'rook' && Object.keys(firstSolution.models)
             .filter(target => firstSolution.models[target].statistics)
@@ -538,6 +598,7 @@ export class CanvasSolutions {
             problemSummary,
             solutionSummary,
             predictionSummary,
+            variableImportance,
             visualizePipelinePanel,
             performanceStats,
             coefficientMatrix,
@@ -554,6 +615,12 @@ let getSolutionAdapter = (problem, solution) => ({
 
 let leftTabResults = 'Solutions';
 let setLeftTabResults = tab => leftTabResults = tab;
+
+
+let importancePreferences = {
+    mode: 'EFD',
+    predictor: undefined
+};
 
 export let selectedMetric = {
     d3m: undefined,
@@ -581,7 +648,8 @@ let resultsSubpanels = {
     'Performance Statistics': false,
     'Visualize Pipeline': false,
     'Solution Description': false,
-    'Problem Description': false
+    'Problem Description': false,
+    'Variable Importance': false
 };
 
 

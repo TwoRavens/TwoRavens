@@ -11,6 +11,7 @@ import * as queryMongo from "../manipulations/queryMongo";
 // functions to extract information from D3M response format
 export let getSolutionAdapter = (problem, solution) => ({
     getName: () => solution.pipelineId,
+    getSource: () => solution.source,
     getActualValues: target => {
         // lazy data loading
         loadProblemData(problem);
@@ -42,7 +43,11 @@ export let getSolutionAdapter = (problem, solution) => ({
     },
     getDescription: () => solution.description,
     getTask: () => solution.status,
-    getModel: () => `${(solution.pipeline.steps || {pipeline: []}).length} steps`
+    getModel: () => `${(solution.pipeline.steps || {pipeline: []}).length} steps`,
+    getImportanceEFD: (predictor, target) => {
+        loadImportanceEFDData(problem, solution, predictor, target);
+        return resultsData.importanceEFD[solution.pipelineId];
+    }
 });
 
 
@@ -198,6 +203,57 @@ export let loadConfusionData = async (problem, solution) => {
         classes: response.data.labels
     };
     resultsData.confusionLoading[solution.pipelineId] = false;
+    m.redraw();
+};
+
+// importance from empirical first differences
+export let loadImportanceEFDData = async (problem, solution, predictor) => {
+    if (!solution.data_pointer) return;
+
+    // don't load if systems are already in loading state
+    if (resultsData.importanceEFDLoading[solution.pipelineId])
+        return;
+    // don't load if already loaded
+    if ((resultsData.importanceEFD[solution.pipelineId] || {})[predictor])
+        return;
+
+    resultsData.importanceEFDLoading[solution.pipelineId] = resultsData.importanceEFDLoading[solution.pipelineId] || {};
+    resultsData.importanceEFDLoading[solution.pipelineId][predictor] = true;
+
+    // actual values after manipulations
+    let compiled = JSON.stringify(queryMongo.buildPipeline([
+        ...app.workspace.raven_config.hardManipulations,
+        ...problem.manipulations,
+        ...resultsQuery
+    ], app.workspace.raven_config.variablesInitial)['pipeline']);
+
+    let response;
+    try {
+        response = await app.makeRequest(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
+            data_pointer: solution.data_pointer,
+            metadata: {
+
+                targets: problem.targets,
+                collectionName: app.workspace.d3m_config.name,
+                manipulations: compiled
+            }
+        });
+
+        if (!response.success) {
+            console.warn(response.data);
+            throw response.data;
+        }
+    } catch (err) {
+        console.warn("retrieve-output-confusion-data error");
+        console.log(err);
+        app.alertWarn('Variable importance EFD data has not been loaded. Some plots will not load.');
+        return;
+    }
+
+    // TODO: this is only index zero if there is one target
+    // TODO: multilabel problems will have d3mIndex collisions
+    resultsData.importanceEFD[solution.pipelineId] = response.data;
+    resultsData.importanceEFDLoading[solution.pipelineId] = false;
     m.redraw();
 };
 
