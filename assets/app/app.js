@@ -1524,11 +1524,33 @@ export async function estimate() {
 
     let datasetDocPath = selectedProblem.datasetDocPath || workspace.d3m_config.dataset_schema;
 
+    console.log("Attempting partials call");
+
+    let partialsLocation; 
+
+    try {
+        partialsLocation = await m.request({
+            method: 'POST',
+            url: ROOK_SVC_URL + 'partialsapp',
+            data: {
+                metadata: variableSummaries
+            }
+        });
+    } catch(err) {
+        cdb(err);
+        alertError(`Error: call to partialsapp failed`);
+    }
+
+    console.log("Cleared partials call");
+
+    console.log(partialsLocation);
+
     let allParams = {
         searchSolutionParams: solverD3M.GRPC_SearchSolutionsRequest(selectedProblem),
         fitSolutionDefaultParams: solverD3M.GRPC_GetFitSolutionRequest(datasetDocPath),
         produceSolutionDefaultParams: solverD3M.GRPC_ProduceSolutionRequest(datasetDocPath),
-        scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath)
+        scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath),
+        partialsLocation: partialsLocation
     };
 
     console.warn("#debug allParams");
@@ -1549,28 +1571,6 @@ export async function estimate() {
     // route streamed responses with this searchId to this problem
     selectedProblem.d3mSearchId = res.data.searchId;
     m.redraw()
-
-    console.log("Attempting partials call");
-
-    let smallPartialsDataset;
-
-    try {
-        smallPartialsDataset = await m.request({
-            method: 'POST',
-            url: ROOK_SVC_URL + 'partialsapp',
-            data: {
-                metadata: variableSummaries
-            }
-        });
-    } catch(err) {
-        cdb(err);
-        alertError(`Error: call to partialsapp failed`);
-    }
-
-    console.log("Cleared partials call");
-
-    console.log(smallPartialsDataset);
-
 }
 
 export async function makeRequest(url, data) {
