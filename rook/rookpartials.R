@@ -66,7 +66,6 @@ partials.app <- function(env){
             ## Construct dataset of partials from metadata values
 
             k <- length(md$variables)
-            print(k)
             s <- 10
 
             index <- rep(1,k+1)
@@ -149,14 +148,13 @@ partials.app <- function(env){
 
         write.csv(mydata, outdata[1], row.names=FALSE, col.names=TRUE)
         result <- outdata[1]  # Path to partials dataset
+        result <- jsonlite:::toJSON(result)
     }
 
 
     if(production){
         sink()
     }
-
-    print("success james")
 
     response$write(result)
     response$finish()

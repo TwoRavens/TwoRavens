@@ -1556,7 +1556,7 @@ export async function estimate() {
     let smallPartialsDataset; 
 
     try {
-        smallPartialDataset = await m.request({
+        smallPartialsDataset = await m.request({
             method: 'POST',
             url: ROOK_SVC_URL + 'partialsapp',
             data: {
