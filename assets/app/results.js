@@ -236,10 +236,10 @@ export class CanvasSolutions {
                             {value: 'Stack', title: 'render confusion matrices in the same space'},
                             {value: 'List', title: 'render confusion matrices above/below each other'}
                         ],
-                        attrsAll: {style: {'margin-top': '1em', width: 'auto', display: 'inline-block'}},
+                        attrsAll: {style: {'margin-left': '1em', width: '10em', display: 'inline-block'}},
                     })),
                 m('label', 'Pipeline:'),
-                m({Stack: MenuHeaders, List: MenuTabbed}[this.confusionMode], {
+                m({Stack: MenuTabbed, List: MenuHeaders}[this.confusionMode], {
                     id: 'confusionMenu',
                     currentTab: this.confusionMatrixSolution,
                     callback: solutionId => this.confusionMatrixSolution = solutionId,

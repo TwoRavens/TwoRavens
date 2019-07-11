@@ -168,17 +168,20 @@ export let loadConfusionData = async (problem, solution) => {
     ], app.workspace.raven_config.variablesInitial)['pipeline']);
     let response;
     try {
-        response = await app.makeRequest(D3M_SVC_URL + `/retrieve-output-confusion-data`, {
-            data_pointer: solution.data_pointer,
-            metadata: {
-                targets: problem.targets,
-                collectionName: app.workspace.d3m_config.name,
-                manipulations: compiled
+        response = await m.request(D3M_SVC_URL + `/retrieve-output-confusion-data`, {
+            method: 'POST',
+            data: {
+                data_pointer: solution.data_pointer,
+                metadata: {
+                    targets: problem.targets,
+                    collectionName: app.workspace.d3m_config.name,
+                    manipulations: compiled
+                }
             }
         });
 
         if (!response.success) {
-            console.warn(response.data);
+            console.warn(response);
             throw response.data;
         }
     } catch (err) {

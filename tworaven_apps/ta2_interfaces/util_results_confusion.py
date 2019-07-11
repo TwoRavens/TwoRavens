@@ -195,7 +195,9 @@ class ConfusionUtil(object):
             {'$project': {target_name: 1, 'd3mIndex': 1, '_id': 0}}
         ], 'aggregate'))[1])
 
-        results_values = actual_values.join(fitted_values, on='d3mIndex', how='left', lsuffix='_actual', rsuffix='_fitted')
+        results_values = actual_values\
+            .join(fitted_values, on='d3mIndex', how='left', lsuffix='_actual', rsuffix='_fitted')
+        results_values = results_values[[target_name + '_actual', target_name + '_fitted']].dropna()
 
         labels = list({*pd.unique(results_values[target_name + '_actual']).tolist(),
                        *pd.unique(results_values[target_name + '_fitted']).tolist()})
