@@ -24,6 +24,8 @@ partials.app <- function(env){
         sink(file = stderr(), type = "output")
     }
 
+    print("GOT HERE")
+
     request <- Request$new(env)
     response <- Response$new(headers = list( "Access-Control-Allow-Origin"="*"))
 
