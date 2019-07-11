@@ -390,9 +390,9 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
         # Make sure that the datasetDoc.json exists
         #
-        datasetdoc_path = join(data_foldername, 'datasetdoc.json')
+        datasetdoc_path = join(data_foldername, 'datasetDoc.json')
         if not isfile(datasetdoc_path):
-            user_msg = ('File datasetDoc.json file not found in'
+            user_msg = ('File datasetDoc.json not found in'
                         ' expected place: %s') % datasetdoc_path
             return err_resp(user_msg)
 
