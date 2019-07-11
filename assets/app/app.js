@@ -1553,13 +1553,20 @@ export async function estimate() {
 
     console.log("Attempting partials call");
 
-    let smallPartialsDataset = await m.request({
-        method: 'POST',
-        url: ROOK_SVC_URL + 'partialsapp',
-        data: {
-            metadata: variableSummaries
-        }
-    });
+    let smallPartialsDataset; 
+
+    try {
+        smallPartialDataset = await m.request({
+            method: 'POST',
+            url: ROOK_SVC_URL + 'partialsapp',
+            data: {
+                metadata: variableSummaries
+            }
+        });
+    } catch(err) {
+        cdb(err);
+        alertError(`Error: call to partialsapp failed`);
+    }
 
     console.log("Cleared partials call");
 

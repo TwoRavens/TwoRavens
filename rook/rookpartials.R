@@ -41,9 +41,10 @@ partials.app <- function(env){
     }
 
 	if(!warning){
-		mymetadata <- partialsParams$metadata
+        md <- list()   # rebuild to resemble original structure in metadata file
+        md$variables <- partialsParams$metadata
 
-        if(length(mymetadata) == 0){ 
+        if(length(md$variables) == 0){ 
                 warning <- TRUE
                 result <- list(warning="No metadata included.")
         }
@@ -58,22 +59,14 @@ partials.app <- function(env){
         }
     }
 
-    #if(!warning){
-    #    mydatastub <- preprocessParams$datastub
-    #    if(length(mydatastub) == 0){ # rewrite to check for data file?
-    #        warning <- TRUE
-    #        result <- list(warning="No dataset stub name.")
-    #    }
-    #}
-
     if(!warning){
         tryCatch({
 
             #########################################################
             ## Construct dataset of partials from metadata values
 
-            md <- jsonlite::fromJSON(mymetadata)
             k <- length(md$variables)
+            print(k)
             s <- 10
 
             index <- rep(1,k+1)
@@ -145,9 +138,9 @@ partials.app <- function(env){
     ## Write dataset of partials to desired location
 
     if(!warning){
-        merge_name <- "partialsData.csv"
+        merge_name <- "/partialsData.csv"
         outdata <- paste(mydataloc, merge_name, sep="")
-        print(outdata)
+        print(outdata[1])
 
         # R won't write to a directory that doesn't exist.
         if (!dir.exists(mydataloc)){
@@ -162,6 +155,8 @@ partials.app <- function(env){
     if(production){
         sink()
     }
+
+    print("success james")
 
     response$write(result)
     response$finish()
