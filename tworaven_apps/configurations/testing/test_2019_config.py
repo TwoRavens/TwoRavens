@@ -91,9 +91,8 @@ class MakeConfigTest(TestCase):
         else:
             print('ok!', config_loader2.get_d3m_config())
 
-        # Error b/c config just made with the same name
-        #
-        self.assertEqual(config_loader2.has_error(), True)
+        #  - Changed! Leaves config in place
+        self.assertEqual(config_loader2.has_error(), False)
 
         # Delete config and try again
         #
