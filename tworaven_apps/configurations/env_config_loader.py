@@ -77,7 +77,8 @@ class EnvConfigLoader(BasicErrCheck):
             else:
                 setattr(config_info, attr, getattr(settings, attr))
 
-        return EnvConfigLoader(config_info)
+        params = dict() #dict(delete_if_exists=True)
+        return EnvConfigLoader(config_info, **params)
 
     @staticmethod
     def run_loader_from_env():

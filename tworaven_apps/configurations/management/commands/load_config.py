@@ -81,11 +81,6 @@ class Command(BaseCommand):
 
             # It worked!!
             #
-            success_msg = ('Successfully loaded new D3M configuration: "%s"'
-                           '\nD3M config values: \n\n%s\n\n') % \
-                           (d3m_config,
-                            d3m_config.get_json_string())
-
             success_msg = ('(%s) Successfully loaded new'
                            ' D3M configuration: "%s"') %\
                           (d3m_config, datetime.now())
