@@ -1212,7 +1212,7 @@ export let loadWorkspace = async newWorkspace => {
                 time: swandive ? [] : newWorkspace.datasetDoc.dataResources // if swandive false, then datadoc has column labeling
                     .filter(resource => resource.resType === 'table')
                     .flatMap(resource => resource.columns
-                        .filter(column => column.role.includes('timeIndicator'))
+                        .filter(column => column.role.includes('timeIndicator') || column.colType === 'dateTime')
                         .map(column => column.colName)),
                 nominal: Object.keys(variableSummaries)
                     .filter(variable => variableSummaries[variable].nature === 'nominal'),
@@ -1809,7 +1809,8 @@ export function discovery(problems) {
 }
 
 export let setVariableSummaries = state => {
-    variableSummaries = state;
+    variableSummaries = Object.keys(state).reduce((out, variable) =>
+        Object.assign(out, {[variable.split('.').join('_')]: state[variable]}), {});
 
     // quality of life
     Object.keys(variableSummaries).forEach(variable => variableSummaries[variable].name = variable);

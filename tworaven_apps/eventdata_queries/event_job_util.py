@@ -499,6 +499,10 @@ class EventJobUtil(object):
 
         # upload dataset if it does not exist
         #
+        print('import request:')
+        print(database)
+        print(collection)
+
         if settings.MONGO_COLLECTION_PREFIX + collection in db.list_collection_names():
             if reload:
                 db[settings.MONGO_COLLECTION_PREFIX + collection].drop()
