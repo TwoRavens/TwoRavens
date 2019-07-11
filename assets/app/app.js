@@ -1533,7 +1533,8 @@ export async function estimate() {
             method: 'POST',
             url: ROOK_SVC_URL + 'partialsapp',
             data: {
-                metadata: variableSummaries
+                metadata: variableSummaries,
+                datasetDoc: workspace.datasetDoc
             }
         });
     } catch(err) {
@@ -1542,15 +1543,18 @@ export async function estimate() {
     }
 
     console.log("Cleared partials call");
-
     console.log(partialsLocation);
+
+    let produceSolutionDefaultParams = solverD3M.GRPC_ProduceSolutionRequest(datasetDocPath);
+    let partialsSolutionDefaultParams = JSON.parse(JSON.stringify(produceSolutionDefaultParams));  //common.deepCopy(produceSolutionDefaultParams);
+    partialsSolutionDefaultParams.inputs[0].dataset_uri = 'file://' + partialsLocation;
 
     let allParams = {
         searchSolutionParams: solverD3M.GRPC_SearchSolutionsRequest(selectedProblem),
         fitSolutionDefaultParams: solverD3M.GRPC_GetFitSolutionRequest(datasetDocPath),
-        produceSolutionDefaultParams: solverD3M.GRPC_ProduceSolutionRequest(datasetDocPath),
+        produceSolutionDefaultParams: produceSolutionDefaultParams,
         scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath),
-        partialsLocation: partialsLocation
+        partialsSolutionDefaultParams: partialsSolutionDefaultParams
     };
 
     console.warn("#debug allParams");
