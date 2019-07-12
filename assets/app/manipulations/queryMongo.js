@@ -560,14 +560,14 @@ export function buildAggregation(unitMeasures, accumulations) {
                     if (data['measure'] === 'Weekly') postTransforms[data['column']] = {
                         $dateFromString: {
                             format: dateFormat,
-                            dateString: '$_id.' + data['column']
+                            dateString: '$_id\\.' + data['column']
                         }
                     };
                     if (data['measure'] === 'Monthly' || data['measure'] === 'Yearly') postTransforms[data['column']] = {
                         $dateFromString: {
                             format: '%Y-%m-%d',
                             dateString: {
-                                $concat: ['$_id.' + data['column'], {
+                                $concat: ['$_id\\.' + data['column'], {
                                     'Monthly': '-01',
                                     'Yearly': '-01-01'
                                 }[data['measure']]]
@@ -585,8 +585,8 @@ export function buildAggregation(unitMeasures, accumulations) {
                     };
                     postTransforms[data['column']] = {
                         $dateFromParts: {
-                            year: {$toInt: {$arrayElemAt: [{$split: ['$_id.' + data['column'], '-']}, 0]}},
-                            month: {$multiply: [{$toInt: {$arrayElemAt: [{$split: ['$_id.' + data['column'], '-']}, 1]}}, 4]},
+                            year: {$toInt: {$arrayElemAt: [{$split: ['$_id\\.' + data['column'], '-']}, 0]}},
+                            month: {$multiply: [{$toInt: {$arrayElemAt: [{$split: ['$_id\\.' + data['column'], '-']}, 1]}}, 4]},
                             day: 1
                         }
                     };
@@ -626,7 +626,7 @@ export function buildAggregation(unitMeasures, accumulations) {
                 postTransforms[data['column']] = {
                     $add: [
                         data['min'],
-                        {$multiply: ['$_id.' + data['column'], (data['max'] - data['min']) / data['measure']]}
+                        {$multiply: ['$_id\\.' + data['column'], (data['max'] - data['min']) / data['measure']]}
                     ]
                 }
             },
@@ -680,7 +680,7 @@ export function buildAggregation(unitMeasures, accumulations) {
 
     if (dyadMeasureName) {
         let _id = columnsNonDyad.reduce((out_id, columnNonDyad) => {
-            out_id[columnNonDyad] = "$_id." + columnNonDyad;
+            out_id[columnNonDyad] = "$_id\\." + columnNonDyad;
             return out_id;
         }, {});
 
@@ -688,7 +688,7 @@ export function buildAggregation(unitMeasures, accumulations) {
             {
                 $facet: columnsDyad.reduce((facet, dyad) => { // build a pipeline for each dyad
                     facet[dyad] = [
-                        {$match: {["_id." + dyad]: true}},
+                        {$match: {["_id\\." + dyad]: true}},
                         {
                             $group: columnsAccum.reduce((accumulators, columnAccum) => {
                                 accumulators[columnAccum] = {$sum: "$" + columnAccum};
@@ -708,7 +708,7 @@ export function buildAggregation(unitMeasures, accumulations) {
         reformatter = reformatter.concat([
             {
                 $addFields: Object.assign(columnsNonDyad.reduce((addFields, column) => {
-                    addFields[column] = '$_id.' + column;
+                    addFields[column] = '$_id\\.' + column;
                     return addFields;
                 }, {}), postTransforms)
             }
@@ -777,8 +777,8 @@ export function buildMenu(step) {
 
                 let getDistinct = [
                     {$group: {_id: {[branch.column]: "$" + branch.column}}},
-                    {$sort: {['_id.' + branch.column]: 1}},
-                    {$group: {_id: 0, values: {"$push": "$_id." + branch.column}}},
+                    {$sort: {['_id\\.' + branch.column]: 1}},
+                    {$group: {_id: 0, values: {"$push": "$_id\\." + branch.column}}},
                     {$project: {values: '$values', _id: 0}}
                 ];
 
@@ -797,8 +797,8 @@ export function buildMenu(step) {
         {
             $project: [...branches].reduce((out, branch) => {
                 let branchName = Object.values(branch).join('-');
-                if (branch.type === 'full') out[branch.tab + '.full'] = '$' + Object.values(branch).join('-') + '.values';
-                else out[branch.tab + '.filters.' + branch.column] = '$' + branchName + '.values';
+                if (branch.type === 'full') out[branch.tab + '\\.full'] = '$' + Object.values(branch).join('-') + '\\.values';
+                else out[branch.tab + '\\.filters\\.' + branch.column] = '$' + branchName + '\\.values';
                 return out;
             }, {_id: 0})
         }
@@ -832,14 +832,14 @@ export function buildMenu(step) {
                 total: {$sum: 1}
             }
         },
-        {$project: {year: '$_id.year', month: '$_id.month', _id: 0, total: 1}},
+        {$project: {year: '$_id\\.year', month: '$_id\\.month', _id: 0, total: 1}},
         {$match: {year: {$exists: true}, month: {$exists: true}}},
         {$sort: {year: 1, month: 1}}
     ];
 
     if (['discrete', 'discrete_grouped'].includes(metadata.type)) return [
         {$group: {_id: {[metadata.columns[0]]: '$' + metadata.columns[0]}, total: {$sum: 1}}},
-        {$project: {[metadata.columns[0]]: '$_id.' + metadata.columns[0], _id: 0, total: 1}}
+        {$project: {[metadata.columns[0]]: '$_id\\.' + metadata.columns[0], _id: 0, total: 1}}
     ];
 
     if (metadata.type === 'continuous') {

@@ -39,6 +39,9 @@ import ModalWorkspace from "./views/ModalWorkspace";
 import Body_EventData from './eventdata/Body_EventData';
 import Body_Dataset from "./views/Body_Dataset";
 
+import VariableImportance from "./views/VariableImportance";
+import {efdCategoricalData, efdContinuousData, tempProblem} from "./variableImportanceDataSample";
+
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
 export let link = url => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
@@ -48,6 +51,7 @@ class Body {
     oninit() {
         app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
         app.set_mode('model');
+        this.TA2URL = D3M_SVC_URL + '/SearchDescribeFitScoreSolutions';
     }
 
     onupdate(vnode) {
@@ -121,7 +125,10 @@ class Body {
                     }
                 },
 
-                m('div', {style: {width: '100%', height: '100%', position: 'relative'}},
+                m('div', {
+                        style: {width: '100%', height: '100%', position: 'relative'},
+                        onresize: m.redraw,
+                    },
                     app.is_results_mode && m(MainCarousel, {previousMode: this.previousMode}, m(results.CanvasSolutions, {problem: resultsProblem})),
                     app.is_explore_mode && m(MainCarousel, {previousMode: this.previousMode}, m(explore.CanvasExplore, {variables: exploreVariables, variate})),
                     app.is_model_mode && m(MainCarousel, {previousMode: this.previousMode}, m(model.CanvasModel, {drawForceDiagram, forceData}))
@@ -408,7 +415,6 @@ class Body {
      * Start: Construct potential modal boxes for the page.
      */
     construct_modals() {
-        this.TA2URL = D3M_SVC_URL + '/SearchDescribeFitScoreSolutions';
         return [
             m(Modal),
             this.modalSaveCurrentWorkspace(),
@@ -601,8 +607,12 @@ class Body {
                 }, 'Prepare'),
                 m(Button, {
                     style: {margin: '1em'},
-                    onclick: () => app.makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', JSON.parse(this.TA2Post))
-                        .then(response => this.TA2Response = response).then(m.redraw)
+                    onclick: () => {
+                        m.request('/d3m-service/retrieve-output-EFD-data', {
+                            method: "POST",
+                            data: JSON.parse(this.TA2Post)
+                        }).then(console.log).then(m.redraw)
+                    }
                 }, 'Send'),
                 m('div#URL', {style: {margin: '1em'}},
                     'URL',
@@ -876,6 +886,33 @@ else {
     m.route(document.body, '/model', {
         '/dataset': {render: () => m(Body_Dataset, {image: '/static/images/TwoRavens.png'})},
         '/datamart': {render: standaloneDatamart},
+        '/testPlot': {
+            render: () => [
+                // for testing plot redraw speeds
+                m(ButtonRadio, {
+                    sections: [{value: 1}, {value: 2}]
+                }),
+                Object.keys(efdContinuousData).map(predictor => [
+                    m(VariableImportance, {
+                        data: efdContinuousData[predictor],
+                        predictor,
+                        target: 'Doubles',
+                        mode: 'EFD',
+                        problem: tempProblem
+                    })
+                ]),
+
+                Object.keys(efdCategoricalData).map(predictor => [
+                    m(VariableImportance, {
+                        data: efdCategoricalData[predictor],
+                        predictor,
+                        target: 'Hall_of_Fame',
+                        mode: 'EFD',
+                        problem: tempProblem
+                    })
+                ])
+            ]
+        },
         '/explore/:variate/:vars...': Body,
         '/data': {render: () => m(Peek, {id: app.peekId, image: '/static/images/TwoRavens.png'})},
         '/:mode': Body

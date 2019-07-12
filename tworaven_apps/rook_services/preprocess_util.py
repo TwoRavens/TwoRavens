@@ -132,11 +132,6 @@ class PreprocessUtil(BasicErrCheck):
             dcr = DuplicateColumnRemover(self.source_path)
             self.column_names = dcr.updated_columns
 
-            print('deduped colnames')
-            print(self.column_names)
-            print(dcr.orig_column_names)
-            print(self.source_path)
-
             if dcr.has_error():
                 user_msg = (f'Augment error during column checks: '
                             f'{dcr.get_error_message()}')

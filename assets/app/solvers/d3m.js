@@ -11,19 +11,20 @@ import * as queryMongo from "../manipulations/queryMongo";
 // functions to extract information from D3M response format
 export let getSolutionAdapter = (problem, solution) => ({
     getName: () => solution.pipelineId,
+    getSource: () => solution.source,
     getActualValues: target => {
         // lazy data loading
-        loadProblemData(problem);
+        loadActualValues(problem);
 
-        let problemData = resultsData.problem;
+        let problemData = resultsData.actuals;
         // cached data is current, return it
         return problemData && problemData.map(point => point[target]);
     },
     getFittedValues: target => {
         // lazy data loading
-        loadSolutionData(problem, solution);
+        loadFittedValues(problem, solution);
 
-        let problemData = resultsData.problem;
+        let problemData = resultsData.actuals;
         let solutionData = resultsData.fitted[solution.pipelineId];
 
         if (!problemData || !solutionData) return;
@@ -42,55 +43,92 @@ export let getSolutionAdapter = (problem, solution) => ({
     },
     getDescription: () => solution.description,
     getTask: () => solution.status,
-    getModel: () => `${(solution.pipeline.steps || {pipeline: []}).length} steps`
+    getModel: () => `${(solution.pipeline.steps || {pipeline: []}).length} steps`,
+    getImportanceEFD: predictor => {
+        loadImportanceEFDData(problem, solution, predictor);
+        return resultsData.importanceEFD[predictor];
+    },
+    getImportancePartials: (predictor) => {
+
+    }
 });
 
+let faultyResultsLimit = 5;
+let faultyResultsCount = 0;
 
 // these variables hold indices, predictors, predicted and actual data
 export let resultsData = {
-    problem: undefined,
-    problemLoading: false,
+    actuals: undefined,
+    actualsLoading: false,
 
+    // cached data is specific to the problem
     fitted: {},
     fittedLoading: {},
 
+    // cached data is specific to the problem
     confusion: {},
     confusionLoading: {},
 
+    // cached data is specific to the solution (tends to be larger)
     importanceEFD: {},
-    importanceEFDLoading: {},
+    importanceEFDLoading: false,
 
     id: {
+        query: [],
         problemID: undefined,
-        query: []
+        solutionID: undefined
     }
 };
 export let resultsQuery = [];
 
 export let recordLimit = 1000;
-// get predictors, actual values, d3mIndices
-export let loadProblemData = async problem => {
-    let newID = {problemID: problem.problemID, query: resultsQuery};
-    if (JSON.stringify(resultsData.id) === JSON.stringify(newID))
+
+
+export let loadProblemValues = async problem => {
+    if (resultsData.id.problemID === problem.problemID && JSON.stringify(resultsData.id.query) === JSON.stringify(resultsQuery))
         return;
 
-    if (resultsData.problemLoading)
-        return;
+    resultsData.id.query = resultsQuery;
+    resultsData.id.problemID = problem.problemID;
+    resultsData.id.solutionID = undefined;
 
-    resultsData.problem = undefined;
-    resultsData.problemLoading = true;
+    // problem specific, one problem stored
+    resultsData.actuals = undefined;
+    resultsData.actualsLoading = false;
 
+    // solution specific, all solutions stored
     resultsData.fitted = {};
     resultsData.fittedLoading = {};
 
+    // solution specific, all solutions stored
     resultsData.confusion = {};
     resultsData.confusionLoading = {};
 
+    // solution specific, one solution stored
     resultsData.importanceEFD = {};
-    resultsData.importanceEFDLoading = {};
+    resultsData.importanceEFDLoading = false;
+};
 
+export let loadActualValues = async problem => {
+
+    // reset if id is different
+    await loadProblemValues(problem);
+
+    // don't load if systems are already in loading state
+    if (resultsData.actualsLoading)
+        return;
+
+    // don't load if already loaded
+    if (resultsData.actuals)
+        return;
+
+    // begin blocking additional requests to load
+    resultsData.actualsLoading = true;
+
+    let tempQuery = JSON.stringify(resultsData.id.query);
+    let response;
     try {
-        resultsData.problem = await app.getData({
+        response = await app.getData({
             method: 'aggregate',
             query: JSON.stringify(queryMongo.buildPipeline(
                 [...workspace.raven_config.hardManipulations, ...problem.manipulations, {
@@ -107,30 +145,44 @@ export let loadProblemData = async problem => {
         app.alertWarn('Dependent variables have not been loaded. Some plots will not load.')
     }
 
-    resultsData.id = newID;
+    // don't accept if problemID changed
+    if (resultsData.id.problemID !== problem.problemID)
+        return;
 
-    resultsData.problemLoading = false;
+    // don't accept if query changed
+    if (JSON.stringify(resultsData.id.query) !== tempQuery)
+        return;
+
+    resultsData.actuals = response;
+    resultsData.actualsLoading = false;
+
     m.redraw()
 };
 
-export let loadSolutionData = async (problem, solution) => {
+export let loadFittedValues = async (problem, solution) => {
+    // don't attempt to load if there is no data
     if (!solution.data_pointer) return;
 
+    // load dependencies, which can clear loading state if problem, etc. changed
+    await loadActualValues(problem);
+
     // don't load if systems are already in loading state
-    if (resultsData.problemLoading || resultsData.fittedLoading[solution.pipelineId])
+    if (resultsData.fittedLoading[solution.pipelineId])
         return;
 
-    await loadProblemData(problem);
+    // don't load if already loaded
+    if (solution.pipelineId in resultsData.fitted)
+        return;
 
-    if (solution.pipelineId in resultsData.fitted) return;
-
+    // begin blocking additional requests to load
     resultsData.fittedLoading[solution.pipelineId] = true;
 
-    let d3mIndices = resultsData.problem.map(point => String(point.d3mIndex));
+    let tempQuery = JSON.stringify(resultsData.id.query);
     let response;
     try {
         response = await app.makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {
-            data_pointer: solution.data_pointer, indices: d3mIndices
+            data_pointer: solution.data_pointer,
+            indices: resultsData.actuals.map(point => String(point.d3mIndex))
         });
 
         if (!response.success) {
@@ -141,6 +193,15 @@ export let loadSolutionData = async (problem, solution) => {
         app.alertWarn('Solution data has not been loaded. Some plots will not load.');
         return;
     }
+
+    // don't accept response if current problem has changed
+    if (resultsData.id.problemID !== problem.problemID)
+        return;
+
+    // don't accept if query changed
+    if (JSON.stringify(resultsQuery) !== tempQuery)
+        return;
+
     // TODO: this is only index zero if there is one target
     // TODO: multilabel problems will have d3mIndex collisions
     resultsData.fitted[solution.pipelineId] = response.data
@@ -150,22 +211,36 @@ export let loadSolutionData = async (problem, solution) => {
 };
 
 export let loadConfusionData = async (problem, solution) => {
-    if (!solution.data_pointer) return;
-    if (!['classification', 'semisupervisedClassification'].includes(problem.task)) return;
+    // don't load if data is not available
+    if (!solution.data_pointer)
+        return;
+
+    // confusion matrices don't apply for non-classification problems
+    if (!['classification', 'semisupervisedClassification'].includes(problem.task))
+        return;
+
+    // load dependencies, which can clear loading state if problem, etc. changed
+    await loadProblemValues(problem);
 
     // don't load if systems are already in loading state
     if (resultsData.confusionLoading[solution.pipelineId])
         return;
 
-    if (solution.pipelineId in resultsData.confusion) return;
+    // don't load if already loaded
+    if (solution.pipelineId in resultsData.confusion)
+        return;
 
+    // begin blocking additional requests to load
     resultsData.confusionLoading[solution.pipelineId] = true;
 
+    // how to construct actual values after manipulation
     let compiled = JSON.stringify(queryMongo.buildPipeline([
         ...app.workspace.raven_config.hardManipulations,
         ...problem.manipulations,
         ...resultsQuery
     ], app.workspace.raven_config.variablesInitial)['pipeline']);
+
+    let tempQuery = JSON.stringify(resultsData.id.query);
     let response;
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-confusion-data`, {
@@ -191,6 +266,14 @@ export let loadConfusionData = async (problem, solution) => {
         return;
     }
 
+    // don't accept response if current problem has changed
+    if (resultsData.id.problemID !== problem.problemID)
+        return;
+
+    // don't accept response if query changed
+    if (JSON.stringify(resultsQuery) !== tempQuery)
+        return;
+
     // TODO: this is only index zero if there is one target
     // TODO: multilabel problems will have d3mIndex collisions
     resultsData.confusion[solution.pipelineId] = {
@@ -198,6 +281,88 @@ export let loadConfusionData = async (problem, solution) => {
         classes: response.data.labels
     };
     resultsData.confusionLoading[solution.pipelineId] = false;
+
+    // apply state changes to the page
+    m.redraw();
+};
+
+// importance from empirical first differences
+export let loadImportanceEFDData = async (problem, solution, predictor) => {
+    // don't load if data is not available
+    if (!solution.data_pointer)
+        return;
+
+    // load dependencies, which can clear loading state if problem, etc. changed
+    await loadProblemValues(problem);
+
+    // don't load if systems are already in loading state
+    if (resultsData.importanceEFDLoading)
+        return;
+
+    // don't load if already loaded
+    if (resultsData.importanceEFD[predictor])
+        return;
+
+    // begin blocking additional requests to load
+    resultsData.importanceEFDLoading = true;
+
+    // how to construct actual values after manipulation
+    let compiled = queryMongo.buildPipeline([
+        ...app.workspace.raven_config.hardManipulations,
+        ...problem.manipulations,
+        ...resultsQuery
+    ], app.workspace.raven_config.variablesInitial)['pipeline'];
+
+    let tempQuery = JSON.stringify(resultsData.id.query);
+
+    let response;
+    try {
+        response = await m.request(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
+            method: 'POST',
+            data: {
+                data_pointer: solution.data_pointer,
+                metadata: {
+                    solutionId: solution.pipelineId,
+                    levels: app.getNominalVariables(problem)
+                        .map(variable => {
+                            if (app.variableSummaries[variable].nature === 'nominal')
+                                return {[variable]: Object.keys(app.variableSummaries[variable].plotvalues)}
+                        }).reduce((out, variable) => Object.assign(out, variable), {}),
+                    targets: problem.targets,
+                    predictors: problem.predictors,
+                    collectionName: app.workspace.d3m_config.name,
+                    query: compiled
+                }
+            }
+        });
+
+        if (!response.success)
+            throw response.data;
+
+    } catch (err) {
+        console.warn("retrieve-output-confusion-data error");
+        console.log(err);
+        app.alertWarn('Variable importance EFD data has not been loaded. Some plots will not load.');
+        return;
+    }
+
+    // don't accept response if current problem has changed
+    if (resultsData.id.problemID !== problem.problemID)
+        return;
+
+    // don't accept if query changed
+    if (JSON.stringify(resultsQuery) !== tempQuery)
+        return;
+
+    // melt predictor data once, opposed to on every redraw
+    Object.keys(response.data)
+        .map(predictor => response.data[predictor] = app.melt(
+            response.data[predictor], [predictor], results.valueLabel, results.variableLabel));
+
+    resultsData.importanceEFD = response.data;
+    resultsData.importanceEFDLoading = false;
+
+    // apply state changes to the page
     m.redraw();
 };
 

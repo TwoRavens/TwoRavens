@@ -100,7 +100,7 @@ class MongoRetrieveUtil(BasicErrCheck):
             return err_resp(self.get_error_message())
 
         def encode(value):
-            if type(value) is str and value[0] == '$':
+            if type(value) is str and value.startswith('$'):
                 return f'${encode_variable(value[1:])}'
             return value
 
@@ -109,22 +109,24 @@ class MongoRetrieveUtil(BasicErrCheck):
         def reformat(query):
             # ---------------------------
             if issubclass(type(query), list):
-                query = [encode(value) for value in query]
+                # mutate query in-place
+                query_temp = [encode(value) for value in query]
+                query.clear()
+                query.extend(query_temp)
                 for stage in query:
                     reformat(stage)
                 return
 
             if issubclass(type(query), dict):
                 # mutate query in-place
-                query_temp = {encode_variable(key): query[key] for key in query}
+                query_temp = {encode_variable(key): encode(query[key]) for key in query}
                 query.clear()
                 query.update(query_temp)
 
                 for key in query:
                     if issubclass(type(query[key]), list):
-                        for stage in query[key]:
-                            reformat(stage)
-                        return
+                        reformat(query[key])
+                        continue
                     if not issubclass(type(query[key]), dict):
                         continue
 
