@@ -179,7 +179,7 @@ class Body {
 
         return m(Header, {
                 image: '/static/images/TwoRavens.png',
-                aboutText: 'TwoRavens v0.1 "Dallas" -- ' +
+                aboutText: 'TwoRavens v0.2 "Marina del Ray" -- ' +
                     'The Norse god Odin had two talking ravens as advisors, who would fly out into the world and report back all they observed. ' +
                     'In the Norse, their names were "Thought" and "Memory". ' +
                     'In our coming release, our thought-raven automatically advises on statistical model selection, ' +
