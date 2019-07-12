@@ -806,7 +806,7 @@ export async function handleGetScoreSolutionResultsResponse(response) {
  Handle a GetProduceSolutionResultsResponse sent via websockets
  -> parse response, retrieve data, plot data
  */
-export async function handleGetProduceSolutionResultsResponse(response) {
+export async function handleGetProduceSolutionResultsResponse(response, type) {
 
     if (response === undefined) {
         debugLog('handleGetProduceSolutionResultsResponse: Error.  "response" undefined');
@@ -843,7 +843,12 @@ export async function handleGetProduceSolutionResultsResponse(response) {
         return;
     }
 
-    solvedProblem.solutions.d3m[response.pipelineId].data_pointer = Object.values(response.response.exposedOutputs)[0].csvUri
+    if (type === 'fittedValues'){
+        solvedProblem.solutions.d3m[response.pipelineId].data_pointer = Object.values(response.response.exposedOutputs)[0].csvUri
+    }
+    else if (type === 'partialsValues'){
+        solvedProblem.solutions.d3m[response.pipelineId].data_pointer_partials = Object.values(response.response.exposedOutputs)[0].csvUri    
+    }
 
     m.redraw();
     // let problemMetadata = {
