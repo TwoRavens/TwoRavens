@@ -37,4 +37,15 @@ def infer_type(value):
     except ValueError:
         pass
 
+    if not len(value):
+        return None
+
     return value
+
+
+def encode_variable(name):
+    return name.replace("\\", "\\\\").replace("\$", "\\u0024").replace(".", "\\u002e")
+
+
+def decode_variable(name):
+    return name.replace("\\u002e", ".").replace("\\u0024", "\$").replace("\\\\", "\\")

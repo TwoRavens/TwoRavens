@@ -773,8 +773,6 @@ export class ModalDatamart {
                                     .map(rightCol => originalRightColumns.indexOf(rightCol)));
                             });
 
-                            // console.warn("#debug implicitVariables");
-                            // console.log('dataPath view 1: '+ dataPath);
                             let augment_api_data = {
                                 data_path: dataPath,
                                 search_result: JSON.stringify(preferences.selectedResult),

@@ -11,7 +11,7 @@ source("rookconfig.R")
 
 print(paste("production: ", production, sep=""))
 
-if(production){
+if(!production){
   print(paste("load packages...", sep=""))
 
     packageList.reports <- c('rmarkdown', 'ggplot2', 'knitr', 'reshape2', 'grid', 'gridExtra', 'xtable')

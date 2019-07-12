@@ -91,6 +91,7 @@ preprocess.app <- function(env){
                     warning <- TRUE
                     return<-list(warning="Data file extension not recognized as .csv or .gz")
                 }
+                if ('columns' %in% names(preprocessParams)) colnames(mydata) <- c(preprocessParams$columns)
 
                 ppJSON<-preprocess(testdata=mydata)
         #        result <- list(targets=targetVars)
@@ -101,8 +102,6 @@ preprocess.app <- function(env){
             result <<- list(warning=paste("Preprocess error: ", err))
         })
 	}
-
-    merge_name <- "trainData.tsv"
     # This reg expression stopped working with .csv.gz extensions:
     #merge_name_stub <- sub("(.*\\/)([^.]+)(\\.[[:alnum:]]+$)", "\\2", mydataloc)   # Extract the filename stub from the provided training data path.  Generally "trainData".
 
@@ -120,16 +119,6 @@ preprocess.app <- function(env){
     if (!dir.exists(rook_output_preprocess)){
         dir.create(rook_output_preprocess, recursive = TRUE)
     }
-
-    outloc <- if ('target' %in% names(preprocessParams)) preprocessParams$target else paste(rook_output_preprocess, "preprocess.json", sep="")
-    outdata <- paste(rook_output_data, merge_name,sep="")
-
-    print(outloc)
-    print(merge_name)
-    print(outdata)
-
-    write(ppJSON, outloc)
-    write.table(mydata, outdata[1], row.names=FALSE, col.names=TRUE, sep="\t")
 
     # Return the preprocess file
     if(!warning){

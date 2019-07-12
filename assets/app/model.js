@@ -527,6 +527,8 @@ export let leftpanel = forceData => {
                 m(VariableSummary, {variable: app.variableSummaries[variableName]})));
     }
 
+
+
     return m(Panel, {
         side: 'left',
         label: 'Data Selection',

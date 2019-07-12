@@ -20,9 +20,10 @@ LOGGER = logging.getLogger(__name__)
 class DuplicateColumnRemover(BasicErrCheck):
     """remove duplicate columns"""
 
-    def __init__(self, source_path):
+    def __init__(self, source_path, rewrite=False):
         """Remove duplicate column names from a file"""
         self.source_path = source_path
+        self.rewrite = rewrite
 
         self.orig_column_names = None
         self.csv_dialect = None
@@ -51,7 +52,7 @@ class DuplicateColumnRemover(BasicErrCheck):
         if not self.format_column_names():
             return
 
-        if self.column_change_needed is True:
+        if self.rewrite and self.column_change_needed is True:
             self.rewrite_file_header()
 
     def format_column_names(self):
@@ -74,21 +75,9 @@ class DuplicateColumnRemover(BasicErrCheck):
         self.updated_columns = col_info.result_obj['new_columns']
         self.num_cols_renamed = col_info.result_obj['num_cols_renamed']
 
-        # For Mongo: Remove dots and dollar signs from column names
-        #  temp fix 3/19/2019
-        #
-        updated_columns2 = [x.replace('.', '_').replace('$', '-')
-                            for x in self.updated_columns]
-
-        if self.updated_columns != updated_columns2:
-            self.updated_columns = updated_columns2
-            self.num_cols_renamed += 1 # just to get it above zero
-
         if self.num_cols_renamed == 0:   # Nothing to change!
             self.success_msg = 'All set. Column names are already unique'
             return True
-
-
 
         self.column_change_needed = True
 
@@ -109,9 +98,7 @@ class DuplicateColumnRemover(BasicErrCheck):
             reader = csv.reader(fh)
             self.csv_dialect = reader.dialect
             #col_delimiter = reader.dialect.delimiter
-            for row in reader:
-                self.orig_column_names = row
-                break
+            self.orig_column_names = next(reader)
 
         if not self.orig_column_names:
             self.add_err_msg('Failed to load original column names')

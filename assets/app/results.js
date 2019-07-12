@@ -22,6 +22,7 @@ import {bold} from "./index";
 import PlotVegaLite from "./views/PlotVegaLite";
 import ConfusionMatrix from "./views/ConfusionMatrix";
 import Flowchart from "./views/Flowchart";
+import ButtonRadio from "../common/views/ButtonRadio";
 
 export let leftpanel = () => {
 
@@ -164,6 +165,7 @@ export class CanvasSolutions {
 
     oninit() {
         this.confusionFactor = undefined;
+        this.confusionMode = 'Stack';
         app.updateRightPanelWidth()
     }
 
@@ -224,8 +226,20 @@ export class CanvasSolutions {
                         onclickChild: setConfusionFactor,
                         style: {'margin-left': '1em'}
                     }))),
+                m('div',
+                    m('label', 'Confusion Matrix Mode:'),
+                    m(ButtonRadio, {
+                        id: 'confusionModeButtonBar',
+                        onclick: mode => this.confusionMode = mode,
+                        activeSection: this.confusionMode,
+                        sections: [
+                            {value: 'Stack', title: 'render confusion matrices in the same space'},
+                            {value: 'List', title: 'render confusion matrices above/below each other'}
+                        ],
+                        attrsAll: {style: {'margin-left': '1em', width: '10em', display: 'inline-block'}},
+                    })),
                 m('label', 'Pipeline:'),
-                m(MenuTabbed, {
+                m({Stack: MenuTabbed, List: MenuHeaders}[this.confusionMode], {
                     id: 'confusionMenu',
                     currentTab: this.confusionMatrixSolution,
                     callback: solutionId => this.confusionMatrixSolution = solutionId,
