@@ -48,15 +48,16 @@ partials.app <- function(env){
         }
 	}
 
-    if(!warning){
-        mydatasetDoc <- partialsParams$datasetDoc
-        print(mydatasetDoc)
-
-        if(length(mydatasetDoc) == 0){ 
-                warning <- TRUE
-                result <- list(warning="No datasetDoc included.")
-        }
-    }
+    #if(!warning){
+    #    # mydatasetDoc <- partialsParams$datasetDoc
+    #    mydatasetDocLoc <- partialsParams$datasetDocLoc
+    #    print(mydatasetDocLoc)
+    #
+    #    if(length(mydatasetDocLoc) == 0){ 
+    #            warning <- TRUE
+    #            result <- list(warning="No datasetDoc location included.")
+    #    }
+    #}
 
     if(!warning){
         mydataloc <- partialsParams$dataloc
@@ -66,6 +67,16 @@ partials.app <- function(env){
                 result <- list(warning="No data location included.")
         }
     }
+
+    #if(!warning){
+    #    tryCatch({
+    #        mydatasetDoc <- read(mydatasetDocLoc)
+    #    },
+    #    error=function(err){
+    #        warning <<- TRUE
+    #        result <<- list(warning=paste("Partials construction error: ", err))
+    #    })
+    #}
 
     if(!warning){
         tryCatch({
@@ -160,7 +171,7 @@ partials.app <- function(env){
         }
 
         write.csv(mydata, outdata[1], row.names=FALSE, col.names=TRUE)
-        write(jsonlite:::toJSON(mydatasetDoc), outdatasetDoc[1])
+        #write(mydatasetDoc, outdatasetDoc[1])
 
         result <- outdatasetDoc[1]  # Path to partials dataset
         result <- jsonlite:::toJSON(result)
