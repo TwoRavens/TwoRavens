@@ -24,8 +24,6 @@ partials.app <- function(env){
         sink(file = stderr(), type = "output")
     }
 
-    print("GOT HERE")
-
     request <- Request$new(env)
     response <- Response$new(headers = list( "Access-Control-Allow-Origin"="*"))
 
@@ -49,6 +47,16 @@ partials.app <- function(env){
                 result <- list(warning="No metadata included.")
         }
 	}
+
+    if(!warning){
+        mydatasetDoc <- partialsParams$datasetDoc
+        print(mydatasetDoc)
+
+        if(length(mydatasetDoc) == 0){ 
+                warning <- TRUE
+                result <- list(warning="No datasetDoc included.")
+        }
+    }
 
     if(!warning){
         mydataloc <- partialsParams$dataloc
@@ -137,17 +145,24 @@ partials.app <- function(env){
     ## Write dataset of partials to desired location
 
     if(!warning){
-        merge_name <- "/partialsData.csv"
-        outdata <- paste(mydataloc, merge_name, sep="")
+        merge_name_data <- "/tables/learningData.csv"
+        merge_name_datasetDoc <- "/datasetDoc.json"
+        merge_name_tables <- "/tables"
+        outtables <- paste(mydataloc, merge_name_tables, sep="")
+        outdata <- paste(mydataloc, merge_name_data, sep="")
+        outdatasetDoc <- paste(mydataloc, merge_name_datasetDoc, sep="")
         print(outdata[1])
+        print(outdatasetDoc[1])
 
         # R won't write to a directory that doesn't exist.
-        if (!dir.exists(mydataloc)){
-            dir.create(mydataloc, recursive = TRUE)
+        if (!dir.exists(outtables)){
+            dir.create(outtables, recursive = TRUE)
         }
 
         write.csv(mydata, outdata[1], row.names=FALSE, col.names=TRUE)
-        result <- outdata[1]  # Path to partials dataset
+        write(jsonlite:::toJSON(mydatasetDoc), outdatasetDoc[1])
+
+        result <- outdatasetDoc[1]  # Path to partials dataset
         result <- jsonlite:::toJSON(result)
     }
 
