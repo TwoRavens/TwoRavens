@@ -21461,7 +21461,7 @@ export let efdContinuousData = {
     ]
 }
 
-export let tempProblem = let tempProblem = {
+let tempProblem = {
     "d3mSearchId": "73",
     "datasetDocPath": "/ravens_volume/test_output/185_baseball/additional_inputs/raven_temp_storage_root/manipulations/149/datasetDoc.json",
     "evaluationMethod": "kFold",

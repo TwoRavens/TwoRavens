@@ -125,7 +125,10 @@ class Body {
                     }
                 },
 
-                m('div', {style: {width: '100%', height: '100%', position: 'relative'}},
+                m('div', {
+                        style: {width: '100%', height: '100%', position: 'relative'},
+                        onresize: m.redraw,
+                    },
                     app.is_results_mode && m(MainCarousel, {previousMode: this.previousMode}, m(results.CanvasSolutions, {problem: resultsProblem})),
                     app.is_explore_mode && m(MainCarousel, {previousMode: this.previousMode}, m(explore.CanvasExplore, {variables: exploreVariables, variate})),
                     app.is_model_mode && m(MainCarousel, {previousMode: this.previousMode}, m(model.CanvasModel, {drawForceDiagram, forceData}))
