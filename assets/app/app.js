@@ -30,7 +30,7 @@ import {getSolutions} from "./results";
 
 let RAVEN_CONFIG_VERSION = 1;
 
-let TA2DebugMode = false;
+let TA2DebugMode = true;
 export let debugLog = TA2DebugMode ? console.log : _ => _;
 
 // ~~~~~ PEEK ~~~~~
@@ -1530,7 +1530,7 @@ export async function estimate() {
 
     console.log("Attempting partials call");
 
-    let partialsLocation; 
+    let partialsLocation;
 
     try {
         partialsLocation = await m.request({
@@ -1550,19 +1550,29 @@ export async function estimate() {
     console.log(partialsLocation);
 
     let produceSolutionDefaultParams = solverD3M.GRPC_ProduceSolutionRequest(datasetDocPath);
-    let partialsSolutionDefaultParams = JSON.parse(JSON.stringify(produceSolutionDefaultParams));  //common.deepCopy(produceSolutionDefaultParams);
-    partialsSolutionDefaultParams.inputs[0].dataset_uri = 'file://' + partialsLocation;
+
 
     let allParams = {
         searchSolutionParams: solverD3M.GRPC_SearchSolutionsRequest(selectedProblem),
         fitSolutionDefaultParams: solverD3M.GRPC_GetFitSolutionRequest(datasetDocPath),
         produceSolutionDefaultParams: produceSolutionDefaultParams,
-        scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath),
-        partialsSolutionDefaultParams: partialsSolutionDefaultParams
-    };
+        scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath)    };
+
+    // ------------------------------------------------
+    // Copy/Update produceSolutionDefaultParams to create
+    //  parameters for the partialsSolutionParams call
+    // ------------------------------------------------
+    if (partialsLocation){
+      let partialsSolutionParams = JSON.parse(JSON.stringify(produceSolutionDefaultParams));
+
+      partialsSolutionParams.inputs[0].dataset_uri = 'file://' + partialsLocation;
+
+      // Add it to allParams
+      allParams.partialsSolutionParams = partialsSolutionParams
+    }
 
     console.warn("#debug allParams");
-    console.log(allParams);
+    console.log(JSON.stringify(allParams));
 
     let res = await makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', allParams);
 

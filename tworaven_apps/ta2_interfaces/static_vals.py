@@ -66,6 +66,7 @@ GET_FIT_SOLUTION_RESULTS = 'GetFitSolutionResults'
 
 PRODUCE_SOLUTION = 'ProduceSolution'
 GET_PRODUCE_SOLUTION_RESULTS = 'GetProduceSolutionResults'
+GET_PARTIALS_SOLUTION_RESULTS = 'GetPartialsSolutionResults'
 
 SCORE_SOLUTION = 'ScoreSolution'
 GET_SCORE_SOLUTION_RESULTS = 'GetScoreSolutionResults'
@@ -84,6 +85,7 @@ KEY_SEARCH_SOLUTION_PARAMS = 'searchSolutionParams'
 KEY_FIT_SOLUTION_DEFAULT_PARAMS = 'fitSolutionDefaultParams'
 KEY_SCORE_SOLUTION_DEFAULT_PARAMS = 'scoreSolutionDefaultParams'
 KEY_PRODUCE_SOLUTION_DEFAULT_PARAMS = 'produceSolutionDefaultParams'
+KEY_PARTIALS_SOLUTION_PARAMS = 'partialsSolutionParams'
 
 REQUIRED_INPUT_KEYS = [(KEY_SEARCH_SOLUTION_PARAMS, SEARCH_SOLUTIONS),
                        (KEY_FIT_SOLUTION_DEFAULT_PARAMS, 'FitSolution'),

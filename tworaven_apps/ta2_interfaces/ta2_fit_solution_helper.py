@@ -45,7 +45,12 @@ class FitSolutionHelper(BasicErrCheck):
         self.fit_params = fit_params
 
         self.search_id = kwargs.get('search_id', None)
-        self.produce_params = kwargs.get('produce_params', None)
+        self.produce_params = kwargs.get('produce_params')
+
+        # If present, this is used to make a 2nd DescribeSolution call
+        #   for partials
+        self.partials_solution_params = kwargs.get('partials_solution_params')
+
         self.session_key = kwargs.get('session_key', '')
 
         self.get_user()
@@ -374,8 +379,22 @@ class FitSolutionHelper(BasicErrCheck):
                 #  then trigger ProduceSolution
                 #
                 if fitted_solution_id:
-                    self.check_fit_progress(fitted_solution_id, result_json)
+                    #
+                    # Potentially make 2 ProduceSolution calls
 
+                    # 1 - the regular one
+                    #
+                    self.check_fit_progress(self.produce_params,
+                                            fitted_solution_id,
+                                            result_json)
+
+                    # 2 - one using partials data (optional)
+                    #
+                    if self.partials_solution_params:
+                        self.check_fit_progress(self.partials_solution_params,
+                                                fitted_solution_id,
+                                                result_json,
+                                                is_partials_call=True)
 
         except grpc.RpcError as err_obj:
             stored_request.set_error_status(str(err_obj))
@@ -389,11 +408,14 @@ class FitSolutionHelper(BasicErrCheck):
         StoredRequestUtil.set_finished_ok_status(stored_request.id)
 
 
-    def check_fit_progress(self, fitted_solution_id, result_json):
+    def check_fit_progress(self, params_for_produce,
+                           fitted_solution_id, result_json, **kwargs):
         """if GetFitSolutionResultsResponse is COMPLETED,
            then trigger ProduceSolution"""
         assert isinstance(result_json, dict), 'result_json must be a dict'
         assert fitted_solution_id, 'fitted_solution_id must be set'
+
+        is_partials_call = kwargs.get('is_partials_call', False)
 
         # --------------------------------------------
         # Check if the progress.state == 'COMPLETED'
@@ -412,15 +434,15 @@ class FitSolutionHelper(BasicErrCheck):
         # --------------------------------------------
         # Format ProduceSolution parameters
         # --------------------------------------------
-        if not self.produce_params:
-            user_msg = 'No default params available for ProduceSolution'
+        if not params_for_produce:
+            user_msg = 'No params available for ProduceSolution'
             self.send_websocket_err_msg(\
                             ta2_static.GET_FIT_SOLUTION_RESULTS,
                             user_msg)
             LOGGER.error(user_msg)
             return
 
-        prod_params = dict(self.produce_params)
+        prod_params = dict(params_for_produce)
         prod_params[ta2_static.KEY_FITTED_SOLUTION_ID] = fitted_solution_id
 
         ProduceSolutionHelper.make_produce_solution_call.delay(\
@@ -429,4 +451,5 @@ class FitSolutionHelper(BasicErrCheck):
                                     self.user_id,
                                     prod_params,
                                     search_id=self.search_id,
-                                    session_key=self.session_key)
+                                    session_key=self.session_key,
+                                    is_partials_call=is_partials_call)
