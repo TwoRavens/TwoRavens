@@ -11,6 +11,12 @@ search_info = SearchSolutionsHelper.make_initial_call(search_params, websocket_i
 if search_info.success:
     return
 
+Note: This makes the following calls:
+    - SearchSolutions
+        - GetSearchSolutionsResults - for each result:
+            - DescribeSolution (async)
+            - FitSolution (async)
+            - ScoreSolution (async)
 
 """
 import logging
@@ -470,18 +476,23 @@ class SearchSolutionsHelper(BasicErrCheck):
 
         produce_params = self.all_search_params[ta2_static.KEY_PRODUCE_SOLUTION_DEFAULT_PARAMS]
 
+        # This is used downstream for a 2nd Produce Solutions call
+        partials_solution_params = self.all_search_params[ta2_static.KEY_PARTIALS_SOLUTION_PARAMS]
 
         # ----------------------------------
         # Start the async process
         # ----------------------------------
+
         FitSolutionHelper.make_fit_solutions_call.delay(\
-                                    pipeline_id,
-                                    self.websocket_id,
-                                    self.user_id,
-                                    fit_params,
-                                    search_id=self.search_id,
-                                    produce_params=produce_params,
-                                    session_key=self.session_key)
+                            pipeline_id,
+                            self.websocket_id,
+                            self.user_id,
+                            fit_params,
+                            search_id=self.search_id,
+                            produce_params=produce_params,
+                            session_key=self.session_key,
+                            partials_solution_params=partials_solution_params
+                            )
 
 
     def run_describe_solution(self, pipeline_id, solution_id, msg_cnt=-1):
