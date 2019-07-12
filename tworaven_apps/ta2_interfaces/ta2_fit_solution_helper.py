@@ -382,14 +382,15 @@ class FitSolutionHelper(BasicErrCheck):
                     #
                     # Potentially make 2 ProduceSolution calls
 
-                    # 1 - the regular one
+                    # 1st - the regular one
                     #
                     self.check_fit_progress(self.produce_params,
                                             fitted_solution_id,
                                             result_json)
 
-                    # 2 - one using partials data (optional)
+                    # 2nd - one using partials data (optional)
                     #
+                    print('Make 2nd Produce Solution with Partials')
                     if self.partials_solution_params:
                         self.check_fit_progress(self.partials_solution_params,
                                                 fitted_solution_id,

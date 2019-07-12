@@ -372,13 +372,15 @@ def fit_solution(raven_json_str=None):
     return ok_resp(message_to_json(reply))
 
 
-def produce_solution(raven_json_str=None):
+def produce_solution(raven_json_str=None, **kwargs):
     """
     Send a ProduceSolutionRequest to the ProduceSolution command
     """
     if raven_json_str is None:
         err_msg = 'No data found for the ProduceSolutionRequest'
         return err_resp(err_msg)
+
+    is_partials_call = kwargs.get('is_partials_call', False)
 
     # --------------------------------
     # Make sure it's valid JSON
