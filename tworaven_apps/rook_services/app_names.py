@@ -8,6 +8,7 @@ MKDOCS_APP = 'MKDOCS_APP'
 
 MKDOCS_ROOK_APP_NAME = 'mkdocsapp'
 PREPROCESS_ROOK_APP_NAME = 'preprocessapp'
+PARTIALS_ROOK_APP_NAME = 'partialsapp'
 
 EXPLORE_APP = 'EXPLORE_APP'
 PLOTDATA_APP = 'PLOTDATA_APP'
@@ -41,7 +42,7 @@ ROOK_APP_NAMES = [('DATA_APP', 'dataapp', 'dataapp'),       # session id?
                   ('ROOK_FILES_APP', 'rook-files', 'rook-files'),
                   (HEALTH_CHECK_APP, 'healthcheckapp', 'healthcheckapp'), # healthcheckapp
                   #('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models
-                  (PARTIALS_APP, 'partialsapp', 'partialsapp'),  # construct partials dataset
+                  (PARTIALS_APP, PARTIALS_ROOK_APP_NAME, PARTIALS_ROOK_APP_NAME),  # construct partials dataset
                  ]
 
 ROOK_APP_NAMES += [\

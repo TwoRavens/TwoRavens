@@ -1,16 +1,17 @@
 {
   "about": {
-    "datasetID": "196_ag_dataset_TRAIN",
+    "datasetID": "196_autoMpg_dataset_TRAIN",
     "datasetName": "NULL",
     "license": "CC-BY license",
     "approximateSize": "",
-    "datasetSchemaVersion": "3.1.1",
+    "datasetSchemaVersion": "3.2.0",
     "redacted": true,
-    "datasetVersion": "1.0"
+    "datasetVersion": "2.0",
+    "digest": "60c318e69584126929800c79653a534bba93d458a20157fddcdfa6ebd4098687"
   },
   "dataResources": [
     {
-      "resID": "0",
+      "resID": "learningData",
       "resPath": "tables/learningData.csv",
       "resType": "table",
       "resFormat": [

@@ -1538,23 +1538,27 @@ export async function estimate() {
     let partialsLocation;
 
     try {
-        partialsLocation = await m.request({
+        let partialsLocationInfo = await m.request({
             method: 'POST',
             url: ROOK_SVC_URL + 'partialsapp',
             data: {
                 metadata: variableSummaries,
-                //datasetDoc: workspace.datasetDoc,
-                datasetDocLoc: workspace.d3m_config.dataset_schema
             }
         });
+        if (!partialsLocationInfo.success){
+          alertWarn('Call for partials data failed. ' + partialsLocationInfo.err_msg);
+        }else{
+          partialsLocation = partialsLocationInfo.data;
+          console.log('partialsLocation: ' + partialsLocation);
+        }
+
     } catch(err) {
         cdb(err);
         alertError(`Error: call to partialsapp failed`);
     }
-
     console.log("Cleared partials call");
-    console.log(partialsLocation);
-
+    console.log('partialsLocation: ' + partialsLocation);
+    
     let produceSolutionDefaultParams = solverD3M.GRPC_ProduceSolutionRequest(datasetDocPath);
 
 
@@ -1562,7 +1566,7 @@ export async function estimate() {
         searchSolutionParams: solverD3M.GRPC_SearchSolutionsRequest(selectedProblem),
         fitSolutionDefaultParams: solverD3M.GRPC_GetFitSolutionRequest(datasetDocPath),
         produceSolutionDefaultParams: produceSolutionDefaultParams,
-        scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath)    };
+        scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath)};
 
     // ------------------------------------------------
     // Copy/Update produceSolutionDefaultParams to create

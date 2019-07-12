@@ -1,20 +1,20 @@
 {
   "about": {
-    "problemID": "185_bl_problem_TRAIN",
+    "problemID": "185_baseball_problem_TRAIN",
     "problemName": "NULL",
     "taskType": "classification",
     "taskSubType": "multiClass",
-    "problemVersion": "1.0",
-    "problemSchemaVersion": "3.1.1"
+    "problemVersion": "2.0",
+    "problemSchemaVersion": "3.2.0"
   },
   "inputs": {
     "data": [
       {
-        "datasetID": "185_bl_dataset_TRAIN",
+        "datasetID": "185_baseball_dataset_TRAIN",
         "targets": [
           {
             "targetIndex": 0,
-            "resID": "0",
+            "resID": "learningData",
             "colIndex": 18,
             "colName": "Hall_of_Fame"
           }

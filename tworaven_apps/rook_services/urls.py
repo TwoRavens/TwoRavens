@@ -11,6 +11,10 @@ urlpatterns = (
         views_files.view_rook_file_passthrough,
         name='view_rook_file_passthrough'),
 
+    url(r'^partialsapp$',
+        views.view_partials_app,
+        name='view_partials_app'),
+
     url(r'^preprocessapp$',
         views.view_rook_preprocess,
         name='view_rook_preprocess'),

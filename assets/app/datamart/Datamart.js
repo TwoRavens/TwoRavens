@@ -414,9 +414,12 @@ export default class Datamart {
                             results[sourceMode].length = 0;
                             results[sourceMode].push(...response.data);
 
-                            console.log('Num results: ' + results[sourceMode].length);
+                            let datasetCnt = results[sourceMode].length;
 
-                            if (results[sourceMode].length === 0) {
+                            console.log('Num results: ' + datasetCnt);
+
+
+                            if (datasetCnt === 0) {
                                 // No datasets found
                                 //
                                 delete preferences.success[sourceMode]; // remove "success"
@@ -427,10 +430,15 @@ export default class Datamart {
                                 delete preferences.error[sourceMode]; // remove error
 
                                 let numDatasetMsg = '';
-                                if (results[sourceMode].length > resultLimit){
-                                  numDatasetMsg = 'Over ';
+
+                                if (datasetCnt > resultLimit){
+                                  numDatasetMsg = `Over ${datasetCnt} datasets found.`;
+                                } else if (datasetCnt == 1){
+                                  numDatasetMsg = `${datasetCnt} dataset found.`;
+                                } else{
+                                  numDatasetMsg = `${datasetCnt} datasets found.`;
                                 }
-                                numDatasetMsg += `${results[sourceMode].length} datasets found.`;
+    
                                 preferences.success[sourceMode] = numDatasetMsg;
                                 console.log('msg: ' + numDatasetMsg);
                             }
