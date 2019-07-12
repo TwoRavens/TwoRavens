@@ -1543,7 +1543,8 @@ export async function estimate() {
             url: ROOK_SVC_URL + 'partialsapp',
             data: {
                 metadata: variableSummaries,
-                datasetDoc: workspace.datasetDoc
+                //datasetDoc: workspace.datasetDoc,
+                datasetDocLoc: workspace.d3m_config.dataset_schema
             }
         });
     } catch(err) {
@@ -1571,6 +1572,11 @@ export async function estimate() {
       let partialsSolutionParams = JSON.parse(JSON.stringify(produceSolutionDefaultParams));
 
       partialsSolutionParams.inputs[0].dataset_uri = 'file://' + partialsLocation;
+
+      console.log('--=-=-=-=-=-=-=--');
+      console.log(produceSolutionDefaultParams);
+      console.log(partialsSolutionParams);
+      console.log('--=-=-=-=-=-=-=--');
 
       // Add it to allParams
       allParams.partialsSolutionParams = partialsSolutionParams
