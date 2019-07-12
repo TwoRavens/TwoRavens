@@ -1,4 +1,4 @@
-from os.path import isdir, join
+from os.path import isdir, isfile, join
 from os import makedirs
 import requests
 import json
@@ -11,10 +11,13 @@ from django.views.decorators.csrf import csrf_exempt
 
 from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 from tworaven_apps.user_workspaces.models import UserWorkspace
+from tworaven_apps.utils.file_util import move_file
+from tworaven_apps.utils.json_helper import json_dumps, json_loads
 
 from tworaven_apps.rook_services.rook_app_info import RookAppInfo
 from tworaven_apps.rook_services.models import UI_KEY_SOLA_JSON, ROOK_ZESSIONID
 from tworaven_apps.rook_services import app_names
+from tworaven_apps.ta2_interfaces import static_vals as ta2_static
 
 from tworaven_apps.rook_services.preprocess_util import \
     (PreprocessUtil,)
@@ -118,9 +121,9 @@ def log_preprocess_call(user, json_data, session_id=''):
     # Log the discovery activity
     #
     log_data2 = dict(session_key=session_id,
-                    feature_id=rook_static.PROBLEM_DISCOVERY,
-                    activity_l1=bl_static.L1_PROBLEM_DEFINITION,
-                    activity_l2=activity_l2_val)
+                     feature_id=rook_static.PROBLEM_DISCOVERY,
+                     activity_l1=bl_static.L1_PROBLEM_DEFINITION,
+                     activity_l2=activity_l2_val)
 
     LogEntryMaker.create_system_entry(user, log_data2)
 
@@ -167,6 +170,147 @@ def create_partials_destination_directory(user_workspace):
         return err_resp(f' {new_dir_info.err_msg} ({dest_dir_path})')
 
     return ok_resp(dest_dir_path)
+
+
+
+@csrf_exempt
+def view_partials_app(request):
+    """For the partials app, a new/unique directory is created
+    for R to write to.  In addition, the current datasetDoc is
+    written to this location.
+    """
+    # -----------------------------
+    # get the app info
+    # -----------------------------
+    rook_app_info = RookAppInfo.get_appinfo_from_name(app_names.PARTIALS_APP)
+    if rook_app_info is None:
+        user_msg = ((f'unknown rook app: "{app_names.PARTIALS_APP}"'
+                    f' (please add "{app_names.PARTIALS_APP}" to '
+                    f' "tworaven_apps/rook_services/app_names.py")'))
+        return JsonResponse(get_json_error(user_msg))
+
+    # -----------------------------
+    # Used for logging
+    # -----------------------------
+    user_workspace_info = get_latest_user_workspace(request)
+    if not user_workspace_info.success:
+        return JsonResponse(get_json_error(user_workspace_info.err_msg))
+
+    user_workspace = user_workspace_info.result_obj
+
+    # -----------------------------
+    # additional params
+    # -----------------------------
+    # See if the body is JSON format
+    raven_data_info = get_request_body_as_json(request)
+    if not raven_data_info.success:
+        err_msg = ("request.body not found for the partials call")
+        return JsonResponse(get_json_error(raven_data_info.err_msg))
+
+    raven_data = raven_data_info.result_obj
+
+    # Create a directory for rook to write to
+    #
+    dest_dir_info = create_partials_destination_directory(user_workspace)
+    print('dest_dir_info', dest_dir_info)
+
+
+    if not dest_dir_info.success:
+        return JsonResponse(get_json_error(dest_dir_info.err_msg))
+
+    dest_folderpath = dest_dir_info.result_obj
+
+    # Copy the current dataset doc to the new partials directory
+    #
+    current_doc_fpath = user_workspace.d3m_config.dataset_schema
+    if not isfile(current_doc_fpath):
+        user_msg = (f'{ta2_static.DATASET_DOC_FNAME} not found.'
+                    f' Path: {current_doc_fpath}  (partials err)')
+        return JsonResponse(get_json_error(user_msg))
+
+    dest_fpath = join(dest_folderpath, ta2_static.DATASET_DOC_FNAME)
+
+    move_file_info = move_file(current_doc_fpath, dest_fpath)
+    if not move_file_info.success:
+        user_msg = (f'Failed to copy the {ta2_static.DATASET_DOC_FNAME}'
+                    f' for the calculating partials. Error:'
+                    f' {move_file_info.err_msg}')
+        return JsonResponse(get_json_error(user_msg))
+
+    # Pass the new partials directory to rook
+    #
+    raven_data['dataloc'] = dest_folderpath
+
+    session_key = get_session_key(request)
+    raven_data[ROOK_ZESSIONID] = session_key
+
+    # dump JSON to text
+    #
+    raven_data_text_info = json_dumps(raven_data)
+    if not raven_data_text_info.success:
+        user_msg = 'Failed to convert data to JSON. (partials app)'
+        return JsonResponse(get_json_error(user_msg))
+
+    raven_data_text = raven_data_text_info.result_obj
+    # for issue: https://github.com/TwoRavens/TwoRavens/issues/237
+    # (need more general encoding?)
+    raven_data_text = raven_data_text.replace('+', '%2B'\
+                                    ).replace('&', '%26'\
+                                    ).replace('=', '%3D')
+
+    app_data = dict(solaJSON=raven_data_text)
+
+    # --------------------------------
+    # Behavioral logging
+    # --------------------------------
+    feature_id = rook_app_info.name
+
+    activity_l1 = bl_static.L1_PROBLEM_DEFINITION
+    activity_l2 = bl_static.L2_ACTIVITY_BLANK
+
+    log_data = dict(session_key=session_key,
+                    feature_id=feature_id,
+                    activity_l1=activity_l1,
+                    activity_l2=activity_l2)
+
+    LogEntryMaker.create_system_entry(user_workspace.user, log_data)
+
+    # Call R services
+    #
+    rook_svc_url = rook_app_info.get_rook_server_url()
+    try:
+        rservice_req = requests.post(rook_svc_url,
+                                     data=app_data)
+    except ConnectionError:
+        user_msg = 'R Server not responding: %s (partials)' % rook_svc_url
+        return JsonResponse(get_json_error(user_msg))
+
+    print('status code from rook call: %s' % rservice_req.status_code)
+
+    # response in this format:
+    #  ["/ravens_volume/test_output/196_autoMpg/additional_inputs/partials/ws_33/2019-07-12_17-40-50/datasetDoc.json"]
+
+    print('rook text: %s' % rservice_req.text)
+    rook_json_info = json_loads(rservice_req.text)
+    if not rook_json_info.success:
+        user_msg = '%s (partials)' % rook_json_info.err_msg
+        return JsonResponse(get_json_error(user_msg))
+
+    rook_json = rook_json_info.result_obj
+    print('rook_json', rook_json)
+    print('type rook_json', type(rook_json))
+    print('rook_json', rook_json[0])
+    if isinstance(rook_json, list) and rook_json:
+        return JsonResponse(\
+                get_json_success('Partials call finished.',
+                                 data=rook_json[0]))
+
+
+    user_msg = ('Expected a list from Rook.'
+                ' Found: %s (partials)') % rservice_req.text
+    return JsonResponse(get_json_error(user_msg))
+
+
 
 
 @csrf_exempt

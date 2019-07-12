@@ -1,16 +1,17 @@
 {
   "about": {
-    "datasetID": "185_bl_dataset_TRAIN",
+    "datasetID": "185_baseball_dataset_TRAIN",
     "datasetName": "NULL",
     "license": "CC-BY license",
     "approximateSize": "",
-    "datasetSchemaVersion": "3.1.1",
+    "datasetSchemaVersion": "3.2.0",
     "redacted": true,
-    "datasetVersion": "1.0"
+    "datasetVersion": "2.0",
+    "digest": "2cda12ac8468aff498d6b4473d5f48f83083eabf005f444d6cc3b2579376a9f2"
   },
   "dataResources": [
     {
-      "resID": "0",
+      "resID": "learningData",
       "resPath": "tables/learningData.csv",
       "resType": "table",
       "resFormat": [

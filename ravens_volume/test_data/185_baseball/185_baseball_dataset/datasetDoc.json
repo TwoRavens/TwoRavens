@@ -8,13 +8,14 @@
     "source": "OpenML",
     "sourceURI": "http://www.openml.org/d/185",
     "approximateSize": "",
-    "datasetSchemaVersion": "3.1.1",
+    "datasetSchemaVersion": "3.2.0",
     "redacted": false,
-    "datasetVersion": "1.0"
+    "datasetVersion": "2.0",
+    "digest": "99df490df70df1cfc04963074f8f0b48b5d4ae6e93b867362dcd1e2610f6e811"
   },
   "dataResources": [
     {
-      "resID": "0",
+      "resID": "learningData",
       "resPath": "tables/learningData.csv",
       "resType": "table",
       "resFormat": [

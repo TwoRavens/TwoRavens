@@ -509,11 +509,8 @@ export default class Datamart {
                         });
 
                         preferences.handleSearchResults(preferences.sourceMode, response);
-
                     }
                 }, 'Search'), // Datamart Search Call
-
-
 
                 preferences.isSearching[preferences.sourceMode] && loader,
 
