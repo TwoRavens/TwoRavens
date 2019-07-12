@@ -27,8 +27,12 @@ export default class PlotVegaLite {
         let newSpecification = JSON.stringify(specification);
         let {width, height} = vnode.dom.getBoundingClientRect();
 
+        if (this.isPlotting) return;
         if (this.specification !== newSpecification || this.width !== width || this.height !== height) {
+            this.isPlotting = true;
             this.specification = newSpecification;
+            this.width = width;
+            this.height = height;
 
             // include padding in width/height calculations
             specification.autosize = {
@@ -57,6 +61,7 @@ export default class PlotVegaLite {
                         this.dataKeys = new Set();
                         this.diff(vnode);
                     }
+                    this.isPlotting = false;
                     m.redraw()
                 })
             } finally {
