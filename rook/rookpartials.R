@@ -87,7 +87,7 @@ partials.app <- function(env){
             k <- length(md$variables)
             s <- 10
 
-            index <- rep(1,k+1)
+            index <- rep(0,k+1)  # 0 if no leading observation of means, 1 if leading observation of means
             natures <- rep(NA,k)
             for(i in 1:k){
                 natures[i] <- md$variables[[i]]$nature
@@ -104,6 +104,9 @@ partials.app <- function(env){
 
             baseline <- list()
             allnames <- rep(NA,k)
+            movement <- list()
+
+
             for(i in 1:k){
 
                 #nature currently is {"nominal" , "ordinal" , "interval" , "ratio" , "percent" , "other"}
@@ -112,6 +115,11 @@ partials.app <- function(env){
                     temp <- rep(md$variables[[i]]$mode, l)    # But might be NA?
                     tempseq <- sort(sample(names(md$variables[[i]]$plotvalues), size=min(s,index[i+1]-index[i])))
                     temp[(index[i]+1):index[i+1]] <- tempseq
+
+                    tdf <- data.frame(tempseq)
+                    names(tdf) <- md$variables[[i]]$varnamesSumStat
+                    movement[[i]] <- tdf
+
                     baseline[[i]] <- temp
                 }else if(nature=="ordinal"){
                     temp <- rep(md$variables[[i]]$median, l)  # But might not be value in dataset? Or NA.
@@ -121,6 +129,11 @@ partials.app <- function(env){
                         tempseq <- seq(from=md$variables[[i]]$min, to=md$variables[[i]]$max, length=s)
                     }
                     temp[(index[i]+1):index[i+1]] <- tempseq
+
+                    tdf <- data.frame(tempseq)
+                    names(tdf) <- md$variables[[i]]$varnamesSumStat
+                    movement[[i]] <- tdf
+
                     baseline[[i]] <- temp
                 }else if(nature=="interval"){
                     baseline[[i]] <- "interval"
@@ -128,11 +141,21 @@ partials.app <- function(env){
                     temp <- rep(md$variables[[i]]$median, l)
                     tempseq <- seq(from=md$variables[[i]]$min, to=md$variables[[i]]$max, length=s)
                     temp[(index[i]+1):index[i+1]] <- tempseq
+
+                    tdf <- data.frame(tempseq)
+                    names(tdf) <- md$variables[[i]]$varnamesSumStat
+                    movement[[i]] <- tdf
+
                     baseline[[i]] <- temp
                 }else if(nature=="percent"){
                     temp <- rep(md$variables[[i]]$median, l)
                     tempseq <- seq(from=md$variables[[i]]$min, to=md$variables[[i]]$max, length=s)
                     temp[(index[i]+1):index[i+1]] <- tempseq
+
+                    tdf <- data.frame(tempseq)
+                    names(tdf) <- md$variables[[i]]$varnamesSumStat
+                    movement[[i]] <- tdf
+
                     baseline[[i]] <- temp
                 }else if(nature=="other"){
                     baseline[[i]] <- "other"
@@ -144,6 +167,7 @@ partials.app <- function(env){
             }
             mydata <- data.frame(matrix(unlist(baseline), nrow=l, byrow=FALSE),stringsAsFactors=FALSE)
             names(mydata) <- allnames
+            names(movement) <- allnames
         },
         error=function(err){
             warning <<- TRUE
@@ -157,11 +181,13 @@ partials.app <- function(env){
 
     if(!warning){
         merge_name_data <- "/tables/learningData.csv"
+        merge_name_summary <- "/tables/partialsSummary.json"
         merge_name_datasetDoc <- "/datasetDoc.json"
         merge_name_tables <- "/tables"
         outtables <- paste(mydataloc, merge_name_tables, sep="")
         outdata <- paste(mydataloc, merge_name_data, sep="")
         outdatasetDoc <- paste(mydataloc, merge_name_datasetDoc, sep="")
+        outsummary <- paste(mydataloc, merge_name_summary, sep="")
         print(outdata[1])
         print(outdatasetDoc[1])
 
@@ -171,6 +197,7 @@ partials.app <- function(env){
         }
 
         write.csv(mydata, outdata[1], row.names=FALSE, col.names=TRUE)
+        write(jsonlite:::toJSON(movement), outsummary[1])
         #write(mydatasetDoc, outdatasetDoc[1])
 
         result <- outdatasetDoc[1]  # Path to partials dataset
