@@ -39,6 +39,9 @@ import ModalWorkspace from "./views/ModalWorkspace";
 import Body_EventData from './eventdata/Body_EventData';
 import Body_Dataset from "./views/Body_Dataset";
 
+import VariableImportance from "./views/VariableImportance";
+import {efdCategoricalData, efdContinuousData, tempProblem} from "./variableImportanceDataSample";
+
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
 export let link = url => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
@@ -605,11 +608,7 @@ class Body {
                         m.request('/d3m-service/retrieve-output-EFD-data', {
                             method: "POST",
                             data: JSON.parse(this.TA2Post)
-                        })
-                        // m.request(this.TA2URL, {method: 'POST', data: JSON.parse(this.TA2Post)})
-                            .then(response => {
-                                console.log(response)
-                            }).then(m.redraw)
+                        }).then(console.log).then(m.redraw)
                     }
                 }, 'Send'),
                 m('div#URL', {style: {margin: '1em'}},
@@ -884,6 +883,33 @@ else {
     m.route(document.body, '/model', {
         '/dataset': {render: () => m(Body_Dataset, {image: '/static/images/TwoRavens.png'})},
         '/datamart': {render: standaloneDatamart},
+        '/testPlot': {
+            render: () => [
+                // for testing plot redraw speeds
+                m(ButtonRadio, {
+                    sections: [{value: 1}, {value: 2}]
+                }),
+                Object.keys(efdContinuousData).map(predictor => [
+                    m(VariableImportance, {
+                        data: efdContinuousData[predictor],
+                        predictor,
+                        target: 'Doubles',
+                        mode: 'EFD',
+                        problem: tempProblem
+                    })
+                ]),
+
+                Object.keys(efdCategoricalData).map(predictor => [
+                    m(VariableImportance, {
+                        data: efdCategoricalData[predictor],
+                        predictor,
+                        target: 'Hall_of_Fame',
+                        mode: 'EFD',
+                        problem: tempProblem
+                    })
+                ])
+            ]
+        },
         '/explore/:variate/:vars...': Body,
         '/data': {render: () => m(Peek, {id: app.peekId, image: '/static/images/TwoRavens.png'})},
         '/:mode': Body
