@@ -308,6 +308,17 @@ def api_materialize(request):
 
 
 @csrf_exempt
+def api_search_by_dataset(request):
+    """For search, submit the entire dataset.
+    Return the calls async"""
+
+    # (1) Location of the current dataset
+
+    return HttpResponse('ok')
+
+
+
+@csrf_exempt
 def api_materialize_async(request):
     """Run async materialize with ISI"""
     success, json_req_obj = get_request_body_as_json(request)
@@ -332,13 +343,6 @@ def api_materialize_async(request):
         return JsonResponse(\
                 get_json_error("invalid input",
                                errors=form.errors.as_json()))
-
-    # job_util_info = get_datamart_job_util(form.cleaned_data['source'])
-    # if not job_util_info.success:
-    #    return JsonResponse(get_json_error(job_util_info.err_msg))
-
-    # DatamartJobUtil = job_util_info.result_obj # e.g. DatamartJobUtilISI, DatamartJobUtilNYU
-
 
     mu_info = make_materialize_call(\
                  form.cleaned_data['source'],

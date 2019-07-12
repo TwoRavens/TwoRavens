@@ -270,10 +270,10 @@ class D3MConfiguration(TimeStampedModel):
 
 
         od[KEY_PROBLEM_SCHEMA_URL] = reverse('view_get_problem_schema_by_id',
-                                           kwargs=dict(d3m_config_id=self.id))
+                                             kwargs=dict(d3m_config_id=self.id))
 
         od[KEY_PROBLEM_DATA_INFO] = reverse('view_get_problem_data_info_by_id',
-                                          kwargs=dict(d3m_config_id=self.id))
+                                            kwargs=dict(d3m_config_id=self.id))
 
         od['config_url'] = reverse('view_d3m_details_json',
                                    kwargs=dict(d3m_config_id=self.id))

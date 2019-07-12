@@ -5,7 +5,7 @@ from os.path import isdir, isfile, getsize, join
 from collections import OrderedDict
 from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
-from django.views.decorators.csrf import csrf_exempt                                                
+from django.views.decorators.csrf import csrf_exempt
 from tworaven_apps.utils import random_info
 from tworaven_apps.configurations.models_d3m import D3MConfiguration,\
     D3M_FILE_ATTRIBUTES
@@ -38,6 +38,22 @@ def get_latest_d3m_config():
     return d3m_config
 
 
+def get_path_to_source_data(d3m_config):
+    """Direct path to the data file"""
+    if not d3m_config:
+        return err_resp('d3m_config is None (get_source_data_path)')
+
+    train_data_info = get_train_data_info(d3m_config)
+    if not train_data_info.success:
+        return train_data_info
+
+    for k, v in train_data_info.result_obj.items():
+        if v['exists']:
+            return ok_resp(v['fullpath'])
+
+    return err_resp('path to source data not found: %s' % \
+                    train_data_info.result_obj)
+
 
 def get_train_data_info(d3m_config):
     """Pull info for train data and train info files.
@@ -49,11 +65,13 @@ def get_train_data_info(d3m_config):
         }
     }"""
     if not d3m_config:
-        return None, 'd3m_config is None'
+        return err_resp('d3m_config is None (get_train_data_info)')
 
     file_info = OrderedDict()
     fnames = ['learningData.csv',
               'learningData.csv.gz']
+
+    source_data_path = None
 
     for fname in fnames:
         # For each file, does it exist? size? path?
@@ -63,10 +81,12 @@ def get_train_data_info(d3m_config):
                      fname)
 
         one_file_info = OrderedDict()
+
         if isfile(fpath):
             # file found
             one_file_info['exists'] = True
             one_file_info['size'] = getsize(fpath)
+            source_data_path = fpath
         else:
             # no file found
             one_file_info['exists'] = False
@@ -76,7 +96,9 @@ def get_train_data_info(d3m_config):
 
         file_info[fname] = one_file_info
 
-    return file_info, None
+    file_info['source_data_path'] = source_data_path
+
+    return ok_resp(file_info)
 
 def get_dataset_size(d3m_config):
     """Make a guess at the data file name and attempt to get the size"""

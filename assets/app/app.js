@@ -928,18 +928,9 @@ export let setDatasetUrl = async () => {
   console.log("result from problem data file info:");
   console.log(problem_info_result);
 
-  // Loop through the response above and
-  // pick the first "path" where "exists" is true
-  //
-  // Note: if data files have "exists" as false, stay at default which is null
-  //
-  let set_d3m_data_path = field => problem_info_result.data[field].exists
-      ? problem_info_result.data[field].path
-      : problem_info_result.data[field + '.gz'].exists
-          ? problem_info_result.data[field + '.gz'].path
-          : undefined
-
-  workspace.datasetUrl = set_d3m_data_path('learningData.csv');
+  if ('source_data_path' in problem_info_result.data){
+    workspace.datasetUrl = problem_info_result.data.source_data_path;
+  }
 
   if (workspace.datasetUrl === undefined){
     console.log('Severe error.  Not able to set the datasetUrl. (p2)' +
@@ -1557,7 +1548,7 @@ export async function estimate() {
 
     console.log("Attempting partials call");
 
-    let smallPartialsDataset; 
+    let smallPartialsDataset;
 
     try {
         smallPartialsDataset = await m.request({

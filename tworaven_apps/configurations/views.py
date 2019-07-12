@@ -132,15 +132,14 @@ def view_get_problem_data_info(request, d3m_config_id=None):
 
     is_pretty = request.GET.get('pretty', False)
 
-    info_dict, err_msg = get_train_data_info(d3m_config)
+    train_data_info = get_train_data_info(d3m_config)
 
-    if err_msg:
-        resp_dict = dict(success=False,
-                         message=err_msg)
+    if not train_data_info.success:
+        resp_dict = get_json_error(train_data_info.err_msg)
 
     else:
-        resp_dict = dict(success=True,
-                         data=info_dict)
+        resp_dict = get_json_success('It worked',
+                                     data=train_data_info.result_obj)
 
     if is_pretty is not False:   # return this as a formatted string?
         config_str = '<pre>%s<pre>' % \
