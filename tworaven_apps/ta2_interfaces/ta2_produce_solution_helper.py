@@ -138,9 +138,15 @@ class ProduceSolutionHelper(BasicErrCheck):
         # --------------------------------
         # (2) Save the request to the db
         # --------------------------------
+        if self.is_partials_call:
+            req_type = ta2_static.PRODUCE_SOLUTION_PARTIALS
+        else:
+            req_type = ta2_static.PRODUCE_SOLUTION
+
+
         stored_request = StoredRequest(\
                         user=self.user_object,
-                        request_type=ta2_static.PRODUCE_SOLUTION,
+                        request_type=req_type,
                         pipeline_id=self.pipeline_id,
                         search_id=self.search_id,
                         is_finished=False,
@@ -160,7 +166,8 @@ class ProduceSolutionHelper(BasicErrCheck):
         # ----------------------------------
         # Run FitSolution
         # ----------------------------------
-        produce_info = produce_solution(json_str_input)
+        produce_info = produce_solution(json_str_input,
+                                        is_partials_call=self.is_partials_call)
         if not produce_info.success:
             StoredResponse.add_err_response(stored_request,
                                             produce_info.err_msg)
@@ -210,6 +217,7 @@ class ProduceSolutionHelper(BasicErrCheck):
 
         if grpc_call == ta2_static.GET_PRODUCE_SOLUTION_RESULTS:
             if self.is_partials_call:
+                print('is_partials_call:', is_partials_call)
                 grpc_call = ta2_static.GET_PARTIALS_SOLUTION_RESULTS
 
         user_msg = '%s error; pipeline %s: %s' % \

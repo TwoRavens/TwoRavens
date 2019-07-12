@@ -65,6 +65,9 @@ FIT_SOLUTION = 'FitSolution'
 GET_FIT_SOLUTION_RESULTS = 'GetFitSolutionResults'
 
 PRODUCE_SOLUTION = 'ProduceSolution'
+PRODUCE_SOLUTION_PARTIALS = 'ProduceSolution_PARTIALS'
+
+
 GET_PRODUCE_SOLUTION_RESULTS = 'GetProduceSolutionResults'
 GET_PARTIALS_SOLUTION_RESULTS = 'GetPartialsSolutionResults'
 
