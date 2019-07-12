@@ -569,6 +569,10 @@ streamSocket.onmessage = function (e) {
         debugLog(msg_data.msg_type + ' recognized!');
         solverD3M.handleGetProduceSolutionResultsResponse(msg_data.data);
     }
+    else if (msg_data.msg_type === 'GetPartialsSolutionResults') {
+        debugLog(msg_data.msg_type + ' recognized!');
+        solverD3M.handleGetPartialsSolutionResultsResponse(msg_data.data);
+    }
     else if (msg_data.msg_type === 'GetFitSolutionResults') {
         debugLog(msg_data.msg_type + ' recognized!');
         debugLog('No handler: Currently not using GetFitSolutionResultsResponse...');
