@@ -290,16 +290,13 @@ def view_partials_app(request):
     # response in this format:
     #  ["/ravens_volume/test_output/196_autoMpg/additional_inputs/partials/ws_33/2019-07-12_17-40-50/datasetDoc.json"]
 
-    print('rook text: %s' % rservice_req.text)
     rook_json_info = json_loads(rservice_req.text)
     if not rook_json_info.success:
         user_msg = '%s (partials)' % rook_json_info.err_msg
         return JsonResponse(get_json_error(user_msg))
 
     rook_json = rook_json_info.result_obj
-    print('rook_json', rook_json)
-    print('type rook_json', type(rook_json))
-    print('rook_json', rook_json[0])
+
     if isinstance(rook_json, list) and rook_json:
         return JsonResponse(\
                 get_json_success('Partials call finished.',
@@ -352,7 +349,6 @@ def view_rook_route(request, app_name_in_url):
     # look for the "solaJSON" variable in the POST
     # -----------------------------
     print('rook_app_info', rook_app_info)
-    print('rook_app_info.is_partials_app()', rook_app_info.is_partials_app())
     if request.POST and UI_KEY_SOLA_JSON in request.POST:
         # this is a POST with a JSON string under the key solaJSON key
         raven_data_text = request.POST[UI_KEY_SOLA_JSON]
@@ -366,16 +362,6 @@ def view_rook_route(request, app_name_in_url):
                                      message=err_msg))
 
         raven_data_text = raven_data_info.result_obj
-
-        if rook_app_info.is_partials_app():
-            # this is a health check
-            dest_dir_info = create_partials_destination_directory(user_workspace)
-            print('dest_dir_info', dest_dir_info)
-            if not dest_dir_info.success:
-                return JsonResponse(get_json_error(dest_dir_info.err_msg))
-
-            additional_params['dataloc'] = dest_dir_info.result_obj
-
 
     # Retrieve post data and attempt to insert django session id
     # (if none exists)
