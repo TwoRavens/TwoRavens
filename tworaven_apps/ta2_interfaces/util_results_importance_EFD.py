@@ -20,14 +20,12 @@ Output:
 from os.path import getsize, join, isfile
 from collections import OrderedDict
 import pandas as pd
-from sklearn.metrics.classification import confusion_matrix
 
 from django.conf import settings
 
 from tworaven_apps.eventdata_queries.event_job_util import EventJobUtil
 from tworaven_apps.eventdata_queries.mongo_retrieve_util import MongoRetrieveUtil
 from tworaven_apps.utils.url_helper import format_file_uri_to_path
-from tworaven_apps.utils.number_formatting import add_commas_to_number
 from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
 from tworaven_apps.ta2_interfaces.static_vals import D3M_OUTPUT_DIR
 from tworaven_apps.raven_auth.models import User
@@ -165,7 +163,6 @@ class ImportanceEFDUtil(object):
 
         # populate levels if not passed (for example, numeric column tagged as categorical)
         for key in self.metadata['levels']:
-            print(key)
             if not self.metadata['levels'][key]:
                 response = util.run_query([
                     *self.metadata['query'],
@@ -176,20 +173,26 @@ class ImportanceEFDUtil(object):
                     return OrderedDict({KEY_SUCCESS: False, KEY_DATA: response[1]})
                 self.metadata['levels'][key] = [doc['_id'] for doc in response[1]]
 
+        self.metadata['levels'].update({
+            'fitted_' + key: self.metadata['levels'][key] for key in self.metadata['levels']
+        })
+
         def is_categorical(variable, levels):
             return variable in levels
 
         def branch_target(variable, levels):
             if is_categorical(variable, levels):
-                return {f'discrete-{variable}-{level}': {
-                "$sum": {"$cond": [{"$eq": [f"${variable}", level]}, 1, 0]}
-            } for level in self.metadata['levels'][variable]}
-            return {f'continuous-{variable}': {"$avg": f'${variable}'}}
+                return {f'{variable}-{level}': {
+                    "$sum": {"$cond": [{"$eq": [f"${variable}", level]}, 1, 0]}
+                } for level in self.metadata['levels'][variable]}
+            return {variable: {"$avg": f'${variable}'}}
 
         def aggregate_targets(variables, levels):
             return {k: v for d in [
                 branch_target(target, levels) for target in variables
             ] for k, v in d.items()}
+
+        target_aggregator = aggregate_targets([*fitted_target_names, *self.metadata['targets']], self.metadata['levels'])
 
         query = [
             *self.metadata['query'],
@@ -204,14 +207,15 @@ class ImportanceEFDUtil(object):
             {
                 "$unwind": "$results_collection"
             },
-            {"$project": {
-                **{
-                    name: f"$results_collection\\.{name}" for name in fitted_target_names
-                },
-                **{
-                    name: 1 for name in [*self.metadata['targets'], *self.metadata['predictors']]
-                },
-                **{"_id": 0}}
+            {
+                "$project": {
+                    **{
+                        name: f"$results_collection\\.{name}" for name in fitted_target_names
+                    },
+                    **{
+                        name: 1 for name in [*self.metadata['targets'], *self.metadata['predictors']]
+                    },
+                    **{"_id": 0}}
             },
             {
                 "$facet": {
@@ -219,18 +223,29 @@ class ImportanceEFDUtil(object):
                         {
                             "$group": {
                                 **{"_id": f'${predictor}'},
-                                **aggregate_targets(self.metadata['targets'], self.metadata['levels'])
+                                **target_aggregator
                             }
                         },
-                        # {
-                        #     "$rename": {f"_id.{predictor}": predictor}
-                        # },
+                        {
+                            "$project": {
+                                **{predictor: "$_id"},
+                                **{k: 1 for k in target_aggregator.keys()},
+                                **{"_id": 0}
+                            }
+                        }
                     ] if is_categorical(predictor, self.metadata['levels']) else [
                         {
                             "$bucketAuto": {
                                 "groupBy": f'${predictor}',
                                 "buckets": 100,
-                                "output": aggregate_targets(self.metadata['targets'], self.metadata['levels'])
+                                "output": target_aggregator
+                            }
+                        },
+                        {
+                            "$project": {
+                                **{predictor: {"$avg": ["$_id\\.min", "$_id\\.max"]}},
+                                **{k: 1 for k in target_aggregator.keys()},
+                                **{"_id": 0}
                             }
                         }
                     ] for predictor in self.metadata['predictors']
@@ -238,7 +253,8 @@ class ImportanceEFDUtil(object):
             },
         ]
 
-        # print(query)
+        print(query)
+
         try:
             status = self.load_results_into_mongo(
                 file_uri,
