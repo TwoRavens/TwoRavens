@@ -25,6 +25,8 @@ from tworaven_apps.datamart_endpoints.forms import \
    DatamartScrapeForm,
    DatamartUploadForm, DatamartCustomForm)
 
+from tworaven_apps.configurations.utils import get_path_to_source_data
+
 from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
 from tworaven_apps.behavioral_logs import static_vals as bl_static
 
@@ -311,10 +313,32 @@ def api_materialize(request):
 def api_search_by_dataset(request):
     """For search, submit the entire dataset.
     Return the calls async"""
+    # Get the latest UserWorkspace
+    #
+    ws_info = get_latest_user_workspace(request)
+    if not ws_info.success:
+        user_msg = 'User workspace not found: %s' % ws_info.err_msg
+        return JsonResponse(get_json_error(user_msg))
+
+    user_workspace = ws_info.result_obj
 
     # (1) Location of the current dataset
+    #
+    dataset_info = get_path_to_source_data(user_workspace.d3m_config)
+    if not dataset_info.success:
+        user_msg = (f'Sorry!  Failed to locate the dataset.'
+                    f' ({dataset_info.err_msg})')
+        return JsonResponse(get_json_error(user_msg))
 
-    return HttpResponse('ok')
+    dataset_path = dataset_info.result_obj
+
+    # (2) Kick off async search
+    #
+    #   (to do)
+
+    resp_info = get_json_success('Search has started!', data=dataset_path)
+
+    return JsonResponse(resp_info)
 
 
 

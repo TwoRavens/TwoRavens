@@ -48,8 +48,9 @@ def get_path_to_source_data(d3m_config):
         return train_data_info
 
     for k, v in train_data_info.result_obj.items():
+        print(v)
         if v['exists']:
-            return ok_resp(v['fullpath'])
+            return ok_resp(v['path'])
 
     return err_resp('path to source data not found: %s' % \
                     train_data_info.result_obj)
