@@ -567,11 +567,11 @@ streamSocket.onmessage = function (e) {
     }
     else if (msg_data.msg_type === 'GetProduceSolutionResults') {
         debugLog(msg_data.msg_type + ' recognized!');
-        solverD3M.handleGetProduceSolutionResultsResponse(msg_data.data);
+        solverD3M.handleGetProduceSolutionResultsResponse(msg_data.data, 'fittedValues');
     }
     else if (msg_data.msg_type === 'GetPartialsSolutionResults') {
         debugLog(msg_data.msg_type + ' recognized!');
-        solverD3M.handleGetPartialsSolutionResultsResponse(msg_data.data);
+        solverD3M.handleGetProduceSolutionResultsResponse(msg_data.data, 'partialsValues');
     }
     else if (msg_data.msg_type === 'GetFitSolutionResults') {
         debugLog(msg_data.msg_type + ' recognized!');
