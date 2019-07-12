@@ -1744,8 +1744,8 @@ export function discovery(problems) {
         // coerceArray un-mangles data from R, in cases where you are expecting an array that could potentially be of length one
         let coerceArray = data => Array.isArray(data) ? data : [data];
 
-        console.log('variableSummaries:' + JSON.stringify(variableSummaries))
-        console.log('>> prob:' +  JSON.stringify(prob))
+        // console.log('variableSummaries:' + JSON.stringify(variableSummaries))
+        // console.log('>> prob:' +  JSON.stringify(prob))
 
         out[problemID] = {
             problemID,
@@ -2354,3 +2354,22 @@ export let omniSort = (a, b) => {
     if (typeof a === 'string') return  a.localeCompare(b);
     return (a < b) ? -1 : 1;
 };
+
+
+export function melt(data, factors, value="value", variable="variable") {
+    factors = new Set(factors);
+    let outData = [];
+    data.forEach(record => {
+        let UID = [...factors].reduce((out, idx) => {
+            out[idx] = record[idx];
+            return out;
+        }, {});
+
+        Object.keys(record)
+            .filter(key => !factors.has(key))
+            .forEach(idxMelted => outData.push(Object.assign(
+                {}, UID,
+                {[variable]: idxMelted, [value]: record[idxMelted]})))
+    });
+    return outData;
+}
