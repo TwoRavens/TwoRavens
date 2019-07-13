@@ -33,6 +33,15 @@ export let getSolutionAdapter = (problem, solution) => ({
         let samples = problemData.map(point => point.d3mIndex);
         return samples.map(sample => solutionData[sample])
     },
+    getPartialsValues: target => {
+        loadPartialsValues(problem, solution);
+
+        let solutionData = resultsData.partials[solution.pipelineId];
+        if (!solutionData) return;
+
+        // cached data is current, return it
+        return solutionData;
+    },
     getConfusionMatrix: target => {
         loadConfusionData(problem, solution);
         return resultsData.confusion[solution.pipelineId];
