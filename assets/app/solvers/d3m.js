@@ -210,8 +210,6 @@ export let loadFittedValues = async (problem, solution) => {
     m.redraw();
 };
 
-// solvedProblem.solutions.d3m
-
 export let loadPartialsValues = async (problem, solution) => {
     // don't attempt to load if there is no data
     if (!solution.data_pointer_partials) return;
