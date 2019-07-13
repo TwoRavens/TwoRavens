@@ -210,6 +210,61 @@ export let loadFittedValues = async (problem, solution) => {
     m.redraw();
 };
 
+// solvedProblem.solutions.d3m
+
+export let loadPartialsValues = async (problem, solution) => {
+    // don't attempt to load if there is no data
+    if (!solution.data_pointer_partials) return;
+
+    // load dependencies, which can clear loading state if problem, etc. changed
+    //await loadActualValues(problem);
+
+    // don't load if systems are already in loading state
+    if (resultsData.partialsLoading[solution.pipelineId])
+        return;
+
+    // don't load if already loaded
+    if (solution.pipelineId in resultsData.partials)
+        return;
+
+    // begin blocking additional requests to load
+    resultsData.partialsLoading[solution.pipelineId] = true;
+
+    let tempQuery = JSON.stringify(resultsData.id.query);
+    let response;
+    try {
+        response = await app.makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {
+            data_pointer: solution.data_pointer_partials,
+            //indices: resultsData.actuals.map(point => String(point.d3mIndex))
+        });
+
+        if (!response.success) {
+            console.warn(response.data);
+            throw response.data;
+        }
+    } catch (err) {
+        app.alertWarn('Partials data has not been loaded. Some plots will not load.');
+        return;
+    }
+
+    // don't accept response if current problem has changed
+    if (resultsData.id.problemID !== problem.problemID)
+        return;
+
+    // don't accept if query changed
+    if (JSON.stringify(resultsQuery) !== tempQuery)
+        return;
+
+    // TODO: this is only index zero if there is one target
+    // TODO: multilabel problems will have d3mIndex collisions
+    resultsData.partials[solution.pipelineId] = response.data
+        .reduce((out, point) => Object.assign(out, {[point['']]: isNaN(parseFloat(point['0'])) ? point['0'] : parseFloat(point['0'])}), {});
+    resultsData.partialsLoading[solution.pipelineId] = false;
+    m.redraw();
+};
+
+
+
 export let loadConfusionData = async (problem, solution) => {
     // don't load if data is not available
     if (!solution.data_pointer)
