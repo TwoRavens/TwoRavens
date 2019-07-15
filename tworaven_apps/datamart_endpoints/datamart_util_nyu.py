@@ -49,6 +49,65 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
         return ok_resp(response['data'])
 
+
+    @staticmethod
+    def search_with_dataset(dataset_path, **kwargs):
+        """Search the datamart using a dataset"""
+        if not isfile(dataset_path):
+            user_msg = ('The dataset file could not be found.')
+            return err_resp(user_msg)
+
+        search_url = get_nyu_url() + '/search'
+
+        # --------------------------------
+        # Behavioral logging
+        # --------------------------------
+        if 'user' in kwargs:
+            log_data = dict(feature_id=f'POST|by-dataset|{search_url}',
+                            activity_l1=bl_static.L1_DATA_PREPARATION,
+                            activity_l2=bl_static.L2_DATA_SEARCH,
+                            path=search_url)
+
+            LogEntryMaker.create_datamart_entry(kwargs['user'], log_data)
+        # --------------------------------
+
+        # --------------------------------
+        # Query the datamart
+        # --------------------------------
+        try:
+            with open(dataset_path, 'rb') as dataset_p:
+                try:
+                    response = requests.post(\
+                        search_url,
+                        files=dict(data=dataset_p),
+                        timeout=settings.DATAMART_LONG_TIMEOUT)
+
+                except requests.exceptions.Timeout as err_obj:
+                    return err_resp('Request timed out. responded with: %s' % err_obj)
+
+        except IOError as err_obj:
+            user_msg = (f'Failed to search with the dataset file.'
+                        f'  Technical: {err_obj}')
+            return err_resp(user_msg)
+
+        if response.status_code != 200:
+            print(str(response))
+            print(response.text)
+            return err_resp(('NYU Datamart internal server error.'
+                             ' status_code: %s') % response.status_code)
+
+        json_results = response.json()['results']
+
+        if not json_results:
+            return err_resp('No datasets found. (%s)' % \
+                            (get_timestamp_string_readable(time_only=True),))
+
+        print('num results: ', len(json_results))
+
+        return ok_resp(json_results)
+
+
+
     @staticmethod
     def datamart_search(query_dict, **kwargs):
         """Search the NYU datamart"""

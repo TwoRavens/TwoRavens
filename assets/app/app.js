@@ -585,6 +585,10 @@ streamSocket.onmessage = function (e) {
         debugLog(msg_data.msg_type + ' recognized!');
         handleAugmentDataMessage(msg_data);
     }
+    else if (msg_data.msg_type === 'DATAMART_SEARCH_BY_DATASET') {
+        debugLog(msg_data.msg_type + ' recognized!');
+        handleSearchbyDataset(msg_data);
+    }
     else {
         console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
     }
@@ -928,18 +932,9 @@ export let setDatasetUrl = async () => {
   console.log("result from problem data file info:");
   console.log(problem_info_result);
 
-  // Loop through the response above and
-  // pick the first "path" where "exists" is true
-  //
-  // Note: if data files have "exists" as false, stay at default which is null
-  //
-  let set_d3m_data_path = field => problem_info_result.data[field].exists
-      ? problem_info_result.data[field].path
-      : problem_info_result.data[field + '.gz'].exists
-          ? problem_info_result.data[field + '.gz'].path
-          : undefined
-
-  workspace.datasetUrl = set_d3m_data_path('learningData.csv');
+  if ('source_data_path' in problem_info_result.data){
+    workspace.datasetUrl = problem_info_result.data.source_data_path;
+  }
 
   if (workspace.datasetUrl === undefined){
     console.log('Severe error.  Not able to set the datasetUrl. (p2)' +
@@ -1557,7 +1552,7 @@ export async function estimate() {
 
     console.log("Attempting partials call");
 
-    let smallPartialsDataset; 
+    let smallPartialsDataset;
 
     try {
         smallPartialsDataset = await m.request({
@@ -2268,6 +2263,36 @@ export function handleMaterializeDataMessage(msg_data){
 
 
 } // end handleMaterializeDataMessage
+
+
+/**
+ *  After a search by dataset:
+ *  - Display the results on the Datamart
+ */
+ export async function handleSearchbyDataset(msg_data){
+
+     if (!msg_data) {
+         console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
+         return;
+     }
+     console.log('handleSearchbyDataset!!!');
+     console.log(JSON.stringify(msg_data));
+
+     // Need datamart name, even if an error
+     //
+     let datamartName = msg_data.data.datamart_name;
+
+
+    if (msg_data.success){
+        let response_info = {
+                              success: true,
+                              data: msg_data.data.search_results
+                            }
+      datamartPreferences.handleSearchResults(datamartName, response_info);
+    } else{
+      datamartPreferences.handleSearchResults(datamartName, msg_data);
+    }
+} // end: handleSearchbyDataset
 
 /**
  *  After an augment:

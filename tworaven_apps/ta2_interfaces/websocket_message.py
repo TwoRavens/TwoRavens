@@ -41,9 +41,21 @@ class WebsocketMessage(object):
         return WebsocketMessage(msg_type=msg_type,
                                 success=True,
                                 user_message=user_message,
+                                message=user_message,
                                 msg_cnt=msg_cnt,
                                 data=data,
                                 **kwargs)
+
+    @staticmethod
+    def get_fail_message_with_data(msg_type, user_message, **kwargs):
+        """Prefill the success to True, assumes no data"""
+        data = kwargs.get('data', None)
+
+        return WebsocketMessage(msg_type=msg_type,
+                                success=False,
+                                user_message=user_message,
+                                message=user_message,
+                                data=data)
 
     @staticmethod
     def get_fail_message(msg_type, user_message, msg_cnt=None):
@@ -51,6 +63,7 @@ class WebsocketMessage(object):
         return WebsocketMessage(msg_type=msg_type,
                                 success=False,
                                 user_message=user_message,
+                                message=user_message,
                                 msg_cnt=msg_cnt)
 
     def as_dict(self):

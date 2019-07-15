@@ -23,6 +23,11 @@ urlpatterns = (
         views.api_search,
         name='api_search'),
 
+    url(r'^api/search-by-dataset$',
+        views.api_search_by_dataset,
+        name='api_search_by_dataset'),
+
+
     url(r'^api/materialize-async$',
         views.api_materialize_async,
         name='api_materialize_async'),
