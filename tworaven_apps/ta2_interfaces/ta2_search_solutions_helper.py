@@ -477,7 +477,7 @@ class SearchSolutionsHelper(BasicErrCheck):
         produce_params = self.all_search_params[ta2_static.KEY_PRODUCE_SOLUTION_DEFAULT_PARAMS]
 
         # This is used downstream for a 2nd Produce Solutions call
-        partials_solution_params = self.all_search_params[ta2_static.KEY_PARTIALS_SOLUTION_PARAMS]
+        partials_solution_params = self.all_search_params.get(ta2_static.KEY_PARTIALS_SOLUTION_PARAMS, None)
 
         # ----------------------------------
         # Start the async process
