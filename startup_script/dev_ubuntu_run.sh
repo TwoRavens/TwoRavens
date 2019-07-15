@@ -16,6 +16,13 @@ cd ~/TwoRavens/
 workon 2ravens
 : $(fab celery_restart)
 
+fab clear_d3m_configs
+
+# prevent package installation in R. This must be set within the 2ravens virtualenv
+export ROOK_USE_PRODUCTION_MODE=yes
+
+mongo tworavens --eval "printjson(db.dropDatabase())"
+
 gnome-terminal --tab -- /bin/bash -c 'echo -ne "\033]0;django\007"; fuser -k 8080/tcp; fab run_with_ta2'
 gnome-terminal --tab -- /bin/bash -c 'echo -ne "\033]0;ta2\007"; fab run_ta2_featurelabs_with_config:2'
 gnome-terminal --tab -- /bin/bash -c 'echo -ne "\033]0;celery\007"; fab celery_run_with_ta2'
