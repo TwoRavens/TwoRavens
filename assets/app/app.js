@@ -1546,8 +1546,10 @@ export async function estimate() {
             url: ROOK_SVC_URL + 'partialsapp',
             data: {metadata: variableSummaries}
         });
+        console.warn("#debug partialsLocationInfo");
+        console.log(partialsLocationInfo);
         if (!partialsLocationInfo.success) {
-            alertWarn('Call for partials data failed. ' + partialsLocationInfo.err_msg);
+            alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
             throw partialsLocationInfo.message;
         } else {
             selectedProblem.partialsDatasetPath = partialsLocationInfo.partialsDatasetPath;
@@ -1565,8 +1567,8 @@ export async function estimate() {
         scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath)
     };
 
-    if (partialsDatasetDocPath)
-        allParams.partialSolutionParams = solverD3M.GRPC_ProduceSolutionRequest(partialsDatasetDocPath);
+    // if (partialsDatasetDocPath)
+    //     allParams.partialSolutionParams = solverD3M.GRPC_ProduceSolutionRequest(partialsDatasetDocPath);
 
     console.warn("#debug allParams");
     console.log(JSON.stringify(allParams));
