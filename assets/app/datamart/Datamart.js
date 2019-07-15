@@ -115,16 +115,9 @@ export default class Datamart {
             getData
         } = preferences;
 
-        let loader = m('div', {
-                style: {height: '120px', margin: 'auto calc(50% - 60px)'}
-            },
-            m('#loading.loader', {
-                style: {position: 'relative', transform: 'translateY(-50%)'}
-            }));
-
         if (preferences.isAugmenting) return m('div',
             m('h5', 'The system is performing an augmentation.'),
-            loader
+            common.loader('DatamartAugmenting')
         );
 
         let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
@@ -451,7 +444,7 @@ export default class Datamart {
                     }
                 }, 'Submit'),
 
-                preferences.isSearching[preferences.sourceMode] && loader,
+                preferences.isSearching[preferences.sourceMode] && common.loader('DatamartSearching'),
 
                 m('div#datamartResults', results[preferences.sourceMode]
                      .map((result, i) => makeCard({

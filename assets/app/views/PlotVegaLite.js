@@ -47,7 +47,7 @@ export default class PlotVegaLite {
 
             // mask repeated warnings about outdated vega-lite specification
             let tempWarn = console.warn;
-            console.warn = _ => _;
+            // console.warn = _ => _;
 
             try {
                 vegaEmbed(vnode.dom, specification, options).then(result => {
@@ -80,8 +80,6 @@ export default class PlotVegaLite {
 
         this.dataKeys = new Set(data.map(datum => datum[identifier]));
         this.instance
-            // .width(offsetWidth)
-            // .height(offsetHeight + (heightOffset || 0))
             .change('embedded', vega.changeset()
                 .insert(newData)
                 .remove(datum => !this.dataKeys.has(datum[identifier])))

@@ -3,10 +3,10 @@ Functions for when the UI sends JSON requests to route to TA2s as gRPC calls
     - Right now this code is quite redundant. Wait for integration to factor it out,
      e.g. lots may change--including the "req_" files being part of a separate service
 """
-import json
+from urllib import parse
 from django.shortcuts import render
 from django.conf import settings
-from django.http import JsonResponse    #, HttpResponse, Http404
+from django.http import JsonResponse, HttpResponse  # , Http404
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 
@@ -22,6 +22,8 @@ from tworaven_apps.utils.view_helper import \
      get_json_success)
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
+
+from os import path
 
 @csrf_exempt
 @cache_page(settings.PAGE_CACHE_TIME)
@@ -64,6 +66,26 @@ def view_retrieve_d3m_output_data(request):
         return JsonResponse(get_json_error(embed_util.error_message))
 
     return JsonResponse(embed_util.get_final_results())
+
+
+@csrf_exempt
+def view_download_file(request):
+    data_pointer = request.GET.get('data_pointer', None)
+
+    if not data_pointer:
+        user_msg = ('No key found: "%s"' % KEY_DATA_POINTER)
+        return JsonResponse(get_json_error(user_msg))
+
+    data_pointer = parse.unquote(data_pointer)
+    print(data_pointer)
+    if not path.exists(data_pointer):
+        user_msg = ('No file found: "%s"' % KEY_DATA_POINTER)
+        return JsonResponse(get_json_error(user_msg))
+
+    with open(data_pointer, 'r') as file_download:
+        return HttpResponse(
+            file_download,
+            content_type='application/force-download')
 
 @csrf_exempt
 def view_retrieve_d3m_confusion_data(request):

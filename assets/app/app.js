@@ -21,7 +21,7 @@ import * as model from './model';
 import * as manipulate from './manipulations/manipulate';
 import * as results from "./results";
 import * as explore from './explore';
-import {getSolutions} from "./results";
+import {getSelectedSolutions} from "./results";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -30,8 +30,10 @@ import {getSolutions} from "./results";
 
 let RAVEN_CONFIG_VERSION = 1;
 
-let TA2DebugMode = true;
+let TA2DebugMode = false;
 export let debugLog = TA2DebugMode ? console.log : _ => _;
+
+window.addEventListener('resize', m.redraw);
 
 // ~~~~~ PEEK ~~~~~
 // for the second-window data preview
@@ -138,7 +140,7 @@ export async function updatePeek(pipeline) {
 
     let data = await manipulate.loadMenu(
         manipulate.constraintMenu
-            ? pipeline.slice(0, pipeline.indexOf(stage => stage === manipulate.constraintMenu.step))
+            ? pipeline.slice(0, pipeline.indexOf(manipulate.constraintMenu.step))
             : pipeline,
         previewMenu
     );
@@ -178,13 +180,11 @@ export async function updatePeek(pipeline) {
     m.redraw();
 }
 
-export let downloadPeek = async () => {
-    let problem = getSelectedProblem();
-    let datasetUrl = await buildDatasetUrl(problem);
-
+export let downloadFile = async datasetUrl => {
+    let downloadUrl = D3M_SVC_URL + '/download-file?' + m.buildQueryString({data_pointer: datasetUrl});
     let link = document.createElement("a");
-    link.setAttribute("href", datasetUrl);
-    link.setAttribute("download", datasetUrl);
+    link.setAttribute("href", downloadUrl);
+    link.setAttribute("download", downloadUrl);
     link.click();
 };
 
@@ -336,7 +336,14 @@ export let buildProblemPreprocess = async (ravenConfig, problem) => await getDat
 });
 
 
-export async function buildDatasetUrl(problem) {
+export async function buildDatasetUrl(problem, lastStep) {
+
+    let steps = [
+        ...workspace.raven_config.hardManipulations,
+        ...problem.manipulations,
+    ];
+    if (lastStep) steps = steps.slice(0, steps.indexOf(lastStep));
+
     let variables = [...getPredictorVariables(problem), ...problem.targets];
     let problemStep = {
         type: 'menu',
@@ -348,11 +355,7 @@ export async function buildDatasetUrl(problem) {
         }
     };
 
-    let compiled = queryMongo.buildPipeline([
-        ...workspace.raven_config.hardManipulations,
-        ...problem.manipulations,
-        problemStep
-    ], workspace.raven_config.variablesInitial)['pipeline'];
+    let compiled = queryMongo.buildPipeline([...steps, problemStep], workspace.raven_config.variablesInitial)['pipeline'];
 
     return await getData({
         method: 'aggregate',
@@ -639,6 +642,9 @@ export let setShowModalAlerts = state => showModalAlerts = state;
 
 export let showModalTA2Debug = false;
 export let setShowModalTA2Debug = state => showModalTA2Debug = state;
+
+export let showModalDownload = false;
+export let setShowModalDownload = state => showModalDownload = state;
 
 // menu state within datamart component
 export let datamartPreferences = {
@@ -1533,58 +1539,34 @@ export async function estimate() {
 
     let datasetDocPath = selectedProblem.datasetDocPath || workspace.d3m_config.dataset_schema;
 
-    console.log("Attempting partials call");
-
-    let partialsLocation;
-
+    let partialsDatasetDocPath;
     try {
         let partialsLocationInfo = await m.request({
             method: 'POST',
             url: ROOK_SVC_URL + 'partialsapp',
-            data: {
-                metadata: variableSummaries,
-            }
+            data: {metadata: variableSummaries}
         });
-        if (!partialsLocationInfo.success){
-          alertWarn('Call for partials data failed. ' + partialsLocationInfo.err_msg);
-        }else{
-          partialsLocation = partialsLocationInfo.data;
-          console.log('partialsLocation: ' + partialsLocation);
+        if (!partialsLocationInfo.success) {
+            alertWarn('Call for partials data failed. ' + partialsLocationInfo.err_msg);
+            throw partialsLocationInfo.message;
+        } else {
+            selectedProblem.partialsDatasetPath = partialsLocationInfo.partialsDatasetPath;
+            partialsDatasetDocPath = partialsLocationInfo.partialsDatasetDocPath;
         }
-
     } catch(err) {
         cdb(err);
         alertError(`Error: call to partialsapp failed`);
     }
-    console.log("Cleared partials call");
-    console.log('partialsLocation: ' + partialsLocation);
-    
-    let produceSolutionDefaultParams = solverD3M.GRPC_ProduceSolutionRequest(datasetDocPath);
-
 
     let allParams = {
         searchSolutionParams: solverD3M.GRPC_SearchSolutionsRequest(selectedProblem),
         fitSolutionDefaultParams: solverD3M.GRPC_GetFitSolutionRequest(datasetDocPath),
-        produceSolutionDefaultParams: produceSolutionDefaultParams,
-        scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath)};
+        produceSolutionDefaultParams: solverD3M.GRPC_ProduceSolutionRequest(datasetDocPath),
+        scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath)
+    };
 
-    // ------------------------------------------------
-    // Copy/Update produceSolutionDefaultParams to create
-    //  parameters for the partialsSolutionParams call
-    // ------------------------------------------------
-    if (partialsLocation){
-      let partialsSolutionParams = JSON.parse(JSON.stringify(produceSolutionDefaultParams));
-
-      partialsSolutionParams.inputs[0].dataset_uri = 'file://' + partialsLocation;
-
-      console.log('--=-=-=-=-=-=-=--');
-      console.log(produceSolutionDefaultParams);
-      console.log(partialsSolutionParams);
-      console.log('--=-=-=-=-=-=-=--');
-
-      // Add it to allParams
-      allParams.partialsSolutionParams = partialsSolutionParams
-    }
+    if (partialsDatasetDocPath)
+        allParams.partialSolutionParams = solverD3M.GRPC_ProduceSolutionRequest(partialsDatasetDocPath);
 
     console.warn("#debug allParams");
     console.log(JSON.stringify(allParams));
@@ -1708,7 +1690,7 @@ export async function callSolver(prob, datasetPath=undefined) {
 
         // add to rook solutions
         Object.assign(prob.solutions.rook, response.results);
-        let selectedPipelines = results.getSolutions(prob);
+        let selectedPipelines = results.getSelectedSolutions(prob);
         if (selectedPipelines.length === 0) results.setSelectedSolution(prob, 'rook', Object.keys(prob.solutions.rook)[0]);
         m.redraw()
     });

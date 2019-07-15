@@ -1,5 +1,4 @@
 import m from 'mithril';
-import * as jStat from 'jstat';
 
 import * as app from "./app";
 import * as plots from "./plots";
@@ -31,15 +30,9 @@ export let leftpanel = () => {
 
     if (!resultsProblem) return;
 
-    let loader = id => m(`#loading${id}.loader-small`, {
-        style: {
-            display: 'inline-block',
-            margin: 'auto',
-            position: 'relative',
-            top: '40%',
-            transform: 'translateY(-50%)'
-        }
-    });
+
+    let solutionAdaptersD3M = getSelectedSolutions(resultsProblem, 'd3m')
+        .map(solution => getSolutionAdapter(resultsProblem, solution));
 
     let resultsContent = [
         m('div', {style: {display: 'inline-block', margin: '1em'}},
@@ -69,13 +62,20 @@ export let leftpanel = () => {
             sections: [
                 {
                     idSuffix: 'DiscoveredSolutions',
-                    value: [m('[style=display:inline-block;margin-right:1em]', 'Discovered Solutions'), app.getResultsProblem().d3mSearchId !== undefined && loader('D3M')],
+                    value: [
+                        m('[style=display:inline-block;margin-right:1em]', 'Discovered Solutions'),
+                        resultsProblem.d3mSearchId !== undefined && common.loaderSmall('D3M')
+                    ],
                     contents: m(Table, {
                         id: 'pipelineTable',
-                        data: Object.keys(resultsProblem.solutions.d3m)
-                            .map(pipelineId => Object.assign(
-                                {ID: pipelineId, Solution: extractD3MModel(resultsProblem.solutions.d3m[pipelineId])},
-                                extractD3MScores(resultsProblem.solutions.d3m[pipelineId]))),
+                        data: solutionAdaptersD3M
+                            .map(adapter => Object.assign({
+                                    ID: adapter.getName(), Solution: adapter.getModel()
+                                },
+                                [resultsProblem.metric, ...resultsProblem.metrics]
+                                    .reduce((out, metric) => Object.assign(out, {
+                                        [metric]: app.formatPrecision(adapter.getScore(metric))
+                                    }), {}))),
                         sortable: true,
                         sortHeader: selectedMetric.d3m,
                         setSortHeader: header => selectedMetric.d3m = header,
@@ -86,7 +86,10 @@ export let leftpanel = () => {
                 },
                 app.callSolverEnabled && {
                     idSuffix: 'BaselineSolutions',
-                    value: [m('[style=display:inline-block;margin-right:1em]', 'Baselines'), app.workspace.raven_config.rook === app.getResultsProblem() && loader('Rook')],
+                    value: [
+                        m('[style=display:inline-block;margin-right:1em]', 'Baselines'),
+                        // app.workspace.raven_config.rook === resultsProblem && common.loaderSmall('Rook')
+                    ],
                     contents: [
                         // m(Subpanel, {
                         //     id: 'addModelSubpanel',
@@ -151,7 +154,7 @@ export let leftpanel = () => {
     return m(Panel, {
             side: 'left',
             label: 'Results',
-            hover: false,
+            hover: window.innerWidth < 1000,
             width: '600px'
         },
         // there seems to be a strange mithril bug here - when returning back to model from results,
@@ -178,6 +181,9 @@ export class CanvasSolutions {
             actualValues: adapter.getActualValues(problem.targets[0]),
             confusionMatrix: adapter.getConfusionMatrix(problem.targets[0])
         })).filter(summary => summary.fittedValues || summary.actualValues);
+
+        if (summaries.length === 0) return common.loader('PredictionSummary');
+
         if (problem.task === 'regression') {
             let xData = summaries.reduce((out, summary) =>
                 Object.assign(out, {[summary.name]: summary.fittedValues}), {});
@@ -276,22 +282,10 @@ export class CanvasSolutions {
         if (!problem.targets.includes(importancePreferences.target))
             importancePreferences.target = problem.targets[0];
 
-        let getEFDContent = () => {
-            let EFDData = adapter.getImportanceEFD(importancePreferences.predictor);
-            if (!EFDData) return;
-
-            return m(VariableImportance, {
-                mode: importancePreferences.mode,
-                data: EFDData,
-                problem: problem,
-                predictor: importancePreferences.predictor,
-                target: importancePreferences.target,
-                yLabel: valueLabel,
-                variableLabel: variableLabel
-            })
-        };
-
-        let getPDPContent = () => {};
+        let importanceData = ({
+            EFD: adapter.getImportanceEFD,
+            Partials: adapter.getImportancePartials
+        })[importancePreferences.mode](importancePreferences.predictor);
 
         return [
             m('label', 'Variable importance mode:'),
@@ -301,7 +295,7 @@ export class CanvasSolutions {
                 activeSection: importancePreferences.mode,
                 sections: [
                     {value: 'EFD', title: 'empirical first differences'},
-                    {value: 'PDP', title: 'partial dependency plot'}
+                    {value: 'Partials', title: 'model prediction as predictor varies over its domain'}
                 ]
             }),
             m('label', 'Importance for predictor:'),
@@ -311,10 +305,15 @@ export class CanvasSolutions {
                 onclickChild: mode => importancePreferences.predictor = mode,
                 activeItem: importancePreferences.predictor,
             }),
-            ({
-                EFD: getEFDContent,
-                PDP: getPDPContent
-            }[importancePreferences.mode])()
+            importanceData ? m(VariableImportance, {
+                mode: importancePreferences.mode,
+                data: importanceData,
+                problem: problem,
+                predictor: importancePreferences.predictor,
+                target: importancePreferences.target,
+                yLabel: valueLabel,
+                variableLabel: variableLabel
+            }) : common.loader('VariableImportance')
         ]
     }
 
@@ -428,7 +427,7 @@ export class CanvasSolutions {
             ]
         }));
 
-        let selectedSolutions = getSolutions(problem);
+        let selectedSolutions = getSelectedSolutions(problem);
         if (selectedSolutions.length === 0)
             return m('div', {style: {margin: '1em 0px'}}, problemSummary);
 
@@ -702,13 +701,14 @@ export let setSelectedSolution = (problem, source, solutionId) => {
 };
 
 
-export let getSolutions = (problem, source) => {
+export let getSelectedSolutions = (problem, source) => {
     if (!problem) return [];
 
     if (!source) return Object.keys(problem.selectedSolutions)
         .flatMap(source => problem.selectedSolutions[source]
             .map(id => problem.solutions[source][id])).filter(_=>_)
 
+    problem.selectedSolutions[source] = problem.selectedSolutions[source] || [];
     return problem.selectedSolutions[source]
         .map(id => problem.solutions[source][id]).filter(_=>_)
 };
@@ -717,7 +717,7 @@ export let getSolutions = (problem, source) => {
 export let modelComparison = false;
 export let setModelComparison = state => {
     let resultsProblem = app.getResultsProblem();
-    let selectedSolutions = getSolutions(resultsProblem);
+    let selectedSolutions = getSelectedSolutions(resultsProblem);
 
     modelComparison = state;
     if (selectedSolutions.length > 1 && !modelComparison)
@@ -764,14 +764,3 @@ export function generatePerformanceData(confusionData2x2) {
         // 'false negative rate': round(fn / (fn + tp), 2), // miss rate
     }
 }
-
-export let extractD3MScores = solution => 'scores' in solution
-    ? solution.scores.reduce((out, score) => Object.assign(out, {[app.d3mMetricsInverted[score.metric.metric]]: app.formatPrecision(score.value.raw.double)}), {})
-    : {};
-
-export let extractD3MModel = solution => 'pipeline' in solution
-    ? solution.pipeline.steps
-        .filter(step => ['regression', 'classification'].includes(step.primitive.primitive.pythonPath.split('.')[2]))
-        .map(step => step.primitive.primitive.pythonPath.replace(new RegExp('d3m\\.primitives\\.(regression|classification)\\.'), ''))
-        .join()
-    : '';
