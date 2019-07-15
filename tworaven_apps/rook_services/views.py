@@ -3,6 +3,7 @@ from os import makedirs
 import requests
 import json
 import logging
+from urllib import parse
 from requests.exceptions import ConnectionError
 from tworaven_apps.utils.basic_response import ok_resp, err_resp
 
@@ -241,6 +242,13 @@ def view_partials_app(request):
     #
     raven_data['dataloc'] = dest_folderpath
 
+    # write metadata to temporary file, to avoid passing large data through url arguments
+    metadata_path = join(dest_folderpath, 'metadata.json')
+    with open(metadata_path, 'w') as metadata_file:
+        json.dump(raven_data['metadata'], metadata_file)
+    raven_data['metadataPath'] = metadata_path
+    del raven_data['metadata']
+
     session_key = get_session_key(request)
     raven_data[ROOK_ZESSIONID] = session_key
 
@@ -252,13 +260,9 @@ def view_partials_app(request):
         return JsonResponse(get_json_error(user_msg))
 
     raven_data_text = raven_data_text_info.result_obj
-    # for issue: https://github.com/TwoRavens/TwoRavens/issues/237
-    # (need more general encoding?)
-    raven_data_text = raven_data_text.replace('+', '%2B'\
-                                    ).replace('&', '%26'\
-                                    ).replace('=', '%3D')
 
-    app_data = dict(solaJSON=raven_data_text)
+    # urllib quoting for issue: https://github.com/TwoRavens/TwoRavens/issues/237
+    app_data = dict(solaJSON=parse.quote(raven_data_text))
 
     # --------------------------------
     # Behavioral logging
@@ -296,6 +300,8 @@ def view_partials_app(request):
         return JsonResponse(get_json_error(user_msg))
 
     rook_json = rook_json_info.result_obj
+
+    print(rook_json)
 
     if isinstance(rook_json, dict) and rook_json:
         return JsonResponse(\

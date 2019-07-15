@@ -20,6 +20,8 @@ partials.app <- function(env){
     mydata <- data.frame()
     preprocessParams <- list()
 
+    print('entering partials app')
+
     if(production){
         sink(file = stderr(), type = "output")
     }
@@ -27,8 +29,8 @@ partials.app <- function(env){
     request <- Request$new(env)
     response <- Response$new(headers = list( "Access-Control-Allow-Origin"="*"))
 
+    print(request$POST()$solaJSON)
     valid <- jsonlite::validate(request$POST()$solaJSON)
-
     if(!valid) {
         warning <- TRUE
         result <- list(warning="The request is not valid json. Check for special characters.")
@@ -40,7 +42,7 @@ partials.app <- function(env){
 
 	if(!warning){
         md <- list()   # rebuild to resemble original structure in metadata file
-        md$variables <- partialsParams$metadata
+        md$variables <- jsonlite::fromJSON(readLines(partialsParams$metadataPath))
 
         if(length(md$variables) == 0){ 
                 warning <- TRUE
@@ -174,7 +176,7 @@ partials.app <- function(env){
             result <<- list(warning=paste("Partials construction error: ", err))
         })
     }
-
+    print(result)
 
     #########################################################
     ## Write dataset of partials to desired location
@@ -212,6 +214,7 @@ partials.app <- function(env){
         sink()
     }
 
+    print('exiting partials app')
     response$write(result)
     response$finish()
 }
