@@ -2279,55 +2279,20 @@ export function handleMaterializeDataMessage(msg_data){
      console.log(JSON.stringify(msg_data));
 
      // Need datamart name, even if an error
-     // (1) turn search mode off
-     // (2) on error, show message
-     // (3) on success, show results
+     //
      let datamartName = msg_data.data.datamart_name;
 
-     // Turn off search flag
-     datamartPreferences.isSearching[datamartName] = false;
 
-     // Show results and message
-     if (msg_data.success){
-
-       // Clear existing results
-       datamartPreferences.results[datamartName].length = 0;
-
-       // Add new results
-       datamartPreferences.results[datamartName].push(...msg_data.data.search_results);
-
-       // Remove any error messages
-       delete datamartPreferences.error[datamartName]; // remove error
-
-       // Add found message
-       let numDatasetMsg = '';
-       let numResults = datamartPreferences.results[datamartName].length;
-
-       if (numResults > resultLimit){
-         numDatasetMsg = 'Over ';
-       }
-       numDatasetMsg += `${numResults} dataset(s) found.`;
-       datamartPreferences.success[datamartType] = numDatasetMsg;
-
-       m.redraw();
-     }
-
-    // msg_data.data.datamart_name
-    // msg_data.data.search_results
-
-    // Ostensibly NYU or ISI
-    const datamartType = msg_data.data.datamart_name;
-
-    datamartPreferences.isSearching[datamartType] = false;
-
-    datamartPreferences.results[datamartType].length = 0;
-    datamartPreferences.results[datamartType].push(...msg_data.data.search_results);
-
-    m.redraw();
-    // datamartPreferences.results[msg_data.data.datamart_name] =
-
-
-}
+    if (msg_data.success){
+        let response_info = {
+                              success: true,
+                              data: msg_data.data.search_results
+                            }
+      datamartPreferences.handleSearchResults(datamartName, response_info);
+    } else{
+      datamartPreferences.handleSearchResults(datamartName, msg_data);
+    }
+} // end: handleSearchbyDataset
 
 /**
  *  After an augment:

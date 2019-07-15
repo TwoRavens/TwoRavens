@@ -83,7 +83,7 @@ export default class Datamart {
               delete preferences.success[datamartSource]; // remove "success"
 
               // show the error message
-              preferences.error[datamartSource] = response.message;
+              preferences.error[datamartSource] =  m('b', {class: "h5"}, response.user_message);
 
               m.redraw();
               return;
@@ -121,7 +121,7 @@ export default class Datamart {
                     }
                     numDatasetMsg += `${numResults} datasets found.`;
                 }
-                preferences.success[datamartSource] = numDatasetMsg;
+                preferences.success[datamartSource] = m('b', {class: "h5"}, numDatasetMsg);
 
                 console.log('msg: ' + numDatasetMsg);
             }

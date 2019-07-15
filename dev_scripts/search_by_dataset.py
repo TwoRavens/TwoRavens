@@ -28,6 +28,8 @@ def test_search_by_dataset(user_workspace_id):
                     '/ravens_volume/test_data/DA_ny_taxi_demand/TRAIN/'
                     'dataset_TRAIN/tables/learningData.csv')
 
+    xdataset_path = '/Users/ramanprasad/Desktop/screenshot.png'
+    
     info = make_search_by_dataset_call(\
                                 dm_static.DATAMART_NYU_NAME,
                                 user_workspace_id,

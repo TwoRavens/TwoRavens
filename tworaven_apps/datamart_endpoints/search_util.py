@@ -174,8 +174,15 @@ class SearchUtil(BasicErrCheck):
         # ----------------------------------
         # Send Websocket message
         # ----------------------------------
-        ws_msg = WebsocketMessage.get_fail_message(dm_static.DATAMART_SEARCH_BY_DATASET,
-                                                   user_msg)
+        data = {}
+        if self.datamart_name:
+            data['datamart_name'] = self.datamart_name
+
+        ws_msg = WebsocketMessage.get_fail_message_with_data(\
+                                        dm_static.DATAMART_SEARCH_BY_DATASET,
+                                        user_msg,
+                                        data=data)
+
         print('send to websocket id: %s' % self.websocket_id)
         ws_msg.send_message(self.websocket_id)
 

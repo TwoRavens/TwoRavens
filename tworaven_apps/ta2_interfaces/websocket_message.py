@@ -46,6 +46,16 @@ class WebsocketMessage(object):
                                 **kwargs)
 
     @staticmethod
+    def get_fail_message_with_data(msg_type, user_message, **kwargs):
+        """Prefill the success to True, assumes no data"""
+        data = kwargs.get('data', None)
+
+        return WebsocketMessage(msg_type=msg_type,
+                                success=False,
+                                user_message=user_message,
+                                data=data)
+
+    @staticmethod
     def get_fail_message(msg_type, user_message, msg_cnt=None):
         """Prefill the success to True, assumes no data"""
         return WebsocketMessage(msg_type=msg_type,
