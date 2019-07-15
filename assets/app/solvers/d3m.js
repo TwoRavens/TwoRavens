@@ -1058,6 +1058,7 @@ export async function handleDescribeSolutionResponse(response) {
 
     // the pipeline template is the only useful information
     solvedProblem.solutions.d3m[response.pipelineId].pipeline = response.pipeline;
+    m.redraw();
 }
 
 /**
@@ -1143,23 +1144,6 @@ export async function handleGetProduceSolutionResultsResponse(response, type) {
     }
 
     m.redraw();
-    // let problemMetadata = {
-    //     dataset: app.workspace.d3m_config.name,
-    //     task: solvedProblem.task,
-    //     subTask: solvedProblem.subTask,
-    //     predictors: solvedProblem.predictors,
-    //     targets: solvedProblem.targets,
-    //     nominal: app.getNominalVariables(solvedProblem),
-    //     summaries: app.variableSummaries,
-    //     manipulations: queryMongo.buildPipeline([
-    //         ...solvedProblem.hardManipulations,
-    //         ...solvedProblem.manipulations
-    //     ]).pipeline
-    // };
-    //
-    // app.makeRequest(D3M_SVC_URL + `/retrieve-output-statistics`, {data_pointer, metadata: problemMetadata})
-    //     .then(responseStatistics =>
-    //         solvedProblem.solutions.d3m[response.pipelineId].statistics = responseStatistics.data)
 }
 
 export async function handleENDGetSearchSolutionsResults() {

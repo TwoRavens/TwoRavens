@@ -1552,8 +1552,8 @@ export async function estimate() {
             alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
             throw partialsLocationInfo.message;
         } else {
-            selectedProblem.partialsDatasetPath = partialsLocationInfo.partialsDatasetPath;
-            partialsDatasetDocPath = partialsLocationInfo.partialsDatasetDocPath;
+            selectedProblem.partialsDatasetPath = partialsLocationInfo.data.partialsDatasetPath;
+            partialsDatasetDocPath = partialsLocationInfo.data.partialsDatasetDocPath;
         }
     } catch(err) {
         cdb(err);
@@ -1567,8 +1567,8 @@ export async function estimate() {
         scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath)
     };
 
-    // if (partialsDatasetDocPath)
-    //     allParams.partialSolutionParams = solverD3M.GRPC_ProduceSolutionRequest(partialsDatasetDocPath);
+    if (partialsDatasetDocPath)
+        allParams.partialsSolutionParams = solverD3M.GRPC_ProduceSolutionRequest(partialsDatasetDocPath);
 
     console.warn("#debug allParams");
     console.log(JSON.stringify(allParams));
