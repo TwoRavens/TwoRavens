@@ -57,10 +57,77 @@ export default class Datamart {
                 'union_columns': ['union_columns']
             }
         });
+
+        // Define the "getData" function
+        //
         setDefault(preferences, 'getData', (result, attribute) => {
             let path = preferences.infoPaths[preferences.sourceMode][attribute];
             return path && path.reduce((out, term) => term in out && out[term], result)
         });
+
+        // Define the handle search results function
+        //
+        setDefault(preferences, 'handleSearchResults', (datamartSource, response) => {
+
+            // stop any UI search indicators
+            preferences.isSearching[datamartSource] = false;
+
+            console.log('datamartSource: ' + datamartSource);
+            console.log('response.success: ' + response.success);
+
+            /* -------------------------------------------
+             * Search failed, show message
+             * ------------------------------------------- */
+            if (!response.success){
+              // remove any success messages
+              delete preferences.success[datamartSource]; // remove "success"
+
+              // show the error message
+              preferences.error[datamartSource] = response.message;
+
+              m.redraw();
+              return;
+            }
+
+            /* -------------------------------------------
+             * Search success, show results
+             * ------------------------------------------- */
+            console.log('results are back! ' + JSON.stringify(response));
+            // (moved sort to server side)
+            // clear array and add results
+            preferences.results[datamartSource].length = 0;
+            preferences.results[datamartSource].push(...response.data);
+
+            let numResults = preferences.results[datamartSource].length
+            console.log('Num results: ' + numResults);
+
+            if (numResults === 0) {
+                // No datasets found
+                delete preferences.success[datamartSource]; // remove "success"
+                preferences.error[datamartSource] = 'No datasets found.';
+
+            } else {
+                // Datasets found!
+                delete preferences.error[datamartSource]; // remove error
+
+                let numDatasetMsg = '';
+                if (numResults === 0){
+                    numDatasetMsg = 'Sorry! No datasets found.';
+                } else if (numResults == 1){
+                    numDatasetMsg = '1 dataset found.';
+                } else {
+                    if (numResults > resultLimit){
+                      numDatasetMsg = 'Over ';
+                    }
+                    numDatasetMsg += `${numResults} datasets found.`;
+                }
+                preferences.success[datamartSource] = numDatasetMsg;
+
+                console.log('msg: ' + numDatasetMsg);
+            }
+            m.redraw();
+        });
+
         /*
         setDefault(preferences, 'getPreviewButtonState', (idx) => {
             return preferences.previewButtonState[idx];
@@ -128,12 +195,6 @@ export default class Datamart {
         );
 
         let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
-
-        // ---------------------------
-        // for debugging
-        // ---------------------------
-        let xmakeCard = ({key, color, summary}) => m('div', summary);
-        // ---------------------------
 
         let makeCard = ({key, color, summary}) => m('table', {
                 style: {
@@ -270,19 +331,6 @@ export default class Datamart {
 
                 if (preferences.sourceMode === 'NYU') {
                     preferences.modalShown = 'augment';
-                    /*
-                    let response = await m.request(endpoint + 'augment', {
-                        method: 'POST',
-                        data: {
-                            data_path: dataPath,
-                            search_result: JSON.stringify(preferences.selectedResult),
-                            source: preferences.sourceMode
-                        }
-                    });
-
-                    if (!response.success)
-                        this.error = response.data;
-                    */
                 }
             }
         }, 'Augment');
@@ -381,6 +429,9 @@ export default class Datamart {
                     attrsAll: {style: {margin: '1em', width: 'auto'}},
                     attrsButtons: {style: {width: 'auto'}}
                 }),
+                /*
+                 * Start: Datamart Search Call
+                 */
                 m(Button, {
                     style: {float: 'right', margin: '1em'},
                     disabled: preferences.isSearching[preferences.sourceMode],
@@ -405,43 +456,9 @@ export default class Datamart {
                             }
                         });
 
-                        preferences.isSearching[sourceMode] = false;
-
-                        if (response.success) {
-                            console.log('results are back! ' + JSON.stringify(response));
-                            // (moved sort to server side)
-                            // clear array and add results
-                            results[sourceMode].length = 0;
-                            results[sourceMode].push(...response.data);
-
-                            console.log('Num results: ' + results[sourceMode].length);
-
-                            if (results[sourceMode].length === 0) {
-                                // No datasets found
-                                //
-                                delete preferences.success[sourceMode]; // remove "success"
-                                preferences.error[sourceMode] = 'No datasets found.';
-                            } else {
-                                // Datasets found!
-                                //
-                                delete preferences.error[sourceMode]; // remove error
-
-                                let numDatasetMsg = '';
-                                if (results[sourceMode].length > resultLimit){
-                                  numDatasetMsg = 'Over ';
-                                }
-                                numDatasetMsg += `${results[sourceMode].length} datasets found.`;
-                                preferences.success[sourceMode] = numDatasetMsg;
-                                console.log('msg: ' + numDatasetMsg);
-                            }
-                        } else {
-                            // show the error message
-                            delete preferences.success[sourceMode]; // remove "success"
-                            preferences.error[sourceMode] = response.message;
-                        }
-                        m.redraw();
+                        preferences.handleSearchResults(preferences.sourceMode, response);
                     }
-                }, 'Submit'),
+                }, 'Submit'), // Datamart Search Call
 
                 preferences.isSearching[preferences.sourceMode] && loader,
 

@@ -72,11 +72,15 @@ class SearchUtil(BasicErrCheck):
             return
 
         LOGGER.info('(5b) send the message!')
+
+        resp_info = dict(datamart_name=self.datamart_name,
+                         search_results=self.search_results)
+
         ws_msg = WebsocketMessage.get_success_message(\
                     dm_static.DATAMART_SEARCH_BY_DATASET,
                     'The dataset search is complate',
-                    #data=dict(dog=1))
-                    data=self.search_results)
+                    data=resp_info)
+
         ws_msg.send_message(self.websocket_id)
         LOGGER.info('(5c) sent!')
 
