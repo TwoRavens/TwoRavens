@@ -200,7 +200,7 @@ partials.app <- function(env){
         write(jsonlite:::toJSON(movement), outsummary[1])
         #write(mydatasetDoc, outdatasetDoc[1])
 
-        result <- list(datasetDocPath = outdatasetDoc[1], partialsDataPath = outsummary[1])  # Path to partials dataset
+        result <- list(partialsDatasetDocPath = outdatasetDoc[1], partialsDatasetPath = outsummary[1])  # Path to partials dataset
         result <- jsonlite:::toJSON(result)
     }
 
