@@ -415,7 +415,7 @@ export let leftpanel = forceData => {
                             if (selectedProblem.pending) {
                                 if (selectedProblem.unedited)
                                     delete problems[selectedProblem.problemID];
-                                else if (confirm('You have unsaved changes in the previous problem, "' + selectedProblem.problemID + '". Would you like to save it before progressing?'))
+                                else if (confirm(`You have unsaved changes in the previous problem, ${selectedProblem.problemID}. Would you like to discard ${selectedProblem.problemID}?`))
                                     selectedProblem.pending = false;
                                 else delete problems[selectedProblem.problemID];
                             }
@@ -1123,8 +1123,8 @@ export let mutateNodes = problem => (state, context) => {
         loose: new Set(problem.tags.loose),
         transformed: new Set(problem.tags.transformed),
         crossSection: new Set(problem.tags.crossSection),
-        time: new Set(problem.tags.time),
         nominal: new Set(app.getNominalVariables(problem)),
+        time: new Set(problem.tags.time),
         weight: new Set(problem.tags.weights),
         targets: new Set(problem.targets),
         matched: new Set(matchedVariables),

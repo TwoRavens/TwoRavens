@@ -297,13 +297,12 @@ def view_partials_app(request):
 
     rook_json = rook_json_info.result_obj
 
-    if isinstance(rook_json, list) and rook_json:
+    if isinstance(rook_json, dict) and rook_json:
         return JsonResponse(\
                 get_json_success('Partials call finished.',
-                                 data=rook_json[0]))
+                                 data=rook_json))
 
-
-    user_msg = ('Expected a list from Rook.'
+    user_msg = ('Expected a dict from Rook.'
                 ' Found: %s (partials)') % rservice_req.text
     return JsonResponse(get_json_error(user_msg))
 

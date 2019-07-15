@@ -41,6 +41,9 @@ import Body_Dataset from "./views/Body_Dataset";
 
 import VariableImportance from "./views/VariableImportance";
 import {efdCategoricalData, efdContinuousData, tempProblem} from "./variableImportanceDataSample";
+import {getSelectedProblem} from "./app";
+import {buildDatasetUrl} from "./app";
+import {alertWarn} from "./app";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -127,7 +130,6 @@ class Body {
 
                 m('div', {
                         style: {width: '100%', height: '100%', position: 'relative'},
-                        onresize: m.redraw,
                     },
                     app.is_results_mode && m(MainCarousel, {previousMode: this.previousMode}, m(results.CanvasSolutions, {problem: resultsProblem})),
                     app.is_explore_mode && m(MainCarousel, {previousMode: this.previousMode}, m(explore.CanvasExplore, {variables: exploreVariables, variate})),
@@ -174,7 +176,7 @@ class Body {
                 })
             }, m('h4[style=display: inline-block; margin: .25em 1em]', pathProblem.problemID)));
 
-            let selectedSolutions = results.getSolutions(resultsProblem);
+            let selectedSolutions = results.getSelectedSolutions(resultsProblem);
             if (app.is_results_mode && selectedSolutions.length === 1 && selectedSolutions[0]) {
                 path.push(m(Icon, {name: 'chevron-right'}), m('h4[style=display: inline-block; margin: .25em 1em]', ({
                     rook: solverRook.getSolutionAdapter, d3m: solverD3M.getSolutionAdapter
@@ -386,10 +388,10 @@ class Body {
             m('div.btn.btn-group', {style: 'float: right; padding: 0px;margin:5px'},
 
 
-                // m(Button, {
-                //     class: 'btn-sm',
-                //     onclick: app.downloadPeek
-                // }, 'Download'),
+                m(Button, {
+                    class: 'btn-sm',
+                    onclick: () => app.setShowModalDownload(true)
+                }, 'Download'),
                 m(Button, {
                     class: 'btn-sm' + (app.peekInlineShown ? ' active' : ''),
                     onclick: () => app.setPeekInlineShown(!app.peekInlineShown)
@@ -424,6 +426,51 @@ class Body {
                     loadWorkspace: app.loadWorkspace
                 }
             ),
+
+            app.showModalDownload && m(ModalVanilla, {
+                id: 'downloadModal',
+                setDisplay: app.setShowModalDownload
+            },
+                m('h4', 'Downloads'),
+
+                m(Table, {
+                    data: [
+                        [
+                            'Original Dataset',
+                            m(Button, {
+                                class: 'btn-sm',
+                                onclick: () => app.downloadFile(app.workspace.datasetUrl)
+                            }, 'Download'),
+                            italicize('Retrieve the original, raw file. No alterations applied.')
+                        ],
+                        manipulate.constraintMenu && [
+                            'Peek Dataset',
+                            m(Button, {
+                                class: 'btn-sm',
+                                onclick: async () => {
+                                    let problem = getSelectedProblem();
+                                    let datasetUrl = await buildDatasetUrl(problem, manipulate.constraintMenu.step);
+                                    if (!datasetUrl) alertWarn('Unable to prepare dataset for download.');
+                                    app.downloadFile(datasetUrl)
+                                }
+                            }, 'Download'),
+                            italicize('Retrieve full dataset currently shown in Peek. Peek shows data at intermediate manipulation stages.')
+                        ],
+                        [
+                            'Modeling Dataset',
+                            m(Button, {
+                                class: 'btn-sm',
+                                onclick: async () => {
+                                    let problem = getSelectedProblem();
+                                    let datasetUrl = await buildDatasetUrl(problem);
+                                    if (!datasetUrl) alertWarn('Unable to prepare dataset for download.');
+                                    app.downloadFile(datasetUrl);
+                                }
+                            }, 'Download'),
+                            italicize('Retrieve the dataset used for modeling, with casting, manipulations and column drops applied.')
+                        ]
+                    ]
+                })),
             /*
              * Alerts modal.  Displays the list of alerts, if any.
              */
@@ -894,21 +941,25 @@ else {
                 }),
                 Object.keys(efdContinuousData).map(predictor => [
                     m(VariableImportance, {
-                        data: efdContinuousData[predictor],
+                        data: app.melt(efdContinuousData[predictor], [predictor]),
                         predictor,
                         target: 'Doubles',
                         mode: 'EFD',
-                        problem: tempProblem
+                        problem: tempProblem,
+                        yLabel: 'value',
+                        variableLabel: 'variable'
                     })
                 ]),
 
                 Object.keys(efdCategoricalData).map(predictor => [
                     m(VariableImportance, {
-                        data: efdCategoricalData[predictor],
+                        data: app.melt(efdCategoricalData[predictor], [predictor]),
                         predictor,
                         target: 'Hall_of_Fame',
                         mode: 'EFD',
-                        problem: tempProblem
+                        problem: tempProblem,
+                        yLabel: 'value',
+                        variableLabel: 'variable'
                     })
                 ])
             ]
