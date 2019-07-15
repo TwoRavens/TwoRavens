@@ -324,10 +324,11 @@ def api_search_by_dataset(request):
     # (3) Which datamart?
     #
     form = dm_forms.DatamartSearchByDatasetForm(json_req_obj)
-    print('form.errors.as_json()', form.errors.as_json())
-    return JsonResponse(\
-            get_json_error("invalid input",
-                           errors=form.errors.as_json()))
+    if not form.is_valid():
+        print('form.errors.as_json()', form.errors.as_json())
+        return JsonResponse(\
+                get_json_error("invalid input",
+                               errors=form.errors.as_json()))
 
     # (4) Location of the current dataset
     #

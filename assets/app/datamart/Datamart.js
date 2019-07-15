@@ -65,8 +65,33 @@ export default class Datamart {
             return path && path.reduce((out, term) => term in out && out[term], result)
         });
 
-        // Define the handle search results function
+        // Show a datamart error message -- datamart specific
         //
+        setDefault(preferences, 'showDatamartErrorMsg', (datamartSource, message) => {
+
+          // remove any success messages
+          delete preferences.success[datamartSource]; // remove "success"
+
+          // show the error message
+          preferences.error[datamartSource] =  m('b', {class: "h5"}, message);
+
+          m.redraw();
+
+        })
+
+        // Show a datamart success message -- datamart specific
+        //
+        setDefault(preferences, 'showDatamartSuccessMsg', (datamartSource, message) => {
+
+          // remove any success messages
+          delete preferences.error[datamartSource]; // remove "success"
+
+          // show the error message
+          preferences.success[datamartSource] =  m('b', {class: "h5"}, message);
+
+          m.redraw();
+        })
+
         setDefault(preferences, 'handleSearchResults', (datamartSource, response) => {
 
             // stop any UI search indicators
@@ -79,13 +104,8 @@ export default class Datamart {
              * Search failed, show message
              * ------------------------------------------- */
             if (!response.success){
-              // remove any success messages
-              delete preferences.success[datamartSource]; // remove "success"
-
-              // show the error message
-              preferences.error[datamartSource] =  m('b', {class: "h5"}, response.user_message);
-
-              m.redraw();
+              console.log('response: ' + JSON.stringify(response));
+              preferences.showDatamartErrorMsg(datamartSource, response.message);
               return;
             }
 
@@ -121,11 +141,11 @@ export default class Datamart {
                     }
                     numDatasetMsg += `${numResults} datasets found.`;
                 }
-                preferences.success[datamartSource] = m('b', {class: "h5"}, numDatasetMsg);
+
+                preferences.showDatamartSuccessMsg(datamartSource, numDatasetMsg);
 
                 console.log('msg: ' + numDatasetMsg);
             }
-            m.redraw();
         });
 
         /*
@@ -457,8 +477,39 @@ export default class Datamart {
                         });
 
                         preferences.handleSearchResults(preferences.sourceMode, response);
+
                     }
                 }, 'Submit'), // Datamart Search Call
+
+
+                m(Button, {
+                  disabled: preferences.isSearching[preferences.sourceMode],
+                  onclick: async () => {
+                      console.log('Datamart/search by dataset');
+
+                      // preserve state after async is awaited
+                      let sourceMode = preferences.sourceMode;
+                      results[sourceMode].length = 0;
+
+                      // enable spinner
+                      preferences.isSearching[sourceMode] = true;
+                      m.redraw();
+
+                      let response = await m.request(endpoint + 'search-by-dataset', {
+                          method: 'POST',
+                          data: {
+                            source: preferences.sourceMode
+                          }
+                      });
+
+                      if (response.success){
+                        preferences.showDatamartSuccessMsg(preferences.sourceMode, response.message);
+                      }else{
+                        preferences.isSearching[sourceMode] = false;
+
+                        preferences.showDatamartErrorMsg(preferences.sourceMode, response.message);
+                      }                  }
+                }, 'Search by Dataset'),
 
                 preferences.isSearching[preferences.sourceMode] && loader,
 

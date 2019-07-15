@@ -41,6 +41,7 @@ class WebsocketMessage(object):
         return WebsocketMessage(msg_type=msg_type,
                                 success=True,
                                 user_message=user_message,
+                                message=user_message,
                                 msg_cnt=msg_cnt,
                                 data=data,
                                 **kwargs)
@@ -53,6 +54,7 @@ class WebsocketMessage(object):
         return WebsocketMessage(msg_type=msg_type,
                                 success=False,
                                 user_message=user_message,
+                                message=user_message,
                                 data=data)
 
     @staticmethod
@@ -61,6 +63,7 @@ class WebsocketMessage(object):
         return WebsocketMessage(msg_type=msg_type,
                                 success=False,
                                 user_message=user_message,
+                                message=user_message,
                                 msg_cnt=msg_cnt)
 
     def as_dict(self):

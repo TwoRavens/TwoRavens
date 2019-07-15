@@ -168,7 +168,7 @@ class SearchUtil(BasicErrCheck):
         if not self.websocket_id:
             return
 
-        user_msg = '%s (datamart materialize)' % \
+        user_msg = '%s (dataset search)' % \
                    (user_msg,)
 
         # ----------------------------------
