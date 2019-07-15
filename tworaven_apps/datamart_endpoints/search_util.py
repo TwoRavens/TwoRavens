@@ -7,14 +7,11 @@ For the materialze process, complete the following steps:
 import logging
 
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
-#from tworaven_apps.utils.json_helper import json_loads, json_dumps
-#from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.ta2_interfaces.websocket_message import WebsocketMessage
 from tworaven_apps.user_workspaces.utils import \
     (get_user_workspace_by_id,)
 
-from tworaven_apps.datamart_endpoints.static_vals import \
-    (DATAMART_MATERIALIZE_PROCESS,)
+from tworaven_apps.datamart_endpoints import static_vals as dm_static
 from tworaven_apps.datamart_endpoints.datamart_util import \
     (get_datamart_job_util)
 
@@ -22,19 +19,19 @@ from tworaven_apps.datamart_endpoints.datamart_util import \
 LOGGER = logging.getLogger(__name__)
 
 
-class MaterializeUtil(BasicErrCheck):
+class SearchUtil(BasicErrCheck):
     """Create a config based on a dict containing key value
     pairs based on the D3M environment variables
     - Includes static method to load from actual environment variables
     - Verify required directories
     - Create any needed subdirectories"""
 
-    def __init__(self, datamart_name, user_workspace_id, datamart_params, **kwargs):
+    def __init__(self, datamart_name, user_workspace_id, dataset_path, **kwargs):
         """Only need a dataset id to start"""
         self.datamart_name = datamart_name
         self.user_workspace_id = user_workspace_id
         self.user_workspace = None
-        self.datamart_params = datamart_params
+        self.dataset_path = dataset_path
 
         # optional for websocket messages
         #
@@ -42,12 +39,12 @@ class MaterializeUtil(BasicErrCheck):
 
         # to be created
         self.datamart_util = None
-        self.materialize_result = None   # file path
+        self.search_results = None   # file path
 
-        self.run_materialize_steps()
+        self.run_search_steps()
 
 
-    def run_materialize_steps(self):
+    def run_search_steps(self):
         """Run through the materialize steps"""
         if self.has_error():
             return
@@ -58,7 +55,7 @@ class MaterializeUtil(BasicErrCheck):
         if not self.load_datamart_util():
             return
 
-        if not self.download_file():
+        if not self.search_with_file():
             return
 
         self.send_websocket_success_message()
@@ -76,10 +73,10 @@ class MaterializeUtil(BasicErrCheck):
 
         LOGGER.info('(5b) send the message!')
         ws_msg = WebsocketMessage.get_success_message(\
-                    DATAMART_MATERIALIZE_PROCESS,
-                    'The dataset has been materialized',
+                    dm_static.DATAMART_SEARCH_BY_DATASET,
+                    'The dataset search is complate',
                     #data=dict(dog=1))
-                    data=self.materialize_result)
+                    data=self.search_results)
         ws_msg.send_message(self.websocket_id)
         LOGGER.info('(5c) sent!')
 
@@ -98,23 +95,41 @@ class MaterializeUtil(BasicErrCheck):
         return True
 
 
-    def download_file(self):
-        """Download the file"""
+    def search_with_file(self):
+        """Search with a file."""
         if self.has_error():
             return False
 
-        materialize_info = self.datamart_util.datamart_materialize(\
-                                    self.user_workspace,
-                                    self.datamart_params['search_result'])
+        # -----------------------------------
+        # RUN THE NYU SEARCH
+        # reference: https://github.com/TwoRavens/TwoRavens/issues/641
+        # -----------------------------------
+        print('self.datamart_util', self.datamart_util)
+        if self.datamart_name == dm_static.DATAMART_NYU_NAME:
+            return self.run_nyu_search()
 
-        print('materialize worked?', materialize_info.success)
-        if not materialize_info.success:
-            self.add_err_msg(materialize_info.err_msg)
+        user_msg = (f'Dataset search not available for datamart: '
+                    f' {self.datamart_util.get_datamart_source()}')
+        self.add_err_msg(user_msg)
+        return False
+
+    def run_nyu_search(self):
+        """Run the NYU search"""
+        params = dict(user=self.user_workspace.user)
+        search_info = self.datamart_util.search_with_dataset(\
+                                self.dataset_path,
+                                **params)
+
+        print('search worked?', search_info.success)
+
+        if not search_info.success:
+            self.add_err_msg(search_info.err_msg)
             return False
 
-        # print('materialize_result', materialize_info.result_obj)
+        print('search_info', search_info.result_obj)
 
-        self.materialize_result = materialize_info.result_obj
+        self.search_results = search_info.result_obj
+
         return True
 
     def retrieve_workspace(self):
@@ -134,11 +149,11 @@ class MaterializeUtil(BasicErrCheck):
     def show_info(self):
         """Some debug print statements"""
         print('user_workspace_id', self.user_workspace_id)
-        print('datamart_params', self.datamart_params)
+        print('dataset_path', self.dataset_path)
         if self.has_error():
             print('error', self.get_error_message())
         else:
-            print('materialize_result', self.materialize_result)
+            print('search_results', self.search_results)
 
     def add_err_msg(self, user_msg):
         """Add to base base "add_err_msg", also send a websocket message"""
@@ -155,7 +170,7 @@ class MaterializeUtil(BasicErrCheck):
         # ----------------------------------
         # Send Websocket message
         # ----------------------------------
-        ws_msg = WebsocketMessage.get_fail_message(DATAMART_MATERIALIZE_PROCESS,
+        ws_msg = WebsocketMessage.get_fail_message(dm_static.DATAMART_SEARCH_BY_DATASET,
                                                    user_msg)
         print('send to websocket id: %s' % self.websocket_id)
         ws_msg.send_message(self.websocket_id)

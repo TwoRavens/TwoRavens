@@ -20,7 +20,7 @@ class DatamartJobUtilBase(ABC):
     @abstractmethod
     def get_datamart_source(self):
         """Return the datamart.  e.g. ISI, NYU, etc"""
-        pass
+        return
 
     @staticmethod
     def get_output_filepath(user_workspace, datamart_id, dir_type='materialize'):

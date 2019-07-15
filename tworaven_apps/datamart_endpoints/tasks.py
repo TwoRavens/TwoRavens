@@ -6,6 +6,37 @@ from tworaven_apps.datamart_endpoints.forms import \
     (DatamartAugmentForm,)
 from tworaven_apps.datamart_endpoints.materialize_util import MaterializeUtil
 from tworaven_apps.datamart_endpoints.augment_util import AugmentUtil
+from tworaven_apps.datamart_endpoints.search_util import SearchUtil
+from tworaven_apps.datamart_endpoints import static_vals as dm_static
+
+def make_search_by_dataset_call(datamart_name, user_workspace_id, dataset_path, **kwargs):
+    """Search the NYU datamart by dataset"""
+    if not datamart_name:
+        return err_resp('datamart_name must be set')
+
+    if not user_workspace_id:
+        return err_resp('user_workspace_id must be set')
+
+    if not dataset_path:
+        return err_resp('dataset_path must be set')
+
+    # Async task to run search by dataset process
+    #
+    kick_off_search_by_dataset.delay(\
+                dm_static.DATAMART_NYU_NAME,
+                user_workspace_id,
+                dataset_path,
+                **kwargs)
+
+    return ok_resp('augment process started')
+
+
+@celery_app.task(ignore_result=True)
+def kick_off_search_by_dataset(datamart_name, user_workspace_id, dataset_path, **kwargs):
+    """Run this async"""
+    search_util = SearchUtil(datamart_name,
+                             user_workspace_id,
+                             dataset_path)
 
 
 def make_materialize_call(datamart_name, user_workspace_id, datamart_params, **kwargs):
@@ -58,10 +89,11 @@ def make_augment_call(user_workspace, augment_params, **kwargs):
 
     # Async task to run augment process
     #
-    kick_off_augment_steps.delay(form.cleaned_data['source'],
-                                 user_workspace.id,
-                                 augment_params,
-                                 **dict(websocket_id=user_workspace.user.username))
+    kick_off_augment_steps.delay(\
+            form.cleaned_data['source'],
+            user_workspace.id,
+            augment_params,
+            **dict(websocket_id=user_workspace.user.username))
 
     return ok_resp('augment process started')
 

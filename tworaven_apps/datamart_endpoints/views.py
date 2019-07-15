@@ -18,21 +18,14 @@ from tworaven_apps.datamart_endpoints.datamart_util_nyu import \
 from tworaven_apps.datamart_endpoints.datamart_util import \
     (get_datamart_job_util,)
 from tworaven_apps.datamart_endpoints.models import DatamartInfo
-from tworaven_apps.datamart_endpoints.forms import \
-  (DatamartSearchForm,
-   DatamartMaterializeForm,
-   DatamartIndexForm,
-   DatamartScrapeForm,
-   DatamartUploadForm, DatamartCustomForm)
+from tworaven_apps.datamart_endpoints import forms as dm_forms
 
 from tworaven_apps.configurations.utils import get_path_to_source_data
 
 from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
 from tworaven_apps.behavioral_logs import static_vals as bl_static
 
-from tworaven_apps.datamart_endpoints.tasks import \
-    (make_materialize_call,
-     make_augment_call)
+from tworaven_apps.datamart_endpoints import tasks as dm_tasks
 
 from django.http import \
     (JsonResponse, HttpResponse)
@@ -78,7 +71,7 @@ def api_scrape(request):
         return JsonResponse(get_json_error(json_req_obj))
 
     # check if data is valid
-    form = DatamartScrapeForm(json_req_obj)
+    form = dm_forms.DatamartScrapeForm(json_req_obj)
     if not form.is_valid():
         return JsonResponse(\
                     get_json_error("invalid input",
@@ -105,7 +98,7 @@ def api_get_metadata(request):
     json_req_obj = req_info.result_obj
 
         # check if data is valid
-    form = DatamartCustomForm(json_req_obj)
+    form = dm_forms.DatamartCustomForm(json_req_obj)
     if not form.is_valid():
         return JsonResponse(\
                 get_json_success('invalid input',
@@ -129,7 +122,7 @@ def api_upload_metadata(request):
         return JsonResponse(get_json_error(json_req_obj))
 
     #     # check if data is valid
-    # form = DatamartUploadForm(json_req_obj)
+    # form = dm_forms.DatamartUploadForm(json_req_obj)
     # if not form.is_valid():
     #     return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
 
@@ -152,7 +145,7 @@ def api_index(request):
         return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
 
     # check if data is valid
-    form = DatamartIndexForm(json_req_obj)
+    form = dm_forms.DatamartIndexForm(json_req_obj)
     if not form.is_valid():
         return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
 
@@ -187,7 +180,7 @@ def api_search(request):
         return JsonResponse(get_json_error(json_req_obj))
 
     # check if data is valid
-    form = DatamartSearchForm(json_req_obj)
+    form = dm_forms.DatamartSearchForm(json_req_obj)
     if not form.is_valid():
         #print('form.errors', form.errors.as_json())
         print('\ntype form.errors', type(form.errors.as_json()))
@@ -246,7 +239,7 @@ def api_augment_async(request):
 
     # print('augment_params', augment_params)
 
-    augment_info = make_augment_call(user_workspace,
+    augment_info = dm_tasks.make_augment_call(user_workspace,
                                      augment_params)
 
     if not augment_info.success:
@@ -279,7 +272,7 @@ def api_materialize(request):
     # --------------------------------------
     # check the data
     # --------------------------------------
-    form = DatamartMaterializeForm(json_req_obj)
+    form = dm_forms.DatamartMaterializeForm(json_req_obj)
     if not form.is_valid():
         print('form.errors.as_json()', form.errors.as_json())
         return JsonResponse(\
@@ -313,7 +306,13 @@ def api_materialize(request):
 def api_search_by_dataset(request):
     """For search, submit the entire dataset.
     Return the calls async"""
-    # Get the latest UserWorkspace
+    # (1) get the request body
+    #
+    success, json_req_obj = get_request_body_as_json(request)
+    if not success:
+        return JsonResponse(get_json_error(json_req_obj))
+
+    # (2) Get the latest UserWorkspace
     #
     ws_info = get_latest_user_workspace(request)
     if not ws_info.success:
@@ -322,7 +321,15 @@ def api_search_by_dataset(request):
 
     user_workspace = ws_info.result_obj
 
-    # (1) Location of the current dataset
+    # (3) Which datamart?
+    #
+    form = dm_forms.DatamartSearchByDatasetForm(json_req_obj)
+    print('form.errors.as_json()', form.errors.as_json())
+    return JsonResponse(\
+            get_json_error("invalid input",
+                           errors=form.errors.as_json()))
+
+    # (4) Location of the current dataset
     #
     dataset_info = get_path_to_source_data(user_workspace.d3m_config)
     if not dataset_info.success:
@@ -332,13 +339,18 @@ def api_search_by_dataset(request):
 
     dataset_path = dataset_info.result_obj
 
-    # (2) Kick off async search
+    # (5) Kick off async search
     #
-    #   (to do)
+    call_info = dm_tasks.make_search_by_dataset_call(\
+                        form.cleaned_data['source'],
+                        user_workspace.id,
+                        dataset_path)
 
-    resp_info = get_json_success('Search has started!', data=dataset_path)
+    if not call_info.success:
+        return JsonResponse(get_json_error(call_info.err_msg))
 
-    return JsonResponse(resp_info)
+
+    return JsonResponse(get_json_success('Search by dataset has started!'))
 
 
 
@@ -346,7 +358,6 @@ def api_search_by_dataset(request):
 def api_materialize_async(request):
     """Run async materialize with ISI"""
     success, json_req_obj = get_request_body_as_json(request)
-
     if not success:
         return JsonResponse(get_json_error(json_req_obj))
 
@@ -361,14 +372,14 @@ def api_materialize_async(request):
 
     # check if data is valid
     #print('materialize input: ', json_req_obj)
-    form = DatamartMaterializeForm(json_req_obj)
+    form = dm_forms.DatamartMaterializeForm(json_req_obj)
     if not form.is_valid():
         print('form.errors.as_json()', form.errors.as_json())
         return JsonResponse(\
                 get_json_error("invalid input",
                                errors=form.errors.as_json()))
 
-    mu_info = make_materialize_call(\
+    mu_info = dm_tasks.make_materialize_call(\
                  form.cleaned_data['source'],
                  user_workspace.id,
                  form.cleaned_data,

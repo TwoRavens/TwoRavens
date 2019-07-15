@@ -585,6 +585,10 @@ streamSocket.onmessage = function (e) {
         debugLog(msg_data.msg_type + ' recognized!');
         handleAugmentDataMessage(msg_data);
     }
+    else if (msg_data.msg_type === 'DATAMART_SEARCH_BY_DATASET') {
+        debugLog(msg_data.msg_type + ' recognized!');
+        handleSearchbyDataset(msg_data);
+    }
     else {
         console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
     }
@@ -2259,6 +2263,20 @@ export function handleMaterializeDataMessage(msg_data){
 
 
 } // end handleMaterializeDataMessage
+
+
+/**
+ *  After a search by dataset:
+ *  - Display the results on the Datamart
+ */
+ export async function handleSearchbyDataset(msg_data){
+
+     if (!msg_data) {
+         console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
+         return;
+     }
+     console.log('handleSearchbyDataset!!!')
+}
 
 /**
  *  After an augment:
