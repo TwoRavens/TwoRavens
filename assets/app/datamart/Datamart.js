@@ -432,6 +432,38 @@ export default class Datamart {
                     preferences.success[preferences.sourceMode])
             ]),
 
+            m('div', {style: {margin: '1em'}}, 'Search using the dataset (without keywords)'), // You may upload a file or extract data from a link.
+
+            m(Button, {
+              disabled: preferences.isSearching[preferences.sourceMode],
+              onclick: async () => {
+                  console.log('Datamart/search by dataset');
+
+                  // preserve state after async is awaited
+                  let sourceMode = preferences.sourceMode;
+                  results[sourceMode].length = 0;
+
+                  // enable spinner
+                  preferences.isSearching[sourceMode] = true;
+                  m.redraw();
+
+                  let response = await m.request(endpoint + 'search-by-dataset', {
+                      method: 'POST',
+                      data: {
+                        source: preferences.sourceMode
+                      }
+                  });
+
+                  if (response.success){
+                    preferences.showDatamartSuccessMsg(preferences.sourceMode, response.message);
+                  }else{
+                    preferences.isSearching[sourceMode] = false;
+
+                    preferences.showDatamartErrorMsg(preferences.sourceMode, response.message);
+                  }                  }
+            }, 'Search by Dataset'),
+
+
             preferences.datamartMode === 'Search' && [
                 m(`div[style=background:${common.menuColor}]`, m(JSONSchema, {
                     data: query,
@@ -479,37 +511,9 @@ export default class Datamart {
                         preferences.handleSearchResults(preferences.sourceMode, response);
 
                     }
-                }, 'Submit'), // Datamart Search Call
+                }, 'Search'), // Datamart Search Call
 
 
-                m(Button, {
-                  disabled: preferences.isSearching[preferences.sourceMode],
-                  onclick: async () => {
-                      console.log('Datamart/search by dataset');
-
-                      // preserve state after async is awaited
-                      let sourceMode = preferences.sourceMode;
-                      results[sourceMode].length = 0;
-
-                      // enable spinner
-                      preferences.isSearching[sourceMode] = true;
-                      m.redraw();
-
-                      let response = await m.request(endpoint + 'search-by-dataset', {
-                          method: 'POST',
-                          data: {
-                            source: preferences.sourceMode
-                          }
-                      });
-
-                      if (response.success){
-                        preferences.showDatamartSuccessMsg(preferences.sourceMode, response.message);
-                      }else{
-                        preferences.isSearching[sourceMode] = false;
-
-                        preferences.showDatamartErrorMsg(preferences.sourceMode, response.message);
-                      }                  }
-                }, 'Search by Dataset'),
 
                 preferences.isSearching[preferences.sourceMode] && loader,
 
