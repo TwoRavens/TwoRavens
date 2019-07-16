@@ -55,14 +55,16 @@ export let getSolutionAdapter = (problem, solution) => ({
         return resultsData.importanceEFD[predictor];
     },
     getImportancePartials: predictor => {
-        loadImportancePartialsData(problem, solution);
-        loadImportancePartialsActualData(problem, solution);
+        loadImportancePartialsFittedData(problem, solution);
 
-        if (!resultsData.importancePartials) return;
         if (!resultsData.importancePartialsActual) return;
+        if (!resultsData.importancePartialsFitted[solution.pipelineId]) return;
 
         return app.melt(
-            resultsData.importancePartials[predictor], [predictor],
+            resultsData.importancePartialsActual[predictor]
+                .map((x, i) => Object.assign({[predictor]: x},
+                    resultsData.importancePartialsFitted[solution.pipelineId][predictor][i])),
+            [predictor],
             results.valueLabel, results.variableLabel);
     },
 });
@@ -85,8 +87,8 @@ export let resultsData = {
     importanceEFDLoading: false,
 
     // this has melted data for both actual and fitted values
-    importancePartials: undefined,
-    importancePartialsLoading: false,
+    importancePartialsFitted: {},
+    importancePartialsFittedLoading: {},
 
     // this has only the essential predictor data that the dataset was fit with
     importancePartialsActual: undefined,
@@ -103,7 +105,7 @@ export let resultsQuery = [];
 export let recordLimit = 1000;
 
 
-export let loadProblemValues = async problem => {
+export let loadProblemData = async problem => {
     if (resultsData.id.problemID === problem.problemID && JSON.stringify(resultsData.id.query) === JSON.stringify(resultsQuery))
         return;
 
@@ -126,12 +128,20 @@ export let loadProblemValues = async problem => {
     // solution specific, one solution stored
     resultsData.importanceEFD = {};
     resultsData.importanceEFDLoading = false;
+
+    // solution specific, all solution stored
+    resultsData.importancePartialsFitted = {};
+    resultsData.importancePartialsFittedLoading = {};
+
+    // problem specific, one problem scored
+    resultsData.importancePartialsActual = undefined;
+    resultsData.importancePartialsActualLoading = false;
 };
 
 export let loadActualValues = async problem => {
 
     // reset if id is different
-    await loadProblemValues(problem);
+    await loadProblemData(problem);
 
     // don't load if systems are already in loading state
     if (resultsData.actualsLoading)
@@ -193,6 +203,10 @@ export let loadFittedValues = async (problem, solution) => {
     if (solution.pipelineId in resultsData.fitted)
         return;
 
+    // don't load if dependencies are not loaded
+    if (!resultsData.actuals)
+        return;
+
     // begin blocking additional requests to load
     resultsData.fittedLoading[solution.pipelineId] = true;
 
@@ -230,7 +244,7 @@ export let loadFittedValues = async (problem, solution) => {
 };
 
 export let loadImportancePartialsActualData = async problem => {
-    await loadProblemValues(problem);
+    await loadProblemData(problem);
 
     // don't attempt to load if there is no data
     if (!problem.partialsDatasetPath) return;
@@ -270,17 +284,18 @@ export let loadImportancePartialsActualData = async problem => {
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
 
-    let parseNumeric = value => isNaN(parseFloat(value)) ? value : parseFloat(value);
-    resultsData.importancePartialsActual = response.data
-        .map(point => Object.keys(point)
-            .reduce((out, column) => Object.assign(out,
-                {[column]: parseNumeric(point[column])}), {}));
+    // convert to structure:
+    // {predictor1: [values along domain], predictor2: ...}
+    resultsData.importancePartialsActual = Object.keys(response.data)
+        .reduce((out, predictor) => Object.assign(out,
+            {[predictor]: response.data[predictor].map(point => point[predictor])}),
+            {});
     resultsData.importancePartialsActualLoading = false;
 
     m.redraw();
 };
 
-export let loadImportancePartialsData = async (problem, solution) => {
+export let loadImportancePartialsFittedData = async (problem, solution) => {
 
     // load dependencies, which can clear loading state if problem, etc. changed
     await loadImportancePartialsActualData(problem);
@@ -289,15 +304,19 @@ export let loadImportancePartialsData = async (problem, solution) => {
     if (!solution.data_pointer_partials) return;
 
     // don't load if systems are already in loading state
-    if (resultsData.importancePartialsLoading[solution.pipelineId])
+    if (resultsData.importancePartialsFittedLoading[solution.pipelineId])
         return;
 
     // don't load if already loaded
-    if (solution.pipelineId in resultsData.importancePartials)
+    if (resultsData.importancePartialsFitted[solution.pipelineId])
+        return;
+
+    // don't load if dependencies are not loaded
+    if (!resultsData.importancePartialsActual)
         return;
 
     // begin blocking additional requests to load
-    resultsData.importancePartialsLoading[solution.pipelineId] = true;
+    resultsData.importancePartialsFittedLoading[solution.pipelineId] = true;
 
     let tempQuery = JSON.stringify(resultsData.id.query);
     let response;
@@ -323,11 +342,23 @@ export let loadImportancePartialsData = async (problem, solution) => {
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
 
-    // TODO: this is only index zero if there is one target
-    // TODO: multilabel problems will have d3mIndex collisions
-    resultsData.importancePartials[solution.pipelineId] = response.data
-        .reduce((out, point) => Object.assign(out, {[point['']]: isNaN(parseFloat(point['0'])) ? point['0'] : parseFloat(point['0'])}), {});
-    resultsData.importancePartialsLoading[solution.pipelineId] = false;
+    let parseNumeric = value => isNaN(parseFloat(value)) ? value : parseFloat(value);
+
+    // convert unlabeled string table to predictor format
+    let offset = 0;
+    resultsData.importancePartialsFitted[solution.pipelineId] = Object.keys(resultsData.importancePartialsActual).reduce((out, predictor) => {
+        let nextOffset = offset + resultsData.importancePartialsActual[predictor].length;
+        // for each point along the domain of the predictor
+        out[predictor] = response.data.slice(offset, nextOffset)
+            // for each target specified in the problem
+            // .map(point => problem.targets.reduce((out, target, i) =>
+            //     Object.assign(out, {[target]: parseNumeric(point[i])}), {}))
+            // for only the first target specified in the problem
+            .map(point => ({[problem.targets[0]]: parseNumeric(point['0'])}));
+        offset = nextOffset;
+        return out;
+    }, {});
+    resultsData.importancePartialsFittedLoading[solution.pipelineId] = false;
 
     m.redraw();
 };
@@ -336,7 +367,7 @@ export let loadImportancePartialsData = async (problem, solution) => {
 
 export let loadConfusionData = async (problem, solution) => {
     // load dependencies, which can clear loading state if problem, etc. changed
-    await loadProblemValues(problem);
+    await loadProblemData(problem);
 
     // don't load if data is not available
     if (!solution.data_pointer)
@@ -413,7 +444,7 @@ export let loadConfusionData = async (problem, solution) => {
 // importance from empirical first differences
 export let loadImportanceEFDData = async (problem, solution, predictor) => {
     // load dependencies, which can clear loading state if problem, etc. changed
-    await loadProblemValues(problem);
+    await loadProblemData(problem);
 
     // don't load if data is not available
     if (!solution.data_pointer)

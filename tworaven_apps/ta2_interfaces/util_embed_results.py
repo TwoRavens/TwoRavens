@@ -69,7 +69,7 @@ class FileEmbedUtil(object):
         self.user = user
         self.data_pointer = data_pointer
         self.final_results = None
-        self.indices = set(indices)
+        self.indices = set(indices) if indices else None
 
         # List of paths where attempted to read a file
         self.attempted_file_paths = []
@@ -193,7 +193,7 @@ class FileEmbedUtil(object):
         if self.is_json_file_type(fpath):
             # Return the file directly
             response_data = self.load_and_return_json_file(fpath)
-            if not response_data.success:
+            if not response_data[KEY_SUCCESS]:
                 return response_data
 
         # If it's a csv file, read, convert to JSON and return it

@@ -287,6 +287,7 @@ export class CanvasSolutions {
             Partials: adapter.getImportancePartials
         })[importancePreferences.mode](importancePreferences.predictor);
 
+
         return [
             m('label', 'Variable importance mode:'),
             m(ButtonRadio, {
@@ -631,7 +632,7 @@ let importancePreferences = {
 };
 
 // labels for variable importance X/Y axes
-export let valueLabel = "Number of Observations";
+export let valueLabel = "Observations";
 export let variableLabel = "Dependent Variable";
 
 export let selectedMetric = {
