@@ -109,8 +109,7 @@ export default class VariableImportance {
         });
 
         // LINE CHART
-        // the empty m() is suppressing DOM node reuse
-        return m('', m(PlotVegaLite, {
+        return m(PlotVegaLite, {
             // data,
             specification: {
                 "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
@@ -128,7 +127,7 @@ export default class VariableImportance {
                     ]
                 }
             }
-        }));
+        });
     }
 
     view(vnode) {
