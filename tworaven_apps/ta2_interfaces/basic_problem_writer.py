@@ -37,13 +37,13 @@ class BasicProblemWriter(BasicErrCheck):
     INCREMENT_FILENAME = 'INCREMENT_FILENAME' # add '', '_0002' to filename
     QUOTING = 'QUOTING'
 
-    def __init__(self, user_obj, filename, data, **kwargs):
+    def __init__(self, user_workspace, filename, data, **kwargs):
         """
         filename - may also include a directory, but not fullpath
         file_data - data to write
         write_directory - optional base directory if no directory in the config
         """
-        self.user_obj = user_obj
+        self.user_workspace = user_workspace
         self.filename = filename
         self.file_data = data
 
@@ -82,25 +82,11 @@ class BasicProblemWriter(BasicErrCheck):
 
         attempted_dirs = []
 
-        # (1) Try the "/output/problems" directory
+
+        # (1) Try the D3M config "user_problems_directory"
         #
-        if self.write_directory:
-            success_dirmake1, output_dir1 = self.make_directory(self.write_directory)
-            if success_dirmake1:
-                fullpath = join(output_dir1, self.filename)
-                self.write_new_file(fullpath, output_dir1)
-                return
-            attempted_dirs = [output_dir1]
+        d3m_config = self.user_workspace.d3m_config
 
-        # (2) Try the "user_problems_root" directory
-        #
-        d3m_config_info = get_latest_d3m_user_config(self.user_obj)
-        if not d3m_config_info.success:
-            self.add_error_message(('Failed to find a D3M config file'))
-            return
-
-
-        d3m_config = d3m_config_info.result_obj
         if d3m_config and d3m_config.user_problems_root:
             user_problems_root = d3m_config.user_problems_root
             success_dirmake2, output_dir2 = self.make_directory(user_problems_root)

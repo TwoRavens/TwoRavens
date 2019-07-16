@@ -10,6 +10,8 @@ from tworaven_apps.utils.view_helper import \
 
 from tworaven_apps.ta2_interfaces.user_problem_helper import UserProblemHelper
 from tworaven_apps.ta2_interfaces.basic_problem_writer import BasicProblemWriter
+from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
+
 from tworaven_apps.ta2_interfaces.forms import \
     (SaveProblemForm,
      PROBLEM_REQ_FILENAME, PROBLEM_REQ_DATA)
@@ -25,9 +27,10 @@ from tworaven_apps.utils.view_helper import \
 @login_required
 def view_save_problem_form(request):
     """View test form"""
-    user_info = get_authenticated_user(request)
-    if not user_info.success:
-        return JsonResponse(get_json_error(user_info.err_msg))
+    user_workspace_info = get_latest_user_workspace(request)
+    if not user_workspace_info.success:
+        return JsonResponse(get_json_error(user_workspace_info.err_msg))
+    user_workspace = user_workspace_info.result_obj
 
     info_dict = dict()
     if request.POST:
@@ -35,7 +38,7 @@ def view_save_problem_form(request):
         if save_problem_form.is_valid():
             content = save_problem_form.cleaned_data
 
-            bpw = BasicProblemWriter(user_info.result_obj,
+            bpw = BasicProblemWriter(user_workspace,
                                      content[PROBLEM_REQ_FILENAME],
                                      content[PROBLEM_REQ_DATA])
 
@@ -69,9 +72,10 @@ def view_store_basic_problem(request):
     (1) Try: "output/problems" + ....
     (2) Try: config.temp_storage_root  + "problems" + .....
     """
-    user_info = get_authenticated_user(request)
-    if not user_info.success:
-        return JsonResponse(get_json_error(user_info.err_msg))
+    user_workspace_info = get_latest_user_workspace(request)
+    if not user_workspace_info.success:
+        return JsonResponse(get_json_error(user_workspace_info.err_msg))
+    user_workspace = user_workspace_info.result_obj
 
     req_info = get_request_body_as_json(request)
     if not req_info.success:
@@ -81,14 +85,14 @@ def view_store_basic_problem(request):
     req_json = req_info.result_obj
 
     if not PROBLEM_REQ_FILENAME in req_json:
-        user_msg = ('The request did not a "%s" value') % PROBLEM_REQ_FILENAME
+        user_msg = ('The request did not contain a "%s" value. (view_store_basic_problem)') % PROBLEM_REQ_FILENAME
         return JsonResponse(get_json_error(user_msg))
 
     if not PROBLEM_REQ_DATA in req_json:
-        user_msg = ('The request did not a "%s" value') % PROBLEM_REQ_DATA
+        user_msg = ('The request did not contain a "%s" value. (view_store_basic_problem)') % PROBLEM_REQ_DATA
         return JsonResponse(get_json_error(user_msg))
 
-    bpw = BasicProblemWriter(user_info.result_obj,
+    bpw = BasicProblemWriter(user_workspace,
                              req_json[PROBLEM_REQ_FILENAME],
                              req_json[PROBLEM_REQ_DATA])
 

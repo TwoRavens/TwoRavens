@@ -27,9 +27,7 @@ from tworaven_apps.eventdata_queries.dataverse.routine_dataverse_check import Ro
 from tworaven_apps.ta2_interfaces.basic_problem_writer import BasicProblemWriter
 
 from tworaven_apps.raven_auth.models import User
-
-from tworaven_apps.user_workspaces.utils import \
-    (get_latest_d3m_user_config,)
+from tworaven_apps.user_workspaces.models import UserWorkspace
 
 LOGGER = logging.getLogger(__name__)
 
@@ -537,8 +535,13 @@ class EventJobUtil(object):
         db[collection].drop()
 
     @staticmethod
-    def export_dataset(user_obj, collection, data):
+    def export_dataset(user_workspace, collection, data):
         """Export the dataset using the 'BasicProblemWriter' """
+        if not isinstance(user_workspace, UserWorkspace):
+            user_msg = ('The user_workspace was not set correctly.'
+                        ' (export_dataset)')
+            return err_resp(user_msg)
+
         if not isinstance(data, list):
             user_msg = 'export_dataset failed.  "data" must be a list'
             LOGGER.error(user_msg)
@@ -554,15 +557,19 @@ class EventJobUtil(object):
                   BasicProblemWriter.INCREMENT_FILENAME: True,
                   BasicProblemWriter.QUOTING: csv.QUOTE_NONNUMERIC}
 
-        bpw = BasicProblemWriter(user_obj, filename, data, **params)
+        bpw = BasicProblemWriter(user_workspace, filename, data, **params)
         if bpw.has_error():
             return err_resp(bpw.get_error_message())
 
         return ok_resp(bpw.new_filepath)
 
     @staticmethod
-    def export_problem(user_obj, data, metadata):
+    def export_problem(user_workspace, data, metadata):
         """Export the problem in a D3M-compatible format"""
+        if not isinstance(user_workspace, UserWorkspace):
+            user_msg = ('The user_workspace was not set correctly.'
+                        ' (export_problem)')
+            return err_resp(user_msg)
 
         if not isinstance(data, list):
             user_msg = 'export_problem failed.  "data" must be a list'
@@ -574,12 +581,7 @@ class EventJobUtil(object):
             LOGGER.error(user_msg)
             return err_resp(user_msg)
 
-        d3m_config_info = get_latest_d3m_user_config(user_obj)
-        if not d3m_config_info.success:
-            user_msg = 'export_problem failed. no d3m config'
-            LOGGER.error(user_msg)
-            return err_resp(user_msg)
-        d3m_config = d3m_config_info.result_obj
+        d3m_config = user_workspace.d3m_config
 
         manipulations_folderpath = os.path.join(d3m_config.temp_storage_root, 'manipulations')
 

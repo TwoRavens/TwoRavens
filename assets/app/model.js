@@ -1325,19 +1325,19 @@ export async function submitDiscProb() {
     let outputCSV = Object.keys(problems).reduce((out, problemID) => {
         let problem = problems[problemID];
 
-
         if(problem.manipulations.length === 0){
             // construct and write out the api call and problem description for each discovered problem
             let problemApiCall = solverD3M.GRPC_SearchSolutionsRequest(problem, 10);
             let problemProblemSchema = solverD3M.GRPC_ProblemDescription(problem);
             let filename_api = problem.problemID + '/ss_api.json';
-            let filename_ps = problem.problemID + '/schema.json';
+            let filename_ps = problem.problemID + '/problem_schema.json';
             app.makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
             app.makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
         } else {
             console.log('omitting:');
             console.log(problem);
         }
+        // return `${problem.problemID},`;
     });
 
     // write the CSV file requested by NIST that describes properties of the solutions
