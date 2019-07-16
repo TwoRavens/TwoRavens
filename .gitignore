@@ -60,6 +60,8 @@ ravens_volume/test_data/*/search_config.json
 ravens_volume/test_data/*/search_config.json
 #ravens_volume/test_data/01_TEST_SOURCE/placeholder.md
 
+# ignore redis dumpfile
+dump.rdb
 
 # IDE
 .idea/
