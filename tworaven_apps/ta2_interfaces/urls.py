@@ -17,9 +17,6 @@ urlpatterns = (
          views_user_problem.view_store_basic_problem,
          name='view_store_basic_problem'),
 
-    path(r'store-ta2ta3-data',
-         views_user_problem.view_store_ta2ta3_data,
-         name='view_store_ta2ta3_data'),
 
     path(r'get-problem-schema',
          views_additional.view_get_problem_schema,
