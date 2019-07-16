@@ -64,7 +64,10 @@ export let leftpanel = () => {
                     idSuffix: 'DiscoveredSolutions',
                     value: [
                         m('[style=display:inline-block;margin-right:1em]', 'Discovered Solutions'),
-                        resultsProblem.d3mSearchId !== undefined && common.loaderSmall('D3M')
+                        resultsProblem.d3mSolverState !== undefined && [
+                            common.loaderSmall('D3M'),
+                            m('div[style=font-size:medium;margin-left:1em;display:inline-block]', resultsProblem.d3mSolverState)
+                        ]
                     ],
                     contents: m(Table, {
                         id: 'pipelineTable',

@@ -1535,6 +1535,8 @@ export async function estimate() {
     let datasetDocPath = selectedProblem.datasetDocPath || workspace.d3m_config.dataset_schema;
 
     let partialsDatasetDocPath;
+    selectedProblem.d3mSolverState = 'preparing partials data';
+    m.redraw();
     try {
         let partialsLocationInfo = await m.request({
             method: 'POST',
@@ -1552,6 +1554,9 @@ export async function estimate() {
         cdb(err);
         alertError(`Error: call to partialsapp failed`);
     }
+
+    selectedProblem.d3mSolverState = 'initiating the search for solutions';
+    m.redraw();
 
     let allParams = {
         searchSolutionParams: solverD3M.GRPC_SearchSolutionsRequest(selectedProblem),
@@ -1580,7 +1585,9 @@ export async function estimate() {
 
     // route streamed responses with this searchId to this problem
     selectedProblem.d3mSearchId = res.data.searchId;
-    m.redraw()
+
+    selectedProblem.d3mSolverState = '';
+    m.redraw();
 }
 
 export async function makeRequest(url, data) {
