@@ -1546,8 +1546,6 @@ export async function estimate() {
             url: ROOK_SVC_URL + 'partialsapp',
             data: {metadata: variableSummaries}
         });
-        console.warn("#debug partialsLocationInfo");
-        console.log(partialsLocationInfo);
         if (!partialsLocationInfo.success) {
             alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
             throw partialsLocationInfo.message;

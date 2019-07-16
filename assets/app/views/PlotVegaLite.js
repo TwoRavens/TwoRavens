@@ -33,6 +33,7 @@ export default class PlotVegaLite {
             this.specification = newSpecification;
             this.width = width;
             this.height = height;
+            this.dataKeys = undefined;
 
             // include padding in width/height calculations
             specification.autosize = {
@@ -47,7 +48,7 @@ export default class PlotVegaLite {
 
             // mask repeated warnings about outdated vega-lite specification
             let tempWarn = console.warn;
-            // console.warn = _ => _;
+            console.warn = _ => _;
 
             try {
                 vegaEmbed(vnode.dom, specification, options).then(result => {
