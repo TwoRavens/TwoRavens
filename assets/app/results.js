@@ -282,12 +282,57 @@ export class CanvasSolutions {
         if (!problem.targets.includes(importancePreferences.target))
             importancePreferences.target = problem.targets[0];
 
-        let importanceData = ({
-            EFD: adapter.getImportanceEFD,
-            Partials: adapter.getImportancePartials
-        })[importancePreferences.mode](importancePreferences.predictor);
+        let importanceContent = common.loader('VariableImportance');
 
+        if (importancePreferences.mode === 'PDP') {
+            importanceContent = [
+                m('label', 'Importance for predictor:'),
+                m(Dropdown, {
+                    id: 'predictorImportanceDropdown',
+                    items: problem.predictors,
+                    onclickChild: mode => importancePreferences.predictor = mode,
+                    activeItem: importancePreferences.predictor,
+                })
+            ];
 
+            let importanceData = ({
+                EFD: adapter.getImportanceEFD,
+                Partials: adapter.getImportancePartials
+            })[importancePreferences.mode](importancePreferences.predictor);
+
+            if (importanceData) importanceContent.push(m(VariableImportance, {
+                mode: importancePreferences.mode,
+                data: importanceData,
+                problem: problem,
+                predictor: importancePreferences.predictor,
+                target: importancePreferences.target,
+                yLabel: valueLabel,
+                variableLabel: variableLabel
+            }));
+            else importanceContent.push(common.loader('VariableImportance'))
+        }
+        else {
+            let importanceData = problem.predictors.reduce((out, predictor) => Object.assign(out, {[predictor]: ({
+                EFD: adapter.getImportanceEFD,
+                Partials: adapter.getImportancePartials
+            })[importancePreferences.mode](predictor)}), {});
+
+            // reassign content if some data is not undefined
+            let importancePlots = Object.keys(importanceData).map(predictor => importanceData[predictor] && [
+                predictor,
+                m(VariableImportance, {
+                    mode: importancePreferences.mode,
+                    data: importanceData[predictor],
+                    problem: problem,
+                    predictor,
+                    target: importancePreferences.target,
+                    yLabel: valueLabel,
+                    variableLabel: variableLabel
+                })
+            ]).filter(_ => _);
+
+            if (importancePlots.length > 0) importanceContent = importancePlots;
+        }
         return [
             m('label', 'Variable importance mode:'),
             m(ButtonRadio, {
@@ -299,22 +344,7 @@ export class CanvasSolutions {
                     {value: 'Partials', title: 'model prediction as predictor varies over its domain'}
                 ]
             }),
-            m('label', 'Importance for predictor:'),
-            m(Dropdown, {
-                id: 'predictorImportanceDropdown',
-                items: problem.predictors,
-                onclickChild: mode => importancePreferences.predictor = mode,
-                activeItem: importancePreferences.predictor,
-            }),
-            importanceData ? m(VariableImportance, {
-                mode: importancePreferences.mode,
-                data: importanceData,
-                problem: problem,
-                predictor: importancePreferences.predictor,
-                target: importancePreferences.target,
-                yLabel: valueLabel,
-                variableLabel: variableLabel
-            }) : common.loader('VariableImportance')
+            importanceContent
         ]
     }
 
