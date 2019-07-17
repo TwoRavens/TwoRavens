@@ -2022,6 +2022,9 @@ export let getResultsProblem = () => {
     return ravenConfig.problems[ravenConfig.resultsProblem];
 };
 
+/*
+ *  Return the problem description--or autogenerate one
+ */
 export function getDescription(problem) {
     if (problem.description) return problem.description;
     let predictors = getPredictorVariables(problem);
