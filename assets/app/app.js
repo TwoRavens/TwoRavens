@@ -905,22 +905,6 @@ export let getCurrentWorkspaceId = () => {
 
 export let setShowModalWorkspace = state => showModalWorkspace = state;
 export let showModalWorkspace = false;
-
-export let showDatasetUrlFailModal = (msg) => {
-
-  setModal(m('div', [
-            m('p', {class: 'h5'}, "The dataset url was not found."),
-            m('p', 'Please try to reload the page using the button below.'),
-            m('hr'),
-            m('p', 'If it fails again, please contact the administrator.'),
-            m('p', msg)
-          ]),
-          "Severe Error. Failed to locate the dataset",
-          true,
-          "Reload Page",
-          false,
-          locationReload);
-}
 /*
  * Set the workspace.datasetUrl using the workspace's d3m_config
  *  - e.g. workspace.d3m_config.problem_data_info
@@ -929,44 +913,56 @@ export let showDatasetUrlFailModal = (msg) => {
  */
 export let setDatasetUrl = async () => {
 
-  console.log("-- setDatasetUrl --");
-  //url example: /config/d3m-config/get-problem-data-file-info/39
-  //
-  let problem_info_result = await m.request(workspace.d3m_config.problem_data_info);
+    let showDatasetUrlFailModal = (msg) => setModal(m('div', [
+            m('p', {class: 'h5'}, "The dataset url was not found."),
+            m('p', 'Please try to reload the page using the button below.'),
+            m('hr'),
+            m('p', 'If it fails again, please contact the administrator.'),
+            m('p', msg)
+        ]),
+        "Severe Error. Failed to locate the dataset",
+        true,
+        "Reload Page",
+        false,
+        locationReload);
 
-  if (!problem_info_result.success){
-      showDatasetUrlFailModal('Error: ' + problem_info_result.message);
 
-      return false;
-  }
-  console.log("result from problem data file info:");
-  console.log(problem_info_result);
+    console.log("-- setDatasetUrl --");
+    //url example: /config/d3m-config/get-problem-data-file-info/39
+    //
+    let problem_info_result = await m.request(workspace.d3m_config.problem_data_info);
 
-  if ('source_data_path' in problem_info_result.data){
-    workspace.datasetUrl = problem_info_result.data.source_data_path;
-  }
+    if (!problem_info_result.success) {
+        showDatasetUrlFailModal('Error: ' + problem_info_result.message);
 
-  if (workspace.datasetUrl === undefined){
-    console.log('Severe error.  Not able to set the datasetUrl. (p2)' +
-              ' (url: ' + workspace.d3m_config.problem_data_info + ')');
+        return false;
+    }
 
-    showDatasetUrlFailModal( '(url: ' + workspace.d3m_config.problem_data_info + ')');
+    if ('source_data_path' in problem_info_result.data) {
+        workspace.datasetUrl = problem_info_result.data.source_data_path;
+    }
 
-    return false;
-  }
-  if (IS_D3M_DOMAIN && !workspace.datasetUrl) {
+    if (workspace.datasetUrl === undefined) {
+        console.log('Severe error.  Not able to set the datasetUrl. (p2)' +
+            ' (url: ' + workspace.d3m_config.problem_data_info + ')');
 
-    console.log('Severe error.  Not able to set the datasetUrl. (p2)' +
-              ' (url: ' + workspace.d3m_config.problem_data_info + ')'+
-              ' Invalid data: ' + JSON.stringify(problem_info_result));
+        showDatasetUrlFailModal('(url: ' + workspace.d3m_config.problem_data_info + ')');
 
-    showDatasetUrlFailModal( 'Invalid data: ' + JSON.stringify(problem_info_result));
+        return false;
+    }
+    if (IS_D3M_DOMAIN && !workspace.datasetUrl) {
 
-    return false;
- }
+        console.log('Severe error.  Not able to set the datasetUrl. (p2)' +
+            ' (url: ' + workspace.d3m_config.problem_data_info + ')' +
+            ' Invalid data: ' + JSON.stringify(problem_info_result));
 
-  return true;
-}  // end setDatasetUrl
+        showDatasetUrlFailModal('Invalid data: ' + JSON.stringify(problem_info_result));
+
+        return false;
+    }
+
+    return true;
+};
 
 export let loadWorkspace = async newWorkspace => {
 
@@ -1006,13 +1002,10 @@ export let loadWorkspace = async newWorkspace => {
     if (swandive)
         alertWarn('Exceptional data detected.  Please check the logs for "D3M WARNING"');
 
-    console.log("data schema data: ", workspace.datasetDoc);
-
-
     /**
      * 2. Load 'datasetUrl'
      */
-    let urlAvailable = await setDatasetUrl()
+    let urlAvailable = await setDatasetUrl();
 
     if (!urlAvailable && IS_D3M_DOMAIN){
         // shouldn't reach here, setDatasetUrl adds failure modal
@@ -1045,8 +1038,8 @@ export let loadWorkspace = async newWorkspace => {
             // res = read(await m.request({method: 'POST', url: url, data: json_input}));
             let preprocess_info = await m.request({method: 'POST', url, data: json_input});
 
-            console.log('preprocess_info: ', preprocess_info);
-            console.log('preprocess_info message: ' + preprocess_info.message);
+            // console.log('preprocess_info: ', preprocess_info);
+            // console.log('preprocess_info message: ' + preprocess_info.message);
             if (!preprocess_info.success) throw "Preprocess failed";
             resPreprocess = preprocess_info.data;
 
@@ -1319,10 +1312,9 @@ export async function load() {
     console.log('---------------------------------------');
     console.log("-- 5. Start the user session /Hello --");
 
-    let problemDoc = await makeRequest(D3M_SVC_URL + '/Hello', {});
-    if (problemDoc) {
-        setTask1_finished(true);
-        if (problemDoc.success !== true) {
+    let responseTA2 = await makeRequest(D3M_SVC_URL + '/Hello', {});
+    if (responseTA2) {
+        if (responseTA2.success !== true) {
           //  const user_err_msg = "We were unable to connect to the TA2 system.  It may not be ready.  Please try again.  (status code: " + problemDoc.message + ")";
             setModal(
                 m('div', [
@@ -1330,7 +1322,7 @@ export async function load() {
                     m('p', {class: 'h5'}, "It may not be ready."),
                     m('p', {class: 'h5'}, "Please try again using the button below."),
                     m('hr'),
-                    m('p', "Technical details: " + problemDoc.message),
+                    m('p', "Technical details: " + responseTA2.message),
                   ]),
                   "Error Connecting to the TA2",
                   true,
@@ -1344,10 +1336,10 @@ export async function load() {
             // Format and show the TA2 name in the footer
             // ----------------------------------------------
             let ta2Version;
-            if (typeof problemDoc.data.version !== 'undefined') {
-                ta2Version = problemDoc.data.version;
+            if (typeof responseTA2.data.version !== 'undefined') {
+                ta2Version = responseTA2.data.version;
             }
-            let ta2Name = problemDoc.data.userAgent;
+            let ta2Name = responseTA2.data.userAgent;
             if (ta2Version) {
                 ta2Name += ' (API: ' + ta2Version + ')';
             }
@@ -1361,61 +1353,6 @@ export async function load() {
         console.log('Starting Hopscotch Tour');
         hopscotch.startTour(mytour());
     }
-
-}
-
-/**
-   called on app start
-   @param {string} fileid
-   @param {string} hostname
-   @param {string} ddiurl
-   @param {string} dataurl
-   @param {string} apikey
-*/
-
-
-export function main(fileid, hostname, ddiurl, dataurl, apikey) {
-    if (PRODUCTION && fileid === '') {
-        let msg = 'Error: No fileid has been provided.';
-        alertError(msg);
-        throw new Error(msg);
-    }
-
-    let dataverseurl = hostname ? 'https://' + hostname :
-        PRODUCTION ? DATAVERSE_URL :
-        'http://localhost:8080';
-    // if file id supplied, assume we are dealing with dataverse and cook a standard dataverse data access url
-    // with the fileid supplied and the hostname we have supplied or configured
-    dataurl = fileid && !dataurl ? `${dataverseurl}/api/access/datafile/${fileid}?key=${apikey}` : dataurl;
-    cdb('--dataurl: ' + dataurl);
-    cdb('--dataverseurl: ' + dataverseurl);
-
-    // indicators for showing membership above arcs
-    // let indicator = (degree) => d3.svg.circle()
-    //     .cx( RADIUS )//(RADIUS+35) * Math.sin(degree))
-    //     .cy( RADIUS )//(RADIUS+35) * Math.cos(degree))
-    //     .r(3);
-    // ind1 = indicator(1);
-    // ind2 = indicator(1.2);
-
-    // assume locations are consistent based on d3m directory structure
-    let d3mRootPath = '';
-    let d3mDataName = '';
-    let d3mData = null;
-    let d3mPreprocess = '';
-    let d3mPS = '';
-    let d3mDS = '';
-
-    // default to Fearon Laitin
-    let data = 'data/' + (false ? 'PUMS5small' : 'fearonLaitin');
-    // let metadataurl = ddiurl || (fileid ? `${dataverseurl}/api/meta/datafile/${fileid}` : data + '.xml');
-    // read pre-processed metadata and data
-    let pURL = dataurl ? `${dataurl}&format=prep` : data + '.json';
-
-    if (IS_D3M_DOMAIN) {
-        pURL = d3mPreprocess;
-    }
-    load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL);
 
 }
 
@@ -1512,27 +1449,28 @@ export async function estimate() {
 
     m.redraw();
 
-    let nominalVars = new Set(getNominalVariables(selectedProblem));
-    let predictorVars = getPredictorVariables(selectedProblem);
+    // let nominalVars = new Set(getNominalVariables(selectedProblem));
+    // let predictorVars = getPredictorVariables(selectedProblem);
+    //
+    // let hasNominal = [...selectedProblem.targets, ...predictorVars]
+    //     .some(variable => nominalVars.has(variable));
+    // let hasManipulation = selectedProblem.manipulations.length > 0;
 
-    let hasNominal = [...selectedProblem.targets, ...predictorVars]
-        .some(variable => nominalVars.has(variable));
-    let hasManipulation = selectedProblem.manipulations.length > 0;
-
-    let needsProblemCopy = hasManipulation || hasNominal;
-
+    // let needsProblemCopy = hasManipulation || hasNominal;
+    //
     let datasetPath = workspace.datasetUrl;
     // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
-    if (needsProblemCopy) {
-        let {data_path, metadata_path} = await buildProblemUrl(selectedProblem);
-        selectedProblem.datasetDocPath = metadata_path;
-        datasetPath = data_path;
-    } else delete selectedProblem.datasetDocPath;
+    // if (needsProblemCopy) {
+    //     let {data_path, metadata_path} = await buildProblemUrl(selectedProblem);
+    //     selectedProblem.datasetDocPath = metadata_path;
+    //     datasetPath = data_path;
+    // } else delete selectedProblem.datasetDocPath;
 
     // initiate rook solver
     callSolverEnabled && callSolver(selectedProblem, datasetPath);
 
-    let datasetDocPath = selectedProblem.datasetDocPath || workspace.d3m_config.dataset_schema;
+    // let datasetDocPath = selectedProblem.datasetDocPath || workspace.d3m_config.dataset_schema;
+    let datasetDocPath = workspace.d3m_config.dataset_schema;
 
     let partialsDatasetDocPath;
     selectedProblem.d3mSolverState = 'preparing partials data';
