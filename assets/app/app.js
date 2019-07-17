@@ -1191,8 +1191,13 @@ export let loadWorkspace = async newWorkspace => {
             metrics: problemDoc.inputs.performanceMetrics.slice(1).map(elem => elem.metric),
             task: problemDoc.about.taskType,
             subTask: problemDoc.about.taskSubtype,
+
+            evaluationMethod: problemDoc.inputs.dataSplits.method || 'kFold',
+            testSize: problemDoc.inputs.dataSplits.trainTestRatio,
+            stratified: problemDoc.inputs.dataSplits.stratified,
+            randomSeed: problemDoc.inputs.dataSplits.randomSeed,
+
             meaningful: false,
-            evaluationMethod: 'kFold',
             manipulations: [],
             solutions: {
                 d3m: {},
@@ -1217,6 +1222,8 @@ export let loadWorkspace = async newWorkspace => {
                 loose: [] // variables displayed in the force diagram, but not in any groups
             }
         };
+        datamartPreferences.hints = problemDoc.dataAugmentation;
+
         if (!defaultProblem.subTask) {
             if (defaultProblem.task === 'classification' || defaultProblem.task === 'semisupervisedClassification')
                 defaultProblem.subTask = variableSummaries[defaultProblem.targets[0]].binary === 'yes' ? 'binary' : 'multiClass'

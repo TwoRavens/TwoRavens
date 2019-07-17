@@ -1316,6 +1316,41 @@ export function connectAllForceDiagram() {
     m.redraw();
 }
 
+let D3M_problemDoc = problem => ({
+    data: {
+        "problemID": problem.problemID,
+        "problemName": "NULL",
+        "taskType": problem.taskType,
+        "taskSubType": problem.taskSubType,
+        "problemVersion": "2.0",
+        "problemSchemaVersion": "3.2.0"
+    },
+    inputs: {
+        data: {
+            "datasetID": app.workspace.datasetDoc.about.datasetID,
+            "targets": problem.targets.map((target, i) => ({
+                targetIndex: i,
+                resID: problem.resourceId,
+                colIndex: Object.keys(app.variableSummaries).indexOf(target),
+                colName: target
+            }))
+        },
+        dataSplits: Object.entries({
+            method: problem.evaluationMethod,
+            testSize: problem.trainTestRatio,
+            stratified: problem.stratified,
+            randomSeed: problem.randomSeed
+        })
+            // remove keys with undefined values
+            .filter(entry => entry[1] !== undefined)
+            .reduce((out, entry) => Object.assign(out, {[entry[0]]: entry[1]}), {}),
+        performanceMetrics: [problem.metric, ...problem.metrics].map(metric => ({metric})),
+    },
+    expectedOutputs: {
+        predictionsFile: 'predictions.csv'
+    }
+});
+
 
 export async function submitDiscProb() {
     let problems = app.workspace.raven_config.problems;
@@ -1329,7 +1364,7 @@ export async function submitDiscProb() {
         if(problem.manipulations.length === 0){
             // construct and write out the api call and problem description for each discovered problem
             let problemApiCall = solverD3M.GRPC_SearchSolutionsRequest(problem, 10);
-            let problemProblemSchema = solverD3M.GRPC_ProblemDescription(problem);
+            let problemProblemSchema = D3M_problemDoc(problem);
             let filename_api = problem.problemID + '/ss_api.json';
             let filename_ps = problem.problemID + '/schema.json';
             app.makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
