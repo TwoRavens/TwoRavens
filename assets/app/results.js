@@ -30,10 +30,6 @@ export let leftpanel = () => {
 
     if (!resultsProblem) return;
 
-
-    let solutionAdaptersD3M = getSelectedSolutions(resultsProblem, 'd3m')
-        .map(solution => getSolutionAdapter(resultsProblem, solution));
-
     let resultsContent = [
         m('div', {style: {display: 'inline-block', margin: '1em'}},
             m('h4', `${ravenConfig.resultsProblem} (${resultsProblem.targets.join(', ')})`),
@@ -71,9 +67,10 @@ export let leftpanel = () => {
                     ],
                     contents: m(Table, {
                         id: 'pipelineTable',
-                        data: solutionAdaptersD3M
+                        data: Object.values(resultsProblem.solutions.d3m)
+                            .map(solution => getSolutionAdapter(resultsProblem, solution))
                             .map(adapter => Object.assign({
-                                    ID: adapter.getName(), Solution: adapter.getModel()
+                                    ID: String(adapter.getName()), Solution: adapter.getModel()
                                 },
                                 [resultsProblem.metric, ...resultsProblem.metrics]
                                     .reduce((out, metric) => Object.assign(out, {

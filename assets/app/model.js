@@ -343,7 +343,7 @@ export let leftpanel = forceData => {
         problem.task,
         problem.metric
     ];
-    sections.push({
+    selectedProblem && sections.push({
         value: 'Discover',
         attrsInterface: {class: (!isDiscoveryClicked && !app.task1_finished) ? 'btn-success' : 'btn-secondary'}, // passed into button
         contents: [
@@ -356,7 +356,7 @@ export let leftpanel = forceData => {
                         'max-width': (window.innerWidth - 90) + 'px'
                     }
                 },
-                selectedProblem && [
+                [
                     m('h4.card-header.clearfix',
                         m('div[style=height:50px;display:inline]', 'Current Problem'),
                         m(Button, {
@@ -435,7 +435,7 @@ export let leftpanel = forceData => {
             ),
 
 
-            selectedProblem && [
+            [
                 m(TextField, {
                     id: 'discoveryInput',
                     textarea: true,

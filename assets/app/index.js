@@ -61,29 +61,7 @@ class Body {
         this.previousMode = vnode.attrs.mode;
     }
 
-    oncreate() {
-        let extract = (name, key, offset, replace) => {
-            key = key + '=';
-            let loc = window.location.toString();
-            let val = loc.indexOf(key) > 0 ? loc.substring(loc.indexOf(key) + offset) : '';
-            let idx = val.indexOf('&');
-            val = idx > 0 ? val.substring(0, idx) : val;
-            val = val.replace('#!/model', '');
-            console.log(name, ': ', val);
-            return replace
-                ? val
-                    .replace(/%25/g, '%')
-                    .replace(/%3A/g, ':')
-                    .replace(/%2F/g, '/')
-                : val;
-        };
-        app.main(
-            extract('fileid', 'dfId', 5),
-            extract('hostname', 'host', 5),
-            extract('ddiurl', 'ddiurl', 7, true),
-            extract('dataurl', 'dataurl', 8, true),
-            extract('apikey', 'key', 4));
-    }
+    oncreate() {app.load();}
 
     view(vnode) {
         //app.alertLog(m(TextField, {value: JSON.stringify(app.workspaces)}));
@@ -655,7 +633,7 @@ class Body {
                 m(Button, {
                     style: {margin: '1em'},
                     onclick: () => {
-                        m.request('/d3m-service/retrieve-output-EFD-data', {
+                        m.request(this.TA2URL, {
                             method: "POST",
                             data: JSON.parse(this.TA2Post)
                         }).then(console.log).then(m.redraw)
