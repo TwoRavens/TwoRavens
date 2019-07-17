@@ -42,13 +42,13 @@ TA2_IMAGE_INFO = [
 
     # Brown: may not be using D3MPORT
     (TA2_Brown,
-     'registry.datadrivendiscovery.org/zshang/docker_images:ta2',
+     'registry.datadrivendiscovery.org/zshang/docker_images:ta2-new',
      '-p 45042:45042  -e D3MPORT=45042'),
 
     # ISI: not using D3MPORT
     (TA2_ISI,
      #'registry.datadrivendiscovery.org/kyao/ta2-isi/ta3ta2-image:latest',
-     'registry.datadrivendiscovery.org/kyao/ta3ta2/ta3ta2-image:latest',
+     'registry.datadrivendiscovery.org/kyao/ta3ta2/ta3ta2-2019-summer:latest',
      #'registry.datadrivendiscovery.org/ta2-submissions/ta2-isi/ta3ta2/ta3ta2-image:latest',
      '-p 45042:45042 -e D3MPORT=45042'),
      #'-p 45042:45042 --memory 10g -e D3MRAM=10 -e D3MCPU=1'),

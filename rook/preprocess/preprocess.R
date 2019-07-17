@@ -106,7 +106,8 @@ preprocess<-function(hostname=NULL, fileid=NULL, testdata=NULL, types=NULL, file
             
         }else{
             output<- table(mydata[,i])
-            hold[[i]]<- list(plottype="bar", plotvalues=output)
+            # return at most 100 unique values
+            hold[[i]]<- list(plottype="bar", plotvalues=output[1:min(100, length(output))])
             holdcdf[[i]] <- list(cdfplottype="NULL", cdfplotx="NULL", cdfploty="NULL")
         }
         

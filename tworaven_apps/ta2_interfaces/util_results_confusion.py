@@ -17,17 +17,14 @@ Output:
 
 
 """
-from os.path import getsize, join, isfile
-import json
+from os.path import join, isfile
 from collections import OrderedDict
-import pandas as pd
-from sklearn.metrics.classification import confusion_matrix
 
 from django.conf import settings
 
+from tworaven_apps.eventdata_queries.event_job_util import EventJobUtil
 from tworaven_apps.eventdata_queries.mongo_retrieve_util import MongoRetrieveUtil
 from tworaven_apps.utils.url_helper import format_file_uri_to_path
-from tworaven_apps.utils.number_formatting import add_commas_to_number
 from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
 from tworaven_apps.ta2_interfaces.static_vals import D3M_OUTPUT_DIR
 from tworaven_apps.raven_auth.models import User
@@ -95,10 +92,7 @@ class ConfusionUtil(object):
 
         return self.final_results
 
-    def get_statistics_results(self, file_uri, is_second_try=False):
-        """Get the content from the file and format a JSON snippet
-        that includes statistical summaries.
-        """
+    def load_results_into_mongo(self, file_uri, collection_name, is_second_try=False):
 
         if not file_uri:
             err_code = ERR_CODE_FILE_URI_NOT_SET
@@ -141,47 +135,27 @@ class ConfusionUtil(object):
             return self.format_embed_err(ERR_CODE_UNHANDLED_FILE_TYPE,
                                          err_msg)
 
-        # Attempt to get the file size, which may throw an
-        # error if the file is not reachable
-        try:
-            fsize = getsize(fpath)
-        except OSError as ex_obj:
-            err_msg = 'Not able to open file: %s' % fpath
-            return self.format_embed_err(ERR_CODE_FILE_NOT_REACHABLE,
-                                         err_msg)
+        EventJobUtil.import_dataset(
+            settings.TWORAVENS_MONGO_DB_NAME,
+            collection_name,
+            datafile=fpath,
+            indexes=['d3mIndex'])
 
-        # Is the file too large to embed?
-        #
-        if fsize > settings.MAX_EMBEDDABLE_FILE_SIZE:
-            err_msg = ('This file was too large to embed.'  
-                       ' Size was %s bytes but the limit is %s bytes.') % \
-                      (add_commas_to_number(fsize),
-                       add_commas_to_number(settings.MAX_EMBEDDABLE_FILE_SIZE))
-            return self.format_embed_err(ERR_CODE_FILE_TOO_LARGE_TO_EMBED,
-                                         err_msg)
+        return OrderedDict({KEY_SUCCESS: True})
 
-        # If it's a JSON file, read and return it
-        #
-        if self.is_json_file_type(fpath):
-            # Return the file directly
-            results_obj = self.load_and_return_json_file(fpath)
-            if results_obj[KEY_SUCCESS]:
-                fitted_values = results_obj[KEY_DATA]
-            else:
-                return results_obj
+    def get_statistics_results(self, file_uri, is_second_try=False):
+        """Get the content from the file and format a JSON snippet
+        that includes statistical summaries.
+        """
 
-        # If it's a csv file, read to dataframe
-        #
-        else:
-            results_obj = self.load_and_return_csv_file(fpath)
-            if results_obj[KEY_SUCCESS]:
-                fitted_values = results_obj[KEY_DATA]
-            else:
-                return results_obj
+        # make sure the base dataset is loaded
+        EventJobUtil.import_dataset(
+            settings.TWORAVENS_MONGO_DB_NAME,
+            self.metadata['collectionName'],
+            datafile=self.metadata['collectionPath'])
 
-        # align joining column and avoid target collision in join
-        target_name = self.metadata['targets'][0]
-        fitted_values.columns = ['d3mIndex', target_name]
+        results_collection_name = self.metadata['collectionName'] + \
+                                  '_solution_' + str(self.metadata['solutionId'])
 
         util = MongoRetrieveUtil(
             settings.TWORAVENS_MONGO_DB_NAME,
@@ -189,37 +163,111 @@ class ConfusionUtil(object):
         if util.has_error():
             return OrderedDict({KEY_SUCCESS: False, KEY_DATA: util.get_error_message()})
 
-        # TODO: exhausting this cursor is potentially a memory bomb
-        actual_values = pd.DataFrame(list(util.run_query([
-            *json.loads(self.metadata['manipulations']),
-            {'$project': {target_name: 1, 'd3mIndex': 1, '_id': 0}}
-        ], 'aggregate'))[1])
+        query = [
+            *self.metadata['query'],
+            # minor optimization, drop unneeded columns before performing lookup
+            {
+                "$project": {
+                    **{
+                        name: 1 for name in self.metadata['targets']
+                    },
+                    **{'d3mIndex': 1}
+                }
+            },
+            {
+                "$lookup": {
+                    "from": settings.MONGO_COLLECTION_PREFIX + results_collection_name,
+                    "localField": "d3mIndex",
+                    "foreignField": "d3mIndex",
+                    "as": "results_collection"
+                }
+            },
+            {
+                "$unwind": "$results_collection"
+            },
+            {
+                "$project": {
+                    **{
+                        'fitted_' + name: f"$results_collection\\.{name}" for name in self.metadata['targets']
+                    },
+                    **{
+                        'actual_' + name: f"${name}" for name in self.metadata['targets']
+                    },
+                    **{"_id": 0}}
+            },
+            {
+                '$facet': {
+                    target: [
+                        {
+                            "$group": {
+                                '_id': {'actual': f'$actual_{target}', 'fitted': f'$fitted_{target}'},
+                                'count': {'$sum': 1}
+                            }
+                        },
+                        {
+                            "$project": {
+                                'actual': '$_id\\.actual',
+                                'fitted': '$_id\\.fitted',
+                                'count': 1,
+                                '_id': 0
+                            }
+                        }
+                    ] for target in self.metadata['targets']
+                }
+            }
+        ]
 
-        results_values = actual_values\
-            .join(fitted_values, on='d3mIndex', how='left', lsuffix='_actual', rsuffix='_fitted')
-        results_values = results_values[[target_name + '_actual', target_name + '_fitted']].dropna()
+        try:
+            status = self.load_results_into_mongo(
+                file_uri,
+                results_collection_name,
+                is_second_try)
 
-        labels = list({*pd.unique(results_values[target_name + '_actual']).tolist(),
-                       *pd.unique(results_values[target_name + '_fitted']).tolist()})
+            if not status['success']:
+                return status
 
-        results = {
-            'confusion_matrix': confusion_matrix(
-                results_values[target_name + '_actual'],
-                results_values[target_name + '_fitted'],
-                labels=labels).tolist(),
-            'labels': labels
-        }
+            response = list(util.run_query(query, method='aggregate'))
 
-        # Send back the data
-        #
-        return OrderedDict({KEY_SUCCESS: True, KEY_DATA: results})
+        finally:
+            EventJobUtil.delete_dataset(
+                settings.TWORAVENS_MONGO_DB_NAME,
+                results_collection_name)
+
+        if not response[0]:
+            return OrderedDict({KEY_SUCCESS: response[0], KEY_DATA: response[1]})
+
+        target_matrices = {}
+
+        for target in self.metadata['targets']:
+            target_matrices[target] = {}
+
+            # populate 2D sparse data structure
+            for cell in response[1][0][target]:
+                # construct row if not exists
+                if not cell['actual'] in target_matrices[target]:
+                    target_matrices[target][cell['actual']] = {}
+
+                target_matrices[target][cell['actual']][cell['fitted']] = cell['count']
+
+            labels = list(target_matrices[target].keys())
+
+            # convert to dense matrix
+            target_matrices[target] = {
+                "data": [
+                    [target_matrices[target][actual].get(fitted, 0) for fitted in labels]
+                    for actual in labels
+                ],
+                "classes": labels
+            }
+
+        return OrderedDict({KEY_SUCCESS: response[0], KEY_DATA: target_matrices})
 
     def attempt_test_output_directory(self, fpath):
         """quick hack for local testing.
         If the TA2 returns a file with file:///output/...,
         then attempt to map it back to the local directory"""
         d3m_config_info = get_latest_d3m_user_config(self.user)
-        if not d3m_config_info.success:
+        if not d3m_config_info['success']:
             err_msg = ('No D3M config found and file'
                        ' not found: %s') % fpath
             return self.format_embed_err(ERR_CODE_FILE_NOT_FOUND,
@@ -252,42 +300,6 @@ class ConfusionUtil(object):
         return self.get_embed_result(new_fpath, is_second_try=True)
 
 
-    def load_and_return_json_file(self, fpath):
-        """Load a JSON file; assumes fpath exists and has undergone prelim checks"""
-        assert isfile(fpath), "fpath must exist; check before using this method"
-
-        try:
-            dataframe = pd.read_json(fpath)
-        # TODO: narrower exception catch
-        except Exception as err:
-            return self.format_embed_err(ERR_CODE_FILE_INVALID_JSON,
-                                         str(err))
-
-        embed_snippet = OrderedDict()
-        embed_snippet[KEY_SUCCESS] = True
-        embed_snippet[KEY_DATA] = dataframe
-
-        return embed_snippet
-
-
-    def load_and_return_csv_file(self, fpath):
-        """Load a JSON file; assumes fpath exists and has undergone prelim checks"""
-        assert isfile(fpath), "fpath must exist; check before using this method"
-
-        try:
-            dataframe = pd.read_csv(fpath)
-        # TODO: narrower exception catch
-        except Exception as err:
-            return self.format_embed_err(ERR_CODE_FILE_INVALID_CSV,
-                                         str(err))
-
-        return OrderedDict({KEY_SUCCESS: True, KEY_DATA: dataframe})
-
-    def format_file_key(self, file_num):
-        """Format the key for an individual file embed"""
-        assert str(file_num).isdigit(), 'The file_num must be digits.'
-        return 'file_%s' % file_num
-
     def format_embed_err(self, err_code, err_msg):
         """Format a dict snippet for JSON embedding"""
         info = OrderedDict()
@@ -310,17 +322,6 @@ class ConfusionUtil(object):
                 " of these types: %s" % \
                 ', '.join(EMBEDDABLE_FILE_TYPES))
 
-
-    def is_json_file_type(self, file_uri):
-        """Check if the file extension is EXT_JSON"""
-        if not file_uri:
-            return False
-
-        file_uri_lcase = file_uri.lower()
-        if file_uri_lcase.endswith(EXT_JSON):
-            return True
-
-        return False
 
     def is_accepted_file_type(self, file_uri):
         """Check if the file extension is in EMBEDDABLE_FILE_TYPES"""
