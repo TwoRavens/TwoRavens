@@ -211,6 +211,9 @@ class ConfusionUtil(object):
                                 'count': 1,
                                 '_id': 0
                             }
+                        },
+                        {
+                            "$sort": {'actual': 1}
                         }
                     ] for target in self.metadata['targets']
                 }

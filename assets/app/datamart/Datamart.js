@@ -195,6 +195,7 @@ export default class Datamart {
 
 
         let {
+            hints,    // keyword hints passed from query schema
             query,    // https://datadrivendiscovery.org/wiki/display/work/Datamart+Query+API
             results,  // list of matched metadata
             indices,  // data to be attached to the upload
@@ -425,39 +426,50 @@ export default class Datamart {
                     preferences.success[preferences.sourceMode])
             ]),
 
-            m('div', {style: {margin: '1em'}}, 'Search using the dataset (without keywords)'), // You may upload a file or extract data from a link.
-
-            m(Button, {
-              disabled: preferences.isSearching[preferences.sourceMode],
-              onclick: async () => {
-                  console.log('Datamart/search by dataset');
-
-                  // preserve state after async is awaited
-                  let sourceMode = preferences.sourceMode;
-                  results[sourceMode].length = 0;
-
-                  // enable spinner
-                  preferences.isSearching[sourceMode] = true;
-                  m.redraw();
-
-                  let response = await m.request(endpoint + 'search-by-dataset', {
-                      method: 'POST',
-                      data: {
-                        source: preferences.sourceMode
-                      }
-                  });
-
-                  if (response.success){
-                    preferences.showDatamartSuccessMsg(preferences.sourceMode, response.message);
-                  }else{
-                    preferences.isSearching[sourceMode] = false;
-
-                    preferences.showDatamartErrorMsg(preferences.sourceMode, response.message);
-                  }                  }
-            }, 'Search by Dataset'),
-
-
             preferences.datamartMode === 'Search' && [
+
+                m('div[style=height:50px]', m('div', {style: {margin: '1em', float: 'left'}}, 'Search using the dataset (without keywords)'), // You may upload a file or extract data from a link.
+
+                    m(Button, {
+                        style: 'float:right;margin:1em',
+                        disabled: preferences.isSearching[preferences.sourceMode],
+                        onclick: async () => {
+                            console.log('Datamart/search by dataset');
+
+                            // preserve state after async is awaited
+                            let sourceMode = preferences.sourceMode;
+                            results[sourceMode].length = 0;
+
+                            // enable spinner
+                            preferences.isSearching[sourceMode] = true;
+                            m.redraw();
+
+                            let response = await m.request(endpoint + 'search-by-dataset', {
+                                method: 'POST',
+                                data: {
+                                    source: preferences.sourceMode
+                                }
+                            });
+
+                            if (response.success){
+                                preferences.showDatamartSuccessMsg(preferences.sourceMode, response.message);
+                            }else{
+                                preferences.isSearching[sourceMode] = false;
+
+                                preferences.showDatamartErrorMsg(preferences.sourceMode, response.message);
+                            }                  }
+                    }, 'Search by Dataset')),
+
+                m('div', {style: {margin: '1em', float: 'left'}}, 'Search using criteria (without dataset)'),
+
+                (hints || []).length > 0 && m(Dropdown, {
+                    id: 'hintsDropdown',
+                    items: hints.map(hint => hint.domain.join(', ')),
+                    onclickChild: child => query.keywords = hints.find(hint => hint.domain.join(', ') === child).keywords || [],
+                    style: {margin: '1em'},
+                    activeItem: 'Hints'
+                }),
+            
                 m(`div[style=background:${common.menuColor}]`, m(JSONSchema, {
                     data: query,
                     schema: datamartQueryInputSchema
@@ -503,7 +515,7 @@ export default class Datamart {
 
                         preferences.handleSearchResults(preferences.sourceMode, response);
                     }
-                }, 'Search'), // Datamart Search Call
+                }, 'Search by Query'), // Datamart Search Call
 
                 preferences.isSearching[preferences.sourceMode] && common.loader('DatamartSearching'),
 

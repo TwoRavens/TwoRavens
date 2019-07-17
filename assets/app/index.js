@@ -40,7 +40,7 @@ import Body_EventData from './eventdata/Body_EventData';
 import Body_Dataset from "./views/Body_Dataset";
 
 import VariableImportance from "./views/VariableImportance";
-import {efdCategoricalData, efdContinuousData, tempProblem} from "./variableImportanceDataSample";
+// import {efdCategoricalData, efdContinuousData, tempProblem} from "./variableImportanceDataSample";
 import {getSelectedProblem} from "./app";
 import {buildDatasetUrl} from "./app";
 import {alertWarn} from "./app";
@@ -912,37 +912,37 @@ else {
     m.route(document.body, '/model', {
         '/dataset': {render: () => m(Body_Dataset, {image: '/static/images/TwoRavens.png'})},
         '/datamart': {render: standaloneDatamart},
-        '/testPlot': {
-            render: () => [
-                // for testing plot redraw speeds
-                m(ButtonRadio, {
-                    sections: [{value: 1}, {value: 2}]
-                }),
-                Object.keys(efdContinuousData).map(predictor => [
-                    m(VariableImportance, {
-                        data: app.melt(efdContinuousData[predictor], [predictor]),
-                        predictor,
-                        target: 'Doubles',
-                        mode: 'EFD',
-                        problem: tempProblem,
-                        yLabel: 'value',
-                        variableLabel: 'variable'
-                    })
-                ]),
-
-                Object.keys(efdCategoricalData).map(predictor => [
-                    m(VariableImportance, {
-                        data: app.melt(efdCategoricalData[predictor], [predictor]),
-                        predictor,
-                        target: 'Hall_of_Fame',
-                        mode: 'EFD',
-                        problem: tempProblem,
-                        yLabel: 'value',
-                        variableLabel: 'variable'
-                    })
-                ])
-            ]
-        },
+        // '/testPlot': {
+        //     render: () => [
+        //         // for testing plot redraw speeds
+        //         m(ButtonRadio, {
+        //             sections: [{value: 1}, {value: 2}]
+        //         }),
+        //         Object.keys(efdContinuousData).map(predictor => [
+        //             m(VariableImportance, {
+        //                 data: app.melt(efdContinuousData[predictor], [predictor]),
+        //                 predictor,
+        //                 target: 'Doubles',
+        //                 mode: 'EFD',
+        //                 problem: tempProblem,
+        //                 yLabel: 'value',
+        //                 variableLabel: 'variable'
+        //             })
+        //         ]),
+        //
+        //         Object.keys(efdCategoricalData).map(predictor => [
+        //             m(VariableImportance, {
+        //                 data: app.melt(efdCategoricalData[predictor], [predictor]),
+        //                 predictor,
+        //                 target: 'Hall_of_Fame',
+        //                 mode: 'EFD',
+        //                 problem: tempProblem,
+        //                 yLabel: 'value',
+        //                 variableLabel: 'variable'
+        //             })
+        //         ])
+        //     ]
+        // },
         '/explore/:variate/:vars...': Body,
         '/data': {render: () => m(Peek, {id: app.peekId, image: '/static/images/TwoRavens.png'})},
         '/:mode': Body
