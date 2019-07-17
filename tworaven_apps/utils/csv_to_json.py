@@ -28,7 +28,7 @@ def convert_csv_file_to_json(csv_fname, to_string=True, index_column=None, indic
         reader = csv.DictReader(f)
         # only return records that match indices.
         if indices:
-            rows = [i for i in reader if i[index_column] in indices]
+            rows = [i for i in reader if i.get(index_column, list(i.values()[0])) in indices]
         else:
             rows = list(reader)
 
