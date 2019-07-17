@@ -28,8 +28,8 @@ RUN apt-get update && \
 # -------------------------------------
 # Install Tex
 # -------------------------------------
-RUN apt-get -y install pandoc texlive-full
-RUN tlmgr init-usertree
+RUN apt-get -y install pandoc texlive-full && \
+  tlmgr init-usertree
 
 # -------------------------------------
 # Install R packages for TwoRavens

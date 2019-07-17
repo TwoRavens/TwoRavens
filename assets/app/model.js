@@ -442,14 +442,14 @@ export let leftpanel = forceData => {
                     /*
                      * User note for selecting "Discovered" problems
                      */
-                  /*  (partition === 'auto') && m('div', {
-                          }, [
-                                m('p', {
-                                  style: {'xpadding-left': '3%'}
-                                },
-                                  'Click on a Discovered problem below to make it the "Current Problem."', m('br'), boldPlain('Note: '), 'the new "Current Problem" will have the same "Target" and "Predictors" but a different "Name" then the one you click on.')
-                              ]
-                    ),*/
+                     (partition === 'auto') && m('div', {},
+                        [
+                          m('p', {
+                            style: {'padding-left': '3%'}
+                          },
+                            'Click on a Discovered problem below to make it the "Current Problem."', m('br'), boldPlain('Note: '), 'the new "Current Problem" will have the same "Target" and "Predictors" but a different "Name" then the one you click on.')
+                        ]
+                      ),
                     /*
                      * Problems table
                      */

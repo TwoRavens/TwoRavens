@@ -33,6 +33,7 @@ class D3MConfigurationAdmin(admin.ModelAdmin):
                     'modified',
                     'created',)
     readonly_fields = ('slug', 'modified', 'created',
-                       'are_paths_valid',
-                       'get_bad_paths_for_admin')
+                       'are_paths_valid',)
+                       #'get_bad_paths_for_admin')
 admin.site.register(D3MConfiguration, D3MConfigurationAdmin)
+#admin.site.register(D3MConfiguration)

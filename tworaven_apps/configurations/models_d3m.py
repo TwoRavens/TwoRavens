@@ -19,6 +19,7 @@ from tworaven_apps.utils.url_helper import add_trailing_slash,\
 
 from tworaven_apps.configurations.util_path_check import are_d3m_paths_valid,\
     get_bad_paths, get_bad_paths_for_admin
+from tworaven_apps.configurations import static_vals as cstatic
 from tworaven_apps.configurations.static_vals import \
     (KEY_D3MINPUTDIR, KEY_D3M_DIR_ADDITIONAL_INPUTS)
 KEY_DATASET_SCHEMA = 'dataset_schema'
@@ -36,8 +37,7 @@ KEY_RAM = 'ram'
 
 D3M_FILE_ATTRIBUTES = [KEY_DATASET_SCHEMA, KEY_PROBLEM_SCHEMA]
 
-D3M_DIR_USER_PROBLEMS_ROOT = 'user_problems_root'
-D3M_DIR_TEMP_STORAGE_ROOT = 'temp_storage_root'
+D3M_DIR_USER_PROBLEMS_ROOT = 'problems'
 
 # /output - for testing only
 OPTIONAL_DIR_OUTPUT_ROOT = 'root_output_directory'
@@ -45,7 +45,7 @@ OPTIONAL_DIR_OUTPUT_ROOT = 'root_output_directory'
 
 D3M_DIR_ATTRIBUTES = ['training_data_root', KEY_PROBLEM_ROOT,
                       'pipeline_logs_root', 'executables_root',
-                      D3M_DIR_TEMP_STORAGE_ROOT, D3M_DIR_USER_PROBLEMS_ROOT]
+                      cstatic.KEY_D3M_USER_PROBLEMS_ROOT]
 D3M_VALUE_ATTRIBUTES = [KEY_TIMEOUT, KEY_CPUS, KEY_RAM]
 D3M_REQUIRED = D3M_FILE_ATTRIBUTES + ['training_data_root', KEY_PROBLEM_ROOT]
 
@@ -75,7 +75,6 @@ class D3MConfiguration(TimeStampedModel):
     "training_data_root": "/baseball/data",
     "pipeline_logs_root": "/outputs/logs",
     "executables_root": "/outputs/executables",
-    "temp_storage_root": "/temp"
     }
     """
     name = models.CharField('Dataset Id',
@@ -153,11 +152,6 @@ class D3MConfiguration(TimeStampedModel):
                                ' for the part of TA(3+2) that involves'
                                ' generating additional problems.'))
 
-    temp_storage_root = models.TextField(\
-                        blank=True,
-                        help_text=('Temporary storage root for performers'
-                                   ' to use.'))
-
     additional_inputs = models.TextField(\
                         blank=True,
                         help_text=('Additional inputs directory'))
@@ -222,7 +216,7 @@ class D3MConfiguration(TimeStampedModel):
         """Return json string"""
         return json.dumps(self.to_dict(), indent=indent)
 
-    def to_ta2_config_test(self, mnt_volume='/ravens_volume', save_shortened_names=False):
+    def xto_ta2_config_test(self, mnt_volume='/ravens_volume', save_shortened_names=False):
         """Return a dict in TA2 format to use with mounted volume"""
         od = OrderedDict()
         d3m_attributes = D3M_FILE_ATTRIBUTES + \
@@ -252,7 +246,6 @@ class D3MConfiguration(TimeStampedModel):
                  'pipeline_logs_root', 'executables_root',
                  'user_problems_root',
                  'additional_inputs',
-                 'temp_storage_root',
                  OPTIONAL_DIR_OUTPUT_ROOT,
                  'timeout', 'cpus', 'ram', 'env_values']
         date_attrs = ['created', 'modified']

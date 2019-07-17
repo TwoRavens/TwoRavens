@@ -67,11 +67,7 @@ def view_save_problem_form(request):
 
 @csrf_exempt
 def view_store_basic_problem(request):
-    """Initial step, store a file to the /output directory
-
-    (1) Try: "output/problems" + ....
-    (2) Try: config.temp_storage_root  + "problems" + .....
-    """
+    """Initial step, store a file to the /output/problems directory"""
     user_workspace_info = get_latest_user_workspace(request)
     if not user_workspace_info.success:
         return JsonResponse(get_json_error(user_workspace_info.err_msg))

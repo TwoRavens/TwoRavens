@@ -95,18 +95,7 @@ class BasicProblemWriter(BasicErrCheck):
                 self.write_new_file(fullpath, output_dir2)
                 return
             attempted_dirs.append(output_dir2)
-
-
-        # (3) Try the "temp_storage_root" directory
-        #
-        if d3m_config.temp_storage_root:
-            temp_storage_root = join(d3m_config.temp_storage_root, 'problems')
-            success, output_dir3 = self.make_directory(temp_storage_root)
-            if success:
-                fullpath = join(output_dir3, self.filename)
-                self.write_new_file(fullpath, output_dir3)
-                return
-            attempted_dirs.append(output_dir3)
+        
 
         self.add_error_message(('Failed to save file!'
                                 ' Tried these directories:') %
