@@ -739,6 +739,31 @@ export let d3mMetrics = {
     loss: "LOSS",
 };
 
+
+export let d3mMetricDomains = {
+    accuracy: [0, 1],
+    precision: [0, 1],
+    recall: [0, 1],
+    f1: [0, 1],
+    f1Micro: [0, 1],
+    f1Macro: [0, 1],
+    rocAuc: [0, 1],
+    rocAucMicro: [0, 1],
+    rocAucMacro: [0, 1],
+    meanSquaredError: undefined,
+    rootMeanSquaredError: undefined,
+    meanAbsoluteError: undefined,
+    rSquared: [0, 1],
+    normalizedMutualInformation: [0, 1],
+    jaccardSimilarityScore: [0, 1],
+    precisionAtTopK: [0, 1],
+    objectDetectionAveragePrecision: [0, 1],
+    hammingLoss: undefined,
+    rank: undefined,
+    loss: undefined,
+};
+
+
 export let d3mMetricsInverted = Object.keys(d3mMetrics)
     .reduce((out, key) => Object.assign(out, {[d3mMetrics[key]]: key}), {});
 
