@@ -24,20 +24,19 @@ export let getSolutionAdapter = (problem, solution) => ({
         // lazy data loading
         loadFittedValues(problem, solution);
 
-        let problemData = resultsData.actuals;
-        let solutionData = resultsData.fitted[solution.pipelineId];
-
-        if (!problemData || !solutionData) return;
+        if (!resultsData.actuals) return;
+        if (!resultsData.fitted[solution.pipelineId]) return;
 
         // cached data is current, return it
-        let samples = problemData.map(point => point.d3mIndex);
-        return samples.map(sample => solutionData[sample])
+        return resultsData.actuals.map(point => point.d3mIndex)
+            .map(sample => resultsData.fitted[solution.pipelineId][sample][target])
     },
     getConfusionMatrix: target => {
         loadConfusionData(problem, solution);
-        return resultsData.confusion[solution.pipelineId];
+        if (solution.pipelineId in resultsData.confusion)
+            return resultsData.confusion[solution.pipelineId][target];
     },
-    getScore: (metric, target) => {
+    getScore: metric => {
         if (!solution.scores) return;
         let evaluation = solution.scores.find(score => app.d3mMetricsInverted[score.metric.metric] === metric);
         return evaluation && evaluation.value.raw.double
@@ -52,7 +51,9 @@ export let getSolutionAdapter = (problem, solution) => ({
         : '',
     getImportanceEFD: predictor => {
         loadImportanceEFDData(problem, solution);
-        return resultsData.importanceEFD[predictor];
+
+        if (resultsData.importanceEFD)
+            return resultsData.importanceEFD[predictor];
     },
     getImportancePartials: predictor => {
         loadImportancePartialsFittedData(problem, solution);
@@ -83,7 +84,7 @@ export let resultsData = {
     confusionLoading: {},
 
     // cached data is specific to the solution (tends to be larger)
-    importanceEFD: {},
+    importanceEFD: undefined,
     importanceEFDLoading: false,
 
     // this has melted data for both actual and fitted values
@@ -126,7 +127,7 @@ export let loadProblemData = async problem => {
     resultsData.confusionLoading = {};
 
     // solution specific, one solution stored
-    resultsData.importanceEFD = {};
+    resultsData.importanceEFD = undefined;
     resultsData.importanceEFDLoading = false;
 
     // solution specific, all solution stored
@@ -136,6 +137,19 @@ export let loadProblemData = async problem => {
     // problem specific, one problem scored
     resultsData.importancePartialsActual = undefined;
     resultsData.importancePartialsActualLoading = false;
+};
+
+export let loadSolutionData = async (problem, solution) => {
+    await loadProblemData(problem);
+
+    if (resultsData.id.solutionID === solution.pipelineId)
+        return;
+
+    resultsData.id.solutionID = solution.pipelineId;
+
+    // solution specific, one solution stored
+    resultsData.importanceEFD = undefined;
+    resultsData.importanceEFDLoading = false;
 };
 
 export let loadActualValues = async problem => {
@@ -190,7 +204,7 @@ export let loadActualValues = async problem => {
 
 export let loadFittedValues = async (problem, solution) => {
     // load dependencies, which can clear loading state if problem, etc. changed
-    await loadActualValues(problem);
+    await loadSolutionData(problem, solution);
 
     // don't attempt to load if there is no data
     if (!solution.data_pointer) return;
@@ -232,13 +246,12 @@ export let loadFittedValues = async (problem, solution) => {
         return;
 
     // don't accept if query changed
-    if (JSON.stringify(resultsQuery) !== tempQuery)
+    if (JSON.stringify(resultsData.id.query) !== tempQuery)
         return;
 
-    // TODO: this is only index zero if there is one target
-    // TODO: multilabel problems will have d3mIndex collisions
     resultsData.fitted[solution.pipelineId] = response.data
-        .reduce((out, point) => Object.assign(out, {[point['']]: isNaN(parseFloat(point['0'])) ? point['0'] : parseFloat(point['0'])}), {});
+        .reduce((out, point) => Object.assign(out, {[point['d3mIndex'] || point['']]: problem.targets
+                .reduce((out, target) => Object.assign(out, {[target]: parseNumeric(point[target])}), {})}), {});
     resultsData.fittedLoading[solution.pipelineId] = false;
     m.redraw();
 };
@@ -281,7 +294,7 @@ export let loadImportancePartialsActualData = async problem => {
         return;
 
     // don't accept if query changed
-    if (JSON.stringify(resultsQuery) !== tempQuery)
+    if (JSON.stringify(resultsData.id.query) !== tempQuery)
         return;
 
     // convert to structure:
@@ -342,8 +355,6 @@ export let loadImportancePartialsFittedData = async (problem, solution) => {
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
 
-    let parseNumeric = value => isNaN(parseFloat(value)) ? value : parseFloat(value);
-
     // convert unlabeled string table to predictor format
     let offset = 0;
     resultsData.importancePartialsFitted[solution.pipelineId] = Object.keys(resultsData.importancePartialsActual).reduce((out, predictor) => {
@@ -351,8 +362,8 @@ export let loadImportancePartialsFittedData = async (problem, solution) => {
         // for each point along the domain of the predictor
         out[predictor] = response.data.slice(offset, nextOffset)
             // for each target specified in the problem
-            // .map(point => problem.targets.reduce((out, target, i) =>
-            //     Object.assign(out, {[target]: parseNumeric(point[i])}), {}))
+            .map(point => problem.targets.reduce((out, target, i) =>
+                Object.assign(out, {[target]: parseNumeric(point[i])}), {}))
             // for only the first target specified in the problem
             .map(point => ({[problem.targets[0]]: parseNumeric(point['0'])}));
         offset = nextOffset;
@@ -363,11 +374,9 @@ export let loadImportancePartialsFittedData = async (problem, solution) => {
     m.redraw();
 };
 
-
-
 export let loadConfusionData = async (problem, solution) => {
     // load dependencies, which can clear loading state if problem, etc. changed
-    await loadProblemData(problem);
+    await loadSolutionData(problem, solution);
 
     // don't load if data is not available
     if (!solution.data_pointer)
@@ -389,11 +398,11 @@ export let loadConfusionData = async (problem, solution) => {
     resultsData.confusionLoading[solution.pipelineId] = true;
 
     // how to construct actual values after manipulation
-    let compiled = JSON.stringify(queryMongo.buildPipeline([
+    let compiled = queryMongo.buildPipeline([
         ...app.workspace.raven_config.hardManipulations,
         ...problem.manipulations,
         ...resultsQuery
-    ], app.workspace.raven_config.variablesInitial)['pipeline']);
+    ], app.workspace.raven_config.variablesInitial)['pipeline'];
 
     let tempQuery = JSON.stringify(resultsData.id.query);
     let response;
@@ -405,7 +414,9 @@ export let loadConfusionData = async (problem, solution) => {
                 metadata: {
                     targets: problem.targets,
                     collectionName: app.workspace.d3m_config.name,
-                    manipulations: compiled
+                    collectionPath: app.workspace.datasetUrl,
+                    query: compiled,
+                    solutionId: solution.pipelineId
                 }
             }
         });
@@ -431,10 +442,7 @@ export let loadConfusionData = async (problem, solution) => {
 
     // TODO: this is only index zero if there is one target
     // TODO: multilabel problems will have d3mIndex collisions
-    resultsData.confusion[solution.pipelineId] = {
-        data: response.data.confusion_matrix,
-        classes: response.data.labels
-    };
+    resultsData.confusion[solution.pipelineId] = response.data;
     resultsData.confusionLoading[solution.pipelineId] = false;
 
     // apply state changes to the page
@@ -442,9 +450,9 @@ export let loadConfusionData = async (problem, solution) => {
 };
 
 // importance from empirical first differences
-export let loadImportanceEFDData = async (problem, solution, predictor) => {
+export let loadImportanceEFDData = async (problem, solution) => {
     // load dependencies, which can clear loading state if problem, etc. changed
-    await loadProblemData(problem);
+    await loadSolutionData(problem, solution);
 
     // don't load if data is not available
     if (!solution.data_pointer)
@@ -455,7 +463,7 @@ export let loadImportanceEFDData = async (problem, solution, predictor) => {
         return;
 
     // don't load if already loaded
-    if (resultsData.importanceEFD[predictor])
+    if (resultsData.importanceEFD)
         return;
 
     // begin blocking additional requests to load
@@ -486,6 +494,7 @@ export let loadImportanceEFDData = async (problem, solution, predictor) => {
                     targets: problem.targets,
                     predictors: problem.predictors,
                     collectionName: app.workspace.d3m_config.name,
+                    collectionPath: app.workspace.datasetUrl,
                     query: compiled
                 }
             }
@@ -511,7 +520,7 @@ export let loadImportanceEFDData = async (problem, solution, predictor) => {
 
     // melt predictor data once, opposed to on every redraw
     Object.keys(response.data)
-        .map(predictor => response.data[predictor] = app.melt(
+        .forEach(predictor => response.data[predictor] = app.melt(
             response.data[predictor], [predictor], results.valueLabel, results.variableLabel));
 
     resultsData.importanceEFD = response.data;
@@ -524,18 +533,24 @@ export let loadImportanceEFDData = async (problem, solution, predictor) => {
 // no new pipelines will be found under searchId
 // pipelines under searchId are also wiped/no longer accessible
 export let endSearch = async searchId => app.makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId})
-    .then(response => {
-        console.warn("#debug response endSearch");
-        console.log(response);
-    });
+    .then(handleCompletedSearch(searchId));
 
 // no new pipelines will be found under searchId
 // discovered pipelines will remain accessible for produce calls
 export let stopSearch = async searchId => app.makeRequest(D3M_SVC_URL + '/StopSearchSolutions', {searchId})
-    .then(response => {
-        console.warn("#debug response stopSearch");
-        console.log(response);
-    });
+    .then(handleCompletedSearch(searchId));
+
+let handleCompletedSearch = searchId => response => {
+    if (!response.success) {
+        console.warn(response.message);
+        return;
+    }
+    let solvedProblem = Object.values(app.workspace.problems)
+        .find(problem => String(problem.d3mSearchId) === String(searchId));
+    if (!solvedProblem) return;
+
+    delete solvedProblem.d3mSolverState;
+};
 
 export let endAllSearches = async () => Object.keys(app.workspace.raven_config.problems)
     .map(problemId => app.workspace.raven_config.problems[problemId].d3mSearchId)
@@ -877,7 +892,7 @@ export function GRPC_ProblemDescription(problem) {
 
     let GRPC_ProblemInput = [
         {
-            datasetId: app.workspace.d3m_config.name,
+            datasetId: app.workspace.datasetDoc.about.datasetID,
             targets: problem.targets.map(target => ({
                 resourceId: app.workspace.raven_config.resourceId,
                 columnIndex: Object.keys(app.variableSummaries).indexOf(target),  // Adjusted to match dataset doc
@@ -1167,20 +1182,20 @@ export async function handleGetProduceSolutionResultsResponse(response, type) {
         return;
     }
 
-    if (type === 'fittedValues'){
-        solvedProblem.solutions.d3m[response.pipelineId].data_pointer = Object.values(response.response.exposedOutputs)[0].csvUri
+    let pointer = Object.values(response.response.exposedOutputs)[0].csvUri.replace('file://', '');
+
+    if (type === 'fittedValues') {
+        solvedProblem.solutions.d3m[response.pipelineId].data_pointer = pointer;
+        console.warn("#debug produce results pointer");
+        console.log(pointer);
     }
-    else if (type === 'partialsValues'){
-        solvedProblem.solutions.d3m[response.pipelineId].data_pointer_partials = Object.values(response.response.exposedOutputs)[0].csvUri    
-    }
+    else if (type === 'partialsValues')
+        solvedProblem.solutions.d3m[response.pipelineId].data_pointer_partials = pointer;
 
     m.redraw();
 }
 
-export async function handleENDGetSearchSolutionsResults() {
-
-    // stop spinner
-    app.buttonLadda.btnEstimate = false;
+export async function handleENDGetSearchSolutionsResults(response) {
     // change status of buttons for estimating problem and marking problem as finished
     app.buttonClasses.btnEstimate = 'btn-secondary';
 
@@ -1263,3 +1278,5 @@ export async function exportSolution(solutionId) {
 
     return response;
 }
+
+let parseNumeric = value => isNaN(parseFloat(value)) ? value : parseFloat(value);

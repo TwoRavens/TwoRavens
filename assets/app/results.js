@@ -32,7 +32,13 @@ export let leftpanel = () => {
 
     let resultsContent = [
         m('div', {style: {display: 'inline-block', margin: '1em'}},
-            m('h4', `${ravenConfig.resultsProblem} (${resultsProblem.targets.join(', ')})`),
+            m('h4', `${ravenConfig.resultsProblem} for `, m('div[style=display:inline-block]', m(Dropdown, {
+                id: 'targetDropdown',
+                items: resultsProblem.targets,
+                activeItem: resultsPreferences.target,
+                onclickChild: value => resultsPreferences.target = value,
+                style: {'margin-left': '1em'}
+            }))),
             // m(Dropdown, {
             //     id: 'pipelineDropdown',
             //     items: Object.keys(ravenConfig.problems).filter(key =>
@@ -120,6 +126,7 @@ export let leftpanel = () => {
 
     let tabbedResults = m(MenuTabbed, {
         id: 'resultsMenu',
+        attrsAll: {style: {height: 'calc(100% - 8px)'}},
         currentTab: leftTabResults,
         callback: setLeftTabResults,
         sections: [
@@ -174,17 +181,15 @@ export class CanvasSolutions {
 
     predictionSummary(problem, adapters) {
 
-        let setConfusionFactor = factor => this.confusionFactor = factor === 'undefined' ? undefined : factor;
-        let summaries = adapters.map(adapter => ({
-            name: adapter.getName(),
-            fittedValues: adapter.getFittedValues(problem.targets[0]),
-            actualValues: adapter.getActualValues(problem.targets[0]),
-            confusionMatrix: adapter.getConfusionMatrix(problem.targets[0])
-        })).filter(summary => summary.fittedValues || summary.actualValues);
+        if (problem.task.includes('regression')) {
+            let summaries = adapters.map(adapter => ({
+                name: adapter.getName(),
+                fittedValues: adapter.getFittedValues(resultsPreferences.target),
+                actualValues: adapter.getActualValues(resultsPreferences.target)
+            })).filter(summary => summary.fittedValues && summary.actualValues);
 
-        if (summaries.length === 0) return common.loader('PredictionSummary');
+            if (summaries.length === 0) return common.loader('PredictionSummary');
 
-        if (problem.task === 'regression') {
             let xData = summaries.reduce((out, summary) =>
                 Object.assign(out, {[summary.name]: summary.fittedValues}), {});
             let yData = summaries.reduce((out, summary) =>
@@ -202,7 +207,16 @@ export class CanvasSolutions {
             }))
         }
 
-        if (problem.task === 'classification') {
+        if (problem.task.includes('classification')) {
+
+            let summaries = adapters.map(adapter => ({
+                name: adapter.getName(),
+                confusionMatrix: adapter.getConfusionMatrix(resultsPreferences.target)
+            })).filter(summary => summary.confusionMatrix);
+
+            if (summaries.length === 0) return common.loader('PredictionSummary');
+
+            let setConfusionFactor = factor => this.confusionFactor = factor === 'undefined' ? undefined : factor;
 
             // ignore summaries without confusion matrices
             summaries = summaries.filter(summary => summary.confusionMatrix);
@@ -258,7 +272,7 @@ export class CanvasSolutions {
                                 data: generatePerformanceData(summary.confusionMatrix.data),
                                 attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
                             }),
-                            summary.confusionMatrix.data.length < 100 ? m('div', {
+                            summary.confusionMatrix.data.length < 100 ? summary.confusionMatrix.classes.length > 0 ? m('div', {
                                 style: {'min-height': '500px', 'min-width': '500px'}
                             }, m(ConfusionMatrix, Object.assign({}, summary.confusionMatrix, {
                                 id: 'resultsConfusionMatrixContainer' + summary.name,
@@ -266,7 +280,9 @@ export class CanvasSolutions {
                                 startColor: '#ffffff', endColor: '#e67e22',
                                 margin: {left: 10, right: 10, top: 50, bottom: 10},
                                 attrsAll: {style: {height: '600px'}}
-                            }))) : 'Too many classes for confusion matrix!'
+                            })))
+                                : 'Too few classes for confusion matrix! There is a data mismatch.'
+                                : 'Too many classes for confusion matrix!'
                         ]
                     }))
                 })
@@ -276,36 +292,30 @@ export class CanvasSolutions {
 
     variableImportance(problem, adapter) {
 
-        // ensure valid state of selected predictor, target
-        if (!problem.predictors.includes(importancePreferences.predictor))
-            importancePreferences.predictor = problem.predictors[0];
-        if (!problem.targets.includes(importancePreferences.target))
-            importancePreferences.target = problem.targets[0];
-
         let importanceContent = common.loader('VariableImportance');
 
-        if (importancePreferences.mode === 'PDP') {
+        if (resultsPreferences.mode === 'PDP') {
             importanceContent = [
                 m('label', 'Importance for predictor:'),
                 m(Dropdown, {
                     id: 'predictorImportanceDropdown',
                     items: problem.predictors,
-                    onclickChild: mode => importancePreferences.predictor = mode,
-                    activeItem: importancePreferences.predictor,
+                    onclickChild: mode => resultsPreferences.predictor = mode,
+                    activeItem: resultsPreferences.predictor,
                 })
             ];
 
             let importanceData = ({
                 EFD: adapter.getImportanceEFD,
                 Partials: adapter.getImportancePartials
-            })[importancePreferences.mode](importancePreferences.predictor);
+            })[resultsPreferences.mode](resultsPreferences.predictor);
 
             if (importanceData) importanceContent.push(m(VariableImportance, {
-                mode: importancePreferences.mode,
+                mode: resultsPreferences.mode,
                 data: importanceData,
                 problem: problem,
-                predictor: importancePreferences.predictor,
-                target: importancePreferences.target,
+                predictor: resultsPreferences.predictor,
+                target: resultsPreferences.target,
                 yLabel: valueLabel,
                 variableLabel: variableLabel
             }));
@@ -315,17 +325,17 @@ export class CanvasSolutions {
             let importanceData = problem.predictors.reduce((out, predictor) => Object.assign(out, {[predictor]: ({
                 EFD: adapter.getImportanceEFD,
                 Partials: adapter.getImportancePartials
-            })[importancePreferences.mode](predictor)}), {});
+            })[resultsPreferences.mode](predictor)}), {});
 
             // reassign content if some data is not undefined
             let importancePlots = Object.keys(importanceData).map(predictor => importanceData[predictor] && [
                 predictor,
                 m(VariableImportance, {
-                    mode: importancePreferences.mode,
+                    mode: resultsPreferences.mode,
                     data: importanceData[predictor],
                     problem: problem,
                     predictor,
-                    target: importancePreferences.target,
+                    target: resultsPreferences.target,
                     yLabel: valueLabel,
                     variableLabel: variableLabel
                 })
@@ -337,8 +347,8 @@ export class CanvasSolutions {
             m('label', 'Variable importance mode:'),
             m(ButtonRadio, {
                 id: 'modeImportanceButtonBar',
-                onclick: mode => importancePreferences.mode = mode,
-                activeSection: importancePreferences.mode,
+                onclick: mode => resultsPreferences.mode = mode,
+                activeSection: resultsPreferences.mode,
                 sections: [
                     {value: 'EFD', title: 'empirical first differences'},
                     {value: 'Partials', title: 'model prediction as predictor varies over its domain'}
@@ -431,6 +441,12 @@ export class CanvasSolutions {
     view(vnode) {
         let {problem} = vnode.attrs;
         if (!problem) return;
+
+        // ensure valid state of selected predictor, target
+        if (!problem.predictors.includes(resultsPreferences.predictor))
+            resultsPreferences.predictor = problem.predictors[0];
+        if (!problem.targets.includes(resultsPreferences.target))
+            resultsPreferences.target = problem.targets[0];
 
         let problemSummary = m(Subpanel, {
             style: {margin: '0px 1em'},
@@ -655,14 +671,14 @@ let getSolutionAdapter = (problem, solution) => ({
 let leftTabResults = 'Solutions';
 let setLeftTabResults = tab => leftTabResults = tab;
 
-let importancePreferences = {
+let resultsPreferences = {
     mode: 'EFD',
     predictor: undefined,
     target: undefined
 };
 
 // labels for variable importance X/Y axes
-export let valueLabel = "Observations";
+export let valueLabel = "Observation";
 export let variableLabel = "Dependent Variable";
 
 export let selectedMetric = {

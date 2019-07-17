@@ -582,7 +582,7 @@ streamSocket.onmessage = function (e) {
     }
     else if (msg_data.msg_type === 'ENDGetSearchSolutionsResults') {
         debugLog(msg_data.msg_type + ' recognized!');
-        solverD3M.handleENDGetSearchSolutionsResults();
+        solverD3M.handleENDGetSearchSolutionsResults(msg_data.data);
     }
     else if (msg_data.msg_type === 'DATAMART_MATERIALIZE_PROCESS') {
         debugLog(msg_data.msg_type + ' recognized!');

@@ -7,7 +7,7 @@ import csv
 import json
 
 
-def convert_csv_file_to_json(csv_fname, to_string=True):
+def convert_csv_file_to_json(csv_fname, to_string=True, index_column=None, indices=None):
     """
     Convert a CSV file to a JSON string
 
@@ -24,10 +24,13 @@ def convert_csv_file_to_json(csv_fname, to_string=True):
 
     # Read the CSV file into python dicts
     #
-    rows = None
     with open(csv_fname) as f:
         reader = csv.DictReader(f)
-        rows = list(reader)
+        # only return records that match indices.
+        if indices:
+            rows = [i for i in reader if i[index_column] in indices]
+        else:
+            rows = list(reader)
 
     # Failed to read csv into rows
     #

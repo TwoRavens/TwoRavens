@@ -17,9 +17,8 @@ Output:
 
 
 """
-from os.path import getsize, join, isfile
+from os.path import join, isfile
 from collections import OrderedDict
-import pandas as pd
 
 from django.conf import settings
 
@@ -93,7 +92,7 @@ class ImportanceEFDUtil(object):
 
         return self.final_results
 
-    def load_results_into_mongo(self, file_uri, collection_name, target_names, is_second_try=False):
+    def load_results_into_mongo(self, file_uri, collection_name, is_second_try=False):
 
         if not file_uri:
             err_code = ERR_CODE_FILE_URI_NOT_SET
@@ -140,8 +139,7 @@ class ImportanceEFDUtil(object):
             settings.TWORAVENS_MONGO_DB_NAME,
             collection_name,
             datafile=fpath,
-            reload=True,
-            column_names=['d3mIndex', *target_names])
+            reload=True)
 
         return OrderedDict({KEY_SUCCESS: True})
 
@@ -150,8 +148,12 @@ class ImportanceEFDUtil(object):
         that includes statistical summaries.
         """
 
-        # align joining column and avoid target collision in join
-        fitted_target_names = ['fitted_' + name for name in self.metadata['targets']]
+        # make sure the base dataset is loaded
+        EventJobUtil.import_dataset(
+            settings.TWORAVENS_MONGO_DB_NAME,
+            self.metadata['collectionName'],
+            datafile=self.metadata['collectionPath'])
+
         results_collection_name = self.metadata['collectionName'] + \
                                   '_solution_' + str(self.metadata['solutionId'])
 
@@ -182,17 +184,19 @@ class ImportanceEFDUtil(object):
 
         def branch_target(variable, levels):
             if is_categorical(variable, levels):
-                return {f'{variable}-{level}': {
-                    "$sum": {"$cond": [{"$eq": [f"${variable}", level]}, 1, 0]}
-                } for level in self.metadata['levels'][variable]}
+                return {
+                    f'{variable}-{level}': {
+                        "$avg": {"$cond": [{"$eq": [f"${variable}", level]}, 1, 0]}
+                    } for level in self.metadata['levels'][variable]}
             return {variable: {"$avg": f'${variable}'}}
 
         def aggregate_targets(variables, levels):
             return {k: v for d in [
-                branch_target(target, levels) for target in variables
+                *[branch_target('fitted_' + target, levels) for target in variables],
+                *[branch_target('actual_' + target, levels) for target in variables]
             ] for k, v in d.items()}
 
-        target_aggregator = aggregate_targets([*fitted_target_names, *self.metadata['targets']], self.metadata['levels'])
+        target_aggregator = aggregate_targets(self.metadata['targets'], self.metadata['levels'])
 
         query = [
             *self.metadata['query'],
@@ -210,11 +214,14 @@ class ImportanceEFDUtil(object):
             {
                 "$project": {
                     **{
-                        name: f"$results_collection\\.{name}" for name in fitted_target_names
+                        'fitted_' + name: f"$results_collection\\.{name}" for name in self.metadata['targets']
                     },
                     **{
-                        name: 1 for name in [*self.metadata['targets'], *self.metadata['predictors']]
+                        'actual_' + name: f"${name}" for name in self.metadata['targets']
                     },
+                    **{
+                        predictor: 1 for predictor in self.metadata['predictors']
+                      },
                     **{"_id": 0}}
             },
             {
@@ -259,7 +266,6 @@ class ImportanceEFDUtil(object):
             status = self.load_results_into_mongo(
                 file_uri,
                 results_collection_name,
-                fitted_target_names,
                 is_second_try)
 
             if not status['success']:
@@ -313,49 +319,6 @@ class ImportanceEFDUtil(object):
         new_fpath = join(d3m_config.root_output_directory, new_fpath)
 
         return self.get_embed_result(new_fpath, is_second_try=True)
-
-
-    def load_and_return_json_file(self, fpath):
-        """Load a JSON file; assumes fpath exists and has undergone prelim checks"""
-        assert isfile(fpath), "fpath must exist; check before using this method"
-
-        try:
-            dataframe = pd.read_json(fpath)
-        # TODO: narrower exception catch
-        except Exception as err:
-            return self.format_embed_err(ERR_CODE_FILE_INVALID_JSON,
-                                         str(err))
-
-        embed_snippet = OrderedDict()
-        embed_snippet[KEY_SUCCESS] = True
-        embed_snippet[KEY_DATA] = dataframe
-
-        return embed_snippet
-
-
-    def load_and_return_csv_file(self, fpath):
-        """Load a JSON file; assumes fpath exists and has undergone prelim checks"""
-        assert isfile(fpath), "fpath must exist; check before using this method"
-
-        try:
-            dataframe = pd.read_csv(fpath)
-        # TODO: narrower exception catch
-        except Exception as err:
-            return self.format_embed_err(ERR_CODE_FILE_INVALID_CSV,
-                                         str(err))
-
-        embed_snippet = OrderedDict()
-        embed_snippet[KEY_SUCCESS] = True
-        embed_snippet[KEY_DATA] = dataframe
-
-        return embed_snippet
-
-
-
-    def format_file_key(self, file_num):
-        """Format the key for an individual file embed"""
-        assert str(file_num).isdigit(), 'The file_num must be digits.'
-        return 'file_%s' % file_num
 
     def format_embed_err(self, err_code, err_msg):
         """Format a dict snippet for JSON embedding"""

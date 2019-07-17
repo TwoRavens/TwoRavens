@@ -38,6 +38,7 @@ class ProduceSolutionHelper(BasicErrCheck):
 
     def __init__(self, pipeline_id, websocket_id, user_id, produce_params, **kwargs):
         """initial params"""
+        print('initializing', pipeline_id)
         self.pipeline_id = pipeline_id
         self.websocket_id = websocket_id
         self.user_id = user_id

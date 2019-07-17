@@ -488,7 +488,7 @@ class EventJobUtil(object):
 
 
     @staticmethod
-    def import_dataset(database, collection, datafile, reload=False, column_names=None):
+    def import_dataset(database, collection, datafile, reload=False, column_names=None, indexes=None):
         """Key method to load a Datafile (csv) into Mongo as a new collection"""
         retrieve_util = MongoRetrieveUtil(database, collection)
         db_info = retrieve_util.get_mongo_db(database)
@@ -518,10 +518,16 @@ class EventJobUtil(object):
 
             # use duplicate column name removal headers instead
             columns = [encode_variable(value) for value in column_names or dcr.updated_columns]
+            print(columns)
             for observation in csv_reader:
                 db[settings.MONGO_COLLECTION_PREFIX + collection].insert_one({
                     col: infer_type(val) for col, val in zip(columns, observation)
                 })
+
+        if indexes:
+            for index in indexes:
+                print('creating index ', index, ' on ', settings.MONGO_COLLECTION_PREFIX + collection)
+                db[settings.MONGO_COLLECTION_PREFIX + collection].create_index(index)
 
         return ok_resp({'collection': settings.MONGO_COLLECTION_PREFIX + collection})
 

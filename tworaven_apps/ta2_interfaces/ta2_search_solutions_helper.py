@@ -425,9 +425,9 @@ class SearchSolutionsHelper(BasicErrCheck):
             # -----------------------------------------------
             # All results arrived, send message to UI
             # -----------------------------------------------
-            ws_msg = WebsocketMessage.get_success_message(\
-                        ta2_static.ENDGetSearchSolutionsResults,
-                        'it worked')
+            ws_msg = WebsocketMessage.get_success_message( \
+                ta2_static.ENDGetSearchSolutionsResults,
+                {'searchId': self.search_id, 'message': 'it worked'})
 
             print('ws_msg: %s' % ws_msg)
             ws_msg.send_message(self.websocket_id)

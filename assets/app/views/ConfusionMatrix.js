@@ -263,7 +263,7 @@ export default class ConfusionMatrix {
         svg.append("text")
             .attr("transform", "translate(" + ((width + widthLegend) / 2) + " ," + (0 - 10) + ")")
             .style("text-anchor", "middle")
-            .text(xLabel || "Predicted Class");
+            .text(xLabel || "Fitted Class");
 
         svg.append("text")
             .attr("transform", "translate(" + ((width + widthLegend) / 2) + " ," + (0 - 30) + ")")

@@ -177,9 +177,9 @@ class FileEmbedUtil(object):
             return self.format_embed_err(ERR_CODE_FILE_NOT_REACHABLE,
                                          err_msg)
 
-        # Is the file too large to embed?
+        # Is the file too large to embed? if indices are set, then this check is ignored
         #
-        if fsize > settings.MAX_EMBEDDABLE_FILE_SIZE:
+        if not self.indices and fsize > settings.MAX_EMBEDDABLE_FILE_SIZE:
             err_msg = ('This file was too large to embed.'
                        ' Size was %s bytes but the limit is %s bytes.') %\
                        (add_commas_to_number(fsize),
@@ -199,7 +199,8 @@ class FileEmbedUtil(object):
         # If it's a csv file, read, convert to JSON and return it
         #
         else:
-            (py_list, err_msg2) = convert_csv_file_to_json(fpath, to_string=False)
+            # The d3mIndex is written out to the column 'd3mIndex'
+            (py_list, err_msg2) = convert_csv_file_to_json(fpath, to_string=False, index_column='d3mIndex', indices=self.indices)
             if err_msg2:
                 return self.format_embed_err(ERR_CODE_FAILED_JSON_CONVERSION,
                                              err_msg2)
@@ -207,10 +208,6 @@ class FileEmbedUtil(object):
             response_data = OrderedDict()
             response_data[KEY_SUCCESS] = True
             response_data[KEY_DATA] = py_list
-
-        # only return records that match indices. The d3mIndex is written out to the column ''
-        if self.indices:
-            response_data[KEY_DATA] = [i for i in response_data[KEY_DATA] if i[''] in self.indices]
 
         return response_data
 
