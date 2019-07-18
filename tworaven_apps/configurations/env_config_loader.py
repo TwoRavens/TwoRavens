@@ -235,8 +235,13 @@ class EnvConfigLoader(BasicErrCheck):
                             ' (%s) exists. Keeping it.') % \
                             (d3m_config.id,)
 
+                if d3m_config.is_default != self.is_default_config:
+                    d3m_config.is_default = self.is_default_config
+                    d3m_config.save()
+
                 self.success_keeping_config = True
                 self.d3m_config = d3m_config
+
                 print(user_msg)
                 print('-' * 40)
 

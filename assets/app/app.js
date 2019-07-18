@@ -1205,6 +1205,7 @@ export let loadWorkspace = async newWorkspace => {
       // This is a Task 1 assignment: no problem doc.
         setTask2_finished(true);
         problemDocExists = false;
+        m.redraw();
     } else {
       alertLog("Something unusual happened reading problem schema.");
     }
@@ -2080,6 +2081,11 @@ export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
   * END: saveAsNewWorkspace
   */
 
+export let isSelectedProblem = (probID) => {
+  let selProblem = getSelectedProblem();
+  if (!selProblem) return false;
+  return (selProblem.problemID === probID)? true : false;
+}
 
 export let getSelectedProblem = () => {
     if (!workspace) return;

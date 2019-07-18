@@ -11,10 +11,13 @@ from django.template.loader import render_to_string
 from tworaven_apps.ta2_interfaces.basic_problem_writer import \
     (BasicProblemWriter, ERR_MSG_UNEXPECTED_DIRECTORY,
      ERR_MSG_NO_FILENAME, ERR_MSG_NO_DATA)
+from tworaven_apps.user_workspaces.models import UserWorkspace
 from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.raven_auth.models import User
 
 class ProblemWriterTest(TestCase):
+
+    fixtures = ['test_problem_writer_2019_0718.json']
 
     def setUp(self):
         # Set it to internal testing mode
@@ -26,6 +29,9 @@ class ProblemWriterTest(TestCase):
         self.client = Client()
 
         self.user_obj = User.objects.get_or_create(username='dev_admin')[0]
+
+        self.user_workspace = UserWorkspace.objects.first()
+
         self.client.force_login(self.user_obj)
 
     def test_010_testwrite(self):
@@ -35,7 +41,7 @@ class ProblemWriterTest(TestCase):
         fname = 'dir1/dir2/test_file1.json'
         data = dict(pet="dog")
 
-        bpw = BasicProblemWriter(self.user_obj,
+        bpw = BasicProblemWriter(self.user_workspace,
                                  fname,
                                  data,
                                  **dict(write_directory=self.test_dir.name))
@@ -58,7 +64,7 @@ class ProblemWriterTest(TestCase):
         fname = '../dir-traverse/../test_file1.json'
         data = dict(pet="dog")
 
-        bpw = BasicProblemWriter(self.user_obj,
+        bpw = BasicProblemWriter(self.user_workspace,
                                  fname,
                                  data,
                                  **dict(write_directory=self.test_dir.name))
@@ -77,7 +83,7 @@ class ProblemWriterTest(TestCase):
         fname = ''
         data = dict(pet="dog")
 
-        bpw = BasicProblemWriter(self.user_obj,
+        bpw = BasicProblemWriter(self.user_workspace,
                                  fname,
                                  data,
                                  **dict(write_directory=self.test_dir.name))
@@ -96,7 +102,7 @@ class ProblemWriterTest(TestCase):
         fname = 'dog_data.json'
         data = ''
 
-        bpw = BasicProblemWriter(self.user_obj,
+        bpw = BasicProblemWriter(self.user_workspace,
                                  fname,
                                  data,
                                  **dict(write_directory=self.test_dir.name))

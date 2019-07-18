@@ -1388,7 +1388,17 @@ export async function submitDiscProb() {
     app.buttonLadda['btnSubmitDisc'] = true;
     m.redraw();
 
-    let outputCSV = Object.keys(problems).reduce((out, problemID) => {
+
+    /* -------------------------------------
+     * Iterate through problems, writing them
+     *  to an output directory and building
+     *  rows for a .csv file
+     */
+
+     //let outputCSV =
+   let outputCSV = ['problem_id,system,meaningful'];
+
+    Object.keys(problems).reduce((out, problemID) => {
         let problem = problems[problemID];
 
         if(problem.manipulations.length === 0){
@@ -1399,16 +1409,19 @@ export async function submitDiscProb() {
             let filename_ps = problem.problemID + '/problem_schema.json';
             app.makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
             app.makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
+
+            let meaningful = problem.meaningful ? 'yes' : 'no';
+            let lineForCSV = `${problem.problemID},${problem.system},${meaningful}`;
+            outputCSV.push(lineForCSV);
         } else {
             console.log('omitting:');
             console.log(problem);
         }
-        // return `${problem.problemID},`;
     });
 
     // write the CSV file requested by NIST that describes properties of the solutions
     console.log(outputCSV);
-    let res3 = await app.makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: 'labels.csv', data: outputCSV});
+    let res3 = await app.makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: 'labels.csv', data: outputCSV.join('\n')});
 
     app.buttonLadda.btnSubmitDisc = false;
     app.buttonClasses.btnSubmitDisc = 'btn-secondary';
