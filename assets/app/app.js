@@ -1164,8 +1164,6 @@ export let loadWorkspace = async newWorkspace => {
         Object.assign(workspace.raven_config.problems, discovery(resPreprocess.dataset.discovery));
         workspace.raven_config.variablesInitial = Object.keys(variableSummaries);
 
-        // Kick off discovery button as green for user guidance
-        if (!task1_finished) buttonClasses.btnDiscover = 'btn-success'
     }
 
     // ---------------------------------------
@@ -1202,7 +1200,9 @@ export let loadWorkspace = async newWorkspace => {
         console.log('Problem doc not loaded.  Consider this Task 1.')
         console.log('Message: ' + problemDocInfo.message);
 
-      // This is a Task 1 assignment: no problem doc.
+        // Kick off discovery button as green for user guidance
+        if (!task1_finished) buttonClasses.btnDiscover = 'btn-success'
+
         setTask2_finished(true);
         problemDocExists = false;
         m.redraw();

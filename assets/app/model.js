@@ -499,8 +499,11 @@ export let leftpanel = forceData => {
                 ])
             ),
 
-
-            !app.is_explore_mode && m(ButtonLadda, {
+            /*
+             *  If this is an unfinished Task1, show the submit discovered
+             *    problem button!
+             */
+            !app.task1_finished && !app.is_explore_mode && m(ButtonLadda, {
                 id: 'btnSubmitDisc',
                 class: app.buttonClasses.btnSubmitDisc,
                 activeLadda: app.buttonLadda.btnSubmitDisc,
@@ -1428,6 +1431,8 @@ export async function submitDiscProb() {
     app.buttonClasses.btnDiscover = 'btn-secondary';
     if (!app.task2_finished) app.buttonClasses.btnEstimate = 'btn-secondary';
 
+    // Remove the button Submit Discovered problem button
+    //
     app.setTask1_finished(true);
     m.redraw();
 
