@@ -116,6 +116,8 @@ class D3MConfiguration(TimeStampedModel):
                         help_text='Input: Path to the dataset schema')
 
     problem_schema = models.TextField(\
+                        cstatic.KEY_D3MPROBLEMPATH,
+                        blank=True,
                         help_text='Input: Path to the problem schema')
 
     training_data_root = models.TextField(\
@@ -126,10 +128,11 @@ class D3MConfiguration(TimeStampedModel):
 
     problem_root = models.TextField(\
                     blank=True,
-                    help_text=('Path to the root directory of the'
+                    help_text=('Path to the directory containing the'
                                ' problem.'))
 
     root_output_directory = models.TextField(\
+                        cstatic.KEY_D3MOUTPUTDIR,
                         blank=True,
                         help_text=(('Not an official field.  Used for testing'
                                     ' to determine the "/output" directory')))

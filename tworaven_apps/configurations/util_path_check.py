@@ -60,8 +60,8 @@ def get_bad_paths(d3m_config, with_html=False):
 
     for dpath in D3M_DIR_ATTRIBUTES:
         dpath_val = d3m_config.__dict__.get(dpath, None)
-        print('dpath', dpath)
-        print('dpath_val', dpath_val)
+        print('-' * 40)
+        print(f'dpath: {dpath}.  val: {dpath_val}')
         print('D3M_DIR_USER_PROBLEMS_ROOT', D3M_DIR_USER_PROBLEMS_ROOT)
         if not isdir(dpath_val):
             if dpath_val and dpath in [D3M_DIR_USER_PROBLEMS_ROOT,]:

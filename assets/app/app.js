@@ -22,6 +22,7 @@ import * as manipulate from './manipulations/manipulate';
 import * as results from "./results";
 import * as explore from './explore';
 import {getSelectedSolutions} from "./results";
+import {linkURL, link} from "./index";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -991,7 +992,34 @@ export let loadWorkspace = async newWorkspace => {
     console.log("-- Workspace: 1. Load 'datasetDoc' --");
     // url example: /config/d3m-config/get-dataset-schema/json/39
     //
-    workspace.datasetDoc = await m.request(workspace.d3m_config.dataset_schema_url);
+    console.log('url: ' + workspace.d3m_config.dataset_schema_url);
+
+    let datasetDocInfo = await m.request(workspace.d3m_config.dataset_schema_url);
+    // console.log(JSON.stringify(datasetDocInfo));
+
+    if (!datasetDocInfo.success){
+      let datasetDocFailMsg = 'D3M WARNING: No dataset doc available! ' +
+                              datasetDocInfo.message;
+      swandive = true;
+      console.log(datasetDocFailMsg);
+      // alertWarn(datasetDocFailMsg);
+
+      let datasetDocLink = window.location.origin +
+                        workspace.d3m_config.dataset_schema_url;
+      setModal(m('div', {}, [
+                m('p', datasetDocFailMsg),
+                m('p', 'Url: ', link(datasetDocLink)),
+                m('p', 'Please try to reload. However, this may be a fatal error.'),
+              ]),
+          true,
+          "Reload Page",
+          false,
+          locationReload);
+      return;
+    }
+
+    workspace.datasetDoc = datasetDocInfo.data;
+
 
     let datadocument_columns = (workspace.datasetDoc.dataResources.find(resource => resource.columns) || {}).columns;
     if (datadocument_columns === undefined) {
@@ -1128,9 +1156,15 @@ export let loadWorkspace = async newWorkspace => {
     // url example: /config/d3m-config/get-problem-schema/json/39
     //
     let d3mPS = workspace.d3m_config.problem_schema_url;
-    let problemDoc = await m.request(d3mPS);
+    let problemDoc;
+    let problemDocInfo = await m.request(d3mPS);
     // console.log("prob schema data: ", res);
-    if(typeof problemDoc.success === 'undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
+    if (problemDocInfo.success){
+
+        problemDoc = problemDocInfo.data;
+
+        console.log('Problem doc loaded!  Consider this Task 2')
+        console.log('Message: ' + problemDocInfo.message);
         // This is a Task 2 assignment
         // console.log("DID WE GET HERE?");
         setTask1_finished(true);
@@ -1138,12 +1172,16 @@ export let loadWorkspace = async newWorkspace => {
         buttonClasses.btnSubmitDisc = 'btn-success';
         buttonClasses.btnEstimate = 'btn-success';
 
-    } else if (!problemDoc.success){                       // Task 1 is when res.success==false
-        // This is a Task 1 assignment: no problem doc.
-        task2_finished = true;
-        problemDocExists = false;
-    } else alertLog("Something Unusual happened reading problem schema.");
+    } else if (!problemDocInfo.success){                       // Task 1 is when res.success==false
+        console.log('Problem doc not loaded.  Consider this Task 1.')
+        console.log('Message: ' + problemDocInfo.message);
 
+      // This is a Task 1 assignment: no problem doc.
+        setTask2_finished(true);
+        problemDocExists = false;
+    } else {
+      alertLog("Something unusual happened reading problem schema.");
+    }
 
     if(problemDocExists){
         console.log("Task 2: Problem Doc Exists");
@@ -1244,8 +1282,9 @@ export let loadWorkspace = async newWorkspace => {
          */
         setSelectedProblem(problemCopy.problemID);
 
-    } else console.log("Task 1: No Problem Doc");
-
+    } else {
+      console.log("Task 1: No Problem Doc");
+    }
 
     return true;
 };

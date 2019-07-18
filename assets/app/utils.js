@@ -54,6 +54,7 @@ export const copyToClipboard = str => {
   }
 };
 
+
 export const numberWithCommas = some_number => {
     return some_number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
