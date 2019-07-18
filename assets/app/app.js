@@ -21,7 +21,6 @@ import * as model from './model';
 import * as manipulate from './manipulations/manipulate';
 import * as results from "./results";
 import * as explore from './explore';
-import {getSelectedSolutions} from "./results";
 import {linkURL, link} from "./index";
 
 //-------------------------------------------------
@@ -2304,74 +2303,71 @@ export function handleMaterializeDataMessage(msg_data){
  *  - Move the old selected problem manipulations to hardManipulations
  *  - Set the old selected problem as the new selected problem (sans manipulations)
  */
-export async function handleAugmentDataMessage(msg_data){
+export async function handleAugmentDataMessage(msg_data) {
 
-  if (!msg_data) {
-      console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
-      return;
-  }
+    if (!msg_data) {
+        console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
+        return;
+    }
 
-  // Hide the modal
-  datamartPreferences.modalShown = undefined;
-  datamartPreferences.isAugmenting = false;
+    // Hide the modal
+    datamartPreferences.modalShown = undefined;
+    datamartPreferences.isAugmenting = false;
 
-  if (msg_data.success === false) {
-    setModal("Error: " + msg_data.user_message,
-             "Data Augmentation Failed", true, "Close", true);
-    return;
-  }
+    if (msg_data.success === false) {
+        setModal("Error: " + msg_data.user_message,
+            "Data Augmentation Failed", true, "Close", true);
+        return;
+    }
 
-  setModal("Success: " + msg_data.user_message,
-           "Data Augmentation Succeeded!", true, "Switch to augmented dataset", false, () => {
+    setModal("Success: " + msg_data.user_message,
+        "Data Augmentation Succeeded!", true, "Switch to augmented dataset", false, async () => {
 
-      /*
-      setModal(undefined, undefined, false)
-      load()
-      */
-      setModal(undefined, undefined, false)
+            /*
+            setModal(undefined, undefined, false)
+            load()
+            */
+            setModal(undefined, undefined, false);
 
-      // (1) Copy the current selected problem
-      //
-      let tempSelectedProblem = common.deepCopy(workspace.raven_config.problems[workspace.raven_config.selectedProblem]);
+            // (1) Preserve necessary info from current workspace
+            //
+            let priorSelectedProblem = getSelectedProblem();
+            let priorHardManipulations = workspace.raven_config.hardManipulations;
 
-      // (2) clear current problems
-      //
-      workspace.raven_config.problems = {};
+            // (2) load the new workspace
+            //
+            let ws_obj = JSON.parse(msg_data.data.workspace_json_string);
+            console.log('--- 2a new workspace: ' + JSON.stringify(ws_obj));
 
-      // (2) load the new workspace
-      //
-      let ws_obj = JSON.parse(msg_data.data.workspace_json_string);
-      console.log('--- 2a new workspace: ' + JSON.stringify(ws_obj));
+            await loadWorkspace(ws_obj);
 
-      loadWorkspace(ws_obj).then(() => {
+            // (3) store prior manipulations
+            //
 
-          // (3) update new workspace manipulations
-          //
+            // - Copy manipulations from the orig selected problem to the
+            // workspace's priorManipulations.
+            // - Clear the orig. selected problem manipulations
+            workspace.raven_config.priorManipulations = [
+                ...priorHardManipulations,
+                ...priorSelectedProblem.manipulations
+            ];
+            priorSelectedProblem.manipulations = [];
 
-          // - Copy manipulations from the orig selected problem to the
-          // workspace's priorManipulations.
-          // - Clear the orig. selected problem manipulations
-          workspace.raven_config.priorManipulations = common.deepCopy(tempSelectedProblem.manipulations);
-          tempSelectedProblem.manipulations = [];
+            // (4) update ids of the orig selected problem to avoid clashes
+            //
+            priorSelectedProblem.problemID = generateProblemID();
+            delete priorSelectedProblem.provenanceID;
 
-          // (4) update ids of the orig selected problem to avoid clashes
-          //
-          tempSelectedProblem.problemID = generateProblemID();
-          if ('provenanceID' in tempSelectedProblem){
-            delete tempSelectedProblem.provenanceID;
-          }
-          // (5) add the old problem to the current problems list
-          //    and make it the selected problem
-          //
-          workspace.raven_config.problems[tempSelectedProblem.problemID] = tempSelectedProblem;
-
-          setSelectedProblem(tempSelectedProblem.problemID);
-      })
-  });
+            // (5) add the old problem to the current problems list
+            //    and make it the selected problem
+            //
+            workspace.raven_config.problems[priorSelectedProblem.problemID] = priorSelectedProblem;
+            setSelectedProblem(priorSelectedProblem.problemID);
+        });
 
 
-  // console.log('datamart_id: ' + msg_data.data.datamart_id);
-  // console.log('filesize: ' + msg_data.data.filesize);
+    // console.log('datamart_id: ' + msg_data.data.datamart_id);
+    // console.log('filesize: ' + msg_data.data.filesize);
 
 } // end: handleAugmentDataMessage
 

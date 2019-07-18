@@ -1226,8 +1226,6 @@ export async function endsession() {
         return;
     }
 
-    console.warn("#debug selectedPipelines[0]");
-    console.log(selectedPipelines[0]);
     let selectedSolution = selectedPipelines[0];
     let selectedSolutionId = selectedSolution.pipelineId;
 
@@ -1235,8 +1233,8 @@ export async function endsession() {
     //
     let status = await exportSolution(String(selectedSolutionId));
 
-
-
+    console.warn("#debug status");
+    console.log(status);
     // app.makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
     //let res = await app.makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
     // endAllSearches();
@@ -1248,6 +1246,8 @@ export async function endsession() {
     if (true) {// (status.success)
         selectedSolution.chosen = true;
         results.setShowFinalPipelineModal(true);
+
+        m.redraw()
     }
 }
 
@@ -1276,9 +1276,6 @@ export async function exportSolution(solutionId) {
         rank: 1.01 - 0.01 * exportCount,
         searchId: app.getResultsProblem().d3mSearchId
     });
-
-    console.warn("#debug response exportSolution");
-    console.log(response);
 
     if (response === undefined)
         console.log('Failed to write executable for solutionId ' + solutionId);

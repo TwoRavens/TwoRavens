@@ -36,6 +36,7 @@ export default class Datamart {
         setDefault(preferences, 'infoPaths', {
             'NYU': {
                 'id': ['id'],
+                'row count': ['metadata', 'nb_rows'],
                 'name': ['metadata', 'name'],
                 'score': ['score'],
                 'description': ['metadata', 'description'],
@@ -47,6 +48,7 @@ export default class Datamart {
             },
             'ISI': {
                 'id': ['datamart_id'],
+                'row count': undefined,
                 'name': ['metadata', 'title'],
                 'score': ['score'],
                 'description': ['metadata', 'description'],
@@ -103,10 +105,10 @@ export default class Datamart {
             /* -------------------------------------------
              * Search failed, show message
              * ------------------------------------------- */
-            if (!response.success){
-              console.log('response: ' + JSON.stringify(response));
-              preferences.showDatamartErrorMsg(datamartSource, response.message);
-              return;
+            if (!response.success) {
+                console.log('response: ' + JSON.stringify(response));
+                preferences.showDatamartErrorMsg(datamartSource, response.user_message);
+                return;
             }
 
             /* -------------------------------------------
@@ -179,8 +181,6 @@ export default class Datamart {
 
         setDefault(preferences, 'joinPairs', []);
         setDefault(preferences, 'exactMatch', true);
-
-        setDefault(preferences, 'implicitVariables', {implicit_variables: []});
     }
 
     view(vnode) {
@@ -190,9 +190,6 @@ export default class Datamart {
             labelWidth, // width of titles on left side of cards
             endpoint,   // Django app url
         } = vnode.attrs;
-
-      //  dataPath = app.workspace.dataset;
-
 
         let {
             hints,    // keyword hints passed from query schema
@@ -306,37 +303,15 @@ export default class Datamart {
             }
         };
 
-        let buttonDownload = i => m(Button, {
-            style: {'margin': '0em 0.25em'},
-            onclick: async () => {
-                let id = getData(results[preferences.sourceMode][i], 'id');
-
-                await materializeData(i);
-
-                // download the file
-                let link = document.createElement('a');
-                document.body.appendChild(link);
-                link.href = cached[id].data_path;
-                link.click();
-            }
-        }, 'Download');
-
         let buttonAugment = i => m(Button, {
             style: {'margin': '0em 0.25em'},
             onclick: async () => {
 
                 // Check if the workspace has been saved
-                if (app.workspace.is_original_workspace){
-
-                  setModal(m('div', m('p', 'Please click the "Save As New" button at the bottom of the page before augmenting your dataset.'),
-                      m('p', 'This will any save changes and allow you to return to this workspace.')),
-                      "Save Before Augmenting",
-                      true,
-                      "Close",
-                      true);
-
-                  return;
-                }
+                if (app.workspace.is_original_workspace && confirm(
+                    'Would you like to save your workspace first? ' +
+                    'Saving your workspace will allow you to return to these problems and solutions.'))
+                    app.setShowModalSaveName(true);
 
                 preferences.selectedResult = results[preferences.sourceMode][i];
 
@@ -475,17 +450,17 @@ export default class Datamart {
                     schema: datamartQueryInputSchema
                 })),
 
-                m(ButtonRadio, {
-                    id: 'dataSourceButtonBar',
-                    onclick: state => {
-                        preferences.sourceMode = state;
-                        preferences.selectedResult = undefined;
-                    },
-                    activeSection: preferences.sourceMode,
-                    sections: [{value: 'NYU'}, {value: 'ISI'}],
-                    attrsAll: {style: {margin: '1em', width: 'auto'}},
-                    attrsButtons: {style: {width: 'auto'}}
-                }),
+                // m(ButtonRadio, {
+                //     id: 'dataSourceButtonBar',
+                //     onclick: state => {
+                //         preferences.sourceMode = state;
+                //         preferences.selectedResult = undefined;
+                //     },
+                //     activeSection: preferences.sourceMode,
+                //     sections: [{value: 'NYU'}, {value: 'ISI'}],
+                //     attrsAll: {style: {margin: '1em', width: 'auto'}},
+                //     attrsButtons: {style: {width: 'auto'}}
+                // }),
                 /*
                  * Start: Datamart Search Call
                  */
@@ -520,29 +495,37 @@ export default class Datamart {
                 preferences.isSearching[preferences.sourceMode] && common.loader('DatamartSearching'),
 
                 m('div#datamartResults', results[preferences.sourceMode]
-                     .map((result, i) => makeCard({
+                    .sort((a, b) => getData(b, 'score') - getData(a, 'score'))
+                    .map((result, i) => makeCard({
                         key: m('', m('', getData(result, 'name') || ''),
-                                    m('p[style=font-weight:normal]', `(#${i+1})`)),
+                            m('p[style=font-weight:normal]', `(#${i + 1})`)),
                         color: preferences.selectedResult === result ? common.selVarColor : common.grayColor,
                         summary: m('div',
-                            m('label[style=width:100%]', 'Score: ' + getData(result, 'score')),
+                            m('label[style=width:100%]', 'Relevance: ' + getData(result, 'score')),
                             buttonPreview(i),
-                            // buttonDownload(i), # download isn't working yet
+
                             buttonAugment(i),
                             buttonMetadata(i),
                             m(Table, {
-                                data: {
-                                    description: getData(result, 'description'),
-                                    'size (bytes)': numberWithCommas(getData(result, 'size')),
-                                    keywords: getData(result, 'keywords') && m(ListTags, {
-                                        tags: getData(result, 'keywords'),
-                                        readonly: true
-                                    })
-                                }
+                                attrsAll: {style: {'margin-top': '.5em'}},
+                                data: [
+                                    (getData(result, 'description') || '').length > 0 && [
+                                        'Description', getData(result, 'description')
+                                    ],
+                                    getData(result, 'size') && [
+                                        'Size (bytes)', numberWithCommas(getData(result, 'size'))
+                                    ],
+                                    getData(result, 'row count') && [
+                                        'Size (rows)', getData(result, 'row count')
+                                    ],
+                                    getData(result, 'keywords') && [
+                                        'Keywords', m(ListTags, {tags: getData(result, 'keywords'), readonly: true})
+                                    ]
+                                ]
                             }))
                     }))
-                 )
-             ],
+                )
+            ],
             preferences.datamartMode === 'Index' && [
                 m('div', {style: {margin: '1em'}}, 'Indexing is for adding your own datasets to datamart. You may provide a ', bold('link'), ' to a file, or ', bold('scrape'), ' datasets from a website.'), // You may upload a file or extract data from a link.
                 m(ButtonRadio, {
@@ -696,8 +679,7 @@ export class ModalDatamart {
         let {
             cached, // summary info and paths related to materialized datasets
             getData,
-            selectedResult,
-            implicitVariables
+            selectedResult
         } = preferences;
 
         if (!getData || !preferences.modalShown)
@@ -708,7 +690,14 @@ export class ModalDatamart {
             setDisplay: () => preferences.modalShown = false
         }, [
             preferences.modalShown === 'preview' && [
-                m('h4', (preferences.getData(selectedResult, 'name') || '') + ' Preview'),
+                m('h4',
+                    (preferences.getData(selectedResult, 'name') || '') + ' Preview',
+                    m(Button, {
+                        class: 'btn-sm',
+                        style: {'margin-left': '1em'},
+                        id: 'btnDownload',
+                        onclick: () => app.downloadFile(cached[preferences.getData(selectedResult, 'id')].data_path)
+                    }, 'Download')),
                 m('div', {style: {width: '100%', overflow: 'auto'}},
                     m(Table, {
                         headers: cached[preferences.getData(selectedResult, 'id')].data_preview[0],
@@ -854,7 +843,6 @@ export class ModalDatamart {
                                 left_columns: JSON.stringify(joinLeftColumns),
                                 right_columns: JSON.stringify(joinRightColumns),
                                 exact_match: preferences.exactMatch,
-                                // left_meta: JSON.stringify(implicitVariables)
                             }
 
                             console.log('augment_api_data: ' + JSON.stringify(augment_api_data));
