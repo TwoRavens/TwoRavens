@@ -83,7 +83,18 @@ class BasicProblemWriter(BasicErrCheck):
         attempted_dirs = []
 
 
-        # (1) Try the D3M config "user_problems_directory"
+        # (1) Try a user-specified directory in kwargs
+        #
+        if self.write_directory:
+            success_dirmake1, output_dir1 = self.make_directory(self.write_directory)
+            if success_dirmake1:
+                fullpath = join(output_dir1, self.filename)
+                self.write_new_file(fullpath, output_dir1)
+                return
+            attempted_dirs = [output_dir1]
+
+        # (2) Try the directory specified in the D3M config "user_problems_directory"
+        #       e.g. /output/problems
         #
         d3m_config = self.user_workspace.d3m_config
 
@@ -95,7 +106,7 @@ class BasicProblemWriter(BasicErrCheck):
                 self.write_new_file(fullpath, output_dir2)
                 return
             attempted_dirs.append(output_dir2)
-        
+
 
         self.add_error_message(('Failed to save file!'
                                 ' Tried these directories:') %

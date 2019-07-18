@@ -46,6 +46,9 @@ class ProblemWriterTest(TestCase):
                                  data,
                                  **dict(write_directory=self.test_dir.name))
 
+        if bpw.has_error():
+            msgt('bpw.error_message: %s' % bpw.error_message)
+
         self.assertTrue(not bpw.has_error())
         self.assertTrue(bpw.error_message is None)
 
