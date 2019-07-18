@@ -155,12 +155,12 @@ export class CanvasModel {
                         width: '150px'
                     }
                 }, [
-                    {id: "timeButton", vars: selectedProblem.tags.time, name: 'Time', borderColor: common.timeColor, innerColor: 'white', width: 1},
-                    {id: "csButton", vars: selectedProblem.tags.crossSection, name: 'Cross Sec', borderColor: common.csColor, innerColor: 'white', width:  1},
-                    {id: "dvButton", vars: selectedProblem.targets, name: 'Dep Var', borderColor: common.dvColor, innerColor: 'white', width: 1},
-                    {id: "nomButton", vars: selectedProblem.tags.nominal, name: 'Nominal', borderColor: common.nomColor, innerColor: 'white', width: 1},
-                    {id: "weightButton", vars: selectedProblem.tags.weights, name: 'Weight', borderColor: common.weightColor, innerColor: 'white', width: 1},
-                    {id: "predButton", vars: selectedProblem.predictors, name: 'Predictors', borderColor: common.gr1Color, innerColor: common.gr1Color, width: 0},
+                {id: "predButton", vars: selectedProblem.predictors, name: 'Predictor', borderColor: common.gr1Color, innerColor: common.gr1Color, width: 0},
+                {id: "dvButton", vars: selectedProblem.targets, name: 'Target', borderColor: common.gr2Color, innerColor: common.gr2Color, width: 0},
+                {id: "timeButton", vars: selectedProblem.tags.time, name: 'Time', borderColor: common.timeColor, innerColor: 'white', width: 1},
+                {id: "csButton", vars: selectedProblem.tags.crossSection, name: 'Cross Sec', borderColor: common.csColor, innerColor: 'white', width:  1},
+                {id: "catButton", vars: selectedProblem.tags.categorical, name: 'Categorical', borderColor: common.categoricalColor, innerColor: 'white', width: 1},
+                {id: "weightButton", vars: selectedProblem.tags.weights, name: 'Weight', borderColor: common.weightColor, innerColor: 'white', width: 1},
                     // {id: "priorsButton", vars: selectedProblem.predictors, name: 'Priors', borderColor: common.warnColor, innerColor: common.warnColor, width: 0},
                 ].filter(group => group.vars.length > 0).map(group =>
                     m(`#${group.id}[style=width:100% !important]`,
@@ -225,7 +225,7 @@ export let leftpanel = forceData => {
             ...leftpanelVariables.filter(variable => !matchedVariables.includes(variable))
         ];
 
-        let nominalVariables = app.getNominalVariables();
+        let categoricalVariables = app.getCategoricalVariables();
 
         sections.push({
             value: 'Variables',
@@ -251,7 +251,7 @@ export let leftpanel = forceData => {
                         },
                         classes: {
                             'item-dependent': app.is_explore_mode ? [] : selectedProblem.targets,
-                            'item-nominal': nominalVariables,
+                            'item-categorical': categoricalVariables,
                             'item-bordered': matchedVariables,
                             'item-cross-section': selectedProblem.tags.crossSection,
                             'item-time': selectedProblem.tags.time,
@@ -794,16 +794,16 @@ export let rightpanel = () => {
                             editable: true,
                             aggregate: false
                         }),
-                        selectedProblem.tags.nominal.length > 0 && m(Flowchart, {
+                        selectedProblem.tags.categorical.length > 0 && m(Flowchart, {
                             attrsAll: {style: {height: 'calc(100% - 87px)', overflow: 'auto'}},
                             labelWidth: '5em',
                             steps: [{
-                                key: 'Nominal',
-                                color: common.nomColor,
+                                key: 'Categorical',
+                                color: common.categoricalColor,
                                 content: m('div', {style: {'text-align': 'left'}},
                                     m(ListTags, {
-                                        tags: selectedProblem.tags.nominal,
-                                        ondelete: name => app.remove(selectedProblem.tags.nominal, name)
+                                        tags: selectedProblem.tags.categorical,
+                                        ondelete: name => app.remove(selectedProblem.tags.categorical, name)
                                     }))
                             }]
                         })
@@ -1123,7 +1123,7 @@ export let mutateNodes = problem => (state, context) => {
         loose: new Set(problem.tags.loose),
         transformed: new Set(problem.tags.transformed),
         crossSection: new Set(problem.tags.crossSection),
-        nominal: new Set(app.getNominalVariables(problem)),
+        categorical: new Set(app.getCategoricalVariables(problem)),
         time: new Set(problem.tags.time),
         weight: new Set(problem.tags.weights),
         targets: new Set(problem.targets),
@@ -1134,16 +1134,16 @@ export let mutateNodes = problem => (state, context) => {
         matched: 4,
         crossSection: 4,
         time: 4,
-        nominal: 4,
-        targets: 4,
+        categorical: 4,
+        // targets: 4,
         weight: 4
     };
 
     let nodeColors = {
         crossSection: common.taggedColor,
         time: common.taggedColor,
-        nominal: common.taggedColor,
-        targets: common.taggedColor,
+        categorical: common.taggedColor,
+        // targets: common.gr2Color,
         weight: common.taggedColor,
         loose: common.selVarColor,
     };
@@ -1151,8 +1151,8 @@ export let mutateNodes = problem => (state, context) => {
         matched: 'black',
         crossSection: common.csColor,
         time: common.timeColor,
-        nominal: common.nomColor,
-        targets: common.dvColor,
+        categorical: common.categoricalColor,
+        // targets: common.dvColor,
         weight: common.weightColor
     };
 
@@ -1218,20 +1218,20 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
     {
         id: 'GroupLabel',
         name: 'Labels',
-        attrs: {fill: common.nomColor},
+        attrs: {fill: common.categoricalColor},
         onclick: forceDiagramState.setSelectedPebble,
         children: [
             {
-                id: 'Nominal',
-                name: 'Nom',
-                attrs: {fill: common.nomColor},
+                id: 'Categorical',
+                name: 'Categorical',
+                attrs: {fill: common.categoricalColor},
                 onclick: d => {
                     if (app.variableSummaries[d].numchar === 'character') {
                         app.alertLog(`Cannot convert column "${d}" to numeric, because the column is character-based.`);
                         return;
                     }
                     delete problem.unedited;
-                    app.toggle(problem.tags.nominal, d);
+                    app.toggle(problem.tags.categorical, d);
                     forceDiagramState.setSelectedPebble(d);
                     app.resetPeek()
                 }
@@ -1247,17 +1247,17 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                     app.resetPeek()
                 }
             },
-            {
-                id: 'Cross',
-                name: 'Cross',
-                attrs: {fill: common.csColor},
-                onclick: d => {
-                    delete problem.unedited;
-                    app.toggle(problem.tags.crossSection, d);
-                    forceDiagramState.setSelectedPebble(d);
-                    app.resetPeek()
-                }
-            },
+            // {
+            //     id: 'Cross',
+            //     name: 'Cross',
+            //     attrs: {fill: common.csColor},
+            //     onclick: d => {
+            //         delete problem.unedited;
+            //         app.toggle(problem.tags.crossSection, d);
+            //         forceDiagramState.setSelectedPebble(d);
+            //         app.resetPeek()
+            //     }
+            // },
             {
                 id: 'Weight',
                 name: 'Weight',
@@ -1270,7 +1270,7 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                         problem.tags.weights = [d];
                         app.remove(problem.targets, d);
                         app.remove(problem.tags.time, d);
-                        app.remove(problem.tags.nominal, d);
+                        app.remove(problem.tags.categorical, d);
                         app.remove(problem.tags.crossSection, d);
                     }
                     forceDiagramState.setSelectedPebble(d);

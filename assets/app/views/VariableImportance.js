@@ -10,7 +10,7 @@ export default class VariableImportance {
         // names of variables in melt
         let {yLabel, variableLabel} = vnode.attrs;
 
-        let nominals = app.getNominalVariables(problem);
+        let nominals = app.getCategoricalVariables(problem);
 
         // HEAT MAP
         if (nominals.includes(predictor) && nominals.includes(target)) return m(PlotVegaLite, {
@@ -85,7 +85,7 @@ export default class VariableImportance {
         // names of variables in melt
         let {yLabel, variableLabel} = vnode.attrs;
 
-        let nominals = app.getNominalVariables(problem);
+        let nominals = app.getCategoricalVariables(problem);
 
         // SCATTER PLOT
         if (nominals.includes(predictor) || nominals.includes(target)) return m(PlotVegaLite, {

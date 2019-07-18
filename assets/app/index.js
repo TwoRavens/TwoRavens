@@ -606,14 +606,14 @@ class Body {
                         let selectedProblem = app.getSelectedProblem();
 
 
-                        let nominalVars = new Set(app.getNominalVariables(selectedProblem));
+                        let categoricalVars = new Set(app.getCategoricalVariables(selectedProblem));
                         let predictorVars = app.getPredictorVariables(selectedProblem);
 
-                        let hasNominal = [...selectedProblem.targets, ...predictorVars]
-                            .some(variable => nominalVars.has(variable));
+                        let hasCategorical = [...selectedProblem.targets, ...predictorVars]
+                            .some(variable => categoricalVars.has(variable));
                         let hasManipulation = selectedProblem.manipulations.length > 0;
 
-                        let needsProblemCopy = hasManipulation || hasNominal;
+                        let needsProblemCopy = hasManipulation || hasCategorical;
 
                         // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
                         if (needsProblemCopy) {

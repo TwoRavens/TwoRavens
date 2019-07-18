@@ -3094,7 +3094,7 @@ export class Subpanel {
                         x[0] === 'dvButton' ? [common.dvColor, 'white', 1]
                             : x[0] === 'csButton' ? [common.csColor, 'white', 1]
                             : x[0] === 'timeButton' ? [common.timeColor, 'white', 1]
-                                : x[0] === 'nomButton' ? [common.nomColor, 'white', 1]
+                                : x[0] === 'nomButton' ? [common.categoricalColor, 'white', 1]
                                     : x[0] === 'gr1Button' ? [common.gr1Color, common.gr1Color, 0]
                                         : [common.gr2Color, common.gr2Color, 0];
                     return m(`#${x[0]}.clearfix.${z[x[1]].length === 0 ? "hide" : "show"}`,

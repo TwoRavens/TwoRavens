@@ -874,10 +874,10 @@ export function buildMenu(step) {
         if (metadata.limit) subset.push({$limit: metadata.limit});
         if (metadata.sample) subset.push({$sample: {size: metadata.sample}});
 
-        if (!metadata.variables && metadata.nominal && metadata.nominal.length > 0) return [
+        if (!metadata.variables && metadata.categorical && metadata.categorical.length > 0) return [
             ...subset,
             {
-                $addFields: metadata.nominal.reduce((out, entry) => {
+                $addFields: metadata.categorical.reduce((out, entry) => {
                     out[entry] = {'$toString': '$' + entry};
                     return out;
                 }, {})
@@ -889,7 +889,7 @@ export function buildMenu(step) {
             ...subset,
             {
                 $project: (metadata.variables || []).reduce((out, entry) => {
-                    out[entry] = (metadata.nominal || []).includes(entry) ? {'$toString': '$' + entry} : 1;
+                    out[entry] = (metadata.categorical || []).includes(entry) ? {'$toString': '$' + entry} : 1;
                     return out;
                 }, {_id: 0})
             }

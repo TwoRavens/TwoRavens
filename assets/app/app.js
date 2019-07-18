@@ -133,7 +133,7 @@ export async function updatePeek(pipeline) {
             skip: peekSkip,
             limit: peekLimit,
             variables,
-            nominal: !is_manipulate_mode && getNominalVariables(problem)
+            categorical: !is_manipulate_mode && getCategoricalVariables(problem)
                 .filter(variable => variables.includes(variable))
         }
     };
@@ -315,7 +315,7 @@ export let buildProblemPreprocess = async (ravenConfig, problem) => await getDat
             type: 'menu',
             metadata: {
                 type: 'data',
-                nominal: getNominalVariables(problem),
+                categorical: getCategoricalVariables(problem),
                 sample: 5000
             }
         }],
@@ -350,7 +350,7 @@ export async function buildDatasetUrl(problem, lastStep) {
         metadata: {
             type: 'data',
             variables,
-            nominal: !is_manipulate_mode && getNominalVariables(problem)
+            categorical: !is_manipulate_mode && getCategoricalVariables(problem)
                 .filter(variable => variables.includes(variable))
         }
     };
@@ -375,7 +375,7 @@ export async function buildProblemUrl(problem) {
             metadata: {
                 type: 'data',
                 variables,
-                nominal: !is_manipulate_mode && getNominalVariables(problem)
+                categorical: !is_manipulate_mode && getCategoricalVariables(problem)
                     .filter(variable => variables.includes(variable))
             }
         }
@@ -1118,7 +1118,7 @@ export let loadWorkspace = async newWorkspace => {
             weights: [], // only one variable can be a weight
             crossSection: [],
             time: [],
-            nominal: [],
+            categorical: [],
             loose: [] // variables displayed in the force diagram, but not in any groups
         }
     };
@@ -1242,7 +1242,7 @@ export let loadWorkspace = async newWorkspace => {
                     .flatMap(resource => resource.columns
                         .filter(column => column.role.includes('timeIndicator') || column.colType === 'dateTime')
                         .map(column => column.colName)),
-                nominal: Object.keys(variableSummaries)
+                categorical: Object.keys(variableSummaries)
                     .filter(variable => variableSummaries[variable].nature === 'nominal'),
                 loose: [] // variables displayed in the force diagram, but not in any groups
             }
@@ -1481,14 +1481,14 @@ export async function estimate() {
 
     m.redraw();
 
-    // let nominalVars = new Set(getNominalVariables(selectedProblem));
+    // let categoricalVars = new Set(getCategoricalVariables(selectedProblem));
     // let predictorVars = getPredictorVariables(selectedProblem);
     //
-    // let hasNominal = [...selectedProblem.targets, ...predictorVars]
-    //     .some(variable => nominalVars.has(variable));
+    // let hasCategorical = [...selectedProblem.targets, ...predictorVars]
+    //     .some(variable => categoricalVars.has(variable));
     // let hasManipulation = selectedProblem.manipulations.length > 0;
 
-    // let needsProblemCopy = hasManipulation || hasNominal;
+    // let needsProblemCopy = hasManipulation || hasCategorical;
     //
     let datasetPath = workspace.datasetUrl;
     // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
@@ -1605,10 +1605,10 @@ export async function callSolver(prob, datasetPath=undefined) {
     setSolverPending(false);
 
     let hasManipulation = [...workspace.raven_config.hardManipulations, ...prob.manipulations].length > 0;
-    let hasNominal = getNominalVariables(prob).length > 0;
+    let hasCategorical = getCategoricalVariables(prob).length > 0;
 
     if (!datasetPath)
-        datasetPath = hasManipulation || hasNominal ? await buildDatasetUrl(prob) : workspace.datasetUrl;
+        datasetPath = hasManipulation || hasCategorical ? await buildDatasetUrl(prob) : workspace.datasetUrl;
 
     // solutions.rook[ravenID] = cachedResponse;
     let params = {
@@ -1681,7 +1681,7 @@ export let erase = () => {
         weights: [], // singleton list
         crossSection: [],
         time: [],
-        nominal: [],
+        categorical: [],
         loose: [] // variables displayed in the force diagram, but not in any groups
     }
 };
@@ -1779,7 +1779,7 @@ export function discovery(problems) {
                 weights: [], // singleton list
                 crossSection: [],
                 time: [],
-                nominal: Object.keys(variableSummaries)
+                categorical: Object.keys(variableSummaries)
                     .filter(variable => variableSummaries[variable].nature === 'nominal'),
                 loose: [] // variables displayed in the force diagram, but not in any groups
             },
@@ -2116,11 +2116,11 @@ export let getPredictorVariables = problem => {
     return [...new Set([...problem.predictors, ...arrowPredictors])]
 };
 
-export let getNominalVariables = problem => {
+export let getCategoricalVariables = problem => {
     let selectedProblem = problem || getSelectedProblem();
     return [...new Set([
-        ...selectedProblem.tags.nominal,
-        // targets in a classification problem are also nominal
+        ...selectedProblem.tags.categorical,
+        // targets in a classification problem are also categorical
         ...['classification', 'semisupervisedClassification'].includes(selectedProblem.task)
             ? selectedProblem.targets : []
     ])];

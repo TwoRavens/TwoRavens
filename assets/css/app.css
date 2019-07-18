@@ -416,7 +416,7 @@ tr.item-lineout{
 .item-dependent {
     border: solid rgba(40, 164, 201, 0.8);
 }
-.item-nominal {
+.item-categorical {
     border: solid #ff6600;
 }
 .item-cross-section {

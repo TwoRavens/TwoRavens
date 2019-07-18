@@ -486,7 +486,7 @@ export let loadImportanceEFDData = async (problem, solution) => {
                 data_pointer: solution.data_pointer,
                 metadata: {
                     solutionId: solution.pipelineId,
-                    levels: app.getNominalVariables(problem)
+                    levels: app.getCategoricalVariables(problem)
                         .map(variable => {
                             if (app.variableSummaries[variable].nature === 'nominal')
                                 return {[variable]: Object.keys(app.variableSummaries[variable].plotvalues)}
@@ -719,7 +719,7 @@ let asString = value => ({string: value});
 let asBool = value => ({bool: value});
 let asInt = value => ({int64: String(value)});
 let asDouble = value => ({double: value});
-let asList = value => ({list: value.map(elem => asType(elem))});
+let asList = value => ({list: {items: value.map(elem => asType(elem))}});
 
 let asType = value => {
     if (Array.isArray(value)) return asList(value);
@@ -801,8 +801,9 @@ let stepSubset = (step, index) => {
     };
 
     let columns = Object.keys(app.variableSummaries);
-
-    return step.flatMap((constraint, ravenIndex) => {
+    console.warn("#debug step");
+    console.log(step);
+    return step.abstractQuery.flatMap((constraint, ravenIndex) => {
         let hyperparams;
 
         if (constraint.subset === 'continuous') hyperparams = {
@@ -1245,7 +1246,7 @@ export async function endsession() {
     // end_ta3_search(true, "Problem marked as complete.");
     // setModal("Your selected pipeline has been submitted.", "Task Complete", true, false, true, locationReload);
     //}
-    if (true) {// (status.success)
+    if (status.success) {
         selectedSolution.chosen = true;
         results.setShowFinalPipelineModal(true);
     }
