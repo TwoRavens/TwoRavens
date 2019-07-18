@@ -22,6 +22,7 @@ from collections import OrderedDict
 
 from django.conf import settings
 
+from tworaven_apps.data_prep_utils.duplicate_column_remover import DuplicateColumnRemover
 from tworaven_apps.eventdata_queries.event_job_util import EventJobUtil
 from tworaven_apps.eventdata_queries.mongo_retrieve_util import MongoRetrieveUtil
 from tworaven_apps.utils.url_helper import format_file_uri_to_path
@@ -92,7 +93,7 @@ class ConfusionUtil(object):
 
         return self.final_results
 
-    def load_results_into_mongo(self, file_uri, collection_name, is_second_try=False):
+    def load_results_into_mongo(self, file_uri, collection_name, columns, is_second_try=False):
 
         if not file_uri:
             err_code = ERR_CODE_FILE_URI_NOT_SET
@@ -139,6 +140,7 @@ class ConfusionUtil(object):
             settings.TWORAVENS_MONGO_DB_NAME,
             collection_name,
             datafile=fpath,
+            column_names=columns,
             indexes=['d3mIndex'])
 
         return OrderedDict({KEY_SUCCESS: True})
@@ -221,9 +223,14 @@ class ConfusionUtil(object):
         ]
 
         try:
+            columns = DuplicateColumnRemover(file_uri).orig_column_names
+            if 'd3mIndex' not in columns:
+                columns[0] = 'd3mIndex'
+
             status = self.load_results_into_mongo(
                 file_uri,
                 results_collection_name,
+                columns,
                 is_second_try)
 
             if not status['success']:

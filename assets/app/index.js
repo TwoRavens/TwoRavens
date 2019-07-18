@@ -88,7 +88,7 @@ class Body {
 
         return m('main',
 
-            this.construct_modals(),
+            this.constructModals(),
             this.header(app.currentMode),
             this.footer(app.currentMode),
             app.workspace && Body.leftpanel(app.currentMode, forceData),
@@ -396,7 +396,7 @@ class Body {
     /*
      * Start: Construct potential modal boxes for the page.
      */
-    construct_modals() {
+    constructModals() {
         return [
             m(Modal),
             this.modalSaveCurrentWorkspace(),
@@ -406,6 +406,8 @@ class Body {
                     loadWorkspace: app.loadWorkspace
                 }
             ),
+
+            results.showFinalPipelineModal && results.finalPipelineModal(),
 
             app.showModalDownload && m(ModalVanilla, {
                 id: 'downloadModal',

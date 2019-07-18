@@ -545,6 +545,7 @@ let handleCompletedSearch = searchId => response => {
         console.warn(response.message);
         return;
     }
+    if (!app.workspace.problems) return;
     let solvedProblem = Object.values(app.workspace.problems)
         .find(problem => String(problem.d3mSearchId) === String(searchId));
     if (!solvedProblem) return;
@@ -1217,28 +1218,37 @@ export async function endsession() {
 
     let selectedPipelines = results.getSelectedSolutions(resultsProblem, 'd3m');
     if (selectedPipelines.length === 0) {
-        alertWarn("No pipelines exist. Cannot mark problem as complete");
+        alertWarn("No pipeline is selected. Cannot mark problem as complete");
         return;
     }
     if (selectedPipelines.length > 1) {
-        alertWarn("More than one pipeline selected. Please select one discovered pipeline");
+        alertWarn("More than one pipeline selected. Please select one pipeline");
         return;
     }
 
-    let chosenSolutionId = selectedPipelines[0].response.solutionId;
+    console.warn("#debug selectedPipelines[0]");
+    console.log(selectedPipelines[0]);
+    let selectedSolution = selectedPipelines[0];
+    let selectedSolutionId = selectedSolution.pipelineId;
 
     // calling exportSolution
     //
-    let end = await exportSolution(chosenSolutionId);
+    let status = await exportSolution(String(selectedSolutionId));
+
+
 
     // app.makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
     //let res = await app.makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
-    endAllSearches();
+    // endAllSearches();
     //let mystatus = res.status.code.toUpperCase();
     //if(mystatus == "OK") {
-    end_ta3_search(true, "Problem marked as complete.");
-    setModal("Your selected pipeline has been submitted.", "Task Complete", true, false, true, locationReload);
+    // end_ta3_search(true, "Problem marked as complete.");
+    // setModal("Your selected pipeline has been submitted.", "Task Complete", true, false, true, locationReload);
     //}
+    if (true) {// (status.success)
+        selectedSolution.chosen = true;
+        results.setShowFinalPipelineModal(true);
+    }
 }
 
 
@@ -1274,7 +1284,8 @@ export async function exportSolution(solutionId) {
         console.log('Failed to write executable for solutionId ' + solutionId);
 
     if (response.success === false)
-        setModal(response.message,"Solution export failed", true, false, false, locationReload);
+        setModal(response.message,"Solution export failed", true, 'Close', true,
+            () => setModal('',"", false));
 
     return response;
 }

@@ -22,6 +22,7 @@ import ConfusionMatrix from "./views/ConfusionMatrix";
 import Flowchart from "./views/Flowchart";
 import ButtonRadio from "../common/views/ButtonRadio";
 import VariableImportance from "./views/VariableImportance";
+import ModalVanilla from "../common/views/ModalVanilla";
 
 export let leftpanel = () => {
 
@@ -290,6 +291,47 @@ export class CanvasSolutions {
         }
     };
 
+    scoresSummary(problem, adapters) {
+
+        if (resultsPreferences.plotScores === 'all')
+            adapters = getSolutions(problem).map(solution => getSolutionAdapter(problem, solution));
+
+        return [
+            m('div', m('[style=display:inline-block]', 'Graph'), m(ButtonRadio, {
+                id: 'plotScoresButtonBar',
+                onclick: mode => resultsPreferences.plotScores = mode,
+                activeSection: resultsPreferences.plotScores,
+                sections: [{value: 'all'}, {value: 'selected'}],
+                attrsAll: {style: {'margin': '0 .5em', display: 'inline-block', width: 'auto'}},
+                attrsButtons: {class: 'btn-sm', style: {width: 'auto'}},
+            }), m('[style=display:inline-block]', 'solutions.')),
+            [problem.metric, ...problem.metrics].map(metric => m(PlotVegaLite, {
+                specification: {
+                    "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+                    "description": `${metric} scores for ${problem.problemID}.`,
+                    data: {values: adapters.map(adapter => ({
+                            ID: adapter.getName(),
+                            [metric]: adapter.getScore(metric)
+                        })).filter(point => point[metric] !== undefined)},
+                    "mark": "bar",
+                    "encoding": {
+                        "x": {"field": 'ID', "type": "nominal"},
+                        "y": {
+                            "field": metric, "type": "quantitative",
+                            scale: (metric in app.d3mMetricDomains)
+                                ? {domain: app.d3mMetricDomains[metric]}
+                                : {}
+                        },
+                        "tooltip": [
+                            {"field": 'ID', "type": "nominal"},
+                            {"field": metric, "type": "quantitative"}
+                        ]
+                    }
+                }
+            }))
+        ]
+    }
+
     variableImportance(problem, adapter) {
 
         let importanceContent = common.loader('VariableImportance');
@@ -532,6 +574,23 @@ export class CanvasSolutions {
             }
         }, resultsSubpanels['Prediction Summary'] && this.predictionSummary(problem, solutionAdapters));
 
+        let scoresSummary = m(Subpanel, {
+            style: {margin: '0px 1em'},
+            header: 'Scores Summary',
+            shown: resultsSubpanels['Scores Summary'],
+            setShown: state => {
+                resultsSubpanels['Scores Summary'] = state;
+                if (state) {
+                    // behavioral logging
+                    let logParams = {
+                        feature_id: 'VIEW_SCORES_SUMMARY',
+                        activity_l1: 'MODEL_SELECTION',
+                        activity_l2: 'MODEL_EXPLANATION'
+                    };
+                    app.saveSystemLogEntry(logParams);
+                }
+            }
+        }, resultsSubpanels['Scores Summary'] && this.scoresSummary(problem, solutionAdapters));
 
         let variableImportance = firstAdapter && firstAdapter.getSource() === 'd3m' && m(Subpanel, {
             style: {margin: '0px 1em'},
@@ -654,6 +713,7 @@ export class CanvasSolutions {
             problemSummary,
             solutionSummary,
             predictionSummary,
+            scoresSummary,
             variableImportance,
             visualizePipelinePanel,
             performanceStats,
@@ -674,7 +734,8 @@ let setLeftTabResults = tab => leftTabResults = tab;
 let resultsPreferences = {
     mode: 'EFD',
     predictor: undefined,
-    target: undefined
+    target: undefined,
+    plotScores: 'all'
 };
 
 // labels for variable importance X/Y axes
@@ -701,6 +762,7 @@ let sortPipelineTable = (a, b) => typeof a === 'string'
 
 let resultsSubpanels = {
     'Prediction Summary': true,
+    'Scores Summary': false,
     'Variance Inflation': false,
     'ANOVA Tables': false,
     'Coefficients': false,
@@ -723,8 +785,10 @@ export let setSelectedSolution = (problem, source, solutionId) => {
     };
 
     if (!problem) return;
+    if (!(source in problem.selectedSolutions)) problem.selectedSolutions[source] = [];
 
     if (modelComparison) {
+
         problem.selectedSolutions[source].includes(solutionId)
             ? app.remove(problem.selectedSolutions[source], solutionId)
             : problem.selectedSolutions[source].push(solutionId);
@@ -747,6 +811,17 @@ export let setSelectedSolution = (problem, source, solutionId) => {
 
 };
 
+export let getSolutions = (problem, source) => {
+    if (!problem) return [];
+
+    if (source) {
+        if (!(source in problem.solutions)) problem.solutions[source] = [];
+        Object.values(problem.solutions[source]);
+    }
+
+    return Object.values(problem.solutions)
+        .flatMap(source => Object.values(source))
+};
 
 export let getSelectedSolutions = (problem, source) => {
     if (!problem) return [];
@@ -811,3 +886,30 @@ export function generatePerformanceData(confusionData2x2) {
         // 'false negative rate': round(fn / (fn + tp), 2), // miss rate
     }
 }
+
+export let showFinalPipelineModal = false;
+export let setShowFinalPipelineModal = state => showFinalPipelineModal = state;
+
+export let finalPipelineModal = () => {
+    let resultsProblem = app.getResultsProblem();
+
+    let chosenSolution = getSolutions(resultsProblem, 'd3m').find(solution => solution.chosen);
+    if (!chosenSolution) return;
+
+    let adapter = solverD3M.getSolutionAdapter(resultsProblem, chosenSolution);
+
+    return m(ModalVanilla, {
+            id: 'finalPipelineModal',
+            setDisplay: setShowFinalPipelineModal
+        },
+        m('h4', 'Pipeline ', adapter.getName()),
+        'Task Two Complete. Your selected pipeline has been submitted.'
+
+        // * lots of room for cool activities *
+
+        // m(Table, {
+        //     id: 'finalPipelineTable',
+        //     data: []
+        // })
+    )
+};
