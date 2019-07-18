@@ -1766,8 +1766,8 @@ export function discovery(problems) {
             },
             selectedSource: undefined, // 'd3m' or 'rook'
             selectedSolutions: {
-                d3m: undefined,
-                rook: undefined
+                d3m: [],
+                rook: []
             },
             tags: {
                 transformed: [...getTransformVariables(manips)], // this is used when updating manipulations pipeline

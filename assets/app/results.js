@@ -828,7 +828,7 @@ export let getSelectedSolutions = (problem, source) => {
 
     if (!source) return Object.keys(problem.selectedSolutions)
         .flatMap(source => problem.selectedSolutions[source]
-            .map(id => problem.solutions[source][id])).filter(_=>_)
+            .map(id => problem.solutions[source][id])).filter(_=>_);
 
     problem.selectedSolutions[source] = problem.selectedSolutions[source] || [];
     return problem.selectedSolutions[source]
