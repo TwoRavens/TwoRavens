@@ -9,8 +9,9 @@ from tworaven_apps.utils.view_helper import \
      get_authenticated_user)
 
 from tworaven_apps.ta2_interfaces.user_problem_helper import UserProblemHelper
-from tworaven_apps.ta2_interfaces.util_data_writer import UtilDataWriter
 from tworaven_apps.ta2_interfaces.basic_problem_writer import BasicProblemWriter
+from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
+
 from tworaven_apps.ta2_interfaces.forms import \
     (SaveProblemForm,
      PROBLEM_REQ_FILENAME, PROBLEM_REQ_DATA)
@@ -26,9 +27,10 @@ from tworaven_apps.utils.view_helper import \
 @login_required
 def view_save_problem_form(request):
     """View test form"""
-    user_info = get_authenticated_user(request)
-    if not user_info.success:
-        return JsonResponse(get_json_error(user_info.err_msg))
+    user_workspace_info = get_latest_user_workspace(request)
+    if not user_workspace_info.success:
+        return JsonResponse(get_json_error(user_workspace_info.err_msg))
+    user_workspace = user_workspace_info.result_obj
 
     info_dict = dict()
     if request.POST:
@@ -36,7 +38,7 @@ def view_save_problem_form(request):
         if save_problem_form.is_valid():
             content = save_problem_form.cleaned_data
 
-            bpw = BasicProblemWriter(user_info.result_obj,
+            bpw = BasicProblemWriter(user_workspace,
                                      content[PROBLEM_REQ_FILENAME],
                                      content[PROBLEM_REQ_DATA])
 
@@ -64,56 +66,12 @@ def view_save_problem_form(request):
 
 
 @csrf_exempt
-def view_store_ta2ta3_data(request):
-    """Initial step, store a file to the /output/temp_storage_root directory
-
-    (1) Data is sent as JSON
-    (2) Converted to .csv
-    (3) Saved in the "temp_storage_root" as specified in the search_config.json
-    """
-    req_info = get_request_body_as_json(request)
-    if not req_info.success:
-        user_msg = ('The request did not contain problem data')
-        return JsonResponse(get_json_error(user_msg))
-
-    req_json = req_info.result_obj
-
-    user_info = get_authenticated_user(request)
-    if not user_info.success:
-        return JsonResponse(get_json_error(user_info.err_msg))
-    user_obj = user_info.result_obj
-
-    if not PROBLEM_REQ_DATA in req_json:
-        user_msg = ('The request did not a "%s" value') % PROBLEM_REQ_DATA
-        return JsonResponse(get_json_error(user_msg))
-
-    filename = None
-    if PROBLEM_REQ_FILENAME in req_json:
-        filename = req_json[PROBLEM_REQ_FILENAME]
-
-    udw = UtilDataWriter(user_obj,
-                         req_json[PROBLEM_REQ_DATA],
-                         filename)
-
-    if udw.has_error():
-        return JsonResponse(get_json_error(udw.error_message))
-
-    info = get_json_success('file created!',
-                            data=udw.get_final_info())
-
-    return JsonResponse(info)
-
-
-@csrf_exempt
 def view_store_basic_problem(request):
-    """Initial step, store a file to the /output directory
-
-    (1) Try: "output/problems" + ....
-    (2) Try: config.temp_storage_root  + "problems" + .....
-    """
-    user_info = get_authenticated_user(request)
-    if not user_info.success:
-        return JsonResponse(get_json_error(user_info.err_msg))
+    """Initial step, store a file to the /output/problems directory"""
+    user_workspace_info = get_latest_user_workspace(request)
+    if not user_workspace_info.success:
+        return JsonResponse(get_json_error(user_workspace_info.err_msg))
+    user_workspace = user_workspace_info.result_obj
 
     req_info = get_request_body_as_json(request)
     if not req_info.success:
@@ -123,14 +81,14 @@ def view_store_basic_problem(request):
     req_json = req_info.result_obj
 
     if not PROBLEM_REQ_FILENAME in req_json:
-        user_msg = ('The request did not a "%s" value') % PROBLEM_REQ_FILENAME
+        user_msg = ('The request did not contain a "%s" value. (view_store_basic_problem)') % PROBLEM_REQ_FILENAME
         return JsonResponse(get_json_error(user_msg))
 
     if not PROBLEM_REQ_DATA in req_json:
-        user_msg = ('The request did not a "%s" value') % PROBLEM_REQ_DATA
+        user_msg = ('The request did not contain a "%s" value. (view_store_basic_problem)') % PROBLEM_REQ_DATA
         return JsonResponse(get_json_error(user_msg))
 
-    bpw = BasicProblemWriter(user_info.result_obj,
+    bpw = BasicProblemWriter(user_workspace,
                              req_json[PROBLEM_REQ_FILENAME],
                              req_json[PROBLEM_REQ_DATA])
 
@@ -145,6 +103,21 @@ def view_store_basic_problem(request):
                             data=data_info)
 
     return JsonResponse(info)
+
+    """
+    # example input:
+    {
+      "filename":"problem 13/schema.json",
+      "data": {
+        "problem":{"taskType":"REGRESSION","taskSubtype":"NONE","performanceMetrics":[{"metric":"MEAN_ABSOLUTE_ERROR"}]},
+
+        "inputs":[{"datasetId":"DA_poverty_estimation_problem_TRAIN-aug-iepqsu_problem",
+        "targets":[{"resourceId":"learningData","columnIndex":5,"columnName":"POVALL_2016"}]}],\
+
+        "description":"Socioeconomic indicators like poverty rates, population change, unemployment rates, and education levels vary geographically across U.S. States and counties. This dataset includes poverty indicators across different counties across all states of the US. The task is to estimate the number of people living in poverty in 2016 across counties in the US. This is a regression problem.",
+
+        "name":"problem 13"}}
+    """
 
 
 

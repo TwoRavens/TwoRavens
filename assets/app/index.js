@@ -46,8 +46,10 @@ import {buildDatasetUrl} from "./app";
 import {alertWarn} from "./app";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
+export let boldPlain = value => m('b', {}, value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
 export let link = url => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
+export let linkURL = url => m('a', {href: url, style: {color: 'blue'}, }, url);
 
 
 class Body {

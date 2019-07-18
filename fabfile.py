@@ -60,16 +60,6 @@ def restart():
 
 
 @task
-def make_d3m_config_files_2018():
-    """2018 (old) Make configs in /ravens_volume and loads them to db"""
-    clear_d3m_configs()
-
-    from tworaven_apps.configurations.util_config_maker import TestConfigMaker
-    TestConfigMaker.make_deploy_config_files()
-
-
-
-@task
 def make_d3m_configs_from_files():
     """Make configs from /ravens_volume and loads them to db"""
     clear_d3m_configs()
@@ -123,13 +113,6 @@ def clear_test_data():
     else:
         print('  -> No preprocess D3M test output directory')
 
-
-def make_d3m_config():
-    """NO LONGER USED
-    Adds D3M configs to database--but DOESN'T create config files"""
-    from tworaven_apps.configurations.util_config_maker import TestConfigMaker
-
-    TestConfigMaker.make_configs()
 
 @task
 def load_d3m_config_from_env():

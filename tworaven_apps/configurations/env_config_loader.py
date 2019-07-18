@@ -10,6 +10,7 @@ from types import SimpleNamespace
 
 from django.conf import settings
 
+from tworaven_apps.utils import random_info
 from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.utils.json_helper import json_loads
@@ -17,16 +18,8 @@ from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
 from tworaven_apps.configurations.models_d3m import \
     (D3MConfiguration)
-from tworaven_apps.configurations.static_vals import \
-    (D3M_VARIABLE_LIST,
-     D3M_DIRECTORY_VARIABLES,
-     D3M_OUTPUT_SUBDIRECTORIES,
-     KEY_D3M_DIR_ADDITIONAL_INPUTS,
-     KEY_D3M_DIR_TEMP,
-     KEY_D3M_USER_PROBLEMS_ROOT,
-     KEY_D3MLOCALDIR,
-     KEY_D3MSTATICDIR,
-     KEY_TA2TA3)
+from tworaven_apps.configurations import static_vals as cstatic
+
 
 
 class EnvConfigLoader(BasicErrCheck):
@@ -71,7 +64,7 @@ class EnvConfigLoader(BasicErrCheck):
         """Use variables from Django settings"""
         config_info = SimpleNamespace()
 
-        for attr in D3M_VARIABLE_LIST:
+        for attr in cstatic.D3M_VARIABLE_LIST:
             if not hasattr(settings, attr):
                 setattr(config_info, attr, None)
             else:
@@ -85,7 +78,7 @@ class EnvConfigLoader(BasicErrCheck):
         """Use the current environment variables"""
         config_info = dict()
 
-        for attr in D3M_VARIABLE_LIST:
+        for attr in cstatic.D3M_VARIABLE_LIST:
             if attr in os.environ:
                 config_info[attr] = os.environ[attr]
             else:
@@ -104,7 +97,7 @@ class EnvConfigLoader(BasicErrCheck):
         if not self.verify_variable_existence():
             return
 
-        if not self.read_problem_doc():
+        if not self.read_problem_doc_if_exists():
             return
 
         self.build_config_entry()
@@ -113,9 +106,11 @@ class EnvConfigLoader(BasicErrCheck):
         if self.success_keeping_config:
             return
 
-    def read_problem_doc(self):
+    def read_problem_doc_if_exists(self):
         """Verify the problem path
         example: "/input/TRAIN/problem_TRAIN/problemDoc.json"
+
+        Note: As of 7/17/2019, it's ok if there's no problem doc
         """
         if self.has_error():
             return False
@@ -124,16 +119,18 @@ class EnvConfigLoader(BasicErrCheck):
             user_msg = ('D3MPROBLEMPATH file non-existent or'
                         ' can\'t be reached: %s') % \
                         self.env_config.D3MPROBLEMPATH
-            self.add_err_msg(user_msg)
-            return False
+            print('Note: ', user_msg)
+            # self.add_err_msg(user_msg)
+            return True
 
         json_content = open(self.env_config.D3MPROBLEMPATH, 'r').read()
         pdoc_info = json_loads(json_content)
         if not pdoc_info.success:
             user_msg = ('D3MPROBLEMPATH file not JSON.  %s\nError: %s') % \
                         (self.env_config.D3MPROBLEMPATH, pdoc_info.err_msg)
-            self.add_err_msg(user_msg)
-            return False
+            print('Note: ', user_msg)
+            # self.add_err_msg(user_msg)
+            return True
 
         self.problem_doc = pdoc_info.result_obj
         return True
@@ -146,7 +143,7 @@ class EnvConfigLoader(BasicErrCheck):
         if self.has_error():
             return False
 
-        for attr in D3M_VARIABLE_LIST:
+        for attr in cstatic.D3M_REQUIRED_VARIABLES:    # cstatic.D3M_VARIABLE_LIST:
 
             # Is it in settings?
             #
@@ -165,9 +162,12 @@ class EnvConfigLoader(BasicErrCheck):
 
             # If it's a directory, does it exist?
             #
-            if attr in D3M_DIRECTORY_VARIABLES:
+            if attr in cstatic.D3M_DIRECTORY_VARIABLES:
                 if not isdir(attr_val):
-                    if attr in [KEY_D3MSTATICDIR, KEY_D3MLOCALDIR]:
+                    # We expect D3MINPUTDIR, D3MOUTPUTDIR
+                    #   - For local testing, we can create D3MSTATICDIR, KEY_D3MLOCALDIR
+                    #
+                    if attr in [cstatic.KEY_D3MSTATICDIR, cstatic.KEY_D3MLOCALDIR]:
                         try:
                             os.makedirs(attr_val, exist_ok=True)
                         except OSError:
@@ -188,7 +188,7 @@ class EnvConfigLoader(BasicErrCheck):
         """Make an entry 185_baseball_dataset on the TA3 config here
         https://datadrivendiscovery.org/wiki/pages/viewpage.action?pageId=11276800
         For now, retrofitting back to D3MConfiguration model with
-            temp_storage_root and user_problems_root, training_data_root
+            user_problems_root, training_data_root
 
         New config example of problemDocPath
             example: "/input/TRAIN/problem_TRAIN/problemDoc.json"
@@ -201,15 +201,26 @@ class EnvConfigLoader(BasicErrCheck):
         print('Default status', self.is_default_config)
         config_info = dict(is_default=self.is_default_config)
 
-        try:
-            name = self.problem_doc['about']['problemID']
-        except KeyError:
-            user_msg = ('about.Problem ID not found in problem doc: %s') % \
-                    self.env_config.D3MPROBLEMPATH
-            self.add_err_msg(user_msg)
-            return
+        # Set the name of the config
+        #
+        if self.problem_doc:
+            try:
+                name = self.problem_doc['about']['problemID']
+            except KeyError:
+                user_msg = ('about.Problem ID not found in problem doc: %s') % \
+                        self.env_config.D3MPROBLEMPATH
+                self.add_err_msg(user_msg)
+                return
+        else:
+            # No problem doc, so timestamp it
+            #
+            name = 'config_%s_%s' % \
+                        (random_info.get_timestamp_string(),
+                         random_info.get_alphanumeric_lowercase(4))
 
-        # If it exists, delete it
+        # If a D3MConfiguration with this name exists, either
+        #   use it or delete, depending on the flag: self.delete_if_exists
+        #
         d3m_config = D3MConfiguration.objects.filter(name=name).first()
         if d3m_config:
             print('-' * 40)
@@ -218,43 +229,56 @@ class EnvConfigLoader(BasicErrCheck):
                 print('Deleting it....')
                 d3m_config.delete()
             else:
+                # Use the existing config!
+                #
                 user_msg = ('Config with same name'
                             ' (%s) exists. Keeping it.') % \
                             (d3m_config.id,)
 
+                if d3m_config.is_default != self.is_default_config:
+                    d3m_config.is_default = self.is_default_config
+                    d3m_config.save()
+
                 self.success_keeping_config = True
                 self.d3m_config = d3m_config
+
                 print(user_msg)
                 print('-' * 40)
 
                 return
 
+        # Make a new config!
+        #
         config_info['name'] = name
         config_info['orig_dataset_id'] = \
                         self.orig_dataset_id if self.orig_dataset_id else name
         config_info['is_user_config'] = self.is_user_config
 
 
+        if not isdir(self.env_config.D3MINPUTDIR):
+            user_msg = (f'D3MINPUTDIR is not accessible:'
+                        f' {self.env_config.D3MINPUTDIR}')
+            self.add_err_msg(user_msg)
+            return
+
         # problem_schema
-        config_info['problem_schema'] = self.env_config.D3MPROBLEMPATH
-        config_info['problem_root'] = dirname(self.env_config.D3MPROBLEMPATH)
+        if hasattr(self.env_config, 'D3MPROBLEMPATH'):
+            config_info['problem_schema'] = self.env_config.D3MPROBLEMPATH
+        else:
+            config_info['problem_schema'] = ''
 
+        config_info['problem_root'] = join(self.env_config.D3MINPUTDIR,
+                                           'TRAIN',
+                                           'problem_TRAIN')
 
-        if self.env_config.D3MPROBLEMPATH.find('problem_TRAIN'):
-            # go up 2 directories + 'dataset_TRAIN'
-            # don't rely on D3MINPUTDIR
-            #
-            config_info['training_data_root'] = \
-                join(dirname(dirname(self.env_config.D3MPROBLEMPATH)),
+        config_info['training_data_root'] = \
+                join(self.env_config.D3MINPUTDIR,
+                     'TRAIN',
                      'dataset_TRAIN')
 
-            config_info['dataset_schema'] = \
-                join(dirname(dirname(self.env_config.D3MPROBLEMPATH)),
-                     'dataset_TRAIN',
-                     'datasetDoc.json')
-
-        #    "dataset_schema": "/baseball/data/dataSchema.json",
-
+        config_info['dataset_schema'] = \
+            join(config_info['training_data_root'],
+                 'datasetDoc.json')
 
         config_info['root_output_directory'] = self.env_config.D3MOUTPUTDIR
         config_info['d3m_input_dir'] = self.env_config.D3MINPUTDIR
@@ -268,18 +292,18 @@ class EnvConfigLoader(BasicErrCheck):
 
         print('new_config default', new_config.is_default)
 
-        for new_dirname in D3M_OUTPUT_SUBDIRECTORIES:
+        for new_dirname in cstatic.D3M_OUTPUT_SUBDIRECTORIES:
             new_dir_fullpath = join(self.env_config.D3MOUTPUTDIR, new_dirname)
+
             if not isdir(new_dir_fullpath):
                 os.makedirs(new_dir_fullpath, exist_ok=True)
 
-            if new_dirname == KEY_D3M_DIR_TEMP:
-                new_config.temp_storage_root = new_dir_fullpath
-
-            elif new_dirname == KEY_D3M_USER_PROBLEMS_ROOT:
+            if new_dirname == cstatic.USER_PROBLEMS_ROOT_DIR_NAME:
+                print('!!! Create: new_dirname', new_dirname)
+                # updated, retrieved with key cstatic.KEY_D3M_USER_PROBLEMS_ROOT:
                 new_config.user_problems_root = new_dir_fullpath
 
-            elif new_dirname == KEY_D3M_DIR_ADDITIONAL_INPUTS:
+            elif new_dirname == cstatic.KEY_D3M_DIR_ADDITIONAL_INPUTS:
                 new_config.additional_inputs = new_dir_fullpath
 
         # save updated config
@@ -323,12 +347,18 @@ class EnvConfigLoader(BasicErrCheck):
 
         info = SimpleNamespace()
 
-        info.D3MRUN = KEY_TA2TA3 # ?
+        info.D3MRUN = cstatic.KEY_TA2TA3 # ?
         info.D3MINPUTDIR = fullpath
-        info.D3MPROBLEMPATH = join(fullpath,
-                                   'TRAIN',
-                                   'problem_TRAIN',
-                                   'problemDoc.json')
+
+        problem_path = join(fullpath,
+                            'TRAIN',
+                            'problem_TRAIN',
+                            'problemDoc.json')
+
+        if isfile(problem_path):
+            info.D3MPROBLEMPATH = problem_path
+        else:
+            info.D3MPROBLEMPATH = ''
 
         # Create these output directories
         #
