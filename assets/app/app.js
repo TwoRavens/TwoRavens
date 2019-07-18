@@ -1176,6 +1176,7 @@ export let loadWorkspace = async newWorkspace => {
             else return response.data;
         })
         .then(preprocess => {
+            if (!preprocess) return;
             setVariableSummaries(preprocess.variables);
             setDatasetSummary(preprocess.dataset);
 
@@ -1786,6 +1787,7 @@ export function discovery(problems) {
 }
 
 export let setVariableSummaries = state => {
+    if (!state) return;
     variableSummaries = Object.keys(state).reduce((out, variable) =>
         Object.assign(out, {[variable.split('.').join('_')]: state[variable]}), {});
 

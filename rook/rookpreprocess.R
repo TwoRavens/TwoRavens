@@ -36,19 +36,18 @@ preprocess.app <- function(env){
         warning <- TRUE
         result <- list(warning="The request is not valid json. Check for special characters.")
     }
-
     if(!warning) {
         preprocessParams <- jsonlite::fromJSON(request$POST()$solaJSON)
     }
 
-	if(!warning){
-		mydataloc <- preprocessParams$data
+    if (! warning) {
+        mydataloc <- preprocessParams$data
 
-        if(length(mydataloc) == 0){ # rewrite to check for data file?
-                warning <- TRUE
-                result<-list(warning="No data location.")
+        if (length(mydataloc) == 0) { # rewrite to check for data file?
+            warning <- TRUE
+            result <- list(warning = "No data location.")
         }
-	}
+    }
 
     if(!warning){
         mydatastub <- preprocessParams$datastub
@@ -91,7 +90,10 @@ preprocess.app <- function(env){
                     warning <- TRUE
                     return<-list(warning="Data file extension not recognized as .csv or .gz")
                 }
-                if ('columns' %in% names(preprocessParams)) colnames(mydata) <- c(preprocessParams$columns)
+                if ('columns' %in% names(preprocessParams)) {
+                    preprocessParams$columns <- sapply(preprocessParams$columns, URLdecode)
+                    colnames(mydata) <- c(preprocessParams$columns)
+                }
 
                 ppJSON<-preprocess(testdata=mydata)
         #        result <- list(targets=targetVars)

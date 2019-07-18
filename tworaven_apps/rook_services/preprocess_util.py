@@ -24,6 +24,7 @@ else:
 """
 import csv
 from io import StringIO
+import json
 from os.path import isfile
 from datetime import datetime as dt
 import requests
@@ -131,6 +132,8 @@ class PreprocessUtil(BasicErrCheck):
         if self.fix_duplicate_columns:
             dcr = DuplicateColumnRemover(self.source_path)
             self.column_names = dcr.updated_columns
+
+            self.column_names = [requests.utils.quote(column) for column in self.column_names]
 
             if dcr.has_error():
                 user_msg = (f'Augment error during column checks: '
