@@ -2501,7 +2501,7 @@ function CreatePipelineData(dataset, problem) {
 
     let pipelineSpec = Object.assign({
         // uriCsv is also valid, but not currently accepted by ISI TA2
-        dataset_uri: dataset.datasetUrl.substring(0, dataset.datasetUrl.lastIndexOf("/tables")) + "/datasetDoc.json",
+        dataset_uri: dataset.datasetPath.substring(0, dataset.datasetPath.lastIndexOf("/tables")) + "/datasetDoc.json",
         // valid values will come in future API
         output: "OUTPUT_TYPE_UNDEFINED",
         // Example:

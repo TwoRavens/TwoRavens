@@ -32,6 +32,7 @@ import Datamart from "./datamart/Datamart";
 
 import {bold ,boldPlain} from "./index";
 import {locationReload, setModal} from "../common/views/Modal";
+import {getSubtask} from "./app";
 
 
 export class CanvasModel {
@@ -53,7 +54,7 @@ export class CanvasModel {
                 onDragOut: pebble => {
                     delete selectedProblem.unedited;
 
-                    let pebbles = forceData.summaries[pebble].plottype === 'collapsed'
+                    let pebbles = forceData.summaries[pebble] && forceData.summaries[pebble].plottype === 'collapsed'
                         ? forceData.summaries[pebble].childNodes : [pebble];
 
                     pebbles.forEach(pebble => {
@@ -89,7 +90,7 @@ export class CanvasModel {
                 },
                 onDragAway: (pebble, groupId) => {
                     delete selectedProblem.unedited;
-                    let pebbles = forceData.summaries[pebble.name].plottype === 'collapsed'
+                    let pebbles = forceData.summaries[pebble.name] && forceData.summaries[pebble.name].plottype === 'collapsed'
                         ? forceData.summaries[pebble.name].childNodes : [pebble.name];
 
                     pebbles.forEach(pebble => {
@@ -519,7 +520,7 @@ export let leftpanel = forceData => {
 
     if (summaryPebble && forceData.pebbles.includes(summaryPebble)) {
         // if hovered over a collapsed pebble, then expand summaryPebble into all children pebbles
-        let summaryPebbles = forceData.summaries[summaryPebble].plottype === 'collapsed'
+        let summaryPebbles = forceData.summaries[summaryPebble] && forceData.summaries[summaryPebble].plottype === 'collapsed'
             ? [...forceData.summaries[summaryPebble].childNodes]
             : [summaryPebble];
 
@@ -593,7 +594,7 @@ export let leftpanel = forceData => {
                 value: 'Augment',
                 contents: m(Datamart, {
                     preferences: app.datamartPreferences,
-                    dataPath: app.workspace.datasetUrl,
+                    dataPath: app.workspace.datasetPath,
                     endpoint: app.datamartURL,
                     labelWidth: '10em'
                 })
@@ -636,7 +637,7 @@ export let rightpanel = () => {
                 m('label', 'Task Type'),
                 m(Dropdown, {
                     id: 'taskType',
-                    items: app.supportedTasks,
+                    items: Object.keys(app.d3mTaskType),
                     activeItem: selectedProblem.task,
                     onclickChild: task => app.setTask(task, selectedProblem),
                     style: {'margin': '1em', 'margin-top': '0'},
@@ -664,9 +665,9 @@ export let rightpanel = () => {
                     disabled: isLocked
                 }),
 
-                app.applicableMetrics[selectedProblem.task][selectedProblem.subTask].length - 1 > selectedProblem.metrics.length && m(Dropdown, {
+                app.applicableMetrics[selectedProblem.task][getSubtask(selectedProblem)].length - 1 > selectedProblem.metrics.length && m(Dropdown, {
                     id: 'performanceMetrics',
-                    items: app.applicableMetrics[selectedProblem.task][selectedProblem.subTask]
+                    items: app.applicableMetrics[selectedProblem.task][getSubtask(selectedProblem)]
                         .filter(metric => metric !== selectedProblem.metric && !selectedProblem.metrics.includes(metric)),
                     activeItem: 'Add Secondary Metric',
                     onclickChild: metric => {
@@ -1192,7 +1193,7 @@ export let mutateNodes = problem => (state, context) => {
 
     // set the base color of each node
     pebbles.forEach(pebble => {
-        if (state.summaries[pebble].plottype === 'collapsed') {
+        if (state.summaries[pebble] && state.summaries[pebble].plottype === 'collapsed') {
             context.nodes[pebble].strokeWidth = 0;
             context.nodes[pebble].nodeCol = 'transparent';
             context.nodes[pebble].strokeColor = 'transparent';

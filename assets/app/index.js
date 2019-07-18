@@ -421,7 +421,7 @@ class Body {
                             'Original Dataset',
                             m(Button, {
                                 class: 'btn-sm',
-                                onclick: () => app.downloadFile(app.workspace.datasetUrl)
+                                onclick: () => app.downloadFile(app.workspace.datasetPath)
                             }, 'Download'),
                             italicize('Retrieve the original, raw file. No alterations applied.')
                         ],
@@ -494,7 +494,7 @@ class Body {
             app.workspace && m(ModalDatamart, {
                 preferences: app.datamartPreferences,
                 endpoint: app.datamartURL,
-                dataPath: app.workspace.datasetUrl
+                dataPath: app.workspace.datasetPath
             }),
 
             // Show basic API and Workspace Info
@@ -717,7 +717,7 @@ class Body {
               m('hr'),
               m('p', [
                   m('b', 'app.workspace.datasetUrl: '),
-                  m('span', `${app.workspace.datasetUrl}`)
+                  m('span', `${app.workspace.datasetPath}`)
                 ]),
               m('hr'),
                 m('div', [
@@ -893,14 +893,14 @@ let standaloneDatamart = () => {
         m('div', {style: {margin: 'auto', 'margin-top': '1em', 'max-width': '1000px'}},
             m(Datamart, {
                 preferences: app.datamartPreferences,
-                dataPath: app.workspace.datasetUrl,
+                dataPath: app.workspace.datasetPath,
                 endpoint: app.datamartURL,
                 labelWidth: '10em'
             })),
         m(ModalDatamart, {
             preferences: app.datamartPreferences,
             endpoint: app.datamartURL,
-            dataPath: app.workspace.datasetUrl
+            dataPath: app.workspace.datasetPath
         })
     ]
 };

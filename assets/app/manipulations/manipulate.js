@@ -136,7 +136,7 @@ function canvas(compoundPipeline) {
 }
 
 export function leftpanel() {
-    if (!app.domainIdentifier || !constraintMenu)
+    if (!app.workspace.d3m_config.name || !constraintMenu)
         return;
 
     return m(Panel, {
@@ -247,7 +247,7 @@ export function varList() {
 // hardcoded to manipulations mode
 export function rightpanel() {
 
-    if (!('name' in app.domainIdentifier)) return;
+    if (!app.workspace.d3m_config.name) return;
 
     return m(Panel, {
             side: 'right',

@@ -414,7 +414,7 @@ export let loadConfusionData = async (problem, solution) => {
                 metadata: {
                     targets: problem.targets,
                     collectionName: app.workspace.d3m_config.name,
-                    collectionPath: app.workspace.datasetUrl,
+                    collectionPath: app.workspace.datasetPath,
                     query: compiled,
                     solutionId: solution.pipelineId
                 }
@@ -494,7 +494,7 @@ export let loadImportanceEFDData = async (problem, solution) => {
                     targets: problem.targets,
                     predictors: problem.predictors,
                     collectionName: app.workspace.d3m_config.name,
-                    collectionPath: app.workspace.datasetUrl,
+                    collectionPath: app.workspace.datasetPath,
                     query: compiled
                 }
             }
