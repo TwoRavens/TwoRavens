@@ -200,6 +200,8 @@ export default class Datamart {
             getData
         } = preferences;
 
+        let coerceArray = data => Array.isArray(data) ? data : [data];
+
         if (preferences.isAugmenting) return m('div',
             m('h5', 'The system is performing an augmentation.'),
             common.loader('DatamartAugmenting')
@@ -439,8 +441,8 @@ export default class Datamart {
 
                 (hints || []).length > 0 && m(Dropdown, {
                     id: 'hintsDropdown',
-                    items: hints.map(hint => hint.domain.join(', ')),
-                    onclickChild: child => query.keywords = hints.find(hint => hint.domain.join(', ') === child).keywords || [],
+                    items: hints.map(hint => coerceArray(hint.domain).join(', ')),
+                    onclickChild: child => query.keywords = hints.find(hint => coerceArray(hint.domain).join(', ') === child).keywords || [],
                     style: {margin: '1em'},
                     activeItem: 'Hints'
                 }),

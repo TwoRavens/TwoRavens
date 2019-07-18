@@ -1233,8 +1233,6 @@ export async function endsession() {
     //
     let status = await exportSolution(String(selectedSolutionId));
 
-    console.warn("#debug status");
-    console.log(status);
     // app.makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
     //let res = await app.makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
     // endAllSearches();
@@ -1243,7 +1241,7 @@ export async function endsession() {
     // end_ta3_search(true, "Problem marked as complete.");
     // setModal("Your selected pipeline has been submitted.", "Task Complete", true, false, true, locationReload);
     //}
-    if (true) {// (status.success)
+    if (status.success) {
         selectedSolution.chosen = true;
         results.setShowFinalPipelineModal(true);
 

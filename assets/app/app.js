@@ -30,7 +30,7 @@ import {linkURL, link} from "./index";
 
 let RAVEN_CONFIG_VERSION = 1;
 
-let TA2DebugMode = false;
+export let TA2DebugMode = false;
 export let debugLog = TA2DebugMode ? console.log : _ => _;
 
 window.addEventListener('resize', m.redraw);
@@ -181,10 +181,15 @@ export async function updatePeek(pipeline) {
 }
 
 export let downloadFile = async datasetUrl => {
+    if (!datasetUrl) return;
     let downloadUrl = D3M_SVC_URL + '/download-file?' + m.buildQueryString({data_pointer: datasetUrl});
+
+    console.warn('Download URL');
+    console.log(downloadUrl);
+
     let link = document.createElement("a");
     link.setAttribute("href", downloadUrl);
-    link.setAttribute("download", downloadUrl);
+    link.setAttribute("download", datasetUrl.split('/').slice(-1));
     link.click();
 };
 
@@ -1167,14 +1172,10 @@ export let loadWorkspace = async newWorkspace => {
             data: {data: sampledDatasetPath, datastub: workspace.d3m_config.name}
         }))
         .then(response => {
-            console.warn("#debug response");
-            console.log(response);
             if (!response.success) alertError(response.message);
             else return response.data;
         })
         .then(preprocess => {
-            console.warn("#debug preprocess");
-            console.log(preprocess);
             setVariableSummaries(preprocess.variables);
             setDatasetSummary(preprocess.dataset);
 

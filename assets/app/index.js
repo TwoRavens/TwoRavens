@@ -39,7 +39,6 @@ import ModalWorkspace from "./views/ModalWorkspace";
 import Body_EventData from './eventdata/Body_EventData';
 import Body_Dataset from "./views/Body_Dataset";
 
-import VariableImportance from "./views/VariableImportance";
 // import {efdCategoricalData, efdContinuousData, tempProblem} from "./variableImportanceDataSample";
 import {getSelectedProblem} from "./app";
 import {buildDatasetUrl} from "./app";
@@ -343,24 +342,26 @@ class Body {
                 onclick: () => app.setShowModalAlerts(true)
             }, m(Icon, {name: 'bell', style: `color: ${app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}`})),
 
-            m(Button, {
-                style: {'margin': '8px'},
-                title: 'ta2 debugger',
-                class: 'btn-sm',
-                onclick: () => app.setShowModalTA2Debug(true)
-            }, m(Icon, {name: 'bug'})),
+            app.TA2DebugMode && [
+                m(Button, {
+                    style: {'margin': '8px'},
+                    title: 'ta2 debugger',
+                    class: 'btn-sm',
+                    onclick: () => app.setShowModalTA2Debug(true)
+                }, m(Icon, {name: 'bug'})),
 
-            m(Button, {
-                style: {'margin': '8px'},
-                title: 'ta2 stop searches',
-                class: 'btn-sm',
-                onclick: () => {
-                    solverD3M.endAllSearches();
-                    solverD3M.stopAllSearches();
-                    // solverD3M.endsession();
-                    // solverD3M.handleENDGetSearchSolutionsResults();
-                }
-            }, m(Icon, {name: 'stop'})),
+                m(Button, {
+                    style: {'margin': '8px'},
+                    title: 'ta2 stop searches',
+                    class: 'btn-sm',
+                    onclick: () => {
+                        solverD3M.endAllSearches();
+                        solverD3M.stopAllSearches();
+                        // solverD3M.endsession();
+                        // solverD3M.handleENDGetSearchSolutionsResults();
+                    }
+                }, m(Icon, {name: 'stop'}))
+            ],
 
             // m("span", {"class": "footer-info-break"}, "|"),
             // m("a", {"href" : "/dev-raven-links", "target": "=_blank"}, "raven-links"),
@@ -379,14 +380,12 @@ class Body {
                 m(Button,{
                     onclick: () => window.open('#!/data', 'data') && app.logEntryPeekUsed(true),
                     class: 'btn-sm'
-                  },
-                  m(Icon, {name: 'link-external'}))
-                ),
+                  }, m(Icon, {name: 'link-external'}))),
             manipulate.totalSubsetRecords !== undefined && m("span.badge.badge-pill.badge-secondary#recordCount", {
                 style: {
                     float: 'right',
                     "margin-left": "5px",
-                    "margin-top": "10px",
+                    "margin-top": "1.4em",
                     "margin-right": "2em"
                 }
             }, manipulate.totalSubsetRecords + ' Records')
