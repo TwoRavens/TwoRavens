@@ -1011,6 +1011,7 @@ export let loadWorkspace = async newWorkspace => {
                 m('p', 'Url: ', link(datasetDocLink)),
                 m('p', 'Please try to reload. However, this may be a fatal error.'),
               ]),
+          "Failed to load datasetDoc.json!",
           true,
           "Reload Page",
           false,
