@@ -314,7 +314,7 @@ export let leftpanel = forceData => {
         title: `mark ${allMeaningful ? 'no' : 'all'} problems as meaningful`
     });
 
-    let discoveryHeaders = [
+    let discoveryHeaders = () => [
         'Name',
         !app.task1_finished && m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
         'Target', 'Predictors',
@@ -410,7 +410,7 @@ export let leftpanel = forceData => {
 
                     m(Table, {
                         id: 'discoveryTableSelectedProblem',
-                        headers: discoveryHeaders,
+                        headers: discoveryHeaders(),
                         data: [formatProblem(selectedProblem)],
                         activeRow: ravenConfig.selectedProblem,
                         // showUID: false,
@@ -446,7 +446,7 @@ export let leftpanel = forceData => {
                      */
                     m(Table, {
                         id: 'discoveryTable' + partition,
-                        headers: discoveryHeaders,
+                        headers: discoveryHeaders(),
                         data: problemPartition[partition].map(formatProblem),
                         rowClasses: {
                             'discovery-table-highlight': selectedProblem.provenanceID

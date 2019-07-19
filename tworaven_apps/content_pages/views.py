@@ -83,7 +83,7 @@ def view_env_variables(request):
                 if key not in d3m_names]
     d3m_vars = [(key, os.getenv(key)) for key in d3m_names]
 
-    print(all_vars)
+    # print(all_vars)
     dinfo = dict(d3m_vars=d3m_vars,
                  all_vars=all_vars)
 
