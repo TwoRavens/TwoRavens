@@ -8,6 +8,7 @@ import {alertError, alertWarn, debugLog} from "../app";
 import {locationReload, setModal} from "../../common/views/Modal";
 import * as queryMongo from "../manipulations/queryMongo";
 import {isKeyDefined} from "../utils";
+import Table from "../../common/views/Table";
 
 // functions to extract information from D3M response format
 export let getSolutionAdapter = (problem, solution) => ({
@@ -1268,26 +1269,26 @@ export async function endsession() {
     let status = await exportSolution(String(selectedSolutionId));
 
     if (status.success) {
-        selectedSolution.chosen = true;
-        results.setShowFinalPipelineModal(true);
+        // more descriptive solution modal that doesn't lock the page
+        // selectedSolution.chosen = true;
+        // results.setShowFinalPipelineModal(true);
 
+        await endAllSearches2();
+
+        setModal(m('div', {}, [
+                m('p', 'Finished! The problem is marked as complete.'),
+                // m('p', ''),
+            ]),
+            "Task complete",
+            true,
+            "Restart",
+            false,
+            locationReload);
         m.redraw()
-    }else{
-      return;
+    } else {
+        status.name = 'Error from pipeline submission.';
+        alertError(m(Table, {data: status}))
     }
-
-    await endAllSearches2();
-
-     setModal(m('div', {}, [
-             m('p', 'Finished! The problem is marked as complete.'),
-             // m('p', ''),
-         ]),
-         "Task complete",
-         true,
-         "Restart",
-         false,
-         locationReload);
-
 }
 
 /*
