@@ -30,6 +30,18 @@ export function trigger(selectors, event) {
     elem(selectors).dispatchEvent(evt);
 }
 
+
+/*
+ *  Check if a nested key exists.
+ *  example:   isKeyDefined(selectedSolution, 'pipeline.id')
+ *   returns object or "undefined"
+ */
+export const isKeyDefined = (obj, key_str) =>{
+    return key_str.split(".").reduce(function(o, x) {
+        return (typeof o == "undefined" || o === null) ? o : o[x];
+    }, obj);
+}
+
 /**
  *  Copy to clipboard
  *  reference: https://hackernoon.com/copying-text-to-clipboard-with-javascript-df4d4988697f
