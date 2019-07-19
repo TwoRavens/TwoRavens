@@ -552,12 +552,19 @@ let handleCompletedSearch = searchId => response => {
         console.warn(response.message);
         return;
     }
-    if (!app.workspace.problems) return;
-    let solvedProblem = Object.values(app.workspace.problems)
-        .find(problem => String(problem.d3mSearchId) === String(searchId));
-    if (!solvedProblem) return;
 
-    delete solvedProblem.d3mSolverState;
+    if (searchId in results.otherSearches) {
+        results.otherSearches[searchId].running = false;
+        m.redraw();
+        return;
+    }
+    let solvedProblem = Object.values(app.workspace.raven_config.problems)
+        .find(problem => problem.d3mSearchId === String(searchId));
+
+    if (solvedProblem)
+        delete solvedProblem.d3mSolverState;
+
+    m.redraw()
 };
 
 export let endAllSearches = async () => Object.keys(app.workspace.raven_config.problems)
@@ -726,7 +733,7 @@ let asString = value => ({string: value});
 let asBool = value => ({bool: value});
 let asInt = value => ({int64: String(value)});
 let asDouble = value => ({double: value});
-let asList = value => ({list: value.map(elem => asType(elem))});
+let asList = value => ({list: {items: value.map(elem => asType(elem))}});
 
 let asType = value => {
     if (Array.isArray(value)) return asList(value);
@@ -781,7 +788,7 @@ let stepRemoveColumns = (metadata, index) => {
                 },
                 // this will be set by the dataset_map primitive; it remains outside of the DAG
                 // arguments: {inputs: {container: {data: getContainerId(index)}}},
-                outputs: [{id: "produce"}],
+                // outputs: [{id: "produce"}],
                 hyperparams: {columns: grpcWrap(indices)},
                 users: []
             }
@@ -809,7 +816,7 @@ let stepSubset = (step, index) => {
 
     let columns = Object.keys(app.variableSummaries);
 
-    return step.flatMap((constraint, ravenIndex) => {
+    return step.abstractQuery.flatMap((constraint, ravenIndex) => {
         let hyperparams;
 
         if (constraint.subset === 'continuous') hyperparams = {
@@ -1038,8 +1045,10 @@ export async function handleGetSearchSolutionResultsResponse(response) {
 
     // end the search if it doesn't match any problem
     if (!solvedProblem) {
-        console.warn('Attempting to end search ' + response.stored_request.search_id);
-        endSearch(response.stored_request.search_id);
+        results.otherSearches[response.stored_request.search_id] = results.otherSearches[response.stored_request.search_id] || {};
+        if (results.otherSearches[response.stored_request.search_id].running === undefined)
+            results.otherSearches[response.stored_request.search_id].running = true;
+        m.redraw();
         return;
     }
     if (response.id === undefined) {
@@ -1098,8 +1107,10 @@ export async function handleDescribeSolutionResponse(response) {
 
     // end the search if it doesn't match any problem
     if (!solvedProblem) {
-        console.warn('Attempting to end search ' + response.searchId);
-        endSearch(response.searchId);
+        results.otherSearches[response.searchId] = results.otherSearches[response.searchId] || {};
+        if (results.otherSearches[response.searchId].running === undefined)
+            results.otherSearches[response.searchId].running = true;
+        m.redraw();
         return;
     }
 
@@ -1131,10 +1142,11 @@ export async function handleGetScoreSolutionResultsResponse(response) {
         .find(problemId => problems[problemId].d3mSearchId === response.stored_request.search_id);
     let solvedProblem = problems[solvedProblemId];
 
-    // end the search if it doesn't match any problem
     if (!solvedProblem) {
-        console.warn('Attempting to end search ' + response.stored_request.search_id);
-        endSearch(response.stored_request.search_id);
+        results.otherSearches[response.stored_request.search_id] = results.otherSearches[response.stored_request.search_id] || {};
+        if (results.otherSearches[response.stored_request.search_id].running === undefined)
+            results.otherSearches[response.stored_request.search_id].running = true;
+        m.redraw();
         return;
     }
 
@@ -1165,10 +1177,11 @@ export async function handleGetProduceSolutionResultsResponse(response, type) {
         .find(problemId => problems[problemId].d3mSearchId === response.stored_request.search_id);
     let solvedProblem = problems[solvedProblemId];
 
-    // end the search if it doesn't match any problem
     if (!solvedProblem) {
-        console.warn('Attempting to end search ' + response.stored_request.search_id);
-        endSearch(response.stored_request.search_id);
+        results.otherSearches[response.stored_request.search_id] = results.otherSearches[response.stored_request.search_id] || {};
+        if (results.otherSearches[response.stored_request.search_id].running === undefined)
+            results.otherSearches[response.stored_request.search_id].running = true;
+        m.redraw();
         return;
     }
 
@@ -1194,8 +1207,8 @@ export async function handleGetProduceSolutionResultsResponse(response, type) {
 
     if (type === 'fittedValues') {
         solvedProblem.solutions.d3m[response.pipelineId].data_pointer = pointer;
-        console.warn("#debug produce results pointer");
-        console.log(pointer);
+        // console.warn("#debug produce results pointer");
+        // console.log(pointer);
     }
     else if (type === 'partialsValues')
         solvedProblem.solutions.d3m[response.pipelineId].data_pointer_partials = pointer;
@@ -1206,6 +1219,9 @@ export async function handleGetProduceSolutionResultsResponse(response, type) {
 export async function handleENDGetSearchSolutionsResults(response) {
     // change status of buttons for estimating problem and marking problem as finished
     app.buttonClasses.btnEstimate = 'btn-secondary';
+
+    console.warn("#debug response end get search solutions results");
+    console.log(response);
 
     app.setTask2_finished(true);
     m.redraw();
@@ -1273,7 +1289,8 @@ export async function endsession() {
         // selectedSolution.chosen = true;
         // results.setShowFinalPipelineModal(true);
 
-        await endAllSearches2();
+        // we don't need to wait for the backend to spin down before telling the user, no await used
+        endAllSearches();
 
         setModal(m('div', {}, [
                 m('p', 'Finished! The problem is marked as complete.'),

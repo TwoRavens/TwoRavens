@@ -178,7 +178,7 @@ class ImportanceEFDUtil(object):
                 self.metadata['levels'][key] = [doc['_id'] for doc in response[1]]
 
         self.metadata['levels'].update({
-            'fitted_' + key: self.metadata['levels'][key] for key in self.metadata['levels']
+            'fitted ' + key: self.metadata['levels'][key] for key in self.metadata['levels']
         })
 
         def is_categorical(variable, levels):
@@ -194,8 +194,8 @@ class ImportanceEFDUtil(object):
 
         def aggregate_targets(variables, levels):
             return {k: v for d in [
-                *[branch_target('fitted_' + target, levels) for target in variables],
-                *[branch_target('actual_' + target, levels) for target in variables]
+                *[branch_target('fitted ' + target, levels) for target in variables],
+                *[branch_target('actual ' + target, levels) for target in variables]
             ] for k, v in d.items()}
 
         target_aggregator = aggregate_targets(self.metadata['targets'], self.metadata['levels'])
@@ -216,10 +216,10 @@ class ImportanceEFDUtil(object):
             {
                 "$project": {
                     **{
-                        'fitted_' + name: f"$results_collection\\.{name}" for name in self.metadata['targets']
+                        'fitted ' + name: f"$results_collection\\.{name}" for name in self.metadata['targets']
                     },
                     **{
-                        'actual_' + name: f"${name}" for name in self.metadata['targets']
+                        'actual ' + name: f"${name}" for name in self.metadata['targets']
                     },
                     **{
                         predictor: 1 for predictor in self.metadata['predictors']
