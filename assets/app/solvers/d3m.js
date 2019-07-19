@@ -47,7 +47,7 @@ export let getSolutionAdapter = (problem, solution) => ({
     getModel: () => 'pipeline' in solution
         ? solution.pipeline.steps
             .filter(step => ['regression', 'classification'].includes(step.primitive.primitive.pythonPath.split('.')[2]))
-            .map(step => step.primitive.primitive.pythonPath.replace(new RegExp('d3m\\.primitives\\.(regression|classification)\\.'), ''))
+            .map(step => step.primitive.primitive.pythonPath.replace(new RegExp('d3m\\.primitives\\.(regression|classification|semisupervised_classification|semisupervised_regression)\\.'), ''))
             .join()
         : '',
     getImportanceEFD: predictor => {

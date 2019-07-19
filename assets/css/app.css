@@ -64,6 +64,7 @@ pre {
     white-space: pre-wrap;
     word-wrap: break-word;
     overflow-x: hidden;
+    text-align: left;
 }
 
 .is-invalid {

@@ -51,6 +51,7 @@ import Button from "../common/views/Button";
 import Icon from "../common/views/Icon";
 
 import {alertLog, alertWarn, alertError} from "./app";
+import {abbreviate} from "./index";
 
 
 // adds some padding, sets the size so the content fills nicely in the page
@@ -126,7 +127,9 @@ export class CanvasExplore {
 
                     let show = exploreVariate === 'Bivariate' || exploreVariate === 'Trivariate';
                     let [n0, n1, n2] = exploreVariables.map(variable => app.variableSummaries[variable]);
-                    let predictorVariables = app.getPredictorVariables(selectedProblem);
+                    let exploreProblem = 'problems' in app.workspace.raven_config && app.workspace.raven_config.problems[x];
+                    let predictorVariables = app.getPredictorVariables(exploreProblem);
+                    let predictorText = predictorVariables && abbreviate(predictorVariables.join(', '), 100);
 
                     // tile for each variable or problem
                     let tile = m('span#exploreNodeBox', {
@@ -190,12 +193,12 @@ export class CanvasExplore {
                             },
                             style: 'height: 65%'
                         }),
-                        m('#exploreNodeLabel', {style: 'margin: 1em'},
+                        m('#exploreNodeLabel', {style: 'margin: 1em; max-width:230px; overflow-wrap:break-word'},
                             show && n0 && n0.name === x ? `${x} (x)`
                                 : show && n1 && n1.name === x ? `${x} (y)`
                                 : show && n2 && n2.name === x ? `${x} (z)`
-                                    : app.leftTab === 'Discover' && predictorVariables
-                                        ? [m('b', x), m('p', predictorVariables.join(', '))]
+                                    : app.leftTab === 'Discover' && predictorText
+                                        ? [m('b', x), m('p', predictorText)]
                                         : x)
                     );
 

@@ -2134,9 +2134,10 @@ export let setMetric = (metric, problem, all=false) => {
 
 // get all predictors, including those that only have an arrow to a target
 export let getPredictorVariables = problem => {
+    if (!problem) return;
     let arrowPredictors = (problem.pebbleLinks || [])
         .filter(link => problem.targets.includes(link.target) && link.right)
-        .map(link => link.source)
+        .map(link => link.source);
 
     // union arrow predictors with predictor group
     return [...new Set([...problem.predictors, ...arrowPredictors])]
