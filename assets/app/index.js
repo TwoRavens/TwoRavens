@@ -45,10 +45,12 @@ import {buildDatasetUrl} from "./app";
 import {alertWarn} from "./app";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
-export let boldPlain = value => m('b', {}, value);
+export let boldPlain = value => m('b', value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
 export let link = url => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
 export let linkURL = url => m('a', {href: url, style: {color: 'blue'}, }, url);
+export let tab = value => m('p', {style: 'padding-left:5px'}, value);
+export let preformatted = text => m('pre', text);
 
 
 class Body {
@@ -134,14 +136,21 @@ class Body {
 
         let createBreadcrumb = () => {
             let path = [
-                m(Popper, {content: () => m(Table, {data: app.workspace.datasetDoc.about})},
+                m(Popper, {
+                        content: () => m(Table, {
+                            data: Object.entries(app.workspace.datasetDoc.about)
+                                .map(row => [row[0], preformatted(row[1])])
+                        })
+                    },
                     m('h4#dataName', {
                             style: {display: 'inline-block', margin: '.25em 1em'},
                         },
                         app.workspace.d3m_config.name || 'Dataset Name', m('br'),
-                        app.workspace.name !== app.workspace.d3m_config.name && m('div', {style: {
+                        app.workspace.name !== app.workspace.d3m_config.name && m('div', {
+                            style: {
                                 'font-style': 'italic', float: 'right', 'font-size': '14px',
-                            }}, `workspace: ${app.workspace.name}`)
+                            }
+                        }, `workspace: ${app.workspace.name}`)
                     ))
             ];
 
@@ -151,7 +160,7 @@ class Body {
 
             if (pathProblem) path.push(m(Icon, {name: 'chevron-right'}), m(Popper, {
                 content: () => m(Table, {
-                    data: {'targets': pathProblem.targets, 'predictors': pathProblem.predictors,'description': pathProblem.description}
+                    data: {'targets': pathProblem.targets, 'predictors': pathProblem.predictors,'description': preformatted(app.getDescription(pathProblem).description)}
                 })
             }, m('h4[style=display: inline-block; margin: .25em 1em]', pathProblem.problemID)));
 
@@ -299,7 +308,7 @@ class Body {
 
         return m(Footer, [
             m('div.btn.btn-group[style=margin:5px;padding:0px]',
-                m(Button, {id: 'btnTA2',class: 'btn-sm', onclick: _ => hopscotch.startTour(app.mytour(), 0)}, 'Help Tour ', m(Icon, {name: 'milestone'})),
+                m(Button, {id: 'btnTA2',class: 'btn-sm', onclick: _ => hopscotch.startTour(app.initialTour(), 0)}, 'Help Tour ', m(Icon, {name: 'milestone'})),
                 m(Button, {id: 'btnTA2', class: 'btn-sm', onclick: _ => app.helpmaterials('video')}, 'Video ', m(Icon, {name: 'file-media'})),
                 m(Button, {id: 'btnTA2', class: 'btn-sm', onclick: _ => app.helpmaterials('manual')}, 'Manual ', m(Icon, {name: 'file-pdf'})),
                 m(Button, {

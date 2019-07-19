@@ -30,7 +30,7 @@ import Flowchart from "./views/Flowchart";
 
 import Datamart from "./datamart/Datamart";
 
-import {bold ,boldPlain} from "./index";
+import {bold, boldPlain, preformatted} from "./index";
 import {locationReload, setModal} from "../common/views/Modal";
 
 
@@ -386,7 +386,7 @@ export let leftpanel = forceData => {
                             m('p', {
                                 id: 'problemDescription',
                                 style: {'padding-left': '2%', width: '80%'},
-                            }, selectedProblem.description || app.getDescription(selectedProblem)),
+                            }, preformatted(app.getDescription(selectedProblem))),
                             selectedProblem.manipulations.length !== 0 && m(
                                 'div', m(Button, {
                                     style: {float: 'left'},
@@ -518,7 +518,6 @@ export let leftpanel = forceData => {
             .map(variableName => m(Subpanel, {
                     id: 'subpanel' + variableName,
                     header: variableName,
-                    attrsBody: {style: {padding: '0.5em'}},
                     defaultShown: false,
                     shown: summaryPebbles.length === 1 || undefined
                 }, m(TextFieldSuggestion, {
@@ -1101,6 +1100,8 @@ Object.assign(forceDiagramState, {
             else setSelectedPebble(pebble)
         },
         mouseover: pebble => {
+            if (firstSummaryMouseover && app.tutorial_mode && !hopscotch.getCurrTour())
+                hopscotch.startTour(summaryTour());
             clearTimeout(forceDiagramState.hoverTimeout);
             forceDiagramState.hoverTimeout = setTimeout(() => {
                 forceDiagramState.hoverPebble = pebble;
@@ -1121,6 +1122,20 @@ Object.assign(forceDiagramState, {
         },
         contextmenu: setContextPebble
     }
+});
+
+// appears when a user attempts to edit when the toggle is set
+let firstSummaryMouseover = true;
+export let summaryTour = () => ({
+    id: "lock_toggle",
+    i18n: {doneBtn: 'Ok'},
+    showCloseButton: true,
+    scrollDuration: 300,
+    onEnd: () => firstSummaryMouseover = false,
+    steps: [
+        app.step("leftpanel", "right", "Variable Summaries",
+            `<p>A summary is shown for the pebble you are hovering over. Keep the variable summary open by clicking on its associated pebble.</p>`)
+    ]
 });
 
 export let mutateNodes = problem => (state, context) => {

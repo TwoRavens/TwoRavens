@@ -796,17 +796,17 @@ export class ModalDatamart {
                         }
                     }, 'Add Pairing'),
 
-                    m('label[style=margin-right:1em]', 'Exact Match:'),
-                    m(ButtonRadio, {
-                        id: 'exactMatchButtonBar',
-                        attrsAll: {style: {display: 'inline-block', width: 'auto'}},
-                        onclick: state => {
-                            if (preferences.isAugmenting) return;
-                            preferences.exactMatch = state === 'true'
-                        },
-                        activeSection: String(preferences.exactMatch),
-                        sections: [{value: 'true'}, {value: 'false'}]
-                    }),
+                    // m('label[style=margin-right:1em]', 'Exact Match:'),
+                    // m(ButtonRadio, {
+                    //     id: 'exactMatchButtonBar',
+                    //     attrsAll: {style: {display: 'inline-block', width: 'auto'}},
+                    //     onclick: state => {
+                    //         if (preferences.isAugmenting) return;
+                    //         preferences.exactMatch = state === 'true'
+                    //     },
+                    //     activeSection: String(preferences.exactMatch),
+                    //     sections: [{value: 'true'}, {value: 'false'}]
+                    // }),
 
                     m(ButtonLadda, {
                         id: 'augmentButton',

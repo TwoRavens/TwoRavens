@@ -230,7 +230,14 @@ export default class ForceDiagram {
                 .attr("transform", d => `translate(${centroids[d.name][0] - d.name.length * 5},${centroids[d.name][1]})`)
                 // .attr('dy', d => centroids[d.name] - Math.min(...hullCoords[d.name].map(_ => _[1])))
         };
-        this.force.on('tick', tick);
+        this.force.on('tick', () => {
+            // somehow tick is keeping a reference to an older 'this' after being rebound
+            // this aggressively rebinds until something catches, which surprisingly works
+            // TODO: RCA, TEMP FIX 7/19
+            try{tick()} catch(_) {
+                m.redraw();
+            }
+        });
         this.force.alphaTarget( 1).restart();
         setTimeout(() => {
             if (this.isDragging) return;
@@ -758,6 +765,11 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
         let circleSelection = d3.select(this).selectAll("circle.embedded-plot").data(groupSpeckCoords);
         circleSelection.exit().remove();
         circleSelection.enter().append("circle").attr('class', 'embedded-plot');
+
+        // bind all events to the plot
+        Object.keys(attrs.pebbleEvents)
+            .forEach(event => circleSelection
+                .on(event, () => attrs.pebbleEvents[event](pebble)));
 
         d3.select(this).selectAll("circle.embedded-plot").data(groupSpeckCoords)
             .transition()

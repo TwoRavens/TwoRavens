@@ -54,6 +54,18 @@ svg {
   user-select: none;
 }
 
+pre {
+    font-family: monospace;
+    font-size: 14px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 400;
+    line-height: 20px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-x: hidden;
+}
+
 .is-invalid {
     border-color: #dc3545 !important;
 }

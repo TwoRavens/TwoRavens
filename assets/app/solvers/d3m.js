@@ -384,7 +384,7 @@ export let loadConfusionData = async (problem, solution) => {
         return;
 
     // confusion matrices don't apply for non-classification problems
-    if (!['classification', 'semisupervisedClassification'].includes(problem.task))
+    if (!['classification', 'semisupervisedclassification'].includes(problem.task.toLowerCase()))
         return;
 
     // don't load if systems are already in loading state
@@ -519,10 +519,15 @@ export let loadImportanceEFDData = async (problem, solution) => {
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
 
+    let nominals = app.getNominalVariables(problem);
+
     // melt predictor data once, opposed to on every redraw
     Object.keys(response.data)
         .forEach(predictor => response.data[predictor] = app.melt(
-            response.data[predictor], [predictor], results.valueLabel, results.variableLabel));
+            nominals.includes(predictor)
+                ? app.sample(response.data[predictor], 20, false, true)
+                : response.data[predictor],
+            [predictor], results.valueLabel, results.variableLabel));
 
     resultsData.importanceEFD = response.data;
     resultsData.importanceEFDLoading = false;

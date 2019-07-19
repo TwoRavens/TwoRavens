@@ -16,7 +16,7 @@ import Button from "../common/views/Button";
 import Icon from "../common/views/Icon";
 import MenuTabbed from "../common/views/MenuTabbed";
 
-import {bold} from "./index";
+import {bold, italicize, preformatted} from "./index";
 import PlotVegaLite from "./views/PlotVegaLite";
 import ConfusionMatrix from "./views/ConfusionMatrix";
 import Flowchart from "./views/Flowchart";
@@ -371,7 +371,7 @@ export class CanvasSolutions {
 
             // reassign content if some data is not undefined
             let importancePlots = Object.keys(importanceData).map(predictor => importanceData[predictor] && [
-                predictor,
+                bold(predictor),
                 m(VariableImportance, {
                     mode: resultsPreferences.mode,
                     data: importanceData[predictor],
@@ -383,7 +383,10 @@ export class CanvasSolutions {
                 })
             ]).filter(_ => _);
 
-            if (importancePlots.length > 0) importanceContent = importancePlots;
+            if (importancePlots.length > 0) importanceContent = [
+                m('div[style=margin: 1em]', italicize("Empirical first differences"), ` is a tool to measure variable importance from the empirical distribution of the data. The "${valueLabel}" axis refers to the frequency of the dependent variable as the predictor (x) varies along its domain. Parts of the domain where the fitted and actual values align indicate high utility from the predictor.`),
+                importancePlots
+            ];
         }
         return [
             m('label', 'Variable importance mode:'),
@@ -511,7 +514,7 @@ export class CanvasSolutions {
             data: [
                 ['Dependent Variables', problem.targets],
                 ['Predictors', app.getPredictorVariables(problem)],
-                ['Description', problem.description],
+                ['Description', preformatted(app.getDescription(problem))],
                 ['Task', problem.task]
             ]
         }));
@@ -749,8 +752,7 @@ export let selectedMetric = {
 
 // array of metrics to sort low to high
 export let reverseSet = [
-    "accuracy", "precision", "recall",
-    "meanSquaredError", "rootMeanSquaredError", "meanAbsoluteError"
+    "meanSquaredError", "rootMeanSquaredError", "meanAbsoluteError", "hammingLoss", "rank", "loss"
 ];
 
 /**

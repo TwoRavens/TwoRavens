@@ -464,7 +464,7 @@ export let saveLogEntry = async logData => {
 export let cdb = _ => PRODUCTION || console.log(_);
 
 export let k = 4; // strength parameter for group attraction/repulsion
-let tutorial_mode = localStorage.getItem('tutorial_mode') !== 'false';
+export let tutorial_mode = localStorage.getItem('tutorial_mode') !== 'false';
 
 export let leftTab = 'Variables'; // current tab in left panel
 export let leftTabHidden = 'Variables'; // stores the tab user was in before summary hover
@@ -484,6 +484,9 @@ export let setLeftTab = (tab) => {
     if (tab === 'Discover') buttonClasses.btnDiscover = 'btn-secondary';
     explore.setExploreVariate(tab === 'Discover' ? 'Problem' : 'Univariate');
     setFocusedPanel('left');
+
+    if (tab === 'Discover' && !task1_finished)
+        hopscotch.startTour(task1Tour);
 };
 
 export let setLeftTabHidden = tab => {
@@ -696,8 +699,8 @@ export let d3mTaskType = {
     timeSeriesForecasting: "TIME_SERIES_FORECASTING",
     collaborativeFiltering: "COLLABORATIVE_FILTERING",
     objectDetection: "OBJECT_DETECTION",
-    semisupervisedClassification: "SEMISUPERVISED_CLASSIFICATION",
-    semisupervisedRegression: "SEMISUPERVISED_REGRESSION",
+    semiSupervisedClassification: "SEMISUPERVISED_CLASSIFICATION",
+    semiSupervisedRegression: "SEMISUPERVISED_REGRESSION",
 };
 
 export let d3mTaskSubtype = {
@@ -805,12 +808,12 @@ export let applicableMetrics = {
     objectDetection: {
         subTypeNone: ['objectDetectionAveragePrecision']
     },
-    semisupervisedClassification: {
+    semiSupervisedClassification: {
         binary: ['accuracy', 'precision', 'recall', 'f1', 'rocAuc'],
         multiClass: ['accuracy', 'f1Micro', 'f1Macro', 'rocAucMicro', 'rocAucMacro', 'jaccardSimilarityScore'],
         multiLabel: ['accuracy', 'f1Micro', 'f1Macro', 'rocAucMacro', 'jaccardSimilarityScore', 'hammingLoss']
     },
-    semisupervisedRegression: {
+    semiSupervisedRegression: {
         univariate: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared'],
         multivariate: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared']
     }
@@ -837,7 +840,7 @@ export let step = (target, placement, title, content) => ({
     }
 });
 
-export let mytour = () => ({
+export let initialTour = () => ({
     id: "dataset_launch",
     i18n: {doneBtn:'Ok'},
     showCloseButton: true,
@@ -874,13 +877,13 @@ export let mytour = () => ({
 });
 
 
-export let mytour3 = {
+export let task1Tour = {
     id: "dataset_launch",
     i18n: {doneBtn:'Ok'},
     showCloseButton: true,
     scrollDuration: 300,
     steps: [
-        step("btnSelect", "right", "Complete Task 1",
+        step("btnSubmitDisc", "right", "Complete Task 1",
              `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
                      <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>
                      <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
@@ -1377,7 +1380,7 @@ export async function load() {
     // hopscotch tutorial
     if (tutorial_mode) {
         console.log('Starting Hopscotch Tour');
-        hopscotch.startTour(mytour());
+        hopscotch.startTour(initialTour());
     }
 
 }
@@ -1788,6 +1791,10 @@ export function discovery(problems) {
 
 export let setVariableSummaries = state => {
     if (!state) return;
+
+    // Brian says d3mIndex should not be visible to the user
+    delete state.d3mIndex;
+
     variableSummaries = Object.keys(state).reduce((out, variable) =>
         Object.assign(out, {[variable.split('.').join('_')]: state[variable]}), {});
 
@@ -2070,10 +2077,10 @@ export function getDescription(problem) {
 export let setTask = (task, problem) => {
     if (task === problem.task) return; //  || !(supportedTasks.includes(task))
     problem.task = task;
-    if (task === 'classification' || task === 'semisupervisedClassification')
-        setSubTask(variableSummaries[problem.targets[0]].binary === 'yes' ? 'binary' : 'multiClass', problem)
-    else if (task === 'regression' || task === 'semisupervisedRegression')
-        setSubTask(problem.predictors.length > 1 ? 'multivariate' : 'univariate', problem)
+    if (task.toLowerCase() === 'classification' || task.toLowerCase() === 'semisupervisedclassification')
+        setSubTask(variableSummaries[problem.targets[0]].binary === 'yes' ? 'binary' : 'multiClass', problem);
+    else if (task.toLowerCase() === 'regression' || task.toLowerCase() === 'semisupervisedregression')
+        setSubTask(problem.predictors.length > 1 ? 'multivariate' : 'univariate', problem);
     else if (!(problem.subTask in applicableMetrics[task]))
         setSubTask(Object.keys(applicableMetrics[task])[0], problem)
 
@@ -2094,12 +2101,12 @@ export let setSubTask = (subTask, problem) => {
 };
 
 export let getSubtask = problem => {
-    if (['regression', 'semisupervisedRegression'].includes(problem.task)) return getPredictorVariables(problem).length > 1 ? 'multivariate' : 'univariate';
+    if (['regression', 'semisupervisedregression'].includes(problem.task.toLowerCase())) return getPredictorVariables(problem).length > 1 ? 'multivariate' : 'univariate';
 
     if (!problem.subTask && variableSummaries[problem.targets[0]]) {
-        if (problem.task === 'classification' || problem.task === 'semisupervisedClassification')
+        if (problem.task.toLowerCase() === 'classification' || problem.task.toLowerCase() === 'semisupervisedclassification')
             problem.subTask = variableSummaries[problem.targets[0]].binary === 'yes' ? 'binary' : 'multiClass';
-        else if (problem.task === 'regression' || problem.task === 'semisupervisedRegression')
+        else if (problem.task.toLowerCase() === 'regression' || problem.task.toLowerCase() === 'semisupervisedregression')
             problem.subTask = problem.predictors.length > 1 ? 'multivariate' : 'univariate';
         else
             problem.subTask = Object.keys(applicableMetrics[problem.task])[0]
@@ -2140,7 +2147,7 @@ export let getNominalVariables = problem => {
     return [...new Set([
         ...selectedProblem.tags.nominal,
         // targets in a classification problem are also nominal
-        ...['classification', 'semisupervisedClassification'].includes(selectedProblem.task)
+        ...['classification', 'semisupervisedclassification'].includes(selectedProblem.task.toLowerCase())
             ? selectedProblem.targets : []
     ])];
 };
@@ -2421,3 +2428,25 @@ export function melt(data, factors, value="value", variable="variable") {
     });
     return outData;
 }
+
+// replacement: allow duplicates in samples
+// ordered: preserve the order in the original array
+export let sample = (arr, n=1, replacement=false, ordered=false) => {
+    let indices = [];
+    if (replacement)
+        indices = Array.from({length: n})
+            .map(() => Math.floor(Math.random() * arr.length));
+    else {
+        let buckets = Array.from({length: arr.length}).map((_, i) => i);
+
+        indices = Array.from({length: Math.min(n, arr.length)}).map(() => {
+            let index = Math.floor(Math.random() * buckets.length);
+            let temp = buckets[index];
+            buckets.splice(index, 1);
+            return temp;
+        });
+    }
+
+    if (ordered) indices = indices.sort();
+    return indices.map(i => arr[i]);
+};
