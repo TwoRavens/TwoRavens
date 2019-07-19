@@ -10,6 +10,7 @@ from django.http import JsonResponse    #, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 
 from tworaven_apps.raven_auth.models import User
+from tworaven_apps.ta2_interfaces.models import StoredRequest, StoredResponse
 
 from tworaven_apps.ta2_interfaces.req_hello import ta2_hello
 from tworaven_apps.ta2_interfaces.req_search_solutions import \
@@ -209,13 +210,15 @@ def view_end_search_solutions(request):
 
     # Begin to log D3M call
     #
-    call_entry = None
-    if ServiceCallEntry.record_d3m_call():
-        call_entry = ServiceCallEntry.get_dm3_entry(\
-                        request_obj=request,
-                        call_type=ta2_static.END_SEARCH_SOLUTIONS,
-                        request_msg=req_body_info.result_obj)
+    stored_request = StoredRequest(\
+                    user=user_info.result_obj,
+                    request_type=ta2_static.END_SEARCH_SOLUTIONS,
+                    # pipeline_id=self.pipeline_id,
+                    # search_id=req_body_info.result_obj.get(ta2_static.KEY_SEARCH_ID),
+                    is_finished=False,
+                    request=req_body_info.result_obj)
 
+    stored_request.save()
 
     # --------------------------------
     # Behavioral logging
@@ -232,18 +235,22 @@ def view_end_search_solutions(request):
     #
     search_info = end_search_solutions(req_body_info.result_obj)
     if not search_info.success:
+        StoredResponse.add_err_response(stored_request,
+                                        search_info.err_msg)
+
         return JsonResponse(get_json_error(search_info.err_msg))
 
     # Convert JSON str to python dict - err catch here
     #
     json_format_info = json_loads(search_info.result_obj)
     if not json_format_info.success:
+        StoredResponse.add_err_response(stored_request,
+                                        json_format_info.err_msg)
         return JsonResponse(get_json_error(json_format_info.err_msg))
 
-    # Save D3M log
-    #
-    if call_entry:
-        call_entry.save_d3m_response(json_format_info.result_obj)
+
+    StoredResponse.add_success_response(stored_request,
+                                        json_format_info.result_obj)
 
     json_info = get_json_success('success!', data=json_format_info.result_obj)
     return JsonResponse(json_info, safe=False)

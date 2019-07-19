@@ -1262,23 +1262,88 @@ export async function endsession() {
     //
     let status = await exportSolution(String(selectedSolutionId));
 
-    // app.makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
-    //let res = await app.makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
-    // endAllSearches();
-    //let mystatus = res.status.code.toUpperCase();
-    //if(mystatus == "OK") {
-    // end_ta3_search(true, "Problem marked as complete.");
-    // setModal("Your selected pipeline has been submitted.", "Task Complete", true, false, true, locationReload);
-    //}
     if (status.success) {
         selectedSolution.chosen = true;
         results.setShowFinalPipelineModal(true);
 
         m.redraw()
+    }else{
+      return;
     }
+
+    await endAllSearches2();
+
+    /*
+    setModal("Problem marked as complete.",
+             "Task Complete!",
+             true,
+             false,
+             true,
+             locationReload);
+      */
+      
+     setModal(m('div', {}, [
+             m('p', 'Finished! The problem is marked as complete.'),
+             // m('p', ''),
+         ]),
+         "Task complete",
+         true,
+         "Restart",
+         false,
+         locationReload);
+
 }
 
+/*
+ * End any running searches and display message
+ */
+export let endAllSearches2 = async () => {
+  console.log('--- Stop any running searches ---');
+  Object.keys(app.workspace.raven_config.problems).map(problemId => {
+    //
+    // For problems with a 'd3mSearchId', send a EndSearchSolutions call
+    //
+    let yeProblem = app.workspace.raven_config.problems[problemId];
+    let d3mSearchIdToStop = isKeyDefined(yeProblem, 'd3mSearchId');
+    if (d3mSearchIdToStop !== undefined){
+      console.log(`stop search: ${d3mSearchIdToStop}`);
+      let endResp = app.makeRequest(D3M_SVC_URL + '/EndSearchSolutions',
+                                         {searchId: d3mSearchIdToStop});
+      console.log(JSON.stringify(endResp))
+    }
+  })
+} // end: endAllSearches2
 
+/*
+ *  Given a problem, check if it has a d3mSearchId.
+ *  If it does, then send an EndSearchSolutions call
+ */
+export let endSearch2 = async problem => {
+  let d3mSearchIdToStop = isKeyDefined(problem, 'd3mSearchId');
+  if (d3mSearchIdToStop !== undefined){
+    console.log(`stop search: ${d3mSearchIdToStop}`);
+    let endResp = await app.makeRequest(D3M_SVC_URL + '/EndSearchSolutions',
+                                       {searchId: d3mSearchIdToStop});
+    console.log(JSON.stringify(endResp))
+  }
+} // end: endSearch2
+
+/*
+let endAllSearches2 = async () => Object.keys(app.workspace.raven_config.problems).map(problemId => {
+   let problemInfo = app.workspace.raven_config.problems[problemId];
+   console.log(problemId);
+   let d3mSearchIdToStop = isKeyDefined(problemInfo, 'd3mSearchId');
+   if (d3mSearchIdToStop !== undefined){
+     console.log('stop it: ' + d3mSearchIdToStop);
+     let endResp = await app.makeRequest(D3M_SVC_URL + '/EndSearchSolutions',
+                                        {searchId: d3mSearchIdToStop});
+     console.log(JSON.stringify(endResp))
+
+   }else{
+     console.log('nuthing running');
+   }
+})
+*/
 
 /**
  rpc SolutionExport (SolutionExportRequest) returns (SolutionExportResponse) {}
