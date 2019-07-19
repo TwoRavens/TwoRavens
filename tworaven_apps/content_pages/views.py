@@ -1,3 +1,4 @@
+import os
 from django.shortcuts import render
 from django.urls import reverse
 
@@ -66,6 +67,31 @@ def view_pebbles_home(request):
                   'index.html',
                   dinfo)
 
+
+def view_env_variables(request):
+    """List env variables"""
+
+    # get env variable keys
+    env_names = list(os.environ.keys())
+    env_names.sort()
+    d3m_names = [x for x in env_names
+                 if x.find('D3M') > -1 or\
+                    x.find('DATAMART') > -1]
+
+    all_vars = [(key, os.getenv(key))
+                for key in env_names
+                if key not in d3m_names]
+    d3m_vars = [(key, os.getenv(key)) for key in d3m_names]
+
+    print(all_vars)
+    dinfo = dict(d3m_vars=d3m_vars,
+                 all_vars=all_vars)
+
+
+
+    return render(request,
+                  'content_pages/view_env_variables.html',
+                  dinfo)
 
 def view_dev_raven_links(request):
     """Dev homepage (other than pebble page)"""
