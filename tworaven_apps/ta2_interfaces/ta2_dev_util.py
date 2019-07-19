@@ -24,12 +24,16 @@ TA2_Brown = 'TA2_Brown'
 TA2_ISI = 'TA2_ISI'
 TA2_STANFORD = 'TA2_STANFORD'
 TA2_BERKELEY = 'TA2_BERKELEY'
+TA2_TAMU = 'TA2_TAMU'
+TA2_CMU = 'TA2_CMU'
 
 TA2_NAMES = (TA2_FeatureLabs,
              TA2_Brown,
              TA2_ISI,
              TA2_STANFORD,
-             TA2_BERKELEY)
+             TA2_BERKELEY,
+             TA2_TAMU,
+             TA2_CMU)
 
 TA2_IMAGE_INFO = [
     # Feature Labs: may not be using D3MPORT
@@ -37,7 +41,8 @@ TA2_IMAGE_INFO = [
      #'registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable',
      #'registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:ta3ta2-api-2018.7.7-eval-2018',
      #'registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:ta3ta2-api-2019.1.22-eval-2018',
-     'registry.datadrivendiscovery.org/ta2-submissions/ta2-mit/winter-2019:latest',
+     # 'registry.datadrivendiscovery.org/ta2-submissions/ta2-mit/winter-2019:latest',
+     'registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable',
      '-p 45042:45042 -e D3MPORT=45042'),
 
     # Brown: may not be using D3MPORT
@@ -62,6 +67,14 @@ TA2_IMAGE_INFO = [
 
     (TA2_BERKELEY,
      'registry.datadrivendiscovery.org/berkeley/aika:2019-march-dry-run',
+     '-p 45042:45042 -e D3MPORT=45042',),
+
+    (TA2_TAMU,
+     'dmartinez05/tamuta2:latest',
+     '-p 45042:45042 -e D3MPORT=45042',),
+
+    (TA2_CMU,
+     'registry.datadrivendiscovery.org/sheath/cmu-ta2:live',
      '-p 45042:45042 -e D3MPORT=45042',)
 ]
 

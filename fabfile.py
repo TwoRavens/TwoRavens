@@ -195,7 +195,7 @@ def stop_ta2_server():
             print('No docker container named "ta2_server"\n')
 
 @task
-def run_ta2_stanford_with_config(choice_num=''):
+def run_ta2_stanford_choose_config(choice_num=''):
     """Pick a config from /ravens_volume and run the Standford TA2"""
     from tworaven_apps.ta2_interfaces.ta2_dev_util import \
             (TA2Helper, TA2_STANFORD)
@@ -203,7 +203,7 @@ def run_ta2_stanford_with_config(choice_num=''):
     resp = TA2Helper.run_ta2_with_dataset(\
                 TA2_STANFORD,
                 choice_num,
-                run_ta2_stanford_with_config.__name__)
+                run_ta2_stanford_choose_config.__name__)
 
     if resp.success:
         stop_ta2_server()
@@ -218,7 +218,7 @@ def run_ta2_stanford_with_config(choice_num=''):
         print(resp.err_msg)
 
 @task
-def run_ta2_featurelabs_with_config(choice_num=''):
+def run_ta2_featurelabs_choose_config(choice_num=''):
     """Pick a config from /ravens_volume and run the FeatureLabs TA2"""
     from tworaven_apps.ta2_interfaces.ta2_dev_util import \
             (TA2Helper, TA2_FeatureLabs)
@@ -226,7 +226,7 @@ def run_ta2_featurelabs_with_config(choice_num=''):
     resp = TA2Helper.run_ta2_with_dataset(\
                 TA2_FeatureLabs,
                 choice_num,
-                run_ta2_featurelabs_with_config.__name__)
+                run_ta2_featurelabs_choose_config.__name__)
 
     if resp.success:
         stop_ta2_server()
@@ -293,6 +293,48 @@ def run_ta2_isi_choose_config(choice_num=''):
                 TA2_ISI,
                 choice_num,
                 run_ta2_isi_choose_config.__name__)
+
+    if resp.success:
+        stop_ta2_server()
+
+        docker_cmd = resp.result_obj
+        print('Running command: %s' % docker_cmd)
+        local(docker_cmd)
+    elif resp.err_msg:
+        print(resp.err_msg)
+
+
+@task
+def run_ta2_tamu_choose_config(choice_num=''):
+    """Pick a config from /ravens_volume and run TAMU's TA2"""
+    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
+        (TA2Helper, TA2_TAMU)
+
+    resp = TA2Helper.run_ta2_with_dataset( \
+        TA2_TAMU,
+        choice_num,
+        run_ta2_tamu_choose_config.__name__)
+
+    if resp.success:
+        stop_ta2_server()
+
+        docker_cmd = resp.result_obj
+        print('Running command: %s' % docker_cmd)
+        local(docker_cmd)
+    elif resp.err_msg:
+        print(resp.err_msg)
+
+
+@task
+def run_ta2_cmu_choose_config(choice_num=''):
+    """Pick a config from /ravens_volume and run CMU's TA2"""
+    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
+        (TA2Helper, TA2_CMU)
+
+    resp = TA2Helper.run_ta2_with_dataset( \
+        TA2_CMU,
+        choice_num,
+        run_ta2_cmu_choose_config.__name__)
 
     if resp.success:
         stop_ta2_server()
