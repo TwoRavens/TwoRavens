@@ -1519,7 +1519,7 @@ export async function estimate() {
                 data: {metadata: variableSummaries}
             });
             if (!partialsLocationInfo.success) {
-                alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
+                // alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
                 throw partialsLocationInfo.message;
             } else {
                 selectedProblem.partialsDatasetPath = partialsLocationInfo.data.partialsDatasetPath;
@@ -1527,7 +1527,7 @@ export async function estimate() {
             }
         } catch(err) {
             cdb(err);
-            alertError(`Error: call to partialsapp failed`);
+            // alertError(`Error: call to partialsapp failed`);
         }
 
         if (partialsDatasetDocPath)
@@ -1701,8 +1701,7 @@ export function discovery(problems) {
     // filter out problems with target of null
     // e.g. [{"target":null, "predictors":null,"transform":0, ...},]
     //
-    problems = problems.filter(yeTarget => yeTarget.target);
-
+    problems = problems.filter(yeTarget => yeTarget.target && yeTarget.target in Object.keys(variableSummaries));
 
     return problems.reduce((out, prob) => {
         let problemID = generateProblemID();

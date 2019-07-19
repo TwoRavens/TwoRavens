@@ -384,7 +384,7 @@ export let loadConfusionData = async (problem, solution) => {
         return;
 
     // confusion matrices don't apply for non-classification problems
-    if (!['classification', 'semisupervisedclassification'].includes(problem.task.toLowerCase()))
+    if (!['classification', 'semisupervisedclassification', 'vertexclassification'].includes(problem.task.toLowerCase()))
         return;
 
     // don't load if systems are already in loading state

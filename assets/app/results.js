@@ -182,7 +182,7 @@ export class CanvasSolutions {
 
     predictionSummary(problem, adapters) {
 
-        if (problem.task.toLowerCase().includes('regression')) {
+        if (problem.task.toLowerCase().includes('regression') || problem.task.toLowerCase() === 'timeseriesforecasting') {
             let summaries = adapters.map(adapter => ({
                 name: adapter.getName(),
                 fittedValues: adapter.getFittedValues(resultsPreferences.target),
@@ -214,7 +214,6 @@ export class CanvasSolutions {
                 name: adapter.getName(),
                 confusionMatrix: adapter.getConfusionMatrix(resultsPreferences.target)
             })).filter(summary => summary.confusionMatrix);
-
             if (summaries.length === 0) return common.loader('PredictionSummary');
 
             let setConfusionFactor = factor => this.confusionFactor = factor === 'undefined' ? undefined : factor;
