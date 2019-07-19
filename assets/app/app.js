@@ -1421,7 +1421,7 @@ export let toggle = (collection, obj) => {
 /** needs doc */
 export function helpmaterials(type) {
     if(type=="video"){
-        var win = window.open("http://2ra.vn/demos/d3mintegrationdemo.mp4", '_blank');
+        var win = window.open("http://2ra.vn/demos/index.html", '_blank');
         win.focus();
     }else{
         var win = window.open("http://2ra.vn/papers/tworavens-d3mguide.pdf", '_blank');
