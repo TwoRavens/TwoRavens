@@ -43,6 +43,7 @@ partials.app <- function(env){
 	if(!warning){
         md <- list()   # rebuild to resemble original structure in metadata file
         md$variables <- jsonlite::fromJSON(readLines(partialsParams$metadataPath))
+        print(md)
 
         if(length(md$variables) == 0){ 
                 warning <- TRUE
@@ -93,7 +94,9 @@ partials.app <- function(env){
             natures <- rep(NA,k)
             for(i in 1:k){
                 natures[i] <- md$variables[[i]]$nature
-                if(natures[i]=="nominal"){
+                if(md$variables[[i]]$valid==0){
+                    index[i+1]<-index[i] + 2
+                }else if(natures[i]=="nominal"){
                     index[i+1]<-index[i] + min(length(names(md$variables[[i]]$plotvalues)),s)       # Or md$variables[[i]]$uniques, but includes NA
                 }else if((natures[i]=="ordinal")  & (md$variables[[i]]$binary=="yes")){
                     index[i+1]<-index[i] + 2
@@ -108,14 +111,30 @@ partials.app <- function(env){
             allnames <- rep(NA,k)
             movement <- list()
 
+            print("index")
+            print(index)
+
 
             for(i in 1:k){
 
                 #nature currently is {"nominal" , "ordinal" , "interval" , "ratio" , "percent" , "other"}
                 nature <- natures[i]
-                if(nature=="nominal"){
+                print(md$variables[[i]]$varnamesSumStat)
+
+
+                if(md$variables[[i]]$valid==0){      # Some variables come out of augmentation with no valid values
+                    print("escaped due to no valid values")
+                    temp <- rep("",l)
+                    tempseq <- rep("", index[i+1]-index[i] )
+                    print(tempseq)
+                    tdf <- data.frame(tempseq)
+                    names(tdf) <- md$variables[[i]]$varnamesSumStat
+                    movement[[i]] <- tdf
+                    baseline[[i]] <- temp
+                }else if(nature=="nominal"){
                     temp <- rep(md$variables[[i]]$mode, l)    # But might be NA?
-                    tempseq <- sort(sample(names(md$variables[[i]]$plotvalues), size=min(s,index[i+1]-index[i])))
+                    tempseq <- sort(sample(names(md$variables[[i]]$plotvalues), size=min(s,index[i+1]-index[i])))      # shouldn't these agree by this point?
+                    print(tempseq)
                     temp[(index[i]+1):index[i+1]] <- tempseq
 
                     tdf <- data.frame(tempseq)
@@ -130,6 +149,7 @@ partials.app <- function(env){
                     }else{
                         tempseq <- seq(from=md$variables[[i]]$min, to=md$variables[[i]]$max, length=s)
                     }
+                    print(tempseq)
                     temp[(index[i]+1):index[i+1]] <- tempseq
 
                     tdf <- data.frame(tempseq)
@@ -141,6 +161,7 @@ partials.app <- function(env){
                     baseline[[i]] <- "interval"
                 }else if(nature=="ratio"){
                     temp <- rep(md$variables[[i]]$median, l)
+                    print(tempseq)
                     tempseq <- seq(from=md$variables[[i]]$min, to=md$variables[[i]]$max, length=s)
                     temp[(index[i]+1):index[i+1]] <- tempseq
 
@@ -152,6 +173,8 @@ partials.app <- function(env){
                 }else if(nature=="percent"){
                     temp <- rep(md$variables[[i]]$median, l)
                     tempseq <- seq(from=md$variables[[i]]$min, to=md$variables[[i]]$max, length=s)
+                    print(tempseq)
+                    
                     temp[(index[i]+1):index[i+1]] <- tempseq
 
                     tdf <- data.frame(tempseq)
