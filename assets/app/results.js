@@ -182,7 +182,7 @@ export class CanvasSolutions {
 
     predictionSummary(problem, adapters) {
 
-        if (problem.task.includes('regression')) {
+        if (problem.task.toLowerCase().includes('regression')) {
             let summaries = adapters.map(adapter => ({
                 name: adapter.getName(),
                 fittedValues: adapter.getFittedValues(resultsPreferences.target),
@@ -208,7 +208,7 @@ export class CanvasSolutions {
             }))
         }
 
-        if (problem.task.includes('classification')) {
+        if (problem.task.toLowerCase().includes('classification')) {
 
             let summaries = adapters.map(adapter => ({
                 name: adapter.getName(),
