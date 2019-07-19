@@ -1701,7 +1701,7 @@ export function discovery(problems) {
     // filter out problems with target of null
     // e.g. [{"target":null, "predictors":null,"transform":0, ...},]
     //
-    problems = problems.filter(yeTarget => yeTarget.target && yeTarget.target in Object.keys(variableSummaries));
+    problems = problems.filter(yeTarget => yeTarget.target && yeTarget.target in variableSummaries);
 
     return problems.reduce((out, prob) => {
         let problemID = generateProblemID();
