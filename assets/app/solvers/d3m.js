@@ -1273,15 +1273,6 @@ export async function endsession() {
 
     await endAllSearches2();
 
-    /*
-    setModal("Problem marked as complete.",
-             "Task Complete!",
-             true,
-             false,
-             true,
-             locationReload);
-      */
-      
      setModal(m('div', {}, [
              m('p', 'Finished! The problem is marked as complete.'),
              // m('p', ''),
