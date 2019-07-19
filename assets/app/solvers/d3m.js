@@ -1038,7 +1038,7 @@ export async function handleGetSearchSolutionResultsResponse(response) {
         return;
     }
 
-    let problems = app.workspace.raven_config.problems;
+    let problems = ((app.workspace || {}).raven_config || {}).problems || {};
     let solvedProblemId = Object.keys(problems)
         .find(problemId => problems[problemId].d3mSearchId === response.stored_request.search_id);
     let solvedProblem = problems[solvedProblemId];
@@ -1100,7 +1100,7 @@ export async function handleDescribeSolutionResponse(response) {
         return;
     }
 
-    let problems = app.workspace.raven_config.problems;
+    let problems = ((app.workspace || {}).raven_config || {}).problems || {};
     let solvedProblemId = Object.keys(problems)
         .find(problemId => problems[problemId].d3mSearchId === response.searchId);
     let solvedProblem = problems[solvedProblemId];
@@ -1137,7 +1137,7 @@ export async function handleGetScoreSolutionResultsResponse(response) {
         return;
     }
 
-    let problems = app.workspace.raven_config.problems;
+    let problems = ((app.workspace || {}).raven_config || {}).problems || {};
     let solvedProblemId = Object.keys(problems)
         .find(problemId => problems[problemId].d3mSearchId === response.stored_request.search_id);
     let solvedProblem = problems[solvedProblemId];
@@ -1172,7 +1172,7 @@ export async function handleGetProduceSolutionResultsResponse(response, type) {
         return;
     }
 
-    let problems = app.workspace.raven_config.problems;
+    let problems = ((app.workspace || {}).raven_config || {}).problems || {};
     let solvedProblemId = Object.keys(problems)
         .find(problemId => problems[problemId].d3mSearchId === response.stored_request.search_id);
     let solvedProblem = problems[solvedProblemId];
