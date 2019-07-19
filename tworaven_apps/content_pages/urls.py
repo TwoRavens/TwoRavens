@@ -7,6 +7,10 @@ urlpatterns = (
         views.view_dev_raven_links,
         name='view_dev_raven_links'),
 
+    url(r'^show-env-variables$',
+        views.view_env_variables,
+        name='view_env_variables'),
+
     url(r'^monitoring/alive$',
         views.view_monitoring_alive,
         name='view_monitoring_alive'),

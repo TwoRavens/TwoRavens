@@ -112,13 +112,24 @@
 
                 <li>Reset workspaces configs: <a href="{% url 'view_reset_user_configs' %}?pretty">view</a></li>
                 <li><a href="{% url 'clear_user_workspaces' %}">Clear user workspaces + return to pebbles page</a></li>
-              </ul>
+              </ul></li>
 
-            <li><a href="{% url 'view_d3m_list' %}">
-                  D3M configs in the database</a>
-                  <p>Includes API endpoints to retrieve JSON config info,
-                  dataset schema file contents, problem schema file contents, etc.</p>
-              </li>
+            <li><b>D3M configs</b>
+              <ul>
+                <li><a href="{% url 'view_d3m_list' %}">
+                      D3M configs in the database</a>
+                      <br />Includes API endpoints to retrieve JSON config info,
+                      dataset schema file contents, problem schema file contents, etc.
+                  </li>
+              </ul></li>
+
+            <li><b>Environment variables</b>
+              <ul>
+                <li><a href="{% url 'view_env_variables' %}">
+                      Environment variables</a>
+                  </li>
+              </ul>
+            </ul></li>
           </ul>
         </div>
       </div>
