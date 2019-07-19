@@ -7,6 +7,7 @@ import {alertError, alertWarn, debugLog} from "../app";
 
 import {locationReload, setModal} from "../../common/views/Modal";
 import * as queryMongo from "../manipulations/queryMongo";
+import {isKeyDefined} from "../utils";
 
 // functions to extract information from D3M response format
 export let getSolutionAdapter = (problem, solution) => ({
@@ -1226,8 +1227,36 @@ export async function endsession() {
         return;
     }
 
+    // console.log('------- end session --------');
+    // console.log(JSON.stringify(selectedPipelines, null, 2));
+
     let selectedSolution = selectedPipelines[0];
-    let selectedSolutionId = selectedSolution.pipelineId;
+
+    let plineId = isKeyDefined(selectedSolution, 'pipelineId');
+    if (plineId === undefined){
+      setModal(m('div', {}, [
+              m('p', 'Sorry!  The pipelineId for the selected solution could not be found.'),
+              m('p', 'The solution was not exported.'),
+              ]),
+               "Failed to Export Solution",
+               true,
+               "Close",
+               true);
+      return;
+    }
+
+    let selectedSolutionId = isKeyDefined(selectedSolution, 'pipeline.id');
+    if (selectedSolutionId === undefined){
+      setModal(m('div', {}, [
+              m('p', 'Sorry!  The solutionId for the selected pipeline could not be found.'),
+              m('p', 'The solution was not exported.'),
+              ]),
+               `Pipeline ${plineId}: Failed to Export Solution`,
+               true,
+               "Close",
+               true);
+      return;
+    }
 
     // calling exportSolution
     //
@@ -1275,13 +1304,17 @@ export async function exportSolution(solutionId) {
         searchId: app.getResultsProblem().d3mSearchId
     });
 
-    if (response === undefined)
-        console.log('Failed to write executable for solutionId ' + solutionId);
+    console.log('--------------------------')
+    console.log(' -- SolutionExport3 --')
+    console.log(JSON.stringify(response));
 
-    if (response.success === false)
+    console.log('--------------------------')
+    if (response === undefined){
+        console.log('Failed to write executable for solutionId ' + solutionId);
+    } else if (!response.success){
         setModal(response.message,"Solution export failed", true, 'Close', true,
             () => setModal('',"", false));
-
+    }
     return response;
 }
 
