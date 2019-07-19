@@ -133,24 +133,51 @@ export let leftpanel = () => {
         sections: [
             {
                 value: 'Problems',
-                contents: m(Table, {
-                    data: Object.keys(app.workspace.raven_config.problems)
-                        .filter(problemId => 'd3mSearchId' in app.workspace.raven_config.problems[problemId])
-                        .map(problemId => app.workspace.raven_config.problems[problemId])
-                        .map(problem => [
-                            problem.problemID,
-                            problem.targets.join(', '),
-                            problem.d3mSearchId,
-                            m(Button, {
-                                title: 'stop the search',
-                                class: 'btn-sm',
-                                onclick: () => solverD3M.stopSearch(problem.d3mSearchId)
-                            }, m(Icon, {name: 'stop'}))
-                        ]),
-                    headers: ['Name', 'Targets', 'Search ID', 'Stop'],
-                    activeRow: app.workspace.raven_config.resultsProblem,
-                    onclick: app.setResultsProblem
-                })
+                contents: [
+                    Object.keys(otherSearches).length > 0 && m('h4', 'Within Workspace'),
+                    'All searches being conducted for this workspace are listed below. ' +
+                    'You may select searches for other problems in the workspace to view their solutions.',
+                    m(Table, {
+                        data: Object.keys(app.workspace.raven_config.problems)
+                            .filter(problemId => 'd3mSearchId' in app.workspace.raven_config.problems[problemId])
+                            .map(problemId => app.workspace.raven_config.problems[problemId])
+                            .map(problem => [
+                                problem.problemID,
+                                problem.targets.join(', '),
+                                problem.d3mSearchId,
+                                problem.d3mSolverState === undefined ? 'stopped' : 'running',
+                                problem.d3mSolverState !== undefined && m(Button, {
+                                    title: 'stop the search',
+                                    class: 'btn-sm',
+                                    onclick: () => solverD3M.stopSearch(problem.d3mSearchId)
+                                }, m(Icon, {name: 'stop'}))
+                            ]),
+                        headers: ['Name', 'Targets', 'Search ID', 'State', 'Stop'],
+                        activeRow: app.workspace.raven_config.resultsProblem,
+                        onclick: app.setResultsProblem
+                    }),
+                    Object.keys(otherSearches).length > 0 && [
+                        m('h4', 'Beyond Workspace'),
+                        'The backend is also searching for solutions under these search IDs. ' +
+                        'These searches could be remnants from a prior workspace, or concurrently being searched in a second workspace. ' +
+                        'Solutions for these searches cannot be viewed from this workspace.',
+                        m(Table, {
+                            data: Object.keys(otherSearches)
+                                .map(searchID => [
+                                    '?',
+                                    '?',
+                                    searchID,
+                                    otherSearches[searchID].running ? 'potentially running' : 'stopped',
+                                    otherSearches[searchID].running && m(Button, {
+                                        title: 'stop the search',
+                                        class: 'btn-sm',
+                                        onclick: () => solverD3M.stopSearch(searchID)
+                                    }, m(Icon, {name: 'stop'}))
+                                ]),
+                            headers: ['Name', 'Targets', 'Search ID', 'State', 'Stop']
+                        })
+                    ]
+                ]
             },
             {
                 value: 'Solutions',
@@ -753,6 +780,9 @@ export let selectedMetric = {
 export let reverseSet = [
     "meanSquaredError", "rootMeanSquaredError", "meanAbsoluteError", "hammingLoss", "rank", "loss"
 ];
+
+// searchID: {running: true} for searchIDs streamed back from TA2 that are not in the workspace
+export let otherSearches = {};
 
 /**
  Sort the Pipeline table, putting the best score at the top

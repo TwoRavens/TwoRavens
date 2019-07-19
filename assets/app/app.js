@@ -1792,7 +1792,7 @@ export let setVariableSummaries = state => {
     if (!state) return;
 
     // Brian says d3mIndex should not be visible to the user
-    delete state.d3mIndex;
+    // delete state.d3mIndex;
 
     variableSummaries = Object.keys(state).reduce((out, variable) =>
         Object.assign(out, {[variable.split('.').join('_')]: state[variable]}), {});
