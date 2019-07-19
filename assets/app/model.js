@@ -1442,6 +1442,12 @@ export async function submitDiscProb() {
     app.setTask1_finished(true);
     m.redraw();
 
-    if (!app.problemDocExists)
-        setModal("Your discovered problems have been submitted.", "Task Complete", true, false, false, locationReload);
+    //setModal("Data preview error: " + msg_data.user_message,
+    //       "Data materialization Failed", true, "Close", true);
+
+    setModal("Your discovered problems have been submitted.",
+             "Task 1 Complete",
+             true,
+             "Close",
+             true);
 }
