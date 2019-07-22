@@ -45,7 +45,7 @@ export let getSolutionAdapter = (problem, solution) => ({
     },
     getDescription: () => solution.description,
     getTask: () => solution.status,
-    getModel: () => 'pipeline' in solution
+    getModel: () => solution.pipeline !== undefined
         ? solution.pipeline.steps
             .filter(step => ['regression', 'classification'].includes(step.primitive.primitive.pythonPath.split('.')[2]))
             .map(step => step.primitive.primitive.pythonPath.replace(new RegExp('d3m\\.primitives\\.(regression|classification|semisupervised_classification|semisupervised_regression)\\.'), ''))
@@ -928,7 +928,7 @@ export function GRPC_SearchSolutionsRequest(problem) {
     return {
         userAgent: TA3_GRPC_USER_AGENT, // set on django
         version: TA3TA2_API_VERSION, // set on django
-        timeBoundSearch: problem.timeBound || 5,
+        timeBoundSearch: problem.timeBound || 0,
         timeBoundRun: problem.timeBoundRun || 0,
         rankSolutionsLimit: problem.solutionsLimit || 0,
         priority: problem.priority || 0,
@@ -1171,7 +1171,7 @@ export async function handleGetProduceSolutionResultsResponse(response, type) {
         debugLog('handleGetProduceSolutionResultsResponse: Error.  "response" undefined');
         return;
     }
-
+    
     let problems = ((app.workspace || {}).raven_config || {}).problems || {};
     let solvedProblemId = Object.keys(problems)
         .find(problemId => problems[problemId].d3mSearchId === response.stored_request.search_id);
