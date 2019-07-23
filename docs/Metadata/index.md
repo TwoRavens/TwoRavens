@@ -9,15 +9,15 @@ services to explore, query, and compare metadata.
 # Guide
 * Preprocess File Description
     * [Preprocess Parameters](#preprocess-parameters)
-    * [Self Section](self_section.md)
-    * [Dataset Section](dataset_section.md)
-    * [Variable Section](defn_variables.md)
-    * [Variable Display Section](variable_display_section.md)
-    * [Custom Statistics Section](custom_statistics_section.md)
-* [License](license.md)
-* [Help](help.md)
+    * [Self Section](#self-section)
+    * [Dataset Section](#dataset-section)
+    * [Variable Section](#variable-section)
+    * [Variable Display Section](#variable-display-section)
+    * [Custom Statistics Section](#custom-statistics-section.md)
+* [License](https://github.com/TwoRavens/raven-metadata-service/blob/develop/LICENSE)
 
-## Preprocess Parameters
+Preprocess Parameters
+=====================
 
 .. data:: variables
 
