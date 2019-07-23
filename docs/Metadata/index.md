@@ -473,32 +473,32 @@ Variable Display Section
 
 ### editable
 
-    list of all the variable features which are editable. e.g `description`, `numchar`, etc.
+list of all the variable features which are editable. e.g `description`, `numchar`, etc.
 
 
-    * **type**: string or null
+* **type**: string or null
 
 ### viewable
 
-    It is a boolean property set for a variable to decide to show it or not in the preprocessed data.
+It is a boolean property set for a variable to decide to show it or not in the preprocessed data.
 
 
-    * **type**: boolean
+* **type**: boolean
 
 ### omit
 
-    A list of all the features which are to be omitted for the particular variable.
+A list of all the features which are to be omitted for the particular variable.
 
 
-    * **type**: string or null
+* **type**: string or null
 
 ### images
 
-    list containing custom/ scripted images of the variable data.
+list containing custom/ scripted images of the variable data.
 
 
-    * **type**: string or null
-    
+* **type**: string or null
+
 Custom Statistics Section
 =========================
 
@@ -509,53 +509,53 @@ Custom Statistics Section
 
 ### id
 
-    unique id assigned by system to the custom statistic. e.g id_000001
+unique id assigned by system to the custom statistic. e.g id_000001
 
 
-    * **type**: string
+* **type**: string
 
 ### name
 
-    Name of the custom statistic.
+Name of the custom statistic.
 
 
-    * **type**: string
+* **type**: string
 
 ### variables
 
-    list of variables involved in the custom statistic.
+list of variables involved in the custom statistic.
 
-    * **type**: string
+* **type**: string
 
 ### images
 
-    list of images associated with the custom statistic.
+list of images associated with the custom statistic.
 
-    * **type**: string
+* **type**: string
 
 ### value
 
-    value of the custom statistic. e.g mean : `12`
+value of the custom statistic. e.g mean : `12`
 
-    * **type**: string or null
+* **type**: string or null
 
 ### description
 
-    brief description of the custom statistics.
+brief description of the custom statistics.
 
-    * **type**: string or null
+* **type**: string or null
 
 ### replication
 
-    the concept/formula behind the custom statistic generation. e.g `sum of obs/ size`.
+the concept/formula behind the custom statistic generation. e.g `sum of obs/ size`.
 
-    * **type**: string or null
+* **type**: string or null
 
 ### display
 
-    owner of the custom statistic has an option to display the statistic or not.
-    This can be done by changing a value of **viewable** to true or false.
+owner of the custom statistic has an option to display the statistic or not.
+This can be done by changing a value of **viewable** to true or false.
 
-    Default: true
+Default: true
 
-    * **type**: boolean
+* **type**: boolean
