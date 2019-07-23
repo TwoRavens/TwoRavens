@@ -165,7 +165,7 @@ Variable Section
 > - For non-numeric values, summary statistics such as **median** and
 > **mean** are set to "NA". For example:
 >
-> > ``` {.sourceCode .json}
+> > ```json
 > > {
 > >  "median":"NA"
 > > }
@@ -173,290 +173,295 @@ Variable Section
 
 
 
-.. data:: variableName
 
-    Name of the variable
+### variableName
 
+ Name of the variable
 
-    * **type**: string
 
+ * **type**: string
 
 
-.. data:: description
 
-    Brief explanation of the variable
+### description
 
+ Brief explanation of the variable
 
-    * **type**: string
 
+ * **type**: string
 
 
-.. data:: numchar
 
-    Describes the variable as numeric or character valued
 
+### numchar
 
-    * **type**: string
-    * **possible values**: character, numeric
+ Describes the variable as numeric or character valued
 
 
-.. data:: nature
+ * **type**: string
+ * **possible values**: character, numeric
 
-    Describes the classification of data into Nominal, Ordinal, Ratio, Interval, Percentage.
 
 
-    * **type**: string
-    * **possible values**: interval, nominal, ordinal, percent, ratio, other
+### nature
 
+ Describes the classification of data into Nominal, Ordinal, Ratio, Interval, Percentage.
 
-.. data:: binary
 
-    Signifies that the data can only take two values
+ * **type**: string
+ * **possible values**: interval, nominal, ordinal, percent, ratio, other
 
 
-    * **type**: boolean
 
+### binary
 
+ Signifies that the data can only take two values
 
-.. data:: interval
 
-    Describes numeric variables as either continuously valued, or discretely valued
+ * **type**: boolean
 
 
-    * **type**: string
-    * **possible values**: continuous, discrete
 
 
-.. data:: time
+### interval
 
-    Signifies that the variable describes points in time
+ Describes numeric variables as either continuously valued, or discretely valued
 
 
+ * **type**: string
+ * **possible values**: continuous, discrete
 
 
+### time
 
+ Signifies that the variable describes points in time
 
-.. data:: invalidCount
 
-    Counts the number of invalid observations, including missing values, nulls, NA's and any observation with a value enumerated in invalidSpecialCodes
 
 
-    * **type**: integer
 
 
+### invalidCount
 
-.. data:: invalidSpecialCodes
+ Counts the number of invalid observations, including missing values, nulls, NA's and any observation with a value enumerated in invalidSpecialCodes
 
-    Any numbers that represent invalid observations
 
+ * **type**: integer
 
-    * **type**: array
 
 
+### invalidSpecialCodes
 
-.. data:: validCount
+ Any numbers that represent invalid observations
 
-    Counts the number of valid observations
 
+ * **type**: array
 
-    * **type**: integer
 
 
+### validCount
 
-.. data:: uniqueCount
+ Counts the number of valid observations
 
-    Count of unique values, including invalid signifiers
 
+ * **type**: integer
 
-    * **type**: integer
 
 
+### uniqueCount
 
-.. data:: median
+ Count of unique values, including invalid signifiers
 
-    A central value in the distribution such that there are as many values equal or above, as there are equal or below this value.
 
-    * **types**: number or string
+ * **type**: integer
 
 
 
+### median
 
-.. data:: mean
+ A central value in the distribution such that there are as many values equal or above, as there are equal or below this value.
 
-    Average of all numeric values, which are not contained in invalidSpecialCodes
+ * **types**: number or string
 
-    * **types**: number or string
 
 
 
+### mean
 
-.. data:: max
+ Average of all numeric values, which are not contained in invalidSpecialCodes
 
-    Largest numeric value observed in dataset, that is not contained in invalidSpecialCodes
+ * **types**: number or string
 
-    * **types**: number or string
 
 
 
+### max
 
-.. data:: min
+ Largest numeric value observed in dataset, that is not contained in invalidSpecialCodes
 
-    Least numeric value observed in dataset, that is not contained in invalidSpecialCodes
+ * **types**: number or string
 
-    * **types**: number or string
 
 
 
+### min
 
-.. data:: mode
+ Least numeric value observed in dataset, that is not contained in invalidSpecialCodes
 
-    Value that occurs most frequently.  Multiple values in the case of ties.
+ * **types**: number or string
 
-    * **types**: array or string
 
 
 
+### mode
 
-.. data:: modeFreq
+ Value that occurs most frequently.  Multiple values in the case of ties.
 
-    Number of times value of mode is observed in variable
+ * **types**: array or string
 
-    * **types**: integer or string
 
 
 
+### modeFreq
 
-.. data:: fewestValues
+ Number of times value of mode is observed in variable
 
-    Value that occurs least frequently.  Multiple values in the case of ties.
+ * **types**: integer or string
 
-    * **types**: array or string
 
 
 
+### fewestValues
 
-.. data:: fewestFreq
+ Value that occurs least frequently.  Multiple values in the case of ties.
 
-    Number of times value of fewestValues is observed in variable
+ * **types**: array or string
 
-    * **types**: integer or string
 
 
 
+### fewestFreq
 
-.. data:: midpoint
+ Number of times value of fewestValues is observed in variable
 
-    The value equidistant from the reported min and max values
+ * **types**: integer or string
 
-    * **types**: number or string
 
 
 
+### midpoint
 
-.. data:: midpointFreq
+ The value equidistant from the reported min and max values
 
-    Number of observations with value equal to minpoint
+ * **types**: number or string
 
-    * **types**: integer or string
 
 
 
+### midpointFreq
 
-.. data:: stdDev
+ Number of observations with value equal to minpoint
 
-    Standard deviation of the values, measuring the spread between values, specifically using population formula
+ * **types**: integer or string
 
-    * **types**: number or string
 
 
 
+### stdDev
 
-.. data:: herfindahlIndex
+ Standard deviation of the values, measuring the spread between values, specifically using population formula
 
-    Measure of heterogeneity of a categorical variable which gives the probability that any two randomly sampled observations have the same value
+ * **types**: number or string
 
-    * **types**: number or string
 
 
 
+### herfindahlIndex
 
-.. data:: plotValues
+ Measure of heterogeneity of a categorical variable which gives the probability that any two randomly sampled observations have the same value
 
-    Plot points of a bar chart for tracing distribution of variable
+ * **types**: number or string
 
-    * **types**: object or string
 
 
 
+### plotValues
 
-.. data:: pdfPlotType
+ Plot points of a bar chart for tracing distribution of variable
 
-    Describes default type of plot appropriate to represent distribution of variable
+ * **types**: object or string
 
-    * **types**: string or null
 
 
 
+### pdfPlotType
 
-.. data:: pdfPlotX
+ Describes default type of plot appropriate to represent distribution of variable
 
-    Plot points along x dimension for tracing distribution of variable
+ * **types**: string or null
 
-    * **types**: array or null
 
 
 
+### pdfPlotX
 
-.. data:: pdfPlotY
+ Plot points along x dimension for tracing distribution of variable
 
-    Plot points along y dimension for tracing distribution of variable
+ * **types**: array or null
 
-    * **types**: array or null
 
 
 
+### pdfPlotY
 
-.. data:: cdfPlotType
+ Plot points along y dimension for tracing distribution of variable
 
-    Describes default type of plot appropriate to represent cumulative distribution of variable
+ * **types**: array or null
 
-    * **types**: string or null
 
 
 
+### cdfPlotType
 
-.. data:: cdfPlotX
+ Describes default type of plot appropriate to represent cumulative distribution of variable
 
-    Plot points along x dimension for tracing cumulative distribution of variable
+ * **types**: string or null
 
-    * **types**: array or null
 
 
 
+### cdfPlotX
 
-.. data:: cdfPlotY
+ Plot points along x dimension for tracing cumulative distribution of variable
 
-    Plot points along y dimension for tracing cumulative distribution of variable
+ * **types**: array or null
 
-    * **types**: array or null
 
 
 
+### cdfPlotY
 
-.. data:: interpretation
+ Plot points along y dimension for tracing cumulative distribution of variable
 
-    Object containing descriptors to interpret variable
+ * **types**: array or null
 
-    * **types**: object or string
 
 
 
+### interpretation
 
-.. data:: tworavens
+ Object containing descriptors to interpret variable
 
-    Object containing metadata specifically used by TwoRavens platform
+ * **types**: object or string
 
-    * **types**: object or string
+
+
+
+### tworavens
+
+ Object containing metadata specifically used by TwoRavens platform
+
+ * **types**: object or string
 
 Variable Display Section
 ========================
@@ -466,28 +471,28 @@ Variable Display Section
 > -   This section contains the modified object/parameters in the
 >     particular version of preprocessed dataset.
 
-.. data:: editable
+### editable
 
     list of all the variable features which are editable. e.g `description`, `numchar`, etc.
 
 
     * **type**: string or null
 
-.. data:: viewable
+### viewable
 
     It is a boolean property set for a variable to decide to show it or not in the preprocessed data.
 
 
     * **type**: boolean
 
-.. data:: omit
+### omit
 
     A list of all the features which are to be omitted for the particular variable.
 
 
     * **type**: string or null
 
-.. data:: images
+### images
 
     list containing custom/ scripted images of the variable data.
 
@@ -502,51 +507,51 @@ Custom Statistics Section
 > -   This section contains the custom statistics added by the user on
 >     the dataset.
 
-.. data:: id
+### id
 
     unique id assigned by system to the custom statistic. e.g id_000001
 
 
     * **type**: string
 
-.. data:: name
+### name
 
     Name of the custom statistic.
 
 
     * **type**: string
 
-.. data:: variables
+### variables
 
     list of variables involved in the custom statistic.
 
     * **type**: string
 
-.. data:: images
+### images
 
     list of images associated with the custom statistic.
 
     * **type**: string
 
-.. data:: value
+### value
 
     value of the custom statistic. e.g mean : `12`
 
     * **type**: string or null
 
-.. data:: description
+### description
 
     brief description of the custom statistics.
 
     * **type**: string or null
 
-.. data:: replication
+### replication
 
     the concept/formula behind the custom statistic generation. e.g `sum of obs/ size`.
 
     * **type**: string or null
 
-.. data:: display
+### display
 
     owner of the custom statistic has an option to display the statistic or not.
     This can be done by changing a value of **viewable** to true or false.
