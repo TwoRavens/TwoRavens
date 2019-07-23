@@ -101,52 +101,58 @@ Dataset Section
 > -   This section contains the important parameters of preprocess file
 >     at dataset level.
 
-.. data:: description
 
-    some definition.
+### description
 
-
-    * **type**: URL
-
-.. data:: unit of analysis
-
-    some definition.
+ some definition.
 
 
-    * **type**: string
-
-.. data:: structure
-
-    some definition.
+ * **type**: URL
 
 
-    * **type**: string
+### unit of analysis
 
-.. data:: rowCount
-
-    number of observations in the dataset.
+ some definition.
 
 
-    * **type**: numeric
-
-.. data:: variableCount
-
-    number of variables in the dataset.
+ * **type**: string
 
 
-    * **type**: numeric
+### structure
 
-.. data:: dataSource
-
-    contains the following details of the source file.
-
-    - **name**: name of the source file.
-    - **type**: file type.
-    - **format**: format of the file.
-    - **fileSize**: size of the file.
+ some definition.
 
 
-    * **type**: string
+ * **type**: string
+
+
+### rowCount
+
+ number of observations in the dataset.
+
+
+ * **type**: numeric
+
+
+### variableCount
+
+ number of variables in the dataset.
+
+
+ * **type**: numeric
+
+
+### dataSource
+
+ contains the following details of the source file.
+
+ - **name**: name of the source file.
+ - **type**: file type.
+ - **format**: format of the file.
+ - **fileSize**: size of the file.
+
+
+ * **type**: string
     
 Variable Section
 ================
