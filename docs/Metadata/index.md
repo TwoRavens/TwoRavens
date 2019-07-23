@@ -13,7 +13,7 @@ services to explore, query, and compare metadata.
     * [Dataset Section](#dataset-section)
     * [Variable Section](#variable-section)
     * [Variable Display Section](#variable-display-section)
-    * [Custom Statistics Section](#custom-statistics-section.md)
+    * [Custom Statistics Section](#custom-statistics-section)
 * [License](https://github.com/TwoRavens/raven-metadata-service/blob/develop/LICENSE)
 
 Preprocess Parameters
