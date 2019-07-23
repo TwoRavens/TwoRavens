@@ -19,11 +19,11 @@ services to explore, query, and compare metadata.
 Preprocess Parameters
 =====================
 
-.. data:: variables
+### variables
 
   Dictionary containing variable metadata
 
-  .. code-block:: json
+```json
 
    {
      "dataset": {
@@ -43,7 +43,8 @@ Preprocess Parameters
         }
       },
     }
-    
+```
+
 Self Section
 ============
 
@@ -52,45 +53,45 @@ Self Section
 > -   This section contains the structure and description of the
 >     preprocessed file.
 
-.. data:: description
+### description
 
-    contains the link to the source.
-
-
-    * **type**: URL
-
-.. data:: created
-
-    The data and time when the preprocessed file was created.
+ contains the link to the source.
 
 
-    * **type**: string
+ * **type**: URL
 
-.. data:: preprocessId
+### created
 
-    It is the auto-generated ID given by the service to every preprocess file.
-
-
-    * **type**: numeric
-
-.. data:: version
-
-    It describes the version of the preprocessed file.
+ The data and time when the preprocessed file was created.
 
 
-    * **type**: numeric
+ * **type**: string
 
-.. data:: schema
+### preprocessId
 
-    contains the description of the schema the service follows.
-
-    - **name**: name of the schema it follows.
-    - **version**: version of the schema it follows.
-    - **schema_url**: source url of the schema it follows.
-    - **schema_docs**: link to the documentation of the schema it follows.
+ It is the auto-generated ID given by the service to every preprocess file.
 
 
-    * **type**: string
+ * **type**: numeric
+
+### version
+
+ It describes the version of the preprocessed file.
+
+
+ * **type**: numeric
+
+### schema
+
+ contains the description of the schema the service follows.
+
+ - **name**: name of the schema it follows.
+ - **version**: version of the schema it follows.
+ - **schema_url**: source url of the schema it follows.
+ - **schema_docs**: link to the documentation of the schema it follows.
+
+
+ * **type**: string
 
 Dataset Section
 ===============
