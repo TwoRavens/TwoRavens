@@ -4,7 +4,6 @@
 ##  1. caret doesn't support a multivariate response. Each target is fit as a univariate model
 ##  2. caret doesn't support partial results under a timeout. Timeouts are returned empty
 ##
-source("rookconfig.R")
 
 # production <- FALSE
 timeout <- 20 # maximum time to spend on a univariate fit
@@ -38,30 +37,8 @@ if (allowParallel) {
 #     metric: "RMSE" and "Rsquared" for regression and "Accuracy" and "Kappa" for classification
 # }
 
-solver.app <- function(env) {
 
-  print(paste("--- solver.app ---", sep = ""))
-
-  if (production) sink(file = stderr(), type = "output")
-
-  solaJSON <- Request$new(env)$POST()$solaJSON
-  if (!jsonlite::validate(solaJSON))
-    return(list(error = "POST request is not valid json. Check for special characters."))
-
-  send(solver(jsonlite::fromJSON(solaJSON)))
-}
-
-
-send <- function(res) {
-  res <- jsonlite:::toJSON(res)
-  if (production) sink()
-
-  response <- Response$new(headers = list(`Access-Control-Allow-Origin` = "*"))
-  response$write(res)
-  response$finish()
-}
-
-error <- function(message) list(error=jsonlite::unbox(message))
+error <- function(message) jsonlite::toJSON(list(error=jsonlite::unbox(message)))
 
 analyzeWrapper <- function(wrapper, hyperparameters, samples) list(
   fittedValues=fitted(wrapper)[samples],
@@ -116,7 +93,7 @@ isBinary <- function(v) {
   length(x) - sum(is.na(x)) == 2L
 }
 
-solver <- function(everything) {
+rookSolver <- function(everything) {
 
   if (is.null(everything[['dataset_path']]))
     return(error("'dataset_path' is null"))
@@ -169,8 +146,7 @@ solver <- function(everything) {
   n <- length(rownames(data))
   samples <- if (n < observationLimit) 1:n else sort(sample(1:n, observationLimit))
   # if sample d3mIndex indices are provided, overwrite data sample indices
-  if (everything[['samples']])
-    samples <- which(data[,'d3mIndex'] %in% everything[['samples']])
+  if (!is.null(everything[['samples']])) samples <- which(data[,'d3mIndex'] %in% everything[['samples']])
 
   methods <- everything[['method']]
   if (is.null(methods)) {
@@ -257,17 +233,17 @@ solver <- function(everything) {
         task=jsonlite::unbox(problem[['task']]),
         library=methodInfo$library, # R library used
         tags=methodInfo$tags,
-        actualValues=if (!is.na(everything[['samples']])) data[samples,problem[['targets']]]
+        actualValues=if (!is.null(everything[['samples']])) data[samples,problem[['targets']]]
       )
     )
   }, methods, hyperparameters, SIMPLIFY=FALSE)
 
   # fit a univariate model to each of the dependent variables
-  list(
+  jsonlite::toJSON(list(
     results=results,
     problem=problem,
     source='rook'
-  )
+  ))
 }
 
 # wrapper <- solver(list(
