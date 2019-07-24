@@ -9,36 +9,13 @@
 ##  8/25/17
 ##
 
+rookPreprocess <- function(preprocessParams) {
 
-preprocess.app <- function(env){
-
-    ## Define paths for output.
-    ## Also set `production` toggle:  TRUE - Production, FALSE - Local Development.
-    source("rookconfig.R")
-
-    warning<-FALSE
-    result <-list()
     ppJSON <- list()
     mydataloc <- ""
     mydata <- data.frame()
-    preprocessParams <- list()
-
-    if(production){
-        sink(file = stderr(), type = "output")
-    }
-
-    request <- Request$new(env)
-    response <- Response$new(headers = list( "Access-Control-Allow-Origin"="*"))
-
-    valid <- jsonlite::validate(request$POST()$solaJSON)
-
-    if(!valid) {
-        warning <- TRUE
-        result <- list(warning="The request is not valid json. Check for special characters.")
-    }
-    if(!warning) {
-        preprocessParams <- jsonlite::fromJSON(request$POST()$solaJSON)
-    }
+    result <-list()
+    warning <- FALSE
 
     if (! warning) {
         mydataloc <- preprocessParams$data
@@ -107,21 +84,6 @@ preprocess.app <- function(env){
     # This reg expression stopped working with .csv.gz extensions:
     #merge_name_stub <- sub("(.*\\/)([^.]+)(\\.[[:alnum:]]+$)", "\\2", mydataloc)   # Extract the filename stub from the provided training data path.  Generally "trainData".
 
-    rook_output_data <- paste(PREPROCESS_OUTPUT_PATH, mydatastub, "/data/", sep="")
-    rook_output_images <- paste(PREPROCESS_OUTPUT_PATH, mydatastub, "/images/", sep="")
-    rook_output_preprocess <- paste(PREPROCESS_OUTPUT_PATH, mydatastub, "/preprocess/", sep="")
-
-    # R won't write to a directory that doesn't exist.
-    if (!dir.exists(rook_output_data)){
-        dir.create(rook_output_data, recursive = TRUE)
-    }
-    if (!dir.exists(rook_output_images)){
-        dir.create(rook_output_images, recursive = TRUE)
-    }
-    if (!dir.exists(rook_output_preprocess)){
-        dir.create(rook_output_preprocess, recursive = TRUE)
-    }
-
     # Return the preprocess file
     if(!warning){
         result<-ppJSON
@@ -132,6 +94,5 @@ preprocess.app <- function(env){
         sink()
     }
 
-    response$write(result)
-    response$finish()
+    result
 }
