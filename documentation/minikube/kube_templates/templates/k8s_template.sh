@@ -119,7 +119,7 @@ spec:
       - name: TA2_STATIC_TEST_MODE
         value: "False"
       - name: R_DEV_SERVER_BASE
-        value: "http://localhost:8000/custom/"
+        value: "http://localhost:8000/"
       - name: TA2_PORT
         value: "45042"
       - name: TA3_PORT
@@ -182,5 +182,5 @@ spec:
       - name: EVAL_ID
         value: {{ eval_id }}
       # Also set to "yes" in the Dockefile
-      - name: ROOK_USE_PRODUCTION_MODE
+      - name: FLASK_USE_PRODUCTION_MODE
         value: "yes"

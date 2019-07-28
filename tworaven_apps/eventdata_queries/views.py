@@ -8,6 +8,7 @@ from django.http import \
     (JsonResponse, HttpResponse)
 from django.views.decorators.csrf import csrf_exempt
 
+from tworaven_apps.rook_services.make_datadocs_util import MakeDatadocsUtil
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
      get_json_error,

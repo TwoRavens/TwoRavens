@@ -129,7 +129,7 @@ services:
     image: tworavens/ravens-r-service:develop
     environment: *shared-env-variables
     # Also set in the docker file
-    #  - ROOK_USE_PRODUCTION_MODE=yes
+    #  - ROO_USE_PRODUCTION_MODE=yes
     ports:
       - 8000
     volumes:

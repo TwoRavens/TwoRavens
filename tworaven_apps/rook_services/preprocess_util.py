@@ -33,11 +33,12 @@ from tworaven_apps.data_prep_utils.duplicate_column_remover import DuplicateColu
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.rook_services.rook_app_info import RookAppInfo
 from tworaven_apps.rook_services.app_names import \
-    (PREPROCESS_ROOK_APP_NAME, SOLA_JSON_KEY)
+    (PREPROCESS_ROOK_APP_NAME)
 from tworaven_apps.utils.json_helper import json_dumps, json_loads
 from tworaven_apps.utils.dict_helper import column_uniquify
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
+
 
 class PreprocessUtil(BasicErrCheck):
     """Convenience class for rook preprocess"""
@@ -106,8 +107,7 @@ class PreprocessUtil(BasicErrCheck):
 
         json_str_info = json_dumps(info)
         if json_str_info.success:
-            app_data = {SOLA_JSON_KEY: json_str_info.result_obj}
-            return app_data
+            return info
 
         # Failed JSON string conversion
         #
@@ -159,7 +159,7 @@ class PreprocessUtil(BasicErrCheck):
         #
         try:
             rservice_req = requests.post(rook_svc_url,
-                                         data=call_data)
+                                         json=call_data)
         except ConnectionError:
             err_msg = 'R Server not responding: %s' % rook_svc_url
             self.add_err_msg(err_msg)

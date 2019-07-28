@@ -21,7 +21,7 @@ describe('TwoRavens component health checks', function() {
     expect(true).to.equal(true)
   })
 
-  // http://2ravens.org/rook-custom/healthcheckapp
+  // http://2ravens.org/rook-custom/healthCheck.app
 
 
   it('Is the TA3 main app running?', function() {

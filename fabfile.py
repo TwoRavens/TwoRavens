@@ -91,18 +91,7 @@ def clear_test_data():
     # (1) D3M config data in Django
     clear_d3m_configs()
 
-    # (2) Delete Preprocess files
-    rook_files_dir = os.path.join(FAB_BASE_DIR, 'rook', 'rook-files')
-    print('-' * 40)
-    print('Delete preprocess output directory: %s' % rook_files_dir)
-    print('-' * 40)
-    if os.path.isdir(rook_files_dir):
-        shutil.rmtree(rook_files_dir)
-        print('  -> Preprocess output directory deleted: %s\n' % rook_files_dir)
-    else:
-        print('  -> No preprocess files to delete\n')
-
-    # (3) Delete ravens_volume test_output
+    # (2) Delete ravens_volume test_output
     d3m_output_dir = os.path.join(FAB_BASE_DIR, 'ravens_volume', 'test_output')
     print('-' * 40)
     print('Delete D3M test output directory: %s' % d3m_output_dir)
@@ -366,19 +355,14 @@ def run_ta2_test_server():
     local(run_cmd)
 
 @task
-def get_run_rook_cmd():
-    """For running the rook server via the command line"""
-    return 'cd rook; Rscript rook_nonstop.R'
+def get_run_R_cmd():
+    """For running the flask server via the command line"""
+    return 'cd R; python runner.py'
 
 @task
-def run_rook():
-    """Run the rook server via the command line"""
-    local(get_run_rook_cmd())
-
-#@task
-#def run_with_rook():
-#    """In addition to the django dev server and webpack, run rook via the Terminal"""
-#    run(with_rook=True)
+def run_R():
+    """Run the flask server via the command line"""
+    local(get_run_R_cmd())
 
 @task
 def run_with_ta2():
@@ -401,7 +385,7 @@ def load_eventdata_dev():
 
 @task
 def run_eventdata_dev():
-    """Set the UI mode to EventData with .js using a local rook url"""
+    """Set the UI mode to EventData with .js using a local flask url"""
     init_db()
 
     load_eventdata_dev()
@@ -424,7 +408,7 @@ def load_eventdata_prod():
 
 @task
 def run_eventdata_prod():
-    """Set the UI mode to EventData with .js using a local rook url"""
+    """Set the UI mode to EventData with .js using a local flask url"""
     init_db()
 
     load_eventdata_prod()
@@ -453,7 +437,7 @@ def run(**kwargs):
     ]
 
     if with_rook:
-        commands.append(get_run_rook_cmd())
+        commands.append(get_run_R_cmd())
 
     proc_list = [subprocess.Popen(command, shell=True, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr) for command in commands]
     try:

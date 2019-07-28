@@ -5,7 +5,7 @@
 # ----------------------------------------------
 # Variables used for TwoRavens (non-eventdata)
 # ----------------------------------------------
-production <- identical(Sys.getenv(x='ROOK_USE_PRODUCTION_MODE', unset="no"), "yes")
+production <- identical(Sys.getenv(x='FLASK_USE_PRODUCTION_MODE', unset="no"), "yes")
 
 #print(paste("production: ", production, sep=""))
 
@@ -21,7 +21,7 @@ addPrivacy<-TRUE      ## Toggle:  TRUE - Add .apps for differential privacy, FAL
 default_output_path <- paste(getwd(), "/rook-files/", sep="")
 PREPROCESS_OUTPUT_PATH <- Sys.getenv(x='PREPROCESS_OUTPUT_PATH', unset=default_output_path)
 
-default_report_path <- paste(getwd(), "/rook-files/reports/", sep="")
+default_report_path <- "/ravens_volume/reports"
 REPORT_OUTPUT_PATH <- Sys.getenv(x='REPORT_OUTPUT_PATH', unset=default_report_path)
 
 # Make sure the path exists
@@ -47,3 +47,5 @@ if(production){
 } else {
 	server_name <- "http://127.0.0.1:8080"
 }
+
+options(error=traceback)

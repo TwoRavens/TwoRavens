@@ -9,23 +9,31 @@ import {preformatted} from "../index";
 
 export default class Body_Dataset {
     async oninit() {
-        await app.load();
+        await app.load({awaitPreprocess: true});
 
         let response = await m.request({
             method: 'POST',
-            url: ROOK_SVC_URL + 'reportGeneratorApp',
+            url: ROOK_SVC_URL + 'report.app',
             data: {
-                dataset: app.datasetSummary,
-                variables: app.variableSummaries
+                metadata: JSON.stringify({
+                    dataset: app.datasetSummary,
+                    variables: app.variableSummaries
+                }),
+                timeout: 60 * 3
             }
         });
 
-        this.reportURL = ROOK_SVC_URL + response.report_url;
+        this.reportURL = D3M_SVC_URL + '/download-file?' + m.buildQueryString({
+            data_pointer: response.report_url,
+            content_type: 'application/pdf'
+        });
         m.redraw()
     }
 
     view(vnode) {
         let {id, image} = vnode.attrs;
+
+        if (!app.workspace) return;
 
         return [
             m(Header, {image}, app.workspace && [
@@ -44,14 +52,14 @@ export default class Body_Dataset {
                         }
                     }
                 },
-                app.workspace && m('div', {
+                m('div', {
                     style: {
                         'max-width': '1000px',
                         'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
                         margin: '1em auto'
                     }
                 },
-                m(Table, {
+                app.workspace.datasetDoc && m(Table, {
                     data: Object.entries(app.workspace.datasetDoc.about)
                         .map(row => [row[0], preformatted(row[1])])
                 })),

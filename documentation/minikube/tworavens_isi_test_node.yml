@@ -89,7 +89,7 @@ spec:
           value: "ravens-eval:45042"
         # Url to TA3 R/rook web service
         - name: R_DEV_SERVER_BASE
-          value: "http://localhost:8000/custom/"
+          value: "http://localhost:8000/"
       # liveness is for restart
       livenessProbe:
         httpGet:
@@ -133,12 +133,12 @@ spec:
         - name: EVAL_ID
           value: ravens-eval
         # Also set to "yes" in the Dockefile
-        - name: ROOK_USE_PRODUCTION_MODE
+        - name: FLASK_USE_PRODUCTION_MODE
           value: "yes"
       # liveness is for restart
       livenessProbe:
         httpGet:
-          path: /custom/healthcheckapp
+          path: /healthCheck.app
           port: 8000
         initialDelaySeconds: 5
         timeoutSeconds: 1
@@ -147,7 +147,7 @@ spec:
       # readiness: ready for traffic
       readinessProbe:
         httpGet:
-          path: /custom/healthcheckapp
+          path: /healthCheck.app
           port: 8000
         initialDelaySeconds: 20
         periodSeconds: 10

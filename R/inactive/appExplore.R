@@ -1,15 +1,3 @@
-send <- function(res) {
-  res <- jsonlite:::toJSON(res)
-  if(production){
-    sink()
-  }
-  write(res, "../assets/result.json")
-
-  response <- Response$new(headers=list("Access-Control-Allow-Origin"="*"))
-  response$write(res)
-  response$finish()
-}
-
 explore.app <- function(env) {
   print(env)
   production <- FALSE
@@ -19,13 +7,6 @@ explore.app <- function(env) {
     sink(file=stderr(), type="output")
   }
 
-  request <- Request$new(env)
-  valid <- jsonlite::validate(request$POST()$solaJSON)
-  if (!valid) {
-    return(send(list(warning="The request is not valid json. Check for special characters.")))
-  }
-
-  everything <- jsonlite::fromJSON(request$POST()$solaJSON, flatten=TRUE)
   print("everything: ")
   print(everything)
 

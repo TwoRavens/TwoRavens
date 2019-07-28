@@ -526,7 +526,7 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
         console.log(jsonout);
 
         // write links to file & run R CMD
-        let json = await app.makeRequest(ROOK_SVC_URL + 'plotdataapp', jsonout);
+        let json = await app.makeRequest(ROOK_SVC_URL + 'plotdata.app', jsonout);
         if (!json) {
             return;
         }

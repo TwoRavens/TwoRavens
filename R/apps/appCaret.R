@@ -1,12 +1,8 @@
 ##
-##  rooksolver.r
 ##  uses caret. Current limitations:
 ##  1. caret doesn't support a multivariate response. Each target is fit as a univariate model
 ##  2. caret doesn't support partial results under a timeout. Timeouts are returned empty
 ##
-
-# production <- FALSE
-timeout <- 20 # maximum time to spend on a univariate fit
 
 # limit on number of fitted values to return to frontend
 observationLimit <- 10
@@ -93,7 +89,11 @@ isBinary <- function(v) {
   length(x) - sum(is.na(x)) == 2L
 }
 
-rookSolver <- function(everything) {
+caret.app <- function(everything) {
+
+  requirePackages(c(packageList.any, packageList.caret.app))
+
+  timeout <- everything[['timeout']]
 
   if (is.null(everything[['dataset_path']]))
     return(error("'dataset_path' is null"))

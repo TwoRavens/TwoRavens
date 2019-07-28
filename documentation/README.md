@@ -224,8 +224,6 @@ This is how the new line looks in the context of the `app_names.py` file.
 #
 ROOK_APP_NAMES = [('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models
                   ('DATA_APP', 'dataapp', 'dataapp'),       # session id?
-                  ('SUBSET_APP', 'subsetapp', 'subsetapp'), # subset file
-                  ('TRANSFORM_APP', 'transformapp', 'transformapp'), # transfor file
                   ('PREPROCESS_APP', 'preprocessapp', 'preprocessapp'), # preprocess
                   ('PIPELINE_APP', 'pipelineapp', 'pipelineapp'), # format pipeline
                  ]

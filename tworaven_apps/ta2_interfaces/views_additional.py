@@ -71,21 +71,22 @@ def view_retrieve_d3m_output_data(request):
 @csrf_exempt
 def view_download_file(request):
     data_pointer = request.GET.get('data_pointer', None)
+    content_type = parse.unquote(request.GET.get('content_type', 'application/force-download'))
 
     if not data_pointer:
         user_msg = ('No key found: "%s"' % KEY_DATA_POINTER)
         return JsonResponse(get_json_error(user_msg))
 
     data_pointer = parse.unquote(data_pointer)
-    print(data_pointer)
+
     if not path.exists(data_pointer):
         user_msg = ('No file found: "%s"' % KEY_DATA_POINTER)
         return JsonResponse(get_json_error(user_msg))
 
-    with open(data_pointer, 'r') as file_download:
+    with open(data_pointer, 'r', encoding="ISO-8859-1") as file_download:
         return HttpResponse(
             file_download,
-            content_type='application/force-download')
+            content_type=content_type)
 
 @csrf_exempt
 def view_retrieve_d3m_confusion_data(request):

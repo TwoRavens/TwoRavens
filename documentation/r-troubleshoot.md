@@ -19,26 +19,26 @@ docker pull tworavens/ravens-r-service
 #### production "yes"
 
 ```
-docker run -ti --rm --name rook -e ROOK_USE_PRODUCTION_MODE="yes" -p8000:8000 -v /ravens_volume:/ravens_volume ravens-r-service:stable
+docker run -ti --rm --name rook -e FLASK_USE_PRODUCTION_MODE="yes" -p8000:8000 -v /ravens_volume:/ravens_volume ravens-r-service:stable
 ```
 
 - start container
 
 ```
-docker run -ti --rm --name rook -e ROOK_USE_PRODUCTION_MODE="yes" -p8000:8000 registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-r-service:stable
+docker run -ti --rm --name rook -e FLASK_USE_PRODUCTION_MODE="yes" -p8000:8000 registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-r-service:stable
 ```
 
 - log into running container
 
 ```
 docker exec -ti rook /bin/bash
-wget http://0.0.0.0:8000/custom/healthcheckapp
-echo $ROOK_USE_PRODUCTION_MODE
+wget http://0.0.0.0:8000/healthCheck.app
+echo $FLASK_USE_PRODUCTION_MODE
 ```
 
 
 #### production "no"
 
 ```
-docker run -ti --rm --name rook -e ROOK_USE_PRODUCTION_MODE="no" -p8000:8000 -v /ravens_volume:/ravens_volume ravens-r-service:stable
+docker run -ti --rm --name rook -e FLASK_USE_PRODUCTION_MODE="no" -p8000:8000 -v /ravens_volume:/ravens_volume ravens-r-service:stable
 ```

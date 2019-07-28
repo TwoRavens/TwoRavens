@@ -45,8 +45,8 @@ These three environment variables are presently in docker-compose.yml
 
 This environment variable is also set in docker-compose.yml
 
-  - **variable**: ROOK_USE_PRODUCTION_MODE
-  - **example**:  ROOK_USE_PRODUCTION_MODE=yes
+  - **variable**: FLASK_USE_PRODUCTION_MODE
+  - **example**:  FLASK_USE_PRODUCTION_MODE=yes
   - Note: We want the value to be "yes" so that `rookconfig.R` will find the right environment variable and `rook` apps will be set up correctly. Otherwise, it will fail as a container.
 
 ### 3. nginx

@@ -1,18 +1,17 @@
 
-rookReport.app <- function(params, body) {
+report.app <- function(data) {
+  print('entering report app')
 
-  print('test')
-  body <- gsub("solaJSON=", "", body)
+  requirePackages(c(packageList.any, packageList.report.app))
 
   if (!dir.exists(REPORT_OUTPUT_PATH))
   dir.create(REPORT_OUTPUT_PATH, recursive = TRUE)
 
   reportName <- paste0('report_', paste0(sample(c(0:9, LETTERS), 10, replace=TRUE), collapse=""), '.pdf')
 
-  templatePath <- paste(getwd(), 'rookReportTemplate.Rmd', sep="/")
+  templatePath <- paste(getwd(), 'apps/appReportTemplate.Rmd', sep="/")
   releasePath <- paste(REPORT_OUTPUT_PATH, 'preprocess.json', sep="/")
   reportPath <- paste(REPORT_OUTPUT_PATH, reportName, sep="/")
-  returnPath <- paste('rook-files/reports', reportName, sep="/")
 
   reportParams <- list(
     title="Dataset Summary",
@@ -20,7 +19,7 @@ rookReport.app <- function(params, body) {
     path=releasePath
   )
 
-  write(body, releasePath)
+  write(data$metadata, releasePath)
   rmarkdown::render(
     templatePath,
     params=reportParams,
@@ -30,6 +29,6 @@ rookReport.app <- function(params, body) {
 
   file.remove(releasePath)
 
-  list(report_url=jsonlite::unbox(returnPath))
+  jsonlite::toJSON(list(report_url=jsonlite::unbox(reportPath)))
 }
 

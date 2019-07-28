@@ -10,8 +10,6 @@ library(XML)
 
 
 preprocess<-function(hostname=NULL, fileid=NULL, testdata=NULL, types=NULL, filename=NULL){
-    
-  #config=jsonlite::fromJSON("config.json")  
   #metadataurl=config$metadata
   metadataurl=NULL
   
@@ -129,20 +127,12 @@ preprocess<-function(hostname=NULL, fileid=NULL, testdata=NULL, types=NULL, file
     if(metadataflag==1){ 
      dataseinf=list(stdyDscr=StudyDesc,fileDscr=FileDesc)
       datasetLevelInfo<-list(private=FALSE,stdyDscr=StudyDesc,fileDscr=FileDesc)
-
-      
-      jsontest<-rjson:::toJSON(datasetLevelInfo)
-    #  write(jsontest,file="test.json")  
       
     }
     
     else{
     datasetLevelInfo<-list(private=FALSE,stdyDscr=list(citation=list(titlStmt=list(titl="",IDNo=list("-agency"="","#text"="")),rspStmt=list(Authentry=""),biblcit="No Data Citation Provided")),fileDscr=list("-ID"="",fileTxt=list(fileName="",dimensns=list(caseQnty="",varQnty=""),fileType=""),notes=list("-level"="","-type"="","-subject"="","#text"="")))    # This signifies that that the metadata summaries are not privacy protecting
     }
-    #datasetitationinfo
-    
-    print("dataset level info")
-    print(datasetLevelInfo)
     
     # adding the covariance matrix for all numeric variables to the datasetLevelInfo
     # using 'complete.obs' is safer than 'pairwise.complete.obs', although it listwise deletes on entire data.frame
@@ -195,9 +185,7 @@ preprocess<-function(hostname=NULL, fileid=NULL, testdata=NULL, types=NULL, file
 
     datasetLevelInfo[["covarianceMatrix"]] <- mycov
     datasetLevelInfo[["discovery"]] <- mydisco
-    
-    jsontest<-rjson:::toJSON(datasetLevelInfo)
-    write(jsontest,file="test.json")
+
       ## Construct Metadata file that at highest level has list of dataset-level, and variable-level information
     largehold<- list(dataset=datasetLevelInfo, variables=hold)
     

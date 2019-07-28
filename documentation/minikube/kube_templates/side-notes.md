@@ -34,6 +34,6 @@ docker exec -it raven_running /usr/bin/ta3_search /ravens_volume/config_185_base
 ---
 
 
-R_DEV_SERVER_BASE=http://rook-service:8000/custom/
+R_DEV_SERVER_BASE=http://rook-service:8000/
 
 docker run --rm -ti -p 8080:8080 --name=raven_running --env TA2_TEST_SERVER_URL=192.168.1.155:45042 --env ravens-main:exp
