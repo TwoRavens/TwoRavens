@@ -1,9 +1,7 @@
-from os.path import isdir, isfile, join
-from os import makedirs
+from os.path import isfile, join
 import requests
 import json
 import logging
-from urllib import parse
 from requests.exceptions import ConnectionError
 from tworaven_apps.utils.basic_response import ok_resp, err_resp
 
@@ -259,11 +257,6 @@ def view_partials_app(request):
         user_msg = 'Failed to convert data to JSON. (partials app)'
         return JsonResponse(get_json_error(user_msg))
 
-    raven_data_text = raven_data_text_info.result_obj
-
-    # urllib quoting for issue: https://github.com/TwoRavens/TwoRavens/issues/237
-    app_data = dict(solaJSON=parse.quote(raven_data_text))
-
     # --------------------------------
     # Behavioral logging
     # --------------------------------
@@ -284,7 +277,7 @@ def view_partials_app(request):
     rook_svc_url = rook_app_info.get_rook_server_url()
     try:
         rservice_req = requests.post(rook_svc_url,
-                                     data=app_data)
+                                     json=raven_data)
     except ConnectionError:
         user_msg = 'R Server not responding: %s (partials)' % rook_svc_url
         return JsonResponse(get_json_error(user_msg))
@@ -403,17 +396,9 @@ def view_rook_route(request, app_name_in_url):
                         dict(success=False,
                              message='Failed to convert data to JSON'))
 
-    # for issue: https://github.com/TwoRavens/TwoRavens/issues/237
-    # (need more general encoding?)
-    raven_data_text = raven_data_text.replace('+', '%2B'\
-                                    ).replace('&', '%26'\
-                                    ).replace('=', '%3D')
-
     print('raven_data_text', raven_data_text)
 
-    app_data = dict(solaJSON=raven_data_text)
-
-
+    app_data = json.loads(raven_data_text)
 
     # --------------------------------
     # Behavioral logging
@@ -445,7 +430,7 @@ def view_rook_route(request, app_name_in_url):
     print('rook_svc_url', rook_svc_url)
     try:
         rservice_req = requests.post(rook_svc_url,
-                                     data=app_data)
+                                     json=app_data)
     except ConnectionError:
         err_msg = 'R Server not responding: %s' % rook_svc_url
         resp_dict = dict(message=err_msg)

@@ -382,7 +382,7 @@ class NewDatasetUtil(BasicErrCheck):
 
     def get_makedoc_rook_params(self):
         """Prepare the problem and dataset docs
-        info to send to rook mkdocsapp:
+        info to send to mkdocs class:
 
         datafile: path to data file
 

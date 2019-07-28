@@ -1,16 +1,12 @@
 ##
-##  rookzelig.r
-##
 ##  3/3/15
 ##
 
 
-zelig.app <- function(env){
+zelig.app <- function(everything, timeout){
 
-    ## Define paths for output.
-    ## Also set `production` toggle:  TRUE - Production, FALSE - Local Development.
-    source("rookconfig.R") 
-    
+    source('utils.R')
+
     warning<-FALSE
     result <-list()
 
@@ -18,21 +14,6 @@ zelig.app <- function(env){
         sink(file = stderr(), type = "output")
     }
 
-    request <- Request$new(env)
-    response <- Response$new(headers = list( "Access-Control-Allow-Origin"="*"))
-
-    valid <- jsonlite::validate(request$POST()$solaJSON)
-    print(valid)
-    if(!valid) {
-        warning <- TRUE
-        result <- list(warning="The request is not valid json. Check for special characters.")
-    }
-
-    if(!warning) {
-        everything <- jsonlite::fromJSON(request$POST()$solaJSON)
-        print(everything)
-    }
-    
     if(!warning){
         mygroup1 <- everything$zgroup1
         mygroup2 <- everything$zgroup2

@@ -1,6 +1,4 @@
 ##
-##  rookpartialsdata.r
-##
 ##  Used presently only in D3M mode.
 ##  Creates dataset used to calculate feature importance by partial plots, using a TwoRavens metadata file.
 ##
@@ -8,17 +6,13 @@
 ##
 
 
-partials.app <- function(env){
-
-    ## Define paths for output.
-    ## Also set `production` toggle:  TRUE - Production, FALSE - Local Development.
-    source("rookconfig.R")
+partials.app <- function(partialsParams){
+    requirePackages(packageList.any)
 
     warning<-FALSE
     result <-list()
     mydataloc <- ""
     mydata <- data.frame()
-    preprocessParams <- list()
 
     print('entering partials app')
 
@@ -26,22 +20,8 @@ partials.app <- function(env){
         sink(file = stderr(), type = "output")
     }
 
-    request <- Request$new(env)
-    response <- Response$new(headers = list( "Access-Control-Allow-Origin"="*"))
-
-    print(request$POST()$solaJSON)
-    valid <- jsonlite::validate(request$POST()$solaJSON)
-    if(!valid) {
-        warning <- TRUE
-        result <- list(warning="The request is not valid json. Check for special characters.")
-    }
-
-    if(!warning) {
-        partialsParams <- jsonlite::fromJSON(request$POST()$solaJSON)
-    }
-
 	if(!warning){
-        md <- list()   # rebuild to resemble original structure in metadata file
+        md <-   list()   # rebuild to resemble original structure in metadata file
         md$variables <- jsonlite::fromJSON(readLines(partialsParams$metadataPath))
         print(md)
 
@@ -229,7 +209,6 @@ partials.app <- function(env){
         result <- list(
             partialsDatasetDocPath = jsonlite::unbox(outdatasetDoc[1]),
             partialsDatasetPath = jsonlite::unbox(outsummary[1]))
-        result <- jsonlite:::toJSON(result)
     }
 
 
@@ -237,7 +216,5 @@ partials.app <- function(env){
         sink()
     }
 
-    print('exiting partials app')
-    response$write(result)
-    response$finish()
+    return(jsonlite:::toJSON(result))
 }

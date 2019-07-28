@@ -302,7 +302,7 @@ export let buildDatasetPreprocess = async ravenConfig => await getData({
     export: 'dataset'
 }).then(url => m.request({
     method: 'POST',
-    url: ROOK_SVC_URL + 'preprocessapp',
+    url: ROOK_SVC_URL + 'preprocess.app',
     data: {
         data: url,
         datastub: workspace.d3m_config.name
@@ -324,7 +324,7 @@ export let buildProblemPreprocess = async (ravenConfig, problem) => await getDat
     export: 'dataset'
 }).then(url => m.request({
     method: 'POST',
-    url: ROOK_SVC_URL + 'preprocessapp',
+    url: ROOK_SVC_URL + 'preprocess.app',
     data: {
         data: url,
         datastub: workspace.d3m_config.name,
@@ -1086,7 +1086,7 @@ export let getPreprocess = async (datasetPath, query) => {
 
     let response = await m.request({
         method: 'POST',
-        url: ROOK_SVC_URL + 'preprocessapp',
+        url: ROOK_SVC_URL + 'preprocess.app',
         data: {
             data: datasetPath,
             datastub: workspace.d3m_config.name,
@@ -1099,7 +1099,7 @@ export let getPreprocess = async (datasetPath, query) => {
     else return response.data;
 };
 
-export let loadWorkspace = async newWorkspace => {
+export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
 
     workspace = newWorkspace;
     // useful for debugging
@@ -1172,7 +1172,7 @@ export let loadWorkspace = async newWorkspace => {
 
     // PREPROCESS
     let promisePreprocess = promiseSampledDatasetPath
-        .then(sampledDatasetPath => m.request(ROOK_SVC_URL + 'preprocessapp', {
+        .then(sampledDatasetPath => m.request(ROOK_SVC_URL + 'preprocess.app', {
             method: 'POST',
             data: {data: sampledDatasetPath, datastub: workspace.d3m_config.name}
         }))
@@ -1323,6 +1323,10 @@ export let loadWorkspace = async newWorkspace => {
             promiseSampledDatasetPath,
             promiseProblemDoc
         ]);
+
+        if (awaitPreprocess)
+            await promisePreprocess;
+
         m.redraw();
 
         return true
@@ -1342,7 +1346,7 @@ export let loadWorkspace = async newWorkspace => {
  5. Start the user session /Hello
  */
 
-export async function load() {
+export async function load({awaitPreprocess}={}) {
     console.log('---------------------------------------');
     console.log('-- initial load, app.js - load() --');
     if (!IS_D3M_DOMAIN) {
@@ -1388,7 +1392,7 @@ export async function load() {
     console.log('---------------------------------------');
     console.log('-- 2. Load workspace --');
 
-    let success = await loadWorkspace(workspace);
+    let success = await loadWorkspace(workspace, {awaitPreprocess});
     if (!success){
       // alertError('Failed to load workspace');
       return;
@@ -1573,7 +1577,7 @@ export async function estimate() {
         try {
             let partialsLocationInfo = await m.request({
                 method: 'POST',
-                url: ROOK_SVC_URL + 'partialsapp',
+                url: ROOK_SVC_URL + 'partials.app',
                 data: {metadata: variableSummaries}
             });
             if (!partialsLocationInfo.success) {
@@ -1585,7 +1589,7 @@ export async function estimate() {
             }
         } catch(err) {
             cdb(err);
-            // alertError(`Error: call to partialsapp failed`);
+            // alertError(`Error: call to partials.app failed`);
         }
 
         if (partialsDatasetDocPath)
@@ -1698,7 +1702,7 @@ export async function callSolver(prob, datasetPath=undefined) {
 
     m.redraw();
 
-    for (let param of params) await makeRequest(ROOK_SVC_URL + 'solverapp', Object.assign({
+    for (let param of params) await makeRequest(ROOK_SVC_URL + 'caret.app', Object.assign({
         problem: probReduced,
         dataset_path: datasetPath,
         samples: prob.actualValues && prob.actualValues.map(point => point.d3mIndex)

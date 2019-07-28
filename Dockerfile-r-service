@@ -15,6 +15,13 @@ RUN mkdir -p /var/webapps/TwoRavens && \
     mkdir -p /var/webapps/TwoRavens/assets && \
     mkdir -p /ravens_volume
 
+# -------------------------------------
+# Copy over the requirements and run them (flask has own dependencies
+# -------------------------------------
+COPY ./requirements/ ./requirements
+RUN pip3 install --no-cache-dir -r requirements/flask-prod.txt
+
+
 # Copy over the repository
 COPY ./rook /var/webapps/TwoRavens/rook
 COPY ./LICENSE /var/webapps/TwoRavens
@@ -24,7 +31,7 @@ COPY ./README.md /var/webapps/TwoRavens
 # -------------------------------------
 # Set production environment variable
 # -------------------------------------
-ENV ROOK_USE_PRODUCTION_MODE=yes
+ENV FLASK_USE_PRODUCTION_MODE=yes
 
 # -------------------------------------
 # Create a volume for outside info
@@ -39,9 +46,9 @@ EXPOSE 8000
 WORKDIR /var/webapps/TwoRavens/rook
 
 # -------------------------------------
-# Run django with "rook_nonstop.R"
+# Run flask with "rook_nonstop.R"
 # -------------------------------------
-CMD Rscript rook_nonstop.R
+fab run_R
 
 # -----------------------------------------
 # -- Dev notes --

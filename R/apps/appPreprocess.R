@@ -1,6 +1,4 @@
 ##
-##  rookpreprocess.r
-##
 ##  Used presently only in D3M mode.
 ##  Creates directory structure for storing data related products for Rook, specific to a dataset.
 ##  Merges files from seed problems together into one dataset.
@@ -9,7 +7,9 @@
 ##  8/25/17
 ##
 
-rookPreprocess <- function(preprocessParams) {
+preprocess.app <- function(preprocessParams) {
+    print('entering preprocess app')
+    requirePackages(packageList.any)
 
     ppJSON <- list()
     mydataloc <- ""

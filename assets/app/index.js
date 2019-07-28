@@ -339,7 +339,7 @@ class Body {
                 onclick: () => app.setShowModalAlerts(true)
             }, m(Icon, {name: 'bell', style: `color: ${app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}`})),
 
-            app.TA2DebugMode && [
+            [
                 m(Button, {
                     style: {'margin': '8px'},
                     title: 'ta2 debugger',

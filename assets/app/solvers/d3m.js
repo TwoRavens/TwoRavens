@@ -515,7 +515,7 @@ export let loadImportanceEFDData = async (problem, solution) => {
     } catch (err) {
         console.warn("retrieve-output-confusion-data error");
         console.log(err);
-        app.alertWarn('Variable importance EFD data has not been loaded. Some plots will not load.');
+        // app.alertWarn('Variable importance EFD data has not been loaded. Some plots will not load.');
         return;
     }
 

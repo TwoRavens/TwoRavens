@@ -62,9 +62,9 @@
         "app_domain": "EVENTDATA_DOMAIN",
         "d3m_svc_url": "/d3m-service",
         "privacy_mode": false,
-        "rook_svc_url": "http://localhost:8000/custom/",
+        "rook_svc_url": "http://localhost:8000/",
         "dataverse_url": "https://beta.dataverse.org",
-        "description": "Run event data in a local environment.  The Rook service url will be \"http://localhost:8000/custom/\""
+        "description": "Run event data in a local environment.  The Rook service url will be \"http://localhost:8000/\""
     }
 },
 {
@@ -79,9 +79,9 @@
         "app_domain": "EVENTDATA_DOMAIN",
         "d3m_svc_url": "/d3m-service",
         "privacy_mode": false,
-        "rook_svc_url": "/custom/",
+        "rook_svc_url": "/",
         "dataverse_url": "https://beta.harvard.edu",
-        "description": "Run event data in production.  The Rook service url will be relative to the deployed server: \"/custom/\""
+        "description": "Run event data in production.  The Rook service url will be relative to the deployed server: \"/\""
     }
 }
 ]

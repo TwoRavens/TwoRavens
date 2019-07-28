@@ -31,7 +31,7 @@ workon 2ravens
 fab clear_d3m_configs
 
 # prevent package installation in R. This must be set within the 2ravens virtualenv
-export ROOK_USE_PRODUCTION_MODE=yes
+export FLASK_USE_PRODUCTION_MODE=yes
 
 mongo tworavens --eval "printjson(db.dropDatabase())"
 

@@ -47,7 +47,7 @@ COPY . .
 #                       credentials on the deployment server
 # -------------------------------------
 ENV DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container2 \
-    R_DEV_SERVER_BASE=http://rook-service:8000/custom/ \
+    R_DEV_SERVER_BASE=http://rook-service:8000/ \
     TA2_STATIC_TEST_MODE=False \
     TA2_TEST_SERVER_URL=localhost:45042 \
     CODE_REPOSITORY=/var/webapps/TwoRavens \

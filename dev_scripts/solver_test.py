@@ -2,7 +2,7 @@ import requests
 import json
 
 
-# print(requests.post('http://localhost:8000/custom/solverapp', data={
+# print(requests.post('http://localhost:8000/caret.app', json={
 #     'problem': json.dumps({
 #         'targets': ['Hits'],
 #         'predictors': ['Doubles', 'Triples', 'Strikeouts'],
@@ -14,7 +14,7 @@ import json
 
 
 
-print(requests.post('http://localhost:8000/custom/solverapp', data={
+print(requests.post('http://localhost:8000/caret.app', json={
     'problem': json.dumps({
         'targets': ['Hall_of_Fame'],
         'predictors': ['Doubles'],
