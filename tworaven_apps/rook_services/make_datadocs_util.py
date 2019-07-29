@@ -175,7 +175,11 @@ class MakeDatadocsUtil(BasicErrCheck):
                     } for targetIdx, col in enumerate([
                         col for col in datasetDoc_columns if 'suggestedTarget' in col['role']
                     ])]
-                }}
+                }},
+                **{
+                    call_data['problemDoc'][key] for key in ['expectedOutputs', 'dataAugmentation']
+                    if key in call_data['problemDoc']
+                }
             },
             'datasetDoc': {
                 'about': {
