@@ -1799,8 +1799,7 @@ export let setVariableSummaries = state => {
     //   but has knock-on effects currently:
     // delete state.d3mIndex;
 
-    variableSummaries = Object.keys(state).reduce((out, variable) =>
-        Object.assign(out, {[variable.split('.').join('_')]: state[variable]}), {});
+    variableSummaries = state;
 
     // quality of life
     Object.keys(variableSummaries).forEach(variable => variableSummaries[variable].name = variable);
