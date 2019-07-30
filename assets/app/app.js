@@ -21,7 +21,8 @@ import * as model from './model';
 import * as manipulate from './manipulations/manipulate';
 import * as results from "./results";
 import * as explore from './explore';
-import {linkURL, link} from "./index";
+import {bold, linkURLwithText, linkURL, link} from "./index";
+import {getClearWorkspacesLink, clearWorkpacesAndReloadPage} from "./utils";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -926,23 +927,26 @@ let getDatasetDoc = async dataset_schema_url => {
     let datasetDocInfo = await m.request(dataset_schema_url);
 
     if (!datasetDocInfo.success) {
-        let datasetDocFailMsg = 'D3M WARNING: No dataset doc available! ' +
-            datasetDocInfo.message;
+        let datasetDocFailMsg = 'D3M WARNING: No dataset doc available! ';
         swandive = true;
         console.log(datasetDocFailMsg);
         // alertWarn(datasetDocFailMsg);
 
         let datasetDocLink = window.location.origin + dataset_schema_url;
+
         setModal(m('div', {}, [
                 m('p', datasetDocFailMsg),
+                m('p', 'Please try to ', linkURLwithText(getClearWorkspacesLink(), 'Reset Workspaces'),
+                  ' or ', linkURLwithText(locationReload, 'Reload the Page')),
+                m('hr'),
+                m('p', bold('Technical info. Error: '), datasetDocInfo.message),
                 m('p', 'Url: ', link(datasetDocLink)),
-                m('p', 'Please try to reload. However, this may be a fatal error.'),
             ]),
             "Failed to load datasetDoc.json!",
             true,
-            "Reload Page",
+            "Reset Workspaces",
             false,
-            locationReload);
+            clearWorkpacesAndReloadPage);
         return;
     }
 

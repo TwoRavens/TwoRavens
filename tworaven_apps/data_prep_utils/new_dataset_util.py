@@ -581,6 +581,8 @@ class NewDatasetUtil(BasicErrCheck):
 
         if 'taskSubType' in new_pdoc['about']:
             new_pdoc['about']['taskSubType'] = self.rook_params['taskSubType']
+            if new_pdoc['about']['taskSubType'] == "remove":
+                del new_pdoc['about']['taskSubType']
 
         # May be incorrect, the column order may not have been kept
         #
@@ -589,9 +591,6 @@ class NewDatasetUtil(BasicErrCheck):
         new_pdoc['inputs']['performanceMetrics'] = self.rook_params['performanceMetrics']
 
         new_pdoc['inputs']['data'][0]['datasetID'] = self.rook_params['datasetid']
-
-        if new_pdoc['about']['taskSubType'] == "remove":
-            del new_pdoc['about']['taskSubType']
 
         # -----------------------------
         # write problemDoc
@@ -610,7 +609,7 @@ class NewDatasetUtil(BasicErrCheck):
 
         return True
 
-    def create_problem_data_docs(self):
+    def xcreate_problem_data_docs(self):
         """Send params to rook app"""
         if self.has_error():
             return False
