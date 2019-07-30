@@ -52,6 +52,7 @@ import Icon from "../common/views/Icon";
 
 import {alertLog, alertWarn, alertError} from "./app";
 import * as queryMongo from "./manipulations/queryMongo";
+import {abbreviate} from "./index";
 let recordLimit = 5000;
 
 
@@ -140,7 +141,7 @@ export class CanvasExplore {
                     let [n0, n1, n2] = exploreVariables.map(variable => app.variableSummaries[variable]);
                     let exploreProblem = 'problems' in app.workspace.raven_config && app.workspace.raven_config.problems[x];
                     let predictorVariables = app.getPredictorVariables(exploreProblem);
-                    let problemText = predictorVariables && [exploreProblem.targets.join(','), m(Icon, {style: 'margin:.5em;margin-top:.25em', name: 'arrow-left'}), predictorVariables.join(', ')];
+                    let problemText = predictorVariables && [exploreProblem.targets.join(','), m(Icon, {style: 'margin:.5em;margin-top:.25em', name: 'arrow-left'}), abbreviate(predictorVariables.join(', '), 100)];
 
                     // tile for each variable or problem
                     let tile = m('span#exploreNodeBox', {
@@ -217,7 +218,7 @@ export class CanvasExplore {
                                 : show && n1 && n1.name === x ? `${x} (y)`
                                 : show && n2 && n2.name === x ? `${x} (z)`
                                     : app.leftTab === 'Discover' && problemText
-                                        ? [m('b', x), m('p', problemText)]
+                                        ? [m('b', x), m('p', {style: {overflow: 'auto', 'max-height': '60px'}}, problemText)]
                                         : x)
                     );
 

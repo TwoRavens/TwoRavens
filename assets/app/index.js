@@ -14,7 +14,6 @@ import * as model from './model';
 
 import * as manipulate from './manipulations/manipulate';
 
-import * as solverWrapped from "./solvers/wrapped";
 import * as solverD3M from "./solvers/d3m";
 
 import * as common from '../common/common';
