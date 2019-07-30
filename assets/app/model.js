@@ -31,16 +31,10 @@ import Flowchart from "./views/Flowchart";
 import Datamart from "./datamart/Datamart";
 
 import {bold, boldPlain, preformatted} from "./index";
-import {locationReload, setModal} from "../common/views/Modal";
+import {setModal} from "../common/views/Modal";
 
 
 export class CanvasModel {
-    // onbeforeremove(vnode) {
-    //     vnode.dom.classList.add("exit-left");
-    //     return new Promise(function(resolve) {
-    //         vnode.dom.addEventListener("animationend", resolve)
-    //     })
-    // }
 
     view(vnode) {
         let {drawForceDiagram, forceData} = vnode.attrs;
@@ -316,7 +310,7 @@ export let leftpanel = forceData => {
 
     let discoveryHeaders = () => [
         'Name',
-        !app.task1_finished && m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
+        !app.taskPreferences.task1_finished && m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
         'Target', 'Predictors',
         Object.values(problems).some(prob => prob.subTask !== 'taskSubtypeUndefined') ? 'Subtask' : '',
         'Task',
@@ -333,7 +327,7 @@ export let leftpanel = forceData => {
 
     let formatProblem = problem => [
         problem.problemID, // this is masked as the UID
-        !app.task1_finished && m('[style=text-align:center]', m('input[type=checkbox]', {
+        !app.taskPreferences.task1_finished && m('[style=text-align:center]', m('input[type=checkbox]', {
             onclick: m.withAttr("checked", state => app.setCheckedDiscoveryProblem(state, problem.problemID)),
             checked: problem.meaningful
         })),
@@ -345,7 +339,7 @@ export let leftpanel = forceData => {
     ];
     selectedProblem && sections.push({
         value: 'Discover',
-        attrsInterface: {class: (!isDiscoveryClicked && !app.task1_finished) ? 'btn-success' : 'btn-secondary'}, // passed into button
+        attrsInterface: {class: (!app.taskPreferences.isDiscoveryClicked && !app.taskPreferences.task1_finished) ? 'btn-success' : 'btn-secondary'}, // passed into button
         contents: [
             m('div#discoveryTablesContainer', {
                     style: {
@@ -363,7 +357,16 @@ export let leftpanel = forceData => {
                 [
                     m('h4.card-header.clearfix',
                         m('div[style=height:50px;display:inline]', 'Current Problem'),
-                        m(Button, {
+                        !selectedProblem.pending && m(Button, {
+                            id: 'btnDeleteProblem',
+                            style: {float: 'right', margin: '-5px', 'margin-right': '22px'},
+                            class: 'btn-sm',
+                            onclick: () => {
+                                selectedProblem.pending = true;
+                                selectedProblem.unedited = true;
+                            },
+                        }, 'Delete'),
+                        selectedProblem.pending && m(Button, {
                             id: 'btnSaveProblem',
                             style: {float: 'right', margin: '-5px', 'margin-right': '22px'},
                             class: 'btn-sm',
@@ -374,7 +377,17 @@ export let leftpanel = forceData => {
                                 ravenConfig.problems[problemCopy.problemID] = problemCopy;
                                 app.setSelectedProblem(problemCopy.problemID);
                             }
-                        }, 'Save')),
+                        }, 'Save'),
+                        selectedProblem.manipulations.length !== 0 && m(Button, {
+                            style: {float: 'right', margin: '-5px', 'margin-right': '1em'},
+                            class: 'btn-sm',
+                            disabled: app.rightTab === 'Manipulate' && common.panelOpen['right'],
+                            title: `view manipulations for ${selectedProblem.problemID}`,
+                            onclick: () => {
+                                app.setRightTab('Manipulate');
+                                common.setPanelOpen('right');
+                            }
+                        }, 'Manipulations')),
 
                         /*
                          * Current Problem description
@@ -385,27 +398,8 @@ export let leftpanel = forceData => {
 
                             m('p', {
                                 id: 'problemDescription',
-                                style: {'padding-left': '2%', width: '80%'},
+                                style: {'padding-left': '2%', 'max-width': '800px'},
                             }, preformatted(app.getDescription(selectedProblem))),
-                            selectedProblem.manipulations.length !== 0 && m(
-                                'div', m(Button, {
-                                    style: {float: 'left'},
-                                    disabled: app.rightTab === 'Manipulate' && common.panelOpen['right'],
-                                    title: `view manipulations for ${selectedProblem.problemID}`,
-                                    onclick: () => {
-                                        app.setRightTab('Manipulate');
-                                        common.setPanelOpen('right');
-                                    }
-                                }, 'View Manipulations')
-                            ),
-                            !selectedProblem.pending && m(Button, {
-                                id: 'btnDelete',
-                                style: 'float:left',
-                                onclick: () => {
-                                    selectedProblem.pending = true;
-                                    selectedProblem.unedited = true;
-                                },
-                            }, 'Delete Problem')
                         ], // END: Current Problem description
 
                     m(Table, {
@@ -487,21 +481,20 @@ export let leftpanel = forceData => {
                         abbreviation: 40,
                         sortable: true
                     })
-                ])
-            ),
-
-            /*
-             *  If this is an unfinished Task1, show the submit discovered
-             *    problem button!
-             */
-            !app.task1_finished && !app.is_explore_mode && m(ButtonLadda, {
-                id: 'btnSubmitDisc',
-                class: app.buttonClasses.btnSubmitDisc,
-                activeLadda: app.buttonLadda.btnSubmitDisc,
-                style: {float: 'right'},
-                onclick: submitDiscProb,
-                title: 'Submit all checked discovered problems'
-            }, 'Submit Disc. Probs.')
+                ]),
+                /*
+                 *  If this is an unfinished Task1, show the submit discovered
+                 *    problem button!
+                 */
+                !app.taskPreferences.task1_finished && !app.is_explore_mode && m(ButtonLadda, {
+                    id: 'btnSubmitDisc',
+                    style: {margin: '1em'},
+                    class: 'btn-success',
+                    activeLadda: app.taskPreferences.isSubmittingProblems,
+                    onclick: submitDiscProb,
+                    title: 'Submit all checked discovered problems'
+                }, 'Submit Meaningful Problems')
+            )
         ]
     });
 
@@ -864,7 +857,6 @@ export let rightpanel = () => {
 // allNodes.push() below establishes a field for the master node array allNodes called "nodeCol" and assigns a color from this scale to that field
 // everything there after should refer to the nodeCol and not the color scale, this enables us to update colors and pass the variable type to R based on its coloring
 export let colors = d3.scaleOrdinal(d3.schemeCategory20);
-let isDiscoveryClicked = false;
 
 const k_combinations = (list, k) => {
     if (k > list.length || k <= 0) return []; // no valid combinations of size k
@@ -1394,7 +1386,7 @@ let D3M_problemDoc = problem => ({
 
 export async function submitDiscProb() {
     let problems = app.workspace.raven_config.problems;
-    app.buttonLadda['btnSubmitDisc'] = true;
+    app.taskPreferences.isSubmittingProblems = true;
     m.redraw();
 
 
@@ -1432,14 +1424,9 @@ export async function submitDiscProb() {
     console.log(outputCSV);
     let res3 = await app.makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: 'labels.csv', data: outputCSV.join('\n')});
 
-    app.buttonLadda.btnSubmitDisc = false;
-    app.buttonClasses.btnSubmitDisc = 'btn-secondary';
-    app.buttonClasses.btnDiscover = 'btn-secondary';
-    if (!app.task2_finished) app.buttonClasses.btnEstimate = 'btn-secondary';
-
     // Remove the button Submit Discovered problem button
     //
-    app.setTask1_finished(true);
+    app.taskPreferences.task1_finished = true;
     m.redraw();
 
     //setModal("Data preview error: " + msg_data.user_message,

@@ -43,6 +43,7 @@ import Body_Dataset from "./views/Body_Dataset";
 import {getSelectedProblem} from "./app";
 import {buildDatasetUrl} from "./app";
 import {alertWarn} from "./app";
+import ButtonLadda from "./views/LaddaButton";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let boldPlain = value => m('b', value);
@@ -195,16 +196,14 @@ class Body {
             m('div', {style: {'flex-grow': 1}}),
 
 
-
-            app.currentMode === 'results' && resultsProblem && Object.keys(resultsProblem.solutions.d3m).length > 0 && m(Button, {
+            app.currentMode === 'results' && resultsProblem && Object.keys(resultsProblem.solutions.d3m).length > 0 && m(ButtonLadda, {
                 id: 'btnEndSession',
-                class: 'ladda-label ladda-button',
+                class: 'ladda-label ladda-button ' + (app.taskPreferences.task2_finished ? 'btn-secondary' : 'btn-success'),
                 onclick: solverD3M.endsession,
+                activeLadda: app.taskPreferences.isSubmittingPipelines,
                 style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
             }, 'Mark Problem Finished'),
 
-
-            // m(Button, {onclick: () => app.alertWarn(JSON.stringify(app.getResultsProblem()))}, 'debug'),
             m(ButtonRadio, {
                 id: 'modeButtonBar',
                 attrsAll: {style: {margin: '0px 1em', width: 'auto'}, class: 'navbar-left'},
@@ -216,29 +215,12 @@ class Body {
                 sections: [
                     {value: 'Model'},
                     {value: 'Explore'},
-                    {value: 'Results', attrsInterface: {class: (!app.isResultsClicked && app.task1_finished && !app.task2_finished) ? 'btn-success' : 'btn-secondary'}}
+                    {value: 'Results', attrsInterface: {class: (!app.taskPreferences.isResultsClicked && app.taskPreferences.task1_finished && !app.taskPreferences.task2_finished) ? 'btn-success' : 'btn-secondary'}}
                 ], // mode 'Manipulate' diabled
 
                 // attrsButtons: {class: ['btn-sm']}, // if you'd like small buttons (btn-sm should be applied to individual buttons, not the entire component)
                 // attrsButtons: {style: {width: 'auto'}}
             }),
-
-            // m(Button, {
-            //     id: 'btnReset',
-            //     class: 'ladda-label ladda-button',
-            //     title: 'Reset',
-            //     onclick: app.reset,
-            //     style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
-            // }, m(Icon, {name: 'sync'})),
-
-            // IS_D3M_DOMAIN && app.is_model_mode && m(ButtonLadda, {
-            //     id: 'btnEstimate',
-            //     class: app.buttonClasses.btnEstimate,
-            //     activeLadda: Object.values(app.solverPending).some(_=>_),
-            //     onclick: app.estimate,
-            //     style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
-            // }, 'Solve This Problem'),
-            // mode !== 'model' ? null : navBtn('btnEstimate.btn-default', 1, 1, app.estimate, m("span.ladda-label", mode === 'explore' ? 'Explore' : 'Solve This Problem'), '150px'),
 
             m(Dropdown, {
                 id: 'loginDropdown',

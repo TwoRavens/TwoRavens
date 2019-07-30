@@ -204,26 +204,19 @@ export let formattingData = {};
 export let alignmentData = {};
 // ~~~~
 
-export let buttonLadda = {
-    btnSubmitDisc: false
-};
-export let buttonClasses = {
-    btnDiscover: 'btn-secondary',
-    btnSubmitDisc: 'btn-secondary',
-    btnEstimate: 'btn-secondary'
-};
-
 // when set, solver will be called if results menu is active
 export let solverPending = false;
 export let setSolverPending = state => solverPending = state;
 
-export let task1_finished = false;
-export let task2_finished = false;
-export let setTask1_finished = state => task1_finished = state;
-export let setTask2_finished = state => task2_finished = state;
-export let isResultsClicked = false;
+export let taskPreferences = {
+    isDiscoveryClicked: false,
+    isSubmittingProblems: false,
+    task1_finished: false,
 
-export let problemDocExists = true;
+    isResultsClicked: false,
+    isSubmittingPipelines: false,
+    task2_finished: false
+};
 
 export let currentMode;
 export let is_model_mode = true;
@@ -481,12 +474,12 @@ export let setRightTab = tab => {
 export let setLeftTab = (tab) => {
     leftTab = tab;
     updateLeftPanelWidth();
-    if (tab === 'Discover') buttonClasses.btnDiscover = 'btn-secondary';
+    if (tab === 'Discover') taskPreferences.isDiscoveryClicked = true;
     explore.setExploreVariate(tab === 'Discover' ? 'Problem' : 'Univariate');
     setFocusedPanel('left');
 
-    if (tab === 'Discover' && !task1_finished)
-        hopscotch.startTour(task1Tour);
+    if (tab === 'Discover' && !taskPreferences.task1_finished)
+        setTimeout(() => hopscotch.startTour(task1Tour), 100);
 };
 
 export let setLeftTabHidden = tab => {
@@ -827,7 +820,7 @@ export const reset = async function reloadPage() {
     location.reload();
 };
 
-export let step = (target, placement, title, content) => ({
+export let step = (target, placement, title, content, options={}) => Object.assign({
     target,
     placement,
     title,
@@ -838,7 +831,7 @@ export let step = (target, placement, title, content) => ({
         localStorage.setItem('tutorial_mode', 'false');
         hopscotch.endTour(true);
     }
-});
+}, options);
 
 export let initialTour = () => ({
     id: "dataset_launch",
@@ -883,10 +876,13 @@ export let task1Tour = {
     showCloseButton: true,
     scrollDuration: 300,
     steps: [
+        step("discoveryTableSelectedProblem", "right", "Mark Problems as Meaningful",
+            `<p>Check problems that you consider meaningful.</p>
+                     <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
         step("btnSubmitDisc", "right", "Complete Task 1",
              `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
-                     <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>
-                     <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
+                     <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>`,
+            {onShow: () => document.getElementById('btnSubmitDisc').scrollIntoView()}),
     ]
 };
 
@@ -1221,18 +1217,19 @@ export let loadWorkspace = async newWorkspace => {
             // problem doc not supplied, so set the first discovered problem as selected, once preprocess loaded
             if (!response.success) {
                 await promisePreprocess;
-                setSelectedProblem(Object.values(workspace.raven_config.problems)[0].problemID);
+                let problemFirst = Object.values(workspace.raven_config.problems)[0];
+                let problemCopy = getProblemCopy(problemFirst);
+                workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+                setSelectedProblem(problemCopy.problemID);
 
                 console.log('Task 1: Initiating');
-                // Kick off discovery button as green for user guidance
-                if (!task1_finished) buttonClasses.btnDiscover = 'btn-success';
                 m.redraw();
                 return;
             }
 
             console.log('Task 1: Complete, problemDoc loaded');
 
-            setTask1_finished(true);
+            taskPreferences.task1_finished = true;
             let problemDoc = response.data;
             datamartPreferences.hints = problemDoc.dataAugmentation;
 
@@ -1447,7 +1444,7 @@ export function downloadIncomplete() {
     called by switching to results mode
 */
 export async function estimate() {
-    isResultsClicked = true;
+    taskPreferences.isResultsClicked = true;
 
     let selectedProblem = getSelectedProblem();
 
@@ -1468,8 +1465,6 @@ export async function estimate() {
         // inactive.estimateNonD3M()
         return;
     }
-
-    buttonLadda.btnEstimate = !swandive;
 
     if (swandive) {
         alertError('estimate() function. Check app.js error with swandive (err: 003)');
@@ -1591,7 +1586,6 @@ export async function makeRequest(url, data) {
     */
 
     if (!IS_D3M_DOMAIN) {
-        buttonLadda.btnEstimate = false;
         m.redraw()
     }
     return res;

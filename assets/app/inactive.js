@@ -2564,7 +2564,6 @@ function estimateNonD3M() {
     // zparams.allVars = valueKey.slice(10, 25); // because the URL is too long...
     //
     //
-    // laddaState['btnEstimate'] = true;
     // m.redraw()
     //
     // let json = await makeRequest(ROOK_SVC_URL + 'zeligapp', zparams);

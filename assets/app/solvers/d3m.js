@@ -1217,13 +1217,10 @@ export async function handleGetProduceSolutionResultsResponse(response, type) {
 }
 
 export async function handleENDGetSearchSolutionsResults(response) {
-    // change status of buttons for estimating problem and marking problem as finished
-    app.buttonClasses.btnEstimate = 'btn-secondary';
 
     console.warn("#debug response end get search solutions results");
     console.log(response);
 
-    app.setTask2_finished(true);
     m.redraw();
 }
 
@@ -1231,6 +1228,7 @@ export async function handleENDGetSearchSolutionsResults(response) {
  EndSession(SessionContext) returns (Response) {}
  */
 export async function endsession() {
+    app.taskPreferences.isSubmittingPipelines = true;
     let resultsProblem = app.getResultsProblem();
 
     let solutions = resultsProblem.solutions;
@@ -1279,12 +1277,15 @@ export async function endsession() {
                true);
       return;
     }
+    m.redraw();
 
     // calling exportSolution
     //
     let status = await exportSolution(String(selectedSolutionId));
 
     if (status.success) {
+        app.taskPreferences.isSubmittingPipelines = false;
+        app.taskPreferences.task2_finished = true;
         // more descriptive solution modal that doesn't lock the page
         // selectedSolution.chosen = true;
         // results.setShowFinalPipelineModal(true);
