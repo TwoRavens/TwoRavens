@@ -50,6 +50,7 @@ export let boldPlain = value => m('b', value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
 export let link = url => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
 export let linkURL = url => m('a', {href: url, style: {color: 'blue'}, }, url);
+export let linkURLwithText = (url, text) => m('a', {href: url, style: {color: 'blue'}, }, text);
 export let preformatted = text => m('pre', text);
 export let abbreviate = (text, length) => text.length > length
     ? m('div', {'data-toggle': 'tooltip', title: text}, text.substring(0, length - 3).trim() + '...')
