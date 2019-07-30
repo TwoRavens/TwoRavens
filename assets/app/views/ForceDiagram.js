@@ -744,12 +744,23 @@ let speckCoords = Array.from({length: 100})
 let pebbleBuilderPlots = (attrs, context, newPebbles) => {
     newPebbles
         .append('g')
-        .attr('class', pebble => ({
-            'continuous': 'density-plot',
-            'bar': 'bar-plot',
-            'collapsed': 'speck-plot'
-        }[(attrs.summaries[pebble] || {}).plottype]))
+        .attr('class', 'pebble-plot')
         .attr('opacity', 0.4);
+
+    context.selectors.pebbles.select('g.pebble-plot')
+        .attr('class', function(pebble) {
+            let className = {
+                'continuous': 'density-plot',
+                'bar': 'bar-plot',
+                'collapsed': 'speck-plot'
+            }[(attrs.summaries[pebble] || {}).plottype];
+
+            // delete old plot if plot type changed
+            if (!this.classList.contains(className))
+                d3.select(this).selectAll('.embedded-plot').remove();
+
+            return 'pebble-plot ' + className
+        });
 
     context.selectors.pebbles
         .select('g.speck-plot').each(function (pebble) {
@@ -809,6 +820,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
 
         // append path if not exists
         let plotSelection = d3.select(this).selectAll('path')
+            .attr('class', 'embedded-plot')
             .data([null]).enter().append('path')
             .attr("class", "area")
             .attr("fill", "#1f77b4");
@@ -861,7 +873,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
             .domain([0, maxY])
             .range([0, height]);
 
-        let rectSelection = d3.select(this).selectAll("rect").data(data);
+        let rectSelection = d3.select(this).selectAll("rect").attr('class', 'embedded-plot').data(data);
         rectSelection.exit().remove();
         rectSelection.enter().append("rect");
 
