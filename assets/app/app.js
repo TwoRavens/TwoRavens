@@ -936,13 +936,11 @@ let getDatasetDoc = async dataset_schema_url => {
 
         setModal(m('div', {}, [
                 m('p', datasetDocFailMsg),
-                m('p', 'Please try to ', linkURLwithText(getClearWorkspacesLink(), 'Reset Workspaces'),
-                  ' or ', linkURLwithText(locationReload, 'Reload the Page')),
+                m('p', 'Please try to ', linkURLwithText(getClearWorkspacesLink(), 'Reset Workspaces')),
+                  //' or ', linkURLwithText(window.location.origin, 'Reload the Page')),
                 m('hr'),
                 m('p', bold('Technical info. Error: '), datasetDocInfo.message),
-                m('p', 'Url: ', link(datasetDocLink)),
-                m('hr'),
-            ]),
+                m('p', 'Url: ', link(datasetDocLink))            ]),
             "Failed to load datasetDoc.json!",
             true,
             "Reset Workspaces",
