@@ -1188,7 +1188,17 @@ export let loadWorkspace = async newWorkspace => {
             if (newRavenConfig)
                 Object.assign(workspace.raven_config.problems, discovery(preprocess.dataset.discovery));
         })
-        .then(m.redraw);
+        .then(m.redraw)
+        .catch(err => {
+            setModal(m('div', m('p', "Preprocess failed."),
+                m('p', '(p: 2)')),
+                "Failed to load basic data.",
+                true,
+                "Reload Page",
+                false,
+                locationReload);
+            throw err;
+        });
 
     // RECORD COUNT
     // wait until after sampling returns, because dataset is loaded into mongo
