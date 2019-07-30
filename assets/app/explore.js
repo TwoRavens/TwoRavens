@@ -129,7 +129,7 @@ export class CanvasExplore {
                     let [n0, n1, n2] = exploreVariables.map(variable => app.variableSummaries[variable]);
                     let exploreProblem = 'problems' in app.workspace.raven_config && app.workspace.raven_config.problems[x];
                     let predictorVariables = app.getPredictorVariables(exploreProblem);
-                    let predictorText = predictorVariables && abbreviate(predictorVariables.join(', '), 100);
+                    let problemText = predictorVariables && [exploreProblem.targets.join(','), m(Icon, {style: 'margin:.5em;margin-top:.25em', name: 'arrow-left'}), predictorVariables.join(', ')];
 
                     // tile for each variable or problem
                     let tile = m('span#exploreNodeBox', {
@@ -193,12 +193,19 @@ export class CanvasExplore {
                             },
                             style: 'height: 65%'
                         }),
-                        m('#exploreNodeLabel', {style: 'margin: 1em; max-width:230px; overflow-wrap:break-word'},
+                        m('#exploreNodeLabel', {
+                                style: {
+                                    margin: '.5em',
+                                    'max-width': '230px',
+                                    'overflow-wrap': 'break-word',
+                                    overflow: 'auto'
+                                }
+                            },
                             show && n0 && n0.name === x ? `${x} (x)`
                                 : show && n1 && n1.name === x ? `${x} (y)`
                                 : show && n2 && n2.name === x ? `${x} (z)`
-                                    : app.leftTab === 'Discover' && predictorText
-                                        ? [m('b', x), m('p', predictorText)]
+                                    : app.leftTab === 'Discover' && problemText
+                                        ? [m('b', x), m('p', problemText)]
                                         : x)
                     );
 
