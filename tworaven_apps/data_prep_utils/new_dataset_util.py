@@ -209,8 +209,8 @@ class NewDatasetUtil(BasicErrCheck):
             return
 
         LOGGER.info('(4) create problem docs (and dataset doc, if needed)')
-        if not self.create_problem_data_docs():
-            return
+        #if not self.create_problem_data_docs():
+        #    return
 
         LOGGER.info('(5) create_new_config')
         self.create_new_config()
@@ -609,8 +609,8 @@ class NewDatasetUtil(BasicErrCheck):
 
         return True
 
-    def xcreate_problem_data_docs(self):
-        """Send params to rook app"""
+    def xx_deprecated_create_problem_data_docs(self):
+        """No longer used!  Send params to rook app"""
         if self.has_error():
             return False
 

@@ -941,6 +941,7 @@ let getDatasetDoc = async dataset_schema_url => {
                 m('hr'),
                 m('p', bold('Technical info. Error: '), datasetDocInfo.message),
                 m('p', 'Url: ', link(datasetDocLink)),
+                m('hr'),
             ]),
             "Failed to load datasetDoc.json!",
             true,
