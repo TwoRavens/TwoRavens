@@ -22,7 +22,7 @@
         "name": "NYU",
         "display_name": "NYU Datamart",
         "is_active": true,
-        "url": "https://datamart.d3m.vida-nyu.org",
+        "url": "https://auctus.vida-nyu.org",
         "documentation_link": "https://gitlab.com/ViDA-NYU/datamart/datamart",
         "description": "snapshot info: https://gitlab.com/ViDA-NYU/datamart/datamart/blob/master/scripts/docker_import_snapshot.sh"
     }

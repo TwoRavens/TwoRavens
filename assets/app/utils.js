@@ -67,6 +67,21 @@ export const copyToClipboard = str => {
 };
 
 
+/*
+ * Add comma separator for numbers over 1,000
+ */
 export const numberWithCommas = some_number => {
     return some_number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+export const getClearWorkspacesLink = _ => {
+  return window.location.origin + '/user-workspaces/clear-user-workspaces';
+}
+
+/*
+ * Clear workspace and return to the pebbles page
+ */
+export const clearWorkpacesAndReloadPage = _ => {
+    document.location = getClearWorkspacesLink();
+    // return some_number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
