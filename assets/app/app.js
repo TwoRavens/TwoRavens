@@ -2353,7 +2353,7 @@ export async function handleAugmentDataMessage(msg_data) {
             //
             let ws_obj = JSON.parse(msg_data.data.workspace_json_string);
             console.log('--- 2a new workspace: ' + JSON.stringify(ws_obj));
-
+            let priorDatasetName = workspace.d3m_config.name;
             await loadWorkspace(ws_obj);
 
             // (3) store prior manipulations
@@ -2370,8 +2370,10 @@ export async function handleAugmentDataMessage(msg_data) {
 
             // (4) update ids of the orig selected problem to avoid clashes
             //
-            priorSelectedProblem.problemID = generateProblemID();
+            priorSelectedProblem.problemID = priorDatasetName;
             delete priorSelectedProblem.provenanceID;
+            priorSelectedProblem.pending = false;
+            priorSelectedProblem.edited = false;
 
             // (5) add the old problem to the current problems list
             //    and make it the selected problem
