@@ -2342,7 +2342,7 @@ export function handleMaterializeDataMessage(msg_data){
 
 
     if (!msg_data) {
-        console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
+        console.log('handleSearchbyDataset: Error.  "msg_data" undefined');
         return;
     }
     console.log('handleSearchbyDataset');
@@ -2400,7 +2400,7 @@ export async function handleAugmentDataMessage(msg_data) {
             //
             let priorSelectedProblem = getSelectedProblem();
             let priorHardManipulations = workspace.raven_config.hardManipulations;
-            let priorVariablesInitial = workspace.variablesInitial;
+            let priorVariablesInitial = workspace.raven_config.variablesInitial;
 
             // (2) load the new workspace
             //
@@ -2434,6 +2434,7 @@ export async function handleAugmentDataMessage(msg_data) {
 
             // (6) add a problem with new columns added to predictors, and set it to the selected problem
             let problemCopy = getProblemCopy(priorSelectedProblem);
+
             problemCopy.predictors.push(...workspace.raven_config.variablesInitial
                 .filter(newVariable => !priorVariablesInitial.includes(newVariable)));
 
