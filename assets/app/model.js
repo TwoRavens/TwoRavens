@@ -21,6 +21,7 @@ import MenuTabbed from "../common/views/MenuTabbed";
 import Dropdown from "../common/views/Dropdown";
 import ButtonRadio from "../common/views/ButtonRadio";
 import MenuHeaders from "../common/views/MenuHeaders";
+import Checkbox from "../common/views/Checkbox";
 
 import ForceDiagram, {groupBuilder, groupLinkBuilder, linkBuilder, pebbleBuilderLabeled} from "./views/ForceDiagram";
 import VariableSummary, {formatVariableSummary} from "./views/VariableSummary";
@@ -185,7 +186,7 @@ export let leftPanelWidths = {
     [preprocessTabName]: '500px',
     'Variables': '300px',
     'Discover': 'auto',
-    'Augment': '600px',
+    'Augment': '1200px',
     'Summary': '300px'
 };
 
@@ -302,10 +303,11 @@ export let leftpanel = forceData => {
     let problems = ravenConfig.problems;
 
     let allMeaningful = Object.keys(problems).every(probID => problems[probID].meaningful);
-    let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
-        onclick: m.withAttr("checked", app.setCheckedDiscoveryProblem),
-        checked: allMeaningful,
-        title: `mark ${allMeaningful ? 'no' : 'all'} problems as meaningful`
+    let discoveryAllCheck = m(Checkbox, {
+        id: 'discoveryAllCheck',
+        title: `mark ${allMeaningful ? 'no' : 'all'} problems as meaningful`,
+        onclick: app.setCheckedDiscoveryProblem,
+        checked: allMeaningful
     });
 
     let discoveryHeaders = () => [
@@ -327,8 +329,8 @@ export let leftpanel = forceData => {
 
     let formatProblem = problem => [
         problem.problemID, // this is masked as the UID
-        !app.taskPreferences.task1_finished && m('[style=text-align:center]', m('input[type=checkbox]', {
-            onclick: m.withAttr("checked", state => app.setCheckedDiscoveryProblem(state, problem.problemID)),
+        !app.taskPreferences.task1_finished && m('[style=text-align:center]', {onclick: e=> e.stopPropagation()}, m(Checkbox, {
+            onclick: state => app.setCheckedDiscoveryProblem(state, problem.problemID),
             checked: problem.meaningful
         })),
         problem.targets.join(', '),

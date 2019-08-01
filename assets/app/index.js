@@ -299,7 +299,10 @@ class Body {
                 m(Button, {
                         id: 'btnAPIInfoWindow',
                         class: `btn-sm ${app.isAPIInfoWindowOpen ? 'active' : ''}`,
-                        onclick: _ => app.setAPIInfoWindowOpen(true),
+                        onclick: _ => {
+                            app.setAPIInfoWindowOpen(true);
+                            m.redraw();
+                        },
                     },
                     `Basic Info (id: ${app.getCurrentWorkspaceId()})`
                 )

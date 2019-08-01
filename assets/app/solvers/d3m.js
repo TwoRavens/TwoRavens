@@ -14,6 +14,9 @@ import Table from "../../common/views/Table";
 export let getSolutionAdapter = (problem, solution) => ({
     getName: () => solution.pipelineId,
     getSource: () => solution.source,
+    getVariable: predictor => {
+        loadVariable(problem, predictor);
+    },
     getActualValues: target => {
         // lazy data loading
         loadActualValues(problem);
@@ -115,6 +118,10 @@ export let loadProblemData = async problem => {
     resultsData.id.query = resultsQuery;
     resultsData.id.problemID = problem.problemID;
     resultsData.id.solutionID = undefined;
+
+    // problem specific, one problem stored
+    resultsData.indices = undefined;
+    resultsData.indicesLoading = false;
 
     // problem specific, one problem stored
     resultsData.actuals = undefined;

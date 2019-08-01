@@ -250,7 +250,14 @@ export class CanvasExplore {
         };
 
         if (['problem', 'univariate', 'bivariate', 'trivariate', 'multiple'].includes(variate)) return wrapCanvas(
-            m(Button, {onclick: _ => m.route.set('/explore'), style: {margin: '1em'}}, m(Icon, {name: 'chevron-left', style: 'margin-right:.5em;transform:scale(1.5)'}), 'back to variables'),
+            m(Button, {
+                onclick: () => {
+                    m.route.set('/explore');
+                    m.redraw()
+                },
+                style: {margin: '1em'}},
+                m(Icon, {name: 'chevron-left', style: 'margin-right:.5em;transform:scale(1.5)'}),
+                'back to variables'),
             m('br'),
             getPlot()
         );

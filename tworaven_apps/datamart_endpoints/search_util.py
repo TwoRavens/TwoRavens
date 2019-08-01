@@ -26,11 +26,12 @@ class SearchUtil(BasicErrCheck):
     - Verify required directories
     - Create any needed subdirectories"""
 
-    def __init__(self, datamart_name, user_workspace_id, dataset_path, **kwargs):
+    def __init__(self, datamart_name, user_workspace_id, query, dataset_path, **kwargs):
         """Only need a dataset id to start"""
         self.datamart_name = datamart_name
         self.user_workspace_id = user_workspace_id
         self.user_workspace = None
+        self.query = query
         self.dataset_path = dataset_path
 
         # optional for websocket messages
@@ -121,6 +122,7 @@ class SearchUtil(BasicErrCheck):
         """Run the NYU search"""
         params = dict(user=self.user_workspace.user)
         search_info = self.datamart_util.search_with_dataset(\
+                                self.query,
                                 self.dataset_path,
                                 **params)
 

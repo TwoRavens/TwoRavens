@@ -1230,6 +1230,49 @@ export let loadWorkspace = async newWorkspace => {
             // problem doc not supplied, so set the first discovered problem as selected, once preprocess loaded
             if (!response.success) {
                 await promisePreprocess;
+
+                if (Object.keys(workspace.raven_config.problems).length === 0) {
+                    let problemID = generateProblemID();
+                    workspace.raven_config.problems = {
+                        [problemID]: {
+                            problemID,
+                            system: 'auto',
+                            predictors: [],
+                            targets: [],
+                            description: '',
+                            metric: 'meanSquaredError',
+                            metrics: [],
+                            task: 'regression',
+                            subTask: 'univariate',
+
+                            evaluationMethod: 'kFold',
+                            testSize: undefined,
+                            stratified: undefined,
+                            randomSeed: undefined,
+
+                            meaningful: false,
+                            manipulations: [],
+                            solutions: {
+                                d3m: {},
+                                rook: {}
+                            },
+                            selectedSource: undefined, // 'd3m' or 'rook'
+                            selectedSolutions: {
+                                d3m: undefined,
+                                rook: undefined
+                            },
+                            tags: {
+                                transformed: [],
+                                weights: [], // singleton list
+                                crossSection: [],
+                                time: [],
+                                nominal: [],
+                                loose: [] // variables displayed in the force diagram, but not in any groups
+                            }
+                        }
+                    };
+                }
+
                 let problemFirst = Object.values(workspace.raven_config.problems)[0];
                 let problemCopy = getProblemCopy(problemFirst);
                 workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
@@ -2266,6 +2309,9 @@ export function handleMaterializeDataMessage(msg_data){
   //
   const previewDatamartId = msg_data.data.datamart_id;
   datamartPreferences.cached[previewDatamartId] = msg_data.data;
+  let previewDatamartIndex = datamartPreferences.results[datamartPreferences.sourceMode]
+      .findIndex(entry => previewDatamartId === datamartPreferences.getData(entry, 'id'));
+  datamartPreferences.setPreviewButtonState(previewDatamartIndex, false);
 
   // Format the data_preview
   //
@@ -2350,6 +2396,7 @@ export async function handleAugmentDataMessage(msg_data) {
             //
             let priorSelectedProblem = getSelectedProblem();
             let priorHardManipulations = workspace.raven_config.hardManipulations;
+            let priorVariablesInitial = workspace.variablesInitial;
 
             // (2) load the new workspace
             //
@@ -2378,10 +2425,16 @@ export async function handleAugmentDataMessage(msg_data) {
             priorSelectedProblem.edited = false;
 
             // (5) add the old problem to the current problems list
-            //    and make it the selected problem
             //
             workspace.raven_config.problems[priorSelectedProblem.problemID] = priorSelectedProblem;
-            setSelectedProblem(priorSelectedProblem.problemID);
+
+            // (6) add a problem with new columns added to predictors, and set it to the selected problem
+            let problemCopy = getProblemCopy(priorSelectedProblem);
+            problemCopy.predictors.push(...workspace.raven_config.variablesInitial
+                .filter(newVariable => !priorVariablesInitial.includes(newVariable)));
+
+            workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+            setSelectedProblem(problemCopy.problemID);
         });
 
 

@@ -4,7 +4,6 @@ from io import BytesIO
 from os.path import dirname, join, isfile
 
 from django.conf import settings
-import pandas as pd
 from tworaven_apps.user_workspaces.models import UserWorkspace
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.random_info import get_timestamp_string_readable
@@ -107,14 +106,12 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
         return ok_resp(json_results)
 
 
-
     @staticmethod
-    def datamart_search(query_dict, **kwargs):
+    def datamart_search(query_dict=None, dataset_path=None, **kwargs):
         """Search the NYU datamart"""
-        if not isinstance(query_dict, dict):
-            user_msg = ('There is something wrong with the search parameters.'
-                        ' Please try again. (expected a dictionary)')
-            return err_resp(user_msg)
+
+        if query_dict is None and dataset_path is None:
+            return err_resp('Either a query or dataset path must be supplied.')
 
         search_url = get_nyu_url() + '/search'
 
@@ -133,19 +130,39 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
         # --------------------------------
         # Query the datamart
         # --------------------------------
-        try:
-            response = requests.post(search_url,
-                                     json=query_dict,
-                                     stream=True,
-                                     timeout=settings.DATAMART_LONG_TIMEOUT)
-        except requests.exceptions.Timeout as err_obj:
-            return err_resp('Request timed out. responded with: %s' % err_obj)
 
-        if response.status_code != 200:
-            print(str(response))
-            print(response.text)
-            return err_resp(('NYU Datamart internal server error.'
-                             ' status_code: %s') % response.status_code)
+        if dataset_path:
+            try:
+                with open(dataset_path, 'rb') as dataset_p:
+                    try:
+                        response = requests.post(
+                            search_url,
+                            json=query_dict,
+                            files=dict(data=dataset_p),
+                            timeout=settings.DATAMART_LONG_TIMEOUT)
+
+                    except requests.exceptions.Timeout as err_obj:
+                        return err_resp('Request timed out. responded with: %s' % err_obj)
+
+            except IOError as err_obj:
+                user_msg = (f'Failed to search with the dataset file.'
+                            f'  Technical: {err_obj}')
+                return err_resp(user_msg)
+
+        else:
+            try:
+                response = requests.post(
+                    search_url,
+                    json=query_dict,
+                    stream=True,
+                    timeout=settings.DATAMART_LONG_TIMEOUT)
+            except requests.exceptions.Timeout as err_obj:
+                return err_resp('Request timed out. responded with: %s' % err_obj)
+            if response.status_code != 200:
+                print(str(response))
+                print(response.text)
+                return err_resp(('NYU Datamart internal server error.'
+                                 ' status_code: %s') % response.status_code)
 
         json_results = response.json()['results']
 
