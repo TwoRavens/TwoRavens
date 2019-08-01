@@ -24,6 +24,8 @@ import * as explore from './explore';
 import {bold, linkURLwithText, linkURL, link} from "./index";
 import {getClearWorkspacesLink, clearWorkpacesAndReloadPage} from "./utils";
 
+import {searchByDataset} from "./datamart/Datamart";
+
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
 //    Developers, see /template/index.html
@@ -1288,6 +1290,7 @@ export let loadWorkspace = async newWorkspace => {
             taskPreferences.task1_finished = true;
             let problemDoc = response.data;
             datamartPreferences.hints = problemDoc.dataAugmentation;
+            // setTimeout(() => searchByDataset(datamartPreferences, datamartURL).then(m.redraw), 1000);
 
             // if swandive, columns cannot be extracted from datasetDoc
             if (swandive) await promisePreprocess;
@@ -2211,7 +2214,7 @@ export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
     step.manual.forEach(manual => out.add(manual.name));
 
     return out;
-}, new Set());
+}, new Set())
 
 export function setSelectedProblem(problemID) {
     let ravenConfig = workspace.raven_config;
@@ -2335,28 +2338,29 @@ export function handleMaterializeDataMessage(msg_data){
  *  After a search by dataset:
  *  - Display the results on the Datamart
  */
- export async function handleSearchbyDataset(msg_data){
-
-     if (!msg_data) {
-         console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
-         return;
-     }
-     console.log('handleSearchbyDataset!!!');
-     console.log(JSON.stringify(msg_data));
-
-     // Need datamart name, even if an error
-     //
-     let datamartName = msg_data.data.datamart_name;
+ export async function handleSearchbyDataset(msg_data) {
 
 
-    if (msg_data.success){
+    if (!msg_data) {
+        console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
+        return;
+    }
+    console.log('handleSearchbyDataset');
+    console.log(JSON.stringify(msg_data));
+
+    // Need datamart name, even if an error
+    //
+    let datamartName = msg_data.data.datamart_name;
+
+
+    if (msg_data.success) {
         let response_info = {
-                              success: true,
-                              data: msg_data.data.search_results
-                            }
-      datamartPreferences.handleSearchResults(datamartName, response_info);
-    } else{
-      datamartPreferences.handleSearchResults(datamartName, msg_data);
+            success: true,
+            data: msg_data.data.search_results
+        }
+        datamartPreferences.handleSearchResults(datamartName, response_info);
+    } else {
+        datamartPreferences.handleSearchResults(datamartName, msg_data);
     }
 } // end: handleSearchbyDataset
 
