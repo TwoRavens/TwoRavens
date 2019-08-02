@@ -239,7 +239,7 @@ def api_augment_async(request):
     # print('augment_params', augment_params)
 
     augment_info = dm_tasks.make_augment_call(user_workspace,
-                                     augment_params)
+                                              augment_params)
 
     if not augment_info.success:
         return JsonResponse(get_json_error(augment_info.err_msg))

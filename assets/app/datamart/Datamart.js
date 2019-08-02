@@ -22,6 +22,7 @@ import Popper from "../../common/views/Popper";
 
 import ButtonLadda from "../views/LaddaButton";
 import {numberWithCommas} from '../utils';
+import {bold} from "../index";
 
 import {datamartQueryInputSchema} from "./query_input_schema_2019_06";
 import {datamartDatasetIndexSchema} from "./dataset_schema_2019_01";
@@ -307,11 +308,12 @@ export default class Datamart {
             onclick: async () => {
 
                 // Check if the workspace has been saved
+                /*
                 if (app.workspace.is_original_workspace && confirm(
                     'Would you like to save your workspace first? ' +
                     'Saving your workspace will allow you to return to these problems and solutions.'))
                     app.setShowModalSaveName(true);
-
+                */
                 preferences.selectedResult = results[preferences.sourceMode][i];
 
                 // set suggested pairs to join on automatically
@@ -722,6 +724,8 @@ export class ModalDatamart {
 
             preferences.modalShown === 'augment' && [
 
+                // Error messages at the top
+                //
                 preferences.error[preferences.sourceMode] && m('div#errorMessage', {
                     style: {
                         background: 'rgba(0,0,0,.05)',
@@ -739,33 +743,22 @@ export class ModalDatamart {
                         warn('Error:'), preferences.error[preferences.sourceMode])
                 ]),
 
-                preferences.joinPairs.map((pair, i) => m('div#pairContainer' + i, {
-                    style: {
-                        background: 'rgba(0,0,0,.05)',
-                        'border-radius': '.5em',
-                        'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
-                        margin: '2em 0 1em 0',
-                        padding: '1em'
-                    }
-                }, [
-                    m('div', {
-                        style: {display: 'inline-block'},
-                        onclick: () => {
-                            if (preferences.isAugmenting) return;
-                            preferences.joinPairs.splice(preferences.joinPairs.findIndex(elem => elem === pair), 1)
-                        }
-                    }, !preferences.isAugmenting && m(Icon, {name: 'x'})),
-                    m('div', {style: {'margin-left': '1em', display: 'inline-block'}},
-                        `Joining [${pair[0].join(', ')}] with [${pair[1].join(', ')}]`)
-                ])),
-
-                m('div',
-                    m('p', "Please choose the variables to connect your dataset" +
-                           " from the found dataset.")),
+                // Instructions
+                //
+                m('div', [
+                    m('p', 'Clicking "Augment" will join your dataset with the found dataset.  You can join the datasets in multiple ways:'),
+                    m('ol', [
+                        m('li', 'Let the system join the datasets automatically. (Simply click "Augment")'),
+                        m('li', 'Choose variables from each dataset to connect them. See "Variable Pairs" below.'),
+                    ]),
+                  ]),
+                    //m('p', "Please choose the variables to connect your dataset" +
+                    //       " from the found dataset.")),
 
                 m('hr'),
 
-
+                // "Add Pairing" and "Augment" Buttons
+                //
                 m('div',
                     m(ButtonPlain, {
                         style: {margin: '1em'},
@@ -804,9 +797,14 @@ export class ModalDatamart {
                         style: {margin: '1em', float: 'right'},
                         activeLadda: preferences.isAugmenting,
 
-                        class: `${(!preferences.joinPairs.length || preferences.isAugmenting === true) ? 'btn-default' : 'btn-primary active'}`,
+                        // class: `${(!preferences.joinPairs.length || preferences.isAugmenting === true) ? 'btn-default' : 'btn-primary active'}`,
+                        //disabled: !preferences.joinPairs.length || preferences.isAugmenting === true,
 
-                        disabled: !preferences.joinPairs.length || preferences.isAugmenting === true,
+                        // Allow augment only with dataset
+                        //
+                        class: `${(preferences.isAugmenting === true) ? 'btn-default' : 'btn-primary active'}`,
+                        disabled: preferences.isAugmenting === true,
+
                         onclick: async () => {
                             preferences.isAugmenting = true;
 
@@ -869,6 +867,45 @@ export class ModalDatamart {
                             console.log(response);
                         }
                     }, 'Augment')),
+
+                  // Listing of pairs
+                  //
+                  m('hr'),
+                  m('h4', 'Variable Pairs'),
+
+                  !preferences.joinPairs.length && m('div', [
+                      m('p', '(No pairs selected)'),
+                      m('li', 'To connect the datasets using variables:'),
+                        m('ul', [
+                            m('li', 'Click on a variable from the ', bold("Your Dataset Variables"), ' column.'),
+                            m('li', 'Select a variable from the ', bold("Found Dataset Variables"), ' column.'),
+                            m('li', 'Click ', bold("Add Pairing"), '.  If desired, add additional pairings.'),
+                            m('li', 'Click ', bold("Augment")),
+
+                    ]),
+                  ]),
+
+                  preferences.joinPairs.map((pair, i) => m('div#pairContainer' + i, {
+                      style: {
+                          background: 'rgba(0,0,0,.05)',
+                          'border-radius': '.5em',
+                          'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
+                          margin: '1em 0 1em 0',
+                          padding: '1em'
+                      }
+                  }, [
+                      m('div', {
+                          style: {display: 'inline-block'},
+                          onclick: () => {
+                              if (preferences.isAugmenting) return;
+                              preferences.joinPairs.splice(preferences.joinPairs.findIndex(elem => elem === pair), 1)
+                          }
+                      }, !preferences.isAugmenting && m(Icon, {name: 'x'})),
+                      m('div', {style: {'margin-left': '1em', display: 'inline-block'}},
+                          `Joining [${pair[0].join(', ')}] with [${pair[1].join(', ')}]`)
+                  ])),
+
+                m('hr'),
 
                 m('h4[style=width:calc(50% - 1em);display:inline-block]', 'Your Dataset Variables'),
                 m('h4[style=width:calc(50% - 1em);display:inline-block]', 'Found Dataset Variables'),
