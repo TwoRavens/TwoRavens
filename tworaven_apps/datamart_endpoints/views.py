@@ -208,7 +208,6 @@ def api_search(request):
 
     success, results_obj_err = DatamartJobUtil.datamart_search(\
                                     form.cleaned_data['query'],
-                                    # form.cleaned_data['data_path'],
                                     **dict(user=user_info.result_obj))
     if not success:
         return JsonResponse(get_json_error(results_obj_err))
@@ -345,7 +344,8 @@ def api_search_by_dataset(request):
     call_info = dm_tasks.make_search_by_dataset_call(\
                         form.cleaned_data['source'],
                         user_workspace.id,
-                        dataset_path)
+                        dataset_path,
+                        query=json_req_obj.get('query', None))
 
     if not call_info.success:
         return JsonResponse(get_json_error(call_info.err_msg))

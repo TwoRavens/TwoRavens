@@ -151,12 +151,12 @@ export let datamartQueryInputSchema = {
           {
             "$ref": "#/definitions/geospatial_variable"
           },
-          {
-            "$ref": "#/definitions/tabular_variable"
-          },
-          {
-            "$ref": "#/definitions/named_entity_variable"
-          }
+          // {
+          //   "$ref": "#/definitions/tabular_variable"
+          // },
+          // {
+          //   "$ref": "#/definitions/named_entity_variable"
+          // }
         ]
       }
     }

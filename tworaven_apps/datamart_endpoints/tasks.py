@@ -9,7 +9,7 @@ from tworaven_apps.datamart_endpoints.augment_util import AugmentUtil
 from tworaven_apps.datamart_endpoints.search_util import SearchUtil
 from tworaven_apps.datamart_endpoints import static_vals as dm_static
 
-def make_search_by_dataset_call(datamart_name, user_workspace_id, dataset_path, **kwargs):
+def make_search_by_dataset_call(datamart_name, user_workspace_id, dataset_path, query=None, **kwargs):
     """Search the NYU datamart by dataset"""
     if not datamart_name:
         return err_resp('datamart_name must be set')
@@ -26,17 +26,19 @@ def make_search_by_dataset_call(datamart_name, user_workspace_id, dataset_path, 
                 dm_static.DATAMART_NYU_NAME,
                 user_workspace_id,
                 dataset_path,
+                query=query,
                 **kwargs)
 
     return ok_resp('augment process started')
 
 
 @celery_app.task(ignore_result=True)
-def kick_off_search_by_dataset(datamart_name, user_workspace_id, dataset_path, **kwargs):
+def kick_off_search_by_dataset(datamart_name, user_workspace_id, dataset_path, query=None, **kwargs):
     """Run this async"""
     search_util = SearchUtil(datamart_name,
                              user_workspace_id,
-                             dataset_path)
+                             dataset_path,
+                             query=query)
 
 
 def make_materialize_call(datamart_name, user_workspace_id, datamart_params, **kwargs):

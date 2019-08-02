@@ -50,7 +50,7 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
 
     @staticmethod
-    def search_with_dataset(dataset_path, **kwargs):
+    def search_with_dataset(dataset_path, query=None, **kwargs):
         """Search the datamart using a dataset"""
         if not isfile(dataset_path):
             user_msg = ('The dataset file could not be found.')
@@ -75,10 +75,14 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
         # --------------------------------
         try:
             with open(dataset_path, 'rb') as dataset_p:
+                search_files = dict(data=dataset_p)
+                if query:
+                    search_files['query'] = query
+
                 try:
                     response = requests.post(\
                         search_url,
-                        files=dict(data=dataset_p),
+                        files=search_files,
                         timeout=settings.DATAMART_LONG_TIMEOUT)
 
                 except requests.exceptions.Timeout as err_obj:

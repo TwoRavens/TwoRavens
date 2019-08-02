@@ -3,25 +3,29 @@
  */
 import m from 'mithril';
 
+import * as app from "../app";
+import * as common from "../../common/common";
 import JSONSchema from "../../common/views/JSONSchema";
 import Button from "../../common/views/Button";
 import ButtonPlain from "../../common/views/ButtonPlain";
-import * as common from "../../common/common";
 import Table from "../../common/views/Table";
 import ListTags from "../../common/views/ListTags";
 import ButtonRadio from "../../common/views/ButtonRadio";
-import * as app from "../app";
-import {numberWithCommas} from '../utils';
 import ModalVanilla from "../../common/views/ModalVanilla";
 import PanelList from "../../common/views/PanelList";
 import TextField from "../../common/views/TextField";
 import Dropdown from "../../common/views/Dropdown";
 import Icon from "../../common/views/Icon";
+import TwoPanel from "../../common/views/TwoPanel";
+import Checkbox from "../../common/views/Checkbox";
+import Popper from "../../common/views/Popper";
+
 import ButtonLadda from "../views/LaddaButton";
+import {numberWithCommas} from '../utils';
+
 import {datamartQueryInputSchema} from "./query_input_schema_2019_06";
 import {datamartDatasetIndexSchema} from "./dataset_schema_2019_01";
-import TwoPanel from "../../common/views/TwoPanel";
-// maximum number of records to display at once
+
 
 let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
 let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-right:1em;]', text);
@@ -108,7 +112,7 @@ export default class Datamart {
              * ------------------------------------------- */
             if (!response.success) {
                 console.log('response: ' + JSON.stringify(response));
-                preferences.showDatamartErrorMsg(datamartSource, response.user_message);
+                preferences.showDatamartErrorMsg(datamartSource, response.message);
                 return;
             }
 
@@ -148,9 +152,9 @@ export default class Datamart {
             }
         });
 
-        // setDefault(preferences, 'getPreviewButtonState', (idx) => {
-        //     return preferences.previewButtonState[idx];
-        // });
+        setDefault(preferences, 'includeDataset', true);
+        setDefault(preferences, 'includeQuery', true);
+
         setDefault(preferences, 'setPreviewButtonState', (idx, val) => {
             preferences.previewButtonState[idx] = val;
         });
@@ -396,34 +400,30 @@ export default class Datamart {
 
                     preferences.datamartMode === 'Search' && [
 
-                        m('div[style=height:50px]', m('div', {style: {margin: '1em', float: 'left'}}, 'Search using the dataset (without keywords)'), // You may upload a file or extract data from a link.
+                        (hints || []).length > 0 && [
+                            m('h4', 'Suggested Keywords'),
+                            m('div', 'Click on a keyword to add it to the list of keywords in the query.'),
+                            m(Table, {
+                                data: hints.map(row => ({
+                                    Domain: row.domain,
+                                    Keywords: m(ListTags, {
+                                        readonly: true,
+                                        tags: row.keywords
+                                            .filter(key => !(preferences.query.keywords || []).includes(key))
+                                            .map(key => m('div', {
+                                                onclick: () => {
+                                                    if (!('keywords' in preferences.query)) preferences.query.keywords = [];
+                                                    if (preferences.query.keywords.includes(key)) preferences.query.keywords.splice(key, 1)
+                                                    else preferences.query.keywords.push(key)
+                                                }
+                                            }, key))
+                                    })
+                                }))
+                            })
+                        ],
 
-                            m(Button, {
-                                style: 'float:right;margin:1em',
-                                disabled: preferences.isSearching[preferences.sourceMode],
-                                onclick: () => searchByDataset(preferences, endpoint)
-                            }, 'Search by Dataset')),
-
-                        m('div', {style: {margin: '1em', float: 'left'}}, 'Search using criteria (without dataset)'),
-
-                        (hints || []).length > 0 && m(Table, {
-                            data: hints.map(row => ({
-                                Domain: row.domain,
-                                Keywords: m(ListTags, {
-                                    readonly: true,
-                                    tags: row.keywords
-                                        .filter(key => !(preferences.query.keywords || []).includes(key))
-                                        .map(key => m('div', {
-                                            onclick: () => {
-                                                if (!('keywords' in preferences.query)) preferences.query.keywords = [];
-                                                if (preferences.query.keywords.includes(key)) preferences.query.keywords.splice(key, 1)
-                                                else preferences.query.keywords.push(key)
-                                            }
-                                        }, key))
-                                })
-                            }))
-                        }),
-
+                        m('h4', 'Query'),
+                        m('div', 'Show datasets that match keywords, or contain variables with temporal or geospatial attributes.'),
                         m(`div[style=background:${common.menuColor}]`, m(JSONSchema, {
                             data: query,
                             schema: datamartQueryInputSchema
@@ -440,35 +440,38 @@ export default class Datamart {
                         //     attrsAll: {style: {margin: '1em', width: 'auto'}},
                         //     attrsButtons: {style: {width: 'auto'}}
                         // }),
+
+                        m('div', {style: {float: 'right'}},
+                            m('div', {
+                                    style: {margin: '1.5em', display: 'inline-block'},
+                                    onclick: () => preferences.includeQuery = !preferences.includeQuery
+                                },
+                                m('label[style=margin:.25em;font-weight:bold]', 'Use query in search '),
+                                m(Checkbox, {
+                                    checked: preferences.includeQuery
+                                })),
+                            m('div', {
+                                    style: {margin: '1.5em', display: 'inline-block'},
+                                    onclick: () => preferences.includeDataset = !preferences.includeDataset
+                                },
+                                m('label[style=margin:.25em;font-weight:bold]',
+                                    m(Popper, {
+                                        content: () => m('div[style=max-width:22em]',
+                                            'Check to show datasets that are considered joinable with the current dataset, ',
+                                            m('pre[style=display:inline]', app.workspace.d3m_config.name), '.')
+                                        }, 'Use dataset in search ')),
+                                m(Checkbox, {
+                                    checked: preferences.includeDataset
+                                })),
                         /*
                          * Start: Datamart Search Call
                          */
-                        m(Button, {
-                            style: {float: 'right', margin: '1em'},
-                            disabled: preferences.isSearching[preferences.sourceMode],
-                            onclick: async () => {
-                                console.log('Datamart Query', JSON.stringify(query));
-
-                                // preserve state after async is awaited
-                                let sourceMode = preferences.sourceMode;
-                                results[sourceMode].length = 0;
-
-                                // enable spinner
-                                preferences.isSearching[sourceMode] = true;
-                                m.redraw();
-
-                                let response = await m.request(endpoint + 'search', {
-                                    method: 'POST',
-                                    data: {
-                                        data_path: dataPath,
-                                        query: JSON.stringify(query),
-                                        source: preferences.sourceMode
-                                    }
-                                });
-
-                                preferences.handleSearchResults(preferences.sourceMode, response);
-                            }
-                        }, 'Search by Keywords'), // Datamart Search Call
+                            m(Button, {
+                                    style: {float: 'right', margin: '1em'},
+                                    disabled: preferences.isSearching[preferences.sourceMode],
+                                    onclick: () => search(preferences, endpoint, preferences.includeDataset, preferences.includeQuery)
+                                },
+                                'Search')), // Datamart Search Call
 
                     ],
                     preferences.datamartMode === 'Index' && [
@@ -928,29 +931,47 @@ export class ModalDatamart {
     }
 }
 
-export let searchByDataset = async (preferences, endpoint) => {
+export let search = async (preferences, endpoint, includeDataset=true, includeQuery=true) => {
     console.log('Datamart/search by dataset');
 
     // preserve state after async is awaited
     let sourceMode = preferences.sourceMode;
     preferences.results[sourceMode].length = 0;
 
+    if ((preferences.query.keywords || []).length === 0 && (preferences.query.variables || []).length === 0)
+        includeQuery = false;
+
+    if (!includeDataset && !includeQuery){
+        preferences.showDatamartErrorMsg(sourceMode, "Either a dataset or query must be included to search.");
+        return;
+    }
+
     // enable spinner
     preferences.isSearching[sourceMode] = true;
     m.redraw();
 
-    let response = await m.request(endpoint + 'search-by-dataset', {
-        method: 'POST',
-        data: {
-            source: preferences.sourceMode
+    let searchParams = {source: sourceMode};
+    if (includeQuery) searchParams.query = JSON.stringify(preferences.query);
+
+    if (includeDataset) {
+        let response = await m.request(endpoint + 'search-by-dataset', {
+            method: 'POST',
+            data: searchParams
+        });
+        if (response.success) {
+            preferences.showDatamartSuccessMsg(sourceMode, response.message);
+        } else {
+            preferences.isSearching[sourceMode] = false;
+
+            preferences.showDatamartErrorMsg(sourceMode, response.message);
         }
-    });
-
-    if (response.success) {
-        preferences.showDatamartSuccessMsg(sourceMode, response.message);
-    } else {
-        preferences.isSearching[sourceMode] = false;
-
-        preferences.showDatamartErrorMsg(sourceMode, response.message);
     }
-}
+
+    else {
+        let response = await m.request(endpoint + 'search', {
+            method: 'POST',
+            data: searchParams
+        });
+        preferences.handleSearchResults(sourceMode, response);
+    }
+};

@@ -24,7 +24,7 @@ import * as explore from './explore';
 import {bold, linkURLwithText, linkURL, link} from "./index";
 import {getClearWorkspacesLink, clearWorkpacesAndReloadPage} from "./utils";
 
-import {searchByDataset} from "./datamart/Datamart";
+import {search} from "./datamart/Datamart";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -1290,7 +1290,7 @@ export let loadWorkspace = async newWorkspace => {
             taskPreferences.task1_finished = true;
             let problemDoc = response.data;
             datamartPreferences.hints = problemDoc.dataAugmentation;
-            // setTimeout(() => searchByDataset(datamartPreferences, datamartURL).then(m.redraw), 1000);
+            setTimeout(() => search(datamartPreferences, datamartURL).then(m.redraw), 1000);
 
             // if swandive, columns cannot be extracted from datasetDoc
             if (swandive) await promisePreprocess;
