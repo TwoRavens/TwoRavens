@@ -49,7 +49,9 @@ export default class Datamart {
                 'keywords': undefined,
                 'data': ['metadata'],
                 'join_columns': ['join_columns'],
-                'union_columns': ['union_columns']
+                'union_columns': ['union_columns'],
+                'augment_with_dataset': true,
+                'augment_with_join_pairs': true
             },
             'ISI': {
                 'id': ['datamart_id'],
@@ -62,7 +64,9 @@ export default class Datamart {
                 'keywords': ['metadata', 'keywords'],
                 'data': ['metadata'],
                 'join_columns': ['join_columns'],
-                'union_columns': ['union_columns']
+                'union_columns': ['union_columns'],
+                'augment_with_dataset': true,
+                'augment_with_join_pairs': true
             }
         });
 
@@ -183,6 +187,10 @@ export default class Datamart {
         setDefault(preferences, 'indexScrape', ''); // https://www.w3schools.com/html/html_tables.asp
 
         setDefault(preferences, 'joinPairs', []);
+
+        setDefault(preferences, 'augment_with_dataset', true);
+        setDefault(preferences, 'augment_with_join_pairs', true);
+
         setDefault(preferences, 'exactMatch', true);
     }
 
@@ -749,7 +757,8 @@ export class ModalDatamart {
                     m('p', 'Clicking "Augment" will join your dataset with the found dataset.  You can join the datasets in multiple ways:'),
                     m('ol', [
                         m('li', 'Let the system join the datasets automatically. (Simply click "Augment")'),
-                        m('li', 'Choose variables from each dataset to connect them. See "Variable Pairs" below.'),
+                        m('li', 'Choose variables from each dataset to connect them. See ', bold("Variable Pairs"), ' below.'),
+                        m('li', 'Join using the both the dataset and ', bold("Variable Pairs"), '.'),
                     ]),
                   ]),
                     //m('p', "Please choose the variables to connect your dataset" +
@@ -759,42 +768,35 @@ export class ModalDatamart {
 
                 // "Add Pairing" and "Augment" Buttons
                 //
-                m('div',
-                    m(ButtonPlain, {
-                        style: {margin: '1em'},
-                        title: 'supply variables from both the left and right datasets',
+                m('div', [
 
-                        class: `${(!preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting === true) ? 'btn-default' : 'btn-primary active'}`,
+                    // Checkbox: Include dataset in Augment
+                    m('div', {
+                        style: {margin: '1.5em', display: 'inline-block'},
+                        onclick: () => preferences.augment_with_dataset = !preferences.augment_with_dataset
+                      },
+                      m('label[style=margin:.25em;font-weight:bold]', 'Augment with dataset '),
+                      m(Checkbox, {
+                          checked: preferences.augment_with_dataset
+                        })
+                    ),
 
-                        disabled: !preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting === true,
-                        onclick: () => {
-                            if (!preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting)
-                                return;
-
-                            preferences.joinPairs.push([
-                                [...preferences.leftJoinVariables],
-                                [...preferences.rightJoinVariables]]);
-
-                            preferences.leftJoinVariables = new Set();
-                            preferences.rightJoinVariables = new Set();
-                        }
-                    }, 'Add Pairing'),
-
-                    // m('label[style=margin-right:1em]', 'Exact Match:'),
-                    // m(ButtonRadio, {
-                    //     id: 'exactMatchButtonBar',
-                    //     attrsAll: {style: {display: 'inline-block', width: 'auto'}},
-                    //     onclick: state => {
-                    //         if (preferences.isAugmenting) return;
-                    //         preferences.exactMatch = state === 'true'
-                    //     },
-                    //     activeSection: String(preferences.exactMatch),
-                    //     sections: [{value: 'true'}, {value: 'false'}]
-                    // }),
+                    // Checkbox: Include join pairs in Augment
+                    m('div', {
+                        style: {margin: '1.5em', display: 'inline-block'},
+                        disabled: true,
+                        onclick: () => preferences.augment_with_join_pairs = !preferences.augment_with_join_pairs
+                      },
+                      m('label[style=margin:.25em;font-weight:bold]', 'Augment with Variable Pairs '),
+                      m(Checkbox, {
+                          checked: preferences.augment_with_join_pairs && preferences.joinPairs.length
+                      }),
+                    )
+                  ],
 
                     m(ButtonLadda, {
                         id: 'augmentButton',
-                        style: {margin: '1em', float: 'right'},
+                        style: {margin: '1em', xfloat: 'right'},
                         activeLadda: preferences.isAugmenting,
 
                         // class: `${(!preferences.joinPairs.length || preferences.isAugmenting === true) ? 'btn-default' : 'btn-primary active'}`,
@@ -885,12 +887,34 @@ export class ModalDatamart {
                     ]),
                   ]),
 
+                  m('div', [
+                      m(ButtonPlain, {
+                          style: {margin: '1em 1em .5em 1em'},
+                          title: 'supply variables from both the left and right datasets',
+
+                          class: `${(!preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting === true) ? 'btn-default' : 'btn-primary active'}`,
+
+                          disabled: !preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting === true,
+                          onclick: () => {
+                              if (!preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting)
+                                  return;
+
+                              preferences.joinPairs.push([
+                                  [...preferences.leftJoinVariables],
+                                  [...preferences.rightJoinVariables]]);
+
+                              preferences.leftJoinVariables = new Set();
+                              preferences.rightJoinVariables = new Set();
+                          }
+                      }, 'Add Pairing'),
+                  ]),
+
                   preferences.joinPairs.map((pair, i) => m('div#pairContainer' + i, {
                       style: {
                           background: 'rgba(0,0,0,.05)',
                           'border-radius': '.5em',
                           'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
-                          margin: '1em 0 1em 0',
+                          margin: '.5em 0 1em 0',
                           padding: '1em'
                       }
                   }, [
