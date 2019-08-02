@@ -1,8 +1,6 @@
 import m from 'mithril';
 import Table from "../../common/views/Table";
 import ModalVanilla from "../../common/views/ModalVanilla";
-import Popper from "../../common/views/Popper";
-import Button from "../../common/views/Button";
 import ButtonPlain from "../../common/views/ButtonPlain";
 import {copyToClipboard} from '../utils';
 
@@ -48,7 +46,7 @@ export default class ModalWorkspace {
 
         return m(ModalVanilla, {id: 'workspaceModal', setDisplay},
             m('h4', 'Current Workspace'),
-            IS_D3M_DOMAIN && m(Table, {data: workspace.datasetDoc.about}),
+            IS_D3M_DOMAIN && m(Table, {data: (workspace.datasetDoc || {}).about}),
 
             this.summaries && [
                 // Intro text to the Saved Workspaces modal
@@ -108,8 +106,8 @@ export default class ModalWorkspace {
 
                         ]),
 
-                        Created: new Date(summary.created).toUTCString(),
-                        'Last Saved': new Date(summary.modified).toUTCString(),
+                        Created: new Date(summary.created).toLocaleString(),
+                        'Last Saved': new Date(summary.modified).toLocaleString(),
 
                         //  Sharing column.  If shared, clicking pops
                         //  up the modal with the shared url

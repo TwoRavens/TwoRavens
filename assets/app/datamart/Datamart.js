@@ -165,6 +165,7 @@ export default class Datamart {
         // set default menu state
         setDefault(preferences, 'datamartMode', 'Search');
         setDefault(preferences, 'isSearching', {ISI: false, NYU: false});
+        setDefault(preferences, 'searchTimeout', undefined);
 
         setDefault(preferences, 'error', {ISI: undefined, NYU: undefined});
         setDefault(preferences, 'success', {ISI: undefined, NYU: undefined});
@@ -308,13 +309,6 @@ export default class Datamart {
             style: {'margin': '0em 0.25em'},
             onclick: async () => {
 
-                // Check if the workspace has been saved
-                /*
-                if (app.workspace.is_original_workspace && confirm(
-                    'Would you like to save your workspace first? ' +
-                    'Saving your workspace will allow you to return to these problems and solutions.'))
-                    app.setShowModalSaveName(true);
-                */
                 preferences.selectedResult = results[preferences.sourceMode][i];
 
                 // set suggested pairs to join on automatically
@@ -405,7 +399,7 @@ export default class Datamart {
 
                         (hints || []).length > 0 && [
                             m('h4', 'Suggested Keywords'),
-                            m('div', 'Click on a keyword to add it to the list of keywords in the query.'),
+                            m('div[style=margin:.5em]', 'Click on a keyword to add it to the list of keywords in the query.'),
                             m(Table, {
                                 data: hints.map(row => ({
                                     Domain: row.domain,
@@ -418,6 +412,11 @@ export default class Datamart {
                                                     if (!('keywords' in preferences.query)) preferences.query.keywords = [];
                                                     if (preferences.query.keywords.includes(key)) preferences.query.keywords.splice(key, 1)
                                                     else preferences.query.keywords.push(key)
+
+                                                    // auto-searching
+                                                    clearTimeout(preferences.searchTimeout);
+                                                    if (!preferences.includeDataset)
+                                                        preferences.searchTimeout = setTimeout(() => search(preferences, endpoint, preferences.includeDataset, preferences.includeQuery), 500)
                                                 }
                                             }, key))
                                     })
@@ -426,8 +425,18 @@ export default class Datamart {
                         ],
 
                         m('h4', 'Query'),
-                        m('div', 'Show datasets that match keywords, or contain variables with temporal or geospatial attributes.'),
-                        m(`div[style=background:${common.menuColor}]`, m(JSONSchema, {
+                        m('div[style=margin:.5em]', 'Show datasets that match keywords, or contain variables with temporal or geospatial attributes.'),
+                        m(`div[style=background:${common.menuColor}]`, {
+                            onkeyup: e => {
+                                // auto-searching
+                                clearTimeout(preferences.searchTimeout);
+                                if (e.code === 'Enter')
+                                    search(preferences, endpoint, preferences.includeDataset, preferences.includeQuery);
+                                else if (!preferences.includeDataset && e.code !== 'Tab'){
+                                    preferences.searchTimeout = setTimeout(() => search(preferences, endpoint, preferences.includeDataset, preferences.includeQuery), 500);
+                                }
+                            }
+                        }, m(JSONSchema, {
                             data: query,
                             schema: datamartQueryInputSchema
                         })),
@@ -793,6 +802,11 @@ export class ModalDatamart {
                         disabled: !preferences.joinPairs.length || preferences.isAugmenting === true,
 
                         onclick: async () => {
+                            if (app.workspace.is_original_workspace) {
+                                app.setNewWorkspaceName(app.workspace.d3m_config.name + '-before-augment');
+                                app.saveAsNewWorkspace();
+                            }
+
                             preferences.isAugmenting = true;
 
                             let sourceMode = preferences.sourceMode;

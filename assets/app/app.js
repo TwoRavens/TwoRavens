@@ -1106,6 +1106,7 @@ export let loadWorkspace = async newWorkspace => {
     window.workspace = workspace;
 
     d3.select("title").html("TwoRavens " + workspace.d3m_config.name);
+    setTimeout(() => search(datamartPreferences, datamartURL).then(m.redraw), 1000);
 
     let newRavenConfig = workspace.raven_config === null;
     if (newRavenConfig) workspace.raven_config = {
@@ -1184,14 +1185,15 @@ export let loadWorkspace = async newWorkspace => {
             setVariableSummaries(preprocess.variables);
             setDatasetSummary(preprocess.dataset);
 
-            // go back and add tags to original problems
-            let nominals = Object.keys(variableSummaries)
-                .filter(variable => variableSummaries[variable].nature === 'nominal');
-            Object.values(workspace.raven_config.problems)
-                .forEach(problem => problem.tags.nominal = nominals);
-            // merge discovery into problem set if constructing a new raven config
-            if (newRavenConfig)
+            if (newRavenConfig) {
+                // go back and add tags to original problems
+                let nominals = Object.keys(variableSummaries)
+                    .filter(variable => variableSummaries[variable].nature === 'nominal');
+                Object.values(workspace.raven_config.problems)
+                    .forEach(problem => problem.tags.nominal = nominals);
+                // merge discovery into problem set if constructing a new raven config
                 Object.assign(workspace.raven_config.problems, discovery(preprocess.dataset.discovery));
+            }
         })
         .then(m.redraw)
         .catch(err => {
@@ -1231,6 +1233,7 @@ export let loadWorkspace = async newWorkspace => {
         .then(async response => {
             // problem doc not supplied, so set the first discovered problem as selected, once preprocess loaded
             if (!response.success) {
+                if (!newRavenConfig) return;
                 await promisePreprocess;
 
                 if (Object.keys(workspace.raven_config.problems).length === 0) {
@@ -1290,25 +1293,26 @@ export let loadWorkspace = async newWorkspace => {
             taskPreferences.task1_finished = true;
             let problemDoc = response.data;
             datamartPreferences.hints = problemDoc.dataAugmentation;
-            setTimeout(() => search(datamartPreferences, datamartURL).then(m.redraw), 1000);
 
-            // if swandive, columns cannot be extracted from datasetDoc
-            if (swandive) await promisePreprocess;
+            if (newRavenConfig) {
+                // if swandive, columns cannot be extracted from datasetDoc
+                if (swandive) await promisePreprocess;
 
-            let defaultProblem = buildDefaultProblem(problemDoc);
+                let defaultProblem = buildDefaultProblem(problemDoc);
 
-            // add the default problems to the list of problems
-            let problemCopy = getProblemCopy(defaultProblem);
+                // add the default problems to the list of problems
+                let problemCopy = getProblemCopy(defaultProblem);
 
-            defaultProblem.defaultProblem = true;
+                defaultProblem.defaultProblem = true;
 
-            workspace.raven_config.problems[defaultProblem.problemID] = defaultProblem;
-            workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
-            /**
-             * Note: mongodb data retrieval initiated here
-             *   setSelectedProblem -> loadMenu (manipulate.js) -> getData (manipulate.js)
-             */
-            setSelectedProblem(problemCopy.problemID);
+                workspace.raven_config.problems[defaultProblem.problemID] = defaultProblem;
+                workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+                /**
+                 * Note: mongodb data retrieval initiated here
+                 *   setSelectedProblem -> loadMenu (manipulate.js) -> getData (manipulate.js)
+                 */
+                setSelectedProblem(problemCopy.problemID);
+            }
         })
         .then(m.redraw);
 
@@ -1896,38 +1900,38 @@ export let getCurrentWorkspaceMessage = () => { return currentWorkspaceSaveMsg; 
  *  ravens_config data to the user workspace.
  *    e.g. updates the workspace saved in the database
  */
-export let saveUserWorkspace = () => {
-  console.log('-- saveUserWorkspace --');
+export let saveUserWorkspace = (silent = false) => {
+    console.log('-- saveUserWorkspace --');
 
-  // clear modal message
-  setSaveCurrentWorkspaceWindowOpen(false);
-  setCurrentWorkspaceMessageSuccess('');
+    // clear modal message
+    !silent && setSaveCurrentWorkspaceWindowOpen(false);
+    setCurrentWorkspaceMessageSuccess('');
 
 
-  if(!('user_workspace_id' in workspace)) {
-    setCurrentWorkspaceMessageError('Cannot save the workspace. The workspace id was not found. (saveUserWorkspace)');
-    setSaveCurrentWorkspaceWindowOpen(true);
-    return;
-  }
-
-  let raven_config_save_url = '/user-workspaces/raven-configs/json/save/' + workspace.user_workspace_id;
-
-  console.log('data to save: ' + JSON.stringify(workspace.raven_config))
-
-  m.request({
-      method: "POST",
-      url: raven_config_save_url,
-      data: {raven_config: workspace.raven_config}
-  })
-  .then(function(save_result) {
-    console.log(save_result);
-    if (save_result.success){
-      setCurrentWorkspaceMessageSuccess('The workspace was saved!')
-    } else {
-      setCurrentWorkspaceMessageError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
+    if (!('user_workspace_id' in workspace)) {
+        setCurrentWorkspaceMessageError('Cannot save the workspace. The workspace id was not found. (saveUserWorkspace)');
+        setSaveCurrentWorkspaceWindowOpen(true);
+        return;
     }
-    setSaveCurrentWorkspaceWindowOpen(true);
-  })
+
+    let raven_config_save_url = '/user-workspaces/raven-configs/json/save/' + workspace.user_workspace_id;
+
+    console.log('data to save: ' + JSON.stringify(workspace.raven_config))
+
+    m.request({
+        method: "POST",
+        url: raven_config_save_url,
+        data: {raven_config: workspace.raven_config}
+    })
+        .then(function (save_result) {
+            console.log(save_result);
+            if (save_result.success) {
+                setCurrentWorkspaceMessageSuccess('The workspace was saved!')
+            } else {
+                setCurrentWorkspaceMessageError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
+            }
+            !silent && setSaveCurrentWorkspaceWindowOpen(true);
+        })
 };
 /*
  * END: saveUserWorkspace
@@ -2390,10 +2394,6 @@ export async function handleAugmentDataMessage(msg_data) {
     setModal("Success: " + msg_data.user_message,
         "Data Augmentation Succeeded!", true, "Switch to augmented dataset", false, async () => {
 
-            /*
-            setModal(undefined, undefined, false)
-            load()
-            */
             setModal(undefined, undefined, false);
 
             // (1) Preserve necessary info from current workspace
@@ -2441,11 +2441,10 @@ export async function handleAugmentDataMessage(msg_data) {
             workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
             setSelectedProblem(problemCopy.problemID);
 
-
             // Close augment and go to variables tab
             setLeftTab('Variables');
 
-
+            saveUserWorkspace(true)
         });
 
 
