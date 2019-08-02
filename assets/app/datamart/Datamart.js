@@ -777,6 +777,7 @@ export class ModalDatamart {
                       },
                       m('label[style=margin:.25em;font-weight:bold]', 'Augment with dataset '),
                       m(Checkbox, {
+                          id: 'checkboxAugmentWithDataset',
                           checked: preferences.augment_with_dataset
                         })
                     ),
@@ -789,6 +790,7 @@ export class ModalDatamart {
                       },
                       m('label[style=margin:.25em;font-weight:bold]', 'Augment with Variable Pairs '),
                       m(Checkbox, {
+                          id: 'checkboxAugmentWithJoinPairs',
                           checked: preferences.augment_with_join_pairs && preferences.joinPairs.length
                       }),
                     )
@@ -835,6 +837,8 @@ export class ModalDatamart {
                                 source: preferences.sourceMode,
                                 left_columns: JSON.stringify(joinLeftColumns),
                                 right_columns: JSON.stringify(joinRightColumns),
+                                augment_with_dataset: preferences.augment_with_dataset,
+                                augment_with_join_pairs: preferences.augment_with_join_pairs,
                                 exact_match: preferences.exactMatch,
                             };
 
@@ -905,6 +909,8 @@ export class ModalDatamart {
 
                               preferences.leftJoinVariables = new Set();
                               preferences.rightJoinVariables = new Set();
+
+                              preferences.augment_with_dataset = true;
                           }
                       }, 'Add Pairing'),
                   ]),
