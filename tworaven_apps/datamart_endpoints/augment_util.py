@@ -143,6 +143,11 @@ class AugmentUtil(BasicErrCheck):
 
     def augment_isi_file(self):
         """Augment the file via the ISI API"""
+
+        self.add_err_msg(('ISI Augment is disabled!!!!'
+                          ' (augment_util.augment_isi_file)'))
+        return False
+
         if self.has_error():
             return False
 
@@ -193,7 +198,9 @@ class AugmentUtil(BasicErrCheck):
 
         # Check for required keys and convert them python dicts
         #
-        req_keys = ['search_result', 'left_columns', 'right_columns']
+        req_keys = ['search_result',
+                    'left_columns',
+                    'right_columns']
         keys_not_found = []
         jsonified_data = {}
         for rk in req_keys:
