@@ -379,10 +379,11 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
         #
         if response.status_code != 200:
             user_msg = (f'NYU Datamart internal server error. Status code:'
-                        f' "{response.status_code}"')
-            print(response.content)
+                        f' "{response.status_code}".'
+                        f' <hr />Technical: {response.content}')
+            # print(response.content)
 
-            return err_resp('NYU Datamart internal server error')
+            return err_resp(user_msg)
 
         # Write the augmented file
         #

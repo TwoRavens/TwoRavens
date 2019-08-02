@@ -22,6 +22,7 @@ import Popper from "../../common/views/Popper";
 
 import ButtonLadda from "../views/LaddaButton";
 import {numberWithCommas} from '../utils';
+import {bold} from "../index";
 
 import {datamartQueryInputSchema} from "./query_input_schema_2019_06";
 import {datamartDatasetIndexSchema} from "./dataset_schema_2019_01";
@@ -182,6 +183,7 @@ export default class Datamart {
         setDefault(preferences, 'indexScrape', ''); // https://www.w3schools.com/html/html_tables.asp
 
         setDefault(preferences, 'joinPairs', []);
+
         setDefault(preferences, 'exactMatch', true);
     }
 
@@ -307,11 +309,12 @@ export default class Datamart {
             onclick: async () => {
 
                 // Check if the workspace has been saved
+                /*
                 if (app.workspace.is_original_workspace && confirm(
                     'Would you like to save your workspace first? ' +
                     'Saving your workspace will allow you to return to these problems and solutions.'))
                     app.setShowModalSaveName(true);
-
+                */
                 preferences.selectedResult = results[preferences.sourceMode][i];
 
                 // set suggested pairs to join on automatically
@@ -722,6 +725,8 @@ export class ModalDatamart {
 
             preferences.modalShown === 'augment' && [
 
+                // Error messages at the top
+                //
                 preferences.error[preferences.sourceMode] && m('div#errorMessage', {
                     style: {
                         background: 'rgba(0,0,0,.05)',
@@ -739,74 +744,54 @@ export class ModalDatamart {
                         warn('Error:'), preferences.error[preferences.sourceMode])
                 ]),
 
-                preferences.joinPairs.map((pair, i) => m('div#pairContainer' + i, {
-                    style: {
-                        background: 'rgba(0,0,0,.05)',
-                        'border-radius': '.5em',
-                        'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
-                        margin: '2em 0 1em 0',
-                        padding: '1em'
-                    }
-                }, [
-                    m('div', {
-                        style: {display: 'inline-block'},
-                        onclick: () => {
-                            if (preferences.isAugmenting) return;
-                            preferences.joinPairs.splice(preferences.joinPairs.findIndex(elem => elem === pair), 1)
-                        }
-                    }, !preferences.isAugmenting && m(Icon, {name: 'x'})),
-                    m('div', {style: {'margin-left': '1em', display: 'inline-block'}},
-                        `Joining [${pair[0].join(', ')}] with [${pair[1].join(', ')}]`)
-                ])),
-
-                m('div',
-                    m('p', "Please choose the variables to connect your dataset" +
-                           " from the found dataset.")),
-
-                m('hr'),
+                // Instructions
+                //
+                // Listing of pairs
+                //
+                m('h4', 'Augment / Join Datasets'),
 
 
                 m('div',
-                    m(ButtonPlain, {
-                        style: {margin: '1em'},
-                        title: 'supply variables from both the left and right datasets',
+                    !preferences.joinPairs.length && m('div',
+                      m('p', 'Clicking "Augment" will join your dataset with the found dataset.'),
+                      m('p', bold('First'), ' please choose variables from each dataset to connect them. See ', bold("Variable Pairs"), ' below.'),
+                    ),
 
-                        class: `${(!preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting === true) ? 'btn-default' : 'btn-primary active'}`,
+                    preferences.joinPairs.length > 0 && m('div',
+                      m('p', 'Click "Augment" to join your dataset with the found dataset.'),
+                    ),
 
-                        disabled: !preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting === true,
-                        onclick: () => {
-                            if (!preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting)
-                                return;
-
-                            preferences.joinPairs.push([
-                                [...preferences.leftJoinVariables],
-                                [...preferences.rightJoinVariables]]);
-
-                            preferences.leftJoinVariables = new Set();
-                            preferences.rightJoinVariables = new Set();
+                    // List of join pairs
+                    //
+                    preferences.joinPairs.map((pair, i) => m('div#pairContainer' + i, {
+                        style: {
+                            background: 'rgba(0,0,0,.05)',
+                            'border-radius': '.5em',
+                            'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
+                            margin: '.5em 0 1em 0',
+                            padding: '1em'
                         }
-                    }, 'Add Pairing'),
-
-                    // m('label[style=margin-right:1em]', 'Exact Match:'),
-                    // m(ButtonRadio, {
-                    //     id: 'exactMatchButtonBar',
-                    //     attrsAll: {style: {display: 'inline-block', width: 'auto'}},
-                    //     onclick: state => {
-                    //         if (preferences.isAugmenting) return;
-                    //         preferences.exactMatch = state === 'true'
-                    //     },
-                    //     activeSection: String(preferences.exactMatch),
-                    //     sections: [{value: 'true'}, {value: 'false'}]
-                    // }),
+                    }, [
+                        m('div', {
+                            style: {display: 'inline-block'},
+                            onclick: () => {
+                                if (preferences.isAugmenting) return;
+                                preferences.joinPairs.splice(preferences.joinPairs.findIndex(elem => elem === pair), 1)
+                            }
+                        }, !preferences.isAugmenting && m(Icon, {name: 'x'})),
+                        m('div', {style: {'margin-left': '1em', display: 'inline-block'}},
+                            `Joining [${pair[0].join(', ')}] with [${pair[1].join(', ')}]`)
+                    ])),
+                    // end: list join pairs
 
                     m(ButtonLadda, {
                         id: 'augmentButton',
-                        style: {margin: '1em', float: 'right'},
+                        style: {margin: '1em'},
                         activeLadda: preferences.isAugmenting,
 
                         class: `${(!preferences.joinPairs.length || preferences.isAugmenting === true) ? 'btn-default' : 'btn-primary active'}`,
-
                         disabled: !preferences.joinPairs.length || preferences.isAugmenting === true,
+
                         onclick: async () => {
                             preferences.isAugmenting = true;
 
@@ -868,7 +853,58 @@ export class ModalDatamart {
                             console.log("#debug response augment");
                             console.log(response);
                         }
-                    }, 'Augment')),
+                    }, 'Augment'),
+
+
+
+                  ),
+                    //m('p', "Please choose the variables to connect your dataset" +
+                    //       " from the found dataset.")),
+
+
+                  // Listing of pairs
+                  //
+                  m('hr'),
+                  m('h4', 'Variable Pairs'),
+
+                  m('div', [
+                      !preferences.joinPairs.length && [
+                          m('p', '(No pairs selected)'),
+                          m('p', 'Please connect the datasets using variables:')],
+                      preferences.joinPairs.length > 0 && m('p', '(Optional) To add another Variable Pair:'),
+                        m('ol', [
+                            m('li', 'Click on a variable from the ', bold("Your Dataset Variables"), ' column.'),
+                            m('li', 'Select a variable from the ', bold("Found Dataset Variables"), ' column.'),
+                            m('li', 'Click ', bold("Add Pairing"), '.  If desired, add additional pairings.'),
+                            m('li', 'Click ', bold("Augment")),
+                    ]),
+                  ]),
+
+                  m('div', [
+                      m(ButtonPlain, {
+                          style: {margin: '1em 1em .5em 1em'},
+                          title: 'supply variables from both the left and right datasets',
+
+                          class: `${(!preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting === true) ? 'btn-default' : 'btn-primary active'}`,
+
+                          disabled: !preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting === true,
+                          onclick: () => {
+                              if (!preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting)
+                                  return;
+
+                              preferences.joinPairs.push([
+                                  [...preferences.leftJoinVariables],
+                                  [...preferences.rightJoinVariables]]);
+
+                              preferences.leftJoinVariables = new Set();
+                              preferences.rightJoinVariables = new Set();
+
+                          }
+                      }, 'Add Pairing'),
+                  ]),
+
+
+                m('hr'),
 
                 m('h4[style=width:calc(50% - 1em);display:inline-block]', 'Your Dataset Variables'),
                 m('h4[style=width:calc(50% - 1em);display:inline-block]', 'Found Dataset Variables'),

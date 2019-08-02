@@ -2440,6 +2440,12 @@ export async function handleAugmentDataMessage(msg_data) {
 
             workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
             setSelectedProblem(problemCopy.problemID);
+
+
+            // Close augment and go to variables tab
+            setLeftTab('Variables');
+
+
         });
 
 
