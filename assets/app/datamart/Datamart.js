@@ -798,7 +798,7 @@ export class ModalDatamart {
                         style: {margin: '1em'},
                         activeLadda: preferences.isAugmenting,
 
-                        class: `${(!preferences.joinPairs.length || preferences.isAugmenting === true) ? 'btn-default' : 'btn-primary active'}`,
+                        class: `${(!preferences.joinPairs.length || preferences.isAugmenting === true) ? 'btn-default' : 'btn-success active'}`,
                         disabled: !preferences.joinPairs.length || preferences.isAugmenting === true,
 
                         onclick: async () => {
@@ -899,7 +899,7 @@ export class ModalDatamart {
                           style: {margin: '1em 1em .5em 1em'},
                           title: 'supply variables from both the left and right datasets',
 
-                          class: `${(!preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting === true) ? 'btn-default' : 'btn-primary active'}`,
+                          class: `${(!preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting === true) ? 'btn-default' : 'btn-success active'}`,
 
                           disabled: !preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting === true,
                           onclick: () => {
