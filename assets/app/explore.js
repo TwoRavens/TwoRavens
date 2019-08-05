@@ -51,7 +51,8 @@ import Button from "../common/views/Button";
 import Icon from "../common/views/Icon";
 
 import {alertLog, alertWarn, alertError} from "./app";
-import {abbreviate} from "./index";
+import * as queryMongo from "./manipulations/queryMongo";
+import {recordLimit} from "./solvers/d3m";
 
 
 // adds some padding, sets the size so the content fills nicely in the page
@@ -64,7 +65,6 @@ let wrapCanvas = (...contents) => m('div#canvasExplore', {
     },
     contents
 );
-
 export class CanvasExplore {
     view(vnode) {
         let {variables, variate} = vnode.attrs;
@@ -241,7 +241,7 @@ export class CanvasExplore {
                     },
                     filtered.split(' ').map(x => m("figure", {style: 'display: inline-block'}, [
                             m(`img#${x}_img[alt=${x}][height=140px][width=260px][src=/static/images/${x}.png]`, {
-                                onclick: _ => plotVega(nodes, x),
+                                onclick: _ => plotVega(nodes, x, selectedProblem),
                                 style: thumbsty(nodes, x)
                             }),
                             m("figcaption", {style: {"text-align": "center"}}, plotMap[x])
@@ -535,12 +535,28 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
         plottype = getPlotType(plottype, mypn); // VJD: second element in array tags the variables for the plot e.g., qq means quantitative,quantitative; qn means quantitative,nominal
         console.log(mypn);
         let plotvars = getNames(mypn);
-        let zd3mdata = app.workspace.datasetPath;
-        let jsonout = {plottype, plotvars, zd3mdata};
-        console.log(jsonout);
+
+        let compiled = queryMongo.buildPipeline(
+            [...app.workspace.raven_config.hardManipulations, ...problem.manipulations, {
+                type: 'menu',
+                metadata: {
+                    type: 'data',
+                    variables: exploreVariables,
+                    sample: recordLimit
+                }
+            }],
+            app.workspace.raven_config.variablesInitial)['pipeline'];
+
+        let json = {
+            plotdata: [JSON.stringify(await app.getData({
+                method: 'aggregate',
+                query: JSON.stringify(compiled)
+            }))],
+            plottype,
+            vars: plotvars
+        };
 
         // write links to file & run R CMD
-        let json = await app.makeRequest(ROOK_SVC_URL + 'plotdataapp', jsonout);
         if (!json) {
             return;
         }
