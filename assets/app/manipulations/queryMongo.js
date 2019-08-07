@@ -97,6 +97,9 @@ export let binaryFunctions = new Set([
     'eq', 'gt', 'gte', 'lt', 'lte', 'ne', // comparison
     'dateFromString'
 ]);
+export let ternaryFunctions = new Set([
+    'lag' // custom function taking variable, index, and lag
+]);
 export let variadicFunctions = new Set([
     'add', 'multiply',
     'max', 'min', 'avg',
@@ -132,10 +135,13 @@ export function buildEquation(text, variables) {
         variables: new Set(),
         unaryFunctions: new Set(),
         binaryFunctions: new Set(),
+        ternaryFunctions: new Set(),
         variadicFunctions: new Set(),
         unaryOperators: new Set(),
         binaryOperators: new Set()
     };
+
+    let pipeline = [];
 
     let parse = tree => {
         if (tree.type === 'Literal') return tree.value;
@@ -158,6 +164,29 @@ export function buildEquation(text, variables) {
             if (binaryFunctions.has(tree.callee.name) && tree['arguments'].length === 2) {
                 usedTerms.binaryFunctions.add(tree.callee.name);
                 return {['$' + tree.callee.name]: tree['arguments'].map(arg => parse(arg))};
+            }
+            if (ternaryFunctions.has(tree.callee.name) && tree['arguments'].length === 3) {
+                usedTerms.ternaryFunctions.add(tree.callee.name);
+                let laggedName = `${tree['arguments'][0]}-lagged-${tree['arguments'][2]}`;
+
+                // lookup with offset index
+                pipeline.push(
+                    {
+                        $lookup: {
+                            from: workspace.d3m_config.name,
+                            let: {rightIndex: `$${tree['arguments'][1]}`},
+                            pipeline: [
+                                {$addFields: {index: {$add: ["$$rightIndex", -tree['arguments'][2]]}}},
+                                {$match: {$expr: {$eq: ['$$rightIndex', tree['arguments'][1]]}}},
+                                {$project: {value: `$${tree['arguments'][0]}`}}
+                            ],
+                            as: laggedName
+                        }
+                    },
+                    {$unwind: laggedName},
+                    {$addFields: {[`${laggedName}\\.value`]: laggedName}});
+
+                return '$' + laggedName
             }
             if (variadicFunctions.has(tree.callee.name)) {
                 usedTerms.variadicFunctions.add(tree.callee.name);
@@ -186,7 +215,7 @@ export function buildEquation(text, variables) {
         throw 'Unknown syntax: ' + tree.type;
     };
 
-    return {query: parse(jsep(text)), usedTerms};
+    return {query: parse(jsep(text)), usedTerms, pipeline};
 }
 
 // ~~~~ BINNING IN TRANSFORM ~~~~
@@ -947,6 +976,45 @@ export function buildMenu(step) {
             }, {_id: 0})
         }
     ];
+
+    if (metadata.type === 'explore') {
+        let lags = [];
+        let transformations = [
+            {
+                $project: preferences.encodings
+                    .reduce((out, encoding) => {
+                        let {query, pipeline} = buildEquation(encoding.variable, metadata.variables);
+                        out[encoding.variable] = query;
+                        lags.push(...pipeline);
+                        return out;
+                    }, {_id: 0})
+            }
+        ];
+
+        let aggregations = [];
+
+        let aggEncoding = preferences.encodings.find(encoding => encoding.aggregation);
+
+        if (aggEncoding && aggEncoding.aggregation === 'none')
+            aggregations.push({$sample: 1000});
+
+        if (aggEncoding && ['avg', 'min', 'max'].includes(aggEncoding.aggregation))
+            aggregations.push({
+                $bucketAuto: {
+                    groupBy: aggEncoding.variable,
+                    buckets: 100,
+                    output: {
+                        "average_Home_runs": {$avg: "$Home_runs"}
+                    }
+                }
+            });
+
+        return [
+            ...lags,
+            ...transformations,
+            ...aggregations
+        ];
+    }
 }
 
 // If there is a postProcessing step at the given key, it will return modified data. Otherwise return the data unmodified
