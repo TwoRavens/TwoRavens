@@ -1,28 +1,22 @@
+import joblib
 import abc
 import uuid
 import json
-import os
-import numpy as np
-
 import requests
-
-import joblib
+import os
+import sklearn.metrics
 import h2o
-import pandas
-from scipy.sparse import csr_matrix
 
-from model import SAVED_MODELS_PATH, R_SERVICE, get_metric
+from model import SAVED_MODELS_DIRECTORY, R_SERVICE
 from util_dataset import Dataset
 
 
 class Model(object):
-    def __init__(self, model, system, predictors, targets, model_id=None, search_id=None):
+    def __init__(self, model, system, model_id=None, search_id=None):
         self.model = model
         self.system = system
-        self.model_id = model_id or str(uuid.uuid4())
+        self.model_id = model_id or uuid.uuid4()
         self.search_id = search_id
-        self.predictors = predictors
-        self.targets = targets
 
     @abc.abstractmethod
     def describe(self):
@@ -42,7 +36,7 @@ class Model(object):
 
     @staticmethod
     def load(model_id):
-        model_folder_path = os.path.join(SAVED_MODELS_PATH, model_id)
+        model_folder_path = os.path.join(SAVED_MODELS_DIRECTORY, model_id)
         metadata_path = os.path.join(model_folder_path, 'metadata.json')
 
         if not os.path.exists(metadata_path):
@@ -51,26 +45,10 @@ class Model(object):
         with open(metadata_path, 'r') as metadata_file:
             metadata = json.load(metadata_file)
 
-        if metadata['system'] in ['auto_sklearn', 'tpot', 'mlbox', 'mljar-supervised']:
-
-            preprocess = None
-            if os.path.exists(os.path.join(model_folder_path, 'preprocess.joblib')):
-                preprocess = joblib.load(os.path.join(model_folder_path, 'preprocess.joblib'))
-
+        if metadata['system'] in ['auto_sklearn', 'tpot']:
             return ModelSklearn(
                 model=joblib.load(os.path.join(model_folder_path, 'model.joblib')),
-                predictors=metadata['predictors'],
-                targets=metadata['targets'],
                 system=metadata['system'],
-                model_id=model_id,
-                search_id=metadata['search_id'],
-                preprocess=preprocess)
-
-        if metadata['system'] == 'ludwig':
-            return ModelLudwig(
-                model=joblib.load(os.path.join(model_folder_path, 'model.joblib')),
-                predictors=metadata['predictors'],
-                targets=metadata['targets'],
                 model_id=model_id,
                 search_id=metadata['search_id'])
 
@@ -78,183 +56,145 @@ class Model(object):
             return ModelH2O(
                 model=h2o.load_model(os.path.join(model_folder_path, metadata['model_filename'])),
                 model_id=model_id,
-                predictors=metadata['predictors'],
-                targets=metadata['targets'],
                 search_id=metadata['search_id'])
 
         raise ValueError(f'System type "{metadata["system"]}" is not recognized.')
 
+    @staticmethod
+    def _score(specification, actual, predicted):
+        if specification['metric'] == "ACCURACY":
+            return sklearn.metrics.accuracy_score(actual, predicted)
+        if specification['metric'] == "PRECISION":
+            return sklearn.metrics.precision_score(actual, predicted)
+        if specification['metric'] == "RECALL":
+            return sklearn.metrics.recall_score(actual, predicted)
+        if specification['metric'] == "F1":
+            return sklearn.metrics.f1_score(actual, predicted)
+        if specification['metric'] == "F1_MICRO":
+            return sklearn.metrics.f1_score(actual, predicted, average="micro")
+        if specification['metric'] == "F1_MACRO":
+            return sklearn.metrics.f1_score(actual, predicted, average="macro")
+        if specification['metric'] == "ROC_AUC":
+            return sklearn.metrics.roc_auc_score(actual, predicted)
+        if specification['metric'] == "ROC_AUC_MICRO":
+            return sklearn.metrics.roc_auc_score(actual, predicted, average="micro")
+        if specification['metric'] == "ROC_AUC_MACRO":
+            return sklearn.metrics.roc_auc_score(actual, predicted, average="macro")
+        if specification['metric'] == "MEAN_SQUARED_ERROR":
+            return sklearn.metrics.mean_squared_error(actual, predicted)
+        if specification['metric'] == "MEAN_ABSOLUTE_ERROR":
+            return sklearn.metrics.mean_absolute_error(actual, predicted)
+        if specification['metric'] == "R_SQUARED":
+            return sklearn.metrics.r2_score(actual, predicted)
+        if specification['metric'] == "JACCARD_SIMILARITY_SCORE":
+            return sklearn.metrics.jaccard_similarity_score(actual, predicted)
+        if specification['metric'] == "PRECISION_AT_TOP_K":
+            raise NotImplementedError
+        if specification['metric'] == "OBJECT_DETECTION_AVERAGE_PRECISION":
+            raise NotImplementedError
+        if specification['metric'] == "HAMMING_LOSS":
+            return sklearn.metrics.hamming_loss(actual, predicted)
+        if specification['metric'] == "RANK":
+            raise NotImplementedError
+
+        raise NotImplementedError
+
 
 class ModelSklearn(Model):
-    def __init__(self, model, system, predictors, targets, model_id=None, search_id=None, preprocess=None):
-        super().__init__(model, system, predictors, targets, model_id, search_id)
-        # categorical one hot encoding
-        self.preprocess = preprocess
 
     def describe(self):
+        # TODO: improve model description
         return {
-            # TODO: extract ~10 character model algorithm
-            "model": "",
             "description": str(self.model),
-            "model_id": self.model_id,
-            "search_id": self.search_id,
-            "system": self.system
+            "model_id": self.model_id
         }
 
     def score(self, specification):
-        dataframe = Dataset(specification['input']).get_dataframe()
-
-        stimulus = dataframe[self.predictors]
-
-        if self.preprocess:
-            stimulus = self.preprocess.transform(stimulus)
-
-        if self.system == 'mlbox':
-            if issubclass(type(stimulus), csr_matrix):
-                stimulus = stimulus.toarray()
-            stimulus = pandas.DataFrame(stimulus)
-
-        if self.system == 'mljar-supervised':
-            stimulus = pandas.DataFrame(stimulus)
-            stimulus.columns = [str(i).strip() for i in stimulus.columns]
-
-        predicted = self.model.predict(stimulus)
-        actual = np.array(dataframe[self.targets[0]]).astype(float)
-
-        if self.system == 'mljar-supervised':
-            predicted = pandas.DataFrame((predicted.idxmax(axis=1) == 'p_1').astype(int))
-            predicted.columns = [self.targets[0]]
+        data = Dataset(specification['input']).get_dataframe()
+        predicted = self.model.predict(data)
 
         scores = []
-
         for metric in specification['performanceMetrics']:
-            scores.append({
-                'value': get_metric(metric)(actual, predicted),
-                'metric': metric,
-                'target': self.targets[0]
-            })
+            for target in predicted.columns:
+                try:
+                    scores.append({
+                        'value': Model._score(metric, data[target], predicted[target]),
+                        'metric': metric,
+                        'target': target
+                    })
+                except NotImplementedError:
+                    pass
 
-        return {
-            'search_id': self.search_id,
-            'model_id': self.model_id,
-            'scores': scores,
-            'system': self.system
-        }
+        return scores
 
     def produce(self, specification):
-        configuration = specification.get('configuration', {})
-        predict_type = configuration.get('predict_type', 'RAW')
+        data = Dataset(specification['input']).get_dataframe()
 
-        dataset = Dataset(specification['input'])
-        dataframe = dataset.get_dataframe()
-
-        stimulus = dataframe[self.predictors]
-
-        if self.preprocess:
-            stimulus = self.preprocess.transform(stimulus)
-
-        if self.system == 'mlbox':
-            if issubclass(type(stimulus), csr_matrix):
-                stimulus = stimulus.toarray()
-            stimulus = pandas.DataFrame(stimulus)
-
-        if self.system == 'mljar-supervised':
-            stimulus = pandas.DataFrame(stimulus)
-            stimulus.columns = [str(i).strip() for i in stimulus.columns]
-
-        output_directory_path = specification['output']['resource_uri'].replace('file://', '')
-        output_path = os.path.join(
-            *output_directory_path.split('/'),
+        resource_path = os.path.join(
+            *specification['output']['resource_uri'].replace('file://', '').split('/'),
             str(uuid.uuid4()) + '.csv')
 
-        if self.system == 'mljar-supervised':
-            predictions = self.model.predict(stimulus)
-            if predict_type == 'RAW':
-                predictions = pandas.DataFrame((predictions.idxmax(axis=1) == 'p_1').astype(int))
-                predictions.columns = [self.targets[0]]
+        predictions = self.model.predict(data)
+        predictions.insert(0, 'd3mIndex', data['d3mIndex'])
+        predictions.to_csv(resource_path)
 
-        else:
-            pred_function = self.model.predict if predict_type == 'RAW' else self.model.predict_proba
-            predictions = pandas.DataFrame(pred_function(stimulus), columns=self.targets)
-
-        predictions.insert(0, 'd3mIndex', dataframe['d3mIndex'])
-
-        if not os.path.exists(output_directory_path):
-            os.makedirs(output_directory_path)
-
-        cwd = os.getcwd()
-        try:
-            os.chdir('/')
-            predictions.to_csv(output_path, index=False)
-        finally:
-            os.chdir(cwd)
-
-        return {
-            'produce': {
-                'input': specification['input'],
-                'configuration': configuration,
-                'data_pointer': output_path
-            },
-            'search_id': self.search_id,
-            'model_id': self.model_id,
-            'system': self.system
-        }
+        return resource_path
 
     def save(self):
-        model_folder_path = os.path.join(SAVED_MODELS_PATH, self.model_id)
+        model_folder_path = os.path.join(SAVED_MODELS_DIRECTORY, self.model_id)
         metadata_path = os.path.join(model_folder_path, 'metadata.json')
 
         if not os.path.exists(metadata_path):
-            os.makedirs(model_folder_path)
+            os.mkdir(model_folder_path)
 
-        with open(metadata_path, 'w') as metadata_file:
-            json.dump({
-                'system': str(self.system),
-                'model_id': str(self.model_id),
-                'predictors': self.predictors,
-                'targets': self.targets
-            }, metadata_file)
+        with open(model_folder_path, 'w') as metadata_file:
+            json.dump(metadata_file, {
+                'solver_type': self.solver_type,
+                'model_id': self.model_id
+            })
 
         joblib.dump(self.model, os.path.join(model_folder_path, 'model.joblib'))
 
-        if self.preprocess:
-            joblib.dump(self.preprocess, os.path.join(model_folder_path, 'preprocess.joblib'))
-
 
 class ModelCaret(Model):
-    def __init__(self, model, predictors, targets, model_id=None, search_id=None):
-        super().__init__(model, 'caret', predictors, targets, model_id, search_id)
+    def __init__(self, model, model_id=None, search_id=None):
+        super().__init__(model, 'caret', model_id, search_id)
 
     def describe(self):
-        response = requests.post(
-            R_SERVICE + 'caretDescribe.app',
-            json={'model_id': self.model_id}).json()
-
-        if not response['success']:
-            raise ValueError(response['message'])
-
-        return response['data']
+        # TODO: improve model description
+        return {
+            "description": str(self.model),
+            "model_id": self.model_id
+        }
 
     def score(self, specification):
         response = requests.post(
-            R_SERVICE + 'caretScore.app',
-            json={
-                'model_id': self.model_id,
-                'specification': specification
-            }).json()
+            R_SERVICE + 'caretProduce.app',
+            json={'specification': specification}).json()
 
         if not response['success']:
             raise ValueError(response['message'])
+        data = Dataset(specification['input']).get_dataframe()
+        predicted = Dataset(response['data']).get_dataframe()
 
-        return response['data']
+        scores = []
+        for metric in specification['performanceMetrics']:
+            for target in predicted.columns:
+                try:
+                    scores.append({
+                        'value': Model._score(metric, data[target], predicted[target]),
+                        'metric': metric,
+                        'target': target
+                    })
+                except NotImplementedError:
+                    pass
+
+        return scores
 
     def produce(self, specification):
         response = requests.post(
             R_SERVICE + 'caretProduce.app',
-            json={
-                'model_id': self.model_id,
-                'specification': specification
-            }).json()
+            json={'specification': specification}).json()
 
         if not response['success']:
             raise ValueError(response['message'])
@@ -267,186 +207,61 @@ class ModelCaret(Model):
 
 
 class ModelH2O(Model):
-    def __init__(self, model, predictors, targets, model_id=None, search_id=None):
-        super().__init__(model, 'h2o', predictors, targets, model_id, search_id)
+    def __init__(self, model, model_id=None, search_id=None):
+        super().__init__(model, 'h2o', model_id, search_id)
 
     def describe(self):
+        # TODO: improve model description
         return {
-            "model": f'{self.model.algo}-{self.model.type}',
-            "description": f'{self.model.algo}-{self.model.type}',
-            "model_id": self.model_id,
-            'search_id': self.search_id,
-            "system": self.system
+            "description": str(self.model),
+            "model_id": self.model_id
         }
 
     def score(self, specification):
         resource_uri = Dataset(specification['input']).get_resource_uri()
         data = h2o.import_file(resource_uri)
-        predicted = self.model.predict(data).as_data_frame()['predict']
+        predicted = self.model.predict(data).as_data_frame()
         data = data.as_data_frame()
 
-        # H2O supports only one target
-        target = self.targets[0]
-
         scores = []
         for metric in specification['performanceMetrics']:
-            try:
-                scores.append({
-                    'value': get_metric(metric)(data[target], predicted),
-                    'metric': metric,
-                    'target': target
-                })
-            except NotImplementedError:
-                pass
-
-        return {
-            'search_id': self.search_id,
-            'model_id': self.model_id,
-            'scores': scores,
-            "system": self.system
-        }
-
-    def produce(self, specification):
-        configuration = specification.get('configuration', {})
-        predict_type = configuration.get('predict_type', 'RAW')
-
-        resource_uri = Dataset(specification['input']).get_resource_uri()
-        data = h2o.import_file(resource_uri)
-
-        predictions = self.model.predict(data).as_data_frame()
-
-        # TODO: standardize output format
-        if predict_type == 'RAW':
-            predictions = predictions[['predict']]
-
-        predictions.insert(0, 'd3mIndex', data.as_data_frame()['d3mIndex'])
-
-        output_directory_path = specification['output']['resource_uri'].replace('file://', '')
-        output_path = os.path.join(
-            *output_directory_path.split('/'),
-            str(uuid.uuid4()) + '.csv')
-
-        if not os.path.exists(output_directory_path):
-            os.makedirs(output_directory_path)
-
-        cwd = os.getcwd()
-        try:
-            os.chdir('/')
-            predictions.to_csv(output_path, index=False)
-        finally:
-            os.chdir(cwd)
-
-        return {
-            'produce': {
-                'input': specification['input'],
-                'configuration': configuration,
-                'data_pointer': output_path
-            },
-            'search_id': self.search_id,
-            'model_id': self.model_id,
-            "system": self.system
-        }
-
-    def save(self):
-        model_folder_path = os.path.join(SAVED_MODELS_PATH, self.model_id)
-        metadata_path = os.path.join(model_folder_path, 'metadata.json')
-
-        if not os.path.exists(metadata_path):
-            os.makedirs(model_folder_path)
-
-        model_path = h2o.save_model(self.model, path=model_folder_path, force=True)
-        with open(metadata_path, 'w') as metadata_file:
-            json.dump({
-                'system': self.system,
-                'model_id': self.model_id,
-                'model_filename': model_folder_path.replace(model_path, ''),
-                'predictors': self.predictors,
-                'targets': self.targets
-            }, metadata_file)
-
-
-class ModelLudwig(Model):
-    def __init__(self, model, predictors, targets, model_id=None, search_id=None):
-        super().__init__(model, 'ludwig', predictors, targets, model_id, search_id)
-
-    def describe(self):
-        return {
-            # TODO: extract more relevant description of model algorithm
-            "model": 'multilayer feedforward network',
-            "description": str(self.model),
-            "model_id": self.model_id,
-            "system": self.system
-        }
-
-    def score(self, specification):
-
-        dataset = Dataset(specification['input'])
-        dataframe = dataset.get_dataframe()
-
-        predicted = self.model.predict(dataframe).as_data_frame()
-
-        # H2O supports only one target
-        target = self.targets[0]
-
-        scores = []
-        for metric in specification['performanceMetrics']:
-            scores.append({
-                'value': get_metric(metric)(dataframe[target], predicted),
-                'metric': metric,
-                'target': target
-            })
+            for target in predicted.columns:
+                try:
+                    scores.append({
+                        'value': Model._score(metric, data[target], predicted[target]),
+                        'metric': metric,
+                        'target': target
+                    })
+                except NotImplementedError:
+                    pass
 
         return scores
 
     def produce(self, specification):
-        configuration = specification.get('configuration', {})
-        predict_type = configuration.get('predict_type', 'RAW')
+        resource_uri = Dataset(specification['input']).get_resource_uri()
+        data = h2o.import_file(resource_uri)
 
-        dataset = Dataset(specification['input'])
-        dataframe = dataset.get_dataframe()
-
-        predictions = self.model.predict(dataframe).as_data_frame()
-        predictions.insert(0, 'd3mIndex', dataframe['d3mIndex'])
-
-        output_directory_path = specification['output']['resource_uri'].replace('file://', '')
-        output_path = os.path.join(
-            *output_directory_path.split('/'),
+        resource_path = os.path.join(
+            *specification['output']['resource_uri'].replace('file://', '').split('/'),
             str(uuid.uuid4()) + '.csv')
 
-        if not os.path.exists(output_directory_path):
-            os.makedirs(output_directory_path)
+        predictions = self.model.predict(data).as_data_frame()
+        predictions.insert(0, 'd3mIndex', data.as_data_frame()['d3mIndex'])
+        predictions.to_csv(resource_path)
 
-        cwd = os.getcwd()
-        try:
-            os.chdir('/')
-            predictions.to_csv(output_path, index=False)
-        finally:
-            os.chdir(cwd)
-
-        return {
-            'produce': {
-                'input': specification['input'],
-                'configuration': configuration,
-                'data_pointer': output_path
-            },
-            'search_id': self.search_id,
-            'model_id': self.model_id,
-            "system": self.system
-        }
+        return resource_path
 
     def save(self):
-        model_folder_path = os.path.join(SAVED_MODELS_PATH, self.model_id)
+        model_folder_path = os.path.join(SAVED_MODELS_DIRECTORY, self.model_id)
         metadata_path = os.path.join(model_folder_path, 'metadata.json')
 
         if not os.path.exists(metadata_path):
-            os.makedirs(model_folder_path)
+            os.mkdir(model_folder_path)
 
-        model_path = self.model.save(path=model_folder_path)
-        with open(metadata_path, 'w') as metadata_file:
-            json.dump({
-                'system': self.system,
+        model_path = h2o.save_model(self.model, path=model_folder_path, force=True)
+        with open(model_folder_path, 'w') as metadata_file:
+            json.dump(metadata_file, {
+                'solver_type': self.solver_type,
                 'model_id': self.model_id,
-                'model_filename': model_folder_path.replace(model_path, ''),
-                'predictors': self.predictors,
-                'targets': self.targets
-            }, metadata_file)
+                'model_filename': model_folder_path.replace(model_path, '')
+            })
