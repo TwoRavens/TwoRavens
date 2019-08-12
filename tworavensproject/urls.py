@@ -20,6 +20,8 @@ urlpatterns = [
 
     url(r'^d3m-service/', include('tworaven_apps.ta2_interfaces.urls')),
 
+    url(r'^solver-service/', include('tworaven_apps.solver_interfaces.urls')),
+
     url(r'^ws-views/', include('tworaven_apps.websocket_views.urls')),
 
     url(r'^datamart/', include('tworaven_apps.datamart_endpoints.urls')),

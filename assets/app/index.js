@@ -631,6 +631,69 @@ class Body {
                         m.redraw()
                     }
                 }, 'Prepare'),
+
+                m(Button, {
+                    onclick: () => {
+                        m.request('/solver-service/Solve', {
+                            method: 'POST',
+                            data: {
+                                "system": "auto_sklearn",
+                                "system_params": {"time_left_for_this_task": 60},
+                                "specification": {
+                                    'search': {
+                                        "input": {
+                                            "resource_uri": 'file:///ravens_volume/test_data/185_baseball/TRAIN/dataset_TRAIN/tables/learningData.csv'
+                                        },
+                                        'problem': {
+                                            "name": "problem 0",
+                                            "targets": ["Doubles"],
+                                            "predictors": ["At_bats", "Triples"],
+                                            "taskSubtype": "NONE",
+                                            "taskType": "CLASSIFICATION"
+                                        },
+                                        "performanceMetric": {
+                                            "metric": "F1_MACRO"
+                                        },
+                                        "configuration": {
+                                            "folds": 0,
+                                            "method": "K_FOLD",
+                                            "randomSeed": 0,
+                                            "shuffle": false,
+                                            "stratified": true,
+                                            "trainTestRatio": 0
+                                        },
+                                        "timeBoundSearch": 0,
+                                        "timeBoundRun": 0,
+                                        "rankSolutionsLimit": 0
+                                    },
+
+
+                                    'produce': [{
+                                        'input': {
+                                            'name': 'data_test',
+                                            "resource_uri": 'file:///ravens_volume/test_data/185_baseball/TEST/dataset_TEST/tables/learningData.csv'
+                                        },
+                                        'output': {
+                                            'resource_uri': 'file:///ravens_volume/test_output_auto_sklearn/185_baseball/'
+                                        }
+                                    }],
+
+                                    'score': [{
+                                        "input": {
+                                            "name": "data_test",
+                                            "resource_uri": 'file:///ravens_volume/test_data/185_baseball/TEST/dataset_TEST/tables/learningData.csv'
+                                        },
+                                        "performanceMetrics": [
+                                            {
+                                                "metric": "F1_MACRO"
+                                            }
+                                        ]
+                                    }]
+                                }
+                            }
+                        }).then(console.log)
+                    }
+                }, 'Run Solver'),
                 m(Button, {
                     style: {margin: '1em'},
                     onclick: () => {

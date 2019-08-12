@@ -25,8 +25,7 @@ flask_app.debug = not production
 
 # multiprocessing.Process is buffered, stdout must be flushed manually
 def debug(*values):
-    print(*values)
-    sys.stdout.flush()
+    print(*values, flush=True)
 
 
 def task_handler(task):

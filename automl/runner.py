@@ -1,22 +1,22 @@
-import sklearn.metrics
-
 import os
-import sys
 import uuid
 
+import requests
 import flask
 from multiprocessing import Pool, TimeoutError
 from multiprocessing.dummy import Pool as ThreadPool
 
-from automl.base import Solve, Search, Model
+from model import DJANGO_SOLVER_SERVICE, KEY_SUCCESS, KEY_DATA, debug
+
+from util_solve import Solve
+from util_model import Model
+from util_search import Search
+
 
 NUM_PROCESSES = 4
 
 TIMEOUT_MAX = 60 * 5
 TIMEOUT_DEFAULT = 2
-
-KEY_SUCCESS = 'success'
-KEY_DATA = 'data'
 
 flask_app = flask.Flask(__name__)
 
@@ -24,13 +24,9 @@ production = os.getenv('FLASK_USE_PRODUCTION_MODE', 'no') == 'yes'
 flask_app.debug = not production
 
 
-# multiprocessing.Process is buffered, stdout must be flushed manually
-def debug(*values):
-    print(*values)
-    sys.stdout.flush()
-
-
 def abortable_worker(func, *args, **kwargs):
+    debug('args abortable worker')
+    debug(args)
     timeout = kwargs.get('timeout', None)
     p = ThreadPool(1)
     res = p.apply_async(func, args=args)
@@ -38,18 +34,14 @@ def abortable_worker(func, *args, **kwargs):
         out = res.get(timeout)  # Wait timeout seconds for func to complete.
         return out
     except TimeoutError:
-        print("Aborting due to timeout")
+        debug("Aborting due to timeout")
         p.terminate()
-        raise
 
 
 @flask_app.route('/solve', methods=['POST'])
 def app_solve():
 
     data = flask.request.json
-
-    debug('data')
-    debug(data)
 
     # sanity check timeout
     if isinstance(data.get('timeout', None), (int, float)):
@@ -58,11 +50,40 @@ def app_solve():
         timeout = TIMEOUT_DEFAULT
 
     data['timeout'] = timeout
+    websocket_id = data['websocket_id']
+
+    def found(self, model):
+        debug('model found')
+        debug(model)
+        # TODO: thread to avoid (slight) block
+        requests.post(
+            url=DJANGO_SOLVER_SERVICE + 'describe',
+            json={
+                "websocket_id": websocket_id,
+                "data": model.describe()
+            })
+
+        for score_spec in self.specification['score']:
+            requests.post(
+                url=DJANGO_SOLVER_SERVICE + 'score',
+                json={
+                    "websocket_id": websocket_id,
+                    "data": model.score(score_spec)
+                })
+
+        for produce_spec in self.specification['produce']:
+            requests.post(
+                url=DJANGO_SOLVER_SERVICE + 'produce',
+                json={
+                    "websocket_id": websocket_id,
+                    "data": model.produce(produce_spec)
+                })
 
     solver = Solve(
         system=data['system'],
         specification=data['specification'],
-        system_params=data['system_params'])
+        system_params=data['system_params'],
+        callback_found=found)
 
     # kick off solver, without awaiting, with a max timeout
     pool.apply_async(lambda: abortable_worker(solver.run, timeout=timeout))
@@ -112,38 +133,65 @@ def app_produce():
 
     data = flask.request.json
 
-    model = Model.load(data['model_id'])
-    return {
-        KEY_SUCCESS: True,
-        KEY_DATA: {
-            "search_id": model.search_id,
-            "model_id": model.model_id,
-            "produce": model.produce(data['specification'])
-        }
-    }
+    # sanity check timeout
+    if isinstance(data.get('timeout', None), (int, float)):
+        timeout = min(max(data.get('timeout'), 0), TIMEOUT_MAX)
+    else:
+        timeout = TIMEOUT_DEFAULT
+
+    data['timeout'] = timeout
+    websocket_id = data['websocket_id']
+
+    def produce_async():
+        model = Model.load(data['model_id'])
+        requests.post(DJANGO_SOLVER_SERVICE, 'ReceiveProduce', json={
+            KEY_SUCCESS: True,
+            KEY_DATA: {
+                "search_id": model.search_id,
+                "model_id": model.model_id,
+                "produce": model.produce(data['specification'])
+            },
+            "websocket_id": websocket_id
+        })
+
+    # kick off solver, without awaiting, with a max timeout
+    pool.apply_async(lambda: abortable_worker(produce_async, timeout=timeout))
 
 
 @flask_app.route('/score', methods=['POST'])
 def app_score():
-
     data = flask.request.json
 
-    model = Model.load(data['model_id'])
-    return {
-        KEY_SUCCESS: True,
-        KEY_DATA: {
-            "search_id": model.search_id,
-            "model_id": model.model_id,
-            "produce": model.score(data['specification'])
-        }
-    }
+    # sanity check timeout
+    if isinstance(data.get('timeout', None), (int, float)):
+        timeout = min(max(data.get('timeout'), 0), TIMEOUT_MAX)
+    else:
+        timeout = TIMEOUT_DEFAULT
+
+    data['timeout'] = timeout
+    websocket_id = data['websocket_id']
+
+    def score_async():
+        model = Model.load(data['model_id'])
+        requests.post(DJANGO_SOLVER_SERVICE, 'ReceiveScore', json={
+            KEY_SUCCESS: True,
+            KEY_DATA: {
+                "search_id": model.search_id,
+                "model_id": model.model_id,
+                "produce": model.score(data['specification'])
+            },
+            "websocket_id": websocket_id
+        })
+
+    # kick off solver, without awaiting, with a max timeout
+    pool.apply_async(lambda: abortable_worker(score_async, timeout=timeout))
 
 
 if __name__ == '__main__':
     pool = Pool(processes=NUM_PROCESSES)
 
     try:
-        flask_app.run(port=8000, threaded=True)
+        flask_app.run(port=8001, threaded=True)
     finally:
         pool.close()
         pool.join()
@@ -218,10 +266,10 @@ system_params = {
     'h2o': {}
 }
 
-for solver_backend in system_params:
-    solver = Solve(
-        solver_backend,
-        specification,
-        system_params[solver_backend])
-    solver.run()
-
+# for solver_backend in system_params:
+#     solver = Solve(
+#         solver_backend,
+#         specification,
+#         system_params[solver_backend])
+#     solver.run()
+#

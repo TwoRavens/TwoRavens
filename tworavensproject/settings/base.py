@@ -77,6 +77,7 @@ INSTALLED_APPS = [
 
     'tworaven_apps.configurations', # UI domain/mode configuration
     'tworaven_apps.ta2_interfaces', # sending UI through to TA2 and back again
+    'tworaven_apps.solver_interfaces',
     'tworaven_apps.content_pages',
     'tworaven_apps.rook_services', # sending UI calls to rook and back again
     'tworaven_apps.api_docs',

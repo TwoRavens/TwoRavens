@@ -1,91 +1,14 @@
+import joblib
 import abc
 import uuid
 import json
-import os
-
-import h2o
-import joblib
-import pandas
-import sklearn.metrics
 import requests
-import time
+import os
+import sklearn.metrics
+import h2o
 
-from automl.runner import KEY_SUCCESS, KEY_DATA
-
-from automl.solvers.solver_auto_sklearn import SearchAutoSklearn
-from automl.solvers.solver_caret import SearchCaret
-from automl.solvers.solver_h2o import SearchH2O, ModelH2O
-from automl.solvers.solver_tpot import SearchTPOT
-
-SAVED_MODELS_DIRECTORY = '/ravens_volume/solvers/'
-DJANGO_SOLVER_SERVICE = 'http://localhost:8080/solver-svc/'
-R_SERVICE = 'http://localhost:8000/'
-
-
-class Solve(object):
-    def __init__(self, system, specification, system_params=None):
-        self.system = system
-        self.specification = specification
-        self.system_params = system_params or {}
-        self.search = {
-            'auto_sklearn': SearchAutoSklearn,
-            'h2o': SearchH2O,
-            'tpot': SearchTPOT,
-            'caret': SearchCaret
-        }[system](self.specification['search'], self.system_params, self.found)
-
-    async def run(self):
-        start_time = time.time()
-        await self.search.run()
-        requests.post(
-            url=DJANGO_SOLVER_SERVICE + 'finished',
-            json={
-                KEY_SUCCESS: True,
-                KEY_DATA: {
-                    "search_id": self.search.search_id,
-                    "elapsed_time": time.time() - start_time
-                }
-            })
-
-    def found(self, model):
-
-        # TODO: thread to avoid (slight) block
-        requests.post(
-            url=DJANGO_SOLVER_SERVICE + 'describe',
-            json=model.describe())
-
-        for score_spec in self.specification['score']:
-            requests.post(
-                url=DJANGO_SOLVER_SERVICE + 'score',
-                json=model.score(score_spec))
-
-        for produce_spec in self.specification['produce']:
-            requests.post(
-                url=DJANGO_SOLVER_SERVICE + 'produce',
-                json=model.produce(produce_spec))
-
-
-class Search(object):
-    def __init__(self, specification, system_params, callback_found=lambda model: None):
-        self.search_id = uuid.uuid4()
-        self.specification = specification
-        self.system_params = system_params
-        self.callback_found = callback_found
-
-    @abc.abstractmethod
-    async def run(self):
-        pass
-
-    @staticmethod
-    def load(system, specification, system_params=None):
-        return {
-            'auto_sklearn': SearchAutoSklearn,
-            'caret': SearchCaret,
-            'h2o': SearchH2O,
-            'tpot': SearchTPOT
-        }[system](
-            specification=specification,
-            system_params=system_params)
+from model import SAVED_MODELS_DIRECTORY, R_SERVICE
+from util_dataset import Dataset
 
 
 class Model(object):
@@ -233,29 +156,112 @@ class ModelSklearn(Model):
         joblib.dump(self.model, os.path.join(model_folder_path, 'model.joblib'))
 
 
-class Dataset(object):
-    def __init__(self, input):
-        if not input:
-            raise ValueError('No input provided.')
+class ModelCaret(Model):
+    def __init__(self, model, model_id=None, search_id=None):
+        super().__init__(model, 'caret', model_id, search_id)
 
-        if 'resource_uri' not in input:
-            raise ValueError('Invalid input: no resource_uri provided.')
+    def describe(self):
+        # TODO: improve model description
+        return {
+            "description": str(self.model),
+            "model_id": self.model_id
+        }
 
-        self.input = input
+    def score(self, specification):
+        response = requests.post(
+            R_SERVICE + 'caretProduce.app',
+            json={'specification': specification}).json()
 
-    def get_dataframe(self):
-        options = {}
+        if not response['success']:
+            raise ValueError(response['message'])
+        data = Dataset(specification['input']).get_dataframe()
+        predicted = Dataset(response['data']).get_dataframe()
 
-        if 'delimiter' in self.input:
-            options['delimiter'] = self.input['delimiter']
+        scores = []
+        for metric in specification['performanceMetrics']:
+            for target in predicted.columns:
+                try:
+                    scores.append({
+                        'value': Model._score(metric, data[target], predicted[target]),
+                        'metric': metric,
+                        'target': target
+                    })
+                except NotImplementedError:
+                    pass
 
-        return pandas.read_csv(self.get_resource_uri(), **options)
+        return scores
 
-    def get_resource_uri(self):
-        return self.input['resource_uri']
+    def produce(self, specification):
+        response = requests.post(
+            R_SERVICE + 'caretProduce.app',
+            json={'specification': specification}).json()
 
-    def get_file_path(self):
-        return os.path.join(*self.get_resource_uri().replace('file://', '').split('/'))
+        if not response['success']:
+            raise ValueError(response['message'])
 
-    def get_name(self):
-        return self.input.get('name', self.input['resource_uri'])
+        return response['data']
+
+    def save(self):
+        # ignore, model is only present in remote caret.app
+        raise ValueError('Caret model is not saveable in Python.')
+
+
+class ModelH2O(Model):
+    def __init__(self, model, model_id=None, search_id=None):
+        super().__init__(model, 'h2o', model_id, search_id)
+
+    def describe(self):
+        # TODO: improve model description
+        return {
+            "description": str(self.model),
+            "model_id": self.model_id
+        }
+
+    def score(self, specification):
+        resource_uri = Dataset(specification['input']).get_resource_uri()
+        data = h2o.import_file(resource_uri)
+        predicted = self.model.predict(data).as_data_frame()
+        data = data.as_data_frame()
+
+        scores = []
+        for metric in specification['performanceMetrics']:
+            for target in predicted.columns:
+                try:
+                    scores.append({
+                        'value': Model._score(metric, data[target], predicted[target]),
+                        'metric': metric,
+                        'target': target
+                    })
+                except NotImplementedError:
+                    pass
+
+        return scores
+
+    def produce(self, specification):
+        resource_uri = Dataset(specification['input']).get_resource_uri()
+        data = h2o.import_file(resource_uri)
+
+        resource_path = os.path.join(
+            *specification['output']['resource_uri'].replace('file://', '').split('/'),
+            str(uuid.uuid4()) + '.csv')
+
+        predictions = self.model.predict(data).as_data_frame()
+        predictions.insert(0, 'd3mIndex', data.as_data_frame()['d3mIndex'])
+        predictions.to_csv(resource_path)
+
+        return resource_path
+
+    def save(self):
+        model_folder_path = os.path.join(SAVED_MODELS_DIRECTORY, self.model_id)
+        metadata_path = os.path.join(model_folder_path, 'metadata.json')
+
+        if not os.path.exists(metadata_path):
+            os.mkdir(model_folder_path)
+
+        model_path = h2o.save_model(self.model, path=model_folder_path, force=True)
+        with open(model_folder_path, 'w') as metadata_file:
+            json.dump(metadata_file, {
+                'solver_type': self.solver_type,
+                'model_id': self.model_id,
+                'model_filename': model_folder_path.replace(model_path, '')
+            })

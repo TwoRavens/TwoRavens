@@ -436,14 +436,24 @@ def run_ta2_test_server():
     local(run_cmd)
 
 @task
-def get_run_flask_cmd():
-    """For running the flask server via the command line"""
+def get_run_flask_R_cmd():
+    """For running the R flask server via the command line"""
     return 'cd R; python runner.py'
 
 @task
-def run_flask():
-    """Run the flask server via the command line"""
-    local(get_run_flask_cmd())
+def run_R():
+    """Run the R flask server via the command line"""
+    local(get_run_flask_R_cmd())
+
+@task
+def get_run_flask_automl_cmd():
+    """For running the automl flask server via the command line"""
+    return 'cd automl; python runner.py'
+
+@task
+def run_automl():
+    """Run the automl flask server via the command line"""
+    local(get_run_flask_automl_cmd())
 
 @task
 def run_with_ta2():
@@ -518,7 +528,7 @@ def run(**kwargs):
     ]
 
     if with_rook:
-        commands.append(get_run_R_cmd())
+        commands.append(get_run_flask_cmd())
 
     proc_list = [subprocess.Popen(command, shell=True, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr) for command in commands]
     try:

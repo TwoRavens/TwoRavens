@@ -528,6 +528,9 @@ streamSocket.onmessage = function (e) {
     //console.log('data:' + JSON.stringify(msg_obj));
     let msg_data = msg_obj['message'];
 
+    console.log('msg_data');
+    console.log(msg_data);
+
     if (msg_data.msg_type === undefined) {
         console.log('streamSocket.onmessage: Error, "msg_data.msg_type" not specified!');
         return;
