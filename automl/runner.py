@@ -8,6 +8,9 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, TimeoutE
 import signal
 import atexit
 
+import traceback
+import asyncio
+
 import requests
 import flask
 
@@ -306,6 +309,44 @@ def search_found_async(model, params):
         describe_async,
         websocket_id,
         model)
+
+        if msg_type and websocket_id:
+            try:
+                requests.post(
+                    url=RECEIVE_ENDPOINT,
+                    json={
+                        KEY_WEBSOCKET_ID: websocket_id,
+                        KEY_MSG_TYPE: msg_type,
+                        KEY_DATA: data,
+                        KEY_MESSAGE: f"aborted due to timeout",
+                        KEY_SUCCESS: False
+                    })
+            except Exception:
+                print("CAUGHT TRACEBACK WHEN SENDING", flush=True)
+                print(traceback.format_exc())
+
+
+def catch_traceback(msg_type, websocket_id, data, func, *args, **kwargs):
+    try:
+        return func(*args, **kwargs)
+    except Exception as err:
+        print("CAUGHT TRACEBACK", flush=True)
+        print(traceback.format_exc(), flush=True)
+
+        if msg_type and websocket_id:
+            try:
+                requests.post(
+                    url=RECEIVE_ENDPOINT,
+                    json={
+                        KEY_WEBSOCKET_ID: websocket_id,
+                        KEY_MSG_TYPE: msg_type,
+                        KEY_DATA: data,
+                        KEY_MESSAGE: str(err),
+                        KEY_SUCCESS: False
+                    })
+            except Exception:
+                print("CAUGHT TRACEBACK WHEN SENDING", flush=True)
+                print(traceback.format_exc())
 
 
 @flask_app.route('/solve', methods=['POST'])
