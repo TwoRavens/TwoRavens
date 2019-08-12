@@ -15,7 +15,7 @@ import autosklearn.regression
 
 class Search(object):
     def __init__(self, specification, system_params, callback_found=lambda model: None):
-        self.search_id = uuid.uuid4()
+        self.search_id = str(uuid.uuid4())
         self.specification = specification
         self.system_params = system_params
         self.callback_found = callback_found
@@ -25,7 +25,7 @@ class Search(object):
         pass
 
     @staticmethod
-    def load(system, specification, system_params=None):
+    def load(system, specification, system_params=None, callback_found=lambda model: None):
         return {
             'auto_sklearn': SearchAutoSklearn,
             'caret': SearchCaret,
@@ -33,12 +33,13 @@ class Search(object):
             'tpot': SearchTPOT
         }[system](
             specification=specification,
-            system_params=system_params)
+            system_params=system_params,
+            callback_found=callback_found)
 
 
 class SearchAutoSklearn(Search):
 
-    async def run(self):
+    def run(self):
         dataset = Dataset(self.specification['input'])
         dataframe = dataset.get_dataframe()
 
@@ -65,13 +66,16 @@ class SearchAutoSklearn(Search):
                 self.system_params['resampling_strategy'] = 'cv'
                 self.system_params['resampling_strategy_arguments']['folds'] = config.get('folds') or 10
 
+        print('system params', self.system_params, flush=True)
         automl = {
-            'regression': autosklearn.regression.AutoSklearnRegressor,
-            'classification': autosklearn.classification.AutoSklearnClassifier
+            'REGRESSION': autosklearn.regression.AutoSklearnRegressor,
+            'CLASSIFICATION': autosklearn.classification.AutoSklearnClassifier
         }[self.specification['problem']['taskType']](**self.system_params)
 
+        print('started fitting', flush=True)
         automl.fit(dataframe[x], dataframe[y], dataset_name=dataset.get_name())
 
+        print('started wrapping model', flush=True)
         model = ModelSklearn(automl, system='auto_sklearn', search_id=self.search_id)
         model.save()
 
@@ -102,7 +106,7 @@ class SearchCaret(Search):
         ]
     }
 
-    async def run(self):
+    def run(self):
 
         for method_spec in self.system_params.get('model_space', self.model_space_default):
 

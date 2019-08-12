@@ -15,7 +15,7 @@ class Model(object):
     def __init__(self, model, system, model_id=None, search_id=None):
         self.model = model
         self.system = system
-        self.model_id = model_id or uuid.uuid4()
+        self.model_id = model_id or str(uuid.uuid4())
         self.search_id = search_id
 
     @abc.abstractmethod

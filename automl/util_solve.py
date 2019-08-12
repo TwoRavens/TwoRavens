@@ -18,9 +18,10 @@ class Solve(object):
             'caret': SearchCaret
         }[system](self.specification['search'], self.system_params, callback_found)
 
-    async def run(self):
+    def run(self):
+        print('started search', flush=True)
         start_time = time.time()
-        await self.search.run()
+        self.search.run()
         requests.post(
             url=DJANGO_SOLVER_SERVICE + 'finished',
             json={
