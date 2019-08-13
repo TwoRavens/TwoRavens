@@ -16,5 +16,3 @@ RECEIVE_DESCRIBE_MSG = 'receive_describe_msg'
 RECEIVE_SCORE_MSG = 'receive_score_msg'
 RECEIVE_PRODUCE_MSG = 'receive_produce_msg'
 RECEIVE_ERROR_MSG = 'receive_error_msg'
-RECEIVE_END_SEARCH = 'receive_end_search_msg'
-

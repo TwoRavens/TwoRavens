@@ -14,14 +14,15 @@ import autosklearn.regression
 
 
 class Search(object):
-    def __init__(self, specification, system_params, callback_found=lambda model: None):
+    def __init__(self, specification, system_params, callback_found=lambda model, params: None, callback_params=None):
         self.search_id = str(uuid.uuid4())
         self.specification = specification
         self.system_params = system_params
         self.callback_found = callback_found
+        self.callback_params = callback_params
 
     @abc.abstractmethod
-    async def run(self):
+    def run(self):
         pass
 
     @staticmethod
@@ -43,10 +44,11 @@ class SearchAutoSklearn(Search):
         dataset = Dataset(self.specification['input'])
         dataframe = dataset.get_dataframe()
 
-        x = dataframe[self.specification['problem']['predictors']]
-        y = dataframe[self.specification['problem']['targets'][0]]
+        print(dataframe)
 
-        #
+        x = self.specification['problem']['predictors']
+        y = self.specification['problem']['targets'][0]
+
         # if os.path.exists(tmp_folder):
         #     shutil.rmtree(tmp_folder)
         # if os.path.exists(output_folder):
@@ -66,20 +68,30 @@ class SearchAutoSklearn(Search):
                 self.system_params['resampling_strategy'] = 'cv'
                 self.system_params['resampling_strategy_arguments']['folds'] = config.get('folds') or 10
 
-        print('system params', self.system_params, flush=True)
+        # sklearn_temp_path = '/ravens_volume/solvers/auto_sklearn/temporary/' + str(uuid.uuid4())
+        # tmp_folder = os.path.join(*sklearn_temp_path.split('/'), 'temp')
+        # output_folder = os.path.join(*sklearn_temp_path.split('/'), 'output')
+
+        # self.system_params['tmp_folder'] = tmp_folder
+        # self.system_params['output_folder'] = output_folder
+        # self.system_params['delete_tmp_folder_after_terminate'] = False
+
         automl = {
             'REGRESSION': autosklearn.regression.AutoSklearnRegressor,
             'CLASSIFICATION': autosklearn.classification.AutoSklearnClassifier
         }[self.specification['problem']['taskType']](**self.system_params)
 
-        print('started fitting', flush=True)
         automl.fit(dataframe[x], dataframe[y], dataset_name=dataset.get_name())
 
-        print('started wrapping model', flush=True)
-        model = ModelSklearn(automl, system='auto_sklearn', search_id=self.search_id)
+        model = ModelSklearn(
+            automl,
+            system='auto_sklearn',
+            search_id=self.search_id,
+            predictors=x,
+            targets=y)
         model.save()
 
-        self.callback_found(model)
+        self.callback_found(model, self.callback_params)
 
 
 class SearchCaret(Search):
@@ -123,7 +135,7 @@ class SearchCaret(Search):
 
 class SearchH2O(Search):
 
-    async def run(self):
+    def run(self):
 
         # ensure backend solver is running
         h2o.init()
@@ -190,28 +202,38 @@ class SearchH2O(Search):
         automl.train(**train_params)
 
         # TODO: extract more than one model
-        model = ModelH2O(automl.leader, search_id=self.search_id)
-        self.callback_found(model)
+        model = ModelH2O(
+            automl.leader,
+            search_id=self.search_id,
+            predictors=X,
+            targets=y)
+        self.callback_found(model, self.callback_params)
 
 
 class SearchTPOT(Search):
 
-    async def run(self):
+    def run(self):
         dataset = Dataset(self.specification['input'])
 
         dataframe = dataset.get_dataframe()
-        X = dataframe[self.specification['problem']['predictors']]
-        y = dataframe[self.specification['problem']['targets'][0]]
+        X = self.specification['problem']['predictors']
+        y = self.specification['problem']['targets']
 
         automl = {
-            'regression': tpot.TPOTRegressor,
-            'classification': tpot.TPOTClassifier
+            'REGRESSION': tpot.TPOTRegressor,
+            'CLASSIFICATION': tpot.TPOTClassifier
         }[self.specification['problem']['taskType']](**self.system_params)
 
-        automl.fit(X, y)
+        automl.fit(dataframe[X], dataframe[y])
 
         # selected models along the cost-complexity vs accuracy frontier
         for model_str in automl.pareto_front_fitted_pipelines_:
-            model = ModelSklearn(automl.pareto_front_fitted_pipelines_[model_str], system='tpot', search_id=self.search_id)
+            print('found model:', model_str, flush=True)
+            model = ModelSklearn(
+                automl.pareto_front_fitted_pipelines_[model_str],
+                system='tpot',
+                search_id=self.search_id,
+                predictors=X,
+                targets=y)
             model.save()
-            self.callback_found(model)
+            self.callback_found(model, self.callback_params)

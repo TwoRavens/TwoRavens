@@ -634,11 +634,23 @@ class Body {
 
                 m(Button, {
                     onclick: () => {
+                        let tpotParams = {
+                            system: 'tpot',
+                            "system_params": {"generations": 1, population_size: 20}
+                        };
+                        let autoSklearnParams = {
+                            system: 'auto_sklearn',
+                            "system_params": {"time_left_for_this_task": 60}
+                        };
+
+                        let h2oParams = {
+                            system: 'h2o'
+                        };
+
                         m.request('/solver-service/Solve', {
                             method: 'POST',
-                            data: {
-                                "system": "auto_sklearn",
-                                "system_params": {"time_left_for_this_task": 60},
+                            data: Object.assign(h2oParams, {
+                                "timeout": 3600,
                                 "specification": {
                                     'search': {
                                         "input": {
@@ -649,10 +661,10 @@ class Body {
                                             "targets": ["Doubles"],
                                             "predictors": ["At_bats", "Triples"],
                                             "taskSubtype": "NONE",
-                                            "taskType": "CLASSIFICATION"
+                                            "taskType": "REGRESSION"
                                         },
                                         "performanceMetric": {
-                                            "metric": "F1_MACRO"
+                                            "metric": "MEAN_SQUARED_ERROR"
                                         },
                                         "configuration": {
                                             "folds": 0,
@@ -685,12 +697,12 @@ class Body {
                                         },
                                         "performanceMetrics": [
                                             {
-                                                "metric": "F1_MACRO"
+                                                "metric": "MEAN_SQUARED_ERROR"
                                             }
                                         ]
                                     }]
                                 }
-                            }
+                            })
                         }).then(console.log)
                     }
                 }, 'Run Solver'),
