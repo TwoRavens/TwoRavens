@@ -9,7 +9,7 @@ import signal
 import atexit
 
 import traceback
-import asyncio
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, TimeoutError
 
 import requests
 import flask
@@ -330,23 +330,115 @@ def catch_traceback(msg_type, websocket_id, data, func, *args, **kwargs):
     try:
         return func(*args, **kwargs)
     except Exception as err:
-        print("CAUGHT TRACEBACK", flush=True)
-        print(traceback.format_exc(), flush=True)
+        print("caught traceback when running future:", flush=True)
+        print(err)
+        print(traceback.format_exc())
+        send_result({
+            KEY_WEBSOCKET_ID: websocket_id,
+            KEY_MSG_TYPE: msg_type,
+            KEY_DATA: data,
+            KEY_MESSAGE: f"aborted due to exception: {err}",
+            KEY_SUCCESS: False
+        })
 
-        if msg_type and websocket_id:
-            try:
-                requests.post(
-                    url=RECEIVE_ENDPOINT,
-                    json={
-                        KEY_WEBSOCKET_ID: websocket_id,
-                        KEY_MSG_TYPE: msg_type,
-                        KEY_DATA: data,
-                        KEY_MESSAGE: str(err),
-                        KEY_SUCCESS: False
-                    })
-            except Exception:
-                print("CAUGHT TRACEBACK WHEN SENDING", flush=True)
-                print(traceback.format_exc())
+
+def solve_async(websocket_id, solver):
+    solver.run()
+    requests.post(
+        url=RECEIVE_ENDPOINT,
+        json={
+            KEY_SUCCESS: True,
+            KEY_MESSAGE: "solve successfully completed",
+            KEY_DATA: {'search_id': solver.search.search_id},
+            KEY_WEBSOCKET_ID: websocket_id,
+            KEY_MSG_TYPE: RECEIVE_SOLVE_MSG
+        })
+
+
+def search_async(websocket_id, search):
+    search.run()
+    requests.post(
+        url=RECEIVE_ENDPOINT,
+        json={
+            KEY_SUCCESS: True,
+            KEY_MESSAGE: "search successfully completed",
+            KEY_DATA: {'search_id': search.search_id},
+            KEY_WEBSOCKET_ID: websocket_id,
+            KEY_MSG_TYPE: RECEIVE_SEARCH_MSG
+        })
+
+
+def describe_async(websocket_id, model, model_id=None):
+    if model_id:
+        model = Model.load(model_id)
+
+    requests.post(
+        url=RECEIVE_ENDPOINT,
+        json={
+            KEY_SUCCESS: True,
+            KEY_MESSAGE: "describe successfully completed",
+            KEY_DATA: model.describe(),
+            KEY_WEBSOCKET_ID: websocket_id,
+            KEY_MSG_TYPE: RECEIVE_DESCRIBE_MSG
+        })
+
+
+def score_async(websocket_id, model, spec):
+    requests.post(
+        url=RECEIVE_ENDPOINT,
+        json={
+            KEY_SUCCESS: True,
+            KEY_MESSAGE: "score successfully completed",
+            KEY_DATA: model.score(spec),
+            KEY_WEBSOCKET_ID: websocket_id,
+            KEY_MSG_TYPE: RECEIVE_SCORE_MSG
+        })
+
+
+def produce_async(websocket_id, model, spec, model_id=None):
+    if model_id:
+        model = Model.load(model_id)
+
+    produce_data = model.produce(spec)
+    requests.post(
+        url=RECEIVE_ENDPOINT,
+        json={
+            KEY_SUCCESS: True,
+            KEY_MESSAGE: "produce successfully completed",
+            KEY_DATA: produce_data,
+            KEY_WEBSOCKET_ID: websocket_id,
+            KEY_MSG_TYPE: RECEIVE_PRODUCE_MSG
+        })
+
+
+# called when a new model is discovered while searching
+def solve_found_async(model, params):
+    specification = params['specification']
+    websocket_id = params['websocket_id']
+
+    describe_async(websocket_id, model)
+
+    for score_spec in specification['score']:
+        score_async(websocket_id, model, score_spec)
+
+    for produce_spec in specification['produce']:
+        produce_async(websocket_id, model, produce_spec)
+
+
+def search_found_async(model, params):
+    websocket_id = params['websocket_id']
+    timeout = params['timeout']
+
+    executor_threads.submit(
+        abortable_worker,
+        RECEIVE_DESCRIBE_MSG,
+        websocket_id,
+        {'model_id': model.model_id},
+        timeout,
+
+        describe_async,
+        websocket_id,
+        model)
 
 
 @flask_app.route('/solve', methods=['POST'])
