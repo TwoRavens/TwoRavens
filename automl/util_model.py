@@ -8,7 +8,7 @@ import sklearn.metrics
 import h2o
 import pandas
 
-from model import SAVED_MODELS_DIRECTORY, R_SERVICE
+from model import SAVED_MODELS_PATH, R_SERVICE
 from util_dataset import Dataset
 
 
@@ -18,7 +18,7 @@ class Model(object):
         self.system = system
         self.model_id = model_id or str(uuid.uuid4())
         self.search_id = search_id
-        self.predictors = predictors,
+        self.predictors = predictors
         self.targets = targets
 
     @abc.abstractmethod
@@ -39,7 +39,7 @@ class Model(object):
 
     @staticmethod
     def load(model_id):
-        model_folder_path = os.path.join(SAVED_MODELS_DIRECTORY, model_id)
+        model_folder_path = os.path.join(SAVED_MODELS_PATH, model_id)
         metadata_path = os.path.join(model_folder_path, 'metadata.json')
 
         if not os.path.exists(metadata_path):
@@ -118,7 +118,7 @@ class ModelSklearn(Model):
 
     def score(self, specification):
         data = Dataset(specification['input']).get_dataframe()
-        predicted = self.model.predict(data[self.predictors[0]])
+        predicted = self.model.predict(data[self.predictors])
         actual = data[self.targets[0]].to_numpy().astype(float)
 
         scores = []
@@ -137,6 +137,8 @@ class ModelSklearn(Model):
         return scores
 
     def produce(self, specification):
+        predict_type = specification.get('configuration', {}).get('predict_type', 'MAX')
+
         dataset = Dataset(specification['input'])
         dataframe = dataset.get_dataframe()
 
@@ -145,7 +147,9 @@ class ModelSklearn(Model):
             *output_directory_path.split('/'),
             str(uuid.uuid4()) + '.csv')
 
-        predictions = pandas.DataFrame(self.model.predict(dataframe[self.predictors[0]]), columns=[self.targets[0]])
+        pred_function = self.model.predict if predict_type == 'RAW' else self.model.predict_proba
+
+        predictions = pandas.DataFrame(pred_function(dataframe[self.predictors]), columns=self.targets)
         predictions.insert(0, 'd3mIndex', dataframe['d3mIndex'])
 
         if not os.path.exists(output_directory_path):
@@ -158,10 +162,15 @@ class ModelSklearn(Model):
         finally:
             os.chdir(cwd)
 
-        return output_path
+        return {
+            'data_pointer': output_path,
+            'predict_type': predict_type,
+            'search_id': self.search_id,
+            'model_id': self.model_id
+        }
 
     def save(self):
-        model_folder_path = os.path.join(SAVED_MODELS_DIRECTORY, self.model_id)
+        model_folder_path = os.path.join(SAVED_MODELS_PATH, self.model_id)
         metadata_path = os.path.join(model_folder_path, 'metadata.json')
 
         if not os.path.exists(metadata_path):
@@ -183,40 +192,35 @@ class ModelCaret(Model):
         super().__init__(model, 'caret', predictors, targets, model_id, search_id)
 
     def describe(self):
-        # TODO: improve model description
-        return {
-            "description": str(self.model),
-            "model_id": self.model_id
-        }
-
-    def score(self, specification):
         response = requests.post(
-            R_SERVICE + 'caretProduce.app',
-            json={'specification': specification}).json()
+            R_SERVICE + 'caretDescribe.app',
+            json={'model_id': self.model_id}).json()
 
         if not response['success']:
             raise ValueError(response['message'])
-        data = Dataset(specification['input']).get_dataframe()
-        predicted = Dataset(response['data']).get_dataframe()
 
-        scores = []
-        for metric in specification['performanceMetrics']:
-            for target in predicted.columns:
-                try:
-                    scores.append({
-                        **metric,
-                        'value': Model._score(metric, data[target], predicted[target]),
-                        'target': target
-                    })
-                except NotImplementedError:
-                    pass
+        return response['data']
 
-        return scores
+    def score(self, specification):
+        response = requests.post(
+            R_SERVICE + 'caretScore.app',
+            json={
+                'model_id': self.model_id,
+                'specification': specification
+            }).json()
+
+        if not response['success']:
+            raise ValueError(response['message'])
+
+        return response['data']
 
     def produce(self, specification):
         response = requests.post(
             R_SERVICE + 'caretProduce.app',
-            json={'specification': specification}).json()
+            json={
+                'model_id': self.model_id,
+                'specification': specification
+            }).json()
 
         if not response['success']:
             raise ValueError(response['message'])
@@ -245,36 +249,55 @@ class ModelH2O(Model):
         predicted = self.model.predict(data).as_data_frame()
         data = data.as_data_frame()
 
+        # H2O supports only one target
+        target = self.targets[0]
+
         scores = []
         for metric in specification['performanceMetrics']:
-            for target in predicted.columns:
-                try:
-                    scores.append({
-                        'value': Model._score(metric, data[target], predicted[target]),
-                        'metric': metric,
-                        'target': target
-                    })
-                except NotImplementedError:
-                    pass
+            try:
+                scores.append({
+                    'value': Model._score(metric, data[target], predicted),
+                    'metric': metric,
+                    'target': target
+                })
+            except NotImplementedError:
+                pass
 
         return scores
 
     def produce(self, specification):
+        predict_type = specification.get('configuration', {}).get('predict_type', 'MAX')
+
         resource_uri = Dataset(specification['input']).get_resource_uri()
         data = h2o.import_file(resource_uri)
 
-        resource_path = os.path.join(
-            *specification['output']['resource_uri'].replace('file://', '').split('/'),
-            str(uuid.uuid4()) + '.csv')
-
         predictions = self.model.predict(data).as_data_frame()
         predictions.insert(0, 'd3mIndex', data.as_data_frame()['d3mIndex'])
-        predictions.to_csv(resource_path)
 
-        return resource_path
+        output_directory_path = specification['output']['resource_uri'].replace('file://', '')
+        output_path = os.path.join(
+            *output_directory_path.split('/'),
+            str(uuid.uuid4()) + '.csv')
+
+        if not os.path.exists(output_directory_path):
+            os.makedirs(output_directory_path)
+
+        cwd = os.getcwd()
+        try:
+            os.chdir('/')
+            predictions.to_csv(output_path, index=False)
+        finally:
+            os.chdir(cwd)
+
+        return {
+            'data_pointer': output_path,
+            'predict_type': predict_type,
+            'search_id': self.search_id,
+            'model_id': self.model_id
+        }
 
     def save(self):
-        model_folder_path = os.path.join(SAVED_MODELS_DIRECTORY, self.model_id)
+        model_folder_path = os.path.join(SAVED_MODELS_PATH, self.model_id)
         metadata_path = os.path.join(model_folder_path, 'metadata.json')
 
         if not os.path.exists(metadata_path):

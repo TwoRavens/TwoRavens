@@ -276,6 +276,12 @@ class SearchH2O(Search):
             }
         }
 
+        return {
+            KEY_SUCCESS: True,
+            KEY_MESSAGE: 'H2O search finished',
+            KEY_DATA: {'search_id': self.search_id}
+        }
+
 
 class SearchTPOT(Search):
     system = 'tpot'
