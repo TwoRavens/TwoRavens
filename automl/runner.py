@@ -78,6 +78,8 @@ def abortable_worker(msg_type, websocket_id, data, timeout, func, *args, **kwarg
 
 def solve_async(websocket_id, solver):
     result = solver.run()
+    print('solve result')
+    print(result)
     requests.post(
         url=RECEIVE_ENDPOINT,
         json={

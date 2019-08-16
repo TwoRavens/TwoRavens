@@ -91,7 +91,8 @@ def default():
 # convert nested python objects to nested R objects
 def r_cast(content):
     robjects.r.library('jsonlite')
-    return robjects.r['fromJSON'](json.dumps(content))
+    # simplifyDataFrame=False: don't mangle simple lists
+    return robjects.r['fromJSON'](json.dumps(content), simplifyDataFrame=False)
 
 
 # convert nested R objects to nested python objects

@@ -15,14 +15,5 @@ class Solve(object):
                   callback_found, callback_params=callback_params)
 
     def run(self):
-        # hack for caret
-        # for caret, models aren't streamed through `callback_found`,
-        # because the models are found on a different system.
-
-        # instead, the solve endpoint is called when initiating a search,
-        # which needs a full specification
-        if self.system == 'caret':
-            self.search.specification = self.specification
-
         return self.search.run()
 

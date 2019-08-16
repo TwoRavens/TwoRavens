@@ -110,33 +110,12 @@ class SearchAutoSklearn(Search):
 
 class SearchCaret(Search):
 
-    model_space_default = {
-        'regression': [
-            {"method": 'lm'},  # old faithful
-            {"method": 'pcr'},  # principal components regression
-            {"method": 'glmnet'},  # lasso/ridge
-            {"method": 'rpart'},  # regression tree
-            {"method": 'knn'},  # k nearest neighbors
-            {"method": 'earth'},  # regression splines
-            {"method": 'svmLinear'}  # linear support vector regression
-        ],
-        "classification": [
-            {"method": 'glm', "hyperparameters": {"family": 'binomial'}},
-            {"method": 'glmnet', "hyperparameters": {"family": 'binomial'}},
-            {"method": 'lda'},  # linear discriminant analysis
-            {"method": 'qda'},  # quadratic discriminant analysis
-            {"method": 'rpart'},  # decision tree
-            {"method": 'svmLinear'},  # support vector machine
-            {"method": 'naive_bayes'},
-            {"method": 'knn'}
-        ]
-    }
-
     def run(self):
-        return requests.post(R_SERVICE + 'caretSearch.app', json={
+        return requests.post(R_SERVICE + 'caretSolve.app', json={
+            'callback_params': self.callback_params,
             'search_id': self.search_id,
             'specification': self.specification,
-            'system_params': self.system_params or self.model_space_default
+            'system_params': self.system_params
         }).json()
 
 

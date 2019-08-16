@@ -22,16 +22,46 @@ sendError <- function(message, websocketId) httr::POST(
   RECEIVE_ENDPOINT,
   encode='json',
   body=list(
-    success=FALSE,
-    msg_type=RECEIVE_ERROR_MSG,
-    websocket_id=websocketId,
-    message=message
+    success=jsonlite::unbox(FALSE),
+    msg_type=jsonlite::unbox(RECEIVE_ERROR_MSG),
+    websocket_id=jsonlite::unbox(websocketId),
+    message=jsonlite::unbox(message)
+  )
+)
+
+# wrap relevant parts of return json with unboxes
+castBody <- function(body) {
+  if (!is.null(body[['success']])) body[['success']] <- jsonlite::unbox(body[['success']])
+  if (!is.null(body[['message']])) body[['message']] <- jsonlite::unbox(body[['message']])
+  if (!is.null(body[['msg_type']])) body[['msg_type']] <- jsonlite::unbox(body[['msg_type']])
+  if (!is.null(body[['websocket_id']])) body[['websocket_id']] <- jsonlite::unbox(body[['websocket_id']])
+  return(body)
+}
+
+defaultModelSpace = list(
+  REGRESSION= list(
+    list(method='lm'),  # old faithful
+    list(method='pcr'),  # principal components regression
+    list(method='glmnet'),  # lasso/ridge
+    list(method='rpart'),  # regression tree
+    list(method='knn'),  # k nearest neighbors
+    list(method='earth'),  # regression splines
+    list(method='svmLinear')  # linear support vector regression
+  ),
+  CLASSIFICATION=list(
+    list(method='glm', hyperparameters=list(family='binomial')),
+    list(method='glmnet', hyperparameters=list(family='binomial')),
+    list(method='lda'),  # linear discriminant analysis
+    list(method='qda'),  # quadratic discriminant analysis
+    list(method='rpart'),  # decision tree
+    list(method='svmLinear'),  # support vector machine
+    list(method='naive_bayes'),
+    list(method='knn')
   )
 )
 
 caretSearch <- function(specification, systemParams, callbackFound, searchId=NULL) {
-
-  if (is.null(searchId)) searchId <- searchId = uuid::UUIDgenerate()
+  if (is.null(searchId)) searchId <- uuid::UUIDgenerate()
 
   metrics <- list(
     CLASSIFICATION=c('ACCURACY', 'F1'),
@@ -75,7 +105,8 @@ caretSearch <- function(specification, systemParams, callbackFound, searchId=NUL
 
     # upsample if stratified sampling enabled
     if (!is.null(configuration[['stratified']]) && configuration[['stratified']]) {
-      trControlParams[['sampling']] <- 'up'
+      # resampling doesn't apply to REGRESSION
+      if (problem[['taskType']] == 'CLASSIFICATION') trControlParams[['sampling']] <- 'up'
     }
   }
 
@@ -94,35 +125,38 @@ caretSearch <- function(specification, systemParams, callbackFound, searchId=NUL
 
   # DATA
   dataWrap <- loadData(specification)
-  if (!data$success) return(data)
-  data <- dataWrap$data
+  if (!dataWrap[['success']]) return(dataWrap)
+  data <- dataWrap[['data']]
 
   # FIT
-  solver.univariate <- function(target, method, hyperparam) tryCatch({
+  solver.univariate <- function(target, method, hyperparameters=NULL) tryCatch({
 
     # HYPERPARAMETERS
-    hyperparameters <- if (!is.null(systemParams[['hyperparameters']])) systemParams[['hyperparameters']] else list()
+    if (is.null(hyperparameters)) hyperparameters <- list()
     # edge case to prevent hyperparam bug
     if (length(hyperparameters) == 0L) hyperparameters <- list(list())
 
     fitControlParams <- list(
       x=data[,problem[['predictors']], drop=FALSE], # if only one predictor, disable drop, so indexing doesn't behave differently
       y=data[,target],
-      method=method,
-      trControl=do.call(caret::trainControl, trControlParams),
-      tuneLength=10, # maximum number of points to check on the hyperparameter grid
-      na.action=na.omit, # listwise deletion of rows for columns used in model
-      weights=problem[['weights']],
-      metric=metricUtility[['metric']],
-      maximize=metricUtility[['maximize']]
+      method=method
+      # trControl=do.call(caret::trainControl, trControlParams)
+      # tuneLength=10, # maximum number of points to check on the hyperparameter grid
+      # na.action=na.omit, # listwise deletion of rows for columns used in model
+      # weights=problem[['weights']],
+      # metric=metricUtility[['metric']],
+      # maximize=metricUtility[['maximize']]
     )
 
-    model <- do.call(caret::train, c(fitControlParams, hyperparam))
-    return(list(succes=TRUE, data=model))
+    model <- do.call(caret::train, fitControlParams) # c(fitControlParams, hyperparameters))
+    return(list(success=TRUE, data=model))
 
-  }, error=function(err) list(success=FALSE, message=paste0("R solver failed fitting model (", err, ")")))
+  }, error=function(msg) list(success=FALSE, message=paste0("R solver failed fitting model (", msg, ")")))
 
-  for (systemModelSpec in systemParams[['models']]) {
+  modelSpace <- systemParams[['models']]
+  if (is.null(modelSpace)) modelSpace <- defaultModelSpace[[problem[['taskType']]]]
+
+  for (systemModelSpec in modelSpace) {
 
     hyperparameters <- systemModelSpec[['hyperparameters']]
     if (is.null(hyperparameters)) hyperparameters <- list()
@@ -184,14 +218,17 @@ caretSearch <- function(specification, systemParams, callbackFound, searchId=NUL
     # R.utils::withTimeout(task, timeout=timeout)
 
     # fit univariate model for first target
-    resultWrap <- solver.univariate(targets[[0]], method, hyperparams)
+    target <- problem[['targets']][[1]]
+
+    resultWrap <- solver.univariate(target, method, problem[['hyperparameters']])
     if (!resultWrap$success) return(resultWrap)
     model <- resultWrap$data
 
     metadata <- list(
       search_id=searchId,
       predictors=problem[['predictors']],
-      targets=targets[[0]],
+      task_type=problem[['taskType']],
+      targets=target,
       system='caret'
     )
 
@@ -213,7 +250,6 @@ caretDescribe <- function(model, metadata) list(
     model_id=metadata$model_id,
     search_id=metadata$search_id,
     method=model$method,
-    task=problem[['taskType']],
     library=model$modelInfo$library,
     tags=model$modelInfo$tags
   )
@@ -262,30 +298,30 @@ caretAnalyze <- function(model, metadata) tryCatch({
 
 
 caretProduce <- function(model, metadata, specification) {
-
   dataWrap <- loadData(specification)
-  if (!dataWrap$success) return(dataWrap)
+  if (!dataWrap[['success']]) return(dataWrap)
   data <- dataWrap$data
 
-  configuration <- specification[['configuration']]
-  if (is.null(configuration)) configuration <- list()
+  resultsWrap <- getPredictions(model, data, metadata, specification)
+  if (!resultsWrap[['success']]) return(resultsWrap)
+  predicted <- resultsWrap[['data']][['predicted']]
+  predictType <- resultsWrap[['data']][['predictType']]
 
-  predictType <- configuration[['predict_type']]
-  if (is.null(predictType)) predictType <- 'raw'
-
-  # map to R names
-  predictType <- list(PROBABILITIES='prob', MAX='raw')[[predictType]]
-
-  predictions <- predict(model, newdata=data, type=predictType)
-
-  joined <- data.frame(data[['d3mIndex']])
-  joined[[metadata[['target']]]] <- predictions
-
-  resultDirectoryPath <- grep('file://', '', specification[['output']][['resource_uri']])
+  resultDirectoryPath <- gsub('file://', '', specification[['output']][['resource_uri']], fixed=TRUE)
 
   uid <- uuid::UUIDgenerate()
   resultPath <- paste(resultDirectoryPath, paste0(uid, '.csv'), sep='/')
-  write.csv(joined, resultPath, row.names=FALSE)
+  currentPath <- getwd()
+
+  resultWrap <- tryCatch({
+      setwd('/')
+      write.csv(predicted, resultPath, row.names=FALSE)
+      list(success=TRUE, message='R writing produce file successful')
+    },
+    error=function(msg) return(list(success=FALSE, message=paste0('R writing produce file failed (', msg, ')')))
+  )
+  setwd(currentPath)
+  if (!resultWrap[['success']]) return(resultWrap)
 
   produceResponse <- list(
     data_pointer=resultPath,
@@ -294,56 +330,79 @@ caretProduce <- function(model, metadata, specification) {
     model_id=metadata[['model_id']]
   )
 
-  return(produceResponse)
+  return(list(success=TRUE, data=produceResponse))
 }
 
 
-caretScore <- function(model, metadata, specification) {
+caretScore <- function(model, metadata, specification, callbackScore) {
 
+  # this sends raw predictions into the 'pred' column for summaryFunction
+  target <- metadata[['targets']][[1]]
+
+  metadata[['targets']] <- 'pred'
+
+  # DATA
   dataWrap <- loadData(specification)
   if (!dataWrap$success) return(dataWrap)
   data <- dataWrap$data
 
-  metricUtility <- getMetricUtility(specification[['performanceMetric']])
-  predictType <- if (metricUtility$classProbs) 'probs' else 'raw'
+  # cache for predicted data
+  predictions <- list(PROBABILITIES=NULL, RAW=NULL)
 
-  predictions <- predict(model, newdata=data, type=predictType)
+  for (performanceMetricSpec in specification[['performanceMetrics']]) {
+    metricUtility <- getMetricUtility(performanceMetricSpec)
 
-  joined <- data.frame(obs=data[[metadata[['target']]]])
-  if (predictType == 'raw') joined[['pred']] <- predictions
-  else if (predictType == 'probs') {
-    joined <- cbind(joined, predictions)
+    # predict class probabilities if needed for metric
+    if (is.null(specification[['configuration']])) specification[['configuration']] <- list()
+    predictType <- if (metricUtility[['classProbs']]) 'PROBABILITIES' else 'RAW'
+    specification[['configuration']][['predict_type']] <- predictType
+
+    # if no prediction cache
+    if (is.null(predictions[[specification[['configuration']][['predict_type']]]])) {
+      resultsWrap <- getPredictions(model, data, metadata, specification)
+      if (!resultsWrap[['success']]) return(resultsWrap)
+      predictions[[predictType]] <- resultsWrap[['data']][['predicted']]
+      predictions[[predictType]]['obs'] <- data[[target]]
+    }
+
+    scoreValue <- metricUtility$summaryFunction(
+      predictions[[predictType]],
+      lev=levels(predictions[[predictType]]$obs)
+    )
+
+    callbackScore(list(
+      metric=metricUtility$metric,
+      value=scoreValue,
+      target=target,
+      search_id=metadata[['search_id']],
+      model_id=metadata[['model_id']]
+    ))
   }
-
-  scoreValue <- metricUtility$summaryFunction(joined, lev=levels(joined$obs))
-
-  scoreResponse <- list(
-    metric=metricUtility$metric,
-    value=scoreValue,
-    target=metadata[['target']],
-    search_id=metadata[['search_id']],
-    model_id=metadata[['model_id']]
-  )
-
-  return(scoreResponse)
 }
 
+
+# BEGIN ENDPOINTS
 
 caretSolve.app <- function(everything) {
   print('entered caretSolve.app')
   requirePackages(c(packageList.any, packageList.caret.app))
 
   # TODO: handle timeout
-  timeout <- everything[['timeout']]
-  websocketId <- everything[['websocket_id']]
   searchId <- everything[['search_id']]
+
+  callbackParams <- everything[['callback_params']]
+  if (is.null(callbackParams)) return(jsonlite::toJSON(castBody(list(
+    success=FALSE, message='callback_params must be specified to return results'
+  ))))
+
+  websocketId <- callbackParams[['websocket_id']]
 
   systemParams <- if (!is.null(everything[['system_params']])) everything[['system_params']] else list()
 
   specification <- everything[['specification']]
-  if (is.null(specification)) return(jsonlite::toJSON(list(
+  if (is.null(specification)) return(jsonlite::toJSON(castBody(list(
     success=FALSE, message="'specification' is null"
-  )))
+  ))))
 
   callbackFound <- function(model, metadata) {
     resultWrap <- saveModel(model, metadata)
@@ -353,65 +412,76 @@ caretSolve.app <- function(everything) {
     resultWrap <- caretDescribe(model, metadata)
     if (resultWrap$success) httr::POST(
       RECEIVE_ENDPOINT,
-      body=list(
-        success=TRUE,
+      body=castBody(list(
+        success=jsonlite::unbox(TRUE),
         data=resultWrap$data,
-        msg_type=RECEIVE_DESCRIBE_MSG,
-        websocket_id=websocketId,
-        message='describe successful'
-      ), encode='json'
+        msg_type=jsonlite::unbox(RECEIVE_DESCRIBE_MSG),
+        websocket_id=jsonlite::unbox(websocketId),
+        message=jsonlite::unbox('describe successful')
+      )), encode='json'
     )
     else sendError(resultWrap$message, websocketId)
 
-    for (produceSpec in specification[['produce']]) {
-      resultWrap <- caretProduce(model, metadata, produceSpec)
-      if (resultWrap$success) httr::POST(
-        RECEIVE_ENDPOINT,
-        body=list(
-          success=TRUE,
-          data=response,
-          msg_type=RECEIVE_PRODUCE_MSG,
-          websocket_id=websocket_id,
-          message='produce successful'
-        ), encode='json'
-      )
-      else sendError(resultWrap$message, websocketId)
+    if ('produce' %in% names(callbackParams[['specification']])) {
+
+      for (produceSpec in callbackParams[['specification']][['produce']]) {
+        resultWrap <- caretProduce(model, metadata, produceSpec)
+
+        if (resultWrap$success) httr::POST(
+          RECEIVE_ENDPOINT,
+          body=castBody(list(
+            success=jsonlite::unbox(TRUE),
+            data=resultWrap[['data']],
+            msg_type=jsonlite::unbox(RECEIVE_PRODUCE_MSG),
+            websocket_id=jsonlite::unbox(websocketId),
+            message=jsonlite::unbox('produce successful')
+          )), encode='json'
+        )
+        else sendError(resultWrap$message, websocketId)
+      }
     }
 
-    for (scoreSpec in specification[['score']]) {
-      resultWrap <- caretScore(model, metadata, scoreSpec)
+    if ('score' %in% names(callbackParams[['specification']])) {
 
-      if (resultWrap$success) httr::POST(
+      callbackScore <- function(metadata) httr::POST(
         RECEIVE_ENDPOINT,
-        body=list(
-          success=TRUE,
-          data=response,
-          msg_type=RECEIVE_SCORE_MSG,
-          websocket_id=websocketId,
-          message='score successful'
-        ), encode='json'
+        body=castBody(list(
+          success=jsonlite::unbox(TRUE),
+          data=metadata,
+          msg_type=jsonlite::unbox(RECEIVE_SCORE_MSG),
+          websocket_id=jsonlite::unbox(websocketId),
+          message=jsonlite::unbox('score successful')
+        )), encode='json'
       )
-      else sendError(resultWrap$message, websocketId)
+
+      for (scoreSpec in callbackParams[['specification']][['score']]) {
+        caretScore(model, metadata, scoreSpec, callbackScore)
+      }
     }
   }
+  resultWrap <- caretSearch(specification, systemParams, callbackFound, searchId)
 
-  resultWrap <- caretSearch(specification[['search']], systemParams, callbackFound, searchId)
-
-  return(jsonlite::toJSON(resultWrap))
+  return(jsonlite::toJSON(castBody(resultWrap)))
 }
 
 caretSearch.app <- function(everything) {
   requirePackages(c(packageList.any, packageList.caret.app))
 
-  websocketId <- everything[['websocket_id']]
+  callbackParams <- everything[['callback_params']]
+  if (is.null(callbackParams)) return(jsonlite::toJSON(castBody(list(
+    success=FALSE, message="'callback_params' is null"
+  ))))
+
+  websocketId <- callbackParams[['websocket_id']]
+
   searchId <- everything[['search_id']]
 
   systemParams <- if (!is.null(everything[['system_params']])) everything[['system_params']] else list()
 
   specification <- everything[['specification']]
-  if (is.null(specification)) return(jsonlite::toJSON(list(
+  if (is.null(specification)) return(jsonlite::toJSON(castBody(list(
     success=FALSE, message="'specification' is null"
-  )))
+  ))))
 
   callbackFound <- function(model, metadata) {
     metadata[['model_id']] <- saveModel(model)
@@ -419,19 +489,19 @@ caretSearch.app <- function(everything) {
     resultWrap <- caretDescribe(model, metadata)
     if (resultWrap$success) httr::POST(
       RECEIVE_ENDPOINT,
-      body=list(
-        success=TRUE,
+      body=castBody(list(
+        success=jsonlite::unbox(TRUE),
         data=resultWrap$data,
-        msg_type=RECEIVE_DESCRIBE_MSG,
-        websocket_id=websocket_id,
-        message='describe successful'
-      ), encode='json'
+        msg_type=jsonlite::unbox(RECEIVE_DESCRIBE_MSG),
+        websocket_id=jsonlite::unbox(websocket_id),
+        message=jsonlite::unbox('describe successful')
+      )), encode='json'
     )
     else sendError(resultWrap$message, websocketId)
   }
 
   resultWrap <- caretSearch(specification[['search']], systemParams, callbackFound, searchId)
-  return(jsonlite::toJSON(resultWrap))
+  return(jsonlite::toJSON(castBody(resultWrap)))
 }
 
 caretDescribe.app <- function(everything) {
@@ -439,63 +509,63 @@ caretDescribe.app <- function(everything) {
 
   modelId <- everything[['model_id']]
   if (is.null(modelId)) return(
-    jsonlite::toJSON(list(success=FALSE, message="'model_id' is null"))
+    jsonlite::toJSON(castBody(list(success=FALSE, message="'model_id' is null")))
   )
 
   resultWrap <- loadModel(modelId)
-  if (!resultWrap$success) return(jsonlite::toJSON(resultWrap))
+  if (!resultWrap$success) return(jsonlite::toJSON(castBody(resultWrap)))
   model <- resultWrap$data
 
   resultWrap <- loadMetadata(modelId)
-  if (!resultWrap$success) return(jsonlite::toJSON(resultWrap))
+  if (!resultWrap$success) return(jsonlite::toJSON(castBody(resultWrap)))
   metadata <- resultWrap$data
 
   resultWrap <- caretDescribe(model, metadata)
-  return(jsonlite::toJSON(resultWrap))
+  return(jsonlite::toJSON(castBody(resultWrap)))
 }
 
 caretProduce.app <- function(everything) {
   requirePackages(c(packageList.any, packageList.caret.app))
 
   specification <- everything[['specification']]
-  if (is.null(specification)) return(jsonlite::toJSON(list(
+  if (is.null(specification)) return(jsonlite::toJSON(castBody(list(
     success=FALSE, message="'specification' is null"
-  )))
+  ))))
 
   modelId <- everything[['model_id']]
-  if (is.null(modelId)) return(
-    jsonlite::toJSON(list(success=FALSE, message="'model_id' is null"))
-  )
+  if (is.null(modelId)) return(jsonlite::toJSON(castBody(list(
+    success=FALSE, message="'model_id' is null"
+  ))))
 
   resultWrap <- loadModel(modelId)
-  if (!resultWrap$success) return(jsonlite::toJSON(resultWrap))
+  if (!resultWrap$success) return(jsonlite::toJSON(castBody(resultWrap)))
   model <- resultWrap$data
 
   resultWrap <- loadMetadata(modelId)
-  if (!resultWrap$success) return(jsonlite::toJSON(resultWrap))
+  if (!resultWrap$success) return(jsonlite::toJSON(castBody(resultWrap)))
   metadata <- resultWrap$data
 
   resultWrap <- caretProduce(model, metadata, specification)
-  return(jsonlite::toJSON(resultWrap))
+  return(jsonlite::toJSON(castBody(resultWrap)))
 }
 
 caretScore.app <- function(everything) {
   requirePackages(c(packageList.any, packageList.caret.app))
 
   specification <- everything[['specification']]
-  if (is.null(specification)) return(jsonlite::toJSON(list(
+  if (is.null(specification)) return(jsonlite::toJSON(castBody(list(
     success=FALSE, message="'specification' is null"
-  )))
+  ))))
 
   modelId <- everything[['model_id']]
-  if (is.null(modelId)) return(
-    jsonlite::toJSON(list(success=FALSE, message="'model_id' is null"))
-  )
+  if (is.null(modelId)) return(jsonlite::toJSON(castBody(list(
+    success=FALSE, message="'model_id' is null"
+  ))))
 
   resultWrap <- loadMetadata(modelId)
-  if (!resultWrap$success) return(jsonlite::toJSON(resultWrap))
+  if (!resultWrap$success) return(jsonlite::toJSON(castBody(resultWrap)))
   metadata <- resultWrap$data
 
   resultWrap <- caretScore(model, metadata, specification)
-  return(jsonlite::toJSON(resultWrap))
+  return(jsonlite::toJSON(castBody(resultWrap)))
 }

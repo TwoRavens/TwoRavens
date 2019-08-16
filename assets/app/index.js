@@ -652,7 +652,7 @@ class Body {
                             system_params: {
                                 trControlParams: {},
                                 models: [
-                                    {method: 'glm', hyperparameters: {}}
+                                    {method: 'glm'}
                                 ]
                             }
                         };
@@ -696,7 +696,7 @@ class Body {
                                             "resource_uri": 'file:///ravens_volume/test_data/185_baseball/TEST/dataset_TEST/tables/learningData.csv'
                                         },
                                         'configuration': {
-                                            'predict_type': 'PROBABILITIES'
+                                            'predict_type': 'RAW'
                                         },
                                         'output': {
                                             'resource_uri': 'file:///ravens_volume/test_output_auto_sklearn/185_baseball/'

@@ -26,4 +26,4 @@ default_solver_service = 'http://localhost:8080/solver-service/'
 DJANGO_SOLVER_SERVICE = Sys.getenv(x='DJANGO_SOLVER_SERVICE', unset=default_solver_service)
 RECEIVE_ENDPOINT = paste0(DJANGO_SOLVER_SERVICE, 'Receive')
 
-options(error=traceback)
+options(error=traceback, warn=1)
