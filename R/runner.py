@@ -32,6 +32,7 @@ def task_handler(task):
     robjects.r.source("config.R")
     robjects.r.source('setup.R')
     robjects.r.source('utils.R')
+    robjects.r.source('utilsCaret.R')
 
     for app in os.listdir('apps/'):
         if app.endswith('.R'):

@@ -4,9 +4,6 @@
 ##  2. caret doesn't support partial results under a timeout. Timeouts are returned empty
 ##
 
-# limit on number of fitted values to return to frontend
-observationLimit <- 10
-
 # parallelize grid search
 allowParallel=FALSE
 if (allowParallel) {
@@ -16,264 +13,489 @@ if (allowParallel) {
   registerDoParallel(cluster)
 }
 
-# POST specification
-# {
-#     dataurl: 'path to url',
-#     problem: {
-#         predictors: ['pred1', 'pred2', ...],
-#         targets: ['targ'],
-#         weights: *optional column name of observation weights*,
-#
-#         task: 'regression' or 'classification',
-#     },
-#     models: *one of keys of methodList variable, like 'linear' or 'poisson'*,
-#     methods: *if specified, overrides task and model, passed directly into caret*,
-#     hyperparameters: [{named arguments to the relevant R library function, like 'family' or 'k'}], # must be of same length as models or methods
-#     crossValidation: 'cv' or 'timeslice',
-#     metric: "RMSE" and "Rsquared" for regression and "Accuracy" and "Kappa" for classification
-# }
+RECEIVE_DESCRIBE_MSG <- 'receive_describe_msg'
+RECEIVE_SCORE_MSG <- 'receive_score_msg'
+RECEIVE_PRODUCE_MSG <- 'receive_produce_msg'
+RECEIVE_ERROR_MSG <- 'receive_error_msg'
 
-
-error <- function(message) jsonlite::toJSON(list(error=jsonlite::unbox(message)))
-
-analyzeWrapper <- function(wrapper, hyperparameters, samples) list(
-  fittedValues=fitted(wrapper)[samples],
-  gridResults=wrapper$results, # fit statistics for each point in a grid over all free hyperparameters
-  bestResult=wrapper$bestTune,
-  hyperparameters=c(hyperparameters, wrapper$bestTune), # combine user hyperparams with the discovered hyperparams
-  sortingMetric=jsonlite::unbox(wrapper$metric), # best hyperparameters were selected by this metric (all metrics still returned)
-  # times=wrapper$times, # elapsed time for grid search, and for training final model
-  predictorTypes=wrapper$terms # types for each term. Useful for verifying types used in fit model
+sendError <- function(message, websocketId) httr::POST(
+  RECEIVE_ENDPOINT,
+  encode='json',
+  body=list(
+    success=FALSE,
+    msg_type=RECEIVE_ERROR_MSG,
+    websocket_id=websocketId,
+    message=message
+  )
 )
 
-analyzeGLM <- function(model, samples) list(
-  coefficients=coef(model),
-  statistics=broom::glance(model),
-  coefficientCovarianceMatrix=vcov(model),
-  anova=anova(model),
-  vif=if(length(coef(model)) > 1) as.list(car::vif(model)) else NULL
-  # This is where some outlier detection could be conducted. Return points that are outliers
-  # cooksDistance=cooks.distance(model)[samples],
-  # hatDiagonals=influence(model)$hat[samples]
-)
+caretSearch <- function(specification, systemParams, callbackFound, searchId=NULL) {
 
-methodList <- list(
-  linear='lm',
-  poisson='glm',
-  binomial='glm',
-  logistic='glm',
-  gamma='glm',
-  exponential='glm',
-  `negative binomial`='glm.nb',
-  `decision tree`='rpart',
-  `random forest`='ranger'
-)
+  if (is.null(searchId)) searchId <- searchId = uuid::UUIDgenerate()
 
-# add family hyperparameter for glm models
-familyList <- list(
-  poisson='poisson',
-  binomial='binomial',
-  logistic='binomial',
-  gamma='gamma',
-  exponential='gamma'
-)
+  metrics <- list(
+    CLASSIFICATION=c('ACCURACY', 'F1'),
+    REGRESSION=c('ROOT_MEAN_SQUARED_ERROR', 'R_SQUARED')
+  )
 
-metrics <- list(
-  classification=c('Accuracy', 'Kappa'),
-  regression=c('RMSE', 'Rsquared')
-)
+  # PROBLEM
+  if (is.null(specification[['problem']]))
+    return(list(success=FALSE, message="'problem' is null"))
+  problem <- specification[['problem']]
 
-#  to check if the variable is binary
-isBinary <- function(v) {
-  x <- unique(v)
-  length(x) - sum(is.na(x)) == 2L
-}
+  if (is.null(problem[['predictors']])) return(list(success=FALSE, message="No defined predictors."))
+  if (is.null(problem[['targets']])) return(list(success=FALSE, message="No defined targets."))
+  if (is.null(problem[['taskType']])) return(list(success=FALSE, message="No defined task."))
 
-caret.app <- function(everything) {
+  # TRAIN CONFIGURATION
+  trControlParams <- list(method='cv',number=10,search="random",allowParallel=allowParallel)
 
-  requirePackages(c(packageList.any, packageList.caret.app))
+  configuration <- specification[['configuration']]
+  if (!is.null(configuration)) {
 
-  timeout <- everything[['timeout']]
-
-  if (is.null(everything[['dataset_path']]))
-    return(error("'dataset_path' is null"))
-  datasetPath <- everything[['dataset_path']]
-
-  if (is.null(everything[['problem']]))
-    return(error("'problem' is null"))
-  problem <- everything[['problem']]
-
-  if (is.null(problem[['predictors']])) return(error("No defined predictors."))
-  if (is.null(problem[['targets']])) return(error("No defined targets."))
-  if (is.null(problem[['task']])) return(error("No defined task."))
-
-  if (is.null(problem[['metric']]) || !(problem[['metric']] %in% metrics[[problem[['task']]]]))
-    problem[['metric']] <- metrics[[problem[['task']]]][[1]]
-
-  hyperparameters <- list()
-  if (!is.null(everything[['hyperparameters']])) {
-    # if (!jsonlite::validate(everything[['hyperparameters']]))
-    #   return(error("'hyperparameters' is not valid json."))
-
-    hyperparameters <- jsonlite::toJSON(everything[['hyperparameters']])
-  }
-  if (length(hyperparameters) == 0L) hyperparameters <- list(list())
-
-  crossValidation <- ifelse(is.null(everything[['crossValidation']]), 'cv', everything[['crossValidation']])
-
-  if (!(crossValidation %in% c('cv', 'timeslice')))
-    return(list(error = paste0('Invalid crossValidation "', crossValidation, '"')))
-
-  # load data
-  data <- tryCatch({
-    # TODO: use library for loading data, don't rely on extension
-    separator <- if (endsWith(datasetPath, 'csv'))',' else '\t'
-    # print(paste("LOAD: separator", separator))
-
-    data <- read.table(datasetPath, sep = separator, header = TRUE, fileEncoding = 'UTF-8')
-    # print('LOAD: head')
-    # print(head(data))
-
-    # assigning as factor causes caret to treat as classification
-    if (problem[['task']] == 'classification')
-      data[problem[['targets']]] <- lapply(data[problem[['targets']]], as.factor)
-    na.omit(data, cols=problem[['predictors']])
-    data
-  }, error=function(msg) error(paste0("R solver failed loading data (", msg, ")")))
-  if (names(data) == c("error")) return(data)
-
-  # use same samples for every target
-  n <- length(rownames(data))
-  samples <- if (n < observationLimit) 1:n else sort(sample(1:n, observationLimit))
-  # if sample d3mIndex indices are provided, overwrite data sample indices
-  if (!is.null(everything[['samples']])) samples <- which(data[,'d3mIndex'] %in% everything[['samples']])
-
-  methods <- everything[['method']]
-  if (is.null(methods)) {
-    model <- everything[['model']]
-
-    # infer a default model (based on the nature of the first target)
-    if (is.null(model) || model == 'modelUndefined') {
-      if (is.null(problem[['task']]) || problem[['task']] == 'regression') model <- 'linear'
-      if (problem[['task']] == 'classification')
-        model <- if (isBinary(data[,problem[['targets']][[1]]])) 'logistic' else 'qda'
+    # set trainControl method if specified in configuration
+    if (!is.null(configuration[['method']])) {
+      trControlParams[['method']] <- list(K_FOLD='cv', HOLDOUT='LGOCV')[[configuration[['method']]]]
     }
 
-    # map user model to caret method
-    methods <- if (model %in% names(methodList)) methodList[[model]] else model
+    # set additional metadata for K_FOLD cv
+    if (all(configuration[['method']] == 'K_FOLD')) {
+      if (!is.null(configuration[['folds']])) {
+        trControlParams[['number']] <- configuration[['folds']]
+      }
+    }
 
-    # add glm family if using glm and hyperparameter if not set
-    if (methods == 'glm' && is.null(hyperparameters[['family']])) hyperparameters[['family']] <- familyList[[model]]
+    # set additional metadata to emulate holdout via leave-group-out control params
+    if (all(configuration[['method']] == 'HOLDOUT')) {
+      if (!is.null(configuration[['trainTestRatio']])) {
+        trControlParams[['p']] <- configuration[['trainTestRatio']]
+      }
+      trControlParams[['number']] <- 1
+    }
+
+    # upsample if stratified sampling enabled
+    if (!is.null(configuration[['stratified']]) && configuration[['stratified']]) {
+      trControlParams[['sampling']] <- 'up'
+    }
   }
 
-  solver.univariate <- function(target, method, hyperparam) {
+  performanceMetric <- specification[['performanceMetric']]
+  if (is.null(performanceMetric) || !(performanceMetric[['metric']] %in% metrics[[problem[['taskType']]]]))
+    performanceMetric <- list(metric=metrics[[problem[['taskType']]]][[1]])
 
-    # fit model
-    caretWrapper <- tryCatch(
-      do.call(caret::train, c(list(
-        data[,problem[['predictors']], drop=FALSE], # if only one predictor, disable drop, so indexing doesn't behave differently
-        data[,target],
-        method=method,
-        trControl=caret::trainControl(
-          method=crossValidation,
-          number=10,
-          search="random",
-          allowParallel=allowParallel
-        ),
-        tuneLength=10 # maximum number of points to check on the hyperparameter grid
-        # na.action=na.omit # listwise deletion of rows
-        # weights=problem[['weights']],
-        # metric=problem[['metric']]
-      ))),
-      error=function(err) error(paste0("R solver failed fitting model (", err, ")")))
-    if (names(caretWrapper) == c("error")) return(caretWrapper)
+  metricUtility <- getMetricUtility(performanceMetric)
+  if (is.null(metricUtility))
+    return(list(success=FALSE, message=paste('Performance metric not found:', performanceMetric[['metric']])))
 
-    # analyze model
-    analysis <- tryCatch({
+  trControlParams[['summaryFunction']] <- metricUtility[['summaryFunction']]
+  trControlParams[['classProbs']] <- metricUtility[['classProbs']]
 
-      analysis <- analyzeWrapper(caretWrapper, hyperparameters, samples)
-      # analysis$trainvalues <- data[samples, problem[['predictors']]
+  if (!is.null(systemParams[['trControlParams']])) trControlParams <- c(trControlParams, systemParams[['trControlParams']])
 
-      # supplemental information for linear models
-      if (method %in% c('lm', 'glm', 'glm.nb'))
-        analysis <- c(analysis, analyzeGLM(caretWrapper$finalModel, samples))
+  # DATA
+  dataWrap <- loadData(specification)
+  if (!data$success) return(data)
+  data <- dataWrap$data
 
-      # percentual average cell counts across resamples
-      if (caretWrapper$modelType == 'Classification') {
-        confMatrix <- caret::confusionMatrix(caretWrapper)
-        analysis$confusionMatrix <- as.data.frame(confMatrix$table)
-        analysis$performance <- confMatrix$overall
+  # FIT
+  solver.univariate <- function(target, method, hyperparam) tryCatch({
+
+    # HYPERPARAMETERS
+    hyperparameters <- if (!is.null(systemParams[['hyperparameters']])) systemParams[['hyperparameters']] else list()
+    # edge case to prevent hyperparam bug
+    if (length(hyperparameters) == 0L) hyperparameters <- list(list())
+
+    fitControlParams <- list(
+      x=data[,problem[['predictors']], drop=FALSE], # if only one predictor, disable drop, so indexing doesn't behave differently
+      y=data[,target],
+      method=method,
+      trControl=do.call(caret::trainControl, trControlParams),
+      tuneLength=10, # maximum number of points to check on the hyperparameter grid
+      na.action=na.omit, # listwise deletion of rows for columns used in model
+      weights=problem[['weights']],
+      metric=metricUtility[['metric']],
+      maximize=metricUtility[['maximize']]
+    )
+
+    model <- do.call(caret::train, c(fitControlParams, hyperparam))
+    return(list(succes=TRUE, data=model))
+
+  }, error=function(err) list(success=FALSE, message=paste0("R solver failed fitting model (", err, ")")))
+
+  for (systemModelSpec in systemParams[['models']]) {
+
+    hyperparameters <- systemModelSpec[['hyperparameters']]
+    if (is.null(hyperparameters)) hyperparameters <- list()
+
+    method <- systemModelSpec[['method']]
+    if (is.null(method)) {
+      model <- systemModelSpec[['model']]
+
+      methodList <- list(
+        linear='lm',
+        poisson='glm',
+        binomial='glm',
+        logistic='glm',
+        gamma='glm',
+        exponential='glm',
+        `negative binomial`='glm.nb',
+        `decision tree`='rpart',
+        `random forest`='ranger'
+      )
+
+      # add family hyperparameter for glm models
+      familyList <- list(
+        poisson='poisson',
+        binomial='binomial',
+        logistic='binomial',
+        gamma='gamma',
+        exponential='gamma'
+      )
+
+      # check if the variable is binary
+      isBinary <- function(v) {
+        x <- unique(v)
+        length(x) - sum(is.na(x)) == 2L
       }
 
-      analysis
-    }, error=function(err) error(paste0("R solver failed analyzing fitted model (", err, ")")))
+      # infer a default model (based on the nature of the first target)
+      if (is.null(model) || all(model == 'modelUndefined')) {
+        if (is.null(problem[['taskType']]) || problem[['taskType']] == 'regression') model <- 'linear'
+        if (problem[['taskType']] == 'classification')
+        model <- if (isBinary(data[,problem[['targets']][[1]]])) 'logistic' else 'qda'
+      }
 
-    analysis
-  }
+      # map user model to caret method
+      method <- if (model %in% names(methodList)) methodList[[model]] else model
 
-  names(methods) <- sapply(methods, function(method) caret::getModelInfo()[[method]]$label)
-
-  results <- mapply(function(method, hyperparams) {
+      # add glm family if using glm and hyperparameter if not set
+      if (method == 'glm' && is.null(hyperparameters[['family']])) hyperparameters[['family']] <- familyList[[model]]
+    }
 
     # exit if package is not installed, to prevent thread block on caret's user prompt to install package
     methodInfo <- caret::getModelInfo()[[method]]
-    if (is.null(methodInfo)) return(error(paste0("'", method, "' is not a valid method.")))
+    if (is.null(methodInfo)) return(list(success=FALSE, message=paste0("'", method, "' is not a valid method.")))
     for (package in methodInfo$library) {
       if (inherits(try(library(package, character.only = TRUE)), 'try-error'))
-        return(error(paste0("Dependency '", package, "' is not installed for caret method '", methods, "'. Please contact us to add the dependency.")))
+      return(list(success=FALSE, message=paste0("Dependency '", package, "' is not installed for caret method '", method, "'. Please contact us to add the dependency.")))
     }
 
-    list(
-      models=sapply(problem[['targets']], function(target) {
-        R.utils::withTimeout(solver.univariate(target, method, hyperparams), timeout=timeout)
-      }, simplify = FALSE, USE.NAMES = TRUE),
-      meta=list(
-        label=jsonlite::unbox(methodInfo$label), # plain english model label
-        method=jsonlite::unbox(method), # caret library method
-        task=jsonlite::unbox(problem[['task']]),
-        library=methodInfo$library, # R library used
-        tags=methodInfo$tags,
-        actualValues=if (!is.null(everything[['samples']])) data[samples,problem[['targets']]]
-      )
-    )
-  }, methods, hyperparameters, SIMPLIFY=FALSE)
+    # TODO: re-add timeout
+    # R.utils::withTimeout(task, timeout=timeout)
 
-  # fit a univariate model to each of the dependent variables
-  jsonlite::toJSON(list(
-    results=results,
-    problem=problem,
-    source='rook'
+    # fit univariate model for first target
+    resultWrap <- solver.univariate(targets[[0]], method, hyperparams)
+    if (!resultWrap$success) return(resultWrap)
+    model <- resultWrap$data
+
+    metadata <- list(
+      search_id=searchId,
+      predictors=problem[['predictors']],
+      targets=targets[[0]],
+      system='caret'
+    )
+
+    callbackFound(model, metadata)
+  }
+
+  # search is complete
+  return(list(
+    success=TRUE,
+    data=list(search_id=searchId),
+    message='search completed'
   ))
 }
 
-# wrapper <- solver(list(
-#   dataset_path='/ravens_volume/test_data/185_baseball/TRAIN/dataset_TRAIN/tables/learningData.csv',
-#   problem=list(
-#     targets=c("Hall_of_Fame"),
-#     predictors=c(
-#       "Number_seasons", "Games_played", "At_bats", "Runs", "Hits", "Doubles",
-#       "Triples", "Home_runs", "RBIs", "Walks", "Strikeouts", "Batting_average",
-#       "On_base_pct", "Slugging_pct", "Fielding_ave", "Position"),
-#     task="classification"),
-#   method=c("rpart"),
-#   samples=c(2, 5)
-# ))
-
-# wrapper$results$CART$models$Hall_of_Fame$gridResults
+caretDescribe <- function(model, metadata) list(
+  success=TRUE,
+  data=list(
+    description=model$modelInfo$label,
+    model_id=metadata$model_id,
+    search_id=metadata$search_id,
+    method=model$method,
+    task=problem[['taskType']],
+    library=model$modelInfo$library,
+    tags=model$modelInfo$tags
+  )
+)
 
 
-# jsonlite::toJSON(wrapper)
+caretAnalyze <- function(model, metadata) tryCatch({
 
-# basic regression
-# jsonlite::toJSON(solver(list(
-#   dataset_path='/ravens_volume/test_data/185_baseball/TRAIN/dataset_TRAIN/tables/learningData.csv',
-#   problem='{"targets": ["Doubles", "RBIs"], "predictors": ["At_bats", "Triples"], "task": "regression"}',
-#   method="lm"
-# )))
+  analyzeWrapper <- function(wrapper, hyperparameters) list(
+    fittedValues=fitted(wrapper),
+    gridResults=wrapper$results, # fit statistics for each point in a grid over all free hyperparameters
+    bestResult=wrapper$bestTune,
+    hyperparameters=c(hyperparameters, wrapper$bestTune), # combine user hyperparams with the discovered hyperparams
+    sortingMetric=jsonlite::unbox(wrapper$metric), # best hyperparameters were selected by this metric (all metrics still returned)
+    # times=wrapper$times, # elapsed time for grid search, and for training final model
+    predictorTypes=wrapper$terms # types for each term. Useful for verifying types used in fit model
+  )
 
-# should error with a friendly prompt to install the package
-# jsonlite::toJSON(solver(list(
-#   dataset_path='/ravens_volume/test_data/185_baseball/TRAIN/dataset_TRAIN/tables/learningData.csv',
-#   problem='{"targets": ["Hall_of_Fame", "Position"], "predictors": ["Doubles"], "task": "classification"}',
-#   method="ordinalNet"
-# )))
+  analyzeGLM <- function(model) list(
+    coefficients=coef(model),
+    statistics=broom::glance(model),
+    coefficientCovarianceMatrix=vcov(model),
+    anova=anova(model),
+    vif=if(length(coef(model)) > 1) as.list(car::vif(model)) else NULL
+    # This is where some outlier detection could be conducted. Return points that are outliers
+    # cooksDistance=cooks.distance(model),
+    # hatDiagonals=influence(model)$hat
+  )
+
+  analysis <- analyzeWrapper(caretWrapper, hyperparameters)
+
+  # supplemental information for linear models
+  if (method %in% c('lm', 'glm', 'glm.nb')) {
+    analysis <- c(analysis, analyzeGLM(model$finalModel))
+  }
+
+  # percentual average cell counts across resamples
+  if (caretWrapper$modelType == 'Classification') {
+    confMatrix <- caret::confusionMatrix(caretWrapper)
+    analysis$confusionMatrix <- as.data.frame(confMatrix$table)
+    analysis$performance <- confMatrix$overall
+  }
+
+  analysis
+}, error=function(err) list(success=FALSE, message=paste0("R solver failed analyzing fitted model (", err, ")")))
+
+
+caretProduce <- function(model, metadata, specification) {
+
+  dataWrap <- loadData(specification)
+  if (!dataWrap$success) return(dataWrap)
+  data <- dataWrap$data
+
+  configuration <- specification[['configuration']]
+  if (is.null(configuration)) configuration <- list()
+
+  predictType <- configuration[['predict_type']]
+  if (is.null(predictType)) predictType <- 'raw'
+
+  # map to R names
+  predictType <- list(PROBABILITIES='prob', MAX='raw')[[predictType]]
+
+  predictions <- predict(model, newdata=data, type=predictType)
+
+  joined <- data.frame(data[['d3mIndex']])
+  joined[[metadata[['target']]]] <- predictions
+
+  resultDirectoryPath <- grep('file://', '', specification[['output']][['resource_uri']])
+
+  uid <- uuid::UUIDgenerate()
+  resultPath <- paste(resultDirectoryPath, paste0(uid, '.csv'), sep='/')
+  write.csv(joined, resultPath, row.names=FALSE)
+
+  produceResponse <- list(
+    data_pointer=resultPath,
+    predict_type=predictType,
+    search_id=metadata[['search_id']],
+    model_id=metadata[['model_id']]
+  )
+
+  return(produceResponse)
+}
+
+
+caretScore <- function(model, metadata, specification) {
+
+  dataWrap <- loadData(specification)
+  if (!dataWrap$success) return(dataWrap)
+  data <- dataWrap$data
+
+  metricUtility <- getMetricUtility(specification[['performanceMetric']])
+  predictType <- if (metricUtility$classProbs) 'probs' else 'raw'
+
+  predictions <- predict(model, newdata=data, type=predictType)
+
+  joined <- data.frame(obs=data[[metadata[['target']]]])
+  if (predictType == 'raw') joined[['pred']] <- predictions
+  else if (predictType == 'probs') {
+    joined <- cbind(joined, predictions)
+  }
+
+  scoreValue <- metricUtility$summaryFunction(joined, lev=levels(joined$obs))
+
+  scoreResponse <- list(
+    metric=metricUtility$metric,
+    value=scoreValue,
+    target=metadata[['target']],
+    search_id=metadata[['search_id']],
+    model_id=metadata[['model_id']]
+  )
+
+  return(scoreResponse)
+}
+
+
+caretSolve.app <- function(everything) {
+  print('entered caretSolve.app')
+  requirePackages(c(packageList.any, packageList.caret.app))
+
+  # TODO: handle timeout
+  timeout <- everything[['timeout']]
+  websocketId <- everything[['websocket_id']]
+  searchId <- everything[['search_id']]
+
+  systemParams <- if (!is.null(everything[['system_params']])) everything[['system_params']] else list()
+
+  specification <- everything[['specification']]
+  if (is.null(specification)) return(jsonlite::toJSON(list(
+    success=FALSE, message="'specification' is null"
+  )))
+
+  callbackFound <- function(model, metadata) {
+    resultWrap <- saveModel(model, metadata)
+    if (!resultWrap$success) sendError(resultWrap$message, websocketId)
+    metadata[['model_id']] <- resultWrap$data
+
+    resultWrap <- caretDescribe(model, metadata)
+    if (resultWrap$success) httr::POST(
+      RECEIVE_ENDPOINT,
+      body=list(
+        success=TRUE,
+        data=resultWrap$data,
+        msg_type=RECEIVE_DESCRIBE_MSG,
+        websocket_id=websocketId,
+        message='describe successful'
+      ), encode='json'
+    )
+    else sendError(resultWrap$message, websocketId)
+
+    for (produceSpec in specification[['produce']]) {
+      resultWrap <- caretProduce(model, metadata, produceSpec)
+      if (resultWrap$success) httr::POST(
+        RECEIVE_ENDPOINT,
+        body=list(
+          success=TRUE,
+          data=response,
+          msg_type=RECEIVE_PRODUCE_MSG,
+          websocket_id=websocket_id,
+          message='produce successful'
+        ), encode='json'
+      )
+      else sendError(resultWrap$message, websocketId)
+    }
+
+    for (scoreSpec in specification[['score']]) {
+      resultWrap <- caretScore(model, metadata, scoreSpec)
+
+      if (resultWrap$success) httr::POST(
+        RECEIVE_ENDPOINT,
+        body=list(
+          success=TRUE,
+          data=response,
+          msg_type=RECEIVE_SCORE_MSG,
+          websocket_id=websocketId,
+          message='score successful'
+        ), encode='json'
+      )
+      else sendError(resultWrap$message, websocketId)
+    }
+  }
+
+  resultWrap <- caretSearch(specification[['search']], systemParams, callbackFound, searchId)
+
+  return(jsonlite::toJSON(resultWrap))
+}
+
+caretSearch.app <- function(everything) {
+  requirePackages(c(packageList.any, packageList.caret.app))
+
+  websocketId <- everything[['websocket_id']]
+  searchId <- everything[['search_id']]
+
+  systemParams <- if (!is.null(everything[['system_params']])) everything[['system_params']] else list()
+
+  specification <- everything[['specification']]
+  if (is.null(specification)) return(jsonlite::toJSON(list(
+    success=FALSE, message="'specification' is null"
+  )))
+
+  callbackFound <- function(model, metadata) {
+    metadata[['model_id']] <- saveModel(model)
+
+    resultWrap <- caretDescribe(model, metadata)
+    if (resultWrap$success) httr::POST(
+      RECEIVE_ENDPOINT,
+      body=list(
+        success=TRUE,
+        data=resultWrap$data,
+        msg_type=RECEIVE_DESCRIBE_MSG,
+        websocket_id=websocket_id,
+        message='describe successful'
+      ), encode='json'
+    )
+    else sendError(resultWrap$message, websocketId)
+  }
+
+  resultWrap <- caretSearch(specification[['search']], systemParams, callbackFound, searchId)
+  return(jsonlite::toJSON(resultWrap))
+}
+
+caretDescribe.app <- function(everything) {
+  requirePackages(c(packageList.any, packageList.caret.app))
+
+  modelId <- everything[['model_id']]
+  if (is.null(modelId)) return(
+    jsonlite::toJSON(list(success=FALSE, message="'model_id' is null"))
+  )
+
+  resultWrap <- loadModel(modelId)
+  if (!resultWrap$success) return(jsonlite::toJSON(resultWrap))
+  model <- resultWrap$data
+
+  resultWrap <- loadMetadata(modelId)
+  if (!resultWrap$success) return(jsonlite::toJSON(resultWrap))
+  metadata <- resultWrap$data
+
+  resultWrap <- caretDescribe(model, metadata)
+  return(jsonlite::toJSON(resultWrap))
+}
+
+caretProduce.app <- function(everything) {
+  requirePackages(c(packageList.any, packageList.caret.app))
+
+  specification <- everything[['specification']]
+  if (is.null(specification)) return(jsonlite::toJSON(list(
+    success=FALSE, message="'specification' is null"
+  )))
+
+  modelId <- everything[['model_id']]
+  if (is.null(modelId)) return(
+    jsonlite::toJSON(list(success=FALSE, message="'model_id' is null"))
+  )
+
+  resultWrap <- loadModel(modelId)
+  if (!resultWrap$success) return(jsonlite::toJSON(resultWrap))
+  model <- resultWrap$data
+
+  resultWrap <- loadMetadata(modelId)
+  if (!resultWrap$success) return(jsonlite::toJSON(resultWrap))
+  metadata <- resultWrap$data
+
+  resultWrap <- caretProduce(model, metadata, specification)
+  return(jsonlite::toJSON(resultWrap))
+}
+
+caretScore.app <- function(everything) {
+  requirePackages(c(packageList.any, packageList.caret.app))
+
+  specification <- everything[['specification']]
+  if (is.null(specification)) return(jsonlite::toJSON(list(
+    success=FALSE, message="'specification' is null"
+  )))
+
+  modelId <- everything[['model_id']]
+  if (is.null(modelId)) return(
+    jsonlite::toJSON(list(success=FALSE, message="'model_id' is null"))
+  )
+
+  resultWrap <- loadMetadata(modelId)
+  if (!resultWrap$success) return(jsonlite::toJSON(resultWrap))
+  metadata <- resultWrap$data
+
+  resultWrap <- caretScore(model, metadata, specification)
+  return(jsonlite::toJSON(resultWrap))
+}

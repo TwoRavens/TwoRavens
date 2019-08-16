@@ -1,6 +1,6 @@
-from model import R_SERVICE
+from model import R_SERVICE, KEY_SUCCESS, KEY_MESSAGE, KEY_DATA
 from util_dataset import Dataset
-from util_model import ModelSklearn, ModelH2O, ModelCaret
+from util_model import ModelSklearn, ModelH2O
 
 import uuid
 import abc
@@ -44,8 +44,6 @@ class SearchAutoSklearn(Search):
         dataset = Dataset(self.specification['input'])
         dataframe = dataset.get_dataframe()
 
-        print(dataframe)
-
         x = self.specification['problem']['predictors']
         y = self.specification['problem']['targets'][0]
 
@@ -68,6 +66,11 @@ class SearchAutoSklearn(Search):
                 self.system_params['resampling_strategy'] = 'cv'
                 self.system_params['resampling_strategy_arguments']['folds'] = config.get('folds') or 10
 
+            if config.get('timeBoundSearch'):
+                self.system_params['time_left_for_this_task'] = config.get('timeBoundSearch')
+
+            if config.get('timeBoundRun'):
+                self.system_params['per_run_time_limit'] = config.get('timeBoundRun')
         # sklearn_temp_path = '/ravens_volume/solvers/auto_sklearn/temporary/' + str(uuid.uuid4())
         # tmp_folder = os.path.join(*sklearn_temp_path.split('/'), 'temp')
         # output_folder = os.path.join(*sklearn_temp_path.split('/'), 'output')
@@ -76,22 +79,33 @@ class SearchAutoSklearn(Search):
         # self.system_params['output_folder'] = output_folder
         # self.system_params['delete_tmp_folder_after_terminate'] = False
 
+        # valid system params
+        # https://automl.github.io/auto-sklearn/master/api.html#api
         automl = {
             'REGRESSION': autosklearn.regression.AutoSklearnRegressor,
             'CLASSIFICATION': autosklearn.classification.AutoSklearnClassifier
         }[self.specification['problem']['taskType']](**self.system_params)
 
-        automl.fit(dataframe[x], dataframe[y], dataset_name=dataset.get_name())
+        automl.fit(dataframe[x], dataframe[y])
+
+        if self.system_params['resampling_strategy'] == 'cv':
+            automl.refit(dataframe[x], dataframe[y])
 
         model = ModelSklearn(
             automl,
             system='auto_sklearn',
             search_id=self.search_id,
             predictors=x,
-            targets=y)
+            targets=[y])
         model.save()
 
         self.callback_found(model, self.callback_params)
+
+        return {
+            KEY_SUCCESS: True,
+            KEY_MESSAGE: 'Auto SKlearn search finished',
+            KEY_DATA: {'search_id': self.search_id}
+        }
 
 
 class SearchCaret(Search):
@@ -119,18 +133,11 @@ class SearchCaret(Search):
     }
 
     def run(self):
-
-        for method_spec in self.system_params.get('model_space', self.model_space_default):
-
-            response = requests.post(R_SERVICE + 'caret.app', json={
-                'specification': self.specification,
-                'system_params': {'method_spec': method_spec}}).json()
-
-            if not response['success']:
-                raise ValueError(response['message'])
-
-            for model_spec in response['data']['model']:
-                ModelCaret(model_spec)
+        return requests.post(R_SERVICE + 'caretSearch.app', json={
+            'search_id': self.search_id,
+            'specification': self.specification,
+            'system_params': self.system_params or self.model_space_default
+        }).json()
 
 
 class SearchH2O(Search):
@@ -152,9 +159,6 @@ class SearchH2O(Search):
 
         if 'configuration' in self.specification:
             config = self.specification['configuration']
-
-            self.system_params['resampling_strategy_arguments'] = self.system_params.get('resampling_strategy_arguments', {})
-            self.system_params['resampling_strategy_arguments']['shuffle'] = config.get('shuffle', False)
 
             if config['method'] == "HOLDOUT":
                 train, test = train.split_frame(
@@ -206,8 +210,14 @@ class SearchH2O(Search):
             automl.leader,
             search_id=self.search_id,
             predictors=X,
-            targets=y)
+            targets=[y])
         self.callback_found(model, self.callback_params)
+
+        return {
+            KEY_SUCCESS: True,
+            KEY_MESSAGE: 'H2O search finished',
+            KEY_DATA: {'search_id': self.search_id}
+        }
 
 
 class SearchTPOT(Search):
@@ -217,7 +227,7 @@ class SearchTPOT(Search):
 
         dataframe = dataset.get_dataframe()
         X = self.specification['problem']['predictors']
-        y = self.specification['problem']['targets']
+        y = self.specification['problem']['targets'][0]
 
         automl = {
             'REGRESSION': tpot.TPOTRegressor,
@@ -228,12 +238,17 @@ class SearchTPOT(Search):
 
         # selected models along the cost-complexity vs accuracy frontier
         for model_str in automl.pareto_front_fitted_pipelines_:
-            print('found model:', model_str, flush=True)
             model = ModelSklearn(
                 automl.pareto_front_fitted_pipelines_[model_str],
                 system='tpot',
                 search_id=self.search_id,
                 predictors=X,
-                targets=y)
+                targets=[y])
             model.save()
             self.callback_found(model, self.callback_params)
+
+        return {
+            KEY_SUCCESS: True,
+            KEY_MESSAGE: 'TPOT search finished',
+            KEY_DATA: {'search_id': self.search_id}
+        }

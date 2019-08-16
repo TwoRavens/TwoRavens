@@ -77,26 +77,22 @@ def abortable_worker(msg_type, websocket_id, data, timeout, func, *args, **kwarg
 
 
 def solve_async(websocket_id, solver):
-    solver.run()
+    result = solver.run()
     requests.post(
         url=RECEIVE_ENDPOINT,
         json={
-            KEY_SUCCESS: True,
-            KEY_MESSAGE: "solve successfully completed",
-            KEY_DATA: {'search_id': solver.search.search_id},
+            **result,
             KEY_WEBSOCKET_ID: websocket_id,
             KEY_MSG_TYPE: RECEIVE_SOLVE_MSG
         })
 
 
 def search_async(websocket_id, search):
-    search.run()
+    result = search.run()
     requests.post(
         url=RECEIVE_ENDPOINT,
         json={
-            KEY_SUCCESS: True,
-            KEY_MESSAGE: "search successfully completed",
-            KEY_DATA: {'search_id': search.search_id},
+            **result,
             KEY_WEBSOCKET_ID: websocket_id,
             KEY_MSG_TYPE: RECEIVE_SEARCH_MSG
         })

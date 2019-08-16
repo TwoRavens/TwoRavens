@@ -647,9 +647,19 @@ class Body {
                             system: 'h2o'
                         };
 
+                        let caretParams = {
+                            system: 'caret',
+                            system_params: {
+                                trControlParams: {},
+                                models: [
+                                    {method: 'glm', hyperparameters: {}}
+                                ]
+                            }
+                        };
+
                         m.request('/solver-service/Solve', {
                             method: 'POST',
-                            data: Object.assign(h2oParams, {
+                            data: Object.assign(caretParams, {
                                 "timeout": 3600,
                                 "specification": {
                                     'search': {
@@ -674,8 +684,8 @@ class Body {
                                             "stratified": true,
                                             "trainTestRatio": 0
                                         },
-                                        "timeBoundSearch": 0,
-                                        "timeBoundRun": 0,
+                                        "timeBoundSearch": 30,
+                                        "timeBoundRun": 30,
                                         "rankSolutionsLimit": 0
                                     },
 
@@ -684,6 +694,9 @@ class Body {
                                         'input': {
                                             'name': 'data_test',
                                             "resource_uri": 'file:///ravens_volume/test_data/185_baseball/TEST/dataset_TEST/tables/learningData.csv'
+                                        },
+                                        'configuration': {
+                                            'predict_type': 'PROBABILITIES'
                                         },
                                         'output': {
                                             'resource_uri': 'file:///ravens_volume/test_output_auto_sklearn/185_baseball/'

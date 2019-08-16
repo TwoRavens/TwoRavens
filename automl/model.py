@@ -1,4 +1,4 @@
-SAVED_MODELS_DIRECTORY = '/ravens_volume/solvers/'
+SAVED_MODELS_PATH = '/ravens_volume/solvers/'
 DJANGO_SOLVER_SERVICE = 'http://localhost:8080/solver-service/'
 RECEIVE_ENDPOINT = DJANGO_SOLVER_SERVICE + 'Receive'
 
