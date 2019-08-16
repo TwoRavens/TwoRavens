@@ -344,6 +344,8 @@ def catch_traceback(msg_type, websocket_id, data, func, *args, **kwargs):
 
 def solve_async(websocket_id, solver):
     result = solver.run()
+    print('solve result')
+    print(result)
     requests.post(
         url=RECEIVE_ENDPOINT,
         json={
