@@ -602,14 +602,14 @@ class Body {
                 m('div', {style: 'margin:1em'},
                     Object.keys(app.solvers).map(system_name => m(Button, {
                         style: {margin: '.5em'},
-                        onclick: () => {
+                        onclick: async () => {
                             let selectedProblem = app.getSelectedProblem();
                             console.warn(selectedProblem);
                             let specification = app.getSolverSpecification(selectedProblem);
 
                             console.log(JSON.stringify(specification));
 
-                            m.request('/solver-service/Solve', {
+                            let response = await m.request('/solver-service/Solve', {
                                 method: 'POST',
                                 data: Object.assign({
                                     system: system_name,
@@ -618,9 +618,14 @@ class Body {
                                     "timeout": 3600,
                                     "specification": specification
                                 })
-                            }).then(console.log)
+                            });
+
+                            if (!response.success) console.log(response);
                         }
                     }, system_name))),
+
+                m('div', {style: 'overflow:auto'},
+                    m(Table, {data: Object.values(app.modelResults)})),
 
                 m('h4', 'TA2 System Debugger'),
                 m(Button, {

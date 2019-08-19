@@ -93,7 +93,9 @@ class ModelSklearn(Model):
         # TODO: improve model description
         return {
             "description": str(self.model),
-            "model_id": self.model_id
+            "model_id": self.model_id,
+            "search_id": self.search_id,
+            "system": self.system
         }
 
     def score(self, specification):
@@ -116,10 +118,15 @@ class ModelSklearn(Model):
                 'target': self.targets[0]
             })
 
-        return scores
+        return {
+            'search_id': self.search_id,
+            'model_id': self.model_id,
+            'scores': scores
+        }
 
     def produce(self, specification):
-        predict_type = specification.get('configuration', {}).get('predict_type', 'RAW')
+        configuration = specification.get('configuration', {})
+        predict_type = configuration.get('predict_type', 'RAW')
 
         dataset = Dataset(specification['input'])
         dataframe = dataset.get_dataframe()
@@ -150,8 +157,9 @@ class ModelSklearn(Model):
             os.chdir(cwd)
 
         return {
+            'input': specification['input'],
+            'configuration': configuration,
             'data_pointer': output_path,
-            'predict_type': predict_type,
             'search_id': self.search_id,
             'model_id': self.model_id
         }
@@ -227,16 +235,17 @@ class ModelH2O(Model):
         super().__init__(model, 'h2o', predictors, targets, model_id, search_id)
 
     def describe(self):
-        # TODO: improve model description
         return {
-            "description": str(self.model),
-            "model_id": self.model_id
+            "description": {'type': self.model.type, 'algo': self.model.algo},
+            "model_id": self.model_id,
+            'search_id': self.search_id,
+            "system": self.system
         }
 
     def score(self, specification):
         resource_uri = Dataset(specification['input']).get_resource_uri()
         data = h2o.import_file(resource_uri)
-        predicted = self.model.predict(data).as_data_frame()
+        predicted = self.model.predict(data).as_data_frame()['predict']
         data = data.as_data_frame()
 
         # H2O supports only one target
@@ -246,22 +255,32 @@ class ModelH2O(Model):
         for metric in specification['performanceMetrics']:
             try:
                 scores.append({
-                    'value': Model._score(metric, data[target], predicted),
+                    'value': get_metric(metric)(data[target], predicted),
                     'metric': metric,
                     'target': target
                 })
             except NotImplementedError:
                 pass
 
-        return scores
+        return {
+            'search_id': self.search_id,
+            'model_id': self.model_id,
+            'scores': scores
+        }
 
     def produce(self, specification):
-        predict_type = specification.get('configuration', {}).get('predict_type', 'RAW')
+        configuration = specification.get('configuration', {})
+        predict_type = configuration.get('predict_type', 'RAW')
 
         resource_uri = Dataset(specification['input']).get_resource_uri()
         data = h2o.import_file(resource_uri)
 
         predictions = self.model.predict(data).as_data_frame()
+
+        # TODO: standardize output format
+        if predict_type == 'RAW':
+            predictions = predictions[['predict']]
+
         predictions.insert(0, 'd3mIndex', data.as_data_frame()['d3mIndex'])
 
         output_directory_path = specification['output']['resource_uri'].replace('file://', '')
@@ -280,8 +299,9 @@ class ModelH2O(Model):
             os.chdir(cwd)
 
         return {
+            'input': specification['input'],
+            'configuration': configuration,
             'data_pointer': output_path,
-            'predict_type': predict_type,
             'search_id': self.search_id,
             'model_id': self.model_id
         }
@@ -311,7 +331,8 @@ class ModelLudwig(Model):
     def describe(self):
         return {
             "description": str(self.model),
-            "model_id": self.model_id
+            "model_id": self.model_id,
+            "system": self.system
         }
 
     def score(self, specification):
@@ -327,7 +348,7 @@ class ModelLudwig(Model):
         scores = []
         for metric in specification['performanceMetrics']:
             scores.append({
-                'value': Model._score(metric, dataframe[target], predicted),
+                'value': get_metric(metric)(dataframe[target], predicted),
                 'metric': metric,
                 'target': target
             })

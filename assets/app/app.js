@@ -531,6 +531,37 @@ streamSocket.onmessage = function (e) {
     console.log('msg_data');
     console.log(msg_data);
 
+    if (msg_data.msg_type === 'receive_describe_msg') {
+        modelResults[msg_data.data.model_id] = modelResults[msg_data.data.model_id] || {};
+        Object.assign(modelResults[msg_data.data.model_id], msg_data.data);
+
+        m.redraw();
+        return;
+    }
+
+    if (msg_data.msg_type === 'receive_score_msg') {
+        modelResults[msg_data.data.model_id] = modelResults[msg_data.data.model_id] || {};
+        modelResults[msg_data.data.model_id].scores = modelResults[msg_data.data.model_id].scores || [];
+        modelResults[msg_data.data.model_id].scores.push(...msg_data.data.scores);
+
+        m.redraw();
+        return;
+    }
+
+    if (msg_data.msg_type === 'receive_produce_msg') {
+        modelResults[msg_data.data.model_id] = modelResults[msg_data.data.model_id] || {};
+        modelResults[msg_data.data.model_id].produce = modelResults[msg_data.data.model_id].produce || [];
+        modelResults[msg_data.data.model_id].produce.push({
+            data_pointer: msg_data.data.data_pointer,
+            configuration: msg_data.data.configuration,
+            input: msg_data.data.input
+        });
+
+        m.redraw();
+        return;
+    }
+
+
     if (msg_data.msg_type === undefined) {
         console.log('streamSocket.onmessage: Error, "msg_data.msg_type" not specified!');
         return;
@@ -841,7 +872,7 @@ export let getSolverSpecification = problem => ({
             "stratified": problem.stratified,
             "trainTestRatio": problem.trainTestRatio
         },
-        "timeBoundSearch": problem.timeBoundSearch,
+        "timeBoundSearch": problem.timeBoundSearch || 30,
         "timeBoundRun": problem.timeBoundRun,
         "rankSolutionsLimit": problem.solutionsLimit
     },
@@ -863,12 +894,17 @@ export let getSolverSpecification = problem => ({
     'score': [{
         "input": {
             "name": "data_test",
-            "resource_uri": 'file://' + workspace.datasetPath
+            "resource_uri": 'file://' + ({
+                'Goldstone_problem': '/home/shoe/TwoRavens/ravens_volume/test_data/MFAC_Goldstone/TEST/dataset_TEST/tables/learningData.csv',
+            })[workspace.d3m_config.name]
         },
         "performanceMetrics": [problem.metric, ...problem.metrics]
             .map(metric => ({metric: d3mMetrics[metric]}))
     }]
 });
+
+export let modelResults = {};
+
 
 export let byId = id => document.getElementById(id);
 // export let byId = id => {console.log(id); return document.getElementById(id);}

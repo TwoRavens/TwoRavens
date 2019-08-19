@@ -173,7 +173,7 @@ class SearchH2O(Search):
         X = self.specification['problem']['predictors']
         y = self.specification['problem']['targets'][0]
 
-        if self.specification['problem']['taskType'] in ['classification', 'semisupervisedClassification']:
+        if self.specification['problem']['taskType'] == 'CLASSIFICATION':
             # For classification, response should be a factor
             train[y] = train[y].asfactor()
 
@@ -197,22 +197,22 @@ class SearchH2O(Search):
         if 'rankSolutionsLimit' in self.specification:
             self.system_params['max_models'] = self.specification['rankSolutionsLimit']
 
-        sort_metrics = {
-            'ACCURACY': "deviance",
-            'ROC_AUC': "auc",
-            'MEAN_SQUARED_ERROR': "mse",
-            'ROOT_MEAN_SQUARED_ERROR': "rmse",
-            'MEAN_ABSOLUTE_ERROR': "mae",
-            'LOSS': "logloss",
-        }
-        if 'performanceMetric' in self.specification:
-            metric_spec = self.specification['performanceMetric']
-            if metric_spec['metric'] in sort_metrics:
-                self.system_params['sort_metric'] = sort_metrics[metric_spec['metric']]
-                self.system_params['stopping_metric'] = sort_metrics[metric_spec['metric']]
+        # sort_metrics = {
+        #     'ACCURACY': "rmse",
+        #     'ROC_AUC': "auc",
+        #     'MEAN_SQUARED_ERROR': "mse",
+        #     'ROOT_MEAN_SQUARED_ERROR': "rmse",
+        #     'MEAN_ABSOLUTE_ERROR': "mae",
+        #     'LOSS': "logloss",
+        # }
+        # if 'performanceMetric' in self.specification:
+        #     metric_spec = self.specification['performanceMetric']
+        #     if metric_spec['metric'] in sort_metrics:
+        #         self.system_params['sort_metric'] = sort_metrics[metric_spec['metric']]
+        #         self.system_params['stopping_metric'] = sort_metrics[metric_spec['metric']]
 
         # CV models are useful for model comparisons
-        self.system_params['keep_cross_validation_models'] = True
+        # self.system_params['keep_cross_validation_models'] = True
 
         train_params = {
             "x": X,
