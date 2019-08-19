@@ -1,6 +1,6 @@
 from sklearn.impute import SimpleImputer
 
-from model import R_SERVICE, KEY_SUCCESS, KEY_MESSAGE, KEY_DATA
+from model import R_SERVICE, KEY_SUCCESS, KEY_MESSAGE, KEY_DATA, get_metric, should_maximize
 from util_dataset import Dataset
 from util_model import ModelSklearn, ModelH2O, ModelLudwig
 
@@ -12,6 +12,8 @@ import requests
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
+
+from sklearn.metrics.scorer import make_scorer
 
 
 def preprocess(dataframe, specification):
@@ -76,7 +78,9 @@ class SearchAutoSklearn(Search):
         import autosklearn.regression
 
         dataset = Dataset(self.specification['input'])
+
         dataframe = dataset.get_dataframe()
+        stimulus, preprocessor = preprocess(dataframe, self.specification)
 
         x = self.specification['problem']['predictors']
         y = self.specification['problem']['targets'][0]
@@ -120,17 +124,18 @@ class SearchAutoSklearn(Search):
             'CLASSIFICATION': autosklearn.classification.AutoSklearnClassifier
         }[self.specification['problem']['taskType']](**self.system_params)
 
-        automl.fit(dataframe[x], dataframe[y])
+        automl.fit(stimulus, dataframe[y])
 
         if self.system_params['resampling_strategy'] == 'cv':
-            automl.refit(dataframe[x], dataframe[y])
+            automl.refit(stimulus, dataframe[y])
 
         model = ModelSklearn(
             automl,
             system='auto_sklearn',
             search_id=self.search_id,
             predictors=x,
-            targets=[y])
+            targets=[y],
+            preprocess=preprocessor)
         model.save()
 
         self.callback_found(model, self.callback_params)
@@ -193,12 +198,12 @@ class SearchH2O(Search):
             self.system_params['max_models'] = self.specification['rankSolutionsLimit']
 
         sort_metrics = {
-            'accuracy': "deviance",
-            'rocAuc': "auc",
-            'meanSquaredError': "mse",
-            'rootMeanSquaredError': "rmse",
-            'meanAbsoluteError': "mae",
-            'loss': "logloss",
+            'ACCURACY': "deviance",
+            'ROC_AUC': "auc",
+            'MEAN_SQUARED_ERROR': "mse",
+            'ROOT_MEAN_SQUARED_ERROR': "rmse",
+            'MEAN_ABSOLUTE_ERROR': "mae",
+            'LOSS': "logloss",
         }
         if 'performanceMetric' in self.specification:
             metric_spec = self.specification['performanceMetric']
@@ -248,6 +253,11 @@ class SearchTPOT(Search):
         y = self.specification['problem']['targets'][0]
 
         self.system_params['config_dict'] = 'TPOT sparse'
+
+        scorer = make_scorer(
+            get_metric(self.specification['performanceMetric']),
+            greater_is_better=should_maximize(self.specification['performanceMetric']))
+        self.system_params['scoring'] = scorer
 
         automl = {
             'REGRESSION': tpot.TPOTRegressor,
@@ -366,9 +376,6 @@ class SearchMLJarSupervised(Search):
         dataframe = dataset.get_dataframe()
         predictors = self.specification['problem']['predictors']
         targets = self.specification['problem']['targets']
-
-        if self.specification['problem']['taskType'] == 'REGRESSION':
-            raise ValueError('taskType: REGRESSION is not supported by the mljar-supervised solver')
 
         automl = AutoML()
 

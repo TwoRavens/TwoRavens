@@ -751,7 +751,7 @@ export let d3mMetricsInverted = Object.keys(d3mMetrics)
     .reduce((out, key) => Object.assign(out, {[d3mMetrics[key]]: key}), {});
 
 export let d3mEvaluationMethods = {
-    holdout: "HOLDOUT",
+    holdOut: "HOLDOUT",
     kFold: "K_FOLD"
 };
 
@@ -801,6 +801,74 @@ export let applicableMetrics = {
         multivariate: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared']
     }
 };
+
+export let solvers = {
+    'tpot': {"generations": 1, population_size: 20},
+    'auto_sklearn': {"time_left_for_this_task": 60},
+    'h2o': {},
+    'caret': {
+        trControlParams: {},
+        models: [
+            {method: 'glm'}
+        ]
+    },
+    'mlbox': {},
+    'mljar-supervised': {},
+    'ludwig': {}
+};
+
+export let getSolverSpecification = problem => ({
+    'search': {
+        "input": {
+            "resource_uri": 'file://' + workspace.datasetPath
+        },
+        'problem': {
+            "name": problem.problemID,
+            "targets": problem.targets,
+            "predictors": getPredictorVariables(problem),
+            "categorical": getNominalVariables(problem),
+            "taskSubtype": d3mTaskSubtype[problem.subTask],
+            "taskType": d3mTaskType[problem.task]
+        },
+        "performanceMetric": {
+            "metric": d3mMetrics[problem.metric]
+        },
+        "configuration": {
+            "folds": problem.folds || 10,
+            "method": d3mEvaluationMethods[problem.evaluationMethod],
+            "randomSeed": problem.shuffleRandomSeed,
+            "shuffle": problem.shuffle,
+            "stratified": problem.stratified,
+            "trainTestRatio": problem.trainTestRatio
+        },
+        "timeBoundSearch": problem.timeBoundSearch,
+        "timeBoundRun": problem.timeBoundRun,
+        "rankSolutionsLimit": problem.solutionsLimit
+    },
+
+
+    'produce': [{
+        'input': {
+            'name': 'data_test',
+            "resource_uri": 'file://' + workspace.datasetPath
+        },
+        'configuration': {
+            'predict_type': 'RAW'
+        },
+        'output': {
+            'resource_uri': 'file:///ravens_volume/solvers/produce/'
+        }
+    }],
+
+    'score': [{
+        "input": {
+            "name": "data_test",
+            "resource_uri": 'file://' + workspace.datasetPath
+        },
+        "performanceMetrics": [problem.metric, ...problem.metrics]
+            .map(metric => ({metric: d3mMetrics[metric]}))
+    }]
+});
 
 export let byId = id => document.getElementById(id);
 // export let byId = id => {console.log(id); return document.getElementById(id);}
@@ -978,7 +1046,7 @@ let buildDefaultProblem = problemDoc => {
         subTask: problemDoc.about.taskSubtype,
 
         evaluationMethod: problemDoc.inputs.dataSplits.method || 'kFold',
-        testSize: problemDoc.inputs.dataSplits.trainTestRatio,
+        trainTestRatio: problemDoc.inputs.dataSplits.testSize,
         stratified: problemDoc.inputs.dataSplits.stratified,
         randomSeed: problemDoc.inputs.dataSplits.randomSeed,
 

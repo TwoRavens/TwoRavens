@@ -597,6 +597,31 @@ class Body {
                     id: 'modalTA2Debug',
                     setDisplay: app.setShowModalTA2Debug
                 },
+                m('h4', 'Open Source Solver System Debugger'),
+
+                m('div', {style: 'margin:1em'},
+                    Object.keys(app.solvers).map(system_name => m(Button, {
+                        style: {margin: '.5em'},
+                        onclick: () => {
+                            let selectedProblem = app.getSelectedProblem();
+                            console.warn(selectedProblem);
+                            let specification = app.getSolverSpecification(selectedProblem);
+
+                            console.log(JSON.stringify(specification));
+
+                            m.request('/solver-service/Solve', {
+                                method: 'POST',
+                                data: Object.assign({
+                                    system: system_name,
+                                    system_params: app.solvers[system_name]
+                                }, {
+                                    "timeout": 3600,
+                                    "specification": specification
+                                })
+                            }).then(console.log)
+                        }
+                    }, system_name))),
+
                 m('h4', 'TA2 System Debugger'),
                 m(Button, {
                     style: {margin: '1em'},
@@ -632,101 +657,6 @@ class Body {
                     }
                 }, 'Prepare'),
 
-                m(Button, {
-                    onclick: () => {
-                        let tpotParams = {
-                            system: 'tpot',
-                            "system_params": {"generations": 1, population_size: 20}
-                        };
-                        let autoSklearnParams = {
-                            system: 'auto_sklearn',
-                            "system_params": {"time_left_for_this_task": 60}
-                        };
-
-                        let h2oParams = {
-                            system: 'h2o'
-                        };
-
-                        let caretParams = {
-                            system: 'caret',
-                            system_params: {
-                                trControlParams: {},
-                                models: [
-                                    {method: 'glm'}
-                                ]
-                            }
-                        };
-
-                        let selectedProblem = app.getSelectedProblem();
-                        console.log(selectedProblem);
-
-                        let specification = {
-                            'search': {
-                                "input": {
-                                    "resource_uri": 'file://' + app.workspace.datasetPath
-                                },
-                                'problem': {
-                                    "name": "problem 0",
-                                    "targets": selectedProblem.targets,
-                                    "predictors": app.getPredictorVariables(selectedProblem),
-                                    "taskSubtype": "NONE",
-                                    "categorical": app.getNominalVariables(selectedProblem),
-                                    "taskType": selectedProblem.task.toUpperCase()
-                                },
-                                "performanceMetric": {
-                                    "metric": "MEAN_SQUARED_ERROR"
-                                },
-                                "configuration": {
-                                    "folds": 0,
-                                    "method": "K_FOLD",
-                                    "randomSeed": 0,
-                                    "shuffle": false,
-                                    "stratified": true,
-                                    "trainTestRatio": 0
-                                },
-                                "timeBoundSearch": 30,
-                                "timeBoundRun": 30,
-                                "rankSolutionsLimit": 0
-                            },
-
-
-                            'produce': [{
-                                'input': {
-                                    'name': 'data_test',
-                                    "resource_uri": 'file://' + app.workspace.datasetPath
-                                },
-                                'configuration': {
-                                    'predict_type': 'RAW'
-                                },
-                                'output': {
-                                    'resource_uri': 'file:///ravens_volume/solvers/produce/'
-                                }
-                            }],
-
-                            'score': [{
-                                "input": {
-                                    "name": "data_test",
-                                    "resource_uri": 'file://' + app.workspace.datasetPath
-                                },
-                                "performanceMetrics": [
-                                    {
-                                        "metric": "MEAN_SQUARED_ERROR"
-                                    }
-                                ]
-                            }]
-                        };
-
-                        console.log(JSON.stringify(specification));
-
-                        m.request('/solver-service/Solve', {
-                            method: 'POST',
-                            data: Object.assign(tpotParams, {
-                                "timeout": 3600,
-                                "specification": specification
-                            })
-                        }).then(console.log)
-                    }
-                }, 'Run Solver'),
                 m(Button, {
                     style: {margin: '1em'},
                     onclick: () => {
