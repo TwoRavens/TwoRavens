@@ -135,7 +135,10 @@ caretSearch <- function(specification, systemParams, callbackFound, searchId=NUL
     if (is.null(hyperparameters)) hyperparameters <- list()
     # edge case to prevent hyperparam bug
     if (length(hyperparameters) == 0L) hyperparameters <- list(list())
-
+    print('predictors')
+    print(problem[['predictors']])
+    print('data')
+    print(colnames(data))
     fitControlParams <- list(
       x=data[,problem[['predictors']], drop=FALSE], # if only one predictor, disable drop, so indexing doesn't behave differently
       y=data[,target],

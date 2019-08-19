@@ -1,16 +1,46 @@
+from sklearn.impute import SimpleImputer
+
 from model import R_SERVICE, KEY_SUCCESS, KEY_MESSAGE, KEY_DATA
 from util_dataset import Dataset
-from util_model import ModelSklearn, ModelH2O
+from util_model import ModelSklearn, ModelH2O, ModelLudwig
 
 import uuid
 import abc
 import requests
 
-import tpot
-import h2o
-from h2o.automl import H2OAutoML
-import autosklearn.classification
-import autosklearn.regression
+# PREPROCESSING
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+
+
+def preprocess(dataframe, specification):
+
+    X = specification['problem']['predictors']
+    y = specification['problem']['targets'][0]
+
+    categorical_features = [i for i in specification['problem']['categorical'] if i != y]
+
+    categorical_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
+        ('onehot', OneHotEncoder(handle_unknown='ignore'))
+    ])
+
+    numerical_features = [i for i in X if i not in categorical_features]
+    numerical_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='median')),
+        ('scaler', StandardScaler())
+    ])
+
+    preprocessor = ColumnTransformer(transformers=[
+        ('numeric', numerical_transformer, numerical_features),
+        ('categorical', categorical_transformer, categorical_features)
+    ])
+
+    stimulus = dataframe[X]
+    stimulus = preprocessor.fit_transform(stimulus)
+
+    return stimulus, preprocessor
 
 
 class Search(object):
@@ -31,7 +61,8 @@ class Search(object):
             'auto_sklearn': SearchAutoSklearn,
             'caret': SearchCaret,
             'h2o': SearchH2O,
-            'tpot': SearchTPOT
+            'tpot': SearchTPOT,
+            'ludwig': SearchLudwig
         }[system](
             specification=specification,
             system_params=system_params,
@@ -41,6 +72,9 @@ class Search(object):
 class SearchAutoSklearn(Search):
 
     def run(self):
+        import autosklearn.classification
+        import autosklearn.regression
+
         dataset = Dataset(self.specification['input'])
         dataframe = dataset.get_dataframe()
 
@@ -122,6 +156,8 @@ class SearchCaret(Search):
 class SearchH2O(Search):
 
     def run(self):
+        import h2o
+        from h2o.automl import H2OAutoML
 
         # ensure backend solver is running
         h2o.init()
@@ -202,18 +238,23 @@ class SearchH2O(Search):
 class SearchTPOT(Search):
 
     def run(self):
+        import tpot
         dataset = Dataset(self.specification['input'])
 
         dataframe = dataset.get_dataframe()
+        stimulus, preprocessor = preprocess(dataframe, self.specification)
+
         X = self.specification['problem']['predictors']
         y = self.specification['problem']['targets'][0]
+
+        self.system_params['config_dict'] = 'TPOT sparse'
 
         automl = {
             'REGRESSION': tpot.TPOTRegressor,
             'CLASSIFICATION': tpot.TPOTClassifier
         }[self.specification['problem']['taskType']](**self.system_params)
 
-        automl.fit(dataframe[X], dataframe[y])
+        automl.fit(stimulus, dataframe[y])
 
         # selected models along the cost-complexity vs accuracy frontier
         for model_str in automl.pareto_front_fitted_pipelines_:
@@ -222,12 +263,129 @@ class SearchTPOT(Search):
                 system='tpot',
                 search_id=self.search_id,
                 predictors=X,
-                targets=[y])
+                targets=[y],
+                preprocess=preprocessor)
             model.save()
+
             self.callback_found(model, self.callback_params)
 
         return {
             KEY_SUCCESS: True,
             KEY_MESSAGE: 'TPOT search finished',
+            KEY_DATA: {'search_id': self.search_id}
+        }
+
+
+class SearchMLBox(Search):
+
+    def run(self):
+        import mlbox.model.classification
+        import mlbox.model.regression
+
+        dataset = Dataset(self.specification['input'])
+
+        dataframe = dataset.get_dataframe()
+        X = self.specification['problem']['predictors']
+        y = self.specification['problem']['targets'][0]
+
+        automl = {
+            'REGRESSION': mlbox.model.regression.Regressor,
+            'CLASSIFICATION': mlbox.model.classification.Classifier
+        }[self.specification['problem']['taskType']](**self.system_params)
+
+        automl.fit(dataframe[X], dataframe[y])
+
+        model = ModelSklearn(
+            automl,
+            system='mlbox',
+            search_id=self.search_id,
+            predictors=X,
+            targets=[y])
+        model.save()
+
+        self.callback_found(model, self.callback_params)
+
+        return {
+            KEY_SUCCESS: True,
+            KEY_MESSAGE: 'MLBox search finished',
+            KEY_DATA: {'search_id': self.search_id}
+        }
+
+
+class SearchLudwig(Search):
+
+    def run(self):
+        from ludwig.api import LudwigModel
+
+        dataset = Dataset(self.specification['input'])
+
+        dataframe = dataset.get_dataframe()
+        predictors = self.specification['problem']['predictors']
+        targets = self.specification['problem']['targets']
+
+        target_type = {
+            "REGRESSION": 'numeric',
+            "CLASSIFICATION": 'category'
+        }[self.specification['problem']['taskType']]
+
+        model_definition = {
+            "input_features": [{"name": predictor} for predictor in predictors],
+            "output_features": [{"name": target, "type": target_type} for target in targets]
+        }
+
+        automl = LudwigModel(model_definition)
+
+        train_statistics = automl.train(dataframe)
+
+        print('train_statistics')
+        print(train_statistics)
+
+        model = ModelLudwig(
+            automl,
+            search_id=self.search_id,
+            predictors=predictors,
+            targets=targets)
+
+        model.save()
+        self.callback_found(model, self.callback_params)
+
+        return {
+            KEY_SUCCESS: True,
+            KEY_MESSAGE: 'Ludwig search finished',
+            KEY_DATA: {'search_id': self.search_id}
+        }
+
+
+class SearchMLJarSupervised(Search):
+
+    def run(self):
+        from supervised.automl import AutoML
+
+        dataset = Dataset(self.specification['input'])
+
+        dataframe = dataset.get_dataframe()
+        predictors = self.specification['problem']['predictors']
+        targets = self.specification['problem']['targets']
+
+        if self.specification['problem']['taskType'] == 'REGRESSION':
+            raise ValueError('taskType: REGRESSION is not supported by the mljar-supervised solver')
+
+        automl = AutoML()
+
+        automl.fit(dataframe[predictors], dataframe[targets[0]])
+
+        model = ModelSklearn(
+            automl,
+            system='mljar-supervised',
+            search_id=self.search_id,
+            predictors=predictors,
+            targets=[targets[0]])
+
+        model.save()
+        self.callback_found(model, self.callback_params)
+
+        return {
+            KEY_SUCCESS: True,
+            KEY_MESSAGE: 'MLJar-Supervised search finished',
             KEY_DATA: {'search_id': self.search_id}
         }

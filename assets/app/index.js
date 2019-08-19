@@ -657,64 +657,72 @@ class Body {
                             }
                         };
 
+                        let selectedProblem = app.getSelectedProblem();
+                        console.log(selectedProblem);
+
+                        let specification = {
+                            'search': {
+                                "input": {
+                                    "resource_uri": 'file://' + app.workspace.datasetPath
+                                },
+                                'problem': {
+                                    "name": "problem 0",
+                                    "targets": selectedProblem.targets,
+                                    "predictors": app.getPredictorVariables(selectedProblem),
+                                    "taskSubtype": "NONE",
+                                    "categorical": app.getNominalVariables(selectedProblem),
+                                    "taskType": selectedProblem.task.toUpperCase()
+                                },
+                                "performanceMetric": {
+                                    "metric": "MEAN_SQUARED_ERROR"
+                                },
+                                "configuration": {
+                                    "folds": 0,
+                                    "method": "K_FOLD",
+                                    "randomSeed": 0,
+                                    "shuffle": false,
+                                    "stratified": true,
+                                    "trainTestRatio": 0
+                                },
+                                "timeBoundSearch": 30,
+                                "timeBoundRun": 30,
+                                "rankSolutionsLimit": 0
+                            },
+
+
+                            'produce': [{
+                                'input': {
+                                    'name': 'data_test',
+                                    "resource_uri": 'file://' + app.workspace.datasetPath
+                                },
+                                'configuration': {
+                                    'predict_type': 'RAW'
+                                },
+                                'output': {
+                                    'resource_uri': 'file:///ravens_volume/solvers/produce/'
+                                }
+                            }],
+
+                            'score': [{
+                                "input": {
+                                    "name": "data_test",
+                                    "resource_uri": 'file://' + app.workspace.datasetPath
+                                },
+                                "performanceMetrics": [
+                                    {
+                                        "metric": "MEAN_SQUARED_ERROR"
+                                    }
+                                ]
+                            }]
+                        };
+
+                        console.log(JSON.stringify(specification));
+
                         m.request('/solver-service/Solve', {
                             method: 'POST',
-                            data: Object.assign(caretParams, {
+                            data: Object.assign(tpotParams, {
                                 "timeout": 3600,
-                                "specification": {
-                                    'search': {
-                                        "input": {
-                                            "resource_uri": 'file:///ravens_volume/test_data/185_baseball/TRAIN/dataset_TRAIN/tables/learningData.csv'
-                                        },
-                                        'problem': {
-                                            "name": "problem 0",
-                                            "targets": ["Doubles"],
-                                            "predictors": ["At_bats", "Triples"],
-                                            "taskSubtype": "NONE",
-                                            "taskType": "REGRESSION"
-                                        },
-                                        "performanceMetric": {
-                                            "metric": "MEAN_SQUARED_ERROR"
-                                        },
-                                        "configuration": {
-                                            "folds": 0,
-                                            "method": "K_FOLD",
-                                            "randomSeed": 0,
-                                            "shuffle": false,
-                                            "stratified": true,
-                                            "trainTestRatio": 0
-                                        },
-                                        "timeBoundSearch": 30,
-                                        "timeBoundRun": 30,
-                                        "rankSolutionsLimit": 0
-                                    },
-
-
-                                    'produce': [{
-                                        'input': {
-                                            'name': 'data_test',
-                                            "resource_uri": 'file:///ravens_volume/test_data/185_baseball/TEST/dataset_TEST/tables/learningData.csv'
-                                        },
-                                        'configuration': {
-                                            'predict_type': 'RAW'
-                                        },
-                                        'output': {
-                                            'resource_uri': 'file:///ravens_volume/test_output_auto_sklearn/185_baseball/'
-                                        }
-                                    }],
-
-                                    'score': [{
-                                        "input": {
-                                            "name": "data_test",
-                                            "resource_uri": 'file:///ravens_volume/test_data/185_baseball/TEST/dataset_TEST/tables/learningData.csv'
-                                        },
-                                        "performanceMetrics": [
-                                            {
-                                                "metric": "MEAN_SQUARED_ERROR"
-                                            }
-                                        ]
-                                    }]
-                                }
+                                "specification": specification
                             })
                         }).then(console.log)
                     }

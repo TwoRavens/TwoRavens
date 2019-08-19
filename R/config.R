@@ -19,7 +19,7 @@ d3m_mode <- TRUE
 default_report_path <- "/ravens_volume/reports"
 REPORT_OUTPUT_PATH <- Sys.getenv(x='REPORT_OUTPUT_PATH', unset=default_report_path)
 
-default_models_path = '/ravens_volume/solvers/'
+default_models_path = '/ravens_volume/solvers/models/'
 SAVED_MODELS_PATH = Sys.getenv(x='SAVED_MODELS_PATH', unset=default_models_path)
 
 default_solver_service = 'http://localhost:8080/solver-service/'

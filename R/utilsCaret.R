@@ -11,10 +11,6 @@ getMetricUtility <- function(specification) {
         'OBJECT_DETECTION_AVERAGE_PRECISION',
         'HAMMING_LOSS')
 
-    print('getMetricUtility')
-    print(specification[['metric']])
-    print(specification[['metric']] %in% unsupportedMetrics)
-
     if (specification[['metric']] %in% unsupportedMetrics) print(paste0(specification[['metric']], ' is not supported.'))
 
     positiveLabel <- NULL
@@ -111,8 +107,6 @@ getMetricUtility <- function(specification) {
         return(list(
             metric=specification[['metric']],
             summaryFunction=function(data, lev=NULL, model=NULL) {
-                print('score data:')
-                print(data)
                 return(list(MEAN_SQUARED_ERROR=MLmetrics::MSE(data$pred, data$obs)))
             },
             maximize=FALSE,
@@ -158,12 +152,10 @@ getMetricUtility <- function(specification) {
 
 loadData <- function(specification) tryCatch({
 
-    print('loadData')
     if (is.null(specification[['input']][['resource_uri']]))
     return(list(success=FALSE, message="'resource_uri' is null"))
     datasetPath <- gsub('file://', '', specification[['input']][['resource_uri']], fixed=TRUE)
 
-    print('loadData.a')
     separator <- if (endsWith(datasetPath, 'csv'))',' else '\t'
 
     if (!is.null(specification[['input']][['delimiter']]))
@@ -173,7 +165,6 @@ loadData <- function(specification) tryCatch({
     # print('LOAD: head')
     # print(head(data))
 
-    print('loadData.b')
     # assigning as factor causes caret to treat as classification
     if (!is.null(specification[['problem']])) {
         problem <- specification[['problem']]
@@ -181,7 +172,6 @@ loadData <- function(specification) tryCatch({
         data[problem[['targets']]] <- lapply(data[problem[['targets']]], as.factor)
         na.omit(data, cols=problem[['predictors']])
     }
-    print('loadData.c')
     return(list(success=TRUE, data=data, message='data loaded successfully'))
 
 }, error=function(msg) list(success=FALSE, message=paste0("R solver failed loading data (", msg, ")")))
