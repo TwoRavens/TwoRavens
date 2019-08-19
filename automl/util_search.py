@@ -571,9 +571,6 @@ class SearchMLJarSupervised(Search):
         predictors = self.specification['problem']['predictors']
         targets = self.specification['problem']['targets']
 
-        if self.specification['problem']['taskType'] == 'REGRESSION':
-            raise ValueError('taskType: REGRESSION is not supported by the mljar-supervised solver')
-
         automl = AutoML()
 
         automl.fit(dataframe[predictors], dataframe[targets[0]])

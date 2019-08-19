@@ -6,11 +6,10 @@ import os
 import requests
 
 import joblib
-import sklearn.metrics
 import h2o
 import pandas
 
-from model import SAVED_MODELS_PATH, R_SERVICE
+from model import SAVED_MODELS_PATH, R_SERVICE, get_metric
 from util_dataset import Dataset
 
 
@@ -70,7 +69,6 @@ class Model(object):
                 model=joblib.load(os.path.join(model_folder_path, 'model.joblib')),
                 predictors=metadata['predictors'],
                 targets=metadata['targets'],
-                system=metadata['system'],
                 model_id=model_id,
                 search_id=metadata['search_id'])
 
@@ -83,45 +81,6 @@ class Model(object):
                 search_id=metadata['search_id'])
 
         raise ValueError(f'System type "{metadata["system"]}" is not recognized.')
-
-    @staticmethod
-    def _score(specification, actual, predicted):
-        if specification['metric'] == "ACCURACY":
-            return sklearn.metrics.accuracy_score(actual, predicted)
-        if specification['metric'] == "PRECISION":
-            return sklearn.metrics.precision_score(actual, predicted)
-        if specification['metric'] == "RECALL":
-            return sklearn.metrics.recall_score(actual, predicted)
-        if specification['metric'] == "F1":
-            return sklearn.metrics.f1_score(actual, predicted)
-        if specification['metric'] == "F1_MICRO":
-            return sklearn.metrics.f1_score(actual, predicted, average="micro")
-        if specification['metric'] == "F1_MACRO":
-            return sklearn.metrics.f1_score(actual, predicted, average="macro")
-        if specification['metric'] == "ROC_AUC":
-            return sklearn.metrics.roc_auc_score(actual, predicted)
-        if specification['metric'] == "ROC_AUC_MICRO":
-            return sklearn.metrics.roc_auc_score(actual, predicted, average="micro")
-        if specification['metric'] == "ROC_AUC_MACRO":
-            return sklearn.metrics.roc_auc_score(actual, predicted, average="macro")
-        if specification['metric'] == "MEAN_SQUARED_ERROR":
-            return sklearn.metrics.mean_squared_error(actual, predicted)
-        if specification['metric'] == "MEAN_ABSOLUTE_ERROR":
-            return sklearn.metrics.mean_absolute_error(actual, predicted)
-        if specification['metric'] == "R_SQUARED":
-            return sklearn.metrics.r2_score(actual, predicted)
-        if specification['metric'] == "JACCARD_SIMILARITY_SCORE":
-            return sklearn.metrics.jaccard_similarity_score(actual, predicted)
-        if specification['metric'] == "PRECISION_AT_TOP_K":
-            raise NotImplementedError
-        if specification['metric'] == "OBJECT_DETECTION_AVERAGE_PRECISION":
-            raise NotImplementedError
-        if specification['metric'] == "HAMMING_LOSS":
-            return sklearn.metrics.hamming_loss(actual, predicted)
-        if specification['metric'] == "RANK":
-            raise NotImplementedError
-
-        raise NotImplementedError
 
 
 class ModelSklearn(Model):
@@ -142,11 +101,8 @@ class ModelSklearn(Model):
 
         stimulus = data[self.predictors]
 
-        print('before', stimulus)
         if self.preprocess:
             stimulus = self.preprocess.transform(stimulus)
-
-        print('after', stimulus)
 
         predicted = self.model.predict(stimulus)
         actual = data[self.targets[0]].to_numpy().astype(float)
@@ -155,7 +111,7 @@ class ModelSklearn(Model):
 
         for metric in specification['performanceMetrics']:
             scores.append({
-                'value': Model._score(metric, actual, predicted),
+                'value': get_metric(metric)(actual, predicted),
                 'metric': metric,
                 'target': self.targets[0]
             })
