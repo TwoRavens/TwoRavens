@@ -478,3 +478,118 @@ class SearchMLJarSupervised(Search):
                 'system': 'mljar-supervised'
             }
         }
+
+
+class SearchMLBox(Search):
+
+    def run(self):
+        import mlbox.model.classification
+        import mlbox.model.regression
+
+        dataset = Dataset(self.specification['input'])
+
+        dataframe = dataset.get_dataframe()
+        X = self.specification['problem']['predictors']
+        y = self.specification['problem']['targets'][0]
+
+        automl = {
+            'REGRESSION': mlbox.model.regression.Regressor,
+            'CLASSIFICATION': mlbox.model.classification.Classifier
+        }[self.specification['problem']['taskType']](**self.system_params)
+
+        automl.fit(dataframe[X], dataframe[y])
+
+        model = ModelSklearn(
+            automl,
+            system='mlbox',
+            search_id=self.search_id,
+            predictors=X,
+            targets=[y])
+        model.save()
+
+        self.callback_found(model, self.callback_params)
+
+        return {
+            KEY_SUCCESS: True,
+            KEY_MESSAGE: 'MLBox search finished',
+            KEY_DATA: {'search_id': self.search_id}
+        }
+
+
+class SearchLudwig(Search):
+
+    def run(self):
+        from ludwig.api import LudwigModel
+
+        dataset = Dataset(self.specification['input'])
+
+        dataframe = dataset.get_dataframe()
+        predictors = self.specification['problem']['predictors']
+        targets = self.specification['problem']['targets']
+
+        target_type = {
+            "REGRESSION": 'numeric',
+            "CLASSIFICATION": 'category'
+        }[self.specification['problem']['taskType']]
+
+        model_definition = {
+            "input_features": [{"name": predictor} for predictor in predictors],
+            "output_features": [{"name": target, "type": target_type} for target in targets]
+        }
+
+        automl = LudwigModel(model_definition)
+
+        train_statistics = automl.train(dataframe)
+
+        print('train_statistics')
+        print(train_statistics)
+
+        model = ModelLudwig(
+            automl,
+            search_id=self.search_id,
+            predictors=predictors,
+            targets=targets)
+
+        model.save()
+        self.callback_found(model, self.callback_params)
+
+        return {
+            KEY_SUCCESS: True,
+            KEY_MESSAGE: 'Ludwig search finished',
+            KEY_DATA: {'search_id': self.search_id}
+        }
+
+
+class SearchMLJarSupervised(Search):
+
+    def run(self):
+        from supervised.automl import AutoML
+
+        dataset = Dataset(self.specification['input'])
+
+        dataframe = dataset.get_dataframe()
+        predictors = self.specification['problem']['predictors']
+        targets = self.specification['problem']['targets']
+
+        if self.specification['problem']['taskType'] == 'REGRESSION':
+            raise ValueError('taskType: REGRESSION is not supported by the mljar-supervised solver')
+
+        automl = AutoML()
+
+        automl.fit(dataframe[predictors], dataframe[targets[0]])
+
+        model = ModelSklearn(
+            automl,
+            system='mljar-supervised',
+            search_id=self.search_id,
+            predictors=predictors,
+            targets=[targets[0]])
+
+        model.save()
+        self.callback_found(model, self.callback_params)
+
+        return {
+            KEY_SUCCESS: True,
+            KEY_MESSAGE: 'MLJar-Supervised search finished',
+            KEY_DATA: {'search_id': self.search_id}
+        }

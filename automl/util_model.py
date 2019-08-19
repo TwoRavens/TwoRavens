@@ -1,9 +1,11 @@
-import joblib
 import abc
 import uuid
 import json
-import requests
 import os
+
+import requests
+
+import joblib
 import sklearn.metrics
 import h2o
 import pandas
@@ -48,8 +50,23 @@ class Model(object):
         with open(metadata_path, 'r') as metadata_file:
             metadata = json.load(metadata_file)
 
-        if metadata['system'] in ['auto_sklearn', 'tpot']:
+        if metadata['system'] in ['auto_sklearn', 'tpot', 'mlbox', 'mljar-unsupervised']:
+
+            preprocess = None
+            if os.path.exists(os.path.join(model_folder_path, 'preprocess.joblib')):
+                preprocess = joblib.load(os.path.join(model_folder_path, 'preprocess.joblib'))
+
             return ModelSklearn(
+                model=joblib.load(os.path.join(model_folder_path, 'model.joblib')),
+                predictors=metadata['predictors'],
+                targets=metadata['targets'],
+                system=metadata['system'],
+                model_id=model_id,
+                search_id=metadata['search_id'],
+                preprocess=preprocess)
+
+        if metadata['system'] == 'ludwig':
+            return ModelLudwig(
                 model=joblib.load(os.path.join(model_folder_path, 'model.joblib')),
                 predictors=metadata['predictors'],
                 targets=metadata['targets'],
@@ -108,6 +125,10 @@ class Model(object):
 
 
 class ModelSklearn(Model):
+    def __init__(self, model, system, predictors, targets, model_id=None, search_id=None, preprocess=None):
+        super().__init__(model, system, predictors, targets, model_id, search_id)
+        # categorical one hot encoding
+        self.preprocess = preprocess
 
     def describe(self):
         # TODO: improve model description
@@ -118,29 +139,39 @@ class ModelSklearn(Model):
 
     def score(self, specification):
         data = Dataset(specification['input']).get_dataframe()
-        predicted = self.model.predict(data[self.predictors])
+
+        stimulus = data[self.predictors]
+
+        print('before', stimulus)
+        if self.preprocess:
+            stimulus = self.preprocess.transform(stimulus)
+
+        print('after', stimulus)
+
+        predicted = self.model.predict(stimulus)
         actual = data[self.targets[0]].to_numpy().astype(float)
 
         scores = []
 
         for metric in specification['performanceMetrics']:
-            # sklearn is lame and only supports a single y column
-            try:
-                scores.append({
-                    'value': Model._score(metric, actual, predicted),
-                    'metric': metric,
-                    'target': self.targets[0]
-                })
-            except NotImplementedError:
-                pass
+            scores.append({
+                'value': Model._score(metric, actual, predicted),
+                'metric': metric,
+                'target': self.targets[0]
+            })
 
         return scores
 
     def produce(self, specification):
-        predict_type = specification.get('configuration', {}).get('predict_type', 'MAX')
+        predict_type = specification.get('configuration', {}).get('predict_type', 'RAW')
 
         dataset = Dataset(specification['input'])
         dataframe = dataset.get_dataframe()
+
+        stimulus = dataframe[self.predictors]
+
+        if self.preprocess:
+            stimulus = self.preprocess.transform(stimulus)
 
         output_directory_path = specification['output']['resource_uri'].replace('file://', '')
         output_path = os.path.join(
@@ -149,7 +180,7 @@ class ModelSklearn(Model):
 
         pred_function = self.model.predict if predict_type == 'RAW' else self.model.predict_proba
 
-        predictions = pandas.DataFrame(pred_function(dataframe[self.predictors]), columns=self.targets)
+        predictions = pandas.DataFrame(pred_function(stimulus), columns=self.targets)
         predictions.insert(0, 'd3mIndex', dataframe['d3mIndex'])
 
         if not os.path.exists(output_directory_path):
@@ -185,6 +216,9 @@ class ModelSklearn(Model):
             }, metadata_file)
 
         joblib.dump(self.model, os.path.join(model_folder_path, 'model.joblib'))
+
+        if self.preprocess:
+            joblib.dump(self.preprocess, os.path.join(model_folder_path, 'preprocess.joblib'))
 
 
 class ModelCaret(Model):
@@ -266,7 +300,7 @@ class ModelH2O(Model):
         return scores
 
     def produce(self, specification):
-        predict_type = specification.get('configuration', {}).get('predict_type', 'MAX')
+        predict_type = specification.get('configuration', {}).get('predict_type', 'RAW')
 
         resource_uri = Dataset(specification['input']).get_resource_uri()
         data = h2o.import_file(resource_uri)
@@ -304,6 +338,85 @@ class ModelH2O(Model):
             os.makedirs(model_folder_path)
 
         model_path = h2o.save_model(self.model, path=model_folder_path, force=True)
+        with open(metadata_path, 'w') as metadata_file:
+            json.dump({
+                'system': self.system,
+                'model_id': self.model_id,
+                'model_filename': model_folder_path.replace(model_path, ''),
+                'predictors': self.predictors,
+                'targets': self.targets
+            }, metadata_file)
+
+
+class ModelLudwig(Model):
+    def __init__(self, model, predictors, targets, model_id=None, search_id=None):
+        super().__init__(model, 'ludwig', predictors, targets, model_id, search_id)
+
+    def describe(self):
+        return {
+            "description": str(self.model),
+            "model_id": self.model_id
+        }
+
+    def score(self, specification):
+
+        dataset = Dataset(specification['input'])
+        dataframe = dataset.get_dataframe()
+
+        predicted = self.model.predict(dataframe).as_data_frame()
+
+        # H2O supports only one target
+        target = self.targets[0]
+
+        scores = []
+        for metric in specification['performanceMetrics']:
+            scores.append({
+                'value': Model._score(metric, dataframe[target], predicted),
+                'metric': metric,
+                'target': target
+            })
+
+        return scores
+
+    def produce(self, specification):
+        predict_type = specification.get('configuration', {}).get('predict_type', 'RAW')
+
+        dataset = Dataset(specification['input'])
+        dataframe = dataset.get_dataframe()
+
+        predictions = self.model.predict(dataframe).as_data_frame()
+        predictions.insert(0, 'd3mIndex', dataframe['d3mIndex'])
+
+        output_directory_path = specification['output']['resource_uri'].replace('file://', '')
+        output_path = os.path.join(
+            *output_directory_path.split('/'),
+            str(uuid.uuid4()) + '.csv')
+
+        if not os.path.exists(output_directory_path):
+            os.makedirs(output_directory_path)
+
+        cwd = os.getcwd()
+        try:
+            os.chdir('/')
+            predictions.to_csv(output_path, index=False)
+        finally:
+            os.chdir(cwd)
+
+        return {
+            'data_pointer': output_path,
+            'predict_type': predict_type,
+            'search_id': self.search_id,
+            'model_id': self.model_id
+        }
+
+    def save(self):
+        model_folder_path = os.path.join(SAVED_MODELS_PATH, self.model_id)
+        metadata_path = os.path.join(model_folder_path, 'metadata.json')
+
+        if not os.path.exists(metadata_path):
+            os.makedirs(model_folder_path)
+
+        model_path = self.model.save(path=model_folder_path)
         with open(metadata_path, 'w') as metadata_file:
             json.dump({
                 'system': self.system,
