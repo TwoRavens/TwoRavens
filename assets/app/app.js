@@ -875,7 +875,7 @@ export let getSolverSpecification = problem => ({
             "stratified": problem.stratified,
             "trainTestRatio": problem.trainTestRatio
         },
-        "timeBoundSearch": problem.timeBoundSearch || 60 * 5,
+        "timeBoundSearch": problem.timeBoundSearch || 60 * .5,
         "timeBoundRun": problem.timeBoundRun,
         "rankSolutionsLimit": problem.solutionsLimit
     },
