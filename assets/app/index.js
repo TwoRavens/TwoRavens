@@ -615,7 +615,7 @@ class Body {
                                     system: system_name,
                                     system_params: app.solvers[system_name]
                                 }, {
-                                    "timeout": 3600,
+                                    "timeout": 999999999,
                                     "specification": specification
                                 })
                             });

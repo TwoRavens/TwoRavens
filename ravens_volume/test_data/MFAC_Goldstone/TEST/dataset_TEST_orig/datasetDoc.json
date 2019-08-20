@@ -73,13 +73,13 @@
         {
           "colIndex": 9,
           "colName": "ethherf",
-          "colType": "float",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 10,
           "colName": "relhrel",
-          "colType": "float",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
@@ -109,19 +109,19 @@
         {
           "colIndex": 15,
           "colName": "logim",
-          "colType": "float",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 16,
           "colName": "logtpop",
-          "colType": "float",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 17,
           "colName": "logmtn",
-          "colType": "float",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
@@ -139,7 +139,7 @@
         {
           "colIndex": 20,
           "colName": "log_gdpc",
-          "colType": "float",
+          "colType": "real",
           "role": ["attribute"]
         },
         {

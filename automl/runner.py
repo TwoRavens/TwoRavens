@@ -1,5 +1,6 @@
 import os
 import uuid
+import time
 
 import traceback
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, TimeoutError
@@ -27,7 +28,7 @@ from util_search import Search
 
 NUM_PROCESSES = 4
 
-TIMEOUT_MAX = 60 * 5
+TIMEOUT_MAX = 60 * 50
 TIMEOUT_DEFAULT = 2
 
 flask_app = flask.Flask(__name__)
@@ -77,9 +78,11 @@ def abortable_worker(msg_type, websocket_id, data, timeout, func, *args, **kwarg
 
 
 def solve_async(websocket_id, solver):
+    start_time = time.time()
     result = solver.run()
-    print('solve result')
-    print(result)
+    stop_time = time.time()
+    result['elapsed_time'] = stop_time - start_time
+
     requests.post(
         url=RECEIVE_ENDPOINT,
         json={
@@ -90,7 +93,11 @@ def solve_async(websocket_id, solver):
 
 
 def search_async(websocket_id, search):
+    start_time = time.time()
     result = search.run()
+    stop_time = time.time()
+    result['elapsed_time'] = stop_time - start_time
+
     requests.post(
         url=RECEIVE_ENDPOINT,
         json={
@@ -187,6 +194,9 @@ def app_solve():
     data['timeout'] = timeout
     websocket_id = data['websocket_id']
     specification = data['specification']
+
+    print(specification)
+    print(data.get('system_params'))
 
     solver = Solve(
         system=data['system'],

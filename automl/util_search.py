@@ -1,3 +1,6 @@
+import pandas
+import numpy as np
+from scipy.sparse.csr import csr_matrix
 from sklearn.impute import SimpleImputer
 
 from model import R_SERVICE, KEY_SUCCESS, KEY_MESSAGE, KEY_DATA, get_metric, should_maximize
@@ -7,6 +10,7 @@ from util_model import ModelSklearn, ModelH2O, ModelLudwig
 import uuid
 import abc
 import requests
+import sys
 
 # PREPROCESSING
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -21,7 +25,7 @@ def preprocess(dataframe, specification):
     X = specification['problem']['predictors']
     y = specification['problem']['targets'][0]
 
-    categorical_features = [i for i in specification['problem']['categorical'] if i != y]
+    categorical_features = [i for i in specification['problem']['categorical'] if i != y and i in X]
 
     categorical_transformer = Pipeline(steps=[
         ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
@@ -98,17 +102,17 @@ class SearchAutoSklearn(Search):
 
             if config['method'] == "HOLDOUT":
                 self.system_params['resampling_strategy'] = 'holdout'
-                self.system_params['resampling_strategy_arguments']['train_size'] = config.get('trainTestRatio') or .6
+                self.system_params['resampling_strategy_arguments']['train_size'] = max(0, config.get('trainTestRatio')) or .6
 
             if config['method'] == "K_FOLD":
                 self.system_params['resampling_strategy'] = 'cv'
                 self.system_params['resampling_strategy_arguments']['folds'] = config.get('folds') or 10
 
-            if config.get('timeBoundSearch'):
-                self.system_params['time_left_for_this_task'] = config.get('timeBoundSearch')
+        if self.specification.get('timeBoundSearch'):
+            self.system_params['time_left_for_this_task'] = self.specification.get('timeBoundSearch')
 
-            if config.get('timeBoundRun'):
-                self.system_params['per_run_time_limit'] = config.get('timeBoundRun')
+        if self.specification.get('timeBoundRun'):
+            self.system_params['per_run_time_limit'] = self.specification.get('timeBoundRun')
         # sklearn_temp_path = '/ravens_volume/solvers/auto_sklearn/temporary/' + str(uuid.uuid4())
         # tmp_folder = os.path.join(*sklearn_temp_path.split('/'), 'temp')
         # output_folder = os.path.join(*sklearn_temp_path.split('/'), 'output')
@@ -182,7 +186,7 @@ class SearchH2O(Search):
 
             if config['method'] == "HOLDOUT":
                 train, test = train.split_frame(
-                    ratios=[config.get('trainTestRatio') or .6],
+                    ratios=[max(0, config.get('trainTestRatio')) or .6],
                     seed=config.get('randomSeed'))
 
             if config['method'] == "K_FOLD":
@@ -254,10 +258,10 @@ class SearchTPOT(Search):
 
         self.system_params['config_dict'] = 'TPOT sparse'
 
-        scorer = make_scorer(
-            get_metric(self.specification['performanceMetric']),
-            greater_is_better=should_maximize(self.specification['performanceMetric']))
-        self.system_params['scoring'] = scorer
+        # scorer = make_scorer(
+        #     get_metric(self.specification['performanceMetric']),
+        #     greater_is_better=should_maximize(self.specification['performanceMetric']))
+        # self.system_params['scoring'] = scorer
 
         automl = {
             'REGRESSION': tpot.TPOTRegressor,
@@ -298,19 +302,25 @@ class SearchMLBox(Search):
         X = self.specification['problem']['predictors']
         y = self.specification['problem']['targets'][0]
 
+        stimulus, preprocessor = preprocess(dataframe, self.specification)
+
         automl = {
             'REGRESSION': mlbox.model.regression.Regressor,
             'CLASSIFICATION': mlbox.model.classification.Classifier
         }[self.specification['problem']['taskType']](**self.system_params)
 
-        automl.fit(dataframe[X], dataframe[y])
+        if issubclass(type(stimulus), csr_matrix):
+            stimulus = stimulus.toarray()
+
+        automl.fit(df_train=pandas.DataFrame(stimulus), y_train=dataframe[y])
 
         model = ModelSklearn(
             automl,
             system='mlbox',
             search_id=self.search_id,
             predictors=X,
-            targets=[y])
+            targets=[y],
+            preprocess=preprocessor)
         model.save()
 
         self.callback_found(model, self.callback_params)

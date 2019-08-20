@@ -43,13 +43,13 @@
         {
           "colIndex": 4,
           "colName": "loggdptarget",
-          "colType": "float",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 5,
           "colName": "logpop",
-          "colType": "float",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
@@ -121,7 +121,7 @@
         {
           "colIndex": 17,
           "colName": "lndyaddist",
-          "colType": "float",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
@@ -133,19 +133,19 @@
         {
           "colIndex": 19,
           "colName": "dyadpcyear2",
-          "colType": "float",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 20,
           "colName": "dyadpcyear3",
-          "colType": "float",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 21,
           "colName": "dyadpcyear4",
-          "colType": "float",
+          "colType": "real",
           "role": ["attribute"]
         }
       ]

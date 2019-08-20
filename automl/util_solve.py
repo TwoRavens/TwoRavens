@@ -1,4 +1,12 @@
-from util_search import SearchAutoSklearn, SearchCaret, SearchH2O, SearchTPOT
+from util_search import (
+    SearchAutoSklearn,
+    SearchCaret,
+    SearchH2O,
+    SearchTPOT,
+    SearchLudwig,
+    SearchMLJarSupervised,
+    SearchMLBox
+)
 
 
 class Solve(object):
@@ -10,7 +18,10 @@ class Solve(object):
             'auto_sklearn': SearchAutoSklearn,
             'h2o': SearchH2O,
             'tpot': SearchTPOT,
-            'caret': SearchCaret
+            'caret': SearchCaret,
+            'ludwig': SearchLudwig,
+            'mljar-supervised': SearchMLJarSupervised,
+            'mlbox': SearchMLBox
         }[system](self.specification['search'], self.system_params,
                   callback_found, callback_params=callback_params)
 

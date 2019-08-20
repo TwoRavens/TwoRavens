@@ -835,7 +835,7 @@ export let applicableMetrics = {
 
 export let solvers = {
     'tpot': {"generations": 1, population_size: 20},
-    'auto_sklearn': {"time_left_for_this_task": 60},
+    'auto_sklearn': {},
     'h2o': {},
     'caret': {
         trControlParams: {},
@@ -856,7 +856,10 @@ export let getSolverSpecification = problem => ({
         'problem': {
             "name": problem.problemID,
             "targets": problem.targets,
-            "predictors": getPredictorVariables(problem),
+            "predictors": workspace.d3m_config.name === 'Goldstone_problem' ? [
+                "sftptv2a", "sftptv2a4", "sftptv2a", "sftptv2a2",
+                "sftptv2a", "logim", "maccat", "disp4cat","stratidc"
+            ] : getPredictorVariables(problem),
             "categorical": getNominalVariables(problem),
             "taskSubtype": d3mTaskSubtype[problem.subTask],
             "taskType": d3mTaskType[problem.task]
@@ -872,7 +875,7 @@ export let getSolverSpecification = problem => ({
             "stratified": problem.stratified,
             "trainTestRatio": problem.trainTestRatio
         },
-        "timeBoundSearch": problem.timeBoundSearch || 30,
+        "timeBoundSearch": problem.timeBoundSearch || 60 * 5,
         "timeBoundRun": problem.timeBoundRun,
         "rankSolutionsLimit": problem.solutionsLimit
     },
@@ -895,7 +898,9 @@ export let getSolverSpecification = problem => ({
         "input": {
             "name": "data_test",
             "resource_uri": 'file://' + ({
-                'Goldstone_problem': '/home/shoe/TwoRavens/ravens_volume/test_data/MFAC_Goldstone/TEST/dataset_TEST/tables/learningData.csv',
+                'Gelpi_Avdan_problem': '/home/shoe/ravens_volume/test_data/MFAC_Gelpi_Avdan/TEST/dataset_TEST/tables/learningData.csv',
+                'Gleditsch_Ward_problem': '/home/shoe/ravens_volume/test_data/MFAC_Gleditsch_Ward/TEST/dataset_TEST/tables/learningData.csv',
+                'Goldstone_problem': '/home/shoe/TwoRavens/ravens_volume/test_data/MFAC_Goldstone/TEST/dataset_TEST/tables/learningData.csv'
             })[workspace.d3m_config.name]
         },
         "performanceMetrics": [problem.metric, ...problem.metrics]
