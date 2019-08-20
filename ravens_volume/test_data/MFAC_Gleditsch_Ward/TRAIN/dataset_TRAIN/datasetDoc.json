@@ -97,13 +97,13 @@
         {
           "colIndex": 13,
           "colName": "rbal",
-          "colType": "float",
+          "colType": "real",
           "role": ["attribute"]
         },
         {
           "colIndex": 14,
           "colName": "lnkmdist",
-          "colType": "float",
+          "colType": "real",
           "role": ["attribute"]
         }
       ]
