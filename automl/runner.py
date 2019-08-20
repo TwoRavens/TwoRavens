@@ -343,9 +343,11 @@ def catch_traceback(msg_type, websocket_id, data, func, *args, **kwargs):
 
 
 def solve_async(websocket_id, solver):
+    start_time = time.time()
     result = solver.run()
-    print('solve result')
-    print(result)
+    stop_time = time.time()
+    result['elapsed_time'] = stop_time - start_time
+
     requests.post(
         url=RECEIVE_ENDPOINT,
         json={
@@ -356,7 +358,11 @@ def solve_async(websocket_id, solver):
 
 
 def search_async(websocket_id, search):
+    start_time = time.time()
     result = search.run()
+    stop_time = time.time()
+    result['elapsed_time'] = stop_time - start_time
+
     requests.post(
         url=RECEIVE_ENDPOINT,
         json={

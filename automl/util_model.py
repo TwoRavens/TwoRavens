@@ -8,6 +8,7 @@ import requests
 import joblib
 import h2o
 import pandas
+from scipy.sparse import csr_matrix
 
 from model import SAVED_MODELS_PATH, R_SERVICE, get_metric
 from util_dataset import Dataset
@@ -90,7 +91,6 @@ class ModelSklearn(Model):
         self.preprocess = preprocess
 
     def describe(self):
-        # TODO: improve model description
         return {
             "description": str(self.model),
             "model_id": self.model_id,
@@ -105,6 +105,11 @@ class ModelSklearn(Model):
 
         if self.preprocess:
             stimulus = self.preprocess.transform(stimulus)
+
+        if self.system == 'mlbox':
+            if issubclass(type(stimulus), csr_matrix):
+                stimulus = stimulus.toarray()
+            stimulus = pandas.DataFrame(stimulus)
 
         predicted = self.model.predict(stimulus)
         actual = data[self.targets[0]].to_numpy().astype(float)
@@ -135,6 +140,11 @@ class ModelSklearn(Model):
 
         if self.preprocess:
             stimulus = self.preprocess.transform(stimulus)
+
+        if self.system == 'mlbox':
+            if issubclass(type(stimulus), csr_matrix):
+                stimulus = stimulus.toarray()
+            stimulus = pandas.DataFrame(stimulus)
 
         output_directory_path = specification['output']['resource_uri'].replace('file://', '')
         output_path = os.path.join(

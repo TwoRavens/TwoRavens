@@ -492,19 +492,25 @@ class SearchMLBox(Search):
         X = self.specification['problem']['predictors']
         y = self.specification['problem']['targets'][0]
 
+        stimulus, preprocessor = preprocess(dataframe, self.specification)
+
         automl = {
             'REGRESSION': mlbox.model.regression.Regressor,
             'CLASSIFICATION': mlbox.model.classification.Classifier
         }[self.specification['problem']['taskType']](**self.system_params)
 
-        automl.fit(dataframe[X], dataframe[y])
+        if issubclass(type(stimulus), csr_matrix):
+            stimulus = stimulus.toarray()
+
+        automl.fit(df_train=pandas.DataFrame(stimulus), y_train=dataframe[y])
 
         model = ModelSklearn(
             automl,
             system='mlbox',
             search_id=self.search_id,
             predictors=X,
-            targets=[y])
+            targets=[y],
+            preprocess=preprocessor)
         model.save()
 
         self.callback_found(model, self.callback_params)
