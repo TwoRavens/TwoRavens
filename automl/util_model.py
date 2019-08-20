@@ -111,8 +111,16 @@ class ModelSklearn(Model):
                 stimulus = stimulus.toarray()
             stimulus = pandas.DataFrame(stimulus)
 
+        if self.system == 'mljar-supervised':
+            stimulus = pandas.DataFrame(stimulus)
+            stimulus.columns = [str(i).strip() for i in stimulus.columns]
+
         predicted = self.model.predict(stimulus)
         actual = data[self.targets[0]].to_numpy().astype(float)
+
+        if self.system == 'mljar-supervised':
+            predicted = pandas.DataFrame((predicted.idxmax(axis=1) == 'p_1').astype(int))
+            predicted.columns = [self.targets[0]]
 
         scores = []
 
@@ -146,14 +154,25 @@ class ModelSklearn(Model):
                 stimulus = stimulus.toarray()
             stimulus = pandas.DataFrame(stimulus)
 
+        if self.system == 'mljar-supervised':
+            stimulus = pandas.DataFrame(stimulus)
+            stimulus.columns = [str(i).strip() for i in stimulus.columns]
+
         output_directory_path = specification['output']['resource_uri'].replace('file://', '')
         output_path = os.path.join(
             *output_directory_path.split('/'),
             str(uuid.uuid4()) + '.csv')
 
-        pred_function = self.model.predict if predict_type == 'RAW' else self.model.predict_proba
+        if self.system == 'mljar-supervised':
+            predictions = self.model.predict(stimulus)
+            if predict_type == 'RAW':
+                predictions = pandas.DataFrame((predictions.idxmax(axis=1) == 'p_1').astype(int))
+                predictions.columns = [self.targets[0]]
 
-        predictions = pandas.DataFrame(pred_function(stimulus), columns=self.targets)
+        else:
+            pred_function = self.model.predict if predict_type == 'RAW' else self.model.predict_proba
+            predictions = pandas.DataFrame(pred_function(stimulus), columns=self.targets)
+
         predictions.insert(0, 'd3mIndex', dataframe['d3mIndex'])
 
         if not os.path.exists(output_directory_path):

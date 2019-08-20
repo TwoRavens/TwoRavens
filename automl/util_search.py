@@ -534,12 +534,16 @@ class SearchLudwig(Search):
         targets = self.specification['problem']['targets']
 
         target_type = {
-            "REGRESSION": 'numeric',
+            "REGRESSION": 'numerical',
             "CLASSIFICATION": 'category'
         }[self.specification['problem']['taskType']]
 
+        # https://github.com/uber/ludwig/blob/master/tests/integration_tests/utils.py
         model_definition = {
-            "input_features": [{"name": predictor} for predictor in predictors],
+            "input_features": [{
+                "name": predictor,
+                "type": 'category' if predictor in self.specification['problem']['categorical'] else 'numerical'
+            } for predictor in predictors],
             "output_features": [{"name": target, "type": target_type} for target in targets]
         }
 
@@ -574,19 +578,32 @@ class SearchMLJarSupervised(Search):
         dataset = Dataset(self.specification['input'])
 
         dataframe = dataset.get_dataframe()
-        predictors = self.specification['problem']['predictors']
-        targets = self.specification['problem']['targets']
+        X = self.specification['problem']['predictors']
+        y = self.specification['problem']['targets'][0]
 
-        automl = AutoML()
+        stimulus, preprocessor = preprocess(dataframe, self.specification)
 
-        automl.fit(dataframe[predictors], dataframe[targets[0]])
+        if self.specification.get('timeBoundSearch'):
+            self.system_params['total_time_limit'] = self.specification['timeBoundSearch']
+
+        if self.specification.get('timeBoundRun'):
+            self.system_params['learner_time_limit'] = self.specification['timeBoundRun']
+
+        automl = AutoML(**self.system_params)
+
+        # mljar seems kind of fragile?
+        stimulus = pandas.DataFrame(stimulus)
+        stimulus.columns = [str(i).strip() for i in stimulus.columns]
+
+        automl.fit(stimulus, dataframe[y])
 
         model = ModelSklearn(
-            automl,
+            automl._best_model,
             system='mljar-supervised',
             search_id=self.search_id,
-            predictors=predictors,
-            targets=[targets[0]])
+            predictors=X,
+            targets=[y],
+            preprocess=preprocessor)
 
         model.save()
         self.callback_found(model, self.callback_params)
