@@ -1,3 +1,6 @@
+/**
+ * Component that lista available datasets
+ */
 import m from 'mithril';
 import * as eventdata from '../eventdata';
 
@@ -36,6 +39,10 @@ export default class CanvasDatasets {
                 m('col', {span: 1, width: '50%'}));
         };
 
+        /**
+         *  Iterate through the Datasets, listing them by name, description,
+         *    download/load buttons, etc
+         */
         return m('div#canvasDatasets', {
             style: {
                 display: display,
@@ -55,7 +62,13 @@ export default class CanvasDatasets {
                 ondblclick: () => this.dataset = undefined
             },
             m('h4', [
+                /*
+                  Dataset name
+                */
                 dataset['name'],
+                /*
+                  "Load button"
+                */
                 m(Button, {
                     id: 'btnLoad' + dataset['name'],
                     style: {margin: '0 0.25em', float: 'right'},
@@ -65,14 +78,23 @@ export default class CanvasDatasets {
                     },
                     disabled: eventdata.selectedDataset === dataset['key']
                 }, 'Load' + (eventdata.selectedDataset === dataset['key'] ? 'ed' : '')),
+                /*
+                  "Download button"
+                */
                 'download' in dataset && m(Button, {
                     id: 'btnDownload' + dataset['key'],
                     style: {margin: '0 0.25em', float: 'right'},
                     onclick: () => window.open(dataset['download'], '_blank')
                 }, 'Download')
             ]),
+            //
+            // Description
+            //
             dataset['description'],
             this.dataset === dataset['key'] && [
+                /*
+                  Information table
+                */
                 m(Table, {
                     data: {
                         'API Reference Key': dataset['key'],
@@ -81,6 +103,9 @@ export default class CanvasDatasets {
                     },
                     attrsCells: {style: {'padding': '5px'}}
                 }),
+                /*
+                  Subsets table
+                */
                 bold("Subsets:"),
                 m(Table, {
                     headers: ['label', 'subset', 'alignments', 'formats', 'columns'].map(name => m('[style=margin:0 0.5em]', name)),
@@ -117,6 +142,9 @@ export default class CanvasDatasets {
                     },
                     tableTags: colgroupDataset()
                 }),
+                /*
+                  Citation
+                */
                 dataset['citations'].map(citation => [m('br'), bold("Citation:"), m('br'), format(citation)])
             ])
         ))

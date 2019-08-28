@@ -25,6 +25,7 @@ from tworaven_apps.eventdata_queries.forms import \
 from tworaven_apps.eventdata_queries.models import \
     (EventDataSavedQuery,
      SEARCH_PARAMETERS, SEARCH_KEY_NAME, SEARCH_KEY_DESCRIPTION)
+from tworaven_apps.eventdata_queries import static_vals as evt_static
 
 LOGGER = logging.getLogger(__name__)
 
@@ -384,7 +385,6 @@ def api_get_files_list(request, version_id):
 @csrf_exempt
 def api_get_eventdata(request):
     """ general api to get event data"""
-
     success, json_req_obj = get_request_body_as_json(request)
 
     if not success:
@@ -412,6 +412,9 @@ def api_get_metadata(request):
 
     success, json_req_obj = get_request_body_as_json(request)
 
+    print(json_req_obj)
+    print(type(json_req_obj))
+
     if not success:
         return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
 
@@ -420,8 +423,17 @@ def api_get_metadata(request):
     if not form.is_valid():
         return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
 
-    return JsonResponse({name: EventJobUtil.get_metadata(name, json_req_obj[name])
-                         for name in ['collections', 'formats', 'alignments'] if name in json_req_obj})
+
+    metadata_info = {name: EventJobUtil.get_metadata(name, json_req_obj[name])
+                     for name in [evt_static.FOLDER_COLLECTIONS, 'formats', 'alignments']\
+                     if name in json_req_obj}
+
+    import json
+    print(json.dumps(metadata_info, indent=4))
+
+    return JsonResponse(metadata_info)
+    #return JsonResponse({name: EventJobUtil.get_metadata(name, json_req_obj[name])
+    #                     for name in ['collections', 'formats', 'alignments'] if name in json_req_obj})
 
 
 @csrf_exempt

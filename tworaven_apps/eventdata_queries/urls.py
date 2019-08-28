@@ -74,7 +74,7 @@ urlpatterns = [
          name='api_get_data'),
 
     path(r'api/import-dataset',
-             views.api_import_dataset,
-             name='api_import_dataset'),
+         views.api_import_dataset,
+         name='api_import_dataset'),
 
 ]
