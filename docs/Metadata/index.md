@@ -24,35 +24,41 @@ Variable Section and Variable Display section. Below is an example of the output
 
 {
      "self":{
-            ...metadata of the output...
+            "description": "",
+            "other attributes": ""
      },
      "dataset": {
-            ...metadata of the input dataset...
+            "description": "",
+            "other attributes": ""
      },
      "variables":{
         "var_1":{
-            ...statistic of var_1...
+            "variableName": "",
+            "other attributes": ""
         },
         "var_2":{
-            ...statistic of var_2...
+            "variableName": "",
+            "other attributes": ""
         },
-        ...
         "var_n":{
-            ...statistic of var_n...
-        },
+            "variableName": "",
+            "other attributes": ""
+        }
       },
       "variableDisplay":{
         "var_1":{
-            ...display setting of var_1...
+            "editable":"",
+            "other attributes":""
         },
         "var_2":{
-            ...display setting of var_2...
+            "editable":"",
+            "other attributes":""
         },
-        ...
         "var_n":{
-            ...display setting of var_n...
-        },
-      },
+            "editable":"",
+            "other attributes":""
+        }
+      }
     }
 ```
 
