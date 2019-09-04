@@ -1,46 +1,57 @@
 TwoRavens Metadata Service
 ==========================
 
-The TwoRavens metadata service is used preprocess tabular data to to
-provide summary statistics that power the TwoRavens interface. The
-preprocess output (defaults to JSON) may be used by programs and
-services to explore, query, and compare metadata.
+The TwoRaven Metadata Service (TRMS) provides the summary statistics that power the TwoRaven interface via using the preprocessed tabular data (Currently, it supports CSV, TAB, XLS and XLSX files). 
+This documentation describes the JSON specification language and how to use TRMS in your application.
+
 
 # Guide
-* Preprocess File Description
-    * [Preprocess Parameters](#preprocess-parameters)
+* JSON Output Structure
+    * [Overview](#overview)
     * [Self Section](#self-section)
     * [Dataset Section](#dataset-section)
     * [Variable Section](#variable-section)
     * [Variable Display Section](#variable-display-section)
-    * [Custom Statistics Section](#custom-statistics-section)
 * [License](https://github.com/TwoRavens/raven-metadata-service/blob/develop/LICENSE)
 
-Preprocess Parameters
-=====================
+Overview
+========
 
-### variables
-
-  Dictionary containing variable metadata
+Our service will return a JSON string that contains four main blocks: Self Section, Dataset-level information,
+Variable Section and Variable Display section. Below is an example of the output.
 
 ```json
 
-   {
+{
+     "self":{
+            ...metadata of the output...
+     },
      "dataset": {
-            ...dataset-level information...
+            ...metadata of the input dataset...
      },
      "variables":{
         "var_1":{
-            ...variable-level data...
+            ...statistic of var_1...
         },
         "var_2":{
-            ..variable-level data...
-        }
+            ...statistic of var_2...
+        },
+        ...
+        "var_n":{
+            ...statistic of var_n...
+        },
       },
       "variableDisplay":{
         "var_1":{
-            ...variable-level display data...
-        }
+            ...display setting of var_1...
+        },
+        "var_2":{
+            ...display setting of var_2...
+        },
+        ...
+        "var_n":{
+            ...display setting of var_n...
+        },
       },
     }
 ```
@@ -50,109 +61,107 @@ Self Section
 
 > **note**
 >
-> -   This section contains the structure and description of the
->     preprocessed file.
+> -   This section contains the information about the process task.
 
 ### description
 
- contains the link to the source.
+A brief description that contains the link to the service which generate this output.
 
-
- * **type**: URL
+ * **type**: String
 
 ### created
 
- The data and time when the preprocessed file was created.
+A timestamp shows when the task is created. (YYYY-MM-DD HH:MM:SS)
 
-
- * **type**: string
+ * **type**: String
 
 ### preprocessId
 
- It is the auto-generated ID given by the service to every preprocess file.
+An automatic generated ID for current task -- Currently is 'None'.
 
-
- * **type**: numeric
+ * **type**: Numeric/None
 
 ### version
 
- It describes the version of the preprocessed file.
+A number describes the version of current task.
 
+ * **type**: Numeric
 
- * **type**: numeric
+### schema(Optional)
 
-### schema
+Contains the description of the schema. You need to specify the value of 'SCHEMA_INFO_DICT' if this block is required. We don't provide this information by default.
 
- contains the description of the schema the service follows.
+| Attribute |                   Description                              |
+| --------- |:----------------------------------------------------------:|
+|    Name   | Name of the followed schema                                |
+|  Version  | Version of corresponding schema it applied                 |
+| SchemaUrl | Source url of the schema                                   |
+| SchemaDoc | Link to the corresponding schema                           |
 
- - **name**: name of the schema it follows.
- - **version**: version of the schema it follows.
- - **schema_url**: source url of the schema it follows.
- - **schema_docs**: link to the documentation of the schema it follows.
-
-
- * **type**: string
+ * **type**: Dict
 
 Dataset Section
 ===============
 
 > **note**
 >
-> -   This section contains the important parameters of preprocess file
->     at dataset level.
+> -   This section contains the important parameters of preprocess file at dataset level.
 
 
 ### description
 
- some definition.
+A brief description of input dataset. (Currently is null)
 
-
- * **type**: URL
-
-
+ * **type**: String/NULL
+ 
 ### unit of analysis
 
- some definition.
+Unknown definition. (Currently is null)
 
-
- * **type**: string
-
+ * **type**: String/NULL
 
 ### structure
 
- some definition.
+The structure of the input dataset.
 
-
- * **type**: string
-
+ * **type**: String
 
 ### rowCount
 
- number of observations in the dataset.
+Number of observations in the dataset.
 
-
- * **type**: numeric
-
+ * **type**: Integer
 
 ### variableCount
 
- number of variables in the dataset.
+number of variables in the dataset.
 
+ * **type**: Integer
 
- * **type**: numeric
+### dataSource(Optional)
 
+Contains some extra information about the raw file. You need to specify the value of 'data_source_info' when a process runner is created, if this block is required. This information is not provided by default.
 
-### dataSource
+| Attribute |                   Description                              |
+| --------- |:----------------------------------------------------------:|
+|    Name   | Name of input file                                         |
+|    Type   | File type (.csv, .xlxs etc)                                |
+|  Format   | Format of the input file                                   |
+| fileSize  | Size of the file in bytes                                  |
 
- contains the following details of the source file.
+ * **type**: Dict
 
- - **name**: name of the source file.
- - **type**: file type.
- - **format**: format of the file.
- - **fileSize**: size of the file.
+### citation(Optional)
 
+Unknown definition. default is null.
+ 
+ * **type**: String
 
- * **type**: string
+### error
+
+A message shows the error happened during dataset-level analysis. This entity may not exist if there is no error occured.
+
+ * **type**: String
     
 Variable Section
 ================
@@ -171,391 +180,226 @@ Variable Section
 > > }
 > > ```
 
-
-
-
 ### variableName
 
- Name of the variable
+Name of the variable (column).
 
-
- * **type**: string
-
-
+ * **type**: String
 
 ### description
 
- Brief explanation of the variable
+Brief explanation of the variable.
 
-
- * **type**: string
-
-
-
+ * **type**: String
 
 ### numchar
 
- Describes the variable as numeric or character valued
+The type of this variable (column).
 
-
- * **type**: string
- * **possible values**: character, numeric
-
-
+ * **type**: String
+ * **possible values**: 'character', 'numeric'
 
 ### nature
 
- Describes the classification of data into Nominal, Ordinal, Ratio, Interval, Percentage.
+The type of this variable (from statistic perspective), below is the table of possible values.
 
+|    Name   |                   Definition                               |
+| --------- |:----------------------------------------------------------:|
+|  Nominal  | Just names, IDs                                            |
+|  Ordinal  | Have/Represent rank order                                  |
+|  Interval | Has a fixed size of interval between data points           |
+|  Ratio    | Has a true zero point (e.g. mass, length)                  |
+|  Percent  | Namely, \[0.0, 1.0] or \[0, 100]%                            |
 
- * **type**: string
- * **possible values**: interval, nominal, ordinal, percent, ratio, other
-
-
+ * **type**: String
 
 ### binary
 
- Signifies that the data can only take two values
+A boolean flag indicates whether this variable is a binary variable or not.
 
-
- * **type**: boolean
-
-
-
+ * **type**: Boolean
 
 ### interval
 
- Describes numeric variables as either continuously valued, or discretely valued
+Indicate whether the variable is either continuous or discrete, if it's a numeric variable.
 
-
- * **type**: string
- * **possible values**: continuous, discrete
-
+ * **type**: String
+ * **possible values**: 'continuous', 'discrete' or 'NA'
 
 ### time
 
- Signifies that the variable describes points in time
+Currently not available, it should return the format of timestamp if this variable is a timestamp.
 
-
-
-
-
+ * **type**: String/None
 
 ### invalidCount
 
- Counts the number of invalid observations, including missing values, nulls, NA's and any observation with a value enumerated in invalidSpecialCodes
+Counts the number of invalid observations, including missing values, nulls, NA's and any observation with a value enumerated in invalidSpecialCodes.
 
-
- * **type**: integer
-
-
-
-### invalidSpecialCodes
-
- Any numbers that represent invalid observations
-
-
- * **type**: array
-
-
+ * **type**: Integer
 
 ### validCount
 
- Counts the number of valid observations
+Counts the number of valid observations
 
-
- * **type**: integer
-
-
+ * **type**: Integer
 
 ### uniqueCount
 
- Count of unique values, including invalid signifiers
+Count of unique values, including invalid observations.
 
-
- * **type**: integer
-
-
+ * **type**: Integer
 
 ### median
 
- A central value in the distribution such that there are as many values equal or above, as there are equal or below this value.
+> **note**
+>       - This attribute may have incorrect value, fix is needed.
 
- * **types**: number or string
+A central value in the distribution such that there are as many values equal or above, as there are equal or below this value. 
+It will be 'NA' if the data is not numerical.
 
-
-
+ * **type**: Numeric/String
 
 ### mean
 
- Average of all numeric values, which are not contained in invalidSpecialCodes
+Average of all numeric values, which are not contained in invalidSpecialCodes. It will be 'NA' if the data is not numerical.
 
- * **types**: number or string
-
-
-
+ * **type**: Numeric/String
 
 ### max
 
- Largest numeric value observed in dataset, that is not contained in invalidSpecialCodes
+Largest numeric value observed in dataset, that is not contained in invalidSpecialCodes. It will be 'NA' if the data is not numerical.
 
- * **types**: number or string
-
-
-
+ * **type**: Numeric/String
 
 ### min
 
- Least numeric value observed in dataset, that is not contained in invalidSpecialCodes
+Least numeric value observed in dataset, that is not contained in invalidSpecialCodes. It will be 'NA' if the data is not numerical.
 
- * **types**: number or string
-
-
-
+ * **type**: Numeric/String
 
 ### mode
 
- Value that occurs most frequently.  Multiple values in the case of ties.
+Value that occurs most frequently.  Multiple values in the case of ties.
 
- * **types**: array or string
-
-
-
+ * **type**: List of String/Numeric
 
 ### modeFreq
 
- Number of times value of mode is observed in variable
+Number of times value of mode is observed in variable.
 
- * **types**: integer or string
-
-
-
+ * **type**: Integer
 
 ### fewestValues
 
- Value that occurs least frequently.  Multiple values in the case of ties.
+Value that occurs least frequently.  Multiple values in the case of ties.
 
- * **types**: array or string
-
-
-
+ * **type**: List of String/Numeric
 
 ### fewestFreq
 
- Number of times value of fewestValues is observed in variable
+Number of times value of fewestValues is observed in variable.
 
- * **types**: integer or string
-
-
-
+ * **type**: Integer
 
 ### midpoint
 
- The value equidistant from the reported min and max values
+The value equidistant from the reported min and max values.
 
- * **types**: number or string
-
-
-
+ * **type**: Numeric/String
 
 ### midpointFreq
 
- Number of observations with value equal to minpoint
+Number of observations with value equal to midpoint.
 
- * **types**: integer or string
-
-
-
+ * **type**: Integer
 
 ### stdDev
 
- Standard deviation of the values, measuring the spread between values, specifically using population formula
+Standard deviation of the values, measuring the spread between values, specifically using population formula.
 
- * **types**: number or string
-
-
-
+ * **type**: Numeric
 
 ### herfindahlIndex
 
- Measure of heterogeneity of a categorical variable which gives the probability that any two randomly sampled observations have the same value
+Measure of heterogeneity of a categorical variable which gives the probability that any two randomly sampled observations have the same value.
 
- * **types**: number or string
+ * **type**: Numeric
 
-
-
+> **warning**
+> - Following attributes may be moved to **Variable Display Section** in the future.
 
 ### plotValues
 
- Plot points of a bar chart for tracing distribution of variable
+Contains the y-value of the plot, available while the **plot_type** is PLOT_BAR
 
- * **types**: object or string
-
-
-
+ * **types**: List of Numeric
 
 ### pdfPlotType
 
- Describes default type of plot appropriate to represent distribution of variable
+Describes default type of plot appropriate to represent the distribution of this variable.
 
- * **types**: string or null
-
-
-
+ * **type**: String/Null
+ * **possible values**: PLOT_BAR, PLOT_CONTINUOUS or None
 
 ### pdfPlotX
 
- Plot points along x dimension for tracing distribution of variable
+A list of number that specifies the x-coordinate of corresponding points of the probability density function.
 
- * **types**: array or null
-
-
-
+ * **types**: List of Numeric/Null
 
 ### pdfPlotY
 
- Plot points along y dimension for tracing distribution of variable
+A list of number that specifies the y-coordinate of corresponding points of the probability density function.
 
- * **types**: array or null
-
-
-
+ * **types**: List of Numeric/Null
 
 ### cdfPlotType
 
- Describes default type of plot appropriate to represent cumulative distribution of variable
+Describes default type of plot appropriate to represent the cumulative distribution of variable.
 
- * **types**: string or null
-
-
-
+ * **type**: String/Null
+ * **possible values**: PLOT_BAR, PLOT_CONTINUOUS or None
 
 ### cdfPlotX
 
- Plot points along x dimension for tracing cumulative distribution of variable
+A list of number that specifies the x-coordinate of corresponding points of the cumulative distribution function.
 
- * **types**: array or null
-
-
-
+ * **types**: List of Numeric/Null
 
 ### cdfPlotY
 
- Plot points along y dimension for tracing cumulative distribution of variable
+A list of number that specifies the x-coordinate of corresponding points of the cumulative distribution function.
 
- * **types**: array or null
-
-
-
-
-### interpretation
-
- Object containing descriptors to interpret variable
-
- * **types**: object or string
-
-
-
-
-### tworavens
-
- Object containing metadata specifically used by TwoRavens platform
-
- * **types**: object or string
+ * **types**: List of Numeric/Null
 
 Variable Display Section
 ========================
 
 > **note**
 >
-> -   This section contains the modified object/parameters in the
->     particular version of preprocessed dataset.
+> -   This section contains additional parameters to control the behavior of final plot.
 
 ### editable
 
-list of all the variable features which are editable. e.g `description`, `numchar`, etc.
+List of all the variable features which are editable. e.g `description`, `numchar`, etc.
 
-
-* **type**: string or null
+ * **type**: List of String
 
 ### viewable
 
-It is a boolean property set for a variable to decide to show it or not in the preprocessed data.
+It is a boolean property set for this variable to decide whether this attribute will be showed in the processed data.
 
-
-* **type**: boolean
+ * **type**: Boolean
 
 ### omit
 
 A list of all the features which are to be omitted for the particular variable.
 
-
-* **type**: string or null
-
-### images
-
-list containing custom/ scripted images of the variable data.
-
-
-* **type**: string or null
-
-Custom Statistics Section
-=========================
-
-> **note**
->
-> -   This section contains the custom statistics added by the user on
->     the dataset.
-
-### id
-
-unique id assigned by system to the custom statistic. e.g id_000001
-
-
-* **type**: string
-
-### name
-
-Name of the custom statistic.
-
-
-* **type**: string
-
-### variables
-
-list of variables involved in the custom statistic.
-
-* **type**: string
+ * **type**: String/Null
 
 ### images
 
-list of images associated with the custom statistic.
+A list contains custom/scripted images of the variable data.
 
-* **type**: string
-
-### value
-
-value of the custom statistic. e.g mean : `12`
-
-* **type**: string or null
-
-### description
-
-brief description of the custom statistics.
-
-* **type**: string or null
-
-### replication
-
-the concept/formula behind the custom statistic generation. e.g `sum of obs/ size`.
-
-* **type**: string or null
-
-### display
-
-owner of the custom statistic has an option to display the statistic or not.
-This can be done by changing a value of **viewable** to true or false.
-
-Default: true
-
-* **type**: boolean
+ * **type**: String/Null
