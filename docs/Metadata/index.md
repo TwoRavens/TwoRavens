@@ -19,6 +19,7 @@ This documentation describes the JSON specification language and how to use TRMS
     * [TypeGuessUtil](api_docs/type_guess_util.md)
     * [SummaryStatsUtil](api_docs/summary_stats_util.md)
     * [PlotValueUtil](api_docs/plot_value_util.md)
+    * [Additional Classes](api_docs/additional_util.md)
 * [License](https://github.com/TwoRavens/raven-metadata-service/blob/develop/LICENSE)
 
 Overview
