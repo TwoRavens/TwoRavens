@@ -32,7 +32,7 @@ Variable Section and Variable Display section. Below is an example of the output
 
 {
      "self":{
-            "description": *""*,
+            "description": "",
             "other attributes": ""
      },
      "dataset": {
