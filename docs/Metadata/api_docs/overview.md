@@ -90,11 +90,9 @@ Please refer to [TypeGuessUtil](type_guess_util.md) for advanced usage.
 SummaryStateUtil
 ----------------
 
-Please refer to :ref:`SummaryStateUtil` for advanced usage.
+Please refer to [SummaryStateUtil](summary_stats_util.md) for advanced usage.
 
 PlotValueUtil
 -------------
 
-Please refer to :ref:`PlotValueUtil` for advanced usage.
-
-* :ref:`test_ref`
+Please refer to [PlotValueUtil](plot_value_util.md) for advanced usage.

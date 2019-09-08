@@ -9,7 +9,7 @@ and executes the actual variable analysis function. Below is the function it pro
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a blank PreprocessRunner with specified setting.
 
 * **Parameters**:
-    * **dataframe** (*Pandas.Dataframe*):    A Dataframe entity that stores the input data in tabular format.
+    * **dataframe** (*Pandas.Dataframe*):    A Pandas.Dataframe entity that stores the input data in tabular format.
     * **job_id** (*String*):  Usage Unknown.
     * **jsonld_citation** (*Unknown*): Usage Unknown.
     * **schema_info_dict** (*Dict*): A dictionary that contains the schema information of input dataset. default is None.
@@ -29,7 +29,7 @@ and executes the actual variable analysis function. Below is the function it pro
 * **Parameters**:
     * **input_file** (*String*):    Path to the input dataset file.
         
-**load_update_file** (*preprocess_input, update_input*)
+**load_update_file** (preprocess_input, update_input)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Static method, it will initialize the PreprocessRunner via the JSON file contains sufficient information. The JSON file should have the same content after calling *get_final_json_indented*().
 
@@ -49,7 +49,7 @@ and executes the actual variable analysis function. Below is the function it pro
 
 * **Parameters**: None
 
-**show_final_info** (*indent=None*)
+**show_final_info** (indent=None)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Print a JSON string contains self section, dataset-level section, variable section and variable display section.
 
