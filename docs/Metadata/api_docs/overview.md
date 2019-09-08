@@ -87,12 +87,49 @@ Below is the code to instantiate a *TypeGuessUtil* object and use it to check th
 
 Please refer to [TypeGuessUtil](type_guess_util.md) for advanced usage.
 
-SummaryStateUtil
+SummaryStatsUtil
 ----------------
 
-Please refer to [SummaryStateUtil](summary_stats_util.md) for advanced usage.
+*SummaryStatsUtil* does the calculation for the statistic variables in the *ColumnInfo* class. It takes a *Pandas.Series* and a *ColumnInfo* as input, fill all the attributes via several built-in functions. Below is an example to use it.
+
+```python3
+    from summary_stats_util import SummaryStatsUtil
+    from type_guess_util import TypeGuessUtil
+    from column_info import ColumnInfo
+    import pandas as pd
+    ...
+    col_info = ColumnInfo(colname)
+    col_series = datafram[colname]
+    # 'dataframe' is the input Pandas.Dataframe and 'colname' is an available column name.
+    
+    type_util = TypeGuessUtil(col_series, col_info)
+    stat_util = SummaryStatsUtil(col_series, col_info)
+    # Use TypeGuessUtil first, stat_util need some information provided by that step.
+    ...
+``` 
+
+Please refer to [SummaryStatsUtil](summary_stats_util.md) for advanced usage.
 
 PlotValueUtil
 -------------
 
+*PlotValueUtil* does the calculation for the plot-specific variable in the *ColumnInfo* class. It follows the same pattern as *SummaryStatsUtil*, taking a *Pandas.Series* and a *ColumnInfo* as input, fill all the attributes via several built-in functions. Below is an example to use it.
+
+```python3
+    from summary_stats_util import SummaryStatsUtil
+    from type_guess_util import TypeGuessUtil
+    from plot_values import PlotValueUtil
+    from column_info import ColumnInfo
+    import pandas as pd
+    ...
+    col_info = ColumnInfo(colname)
+    col_series = datafram[colname]
+    # 'dataframe' is the input Pandas.Dataframe and 'colname' is an available column name.
+    
+    type_util = TypeGuessUtil(col_series, col_info)
+    stat_util = SummaryStatsUtil(col_series, col_info)
+    plot_util = PlotValueUtil(col_series, col_info)
+    # Use TypeGuessUtil and SummaryStatsUtil first, plot_util need some information provided by those steps.
+    ...
+``` 
 Please refer to [PlotValueUtil](plot_value_util.md) for advanced usage.
