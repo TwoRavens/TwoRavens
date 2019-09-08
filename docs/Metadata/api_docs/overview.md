@@ -8,7 +8,7 @@ Overview
 
 Below is the workflow graph of the analysis process. We will introduce the component one by one. In this page, only the basic usage of each component will be presented, please refer to corresponding linked page for advanced usage.
 
-![alt text](.../images/workflow.png "Metadata workflow diagram")
+![alt text](../images/workflow.png "Metadata workflow diagram")
 
 PreprocessRunner
 ----------------
@@ -45,7 +45,7 @@ Other one is more straightforward:
     ...
 ```
 
-Please refer to [PreprocessRunner](api_docs/preprocess_runner.md) for advanced usage.
+Please refer to [PreprocessRunner](preprocess_runner.md) for advanced usage.
 
 ColumnInfo
 ----------
@@ -62,7 +62,7 @@ You can instantiate a *ColumnInfo* via following code. However, in most cases, t
     ...
 ```
 
-Please refer to [ColumnInfo](api_docs/column_info.md) for advanced usage.
+Please refer to [ColumnInfo](column_info.md) for advanced usage.
 
 TypeGuessUtil
 -------------
@@ -85,7 +85,7 @@ Below is the code to instantiate a *TypeGuessUtil* object and use it to check th
     ...
 ```
 
-Please refer to [TypeGuessUtil](api_docs/type_guess_util.md) for advanced usage.
+Please refer to [TypeGuessUtil](type_guess_util.md) for advanced usage.
 
 SummaryStateUtil
 ----------------
