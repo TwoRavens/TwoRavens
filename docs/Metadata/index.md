@@ -13,7 +13,7 @@ This documentation describes the JSON specification language and how to use TRMS
     * [Variable Section](#variable-section)
     * [Variable Display Section](#variable-display-section)
 * API Documentation
-    * [Overview](api_docs/overview.md)
+    * [Overview (Basic Usage Included)](api_docs/overview.md)
 * [License](https://github.com/TwoRavens/raven-metadata-service/blob/develop/LICENSE)
 
 Overview
