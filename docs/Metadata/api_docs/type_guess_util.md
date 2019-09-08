@@ -10,6 +10,8 @@ TypeGuessUtil
 * **Parameters**:
     * **col_series** (*Pandas.Series*):    A Pandas.Series entity contains one column of the input.
     * **col_info** (*ColumnInfo*):  A ColumnInfo object that stores the information about corresponding column.
+    
+---
 
 **run_preprocess** ()
 
@@ -17,12 +19,16 @@ TypeGuessUtil
 
 * **Parameters**: None
 
+---
+
 **load_from_file** (input_file)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Static method, it will create a dataframe item by read given file. Return a None and an error message if any error happened. Return an initialized *PreprocessRunner* and a None if everything goes well.
 
 * **Parameters**:
     * **input_file** (*String*):    Path to the input dataset file.
+    
+---
 
 **load_update_file** (preprocess_input, update_input)
     
@@ -31,6 +37,8 @@ TypeGuessUtil
 * **Parameters**:
     * **preprocess_input** (*String*):    Path to the original JSON result file.
     * **update_input** (*String*):  Path to the new JSON result file.
+    
+---
 
 **get_self_section** ()
 
@@ -38,11 +46,15 @@ TypeGuessUtil
 
 * **Parameters**: None
 
+---
+
 **get_datset_level_section** ()
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a JSON string contains only the information in the dataset-level section.
 
 * **Parameters**: None
+
+---
 
 **show_final_info** (indent=None)
 
@@ -50,3 +62,4 @@ TypeGuessUtil
 
 * **Parameters**:
     * **indent** (*Integer*):    The number of blank you want to use for indent.
+    

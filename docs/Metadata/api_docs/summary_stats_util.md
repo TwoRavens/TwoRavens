@@ -10,12 +10,16 @@ SummaryStateUtil
 * **Parameters**:
     * **col_series** (*Pandas.Series*):    A Pandas.Series entity contains one column of the input.
     * **col_info** (*ColumnInfo*):  A ColumnInfo object that stores the information about corresponding column.
+    
+---
 
 **calc_stats** ()
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Compute numeric statistic if applicable, return True if the process has done correctly and False otherwise.
 
 * **Parameters**: None
+
+---
 
 **herfindahl_index** (col_data, char, sum_val, drop_missing=True)
 

@@ -3,6 +3,7 @@ PlotValueUtil
 
 *PlotValueUtil* does the calculation for the plot-specific variable in the *ColumnInfo* class. It follows the same pattern as *SummaryStatsUtil*, taking a *Pandas.Series* and a *ColumnInfo* as input, fill all the attributes via several built-in functions.
 
+
 **PlotValueUtil** (col_series, col_info)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a blank *PlotValueUtil* object, does the plot variable calculation and fill corresponding variables in the given *ColumnInfo* object.
@@ -10,6 +11,8 @@ PlotValueUtil
 * **Parameters**:
     * **col_series** (*Pandas.Series*):    A Pandas.Series entity contains one column of the input.
     * **col_info** (*ColumnInfo*):  A ColumnInfo object that stores the information about corresponding column.
+    
+---
 
 **ecdf** (data)
 
@@ -17,6 +20,8 @@ PlotValueUtil
 
 * **Parameters**:
     * **data** (List of Numeric): A list of x-axis used to compute corresponding y-axis.
+    
+---
 
 **cal_plot_values** (data)
 

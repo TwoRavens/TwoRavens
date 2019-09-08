@@ -9,12 +9,16 @@ ColumnInfo
 
 * **Parameters**:
     * **colname** (*String*):    Name of the column/variable/attribute.
+    
+---
 
 **is_numeric** ()
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return True if current variable is a numeric variable. False otherwise.
 
-    * **Parameters**: None
+* **Parameters**: None
+
+---
 
 **is_character** ()
 
@@ -22,12 +26,16 @@ ColumnInfo
 
 * **Parameters**: None
 
+---
+
 **is_valid_nature** (val)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Static method, return ture if the input *val* is a supported nature type.
 
 * **Parameters**:
     * **val** (*String*):    Name of the nature type.
+    
+---
 
 **is_valid_numchar** (val)
 
@@ -35,6 +43,8 @@ ColumnInfo
 
 * **Parameters**:
     * **val** (*String*):    Name of the variable type.
+    
+---
 
 **get_numeric_attribute_name** ()
 
@@ -42,12 +52,16 @@ ColumnInfo
 
 * **Parameters**: None
 
+---
+
 **is_numeric_attribute** (ye_attr_name)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return True if the input *ye_attr_name* is a numeric attribute.
 
 * **Parameters**:
     * **ye_attr_name** (*String*): Name of the attribute.
+    
+---
 
 **get_editable_column_labelsn** ()
 
@@ -55,17 +69,23 @@ ColumnInfo
 
 * **Parameters**: None
 
+---
+
 **get_variable_label_lookup** ()
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Static method, return a lookup consisting of {"variable name": "label name"}, Exclude variables starting with "default" as in "defaultTime"
 
 * **Parameters**: None
 
+---
+
 **print_values** ()
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Print all the information stored in this object to the screen.
 
 * **Parameters**: None
+
+---
 
 **as_dict** (as_string=False)
 
