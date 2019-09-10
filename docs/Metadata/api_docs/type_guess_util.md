@@ -5,7 +5,7 @@ TypeGuessUtil
 
 **TypeGuessUtil** (col_series, col_info)
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a blank PreprocessRunner with specified setting.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a blank TypeGuessUtil, does the data type analysis and fill corresponding variables in the given *ColumnInfo* object.
 
 * **Parameters**:
     * **col_series** (*Pandas.Series*):    A Pandas.Series entity contains one column of the input.
@@ -13,53 +13,43 @@ TypeGuessUtil
     
 ---
 
-**run_preprocess** ()
+**check_types** ()
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Let the PreprocessRuner execute the data profiling process. Return True is the process is done correctly, otherwise, an error message will be logged and False will be returned.
-
-* **Parameters**: None
-
----
-
-**load_from_file** (input_file)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Static method, it will create a dataframe item by read given file. Return a None and an error message if any error happened. Return an initialized *PreprocessRunner* and a None if everything goes well.
-
-* **Parameters**:
-    * **input_file** (*String*):    Path to the input dataset file.
-    
----
-
-**load_update_file** (preprocess_input, update_input)
-    
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Static method, it will initialize the PreprocessRunner via the JSON file contains sufficient information. The JSON file should have the same content after calling *get_final_json_indented*().
-
-* **Parameters**:
-    * **preprocess_input** (*String*):    Path to the original JSON result file.
-    * **update_input** (*String*):  Path to the new JSON result file.
-    
----
-
-**get_self_section** ()
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a JSON string contains only the information in the self section.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Does the data type analysis and fill corresponding variables in the given *ColumnInfo* object.
 
 * **Parameters**: None
 
 ---
+**is_not_numeric** (var_series)
 
-**get_datset_level_section** ()
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a JSON string contains only the information in the dataset-level section.
-
-* **Parameters**: None
-
----
-
-**show_final_info** (indent=None)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Print a JSON string contains self section, dataset-level section, variable section and variable display section.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Static method, check whether the input column is a numeric column or not. Return True if it is not numeric, False otherwise.
 
 * **Parameters**:
-    * **indent** (*Integer*):    The number of blank you want to use for indent.
+    * **var_series** (*Pandas.Series*): A Pandas.Series entity contains one column of the input.
+    
+---
+**is_not_logical** (var_series)
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Static method, check whether the input column contains boolean values.
+
+* **Parameters**:
+    * **var_series** (*Pandas.Series*): A Pandas.Series entity contains one column of the input.
+    
+---
+**check_nature** (data_series, continuous_check)
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Static method, check the nature of input column, return corresponding nature type.
+
+* **Parameters**:
+    * **data_series** (*Pandas.Series*): A Pandas.Series entity contains one column of the input.
+    * **continuous_check** (*Boolean*): A boolean flag that indicates the type of input column. Set to true if it is continuous, False otherwise.
+    
+---
+**chech_time** (var_series)
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Static method, check whether the input column is a time instance, return True if it is a time instance, False otherwise.
+
+* **Parameters**
+    * **data_series** (*Pandas.Series*): A Pandas.Series entity contains one column of the input.
+
     

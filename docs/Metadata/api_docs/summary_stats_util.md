@@ -1,4 +1,4 @@
-SummaryStateUtil
+SummaryStatsUtil
 ================
 
 *SummaryStatsUtil* does the calculation for the statistic variables in the *ColumnInfo* class. It takes a *Pandas.Series* and a *ColumnInfo* as input, fill all the attributes via several built-in functions.
