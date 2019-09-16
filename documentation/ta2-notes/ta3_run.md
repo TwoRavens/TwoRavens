@@ -35,6 +35,10 @@ For each command below, **FIRST**:
     ```
     fab run_rook
     ```
+5. If Mongo is not up then:
+    ```
+    mongod --config /usr/local/etc/mongod.conf
+    ```
 
 ## Open Browser
 
