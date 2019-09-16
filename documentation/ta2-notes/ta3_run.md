@@ -31,9 +31,9 @@ For each command below, **FIRST**:
     ```
     fab run_with_ta2
     ```
-4. Rook
+4. R applications
     ```
-    fab run_rook
+    fab run_flash
     ```
 5. If Mongo is not up then:
     ```
