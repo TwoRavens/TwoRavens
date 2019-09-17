@@ -141,7 +141,7 @@ class ImportanceEFDUtil(object):
             collection_name,
             datafile=fpath,
             column_names=columns,
-            reload=True)
+            indexes=['d3mIndex'])
 
         return OrderedDict({KEY_SUCCESS: True})
 
