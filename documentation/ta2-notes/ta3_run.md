@@ -1,7 +1,7 @@
 ## If you need to update any dependencies
 
 Go through the list of update commands in
-  -- `update_dependencies.md`
+  - `update_dependencies.md`
 
 ## Run the TA3 for an external TA2
 
