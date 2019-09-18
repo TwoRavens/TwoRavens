@@ -1563,10 +1563,27 @@ export async function estimate() {
     // let datasetDocPath = selectedProblem.datasetDocPath || workspace.d3m_config.dataset_schema;
     let datasetDocPath = workspace.d3m_config.dataset_schema;
 
+    let response = await m.request({
+        method: 'POST',
+        url: D3M_SVC_URL + '/get-test-train-split',
+        data: {
+            dataset_schema: workspace.d3m_config.dataset_schema,
+            train_test_ratio: selectedProblem.trainTestRatio
+        }
+    });
+
+    if (!response.success) {
+        alertError(response.message);
+        return;
+    }
+    let datasetDocPathTrain = response.data.dataset_schemas.train;
+    let datasetDocPathTest = response.data.dataset_schemas.test;
+    selectedProblem.indices = response.data.sample_test_indices;
+
     let allParams = {
         searchSolutionParams: solverD3M.GRPC_SearchSolutionsRequest(selectedProblem),
-        fitSolutionDefaultParams: solverD3M.GRPC_GetFitSolutionRequest(datasetDocPath),
-        produceSolutionDefaultParams: solverD3M.GRPC_ProduceSolutionRequest(datasetDocPath),
+        fitSolutionDefaultParams: solverD3M.GRPC_GetFitSolutionRequest(datasetDocPathTrain),
+        produceSolutionDefaultParams: solverD3M.GRPC_ProduceSolutionRequest(datasetDocPathTest),
         scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath)
     };
 

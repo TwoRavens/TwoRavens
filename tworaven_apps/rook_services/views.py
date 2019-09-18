@@ -153,14 +153,14 @@ def view_rook_healthcheck(request):
     return HttpResponse(rservice_req.text)
 
 
-def create_partials_destination_directory(user_workspace):
+def create_destination_directory(user_workspace, role):
     """Used to add a write directory for the partials app"""
     if not isinstance(user_workspace, UserWorkspace):
         return err_resp('Error "user_workspace" must be a UserWorkspace object.')
 
     # build destination path for partials app
     dest_dir_path = join(user_workspace.d3m_config.additional_inputs,
-                         'partials',
+                         role,
                          f'ws_{user_workspace.id}',
                          get_timestamp_string())
 
@@ -169,7 +169,6 @@ def create_partials_destination_directory(user_workspace):
         return err_resp(f' {new_dir_info.err_msg} ({dest_dir_path})')
 
     return ok_resp(dest_dir_path)
-
 
 
 @csrf_exempt
@@ -210,7 +209,7 @@ def view_partials_app(request):
 
     # Create a directory for rook to write to
     #
-    dest_dir_info = create_partials_destination_directory(user_workspace)
+    dest_dir_info = create_destination_directory(user_workspace, role='partials')
     print('dest_dir_info', dest_dir_info)
 
 

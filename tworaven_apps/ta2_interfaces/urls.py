@@ -22,10 +22,6 @@ urlpatterns = (
          views_additional.view_get_problem_schema,
          name='get_problem_schema'),
 
-    path(r'debug-pipeline-steps',
-         views_additional.view_show_pipeline_steps,
-         name='view_show_pipeline_steps'),
-
     path(r'retrieve-output-data',
          views_additional.view_retrieve_d3m_output_data,
          name='view_retrieve_d3m_output_data'),
@@ -41,6 +37,10 @@ urlpatterns = (
     path(r'retrieve-output-EFD-data',
          views_additional.view_retrieve_d3m_EFD_data,
          name='view_retrieve_d3m_EFD_data'),
+
+    path(r'get-test-train-split',
+         views_additional.get_test_train_split,
+         name='get-test-train-split'),
 
     re_path((r'stored-request/(?P<hash_id>[\w]{40,200})$'),
             views_saved_requests.view_stored_request,

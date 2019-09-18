@@ -32,6 +32,9 @@ export let getSolutionAdapter = (problem, solution) => ({
         if (!resultsData.actuals) return;
         if (!resultsData.fitted[solution.pipelineId]) return;
 
+        console.log('resultsData')
+        console.log(resultsData)
+
         // cached data is current, return it
         return resultsData.actuals.map(point => point.d3mIndex)
             .map(sample => resultsData.fitted[solution.pipelineId][sample][target])
@@ -183,14 +186,29 @@ export let loadActualValues = async problem => {
         response = await app.getData({
             method: 'aggregate',
             query: JSON.stringify(queryMongo.buildPipeline(
-                [...workspace.raven_config.hardManipulations, ...problem.manipulations, {
-                    type: 'menu',
-                    metadata: {
-                        type: 'data',
-                        variables: ['d3mIndex', ...problem.targets],
-                        sample: recordLimit
-                    }
-                }],
+                [
+                    ...workspace.raven_config.hardManipulations,
+                    ...problem.manipulations,
+                    {
+                        type: "subset",
+                        abstractQuery: [
+                            {
+                                column: "d3mIndex",
+                                children: problem.indices.map(index => ({value: index})),
+                                subset: 'discrete',
+                                type: 'rule'
+                            }
+                        ]
+                    },
+                    {
+                        type: 'menu',
+                        metadata: {
+                            type: 'data',
+                            variables: ['d3mIndex', ...problem.targets],
+                            sample: recordLimit
+                        }
+                    },
+                ],
                 workspace.raven_config.variablesInitial)['pipeline'])
         })
     } catch (err) {

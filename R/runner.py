@@ -9,7 +9,7 @@ from multiprocessing import Pool
 NUM_PROCESSES = 4
 
 TIMEOUT_MAX = 60 * 5
-TIMEOUT_DEFAULT = 2
+TIMEOUT_DEFAULT = 60
 
 KEY_SUCCESS = 'success'
 KEY_DATA = 'data'

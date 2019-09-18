@@ -10,6 +10,7 @@ from django.http import JsonResponse, HttpResponse  # , Http404
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 
+from tworaven_apps.rook_services.views import create_destination_directory
 from tworaven_apps.ta2_interfaces.util_results_importance_EFD import ImportanceEFDUtil
 from tworaven_apps.ta2_interfaces.util_results_confusion import ConfusionUtil
 from tworaven_apps.ta2_interfaces.grpc_util import TA3TA2Util
@@ -22,8 +23,15 @@ from tworaven_apps.utils.view_helper import \
      get_json_success)
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
+from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 
+import shutil
 from os import path
+import os
+from d3m.container.dataset import Dataset
+
+from sklearn.model_selection import train_test_split
+
 
 @csrf_exempt
 @cache_page(settings.PAGE_CACHE_TIME)
@@ -125,7 +133,7 @@ def view_retrieve_d3m_EFD_data(request):
         return JsonResponse(get_json_error(req_body_info.err_msg))
 
     req_info = req_body_info.result_obj
-    if not KEY_DATA_POINTER in req_info:
+    if KEY_DATA_POINTER not in req_info:
         user_msg = ('No key found: "%s"' % KEY_DATA_POINTER)
         return JsonResponse(get_json_error(user_msg))
 
@@ -141,12 +149,53 @@ def view_retrieve_d3m_EFD_data(request):
 
     return JsonResponse(statistics_util.get_final_results())
 
-def view_show_pipeline_steps(request):
-    """If any are available, lists the pipeline steps in StoredResponse objects"""
-    putil = PipelineInfoUtil()
 
-    view_info = dict(pipeline_util=putil)
+@csrf_exempt
+def get_test_train_split(request):
+    """Expects a JSON request containing "datasetDoc_path"
+    For example: { "datasetDoc_path": "/datasetDoc.json"}
+    """
+    req_body_info = get_request_body_as_json(request)
+    if not req_body_info.success:
+        return JsonResponse(get_json_error(req_body_info.err_msg))
 
-    return render(request,
-                  'ta2_interfaces/view_show_pipeline_steps.html',
-                  view_info)
+    user_workspace_info = get_latest_user_workspace(request)
+    if not user_workspace_info.success:
+        return JsonResponse(get_json_error(user_workspace_info.err_msg))
+    user_workspace = user_workspace_info.result_obj
+    req_info = req_body_info.result_obj
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    dataset = Dataset.load(f'file://{req_info["dataset_schema"]}')
+    dataframe = next(iter(dataset.values()))
+    dataframe_train, dataframe_test = train_test_split(dataframe, train_size=req_info.get('train_test_ratio', .7))
+
+    datasetDocs = {}
+    for role, dataframe_partition in (('train', dataframe_train), ('test', dataframe_test)):
+        dest_dir_info = create_destination_directory(user_workspace, role=role)
+        if not dest_dir_info.success:
+            return JsonResponse(get_json_error(dest_dir_info.err_msg))
+        dest_directory = dest_dir_info.result_obj
+        datasetDoc_path = path.join(dest_directory, 'datasetDoc.json')
+        tables_directory = os.path.join(dest_directory, 'tables')
+        csv_path = os.path.join(tables_directory, 'learningData.csv')
+
+        os.makedirs(tables_directory)
+
+        shutil.copyfile(req_info['dataset_schema'], datasetDoc_path)
+        dataframe_partition.to_csv(csv_path)
+
+        datasetDocs[role] = datasetDoc_path
+
+    sample_test_indices = dataframe_test['d3mIndex'].astype('int32')\
+        .sample(n=req_info.get("sampleCount", min(1000, len(dataframe_test)))).tolist()
+
+    return JsonResponse({
+        "success": True, "data": {
+            'dataset_schemas': datasetDocs,
+            'sample_test_indices': sample_test_indices
+        },
+        "message": "data partitioning successful"
+    })
