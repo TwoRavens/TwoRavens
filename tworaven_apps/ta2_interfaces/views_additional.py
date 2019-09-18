@@ -28,6 +28,7 @@ from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 import shutil
 from os import path
 import os
+import json
 from d3m.container.dataset import Dataset
 
 from sklearn.model_selection import train_test_split
@@ -151,25 +152,32 @@ def view_retrieve_d3m_EFD_data(request):
 
 
 @csrf_exempt
-def get_test_train_split(request):
+def get_train_test_split(request):
     """Expects a JSON request containing "datasetDoc_path"
     For example: { "datasetDoc_path": "/datasetDoc.json"}
     """
+    # request body
     req_body_info = get_request_body_as_json(request)
     if not req_body_info.success:
         return JsonResponse(get_json_error(req_body_info.err_msg))
+    req_info = req_body_info.result_obj
 
+    # workspace
     user_workspace_info = get_latest_user_workspace(request)
     if not user_workspace_info.success:
         return JsonResponse(get_json_error(user_workspace_info.err_msg))
     user_workspace = user_workspace_info.result_obj
-    req_info = req_body_info.result_obj
+
+    # user
     user_info = get_authenticated_user(request)
     if not user_info.success:
         return JsonResponse(get_json_error(user_info.err_msg))
 
+    dataset_schema = json.load(open(req_info['dataset_schema'], 'r'))
+    resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
+
     dataset = Dataset.load(f'file://{req_info["dataset_schema"]}')
-    dataframe = next(iter(dataset.values()))
+    dataframe = dataset[resource_schema['resID']]
     dataframe_train, dataframe_test = train_test_split(dataframe, train_size=req_info.get('train_test_ratio', .7))
 
     datasetDocs = {}
@@ -177,16 +185,15 @@ def get_test_train_split(request):
         dest_dir_info = create_destination_directory(user_workspace, role=role)
         if not dest_dir_info.success:
             return JsonResponse(get_json_error(dest_dir_info.err_msg))
+
         dest_directory = dest_dir_info.result_obj
-        datasetDoc_path = path.join(dest_directory, 'datasetDoc.json')
-        tables_directory = os.path.join(dest_directory, 'tables')
-        csv_path = os.path.join(tables_directory, 'learningData.csv')
-
-        os.makedirs(tables_directory)
-
-        shutil.copyfile(req_info['dataset_schema'], datasetDoc_path)
+        csv_path = os.path.join(dest_directory, resource_schema['resPath'])
+        shutil.rmtree(dest_directory)
+        shutil.copytree(user_workspace.d3m_config.training_data_root, dest_directory)
+        os.remove(csv_path)
         dataframe_partition.to_csv(csv_path)
 
+        datasetDoc_path = path.join(dest_directory, 'datasetDoc.json')
         datasetDocs[role] = datasetDoc_path
 
     sample_test_indices = dataframe_test['d3mIndex'].astype('int32')\

@@ -38,9 +38,9 @@ urlpatterns = (
          views_additional.view_retrieve_d3m_EFD_data,
          name='view_retrieve_d3m_EFD_data'),
 
-    path(r'get-test-train-split',
-         views_additional.get_test_train_split,
-         name='get-test-train-split'),
+    path(r'get-train-test-split',
+         views_additional.get_train_test_split,
+         name='get-train-test-split'),
 
     re_path((r'stored-request/(?P<hash_id>[\w]{40,200})$'),
             views_saved_requests.view_stored_request,

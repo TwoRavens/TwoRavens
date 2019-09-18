@@ -1565,7 +1565,7 @@ export async function estimate() {
 
     let response = await m.request({
         method: 'POST',
-        url: D3M_SVC_URL + '/get-test-train-split',
+        url: D3M_SVC_URL + '/get-train-test-split',
         data: {
             dataset_schema: workspace.d3m_config.dataset_schema,
             train_test_ratio: selectedProblem.trainTestRatio
