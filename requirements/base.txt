@@ -65,3 +65,6 @@ pylint>=2.3.1
 
 # to show git branch name on page
 GitPython==2.1.11
+
+# for dataset loading
+d3m==2019.6.7
