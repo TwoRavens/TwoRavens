@@ -32,8 +32,6 @@ export let getSolutionAdapter = (problem, solution) => ({
         if (!resultsData.actuals) return;
         if (!resultsData.fitted[solution.pipelineId]) return;
 
-        console.log('resultsData')
-        console.log(resultsData)
 
         // cached data is current, return it
         return resultsData.actuals.map(point => point.d3mIndex)
