@@ -5,5 +5,4 @@ pip install -r requirements/dev.txt
 python manage.py migrate
 npm install
 git pull --recurse-submodules
-mongod --config /usr/local/etc/mongod.conf
 ```
