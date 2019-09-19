@@ -4,7 +4,12 @@ Updated 9/17/2017.
 
 ## Get the CMU docker image:
 
-`from somewhere`
+ - login is the same as gitlab credentials
+
+```
+docker login registry.datadrivendiscovery.org
+docker pull registry.datadrivendiscovery.org/sheath/cmu-ta2:live
+```
 
 ## Run it with env variable
 
