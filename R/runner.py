@@ -2,6 +2,7 @@ import rpy2.robjects as robjects
 import json
 import os
 import sys
+from distutils.util import strtobool
 
 import flask
 from multiprocessing import Pool
@@ -16,8 +17,10 @@ KEY_DATA = 'data'
 
 flask_app = flask.Flask(__name__)
 
-production = os.getenv('FLASK_USE_PRODUCTION_MODE', 'no') == 'yes'
+production = strtobool(os.getenv('FLASK_USE_PRODUCTION_MODE', 'False'))
+
 flask_app.debug = not production
+
 
 
 # multiprocessing.Process is buffered, stdout must be flushed manually
@@ -91,7 +94,7 @@ if __name__ == '__main__':
     pool = Pool(processes=NUM_PROCESSES)
 
     try:
-        flask_app.run(port=8000, threaded=True)
+        flask_app.run(host='0.0.0.0', port=8000, threaded=True)
     finally:
         pool.close()
         pool.join()
