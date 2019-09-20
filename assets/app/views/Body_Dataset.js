@@ -23,7 +23,7 @@ export default class Body_Dataset {
             }
         });
 
-        this.reportURL = D3M_SVC_URL + '/download-file?' + m.buildQueryString({
+        this.reportURL = D3M_SVC_URL + '/download-report-file?' + m.buildQueryString({
             data_pointer: response.report_url,
             content_type: 'application/pdf'
         });

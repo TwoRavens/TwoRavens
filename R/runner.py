@@ -2,7 +2,8 @@ import rpy2.robjects as robjects
 import json
 import os
 import sys
-
+from distutils.util import strtobool
+from datetime import datetime
 import flask
 from multiprocessing import Pool
 
@@ -16,8 +17,10 @@ KEY_DATA = 'data'
 
 flask_app = flask.Flask(__name__)
 
-production = os.getenv('FLASK_USE_PRODUCTION_MODE', 'no') == 'yes'
+production = strtobool(os.getenv('FLASK_USE_PRODUCTION_MODE', 'False'))
+
 flask_app.debug = not production
+
 
 
 # multiprocessing.Process is buffered, stdout must be flushed manually
@@ -45,6 +48,11 @@ def task_handler(task):
     # R returns a singleton list of a json string. Unwrap it, but don't parse
     # Parsing unnecessary because text can be returned with a json header
     return robjects.globalenv[task['app']](data_casted)[0]
+
+@flask_app.route('/healthCheck.app', methods=['GET', 'POST'])
+def healthcheck():
+    """legacy root from rook"""
+    return 'Health check. Looks good.<br />(%s)' % (datetime.now())
 
 
 @flask_app.route('/<r_app>', methods=['POST'])
@@ -76,6 +84,7 @@ def app_general(r_app):
         return json.dumps({KEY_SUCCESS: False, KEY_DATA: 'Timeout exceeded'})
 
 
+
 # convert nested python objects to nested R objects
 def r_cast(content):
     robjects.r.library('jsonlite')
@@ -91,7 +100,7 @@ if __name__ == '__main__':
     pool = Pool(processes=NUM_PROCESSES)
 
     try:
-        flask_app.run(port=8000, threaded=True)
+        flask_app.run(host='0.0.0.0', port=8000, threaded=True)
     finally:
         pool.close()
         pool.join()

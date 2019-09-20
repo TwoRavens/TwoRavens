@@ -1,6 +1,6 @@
 # Note: This only runs the Django app, not the rook services
 FROM python:3.6.8
-MAINTAINER Raman Prasad (raman_prasad@harvard.edu)
+MAINTAINER TwoRavens http://2ra.vn/
 
 LABEL organization="Two Ravens" \
       2ra.vn.version="0.0.6-beta" \
