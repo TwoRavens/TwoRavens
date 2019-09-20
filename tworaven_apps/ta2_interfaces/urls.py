@@ -30,6 +30,10 @@ urlpatterns = (
          views_additional.view_download_file,
          name='view_download_file'),
 
+    path(r'download-report-file',
+         views_additional.view_download_report_file,
+         name='view_download_report_file'),
+
     path(r'retrieve-output-confusion-data',
          views_additional.view_retrieve_d3m_confusion_data,
          name='view_retrieve_d3m_confusion_data'),

@@ -4,9 +4,11 @@ Functions for when the UI sends JSON requests to route to TA2s as gRPC calls
      e.g. lots may change--including the "req_" files being part of a separate service
 """
 from urllib import parse
+from os.path import basename, isfile
 from django.shortcuts import render
 from django.conf import settings
-from django.http import JsonResponse, HttpResponse  # , Http404
+from django.http import JsonResponse, HttpResponse, HttpResponseNotFound
+
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 
@@ -77,6 +79,7 @@ def view_retrieve_d3m_output_data(request):
     return JsonResponse(embed_util.get_final_results())
 
 
+
 @csrf_exempt
 def view_download_file(request):
     data_pointer = request.GET.get('data_pointer', None)
@@ -96,6 +99,61 @@ def view_download_file(request):
         return HttpResponse(
             file_download,
             content_type=content_type)
+
+
+
+@csrf_exempt
+def view_download_report_file(request):
+    """Return the report, which is generally a PDF file"""
+    data_pointer = request.GET.get('data_pointer', None)
+    content_type = parse.unquote(request.GET.get('content_type', 'application/force-download'))
+
+    # Make sure the file exists
+    #
+    if not data_pointer:
+        user_msg = ('No key found: "%s"' % KEY_DATA_POINTER)
+        return JsonResponse(get_json_error(user_msg))
+
+    data_pointer = parse.unquote(data_pointer)
+
+    if not isfile(data_pointer):
+        user_msg = ('No file found: "%s"' % KEY_DATA_POINTER)
+        return JsonResponse(get_json_error(user_msg))
+
+    # Read the report and send it back as an attachment
+    #
+    report_filename = basename(data_pointer)
+
+    try:
+        with open(data_pointer, 'rb') as ze_file:
+            file_data = ze_file.read()
+
+        # sending response
+        response = HttpResponse(file_data, content_type=content_type)
+        # response['Content-Disposition'] = f'attachment; filename="{report_filename}"'
+
+    except IOError:
+        # handle file not exist case here
+        response = HttpResponseNotFound('<h1>File not exist</h1>')
+
+    return response
+
+
+
+    response = HttpResponse(pdf, content_type='application/pdf')
+
+    with open(data_pointer, 'r', encoding="ISO-8859-1") as file_download:
+        return HttpResponse(
+            file_download,
+            content_type=content_type)
+"""
+filename = "sample_pdf.pdf"
+
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="' + filename + '"'
+    return response
+"""
+
 
 @csrf_exempt
 def view_retrieve_d3m_confusion_data(request):
