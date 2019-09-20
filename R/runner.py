@@ -49,7 +49,7 @@ def task_handler(task):
     # Parsing unnecessary because text can be returned with a json header
     return robjects.globalenv[task['app']](data_casted)[0]
 
-@flask_app.route('healthCheck.app', methods=['GET', 'POST'])
+@flask_app.route('/healthCheck.app', methods=['GET', 'POST'])
 def healthcheck():
     """legacy root from rook"""
     return 'Health check. Looks good.<br />(%s)' % (datetime.now())
