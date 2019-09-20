@@ -3,7 +3,7 @@ import json
 import os
 import sys
 from distutils.util import strtobool
-
+from datetime import datetime
 import flask
 from multiprocessing import Pool
 
@@ -49,6 +49,11 @@ def task_handler(task):
     # Parsing unnecessary because text can be returned with a json header
     return robjects.globalenv[task['app']](data_casted)[0]
 
+@flask_app.route('healthCheck.app', methods=['GET', 'POST'])
+def healthcheck():
+    """legacy root from rook"""
+    return 'Health check. Looks good.<br />(%s)' % (datetime.now())
+
 
 @flask_app.route('/<r_app>', methods=['POST'])
 def app_general(r_app):
@@ -77,6 +82,7 @@ def app_general(r_app):
         return resp
     except TimeoutError:
         return json.dumps({KEY_SUCCESS: False, KEY_DATA: 'Timeout exceeded'})
+
 
 
 # convert nested python objects to nested R objects

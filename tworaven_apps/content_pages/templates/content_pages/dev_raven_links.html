@@ -42,9 +42,12 @@
             <ul>
               <li><a href="{% url 'view_test_form' %}">gRPC test form</a></li>
               <li><a href="{% url 'view_save_problem_form' %}">save problem test form</a></li>
+              {% comment %}
               <li><a href="{% url 'view_show_pipeline_steps' %}">Pipeline steps from DescribeSolution</a>
                 <br />(Note: May have stale data. To clear it:
                 <br /><code>fab clear_ta2_stored_requests</code>)</li>
+              {% endcomment %}
+
             </ul>
             <hr />
             <ul>
