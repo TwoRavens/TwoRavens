@@ -7,7 +7,11 @@ Django==2.1.10
 django-model-utils==3.0.0
 django-webpack-loader==0.6.0
 jsonfield==2.0.2
-requests==2.20.0
+
+# requests==2.20.0
+# downgrade for d3m package
+requests==2.19.1
+
 django-storages==1.7.1
 
 # fabric for dev: to run npm and test server with one command
@@ -31,13 +35,7 @@ redis==3.2.0
 # for nist k8s templates
 Jinja2==2.10.1
 
-# for eventdata and d3m results joins
-#
-pandas==0.23.4
 
-# for the confusion matrix
-#
-sklearn==0.0
 
 # django channels/daphne
 #  note on http2: https://github.com/django/daphne#http2-support
@@ -68,3 +66,11 @@ GitPython==2.1.11
 
 # for dataset loading
 d3m==2019.6.7
+
+# for eventdata and d3m results joins
+#
+#pandas==0.23.4
+
+# for the confusion matrix
+#
+#sklearn==0.0
