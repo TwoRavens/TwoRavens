@@ -14,6 +14,12 @@ Demo [TwoRavens D3M](http://2ravens.org) \\
 Demo [TwoRavens for Event Data](http://eventdata.2ravens.org) \\
 Demo [Metadata Service](http://metadata.2ravens.org)
 
+# Metadata Service Samples/Benchmarks
+
+| File | Size | # Rows | # Cols | Time | Result |
+| --- | --- | --- | --- | --- | --- |  
+| [ajps_replication_long.tab](https://dataverse.harvard.edu/file.xhtml?persistentId=doi:10.7910/DVN/CQXHTH/UGSMIP&version=1.0) | 86.5 kB  | 360 | 66 | 0.24 s | [.json](https://raw.githubusercontent.com/TwoRavens/raven-metadata-service/dataverse-test/test_data/dataverse/python/CQXHTH_ajps_lebanon_raw_wide.tab) | 
+
 # Related Publications
 Gil, Yolanda, James Honaker, Shikhar Gupta, Yibo Ma, Vito D'Orazio, Daniel Garijo, Shruti Gadewar, Qifan Yang, and Neda Jahanshad. "Towards human-guided machine learning." In Proceedings of the 24th International Conference on Intelligent User Interfaces, pp. 614-624. ACM, 2019.
 
