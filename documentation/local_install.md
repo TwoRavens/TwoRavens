@@ -239,10 +239,15 @@ Download and install R at https://www.r-project.org. R versions 3.4+ should work
 
 # Run a TA2
 
-- This next steps requires access to the 
+- This next step requires access to the TA2 registry. Please talk to team members for details.
 
-# Next steps need updating... (9/27)
+(TO DO: Docker memory specs for Brown, allow /ravens_volume through Docker)
 
+```
+fab run_ta2_brown_choose_config
+```
+
+Run with a dataset such as `DA_poverty_estimation`.
 
 
 ## Running the Local Environment after Setup
