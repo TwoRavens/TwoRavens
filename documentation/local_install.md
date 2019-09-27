@@ -92,13 +92,13 @@ Mac:
        export PROJECT_HOME=$HOME/Devel
        VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
        source ~/.local/bin/virtualenvwrapper.sh
-       ``` 
+       ```
     4. You may need to install virtualenv:
        ```
        sudo apt install virtualenv
        ```
     5. Start new terminals to reload .bashrc
-    
+
 ### Make a virtualenv and install requirements
 
 - From the Terminal and within the TwoRavens repository.
@@ -138,7 +138,7 @@ Mac:
 - You should see ```tworavensproject.settings.local_settings```
 
 
-### See if Django is configured ok and create the database
+### See if Django is configured ok, initialize and run the web server
 
 This command is run within the ```TwoRavens``` directory with the virtualenv activated:
 
@@ -146,57 +146,41 @@ This command is run within the ```TwoRavens``` directory with the virtualenv act
   python manage.py check
   ```
 
-If there are no errors, create the database:
+If there are no errors, run the following command:
 
   ```
-  fab init_db
+  fab run_with_ta2
   ```
 
-Create a example NIST configuration file as:
+This will:
+  1. Initialize the database, if needed
+  2. Create a "dev_admin" superuser, if needed
+    - password:  "admin" (printed to Terminal--save it for a later step)
+  3. Start the django test web server
+    - shortcut for: ```python manage.py runserver 8080```
+  4. Start webpack
+    - shortcut for ```npm start```
 
-  ```
-  fab make_d3m_config
-  ```
-
-
-(The command above is a short cut for ```python manage.py migrate```)
-
-### Create a django superuser (optional)
-
-This should only be used in local (laptop) test environments.  After running the command, the admin password will be printed on the screen.
-
-  ```
-  fab create_django_superuser
-  ```
-
-This creates a django super with:
-  - username: ```dev_admin```
-  - password: (printed to Terminal--save it for a later step)
-
-## Run the Django dev server and webpack
-
-The following command will start the Django webserver as well as webpack.
-
-  ```
-  fab run
-  ```
-
-  - The command above runs two commands: ```python manage.py runserver 8080``` and ```npm start```
 
 - Go to: http://127.0.0.1:8080/
 
-- You will probably see an error!  Follow the step below and then go back to the url above and try again.
+- You will probably see an error!  That's OK.  Several other services need to be started
 
-# Run Redis/Celery
+## Create a symlink for /ravens_volume
+
+Symlink the "ravens_volume" directory within the TwoRavens repository to:
+
+```
+ln -s (location of TwoRavens repo)/TwoRavens/ravens_volume/ /ravens_volume
+```
+
+The "/ravens_volume" location on your local machine will be used by a TA2 system running within a docker container
+
+
+# 1. Run Redis/Celery
 
 ## Redis
 
-**With docker:**
-
-
-```
-docker run --rm -p 6379:6379 -v /ravens_volume:/ravens_volume redis:4
-```
 
 **_Without_ docker**
 
@@ -204,10 +188,19 @@ docker run --rm -p 6379:6379 -v /ravens_volume:/ravens_volume redis:4
       - example: https://medium.com/@petehouston/install-and-config-redis-on-mac-os-x-via-homebrew-eb8df9a4f298
 2. From a new Terminal and within the TwoRavens repository, run the following commands
 
-      ```
-      workon 2ravens
-      fab redis_run
-      ```
+```
+workon 2ravens
+fab redis_run
+```
+
+**With docker:**
+
+- Note: not tested recently with docker redis
+
+```
+docker run --rm -p 6379:6379 -v /ravens_volume:/ravens_volume redis:4
+```
+
 
 ## Celery
 
@@ -216,62 +209,41 @@ docker run --rm -p 6379:6379 -v /ravens_volume:/ravens_volume redis:4
 1. Run the following commands:
     ```
     workon 2ravens
-    fab celery_run
+    fab celery_run_with_ta2
     ```
 
 
-# Install R / Run Rook
+# Install R / Run Flask-wrapped R
 
-Download and install R at https://www.r-project.org. If you followed the Vagrant install guide, you've already done this.
+Download and install R at https://www.r-project.org. R versions 3.4+ should work.
 
-The following must be run within R. On the Vagrant install, this is done via:
+1. Open a new Terminal
+1. `cd` within the TwoRavens repository directory
+1. Run the following commands:
+    ```
+    workon 2ravens
+    fab run_flask
+    ```
+1. Go to: http://0.0.0.0:8000/healthCheck.app
+  - There should be a message: "Health check. Looks good."
+    - Or similar
 
-    sudo -i R
 
-Then, in the R shell:
+# Run a local Mongo instance
 
+- Install and run Mongo locally
+- Sample Mac command:
   ```
-  install.packages(c("VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "XML", "Zelig", "rappdirs", "sourcetools", "processx", "rex", "evaluate", "highr", "brglm", "ROCR", "praise", "commonmark", "hunspell", "knitr", "rprojroot", "rpart"))
-  ```
-  
-  On Ubuntu, some packages need additional commands:  
-  Rcpp: `install.packages('Rcpp')`  
-  devtools: `sudo apt-get install libcurl4-openssl-dev libssl-dev`    
-  Zelig: `install.packages('Zelig')`   
-  XML: `sudo apt-get install libxml2-dev`  
-
-Then set your working directory to ~/TwoRavens/rook. On the Vagrant install, this is:
-
-  ```
-  setwd("/home/ubuntu/TwoRavens/rook")
+  mongod --config /usr/local/etc/mongod.conf
   ```
 
-On Mac it will look more like:
+# Run a TA2
 
-  ```
-  setwd("/Users/vjdorazio/Desktop/github/TwoRavens/rook")
-  ```
+- This next steps requires access to the 
 
-Then source rooksource.R to get the app up:
+# Next steps need updating... (9/27)
 
-  ```
-  source("rooksource.R")
-  ```
 
-Note that this may install many packages, depending on what already exists. If it asks, just say that you want to install things from the source. The local server with the apps should be up and R should say something like:
-
-  ```
-  *Server started on host...*
-  ```
-
-- Try the app again:
-  - Go to: http://127.0.0.1:8080/
-  - Hit shift+refresh on the browser
-
-As a shortcut to the above, assuming R is installed, from the command line, you can try:
-  ```
-  fab run_rook
-  ```
 
 ## Running the Local Environment after Setup
 
