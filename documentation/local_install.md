@@ -3,23 +3,21 @@
 
 # Local Installation Instructions
 
-For the recommended and easiest route, try the [Vagrant install](https://github.com/TwoRavens/TwoRavens/blob/master/docs/vagrant_install.md), which will allow you to run TwoRavens within a virtual machine on Mac, Windows, or Linux.
-
-Note: the Vagrant install will also work natively on an Ubuntu 16.04 (Xenial) system.
-
 The following is tested on a Mac (OS 10.12.6).
 
-## Get the repository
+## A. Get the repository
 
 - Use Github Desktop to pull down the [TwoRavens repository](https://github.com/TwoRavens/TwoRavens)
 - Alternately, use the command line:
     ```
     git clone https://github.com/TwoRavens/TwoRavens.git
-    #git submodule init
-    #git submodule update
+
+    # Two Ravens uses a submodule -- the inclusion of another GitHub repository
+    git submodule init
+    git submodule update
     ```
 
-## Install Node.js
+## B. Install Node.js
 
 Mac:
   - [Install brew](https://brew.sh/#install)
@@ -34,7 +32,7 @@ Ubuntu:
   sudo apt-get install -y nodejs
   ```
 
-#### Install the NPM libraries for TwoRavens
+## C. Install the NPM libraries for TwoRavens
 
 - `cd` into the TwoRavens repository
   - This directory contains the file ```webpack.config.js```
@@ -50,7 +48,9 @@ Ubuntu:
     ```
     - e.g.: `npm config set python /usr/bin/python`
 
-## Install Python/Django
+## D. Install Python/Django
+
+Note: The TwoRavens application requires python 3.6+
 
 Mac:
   - [Install python 3 using brew](http://docs.python-guide.org/en/latest/starting/install3/osx/)
@@ -61,7 +61,7 @@ Mac:
     - This will also install ```pip3```
 
 
-### Install [virtualenvwrapper](http://virtualenvwrapper.readthedocs.io/en/latest/install.html#basic-installation)
+### D1. Install [virtualenvwrapper](http://virtualenvwrapper.readthedocs.io/en/latest/install.html#basic-installation)
 
 * The virtualenvwrapper may be installed via ```pip3```:
 
@@ -99,7 +99,7 @@ Mac:
        ```
     5. Start new terminals to reload .bashrc
 
-### Make a virtualenv and install requirements
+### D2. Make a virtualenv and install requirements
 
 - From the Terminal and within the TwoRavens repository.
 - Run the following commands (May take a couple of minutes)
@@ -115,7 +115,7 @@ Mac:
 - Mac note: If you run into Xcode (or other errors) when running the install, google it.  
   - Sometimes the [Xcode license agreement hasn't been accepted](http://stackoverflow.com/questions/26197347/agreeing-to-the-xcode-ios-license-requires-admin-privileges-please-re-run-as-r/26197363#26197363)
 
-### Configure your virtualenv
+### D3. Configure your virtualenv
 
 * Edit the [```postactivate``` script for the virtualenvwrapper](http://virtualenvwrapper.readthedocs.org/en/latest/scripts.html#postactivate).
   - Note: 'atom' below may be any text editor
@@ -138,7 +138,7 @@ Mac:
 - You should see ```tworavensproject.settings.local_settings```
 
 
-### See if Django is configured ok, initialize and run the web server
+### D4. See if Django is configured ok, initialize and run the web server
 
 This command is run within the ```TwoRavens``` directory with the virtualenv activated:
 
@@ -164,11 +164,13 @@ This will:
 
 - Go to: http://127.0.0.1:8080/
 
-- You will probably see an error!  That's OK.  Several other services need to be started
+- You will probably see an error!  That's OK.  Several other services need to be started for the system to work.
 
-## Create a symlink for /ravens_volume
+## E. Create a symlink for /ravens_volume
 
-Symlink the "ravens_volume" directory within the TwoRavens repository to:
+"/**ravens_volume**" is a directory shared by multiple system components. In development, this directory includes test datasets. On deployment, there are multiple shared directories specified via environment variables
+
+Symlink the "ravens_volume" directory within the TwoRavens repository to your local machine:
 
 ```
 ln -s (location of TwoRavens repo)/TwoRavens/ravens_volume/ /ravens_volume
@@ -177,9 +179,9 @@ ln -s (location of TwoRavens repo)/TwoRavens/ravens_volume/ /ravens_volume
 The "/ravens_volume" location on your local machine will be used by a TA2 system running within a docker container
 
 
-# 1. Run Redis/Celery
+# 2. Run Redis/Celery
 
-## Redis
+## 2a. Redis
 
 
 **_Without_ docker**
@@ -202,7 +204,7 @@ docker run --rm -p 6379:6379 -v /ravens_volume:/ravens_volume redis:4
 ```
 
 
-## Celery
+## 2b. Celery
 
 1. Open a new Terminal
 1. `cd` within the TwoRavens repository directory
@@ -213,7 +215,7 @@ docker run --rm -p 6379:6379 -v /ravens_volume:/ravens_volume redis:4
     ```
 
 
-# Install R / Run Flask-wrapped R
+# 3. Install R / Run Flask-wrapped R
 
 Download and install R at https://www.r-project.org. R versions 3.4+ should work.
 
@@ -229,7 +231,7 @@ Download and install R at https://www.r-project.org. R versions 3.4+ should work
     - Or similar
 
 
-# Run a local Mongo instance
+# 4. Run a local Mongo instance
 
 - Install and run Mongo locally
 - Sample Mac command:
@@ -237,63 +239,83 @@ Download and install R at https://www.r-project.org. R versions 3.4+ should work
   mongod --config /usr/local/etc/mongod.conf
   ```
 
-# Run a TA2
+# 5. Configure/Run a TA2 Docker image
 
-- This next step requires access to the TA2 registry. Please talk to team members for details.
+## 5a. Docker configuration
 
-(TO DO: Docker memory specs for Brown, allow /ravens_volume through Docker)
+The TA2 systems require several Docker updates.  
 
-```
-fab run_ta2_brown_choose_config
-```
+1. Open your Docker application and go to the **Advanced** section.  Make the following updates (or as close as possible):
+  - **CPUs**: 4
+  - **Memory**: 10.0 GiB
+  - **Swap**: 1.0 Gib
+2. Within the Docker application, go to **File Sharing**. Add the following directory:
+  - `/ravens_volume`
+  - Note: Make sure you've completed the previous step titled **Create a symlink for /ravens_volume**
 
-Run with a dataset such as `DA_poverty_estimation`.
+## 5b. Run the TA2
 
+This next step requires access to the TA2 registry. Please talk to team members for details.
+
+The example below uses the Brown TA2 (9/29/2019)
+
+- Make sure you have the Brown TA2 image.  Running `docker images` in a Terminal should show the entry:
+  - ```registry.datadrivendiscovery.org/zshang/docker_images:ta2-new```
+
+- Run the TA2 using the command below.  Note, the TA2 may a minute or two to start up
+  ```
+  # This command will give a list of possible datasets
+  #
+  fab run_ta2_brown_choose_config
+
+  # Run with a dataset such as `DA_poverty_estimation`.
+  #
+  fab run_ta2_brown_choose_config:24
+
+  ```
+
+- After giving the TA2 some time to start up, revisit:
+  - http://127.0.0.1:8080
+
+- Note: Running the TA2 will set an initial dataset for the system, removing the error seen earlier.
+
+
+
+---
+(needs updating)
 
 ## Running the Local Environment after Setup
 
-### Run the server
+This setup involves running several processes.  The manual method is as follows.
+Contact team members for Mac an ubuntu scripts to speed up this process.
 
-6/20 - This setup involves running several processes.  The manual method is as follows:
+### Run the TwoRavens system
 
-#### _Without_ a TA2 (test mode)
-
-1. Open 4 separate Terminals
-2. For each Terminal:
+- Open 6 separate Terminals
+- Terminal 1: Run the Mongo server.
+  - Sample command: `mongod --config /usr/local/etc/mongod.conf`
+- For each of the other Terminals:
     - ```cd``` into the TwoRavens directory
     - ```workon 2ravens```
-3. Next are commands to run--one for each Terminal
-    i. Main app: ```fab run```
-    j. Rook: ```fab run_rook```
-    k. Redis: ```docker run --rm -p 6379:6379 redis:2.8```
-         - If you don't have docker:
-             - install redis (see above)
-             - redis: ```fab run_redis```
-    l. Celery: ```fab celery_run```
+- Commands to run--one for each Terminal
+  1. Main app: ```fab run_with_ta2```
+  2. R services: ```fab run_flask```
+  3. Redis: ```docker run --rm -p 6379:6379 redis:4```
+       - If you don't have docker:
+           - install redis (see above)
+           - redis: ```fab run_redis```
+  4. Celery: ```fab celery_run_with_ta2```
+  5. TA2.  Example using the Brown TA2:
+    - List datasets: ```fab run_ta2_brown_choose_config```
+    - Pick a dataset based on its number.
+      - Example: ```fab run_ta2_brown_choose_config:24```
+
 4. Go to Two Ravens: http://127.0.0.1:8080/
     - Go to the Django admin: http://127.0.0.1:8080/admin
       - username: `dev_admin`
       - password: [from create superuser step above](#create-a-django-superuser-optional)
 
-
-#### _With_ a TA2
-
-Read fully before going through the step.
-Use the instructions in `./ta2-notes/ta3_run.md`.
-
-If error due to /ravens_volume/test_data not found:
-    A symlink is needed from root to `ravens_volume`. Adjust path as necessary. On Ubuntu:
-    ```sudo ln -s /home/shoe/TwoRavens/ravens_volume /```
-
-### Run the python shell (if needed)
-
-1. Open a Terminal and ```cd``` into the TwoRavens directory
-2. Activate the virtual environment and run the shell
-
-    ```
-    workon 2ravens
-    python manage.py shell
-    ```
+## Misc.
 
 ### Access the database via command line
 
@@ -324,9 +346,11 @@ These commands will:
 
 ### Commands
 
-- x Submodule updates
+- Submodule update for the [TwoRavens common library](https://github.com/TwoRavens/common)
     ```
-    #git submodule update
+    cd assets/common/
+    git checkout develop
+    git pull
     ```
 
 - Update requirements
