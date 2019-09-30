@@ -18,7 +18,7 @@ Demo [Metadata Service](http://metadata.2ravens.org)
 
 | File | Size | # Rows | # Columns | Time | Download | Result |
 | --- | --- | --- | --- | --- | --- | --- | 
-| [ajps_replication_raw_wide.tab](https://dataverse.harvard.edu/file.xhtml?persistentId=doi:10.7910/DVN/CQXHTH/UGSMIP&version=1.0) | 86.5 kB  | 360 | 66 | 0.24 s | [.tab](https://github.com/TwoRavens/raven-metadata-service/dataverse-test/test_data/CQXHTH_ajps_lebanon_raw_wide.tab) | [.json](https://github.com/TwoRavens/raven-metadata-service/dataverse-test/test_data/CQXHTH_ajps_lebanon_raw_wide.json) |
+| [ajps_replication_raw_wide.tab](https://dataverse.harvard.edu/file.xhtml?persistentId=doi:10.7910/DVN/CQXHTH/UGSMIP&version=1.0) | 86.5 kB  | 360 | 66 | 0.24 s | [.tab](https://github.com/TwoRavens/raven-metadata-service/blob/dataverse-test/test_data/CQXHTH_ajps_lebanon_raw_wide.tab) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/dataverse-test/test_data/CQXHTH_ajps_lebanon_raw_wide.json) |
 
 # Related Publications
 Gil, Yolanda, James Honaker, Shikhar Gupta, Yibo Ma, Vito D'Orazio, Daniel Garijo, Shruti Gadewar, Qifan Yang, and Neda Jahanshad. "Towards human-guided machine learning." In Proceedings of the 24th International Conference on Intelligent User Interfaces, pp. 614-624. ACM, 2019.
@@ -28,7 +28,7 @@ D'Orazio, Vito, Marcus Deng, and Michael Shoemate. "TwoRavens for Event Data." I
 Honaker, James, and Vito D'Orazio. "Statistical Modeling by Gesture: A Graphical, Browser-based Statistical Interface for Data Repositories," in Extended Proceedings of ACM Hypertext, 2014.
 
 # Team
-TwoRavens is led by [James Honaker](http://hona.kr/), [Vito D'Orazio](http:vitodorazio.com), and [Raman Prasad](https://github.com/raprasad).
+TwoRavens is led by [James Honaker](http://hona.kr/), [Vito D'Orazio](http://vitodorazio.com), and [Raman Prasad](https://github.com/raprasad).
 
 This project would not be possible without the excellent contributions of our research assistants: Kripanshu Bhargava, Rohit Bhattacharjee,  Marcus Deng, Sruti Jain, Aaron Lebo, Mital Modha, and Michael Shoemate.
 
