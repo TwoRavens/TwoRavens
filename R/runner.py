@@ -84,6 +84,11 @@ def app_general(r_app):
         return json.dumps({KEY_SUCCESS: False, KEY_DATA: 'Timeout exceeded'})
 
 
+@flask_app.route('/', methods=['GET', 'POST'])
+def default():
+    """Basic note at root url"""
+    return 'TwoRavens R service. Looks good.<br />(%s)' % (datetime.now())
+
 
 # convert nested python objects to nested R objects
 def r_cast(content):
