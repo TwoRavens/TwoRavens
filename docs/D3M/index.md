@@ -15,7 +15,7 @@ Our TwoRavens D3M interface is built upon Django and we assume the user know the
         * [URL Patterns](api_docs/configuration/urls.md)
         * [Views](api_docs/configuration/views.md)
         * [Template](api_docs/configuration/templates.md)
-    * [TA2 Interface(api_docs/ta2/index.md)
+    * [TA2 Interface](api_docs/ta2/index.md)
         * [Introduction](api_docs/ta2/index.md)
         * [URL Patterns](api_docs/ta2/urls.md)
         * [Views](api_docs/ta2/views.md)
