@@ -19,9 +19,9 @@ D3M Configuration
 This application constructs the web page you can see. It will generate url based on your operation and pass it to the **View** component.
 After that, **View** will execute corresponding logic code based on the input urls.
 
-* [URL Patterns](api_docs/configuration/urls.md)
-* [Views](api_docs/configuration/views.md)
-* [Template](api_docs/configuration/templates.md)
+* [URL Patterns](configuration/urls.md)
+* [Views](configuration/views.md)
+* [Template](configuration/templates.md)
 
 TA2 Interface
 =============
