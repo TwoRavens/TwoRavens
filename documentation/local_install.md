@@ -19,14 +19,14 @@ The following is tested on a Mac (OS 10.12.6).
 
 ## B. Install Node.js
 
-Mac:
+- Mac:
   - [Install brew](https://brew.sh/#install)
   - The node install command is:
     ```
     brew install node
     ```
-Ubuntu:
-  - Instructions from here: https://github.com/nodesource/distributions/blob/master/README.md
+- Ubuntu:
+  - Instructions are from here: https://github.com/nodesource/distributions/blob/master/README.md
     ```
     curl -sL https://deb.nodesource.com/setup_11.x | sudo -E bash -
     sudo apt-get install -y nodejs
@@ -140,31 +140,26 @@ Note: The TwoRavens application requires python 3.6+
 
 ### D4. Check Django configuration. Initialize and run the web server
 
-This command is run within the ```TwoRavens``` directory with the virtualenv activated:
+- Run this command within the ```TwoRavens``` directory with the virtualenv activated:
+    ```
+    python manage.py check
+    ```
+- If there are no errors, initialize and run the web server with the following command:
+    ```
+    fab run_with_ta2
+    ```
+    - The command above will will:
+      - (1) Initialize the database, if needed
+      - (2) Create a "dev_admin" superuser, if needed
+           - password:  "admin" (printed to Terminal--save it for a later step)
+      - (3) Start the django test web server
+          - shortcut for: ```python manage.py runserver 8080```
+      - (4) Start webpack
+         - shortcut for ```npm start```
 
-  ```
-  python manage.py check
-  ```
-
-If there are no errors, run the following command:
-
-  ```
-  fab run_with_ta2
-  ```
-
-This will:
-  1. Initialize the database, if needed
-  2. Create a "dev_admin" superuser, if needed
-      - password:  "admin" (printed to Terminal--save it for a later step)
-  3. Start the django test web server
-      - shortcut for: ```python manage.py runserver 8080```
-  4. Start webpack
-      - shortcut for ```npm start```
-
-
-- Go to: http://127.0.0.1:8080/
-
-- You will probably see an error!  That's OK.  Several other services need to be started for the system to work.
+- Check if the application is running:
+    - Go to: http://127.0.0.1:8080/
+    - You will probably see an error!  That's OK.  Several other services need to be started for the system to work.
 
 ## E. Create a symlink for /ravens_volume
 
@@ -225,8 +220,7 @@ Download and install R at https://www.r-project.org. R versions 3.4+ should work
     fab run_flask
     ```
 1. Go to: http://0.0.0.0:8000/healthCheck.app
-  - There should be a message: "Health check. Looks good."
-    - Or similar
+  - There should be a message similar to: "Health check. Looks good."
 
 
 # 4. Run a local MongoDB instance
@@ -274,8 +268,7 @@ The example below uses the Brown TA2 (9/29/2019)
 
 - After giving the TA2 some time to start up, revisit:
   - http://127.0.0.1:8080
-
-- Note: Running the TA2 will set an initial dataset for the system, removing the error seen earlier.
+  - Note: Running the TA2 will set an initial dataset for the system, removing the error seen earlier.
 
 
 
@@ -283,29 +276,41 @@ The example below uses the Brown TA2 (9/29/2019)
 
 ## Running the Local Environment after Setup
 
-This setup involves running several processes.  The manual method is as follows.
-Contact team members for Mac an ubuntu scripts to speed up this process.
+This setup involves running several processes.  
+    - The manual method is detailed below.
+    - Contact team members for Mac an ubuntu scripts to speed up this process.
 
 ### Run many, many Terminals...
 
 - Open 6 separate Terminals
-- Terminal 1: Run the Mongo server.
+- **Terminal 1**: Run the Mongo server.
   - Sample command: `mongod --config /usr/local/etc/mongod.conf`
 - For each of the other Terminals:
     - ```cd``` into the TwoRavens directory
     - ```workon 2ravens```
 - Commands to run--one for each Terminal
-    - Terminal 2. Main app: ```fab run_with_ta2```
-    - Terminal 3. R services: ```fab run_flask```
-    - Terminal 4. Redis: ```docker run --rm -p 6379:6379 redis:4```
-       - If you don't have docker:
-           - install redis (see above)
-           - redis: ```fab run_redis```
-    - Terminal 5. Celery: ```fab celery_run_with_ta2```
-    - Terminal 6. TA2.  Example using the Brown TA2:
-    - List datasets: ```fab run_ta2_brown_choose_config```
-    - Pick a dataset based on its number.
-        - Example: ```fab run_ta2_brown_choose_config:24```
+    - **Terminal 2: Main app**:
+      ```
+      fab run_with_ta2
+      ```
+    - **Terminal 3. R services**:
+      ```
+      fab run_flask
+      ```
+    - **Terminal 4. Redis**:
+      ```
+      docker run --rm -p 6379:6379 redis:4
+      ```
+      - If you don't have docker:
+        - install redis (see above)
+        - redis: ```fab run_redis```
+    - **Terminal 5. Celery**:
+      ```fab celery_run_with_ta2```
+    - **Terminal 6. TA2**.  
+      - Example using the Brown TA2:
+        - List datasets: ```fab run_ta2_brown_choose_config```
+        - Pick a dataset based on its number.
+          - Example: ```fab run_ta2_brown_choose_config:24```
 
 ### Go to the site
 
