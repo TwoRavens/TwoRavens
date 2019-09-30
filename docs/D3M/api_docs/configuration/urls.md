@@ -92,11 +92,11 @@ All acceptable url patterns (in regex) are presented below:
 
 ---
 
-**Pattern**: d3m-config/get-problem-data-file-info/(?P<d3m_config_id>\d{1,5})
+**Pattern**: d3m-config/get-problem-data-file-info
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Same function as *view_get_problem_data_info* with specific configuration id.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a JSON string that describes the information of training data and target files, if they exist.
 
-* **View Func**: view_get_problem_data_info(request, d3m_config_id=*d3m_config_id*)
+* **View Func**: [view_get_problem_data_info](views.md)
 
 
 
