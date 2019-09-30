@@ -5,7 +5,7 @@
 
 The following is tested on a Mac (OS 10.12.6).
 
-## A. Get the repository
+## A. Clone the repository
 
 - Use Github Desktop to pull down the [TwoRavens repository](https://github.com/TwoRavens/TwoRavens)
 - Alternately, use the command line:
@@ -27,10 +27,10 @@ Mac:
     ```
 Ubuntu:
   - Instructions from here: https://github.com/nodesource/distributions/blob/master/README.md
-  ```
-  curl -sL https://deb.nodesource.com/setup_11.x | sudo -E bash -
-  sudo apt-get install -y nodejs
-  ```
+    ```
+    curl -sL https://deb.nodesource.com/setup_11.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+    ```
 
 ## C. Install the NPM libraries for TwoRavens
 
@@ -52,8 +52,7 @@ Ubuntu:
 
 Note: The TwoRavens application requires python 3.6+
 
-Mac:
-  - [Install python 3 using brew](http://docs.python-guide.org/en/latest/starting/install3/osx/)
+  - Mac: [Install python 3 using brew](http://docs.python-guide.org/en/latest/starting/install3/osx/)
     - If you have brew:
         ```
         brew install python3
@@ -70,34 +69,35 @@ Mac:
     ```
 
 * Set the shell/Terminal to use virtualenvwrapper.
-  - For Mac users:
-    1. Open a new terminal
-    2. Open your ```~/.bash_profile``` for editing
-      - If you don't have a ```~/.bash_profile``` file, then create it
-    3. Add these lines
-        ```
-        export WORKON_HOME=$HOME/.virtualenvs
-        export PROJECT_HOME=$HOME/Devel
-        VIRTUALENVWRAPPER_PYTHON=/usr/local/bin/python3
-        source /usr/local/bin/virtualenvwrapper.sh
-        ```
-    4. Reference: http://virtualenvwrapper.readthedocs.org/en/latest/install.html#shell-startup-file
 
-  - For Ubuntu users:
-    1. Open a new terminal
-    2. Open your ```~/.bashrc``` for editing
-    3. Add these lines
-       ```
-       export WORKON_HOME=$HOME/.virtualenvs
-       export PROJECT_HOME=$HOME/Devel
-       VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
-       source ~/.local/bin/virtualenvwrapper.sh
-       ```
-    4. You may need to install virtualenv:
-       ```
-       sudo apt install virtualenv
-       ```
-    5. Start new terminals to reload .bashrc
+#### Mac users:
+  1. Open a new terminal
+  2. Open your ```~/.bash_profile``` for editing
+      - If you don't have a ```~/.bash_profile``` file, then create it
+  3. Add these lines
+      ```
+      export WORKON_HOME=$HOME/.virtualenvs
+      export PROJECT_HOME=$HOME/Devel
+      VIRTUALENVWRAPPER_PYTHON=/usr/local/bin/python3
+      source /usr/local/bin/virtualenvwrapper.sh
+      ```
+  4. Reference: http://virtualenvwrapper.readthedocs.org/en/latest/install.html#shell-startup-file
+
+#### Ubuntu users:
+  1. Open a new terminal
+  2. Open your ```~/.bashrc``` for editing
+  3. Add these lines
+     ```
+     export WORKON_HOME=$HOME/.virtualenvs
+     export PROJECT_HOME=$HOME/Devel
+     VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
+     source ~/.local/bin/virtualenvwrapper.sh
+     ```
+  4. You may need to install virtualenv:
+     ```
+     sudo apt install virtualenv
+     ```
+  5. Start new terminals to reload .bashrc
 
 ### D2. Make a virtualenv and install requirements
 
@@ -109,11 +109,11 @@ Mac:
     pip install -r requirements/dev.txt  
     # note: within the virtualenv, pip defaults to pip3
     ```
-
-- Ubuntu note: If you get the error `OSError: mysql_config not found`, then run  
+- Notes:
+  - Ubuntu: If you get the error `OSError: mysql_config not found`, then run  
   `sudo apt-get install libmysqlclient-dev`
-- Mac note: If you run into Xcode (or other errors) when running the install, google it.  
-  - Sometimes the [Xcode license agreement hasn't been accepted](http://stackoverflow.com/questions/26197347/agreeing-to-the-xcode-ios-license-requires-admin-privileges-please-re-run-as-r/26197363#26197363)
+  - Mac: If you run into Xcode (or other errors) when running the install, google it.  
+    - Sometimes the [Xcode license agreement hasn't been accepted](http://stackoverflow.com/questions/26197347/agreeing-to-the-xcode-ios-license-requires-admin-privileges-please-re-run-as-r/26197363#26197363)
 
 ### D3. Configure your virtualenv
 
@@ -138,7 +138,7 @@ Mac:
 - You should see ```tworavensproject.settings.local_settings```
 
 
-### D4. See if Django is configured ok, initialize and run the web server
+### D4. Check Django configuration. Initialize and run the web server
 
 This command is run within the ```TwoRavens``` directory with the virtualenv activated:
 
@@ -155,11 +155,11 @@ If there are no errors, run the following command:
 This will:
   1. Initialize the database, if needed
   2. Create a "dev_admin" superuser, if needed
-    - password:  "admin" (printed to Terminal--save it for a later step)
+      - password:  "admin" (printed to Terminal--save it for a later step)
   3. Start the django test web server
-    - shortcut for: ```python manage.py runserver 8080```
+      - shortcut for: ```python manage.py runserver 8080```
   4. Start webpack
-    - shortcut for ```npm start```
+      - shortcut for ```npm start```
 
 
 - Go to: http://127.0.0.1:8080/
@@ -168,15 +168,15 @@ This will:
 
 ## E. Create a symlink for /ravens_volume
 
-"/**ravens_volume**" is a directory shared by multiple system components. In development, this directory includes test datasets. On deployment, there are multiple shared directories specified via environment variables
+- "/**ravens_volume**" is a directory shared by multiple system components. In development, this directory includes test datasets. On deployment, there are multiple shared directories specified via environment variables
 
-Symlink the "ravens_volume" directory within the TwoRavens repository to your local machine:
+- Symlink the "ravens_volume" directory within the TwoRavens repository to your local machine:
 
-```
-ln -s (location of TwoRavens repo)/TwoRavens/ravens_volume/ /ravens_volume
-```
+    ```
+    ln -s [location of TwoRavens repo]/TwoRavens/ravens_volume/ /ravens_volume
+    ```
 
-The "/ravens_volume" location on your local machine will be used by a TA2 system running within a docker container
+- The "/ravens_volume" location on your local machine will be used by a TA2 system running within a docker container
 
 
 # 2. Run Redis/Celery
@@ -190,24 +190,22 @@ The "/ravens_volume" location on your local machine will be used by a TA2 system
       - example: https://medium.com/@petehouston/install-and-config-redis-on-mac-os-x-via-homebrew-eb8df9a4f298
 2. From a new Terminal and within the TwoRavens repository, run the following commands
 
-```
-workon 2ravens
-fab redis_run
-```
+    ```
+    workon 2ravens
+    fab redis_run
+    ```
 
 **With docker:**
 
-- Note: not tested recently with docker redis
-
-```
-docker run --rm -p 6379:6379 -v /ravens_volume:/ravens_volume redis:4
-```
+    ```
+    docker run --rm -p 6379:6379 -v /ravens_volume:/ravens_volume redis:4
+    ```
 
 
 ## 2b. Celery
 
 1. Open a new Terminal
-1. `cd` within the TwoRavens repository directory
+1. `cd` into the TwoRavens repository
 1. Run the following commands:
     ```
     workon 2ravens
@@ -220,7 +218,7 @@ docker run --rm -p 6379:6379 -v /ravens_volume:/ravens_volume redis:4
 Download and install R at https://www.r-project.org. R versions 3.4+ should work.
 
 1. Open a new Terminal
-1. `cd` within the TwoRavens repository directory
+1. `cd` into the TwoRavens repository
 1. Run the following commands:
     ```
     workon 2ravens
@@ -231,10 +229,10 @@ Download and install R at https://www.r-project.org. R versions 3.4+ should work
     - Or similar
 
 
-# 4. Run a local Mongo instance
+# 4. Run a local MongoDB instance
 
-- Install and run Mongo locally
-- Sample Mac command:
+- [Install](https://docs.mongodb.com/manual/installation/) and run MongoDB locally
+- Sample Mac command to start the Mongo server:
   ```
   mongod --config /usr/local/etc/mongod.conf
   ```
@@ -246,12 +244,12 @@ Download and install R at https://www.r-project.org. R versions 3.4+ should work
 The TA2 systems require several Docker updates.  
 
 1. Open your Docker application and go to the **Advanced** section.  Make the following updates (or as close as possible):
-  - **CPUs**: 4
-  - **Memory**: 10.0 GiB
-  - **Swap**: 1.0 Gib
+    - **CPUs**: 4
+    - **Memory**: 10.0 GiB
+    - **Swap**: 1.0 Gib
 2. Within the Docker application, go to **File Sharing**. Add the following directory:
-  - `/ravens_volume`
-  - Note: Make sure you've completed the previous step titled **Create a symlink for /ravens_volume**
+    - `/ravens_volume`
+    - Note: Make sure you've completed the previous step titled **Create a symlink for /ravens_volume**
 
 ## 5b. Run the TA2
 
@@ -282,14 +280,13 @@ The example below uses the Brown TA2 (9/29/2019)
 
 
 ---
-(needs updating)
 
 ## Running the Local Environment after Setup
 
 This setup involves running several processes.  The manual method is as follows.
 Contact team members for Mac an ubuntu scripts to speed up this process.
 
-### Run the TwoRavens system
+### Run many, many Terminals...
 
 - Open 6 separate Terminals
 - Terminal 1: Run the Mongo server.
@@ -298,22 +295,24 @@ Contact team members for Mac an ubuntu scripts to speed up this process.
     - ```cd``` into the TwoRavens directory
     - ```workon 2ravens```
 - Commands to run--one for each Terminal
-  1. Main app: ```fab run_with_ta2```
-  2. R services: ```fab run_flask```
-  3. Redis: ```docker run --rm -p 6379:6379 redis:4```
+    - Terminal 2. Main app: ```fab run_with_ta2```
+    - Terminal 3. R services: ```fab run_flask```
+    - Terminal 4. Redis: ```docker run --rm -p 6379:6379 redis:4```
        - If you don't have docker:
            - install redis (see above)
            - redis: ```fab run_redis```
-  4. Celery: ```fab celery_run_with_ta2```
-  5. TA2.  Example using the Brown TA2:
+    - Terminal 5. Celery: ```fab celery_run_with_ta2```
+    - Terminal 6. TA2.  Example using the Brown TA2:
     - List datasets: ```fab run_ta2_brown_choose_config```
     - Pick a dataset based on its number.
-      - Example: ```fab run_ta2_brown_choose_config:24```
+        - Example: ```fab run_ta2_brown_choose_config:24```
 
-4. Go to Two Ravens: http://127.0.0.1:8080/
-    - Go to the Django admin: http://127.0.0.1:8080/admin
-      - username: `dev_admin`
-      - password: [from create superuser step above](#create-a-django-superuser-optional)
+### Go to the site
+
+- Visit: http://127.0.0.1:8080/
+- Go to the Django admin: http://127.0.0.1:8080/admin
+    - username: `dev_admin`
+    - password: [from create superuser step above](#create-a-django-superuser-optional)
 
 ## Misc.
 
