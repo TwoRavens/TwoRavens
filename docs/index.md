@@ -17,8 +17,8 @@ Demo [Metadata Service](http://metadata.2ravens.org)
 # Metadata Service Samples/Benchmarks
 
 | File | Size | # Rows | # Columns | Time | Download | Result |
-| --- | --- | --- | --- | --- | --- |  
-| [ajps_replication_raw_wide.tab](https://dataverse.harvard.edu/file.xhtml?persistentId=doi:10.7910/DVN/CQXHTH/UGSMIP&version=1.0) | 86.5 kB  | 360 | 66 | 0.24 s | [.tab](https://github.com/TwoRavens/raven-metadata-service/dataverse-test/test_data/CQXHTH_ajps_lebanon_raw_wide.tab) [.json](https://github.com/TwoRavens/raven-metadata-service/dataverse-test/test_data/CQXHTH_ajps_lebanon_raw_wide.tab) | [.json](https://github.com/TwoRavens/raven-metadata-service/dataverse-test/test_data/CQXHTH_ajps_lebanon_raw_wide.json) |
+| --- | --- | --- | --- | --- | --- | --- | 
+| [ajps_replication_raw_wide.tab](https://dataverse.harvard.edu/file.xhtml?persistentId=doi:10.7910/DVN/CQXHTH/UGSMIP&version=1.0) | 86.5 kB  | 360 | 66 | 0.24 s | [.tab](https://github.com/TwoRavens/raven-metadata-service/dataverse-test/test_data/CQXHTH_ajps_lebanon_raw_wide.tab) | [.json](https://github.com/TwoRavens/raven-metadata-service/dataverse-test/test_data/CQXHTH_ajps_leban
 
 # Related Publications
 Gil, Yolanda, James Honaker, Shikhar Gupta, Yibo Ma, Vito D'Orazio, Daniel Garijo, Shruti Gadewar, Qifan Yang, and Neda Jahanshad. "Towards human-guided machine learning." In Proceedings of the 24th International Conference on Intelligent User Interfaces, pp. 614-624. ACM, 2019.
