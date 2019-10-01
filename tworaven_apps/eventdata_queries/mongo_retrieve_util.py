@@ -221,7 +221,11 @@ class MongoRetrieveUtil(BasicErrCheck):
                 else:
                     return data
 
-            return ok_resp(serialized(list(cursor)))
+            def serialize(data):
+                for line in data:
+                    yield serialized(line)
+
+            return ok_resp(serialize(cursor))
 
         except PyMongoError as err_obj:
             return err_resp(str(err_obj))

@@ -2,6 +2,7 @@ import os
 import csv
 import json
 import logging
+import types
 
 from django.conf import settings
 from collections import OrderedDict
@@ -557,8 +558,8 @@ class EventJobUtil(object):
                         ' (export_dataset)')
             return err_resp(user_msg)
 
-        if not isinstance(data, list):
-            user_msg = 'export_dataset failed.  "data" must be a list'
+        if not isinstance(data, list) and not isinstance(data, types.GeneratorType):
+            user_msg = 'export_dataset failed.  "data" must be a list or generator'
             LOGGER.error(user_msg)
             return err_resp(user_msg)
 
@@ -586,8 +587,8 @@ class EventJobUtil(object):
                         ' (export_problem)')
             return err_resp(user_msg)
 
-        if not isinstance(data, list):
-            user_msg = 'export_problem failed.  "data" must be a list'
+        if not isinstance(data, list) and not isinstance(data, types.GeneratorType):
+            user_msg = 'export_problem failed.  "data" must be a list or generator'
             LOGGER.error(user_msg)
             return err_resp(user_msg)
 
@@ -616,15 +617,31 @@ class EventJobUtil(object):
         except OSError:
             pass
 
+        first_row = None
+        data_source = None
+
+        if isinstance(data, list):
+            first_row = data[0]
+            data_source = data
+
+        if isinstance(data, types.GeneratorType):
+            first_row = next(data)
+
+            def file_data():
+                yield first_row
+                yield from data
+            data_source = file_data()
+
         # the BasicProblemWriter doesn't write to write_directory, and this doesn't seem trivial to change
-        columns = list(data[0].keys())
+        columns = list(first_row.keys())
 
         with open(temp_data_filepath, 'w', newline='') as output_file:
             dict_writer = csv.DictWriter(output_file,
+                                         quoting=csv.QUOTE_MINIMAL,
                                          fieldnames=columns,
                                          extrasaction='ignore')
             dict_writer.writeheader()
-            dict_writer.writerows(data)
+            dict_writer.writerows(data_source)
 
         resource = next(res for res in metadata['dataResources'] if res['resType'] == 'table')
         column_lookup = {struct['colName']: struct for struct in resource['columns']}
