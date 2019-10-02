@@ -78,7 +78,7 @@ All acceptable url patterns (in regex) are presented below:
 
 * **Example**:
 
-![alt text](imgs/get-problem-schema.png "Returned JSON string")
+![alt text](imgs/get-problem-schema_v2.png "Returned JSON string")
 
 ---
 
