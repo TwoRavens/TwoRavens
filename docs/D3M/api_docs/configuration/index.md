@@ -82,12 +82,11 @@ All acceptable url patterns (in regex) are presented below:
 
 ---
 
-**Pattern**: d3m-config/get-problem-data-file-info
 **Pattern**: d3m-config/get-problem-data-file-info/(?P<d3m_config_id>\d{1,5})
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a JSON string that describes the information of training data and target files, if they exist. Configuration ID is optional.
 
-* **View Func**: **view_get_problem_data_info** (request, d3m_config_id=None)
+* **view_get_problem_data_info** (request, d3m_config_id=None)
 
 * **Parameters**:
     * **request** (*Django.http.HttpRequest*):  Http request received, it's naturally handled by Django framework.
