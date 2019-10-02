@@ -58,14 +58,6 @@ All acceptable url patterns (in regex) are presented below:
 
 ---
 
-**Pattern**: d3m-config/get-problem-schema/json
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a JSON string that presents the problem schema of given D3M configuration id.
-
-* **View Func**: view_get_problem_schema(request, d3m_config_id=None)
-
----
-
 **Pattern**: d3m-config/get-dataset-schema/json/(?P<d3m_config_id>\d{1,5})
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Same function as *view_get_dataset_schema* with specific configuration id.
@@ -76,9 +68,17 @@ All acceptable url patterns (in regex) are presented below:
 
 **Pattern**: d3m-config/get-problem-schema/json/(?P<d3m_config_id>\d{1,5})
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Same function as *view_get_problem_schema* with specific configuration id.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a JSON string that presents the problem schema. Configuration ID is optional.
 
-* **View Func**: view_get_problem_schema(request, d3m_config_id=*d3m_config_id*)
+* **view_get_problem_schema** (request, d3m_config_id=None)
+
+* **Parameters**:
+    * **request** (*Django.http.HttpRequest*):  Http request received, it's naturally handled by Django framework.
+    * **d3m_config_id** (*String*):             A string that indicates a D3M configuration ID.
+
+* **Example**:
+
+![alt text](imgs/get-problem-schema.png "Returned JSON string")
 
 ---
 
@@ -93,4 +93,6 @@ All acceptable url patterns (in regex) are presented below:
     * **d3m_config_id** (*String*):             A string that indicates a D3M configuration ID.
 
 * **Example**:
+
 ![alt text](imgs/get-problem-data-file-info.png "Returned JSON string")
+
