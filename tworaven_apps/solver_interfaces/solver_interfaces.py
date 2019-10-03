@@ -10,7 +10,7 @@ from tworaven_apps.utils.view_helper import (
     get_json_error, get_json_success)
 
 
-def view_send_generator(app):
+def view_send_factory(app):
 
     @csrf_exempt
     def generated(request):

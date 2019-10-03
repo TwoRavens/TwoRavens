@@ -11,7 +11,7 @@ from django.http import JsonResponse, HttpResponse, HttpResponseNotFound
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 
-from tworaven_apps.rook_services.views import create_destination_directory
+from tworaven_apps.R_services.views import create_destination_directory
 from tworaven_apps.ta2_interfaces.util_results_visualizations import (
     util_results_confusion_matrix, util_results_importance_efd)
 from tworaven_apps.ta2_interfaces.grpc_util import TA3TA2Util
@@ -254,14 +254,24 @@ def get_train_test_split(request):
         os.remove(csv_path)
         writable_dataframe.to_csv(csv_path)
 
-        return path.join(dest_directory, 'datasetDoc.json')
+        return path.join(dest_directory, 'datasetDoc.json'), csv_path
 
     dataframe_train, dataframe_test = train_test_split(dataframe, train_size=req_info.get('train_test_ratio', .7))
 
+    all_datasetDoc, all_datasetCsv = write_dataset('all', dataframe)
+    train_datasetDoc, train_datasetCsv = write_dataset('train', dataframe_train)
+    test_datasetDoc, test_datasetCsv = write_dataset('test', dataframe_test)
+
     datasetDocs = {
-        'all': write_dataset('all', dataframe),
-        'train': write_dataset('train', dataframe_train),
-        'test': write_dataset('test', dataframe_test)
+        'all': all_datasetDoc,
+        'train': train_datasetDoc,
+        'test': test_datasetDoc
+    }
+
+    datasetCsvs = {
+        'all': all_datasetCsv,
+        'train': train_datasetCsv,
+        'test': test_datasetCsv
     }
 
     print('datasetDocs', datasetDocs)
@@ -272,6 +282,7 @@ def get_train_test_split(request):
     return JsonResponse({
         "success": True, "data": {
             'dataset_schemas': datasetDocs,
+            'dataset_paths': datasetCsvs,
             'sample_test_indices': sample_test_indices
         },
         "message": "data partitioning successful"

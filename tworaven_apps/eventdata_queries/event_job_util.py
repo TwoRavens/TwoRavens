@@ -526,7 +526,7 @@ class EventJobUtil(object):
 
             # use duplicate column name removal headers instead
             columns = [encode_variable(value) for value in column_names or dcr.updated_columns]
-            print(columns)
+
             for observation in csv_reader:
                 db[settings.MONGO_COLLECTION_PREFIX + collection].insert_one({
                     col: infer_type(val) for col, val in zip(columns, observation)

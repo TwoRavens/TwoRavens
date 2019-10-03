@@ -22,8 +22,11 @@ class Solve(object):
             'ludwig': SearchLudwig,
             'mljar-supervised': SearchMLJarSupervised,
             'mlbox': SearchMLBox
-        }[system](self.specification['search'], self.system_params,
-                  callback_found, callback_params=callback_params)
+        }[system](
+            self.specification['search'],
+            self.system_params,
+            callback_found,
+            callback_params=callback_params)
 
     def run(self):
         return self.search.run()

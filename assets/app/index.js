@@ -14,7 +14,7 @@ import * as model from './model';
 
 import * as manipulate from './manipulations/manipulate';
 
-import * as solverRook from "./solvers/rook";
+import * as solverWrapped from "./solvers/wrapped";
 import * as solverD3M from "./solvers/d3m";
 
 import * as common from '../common/common';
@@ -59,7 +59,7 @@ export let abbreviate = (text, length) => text.length > length
 class Body {
     oninit() {
         app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
-        app.set_mode('model');
+        app.setSelectedMode('model');
         this.TA2URL = D3M_SVC_URL + '/SearchDescribeFitScoreSolutions';
     }
 
@@ -77,7 +77,7 @@ class Body {
         // after calling m.route.set, the params for mode, variate, vars don't update in the first redraw.
         // checking window.location.href is a workaround, permits changing mode from url bar
         if (window.location.href.includes(mode) && mode !== app.currentMode)
-            app.set_mode(mode);
+            app.setSelectedMode(mode);
 
         let exploreVariables = (vars ? vars.split('/') : [])
             .filter(variable => variable in app.variableSummaries);
@@ -176,8 +176,8 @@ class Body {
             let selectedSolutions = results.getSelectedSolutions(resultsProblem);
             if (app.is_results_mode && selectedSolutions.length === 1 && selectedSolutions[0]) {
                 path.push(m(Icon, {name: 'chevron-right'}), m('h4[style=display: inline-block; margin: .25em 1em]', ({
-                    rook: solverRook.getSolutionAdapter, d3m: solverD3M.getSolutionAdapter
-                })[selectedSolutions[0].source](pathProblem, selectedSolutions[0]).getName()))
+                    [selectedSolutions[0].systemId]: solverWrapped.getSolutionAdapter, d3m: solverD3M.getSolutionAdapter
+                })[selectedSolutions[0].systemId](pathProblem, selectedSolutions[0]).getName()))
             }
 
             return path;
@@ -216,7 +216,7 @@ class Body {
                 attrsButtons: {
                     // class: 'btn-sm',
                     style: {width: "auto"}},
-                onclick: app.set_mode,
+                onclick: app.setSelectedMode,
                 activeSection: app.currentMode || 'model',
                 sections: [
                     {value: 'Model'},
@@ -605,19 +605,18 @@ class Body {
                         onclick: async () => {
                             let selectedProblem = app.getSelectedProblem();
                             console.warn(selectedProblem);
-                            let specification = app.getSolverSpecification(selectedProblem);
+                            let specification = solverWrapped.getSolverSpecification(selectedProblem);
 
                             console.log(JSON.stringify(specification));
 
                             let response = await m.request('/solver-service/Solve', {
                                 method: 'POST',
-                                data: Object.assign({
+                                data: {
                                     system: system_name,
-                                    system_params: app.solvers[system_name]
-                                }, {
-                                    "timeout": 999999999,
-                                    "specification": specification
-                                })
+                                    system_params: app.solvers[system_name],
+                                    timeout: 999999999,
+                                    specification
+                                }
                             });
 
                             if (!response.success) console.log(response);
@@ -631,33 +630,7 @@ class Body {
                 m(Button, {
                     style: {margin: '1em'},
                     onclick: async () => {
-
-                        let selectedProblem = app.getSelectedProblem();
-
-
-                        let nominalVars = new Set(app.getNominalVariables(selectedProblem));
-                        let predictorVars = app.getPredictorVariables(selectedProblem);
-
-                        let hasNominal = [...selectedProblem.targets, ...predictorVars]
-                            .some(variable => nominalVars.has(variable));
-                        let hasManipulation = selectedProblem.manipulations.length > 0;
-
-                        let needsProblemCopy = hasManipulation || hasNominal;
-
-                        // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
-                        if (needsProblemCopy) {
-                            let {metadata_path} = await app.buildProblemUrl(selectedProblem);
-                            selectedProblem.datasetDocPath = metadata_path;
-                        } else delete selectedProblem.datasetDocPath;
-
-                        let datasetDocPath = selectedProblem.datasetDocPath || app.workspace.d3m_config.dataset_schema;
-
-                        this.TA2Post = JSON.stringify({
-                            searchSolutionParams: solverD3M.GRPC_SearchSolutionsRequest(selectedProblem),
-                            fitSolutionDefaultParams: solverD3M.GRPC_GetFitSolutionRequest(datasetDocPath),
-                            produceSolutionDefaultParams: solverD3M.GRPC_ProduceSolutionRequest(datasetDocPath),
-                            scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath)
-                        });
+                        this.TA2Post = JSON.stringify(await solverD3M.getSolverSpecification(app.getSelectedProblem()));
                         m.redraw()
                     }
                 }, 'Prepare'),
@@ -842,6 +815,7 @@ class Body {
      */
 
     static leftpanel(mode, forceData) {
+
         if (mode === 'manipulate') return manipulate.leftpanel();
         if (mode === 'results') return results.leftpanel();
         return model.leftpanel(forceData);

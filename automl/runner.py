@@ -29,7 +29,7 @@ from util_search import Search
 NUM_PROCESSES = 4
 
 TIMEOUT_MAX = 60 * 50
-TIMEOUT_DEFAULT = 2
+TIMEOUT_DEFAULT = 60 * 5
 
 flask_app = flask.Flask(__name__)
 

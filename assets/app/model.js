@@ -417,7 +417,7 @@ export let leftpanel = forceData => {
                             let clickedProblem = problems[problemID];
                             if (clickedProblem.system === 'solved') {
                                 app.setResultsProblem(problemID);
-                                app.set_mode('results');
+                                app.setSelectedMode('results');
                                 return;
                             }
                             if (selectedProblem.problemID === problemID) return;
@@ -1382,8 +1382,14 @@ export async function submitDiscProb() {
             let problemProblemSchema = D3M_problemDoc(problem);
             let filename_api = problem.problemID + '/ss_api.json';
             let filename_ps = problem.problemID + '/problem_schema.json';
-            app.makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
-            app.makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
+            m.request(D3M_SVC_URL + '/store-user-problem', {
+                method: 'POST',
+                data: {filename: filename_api, data: problemApiCall}
+            });
+            m.request(D3M_SVC_URL + '/store-user-problem', {
+                method: 'POST',
+                data: {filename: filename_ps, data: problemProblemSchema}
+            });
 
             let meaningful = problem.meaningful ? 'yes' : 'no';
             let lineForCSV = `${problem.problemID},${problem.system},${meaningful}`;
@@ -1396,7 +1402,10 @@ export async function submitDiscProb() {
 
     // write the CSV file requested by NIST that describes properties of the solutions
     console.log(outputCSV);
-    let res3 = await app.makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: 'labels.csv', data: outputCSV.join('\n')});
+    let res3 = await m.request(D3M_SVC_URL + '/store-user-problem', {
+        method: 'POST',
+        data: {filename: 'labels.csv', data: outputCSV.join('\n')}
+    });
 
     // Remove the button Submit Discovered problem button
     //
