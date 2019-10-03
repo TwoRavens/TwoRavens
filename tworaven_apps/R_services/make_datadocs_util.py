@@ -20,7 +20,7 @@ parms_sort_of = {
 }
 
 
-from tworaven_apps.rook_services.preprocess_util import MakeDatadocsUtil
+from tworaven_apps.R_services.preprocess_util import MakeDatadocsUtil
 mdutil = MakeDatadocsUtil(rook_params)
 if mdutil.has_error():
     print('error found: ', mdutil.get_error_message())

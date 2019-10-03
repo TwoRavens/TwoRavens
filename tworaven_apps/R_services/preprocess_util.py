@@ -2,7 +2,7 @@
 
 Example usage:
 
-from tworaven_apps.rook_services.preprocess_util import PreprocessUtil
+from tworaven_apps.R_services.preprocess_util import PreprocessUtil
 src_file = '/ravens_volume/test_data/185_baseball/TRAIN/dataset_TRAIN/tables/learningData.csv'
 
 putil = PreprocessUtil(src_file)
@@ -35,7 +35,6 @@ from raven_preprocess.preprocess_runner import PreprocessRunner
 
 from tworaven_apps.data_prep_utils.duplicate_column_remover import DuplicateColumnRemover
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
-
 from tworaven_apps.utils.json_helper import json_dumps, json_loads
 
 
@@ -88,7 +87,6 @@ class PreprocessUtil(BasicErrCheck):
         assert not self.has_error(),\
             'Make sure "has_error()" is False before calling this method'
         return self.preprocess_data
-
 
     def get_call_data(self):
         """Format data for rook call"""
@@ -151,7 +149,7 @@ class PreprocessUtil(BasicErrCheck):
 
 
 """
-from tworaven_apps.rook_services.preprocess_util import PreprocessUtil
+from tworaven_apps.R_services.preprocess_util import PreprocessUtil
 src_file = '/ravens_volume/test_data/185_baseball/TRAIN/dataset_TRAIN/tables/learningData.csv'
 
 

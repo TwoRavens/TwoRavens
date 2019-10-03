@@ -510,9 +510,9 @@ def run_eventdata_prod():
 def run(**kwargs):
     """Run the django dev server and webpack--webpack watches the assets directory and rebuilds when appTwoRavens changes
 
-    with_rook=True - runs rook in "nonstop" mode
+    with_R=True - runs flask R server
     """
-    with_rook = kwargs.get('with_rook', False)
+    with_R = kwargs.get('with_R', False)
     external_ta2 = kwargs.get('external_ta2', False)
 
     clear_js()  # clear any dev css/js files
@@ -527,8 +527,8 @@ def run(**kwargs):
         'npm start',
     ]
 
-    if with_rook:
-        commands.append(get_run_flask_cmd())
+    if with_R:
+        commands.append(get_run_flask_R_cmd())
 
     proc_list = [subprocess.Popen(command, shell=True, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr) for command in commands]
     try:

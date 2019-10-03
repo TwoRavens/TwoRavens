@@ -79,7 +79,7 @@ INSTALLED_APPS = [
     'tworaven_apps.ta2_interfaces', # sending UI through to TA2 and back again
     'tworaven_apps.solver_interfaces',
     'tworaven_apps.content_pages',
-    'tworaven_apps.rook_services', # sending UI calls to rook and back again
+    'tworaven_apps.R_services', # sending UI calls to rook and back again
     'tworaven_apps.api_docs',
     'tworaven_apps.call_captures', # capture data sent from UI out to rook/TA2
     'tworaven_apps.eventdata_queries', # eventdata API services

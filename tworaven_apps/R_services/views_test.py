@@ -5,7 +5,7 @@ from django.conf import settings
 from django.http import JsonResponse, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from tworaven_apps.call_captures.models import ServiceCallEntry
-from tworaven_apps.rook_services.rook_app_info import RookAppInfo
+from tworaven_apps.R_services.R_app_info import RAppInfo
 
 from datetime import datetime as dt
 

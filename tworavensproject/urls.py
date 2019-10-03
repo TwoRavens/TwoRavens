@@ -12,7 +12,7 @@ urlpatterns = [
 
     url(r'^auth/', include('tworaven_apps.raven_auth.urls')),
 
-    url(r'^rook-custom/', include('tworaven_apps.rook_services.urls')),
+    url(r'^rook-custom/', include('tworaven_apps.R_services.urls')),
 
     url(r'^config/', include('tworaven_apps.configurations.urls')),
 

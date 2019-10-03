@@ -13,12 +13,12 @@ from tworaven_apps.user_workspaces.models import UserWorkspace
 from tworaven_apps.utils.file_util import move_file
 from tworaven_apps.utils.json_helper import json_dumps, json_loads
 
-from tworaven_apps.rook_services.rook_app_info import RookAppInfo
-from tworaven_apps.rook_services.models import UI_KEY_SOLA_JSON, ROOK_ZESSIONID
-from tworaven_apps.rook_services import app_names
+from tworaven_apps.R_services.R_app_info import RAppInfo
+from tworaven_apps.R_services.models import UI_KEY_SOLA_JSON, ROOK_ZESSIONID
+from tworaven_apps.R_services import app_names
 from tworaven_apps.ta2_interfaces import static_vals as ta2_static
 
-from tworaven_apps.rook_services.preprocess_util import \
+from tworaven_apps.R_services.preprocess_util import \
     (PreprocessUtil,)
 
 from tworaven_apps.utils.view_helper import get_session_key
@@ -36,14 +36,15 @@ from tworaven_apps.utils.file_util import create_directory
 from tworaven_apps.ta2_interfaces import static_vals as ta2_static
 from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
 from tworaven_apps.behavioral_logs import static_vals as bl_static
-from tworaven_apps.rook_services import static_vals as rook_static
+
+from tworaven_apps.R_services import static_vals as rook_static
 from tworaven_apps.utils.raven_json_encoder import RavenJSONEncoder
 
 LOGGER = logging.getLogger(__name__)
 
 
 @csrf_exempt
-def view_rook_preprocess(request):
+def view_R_preprocess(request):
     """Route to rook preprocess
     Example input:
         {
@@ -128,15 +129,15 @@ def log_preprocess_call(user, json_data, session_id=''):
     LogEntryMaker.create_system_entry(user, log_data2)
 
 @csrf_exempt
-def view_rook_healthcheck(request):
+def view_R_healthcheck(request):
     """Ping rook to make sure it's receiving/responding to requests"""
     # get the app info
     #
-    rook_app_info = RookAppInfo.get_appinfo_from_name(app_names.HEALTH_CHECK_APP)
+    rook_app_info = RAppInfo.get_appinfo_from_name(app_names.HEALTH_CHECK_APP)
     if not rook_app_info:
         raise Http404((f'unknown rook app: "{app_names.HEALTH_CHECK_APP}"'
                        f' (please add "{app_names.HEALTH_CHECK_APP}" to '
-                       f' "tworaven_apps/rook_services/app_names.py")'))
+                       f' "tworaven_apps/R_services/app_names.py")'))
 
     rook_svc_url = rook_app_info.get_rook_server_url()
 
@@ -180,11 +181,11 @@ def view_partials_app(request):
     # -----------------------------
     # get the app info
     # -----------------------------
-    rook_app_info = RookAppInfo.get_appinfo_from_name(app_names.PARTIALS_APP)
+    rook_app_info = RAppInfo.get_appinfo_from_name(app_names.PARTIALS_APP)
     if rook_app_info is None:
         user_msg = ((f'unknown rook app: "{app_names.PARTIALS_APP}"'
                     f' (please add "{app_names.PARTIALS_APP}" to '
-                    f' "tworaven_apps/rook_services/app_names.py")'))
+                    f' "tworaven_apps/R_services/app_names.py")'))
         return JsonResponse(get_json_error(user_msg))
 
     # -----------------------------
@@ -274,7 +275,7 @@ def view_partials_app(request):
 
 
 @csrf_exempt
-def view_rook_route(request, app_name_in_url):
+def view_R_route(request, app_name_in_url):
     """Route TwoRavens calls to Rook
         orig: TwoRavens -> Rook
         view: TwoRavens -> Django 2ravens -> Rook
@@ -286,10 +287,10 @@ def view_rook_route(request, app_name_in_url):
     # -----------------------------
     # get the app info
     # -----------------------------
-    rook_app_info = RookAppInfo.get_appinfo_from_url(app_name_in_url)
+    rook_app_info = RAppInfo.get_appinfo_from_url(app_name_in_url)
     if rook_app_info is None:
         raise Http404(('unknown rook app: "{0}" (please add "{0}" to '
-                       ' "tworaven_apps/rook_services/app_names.py")').format(\
+                       ' "tworaven_apps/R_services/app_names.py")').format(\
                        app_name_in_url))
 
     # -----------------------------
@@ -341,7 +342,7 @@ def view_rook_route(request, app_name_in_url):
             updated_session_str = '%s":"%s"' % (ROOK_ZESSIONID, session_key)
             raven_data_text = raven_data_text.replace(blank_session_str, updated_session_str)
         elif raven_data_text.find(ROOK_ZESSIONID) == -1:
-            print('MAJOR ISSUE: NOT SESSION AT ALL (rook_services.views.py)')
+            print('MAJOR ISSUE: NOT SESSION AT ALL (R_services.views.py)')
 
     elif isinstance(raven_data_text, dict):
         #  We have a dict, make sure it gets a session

@@ -2,13 +2,13 @@
 Help with zelig app names, including routing to the Rook server
 """
 from django.conf import settings
-from tworaven_apps.rook_services import app_names
-from tworaven_apps.rook_services.app_names import \
+from tworaven_apps.R_services import app_names
+from tworaven_apps.R_services.app_names import \
      HEALTH_CHECK_APP
 
 
 
-class RookAppInfo(object):
+class RAppInfo(object):
     """for convenience"""
 
     def __init__(self, app_info):
@@ -63,7 +63,7 @@ class RookAppInfo(object):
 
         info = app_names.ROOK_APP_FRONTEND_LU.get(frontend_name, None)
         if info:
-            return RookAppInfo(info)
+            return RAppInfo(info)
 
         return None
 
@@ -75,6 +75,6 @@ class RookAppInfo(object):
         """
         info = app_names.ROOK_APP_NAME_LOOKUP.get(app_name, None)
         if info:
-            return RookAppInfo(info)
+            return RAppInfo(info)
 
         return None
