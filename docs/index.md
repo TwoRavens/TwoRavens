@@ -19,6 +19,7 @@ Demo [Metadata Service](http://metadata.2ravens.org)
 | Dataverse | Size | # Rows | # Columns | Time | First 100 Rows* | Result |
 | --- | --- | --- | --- | --- | --- | --- | 
 | [ajps_replication_raw_wide.tab](https://dataverse.harvard.edu/file.xhtml?persistentId=doi:10.7910/DVN/CQXHTH/UGSMIP&version=1.0) | 86.5 kB  | 360 | 66 | 0.24 s | [.tab](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/CQXHTH_ajps_lebanon_raw_wide.tab) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/CQXHTH_ajps_lebanon_raw_wide.json) |
+| [sectoral_value_added.csv](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/FE0UYM&version=1.0) | 44.2 kB  | 900 | 26 | 0.25 s | [.csv](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/sectoral_value_added.csv) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/sectoral_value_added.json) |
 * please see the Dataverse link for the full file 
 
 # Related Publications
