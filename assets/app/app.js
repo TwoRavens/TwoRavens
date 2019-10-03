@@ -558,39 +558,25 @@ streamSocket.onmessage = function (e) {
     console.log('msg_data');
     console.log(msg_data);
 
-    if (msg_data.msg_type === 'receive_describe_msg') {
-        modelResults[msg_data.data.model_id] = modelResults[msg_data.data.model_id] || {};
-        Object.assign(modelResults[msg_data.data.model_id], msg_data.data);
-
-        m.redraw();
-        return;
-    }
-
-    if (msg_data.msg_type === 'receive_score_msg') {
-        modelResults[msg_data.data.model_id] = modelResults[msg_data.data.model_id] || {};
-        modelResults[msg_data.data.model_id].scores = modelResults[msg_data.data.model_id].scores || [];
-        modelResults[msg_data.data.model_id].scores.push(...msg_data.data.scores);
-
-        m.redraw();
-        return;
-    }
-
-    if (msg_data.msg_type === 'receive_produce_msg') {
-        modelResults[msg_data.data.model_id] = modelResults[msg_data.data.model_id] || {};
-        modelResults[msg_data.data.model_id].produce = modelResults[msg_data.data.model_id].produce || [];
-        modelResults[msg_data.data.model_id].produce.push({
-            data_pointer: msg_data.data.data_pointer,
-            configuration: msg_data.data.configuration,
-            input: msg_data.data.input
-        });
-
-        m.redraw();
-        return;
-    }
-
-
     if (msg_data.msg_type === undefined) {
         console.log('streamSocket.onmessage: Error, "msg_data.msg_type" not specified!');
+        return;
+    }
+
+    if (msg_data.msg_type === 'receive_describe_msg') {
+        solverWrapped.handleDescribeResponse(msg_data.data);
+        return;
+    }
+    if (msg_data.msg_type === 'receive_score_msg') {
+        solverWrapped.handleScoreResponse(msg_data.data);
+        return;
+    }
+    if (msg_data.msg_type === 'receive_produce_msg') {
+        solverWrapped.handleProduceResponse(msg_data.data);
+        return;
+    }
+    if (msg_data.msg_type === 'receive_solve_msg') {
+        solverWrapped.handleSolveCompleteResponse(msg_data.data);
         return;
     }
 

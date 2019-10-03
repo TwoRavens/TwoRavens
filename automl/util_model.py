@@ -2,6 +2,7 @@ import abc
 import uuid
 import json
 import os
+import numpy as np
 
 import requests
 
@@ -50,7 +51,7 @@ class Model(object):
         with open(metadata_path, 'r') as metadata_file:
             metadata = json.load(metadata_file)
 
-        if metadata['system'] in ['auto_sklearn', 'tpot', 'mlbox', 'mljar-unsupervised']:
+        if metadata['system'] in ['auto_sklearn', 'tpot', 'mlbox', 'mljar-supervised']:
 
             preprocess = None
             if os.path.exists(os.path.join(model_folder_path, 'preprocess.joblib')):
@@ -99,9 +100,9 @@ class ModelSklearn(Model):
         }
 
     def score(self, specification):
-        data = Dataset(specification['input']).get_dataframe()
+        dataframe = Dataset(specification['input']).get_dataframe()
 
-        stimulus = data[self.predictors]
+        stimulus = dataframe[self.predictors]
 
         if self.preprocess:
             stimulus = self.preprocess.transform(stimulus)
@@ -116,7 +117,7 @@ class ModelSklearn(Model):
             stimulus.columns = [str(i).strip() for i in stimulus.columns]
 
         predicted = self.model.predict(stimulus)
-        actual = data[self.targets[0]].to_numpy().astype(float)
+        actual = np.array(dataframe[self.targets[0]]).astype(float)
 
         if self.system == 'mljar-supervised':
             predicted = pandas.DataFrame((predicted.idxmax(axis=1) == 'p_1').astype(int))
@@ -134,7 +135,8 @@ class ModelSklearn(Model):
         return {
             'search_id': self.search_id,
             'model_id': self.model_id,
-            'scores': scores
+            'scores': scores,
+            'system': self.system
         }
 
     def produce(self, specification):
@@ -186,11 +188,14 @@ class ModelSklearn(Model):
             os.chdir(cwd)
 
         return {
-            'input': specification['input'],
-            'configuration': configuration,
-            'data_pointer': output_path,
+            'produce': {
+                'input': specification['input'],
+                'configuration': configuration,
+                'data_pointer': output_path
+            },
             'search_id': self.search_id,
-            'model_id': self.model_id
+            'model_id': self.model_id,
+            'system': self.system
         }
 
     def save(self):
@@ -294,7 +299,8 @@ class ModelH2O(Model):
         return {
             'search_id': self.search_id,
             'model_id': self.model_id,
-            'scores': scores
+            'scores': scores,
+            "system": self.system
         }
 
     def produce(self, specification):
@@ -328,11 +334,14 @@ class ModelH2O(Model):
             os.chdir(cwd)
 
         return {
-            'input': specification['input'],
-            'configuration': configuration,
-            'data_pointer': output_path,
+            'produce': {
+                'input': specification['input'],
+                'configuration': configuration,
+                'data_pointer': output_path
+            },
             'search_id': self.search_id,
-            'model_id': self.model_id
+            'model_id': self.model_id,
+            "system": self.system
         }
 
     def save(self):
@@ -385,7 +394,8 @@ class ModelLudwig(Model):
         return scores
 
     def produce(self, specification):
-        predict_type = specification.get('configuration', {}).get('predict_type', 'RAW')
+        configuration = specification.get('configuration', {})
+        predict_type = configuration.get('predict_type', 'RAW')
 
         dataset = Dataset(specification['input'])
         dataframe = dataset.get_dataframe()
@@ -409,10 +419,14 @@ class ModelLudwig(Model):
             os.chdir(cwd)
 
         return {
-            'data_pointer': output_path,
-            'predict_type': predict_type,
+            'produce': {
+                'input': specification['input'],
+                'configuration': configuration,
+                'data_pointer': output_path
+            },
             'search_id': self.search_id,
-            'model_id': self.model_id
+            'model_id': self.model_id,
+            "system": self.system
         }
 
     def save(self):
