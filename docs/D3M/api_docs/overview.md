@@ -19,6 +19,8 @@ For each web application, the url pattern and corresponding logic in the view co
 [Content (content_pages)](content_pages/index.md)
 =================================================
 
+**Entrance URL**: / (default path)
+
 This web application constructs the web page you can see. Different pages will be rendered based on the url received.
 Generally, it controls the website rendering process.
 
@@ -34,4 +36,6 @@ After that, **View** will execute corresponding logic code based on the input ur
 [TA2 Interface (ta2_interface)](ta2/index.md)
 =============================================
 
-This application plays the role of Back-end in our program. Namely, it will handles the communication between remote TA2 server and process the response.
+**Entrance URL**: /d3m-service/
+
+This application plays the role of Back-end in our program. Namely, it handles the communication between remote TA2 server and process the response.

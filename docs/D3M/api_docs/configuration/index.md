@@ -1,7 +1,7 @@
 D3M Configuration
 =================
 
-This application constructs the web page you can see. It will generate url based on your operation and pass it to the **View** component.
+This application is the core component of our D3M interface. It stores several crucial configuration about the dataset and task.. It will generate url based on your operation and pass it to the **View** component.
 After that, **View** will execute corresponding logic code based on the input urls.
 
 URL Patterns
