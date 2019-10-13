@@ -8,12 +8,19 @@ URL Patterns
 ============
 
 All acceptable url patterns (in regex) are presented below:
-* [d3m-config/list](#head1234)
+* [d3m-config/list](#d3m_config_list)
+* [d3m-config/details/?](#d3m_config_details)
+* [d3m-config/details/json/?](#d3m_config_details_json)
+* [d3m-config/json/latest](#d3m_config_json_latest)
+* [d3m-config/json/eval/latest](#d3m_config_json_eval_latest)
+* [d3m-config/get-dataset-schema/json/?](#d3m_config_dataset_schema_json)
+* [d3m-config/get-problem-schema/json/?](#d3m_config_problem_schema_json)
+* [d3m-config/get-problem-data-file-info/?](#d3m_config_problem_data_json)
 
 ---
 
 
-**Pattern**: d3m-config/list <a name="head1234"></a>
+**Pattern**: d3m-config/list <a name="d3m_config_list"></a>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a HTML page shows the list of available D3M configuration, rendered by [this](https://github.com/TwoRavens/TwoRavens/blob/master/tworaven_apps/configurations/templates/d3m_config_list.html).
 
@@ -28,7 +35,7 @@ All acceptable url patterns (in regex) are presented below:
 
 ---
 
-**Pattern**: d3m-config/details/(?P<d3m_config_id>\d{1,5})
+**Pattern**: d3m-config/details/(?P<d3m_config_id>\d{1,5}) <a name="d3m_config_details"></a>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Not implemented yet, return a TODO page.
 
@@ -38,7 +45,7 @@ NOT IMPLEMENTED
 
 ---
 
-**Pattern**: d3m-config/details/json/(?P<d3m_config_id>\d{1,5})
+**Pattern**: d3m-config/details/json/(?P<d3m_config_id>\d{1,5}) <a name="d3m_config_details_json"></a>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a JSON string that contains detailed information for given D3M configuration ID.
 
@@ -54,7 +61,7 @@ NOT IMPLEMENTED
 
 ---
 
-**Pattern**: d3m-config/json/latest
+**Pattern**: d3m-config/json/latest <a name="d3m_config_json_latest"></a>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a JSON string that contains detailed information for the last modified D3M configuration.
 
@@ -70,7 +77,7 @@ NOT IMPLEMENTED
 
 ---
 
-**Pattern**: d3m-config/json/eval/latest
+**Pattern**: d3m-config/json/eval/latest <a name="d3m_config_json_eval_latest"></a>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a JSON string that contains detailed information for the last modified D3M configuration. A wrap function for *view_d3m_details_json_latest(request, True)*
 
@@ -85,7 +92,7 @@ NOT IMPLEMENTED
 
 ---
 
-**Pattern**: d3m-config/get-dataset-schema/json/(?P<d3m_config_id>\d{1,5})
+**Pattern**: d3m-config/get-dataset-schema/json/(?P<d3m_config_id>\d{1,5}) <a name="d3m_config_dataset_schema_json"></a>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a JSON string that presents the dataset schema. Configuration ID is optional. Return the last schema if the id is not specified.
 
@@ -101,7 +108,7 @@ NOT IMPLEMENTED
 
 ---
 
-**Pattern**: d3m-config/get-problem-schema/json/(?P<d3m_config_id>\d{1,5})
+**Pattern**: d3m-config/get-problem-schema/json/(?P<d3m_config_id>\d{1,5}) <a name="d3m_config_problem_schema_json"></a>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a JSON string that presents the problem schema. Configuration ID is optional. Return the last schema if the id is not specified.
 
@@ -117,7 +124,7 @@ NOT IMPLEMENTED
 
 ---
 
-**Pattern**: d3m-config/get-problem-data-file-info/(?P<d3m_config_id>\d{1,5})
+**Pattern**: d3m-config/get-problem-data-file-info/(?P<d3m_config_id>\d{1,5}) <a name="d3m_config_problem_data_json"></a>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a JSON string that describes the information of training data and target files, if they exist. Configuration ID is optional. Return the last info if the id is not specified.
 
