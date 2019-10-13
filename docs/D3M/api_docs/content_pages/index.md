@@ -8,10 +8,17 @@ URL Patterns
 ============
 
 All acceptable url patterns (in regex) are presented below:
+* [dev_raven_links](#dev_raven_links)
+* [show-env-variables](#show_env_variables)
+* [monitoring/alive](#monitoring)
+* [privacy-policy](#privacy_policy)
+* [app-domain-config-error](#app_domain_config_error)
+* [d3m-configuration-error](#d3m_config_error)
+* [(empty pattern | default page)](#default)
 
 ---
 
-**Pattern**: dev_raven_links
+**Pattern**: dev_raven_links <a name="dev_raven_links"></a>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a development information web page.
 
@@ -26,7 +33,7 @@ All acceptable url patterns (in regex) are presented below:
 
 ---
 
-**Pattern**: show-env-variables
+**Pattern**: show-env-variables <a name="show_env_variables"></a>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a HTML contains a list of ENV settings.
 
@@ -41,7 +48,7 @@ All acceptable url patterns (in regex) are presented below:
 
 ---
 
-**Pattern**: monitoring/alive
+**Pattern**: monitoring/alive <a name="monitoring"></a>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a JSON string that indicates the status of kubernetes
 
@@ -56,7 +63,7 @@ All acceptable url patterns (in regex) are presented below:
 
 ---
 
-**Pattern**: privacy-policy
+**Pattern**: privacy-policy <a name="privacy_policy"></a>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a HTML page contains the privacy policy.
 
@@ -71,7 +78,7 @@ All acceptable url patterns (in regex) are presented below:
 
 ---
 
-**Pattern**:app-domain-config-error
+**Pattern**:app-domain-config-error <a name="app_domain_config_error"></a>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a pop-up shows no domain config error.
 
@@ -87,7 +94,7 @@ None
 
 ---
 
-**Pattern**: d3m-configuration-error
+**Pattern**: d3m-configuration-error <a name="d3m_config_error"></a>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a pop-up shows no D3M config error.
 
@@ -102,7 +109,7 @@ None
 
 ---
 
-**Pattern**: ''
+**Pattern**: '' <a name="default"></a>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Serve up the workspace, the current home page. Include global js settings.
 
