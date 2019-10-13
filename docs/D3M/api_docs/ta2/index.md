@@ -21,6 +21,8 @@ All acceptable url patterns (in regex) are presented below (Most url pattern her
 * [view-grpc-stored-history/?](#view_grpc_stored_history)
 * [clear-grpc-stored-history](#clear_grpc)
 
+where '?' denotes optional extra pattern, please refer to corresponding section for detailed information.
+
 ---
 
 **Pattern**: store-problem-form <a name="store_problem_form"></a>

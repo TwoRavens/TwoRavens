@@ -17,6 +17,8 @@ All acceptable url patterns (in regex) are presented below:
 * [d3m-config/get-problem-schema/json/?](#d3m_config_problem_schema_json)
 * [d3m-config/get-problem-data-file-info/?](#d3m_config_problem_data_json)
 
+where '?' denotes optional extra pattern, please refer to corresponding section for detailed information.
+
 ---
 
 
