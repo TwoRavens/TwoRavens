@@ -17,4 +17,4 @@ Our TwoRavens D3M interface is built upon Django and we assume the user know the
 
 # Additional Resource
 
-Please noted that this is a TA3 interface. Please refer to this [Gitlab](https://gitlab.com/datadrivendiscovery/ta3ta2-api) for more information about the API of TA2 and the json schema we used to communicate.
+Please noted that this is a TA3 interface. Please refer to this [Gitlab](https://gitlab.com/datadrivendiscovery/ta3ta2-api) for more information about the API of TA2 and the json schema we used for communication.

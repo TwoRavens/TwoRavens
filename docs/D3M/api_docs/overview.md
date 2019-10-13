@@ -39,3 +39,10 @@ After that, **View** will execute corresponding logic code based on the input ur
 **Entrance URL**: /d3m-service/
 
 This application plays the role of Back-end in our program. Namely, it handles the communication between remote TA2 server and process the response.
+
+[Datamart](datamart/index.md)
+=============================
+
+**Entrance URL**: /datamart/
+
+This is an auxiliary application, which generates a list of datasets that maybe helpful for current task.
