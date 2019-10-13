@@ -18,3 +18,20 @@ Our TwoRavens D3M interface is built upon Django and we assume the user know the
 # Additional Resource
 
 Please noted that this is a TA3 interface. Please refer to this [Gitlab](https://gitlab.com/datadrivendiscovery/ta3ta2-api) for more information about the API of TA2 and the json schema we used for communication.
+
+Component Architecture
+=======================
+
+![alt text](imgs/components.png "Component architecture")
+
+Above is the architecture of our D3M Interface. The function of each component is listed below:
+
+* **Front-end**
+    * **Content Pages** : Render the web page presented to user;
+    * **User Workspace** : Render the user workspace in each web page;
+* **Back-end**
+    * **D3M Configuration** : (*Core Component*) Contains all the information of a D3M task;
+    * **TA2 Interface** : (*Core Component*) Handle the communication with remote TA2 Server;
+    * **Datamart** : (*Core Component*) Handle the communication with remote data repo and provide dataset filtering;
+    * **Auth** : Handles the user login/logout procedure;
+    * **Admin**: Default application provided by Django framework, provides an user-friendly control panel for the webpage;
