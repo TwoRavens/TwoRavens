@@ -8,9 +8,11 @@ URL Patterns
 ============
 
 All acceptable url patterns (in regex) are presented below:
+* [d3m-config/list](head1234)
 
 ---
 
+<a name="head1234"></a>
 **Pattern**: d3m-config/list
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return a HTML page shows the list of available D3M configuration, rendered by [this](https://github.com/TwoRavens/TwoRavens/blob/master/tworaven_apps/configurations/templates/d3m_config_list.html).
