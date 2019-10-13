@@ -8,7 +8,7 @@ URL Patterns
 ============
 
 All acceptable url patterns (in regex) are presented below:
-* [d3m-config/list](head1234)
+* [d3m-config/list](#head1234)
 
 ---
 
