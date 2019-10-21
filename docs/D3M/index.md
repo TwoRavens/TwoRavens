@@ -22,7 +22,7 @@ Please noted that this is a TA3 interface. Please refer to this [Gitlab](https:/
 Component Architecture
 =======================
 
-![alt text](imgs/components.png "Component architecture")
+![alt text](imgs/2ravens.png "Component architecture")
 
 Above is the architecture of our D3M Interface. The function of each component is listed below:
 
@@ -31,6 +31,7 @@ Above is the architecture of our D3M Interface. The function of each component i
     * **User Workspace** : Render the user workspace in each web page;
 * **Back-end**
     * **D3M Configuration** : (*Core Component*) Contains all the information of a D3M task;
+    * **R Service** : Handle the dataset pre-process using R. (We are using *flask* as wrapper now). Notably, this component is only used by D3M Configuration, thus it can be considered as part of it.
     * **TA2 Interface** : (*Core Component*) Handle the communication with remote TA2 Server;
     * **Datamart** : (*Core Component*) Handle the communication with remote data repo and provide dataset filtering;
     * **Auth** : Handles the user login/logout procedure;
