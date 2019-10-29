@@ -32,7 +32,7 @@ where '?' denotes optional extra pattern, please refer to corresponding section 
 
 * **Example**:
 
-![alt text](imgs/datamart_info.png "Returned JSON string")
+![alt text](imgs/datarmart_info.png "Returned JSON string")
 
 ---
 
