@@ -1,7 +1,7 @@
 TA2 Interface
 =================
 
-This application plays the role of Back-end in our program. Namely, it handles the communication between remote TA2 server and process the response.. Different pages will be rendered based on the url received.
+This application plays the role of Back-end in our program. Namely, it handles the communication between remote TA2 server and process the response. Different pages will be rendered based on the url received.
 
 URL Patterns
 ============
