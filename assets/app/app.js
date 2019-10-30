@@ -560,19 +560,20 @@ streamSocket.onmessage = function (e) {
     }
 
     if (msg_data.msg_type === 'receive_describe_msg') {
-        solverWrapped.handleDescribeResponse(msg_data.data);
+        solverWrapped.handleDescribeResponse(msg_data);
         return;
     }
     if (msg_data.msg_type === 'receive_score_msg') {
-        solverWrapped.handleScoreResponse(msg_data.data);
+        solverWrapped.handleScoreResponse(msg_data);
         return;
     }
     if (msg_data.msg_type === 'receive_produce_msg') {
-        solverWrapped.handleProduceResponse(msg_data.data);
+        solverWrapped.handleProduceResponse(msg_data);
         return;
     }
     if (msg_data.msg_type === 'receive_solve_msg') {
-        solverWrapped.handleSolveCompleteResponse(msg_data.data);
+        console.log("receive solve message", msg_data);
+        solverWrapped.handleSolveCompleteResponse(msg_data);
         return;
     }
 
@@ -1039,6 +1040,7 @@ let buildDefaultProblem = problemDoc => {
         trainTestRatio: problemDoc.inputs.dataSplits.testSize,
         stratified: problemDoc.inputs.dataSplits.stratified,
         randomSeed: problemDoc.inputs.dataSplits.randomSeed,
+        splitsFile: problemDoc.inputs.dataSplits.splitsFile,
 
         meaningful: false,
         manipulations: [],
@@ -1627,13 +1629,16 @@ export let materializeTrainTest = async problem => {
         data: {
             nominal_variables: getNominalVariables(selectedProblem),
             dataset_schema: problem.datasetSchemas.all,
-            train_test_ratio: problem.trainTestRatio
+            train_test_ratio: problem.trainTestRatio,
+            stratified: problem.stratified,
+            splits_file: problem.splitsFile,
+            random_seed: problem.randomSeed,
         }
     });
 
     if (!response.success) {
         alertError(response.message);
-        return;
+        return false;
     }
 
     problem.datasetSchemas.train = response.data.dataset_schemas.train;
@@ -1643,6 +1648,8 @@ export let materializeTrainTest = async problem => {
     problem.datasetPaths.test = response.data.dataset_paths.test;
 
     problem.indices = response.data.sample_test_indices;
+
+    return true;
 };
 
 // programmatically deselect every selected variable

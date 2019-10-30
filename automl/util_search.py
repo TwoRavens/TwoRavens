@@ -52,6 +52,8 @@ def preprocess(dataframe, specification):
 
 
 class Search(object):
+    system = None
+
     def __init__(self, specification, system_params, callback_found=lambda model, params: None, callback_params=None):
         self.search_id = str(uuid.uuid4())
         self.specification = specification
@@ -78,6 +80,7 @@ class Search(object):
 
 
 class SearchAutoSklearn(Search):
+    system = 'auto_sklearn'
 
     def run(self):
         import autosklearn.classification
@@ -148,7 +151,7 @@ class SearchAutoSklearn(Search):
 
         return {
             KEY_SUCCESS: True,
-            KEY_MESSAGE: 'Auto SKlearn search finished',
+            KEY_MESSAGE: 'search complete',
             KEY_DATA: {
                 'search_id': self.search_id,
                 'system': 'auto_sklearn'
@@ -157,6 +160,7 @@ class SearchAutoSklearn(Search):
 
 
 class SearchCaret(Search):
+    system = 'caret'
 
     def run(self):
         return requests.post(R_SERVICE + 'caretSolve.app', json={
@@ -168,6 +172,7 @@ class SearchCaret(Search):
 
 
 class SearchH2O(Search):
+    system = 'h2o'
 
     def run(self):
         import h2o
@@ -234,17 +239,30 @@ class SearchH2O(Search):
         automl = H2OAutoML(**self.system_params)
         automl.train(**train_params)
 
+        print(automl)
+        print(automl.leaderboard)
         # TODO: extract more than one model
+        if not automl.leader:
+            return {
+                KEY_SUCCESS: False,
+                KEY_MESSAGE: 'no models found',
+                KEY_DATA: {
+                    'search_id': self.search_id,
+                    'system': 'h2o'
+                }
+            }
+
         model = ModelH2O(
             automl.leader,
             search_id=self.search_id,
             predictors=X,
             targets=[y])
+
         self.callback_found(model, self.callback_params)
 
         return {
             KEY_SUCCESS: True,
-            KEY_MESSAGE: 'H2O search finished',
+            KEY_MESSAGE: 'search complete',
             KEY_DATA: {
                 'search_id': self.search_id,
                 'system': 'h2o'
@@ -253,6 +271,7 @@ class SearchH2O(Search):
 
 
 class SearchTPOT(Search):
+    system = 'tpot'
 
     def run(self):
         import tpot
@@ -262,7 +281,6 @@ class SearchTPOT(Search):
         stimulus, preprocessor = preprocess(dataframe, self.specification)
 
         X = self.specification['problem']['predictors']
-        print(type(X))
         y = self.specification['problem']['targets'][0]
 
         self.system_params['config_dict'] = 'TPOT sparse'
@@ -294,7 +312,7 @@ class SearchTPOT(Search):
 
         return {
             KEY_SUCCESS: True,
-            KEY_MESSAGE: 'TPOT search finished',
+            KEY_MESSAGE: 'search complete',
             KEY_DATA: {
                 'search_id': self.search_id,
                 'system': 'tpot'
@@ -303,6 +321,7 @@ class SearchTPOT(Search):
 
 
 class SearchMLBox(Search):
+    system = 'mlbox'
 
     def run(self):
         import mlbox.model.classification
@@ -339,7 +358,7 @@ class SearchMLBox(Search):
 
         return {
             KEY_SUCCESS: True,
-            KEY_MESSAGE: 'MLBox search finished',
+            KEY_MESSAGE: 'search complete',
             KEY_DATA: {
                 'search_id': self.search_id,
                 'system': 'mlbox'
@@ -348,6 +367,7 @@ class SearchMLBox(Search):
 
 
 class SearchLudwig(Search):
+    system = 'ludwig'
 
     def run(self):
         from ludwig.api import LudwigModel
@@ -390,7 +410,7 @@ class SearchLudwig(Search):
 
         return {
             KEY_SUCCESS: True,
-            KEY_MESSAGE: 'Ludwig search finished',
+            KEY_MESSAGE: 'search complete',
             KEY_DATA: {
                 'search_id': self.search_id,
                 'system': 'ludwig'
@@ -399,6 +419,7 @@ class SearchLudwig(Search):
 
 
 class SearchMLJarSupervised(Search):
+    system = 'mljar-unsupervised'
 
     def run(self):
         from supervised.automl import AutoML
@@ -438,7 +459,7 @@ class SearchMLJarSupervised(Search):
 
         return {
             KEY_SUCCESS: True,
-            KEY_MESSAGE: 'MLJar-Supervised search finished',
+            KEY_MESSAGE: 'search complete',
             KEY_DATA: {
                 'search_id': self.search_id,
                 'system': 'mljar-supervised'

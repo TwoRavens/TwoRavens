@@ -25,7 +25,7 @@ export let getSolverSpecification = async (problem, systemId) => {
 
     problem.solverState[systemId].message = 'preparing train/test splits';
     m.redraw();
-    await app.materializeTrainTest(problem);
+    if (!await app.materializeTrainTest(problem)) throw "Cannot solve problem without a train/test split."
 
     problem.solverState[systemId].message = 'applying manipulations to data';
     m.redraw();
@@ -262,45 +262,55 @@ let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
 let setRecursiveDefault = (obj, map) => map
     .reduce((obj, pair) => setDefault(obj, pair[0], pair[1]), obj);
 
-export let handleDescribeResponse = data => {
+export let handleDescribeResponse = response => {
+    let data = response.data;
     let solvedProblem = findProblem(data);
     if (!solvedProblem) {
         console.warn('description arrived for unknown problem', data);
         return;
     }
 
-    setRecursiveDefault(solvedProblem.solutions, [
-        [data.system, {}], [data.model_id, data]]);
-    m.redraw()
+    if (response.success) {
+        setRecursiveDefault(solvedProblem.solutions, [
+            [data.system, {}], [data.model_id, data]]);
+        m.redraw()
+    }
 };
 
-export let handleProduceResponse = data => {
+export let handleProduceResponse = response => {
+    let data = response.data;
     let solvedProblem = findProblem(data);
     if (!solvedProblem) {
         console.warn('produce arrived for unknown problem', data);
         return;
     }
 
-    setRecursiveDefault(solvedProblem.solutions, [
-        [data.system, {}], [data.model_id, {}], ['produce', []]]);
-    solvedProblem.solutions[data.system][data.model_id].produce.push(data.produce);
-    m.redraw()
+    if (response.success) {
+        setRecursiveDefault(solvedProblem.solutions, [
+            [data.system, {}], [data.model_id, {}], ['produce', []]]);
+        solvedProblem.solutions[data.system][data.model_id].produce.push(data.produce);
+        m.redraw()
+    }
 };
 
-export let handleScoreResponse = data => {
+export let handleScoreResponse = response => {
+    let data = response.data;
     let solvedProblem = findProblem(data);
     if (!solvedProblem) {
         console.warn('scores arrived for unknown problem', data);
         return;
     }
 
-    setRecursiveDefault(solvedProblem.solutions, [
-        [data.system, {}], [data.model_id, {}], ['scores', []]]);
-    solvedProblem.solutions[data.system][data.model_id].scores.push(...data.scores)
-    m.redraw()
+    if (response.success) {
+        setRecursiveDefault(solvedProblem.solutions, [
+            [data.system, {}], [data.model_id, {}], ['scores', []]]);
+        solvedProblem.solutions[data.system][data.model_id].scores.push(...data.scores);
+        m.redraw()
+    }
 };
 
-export let handleSolveCompleteResponse = data => {
+export let handleSolveCompleteResponse = response => {
+    let data = response.data;
     let solvedProblem = findProblem(data);
     if (!solvedProblem) {
         console.warn('solve complete arrived for unknown problem', data);
@@ -308,7 +318,7 @@ export let handleSolveCompleteResponse = data => {
     }
 
     solvedProblem.solverState[data.system].thinking = false;
-    solvedProblem.solverState[data.system].message = 'search complete';
+    solvedProblem.solverState[data.system].message = response.additional_info.message;
     m.redraw()
 };
 

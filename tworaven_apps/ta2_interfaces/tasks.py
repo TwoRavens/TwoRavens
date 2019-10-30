@@ -4,10 +4,15 @@ capture the results in the db as StoredResponse objects
 """
 from datetime import datetime
 from django.conf import settings
+from django.http import JsonResponse
+
+from tworaven_apps.R_services.views import create_destination_directory
 
 from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.utils.proto_util import message_to_json
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
+from tworaven_apps.utils.view_helper import get_json_error
+
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.models import \
     (StoredRequest, StoredResponse)
@@ -22,6 +27,18 @@ import core_pb2
 from google.protobuf.json_format import \
     (Parse, ParseError)
 
+import shutil
+from os import path
+
+import os
+import json
+from d3m.container.dataset import Dataset
+
+from sklearn.model_selection import train_test_split
+import pandas as pd
+import numpy as np
+
+
 #
 # Import Tasks to SearchSolutions/GetSearchSolutionsResults,
 #                 FitSolution/GetFitSolutionResults,
@@ -31,6 +48,7 @@ from tworaven_apps.ta2_interfaces.ta2_search_solutions_helper import \
     SearchSolutionsHelper
 from tworaven_apps.ta2_interfaces.ta2_fit_solution_helper import FitSolutionHelper
 from tworaven_apps.ta2_interfaces.ta2_score_solution_helper import ScoreSolutionHelper
+
 
 
 @celery_app.task(ignore_result=True)
@@ -166,3 +184,90 @@ def stream_and_store_results(raven_json_str, stored_request_id,
 
 
     StoredRequestUtil.set_finished_ok_status(stored_request_id)
+
+
+@celery_app.task()
+def split_dataset(configuration, workspace):
+
+    DEFAULT_RATIO = .7
+    train_test_ratio = configuration.get('train_test_ratio', DEFAULT_RATIO)
+    if not (0 >= train_test_ratio > 1):
+        train_test_ratio = DEFAULT_RATIO
+
+    stratified = configuration.get('stratified')
+    # TODO: don't ignore splits file
+    splits_file = configuration.get('splits_file')
+    random_seed = configuration.get('random_seed', 0)
+
+    dataset_schema = json.load(open(configuration['dataset_schema'], 'r'))
+    resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
+
+    dataset = Dataset.load(f'file://{configuration["dataset_schema"]}')
+    dataframe = dataset[resource_schema['resID']]
+
+    # rows with NaN values become object rows, which may contain multiple types. The NaN values become empty strings
+    # this converts '' to np.nan in non-nominal columns, so that nan may be dropped
+    # perhaps in a future version of d3m, the dataset loader could use pandas extension types instead of objects
+    nominals = configuration.get('nominals', [])
+    for column in [col for col in dataframe.columns.values if col not in nominals]:
+        dataframe[column].replace('', np.nan, inplace=True)
+
+    dataframe.dropna(inplace=True)
+    dataframe.reset_index(drop=True, inplace=True)
+
+    def run_split():
+        try:
+            dataframe_train, dataframe_test = train_test_split(
+                dataframe,
+                train_size=train_test_ratio,
+                stratify=stratified,
+                random_state=random_seed)
+            return {'train': dataframe_train, 'test': dataframe_test, 'stratify': stratified}
+        except TypeError:
+            dataframe_train, dataframe_test = train_test_split(
+                dataframe,
+                train_size=train_test_ratio,
+                random_state=random_seed)
+            return {'train': dataframe_train, 'test': dataframe_test, 'stratify': False}
+
+    def write_dataset(role, writable_dataframe):
+        dest_dir_info = create_destination_directory(workspace, role=role)
+        if not dest_dir_info.success:
+            return JsonResponse(get_json_error(dest_dir_info.err_msg))
+
+        dest_directory = dest_dir_info.result_obj
+        csv_path = os.path.join(dest_directory, resource_schema['resPath'])
+        shutil.rmtree(dest_directory)
+        shutil.copytree(workspace.d3m_config.training_data_root, dest_directory)
+        os.remove(csv_path)
+        writable_dataframe.to_csv(csv_path)
+
+        return path.join(dest_directory, 'datasetDoc.json'), csv_path
+
+    splits = run_split()
+
+    all_datasetDoc, all_datasetCsv = write_dataset('all', dataframe)
+    train_datasetDoc, train_datasetCsv = write_dataset('train', splits['train'])
+    test_datasetDoc, test_datasetCsv = write_dataset('test', splits['test'])
+
+    datasetDocs = {
+        'all': all_datasetDoc,
+        'train': train_datasetDoc,
+        'test': test_datasetDoc
+    }
+
+    datasetCsvs = {
+        'all': all_datasetCsv,
+        'train': train_datasetCsv,
+        'test': test_datasetCsv
+    }
+
+    sample_test_indices = splits['test']['d3mIndex'].astype('int32') \
+        .sample(n=configuration.get("sampleCount", min(1000, len(splits['test'])))).tolist()
+
+    return {
+        'dataset_schemas': datasetDocs,
+        'dataset_paths': datasetCsvs,
+        'sample_test_indices': sample_test_indices,
+        'stratified': splits['stratify']
+    }

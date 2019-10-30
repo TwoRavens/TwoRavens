@@ -14,7 +14,7 @@
 #    stanford
 #    tamu
 #
-# and $2 is the dataset id. If blank, random id is chosen up to configCount
+# and $2 is the dataset id. If 'r', random id is chosen up to configCount
 # -------------------------------------------------
 
 configCount=20
@@ -48,6 +48,9 @@ if [ $2 = 'r' ]
     DATA_ID=$((RANDOM % configCount))
   else
     DATA_ID=$2
+
+    echo "Running with dataset:"
+    echo $(fab run_ta2_brown_choose_config | grep $DATA_ID)
 fi
 
 : $(fab celery_restart)

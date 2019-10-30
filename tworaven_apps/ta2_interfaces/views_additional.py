@@ -11,6 +11,7 @@ from django.http import JsonResponse, HttpResponse, HttpResponseNotFound
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 
+from tworaven_apps.ta2_interfaces.tasks import split_dataset
 from tworaven_apps.R_services.views import create_destination_directory
 from tworaven_apps.ta2_interfaces.util_results_visualizations import (
     util_results_confusion_matrix, util_results_importance_efd)
@@ -26,16 +27,9 @@ from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
 from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 
-import shutil
 from os import path
-import os
-import json
-from d3m.container.dataset import Dataset
 
-from sklearn.model_selection import train_test_split
-import pandas as pd
-import numpy as np
-
+import traceback
 
 @csrf_exempt
 @cache_page(settings.PAGE_CACHE_TIME)
@@ -224,66 +218,19 @@ def get_train_test_split(request):
     if not user_info.success:
         return JsonResponse(get_json_error(user_info.err_msg))
 
-    dataset_schema = json.load(open(req_info['dataset_schema'], 'r'))
-    resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
+    try:
+        response = {
+            "success": True,
+            "data": split_dataset(req_info, user_workspace),
+            "message": "data partitioning successful"
+        }
 
-    dataset = Dataset.load(f'file://{req_info["dataset_schema"]}')
-    dataframe = pd.DataFrame(dataset[resource_schema['resID']])
+    except Exception:
+        print("caught traceback when splitting data:", flush=True)
+        print(traceback.format_exc(), flush=True)
+        response = {
+            "success": False,
+            "message": "Internal error while splitting dataset."
+        }
 
-    # rows with NaN values become object rows, which may contain multiple types. The NaN values become empty strings
-    # this converts '' to np.nan in non-nominal columns, so that nan may be dropped
-    # perhaps in a future version of d3m, the dataset loader could use pandas extension types instead of objects
-    nominals = req_info.get('nominals', [])
-    for column in [col for col in dataframe.columns.values if col not in nominals]:
-        dataframe[column].replace('', np.nan, inplace=True)
-
-    dataframe.dropna(inplace=True)
-    dataframe.reset_index(drop=True, inplace=True)
-
-    print(dataframe)
-
-    def write_dataset(role, writable_dataframe):
-        dest_dir_info = create_destination_directory(user_workspace, role=role)
-        if not dest_dir_info.success:
-            return JsonResponse(get_json_error(dest_dir_info.err_msg))
-
-        dest_directory = dest_dir_info.result_obj
-        csv_path = os.path.join(dest_directory, resource_schema['resPath'])
-        shutil.rmtree(dest_directory)
-        shutil.copytree(user_workspace.d3m_config.training_data_root, dest_directory)
-        os.remove(csv_path)
-        writable_dataframe.to_csv(csv_path)
-
-        return path.join(dest_directory, 'datasetDoc.json'), csv_path
-
-    dataframe_train, dataframe_test = train_test_split(dataframe, train_size=req_info.get('train_test_ratio', .7))
-
-    all_datasetDoc, all_datasetCsv = write_dataset('all', dataframe)
-    train_datasetDoc, train_datasetCsv = write_dataset('train', dataframe_train)
-    test_datasetDoc, test_datasetCsv = write_dataset('test', dataframe_test)
-
-    datasetDocs = {
-        'all': all_datasetDoc,
-        'train': train_datasetDoc,
-        'test': test_datasetDoc
-    }
-
-    datasetCsvs = {
-        'all': all_datasetCsv,
-        'train': train_datasetCsv,
-        'test': test_datasetCsv
-    }
-
-    print('datasetDocs', datasetDocs)
-
-    sample_test_indices = dataframe_test['d3mIndex'].astype('int32')\
-        .sample(n=req_info.get("sampleCount", min(1000, len(dataframe_test)))).tolist()
-
-    return JsonResponse({
-        "success": True, "data": {
-            'dataset_schemas': datasetDocs,
-            'dataset_paths': datasetCsvs,
-            'sample_test_indices': sample_test_indices
-        },
-        "message": "data partitioning successful"
-    })
+    return JsonResponse(response)

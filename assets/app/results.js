@@ -81,8 +81,8 @@ export let leftpanel = () => {
                             action: m(Button, {
                                 class: 'btn-sm',
                                 onclick: () => solverSystems[systemId](resultsProblem).solve(),
-                                disabled: !!resultsProblem.solverState[systemId]
-                            }, resultsProblem.solverState[systemId] ? 'Solving' : 'Solve'),
+                                disabled: !!(resultsProblem.solverState[systemId] || {}).thinking
+                            }, !!(resultsProblem.solverState[systemId] || {}).thinking ? 'Solving' : 'Solve'),
                             state: resultsProblem.solverState[systemId] && m('',
                                 resultsProblem.solverState[systemId].thinking && common.loaderSmall(systemId),
                                 m('div[style=font-size:medium;margin-left:1em;display:inline-block]',

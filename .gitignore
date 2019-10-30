@@ -52,7 +52,6 @@ ravens_volume/32_wikiqa
 assets/pkgs/swagger-ui/dist/*.map
 .Rhistory
 ravens_volume/test_data/*/search_config.json
-ravens_volume/test_data/*/search_config.json
 #ravens_volume/test_data/01_TEST_SOURCE/placeholder.md
 
 # ignore redis dumpfile
