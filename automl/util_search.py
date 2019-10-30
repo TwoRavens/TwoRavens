@@ -278,7 +278,7 @@ class SearchH2O(Search):
 
         return {
             KEY_SUCCESS: True,
-            KEY_MESSAGE: 'H2O search finished',
+            KEY_MESSAGE: 'search complete',
             KEY_DATA: {
                 'search_id': self.search_id,
                 'system': 'h2o'
@@ -297,7 +297,6 @@ class SearchTPOT(Search):
         stimulus, preprocessor = preprocess(dataframe, self.specification)
 
         X = self.specification['problem']['predictors']
-        print(type(X))
         y = self.specification['problem']['targets'][0]
 
         self.system_params['config_dict'] = 'TPOT sparse'
@@ -521,7 +520,7 @@ class SearchMLBox(Search):
 
         return {
             KEY_SUCCESS: True,
-            KEY_MESSAGE: 'MLBox search finished',
+            KEY_MESSAGE: 'search complete',
             KEY_DATA: {
                 'search_id': self.search_id,
                 'system': 'mlbox'
@@ -530,6 +529,7 @@ class SearchMLBox(Search):
 
 
 class SearchLudwig(Search):
+    system = 'ludwig'
 
     def run(self):
         from ludwig.api import LudwigModel
@@ -572,7 +572,7 @@ class SearchLudwig(Search):
 
         return {
             KEY_SUCCESS: True,
-            KEY_MESSAGE: 'Ludwig search finished',
+            KEY_MESSAGE: 'search complete',
             KEY_DATA: {
                 'search_id': self.search_id,
                 'system': 'ludwig'
@@ -581,6 +581,7 @@ class SearchLudwig(Search):
 
 
 class SearchMLJarSupervised(Search):
+    system = 'mljar-unsupervised'
 
     def run(self):
         from supervised.automl import AutoML
@@ -620,7 +621,7 @@ class SearchMLJarSupervised(Search):
 
         return {
             KEY_SUCCESS: True,
-            KEY_MESSAGE: 'MLJar-Supervised search finished',
+            KEY_MESSAGE: 'search complete',
             KEY_DATA: {
                 'search_id': self.search_id,
                 'system': 'mljar-supervised'

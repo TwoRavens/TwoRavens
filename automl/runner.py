@@ -331,20 +331,38 @@ def catch_traceback(msg_type, websocket_id, data, func, *args, **kwargs):
         return func(*args, **kwargs)
     except Exception as err:
         print("caught traceback when running future:", flush=True)
-        print(err)
         print(traceback.format_exc())
         send_result({
             KEY_WEBSOCKET_ID: websocket_id,
             KEY_MSG_TYPE: msg_type,
             KEY_DATA: data,
-            KEY_MESSAGE: f"aborted due to exception: {err}",
+            KEY_MESSAGE: "aborted due to exception",
             KEY_SUCCESS: False
         })
 
 
-def solve_async(websocket_id, solver):
+def solve_async(websocket_id, solver: Solve):
     start_time = time.time()
-    result = solver.run()
+    try:
+        result = solver.run()
+    except Exception:
+        print("caught traceback when running solver:", flush=True)
+        print(traceback.format_exc())
+        requests.post(
+            url=RECEIVE_ENDPOINT,
+            json={
+                KEY_SUCCESS: False,
+                KEY_MESSAGE: 'solve failed due to exception',
+                KEY_DATA: {
+                    'search_id': solver.search.search_id,
+                    'system': solver.system
+                },
+                KEY_WEBSOCKET_ID: websocket_id,
+                KEY_MSG_TYPE: RECEIVE_SOLVE_MSG
+            }
+        )
+        return
+
     stop_time = time.time()
     result['elapsed_time'] = stop_time - start_time
 
@@ -357,9 +375,28 @@ def solve_async(websocket_id, solver):
         })
 
 
-def search_async(websocket_id, search):
+def search_async(websocket_id, search: Search):
     start_time = time.time()
-    result = search.run()
+    try:
+        result = search.run()
+    except Exception:
+        print("caught traceback when running search:", flush=True)
+        print(traceback.format_exc())
+        requests.post(
+            url=RECEIVE_ENDPOINT,
+            json={
+                KEY_SUCCESS: False,
+                KEY_MESSAGE: 'search failed due to exception',
+                KEY_DATA: {
+                    'search_id': search.search_id,
+                    'system': search.system
+                },
+                KEY_WEBSOCKET_ID: websocket_id,
+                KEY_MSG_TYPE: RECEIVE_SEARCH_MSG
+            }
+        )
+        return
+
     stop_time = time.time()
     result['elapsed_time'] = stop_time - start_time
 
@@ -373,37 +410,99 @@ def search_async(websocket_id, search):
 
 
 def describe_async(websocket_id, model, model_id=None):
-    if model_id:
-        model = Model.load(model_id)
+
+    try:
+        if model_id:
+            model = Model.load(model_id)
+        result = model.describe()
+    except Exception:
+        print("caught traceback when running describe:", flush=True)
+        print(traceback.format_exc())
+
+        requests.post(
+            url=RECEIVE_ENDPOINT,
+            json={
+                KEY_SUCCESS: False,
+                KEY_MESSAGE: "describe failed due to exception",
+                KEY_DATA: {
+                    'model_id': model.model_id,
+                    'search_id': model.search_id,
+                    'system': model.system
+                },
+                KEY_WEBSOCKET_ID: websocket_id,
+                KEY_MSG_TYPE: RECEIVE_DESCRIBE_MSG
+            })
+        return
 
     requests.post(
         url=RECEIVE_ENDPOINT,
         json={
             KEY_SUCCESS: True,
             KEY_MESSAGE: "describe successfully completed",
-            KEY_DATA: model.describe(),
+            KEY_DATA: result,
             KEY_WEBSOCKET_ID: websocket_id,
             KEY_MSG_TYPE: RECEIVE_DESCRIBE_MSG
         })
 
 
 def score_async(websocket_id, model, spec):
+
+    try:
+        result = model.score(spec)
+    except Exception:
+        print("caught traceback when running score:", flush=True)
+        print(traceback.format_exc())
+
+        requests.post(
+            url=RECEIVE_ENDPOINT,
+            json={
+                KEY_SUCCESS: False,
+                KEY_MESSAGE: "score failed due to exception",
+                KEY_DATA: {
+                    'model_id': model.model_id,
+                    'search_id': model.search_id,
+                    'system': model.system
+                },
+                KEY_WEBSOCKET_ID: websocket_id,
+                KEY_MSG_TYPE: RECEIVE_SCORE_MSG
+            })
+        return
+
     requests.post(
         url=RECEIVE_ENDPOINT,
         json={
             KEY_SUCCESS: True,
             KEY_MESSAGE: "score successfully completed",
-            KEY_DATA: model.score(spec),
+            KEY_DATA: result,
             KEY_WEBSOCKET_ID: websocket_id,
             KEY_MSG_TYPE: RECEIVE_SCORE_MSG
         })
 
 
 def produce_async(websocket_id, model, spec, model_id=None):
-    if model_id:
-        model = Model.load(model_id)
 
-    produce_data = model.produce(spec)
+    try:
+        if model_id:
+            model = Model.load(model_id)
+        produce_data = model.produce(spec)
+    except Exception:
+        print("caught traceback when running produce:", flush=True)
+        print(traceback.format_exc())
+        requests.post(
+            url=RECEIVE_ENDPOINT,
+            json={
+                KEY_SUCCESS: False,
+                KEY_MESSAGE: "produce failed due to exception",
+                KEY_DATA: {
+                    'model_id': model.model_id,
+                    'search_id': model.search_id,
+                    'system': model.system
+                },
+                KEY_WEBSOCKET_ID: websocket_id,
+                KEY_MSG_TYPE: RECEIVE_PRODUCE_MSG
+            })
+        return
+
     requests.post(
         url=RECEIVE_ENDPOINT,
         json={
@@ -437,7 +536,11 @@ def search_found_async(model, params):
         abortable_worker,
         RECEIVE_DESCRIBE_MSG,
         websocket_id,
-        {'model_id': model.model_id},
+        {
+            'model_id': model.model_id,
+            'search_id': model.search_id,
+            'system': model.system
+        },
         timeout,
 
         describe_async,

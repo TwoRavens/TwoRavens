@@ -564,19 +564,20 @@ streamSocket.onmessage = function (e) {
     }
 
     if (msg_data.msg_type === 'receive_describe_msg') {
-        solverWrapped.handleDescribeResponse(msg_data.data);
+        solverWrapped.handleDescribeResponse(msg_data);
         return;
     }
     if (msg_data.msg_type === 'receive_score_msg') {
-        solverWrapped.handleScoreResponse(msg_data.data);
+        solverWrapped.handleScoreResponse(msg_data);
         return;
     }
     if (msg_data.msg_type === 'receive_produce_msg') {
-        solverWrapped.handleProduceResponse(msg_data.data);
+        solverWrapped.handleProduceResponse(msg_data);
         return;
     }
     if (msg_data.msg_type === 'receive_solve_msg') {
-        solverWrapped.handleSolveCompleteResponse(msg_data.data);
+        console.log("receive solve message", msg_data);
+        solverWrapped.handleSolveCompleteResponse(msg_data);
         return;
     }
 
