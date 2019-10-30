@@ -26,6 +26,30 @@ configCount=20
 cd ~/TwoRavens/
 . `which virtualenvwrapper.sh`
 workon 2ravens
+
+if [ -z "$1" ]
+  then
+    echo "Error: First argument must be one of:"
+    echo "  berkeley, brown, cmu, featurelabs, isi, stanford, tamu"
+  	return
+fi
+
+# if no dataset, then output list
+if [ -z "$2" ]
+  then
+    echo "Error: Second argument must be one of:"
+  	fab run_ta2_brown_choose_config
+  	return
+fi
+
+# if r, then pick random
+if [ $2 = 'r' ]
+  then
+    DATA_ID=$((RANDOM % configCount))
+  else
+    DATA_ID=$2
+fi
+
 : $(fab celery_restart)
 
 fab clear_d3m_configs
@@ -36,7 +60,7 @@ export FLASK_USE_PRODUCTION_MODE=yes
 mongo tworavens --eval "printjson(db.dropDatabase())"
 
 gnome-terminal --tab -- /bin/bash -c 'echo -ne "\033]0;django\007"; fuser -k 8080/tcp; fab run_with_ta2'
-gnome-terminal --tab -- /bin/bash -c "echo -ne '\033]0;ta2 $1\007'; fab run_ta2_$1_choose_config:${2-$((RANDOM % configCount))}"
+gnome-terminal --tab -- /bin/bash -c "echo -ne '\033]0;ta2 $1\007'; fab run_ta2_$1_choose_config:$DATA_ID"
 gnome-terminal --tab -- /bin/bash -c 'echo -ne "\033]0;celery\007"; fab celery_run_with_ta2'
 gnome-terminal --tab -- /bin/bash -c 'echo -ne "\033]0;flask R\007"; fuser -k 8000/tcp; fab run_R'
 gnome-terminal --tab -- /bin/bash -c 'echo -ne "\033]0;flask automl\007"; fuser -k 8001/tcp; fab run_automl'

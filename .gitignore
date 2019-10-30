@@ -43,6 +43,8 @@ setup/r-setup/RINSTALL.*.LOG
 
 ravens_volume/test_output/*
 ravens_volume/reports/*
+ravens_volume/solvers/
+ravens_volume/test_output_auto_sklearn/
 !ravens_volume/test_output/placeholder.md
 ravens_volume/manipulation_data/*
 ravens_volume/config_*.json
