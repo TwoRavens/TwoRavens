@@ -65,7 +65,7 @@ def make_d3m_configs_from_files():
     clear_d3m_configs()
 
     from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
-    loader = EnvConfigLoader.make_d3m_test_configs_env_based()
+    loader = EnvConfigLoader.make_d3m_test_configs_env_based('/ravens_volume/test_data')
 
 
 @task
