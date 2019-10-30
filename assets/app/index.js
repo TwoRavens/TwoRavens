@@ -126,14 +126,19 @@ class Body {
 
     header() {
         let userlinks = username === '' ? [
-            {title: "Log in", url: login_url},
-            {title: "Sign up", url: signup_url}
-        ] : [{title: "Workspaces", url: workspaces_url},
-            {title: "Clear Workspaces", url: '/user-workspaces/clear-user-workspaces'},
-            {title: "Settings", url: settings_url},
-            {title: "Links", url: devlinks_url},
-            {title: "Behavioral Logs", url: behavioral_log_url},
-            {title: "Logout", url: logout_url}];
+            {title: "Log in", url: login_url, newWin: false},
+            {title: "Sign up", url: signup_url, newWin: false}
+        ] : [
+            //{title: [m('span', {}, "Workspaces "), m(Icon, {name: 'link-external'})], url: workspaces_url, newWin: true},
+            {title: [m('span', {}, "Settings "), m(Icon, {name: 'link-external'})], url: settings_url, newWin: true},
+            {title: [m('span', {}, "Links "), m(Icon, {name: 'link-external'})], url: devlinks_url, newWin: true},
+            {title: [m('span', {}, "Behavioral Logs "), m(Icon, {name: 'link-external'})], url: behavioral_log_url, newWin: true},
+            {title: [m('span', {}, "Reset "), m(Icon, {name: 'alert'})], url: '/user-workspaces/clear-user-workspaces', newWin: false},
+            {title: "Logout", url: logout_url, newWin: false}];
+
+        let openUserLink = (linkInfo) =>{
+            linkInfo.newWin === true ? window.open(linkInfo.url) : window.location.href = linkInfo.url;
+        }
 
         let resultsProblem = app.getResultsProblem();
         let selectedProblem = app.getSelectedProblem();
@@ -227,13 +232,9 @@ class Body {
                 id: 'loginDropdown',
                 items: userlinks.map(link => link.title),
                 activeItem: username,
-                onclickChild: child => window.open(userlinks.find(link => link.title === child).url)
+                onclickChild: child => openUserLink(userlinks.find(link => link.title === child))
             })
-            // m('.dropdown[style=float: right; padding-right: 1em]',
-            //     m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
-            //         [username, " ", m(Icon, {name: 'triangle-down'})]),
-            //     m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
-            //         userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
+
         );
     }
 

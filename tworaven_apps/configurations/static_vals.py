@@ -7,13 +7,16 @@ KEY_TA2TA3 = 'ta2ta3'
 KEY_D3MINPUTDIR = 'D3MINPUTDIR'
 KEY_D3MOUTPUTDIR = 'D3MOUTPUTDIR'
 KEY_D3MPROBLEMPATH = 'D3MPROBLEMPATH'
+KEY_D3MLOCALDIR = 'D3MLOCALDIR'
+KEY_D3MSTATICDIR = 'D3MSTATICDIR'
+
 D3M_VARIABLE_LIST = (\
                 'D3MRUN',
                 KEY_D3MINPUTDIR,
                 KEY_D3MPROBLEMPATH,
                 KEY_D3MOUTPUTDIR,
-                'D3MLOCALDIR',
-                'D3MSTATICDIR',
+                KEY_D3MLOCALDIR,
+                KEY_D3MSTATICDIR,
                 'D3MCPU',
                 'D3MRAM',
                 'D3MTIMEOUT')
