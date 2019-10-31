@@ -105,15 +105,24 @@ Note: The TwoRavens application requires python 3.6+
 - Run the following commands (May take a couple of minutes)
 
     ```
-    mkvirtualenv -p python3 2ravens  
+    mkvirtualenv -p python3.6 2ravens  
     pip install -r requirements/dev.txt  
     # note: within the virtualenv, pip defaults to pip3
     ```
 - Notes:
+  - The D3M python package is not yet compatible with Python 3.7. Waiting for:
+    `https://gitlab.com/datadrivendiscovery/d3m/merge_requests/199`
+  - Mac: Python 3.6 installation can be done like this:
+    `https://stackoverflow.com/a/54443920`
   - Ubuntu: If you get the error `OSError: mysql_config not found`, then run  
   `sudo apt-get install libmysqlclient-dev`
   - Mac: If you run into Xcode (or other errors) when running the install, google it.  
     - Sometimes the [Xcode license agreement hasn't been accepted](http://stackoverflow.com/questions/26197347/agreeing-to-the-xcode-ios-license-requires-admin-privileges-please-re-run-as-r/26197363#26197363)
+  - Mac: If you run into issues installing libcurl, then run 
+  
+        brew install gnutls 
+        brew install libgcrypt
+        export PYCURL_SSL_LIBRARY=gnutls
 
 ### D3. Configure your virtualenv
 
