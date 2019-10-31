@@ -15,10 +15,11 @@ from tworaven_apps.utils.view_helper import \
 from tworaven_apps.configurations.models_d3m import D3MConfiguration
 from tworaven_apps.configurations.utils import clear_output_directory
 
-from tworaven_apps.user_workspaces import utils as ws_util
+from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
+from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 
 from tworaven_apps.configurations.utils import \
     (get_latest_d3m_config,)
@@ -44,26 +45,47 @@ def view_select_dataset(request, config_id=None):
     if config_id is None:
         raise Http404('"config_id" is required')
 
-    d3m_config = D3MConfiguration.objects.filter(id=config_id).first()
-    if not d3m_config:
+    ws_info = get_latest_user_workspace(request)
+    if not ws_info.success:
+        # TODO: Need a better error here!
+        #
+        user_msg = 'User workspace not found: %s' % ws_info.err_msg
+        return JsonResponse(get_json_error(user_msg))
+
+    user_workspace = ws_info.result_obj
+
+    # New, chosen config to switch to
+    #
+    new_d3m_config = D3MConfiguration.objects.filter(id=config_id).first()
+    if not new_d3m_config:
         raise Http404(f'D3MConfiguration not found for id {config_id}')
 
-    # Get current config
+
+    # Don't switch to config you already have!
     #
-    current_config = get_latest_d3m_config()
-    if not current_config:
-        raise Http404(f'current_config not found!')
+    if user_workspace.d3m_config.id == new_d3m_config.id:
+        # TODO: Need a better error here!
+        #
+        user_msg = (f'The dataset was not switched!'
+                    f' You are already analyzing dataset:'
+                    f' {user_workspace.d3m_config.name}')
+        return JsonResponse(get_json_error(user_msg))
 
     # (1) stop searches.... Should happen with UI or with UserWorkspace
     #
+    # drastic.., e.g. stop all searches in request history
+    StoredRequestUtil.stop_search_requests(**dict(user=user_workspace.user))
 
+    return HttpResponse((f'config_id: {config_id}<br />'
+                         f' user_workspace {user_workspace}'))
     # (2) Clear TA2/TA3 output directory
     #
-    clear_output_directory(current_config)
+    clear_output_directory(user_workspace.d3m_config)
 
-    # (3) Clear gRPC logs for current user
+    # (3) Clear StoredRequest/StoredResponse objects for current user
     #
-    # See: view_clear_grpc_stored_history(request):
+    StoredRequestUtil.clear_saved_requests_responses(user_id=user_workspace.user)
+
 
     # (4) Clear behavioral logs for current user
     #
@@ -77,6 +99,8 @@ def view_select_dataset(request, config_id=None):
     # (6) Set new default config
     #
 
+    # (6a) Mongo?
+    #
 
     # (7) Redirect to pebbles page
     #

@@ -99,7 +99,6 @@ def search_solutions(raven_json_str=None):
     return ok_resp(message_to_json(reply))
 
 
-
 def end_search_solutions(raven_json_str=None):
     """
     Send a EndSearchSolutionsRequest to the EndSearchSolutions command

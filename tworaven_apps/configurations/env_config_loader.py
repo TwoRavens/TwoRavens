@@ -54,6 +54,7 @@ class EnvConfigLoader(BasicErrCheck):
         self.orig_dataset_id = kwargs.get('orig_dataset_id', None)
         self.is_user_config = kwargs.get('is_user_config', False)
 
+        self.dataset_doc = None
         self.problem_doc = None
         self.d3m_config = None
 
@@ -262,20 +263,35 @@ class EnvConfigLoader(BasicErrCheck):
             return
 
         # problem_schema
+        #
         if hasattr(self.env_config, 'D3MPROBLEMPATH'):
             config_info['problem_schema'] = self.env_config.D3MPROBLEMPATH
         else:
             config_info['problem_schema'] = ''
 
-        config_info['problem_root'] = join(self.env_config.D3MINPUTDIR,
-                                           'TRAIN',
-                                           'problem_TRAIN')
-
-        config_info['training_data_root'] = \
+        # Training data root - 10/31/2019
+        #
+        #   If there's a D3MPROBLEMPATH, then build directory working
+        #       backwards.  If not work off the D3MINPUTDIR.
+        #
+        #
+        if config_info.get('problem_schema'):   # has D3MPROBLEMPATH
+            # go from TRAIN/problem_TRAIN/problemDoc.json
+            #   TO    TRAIN/dataset_TRAIN/
+            config_info['training_data_root'] = \
+                join(dirname(dirname(config_info['problem_schema'])),
+                     'dataset_TRAIN')
+        else:
+            # This will fail if multi-user testing
+            #   with no problem doc
+            #
+            config_info['training_data_root'] = \
                 join(self.env_config.D3MINPUTDIR,
                      'TRAIN',
                      'dataset_TRAIN')
 
+        # Dataset schema
+        #
         config_info['dataset_schema'] = \
             join(config_info['training_data_root'],
                  'datasetDoc.json')
@@ -319,12 +335,20 @@ class EnvConfigLoader(BasicErrCheck):
         return self.d3m_config
 
     @staticmethod
-    def make_d3m_test_configs_env_based(base_data_dir=None):
-        """Iterate over test data directories to make D3M configs"""
+    def make_d3m_test_configs_env_based(base_data_dir=None, **kwargs):
+        """Iterate over test data directories to make D3M configs
+
+        **kwargs option, for details, see `make_config_from_directory`
+
+        is_multi_dataset_demo - if True, set output directories
+                                to 1-directory above the usual
+
+        """
         if base_data_dir is None:
             base_data_dir = join(settings.BASE_DIR,
                                  'ravens_volume',
                                  'test_data')
+
         cnt = 0
         for dname in os.listdir(base_data_dir):
             #if not dname[0].isdigit():
@@ -333,7 +357,7 @@ class EnvConfigLoader(BasicErrCheck):
             cnt += 1
             fullpath = join(base_data_dir, dname)
             msgt('(%d) Make config: %s' % (cnt, fullpath))
-            attempt_info = EnvConfigLoader.make_config_from_directory(fullpath)
+            attempt_info = EnvConfigLoader.make_config_from_directory(fullpath, **kwargs)
             if attempt_info.success:
                 print('It worked!  Created: %s' % attempt_info.result_obj)
             else:
@@ -341,15 +365,45 @@ class EnvConfigLoader(BasicErrCheck):
 
     @staticmethod
     def make_config_from_directory(fullpath, **kwargs):
-        """Make a directory from an existing path"""
+        """Make a directory from an existing path.
+
+        fullpath - The dataset top directory.
+                e.g. /ravens_volume/test_data/185_baseball
+
+        10/31 - Added is_multi_dataset_demo
+
+        is_multi_dataset_demo - if True, set input/output subdirectories
+                                to 1-directory above the usual
+
+        for a multi-dataset demo, we want to set the
+            Input/output directories 1-level ~above~ the usual dataset dir
+            -example for `input` at `test_data/DA_POVERTY_ESTIMATION`
+                - set the input to 1 -- giving access to all datasets.
+
+            - same for output. use `test_output`
+               - instead of `test_output/DA_POVERTY_ESTIMATION`
+
+         Note: this will only work on GCE and DM test,
+                in eval system won't have directory perms.
+        """
         if not isdir(fullpath):
             return err_resp('Directory not found: %s' % fullpath)
+
+        is_multi_dataset_demo = kwargs.get('is_multi_dataset_demo', False)
 
         info = SimpleNamespace()
 
         info.D3MRUN = cstatic.KEY_TA2TA3 # ?
-        info.D3MINPUTDIR = fullpath
 
+        if is_multi_dataset_demo is True:
+            # Set the input directories to 1-above the usual
+            #
+            info.D3MINPUTDIR = dirname(fullpath)
+        else:
+            info.D3MINPUTDIR = fullpath
+
+        # Problem path is the same...
+        #
         problem_path = join(fullpath,
                             'TRAIN',
                             'problem_TRAIN',
@@ -362,9 +416,18 @@ class EnvConfigLoader(BasicErrCheck):
 
         # Create these output directories
         #
-        info.D3MOUTPUTDIR = join(dirname(dirname(fullpath)),
-                                 'test_output',
-                                 basename(fullpath))
+        if is_multi_dataset_demo is True:
+            # For single-user multi-dataset, output written to top level
+            #
+            info.D3MOUTPUTDIR = join(dirname(dirname(fullpath)),
+                                     'test_output')
+        else:
+            # The usual not for the 11/2019 demo
+            #
+            info.D3MOUTPUTDIR = join(dirname(dirname(fullpath)),
+                                     'test_output',
+                                     basename(fullpath))
+
         os.makedirs(info.D3MOUTPUTDIR, exist_ok=True)
 
         info.D3MLOCALDIR = join(info.D3MOUTPUTDIR, 'local_dir')

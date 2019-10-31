@@ -26,7 +26,6 @@ KEY_DATASET_SCHEMA = 'dataset_schema'
 
 KEY_PROBLEM_SCHEMA = 'problem_schema'
 KEY_PROBLEM_SCHEMA_URL = 'problem_schema_url'
-KEY_PROBLEM_ROOT = 'problem_root'
 
 KEY_PROBLEM_DATA_INFO = 'problem_data_info'
 
@@ -43,21 +42,19 @@ D3M_DIR_USER_PROBLEMS_ROOT = 'problems'
 OPTIONAL_DIR_OUTPUT_ROOT = 'root_output_directory'
 
 
-D3M_DIR_ATTRIBUTES = ['training_data_root', KEY_PROBLEM_ROOT,
+D3M_DIR_ATTRIBUTES = ['training_data_root',
                       'pipeline_logs_root', 'executables_root',
                       cstatic.KEY_D3M_USER_PROBLEMS_ROOT]
 D3M_VALUE_ATTRIBUTES = [KEY_TIMEOUT, KEY_CPUS, KEY_RAM]
-D3M_REQUIRED = D3M_FILE_ATTRIBUTES + ['training_data_root', KEY_PROBLEM_ROOT]
+D3M_REQUIRED = D3M_FILE_ATTRIBUTES + ['training_data_root',]
 
 EVAL_ATTRIBUTES_TO_REMOVE = [KEY_PROBLEM_SCHEMA,
-                             KEY_PROBLEM_ROOT,
                              KEY_PROBLEM_SCHEMA_URL] + \
                             D3M_VALUE_ATTRIBUTES
 
 # 8/9/2018 - D3M config change
 #
 D3M_REQUIRED.remove(KEY_PROBLEM_SCHEMA)
-D3M_REQUIRED.remove(KEY_PROBLEM_ROOT)
 
 # environment variable name to store a d3m config filepath for startup
 CONFIG_JSON_PATH = 'CONFIG_JSON_PATH'
@@ -125,11 +122,6 @@ class D3MConfiguration(TimeStampedModel):
                         blank=True,
                         help_text=('Input: Path to the root directory of the'
                                    ' dataset described by dataset_schema'))
-
-    problem_root = models.TextField(\
-                    blank=True,
-                    help_text=('Path to the directory containing the'
-                               ' problem.'))
 
     root_output_directory = models.TextField(\
                         cstatic.KEY_D3MOUTPUTDIR,
@@ -245,7 +237,7 @@ class D3MConfiguration(TimeStampedModel):
                  'description',
                  'd3m_input_dir',
                  'dataset_schema', 'problem_schema',
-                 'training_data_root', 'problem_root',
+                 'training_data_root', 
                  'pipeline_logs_root', 'executables_root',
                  'user_problems_root',
                  'additional_inputs',

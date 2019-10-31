@@ -67,6 +67,20 @@ def make_d3m_configs_from_files():
     from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
     loader = EnvConfigLoader.make_d3m_test_configs_env_based('/ravens_volume/test_data')
 
+@task
+def make_d3m_configs_from_files_multiuser_test():
+    """11/2019 Make configs from /ravens_volume and loads them to db
+    Also make the input/output directories 1-level higher than usual
+    """
+    clear_d3m_configs()
+
+    from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
+
+    params = dict(is_multi_dataset_demo=True)
+    loader = EnvConfigLoader.make_d3m_test_configs_env_based(\
+                    '/ravens_volume/test_data',
+                    **params)
+
 
 @task
 def clear_d3m_configs():
