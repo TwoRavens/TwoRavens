@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 
 from django.urls import reverse
+from tworaven_apps.utils.view_helper import get_authenticated_user
 
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
@@ -49,46 +50,56 @@ def view_select_dataset(request, config_id=None):
     if config_id is None:
         raise Http404('"config_id" is required')
 
-    ws_info = ws_util.get_latest_user_workspace(request)
-    if not ws_info.success:
-        # TODO: Need a better error here!
-        #
-        user_msg = 'User workspace not found: %s' % ws_info.err_msg
-        return JsonResponse(get_json_error(user_msg))
+    # The user is required...
+    #
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+    user = user_info.result_obj
 
-    user_workspace = ws_info.result_obj
-
-    # New, chosen config to switch to
+    # Retrieve the chosen D3M config
     #
     new_d3m_config = D3MConfiguration.objects.filter(id=config_id).first()
     if not new_d3m_config:
         raise Http404(f'D3MConfiguration not found for id {config_id}')
 
+    # If available, try to get the workspace
+    #
+    user_workspace = None
+    current_d3m_config = None
+
+    ws_info = ws_util.get_latest_user_workspace(request)
+    if ws_info.success:
+        user_workspace = ws_info.result_obj
+        current_d3m_config = user_workspace.d3m_config
+    else:
+        current_d3m_config = get_latest_d3m_config()
 
     # Don't switch to config you already have!
     #
-    if user_workspace.d3m_config.id == new_d3m_config.id:
+    if current_d3m_config and current_d3m_config.id == new_d3m_config.id:
         # TODO: Need a better error here!
         #
         user_msg = (f'The dataset was not switched!'
                     f' You are already analyzing dataset:'
-                    f' {user_workspace.d3m_config.name}')
+                    f' {current_d3m_config.name}')
         return JsonResponse(get_json_error(user_msg))
 
     # (1) stop searches.... Should happen with UI or with UserWorkspace
     #
     # Stop all searches in request history
     #
-    StoredRequestUtil.stop_search_requests(**dict(user=user_workspace.user))
+    StoredRequestUtil.stop_search_requests(**dict(user=user))
 
     # (2) Clear TA2/TA3 output directory
     #
-    clear_output_directory(user_workspace.d3m_config)
+    if current_d3m_config:
+        clear_output_directory(current_d3m_config)
+
 
     # (3) Clear StoredRequest/StoredResponse objects for current user
     #
-    clear_info = SearchHistoryUtil.clear_grpc_stored_history(\
-                                        user=user_workspace.user)
+    clear_info = SearchHistoryUtil.clear_grpc_stored_history(user)
     if clear_info.success:
         print('\n'.join(clear_info.result_obj))
     else:
@@ -97,7 +108,7 @@ def view_select_dataset(request, config_id=None):
     # (4) Clear behavioral logs for current user
     #
     # See: view_clear_logs_for_user
-    log_clear = BehavioralLogFormatter.delete_logs_for_user(user_workspace.user)
+    log_clear = BehavioralLogFormatter.delete_logs_for_user(user)
     if log_clear.success:
         print('\n'.join(log_clear.result_obj))
     else:
@@ -105,7 +116,7 @@ def view_select_dataset(request, config_id=None):
 
     # (5) Clear user workspaces
     #
-    delete_info = ws_util.delete_user_workspaces(user_workspace.user)
+    delete_info = ws_util.delete_user_workspaces(user)
     if not delete_info.success:
         print(delete_info.err_msg)
     else:

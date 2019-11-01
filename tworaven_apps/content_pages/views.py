@@ -23,6 +23,9 @@ from tworaven_apps.configurations.utils import get_latest_d3m_config
 def view_pebbles_home(request):
     """Serve up the workspace, the current home page.
     Include global js settings"""
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect(reverse('login'))
+
     app_config = AppConfiguration.get_config()
     if app_config is None:
         return HttpResponseRedirect(reverse('view_no_domain_config_error'))
@@ -35,13 +38,8 @@ def view_pebbles_home(request):
         # (1) Is there a valid D3M config?
         d3m_config_info = get_latest_d3m_config()
         if not d3m_config_info:
-            return HttpResponseRedirect(\
-                    reverse('view_d3m_config_error'))
-
-        # (2) Is the user authenticated?
-        if not request.user.is_authenticated:
-            return HttpResponseRedirect(\
-                    reverse('login'))
+            return HttpResponseRedirect(reverse('view_list_dataset_choices'))
+            # return HttpResponseRedirect(reverse('view_d3m_config_error'))
 
         session_key = get_session_key(request)
 
