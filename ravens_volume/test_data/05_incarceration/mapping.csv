@@ -1,0 +1,18 @@
+legislator_id,integer,{},Unique identifier for each legislator
+name,string,{},Legislator name
+district_number,categorical,{},State legislative district
+state_abbreviation,categorical,{},State postal abbreviation
+state_name,categorical,{},Legislator's state
+district,categorical,{},Legislator's district with number and year
+fips,categorical,{},State FIPS code
+bill_number,categorical,{},Bill number
+vote_direction,categorical,"{'0.0':'expansive','1.0':'restrictive'}",Legislator votes cast on Project Vote Smart’s "Key Votes" on immigration
+percent_latino_population,real,{},Percent Latino population in legislative district
+district_ideology_score,real,{},Tausanovitch and Warshaw district ideology. Higher values (closer to 1) are associated with more conservative district ideologies, while lower values (closer to -1) are associated with more liberal district ideologies
+southern_state,categorical,"{'0.0':'non-south','1.0':'south'}",Southern state
+borders_mexico,categorical,"{'0.0':'not border district','1.0':'border district'}",District that borders Mexico
+immigration_impact,categorical,"{'0.0':'expansive bill','1.0':'restrictive bill'}",Bill impact on immigration
+state_control,categorical,"{'0.0':'republican','1.0':'democratic'}",Party control of state legislature
+legislator_party,categorical,"{'0':'republican','1':'democratic'}",Legislator party affiliation
+legislator_latino,categorical,"{'0.0':'non-latino','1.0':'latino'}",Legislator ethnicity
+legislator_ideology_score,real,{},"McCarty and Shor legislator ideology. Higher values (closer to 3) are associated with more conservative legislator ideologies, while lower values (closer to -3) are associated with more liberal legislator ideologies"
