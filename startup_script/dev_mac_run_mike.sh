@@ -64,8 +64,9 @@ export FLASK_USE_PRODUCTION_MODE=yes
 ttab -G 'echo -ne "\033]0;django\007"; cd '$install_directory'; workon 2ravens; lsof -ti:8080 | xargs kill; ps -ef | grep webpack | awk "{print $2}" | xargs kill; fab run_with_ta2; exit'
 ttab -G "echo -ne '\033]0;ta2 $1\007'; cd $install_directory; workon 2ravens; fab run_ta2_$1_choose_config:$DATA_ID; exit"
 ttab -G 'echo -ne "\033]0;celery\007"; cd '$install_directory'; workon 2ravens; pkill -f celery; fab celery_run_with_ta2; exit'
-ttab -G 'echo -ne "\033]0;flask R\007"; cd '$install_directory'; workon 2ravens; lsof -ti:8000 | xargs kill; fab run_R; exit'
-ttab -G 'echo -ne "\033]0;flask automl\007"; cd '$install_directory'; workon 2ravens; lsof -ti:8001 | xargs kill; fab run_automl; exit'
+ttab -G 'echo -ne "\033]0;flask R\007"; cd '$install_directory'; workon 2ravens; lsof -ti:8000 | xargs kill -9; fab run_R; exit'
+# rename tab; move into repo; set working ev; enable forking; kill flask; kill h2o; run flask; close tab;
+ttab -G 'echo -ne "\033]0;flask automl\007"; cd '$install_directory'; workon 2ravens; export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES; lsof -ti:8001 | xargs kill -9; lsof -ti:54321 | xargs kill -9; fab run_automl; exit'
 ttab -G 'echo -ne "\033]0;mongod\007"; cd '$install_directory'; workon 2ravens; mongod --shutdown; mongod; exit'
 ttab -G 'echo -ne "\033]0;redis\007"; cd '$install_directory'; workon 2ravens; redis-cli stop; redis-server; exit'
 

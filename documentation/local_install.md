@@ -217,8 +217,9 @@ Note: The TwoRavens application requires python 3.6+
     ```
 
 
-# 3. Install R / Run Flask-wrapped R
+# 3. Run Flask servers
 
+## 3.a Flask-wrapped R
 Download and install R at https://www.r-project.org. R versions 3.4+ should work.
 
 1. Open a new Terminal
@@ -226,11 +227,29 @@ Download and install R at https://www.r-project.org. R versions 3.4+ should work
 1. Run the following commands:
     ```
     workon 2ravens
-    fab run_flask
+    fab run_R
     ```
 1. Go to: http://0.0.0.0:8000/healthCheck.app
   - There should be a message similar to: "Health check. Looks good."
 
+## 3.b Flask-wrapped automated machine learning solvers
+
+1. Open a new terminal
+1. `cd` into the TwoRavens repository
+1. Run the following commands:
+    ```
+    workon 2ravens
+    fab run_automl
+    ```
+    On Mac, you may need to run this flag to allow forking:
+    `export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES`
+Some solvers require additional setup:
+    On Mac, you may need to install libomp for some solvers to work (like tpot)
+        `brew install libomp` 
+    For h2o, you will need to install a java version less than 9. If not already installed:
+        ```
+        brew cask install homebrew/cask-versions/adoptopenjdk8
+        ```
 
 # 4. Run a local MongoDB instance
 
