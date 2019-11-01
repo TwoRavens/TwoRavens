@@ -562,13 +562,22 @@ export let loadImportanceEFDData = async (problem, solution) => {
 
 // no new pipelines will be found under searchId
 // pipelines under searchId are also wiped/no longer accessible
-export let endSearch = async searchId => app.makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId})
-    .then(handleCompletedSearch(searchId));
+export let endSearch = async searchId => {
 
+  if (searchId === undefined) return;
+  
+  app.makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId})
+      .then(handleCompletedSearch(searchId));
+}
 // no new pipelines will be found under searchId
 // discovered pipelines will remain accessible for produce calls
-export let stopSearch = async searchId => app.makeRequest(D3M_SVC_URL + '/StopSearchSolutions', {searchId})
+export let stopSearch = async searchId =>{
+
+  if (searchId === undefined) return;
+
+  app.makeRequest(D3M_SVC_URL + '/StopSearchSolutions', {searchId})
     .then(handleCompletedSearch(searchId));
+}
 
 let handleCompletedSearch = searchId => response => {
     if (!response.success) {
@@ -590,12 +599,25 @@ let handleCompletedSearch = searchId => response => {
     m.redraw()
 };
 
-export let endAllSearches = async () => Object.keys(app.workspace.raven_config.problems)
+/*
+ * Iterate through the problems and end any ongoing searches
+ *
+ * Note: not all problems have a d3mSearchId
+ */
+export let endAllSearches = async () => {
+    Object.keys(app.workspace.raven_config.problems)
     .map(problemId => app.workspace.raven_config.problems[problemId].d3mSearchId)
-    .forEach(endSearch);
+    .forEach(searchId => searchId && endSearch(searchId));
+}
+
+/*
+ * Iterate through the problems and stop any ongoing searches
+ *
+ *  Note: not all problems have a d3mSearchId
+ */
 export let stopAllSearches = async () => Object.keys(app.workspace.raven_config.problems)
     .map(problemId => app.workspace.raven_config.problems[problemId].d3mSearchId)
-    .forEach(stopSearch);
+    .forEach(searchId => searchId && stopSearch(searchId));
 
 // ------------------------------------------
 //      create pipeline template
@@ -1194,7 +1216,7 @@ export async function handleGetProduceSolutionResultsResponse(response, type) {
         debugLog('handleGetProduceSolutionResultsResponse: Error.  "response" undefined');
         return;
     }
-    
+
     let problems = ((app.workspace || {}).raven_config || {}).problems || {};
     let solvedProblemId = Object.keys(problems)
         .find(problemId => problems[problemId].d3mSearchId === response.stored_request.search_id);
@@ -1343,8 +1365,10 @@ export let endAllSearches2 = async () => {
     //
     let yeProblem = app.workspace.raven_config.problems[problemId];
     let d3mSearchIdToStop = isKeyDefined(yeProblem, 'd3mSearchId');
+    console.log('endAllSearches2: ' + d3mSearchIdToStop);
+
     if (d3mSearchIdToStop !== undefined){
-      console.log(`stop search: ${d3mSearchIdToStop}`);
+      console.log(`end search: ${d3mSearchIdToStop}`);
       let endResp = app.makeRequest(D3M_SVC_URL + '/EndSearchSolutions',
                                          {searchId: d3mSearchIdToStop});
       console.log(JSON.stringify(endResp))
@@ -1358,6 +1382,8 @@ export let endAllSearches2 = async () => {
  */
 export let endSearch2 = async problem => {
   let d3mSearchIdToStop = isKeyDefined(problem, 'd3mSearchId');
+  console.log('endSearch2: ' + d3mSearchIdToStop);
+
   if (d3mSearchIdToStop !== undefined){
     console.log(`stop search: ${d3mSearchIdToStop}`);
     let endResp = await app.makeRequest(D3M_SVC_URL + '/EndSearchSolutions',

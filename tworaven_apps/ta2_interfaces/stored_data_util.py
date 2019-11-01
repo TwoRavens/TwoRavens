@@ -113,27 +113,13 @@ class StoredRequestUtil(object):
             end_req = {ta2_static.KEY_SEARCH_ID: search_id}
             end_req_json_str = json.dumps(end_req)
 
-            # Begin to log D3M call
-            #
-            stored_request = StoredRequest(\
-                            user=user,
-                            request_type=ta2_static.END_SEARCH_SOLUTIONS,
-                            search_id=search_id,
-                            is_finished=False,
-                            request=end_req)
+            params = dict(user=user)
 
-            stored_request.save()
-            search_info = end_search_solutions(end_req_json_str)
-            if not search_info.success:
-                StoredResponse.add_err_response(stored_request,
-                                                search_info.err_msg)
+            search_info = end_search_solutions(end_req_json_str, **params)
+
+            # Results are getting logged, so not doing much here
+            if search_info.success:
+                pass
             else:
-                # Convert JSON str to python dict - err catch here
-                #
-                json_format_info = json_loads(search_info.result_obj)
-                if not json_format_info.success:
-                    StoredResponse.add_err_response(stored_request,
-                                                    json_format_info.err_msg)
-                else:
-                    StoredResponse.add_success_response(stored_request,
-                                                        json_format_info.result_obj)
+                # error message at `search_info.err_msg`
+                pass
