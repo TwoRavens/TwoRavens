@@ -4,6 +4,8 @@ import time
 
 import traceback
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, TimeoutError
+import signal
+import atexit
 
 import requests
 import flask
@@ -493,11 +495,19 @@ if __name__ == '__main__':
     # the abortable workers are given processes
     executor_processes = ProcessPoolExecutor(max_workers=NUM_PROCESSES)
 
+    def handle_exit():
+        executor_threads.shutdown()
+        executor_processes.shutdown()
+
     try:
         flask_app.run(port=8001, threaded=True)
     finally:
-        executor_threads.shutdown()
-        executor_processes.shutdown()
+        handle_exit()
+
+    # https://stackoverflow.com/questions/57031253/how-to-fix-brokenprocesspool-error-for-concurrent-futures-processpoolexecutor
+    atexit.register(handle_exit)
+    signal.signal(signal.SIGTERM, handle_exit)
+    signal.signal(signal.SIGINT, handle_exit)
 
 
 # ~~~~~ USAGE ~~~~~~

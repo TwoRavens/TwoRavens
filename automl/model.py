@@ -2,10 +2,10 @@
 import sklearn.metrics
 
 SAVED_MODELS_PATH = '/ravens_volume/solvers/models/'
-DJANGO_SOLVER_SERVICE = 'http://localhost:8080/solver-service/'
+DJANGO_SOLVER_SERVICE = 'http://0.0.0.0:8080/solver-service/'
 RECEIVE_ENDPOINT = DJANGO_SOLVER_SERVICE + 'Receive'
 
-R_SERVICE = 'http://localhost:8000/'
+R_SERVICE = 'http://0.0.0.0:8000/'
 
 KEY_SUCCESS = 'success'
 KEY_DATA = 'data'
