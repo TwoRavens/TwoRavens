@@ -39,6 +39,25 @@ flask_app = flask.Flask(__name__)
 production = os.getenv('FLASK_USE_PRODUCTION_MODE', 'no') == 'yes'
 flask_app.debug = not production
 
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures.process import BrokenProcessPool
+
+
+class PersistentProcessPoolExecutor(ProcessPoolExecutor):
+    def __init__(self, max_workers=10):
+        self._max_workers = max_workers
+        super().__init__(max_workers)
+
+    def _do_submit_job(self, job, run_times):
+        try:
+            return super()._do_submit_job(job, run_times)
+        except BrokenProcessPool:
+            print('Process pool is broken. Restarting executor.')
+            self._pool.shutdown(wait=True)
+            self._pool = ProcessPoolExecutor(int(self._max_workers))
+
+            return super()._do_submit_job(job, run_times)
+
 
 def send_result(data):
     try:
@@ -493,7 +512,7 @@ if __name__ == '__main__':
     executor_threads = ThreadPoolExecutor()
 
     # the abortable workers are given processes
-    executor_processes = ProcessPoolExecutor(max_workers=NUM_PROCESSES)
+    executor_processes = PersistentProcessPoolExecutor(max_workers=NUM_PROCESSES)
 
     def handle_exit():
         executor_threads.shutdown()
