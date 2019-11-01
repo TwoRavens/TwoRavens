@@ -64,43 +64,29 @@ let SPEC_search = problem => ({
         "stratified": problem.stratified,
         "trainTestRatio": problem.trainTestRatio
     },
-    "timeBoundSearch": problem.timeBoundSearch || 60 * .5,
-    "timeBoundRun": problem.timeBoundRun,
+    "timeBoundSearch": (problem.timeBoundSearch || .5) * 60,
+    "timeBoundRun": problem.timeBoundRun && problem.timeBoundRun * 60,
     "rankSolutionsLimit": problem.solutionsLimit
 });
 
 let SPEC_produce = problem => {
-    let specification = [
-        {
-            'input': {
-                'name': 'test',
-                "resource_uri": 'file://' + ((problem.datasetPathsManipulated || {}).test || problem.datasetPaths.test)
-            },
-            'configuration': {
-                'predict_type': 'RAW'
-            },
-            'output': {
-                'resource_uri': 'file:///ravens_volume/solvers/produce/'
-            }
+    let predict_types = ['RAW', 'PROBABILITIES'];
+    let dataset_types = ['test', 'train'];
+    if (problem.datasetPaths.partials) dataset_types.push('partials');
+
+    return predict_types.flatMap(predict_type => dataset_types.flatMap(dataset_type => ({
+        'input': {
+            'name': dataset_type,
+            "resource_uri": 'file://' + (
+                (problem.datasetPathsManipulated || {})[dataset_type] || problem.datasetPaths[dataset_type])
+        },
+        'configuration': {
+            'predict_type': predict_type
+        },
+        'output': {
+            'resource_uri': 'file:///ravens_volume/solvers/produce/'
         }
-    ];
-
-    if (problem.datasetPaths.partials) {
-        specification.push({
-            'input': {
-                'name': 'partials',
-                "resource_uri": 'file://' + ((problem.datasetPathsManipulated || {}).partials || problem.datasetPaths.partials)
-            },
-            'configuration': {
-                'predict_type': 'RAW'
-            },
-            'output': {
-                'resource_uri': 'file:///ravens_volume/solvers/produce/'
-            }
-        })
-    }
-
-    return specification;
+    })));
 };
 
 
@@ -134,7 +120,8 @@ export let getSystemAdapterWrapped = systemId => problem => ({
         data: {
             system: systemId,
             specification: await getSolverSpecification(problem, systemId),
-            system_params: systemParams[systemId]
+            system_params: systemParams[systemId],
+            timeout: (problem.timeBoundSearch || .5) * 60 * 2
         }
     }).then(response => {
         if (!response.success) {
@@ -152,7 +139,8 @@ export let getSystemAdapterWrapped = systemId => problem => ({
         data: {
             system: systemId,
             specification: await getSolverSpecification(problem, systemId),
-            system_params: systemParams[systemId]
+            system_params: systemParams[systemId],
+            timeout: (problem.timeBoundSearch || .5) * 60 * 2
         }
     }),
     describe: solutionId => m.request(SOLVER_SVC_URL + 'Describe', {
@@ -226,7 +214,7 @@ export let getSolutionAdapter = (problem, solution) => ({
     },
     getDescription: () => solution.description,
     getTask: () => '',
-    getModel: () => '',
+    getModel: () => solution.model || '',
     getImportanceEFD: predictor => {
         let adapter = getSolutionAdapter(problem, solution);
         results.loadImportanceEFDData(problem, adapter);

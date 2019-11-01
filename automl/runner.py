@@ -19,8 +19,7 @@ from model import (
     RECEIVE_SEARCH_MSG,
     RECEIVE_DESCRIBE_MSG,
     RECEIVE_SCORE_MSG,
-    RECEIVE_PRODUCE_MSG,
-    RECEIVE_ERROR_MSG)
+    RECEIVE_PRODUCE_MSG)
 
 from util_solve import Solve
 from util_model import Model
@@ -29,7 +28,8 @@ from util_search import Search
 
 NUM_PROCESSES = 4
 
-TIMEOUT_MAX = 60 * 50
+# 8 hours
+TIMEOUT_MAX = 60 * 60 * 8
 TIMEOUT_DEFAULT = 60 * 5
 
 flask_app = flask.Flask(__name__)
@@ -299,6 +299,7 @@ def app_solve():
     websocket_id = data['websocket_id']
     specification = data['specification']
 
+    print("timeout:", timeout)
     print(specification)
     print(data.get('system_params'))
 

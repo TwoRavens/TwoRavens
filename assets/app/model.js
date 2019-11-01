@@ -632,10 +632,10 @@ export let rightpanel = () => {
                     m('label', 'Approximate time bound for overall pipeline search, in minutes. Leave empty for unlimited time.'),
                     m(TextField, {
                         id: 'timeBoundOption',
-                        value: selectedProblem.timeBound || '',
+                        value: selectedProblem.timeBoundSearch || '',
                         disabled: isLocked,
-                        oninput: !isLocked && (value => selectedProblem.timeBound = value.replace(/[^\d.-]/g, '')),
-                        onblur: !isLocked && (value => selectedProblem.timeBound = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
+                        oninput: !isLocked && (value => selectedProblem.timeBoundSearch = value.replace(/[^\d.-]/g, '')),
+                        onblur: !isLocked && (value => selectedProblem.timeBoundSearch = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
                         style: {'margin-bottom': '1em'}
                     }),
                     m('label', 'Approximate time bound for predicting with a single pipeline, in minutes. Leave empty for unlimited time.'),

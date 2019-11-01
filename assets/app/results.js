@@ -577,11 +577,42 @@ export class CanvasSolutions {
         }, m(Table, {
             headers: ['Variable', 'Data'],
             data: [
-                ['System', firstAdapter.getSystemId()]
+                ['System', firstAdapter.getSystemId()],
+                ['Downloads', m(Table, {
+                    data: firstSolution.systemId === 'd3m' ? [
+                        {
+                            'name': 'train',
+                            'predict type': 'RAW',
+                            'input': m(Button, {onclick: () => app.downloadFile(problem.datasetPaths.train)}, 'Download'),
+                            // 'output': 'MISSING',
+                        },
+                        {
+                            'name': 'test',
+                            'predict type': 'RAW',
+                            'input': m(Button, {onclick: () => app.downloadFile(problem.datasetPaths.test)}, 'Download'),
+                            'output': m(Button, {onclick: () => app.downloadFile(firstSolution.data_pointer)}, 'Download'),
+                        },
+                        {
+                            'name': 'partials',
+                            'predict type': 'RAW',
+                            'input': m(Button, {onclick: () => app.downloadFile(problem.datasetPaths.partials)}, 'Download'),
+                            'output': m(Button, {onclick: () => app.downloadFile(firstSolution.data_pointer_partials)}, 'Download'),
+                        }
+                    ] : firstSolution.produce.map(produce =>
+                        ({
+                            'name': produce.input.name,
+                            'predict type': produce.configuration.predict_type,
+                            'input': m(Button, {onclick: () => app.downloadFile(produce.input.resource_uri)}, 'Download'),
+                            'output': m(Button, {onclick: () => app.downloadFile('file:///' + produce.data_pointer)}, 'Download'),
+                        }))
+
+                })],
+                ['Description', firstAdapter.getDescription()],
+                ['Model', firstAdapter.getModel()]
             ].concat(firstSolution.systemId === 'caret' ? [
                 ['Label', firstSolution.meta.label],
                 ['Caret/R Method', firstSolution.meta.method],
-                ['Tags', firstSolution.meta.tags]
+                ['Tags', firstSolution.meta.tags],
             ] : firstSolution.systemId === 'd3m' ? [
                 ['Pipeline ID', firstSolution.pipelineId],
                 ['Status', firstSolution.status],
@@ -774,7 +805,7 @@ let getSolutionTable = (problem, systemId) => {
     let data = adapters
     // extract data for each row (identification and scores)
         .map(adapter => Object.assign({
-                adapter, ID: String(adapter.getName()), Solution: adapter.getModel()
+                adapter, ID: String(adapter.getName()), Solver: adapter.getSystemId(), Solution: adapter.getModel()
             },
             [problem.metric, ...problem.metrics]
                 .reduce((out, metric) => Object.assign(out, {

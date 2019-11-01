@@ -50,7 +50,7 @@ if [ $2 = 'r' ]
     DATA_ID=$2
 
     echo "Running with dataset:"
-    echo $(fab run_ta2_brown_choose_config | grep $DATA_ID)
+    echo $(fab run_ta2_brown_choose_config | grep "($DATA_ID)")
 fi
 
 : $(fab celery_restart)
