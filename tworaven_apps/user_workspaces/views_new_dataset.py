@@ -13,7 +13,9 @@ from tworaven_apps.utils.view_helper import \
      get_json_success)
 
 from tworaven_apps.configurations.models_d3m import D3MConfiguration
-from tworaven_apps.configurations.utils import clear_output_directory
+from tworaven_apps.configurations.utils import \
+    (clear_output_directory,
+     check_build_output_directories)
 from tworaven_apps.behavioral_logs.log_formatter import BehavioralLogFormatter
 
 from tworaven_apps.user_workspaces import utils as ws_util
@@ -83,7 +85,6 @@ def view_select_dataset(request, config_id=None):
     #
     clear_output_directory(user_workspace.d3m_config)
 
-
     # (3) Clear StoredRequest/StoredResponse objects for current user
     #
     clear_info = SearchHistoryUtil.clear_grpc_stored_history(\
@@ -113,6 +114,8 @@ def view_select_dataset(request, config_id=None):
 
     # (6) Set new default config
     #
+    check_build_output_directories(new_d3m_config)
+
     set_info = D3MConfiguration.set_as_default(new_d3m_config)
     if set_info.success:
         print('New config set!')
