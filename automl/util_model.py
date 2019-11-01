@@ -93,6 +93,8 @@ class ModelSklearn(Model):
 
     def describe(self):
         return {
+            # TODO: extract ~10 character model algorithm
+            "model": "",
             "description": str(self.model),
             "model_id": self.model_id,
             "search_id": self.search_id,
@@ -270,7 +272,8 @@ class ModelH2O(Model):
 
     def describe(self):
         return {
-            "description": {'type': self.model.type, 'algo': self.model.algo},
+            "model": f'{self.model.algo}-{self.model.type}',
+            "description": f'{self.model.algo}-{self.model.type}',
             "model_id": self.model_id,
             'search_id': self.search_id,
             "system": self.system
@@ -368,6 +371,8 @@ class ModelLudwig(Model):
 
     def describe(self):
         return {
+            # TODO: extract more relevant description of model algorithm
+            "model": 'multilayer feedforward network',
             "description": str(self.model),
             "model_id": self.model_id,
             "system": self.system
