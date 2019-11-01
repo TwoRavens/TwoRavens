@@ -204,6 +204,12 @@ def clear_output_directory(d3m_config):
           "D3MLOCALDIR":"/ravens_volume/test_output/38_sick/local_dir",
           "D3MSTATICDIR":"/ravens_volume/test_output/38_sick/static_dir"
         }
+    OR
+        {
+          "D3MOUTPUTDIR":"/ravens_volume/test_output,
+          "D3MLOCALDIR":"/ravens_volume/test_output/local_dir",
+          "D3MSTATICDIR":"/ravens_volume/test_output/static_dir"
+        }
     """
     if not isinstance(d3m_config, D3MConfiguration):
         return err_resp('d3m_config must be a D3MConfiguration object')
@@ -213,7 +219,8 @@ def clear_output_directory(d3m_config):
 
     output_path = d3m_config.env_values.get(d3m_static.KEY_D3MOUTPUTDIR, None)
 
-    dirs_to_keep = [d3m_config.env_values.get(d3m_static.KEY_D3MLOCALDIR, None),
+    dirs_to_keep = [
+                    d3m_config.env_values.get(d3m_static.KEY_D3MLOCALDIR, None),
                     d3m_config.env_values.get(d3m_static.KEY_D3MSTATICDIR, None)]
 
     dirs_to_keep = [x for x in dirs_to_keep

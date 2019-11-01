@@ -23,27 +23,18 @@ from tworaven_apps.ta2_interfaces.static_vals import \
 
 @login_required
 def view_clear_grpc_stored_history(request):
-    """For develop, clear GPRC stored history"""
-    msg_list = []
-    for model_name in [StoredResponse, StoredRequest]:
-        mcnt = model_name.objects.count()
+    """For develop, clear GPRC stored history for a User"""
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
 
-        user_msg = '%d %s objects(s) found' % (mcnt, model_name.__name__)
-        print(f'\n{user_msg}')
-        msg_list.append(user_msg)
+    clear_info = SearchHistoryUtil.clear_grpc_stored_history(user_info.result_obj)
 
-        if mcnt > 0:
-            for meta_obj in model_name.objects.all().order_by('-id'):
-                meta_obj.delete()
-            print('Deleted...')
-            msg_list.append('Deleted...')
+    if not clear_info.success:
+        return HttpResponse(clear_info.err_msg)
 
-        else:
-            user_msg = f'No {model_name.__name__} objects found.'
-            print(f'\n{user_msg}')
-            msg_list.append(user_msg)
+    return HttpResponse('<br />'.join(clear_info.result_obj))
 
-    return HttpResponse('<br />'.join(msg_list))
 
 @login_required
 def view_grpc_search_history_json_no_id(request):

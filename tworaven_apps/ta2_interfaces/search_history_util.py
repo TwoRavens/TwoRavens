@@ -20,6 +20,8 @@ from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
+
+from tworaven_apps.raven_auth.models import User
 from tworaven_apps.ta2_interfaces.models import StoredRequest, StoredResponse
 from tworaven_apps.ta2_interfaces.static_vals import \
     (SEARCH_SOLUTIONS,
@@ -209,3 +211,33 @@ class SearchHistoryUtil(BasicErrCheck):
             self.add_requests([last_req])
 
         return True
+
+    @staticmethod
+    def clear_grpc_stored_history(user):
+        """Clear gRPC stored history for a specific user"""
+        if not isinstance(user, User):
+            return err_resp('"user" must be a User object')
+
+        msg_list = [f'Deleting gRPC history for user: {user}']
+        cnt = 0
+
+        for model_name in [StoredResponse, StoredRequest]:
+            cnt += 1
+            if cnt == 1:
+                params = dict(stored_request__user=user)
+            else:
+                params = dict(user=user)
+
+            mcnt = model_name.objects.filter(**params).count()
+
+            user_msg = f'{mcnt} {model_name.__name__} objects(s) found.'
+            print(f'\n{user_msg}')
+            msg_list.append(user_msg)
+
+            if mcnt > 0:
+                for meta_obj in model_name.objects.filter(**params).order_by('-id'):
+                    meta_obj.delete()
+                user_msg = f'{mcnt} {model_name.__name__} objects(s) deleted.'
+                msg_list.append(user_msg)
+
+        return ok_resp(msg_list)

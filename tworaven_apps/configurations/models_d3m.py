@@ -16,7 +16,7 @@ from django.db import transaction
 from tworaven_apps.utils.js_helper import get_js_boolean
 from tworaven_apps.utils.url_helper import add_trailing_slash,\
     remove_trailing_slash
-
+from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.configurations.util_path_check import are_d3m_paths_valid,\
     get_bad_paths, get_bad_paths_for_admin
 from tworaven_apps.configurations import static_vals as cstatic
@@ -206,6 +206,19 @@ class D3MConfiguration(TimeStampedModel):
 
         super(D3MConfiguration, self).save(*args, **kwargs)
 
+    @staticmethod
+    def set_as_default(d3m_config):
+        if not isinstance(d3m_config, D3MConfiguration):
+            return err_resp('"d3m_config" is not a D3MConfiguration object')
+
+        d3m_config.is_default = True
+        d3m_config.save()
+
+        if d3m_config.is_default:
+            return ok_resp('Default set!')
+
+        return err_resp('Default NOT set. Save failed.')
+
 
     def get_json_string(self, indent=2):
         """Return json string"""
@@ -237,7 +250,7 @@ class D3MConfiguration(TimeStampedModel):
                  'description',
                  'd3m_input_dir',
                  'dataset_schema', 'problem_schema',
-                 'training_data_root', 
+                 'training_data_root',
                  'pipeline_logs_root', 'executables_root',
                  'user_problems_root',
                  'additional_inputs',

@@ -14,12 +14,14 @@ from tworaven_apps.utils.view_helper import \
 
 from tworaven_apps.configurations.models_d3m import D3MConfiguration
 from tworaven_apps.configurations.utils import clear_output_directory
+from tworaven_apps.behavioral_logs.log_formatter import BehavioralLogFormatter
 
-from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
+from tworaven_apps.user_workspaces import utils as ws_util
 
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
 from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
+from tworaven_apps.ta2_interfaces.search_history_util import SearchHistoryUtil
 
 from tworaven_apps.configurations.utils import \
     (get_latest_d3m_config,)
@@ -45,7 +47,7 @@ def view_select_dataset(request, config_id=None):
     if config_id is None:
         raise Http404('"config_id" is required')
 
-    ws_info = get_latest_user_workspace(request)
+    ws_info = ws_util.get_latest_user_workspace(request)
     if not ws_info.success:
         # TODO: Need a better error here!
         #
@@ -73,42 +75,61 @@ def view_select_dataset(request, config_id=None):
 
     # (1) stop searches.... Should happen with UI or with UserWorkspace
     #
-    # drastic.., e.g. stop all searches in request history
+    # Stop all searches in request history
+    #
     StoredRequestUtil.stop_search_requests(**dict(user=user_workspace.user))
 
-    return HttpResponse((f'config_id: {config_id}<br />'
-                         f' user_workspace {user_workspace}'))
     # (2) Clear TA2/TA3 output directory
     #
     clear_output_directory(user_workspace.d3m_config)
 
+
     # (3) Clear StoredRequest/StoredResponse objects for current user
     #
-    StoredRequestUtil.clear_saved_requests_responses(user_id=user_workspace.user)
-
+    clear_info = SearchHistoryUtil.clear_grpc_stored_history(\
+                                        user=user_workspace.user)
+    if clear_info.success:
+        print('\n'.join(clear_info.result_obj))
+    else:
+        print(clear_info.err_msg)
 
     # (4) Clear behavioral logs for current user
     #
     # See: view_clear_logs_for_user
+    log_clear = BehavioralLogFormatter.delete_logs_for_user(user_workspace.user)
+    if log_clear.success:
+        print('\n'.join(log_clear.result_obj))
+    else:
+        print(log_clear.err_msg)
 
     # (5) Clear user workspaces
     #
-    # See:
+    delete_info = ws_util.delete_user_workspaces(user_workspace.user)
+    if not delete_info.success:
+        print(delete_info.err_msg)
+    else:
+        print('workspaces cleared')
 
 
     # (6) Set new default config
     #
+    set_info = D3MConfiguration.set_as_default(new_d3m_config)
+    if set_info.success:
+        print('New config set!')
+    else:
+        print(set_info.err_msg)
 
     # (6a) Mongo?
     #
 
     # (7) Redirect to pebbles page
     #
+    return HttpResponseRedirect(reverse('home'))
 
-    return HttpResponse('blah: ' + config_id)
+    #return HttpResponse('blah: ' + config_id)
     #info = dict(title='hi',
     #            config_id=config_id)
 
-    return render(request,
-                  'user_workspaces/view_list_dataset_choices.html',
-                  info)
+    #return render(request,
+    #              'user_workspaces/view_list_dataset_choices.html',
+    #              info)
