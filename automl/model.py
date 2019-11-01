@@ -3,6 +3,7 @@ import sklearn.metrics
 
 SAVED_MODELS_PATH = '/ravens_volume/solvers/models/'
 DJANGO_SOLVER_SERVICE = 'http://0.0.0.0:8080/solver-service/'
+EXPORTED_MODELS_PATH = '/ravens_volume/solvers/exported/'
 RECEIVE_ENDPOINT = DJANGO_SOLVER_SERVICE + 'Receive'
 
 R_SERVICE = 'http://0.0.0.0:8000/'

@@ -5,7 +5,8 @@ from tworaven_apps.ta2_interfaces import (\
         views_additional,
         views_streaming_requests,
         views_saved_requests,
-        views_non_streaming_requests,)
+        views_non_streaming_requests,
+        views_debug,)
 
 urlpatterns = (
 
@@ -145,5 +146,9 @@ urlpatterns = (
     path(r'ListPrimitives',
          views_non_streaming_requests.view_list_primitives,
          name='ListPrimitives'),
+
+    path(r'ZipSolutions',
+         views_debug.view_zip_solutions,
+         name='ZipSolutions'),
 
 )

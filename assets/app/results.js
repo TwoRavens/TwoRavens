@@ -617,7 +617,13 @@ export class CanvasSolutions {
                 ['Pipeline ID', firstSolution.pipelineId],
                 ['Status', firstSolution.status],
                 ['Created', new Date(firstSolution.created).toUTCString()]
-            ] : [])
+            ] : [
+                ['Model Zip', m(Button, {
+                    onclick: () => {
+                        solverWrapped.downloadModel(firstSolution.model_pointer)
+                    }
+                }, 'Download')]
+            ])
         }));
 
         let predictionSummary = m(Subpanel, {
@@ -1572,3 +1578,39 @@ export let loadImportanceEFDData = async (problem, adapter) => {
 };
 
 let parseNumeric = value => isNaN(parseFloat(value)) ? value : parseFloat(value);
+
+
+export let getSummaryData = problem => ({
+    dataset_name: app.workspace.d3m_config.name,
+    problem: problem,
+    solutions: getSolutions(problem)
+        .map(solution => {
+            let adapter = getSolutionAdapter(problem, solution);
+            let systemId = adapter.getSystemId();
+
+            let outputs = systemId === 'd3m' ? [
+                {
+                    'name': 'test',
+                    'predict type': 'RAW',
+                    'output': solution.data_pointer,
+                },
+                {
+                    'name': 'partials',
+                    'predict type': 'RAW',
+                    'output': solution.data_pointer_partials,
+                }
+            ] : solution.produce.map(produce =>
+                ({
+                    'name': produce.input.name,
+                    'predict type': produce.configuration.predict_type,
+                    'output': '/' + produce.data_pointer,
+                }));
+
+            return {
+                outputs,
+                solution: solution,
+                solutionId: adapter.getSolutionId(),
+                systemId: adapter.getSystemId()
+            }
+        })
+});

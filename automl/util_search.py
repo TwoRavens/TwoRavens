@@ -252,13 +252,20 @@ class SearchH2O(Search):
                 }
             }
 
-        model = ModelH2O(
-            automl.leader,
-            search_id=self.search_id,
-            predictors=X,
-            targets=[y])
+        print("leaderboard:", automl.leaderboard)
+        leaderboard = automl.leaderboard
+        print(leaderboard.columns[0])
 
-        self.callback_found(model, self.callback_params)
+        # take up to 10 models
+        for model_id in leaderboard.head(10).as_data_frame()['model_id']:
+            model = ModelH2O(
+                h2o.get_model(model_id),
+                search_id=self.search_id,
+                predictors=X,
+                targets=[y])
+            model.save()
+
+            self.callback_found(model, self.callback_params)
 
         return {
             KEY_SUCCESS: True,

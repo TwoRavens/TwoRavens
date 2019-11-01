@@ -186,10 +186,12 @@ export async function updatePeek(pipeline) {
     m.redraw();
 }
 
-export let downloadFile = async datasetUrl => {
+export let downloadFile = async (datasetUrl, contentType) => {
     console.log(datasetUrl);
     if (!datasetUrl) return;
-    let downloadUrl = D3M_SVC_URL + '/download-file?' + m.buildQueryString({data_pointer: datasetUrl});
+    let data = {data_pointer: datasetUrl};
+    if (contentType) data['content_type'] = contentType;
+    let downloadUrl = D3M_SVC_URL + '/download-file?' + m.buildQueryString(data);
 
     console.warn('Download URL');
     console.log(downloadUrl);

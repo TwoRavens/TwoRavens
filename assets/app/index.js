@@ -597,6 +597,21 @@ class Body {
                     id: 'modalTA2Debug',
                     setDisplay: app.setShowModalTA2Debug
                 },
+                m('h4', 'Organize all models/datasets'),
+                m(Button, {
+                    onclick: () => {
+                        let problem = app.getResultsProblem();
+                        m.request(D3M_SVC_URL + '/ZipSolutions', {
+                            method: 'POST',
+                            data: results.getSummaryData(problem)
+                        }).then(response => {
+                            if (response.success) {
+                                console.warn(response.data);
+                            }
+                            else console.error(response.message);
+                        });
+                    }
+                }, 'Export All Results'),
                 m('h4', 'Open Source Solver System Debugger'),
 
                 m('div', {style: 'margin:1em'},

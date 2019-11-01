@@ -84,10 +84,10 @@ def view_download_file(request):
         user_msg = ('No key found: "%s"' % KEY_DATA_POINTER)
         return JsonResponse(get_json_error(user_msg))
 
-    data_pointer = parse.unquote(data_pointer)
+    data_pointer = parse.unquote(data_pointer).replace('file://', '')
 
     if not path.exists(data_pointer):
-        user_msg = ('No file found: "%s"' % KEY_DATA_POINTER)
+        user_msg = ('No file found: "%s"' % data_pointer)
         return JsonResponse(get_json_error(user_msg))
 
     with open(data_pointer, 'r', encoding="ISO-8859-1") as file_download:
@@ -112,7 +112,7 @@ def view_download_report_file(request):
     data_pointer = parse.unquote(data_pointer)
 
     if not isfile(data_pointer):
-        user_msg = ('No file found: "%s"' % KEY_DATA_POINTER)
+        user_msg = ('No file found: "%s"' % data_pointer)
         return JsonResponse(get_json_error(user_msg))
 
     # Read the report and send it back as an attachment

@@ -3,8 +3,9 @@ import m from 'mithril';
 
 import * as app from '../app';
 import * as results from "../results";
+import {alertWarn} from "../app";
 
-let SOLVER_SVC_URL = '/solver-service/';
+export let SOLVER_SVC_URL = '/solver-service/';
 
 
 export let getSolverSpecification = async (problem, systemId) => {
@@ -177,8 +178,12 @@ export let getSolutionAdapter = (problem, solution) => ({
     getName: () => solution.model_id,
     getSystemId: () => solution.system,
     getSolutionId: () => solution.model_id,
-    getDataPointer: pointerId => {
-        let produce = solution.produce.find(produce => produce.input.name === pointerId);
+    getDataPointer: (pointerId, predict_type='RAW') => {
+
+        let produce = solution.produce
+            .find(produce =>
+                produce.input.name === pointerId &&
+                produce.input.predict_type === predict_type);
         return produce && '/' + produce.data_pointer;
     },
     getActualValues: target => {
@@ -309,6 +314,19 @@ export let handleSolveCompleteResponse = response => {
     solvedProblem.solverState[data.system].message = response.additional_info.message;
     m.redraw()
 };
+
+export let downloadModel = async solution => m.request(SOLVER_SVC_URL + 'Download', {
+    method: 'POST',
+    data: {model_id: solution.model_id}
+}).then(response => {
+    if (!response.success) {
+        alertWarn("Unable to prepare model for downloading.");
+        console.warn(response.message);
+        return;
+    }
+    console.log("Downloading model: ", response.data);
+    app.downloadFile(response.data.model_pointer, 'application/octet-stream');
+});
 
 /* Generates confusion table data and labels, given the expected and predicted values*/
 /* if a factor is passed, the resultant table will be 2x2 with respect to the factor */

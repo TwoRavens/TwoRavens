@@ -1,3 +1,4 @@
+import json
 import os
 import uuid
 import time
@@ -21,12 +22,14 @@ from model import (
     RECEIVE_SEARCH_MSG,
     RECEIVE_DESCRIBE_MSG,
     RECEIVE_SCORE_MSG,
-    RECEIVE_PRODUCE_MSG)
+    RECEIVE_PRODUCE_MSG,
+    SAVED_MODELS_PATH,
+    EXPORTED_MODELS_PATH)
 
 from util_solve import Solve
 from util_model import Model
 from util_search import Search
-
+import zipfile
 
 NUM_PROCESSES = 4
 
@@ -321,8 +324,8 @@ def app_solve():
     specification = data['specification']
 
     print("timeout:", timeout)
-    print(specification)
-    print(data.get('system_params'))
+    print(json.dumps(specification))
+    print(json.dumps(data.get('system_params')))
 
     solver = Solve(
         system=data['system'],
@@ -369,6 +372,10 @@ def app_search():
 
     data['timeout'] = timeout
     websocket_id = data['websocket_id']
+
+    print("timeout:", timeout)
+    print(json.dumps(specification))
+    print(json.dumps(data.get('system_params')))
 
     search = Search.load(
         system=data['system'],
@@ -503,6 +510,42 @@ def app_score():
     return {
         KEY_SUCCESS: True,
         KEY_MESSAGE: "score successfully started"
+    }
+
+
+@flask_app.route('/download', methods=['POST'])
+def app_download():
+    data = flask.request.json
+
+    if 'model_id' not in data:
+        return {
+            KEY_SUCCESS: False,
+            KEY_MESSAGE: '"model_id" is a required field'
+        }
+
+    model_id = data['model_id']
+    save_path = os.path.join(SAVED_MODELS_PATH, model_id)
+    export_path = os.path.join(EXPORTED_MODELS_PATH, model_id + '.zip')
+
+    if not os.path.exists(save_path):
+        return {
+            KEY_SUCCESS: False,
+            KEY_MESSAGE: f'model "{model_id}" does not exist'
+        }
+
+    if not os.path.exists(EXPORTED_MODELS_PATH):
+        os.makedirs(EXPORTED_MODELS_PATH)
+
+    if not os.path.exists(export_path):
+        with zipfile.ZipFile(export_path, 'w', zipfile.ZIP_DEFLATED) as zfile:
+            for root, dirs, files in os.walk(save_path):
+                for file in files:
+                    zfile.write(os.path.join(root, file),
+                                os.path.relpath(os.path.join(root, file), os.path.join(save_path, '..')))
+
+    return {
+        KEY_SUCCESS: True,
+        KEY_DATA: {'model_pointer': 'file://' + export_path}
     }
 
 

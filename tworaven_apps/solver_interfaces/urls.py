@@ -23,6 +23,10 @@ urlpatterns = (
         solver_interfaces.view_send_factory('produce'),
         name='Produce'),
 
+    url(r'^Download',
+        solver_interfaces.view_send_factory('download'),
+        name='Download'),
+
     url(r'^Receive$',
         solver_interfaces.view_receive,
         name='Receive'),
