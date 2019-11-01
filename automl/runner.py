@@ -801,6 +801,10 @@ if __name__ == '__main__':
         executor_threads.shutdown()
         executor_processes.shutdown()
 
+    def handle_exit():
+        executor_threads.shutdown()
+        executor_processes.shutdown()
+
     try:
         flask_app.run(port=8001, threaded=True)
     finally:
