@@ -10,7 +10,7 @@ jsonfield==2.0.2
 
 # requests==2.20.0
 # downgrade for d3m package
-requests==2.19.1
+requests==2.20.0
 
 django-storages==1.7.1
 
