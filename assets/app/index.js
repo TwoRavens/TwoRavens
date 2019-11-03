@@ -56,6 +56,7 @@ export let abbreviate = (text, length) => text.length > length
     ? m('div', {'data-toggle': 'tooltip', title: text}, text.substring(0, length - 3).trim() + '...')
     : text;
 
+window.m = m;
 
 class Body {
     oninit() {

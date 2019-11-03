@@ -209,7 +209,10 @@ export class CanvasSolutions {
 
     predictionSummary(problem, adapters) {
 
-        if (problem.task.toLowerCase().includes('regression') || problem.task.toLowerCase() === 'timeseriesforecasting') {
+	window.adaptes = adapters
+	window.testResult = resultsPreferences
+
+        if (problem.task.toLowerCase().includes('regression')) {
             let summaries = adapters.map(adapter => ({
                 name: adapter.getName(),
                 fittedValues: adapter.getFittedValues(resultsPreferences.target),
@@ -226,6 +229,38 @@ export class CanvasSolutions {
             let xName = 'Fitted Values';
             let yName = 'Actual Values';
             let title = 'Fitted vs. Actuals for predicting ' + problem.targets.join(', ');
+            let legendName = 'Solution Name';
+
+            return m('div', {
+                style: {'height': '500px'}
+            }, m(PlotVegaLite, {
+                specification: plots.vegaScatter(xData, yData, xName, yName, title, legendName),
+            }))
+        }
+
+	if (problem.task.toLowerCase() === 'timeseriesforecasting') {
+            let summaries = adapters.map(adapter => ({
+                name: adapter.getName(),
+                fittedValues: adapter.getFittedValues(resultsPreferences.target),
+                //actualValues: adapter.getActualValues(resultsPreferences.target),
+		dateValues: adapter.getActualValues(resultsPreferences.predictor)
+            })).filter(summary => summary.fittedValues && summary.dateValues);
+
+            console.log(summaries)
+
+            if (summaries.length === 0) return common.loader('PredictionSummary');
+
+            //let xData = summaries.reduce((out, summary) =>
+            //    Object.assign(out, {[summary.name]: summary.fittedValues}), {});
+            let yData = summaries.reduce((out, summary) =>
+                Object.assign(out, {[summary.name]: summary.fittedValues}), {});
+
+	    let xData = summaries.reduce((out, summary) =>
+                Object.assign(out, {[summary.name]: summary.dateValues}), {});
+
+            let xName = 'Time Series';
+            let yName = 'Actual Values';
+            let title = 'Fitted vs. Actuals TimeSeriesGraph for predicting ' + problem.targets.join(', ');
             let legendName = 'Solution Name';
 
             return m('div', {
