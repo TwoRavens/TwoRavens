@@ -1,0 +1,37 @@
+{
+  "about": {
+    "problemID": "LL1_terra_canopy_height_long_form_s4_70_problem_SCORE",
+    "problemName": "LL1 terra canopy height long form s4 70 problem",
+    "problemDescription": "The task is to predict the final canopy height (in cm) per cultivar per plot/site given the data up to 70 days",
+    "taskType": "timeSeriesForecasting",
+    "problemSchemaVersion": "3.3.0",
+    "problemVersion": "1.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "LL1_terra_canopy_height_long_form_s4_70_dataset_SCORE",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "learningData",
+            "colIndex": 4,
+            "colName": "canopy_height"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "splitsFile": "dataSplits.csv",
+      "splitScript": "splitScript.py"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "meanAbsoluteError"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}
