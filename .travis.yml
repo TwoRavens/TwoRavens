@@ -12,8 +12,12 @@ python:
 services:
   - docker
 
+before_install:
+  - sudo apt-get install libgnutls28-dev
+
 install:
   # Build/test dependencies
+  - pip install --upgrade pip
   - pip install --no-cache-dir -r requirements/prod.txt
   - pip install coveralls
 script:
