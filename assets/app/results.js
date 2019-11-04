@@ -1105,25 +1105,27 @@ export let resultsData = {
     id: {
         query: [],
         problemID: undefined,
-        solutionID: undefined
+        solutionID: undefined,
+        dataSplit: undefined
     }
 };
+
+export let dataSplit;
+export let setDataSplit = value => dataSplit = value;
 
 export let resultsQuery = [];
 
 export let recordLimit = 1000;
 
 export let loadProblemData = async problem => {
-    if (resultsData.id.problemID === problem.problemID && JSON.stringify(resultsData.id.query) === JSON.stringify(resultsQuery))
+    if (resultsData.id.problemID === problem.problemID &&
+        JSON.stringify(resultsData.id.query) === JSON.stringify(resultsQuery) &&
+        resultsData.id.dataSplit === dataSplit)
         return;
 
     resultsData.id.query = resultsQuery;
     resultsData.id.problemID = problem.problemID;
     resultsData.id.solutionID = undefined;
-
-    // problem specific, one problem stored
-    resultsData.indices = undefined;
-    resultsData.indicesLoading = false;
 
     // problem specific, one problem stored
     resultsData.actuals = undefined;
@@ -1193,7 +1195,7 @@ export let loadActualValues = async problem => {
                         abstractQuery: [
                             {
                                 column: "d3mIndex",
-                                children: problem.indices.map(index => ({value: index})),
+                                children: problem.indices[dataSplit].map(index => ({value: index})),
                                 subset: 'discrete',
                                 type: 'rule'
                             }
@@ -1211,7 +1213,10 @@ export let loadActualValues = async problem => {
                 workspace.raven_config.variablesInitial)['pipeline'])
         })
     } catch (err) {
-        app.alertWarn('Dependent variables have not been loaded. Some plots will not load.')
+        console.warn('Dependent variable loading failed:');
+        console.warn(err);
+        app.alertWarn('Dependent variables have not been loaded. Some plots will not load.');
+        return;
     }
 
     // don't accept if problemID changed

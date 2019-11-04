@@ -12,7 +12,7 @@ from tworaven_apps.utils.view_helper import (
 import shutil
 
 @csrf_exempt
-def view_zip_solutions(request):
+def view_export_solutions(request):
     req_body_info = get_request_body_as_json(request)
     if not req_body_info.success:
         return JsonResponse(get_json_error(req_body_info.err_msg))
@@ -47,6 +47,9 @@ def view_zip_solutions(request):
 
     solutions_summaries = data['solutions']
     for solution in solutions_summaries:
+
+        with open('summary.json', 'w') as outfile:
+            json.dump(solution['solution'], outfile)
 
         # build each solution folder
         output_dir = os.path.join(solutions_dir, f"{solution['systemId']}-{solution['solutionId']}")

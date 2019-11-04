@@ -601,7 +601,7 @@ class Body {
                 m(Button, {
                     onclick: () => {
                         let problem = app.getResultsProblem();
-                        m.request(D3M_SVC_URL + '/ZipSolutions', {
+                        m.request(D3M_SVC_URL + '/ExportSolutions', {
                             method: 'POST',
                             data: results.getSummaryData(problem)
                         }).then(response => {

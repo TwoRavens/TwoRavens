@@ -147,8 +147,7 @@ urlpatterns = (
          views_non_streaming_requests.view_list_primitives,
          name='ListPrimitives'),
 
-    path(r'ZipSolutions',
-         views_debug.view_zip_solutions,
-         name='ZipSolutions'),
-
+    path(r'ExportSolutions',
+         views_debug.view_export_solutions,
+         name='ExportSolutions'),
 )

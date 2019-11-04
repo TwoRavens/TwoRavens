@@ -625,6 +625,31 @@ export let rightpanel = () => {
                 selectedProblem.metrics.length > 0 && m('label', 'Secondary Performance Metrics'),
                 m(ListTags, {readonly: isLocked, tags: selectedProblem.metrics, ondelete: metric => app.remove(selectedProblem.metrics, metric)}),
                 m(Subpanel, {
+                        header: 'Split Options',
+                        defaultShown: false,
+                        style: {margin: '1em'}
+                    },
+                    m('label', 'Prepare in/out-of-sample splits.'),
+                    m(ButtonRadio, {
+                        id: 'outOfSampleSplit',
+                        onclick: value => {
+                            if (isLocked) return;
+                            selectedProblem.outOfSampleSplit = value === 'True';
+                        },
+                        activeSection: selectedProblem.outOfSampleSplit ? 'True' : 'False',
+                        sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
+                    }),
+                    selectedProblem.outOfSampleSplit && [
+                        m('label[style=margin-top:0.5em]', 'In-sample-ratio. This ratio is used for model training, the rest is used for out-of-sample scoring and diagnostics.'),
+                        m(TextField, {
+                            id: 'sampleRatioOption',
+                            disabled: isLocked,
+                            value: selectedProblem.inOutSampleRatio || 0,
+                            onblur: !isLocked && (value => selectedProblem.inOutSampleRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
+                            style: {'margin-bottom': '1em'}
+                        })
+                    ]),
+                m(Subpanel, {
                         header: 'Search Options',
                         defaultShown: false,
                         style: {margin: '1em'}

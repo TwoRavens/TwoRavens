@@ -3,6 +3,7 @@
 */
 import hopscotch from 'hopscotch';
 import m from 'mithril';
+window.m = m;
 
 import $ from 'jquery';
 import * as d3 from 'd3';
@@ -645,7 +646,10 @@ export let lockToggle = true;
 export let setLockToggle = state => {
     let selectedProblem = getSelectedProblem();
     if (state && selectedProblem.system === 'solved') hopscotch.startTour(lockTour(selectedProblem));
-    else lockToggle = state;
+    else {
+        hopscotch.endTour(true);
+        lockToggle = state;
+    }
 };
 export let isLocked = problem => lockToggle || problem.system === 'solved';
 
@@ -1039,6 +1043,8 @@ let buildDefaultProblem = problemDoc => {
         task: problemDoc.about.taskType,
         subTask: problemDoc.about.taskSubtype,
 
+        outOfSampleSplit: true,
+        inOutSampleRatio: 0.7,
         evaluationMethod: problemDoc.inputs.dataSplits.method || 'kFold',
         trainTestRatio: problemDoc.inputs.dataSplits.testSize,
         stratified: problemDoc.inputs.dataSplits.stratified,
@@ -1649,8 +1655,7 @@ export let materializeTrainTest = async problem => {
 
     problem.datasetPaths.train = response.data.dataset_paths.train;
     problem.datasetPaths.test = response.data.dataset_paths.test;
-
-    problem.indices = response.data.sample_test_indices;
+    problem.indices = response.data.indices;
 
     return true;
 };
@@ -1740,6 +1745,9 @@ export function discovery(problems) {
             task: undefined,
             subTask: 'taskSubtypeUndefined',
             meaningful: false,
+
+            outOfSampleSplit: true,
+            inOutSampleRatio: 0.7,
             evaluationMethod: 'kFold',
             manipulations: manips,
             solutions: {
@@ -2140,7 +2148,7 @@ export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
     step.manual.forEach(manual => out.add(manual.name));
 
     return out;
-}, new Set())
+}, new Set());
 
 export function setSelectedProblem(problemID) {
     let ravenConfig = workspace.raven_config;
@@ -2188,6 +2196,9 @@ export function setSelectedProblem(problemID) {
 
 export function setResultsProblem(problemID) {
     workspace.raven_config.resultsProblem = problemID;
+    let problem = getResultsProblem();
+    if (!results.dataSplit || (results.dataSplit !== 'all' && !problem.outOfSampleSplit))
+        results.dataSplit = 'all';
 }
 
 export function getProblemCopy(problemSource) {

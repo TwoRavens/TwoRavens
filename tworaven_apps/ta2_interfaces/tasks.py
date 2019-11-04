@@ -198,6 +198,7 @@ def split_dataset(configuration, workspace):
     # TODO: don't ignore splits file
     splits_file = configuration.get('splits_file')
     random_seed = configuration.get('random_seed', 0)
+    sample_limit = configuration.get('sample_limit')
 
     dataset_schema = json.load(open(configuration['dataset_schema'], 'r'))
     resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
@@ -242,13 +243,17 @@ def split_dataset(configuration, workspace):
         os.remove(csv_path)
         writable_dataframe.to_csv(csv_path)
 
-        return path.join(dest_directory, 'datasetDoc.json'), csv_path
+        sample_count = configuration.get("sampleCount", min(sample_limit, len(writable_dataframe)))
+        indices = writable_dataframe['d3mIndex'].astype('int32') \
+            .sample(n=sample_count).tolist()
+
+        return path.join(dest_directory, 'datasetDoc.json'), csv_path, indices
 
     splits = run_split()
 
-    all_datasetDoc, all_datasetCsv = write_dataset('all', dataframe)
-    train_datasetDoc, train_datasetCsv = write_dataset('train', splits['train'])
-    test_datasetDoc, test_datasetCsv = write_dataset('test', splits['test'])
+    all_datasetDoc, all_datasetCsv, all_indices = write_dataset('all', dataframe)
+    train_datasetDoc, train_datasetCsv, train_indices = write_dataset('train', splits['train'])
+    test_datasetDoc, test_datasetCsv, test_indices = write_dataset('test', splits['test'])
 
     datasetDocs = {
         'all': all_datasetDoc,
@@ -262,12 +267,15 @@ def split_dataset(configuration, workspace):
         'test': test_datasetCsv
     }
 
-    sample_test_indices = splits['test']['d3mIndex'].astype('int32') \
-        .sample(n=configuration.get("sampleCount", min(1000, len(splits['test'])))).tolist()
+    datasetIndices = {
+        'all': all_indices,
+        'train': train_indices,
+        'test': test_indices
+    }
 
     return {
         'dataset_schemas': datasetDocs,
         'dataset_paths': datasetCsvs,
-        'sample_test_indices': sample_test_indices,
+        'indices': datasetIndices,
         'stratified': splits['stratify']
     }

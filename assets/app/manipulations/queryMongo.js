@@ -2,7 +2,7 @@ import jsep from 'jsep';
 import {alignmentData} from "../app";
 
 // functions for generating database queries
-// subset queries are built typically built from pipelines witin app.manipulations. An additional menu step may be added too
+// subset queries are built from manipulations pipelines. An additional menu step may be added too
 
 // build*() functions are pure and return mongo queries. There is one per step type, and one for the overall pipeline
 // process*() functions are for constructing the subset query, relative to a specific node, group, or rule on the query tree

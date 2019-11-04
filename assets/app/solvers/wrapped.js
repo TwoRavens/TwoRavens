@@ -16,6 +16,7 @@ export let getSolverSpecification = async (problem, systemId) => {
     problem.datasetPaths = {
         all: app.workspace.datasetPath
     };
+    problem.datasetIndices = {};
     problem.datasetSchemasManipulated = {};
     problem.datasetPathsManipulated = {};
 
@@ -26,7 +27,7 @@ export let getSolverSpecification = async (problem, systemId) => {
 
     problem.solverState[systemId].message = 'preparing train/test splits';
     m.redraw();
-    if (!await app.materializeTrainTest(problem)) throw "Cannot solve problem without a train/test split."
+    if (!await app.materializeTrainTest(problem)) throw "Cannot solve problem without a train/test split.";
 
     problem.solverState[systemId].message = 'applying manipulations to data';
     m.redraw();
