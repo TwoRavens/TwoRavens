@@ -18,8 +18,6 @@ before_install:
 install:
   # Build/test dependencies
   - pip install --upgrade pip
-  #- pip install --compile --no-cache-dir --global-option="--with-gnutls" pycurl
-  # previously worked:
   - pip install --no-cache-dir -r requirements/prod.txt
   - pip install coveralls
 script:
