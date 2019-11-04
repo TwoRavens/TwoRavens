@@ -14,7 +14,10 @@ services:
 
 install:
   # Build/test dependencies
-  - pip install --no-cache-dir -r requirements/prod.txt
+  - pip install --upgrade pip
+  - pip install pycurl
+  #- pip install --no-cache-dir -r requirements/prod.txt
+  - pip install -r requirements/prod.txt
   - pip install coveralls
 script:
   - echo $TRAVIS_BRANCH;
