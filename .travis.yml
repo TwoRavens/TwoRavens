@@ -12,13 +12,16 @@ python:
 services:
   - docker
 
+before_install:
+  - sudo apt-get install libcurl4-gnutls-dev
+
 install:
   # Build/test dependencies
   - pip install --upgrade pip
 
   # attempt 1:
-  #- pip install pycurl
-  # attempt 2:
+  - pip install pycurl
+  # attempt 2: failed
   - pip install --compile --no-cache-dir --global-option="--with-gnutls" pycurl
   # previously worked:
   - pip install --no-cache-dir -r requirements/prod.txt
