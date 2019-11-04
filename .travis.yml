@@ -15,9 +15,13 @@ services:
 install:
   # Build/test dependencies
   - pip install --upgrade pip
-  - pip install pycurl
-  #- pip install --no-cache-dir -r requirements/prod.txt
-  - pip install -r requirements/prod.txt
+
+  # attempt 1:
+  #- pip install pycurl
+  # attempt 2:
+  - pip install --compile --no-cache-dir --global-option="--with-gnutls" pycurl
+  # previously worked:
+  - pip install --no-cache-dir -r requirements/prod.txt
   - pip install coveralls
 script:
   - echo $TRAVIS_BRANCH;
