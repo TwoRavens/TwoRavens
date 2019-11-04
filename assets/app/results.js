@@ -266,7 +266,7 @@ export class CanvasSolutions {
             return m('div', {
                 style: {'height': '500px'}
             }, m(PlotVegaLite, {
-                specification: plots.vegaScatter(xData, yData, xName, yName, title, legendName),
+                specification: plots.vegaScatterV2(xData, yData, xName, yName, title, legendName),
             }))
         }
 
