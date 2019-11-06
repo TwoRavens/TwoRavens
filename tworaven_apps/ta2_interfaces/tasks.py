@@ -33,6 +33,8 @@ from os import path
 import os
 import json
 from d3m.container.dataset import Dataset
+import numpy as np
+import math
 
 from sklearn.model_selection import train_test_split
 import pandas as pd
@@ -194,12 +196,6 @@ def split_dataset(configuration, workspace):
     if not (0 >= train_test_ratio > 1):
         train_test_ratio = DEFAULT_RATIO
 
-    stratified = configuration.get('stratified')
-    # TODO: don't ignore splits file
-    splits_file = configuration.get('splits_file')
-    random_seed = configuration.get('random_seed', 0)
-    sample_limit = configuration.get('sample_limit')
-
     dataset_schema = json.load(open(configuration['dataset_schema'], 'r'))
     resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
 
@@ -216,20 +212,52 @@ def split_dataset(configuration, workspace):
     dataframe.dropna(inplace=True)
     dataframe.reset_index(drop=True, inplace=True)
 
-    def run_split():
-        try:
-            dataframe_train, dataframe_test = train_test_split(
-                dataframe,
-                train_size=train_test_ratio,
-                stratify=stratified,
-                random_state=random_seed)
-            return {'train': dataframe_train, 'test': dataframe_test, 'stratify': stratified}
-        except TypeError:
-            dataframe_train, dataframe_test = train_test_split(
-                dataframe,
-                train_size=train_test_ratio,
-                random_state=random_seed)
-            return {'train': dataframe_train, 'test': dataframe_test, 'stratify': False}
+    random_seed = configuration.get('random_seed', 0)
+    sample_limit = configuration.get('sample_limit', 1000)
+    temporal_variable = configuration.get('temporal_variable')
+
+    # TODO: don't ignore splits file
+    splits_file_path = configuration.get('splits_file')
+    if splits_file_path:
+        pass
+
+    # split dataset along temporal variable
+    if temporal_variable:
+        num_test_records = math.ceil(train_test_ratio * len(dataframe))
+        sorted_index = [
+            x for _, x in sorted(
+                zip(np.array(dataframe[temporal_variable]), np.arange(0, len(dataframe))),
+                # TODO: more robust sorting for temporal data (parse to datetime?)
+                key=lambda pair: pair[0])
+        ]
+        splits = {
+            'train': dataframe.iloc[sorted_index[:-num_test_records]],
+            'test': dataframe.iloc[sorted_index[-num_test_records:]],
+            'stratify': False
+        }
+
+    else:
+        shuffle = configuration.get('shuffle', True)
+        stratified = configuration.get('stratified')
+
+        def run_split():
+            try:
+                dataframe_train, dataframe_test = train_test_split(
+                    dataframe,
+                    train_size=train_test_ratio,
+                    shuffle=shuffle,
+                    stratify=stratified,
+                    random_state=random_seed)
+                return {'train': dataframe_train, 'test': dataframe_test, 'stratify': stratified}
+            except TypeError:
+                dataframe_train, dataframe_test = train_test_split(
+                    dataframe,
+                    shuffle=shuffle,
+                    train_size=train_test_ratio,
+                    random_state=random_seed)
+                return {'train': dataframe_train, 'test': dataframe_test, 'stratify': False}
+
+        splits = run_split()
 
     def write_dataset(role, writable_dataframe):
         dest_dir_info = create_destination_directory(workspace, role=role)
@@ -248,8 +276,6 @@ def split_dataset(configuration, workspace):
             .sample(n=sample_count).tolist()
 
         return path.join(dest_directory, 'datasetDoc.json'), csv_path, indices
-
-    splits = run_split()
 
     all_datasetDoc, all_datasetCsv, all_indices = write_dataset('all', dataframe)
     train_datasetDoc, train_datasetCsv, train_indices = write_dataset('train', splits['train'])
