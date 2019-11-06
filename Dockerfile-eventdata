@@ -48,7 +48,8 @@ ENV DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container2 \
     R_DEV_SERVER_BASE=http://rook-service:8000/ \
     TA2_STATIC_TEST_MODE=True \
     CODE_REPOSITORY=/var/webapps/TwoRavens \
-    RAVENS_SESSION_COOKIE_NAME=tworavens_eventdata \
+    SESSION_COOKIE_NAME=tworavens_eventdata \
+    CSRF_COOKIE_NAME=tworavens_eventdata_csrf \
     LC_ALL=C.UTF-8
 
 # -------------------------------------

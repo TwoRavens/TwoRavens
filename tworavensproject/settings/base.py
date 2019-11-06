@@ -226,9 +226,12 @@ USE_L10N = True
 
 USE_TZ = True
 
-# Store the CSRF in a session: https://docs.djangoproject.com/en/1.11/ref/settings/#std:setting-CSRF_USE_SESSIONS
-#CSRF_USE_SESSIONS = True
-CSRF_COOKIE_NAME = 'CSRF_2R'
+
+SESSION_COOKIE_NAME = os.environ.get('SESSION_COOKIE_NAME',
+                                     '2ravens_base')
+
+CSRF_COOKIE_NAME = os.environ.get('CSRF_COOKIE_NAME',
+                                  '2ravens_base_csrf')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
