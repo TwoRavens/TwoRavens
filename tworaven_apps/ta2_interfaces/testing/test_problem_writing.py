@@ -17,7 +17,7 @@ from tworaven_apps.raven_auth.models import User
 
 class ProblemWriterTest(TestCase):
 
-    fixtures = ['test_problem_writer_2019_0718.json']
+    fixtures = ['test_problem_writer_2019_1106.json']
 
     def setUp(self):
         # Set it to internal testing mode
