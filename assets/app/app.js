@@ -285,6 +285,12 @@ export function setSelectedMode(mode) {
             // denote as solved problem
             selectedProblem.solverState = {};
             selectedProblem.system = 'solved';
+
+            if (!results.resultsPreferences.dataSplit)
+                results.resultsPreferences.dataSplit = 'test';
+
+            if (results.resultsPreferences.dataSplit !== 'all' && !getResultsProblem().outOfSampleSplit)
+                results.resultsPreferences.dataSplit = 'all';
         }
 
         if (is_model_mode && manipulate.pendingHardManipulation) {
@@ -540,14 +546,41 @@ if (!IS_EVENTDATA_DOMAIN) {
 // Initialize a websocket for this page
 //-------------------------------------------------
 export let wsLink = WEBSOCKET_PREFIX + window.location.host +
-               '/ws/connect/' + username + '/';
-console.log('streamSocket connection made: ' + wsLink);
-export let streamSocket = new WebSocket(wsLink);
+    '/ws/connect/' + username + '/';
+function connectWebsocket() {
+    let ws = null;
 
+    function start() {
+
+        try {
+            ws = new WebSocket(wsLink);
+        } catch (err) {
+            console.log('Cannot connect to streamSocket:', wsLink)
+        }
+        ws.onopen = function () {
+            console.log('Connected to streamSocket:', wsLink);
+        };
+        ws.onmessage = websocketMessage;
+        ws.onclose = function () {
+            console.log('Attempting reconnect to streamSocket:', wsLink);
+            check();
+        };
+    }
+
+    function check() {
+        if (!ws || ws.readyState === 3) start();
+    }
+
+    start();
+
+    setInterval(check, 10000);
+}
+
+document.addEventListener("DOMContentLoaded", connectWebsocket);
 export let streamMsgCnt = 0;
 //  messages received.
 //
-streamSocket.onmessage = function (e) {
+function websocketMessage(e) {
     streamMsgCnt++;
     debugLog(streamMsgCnt + ') message received! ' + e);
     // parse the data into JSON
@@ -624,11 +657,7 @@ streamSocket.onmessage = function (e) {
     }
     else if (msg_data.msg_type === 'GetProduceSolutionResults') {
         debugLog(msg_data.msg_type + ' recognized!');
-        solverD3M.handleGetProduceSolutionResultsResponse(msg_data.data, 'fittedValues');
-    }
-    else if (msg_data.msg_type === 'GetPartialsSolutionResults') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        solverD3M.handleGetProduceSolutionResultsResponse(msg_data.data, 'partialsValues');
+        solverD3M.handleGetProduceSolutionResultsResponse(msg_data.data);
     }
     else if (msg_data.msg_type === 'GetFitSolutionResults') {
         debugLog(msg_data.msg_type + ' recognized!');
@@ -653,10 +682,7 @@ streamSocket.onmessage = function (e) {
     else {
         console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
     }
-};
-streamSocket.onclose = function(e) {
-      console.error('streamSocket closed unexpectedly');
-};
+}
 //-------------------------------------------------
 
 // when set, a problem's Task, Subtask and Metric may not be edited
@@ -1627,6 +1653,8 @@ export let materializeManipulations = async (problem, schemaIds) => {
         }))
 };
 
+// materializing partials may only happen once per problem, all calls wait for same response
+export let materializePartialsPromise = {};
 export let materializePartials = async problem => {
 
     if (!variableSummariesLoaded)
@@ -1651,23 +1679,34 @@ export let materializePartials = async problem => {
     }
 };
 
+// materializing splits may only happen once per problem, all calls wait for same response
+export let materializeTrainTestPromise = {};
 export let materializeTrainTest = async problem => {
+
+    let temporalVariables = problem.task.toLowerCase() === 'timeseriesforecasting' ? problem.tags.time : [];
+    if (temporalVariables.length > 1)
+        alertWarn(`Multiple temporal variables found. Using the first temporal variable to split: ${temporalVariables[0]}`);
 
     let response = await m.request({
         method: 'POST',
         url: D3M_SVC_URL + '/get-train-test-split',
         data: {
-            nominal_variables: getNominalVariables(selectedProblem),
+            do_split: problem.outOfSampleSplit,
+            temporal_variable: temporalVariables[0],
+            nominal_variables: getNominalVariables(problem),
             dataset_schema: problem.datasetSchemas.all,
             train_test_ratio: problem.trainTestRatio,
             stratified: problem.stratified,
             splits_file: problem.splitsFile,
+            shuffle: problem.shuffle,
             random_seed: problem.randomSeed,
         }
     });
 
     if (!response.success) {
-        alertError(response.message);
+        console.warn('Materialize train/test error:', response.message);
+        alertWarn('Unable to create out-of-sample split. Using entire dataset for training and for in-sample testing.');
+        problem.outOfSampleSplit = false;
         return false;
     }
 
@@ -2218,8 +2257,12 @@ export function setSelectedProblem(problemID) {
 export function setResultsProblem(problemID) {
     workspace.raven_config.resultsProblem = problemID;
     let problem = getResultsProblem();
-    if (!results.dataSplit || (results.dataSplit !== 'all' && !problem.outOfSampleSplit))
-        results.dataSplit = 'all';
+
+    if (!results.resultsPreferences.dataSplit)
+        results.resultsPreferences.dataSplit = 'test';
+
+    if (results.resultsPreferences.dataSplit !== 'all' && !problem.outOfSampleSplit)
+        results.resultsPreferences.dataSplit = 'all';
 }
 
 export function getProblemCopy(problemSource) {
