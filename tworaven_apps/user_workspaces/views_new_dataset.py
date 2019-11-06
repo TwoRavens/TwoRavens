@@ -17,15 +17,13 @@ from tworaven_apps.configurations.models_d3m import D3MConfiguration
 from tworaven_apps.configurations.utils import \
     (clear_output_directory,
      check_build_output_directories)
-from tworaven_apps.behavioral_logs.log_formatter import BehavioralLogFormatter
 
 from tworaven_apps.user_workspaces import utils as ws_util
 
+from tworaven_apps.user_workspaces.reset_util import ResetUtil
+
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
-from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
-from tworaven_apps.ta2_interfaces.search_history_util import SearchHistoryUtil
-
 from tworaven_apps.configurations.utils import \
     (get_latest_d3m_config,)
 
@@ -63,17 +61,14 @@ def view_select_dataset(request, config_id=None):
     if not new_d3m_config:
         raise Http404(f'D3MConfiguration not found for id {config_id}')
 
-    # If available, try to get the workspace
+    # Tries to fetch the UserWorkspace and is ready to "reset"
+    #   by clearing logs, stopping searches, etc.
     #
-    user_workspace = None
-    current_d3m_config = None
+    reset_util = ResetUtil(user=user, **dict(request_obj=request))
+    if reset_util.has_error():
+        return JsonResponse(get_json_error(reset_util.get_err_msg()))
 
-    ws_info = ws_util.get_latest_user_workspace(request)
-    if ws_info.success:
-        user_workspace = ws_info.result_obj
-        current_d3m_config = user_workspace.d3m_config
-    else:
-        current_d3m_config = get_latest_d3m_config()
+    current_d3m_config = reset_util.get_d3m_config()
 
     # Don't switch to config you already have!
     #
@@ -85,45 +80,11 @@ def view_select_dataset(request, config_id=None):
                     f' {current_d3m_config.name}')
         return JsonResponse(get_json_error(user_msg))
 
-    # (1) stop searches.... Should happen with UI or with UserWorkspace
+    # Now really stop searches, clears logs, etc, etc
     #
-    # Stop all searches in request history
-    #
-    StoredRequestUtil.stop_search_requests(**dict(user=user))
+    reset_util.start_the_reset()
 
-    # (2) Clear TA2/TA3 output directory
-    #
-    if current_d3m_config:
-        clear_output_directory(current_d3m_config)
-
-
-    # (3) Clear StoredRequest/StoredResponse objects for current user
-    #
-    clear_info = SearchHistoryUtil.clear_grpc_stored_history(user)
-    if clear_info.success:
-        print('\n'.join(clear_info.result_obj))
-    else:
-        print(clear_info.err_msg)
-
-    # (4) Clear behavioral logs for current user
-    #
-    # See: view_clear_logs_for_user
-    log_clear = BehavioralLogFormatter.delete_logs_for_user(user)
-    if log_clear.success:
-        print('\n'.join(log_clear.result_obj))
-    else:
-        print(log_clear.err_msg)
-
-    # (5) Clear user workspaces
-    #
-    delete_info = ws_util.delete_user_workspaces(user)
-    if not delete_info.success:
-        print(delete_info.err_msg)
-    else:
-        print('workspaces cleared')
-
-
-    # (6) Set new default config
+    # Set new default config
     #
     check_build_output_directories(new_d3m_config)
 
@@ -133,17 +94,6 @@ def view_select_dataset(request, config_id=None):
     else:
         print(set_info.err_msg)
 
-    # (6a) Mongo?
-    #
-
     # (7) Redirect to pebbles page
     #
     return HttpResponseRedirect(reverse('home'))
-
-    #return HttpResponse('blah: ' + config_id)
-    #info = dict(title='hi',
-    #            config_id=config_id)
-
-    #return render(request,
-    #              'user_workspaces/view_list_dataset_choices.html',
-    #              info)

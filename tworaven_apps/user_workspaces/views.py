@@ -18,6 +18,7 @@ from tworaven_apps.utils.json_helper import format_pretty_from_dict
 from tworaven_apps.user_workspaces import static_vals as uw_static
 
 from tworaven_apps.user_workspaces import utils as ws_util
+from tworaven_apps.user_workspaces.reset_util import ResetUtil
 
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
@@ -198,9 +199,14 @@ def clear_user_workspaces(request):
         return JsonResponse(get_json_error(user_info.err_msg))
 
     user = user_info.result_obj
-    delete_info = ws_util.delete_user_workspaces(user)
-    if not delete_info.success:
-        return JsonResponse(get_json_error(delete_info.err_msg))
+
+    reset_util = ResetUtil(user=user, **dict(request_obj=request))
+    if reset_util.has_error():
+        return JsonResponse(get_json_error(reset_util.get_err_msg()))
+
+    # Now really stop searches, clears logs, etc, etc
+    #
+    reset_util.start_the_reset()
 
     return HttpResponseRedirect(reverse('home'))
 
