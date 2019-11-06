@@ -1,0 +1,71 @@
+{
+  "about": {
+    "datasetID": "LL1_terra_leaf_angle_mean_long_form_s4_dataset_TRAIN",
+    "datasetName": "LL1 terra leaf angle mean long form s4",
+    "description": "This dataset contains leaf angle measurements for several genetic variants (cultivars) of the sorghum plant. The measurements were measured over the course of 133 days. Each plot (site) contains a timeseries of leaf angle measurements (in normalized degrees taken over the 133 day period. The task is to predict the last leaf angle measurement of each plot/site.",
+    "citation": "",
+    "license": "https://terraref.gitbooks.io/terraref-documentation/content/user/data_release_policy.html",
+    "source": "TERRA-REF",
+    "sourceURI": "",
+    "datasetSchemaVersion": "3.3.0",
+    "redacted": false,
+    "datasetVersion": "1.0",
+    "digest": "6ff7ff4c7356e8b7620d9c06f1ca33961c7e6e395016324c19491e2a2188bc07"
+  },
+  "dataResources": [
+    {
+      "resID": "learningData",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "cultivar",
+          "colType": "string",
+          "role": [
+            "attribute",
+            "suggestedGroupingKey"
+          ]
+        },
+        {
+          "colIndex": 2,
+          "colName": "sitename",
+          "colType": "string",
+          "role": [
+            "attribute",
+            "suggestedGroupingKey"
+          ]
+        },
+        {
+          "colIndex": 3,
+          "colName": "day",
+          "colType": "integer",
+          "role": [
+            "attribute",
+            "timeIndicator"
+          ]
+        },
+        {
+          "colIndex": 4,
+          "colName": "leaf_angle_mean",
+          "colType": "real",
+          "role": [
+            "suggestedTarget"
+          ]
+        }
+      ]
+    }
+  ]
+}
