@@ -98,7 +98,7 @@ COPY startup_script/gce_start.sh /usr/bin/gce_start.sh
 COPY startup_script/gce_start_multiuser.sh /usr/bin/gce_start_multiuser.sh
 COPY startup_script/d3m_start.sh /usr/bin/d3m_start.sh
 
-RUN chmod u+x /usr/bin/gce_start.sh /usr/bin/d3m_start.sh
+RUN chmod u+x /usr/bin/gce_start.sh /usr/bin/d3m_start.sh /usr/bin/gce_start_multiuser.sh
 
 # -------------------------------------
 # Idle the container on startup so it
