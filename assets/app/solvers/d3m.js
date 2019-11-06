@@ -565,7 +565,7 @@ export let loadImportanceEFDData = async (problem, solution) => {
 export let endSearch = async searchId => {
 
   if (searchId === undefined) return;
-  
+
   app.makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId})
       .then(handleCompletedSearch(searchId));
 }
@@ -1338,6 +1338,10 @@ export async function endsession() {
         // we don't need to wait for the backend to spin down before telling the user, no await used
         endAllSearches();
 
+        let resetTheApp = () => {
+            window.location.pathname = clear_user_workspaces_url;
+        }
+
         setModal(m('div', {}, [
                 m('p', 'Finished! The problem is marked as complete.'),
                 // m('p', ''),
@@ -1346,7 +1350,7 @@ export async function endsession() {
             true,
             "Restart",
             false,
-            locationReload);
+            resetTheApp);
         m.redraw()
     } else {
         status.name = 'Error from pipeline submission.';

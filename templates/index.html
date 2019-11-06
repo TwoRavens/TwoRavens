@@ -76,14 +76,6 @@
           // --------------------------
           const isAuthenticated = true;
           const username = "{{ user.username }}";
-          //
-          const workspaces_url = "{% url 'view_latest_raven_configs' %}?pretty";
-          const switch_dataset_url = "{% url 'view_list_dataset_choices' %}";
-
-          const devlinks_url = "{% url 'view_dev_raven_links' %}";
-          const settings_url = "{% url 'view_d3m_list' %}"; // D3M configs
-          const behavioral_log_url = "{% url 'view_show_log_onscreen' %}"; // D3M configs
-
           {% else %}
           // --------------------------
           // User is not authenticated
@@ -111,6 +103,20 @@
 
           // test url: just sends back your POSTed data
           const test_csrf_url = "{% url 'view_test_csrf_required' %}";
+
+          // --------------------------
+          // URLs/settings used within the app
+          // --------------------------
+          const workspaces_url = "{% url 'view_latest_raven_configs' %}?pretty";
+          const switch_dataset_url = "{% url 'view_list_dataset_choices' %}";
+          const clear_user_workspaces_url = "{% url 'clear_user_workspaces' %}";
+
+          const devlinks_url = "{% url 'view_dev_raven_links' %}";
+          const settings_url = "{% url 'view_d3m_list' %}"; // D3M configs
+          const behavioral_log_url = "{% url 'view_show_log_onscreen' %}"; // D3M configs
+
+          const DISPLAY_DATAMART_UI = {% if DISPLAY_DATAMART_UI %}true{% else %}false{% endif %};
+
 
           {#% if DEBUG %#}
           // --------------------------

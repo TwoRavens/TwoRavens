@@ -133,7 +133,7 @@ class Body {
             {title: [m('span', {}, "Settings "), m(Icon, {name: 'link-external'})], url: settings_url, newWin: true},
             {title: [m('span', {}, "Links "), m(Icon, {name: 'link-external'})], url: devlinks_url, newWin: true},
             {title: [m('span', {}, "Behavioral Logs "), m(Icon, {name: 'link-external'})], url: behavioral_log_url, newWin: true},
-            {title: [m('span', {}, "Reset "), m(Icon, {name: 'alert'})], url: '/user-workspaces/clear-user-workspaces', newWin: false},
+            {title: [m('span', {}, "Reset "), m(Icon, {name: 'alert'})], url: clear_user_workspaces_url, newWin: false},
             {title: [m('span', {}, "Switch Datasets"), m(Icon, {name: 'alert'})], url: switch_dataset_url, newWin: false},
             {title: "Logout", url: logout_url, newWin: false}];
 

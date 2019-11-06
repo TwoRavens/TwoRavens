@@ -1106,7 +1106,10 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
     window.workspace = workspace;
 
     d3.select("title").html("TwoRavens " + workspace.d3m_config.name);
-    setTimeout(() => search(datamartPreferences, datamartURL).then(m.redraw), 1000);
+
+    if (DISPLAY_DATAMART_UI){
+      setTimeout(() => search(datamartPreferences, datamartURL).then(m.redraw), 1000);
+    }
 
     let newRavenConfig = workspace.raven_config === null;
     if (newRavenConfig) workspace.raven_config = {
