@@ -21,24 +21,36 @@ export let getSolverSpecification = async problem => {
     problem.solverState.d3m = {thinking: true};
     problem.solverState.d3m.message = 'preparing partials data';
     m.redraw();
-    await app.materializePartials(problem);
+    if (!app.materializePartialsPromise[problem.problemID])
+        app.materializePartialsPromise[problem.problemID] = app.materializePartials(problem);
+    await app.materializePartialsPromise[problem.problemID];
 
     problem.solverState.d3m.message = 'preparing train/test splits';
     m.redraw();
-    await app.materializeTrainTest(problem, problem.datasetSchemas.all);
+    if (!app.materializeTrainTestPromise[problem.problemID])
+        app.materializeTrainTestPromise[problem.problemID] = app.materializeTrainTest(problem, problem.datasetSchemas.all);
+    await app.materializeTrainTestPromise[problem.problemID];
 
     problem.solverState.d3m.message = 'initiating the search for solutions';
     m.redraw();
 
+    let trainDatasetSchema = problem.datasetSchemas[problem.outOfSampleSplit ? 'train' : 'all'];
+
     let allParams = {
-        searchSolutionParams: GRPC_SearchSolutionsRequest(problem, problem.datasetSchemas.all),
-        fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(problem.datasetSchemas.train),
-        produceSolutionDefaultParams: GRPC_ProduceSolutionRequest(problem.datasetSchemas.test),
-        scoreSolutionDefaultParams: GRPC_ScoreSolutionRequest(problem, problem.datasetSchemas.all)
+        searchSolutionParams: GRPC_SearchSolutionsRequest(problem, trainDatasetSchema),
+        fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(trainDatasetSchema),
+        scoreSolutionDefaultParams: GRPC_ScoreSolutionRequest(problem, problem.datasetSchemas.all),
+        produceSolutionDefaultParams: {}
     };
 
+    if (problem.outOfSampleSplit) {
+        allParams.produceSolutionDefaultParams.test = GRPC_ProduceSolutionRequest(problem.datasetSchemas.test);
+        allParams.produceSolutionDefaultParams.train = GRPC_ProduceSolutionRequest(problem.datasetSchemas.train);
+    } else
+        allParams.produceSolutionDefaultParams.all = GRPC_ProduceSolutionRequest(problem.datasetSchemas.all);
+
     if (problem.datasetSchemas.partials)
-        allParams.partialsSolutionParams = GRPC_ProduceSolutionRequest(problem.datasetSchemas.partials);
+        allParams.produceSolutionDefaultParams.partials = GRPC_ProduceSolutionRequest(problem.datasetSchemas.partials);
 
     return allParams;
 };
@@ -75,7 +87,7 @@ export let getD3MAdapter = problem => ({
         }
 
         // sort resulting pipelines by the primary metric by default
-        results.setSelectedMetric(problem.metric);
+        results.resultsPreferences.selectedMetric = problem.metric;
 
         // route streamed responses with this searchId to this problem
         problem.solverState.d3m.searchId = res.data.searchId;
@@ -103,13 +115,7 @@ export let getSolutionAdapter = (problem, solution) => ({
     getName: () => String(solution.pipelineId),
     getSystemId: () => 'd3m',
     getSolutionId: () => String(solution.pipelineId),
-    getDataPointer: pointerId => {
-        if (pointerId === 'test')
-            return solution.data_pointer;
-        if (pointerId === 'partials')
-            return solution.data_pointer_partials;
-        else console.log('Unknown data pointer type in D3M adapter:', pointerId)
-    },
+    getDataPointer: pointerId => (solution.produce || {})[pointerId],
     getActualValues: target => {
         // lazy data loading
         results.loadActualValues(problem);
@@ -588,7 +594,7 @@ export function GRPC_SearchSolutionsRequest(problem, datasetDocUrl) {
     return {
         userAgent: TA3_GRPC_USER_AGENT, // set on django
         version: TA3TA2_API_VERSION, // set on django
-        timeBoundSearch: problem.timeBound || 0,
+        timeBoundSearch: problem.timeBoundSearch || 0,
         timeBoundRun: problem.timeBoundRun || 0,
         rankSolutionsLimit: problem.solutionsLimit || 0,
         priority: problem.priority || 0,
@@ -740,7 +746,6 @@ export async function handleGetSearchSolutionResultsResponse(response) {
     // }
 
     let selectedSolutions = results.getSelectedSolutions(solvedProblem);
-
     if (selectedSolutions.length === 0) results.setSelectedSolution(solvedProblem, 'd3m', response.id);
 
     m.redraw();
@@ -824,7 +829,7 @@ export async function handleGetScoreSolutionResultsResponse(response) {
  Handle a GetProduceSolutionResultsResponse sent via websockets
  -> parse response, retrieve data, plot data
  */
-export async function handleGetProduceSolutionResultsResponse(response, type) {
+export async function handleGetProduceSolutionResultsResponse(response) {
 
     if (response === undefined) {
         debugLog('handleGetProduceSolutionResultsResponse: Error.  "response" undefined');
@@ -865,13 +870,11 @@ export async function handleGetProduceSolutionResultsResponse(response, type) {
 
     let pointer = Object.values(response.response.exposedOutputs)[0].csvUri.replace('file://', '');
 
-    if (type === 'fittedValues') {
-        solvedProblem.solutions.d3m[response.pipelineId].data_pointer = pointer;
-        // console.warn("#debug produce results pointer");
-        // console.log(pointer);
-    }
-    else if (type === 'partialsValues')
-        solvedProblem.solutions.d3m[response.pipelineId].data_pointer_partials = pointer;
+    let pipeline = solvedProblem.solutions.d3m[response.pipelineId];
+    pipeline.produce = pipeline.produce || {};
+    pipeline.produce[response.produce_dataset_name] = pointer;
+    // console.warn("#debug produce results pointer");
+    // console.log(response.produce_dataset_name, pointer);
 
     m.redraw();
 }

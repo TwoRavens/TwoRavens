@@ -21,13 +21,20 @@ export let getSolverSpecification = async (problem, systemId) => {
     problem.datasetPathsManipulated = {};
 
     problem.solverState[systemId] = {thinking: true};
+
+    // add partials dataset to to datasetSchemas and datasetPaths
     problem.solverState[systemId].message = 'preparing partials data';
     m.redraw();
-    await app.materializePartials(problem);
+    if (!app.materializePartialsPromise[problem.problemID])
+        app.materializePartialsPromise[problem.problemID] = app.materializePartials(problem);
+    await app.materializePartialsPromise[problem.problemID];
 
+    // add train/test datasets to datasetSchemas and datasetPaths
     problem.solverState[systemId].message = 'preparing train/test splits';
     m.redraw();
-    if (!await app.materializeTrainTest(problem)) throw "Cannot solve problem without a train/test split.";
+    if (!app.materializeTrainTestPromise[problem.problemID])
+        app.materializeTrainTestPromise[problem.problemID] = app.materializeTrainTest(problem, problem.datasetSchemas.all);
+    await app.materializeTrainTestPromise[problem.problemID];
 
     problem.solverState[systemId].message = 'applying manipulations to data';
     m.redraw();
@@ -43,37 +50,47 @@ export let getSolverSpecification = async (problem, systemId) => {
     };
 };
 
+// GRPC_SearchSolutionsRequest
 let SPEC_search = problem => ({
     "input": {
-        "resource_uri": 'file://' + ((problem.datasetPathsManipulated || {}).train || problem.datasetPaths.train)
+        // search with 'all' if no out of sample split
+        "resource_uri": 'file://' + problem.outOfSampleSplit
+            ? ((problem.datasetPathsManipulated || {}).train || problem.datasetPaths.train)
+            : ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
     },
-    'problem': {
-        "name": problem.problemID,
-        "targets": problem.targets,
-        "predictors": app.getPredictorVariables(problem),
-        "categorical": app.getNominalVariables(problem),
-        "taskSubtype": app.d3mTaskSubtype[problem.subTask],
-        "taskType": app.d3mTaskType[problem.task]
-    },
-    "performanceMetric": {
-        "metric": app.d3mMetrics[problem.metric]
-    },
-    "configuration": {
-        "folds": problem.folds || 10,
-        "method": app.d3mEvaluationMethods[problem.evaluationMethod],
-        "randomSeed": problem.shuffleRandomSeed,
-        "shuffle": problem.shuffle,
-        "stratified": problem.stratified,
-        "trainTestRatio": problem.trainTestRatio
-    },
+    'problem': SPEC_problem(problem),
     "timeBoundSearch": (problem.timeBoundSearch || .5) * 60,
     "timeBoundRun": problem.timeBoundRun && problem.timeBoundRun * 60,
-    "rankSolutionsLimit": problem.solutionsLimit
+    "rankSolutionsLimit": problem.solutionsLimit,
+    "priority": problem.priority,
+
+    // pass the same criteria the models will be scored on to the search phase
+    "performanceMetric": {"metric": app.d3mMetrics[problem.metric]},
+    "configuration": SPEC_configuration(problem)
+});
+
+// GRPC_ProblemDescription
+let SPEC_problem = problem => ({
+    "name": problem.problemID,
+    "targets": problem.targets,
+    "predictors": app.getPredictorVariables(problem),
+    "categorical": app.getNominalVariables(problem),
+    "taskSubtype": app.d3mTaskSubtype[problem.subTask],
+    "taskType": app.d3mTaskType[problem.task]
+});
+
+let SPEC_configuration = problem => ({
+    "folds": problem.folds || 10,
+    "method": app.d3mEvaluationMethods[problem.evaluationMethod],
+    "randomSeed": problem.shuffleRandomSeed,
+    "shuffle": problem.shuffle,
+    "stratified": problem.stratified,
+    "trainTestRatio": problem.trainTestRatio
 });
 
 let SPEC_produce = problem => {
     let predict_types = ['RAW', 'PROBABILITIES'];
-    let dataset_types = ['test', 'train'];
+    let dataset_types = problem.outOfSampleSplit ? ['test', 'train'] : ['all'];
     if (problem.datasetPaths.partials) dataset_types.push('partials');
 
     return predict_types.flatMap(predict_type => dataset_types.flatMap(dataset_type => ({
@@ -97,6 +114,7 @@ let SPEC_score = problem => [{
         "name": "data_test",
         "resource_uri": 'file://' + ((problem.datasetPathsManipulated || {}).test || problem.datasetPaths.test)
     },
+    "configuration": SPEC_configuration(problem),
     "performanceMetrics": [problem.metric, ...problem.metrics]
         .map(metric => ({metric: app.d3mMetrics[metric]}))
 }];
@@ -134,6 +152,7 @@ export let getSystemAdapterWrapped = systemId => problem => ({
         problem.solverState[systemId].message = 'searching for solutions';
         problem.solverState[systemId].searchId = response.data.search_id;
         problem.selectedSolutions[systemId] = [];
+        results.resultsPreferences.selectedMetric = problem.metric;
         m.redraw()
     }),
     search: async () => m.request(SOLVER_SVC_URL + 'Search', {
@@ -179,13 +198,13 @@ export let getSolutionAdapter = (problem, solution) => ({
     getName: () => solution.model_id,
     getSystemId: () => solution.system,
     getSolutionId: () => solution.model_id,
-    getDataPointer: (pointerId, predict_type='RAW') => {
+    getDataPointer: (dataSplit, predict_type='RAW') => {
 
         let produce = solution.produce
             .find(produce =>
-                produce.input.name === pointerId &&
-                produce.input.predict_type === predict_type);
-        return produce && '/' + produce.data_pointer;
+                produce.input.name === dataSplit &&
+                produce.configuration.predict_type === predict_type);
+        return produce && ('/' + produce.data_pointer);
     },
     getActualValues: target => {
         // lazy data loading
@@ -248,7 +267,7 @@ let findProblem = data => {
     let problems = ((app.workspace || {}).raven_config || {}).problems || {};
     let solvedProblemId = Object.keys(problems)
         .find(problemId =>
-            ((problems[problemId].solverState || {})[data.system] || {}).searchId === data.search_id)
+            ((problems[problemId].solverState || {})[data.system] || {}).searchId === data.search_id);
     return problems[solvedProblemId];
 };
 
@@ -267,6 +286,10 @@ export let handleDescribeResponse = response => {
     if (response.success) {
         setRecursiveDefault(solvedProblem.solutions, [
             [data.system, {}], [data.model_id, data]]);
+
+        let selectedSolutions = results.getSelectedSolutions(solvedProblem);
+        if (selectedSolutions.length === 0) results.setSelectedSolution(solvedProblem, data.system, data.model_id);
+
         m.redraw()
     }
 };

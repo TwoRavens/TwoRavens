@@ -46,6 +46,12 @@ export let leftpanel = () => {
                 activeItem: resultsPreferences.target,
                 onclickChild: value => resultsPreferences.target = value,
                 style: {'margin-left': '1em'}
+            })), ' on data split ', m('div[style=display:inline-block]', m(Dropdown, {
+                id: 'dataSplitDropdown',
+                items: ['all'].concat(resultsProblem.outOfSampleSplit ? ['test', 'train'] : []),
+                activeItem: resultsPreferences.dataSplit,
+                onclickChild: value => resultsPreferences.dataSplit = value,
+                style: {'margin-left': '1em'}
             }))),
             // m(Dropdown, {
             //     id: 'pipelineDropdown',
@@ -56,7 +62,7 @@ export let leftpanel = () => {
             //     onclickChild: app.setResultsProblem
             // })
         ),
-        m('div#modelComparisonOption', {style: {display: 'inline-block'}},
+        m('div#modelComparisonOption', {style: {displayx: 'inline-block'}},
             m('input#modelComparisonCheck[type=checkbox]', {
                 onclick: m.withAttr("checked", setModelComparison),
                 checked: modelComparison,
@@ -598,7 +604,7 @@ export class CanvasSolutions {
                             'input': m(Button, {onclick: () => app.downloadFile(problem.datasetPaths.partials)}, 'Download'),
                             'output': m(Button, {onclick: () => app.downloadFile(firstSolution.data_pointer_partials)}, 'Download'),
                         }
-                    ] : firstSolution.produce.map(produce =>
+                    ] : (firstSolution.produce || []).map(produce =>
                         ({
                             'name': produce.input.name,
                             'predict type': produce.configuration.predict_type,
@@ -821,9 +827,9 @@ let getSolutionTable = (problem, systemId) => {
     return m(Table, {
         id: 'solutionTable' + (systemId || ''), data,
         sortable: true, showUID: false,
-        sortHeader: selectedMetric,
-        setSortHeader: header => selectedMetric = header,
-        sortDescending: !reverseSet.includes(selectedMetric),
+        sortHeader: resultsPreferences.selectedMetric,
+        setSortHeader: header => resultsPreferences.selectedMetric = header,
+        sortDescending: !reverseSet.includes(resultsPreferences.selectedMetric),
         activeRow: new Set(adapters
             .filter(adapter => problem.selectedSolutions[adapter.getSystemId()].includes(adapter.getSolutionId()))),
         onclick: adapter => setSelectedSolution(problem, adapter.getSystemId(), adapter.getSolutionId())
@@ -861,15 +867,13 @@ let resultsPreferences = {
     mode: 'EFD',
     predictor: undefined,
     target: undefined,
-    plotScores: 'all'
+    plotScores: 'all',
+    selectedMetric: undefined
 };
 
 // labels for variable importance X/Y axes
 export let valueLabel = "Observation";
 export let variableLabel = "Dependent Variable";
-
-export let selectedMetric = undefined;
-export let setSelectedMetric = metric => selectedMetric = metric;
 
 // array of metrics to sort low to high
 export let reverseSet = [
@@ -884,7 +888,7 @@ export let otherSearches = {};
  */
 let sortPipelineTable = (a, b) => typeof a === 'string'
     ? app.omniSort(a, b)
-    : (b - a) * (reverseSet.includes(selectedMetric) ? -1 : 1);
+    : (b - a) * (reverseSet.includes(resultsPreferences.selectedMetric) ? -1 : 1);
 
 let resultsSubpanels = {
     'Prediction Summary': true,
@@ -1110,9 +1114,6 @@ export let resultsData = {
     }
 };
 
-export let dataSplit;
-export let setDataSplit = value => dataSplit = value;
-
 export let resultsQuery = [];
 
 export let recordLimit = 1000;
@@ -1120,12 +1121,13 @@ export let recordLimit = 1000;
 export let loadProblemData = async problem => {
     if (resultsData.id.problemID === problem.problemID &&
         JSON.stringify(resultsData.id.query) === JSON.stringify(resultsQuery) &&
-        resultsData.id.dataSplit === dataSplit)
+        resultsData.id.dataSplit === resultsPreferences.dataSplit)
         return;
 
     resultsData.id.query = resultsQuery;
     resultsData.id.problemID = problem.problemID;
     resultsData.id.solutionID = undefined;
+    resultsData.id.dataSplit = resultsPreferences.dataSplit;
 
     // problem specific, one problem stored
     resultsData.actuals = undefined;
@@ -1195,7 +1197,7 @@ export let loadActualValues = async problem => {
                         abstractQuery: [
                             {
                                 column: "d3mIndex",
-                                children: problem.indices[dataSplit].map(index => ({value: index})),
+                                children: problem.indices[resultsPreferences.dataSplit].map(index => ({value: index})),
                                 subset: 'discrete',
                                 type: 'rule'
                             }
@@ -1237,7 +1239,7 @@ export let loadFittedValues = async (problem, adapter) => {
     // load dependencies, which can clear loading state if problem, etc. changed
     await loadSolutionData(problem, adapter);
 
-    let dataPointer = adapter.getDataPointer('test');
+    let dataPointer = adapter.getDataPointer(resultsPreferences.dataSplit);
 
     // don't attempt to load if there is no data
     if (!dataPointer) return;
@@ -1420,7 +1422,7 @@ export let loadConfusionData = async (problem, adapter) => {
     // load dependencies, which can clear loading state if problem, etc. changed
     await loadSolutionData(problem, adapter);
 
-    let dataPointer = adapter.getDataPointer('test');
+    let dataPointer = adapter.getDataPointer(resultsPreferences.dataSplit);
 
     // don't load if data is not available
     if (!dataPointer)
@@ -1450,7 +1452,6 @@ export let loadConfusionData = async (problem, adapter) => {
 
     let tempQuery = JSON.stringify(resultsData.id.query);
     let response;
-    console.warn('dataPointer', dataPointer);
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-confusion-data`, {
             method: 'POST',
@@ -1499,7 +1500,7 @@ export let loadImportanceEFDData = async (problem, adapter) => {
     // load dependencies, which can clear loading state if problem, etc. changed
     await loadSolutionData(problem, adapter);
 
-    let dataPointer = adapter.getDataPointer('test');
+    let dataPointer = adapter.getDataPointer(resultsPreferences.dataSplit);
 
     // don't load if data is not available
     if (!dataPointer)
