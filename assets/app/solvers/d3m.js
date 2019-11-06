@@ -34,11 +34,9 @@ export let getSolverSpecification = async problem => {
     problem.solverState.d3m.message = 'initiating the search for solutions';
     m.redraw();
 
-    let trainDatasetSchema = problem.datasetSchemas[problem.outOfSampleSplit ? 'train' : 'all'];
-
     let allParams = {
-        searchSolutionParams: GRPC_SearchSolutionsRequest(problem, trainDatasetSchema),
-        fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(trainDatasetSchema),
+        searchSolutionParams: GRPC_SearchSolutionsRequest(problem, problem.datasetSchemas.all),
+        fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(problem.datasetSchemas[problem.outOfSampleSplit ? 'train' : 'all']),
         scoreSolutionDefaultParams: GRPC_ScoreSolutionRequest(problem, problem.datasetSchemas.all),
         produceSolutionDefaultParams: {}
     };

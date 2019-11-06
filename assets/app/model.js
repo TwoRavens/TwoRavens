@@ -644,8 +644,16 @@ export let rightpanel = () => {
                         m(TextField, {
                             id: 'sampleRatioOption',
                             disabled: isLocked,
-                            value: selectedProblem.inOutSampleRatio || 0,
-                            onblur: !isLocked && (value => selectedProblem.inOutSampleRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
+                            value: selectedProblem.sampleTrainTestRatio || 0,
+                            onblur: !isLocked && (value => selectedProblem.sampleTrainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
+                            style: {'margin-bottom': '1em'}
+                        }),
+                        m('label[style=margin-top:0.5em]', 'Splits file (optional)'),
+                        m(TextField, {
+                            id: 'textFieldSampleSplitsFile',
+                            disabled: isLocked,
+                            value: selectedProblem.sampleSplitsFile,
+                            onblur: !isLocked && (value => selectedProblem.sampleSplitsFile = value),
                             style: {'margin-bottom': '1em'}
                         })
                     ]),

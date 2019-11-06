@@ -38,8 +38,6 @@ import math
 
 from sklearn.model_selection import train_test_split
 import pandas as pd
-import numpy as np
-
 
 #
 # Import Tasks to SearchSolutions/GetSearchSolutionsResults,
@@ -216,13 +214,20 @@ def split_dataset(configuration, workspace):
     sample_limit = configuration.get('sample_limit', 1000)
     temporal_variable = configuration.get('temporal_variable')
 
-    # TODO: don't ignore splits file
-    splits_file_path = configuration.get('splits_file')
-    if splits_file_path:
-        pass
+    # TODO: use d3m splitting primitive
+    in_out_sample_splits_file_dir = configuration.get('in_out_sample_splits_file')
+    if in_out_sample_splits_file_dir:
+        splits_dataframe = pd.read_csv(in_out_sample_splits_file_dir)
+        train_indices = set(splits_dataframe[splits_dataframe.type == 'TRAIN']['d3mIndex'].tolist())
+        test_indices = set(splits_dataframe[splits_dataframe.type == 'TEST']['d3mIndex'].tolist())
+        splits = {
+            'train': dataframe[dataframe.d3mIndex.isin(train_indices)],
+            'test': dataframe[dataframe.d3mIndex.isin(test_indices)],
+            'stratify': False
+        }
 
     # split dataset along temporal variable
-    if temporal_variable:
+    elif temporal_variable:
         num_test_records = math.ceil(train_test_ratio * len(dataframe))
         sorted_index = [
             x for _, x in sorted(
@@ -269,7 +274,7 @@ def split_dataset(configuration, workspace):
         shutil.rmtree(dest_directory)
         shutil.copytree(workspace.d3m_config.training_data_root, dest_directory)
         os.remove(csv_path)
-        writable_dataframe.to_csv(csv_path)
+        splits[role].to_csv(csv_path, index=False)
 
         sample_count = configuration.get("sampleCount", min(sample_limit, len(writable_dataframe)))
         indices = writable_dataframe['d3mIndex'].astype('int32') \

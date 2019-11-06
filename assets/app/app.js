@@ -1091,7 +1091,10 @@ let buildDefaultProblem = problemDoc => {
         subTask: problemDoc.about.taskSubtype,
 
         outOfSampleSplit: true,
-        inOutSampleRatio: 0.7,
+        sampleTrainTestRatio: (problemDoc.inputs.sampleSplits || {}).testSize || 0.35,
+        sampleSplitsFile: (problemDoc.inputs.sampleSplits || {}).splitsFile,
+        sampleSplitsDir: (problemDoc.inputs.sampleSplits || {}).splitsDir,
+
         evaluationMethod: problemDoc.inputs.dataSplits.method || 'kFold',
         trainTestRatio: problemDoc.inputs.dataSplits.testSize,
         stratified: problemDoc.inputs.dataSplits.stratified,
@@ -1697,7 +1700,7 @@ export let materializeTrainTest = async problem => {
             dataset_schema: problem.datasetSchemas.all,
             train_test_ratio: problem.trainTestRatio,
             stratified: problem.stratified,
-            splits_file: problem.splitsFile,
+            splits_file: problem.sampleSplitsDir && problem.sampleSplitsFile && (problem.sampleSplitsDir + '/' + problem.sampleSplitsFile),
             shuffle: problem.shuffle,
             random_seed: problem.randomSeed,
         }
@@ -1807,7 +1810,7 @@ export function discovery(problems) {
             meaningful: false,
 
             outOfSampleSplit: true,
-            inOutSampleRatio: 0.7,
+            sampleTrainTestRatio: 0.7,
             evaluationMethod: 'kFold',
             manipulations: manips,
             solutions: {

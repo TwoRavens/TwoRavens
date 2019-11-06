@@ -13,6 +13,9 @@ from scipy.sparse import csr_matrix
 
 from model import SAVED_MODELS_PATH, R_SERVICE, get_metric
 from util_dataset import Dataset
+from collections import defaultdict
+
+from sklearn import model_selection
 
 
 class Model(object):
@@ -133,6 +136,54 @@ class ModelSklearn(Model):
                 'metric': metric,
                 'target': self.targets[0]
             })
+
+        # if configuration['method'] == 'K_FOLD':
+        #     split_arguments = {
+        #         'n_splits': configuration['folds'],
+        #         'shuffle': configuration['shuffle']
+        #     }
+        #     if configuration['stratified']:
+        #         splitter = model_selection.StratifiedKFold(**split_arguments)
+        #     else:
+        #         splitter = model_selection.KFold(**split_arguments)
+        #
+        # elif configuration['method'] == 'HOLDOUT':
+        #     if configuration['stratified']:
+        #         splitter = model_selection.ShuffleSplit()
+        #     else:
+        #         splitter = model_selection.StratifiedShuffleSplit()
+        # else:
+        #     raise ValueError(f'Invalid evaluation method: {configuration.method}')
+        #
+        # split_scores = defaultdict(list)
+        # for train_split, test_split in splitter.split(stimulus, actual):
+        #     if self.system == 'mlbox':
+        #         # must have a dense pandas array
+        #         if issubclass(type(train_split), csr_matrix):
+        #             train_split = train_split.toarray()
+        #         train_split = pandas.DataFrame(train_split)
+        #
+        #     if self.system == 'mljar-supervised':
+        #         # must have a pandas array with formatted column names (so they don't get modified by the solver)
+        #         train_split = pandas.DataFrame(train_split)
+        #         train_split.columns = [str(i).strip() for i in train_split.columns]
+        #
+        #     predicted = self.model.predict(train_split)
+        #
+        #     if self.system == 'mljar-supervised':
+        #         predicted = pandas.DataFrame((predicted.idxmax(axis=1) == 'p_1').astype(int))
+        #         predicted.columns = [self.targets[0]]
+        #
+        #     for metric in specification['performanceMetrics']:
+        #         split_scores[metric].append(get_metric(metric)(actual, predicted))
+        #
+        # scores = []
+        # for metric in split_scores:
+        #     scores.append({
+        #         'value': np.average(split_scores[metric]),
+        #         'metric': metric,
+        #         'target': self.targets[0]
+        #     })
 
         return {
             'search_id': self.search_id,
