@@ -219,13 +219,13 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
 
+
+RAVENS_SERVER_NAME = os.environ.get('RAVENS_SERVER_NAME',
+                                    '2ravens.org')
 
 SESSION_COOKIE_NAME = os.environ.get('SESSION_COOKIE_NAME',
                                      '2ravens_base')

@@ -23,6 +23,9 @@ DATABASES = {
     }
 }
 
+RAVENS_SERVER_NAME = os.environ.get('RAVENS_SERVER_NAME',
+                                    '2ravens.org')
+
 SESSION_COOKIE_NAME = os.environ.get('SESSION_COOKIE_NAME',
                                      'two_ravens_local')
 

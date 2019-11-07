@@ -763,8 +763,10 @@ def set_eventdata_public_site():
 @task
 def set_2ravens_public_site():
     """Set the current Site to '2ravens.org'"""
-    set_django_site('2ravens.org',
-                    '2ravens.org')
+    domain_name = os.environ.get('RAVENS_SERVER_NAME',
+                                 '2ravens.org')
+    set_django_site(domain_name,
+                    domain_name)
 
 
 @task
