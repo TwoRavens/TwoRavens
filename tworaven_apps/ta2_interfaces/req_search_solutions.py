@@ -33,6 +33,7 @@ def search_solutions(raven_json_str=None):
     """
     Send a SearchSolutionsRequest to the SearchSolutions command
     """
+    print('raven_json_str', raven_json_str)
     if raven_json_str is None:
         err_msg = 'No data found for the SearchSolutionsRequest'
         return err_resp(err_msg)
@@ -43,12 +44,12 @@ def search_solutions(raven_json_str=None):
         json_str_info = json_dumps(raven_json_str)
         if not json_str_info.success:
             return json_str_info
+
         raven_json_str = json_str_info.result_obj
 
     else:
-        # --------------------------------
-        # Make sure it's valid JSON
-        # --------------------------------
+        # Make sure the string is valid JSON
+        #
         raven_json_info = json_loads(raven_json_str)
         if not raven_json_info.success:
             return err_resp(raven_json_info.err_msg)

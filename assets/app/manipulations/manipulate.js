@@ -212,7 +212,12 @@ export function varList() {
             callback: ['transform', 'imputation'].includes(constraintMenu.type)
                 ? variable => constraintPreferences.select(variable) // the select function is defined inside CanvasTransform
                 : variable => setConstraintColumn(variable, constraintMenu.pipeline),
-            popup: x => m('div', m('h4', 'Summary Statistics for ' + x), m(Table, {attrsAll: {class: 'table-sm'}, data: formatVariableSummary(app.variableSummaries[x])})),
+            popup: x => m('div',
+                          m('h4', 'Summary Statistics for ' + x),
+                          m(Table, {
+                            attrsAll: {class: 'table-sm'},
+                            data: formatVariableSummary(app.variableSummaries[x])
+                          })),
             popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
             attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
             attrsAll: {

@@ -292,7 +292,7 @@ export let leftpanel = forceData => {
                                 pipeline: problemPipeline
                             });
                             common.setPanelOpen('left');
-                            app.setLeftTab('Variables');
+                            app.setLeftTab(app.LEFT_TAB_NAME_VARIABLES);
                         }
                     }, 'Create New Variable'),
                 ]

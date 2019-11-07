@@ -1,10 +1,11 @@
 import m from 'mithril';
 import * as d3 from "d3";
 import PlotVegaLite from "./PlotVegaLite";
-import {formatPrecision} from "../app";
+import {formatPrecision, saveSystemLogEntry} from "../app";
 import Table from "../../common/views/Table";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import {italicize} from "../index";
+
 
 export default class VariableSummary {
     oninit() {
@@ -109,6 +110,16 @@ export default class VariableSummary {
 
 export let formatVariableSummary = variable => {
     if (!variable) return;
+
+    /*
+    let logParams = {
+                  feature_id: 'VIEW_VARIABLE_SUMMARY',
+                  activity_l1: 'DATA_PREPARATION',
+                  activity_l2: 'DATA_EXPLORE',
+                  other: {variable: variable.name}
+                }
+    saveSystemLogEntry(logParams);
+    */
 
     // d3 significant digit formatter
     let rint = d3.format('r');

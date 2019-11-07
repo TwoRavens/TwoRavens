@@ -125,6 +125,9 @@ export let leftpanel = () => {
         })
     ];
 
+    /*
+      This is the Left Menu with tabs:  Problems | Solutions
+     */
     let tabbedResults = m(MenuTabbed, {
         id: 'resultsMenu',
         attrsAll: {style: {height: 'calc(100% - 8px)'}},
@@ -149,7 +152,20 @@ export let leftpanel = () => {
                                 problem.d3mSolverState !== undefined && m(Button, {
                                     title: 'stop the search',
                                     class: 'btn-sm',
-                                    onclick: () => solverD3M.stopSearch(problem.d3mSearchId)
+                                    onclick: () => {
+                                      // User clicks the 'Stop' button next to
+                                      // a particular problem search
+
+                                      // behavioral logging
+                                      let logParams = {
+                                                    feature_id: 'RESULTS_STOP_PROBLEM_SEARCH',
+                                                    activity_l1: 'MODEL_SELECTION',
+                                                    activity_l2: 'PROBLEM_SEARCH_SELECTION'
+                                                  };
+                                      app.saveSystemLogEntry(logParams);
+
+                                      solverD3M.stopSearch(problem.d3mSearchId);
+                                    }
                                 }, m(Icon, {name: 'stop'}))
                             ]),
                         headers: ['Name', 'Targets', 'Search ID', 'State', 'Stop'],
@@ -181,7 +197,7 @@ export let leftpanel = () => {
             },
             {
                 value: 'Solutions',
-                contents: resultsContent
+                contents: resultsContent,
             }
         ]
     });
@@ -757,9 +773,33 @@ let getSolutionAdapter = (problem, solution) => ({
     rook: solverRook.getSolutionAdapter, d3m: solverD3M.getSolutionAdapter
 }[solution.source](problem, solution));
 
-let leftTabResults = 'Solutions';
-let setLeftTabResults = tab => leftTabResults = tab;
+/*
+  Set the leftTab value
+ */
+let leftTabResults = 'Solutions'; // default value
 
+/*
+  The name of the tab will bring the selected tab to the forefront,
+  similar to clicking the tab button
+ */
+let setLeftTabResults = tabName => {
+
+  leftTabResults = tabName;
+  console.log('tab: ' + tabName);
+
+  // behavioral logging
+  let logParams = tabName === 'Solutions' ? {
+                feature_id: 'RESULTS_VIEW_SOLUTIONS',
+                activity_l1: 'MODEL_SELECTION',
+                activity_l2: 'MODEL_SUMMARIZATION',
+              }: {
+                feature_id: 'RESULTS_VIEW_PROBLEM_SEARCHES',
+                activity_l1: 'MODEL_SELECTION',
+                activity_l2: 'PROBLEM_SEARCH_SELECTION',
+              }
+  app.saveSystemLogEntry(logParams);
+
+}
 let resultsPreferences = {
     mode: 'EFD',
     predictor: undefined,
