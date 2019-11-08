@@ -27,6 +27,12 @@ export let getSolutionAdapter = (problem, solution) => ({
         // cached data is current, return it
         return problemData && problemData.map(point => point[target]);
     },
+    getAdditionalValues: target => {
+        loadAdditionalValues(problem);
+
+        let extraData = resultsData.additional;
+        return extraData && extraData.map(point => point[target]);
+    },
     getFittedValues: target => {
         // lazy data loading
         loadFittedValues(problem, solution);
@@ -83,6 +89,9 @@ export let resultsData = {
     actuals: undefined,
     actualsLoading: false,
 
+    additional: undefined,
+    additionalLoading: false,
+
     // cached data is specific to the problem
     fitted: {},
     fittedLoading: {},
@@ -129,6 +138,10 @@ export let loadProblemData = async problem => {
     // problem specific, one problem stored
     resultsData.actuals = undefined;
     resultsData.actualsLoading = false;
+
+    // problem specific, should be convert to array in later revision
+    resultsData.additional = undefined;
+    resultsData.additionalLoading = false;
 
     // solution specific, all solutions stored
     resultsData.fitted = {};
@@ -225,6 +238,71 @@ export let loadActualValues = async problem => {
 
     resultsData.actuals = response;
     resultsData.actualsLoading = false;
+
+    m.redraw()
+};
+
+export let loadAdditionalValues = async problem => {
+
+    // reset if id is different
+    await loadProblemData(problem);
+
+    // don't load if systems are already in loading state
+    if (resultsData.additionalLoading)
+        return;
+
+    // don't load if already loaded
+    if (resultsData.additional)
+        return;
+
+    // begin blocking additional requests to load
+    resultsData.additionalLoading = true;
+
+    let tempQuery = JSON.stringify(resultsData.id.query);
+    let response;
+    try {
+        response = await app.getData({
+            method: 'aggregate',
+            query: JSON.stringify(queryMongo.buildPipeline(
+                [
+                    ...workspace.raven_config.hardManipulations,
+                    ...problem.manipulations,
+                    {
+                        type: "subset",
+                        abstractQuery: [
+                            {
+                                column: "d3mIndex",
+                                children: problem.indices.map(index => ({value: index})),
+                                subset: 'discrete',
+                                type: 'rule'
+                            }
+                        ]
+                    },
+                    {
+                        type: 'menu',
+                        metadata: {
+                            type: 'data',
+                            variables: ['d3mIndex', ...problem.targets, ...problem.predictors],
+                            sample: recordLimit
+                        }
+                    },
+                ],
+                workspace.raven_config.variablesInitial)['pipeline'])
+        })
+    } catch (err) {
+        app.alertWarn('Dependent variables have not been loaded. Some plots will not load.')
+    }
+
+    // don't accept if problemID changed
+    if (resultsData.id.problemID !== problem.problemID)
+        return;
+
+    // don't accept if query changed
+    if (JSON.stringify(resultsData.id.query) !== tempQuery)
+        return;
+
+    resultsData.additional = response;
+    resultsData.additionalLoading = false;
 
     m.redraw()
 };
