@@ -11,10 +11,10 @@ import Table from "../../common/views/Table";
 
 export let getSolverSpecification = async problem => {
 
-    problem.datasetSchemas = {
+    problem.datasetSchemas = problem.datasetSchemas || {
         all: app.workspace.d3m_config.dataset_schema
     };
-    problem.datasetPaths = {
+    problem.datasetPaths = problem.datasetPaths || {
         all: app.workspace.datasetPath
     };
 

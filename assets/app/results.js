@@ -33,7 +33,15 @@ export let leftpanel = () => {
 
     if (!resultsProblem) return;
 
-    let solverSystems = ['auto_sklearn', 'tpot', 'mlbox', 'mljar-supervised', 'ludwig', 'h2o', 'caret']
+    let solverSystemNames = ['auto_sklearn', 'tpot', 'mlbox', 'ludwig', 'h2o', 'caret'];
+
+    // mljar-supervised only supports binary classification
+    if (resultsProblem.task && resultsProblem.subTask &&
+        resultsProblem.task.toLowerCase().includes('classification') &&
+        resultsProblem.subTask.toLowerCase().includes('binary'))
+        solverSystemNames.push('mljar-supervised');
+
+    let solverSystems = solverSystemNames
         .reduce((out, systemId) => Object.assign(out, {
             [systemId]: solverWrapped.getSystemAdapterWrapped(systemId)
         }), {d3m: solverD3M.getD3MAdapter});

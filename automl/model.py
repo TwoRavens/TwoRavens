@@ -1,4 +1,4 @@
-
+import math
 import sklearn.metrics
 
 SAVED_MODELS_PATH = '/ravens_volume/solvers/models/'
@@ -41,6 +41,8 @@ def get_metric(specification):
         return lambda actual, predicted: sklearn.metrics.roc_auc_score(actual, predicted, average="micro")
     if specification['metric'] == "ROC_AUC_MACRO":
         return lambda actual, predicted: sklearn.metrics.roc_auc_score(actual, predicted, average="macro")
+    if specification['metric'] == 'ROOT_MEAN_SQUARED_ERROR':
+        return lambda actual, predicted: math.sqrt(sklearn.metrics.mean_squared_error(actual, predicted))
     if specification['metric'] == "MEAN_SQUARED_ERROR":
         return sklearn.metrics.mean_squared_error
     if specification['metric'] == "MEAN_ABSOLUTE_ERROR":

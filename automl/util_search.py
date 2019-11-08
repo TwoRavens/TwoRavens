@@ -228,6 +228,9 @@ class SearchH2O(Search):
         # CV models are useful for model comparisons
         # self.system_params['keep_cross_validation_models'] = True
 
+        if 'CLASSIFICATION' in self.specification['problem']['taskType']:
+            train[y] = train[y].asfactor()
+
         train_params = {
             "x": X,
             "y": y,
@@ -239,9 +242,6 @@ class SearchH2O(Search):
         automl = H2OAutoML(**self.system_params)
         automl.train(**train_params)
 
-        print(automl)
-        print(automl.leaderboard)
-        # TODO: extract more than one model
         if not automl.leader:
             return {
                 KEY_SUCCESS: False,
@@ -252,9 +252,7 @@ class SearchH2O(Search):
                 }
             }
 
-        print("leaderboard:", automl.leaderboard)
         leaderboard = automl.leaderboard
-        print(leaderboard.columns[0])
 
         # take up to 10 models
         for model_id in leaderboard.head(10).as_data_frame()['model_id']:
@@ -262,7 +260,8 @@ class SearchH2O(Search):
                 h2o.get_model(model_id),
                 search_id=self.search_id,
                 predictors=X,
-                targets=[y])
+                targets=[y],
+                task=self.specification['problem']['taskType'])
             model.save()
 
             self.callback_found(model, self.callback_params)
@@ -435,7 +434,7 @@ class SearchLudwig(Search):
 
 
 class SearchMLJarSupervised(Search):
-    system = 'mljar-unsupervised'
+    system = 'mljar-supervised'
 
     def run(self):
         from supervised.automl import AutoML
@@ -462,16 +461,17 @@ class SearchMLJarSupervised(Search):
 
         automl.fit(stimulus, dataframe[y])
 
-        model = ModelSklearn(
-            automl._best_model,
-            system='mljar-supervised',
-            search_id=self.search_id,
-            predictors=X,
-            targets=[y],
-            preprocess=preprocessor)
+        for model_mljar in sorted(automl._models, key=lambda m: m.get_final_loss())[:10]:
+            model = ModelSklearn(
+                model_mljar,
+                system='mljar-supervised',
+                search_id=self.search_id,
+                predictors=X,
+                targets=[y],
+                preprocess=preprocessor)
 
-        model.save()
-        self.callback_found(model, self.callback_params)
+            model.save()
+            self.callback_found(model, self.callback_params)
 
         return {
             KEY_SUCCESS: True,

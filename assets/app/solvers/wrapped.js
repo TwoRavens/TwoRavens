@@ -10,10 +10,10 @@ export let SOLVER_SVC_URL = '/solver-service/';
 
 export let getSolverSpecification = async (problem, systemId) => {
 
-    problem.datasetSchemas = {
+    problem.datasetSchemas = problem.datasetSchemas || {
         all: app.workspace.d3m_config.dataset_schema
     };
-    problem.datasetPaths = {
+    problem.datasetPaths = problem.datasetPaths || {
         all: app.workspace.datasetPath
     };
     problem.datasetIndices = {};
@@ -54,9 +54,9 @@ export let getSolverSpecification = async (problem, systemId) => {
 let SPEC_search = problem => ({
     "input": {
         // search with 'all' if no out of sample split
-        "resource_uri": 'file://' + problem.outOfSampleSplit
+        "resource_uri": 'file://' + (problem.outOfSampleSplit
             ? ((problem.datasetPathsManipulated || {}).train || problem.datasetPaths.train)
-            : ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
+            : ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all))
     },
     'problem': SPEC_problem(problem),
     "timeBoundSearch": (problem.timeBoundSearch || .5) * 60,
@@ -89,11 +89,17 @@ let SPEC_configuration = problem => ({
 });
 
 let SPEC_produce = problem => {
+    let train_split = problem.outOfSampleSplit ? 'train' : 'all';
     let predict_types = ['RAW', 'PROBABILITIES'];
     let dataset_types = problem.outOfSampleSplit ? ['test', 'train'] : ['all'];
     if (problem.datasetPaths.partials) dataset_types.push('partials');
 
     return predict_types.flatMap(predict_type => dataset_types.flatMap(dataset_type => ({
+        'train': {
+            'name': 'train',
+            "resource_uri": 'file://' +
+                ((problem.datasetPathsManipulated || {})[train_split] || problem.datasetPaths[train_split])
+        },
         'input': {
             'name': dataset_type,
             "resource_uri": 'file://' + (
@@ -200,11 +206,11 @@ export let getSolutionAdapter = (problem, solution) => ({
     getSolutionId: () => solution.model_id,
     getDataPointer: (dataSplit, predict_type='RAW') => {
 
-        let produce = solution.produce
+        let produce = (solution.produce || [])
             .find(produce =>
                 produce.input.name === dataSplit &&
                 produce.configuration.predict_type === predict_type);
-        return produce && ('/' + produce.data_pointer);
+        return produce && produce.data_pointer;
     },
     getActualValues: target => {
         // lazy data loading
