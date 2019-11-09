@@ -19,7 +19,7 @@ from sklearn import model_selection
 
 
 class Model(object):
-    def __init__(self, model, system, predictors, targets, model_id=None, search_id=None, train_specification=None):
+    def __init__(self, model, system, predictors, targets, model_id=None, search_id=None, train_specification=None, task=None):
         self.model = model
         self.system = system
         self.model_id = model_id or str(uuid.uuid4())
@@ -29,6 +29,7 @@ class Model(object):
 
         # which dataset model is currently trained on
         self.train_specification = train_specification
+        self.task = task
 
     @abc.abstractmethod
     def describe(self):
@@ -71,7 +72,8 @@ class Model(object):
                 model_id=model_id,
                 search_id=metadata['search_id'],
                 train_specification=metadata['train_specification'],
-                preprocess=preprocess)
+                preprocess=preprocess,
+                task=metadata['task'])
 
         if metadata['system'] == 'ludwig':
             return ModelLudwig(
@@ -79,7 +81,8 @@ class Model(object):
                 predictors=metadata['predictors'],
                 targets=metadata['targets'],
                 model_id=model_id,
-                search_id=metadata['search_id'])
+                search_id=metadata['search_id'],
+                task=metadata['task'])
 
         if metadata['system'] == 'h2o':
             return ModelH2O(
@@ -88,7 +91,8 @@ class Model(object):
                 predictors=metadata['predictors'],
                 targets=metadata['targets'],
                 search_id=metadata['search_id'],
-                train_specification=metadata['train_specification'])
+                train_specification=metadata['train_specification'],
+                task=metadata['task'])
 
         raise ValueError(f'System type "{metadata["system"]}" is not recognized.')
 
@@ -116,8 +120,8 @@ class Model(object):
 
 
 class ModelSklearn(Model):
-    def __init__(self, model, system, predictors, targets, model_id=None, search_id=None, preprocess=None, train_specification=None):
-        super().__init__(model, system, predictors, targets, model_id, search_id, train_specification)
+    def __init__(self, model, system, predictors, targets, model_id=None, search_id=None, preprocess=None, train_specification=None, task=None):
+        super().__init__(model, system, predictors, targets, model_id, search_id, train_specification, task)
         # categorical one hot encoding
         self.preprocess = preprocess
 
@@ -140,7 +144,7 @@ class ModelSklearn(Model):
         }
 
     def score(self, specification):
-        dataframe = Dataset(specification['input']).get_dataframe()
+        dataframe = Dataset(specification['input']).get_dataframe().dropna()
 
         if self.system == 'mlbox':
             # must have a dense pandas array
@@ -161,8 +165,11 @@ class ModelSklearn(Model):
         for train_split, test_split in splits:
             self.fit(train_split)
 
-            actual = np.array(test_split[self.targets[0]]).astype(float)
+            actual = np.array(test_split[self.targets[0]])
             predicted = self.model.predict(test_split[self.predictors])
+
+            if 'CLASSIFICATION' in self.task:
+                actual = actual.astype(int)
 
             if self.system == 'mljar-supervised':
                 predicted = pandas.DataFrame((predicted.idxmax(axis=1) == 'p_1').astype(int))
@@ -208,9 +215,9 @@ class ModelSklearn(Model):
         configuration = specification.get('configuration', {})
         predict_type = configuration.get('predict_type', 'RAW')
 
-        self.fit(Dataset(specification['train']).get_dataframe(), specification['train'])
+        self.fit(Dataset(specification['train']).get_dataframe().dropna(), specification['train'])
         dataset = Dataset(specification['input'])
-        dataframe = dataset.get_dataframe()
+        dataframe = dataset.get_dataframe().dropna()
 
         stimulus = dataframe[self.predictors]
 
@@ -284,7 +291,8 @@ class ModelSklearn(Model):
                 'model_id': str(self.model_id),
                 'predictors': self.predictors,
                 'targets': self.targets,
-                'train_specification': self.train_specification
+                'train_specification': self.train_specification,
+                'task': self.task
             }, metadata_file)
 
         joblib.dump(self.model, os.path.join(model_folder_path, 'model.joblib'))
@@ -340,8 +348,7 @@ class ModelCaret(Model):
 
 class ModelH2O(Model):
     def __init__(self, model, predictors, targets, model_id=None, search_id=None, train_specification=None, task=None):
-        super().__init__(model, 'h2o', predictors, targets, model_id, search_id, train_specification)
-        self.task = task
+        super().__init__(model, 'h2o', predictors, targets, model_id, search_id, train_specification, task=task)
 
     def describe(self):
         return {
@@ -379,12 +386,23 @@ class ModelH2O(Model):
         for split_id in range(configuration['folds']):
             train, test = data[folds != split_id], data[folds == split_id]
             self.fit(train)
-            prediction = self.model.predict(test).as_data_frame()['predict']
-            actual = test[self.targets[0]].as_data_frame()[self.targets[0]]
+            results = pandas.DataFrame({
+                'predict': self.model.predict(test).as_data_frame()['predict'],
+                'actual': test[self.targets[0]].as_data_frame()[self.targets[0]]
+            }).dropna()
+
+            if 'CLASSIFICATION' in self.task:
+                results['actual'] = results['actual'].astype(int)
 
             for metric_schema in specification['performanceMetrics']:
-                split_scores[json.dumps(metric_schema)].append(get_metric(metric_schema)(actual, prediction))
-                split_weights[json.dumps(metric_schema)].append(prediction.size)
+                try:
+                    split_scores[json.dumps(metric_schema)].append(get_metric(metric_schema)(
+                        results['actual'],
+                        results['predict']))
+                    split_weights[json.dumps(metric_schema)].append(results.size)
+                except ValueError as err:
+                    print(f'Could not evaluate metric: {str(metric_schema)}')
+                    print(err)
 
         scores = []
 
@@ -474,8 +492,8 @@ class ModelH2O(Model):
 
 
 class ModelLudwig(Model):
-    def __init__(self, model, predictors, targets, model_id=None, search_id=None, train_specification=None):
-        super().__init__(model, 'ludwig', predictors, targets, model_id, search_id, train_specification)
+    def __init__(self, model, predictors, targets, model_id=None, search_id=None, train_specification=None, task=None):
+        super().__init__(model, 'ludwig', predictors, targets, model_id, search_id, train_specification, task)
 
     def describe(self):
         return {
@@ -556,5 +574,6 @@ class ModelLudwig(Model):
                 'model_id': self.model_id,
                 'model_filename': model_folder_path.replace(model_path, ''),
                 'predictors': self.predictors,
-                'targets': self.targets
+                'targets': self.targets,
+                'task': self.task
             }, metadata_file)

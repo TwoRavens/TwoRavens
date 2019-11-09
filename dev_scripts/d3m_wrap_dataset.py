@@ -134,6 +134,7 @@ def d3m_wrap_dataset(outputDir, dataPaths, about, problem):
                 'problemID': problemID,
                 'problemName': problem.get('problemName', about['datasetName'] + ' problem'),
                 'taskType': problem.get('taskType', 'regression'),
+                'taskSubType': problem.get('taskSubType', 'regression'),
                 'problemSchemaVersion': PROBLEM_SCHEMA_VERSION,
                 'problemVersion': '1.0'
             },

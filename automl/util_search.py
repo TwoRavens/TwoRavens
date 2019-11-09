@@ -88,7 +88,7 @@ class SearchAutoSklearn(Search):
 
         dataset = Dataset(self.specification['input'])
 
-        dataframe = dataset.get_dataframe()
+        dataframe = dataset.get_dataframe().dropna()
         stimulus, preprocessor = preprocess(dataframe, self.specification)
 
         x = self.specification['problem']['predictors']
@@ -144,7 +144,8 @@ class SearchAutoSklearn(Search):
             search_id=self.search_id,
             predictors=x,
             targets=[y],
-            preprocess=preprocessor)
+            preprocess=preprocessor,
+            task=self.specification['problem']['taskType'])
         model.save()
 
         self.callback_found(model, self.callback_params)
@@ -320,7 +321,8 @@ class SearchTPOT(Search):
                 search_id=self.search_id,
                 predictors=X,
                 targets=[y],
-                preprocess=preprocessor)
+                preprocess=preprocessor,
+                task=self.specification['problem']['taskType'])
             model.save()
 
             self.callback_found(model, self.callback_params)
@@ -366,7 +368,8 @@ class SearchMLBox(Search):
             search_id=self.search_id,
             predictors=X,
             targets=[y],
-            preprocess=preprocessor)
+            preprocess=preprocessor,
+            task=self.specification['problem']['taskType'])
         model.save()
 
         self.callback_found(model, self.callback_params)
@@ -418,7 +421,8 @@ class SearchLudwig(Search):
             automl,
             search_id=self.search_id,
             predictors=predictors,
-            targets=targets)
+            targets=targets,
+            task=self.specification['problem']['taskType'])
 
         model.save()
         self.callback_found(model, self.callback_params)
@@ -468,7 +472,8 @@ class SearchMLJarSupervised(Search):
                 search_id=self.search_id,
                 predictors=X,
                 targets=[y],
-                preprocess=preprocessor)
+                preprocess=preprocessor,
+                task=self.specification['problem']['taskType'])
 
             model.save()
             self.callback_found(model, self.callback_params)

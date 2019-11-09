@@ -51,7 +51,9 @@ def reformat_chenowith_ulfelder(dataset_name, predictors_function):
             'targets': targets,
             'predictors': predictors,
             'time': ['year'],
-            'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1']
+            'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1'],
+            'taskType': 'classification',
+            'taskSubType': 'binary'
         }
     )
 
@@ -103,11 +105,11 @@ def reformat_gelpi_avdan(dataset_name):
             'datasetName': dataset_name,
         },
         problem={
-            "taskType": "classification",
-            "taskSubType": "binary",
             'targets': targets,
             'predictors': predictors,
-            'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1']
+            'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1'],
+            'taskType': 'classification',
+            'taskSubType': 'binary'
         }
     )
 
@@ -164,7 +166,9 @@ def reformat_gleditsch_ward(dataset_name, predictors):
         problem={
             'targets': targets,
             'predictors': predictors,
-            'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1']
+            'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1'],
+            'taskType': 'classification',
+            'taskSubType': 'binary'
         }
     )
 
@@ -215,11 +219,11 @@ def reformat_goldstone(dataset_name, dataset_filename):
             'datasetName': dataset_name,
         },
         problem={
-            "taskType": "classification",
-            "taskSubType": "binary",
             'targets': targets,
             'predictors': predictors,
-            'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1']
+            'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1'],
+            'taskType': 'classification',
+            'taskSubType': 'binary'
         }
     )
 
