@@ -152,7 +152,7 @@ def d3m_wrap_dataset(outputDir, dataPaths, about, problem):
                     "splitsFile": "dataSplits.csv"
                 },
                 'performanceMetrics': [
-                    {'metric': problem.get('metric', 'rootMeanSquaredError')}
+                    {'metric': metric} for metric in problem.get('metrics', ['rootMeanSquaredError'])
                 ],
                 "expectedOutputs": {
                     "predictionsFile": "predictions.csv"

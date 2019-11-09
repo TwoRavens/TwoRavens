@@ -2,6 +2,7 @@ import pandas as pd
 import shutil
 import os
 import json
+import numpy as np
 from dev_scripts.d3m_wrap_dataset import d3m_wrap_dataset
 
 # 1. copy data into dev_scripts/big_data_paper
@@ -17,40 +18,7 @@ data_output_dir = os.path.abspath('/ravens_volume/test_data')
 os.makedirs(data_output_dir, exist_ok=True)
 
 
-def reformat_chenowith_ulfelder():
-    predictors = ["year", "country", "sftgcode", "yrborn", "yrdied", "reg.eap", "reg.afr",
-                  "reg.eur", "reg.mna", "reg.sca", "reg.amr", "dosreg", "nvc.start", "nvc.ongoing",
-                  "nvc.end", "elceleth", "bnk.assntns", "bnk.strikes", "bnk.guerwar", "bnk.govcrises",
-                  "bnk.purges", "bnk.riots", "bnk.revs", "bnk.agdems", "bnk.coups", "bnk.conchgs",
-                  "bnn.yroff", "cnsimr", "dispota4", "xxxcimr", "bnk.papers", "ythbul", "ythbul2",
-                  "ythbul3", "ythbul4", "mev.ind", "mev.intind", "mev.intviol", "mev.intwar",
-                  "mev.civviol", "mev.civwar", "mev.ethviol", "mev.ethwar", "mev.inttot", "mev.civtot",
-                  "mev.actotal", "mev.nborder", "mev.region", "mev.nregion", "mev.afrreg", "mev.regcon",
-                  "mev.muslim", "cmm.succ", "cmm.fail", "cmm.plot", "cmm.rumr", "pol.democ", "pol.autoc",
-                  "pol.polity", "pol.polity2", "pol.durable", "pol.xrreg", "pol.xrcomp", "pol.xropen",
-                  "pol.xconst", "pol.parreg", "pol.parcomp", "pol.exrec", "pol.exconst", "pol.polcomp",
-                  "fiw.pr", "fiw.cl", "fiw.status", "wdi.trade", "wdi.gdppcppp", "wdi.gdppc", "wdi.gdpchg",
-                  "wdi.inflat", "wdi.cpi", "wdi.agric", "wdi.manuf", "wdi.indus", "wdi.servs", "wdi.pop",
-                  "wdi.popurb", "wdi.armed", "wdi.armpct", "wdi.forest", "wdi.mineral", "wdi.energy", "wdi.sch2",
-                  "wdi.sch2f", "wdi.sch2m", "wdi.litf", "wdi.litm", "wdi.littot", "wdi.litpar", "wdi.mobp100",
-                  "wdi.webusers", "wdi.webp100", "wdi.pop0014t", "wdi.pop1519f", "wdi.pop1519m", "wdi.pop2024f",
-                  "wdi.pop2024m", "wdi.imrate", "ccode", "ios.eu", "ios.nato", "ios.natopfp", "ios.osce",
-                  "ios.oecd", "ios.coe", "ios.comnw", "ios.franc", "ios.geneva", "ios.gattwto", "ios.apec",
-                  "ios.asean", "ios.seato", "ios.oas", "ios.mercosur", "ios.opec", "ios.arablg", "ios.oau",
-                  "ios.ecowas", "ios.iccpr", "ios.iccpr1", "ios.achr", "ios.achpr", "ios.icj", "ios.oic",
-                  "nld.exec", "nld.leg", "nld.ca", "nld.any", "cir.physint", "cir.disap", "cir.kill", "cir.polpris",
-                  "cir.tort", "cir.newempinx", "cir.assn", "cir.formov", "cir.dommov", "cir.speech", "cir.elecsd",
-                  "cir.newrelfre", "cir.worker", "cir.wecon", "cir.wopol", "cir.wosoc", "cir.injud", "kill",
-                  "pit.reg.magfail", "pit.reg.magcol", "pit.reg.magviol", "pit.reg.magave", "pit.reg.ongoing",
-                  "pit.reg.onset", "pit.reg.end", "pit.reg.dur", "pit.rev.magfight", "pit.rev.magfatal",
-                  "pit.rev.magarea", "pit.rev.magave", "pit.rev.ongoing", "pit.rev.onset", "pit.rev.end",
-                  "pit.rev.dur", "pit.eth.magfight", "pit.eth.magfatal", "pit.eth.magarea", "pit.eth.magave",
-                  "pit.eth.ongoing", "pit.eth.onset", "pit.eth.end", "pit.eth.dur", "pit.gen.deathmag",
-                  "pit.gen.ongoing", "pit.gen.onset", "pit.gen.end", "pit.gen.dur", "nvc.dosregt", "elceleth.c",
-                  "dispota4.c", "cir.femrights", "cir.femrights.c", "traderes", "traderes.c", "bnk.unrest",
-                  "cir.speech.c", "postcoldwar", "civilwar", "wdi.gdpchg.s", "fiw.pr.chg", "fiw.cl.chg", "cou.tries5",
-                  "pitfdem", "wdi.sch2.mi", "wdi.manuf.mi", "wdi.servs.mi", "wdi.popurb.mi", "wdi.pop.mi",
-                  "nld.any.1", "age", "predyr"]
+def reformat_chenowith_ulfelder(dataset_name, predictors_function):
     targets = ['nvc.start.1']
 
     dataframe_train = pd.read_csv(
@@ -58,17 +26,20 @@ def reformat_chenowith_ulfelder():
     dataframe_test = pd.read_csv(
         os.path.join(data_input_dir, 'ChenowethUlfelder/cu_fig2_test.tsv'), delimiter='\t')
 
-    dataframe = pd.concat([dataframe_train, dataframe_test])
+    dataframe_merged = pd.concat([dataframe_train, dataframe_test], ignore_index=True)
 
-    # drop other columns
-    dataframe = dataframe[predictors + targets]
+    dataframe = predictors_function(dataframe_merged)
+    predictors = dataframe.columns.values
 
+    dataframe[targets[0]] = dataframe_merged[[targets[0]]]
     # build intermediate data file
-    intermediate_data_path = os.path.join(data_intermediate_dir, 'chenowith_ulfelder', 'learningData.csv')
+    intermediate_data_path = os.path.join(data_intermediate_dir, dataset_name, 'learningData.csv')
     os.makedirs(os.path.dirname(intermediate_data_path), exist_ok=True)
     dataframe.to_csv(intermediate_data_path, index=False)
 
-    dataset_name = 'TR10_Chenowith_Ulfelder'
+    dataset_dir = os.path.join(data_output_dir, dataset_name)
+    if os.path.exists(dataset_dir):
+        shutil.rmtree(dataset_dir)
 
     d3m_wrap_dataset(
         data_output_dir,
@@ -79,7 +50,8 @@ def reformat_chenowith_ulfelder():
         problem={
             'targets': targets,
             'predictors': predictors,
-            'time': ['year']
+            'time': ['year'],
+            'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1']
         }
     )
 
@@ -106,21 +78,23 @@ def reformat_chenowith_ulfelder():
         json.dump(problem_doc, problem_file)
 
 
-def reformat_gelpi_avdan():
+def reformat_gelpi_avdan(dataset_name):
     predictors = ["polity2b", "polity2borigin", "loggdptarget", "logpop", "majpowhome", "majpoworigin", "coloniallink", "ethnictie", "ethnicPCW", "ethnicany911", "dyadalliance", "dyadalliancePCW", "rivalrydummy", "postCW", "post911", "lndyaddist", "dyadpcyear1", "dyadpcyear2", "dyadpcyear3", "dyadpcyear4"]
     targets = ['incident']
 
     dataframe = pd.read_csv(
-        os.path.join(data_input_dir, 'GelpiAvdan2018/ga_TA2.tsv'), delimiter='\t')
+        os.path.join(data_input_dir, 'GelpiAvdan2018/ga_TA2c.tsv'), delimiter='\t')
 
-    dataframe = dataframe[predictors + targets]
+    dataframe = dataframe[predictors + targets + ['year']]
 
     # build intermediate data file
-    intermediate_data_path = os.path.join(data_intermediate_dir, 'gelpi_avdan', 'learningData.csv')
+    intermediate_data_path = os.path.join(data_intermediate_dir, dataset_name, 'learningData.csv')
     os.makedirs(os.path.dirname(intermediate_data_path), exist_ok=True)
     dataframe.to_csv(intermediate_data_path, index=False)
 
-    dataset_name = 'TR11_Gelpi_Avdan'
+    dataset_dir = os.path.join(data_output_dir, dataset_name)
+    if os.path.exists(dataset_dir):
+        shutil.rmtree(dataset_dir)
 
     d3m_wrap_dataset(
         data_output_dir,
@@ -133,13 +107,14 @@ def reformat_gelpi_avdan():
             "taskSubType": "binary",
             'targets': targets,
             'predictors': predictors,
+            'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1']
         }
     )
 
     # load custom out-of-sample splits into TwoRavens/d3m
     dataframe_splits = pd.DataFrame({
         'd3mIndex': range(len(dataframe)),
-        'type': ['TRAIN' if year > 32 else 'TEST' for year in dataframe.dyadpcyear1],
+        'type': ['TRAIN' if year < 2002 else 'TEST' for year in dataframe['year']],
         'repeat': [0] * len(dataframe),
         'fold': [0] * len(dataframe)
     })
@@ -159,7 +134,7 @@ def reformat_gelpi_avdan():
         json.dump(problem_doc, problem_file)
 
 
-def reformat_gleditsch_ward(predictors):
+def reformat_gleditsch_ward(dataset_name, predictors):
     targets = ['mido']
 
     dataframe_train = pd.read_csv(
@@ -172,11 +147,13 @@ def reformat_gleditsch_ward(predictors):
     dataframe = dataframe[predictors + targets]
 
     # build intermediate data file
-    intermediate_data_path = os.path.join(data_intermediate_dir, 'gleditsch_ward', 'learningData.csv')
+    intermediate_data_path = os.path.join(data_intermediate_dir, dataset_name, 'learningData.csv')
     os.makedirs(os.path.dirname(intermediate_data_path), exist_ok=True)
     dataframe.to_csv(intermediate_data_path, index=False)
 
-    dataset_name = 'TR12_Gleditsch_Ward'
+    dataset_dir = os.path.join(data_output_dir, dataset_name)
+    if os.path.exists(dataset_dir):
+        shutil.rmtree(dataset_dir)
 
     d3m_wrap_dataset(
         data_output_dir,
@@ -186,7 +163,8 @@ def reformat_gleditsch_ward(predictors):
         },
         problem={
             'targets': targets,
-            'predictors': predictors
+            'predictors': predictors,
+            'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1']
         }
     )
 
@@ -213,24 +191,22 @@ def reformat_gleditsch_ward(predictors):
         json.dump(problem_doc, problem_file)
 
 
-def reformat_goldstone():
-    predictors = ["year", "byregn2", "group", "sftgname", "feanctig", "sftptv2a", "sftpcons",
-                  "ethherf", "relhrel", "disp4cat", "sftpdur2", "floil", "maccat",
-                  "logim", "logtpop", "logmtn", "anocracy", "democracy", "log_gdpc", "miss_ind",
-                  "glb_ind", "cwar_ind", "reg_ind", "sample", "sftptv2a1", "sftptv2a2", "sftptv2a3",
-                  "sftptv2a4", "sftptv2a5", "sftptv2a6", "byregn2_1", "byregn2_2", "byregn2_3", "byregn2_4",
-                  "byregn2_5", "stratida", "stratidb", "stratidc"]
+def reformat_goldstone(dataset_name, dataset_filename):
     targets = ['sftpcons']
 
     dataframe = pd.read_csv(
-        os.path.join(data_input_dir, 'GoldstoneEtAl2013/pitf_tab1_mod1.tsv'), delimiter='\t')
+        os.path.join(data_input_dir, 'GoldstoneEtAl2013', dataset_filename), delimiter='\t')
 
     # build intermediate data file
-    intermediate_data_path = os.path.join(data_intermediate_dir, 'goldstone', 'learningData.csv')
+    intermediate_data_path = os.path.join(data_intermediate_dir, dataset_name, 'learningData.csv')
     os.makedirs(os.path.dirname(intermediate_data_path), exist_ok=True)
     dataframe.to_csv(intermediate_data_path, index=False)
 
-    dataset_name = 'TR13_Goldstone'
+    predictors = dataframe.columns.values[1:]
+
+    dataset_dir = os.path.join(data_output_dir, dataset_name)
+    if os.path.exists(dataset_dir):
+        shutil.rmtree(dataset_dir)
 
     d3m_wrap_dataset(
         data_output_dir,
@@ -243,19 +219,95 @@ def reformat_goldstone():
             "taskSubType": "binary",
             'targets': targets,
             'predictors': predictors,
+            'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1']
         }
     )
 
 
-gw_issues_predictors = ["pmid", "py", "py2", "py3", "terriss", "riveriss", "mariss",
-                        "terrAtt", "rivAtt", "marAtt"]
-gw_combined_predictors = ["pmid", "py", "py2", "py3", "terriss", "riveriss", "mariss",
-                          "terrAtt", "rivAtt", "marAtt", "minpol", "rbal", "lnkmdist"]
-gw_structural_predictors = ["pmid", "py", "py2", "py3", "minpol", "rbal", "lnkmdist"]
+def cu_base(dataframe):
+    return pd.DataFrame({
+        "log(wdi.pop)": np.log(dataframe['wdi.pop'])
+    })
 
-reformat_gelpi_avdan()
-reformat_chenowith_ulfelder()
-reformat_gleditsch_ward(gw_issues_predictors)
-reformat_goldstone()
+
+def cu_grievances(dataframe):
+    return pd.DataFrame({
+        "log(wdi.pop)": np.log(dataframe['wdi.pop']),
+        "log(xxxcimr)": np.log(dataframe['xxxcimr']),
+        "wdi.gdpchg.s": dataframe['wdi.gdpchg.s'],
+        "sqrt(wdi.cpi)": np.sqrt(dataframe['wdi.cpi']),
+        "log1p(bnn.yroff)": np.log1p(dataframe['bnn.yroff']),
+        "elceleth.c": dataframe['elceleth.c'],
+        "dispota4.c": dataframe['dispota4.c'],
+        "cir.physint": dataframe['cir.physint'],
+        "I(cir.physint^2)": np.power(dataframe['cir.physint'], 2)
+    })
+
+
+def cu_modernization(dataframe):
+    return pd.DataFrame({
+        "log(wdi.pop)": np.log(dataframe['wdi.pop']),
+        "wdi.popurb.mi": dataframe['wdi.popurb.mi'],
+        "I(wdi.manuf.mi + wdi.servs.mi)": dataframe['wdi.manuf.mi'] + dataframe['wdi.servs.mi'],
+        "wdi.sch2.mi": dataframe['wdi.sch2.mi'],
+        "log1p(wdi.mobp100)": np.log1p(dataframe['wdi.mobp100']),
+        "ios.gattwto": dataframe['ios.gattwto']
+    })
+
+
+def cu_resource_mobilization(dataframe):
+    return pd.DataFrame({
+        "log(wdi.pop)": np.log(dataframe['wdi.pop']),
+        "wdi.popurb.mi": dataframe['wdi.popurb.mi'],
+        "ythbul4": dataframe['ythbul4'],
+        "log1p(bnk.unrest)": np.log1p(dataframe['bnk.unrest']),
+        "log1p(bnk.strikes)": np.log1p(dataframe['bnk.strikes']),
+        "log1p(nvc.dosregt)": np.log1p(dataframe['nvc.dosregt']),
+        "nvc.ongoing": dataframe['nvc.ongoing'],
+        "civilwar": dataframe['civilwar']
+    })
+
+
+def cu_political_opportunity(dataframe):
+    return pd.DataFrame({
+        "log(wdi.pop)": np.log(dataframe['wdi.pop']),
+        "log1p(age)": np.log1p(dataframe['age']),
+        "postcoldwar": dataframe['postcoldwar'],
+        "ios.iccpr1": dataframe["ios.iccpr1"],
+        "nld.any.1": dataframe["nld.any.1"],
+        "pitfdem": dataframe["pitfdem"],
+        "I(pitfdem * nld.any.1)": dataframe["pitfdem"] * dataframe['nld.any.1'],
+        "I(postcoldwar * nld.any.1)": dataframe['postcoldwar'] * dataframe['nld.any.1'],
+        "as.factor(fiw.cl)": dataframe['fiw.cl'].astype(str),
+        "log1p(pol.durable)": np.log1p(dataframe['pol.durable']),
+        "log1p(cou.tries5)": np.log1p(dataframe['cou.tries5'])
+    })
+
+
+reformat_chenowith_ulfelder('TR10a_Chen_Ulf_Base', cu_base)
+reformat_chenowith_ulfelder('TR10b_Chen_Ulf_Grievances', cu_grievances)
+reformat_chenowith_ulfelder('TR10c_Chen_Ulf_Resource_Mobilization', cu_resource_mobilization)
+reformat_chenowith_ulfelder('TR10d_Chen_Ulf_Modernization', cu_modernization)
+reformat_chenowith_ulfelder('TR10e_Chen_Ulf_Political_Opportunity', cu_political_opportunity)
+
+
+reformat_gelpi_avdan('TR11_Gelpi_Avdan')
+
+reformat_gleditsch_ward(
+    'TR12a_Gleditsch_Ward_Issues',
+    ["pmid", "py", "py2", "py3", "terriss", "riveriss", "mariss", "terrAtt", "rivAtt", "marAtt"])
+reformat_gleditsch_ward(
+    'TR12b_Gleditsch_Ward_Structural',
+    ["pmid", "py", "py2", "py3", "minpol", "rbal", "lnkmdist"])
+reformat_gleditsch_ward(
+    'TR12c_Gleditsch_Ward_Combined',
+    ["pmid", "py", "py2", "py3", "terriss", "riveriss", "mariss",
+     "terrAtt", "rivAtt", "marAtt", "minpol", "rbal", "lnkmdist"])
+
+
+reformat_goldstone('TR13a_Goldstone_Table_1_Full', "pitf_tab1_mod1.tsv")
+reformat_goldstone('TR13b_Goldstone_Table_3_Full', "pitf_tab3_allpreds.tsv")
+reformat_goldstone('TR13c_Goldstone_Table_3_Fearon_Laitin', "pitf_tab3_modFL.tsv")
+reformat_goldstone('TR13c_Goldstone_Table_3_PITF', "pitf_tab3_modPITF.tsv")
 
 shutil.rmtree(data_intermediate_dir)
