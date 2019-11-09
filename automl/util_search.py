@@ -293,7 +293,7 @@ class SearchTPOT(Search):
         import tpot
         dataset = Dataset(self.specification['input'])
 
-        dataframe = dataset.get_dataframe()
+        dataframe = dataset.get_dataframe().dropna()
         stimulus, preprocessor = preprocess(dataframe, self.specification)
 
         X = self.specification['problem']['predictors']
@@ -346,7 +346,7 @@ class SearchMLBox(Search):
 
         dataset = Dataset(self.specification['input'])
 
-        dataframe = dataset.get_dataframe()
+        dataframe = dataset.get_dataframe().dropna()
         X = self.specification['problem']['predictors']
         y = self.specification['problem']['targets'][0]
 
@@ -445,7 +445,7 @@ class SearchMLJarSupervised(Search):
 
         dataset = Dataset(self.specification['input'])
 
-        dataframe = dataset.get_dataframe()
+        dataframe = dataset.get_dataframe().dropna()
         X = self.specification['problem']['predictors']
         y = self.specification['problem']['targets'][0]
 

@@ -18,20 +18,27 @@ data_output_dir = os.path.abspath('/ravens_volume/test_data')
 os.makedirs(data_output_dir, exist_ok=True)
 
 
-def reformat_chenowith_ulfelder(dataset_name, predictors_function):
+def reformat_chenowith_ulfelder(dataset_name, predictors_function, dropna=False):
     targets = ['nvc.start.1']
 
-    dataframe_train = pd.read_csv(
+    dataframe_train_nas = pd.read_csv(
         os.path.join(data_input_dir, 'ChenowethUlfelder/cu_fig2_train.tsv'), delimiter='\t')
-    dataframe_test = pd.read_csv(
+    dataframe_test_nas = pd.read_csv(
         os.path.join(data_input_dir, 'ChenowethUlfelder/cu_fig2_test.tsv'), delimiter='\t')
 
-    dataframe_merged = pd.concat([dataframe_train, dataframe_test], ignore_index=True)
+    dataframe_train = predictors_function(dataframe_train_nas)
+    dataframe_test = predictors_function(dataframe_test_nas)
 
-    dataframe = predictors_function(dataframe_merged)
+    dataframe_train[targets[0]] = dataframe_train_nas[[targets[0]]]
+    dataframe_test[targets[0]] = dataframe_test_nas[[targets[0]]]
+
+    if dropna:
+        dataframe_train.dropna(inplace=True)
+        dataframe_test.dropna(inplace=True)
+
+    dataframe = pd.concat([dataframe_train, dataframe_test], ignore_index=True)
+
     predictors = dataframe.columns.values
-
-    dataframe[targets[0]] = dataframe_merged[[targets[0]]]
     # build intermediate data file
     intermediate_data_path = os.path.join(data_intermediate_dir, dataset_name, 'learningData.csv')
     os.makedirs(os.path.dirname(intermediate_data_path), exist_ok=True)
@@ -92,6 +99,7 @@ def reformat_gelpi_avdan(dataset_name):
     # build intermediate data file
     intermediate_data_path = os.path.join(data_intermediate_dir, dataset_name, 'learningData.csv')
     os.makedirs(os.path.dirname(intermediate_data_path), exist_ok=True)
+    dataframe.dropna(inplace=True)
     dataframe.to_csv(intermediate_data_path, index=False)
 
     dataset_dir = os.path.join(data_output_dir, dataset_name)
@@ -144,6 +152,8 @@ def reformat_gleditsch_ward(dataset_name, predictors):
     dataframe_test = pd.read_csv(
         os.path.join(data_input_dir, 'GleditschWard2013/gw_tab1_test.tsv'), delimiter='\t')
 
+    dataframe_train.dropna(inplace=True)
+    dataframe_test.dropna(inplace=True)
     dataframe = pd.concat([dataframe_train, dataframe_test])
 
     dataframe = dataframe[predictors + targets]
@@ -204,6 +214,7 @@ def reformat_goldstone(dataset_name, dataset_filename):
     # build intermediate data file
     intermediate_data_path = os.path.join(data_intermediate_dir, dataset_name, 'learningData.csv')
     os.makedirs(os.path.dirname(intermediate_data_path), exist_ok=True)
+    dataframe.dropna(inplace=True)
     dataframe.to_csv(intermediate_data_path, index=False)
 
     predictors = dataframe.columns.values[1:]
@@ -294,6 +305,11 @@ reformat_chenowith_ulfelder('TR10c_Chen_Ulf_Resource_Mobilization', cu_resource_
 reformat_chenowith_ulfelder('TR10d_Chen_Ulf_Modernization', cu_modernization)
 reformat_chenowith_ulfelder('TR10e_Chen_Ulf_Political_Opportunity', cu_political_opportunity)
 
+reformat_chenowith_ulfelder('TR10a_DENSE_Chen_Ulf_Base', cu_base, dropna=True)
+reformat_chenowith_ulfelder('TR10b_DENSE_Chen_Ulf_Grievances', cu_grievances, dropna=True)
+reformat_chenowith_ulfelder('TR10c_DENSE_Chen_Ulf_Resource_Mobilization', cu_resource_mobilization, dropna=True)
+reformat_chenowith_ulfelder('TR10d_DENSE_Chen_Ulf_Modernization', cu_modernization, dropna=True)
+reformat_chenowith_ulfelder('TR10e_DENSE_Chen_Ulf_Political_Opportunity', cu_political_opportunity, dropna=True)
 
 reformat_gelpi_avdan('TR11_Gelpi_Avdan')
 

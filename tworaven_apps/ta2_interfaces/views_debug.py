@@ -48,14 +48,15 @@ def view_export_solutions(request):
     solutions_summaries = data['solutions']
     for solution in solutions_summaries:
 
-        with open('summary.json', 'w') as outfile:
-            json.dump(solution['solution'], outfile)
-
         # build each solution folder
         output_dir = os.path.join(solutions_dir, f"{solution['systemId']}-{solution['solutionId']}")
+
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
+        with open(os.path.join(output_dir, 'summary.json'), 'w') as outfile:
+            json.dump(solution['solution'], outfile)
         for output in solution['outputs']:
+
             shutil.copyfile(
                 output['output'].replace('file://', ''),
                 os.path.join(output_dir, f'{output["name"]}_{output["predict type"]}.csv'))
