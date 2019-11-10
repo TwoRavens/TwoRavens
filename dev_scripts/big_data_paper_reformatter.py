@@ -60,7 +60,13 @@ def reformat_chenowith_ulfelder(dataset_name, predictors_function, dropna=False)
             'time': ['year'],
             'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1'],
             'taskType': 'classification',
-            'taskSubType': 'binary'
+            'taskSubType': 'binary',
+            'dataSplits': {
+                "method": "kFold",
+                "stratified": True,
+                "numRepeats": 0,
+                "splitsFile": "dataSplits.csv"
+            }
         }
     )
 
@@ -117,7 +123,13 @@ def reformat_gelpi_avdan(dataset_name):
             'predictors': predictors,
             'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1'],
             'taskType': 'classification',
-            'taskSubType': 'binary'
+            'taskSubType': 'binary',
+            'dataSplits': {
+                "method": "kFold",
+                "stratified": True,
+                "numRepeats": 0,
+                "splitsFile": "dataSplits.csv"
+            }
         }
     )
 
@@ -178,7 +190,13 @@ def reformat_gleditsch_ward(dataset_name, predictors):
             'predictors': predictors,
             'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1'],
             'taskType': 'classification',
-            'taskSubType': 'binary'
+            'taskSubType': 'binary',
+            'dataSplits': {
+                "method": "kFold",
+                "stratified": True,
+                "numRepeats": 0,
+                "splitsFile": "dataSplits.csv"
+            }
         }
     )
 
@@ -234,7 +252,13 @@ def reformat_goldstone(dataset_name, dataset_filename):
             'predictors': predictors,
             'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1'],
             'taskType': 'classification',
-            'taskSubType': 'binary'
+            'taskSubType': 'binary',
+            'dataSplits': {
+                "method": "kFold",
+                "stratified": True,
+                "numRepeats": 0,
+                "splitsFile": "dataSplits.csv"
+            }
         }
     )
 

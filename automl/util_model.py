@@ -100,14 +100,16 @@ class Model(object):
 
         if configuration['method'] == 'K_FOLD':
             split_arguments = {
-                'n_splits': configuration.get('folds'),
-                'shuffle': configuration.get('shuffle'),
+                'n_splits': configuration.get('folds', 10),
+                'shuffle': configuration.get('shuffle', False),
                 'random_state': configuration.get('randomSeed')
             }
             if configuration['stratified']:
-                return model_selection.StratifiedKFold(**split_arguments).split(data, data[self.targets[0]])
+                return ((data.iloc[train_indices], data.iloc[test_indices]) for train_indices, test_indices in
+                        model_selection.StratifiedKFold(**split_arguments).split(data, data[self.targets[0]]))
             else:
-                return model_selection.KFold(**split_arguments).split(data)
+                return ((data.iloc[train_indices], data.iloc[test_indices]) for train_indices, test_indices in
+                        model_selection.KFold(**split_arguments).split(data))
 
         elif configuration['method'] == 'HOLDOUT':
             return [model_selection.train_test_split(
@@ -124,6 +126,23 @@ class ModelSklearn(Model):
         super().__init__(model, system, predictors, targets, model_id, search_id, train_specification, task)
         # categorical one hot encoding
         self.preprocess = preprocess
+
+    def make_stimulus(self, data):
+        stimulus = data[self.predictors]
+        if self.preprocess:
+            stimulus = self.preprocess.transform(stimulus)
+
+        if self.system == 'mlbox':
+            # must have a dense pandas array
+            if issubclass(type(stimulus), csr_matrix):
+                stimulus = stimulus.toarray()
+            stimulus = pandas.DataFrame(stimulus)
+
+        if self.system == 'mljar-supervised':
+            # must have a pandas array with formatted column names (so they don't get modified by the solver)
+            stimulus = pandas.DataFrame(stimulus)
+            stimulus.columns = [str(i).strip() for i in stimulus.columns]
+        return stimulus
 
     def describe(self):
         model_name = self.model.__class__.__name__
@@ -144,18 +163,8 @@ class ModelSklearn(Model):
         }
 
     def score(self, specification):
-        dataframe = Dataset(specification['input']).get_dataframe().dropna()
-
-        if self.system == 'mlbox':
-            # must have a dense pandas array
-            if issubclass(type(dataframe), csr_matrix):
-                dataframe = dataframe.toarray()
-            dataframe = pandas.DataFrame(dataframe)
-
-        if self.system == 'mljar-supervised':
-            # must have a pandas array with formatted column names (so they don't get modified by the solver)
-            dataframe = pandas.DataFrame(dataframe)
-            dataframe.columns = [str(i).strip() for i in dataframe.columns]
+        dataframe = Dataset(specification['input']).get_dataframe()[self.predictors + self.targets].dropna()
+        dataframe.reset_index(drop=True, inplace=True)
 
         configuration = specification['configuration']
 
@@ -163,10 +172,10 @@ class ModelSklearn(Model):
         split_scores = defaultdict(list)
         split_weights = defaultdict(list)
         for train_split, test_split in splits:
-            self.fit(train_split)
+            self.fit(self.make_stimulus(train_split), train_split[self.targets[0]])
 
             actual = np.array(test_split[self.targets[0]])
-            predicted = self.model.predict(test_split[self.predictors])
+            predicted = self.model.predict(self.make_stimulus(test_split))
 
             if 'CLASSIFICATION' in self.task:
                 actual = actual.astype(int)
@@ -194,7 +203,7 @@ class ModelSklearn(Model):
             'system': self.system
         }
 
-    def fit(self, data, specification=None):
+    def fit(self, stimulus, target, specification=None):
         # check if model has already been trained for the same dataset
         specification_str = json.dumps(specification) if specification else None
         if self.train_specification and self.train_specification == specification_str:
@@ -202,22 +211,37 @@ class ModelSklearn(Model):
         self.train_specification = specification_str
 
         if self.system == 'auto_sklearn':
-            self.model.refit(data[self.predictors], data[self.targets[0]])
+            self.model.refit(stimulus, target)
         elif self.system == 'mljar-supervised':
-            print(data)
             self.model.train({"train": {
-                "X": data[self.predictors], 'y': data[self.targets[0]]
+                "X": stimulus, 'y': target
             }})
         else:
-            self.model.fit(data[self.predictors], data[self.targets[0]])
+            self.model.fit(stimulus, target)
 
     def produce(self, specification):
         configuration = specification.get('configuration', {})
         predict_type = configuration.get('predict_type', 'RAW')
 
+        # REFIT
         dataframe_train = Dataset(specification['train']).get_dataframe().dropna()
-        self.fit(dataframe_train, specification['train'])
 
+        stimulus = dataframe_train[self.predictors]
+        if self.preprocess:
+            stimulus = self.preprocess.transform(stimulus)
+
+        if self.system == 'mlbox':
+            if issubclass(type(stimulus), csr_matrix):
+                stimulus = stimulus.toarray()
+            stimulus = pandas.DataFrame(stimulus)
+
+        if self.system == 'mljar-supervised':
+            stimulus = pandas.DataFrame(stimulus)
+            stimulus.columns = [str(i).strip() for i in stimulus.columns]
+
+        self.fit(stimulus, dataframe_train[self.targets[0]], specification['train'])
+
+        # PRODUCE
         dataframe = Dataset(specification['input']).get_dataframe().dropna()
         dataframe.reset_index(drop=True, inplace=True)
 

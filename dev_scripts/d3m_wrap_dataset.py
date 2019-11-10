@@ -145,13 +145,13 @@ def d3m_wrap_dataset(outputDir, dataPaths, about, problem):
                         {**{'targetIndex': targetIndex}, **target} for targetIndex, target in enumerate(targetConfigs)
                     ]
                 }],
-                'dataSplits': {
+                'dataSplits': problem.get('dataSplits', {
                     "method": "holdOut",
                     "testSize": 0.35,
                     "stratified": False,
                     "numRepeats": 0,
                     "splitsFile": "dataSplits.csv"
-                },
+                }),
                 'performanceMetrics': [
                     {'metric': metric} for metric in problem.get('metrics', ['rootMeanSquaredError'])
                 ],

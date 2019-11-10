@@ -465,7 +465,7 @@ class SearchMLJarSupervised(Search):
 
         automl.fit(stimulus, dataframe[y])
 
-        for model_mljar in sorted(automl._models, key=lambda m: m.get_final_loss())[:10]:
+        for model_mljar in sorted(automl._models, key=lambda m: m.get_final_loss())[:4]:
             model = ModelSklearn(
                 model_mljar,
                 system='mljar-supervised',
