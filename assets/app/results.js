@@ -1607,7 +1607,7 @@ export let getSummaryData = problem => ({
                     'name': key,
                     'predict type': 'RAW',
                     'output': solution.produce[key]
-                })) : solution.produce.map(produce =>
+                })) : (solution.produce || []).map(produce =>
                 ({
                     'name': produce.input.name,
                     'predict type': produce.configuration.predict_type,

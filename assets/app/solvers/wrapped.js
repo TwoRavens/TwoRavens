@@ -94,16 +94,14 @@ let SPEC_produce = problem => {
     let dataset_types = problem.outOfSampleSplit ? ['test', 'train'] : ['all'];
     if (problem.datasetPaths.partials) dataset_types.push('partials');
 
-    return predict_types.flatMap(predict_type => dataset_types.flatMap(dataset_type => ({
+    let produces = predict_types.map(predict_type => ({
         'train': {
-            'name': 'train',
-            "resource_uri": 'file://' +
-                ((problem.datasetPathsManipulated || {})[train_split] || problem.datasetPaths[train_split])
+            'name': 'all',
+            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
         },
         'input': {
-            'name': dataset_type,
-            "resource_uri": 'file://' + (
-                (problem.datasetPathsManipulated || {})[dataset_type] || problem.datasetPaths[dataset_type])
+            'name': 'all',
+            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
         },
         'configuration': {
             'predict_type': predict_type
@@ -111,14 +109,36 @@ let SPEC_produce = problem => {
         'output': {
             'resource_uri': 'file:///ravens_volume/solvers/produce/'
         }
-    })));
+    }));
+
+    if (problem.outOfSampleSplit)
+        produces.push(...dataset_types.flatMap(dataset_type => predict_types.flatMap(predict_type => ({
+            'train': {
+                'name': 'train',
+                "resource_uri": 'file://' +
+                    ((problem.datasetPathsManipulated || {})[train_split] || problem.datasetPaths[train_split])
+            },
+            'input': {
+                'name': dataset_type,
+                "resource_uri": 'file://' + (
+                    (problem.datasetPathsManipulated || {})[dataset_type] || problem.datasetPaths[dataset_type])
+            },
+            'configuration': {
+                'predict_type': predict_type
+            },
+            'output': {
+                'resource_uri': 'file:///ravens_volume/solvers/produce/'
+            }
+        }))));
+
+    return produces
 };
 
 
 let SPEC_score = problem => [{
     "input": {
-        "name": "data_test",
-        "resource_uri": 'file://' + ((problem.datasetPathsManipulated || {}).test || problem.datasetPaths.test)
+        "name": "all",
+        "resource_uri": 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
     },
     "configuration": SPEC_configuration(problem),
     "performanceMetrics": [problem.metric, ...problem.metrics]

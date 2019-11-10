@@ -215,9 +215,11 @@ class ModelSklearn(Model):
         configuration = specification.get('configuration', {})
         predict_type = configuration.get('predict_type', 'RAW')
 
-        self.fit(Dataset(specification['train']).get_dataframe().dropna(), specification['train'])
-        dataset = Dataset(specification['input'])
-        dataframe = dataset.get_dataframe().dropna()
+        dataframe_train = Dataset(specification['train']).get_dataframe().dropna()
+        self.fit(dataframe_train, specification['train'])
+
+        dataframe = Dataset(specification['input']).get_dataframe().dropna()
+        dataframe.reset_index(drop=True, inplace=True)
 
         stimulus = dataframe[self.predictors]
 
@@ -249,12 +251,13 @@ class ModelSklearn(Model):
                 predictions = self.model.predict(stimulus)
                 if len(predictions.shape) > 1:
                     predictions = np.argmax(predictions, axis=-1)
-                predictions = pandas.DataFrame(predictions, columns=[self.targets[0]])
+                predictions = pandas.DataFrame(predictions, columns=[self.targets[0]]).astype(int)
             else:
                 predictions = self.model.predict_proba(stimulus)
                 # TODO: standardize probability column names
                 predictions = pandas.DataFrame(predictions, columns=[f'p_{i}' for i in range(predictions.shape[1])])
 
+        predictions.reset_index(drop=True, inplace=True)
         predictions.insert(0, 'd3mIndex', dataframe['d3mIndex'])
 
         if not os.path.exists(output_directory_path):
@@ -375,43 +378,62 @@ class ModelH2O(Model):
         if 'CLASSIFICATION' in self.task:
             data[self.targets[0]] = data[self.targets[0]].asfactor()
 
-        if configuration.get('stratified'):
-            # how does h2o know which column to stratify for? weirdness here
-            folds = data.stratified_kfold_column(n_folds=configuration['folds'])
-        else:
-            folds = data.kfold_column(n_folds=configuration['folds'])
+        results = pandas.DataFrame({
+            'predict': self.model.predict(data).as_data_frame()['predict'],
+            'actual': data[self.targets[0]].as_data_frame()[self.targets[0]]
+        }).dropna()
 
-        split_scores = defaultdict(list)
-        split_weights = defaultdict(list)
-        for split_id in range(configuration['folds']):
-            train, test = data[folds != split_id], data[folds == split_id]
-            self.fit(train)
-            results = pandas.DataFrame({
-                'predict': self.model.predict(test).as_data_frame()['predict'],
-                'actual': test[self.targets[0]].as_data_frame()[self.targets[0]]
-            }).dropna()
-
-            if 'CLASSIFICATION' in self.task:
-                results['actual'] = results['actual'].astype(int)
-
-            for metric_schema in specification['performanceMetrics']:
-                try:
-                    split_scores[json.dumps(metric_schema)].append(get_metric(metric_schema)(
-                        results['actual'],
-                        results['predict']))
-                    split_weights[json.dumps(metric_schema)].append(results.size)
-                except ValueError as err:
-                    print(f'Could not evaluate metric: {str(metric_schema)}')
-                    print(err)
+        if 'CLASSIFICATION' in self.task:
+            results['actual'] = results['actual'].astype(int)
 
         scores = []
+        for metric_schema in specification['performanceMetrics']:
+            try:
+                scores.append({
+                    'value': get_metric(metric_schema)(
+                        results['actual'],
+                        results['predict']),
+                    'metric': metric_schema,
+                    'target': self.targets[0]
+                })
+            except ValueError as err:
+                print(f'Could not evaluate metric: {str(metric_schema)}')
+                print(err)
 
-        for metric in split_scores:
-            scores.append({
-                'value': np.average(split_scores[metric], weights=split_weights[metric]),
-                'metric': json.loads(metric),
-                'target': self.targets[0]
-            })
+        # if configuration.get('stratified'):
+        #     # how does h2o know which column to stratify for? weirdness here
+        #     folds = data.stratified_kfold_column(n_folds=configuration['folds'])
+        # else:
+        #     folds = data.kfold_column(n_folds=configuration['folds'])
+        #
+        # split_scores = defaultdict(list)
+        # split_weights = defaultdict(list)
+        # for split_id in range(configuration['folds']):
+        #     train, test = data[folds != split_id], data[folds == split_id]
+        #     self.fit(train)
+        #     results = pandas.DataFrame({
+        #         'predict': self.model.predict(test).as_data_frame()['predict'],
+        #         'actual': test[self.targets[0]].as_data_frame()[self.targets[0]]
+        #     }).dropna()
+        #
+        #     if 'CLASSIFICATION' in self.task:
+        #         results['actual'] = results['actual'].astype(int)
+        #
+        #     for metric_schema in specification['performanceMetrics']:
+        #         try:
+        #             split_scores[json.dumps(metric_schema)].append(get_metric(metric_schema)(
+        #                 results['actual'],
+        #                 results['predict']))
+        #             split_weights[json.dumps(metric_schema)].append(results.size)
+        #         except ValueError as err:
+        #             print(f'Could not evaluate metric: {str(metric_schema)}')
+        #             print(err)
+        # for metric in split_scores:
+        #     scores.append({
+        #         'value': np.average(split_scores[metric], weights=split_weights[metric]),
+        #         'metric': json.loads(metric),
+        #         'target': self.targets[0]
+        #     })
 
         return {
             'search_id': self.search_id,
@@ -435,7 +457,11 @@ class ModelH2O(Model):
         if 'CLASSIFICATION' in self.task:
             data[self.targets[0]] = data[self.targets[0]].asfactor()
 
-        predictions = self.model.predict(data).as_data_frame()
+        # retry once
+        try:
+            predictions = self.model.predict(data).as_data_frame()
+        except Exception as err:
+            predictions = self.model.predict(data).as_data_frame()
 
         if predict_type == 'RAW':
             if 'CLASSIFICATION' in self.task:
