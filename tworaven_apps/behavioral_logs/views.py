@@ -132,17 +132,12 @@ def view_create_log_entry_verbose(request):
 @csrf_exempt
 def view_create_log_entry(request, is_verbose=False):
     """Make log entry endpoint"""
-    ws_info = get_latest_user_workspace(request)
-    if not ws_info.success:
-        user_msg = 'User workspace not found: %s' % ws_info.err_msg
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        user_msg = 'Can only log entries when user is logged in.'
         return JsonResponse(get_json_error(user_msg))
 
-    user_workspace = ws_info.result_obj
-
-    # ----------------------------------------
-    # Get the user and session_key
-    # ----------------------------------------
-    user = user_workspace.user
+    user = user_info.result_obj
 
     session_key = get_session_key(request)
 
@@ -156,13 +151,13 @@ def view_create_log_entry(request, is_verbose=False):
     log_data = json_info.result_obj
     log_data.update(dict(session_key=session_key))
 
-    print('log_data 1', log_data)
+    print('log_data 1') #, log_data)
     # Default L2 to unkown
     #
     if not bl_static.KEY_L2_ACTIVITY in log_data:
         log_data[bl_static.KEY_L2_ACTIVITY] = bl_static.L2_ACTIVITY_BLANK
 
-    print('log_data 2', log_data)
+    print('log_data 2') #, log_data)
 
     # Note: this form is also used by the LogEntryMaker
     #   - redundant but ok for now, want to return form errors
@@ -176,7 +171,7 @@ def view_create_log_entry(request, is_verbose=False):
 
 
     log_create_info = LogEntryMaker.create_log_entry(\
-                            user_workspace,
+                            user,
                             log_data['type'],
                             log_data)
 

@@ -120,7 +120,7 @@ class SearchUtil(BasicErrCheck):
 
     def run_nyu_search(self):
         """Run the NYU search"""
-        params = dict(user=self.user_workspace.user)
+        params = dict(user_workspace=self.user_workspace)
         search_info = self.datamart_util.search_with_dataset(\
                                 self.dataset_path,
                                 query=self.query,

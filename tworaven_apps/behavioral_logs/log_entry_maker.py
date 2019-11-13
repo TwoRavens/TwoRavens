@@ -31,7 +31,7 @@ class LogEntryMaker:
         pass
 
     @staticmethod
-    def create_system_entry(user_workspace, log_data):
+    def create_system_entry(user, log_data):
         """Add a TA2TA3 entry"""
         assert isinstance(log_data, dict),\
             'log_data must be a python dict. (create_system_entry)'
@@ -39,6 +39,19 @@ class LogEntryMaker:
         log_data['is_optional'] = True
 
         return LogEntryMaker.create_log_entry(\
+                        user,
+                        bl_static.ENTRY_TYPE_SYSTEM,
+                        log_data)
+
+    @staticmethod
+    def create_system_entry_with_workspace(user_workspace, log_data):
+        """Add a TA2TA3 entry"""
+        assert isinstance(log_data, dict),\
+            'log_data must be a python dict. (create_system_entry_with_workspace)'
+
+        log_data['is_optional'] = True
+
+        return LogEntryMaker.create_log_entry_with_workspace(\
                         user_workspace,
                         bl_static.ENTRY_TYPE_SYSTEM,
                         log_data)
@@ -51,28 +64,38 @@ class LogEntryMaker:
 
         print('log_data', log_data)
 
-        return LogEntryMaker.create_log_entry(\
+        return LogEntryMaker.create_log_entry_with_workspace(\
                         user_workspace,
                         bl_static.ENTRY_TYPE_DATAMART,
                         log_data)
 
     @staticmethod
-    def create_ta2ta3_entry(user_workspace, log_data):
+    def create_ta2ta3_entry(user, log_data):
         """Add a TA2TA3 entry"""
         assert isinstance(log_data, dict),\
             'log_data must be a python dict. (create_ta2ta3_entry)'
 
         return LogEntryMaker.create_log_entry(\
-                        user_workspace,
+                        user,
                         bl_static.ENTRY_TYPE_TA23API,
                         log_data)
 
 
     @staticmethod
-    def create_log_entry(user_workspace, entry_type, log_data):
-        """Add a TA2TA3 entry"""
+    def create_log_entry_with_workspace(user_workspace, entry_type, log_data):
+        """Add a log entry"""
         if not isinstance(user_workspace, UserWorkspace):
-            return err_resp("user must be a UserWorkspace object")
+            return err_resp("user must be a User object")
+
+        return LogEntryMaker.create_log_entry(user_workspace.user,
+                                              entry_type,
+                                              log_data)
+
+    @staticmethod
+    def create_log_entry(user, entry_type, log_data):
+        """Create a BehavioralLogEntry object"""
+        if not isinstance(user, User):
+            return err_resp("user must be a User object")
 
         if not isinstance(log_data, dict):
             return err_resp("log_data must be a dict object")
@@ -88,7 +111,7 @@ class LogEntryMaker:
             return err_resp(err_msg)
 
         new_entry = BehavioralLogEntry(**f.cleaned_data)
-        new_entry.user = user_workspace.user
+        new_entry.user = user
         new_entry.save()
 
         # Write the entry to the Log File
