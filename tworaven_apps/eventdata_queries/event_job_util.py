@@ -2,13 +2,13 @@ import os
 import csv
 import json
 import logging
-import shutil
 
 from django.conf import settings
 from collections import OrderedDict
 
+from tworaven_apps.data_prep_utils.duplicate_column_remover import DuplicateColumnRemover
 from tworaven_apps.utils.view_helper import get_json_error
-from tworaven_apps.utils.mongo_util import infer_type
+from tworaven_apps.utils.mongo_util import infer_type, encode_variable
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
 from tworaven_apps.eventdata_queries.models import \
@@ -27,9 +27,7 @@ from tworaven_apps.eventdata_queries.dataverse.routine_dataverse_check import Ro
 from tworaven_apps.ta2_interfaces.basic_problem_writer import BasicProblemWriter
 
 from tworaven_apps.raven_auth.models import User
-
-from tworaven_apps.user_workspaces.utils import \
-    (get_latest_d3m_user_config,)
+from tworaven_apps.user_workspaces.models import UserWorkspace
 
 LOGGER = logging.getLogger(__name__)
 
@@ -488,7 +486,7 @@ class EventJobUtil(object):
 
 
     @staticmethod
-    def import_dataset(database, collection, datafile, reload=False):
+    def import_dataset(database, collection, datafile, reload=False, column_names=None, indexes=None):
         """Key method to load a Datafile (csv) into Mongo as a new collection"""
         retrieve_util = MongoRetrieveUtil(database, collection)
         db_info = retrieve_util.get_mongo_db(database)
@@ -508,20 +506,48 @@ class EventJobUtil(object):
         if not os.path.exists(datafile):
             return err_resp(collection + ' not found')
 
+        dcr = DuplicateColumnRemover(datafile)
+
         with open(datafile, 'r') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
-            columns = next(csv_reader)
+
+            # discard header
+            next(csv_reader)
+
+            # use duplicate column name removal headers instead
+            columns = [encode_variable(value) for value in column_names or dcr.updated_columns]
+            print(columns)
             for observation in csv_reader:
                 db[settings.MONGO_COLLECTION_PREFIX + collection].insert_one({
                     col: infer_type(val) for col, val in zip(columns, observation)
                 })
 
+        if indexes:
+            for index in indexes:
+                print('creating index ', index, ' on ', settings.MONGO_COLLECTION_PREFIX + collection)
+                db[settings.MONGO_COLLECTION_PREFIX + collection].create_index(index)
+
         return ok_resp({'collection': settings.MONGO_COLLECTION_PREFIX + collection})
 
+    @staticmethod
+    def delete_dataset(database, collection):
+        retrieve_util = MongoRetrieveUtil(database, collection)
+        db_info = retrieve_util.get_mongo_db(database)
+        if not db_info.success:
+            return err_resp(db_info.err_msg)
+
+        db = db_info.result_obj
+
+        db[collection].drop()
 
     @staticmethod
-    def export_dataset(user_obj, collection, data):
+    def export_dataset(user_workspace, collection, data):
         """Export the dataset using the 'BasicProblemWriter' """
+        if not isinstance(user_workspace, UserWorkspace):
+            user_msg = ('The user_workspace was not set correctly.'
+                        ' (export_dataset)')
+            return err_resp(user_msg)
+
         if not isinstance(data, list):
             user_msg = 'export_dataset failed.  "data" must be a list'
             LOGGER.error(user_msg)
@@ -537,15 +563,19 @@ class EventJobUtil(object):
                   BasicProblemWriter.INCREMENT_FILENAME: True,
                   BasicProblemWriter.QUOTING: csv.QUOTE_NONNUMERIC}
 
-        bpw = BasicProblemWriter(user_obj, filename, data, **params)
+        bpw = BasicProblemWriter(user_workspace, filename, data, **params)
         if bpw.has_error():
             return err_resp(bpw.get_error_message())
 
         return ok_resp(bpw.new_filepath)
 
     @staticmethod
-    def export_problem(user_obj, data, metadata):
+    def export_problem(user_workspace, data, metadata):
         """Export the problem in a D3M-compatible format"""
+        if not isinstance(user_workspace, UserWorkspace):
+            user_msg = ('The user_workspace was not set correctly.'
+                        ' (export_problem)')
+            return err_resp(user_msg)
 
         if not isinstance(data, list):
             user_msg = 'export_problem failed.  "data" must be a list'
@@ -557,14 +587,9 @@ class EventJobUtil(object):
             LOGGER.error(user_msg)
             return err_resp(user_msg)
 
-        d3m_config_info = get_latest_d3m_user_config(user_obj)
-        if not d3m_config_info.success:
-            user_msg = 'export_problem failed. no d3m config'
-            LOGGER.error(user_msg)
-            return err_resp(user_msg)
-        d3m_config = d3m_config_info.result_obj
+        d3m_config = user_workspace.d3m_config
 
-        manipulations_folderpath = os.path.join(d3m_config.temp_storage_root, 'manipulations')
+        manipulations_folderpath = os.path.join(d3m_config.additional_inputs, 'manipulations')
 
         extension = 0
         while os.path.exists(os.path.join(manipulations_folderpath, str(extension))):

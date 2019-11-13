@@ -25,6 +25,7 @@ export default class ConfusionMatrix {
          !vnode.attrs.classes.every(clss => this.classes.has(clss))) && this.plot(vnode)
 
         let {width, height} = vnode.dom.getBoundingClientRect();
+
         if (this.width !== width) {
             this.width = width;
             this.height = height;
@@ -74,10 +75,6 @@ export default class ConfusionMatrix {
         // compute how many pixels are necessary for the legend and labels
         let widthLegend = 15 + 7 * String(maxValue).length;
 
-        let longestLabel = Math.max(...classes.map(val => val.length));
-        let widthLabels = 15 + 7 * longestLabel; // # number of pixels the row labels need
-        let heightLabels = 15 + 7 * longestLabel * .86602; // # of pixels the column labels need
-
         // set the dimensions and margins of the graph
         let width = this.width - widthLegend - 20;
         let height = this.height;
@@ -86,6 +83,12 @@ export default class ConfusionMatrix {
 
         let numrows = data.length;
         let numcols = data[0].length;
+
+        let fontSize = Math.max(10,Math.round(46/Math.sqrt(numcols+1)));
+
+        let longestLabel = Math.max(...classes.map(val => String(val).length));
+        let widthLabels = 15 + fontSize / 2 * longestLabel; // # number of pixels the row labels need
+        let heightLabels = 15 + fontSize / 2 * longestLabel * .86602; // # of pixels the column labels need
 
         // legend
         let key = d3.select(vnode.dom)
@@ -225,7 +228,7 @@ export default class ConfusionMatrix {
         columnLabels.append("text")
             .attr("x", x.bandwidth() / 2)
             .attr("y", -10)
-            .attr("font-size", Math.max(10,Math.round(46/Math.sqrt(numcols+1))))
+            .attr("font-size", fontSize)
             //.attr("dy", "0.5em")
             .attr("text-anchor", "start")
             .attr("transform", "rotate(60," + x.bandwidth() / 2 + ",-10)")
@@ -250,7 +253,7 @@ export default class ConfusionMatrix {
         rowLabels.append("text")
             .attr("x", -8)
             .attr("y", y.bandwidth() / 2)
-            .attr("font-size", Math.max(10,Math.round(46/Math.sqrt(numcols+1))))
+            .attr("font-size", fontSize)
             .attr("dy", ".32em")
             .attr("text-anchor", "end")
             .text(function (d) {
@@ -260,7 +263,7 @@ export default class ConfusionMatrix {
         svg.append("text")
             .attr("transform", "translate(" + ((width + widthLegend) / 2) + " ," + (0 - 10) + ")")
             .style("text-anchor", "middle")
-            .text(xLabel || "Predicted Class");
+            .text(xLabel || "Fitted Class");
 
         svg.append("text")
             .attr("transform", "translate(" + ((width + widthLegend) / 2) + " ," + (0 - 30) + ")")
@@ -271,7 +274,7 @@ export default class ConfusionMatrix {
             .attr("transform", "rotate(-90)")
 
             .attr("x", 0 - (height - margin.bottom - margin.top) / 2)
-            .attr("y", -10 - widthLabels)
+            .attr("y", - widthLabels)
             //.attr("dy", "1em")
             .style("text-anchor", "middle")
             .text(yLabel || "Actual Class");

@@ -1,6 +1,6 @@
 # Note: This only runs the Django app, not the rook services
 FROM python:3.6.8
-MAINTAINER Raman Prasad (raman_prasad@harvard.edu)
+MAINTAINER TwoRavens http://2ra.vn/
 
 LABEL organization="Two Ravens" \
       2ra.vn.version="0.0.6-beta" \
@@ -47,7 +47,7 @@ COPY . .
 #                       credentials on the deployment server
 # -------------------------------------
 ENV DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container2 \
-    R_DEV_SERVER_BASE=http://rook-service:8000/custom/ \
+    R_DEV_SERVER_BASE=http://rook-service:8000/ \
     TA2_STATIC_TEST_MODE=False \
     TA2_TEST_SERVER_URL=localhost:45042 \
     CODE_REPOSITORY=/var/webapps/TwoRavens \
@@ -95,9 +95,10 @@ EXPOSE 8080
 # -------------------------------------
 #COPY startup_script/ta3_search /usr/bin/ta3_search
 COPY startup_script/gce_start.sh /usr/bin/gce_start.sh
+COPY startup_script/d3m_start_multiuser.sh /usr/bin/d3m_start_multiuser.sh
 COPY startup_script/d3m_start.sh /usr/bin/d3m_start.sh
 
-RUN chmod u+x /usr/bin/gce_start.sh /usr/bin/d3m_start.sh
+RUN chmod u+x /usr/bin/gce_start.sh /usr/bin/d3m_start.sh /usr/bin/d3m_start_multiuser.sh
 
 # -------------------------------------
 # Idle the container on startup so it

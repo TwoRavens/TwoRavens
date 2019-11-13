@@ -10,6 +10,8 @@ cd /var/webapps/TwoRavens
 fab init_db
 fab check_datamarts
 
+fab set_2ravens_public_site
+
 # Make superuser and test user
 #
 fab create_django_superuser

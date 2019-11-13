@@ -230,7 +230,14 @@ export default class ForceDiagram {
                 .attr("transform", d => `translate(${centroids[d.name][0] - d.name.length * 5},${centroids[d.name][1]})`)
                 // .attr('dy', d => centroids[d.name] - Math.min(...hullCoords[d.name].map(_ => _[1])))
         };
-        this.force.on('tick', tick);
+        this.force.on('tick', () => {
+            // somehow tick is keeping a reference to an older 'this' after being rebound
+            // this aggressively rebinds until something catches, which surprisingly works
+            // TODO: RCA, TEMP FIX 7/19
+            try{tick()} catch(_) {
+                m.redraw();
+            }
+        });
         this.force.alphaTarget( 1).restart();
         setTimeout(() => {
             if (this.isDragging) return;
@@ -737,12 +744,23 @@ let speckCoords = Array.from({length: 100})
 let pebbleBuilderPlots = (attrs, context, newPebbles) => {
     newPebbles
         .append('g')
-        .attr('class', pebble => ({
-            'continuous': 'density-plot',
-            'bar': 'bar-plot',
-            'collapsed': 'speck-plot'
-        }[(attrs.summaries[pebble] || {}).plottype]))
+        .attr('class', 'pebble-plot')
         .attr('opacity', 0.4);
+
+    context.selectors.pebbles.select('g.pebble-plot')
+        .attr('class', function(pebble) {
+            let className = {
+                'continuous': 'density-plot',
+                'bar': 'bar-plot',
+                'collapsed': 'speck-plot'
+            }[(attrs.summaries[pebble] || {}).plottype];
+
+            // delete old plot if plot type changed
+            if (!this.classList.contains(className))
+                d3.select(this).selectAll('.embedded-plot').remove();
+
+            return 'pebble-plot ' + className
+        });
 
     context.selectors.pebbles
         .select('g.speck-plot').each(function (pebble) {
@@ -758,6 +776,11 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
         let circleSelection = d3.select(this).selectAll("circle.embedded-plot").data(groupSpeckCoords);
         circleSelection.exit().remove();
         circleSelection.enter().append("circle").attr('class', 'embedded-plot');
+
+        // bind all events to the plot
+        Object.keys(attrs.pebbleEvents)
+            .forEach(event => circleSelection
+                .on(event, () => attrs.pebbleEvents[event](pebble)));
 
         d3.select(this).selectAll("circle.embedded-plot").data(groupSpeckCoords)
             .transition()
@@ -797,6 +820,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
 
         // append path if not exists
         let plotSelection = d3.select(this).selectAll('path')
+            .attr('class', 'embedded-plot')
             .data([null]).enter().append('path')
             .attr("class", "area")
             .attr("fill", "#1f77b4");
@@ -849,7 +873,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
             .domain([0, maxY])
             .range([0, height]);
 
-        let rectSelection = d3.select(this).selectAll("rect").data(data);
+        let rectSelection = d3.select(this).selectAll("rect").attr('class', 'embedded-plot').data(data);
         rectSelection.exit().remove();
         rectSelection.enter().append("rect");
 

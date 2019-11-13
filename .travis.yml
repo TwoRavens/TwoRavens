@@ -12,8 +12,12 @@ python:
 services:
   - docker
 
+before_install:
+  - sudo apt-get install libgnutls28-dev
+
 install:
   # Build/test dependencies
+  - pip install --upgrade pip
   - pip install --no-cache-dir -r requirements/prod.txt
   - pip install coveralls
 script:
@@ -38,6 +42,14 @@ after_success:
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
     docker push tworavens/ravens-main:develop;
     fi
+  # -------------------------------------
+  # Temp push, to test new multiuser
+  # -------------------------------------
+  #- if [ "$TRAVIS_BRANCH" == "710-multi-dataset" ]; then
+  #  docker build -t tworavens/ravens-main:nov-test .;
+  #  docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+  #  docker push tworavens/ravens-main:nov-test;
+  #  fi
   #  docker tag tworavens/ravens-main:develop tworavens/ravens-main:dm-demo3;
   #  docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
   #  docker push tworavens/ravens-main:dm-demo3;

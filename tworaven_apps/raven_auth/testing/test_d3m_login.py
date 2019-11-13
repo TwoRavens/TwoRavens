@@ -10,7 +10,7 @@ from django.conf import settings
 from tworaven_apps.utils import random_info
 from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.configurations.models import AppConfiguration, D3M_DOMAIN
-from tworaven_apps.configurations.util_config_maker import TestConfigMaker
+# from tworaven_apps.configurations.util_config_maker import TestConfigMaker
 from tworaven_apps.raven_auth.models import User
 
 LOGIN_STR = '<h3>Login</h3>'

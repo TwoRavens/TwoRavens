@@ -8,6 +8,7 @@ from django.http import \
     (JsonResponse, HttpResponse)
 from django.views.decorators.csrf import csrf_exempt
 
+from tworaven_apps.rook_services.make_datadocs_util import MakeDatadocsUtil
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
      get_json_error,
@@ -27,6 +28,7 @@ from tworaven_apps.eventdata_queries.models import \
      SEARCH_PARAMETERS, SEARCH_KEY_NAME, SEARCH_KEY_DESCRIPTION)
 from tworaven_apps.eventdata_queries.mongo_retrieve_util import \
     MongoRetrieveUtil
+from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 
 LOGGER = logging.getLogger(__name__)
 
@@ -450,19 +452,16 @@ def api_get_data(request):
 
     """
     LOGGER.info('--- api_get_data: Retrieve data from MongoDB ---')
+    user_workspace_info = get_latest_user_workspace(request)
+    if not user_workspace_info.success:
+        return JsonResponse(get_json_error(user_workspace_info.err_msg))
+    user_workspace = user_workspace_info.result_obj
 
     success, json_req_obj = get_request_body_as_json(request)
 
-    #import json
-    #print('json_req_obj', json.dumps(json_req_obj, indent=4))
+    #import json; print('json_req_obj', json.dumps(json_req_obj, indent=4))
     if not success:
         return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
-
-    user_info = get_authenticated_user(request)
-    if not user_info.success:
-        return JsonResponse(get_json_error(user_info.err_msg))
-
-    user_obj = user_info.result_obj
 
     # check if data is valid
     #
@@ -501,13 +500,13 @@ def api_get_data(request):
 
     if json_req_obj.get('export') == 'dataset':
         success, results_obj_err = EventJobUtil.export_dataset(\
-            user_obj,
+            user_workspace,
             settings.MONGO_COLLECTION_PREFIX + json_req_obj['collection_name'],
             results_obj_err)
 
     if json_req_obj.get('export') == 'problem':
         success, results_obj_err = EventJobUtil.export_problem(\
-            user_obj,
+            user_workspace,
             results_obj_err,
             json.loads(json_req_obj['metadata']))
 

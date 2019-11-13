@@ -4,7 +4,6 @@ from io import BytesIO
 from os.path import dirname, join, isfile
 
 from django.conf import settings
-import pandas as pd
 from tworaven_apps.user_workspaces.models import UserWorkspace
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.random_info import get_timestamp_string_readable
@@ -49,13 +48,74 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
         return ok_resp(response['data'])
 
+
     @staticmethod
-    def datamart_search(query_dict, **kwargs):
-        """Search the NYU datamart"""
-        if not isinstance(query_dict, dict):
-            user_msg = ('There is something wrong with the search parameters.'
-                        ' Please try again. (expected a dictionary)')
+    def search_with_dataset(dataset_path, query=None, **kwargs):
+        """Search the datamart using a dataset"""
+        if not isfile(dataset_path):
+            user_msg = ('The dataset file could not be found.')
             return err_resp(user_msg)
+
+        search_url = get_nyu_url() + '/search'
+
+        # --------------------------------
+        # Behavioral logging
+        # --------------------------------
+        if 'user' in kwargs:
+            log_data = dict(feature_id=f'POST|by-dataset|{search_url}',
+                            activity_l1=bl_static.L1_DATA_PREPARATION,
+                            activity_l2=bl_static.L2_DATA_SEARCH,
+                            path=search_url)
+
+            LogEntryMaker.create_datamart_entry(kwargs['user'], log_data)
+        # --------------------------------
+
+        # --------------------------------
+        # Query the datamart
+        # --------------------------------
+        try:
+            with open(dataset_path, 'rb') as dataset_p:
+                search_files = dict(data=dataset_p)
+                if query:
+                    search_files['query'] = query
+
+                try:
+                    response = requests.post(\
+                        search_url,
+                        files=search_files,
+                        timeout=settings.DATAMART_LONG_TIMEOUT)
+
+                except requests.exceptions.Timeout as err_obj:
+                    return err_resp('Request timed out. responded with: %s' % err_obj)
+
+        except IOError as err_obj:
+            user_msg = (f'Failed to search with the dataset file.'
+                        f'  Technical: {err_obj}')
+            return err_resp(user_msg)
+
+        if response.status_code != 200:
+            print(str(response))
+            print(response.text)
+            return err_resp(('NYU Datamart internal server error.'
+                             ' status_code: %s') % response.status_code)
+
+        json_results = response.json()['results']
+
+        if not json_results:
+            return err_resp('No datasets found. (%s)' % \
+                            (get_timestamp_string_readable(time_only=True),))
+
+        print('num results: ', len(json_results))
+
+        return ok_resp(json_results)
+
+
+    @staticmethod
+    def datamart_search(query_dict=None, dataset_path=None, **kwargs):
+        """Search the NYU datamart"""
+
+        if query_dict is None and dataset_path is None:
+            return err_resp('Either a query or dataset path must be supplied.')
 
         search_url = get_nyu_url() + '/search'
 
@@ -74,19 +134,39 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
         # --------------------------------
         # Query the datamart
         # --------------------------------
-        try:
-            response = requests.post(search_url,
-                                     json=query_dict,
-                                     stream=True,
-                                     timeout=settings.DATAMART_LONG_TIMEOUT)
-        except requests.exceptions.Timeout as err_obj:
-            return err_resp('Request timed out. responded with: %s' % err_obj)
 
-        if response.status_code != 200:
-            print(str(response))
-            print(response.text)
-            return err_resp(('NYU Datamart internal server error.'
-                             ' status_code: %s') % response.status_code)
+        if dataset_path:
+            try:
+                with open(dataset_path, 'rb') as dataset_p:
+                    try:
+                        response = requests.post(
+                            search_url,
+                            json=query_dict,
+                            files=dict(data=dataset_p),
+                            timeout=settings.DATAMART_LONG_TIMEOUT)
+
+                    except requests.exceptions.Timeout as err_obj:
+                        return err_resp('Request timed out. responded with: %s' % err_obj)
+
+            except IOError as err_obj:
+                user_msg = (f'Failed to search with the dataset file.'
+                            f'  Technical: {err_obj}')
+                return err_resp(user_msg)
+
+        else:
+            try:
+                response = requests.post(
+                    search_url,
+                    json=query_dict,
+                    stream=True,
+                    timeout=settings.DATAMART_LONG_TIMEOUT)
+            except requests.exceptions.Timeout as err_obj:
+                return err_resp('Request timed out. responded with: %s' % err_obj)
+            if response.status_code != 200:
+                print(str(response))
+                print(response.text)
+                return err_resp(('NYU Datamart internal server error.'
+                                 ' status_code: %s') % response.status_code)
 
         json_results = response.json()['results']
 
@@ -299,10 +379,11 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
         #
         if response.status_code != 200:
             user_msg = (f'NYU Datamart internal server error. Status code:'
-                        f' "{response.status_code}"')
-            print(response.content)
+                        f' "{response.status_code}".'
+                        f' <hr />Technical: {response.content}')
+            # print(response.content)
 
-            return err_resp('NYU Datamart internal server error')
+            return err_resp(user_msg)
 
         # Write the augmented file
         #
@@ -390,9 +471,9 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
         # Make sure that the datasetDoc.json exists
         #
-        datasetdoc_path = join(data_foldername, 'datasetdoc.json')
+        datasetdoc_path = join(data_foldername, 'datasetDoc.json')
         if not isfile(datasetdoc_path):
-            user_msg = ('File datasetDoc.json file not found in'
+            user_msg = ('File datasetDoc.json not found in'
                         ' expected place: %s') % datasetdoc_path
             return err_resp(user_msg)
 

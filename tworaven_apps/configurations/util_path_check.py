@@ -44,22 +44,27 @@ def get_bad_paths_for_admin(d3m_config):
 def get_bad_paths(d3m_config, with_html=False):
     """Get a list of bad paths.
     This should be in some util but speed needed"""
+    from tworaven_apps.configurations import static_vals as cstatic
     from tworaven_apps.configurations.models_d3m import \
             (D3M_FILE_ATTRIBUTES,
              D3M_DIR_ATTRIBUTES,
              D3M_DIR_USER_PROBLEMS_ROOT,
-             D3M_DIR_TEMP_STORAGE_ROOT)
+             )
 
     bad_paths = []
     for fpath in D3M_FILE_ATTRIBUTES:
+        print('fpath', fpath)
         if not isfile(d3m_config.__dict__.get(fpath, None)):
             fmt_line = format_bad_path_msg(d3m_config, fpath, with_html)
             bad_paths.append(fmt_line)
 
     for dpath in D3M_DIR_ATTRIBUTES:
         dpath_val = d3m_config.__dict__.get(dpath, None)
+        print('-' * 40)
+        print(f'dpath: {dpath}.  val: {dpath_val}')
+        print('D3M_DIR_USER_PROBLEMS_ROOT', D3M_DIR_USER_PROBLEMS_ROOT)
         if not isdir(dpath_val):
-            if dpath_val and dpath in [D3M_DIR_USER_PROBLEMS_ROOT, D3M_DIR_TEMP_STORAGE_ROOT]:
+            if dpath_val and dpath in [D3M_DIR_USER_PROBLEMS_ROOT,]:
                 # for these directories, try to create them...
                 try:
                     os.makedirs(dpath_val, exist_ok=True)

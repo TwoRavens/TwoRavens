@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static %}
+
+  {% block main_content %}
+  <div class="row">
+    <div class="col-12 col-md-12">
+      {% include "content_pages/snippet_return_to_links.html" %}
+
+      <h3>Environment Variables</h3>
+      <div class="card">
+        <div class="card-body">
+          The current system environment variables are listed below.
+        </div>
+      </div>
+
+      <br />
+
+      <div class="card">
+        <div class="card-header"><b>D3M Environment Variables</b></div>
+        <div class="card-body">
+          <table class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for name, value in d3m_vars %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ name }}</td>
+                <td>{{ value }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan=3>No 'D3M' or 'DATAMART' variables found</td>
+              </tr>
+
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <br />
+      <div class="card">
+        <div class="card-header"><b>Other Environment Variables</b></div>
+        <div class="card-body">
+          <table class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for name, value in all_vars %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ name }}</td>
+                <td>{{ value }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan=3>No 'D3M' or 'DATAMART' variables found</td>
+              </tr>
+
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- end: column -->
+  </div><!-- end: row -->
+{% endblock %}

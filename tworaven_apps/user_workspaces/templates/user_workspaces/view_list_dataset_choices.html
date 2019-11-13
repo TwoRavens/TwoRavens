@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+table.config-list tr th,
+table.config-list tr td {
+  text-align: left;
+}
+</style>
+{% endblock %}
+
+  {% block main_content %}
+  <div class="row">
+    <div class="col-12">
+      {% include "content_pages/snippet_return_to_links.html" %}
+      <h3>Dataset Choices</h3>
+
+
+      {% if not configs %}
+        <div class="alert alert-warning" role="alert">
+          No Dataset Configurations in the Database.
+        </div>
+      {% else %}
+        <div class="alert alert-primary" role="alert">
+          Note: Choosing a new dataset will clear all previous history.
+        </div>
+      {% endif %}
+
+
+
+      <div class="card">
+        <div class="card-header"><b>Choose a Dataset</b></div>
+        <div class="card-body">
+          Analyze a dataset from one of the choices below:
+          <div class="row">
+            <div class="col-8">
+              <table class="table table-condensed table-bordered">
+
+                <thead>
+                  <tr>
+                      <th>#</th>
+                      <th>Name</th>
+                      <th>Analyze</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {% for config in configs %}
+                    <tr>
+                      <td>{{ forloop.counter }}</td>
+                      <td>{{ config.name }}</td>
+                      <td>
+                        {% if config.is_default %}
+                          (Currently selected)
+                        {% else %}
+                        <button type="button" class="btn btn-primary" data-config-id="{{ config.id }}" data-config-name="{{ config.name }}"  data-toggle="modal" data-target="#analyzeDatasetModal">Analyze</button>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="3">No datasets available</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Modal -->
+      <div class="modal fade" id="analyzeDatasetModal" tabindex="-1" role="dialog" aria-labelledby="analyzeDatasetModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="analyzeDatasetModalLabel">Analyze New Dataset</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+                <p>Click "Confirm" to use the dataset.</p>
+
+                <p>Warning: This will delete any current workspaces</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+              <a class="btn btn-primary" id="modal-confirm" style="text-decoration:none;">Confirm</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <script>
+        $('#analyzeDatasetModal').on('show.bs.modal', function (event) {
+          let button = $(event.relatedTarget) // Button that triggered the modal
+          let configName = button.data('config-name') // Extract info from data-* attributes
+          let configId = button.data('config-id')
+          let modal = $(this);
+          modal.find('.modal-title').text('Analyze Dataset: ' + configName);
+          modal.find('#modal-confirm').attr('href', "{% url 'view_select_dataset_base' %}" + configId);
+        })
+      </script>
+    </div>
+  </div>
+  {% endblock %}

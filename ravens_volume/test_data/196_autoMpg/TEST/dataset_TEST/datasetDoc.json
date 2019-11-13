@@ -1,16 +1,17 @@
 {
   "about": {
-    "datasetID": "196_ag_dataset_TEST",
+    "datasetID": "196_autoMpg_dataset_TEST",
     "datasetName": "NULL",
     "license": "CC-BY license",
     "approximateSize": "",
-    "datasetSchemaVersion": "3.1.1",
+    "datasetSchemaVersion": "3.2.0",
     "redacted": true,
-    "datasetVersion": "1.0"
+    "datasetVersion": "2.0",
+    "digest": "3f23c61318ec2eeee28e924d2b84edbd2c3beb6e32c080da88097116013af1c0"
   },
   "dataResources": [
     {
-      "resID": "0",
+      "resID": "learningData",
       "resPath": "tables/learningData.csv",
       "resType": "table",
       "resFormat": [

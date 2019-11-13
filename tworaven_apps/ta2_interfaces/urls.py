@@ -17,25 +17,34 @@ urlpatterns = (
          views_user_problem.view_store_basic_problem,
          name='view_store_basic_problem'),
 
-    path(r'store-ta2ta3-data',
-         views_user_problem.view_store_ta2ta3_data,
-         name='view_store_ta2ta3_data'),
 
     path(r'get-problem-schema',
          views_additional.view_get_problem_schema,
          name='get_problem_schema'),
 
-    path(r'debug-pipeline-steps',
-         views_additional.view_show_pipeline_steps,
-         name='view_show_pipeline_steps'),
-
     path(r'retrieve-output-data',
          views_additional.view_retrieve_d3m_output_data,
          name='view_retrieve_d3m_output_data'),
 
-    path(r'retrieve-output-statistics',
-         views_additional.view_retrieve_d3m_statistics_data,
-         name='view_retrieve_d3m_statistics_data'),
+    path(r'download-file',
+         views_additional.view_download_file,
+         name='view_download_file'),
+
+    path(r'download-report-file',
+         views_additional.view_download_report_file,
+         name='view_download_report_file'),
+
+    path(r'retrieve-output-confusion-data',
+         views_additional.view_retrieve_d3m_confusion_data,
+         name='view_retrieve_d3m_confusion_data'),
+
+    path(r'retrieve-output-EFD-data',
+         views_additional.view_retrieve_d3m_EFD_data,
+         name='view_retrieve_d3m_EFD_data'),
+
+    path(r'get-train-test-split',
+         views_additional.get_train_test_split,
+         name='get-train-test-split'),
 
     re_path((r'stored-request/(?P<hash_id>[\w]{40,200})$'),
             views_saved_requests.view_stored_request,

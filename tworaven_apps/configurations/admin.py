@@ -36,3 +36,19 @@ class D3MConfigurationAdmin(admin.ModelAdmin):
                        'are_paths_valid',
                        'get_bad_paths_for_admin')
 admin.site.register(D3MConfiguration, D3MConfigurationAdmin)
+#admin.site.register(D3MConfiguration)
+
+"""
+from tworaven_apps.configurations.models_d3m import D3MConfiguration
+from tworaven_apps.configurations import util_path_check as putil
+
+config = D3MConfiguration.objects.get(pk=2)
+
+info = putil.are_d3m_paths_valid(config)
+print('info', info)
+
+
+info2 = putil.get_bad_paths(config)
+print('info', info2)
+
+"""

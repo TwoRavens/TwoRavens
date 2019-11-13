@@ -1,0 +1,86 @@
+[
+{
+    "model": "raven_auth.user",
+    "pk": 1,
+    "fields": {
+        "password": "pbkdf2_sha256$120000$K8ND9pINixv2$yrP8JdfGAgIHd9n/oBd2WXRlf8LXR5rRsTacSxJDP+A=",
+        "last_login": "2019-07-17T23:44:26.686Z",
+        "is_superuser": true,
+        "username": "dev_admin",
+        "first_name": "Dev",
+        "last_name": "Administrator",
+        "email": "",
+        "is_staff": true,
+        "is_active": true,
+        "date_joined": "2019-07-17T23:44:08.424Z",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "raven_auth.user",
+    "pk": 2,
+    "fields": {
+        "password": "pbkdf2_sha256$120000$qdKTokj7POUQ$j11Oo44TcIF0rn/7i5cvuzZRHlSk111/QLF06RJrODI=",
+        "last_login": null,
+        "is_superuser": false,
+        "username": "test_user",
+        "first_name": "Test",
+        "last_name": "User",
+        "email": "",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2019-07-17T23:44:08.536Z",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "configurations.d3mconfiguration",
+    "pk": 16,
+    "fields": {
+        "created": "2019-07-18T04:19:12.885Z",
+        "modified": "2019-07-18T04:41:52.599Z",
+        "name": "DA_poverty_estimation_problem_TRAIN",
+        "orig_dataset_id": "DA_poverty_estimation_problem_TRAIN",
+        "is_user_config": false,
+        "description": "",
+        "is_default": true,
+        "d3m_input_dir": "/ravens_volume/test_data/DA_poverty_estimation",
+        "dataset_schema": "/ravens_volume/test_data/DA_poverty_estimation/TRAIN/dataset_TRAIN/datasetDoc.json",
+        "problem_schema": "/ravens_volume/test_data/DA_poverty_estimation/TRAIN/problem_TRAIN/problemDoc.json",
+        "training_data_root": "/ravens_volume/test_data/DA_poverty_estimation/TRAIN/dataset_TRAIN",
+        "root_output_directory": "/ravens_volume/test_output/DA_poverty_estimation",
+        "executables_root": "",
+        "pipeline_logs_root": "",
+        "user_problems_root": "/ravens_volume/test_output/DA_poverty_estimation/problems",
+        "additional_inputs": "/ravens_volume/test_output/DA_poverty_estimation/additional_inputs",
+        "timeout": 600,
+        "cpus": "1",
+        "ram": "1",
+        "env_values": "{\"D3MRUN\":\"ta2ta3\",\"D3MINPUTDIR\":\"/ravens_volume/test_data/DA_poverty_estimation\",\"D3MPROBLEMPATH\":\"/ravens_volume/test_data/DA_poverty_estimation/TRAIN/problem_TRAIN/problemDoc.json\",\"D3MOUTPUTDIR\":\"/ravens_volume/test_output/DA_poverty_estimation\",\"D3MLOCALDIR\":\"/ravens_volume/test_output/DA_poverty_estimation/local_dir\",\"D3MSTATICDIR\":\"/ravens_volume/test_output/DA_poverty_estimation/static_dir\",\"D3MTIMEOUT\":\"600\",\"D3MCPU\":\"1\",\"D3MRAM\":1}",
+        "slug": "da_poverty_estimation_problem_train"
+    }
+},
+{
+    "model": "user_workspaces.userworkspace",
+    "pk": 35,
+    "fields": {
+        "created": "2019-07-18T05:05:51.462Z",
+        "modified": "2019-07-18T05:05:51.469Z",
+        "user": 1,
+        "name": "DA_poverty_estimation_problem_TRAIN (id: 16)",
+        "is_public": false,
+        "d3m_config": 16,
+        "raven_config": "\"\"",
+        "slug": "",
+        "is_current_workspace": true,
+        "is_active": true,
+        "description": "",
+        "started_as_shared_workspace": false,
+        "original_workspace": 35,
+        "previous_workspace": null,
+        "hash_id": "4650d856fd0580d66864721217b79e7d729aa1b869d9861a42eb605a"
+    }
+}
+]

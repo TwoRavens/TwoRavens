@@ -4,7 +4,7 @@ import os
 
 
 R_DEV_SERVER_BASE = os.environ.get('R_DEV_SERVER_BASE',
-                                   'http://0.0.0.0:8000/custom/')
+                                   'http://0.0.0.0:8000/')
 
 TEST_DIRECT_STATIC = STATIC_ROOT
 
@@ -25,8 +25,13 @@ TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL',
 TA3_GRPC_USER_AGENT = os.environ.get('TA3_GRPC_USER_AGENT',
                                      'tworavens')
 
-SESSION_COOKIE_NAME = os.environ.get('RAVENS_SESSION_COOKIE_NAME',
+
+SESSION_COOKIE_NAME = os.environ.get('SESSION_COOKIE_NAME',
                                      'tworavens_deploy')
+
+CSRF_COOKIE_NAME = os.environ.get('CSRF_COOKIE_NAME',
+                                  'tworavens_deploy_csrf')
+
 
 SWAGGER_HOST = '127.0.0.1:80'
 

@@ -10,7 +10,7 @@ from fabric.api import local, task, settings
 import django
 import subprocess
 import re
-
+import os
 
 # ----------------------------------------------------
 # Add this directory to the python system path
@@ -60,22 +60,26 @@ def restart():
 
 
 @task
-def make_d3m_config_files_2018():
-    """2018 (old) Make configs in /ravens_volume and loads them to db"""
-    clear_d3m_configs()
-
-    from tworaven_apps.configurations.util_config_maker import TestConfigMaker
-    TestConfigMaker.make_deploy_config_files()
-
-
-
-@task
 def make_d3m_configs_from_files():
     """Make configs from /ravens_volume and loads them to db"""
     clear_d3m_configs()
 
     from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
-    loader = EnvConfigLoader.make_d3m_test_configs_env_based()
+    loader = EnvConfigLoader.make_d3m_test_configs_env_based('/ravens_volume/test_data')
+
+@task
+def make_d3m_configs_from_files_multiuser_test():
+    """11/2019 Make configs from /ravens_volume and loads them to db
+    Also make the input/output directories 1-level higher than usual
+    """
+    clear_d3m_configs()
+
+    from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
+
+    params = dict(is_multi_dataset_demo=True)
+    loader = EnvConfigLoader.make_d3m_test_configs_env_based(\
+                    '/ravens_volume/test_data',
+                    **params)
 
 
 @task
@@ -101,18 +105,7 @@ def clear_test_data():
     # (1) D3M config data in Django
     clear_d3m_configs()
 
-    # (2) Delete Preprocess files
-    rook_files_dir = os.path.join(FAB_BASE_DIR, 'rook', 'rook-files')
-    print('-' * 40)
-    print('Delete preprocess output directory: %s' % rook_files_dir)
-    print('-' * 40)
-    if os.path.isdir(rook_files_dir):
-        shutil.rmtree(rook_files_dir)
-        print('  -> Preprocess output directory deleted: %s\n' % rook_files_dir)
-    else:
-        print('  -> No preprocess files to delete\n')
-
-    # (3) Delete ravens_volume test_output
+    # (2) Delete ravens_volume test_output
     d3m_output_dir = os.path.join(FAB_BASE_DIR, 'ravens_volume', 'test_output')
     print('-' * 40)
     print('Delete D3M test output directory: %s' % d3m_output_dir)
@@ -123,13 +116,6 @@ def clear_test_data():
     else:
         print('  -> No preprocess D3M test output directory')
 
-
-def make_d3m_config():
-    """NO LONGER USED
-    Adds D3M configs to database--but DOESN'T create config files"""
-    from tworaven_apps.configurations.util_config_maker import TestConfigMaker
-
-    TestConfigMaker.make_configs()
 
 @task
 def load_d3m_config_from_env():
@@ -212,7 +198,7 @@ def stop_ta2_server():
             print('No docker container named "ta2_server"\n')
 
 @task
-def run_ta2_stanford_with_config(choice_num=''):
+def run_ta2_stanford_choose_config(choice_num=''):
     """Pick a config from /ravens_volume and run the Standford TA2"""
     from tworaven_apps.ta2_interfaces.ta2_dev_util import \
             (TA2Helper, TA2_STANFORD)
@@ -220,7 +206,7 @@ def run_ta2_stanford_with_config(choice_num=''):
     resp = TA2Helper.run_ta2_with_dataset(\
                 TA2_STANFORD,
                 choice_num,
-                run_ta2_stanford_with_config.__name__)
+                run_ta2_stanford_choose_config.__name__)
 
     if resp.success:
         stop_ta2_server()
@@ -235,7 +221,7 @@ def run_ta2_stanford_with_config(choice_num=''):
         print(resp.err_msg)
 
 @task
-def run_ta2_featurelabs_with_config(choice_num=''):
+def run_ta2_featurelabs_choose_config(choice_num=''):
     """Pick a config from /ravens_volume and run the FeatureLabs TA2"""
     from tworaven_apps.ta2_interfaces.ta2_dev_util import \
             (TA2Helper, TA2_FeatureLabs)
@@ -243,7 +229,7 @@ def run_ta2_featurelabs_with_config(choice_num=''):
     resp = TA2Helper.run_ta2_with_dataset(\
                 TA2_FeatureLabs,
                 choice_num,
-                run_ta2_featurelabs_with_config.__name__)
+                run_ta2_featurelabs_choose_config.__name__)
 
     if resp.success:
         stop_ta2_server()
@@ -320,6 +306,48 @@ def run_ta2_isi_choose_config(choice_num=''):
     elif resp.err_msg:
         print(resp.err_msg)
 
+
+@task
+def run_ta2_tamu_choose_config(choice_num=''):
+    """Pick a config from /ravens_volume and run TAMU's TA2"""
+    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
+        (TA2Helper, TA2_TAMU)
+
+    resp = TA2Helper.run_ta2_with_dataset( \
+        TA2_TAMU,
+        choice_num,
+        run_ta2_tamu_choose_config.__name__)
+
+    if resp.success:
+        stop_ta2_server()
+
+        docker_cmd = resp.result_obj
+        print('Running command: %s' % docker_cmd)
+        local(docker_cmd)
+    elif resp.err_msg:
+        print(resp.err_msg)
+
+
+@task
+def run_ta2_cmu_choose_config(choice_num=''):
+    """Pick a config from /ravens_volume and run CMU's TA2"""
+    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
+        (TA2Helper, TA2_CMU)
+
+    resp = TA2Helper.run_ta2_with_dataset( \
+        TA2_CMU,
+        choice_num,
+        run_ta2_cmu_choose_config.__name__)
+
+    if resp.success:
+        stop_ta2_server()
+
+        docker_cmd = resp.result_obj
+        print('Running command: %s' % docker_cmd)
+        local(docker_cmd)
+    elif resp.err_msg:
+        print(resp.err_msg)
+
 @task
 def load_docker_ui_config():
     """Load config pk=3, name 'Docker Default configuration'"""
@@ -351,16 +379,28 @@ def check_config():
 
 @task
 def check_datamarts():
-    """If there aren't any db configurations, then load the fixtures"""
+    """If there aren't any db configurations, then load the fixtures
+    - Update the configurations from available env variables
+    """
     from tworaven_apps.datamart_endpoints.models import DatamartInfo
-
+    from tworaven_apps.datamart_endpoints import datamart_info_util
+    # Are any DatamartInfo objects in the database?
+    #
     config_cnt = DatamartInfo.objects.count()
+
+    # No.  Then load the default fixtures
+    #
     if config_cnt == 0:
         local(('python manage.py loaddata'
                ' tworaven_apps/datamart_endpoints/'
                'fixtures/initial_datamarts.json'))
     else:
         print('Configs exist in the db: %d' % config_cnt)
+
+    # If appropriate, override db settings with
+    # any environment variables
+    #
+    datamart_info_util.load_from_env_variables()
 
 
 @task
@@ -371,19 +411,14 @@ def run_ta2_test_server():
     local(run_cmd)
 
 @task
-def get_run_rook_cmd():
-    """For running the rook server via the command line"""
-    return 'cd rook; Rscript rook_nonstop.R'
+def get_run_flask_cmd():
+    """For running the flask server via the command line"""
+    return 'cd R; python runner.py'
 
 @task
-def run_rook():
-    """Run the rook server via the command line"""
-    local(get_run_rook_cmd())
-
-#@task
-#def run_with_rook():
-#    """In addition to the django dev server and webpack, run rook via the Terminal"""
-#    run(with_rook=True)
+def run_flask():
+    """Run the flask server via the command line"""
+    local(get_run_flask_cmd())
 
 @task
 def run_with_ta2():
@@ -406,7 +441,7 @@ def load_eventdata_dev():
 
 @task
 def run_eventdata_dev():
-    """Set the UI mode to EventData with .js using a local rook url"""
+    """Set the UI mode to EventData with .js using a local flask url"""
     init_db()
 
     load_eventdata_dev()
@@ -429,7 +464,7 @@ def load_eventdata_prod():
 
 @task
 def run_eventdata_prod():
-    """Set the UI mode to EventData with .js using a local rook url"""
+    """Set the UI mode to EventData with .js using a local flask url"""
     init_db()
 
     load_eventdata_prod()
@@ -458,7 +493,7 @@ def run(**kwargs):
     ]
 
     if with_rook:
-        commands.append(get_run_rook_cmd())
+        commands.append(get_run_R_cmd())
 
     proc_list = [subprocess.Popen(command, shell=True, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr) for command in commands]
     try:
@@ -506,47 +541,6 @@ def clear_js():
         os.remove(fname)
     print('-' * 40)
     print('Deleted %s file(s)' % len(build_file_names))
-
-@task
-def clear_logs():
-    """Delete log files, image files, and preprocess files from rook"""
-    print(clear_logs.__doc__)
-
-    # rook directory
-    rook_log_dir = os.path.join(FAB_BASE_DIR, 'rook')
-
-    # find files
-    pat1 = r'^log_(\w|-){25,50}\.txt$'
-    pat2 = r'^output(\w|-){2,10}\.png$'
-
-    log_files_names = [x for x in os.listdir(rook_log_dir)
-                       if re.match(pat1, x) is not None or
-                       re.match(pat2, x) is not None]
-
-    if log_files_names:
-        print('Deleting %s log file(s)' % len(log_files_names))
-        print('-' * 40)
-        for fname in [os.path.join(rook_log_dir, x) for x in log_files_names]:
-            print('removing... %s' % fname)
-            os.remove(fname)
-        print('-' * 40)
-        print('Deleted %s log file(s)' % len(log_files_names))
-
-    # data directory
-    rook_data_dir = os.path.join(FAB_BASE_DIR, 'data')
-
-    pat3 = r'^preprocessSubset_(\w|-){15,50}\.txt$'
-    data_file_names = [x for x in os.listdir(rook_data_dir)
-                       if re.match(pat3, x) is not None]
-
-    if data_file_names:
-        print('Deleting %s data file(s)' % len(data_file_names))
-        print('-' * 40)
-        for fname in [os.path.join(rook_data_dir, x) for x in data_file_names]:
-            print('removing... %s' % fname)
-            os.remove(fname)
-        print('-' * 40)
-        print('Deleted %s log file(s)' % len(data_file_names))
 
 @task
 def create_test_user():
@@ -769,8 +763,10 @@ def set_eventdata_public_site():
 @task
 def set_2ravens_public_site():
     """Set the current Site to '2ravens.org'"""
-    set_django_site('2ravens.org',
-                    '2ravens.org')
+    domain_name = os.environ.get('RAVENS_SERVER_NAME',
+                                 '2ravens.org')
+    set_django_site(domain_name,
+                    domain_name)
 
 
 @task

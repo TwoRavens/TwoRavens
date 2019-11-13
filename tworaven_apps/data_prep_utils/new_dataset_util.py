@@ -114,13 +114,18 @@ class NewDatasetUtil(BasicErrCheck):
     def create_dataset_id(old_id=None):
         """Construct an updated Dataset id"""
         if old_id:
-            return '%s-augmented-%s' % (old_id,
-                                        get_alpha_string(6))
+            aug_idx = old_id.find('-aug-')
+            if aug_idx > 1:
+                # to stop appending multiple '-aug-rndchr' strings
+                old_id = old_id[:aug_idx]
+
+            return '%s-aug-%s' % (old_id,
+                                  get_alpha_string(6))
             #return '%s-%s-%s' % (old_id,
             #                     get_timestamp_string(no_breaks=True),
             #s                     get_alpha_string(6))
 
-        return 'augmented-%s' % (get_alpha_string(6),)
+        return 'aug-%s' % (get_alpha_string(6),)
                                  #get_timestamp_string(no_breaks=True))
 
 
@@ -203,11 +208,11 @@ class NewDatasetUtil(BasicErrCheck):
         if not self.move_source_files():
             return
 
-        LOGGER.info('(4) create problem docs (and dataset doc, if needed)')
-        if not self.create_problem_data_docs():
-            return
+        #LOGGER.info('(4) create problem docs (and dataset doc, if needed)')
+        #if not self.create_problem_data_docs():
+        #    return
 
-        LOGGER.info('(5) create_new_config')
+        LOGGER.info('(4) create_new_config')
         self.create_new_config()
 
         # self.send_websocket_err_msg(':( - the augment did not work')
@@ -377,7 +382,7 @@ class NewDatasetUtil(BasicErrCheck):
 
     def get_makedoc_rook_params(self):
         """Prepare the problem and dataset docs
-        info to send to rook mkdocsapp:
+        info to send to mkdocs class:
 
         datafile: path to data file
 
@@ -526,8 +531,8 @@ class NewDatasetUtil(BasicErrCheck):
         return params
 
 
-    def create_problem_data_docs(self):
-        """Send params to rook app"""
+    def xxcreate_problem_data_docs(self):
+        """NOT USED.  NO PROBLEM DOC NEEDED. Send params to rook app"""
         if self.has_error():
             return False
 
@@ -574,7 +579,10 @@ class NewDatasetUtil(BasicErrCheck):
 
         new_pdoc['about']['taskType'] = self.rook_params['taskType']
 
-        new_pdoc['about']['taskSubType'] = self.rook_params['taskSubType']
+        if 'taskSubType' in new_pdoc['about']:
+            new_pdoc['about']['taskSubType'] = self.rook_params['taskSubType']
+            if new_pdoc['about']['taskSubType'] == "remove":
+                del new_pdoc['about']['taskSubType']
 
         # May be incorrect, the column order may not have been kept
         #
@@ -583,9 +591,6 @@ class NewDatasetUtil(BasicErrCheck):
         new_pdoc['inputs']['performanceMetrics'] = self.rook_params['performanceMetrics']
 
         new_pdoc['inputs']['data'][0]['datasetID'] = self.rook_params['datasetid']
-
-        if new_pdoc['about']['taskSubType'] == "remove":
-            del new_pdoc['about']['taskSubType']
 
         # -----------------------------
         # write problemDoc
@@ -604,8 +609,8 @@ class NewDatasetUtil(BasicErrCheck):
 
         return True
 
-    def xcreate_problem_data_docs(self):
-        """Send params to rook app"""
+    def xx_deprecated_create_problem_data_docs(self):
+        """No longer used! No problem doc needed!  Send params to rook app"""
         if self.has_error():
             return False
 

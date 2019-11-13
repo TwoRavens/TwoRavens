@@ -257,8 +257,6 @@ class UserProblemHelper(object):
         #
 
 
-
-
     @staticmethod
     def write_to_user_problems_root(user_obj, problem_info_string, file_prefix='user_prob'):
         """Write a JSON string as a new file to the

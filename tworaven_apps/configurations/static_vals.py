@@ -5,16 +5,24 @@ from os.path import join
 #
 KEY_TA2TA3 = 'ta2ta3'
 KEY_D3MINPUTDIR = 'D3MINPUTDIR'
+KEY_D3MOUTPUTDIR = 'D3MOUTPUTDIR'
+KEY_D3MPROBLEMPATH = 'D3MPROBLEMPATH'
+KEY_D3MLOCALDIR = 'D3MLOCALDIR'
+KEY_D3MSTATICDIR = 'D3MSTATICDIR'
+
 D3M_VARIABLE_LIST = (\
                 'D3MRUN',
                 KEY_D3MINPUTDIR,
-                'D3MPROBLEMPATH',
-                'D3MOUTPUTDIR',
-                'D3MLOCALDIR',
-                'D3MSTATICDIR',
+                KEY_D3MPROBLEMPATH,
+                KEY_D3MOUTPUTDIR,
+                KEY_D3MLOCALDIR,
+                KEY_D3MSTATICDIR,
                 'D3MCPU',
                 'D3MRAM',
                 'D3MTIMEOUT')
+
+D3M_REQUIRED_VARIABLES = list(D3M_VARIABLE_LIST)
+D3M_REQUIRED_VARIABLES.remove(KEY_D3MPROBLEMPATH)
 
 KEY_D3MLOCALDIR = 'D3MLOCALDIR'
 KEY_D3MSTATICDIR = 'D3MSTATICDIR'
@@ -28,8 +36,9 @@ D3M_DIRECTORY_VARIABLES = (\
 
 
 KEY_D3M_DIR_ADDITIONAL_INPUTS = 'additional_inputs'
-KEY_D3M_DIR_TEMP = join(KEY_D3M_DIR_ADDITIONAL_INPUTS, 'raven_temp_storage_root')
+
 KEY_D3M_USER_PROBLEMS_ROOT = 'user_problems_root'
+USER_PROBLEMS_ROOT_DIR_NAME = 'problems'  # for /output/problems
 
 D3M_OUTPUT_SUBDIRECTORIES = (\
         'pipelines_ranked', # a directory with ranked pipelines to be evaluated,
@@ -55,6 +64,5 @@ D3M_OUTPUT_SUBDIRECTORIES = (\
         # have an unique ID; in the case that additional datasets are provided,
         # TA2 should output also pipeline run documents for their ranked pipe)
 
-        KEY_D3M_USER_PROBLEMS_ROOT, # self-added to coincide with user_problems_root
-        KEY_D3M_DIR_TEMP, # self-added, to coincide with temp_storage_root
+        USER_PROBLEMS_ROOT_DIR_NAME, # self-added to coincide with user_problems_root
                             )

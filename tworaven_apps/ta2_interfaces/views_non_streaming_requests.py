@@ -10,6 +10,7 @@ from django.http import JsonResponse    #, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 
 from tworaven_apps.raven_auth.models import User
+from tworaven_apps.ta2_interfaces.models import StoredRequest, StoredResponse
 
 from tworaven_apps.ta2_interfaces.req_hello import ta2_hello
 from tworaven_apps.ta2_interfaces.req_search_solutions import \
@@ -207,15 +208,6 @@ def view_end_search_solutions(request):
     if not req_body_info.success:
         return JsonResponse(get_json_error(req_body_info.err_msg))
 
-    # Begin to log D3M call
-    #
-    call_entry = None
-    if ServiceCallEntry.record_d3m_call():
-        call_entry = ServiceCallEntry.get_dm3_entry(\
-                        request_obj=request,
-                        call_type=ta2_static.END_SEARCH_SOLUTIONS,
-                        request_msg=req_body_info.result_obj)
-
 
     # --------------------------------
     # Behavioral logging
@@ -227,25 +219,16 @@ def view_end_search_solutions(request):
 
     LogEntryMaker.create_ta2ta3_entry(user_info.result_obj, log_data)
 
-
     # Let's call the TA2 and end the session!
     #
-    search_info = end_search_solutions(req_body_info.result_obj)
+    params = dict(user=user_info.result_obj)
+    search_info = end_search_solutions(req_body_info.result_obj,
+                                       **params)
+
     if not search_info.success:
         return JsonResponse(get_json_error(search_info.err_msg))
 
-    # Convert JSON str to python dict - err catch here
-    #
-    json_format_info = json_loads(search_info.result_obj)
-    if not json_format_info.success:
-        return JsonResponse(get_json_error(json_format_info.err_msg))
-
-    # Save D3M log
-    #
-    if call_entry:
-        call_entry.save_d3m_response(json_format_info.result_obj)
-
-    json_info = get_json_success('success!', data=json_format_info.result_obj)
+    json_info = get_json_success('success!', data=search_info.result_obj)
     return JsonResponse(json_info, safe=False)
 
 

@@ -1,20 +1,20 @@
 {
   "about": {
-    "problemID": "196_ag_problem_TEST",
+    "problemID": "196_autoMpg_problem_TEST",
     "problemName": "NULL",
     "taskType": "regression",
     "taskSubType": "univariate",
-    "problemVersion": "1.0",
-    "problemSchemaVersion": "3.1.1"
+    "problemVersion": "2.0",
+    "problemSchemaVersion": "3.2.0"
   },
   "inputs": {
     "data": [
       {
-        "datasetID": "196_ag_dataset_TEST",
+        "datasetID": "196_autoMpg_dataset_TEST",
         "targets": [
           {
             "targetIndex": 0,
-            "resID": "0",
+            "resID": "learningData",
             "colIndex": 8,
             "colName": "class"
           }

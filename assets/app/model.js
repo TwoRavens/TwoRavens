@@ -21,6 +21,7 @@ import MenuTabbed from "../common/views/MenuTabbed";
 import Dropdown from "../common/views/Dropdown";
 import ButtonRadio from "../common/views/ButtonRadio";
 import MenuHeaders from "../common/views/MenuHeaders";
+import Checkbox from "../common/views/Checkbox";
 
 import ForceDiagram, {groupBuilder, groupLinkBuilder, linkBuilder, pebbleBuilderLabeled} from "./views/ForceDiagram";
 import VariableSummary, {formatVariableSummary} from "./views/VariableSummary";
@@ -30,17 +31,11 @@ import Flowchart from "./views/Flowchart";
 
 import Datamart from "./datamart/Datamart";
 
-import {bold} from "./index";
-import {locationReload, setModal} from "../common/views/Modal";
+import {bold, boldPlain, preformatted} from "./index";
+import {setModal} from "../common/views/Modal";
 
 
 export class CanvasModel {
-    // onbeforeremove(vnode) {
-    //     vnode.dom.classList.add("exit-left");
-    //     return new Promise(function(resolve) {
-    //         vnode.dom.addEventListener("animationend", resolve)
-    //     })
-    // }
 
     view(vnode) {
         let {drawForceDiagram, forceData} = vnode.attrs;
@@ -53,7 +48,7 @@ export class CanvasModel {
                 onDragOut: pebble => {
                     delete selectedProblem.unedited;
 
-                    let pebbles = forceData.summaries[pebble].plottype === 'collapsed'
+                    let pebbles = forceData.summaries[pebble] && forceData.summaries[pebble].plottype === 'collapsed'
                         ? forceData.summaries[pebble].childNodes : [pebble];
 
                     pebbles.forEach(pebble => {
@@ -89,7 +84,7 @@ export class CanvasModel {
                 },
                 onDragAway: (pebble, groupId) => {
                     delete selectedProblem.unedited;
-                    let pebbles = forceData.summaries[pebble.name].plottype === 'collapsed'
+                    let pebbles = forceData.summaries[pebble.name] && forceData.summaries[pebble.name].plottype === 'collapsed'
                         ? forceData.summaries[pebble.name].childNodes : [pebble.name];
 
                     pebbles.forEach(pebble => {
@@ -191,7 +186,7 @@ export let leftPanelWidths = {
     [preprocessTabName]: '500px',
     'Variables': '300px',
     'Discover': 'auto',
-    'Augment': '600px',
+    'Augment': '1200px',
     'Summary': '300px'
 };
 
@@ -297,7 +292,7 @@ export let leftpanel = forceData => {
                                 pipeline: problemPipeline
                             });
                             common.setPanelOpen('left');
-                            app.setLeftTab('Variables');
+                            app.setLeftTab(app.LEFT_TAB_NAME_VARIABLES);
                         }
                     }, 'Create New Variable'),
                 ]
@@ -308,15 +303,16 @@ export let leftpanel = forceData => {
     let problems = ravenConfig.problems;
 
     let allMeaningful = Object.keys(problems).every(probID => problems[probID].meaningful);
-    let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
-        onclick: m.withAttr("checked", app.setCheckedDiscoveryProblem),
-        checked: allMeaningful,
-        title: `mark ${allMeaningful ? 'no' : 'all'} problems as meaningful`
+    let discoveryAllCheck = m(Checkbox, {
+        id: 'discoveryAllCheck',
+        title: `mark ${allMeaningful ? 'no' : 'all'} problems as meaningful`,
+        onclick: app.setCheckedDiscoveryProblem,
+        checked: allMeaningful
     });
 
-    let discoveryHeaders = [
+    let discoveryHeaders = () => [
         'Name',
-        m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
+        !app.taskPreferences.task1_finished && m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
         'Target', 'Predictors',
         Object.values(problems).some(prob => prob.subTask !== 'taskSubtypeUndefined') ? 'Subtask' : '',
         'Task',
@@ -333,8 +329,8 @@ export let leftpanel = forceData => {
 
     let formatProblem = problem => [
         problem.problemID, // this is masked as the UID
-        m('[style=text-align:center]', m('input[type=checkbox]', {
-            onclick: m.withAttr("checked", state => app.setCheckedDiscoveryProblem(state, problem.problemID)),
+        !app.taskPreferences.task1_finished && m('[style=text-align:center]', {onclick: e=> e.stopPropagation()}, m(Checkbox, {
+            onclick: state => app.setCheckedDiscoveryProblem(state, problem.problemID),
             checked: problem.meaningful
         })),
         problem.targets.join(', '),
@@ -343,23 +339,36 @@ export let leftpanel = forceData => {
         problem.task,
         problem.metric
     ];
-    sections.push({
+    selectedProblem && sections.push({
         value: 'Discover',
-        attrsInterface: {class: (!isDiscoveryClicked && !app.task1_finished) ? 'btn-success' : 'btn-secondary'}, // passed into button
+        attrsInterface: {class: (!app.taskPreferences.isDiscoveryClicked && !app.taskPreferences.task1_finished) ? 'btn-success' : 'btn-secondary'}, // passed into button
         contents: [
             m('div#discoveryTablesContainer', {
                     style: {
-                        height: '80%',
+                        // height: '80%',
                         overflow: 'auto',
                         display: 'block',
                         'margin-bottom': 0,
                         'max-width': (window.innerWidth - 90) + 'px'
                     }
                 },
-                selectedProblem && [
+
+                /*
+                 *  Current Problem Table
+                 */
+                [
                     m('h4.card-header.clearfix',
                         m('div[style=height:50px;display:inline]', 'Current Problem'),
-                        m(Button, {
+                        !selectedProblem.pending && m(Button, {
+                            id: 'btnDeleteProblem',
+                            style: {float: 'right', margin: '-5px', 'margin-right': '22px'},
+                            class: 'btn-sm',
+                            onclick: () => {
+                                selectedProblem.pending = true;
+                                selectedProblem.unedited = true;
+                            },
+                        }, 'Delete'),
+                        selectedProblem.pending && m(Button, {
                             id: 'btnSaveProblem',
                             style: {float: 'right', margin: '-5px', 'margin-right': '22px'},
                             class: 'btn-sm',
@@ -370,10 +379,34 @@ export let leftpanel = forceData => {
                                 ravenConfig.problems[problemCopy.problemID] = problemCopy;
                                 app.setSelectedProblem(problemCopy.problemID);
                             }
-                        }, 'Save')),
+                        }, 'Save'),
+                        selectedProblem.manipulations.length !== 0 && m(Button, {
+                            style: {float: 'right', margin: '-5px', 'margin-right': '1em'},
+                            class: 'btn-sm',
+                            disabled: app.rightTab === 'Manipulate' && common.panelOpen['right'],
+                            title: `view manipulations for ${selectedProblem.problemID}`,
+                            onclick: () => {
+                                app.setRightTab('Manipulate');
+                                common.setPanelOpen('right');
+                            }
+                        }, 'Manipulations')),
+
+                        /*
+                         * Current Problem description
+                         */
+                        [
+                            m('h5.card-header.clearfix',
+                                m('div[style=height:50px;display:inline]', 'Description')),
+
+                            m('p', {
+                                id: 'problemDescription',
+                                style: {'padding-left': '2%', 'max-width': '800px'},
+                            }, preformatted(app.getDescription(selectedProblem))),
+                        ], // END: Current Problem description
+
                     m(Table, {
                         id: 'discoveryTableSelectedProblem',
-                        headers: discoveryHeaders,
+                        headers: discoveryHeaders(),
                         data: [formatProblem(selectedProblem)],
                         activeRow: ravenConfig.selectedProblem,
                         // showUID: false,
@@ -381,16 +414,35 @@ export let leftpanel = forceData => {
                     })
                 ],
 
-                // Object.keys(problemPartition)
+                /*
+                 *  Generate tables for "Custom", "Discovered", and "Solved" problems
+                 */
                 ['solved', 'user', 'auto'].filter(key => key in problemPartition).map(partition => [
+                    /*
+                     *  Display the appropriate header "Custom", "Discovered", or "Solved" problems
+                     */
                     m('h4.card-header', `${{
                         'user': 'Custom',
                         'auto': 'Discovered',
                         'solved': 'Solved'
                     }[partition]} Problems`),
+                    /*
+                     * User note for selecting "Discovered" problems
+                     */
+                     (partition === 'auto') && m('div', {},
+                        [
+                          m('p', {
+                            style: {'padding-left': '3%'}
+                          },
+                            'Click on a Discovered problem below to make it the "Current Problem."', m('br'), boldPlain('Note: '), 'the new "Current Problem" will have the same "Target" and "Predictors" but the "Name" will be different.')
+                        ]
+                      ),
+                    /*
+                     * Problems table
+                     */
                     m(Table, {
                         id: 'discoveryTable' + partition,
-                        headers: discoveryHeaders,
+                        headers: discoveryHeaders(),
                         data: problemPartition[partition].map(formatProblem),
                         rowClasses: {
                             'discovery-table-highlight': selectedProblem.provenanceID
@@ -415,7 +467,7 @@ export let leftpanel = forceData => {
                             if (selectedProblem.pending) {
                                 if (selectedProblem.unedited)
                                     delete problems[selectedProblem.problemID];
-                                else if (confirm('You have unsaved changes in the previous problem, "' + selectedProblem.problemID + '". Would you like to save it before progressing?'))
+                                else if (confirm(`You have unsaved changes in the previous problem, ${selectedProblem.problemID}. Would you like to discard ${selectedProblem.problemID}?`))
                                     selectedProblem.pending = false;
                                 else delete problems[selectedProblem.problemID];
                             }
@@ -431,52 +483,20 @@ export let leftpanel = forceData => {
                         abbreviation: 40,
                         sortable: true
                     })
-                ])
-            ),
-
-
-            selectedProblem && [
-                m(TextField, {
-                    id: 'discoveryInput',
-                    textarea: true,
-                    style: {width: '100%', height: 'calc(20% - 60px)', overflow: 'auto'},
-                    value: selectedProblem.description || app.getDescription(selectedProblem), // description is autogenerated if not edited
-                    oninput: value => selectedProblem.description = value,
-                    onblur: value => selectedProblem.description = value
-                }),
-                // m('div', {style: {display: 'inline-block', margin: '.75em'}},
-                //     m('input[type=checkbox]', {
-                //         onclick: m.withAttr("checked", checked => app.setCheckedDiscoveryProblem(checked, selectedProblem.problemID)),
-                //         checked: selectedProblem.meaningful
-                //     }), m('label[style=margin-left:1em]', `Mark ${selectedProblem.problemID} as meaningful`))
-                selectedProblem.manipulations.length !== 0 && m(
-                    'div', m(Button, {
-                        style: {float: 'left'},
-                        disabled: app.rightTab === 'Manipulate' && common.panelOpen['right'],
-                        title: `view manipulations for ${selectedProblem.problemID}`,
-                        onclick: () => {
-                            app.setRightTab('Manipulate');
-                            common.setPanelOpen('right');
-                        }
-                    }, 'View Manipulations')
-                ),
-                !selectedProblem.pending && m(Button, {
-                    id: 'btnDelete',
-                    style: 'float:left',
-                    onclick: () => {
-                        selectedProblem.pending = true;
-                        selectedProblem.unedited = true;
-                    },
-                }, 'Delete Problem')
-            ],
-            !app.is_explore_mode && m(ButtonLadda, {
-                id: 'btnSubmitDisc',
-                class: app.buttonClasses.btnSubmitDisc,
-                activeLadda: app.buttonLadda.btnSubmitDisc,
-                style: {float: 'right'},
-                onclick: submitDiscProb,
-                title: 'Submit all checked discovered problems'
-            }, 'Submit Disc. Probs.')
+                ]),
+                /*
+                 *  If this is an unfinished Task1, show the submit discovered
+                 *    problem button!
+                 */
+                !app.taskPreferences.task1_finished && !app.is_explore_mode && m(ButtonLadda, {
+                    id: 'btnSubmitDisc',
+                    style: {margin: '1em'},
+                    class: 'btn-success',
+                    activeLadda: app.taskPreferences.isSubmittingProblems,
+                    onclick: submitDiscProb,
+                    title: 'Submit all checked discovered problems'
+                }, 'Submit Meaningful Problems')
+            )
         ]
     });
 
@@ -485,7 +505,7 @@ export let leftpanel = forceData => {
 
     if (summaryPebble && forceData.pebbles.includes(summaryPebble)) {
         // if hovered over a collapsed pebble, then expand summaryPebble into all children pebbles
-        let summaryPebbles = forceData.summaries[summaryPebble].plottype === 'collapsed'
+        let summaryPebbles = forceData.summaries[summaryPebble] && forceData.summaries[summaryPebble].plottype === 'collapsed'
             ? [...forceData.summaries[summaryPebble].childNodes]
             : [summaryPebble];
 
@@ -493,7 +513,6 @@ export let leftpanel = forceData => {
             .map(variableName => m(Subpanel, {
                     id: 'subpanel' + variableName,
                     header: variableName,
-                    attrsBody: {style: {padding: '0.5em'}},
                     defaultShown: false,
                     shown: summaryPebbles.length === 1 || undefined
                 }, m(TextFieldSuggestion, {
@@ -527,6 +546,8 @@ export let leftpanel = forceData => {
                 m(VariableSummary, {variable: app.variableSummaries[variableName]})));
     }
 
+
+
     return m(Panel, {
         side: 'left',
         label: 'Data Selection',
@@ -545,7 +566,7 @@ export let leftpanel = forceData => {
         attrsAll: {style: {height: 'calc(100% - 50px)'}},
         currentTab: app.leftTab,
         callback: app.setLeftTab,
-        sections: sections.concat([
+        sections: DISPLAY_DATAMART_UI ? sections.concat([
             {
                 value: preprocessTabName,
                 id: 'preprocessInfoTab',
@@ -557,9 +578,9 @@ export let leftpanel = forceData => {
                 value: 'Augment',
                 contents: m(Datamart, {
                     preferences: app.datamartPreferences,
-                    dataPath: ravenConfig.datasetUrl,
+                    dataPath: app.workspace.datasetPath,
                     endpoint: app.datamartURL,
-                    labelWidth: '10em'
+                    labelWidth: '10em',
                 })
             },
             {
@@ -568,7 +589,7 @@ export let leftpanel = forceData => {
                 display: 'none',
                 contents: summaryContent
             }
-        ])
+        ]) : sections
     }));
 };
 
@@ -600,7 +621,7 @@ export let rightpanel = () => {
                 m('label', 'Task Type'),
                 m(Dropdown, {
                     id: 'taskType',
-                    items: app.supportedTasks,
+                    items: Object.keys(app.d3mTaskType),
                     activeItem: selectedProblem.task,
                     onclickChild: task => app.setTask(task, selectedProblem),
                     style: {'margin': '1em', 'margin-top': '0'},
@@ -628,9 +649,9 @@ export let rightpanel = () => {
                     disabled: isLocked
                 }),
 
-                app.applicableMetrics[selectedProblem.task][selectedProblem.subTask].length - 1 > selectedProblem.metrics.length && m(Dropdown, {
+                app.applicableMetrics[selectedProblem.task][app.getSubtask(selectedProblem)].length - 1 > selectedProblem.metrics.length && m(Dropdown, {
                     id: 'performanceMetrics',
-                    items: app.applicableMetrics[selectedProblem.task][selectedProblem.subTask]
+                    items: app.applicableMetrics[selectedProblem.task][app.getSubtask(selectedProblem)]
                         .filter(metric => metric !== selectedProblem.metric && !selectedProblem.metrics.includes(metric)),
                     activeItem: 'Add Secondary Metric',
                     onclickChild: metric => {
@@ -838,7 +859,6 @@ export let rightpanel = () => {
 // allNodes.push() below establishes a field for the master node array allNodes called "nodeCol" and assigns a color from this scale to that field
 // everything there after should refer to the nodeCol and not the color scale, this enables us to update colors and pass the variable type to R based on its coloring
 export let colors = d3.scaleOrdinal(d3.schemeCategory20);
-let isDiscoveryClicked = false;
 
 const k_combinations = (list, k) => {
     if (k > list.length || k <= 0) return []; // no valid combinations of size k
@@ -1074,6 +1094,8 @@ Object.assign(forceDiagramState, {
             else setSelectedPebble(pebble)
         },
         mouseover: pebble => {
+            if (firstSummaryMouseover && app.tutorial_mode && !hopscotch.getCurrTour())
+                hopscotch.startTour(summaryTour());
             clearTimeout(forceDiagramState.hoverTimeout);
             forceDiagramState.hoverTimeout = setTimeout(() => {
                 forceDiagramState.hoverPebble = pebble;
@@ -1094,6 +1116,20 @@ Object.assign(forceDiagramState, {
         },
         contextmenu: setContextPebble
     }
+});
+
+// appears when a user attempts to edit when the toggle is set
+let firstSummaryMouseover = true;
+export let summaryTour = () => ({
+    id: "lock_toggle",
+    i18n: {doneBtn: 'Ok'},
+    showCloseButton: true,
+    scrollDuration: 300,
+    onEnd: () => firstSummaryMouseover = false,
+    steps: [
+        app.step("leftpanel", "right", "Variable Summaries",
+            `<p>A summary is shown for the pebble you are hovering over. Keep the variable summary open by clicking on its associated pebble.</p>`)
+    ]
 });
 
 export let mutateNodes = problem => (state, context) => {
@@ -1121,8 +1157,8 @@ export let mutateNodes = problem => (state, context) => {
         loose: new Set(problem.tags.loose),
         transformed: new Set(problem.tags.transformed),
         crossSection: new Set(problem.tags.crossSection),
-        time: new Set(problem.tags.time),
         nominal: new Set(app.getNominalVariables(problem)),
+        time: new Set(problem.tags.time),
         weight: new Set(problem.tags.weights),
         targets: new Set(problem.targets),
         matched: new Set(matchedVariables),
@@ -1156,7 +1192,7 @@ export let mutateNodes = problem => (state, context) => {
 
     // set the base color of each node
     pebbles.forEach(pebble => {
-        if (state.summaries[pebble].plottype === 'collapsed') {
+        if (state.summaries[pebble] && state.summaries[pebble].plottype === 'collapsed') {
             context.nodes[pebble].strokeWidth = 0;
             context.nodes[pebble].nodeCol = 'transparent';
             context.nodes[pebble].strokeColor = 'transparent';
@@ -1314,24 +1350,72 @@ export function connectAllForceDiagram() {
     m.redraw();
 }
 
+let D3M_problemDoc = problem => ({
+    data: {
+        "problemID": problem.problemID,
+        "problemName": "NULL",
+        "taskType": problem.taskType,
+        "taskSubType": problem.taskSubType,
+        "problemVersion": "2.0",
+        "problemSchemaVersion": "3.2.0"
+    },
+    inputs: {
+        data: {
+            "datasetID": app.workspace.datasetDoc.about.datasetID,
+            "targets": problem.targets.map((target, i) => ({
+                targetIndex: i,
+                resID: problem.resourceId,
+                colIndex: Object.keys(app.variableSummaries).indexOf(target),
+                colName: target
+            }))
+        },
+        dataSplits: Object.entries({
+            method: problem.evaluationMethod,
+            testSize: problem.trainTestRatio,
+            stratified: problem.stratified,
+            randomSeed: problem.randomSeed
+        })
+            // remove keys with undefined values
+            .filter(entry => entry[1] !== undefined)
+            .reduce((out, entry) => Object.assign(out, {[entry[0]]: entry[1]}), {}),
+        performanceMetrics: [problem.metric, ...problem.metrics].map(metric => ({metric})),
+    },
+    expectedOutputs: {
+        predictionsFile: 'predictions.csv'
+    }
+});
+
 
 export async function submitDiscProb() {
     let problems = app.workspace.raven_config.problems;
-    app.buttonLadda['btnSubmitDisc'] = true;
+    app.taskPreferences.isSubmittingProblems = true;
     m.redraw();
 
-    let outputCSV = Object.keys(problems).reduce((out, problemID) => {
-        let problem = problems[problemID];
 
+    /* -------------------------------------
+     * Iterate through problems, writing them
+     *  to an output directory and building
+     *  rows for a .csv file
+     */
+
+     //let outputCSV =
+   let outputCSV = ['problem_id,system,meaningful'];
+
+    Object.keys(problems).reduce((out, problemID) => {
+        let problem = problems[problemID];
 
         if(problem.manipulations.length === 0){
             // construct and write out the api call and problem description for each discovered problem
             let problemApiCall = solverD3M.GRPC_SearchSolutionsRequest(problem, 10);
-            let problemProblemSchema = solverD3M.GRPC_ProblemDescription(problem);
+            let problemProblemSchema = D3M_problemDoc(problem);
             let filename_api = problem.problemID + '/ss_api.json';
-            let filename_ps = problem.problemID + '/schema.json';
+            let filename_ps = problem.problemID + '/problem_schema.json';
             app.makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
             app.makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
+
+            let meaningful = problem.meaningful ? 'yes' : 'no';
+            let lineForCSV = `${problem.problemID},${problem.system},${meaningful}`;
+            outputCSV.push(lineForCSV);
         } else {
             console.log('omitting:');
             console.log(problem);
@@ -1340,16 +1424,19 @@ export async function submitDiscProb() {
 
     // write the CSV file requested by NIST that describes properties of the solutions
     console.log(outputCSV);
-    let res3 = await app.makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: 'labels.csv', data: outputCSV});
+    let res3 = await app.makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: 'labels.csv', data: outputCSV.join('\n')});
 
-    app.buttonLadda.btnSubmitDisc = false;
-    app.buttonClasses.btnSubmitDisc = 'btn-secondary';
-    app.buttonClasses.btnDiscover = 'btn-secondary';
-    if (!app.task2_finished) app.buttonClasses.btnEstimate = 'btn-secondary';
-
-    app.setTask1_finished(true);
+    // Remove the button Submit Discovered problem button
+    //
+    app.taskPreferences.task1_finished = true;
     m.redraw();
 
-    if (!app.problemDocExists)
-        setModal("Your discovered problems have been submitted.", "Task Complete", true, false, false, locationReload);
+    //setModal("Data preview error: " + msg_data.user_message,
+    //       "Data materialization Failed", true, "Close", true);
+
+    setModal("Your discovered problems have been submitted.",
+             "Task 1 Complete",
+             true,
+             "Close",
+             true);
 }

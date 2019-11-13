@@ -38,6 +38,7 @@ class ProduceSolutionHelper(BasicErrCheck):
 
     def __init__(self, pipeline_id, websocket_id, user_id, produce_params, **kwargs):
         """initial params"""
+        print('initializing', pipeline_id)
         self.pipeline_id = pipeline_id
         self.websocket_id = websocket_id
         self.user_id = user_id
@@ -46,6 +47,7 @@ class ProduceSolutionHelper(BasicErrCheck):
         self.produce_params = produce_params
         self.search_id = kwargs.get('search_id', None)
         self.session_key = kwargs.get('session_key', None)
+        self.is_partials_call = kwargs.get('is_partials_call', None)
 
         self.get_user()
         self.check_produce_params()
@@ -94,12 +96,10 @@ class ProduceSolutionHelper(BasicErrCheck):
     def make_produce_solution_call(pipeline_id, websocket_id, user_id, produce_params, **kwargs):
         """Celery task to make TA2 calls for:
          ProduceSolution and GetProduceSolutionResults"""
-        print('make_produce_solution_call 1')
         assert pipeline_id, "pipeline_id must be set"
         assert websocket_id, "websocket_id must be set"
         assert user_id, "user_id must be set"
         assert produce_params, "produce_params must be set"
-        print('make_produce_solution_call 2')
 
         produce_helper = ProduceSolutionHelper(\
                                 pipeline_id, websocket_id,
@@ -139,9 +139,15 @@ class ProduceSolutionHelper(BasicErrCheck):
         # --------------------------------
         # (2) Save the request to the db
         # --------------------------------
+        if self.is_partials_call:
+            req_type = ta2_static.PRODUCE_SOLUTION_PARTIALS
+        else:
+            req_type = ta2_static.PRODUCE_SOLUTION
+
+
         stored_request = StoredRequest(\
                         user=self.user_object,
-                        request_type=ta2_static.PRODUCE_SOLUTION,
+                        request_type=req_type,
                         pipeline_id=self.pipeline_id,
                         search_id=self.search_id,
                         is_finished=False,
@@ -161,7 +167,8 @@ class ProduceSolutionHelper(BasicErrCheck):
         # ----------------------------------
         # Run FitSolution
         # ----------------------------------
-        produce_info = produce_solution(json_str_input)
+        produce_info = produce_solution(json_str_input,
+                                        is_partials_call=self.is_partials_call)
         if not produce_info.success:
             StoredResponse.add_err_response(stored_request,
                                             produce_info.err_msg)
@@ -208,6 +215,11 @@ class ProduceSolutionHelper(BasicErrCheck):
     def send_websocket_err_msg(self, grpc_call, user_msg=''):
         """Send an error messsage over websockets"""
         assert grpc_call, 'grpc_call is required'
+
+        if grpc_call == ta2_static.GET_PRODUCE_SOLUTION_RESULTS:
+            if self.is_partials_call:
+                print('is_partials_call:', is_partials_call)
+                grpc_call = ta2_static.GET_PARTIALS_SOLUTION_RESULTS
 
         user_msg = '%s error; pipeline %s: %s' % \
                    (grpc_call,
@@ -362,8 +374,12 @@ class ProduceSolutionHelper(BasicErrCheck):
                     # wait for next message...
                     continue
 
+                ws_msg_type = ta2_static.GET_PARTIALS_SOLUTION_RESULTS \
+                              if self.is_partials_call else \
+                              ta2_static. GET_PRODUCE_SOLUTION_RESULTS
+
                 ws_msg = WebsocketMessage.get_success_message(\
-                            ta2_static.GET_PRODUCE_SOLUTION_RESULTS,
+                            ws_msg_type,
                             'it worked.',
                             msg_cnt=msg_cnt,
                             data=stored_response.as_dict())

@@ -19,7 +19,6 @@
           "executables_root": "",
           "pipeline_logs_root": "",
           "user_problems_root": "/ravens_volume/test_output/DA_college_debt_100/user_problems_root",
-          "temp_storage_root": "/ravens_volume/test_output/DA_college_debt_100/additional_inputs/raven_temp_storage_root",
           "additional_inputs": "/ravens_volume/test_output/DA_college_debt_100/additional_inputs",
           "timeout": 600,
           "cpus": "1",

@@ -1,3 +1,4 @@
+import os
 from django.shortcuts import render
 from django.urls import reverse
 
@@ -22,6 +23,9 @@ from tworaven_apps.configurations.utils import get_latest_d3m_config
 def view_pebbles_home(request):
     """Serve up the workspace, the current home page.
     Include global js settings"""
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect(reverse('login'))
+
     app_config = AppConfiguration.get_config()
     if app_config is None:
         return HttpResponseRedirect(reverse('view_no_domain_config_error'))
@@ -34,13 +38,8 @@ def view_pebbles_home(request):
         # (1) Is there a valid D3M config?
         d3m_config_info = get_latest_d3m_config()
         if not d3m_config_info:
-            return HttpResponseRedirect(\
-                    reverse('view_d3m_config_error'))
-
-        # (2) Is the user authenticated?
-        if not request.user.is_authenticated:
-            return HttpResponseRedirect(\
-                    reverse('login'))
+            return HttpResponseRedirect(reverse('view_list_dataset_choices'))
+            # return HttpResponseRedirect(reverse('view_d3m_config_error'))
 
         session_key = get_session_key(request)
 
@@ -56,7 +55,9 @@ def view_pebbles_home(request):
                  TA2_STATIC_TEST_MODE=settings.TA2_STATIC_TEST_MODE,
                  TA2_TEST_SERVER_URL=settings.TA2_TEST_SERVER_URL,
                  TA3_GRPC_USER_AGENT=settings.TA3_GRPC_USER_AGENT, TA3TA2_API_VERSION=TA3TA2Util.get_api_version(),
-                 WEBSOCKET_PREFIX=settings.WEBSOCKET_PREFIX)
+                 DISPLAY_DATAMART_UI=settings.DISPLAY_DATAMART_UI,
+                 WEBSOCKET_PREFIX=settings.WEBSOCKET_PREFIX,
+                 GIT_BRANCH_INFO=settings.GIT_BRANCH_INFO)
 
     #print('-' * 40)
     #print(dinfo['app_config'])
@@ -65,6 +66,31 @@ def view_pebbles_home(request):
                   'index.html',
                   dinfo)
 
+
+def view_env_variables(request):
+    """List env variables"""
+
+    # get env variable keys
+    env_names = list(os.environ.keys())
+    env_names.sort()
+    d3m_names = [x for x in env_names
+                 if x.find('D3M') > -1 or\
+                    x.find('DATAMART') > -1]
+
+    all_vars = [(key, os.getenv(key))
+                for key in env_names
+                if key not in d3m_names]
+    d3m_vars = [(key, os.getenv(key)) for key in d3m_names]
+
+    # print(all_vars)
+    dinfo = dict(d3m_vars=d3m_vars,
+                 all_vars=all_vars)
+
+
+
+    return render(request,
+                  'content_pages/view_env_variables.html',
+                  dinfo)
 
 def view_dev_raven_links(request):
     """Dev homepage (other than pebble page)"""

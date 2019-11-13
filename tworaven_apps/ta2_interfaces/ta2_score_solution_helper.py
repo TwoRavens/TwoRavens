@@ -17,7 +17,6 @@ from tworaven_apps.utils.proto_util import message_to_json
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 from tworaven_apps.ta2_interfaces.req_search_solutions import score_solution
-from tworaven_apps.ta2_interfaces.ta2_produce_solution_helper import ProduceSolutionHelper
 from tworaven_apps.ta2_interfaces.models import \
         (StoredRequest, StoredResponse)
 from tworaven_apps.ta2_interfaces import static_vals as ta2_static

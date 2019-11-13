@@ -143,6 +143,11 @@ class AugmentUtil(BasicErrCheck):
 
     def augment_isi_file(self):
         """Augment the file via the ISI API"""
+
+        self.add_err_msg(('ISI Augment is disabled!!!!'
+                          ' (augment_util.augment_isi_file)'))
+        return False
+
         if self.has_error():
             return False
 
@@ -193,7 +198,9 @@ class AugmentUtil(BasicErrCheck):
 
         # Check for required keys and convert them python dicts
         #
-        req_keys = ['search_result', 'left_columns', 'right_columns']
+        req_keys = ['search_result',
+                    'left_columns',
+                    'right_columns']
         keys_not_found = []
         jsonified_data = {}
         for rk in req_keys:
@@ -281,6 +288,7 @@ class AugmentUtil(BasicErrCheck):
             self.add_err_msg(new_dataset_util.get_error_message())
             return
 
+        self.new_workspace = new_dataset_util.new_workspace
 
     def send_websocket_success_message(self):
         """Send a websocket message with the materialize_result data"""
@@ -293,9 +301,19 @@ class AugmentUtil(BasicErrCheck):
             return
 
         LOGGER.info('(5b) send the message!')
+
+        ws_string_info = json_dumps(self.new_workspace.to_dict())
+        if not ws_string_info.success:
+            user_msg = ('Sorry! An error occurred.  (Created workspace but'
+                        ' failed JSON conversion.)')
+            self.add_err_msg(user_msg)
+            return
+
         ws_msg = WebsocketMessage.get_success_message(\
                     dm_static.DATAMART_AUGMENT_PROCESS,
                     ('The dataset has been augmented '
-                     'and a new workspace created'))
+                     'and a new workspace created'),
+                    msg_cnt=99,
+                    data=dict(workspace_json_string=ws_string_info.result_obj))
         ws_msg.send_message(self.websocket_id)
         LOGGER.info('(5c) sent!')

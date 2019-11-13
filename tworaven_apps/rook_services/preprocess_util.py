@@ -24,6 +24,7 @@ else:
 """
 import csv
 from io import StringIO
+import json
 from os.path import isfile
 from datetime import datetime as dt
 import requests
@@ -32,11 +33,12 @@ from tworaven_apps.data_prep_utils.duplicate_column_remover import DuplicateColu
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.rook_services.rook_app_info import RookAppInfo
 from tworaven_apps.rook_services.app_names import \
-    (PREPROCESS_ROOK_APP_NAME, SOLA_JSON_KEY)
+    (PREPROCESS_ROOK_APP_NAME)
 from tworaven_apps.utils.json_helper import json_dumps, json_loads
 from tworaven_apps.utils.dict_helper import column_uniquify
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
+
 
 class PreprocessUtil(BasicErrCheck):
     """Convenience class for rook preprocess"""
@@ -54,6 +56,8 @@ class PreprocessUtil(BasicErrCheck):
 
         self.rook_app_info = None
         self.preprocess_data = None
+
+        self.column_names = None
 
         self.set_rook_app_info()
         self.run_preprocess()
@@ -98,10 +102,12 @@ class PreprocessUtil(BasicErrCheck):
         info = dict(data=self.source_path,
                     datastub=self.datastub)
 
+        if self.column_names:
+            info['columns'] = self.column_names
+
         json_str_info = json_dumps(info)
         if json_str_info.success:
-            app_data = {SOLA_JSON_KEY: json_str_info.result_obj}
-            return app_data
+            return info
 
         # Failed JSON string conversion
         #
@@ -125,6 +131,10 @@ class PreprocessUtil(BasicErrCheck):
         #
         if self.fix_duplicate_columns:
             dcr = DuplicateColumnRemover(self.source_path)
+            self.column_names = dcr.updated_columns
+
+            self.column_names = [requests.utils.quote(column) for column in self.column_names]
+
             if dcr.has_error():
                 user_msg = (f'Augment error during column checks: '
                             f'{dcr.get_error_message()}')
@@ -149,7 +159,7 @@ class PreprocessUtil(BasicErrCheck):
         #
         try:
             rservice_req = requests.post(rook_svc_url,
-                                         data=call_data)
+                                         json=call_data)
         except ConnectionError:
             err_msg = 'R Server not responding: %s' % rook_svc_url
             self.add_err_msg(err_msg)

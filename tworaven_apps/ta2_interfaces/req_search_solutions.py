@@ -33,6 +33,7 @@ def search_solutions(raven_json_str=None):
     """
     Send a SearchSolutionsRequest to the SearchSolutions command
     """
+    print('raven_json_str', raven_json_str)
     if raven_json_str is None:
         err_msg = 'No data found for the SearchSolutionsRequest'
         return err_resp(err_msg)
@@ -43,12 +44,12 @@ def search_solutions(raven_json_str=None):
         json_str_info = json_dumps(raven_json_str)
         if not json_str_info.success:
             return json_str_info
+
         raven_json_str = json_str_info.result_obj
 
     else:
-        # --------------------------------
-        # Make sure it's valid JSON
-        # --------------------------------
+        # Make sure the string is valid JSON
+        #
         raven_json_info = json_loads(raven_json_str)
         if not raven_json_info.success:
             return err_resp(raven_json_info.err_msg)
@@ -99,10 +100,13 @@ def search_solutions(raven_json_str=None):
     return ok_resp(message_to_json(reply))
 
 
-
-def end_search_solutions(raven_json_str=None):
+def end_search_solutions(raven_json_str=None, **kwargs):
     """
     Send a EndSearchSolutionsRequest to the EndSearchSolutions command
+
+    optional kwargs:
+
+    user = User object for logging
     """
     if raven_json_str is None:
         err_msg = 'No data found for the EndSearchSolutionsRequest'
@@ -114,6 +118,31 @@ def end_search_solutions(raven_json_str=None):
     raven_json_info = json_loads(raven_json_str)
     if not raven_json_info.success:
         return err_resp(raven_json_info.err_msg)
+
+    if not ta2_static.KEY_SEARCH_ID in raven_json_info.result_obj:
+        err_msg = (f'The send solutions request did not include'
+                   f' a "{ta2_static.KEY_SEARCH_ID}" key')
+        return err_resp(err_msg)
+
+    search_id = raven_json_info.result_obj[ta2_static.KEY_SEARCH_ID]
+
+    # --------------------------------
+    # optional logging
+    # --------------------------------
+    user = kwargs.get('user')
+    stored_request = None
+    # Begin to log D3M call
+    #
+    if user:
+        stored_request = StoredRequest(\
+                            user=user,
+                            request_type=ta2_static.END_SEARCH_SOLUTIONS,
+                            search_id=search_id,
+                            is_finished=False,
+                            request=raven_json_info.result_obj)
+
+        stored_request.save()
+
 
     # --------------------------------
     # convert the JSON string to a gRPC request
@@ -150,7 +179,26 @@ def end_search_solutions(raven_json_str=None):
     # --------------------------------
     # Convert the reply to JSON and send it back
     # --------------------------------
-    return ok_resp(message_to_json(reply))
+
+    # This returns a JSON string
+    reply_json_str = message_to_json(reply)
+
+    # Double-check, make sure it converts back to a python dict
+    #
+    json_format_info = json_loads(reply_json_str)
+    if not json_format_info.success:
+        if user:
+            StoredResponse.add_err_response(stored_request,
+                                            json_format_info.err_msg)
+        return err_resp(json_format_info.err_msg)
+
+    # Looks good, save response and return value
+    #
+    if user:
+        StoredResponse.add_success_response(stored_request,
+                                            json_format_info.result_obj)
+
+    return ok_resp(json_format_info.result_obj)
 
 
 
@@ -372,13 +420,15 @@ def fit_solution(raven_json_str=None):
     return ok_resp(message_to_json(reply))
 
 
-def produce_solution(raven_json_str=None):
+def produce_solution(raven_json_str=None, **kwargs):
     """
     Send a ProduceSolutionRequest to the ProduceSolution command
     """
     if raven_json_str is None:
         err_msg = 'No data found for the ProduceSolutionRequest'
         return err_resp(err_msg)
+
+    is_partials_call = kwargs.get('is_partials_call', False)
 
     # --------------------------------
     # Make sure it's valid JSON

@@ -11,6 +11,12 @@ search_info = SearchSolutionsHelper.make_initial_call(search_params, websocket_i
 if search_info.success:
     return
 
+Note: This makes the following calls:
+    - SearchSolutions
+        - GetSearchSolutionsResults - for each result:
+            - DescribeSolution (async)
+            - FitSolution (async)
+            - ScoreSolution (async)
 
 """
 import logging
@@ -118,6 +124,7 @@ class SearchSolutionsHelper(BasicErrCheck):
             user_msg = 'No user found for id: %s' % user_id
             return err_resp(user_msg)
 
+        search_solution_params = all_params[ta2_static.KEY_SEARCH_SOLUTION_PARAMS]
 
         # --------------------------------
         # (2) Logging
@@ -128,7 +135,7 @@ class SearchSolutionsHelper(BasicErrCheck):
                         workspace='(not specified)',
                         request_type=ta2_static.SEARCH_SOLUTIONS,
                         is_finished=False,
-                        request=all_params[ta2_static.KEY_SEARCH_SOLUTION_PARAMS])
+                        request=search_solution_params)
         stored_request.save()
 
         # --------------------------------
@@ -139,13 +146,21 @@ class SearchSolutionsHelper(BasicErrCheck):
         log_data = dict(session_key=session_key,
                         feature_id=ta2_static.SEARCH_SOLUTIONS,
                         activity_l1=bl_static.L1_MODEL_SELECTION,
-                        activity_l2=bl_static.L2_MODEL_SEARCH)
+                        activity_l2=bl_static.L2_MODEL_SEARCH,
+                        other=search_solution_params)
 
         LogEntryMaker.create_ta2ta3_entry(user_obj, log_data)
 
+
+        # 11/6/2019 - late night hack, these variables shouldn't be here
+        #    - introduced somewhere in the .js when setting a  problem
+        #
+        search_solution_params.pop('id', None)
+        search_solution_params.pop('session_key', None)
+
         # Run SearchSolutions against the TA2
         #
-        search_info = search_solutions(all_params[ta2_static.KEY_SEARCH_SOLUTION_PARAMS])
+        search_info = search_solutions(search_solution_params)
         if not search_info.success:
             StoredResponse.add_err_response(stored_request,
                                             search_info.err_msg)
@@ -419,9 +434,9 @@ class SearchSolutionsHelper(BasicErrCheck):
             # -----------------------------------------------
             # All results arrived, send message to UI
             # -----------------------------------------------
-            ws_msg = WebsocketMessage.get_success_message(\
-                        ta2_static.ENDGetSearchSolutionsResults,
-                        'it worked')
+            ws_msg = WebsocketMessage.get_success_message( \
+                ta2_static.ENDGetSearchSolutionsResults,
+                {'searchId': self.search_id, 'message': 'it worked'})
 
             print('ws_msg: %s' % ws_msg)
             ws_msg.send_message(self.websocket_id)
@@ -470,18 +485,23 @@ class SearchSolutionsHelper(BasicErrCheck):
 
         produce_params = self.all_search_params[ta2_static.KEY_PRODUCE_SOLUTION_DEFAULT_PARAMS]
 
+        # This is used downstream for a 2nd Produce Solutions call
+        partials_solution_params = self.all_search_params.get(ta2_static.KEY_PARTIALS_SOLUTION_PARAMS, None)
 
         # ----------------------------------
         # Start the async process
         # ----------------------------------
+
         FitSolutionHelper.make_fit_solutions_call.delay(\
-                                    pipeline_id,
-                                    self.websocket_id,
-                                    self.user_id,
-                                    fit_params,
-                                    search_id=self.search_id,
-                                    produce_params=produce_params,
-                                    session_key=self.session_key)
+                            pipeline_id,
+                            self.websocket_id,
+                            self.user_id,
+                            fit_params,
+                            search_id=self.search_id,
+                            produce_params=produce_params,
+                            session_key=self.session_key,
+                            partials_solution_params=partials_solution_params
+                            )
 
 
     def run_describe_solution(self, pipeline_id, solution_id, msg_cnt=-1):

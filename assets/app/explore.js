@@ -51,6 +51,8 @@ import Button from "../common/views/Button";
 import Icon from "../common/views/Icon";
 
 import {alertLog, alertWarn, alertError} from "./app";
+import * as queryMongo from "./manipulations/queryMongo";
+import {recordLimit} from "./solvers/d3m";
 
 
 // adds some padding, sets the size so the content fills nicely in the page
@@ -63,7 +65,6 @@ let wrapCanvas = (...contents) => m('div#canvasExplore', {
     },
     contents
 );
-
 export class CanvasExplore {
     view(vnode) {
         let {variables, variate} = vnode.attrs;
@@ -107,6 +108,17 @@ export class CanvasExplore {
                         || variate === 'multiple' && len < 2) {
                         return;
                     }
+
+                    // behavioral logging
+                    let logParams = {
+                                  feature_id: 'EXPLORE_MAKE_PLOTS',
+                                  activity_l1: 'MODEL_SELECTION',
+                                  activity_l2: 'MODEL_SEARCH',
+                                  other: {variate: variate}
+
+                                };
+                    app.saveSystemLogEntry(logParams);
+
                     m.route.set(`/explore/${variate}/${selected.join('/')}`);
                 }
             }, 'go'),
@@ -126,7 +138,9 @@ export class CanvasExplore {
 
                     let show = exploreVariate === 'Bivariate' || exploreVariate === 'Trivariate';
                     let [n0, n1, n2] = exploreVariables.map(variable => app.variableSummaries[variable]);
-                    let predictorVariables = app.getPredictorVariables(selectedProblem);
+                    let exploreProblem = 'problems' in app.workspace.raven_config && app.workspace.raven_config.problems[x];
+                    let predictorVariables = app.getPredictorVariables(exploreProblem);
+                    let problemText = predictorVariables && [exploreProblem.targets.join(','), m(Icon, {style: 'margin:.5em;margin-top:.25em', name: 'arrow-left'}), predictorVariables.join(', ')];
 
                     // tile for each variable or problem
                     let tile = m('span#exploreNodeBox', {
@@ -190,12 +204,19 @@ export class CanvasExplore {
                             },
                             style: 'height: 65%'
                         }),
-                        m('#exploreNodeLabel', {style: 'margin: 1em'},
+                        m('#exploreNodeLabel', {
+                                style: {
+                                    margin: '.5em',
+                                    'max-width': '230px',
+                                    'overflow-wrap': 'break-word',
+                                    overflow: 'auto'
+                                }
+                            },
                             show && n0 && n0.name === x ? `${x} (x)`
                                 : show && n1 && n1.name === x ? `${x} (y)`
                                 : show && n2 && n2.name === x ? `${x} (z)`
-                                    : app.leftTab === 'Discover' && predictorVariables
-                                        ? [m('b', x), m('p', predictorVariables.join(', '))]
+                                    : app.leftTab === 'Discover' && problemText
+                                        ? [m('b', x), m('p', problemText)]
                                         : x)
                     );
 
@@ -231,7 +252,7 @@ export class CanvasExplore {
                     },
                     filtered.split(' ').map(x => m("figure", {style: 'display: inline-block'}, [
                             m(`img#${x}_img[alt=${x}][height=140px][width=260px][src=/static/images/${x}.png]`, {
-                                onclick: _ => plotVega(nodes, x),
+                                onclick: _ => plotVega(nodes, x, selectedProblem),
                                 style: thumbsty(nodes, x)
                             }),
                             m("figcaption", {style: {"text-align": "center"}}, plotMap[x])
@@ -247,7 +268,14 @@ export class CanvasExplore {
         };
 
         if (['problem', 'univariate', 'bivariate', 'trivariate', 'multiple'].includes(variate)) return wrapCanvas(
-            m(Button, {onclick: _ => m.route.set('/explore'), style: {margin: '1em'}}, m(Icon, {name: 'chevron-left', style: 'margin-right:.5em;transform:scale(1.5)'}), 'back to variables'),
+            m(Button, {
+                onclick: () => {
+                    m.route.set('/explore');
+                    m.redraw()
+                },
+                style: {margin: '1em'}},
+                m(Icon, {name: 'chevron-left', style: 'margin-right:.5em;transform:scale(1.5)'}),
+                'back to variables'),
             m('br'),
             getPlot()
         );
@@ -491,8 +519,17 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
             stringified = stringified.replace(/"tworavensVars"/g, $matvars);
         }
 
+        // behavioral logging
+        let logParams = {
+                      feature_id: 'EXPLORE_VIEW_PLOT',
+                      activity_l1: 'DATA_PREPARATION',
+                      activity_l2: 'DATA_EXPLORE',
+                      other: {plottype: plottype}
+                    };
+        app.saveSystemLogEntry(logParams);
+
         // VJD: if you enter this console.log into the vega editor https://vega.github.io/editor/#/edited the plot will render
-        console.log(stringified);
+        //console.log(stringified);
         return JSON.parse(stringified);
     };
 
@@ -518,12 +555,28 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
         plottype = getPlotType(plottype, mypn); // VJD: second element in array tags the variables for the plot e.g., qq means quantitative,quantitative; qn means quantitative,nominal
         console.log(mypn);
         let plotvars = getNames(mypn);
-        let zd3mdata = app.workspace.datasetUrl;
-        let jsonout = {plottype, plotvars, zd3mdata};
-        console.log(jsonout);
+
+        let compiled = queryMongo.buildPipeline(
+            [...app.workspace.raven_config.hardManipulations, ...problem.manipulations, {
+                type: 'menu',
+                metadata: {
+                    type: 'data',
+                    variables: exploreVariables,
+                    sample: recordLimit
+                }
+            }],
+            app.workspace.raven_config.variablesInitial)['pipeline'];
+
+        let json = {
+            plotdata: [JSON.stringify(await app.getData({
+                method: 'aggregate',
+                query: JSON.stringify(compiled)
+            }))],
+            plottype,
+            vars: plotvars
+        };
 
         // write links to file & run R CMD
-        let json = await app.makeRequest(ROOK_SVC_URL + 'plotdataapp', jsonout);
         if (!json) {
             return;
         }

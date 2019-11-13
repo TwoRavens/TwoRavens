@@ -21,7 +21,10 @@ import * as model from './model';
 import * as manipulate from './manipulations/manipulate';
 import * as results from "./results";
 import * as explore from './explore';
-import {getSolutions} from "./results";
+import {bold, linkURLwithText, linkURL, link} from "./index";
+import {getClearWorkspacesLink, clearWorkpacesAndReloadPage} from "./utils";
+
+import {search} from "./datamart/Datamart";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -30,8 +33,10 @@ import {getSolutions} from "./results";
 
 let RAVEN_CONFIG_VERSION = 1;
 
-let TA2DebugMode = false;
+export let TA2DebugMode = false;
 export let debugLog = TA2DebugMode ? console.log : _ => _;
+
+window.addEventListener('resize', m.redraw);
 
 // ~~~~~ PEEK ~~~~~
 // for the second-window data preview
@@ -138,7 +143,7 @@ export async function updatePeek(pipeline) {
 
     let data = await manipulate.loadMenu(
         manipulate.constraintMenu
-            ? pipeline.slice(0, pipeline.indexOf(stage => stage === manipulate.constraintMenu.step))
+            ? pipeline.slice(0, pipeline.indexOf(manipulate.constraintMenu.step))
             : pipeline,
         previewMenu
     );
@@ -178,13 +183,16 @@ export async function updatePeek(pipeline) {
     m.redraw();
 }
 
-export let downloadPeek = async () => {
-    let problem = getSelectedProblem();
-    let datasetUrl = await buildDatasetUrl(problem);
+export let downloadFile = async datasetUrl => {
+    if (!datasetUrl) return;
+    let downloadUrl = D3M_SVC_URL + '/download-file?' + m.buildQueryString({data_pointer: datasetUrl});
+
+    console.warn('Download URL');
+    console.log(downloadUrl);
 
     let link = document.createElement("a");
-    link.setAttribute("href", datasetUrl);
-    link.setAttribute("download", datasetUrl);
+    link.setAttribute("href", downloadUrl);
+    link.setAttribute("download", datasetUrl.split('/').slice(-1));
     link.click();
 };
 
@@ -199,26 +207,19 @@ export let formattingData = {};
 export let alignmentData = {};
 // ~~~~
 
-export let buttonLadda = {
-    btnSubmitDisc: false
-};
-export let buttonClasses = {
-    btnDiscover: 'btn-secondary',
-    btnSubmitDisc: 'btn-secondary',
-    btnEstimate: 'btn-secondary'
-};
-
 // when set, solver will be called if results menu is active
 export let solverPending = false;
 export let setSolverPending = state => solverPending = state;
 
-export let task1_finished = false;
-export let task2_finished = false;
-export let setTask1_finished = state => task1_finished = state;
-export let setTask2_finished = state => task2_finished = state;
-export let isResultsClicked = false;
+export let taskPreferences = {
+    isDiscoveryClicked: false,
+    isSubmittingProblems: false,
+    task1_finished: false,
 
-export let problemDocExists = true;
+    isResultsClicked: false,
+    isSubmittingPipelines: false,
+    task2_finished: false
+};
 
 export let currentMode;
 export let is_model_mode = true;
@@ -301,7 +302,7 @@ export let buildDatasetPreprocess = async ravenConfig => await getData({
     export: 'dataset'
 }).then(url => m.request({
     method: 'POST',
-    url: ROOK_SVC_URL + 'preprocessapp',
+    url: ROOK_SVC_URL + 'preprocess.app',
     data: {
         data: url,
         datastub: workspace.d3m_config.name
@@ -323,7 +324,7 @@ export let buildProblemPreprocess = async (ravenConfig, problem) => await getDat
     export: 'dataset'
 }).then(url => m.request({
     method: 'POST',
-    url: ROOK_SVC_URL + 'preprocessapp',
+    url: ROOK_SVC_URL + 'preprocess.app',
     data: {
         data: url,
         datastub: workspace.d3m_config.name,
@@ -336,7 +337,14 @@ export let buildProblemPreprocess = async (ravenConfig, problem) => await getDat
 });
 
 
-export async function buildDatasetUrl(problem) {
+export async function buildDatasetUrl(problem, lastStep) {
+
+    let steps = [
+        ...workspace.raven_config.hardManipulations,
+        ...problem.manipulations,
+    ];
+    if (lastStep) steps = steps.slice(0, steps.indexOf(lastStep));
+
     let variables = [...getPredictorVariables(problem), ...problem.targets];
     let problemStep = {
         type: 'menu',
@@ -348,11 +356,7 @@ export async function buildDatasetUrl(problem) {
         }
     };
 
-    let compiled = queryMongo.buildPipeline([
-        ...workspace.raven_config.hardManipulations,
-        ...problem.manipulations,
-        problemStep
-    ], workspace.raven_config.variablesInitial)['pipeline'];
+    let compiled = queryMongo.buildPipeline([...steps, problemStep], workspace.raven_config.variablesInitial)['pipeline'];
 
     return await getData({
         method: 'aggregate',
@@ -393,7 +397,7 @@ export let getData = async body => m.request({
     url: mongoURL + 'get-data',
     method: 'POST',
     data: Object.assign({
-        datafile: workspace.datasetUrl, // location of the dataset csv
+        datafile: workspace.datasetPath, // location of the dataset csv
         collection_name: workspace.d3m_config.name // collection/dataset name
     }, body)
 }).then(response => {
@@ -439,27 +443,27 @@ export let saveLogEntry = async logData => {
         url: save_log_entry_url,
         data: logData
     })
-        .then(function(save_result) {
-            // console.log(save_result);
-            /*
-            if (save_result.success){
-              setCurrentWorkspaceMessageSuccess('The workspace was saved!')
-            } else {
-              setCurrentWorkspaceMessageError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
-            }
-            setSaveCurrentWorkspaceWindowOpen(true);
-            */
-        })
+    .then(function(save_result) {
+        if (save_result.success){
+          // console.log('log entry saved');
+        } else {
+          console.log('log entry FAILED: ' + save_result.message);
+        }
+    })
 };
 
 // for debugging - if not in PRODUCTION, prints args
 export let cdb = _ => PRODUCTION || console.log(_);
 
 export let k = 4; // strength parameter for group attraction/repulsion
-let tutorial_mode = localStorage.getItem('tutorial_mode') !== 'false';
+export let tutorial_mode = localStorage.getItem('tutorial_mode') !== 'false';
 
-export let leftTab = 'Variables'; // current tab in left panel
-export let leftTabHidden = 'Variables'; // stores the tab user was in before summary hover
+export let LEFT_TAB_NAME_VARIABLES = 'Variables';
+export let LEFT_TAB_NAME_DISCOVER = 'Discover';
+export let LEFT_TAB_NAME_AUGMENT = 'Augment';
+
+export let leftTab = LEFT_TAB_NAME_VARIABLES; // current tab in left panel
+export let leftTabHidden = LEFT_TAB_NAME_VARIABLES; // stores the tab user was in before summary hover
 
 export let rightTab = 'Problem'; // current tab in right panel
 
@@ -469,13 +473,30 @@ export let setRightTab = tab => {
     setFocusedPanel('right')
 };
 
-// call with a tab name to change the left tab in model mode
-export let setLeftTab = (tab) => {
-    leftTab = tab;
+/*
+  Model Mode
+  - Set the Left Tab: Variables | Discover | Augment
+  call with a tab name to change the left tab in model mode
+*/
+export let setLeftTab = (tabName) => {
+    leftTab = tabName;
+    console.log('tab: ' + tabName)
     updateLeftPanelWidth();
-    if (tab === 'Discover') buttonClasses.btnDiscover = 'btn-secondary';
-    explore.setExploreVariate(tab === 'Discover' ? 'Problem' : 'Univariate');
+
+    // behavioral logging
+    let logParams = {
+        feature_id: 'VIEW_' + tabName.toUpperCase(),
+        activity_l1: 'DATA_PREPARATION',
+        activity_l2: 'PROBLEM_DEFINITION',
+    };
+    saveSystemLogEntry(logParams);
+
+    if (tabName === LEFT_TAB_NAME_DISCOVER) taskPreferences.isDiscoveryClicked = true;
+    explore.setExploreVariate(tabName === LEFT_TAB_NAME_DISCOVER ? 'Problem' : 'Univariate');
     setFocusedPanel('left');
+
+    if (tabName === LEFT_TAB_NAME_DISCOVER && !taskPreferences.task1_finished)
+        setTimeout(() => hopscotch.startTour(task1Tour), 100);
 };
 
 export let setLeftTabHidden = tab => {
@@ -567,7 +588,11 @@ streamSocket.onmessage = function (e) {
     }
     else if (msg_data.msg_type === 'GetProduceSolutionResults') {
         debugLog(msg_data.msg_type + ' recognized!');
-        solverD3M.handleGetProduceSolutionResultsResponse(msg_data.data);
+        solverD3M.handleGetProduceSolutionResultsResponse(msg_data.data, 'fittedValues');
+    }
+    else if (msg_data.msg_type === 'GetPartialsSolutionResults') {
+        debugLog(msg_data.msg_type + ' recognized!');
+        solverD3M.handleGetProduceSolutionResultsResponse(msg_data.data, 'partialsValues');
     }
     else if (msg_data.msg_type === 'GetFitSolutionResults') {
         debugLog(msg_data.msg_type + ' recognized!');
@@ -575,7 +600,7 @@ streamSocket.onmessage = function (e) {
     }
     else if (msg_data.msg_type === 'ENDGetSearchSolutionsResults') {
         debugLog(msg_data.msg_type + ' recognized!');
-        solverD3M.handleENDGetSearchSolutionsResults();
+        solverD3M.handleENDGetSearchSolutionsResults(msg_data.data);
     }
     else if (msg_data.msg_type === 'DATAMART_MATERIALIZE_PROCESS') {
         debugLog(msg_data.msg_type + ' recognized!');
@@ -584,6 +609,10 @@ streamSocket.onmessage = function (e) {
     else if (msg_data.msg_type === 'DATAMART_AUGMENT_PROCESS') {
         debugLog(msg_data.msg_type + ' recognized!');
         handleAugmentDataMessage(msg_data);
+    }
+    else if (msg_data.msg_type === 'DATAMART_SEARCH_BY_DATASET') {
+        debugLog(msg_data.msg_type + ' recognized!');
+        handleSearchbyDataset(msg_data);
     }
     else {
         console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
@@ -636,16 +665,14 @@ export let setShowModalAlerts = state => showModalAlerts = state;
 export let showModalTA2Debug = false;
 export let setShowModalTA2Debug = state => showModalTA2Debug = state;
 
+export let showModalDownload = false;
+export let setShowModalDownload = state => showModalDownload = state;
+
 // menu state within datamart component
 export let datamartPreferences = {
     // default state for query
     query: {
-      keywords: [],
-        /*
-        dataset: {
-            about: '',
-            keywords: []
-        }*/
+      keywords: []
     },
     // potential new indices to submit to datamart
     indices: [],
@@ -666,9 +693,6 @@ export let datamartPreferences = {
     }
 };
 
-export let configurations = {};
-export let domainIdentifier = null; // available throughout apps js; used for saving workspace
-
 // eventually read this from the schema with real descriptions
 // metrics, tasks, and subtasks as specified in D3M schemas
 // MEAN SQUARED ERROR IS SET TO SAME AS RMSE. MSE is in schema but not proto
@@ -685,8 +709,8 @@ export let d3mTaskType = {
     timeSeriesForecasting: "TIME_SERIES_FORECASTING",
     collaborativeFiltering: "COLLABORATIVE_FILTERING",
     objectDetection: "OBJECT_DETECTION",
-    semisupervisedClassification: "SEMISUPERVISED_CLASSIFICATION",
-    semisupervisedRegression: "SEMISUPERVISED_REGRESSION",
+    semiSupervisedClassification: "SEMISUPERVISED_CLASSIFICATION",
+    semiSupervisedRegression: "SEMISUPERVISED_REGRESSION",
 };
 
 export let d3mTaskSubtype = {
@@ -725,6 +749,31 @@ export let d3mMetrics = {
     loss: "LOSS",
 };
 
+
+export let d3mMetricDomains = {
+    accuracy: [0, 1],
+    precision: [0, 1],
+    recall: [0, 1],
+    f1: [0, 1],
+    f1Micro: [0, 1],
+    f1Macro: [0, 1],
+    rocAuc: [0, 1],
+    rocAucMicro: [0, 1],
+    rocAucMacro: [0, 1],
+    meanSquaredError: undefined,
+    rootMeanSquaredError: undefined,
+    meanAbsoluteError: undefined,
+    rSquared: [0, 1],
+    normalizedMutualInformation: [0, 1],
+    jaccardSimilarityScore: [0, 1],
+    precisionAtTopK: [0, 1],
+    objectDetectionAveragePrecision: [0, 1],
+    hammingLoss: undefined,
+    rank: undefined,
+    loss: undefined,
+};
+
+
 export let d3mMetricsInverted = Object.keys(d3mMetrics)
     .reduce((out, key) => Object.assign(out, {[d3mMetrics[key]]: key}), {});
 
@@ -732,12 +781,6 @@ export let d3mEvaluationMethods = {
     holdout: "HOLDOUT",
     kFold: "K_FOLD"
 };
-
-export let supportedTasks = [
-    'classification', 'regression',
-    'timeSeriesForecasting',
-    'semisupervisedClassification', 'semisupervisedRegression'
-];
 
 export let applicableMetrics = {
     classification: {
@@ -775,12 +818,12 @@ export let applicableMetrics = {
     objectDetection: {
         subTypeNone: ['objectDetectionAveragePrecision']
     },
-    semisupervisedClassification: {
+    semiSupervisedClassification: {
         binary: ['accuracy', 'precision', 'recall', 'f1', 'rocAuc'],
         multiClass: ['accuracy', 'f1Micro', 'f1Macro', 'rocAucMicro', 'rocAucMacro', 'jaccardSimilarityScore'],
         multiLabel: ['accuracy', 'f1Micro', 'f1Macro', 'rocAucMacro', 'jaccardSimilarityScore', 'hammingLoss']
     },
-    semisupervisedRegression: {
+    semiSupervisedRegression: {
         univariate: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared'],
         multivariate: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared']
     }
@@ -794,7 +837,7 @@ export const reset = async function reloadPage() {
     location.reload();
 };
 
-export let step = (target, placement, title, content) => ({
+export let step = (target, placement, title, content, options={}) => Object.assign({
     target,
     placement,
     title,
@@ -805,9 +848,9 @@ export let step = (target, placement, title, content) => ({
         localStorage.setItem('tutorial_mode', 'false');
         hopscotch.endTour(true);
     }
-});
+}, options);
 
-export let mytour = () => ({
+export let initialTour = () => ({
     id: "dataset_launch",
     i18n: {doneBtn:'Ok'},
     showCloseButton: true,
@@ -844,16 +887,19 @@ export let mytour = () => ({
 });
 
 
-export let mytour3 = {
+export let task1Tour = {
     id: "dataset_launch",
     i18n: {doneBtn:'Ok'},
     showCloseButton: true,
     scrollDuration: 300,
     steps: [
-        step("btnSelect", "right", "Complete Task 1",
-             `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
-                     <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>
+        step("discoveryTableSelectedProblem", "right", "Mark Problems as Meaningful",
+            `<p>Check problems that you consider meaningful.</p>
                      <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
+        step("btnSubmitDisc", "right", "Complete Task 1",
+             `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
+                     <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>`,
+            {onShow: () => document.getElementById('btnSubmitDisc').scrollIntoView()}),
     ]
 };
 
@@ -892,36 +938,34 @@ export let getCurrentWorkspaceId = () => {
 export let setShowModalWorkspace = state => showModalWorkspace = state;
 export let showModalWorkspace = false;
 
-export let loadWorkspace = async newWorkspace => {
+let getDatasetDoc = async dataset_schema_url => {
 
-    // scopes at app.js level; used for saving workspace
-    domainIdentifier = {
-        name: newWorkspace.d3m_config.name,
-        source_url: newWorkspace.d3m_config.config_url,
-        description: 'D3M config file',
-        // id: workspace.d3m_config.id
-    };
+    let datasetDocInfo = await m.request(dataset_schema_url);
 
-    workspace = newWorkspace;
-    // useful for debugging
-    window.workspace = workspace;
+    if (!datasetDocInfo.success) {
+        let datasetDocFailMsg = 'D3M WARNING: No dataset doc available! ';
+        swandive = true;
+        console.log(datasetDocFailMsg);
+        // alertWarn(datasetDocFailMsg);
 
-    // update page title shown on tab
-    d3.select("title").html("TwoRavens " + workspace.d3m_config.name);
+        let datasetDocLink = window.location.origin + dataset_schema_url;
 
-    // will trigger further mongo calls if the secondary peek page is open
-    localStorage.setItem('peekHeader' + peekId, "TwoRavens " + workspace.d3m_config.name);
+        setModal(m('div', {}, [
+                m('p', datasetDocFailMsg),
+                m('p', 'Please try to ', linkURLwithText(getClearWorkspacesLink(), 'Reset Workspaces')),
+                  //' or ', linkURLwithText(window.location.origin, 'Reload the Page')),
+                m('hr'),
+                m('p', bold('Technical info. Error: '), datasetDocInfo.message),
+                m('p', 'Url: ', link(datasetDocLink))            ]),
+            "Failed to load datasetDoc.json!",
+            true,
+            "Reset Workspaces",
+            false,
+            clearWorkpacesAndReloadPage);
+        return;
+    }
 
-    /**
-     * 1. Load 'datasetDoc'
-     */
-    console.log('---------------------------------------');
-    console.log("-- Workspace: 1. Load 'datasetDoc' --");
-    // url example: /config/d3m-config/get-dataset-schema/json/39
-    //
-    workspace.datasetDoc = await m.request(workspace.d3m_config.dataset_schema_url);
-
-    let datadocument_columns = (workspace.datasetDoc.dataResources.find(resource => resource.columns) || {}).columns;
+    let datadocument_columns = (datasetDocInfo.data.dataResources.find(resource => resource.columns) || {}).columns;
     if (datadocument_columns === undefined) {
         console.log('D3M WARNING: datadocument.dataResources[x].columns is undefined.');
         swandive = true;
@@ -930,148 +974,159 @@ export let loadWorkspace = async newWorkspace => {
     if (swandive)
         alertWarn('Exceptional data detected.  Please check the logs for "D3M WARNING"');
 
-    console.log("data schema data: ", workspace.datasetDoc);
+    return datasetDocInfo.data;
+};
 
-    //
-    // if (!IS_D3M_DOMAIN) {
-    //     // Note: presently xml is no longer being read from Dataverse metadata anywhere
-    //     let temp = xml.documentElement.getElementsByTagName("fileName");
-    //     zparams.zdata = temp[0].childNodes[0].nodeValue;
-    //     let cite = xml.documentElement.getElementsByTagName("biblCit");
-    //     // clean citation so POST is valid json
-    //     zparams.zdatacite = cite[0].childNodes[0].nodeValue
-    //         .replace(/\&/g, "and")
-    //         .replace(/\;/g, ",")
-    //         .replace(/\%/g, "-");
-    //     // fill in citation in header
-    //     byId('cite').children[0].textContent = zparams.zdatacite;
-    // }
+let buildDefaultProblem = problemDoc => {
+
+    // create the default problem provided by d3m
+    let targets = problemDoc.inputs.data
+        .flatMap(source => source.targets.map(targ => targ.colName));
+
+    let predictors = swandive
+        ? Object.keys(variableSummaries)
+            .filter(column => column !== 'd3mIndex' && !targets.includes(column))
+        : workspace.datasetDoc.dataResources // if swandive false, then datadoc has column labeling
+            .filter(resource => resource.resType === 'table')
+            .flatMap(resource => resource.columns
+                .filter(column => !column.role.includes('index') && !targets.includes(column.colName))
+                .map(column => column.colName));
+
+    let defaultProblem = {
+        problemID: problemDoc.about.problemID,
+        system: 'auto',
+        version: problemDoc.about.version,
+        predictors: predictors,
+        targets: targets,
+        description: problemDoc.about.problemDescription,
+        metric: problemDoc.inputs.performanceMetrics[0].metric,
+        metrics: problemDoc.inputs.performanceMetrics.slice(1).map(elem => elem.metric),
+        task: problemDoc.about.taskType,
+        subTask: problemDoc.about.taskSubtype,
+
+        evaluationMethod: problemDoc.inputs.dataSplits.method || 'kFold',
+        testSize: problemDoc.inputs.dataSplits.trainTestRatio,
+        stratified: problemDoc.inputs.dataSplits.stratified,
+        randomSeed: problemDoc.inputs.dataSplits.randomSeed,
+
+        meaningful: false,
+        manipulations: [],
+        solutions: {
+            d3m: {},
+            rook: {}
+        },
+        selectedSource: undefined, // 'd3m' or 'rook'
+        selectedSolutions: {
+            d3m: undefined,
+            rook: undefined
+        },
+        tags: {
+            transformed: [],
+            weights: [], // singleton list
+            crossSection: [],
+            time: swandive ? [] : workspace.datasetDoc.dataResources // if swandive false, then datadoc has column labeling
+                .filter(resource => resource.resType === 'table')
+                .flatMap(resource => resource.columns
+                    .filter(column => column.role.includes('timeIndicator') || column.colType === 'dateTime')
+                    .map(column => column.colName)),
+            nominal: [],
+            loose: [] // variables displayed in the force diagram, but not in any groups
+        }
+    };
+
+    return defaultProblem;
+};
+
+/*
+ * Set the workspace.datasetUrl using the workspace's d3m_config
+ *  - e.g. workspace.d3m_config.problem_data_info
+ *    - example of url in variable above
+ *        - /config/d3m-config/get-problem-data-file-info/39
+ */
+let getDatasetPath = async problem_data_info => {
+
+    let showDatasetUrlFailModal = (msg) => setModal(m('div', [
+            m('p', {class: 'h5'}, "The dataset url was not found."),
+            m('p', 'Please try to reload the page using the button below.'),
+            m('hr'),
+            m('p', 'If it fails again, please contact the administrator.'),
+            m('p', msg)
+        ]),
+        "Severe Error. Failed to locate the dataset",
+        true,
+        "Reload Page",
+        false,
+        locationReload);
 
 
-    /**
-     * 2. Load 'datasetUrl'
-     */
-    console.log('---------------------------------------');
-    console.log("-- Workspace: 2. Load 'datasetUrl' --");
+    console.log("-- getDatasetPath --");
     //url example: /config/d3m-config/get-problem-data-file-info/39
     //
-    let problem_info_result = await m.request(workspace.d3m_config.problem_data_info);
+    let problem_info_result = await m.request(problem_data_info);
 
-    console.log("result from problem data file info:");
-    console.log(problem_info_result);
+    if (!problem_info_result.success) {
+        showDatasetUrlFailModal('Error: ' + problem_info_result.message);
 
-    // The result of this call is similar to below:
-    // example:
-    /*  {
-             "success":true,
-             "data":{
-                "learningData.csv":{
-                   "exists":true,
-                   "size":11654,
-                   "path":"/inputs/dataset_TRAIN/tables/learningData.csv"
-                },
-                "learningData.csv.gz":{
-                   "exists":false,
-                   "size":-1,
-                   "path":"/inputs/dataset_TRAIN/tables/learningData.csv.gz"
-                }
-             }
-          }
-    */
-
-    // Loop through the response above and
-    // pick the first "path" where "exists" is true
-    //
-    // Note: if data files have "exists" as false, stay at default which is null
-    //
-    let set_d3m_data_path = field => problem_info_result.data[field].exists
-        ? problem_info_result.data[field].path
-        : problem_info_result.data[field + '.gz'].exists
-            ? problem_info_result.data[field + '.gz'].path
-            : undefined
-
-
-    workspace.datasetUrl = set_d3m_data_path('learningData.csv');
-
-    // If this is the D3M domain; workspace.datasetUrl MUST be set to an actual value
-    //
-    if (IS_D3M_DOMAIN && !workspace.datasetUrl) {
-        const d3m_path_err = 'NO VALID datasetUrl! ' + JSON.stringify(problem_info_result)
-        console.log(d3m_path_err);
-        alertError('debug (be more graceful): ' + d3m_path_err);
+        return;
     }
 
+    if (!('source_data_path' in problem_info_result.data)) {
+        console.log('Severe error.  Not able to load the datasetPath. (p2)' +
+            ' (url: ' + problem_data_info + ')' +
+            ' Invalid data: ' + JSON.stringify(problem_info_result));
 
-    /**
-     * 3. read preprocess data or (if necessary) run preprocess
-     * NOTE: preprocess.json is now guaranteed to exist...
-     */
-    console.log('---------------------------------------');
-    console.log("-- Workspace: 3. read preprocess data or (if necessary) run preprocess --");
+        showDatasetUrlFailModal('Invalid data: ' + JSON.stringify(problem_info_result));
 
-    let resPreprocess;
+        return;
+    }
 
-    // update preprocess
-    if (workspace.raven_config)
-        setVariableSummaries(await buildProblemPreprocess(workspace.raven_config, getSelectedProblem()));
-    else {
-        let url = ROOK_SVC_URL + 'preprocessapp';
-        // For D3M inputs, change the preprocess input data
-        let json_input = {
-            data: workspace.datasetUrl,
-            datastub: IS_D3M_DOMAIN ? workspace.d3m_config.name : workspace.name
-        };
+    if (!problem_info_result.data.source_data_path) {
+        console.log('Severe error.  Not able to load the datasetPath. (p2)' +
+            ' (url: ' + problem_data_info + ')');
 
-        try {
-            // res = read(await m.request({method: 'POST', url: url, data: json_input}));
-            let preprocess_info = await m.request({method: 'POST', url, data: json_input});
+        showDatasetUrlFailModal('(url: ' + problem_data_info + ')');
 
-            console.log('preprocess_info: ', preprocess_info);
-            console.log('preprocess_info message: ' + preprocess_info.message);
-            if (!preprocess_info.success) throw "Preprocess failed";
-            resPreprocess = preprocess_info.data;
+        return;
+    }
 
-            priv = resPreprocess.dataset.private || priv
+    return problem_info_result.data.source_data_path;
+};
 
-        } catch(_) {
-            // alertError('preprocess failed. ending user session.');
-            setModal(m('div', m('p', "Preprocess failed."),
-                m('p', '(p: 2)')),
-                "Failed to load basic data.",
-                true,
-                "Reload Page",
-                false,
-                locationReload);
-            // endsession();
-            return false;
+export let getPreprocess = async (datasetPath, query) => {
+    if (query) datasetPath = await getData({
+        method: 'aggregate', query,
+        export: 'dataset'
+    });
+
+    let response = await m.request({
+        method: 'POST',
+        url: ROOK_SVC_URL + 'preprocess.app',
+        data: {
+            data: datasetPath,
+            datastub: workspace.d3m_config.name,
+            l1_activity: 'PROBLEM_DEFINITION',
+            l2_activity: 'PROBLEM_SPECIFICATION'
         }
-        setVariableSummaries(resPreprocess.variables);
-        setDatasetSummary(resPreprocess.dataset);
+    });
+
+    if (!response.success) alertError(response.message);
+    else return response.data;
+};
+
+export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
+
+    workspace = newWorkspace;
+    // useful for debugging
+    window.workspace = workspace;
+
+    d3.select("title").html("TwoRavens " + workspace.d3m_config.name);
+
+    if (DISPLAY_DATAMART_UI){
+      setTimeout(() => search(datamartPreferences, datamartURL).then(m.redraw), 1000);
     }
 
-    if (workspace.raven_config) {
-        // update total subset records
-        let countMenu = {type: 'menu', metadata: {type: 'count'}};
-        manipulate.loadMenu([...workspace.raven_config.hardManipulations, ...getSelectedProblem().manipulations], countMenu).then(count => {
-            manipulate.setTotalSubsetRecords(count);
-            m.redraw();
-        });
-        // update peek
-        resetPeek();
-    }
-
-    /**
-     * 4. Create 'raven_config' if undefined
-     */
-    console.log('---------------------------------------');
-    console.log("-- Workspace: 4. Create 'raven_config' if undefined --");
-    if (workspace.raven_config) {
-        console.log('workspace.raven_config found! ' + workspace.user_workspace_id);
-        m.redraw();
-        return true;
-    }
-
-    workspace.raven_config = {
+    let newRavenConfig = workspace.raven_config === null;
+    if (newRavenConfig) workspace.raven_config = {
         problemCount: 0, // used for generating new problem ID's
         ravenConfigVersion: RAVEN_CONFIG_VERSION,
         hardManipulations: [],
@@ -1086,145 +1141,216 @@ export let loadWorkspace = async newWorkspace => {
         }
     };
 
+    let manipulations = newRavenConfig ? [] : [
+        ...workspace.raven_config.hardManipulations,
+        ...getSelectedProblem().manipulations
+    ];
 
-    /**
-     * 4.a. Assign problem discovery to raven_config
-     */
-    console.log('---------------------------------------');
-    console.log("-- Workspace: 4.a. Assign problem discovery to raven_config --");
+    // ~~~~ BEGIN PROMISE GRAPH ~~~~
 
-    if(!swandive && resPreprocess) {
-        // assign discovered problems into problems set, keeping the d3m problem
-        Object.assign(workspace.raven_config.problems, discovery(resPreprocess.dataset.discovery));
-        workspace.raven_config.variablesInitial = Object.keys(variableSummaries);
+    // DATASET PATH
+    let promiseDatasetPath = getDatasetPath(workspace.d3m_config.problem_data_info)
+        .then(datasetPath => {
+            if (!datasetPath && IS_D3M_DOMAIN) throw "datasetPath not loaded";
+            workspace.datasetPath = datasetPath;
+        })
+        .then(m.redraw);
 
-        // Kick off discovery button as green for user guidance
-        if (!task1_finished) buttonClasses.btnDiscover = 'btn-success'
+    // DATASET DOC
+    let promiseDatasetDoc = getDatasetDoc(workspace.d3m_config.dataset_schema_url)
+        .then(datasetDoc => {
+            workspace.datasetDoc = datasetDoc;
+
+            let resourceTable = datasetDoc.dataResources
+                .find(resource => resource.resType === 'table');
+            if (!resourceTable) return;
+
+            // store the resourceId of the table being used in the raven_config (must persist)
+            workspace.raven_config.resourceId = resourceTable.resID;
+
+            if ('columns' in resourceTable)
+                workspace.raven_config.variablesInitial = resourceTable.columns
+                    .sort((a, b) => omniSort(a.colIndex, b.colIndex))
+                    .map(column => column.colName);
+            // TODO: endpoint to retrieve column names if columns not present in datasetDoc
+            else swandive = true;
+        })
+        .then(m.redraw);
+
+    // MONGO LOAD / SAMPLE DATASET PATH
+    let promiseSampledDatasetPath = Promise.all([promiseDatasetDoc, promiseDatasetPath])
+        .then(() => getData({
+            method: 'aggregate',
+            query: JSON.stringify(queryMongo.buildPipeline([
+                ...manipulations, {type: 'menu', metadata: {type: 'data', sample: 5000}}
+            ], workspace.raven_config.variablesInitial)['pipeline']),
+            export: 'dataset'
+        }));
+
+    // PREPROCESS
+    let promisePreprocess = promiseSampledDatasetPath
+        .then(sampledDatasetPath => m.request(ROOK_SVC_URL + 'preprocess.app', {
+            method: 'POST',
+            data: {data: sampledDatasetPath, datastub: workspace.d3m_config.name}
+        }))
+        .then(response => {
+            if (!response.success) alertError(response.message);
+            else return response.data;
+        })
+        .then(preprocess => {
+            if (!preprocess) return;
+            setVariableSummaries(preprocess.variables);
+            setDatasetSummary(preprocess.dataset);
+
+            if (newRavenConfig) {
+                // go back and add tags to original problems
+                let nominals = Object.keys(variableSummaries)
+                    .filter(variable => variableSummaries[variable].nature === 'nominal');
+                Object.values(workspace.raven_config.problems)
+                    .forEach(problem => problem.tags.nominal = nominals);
+                // merge discovery into problem set if constructing a new raven config
+                Object.assign(workspace.raven_config.problems, discovery(preprocess.dataset.discovery));
+            }
+        })
+        .then(m.redraw)
+        .catch(err => {
+            setModal(m('div', m('p', "Preprocess failed."),
+                m('p', '(p: 2)')),
+                "Failed to load basic data.",
+                true,
+                "Reload Page",
+                false,
+                locationReload);
+            throw err;
+        });
+
+    // RECORD COUNT
+    // wait until after sampling returns, because dataset is loaded into mongo
+    promiseSampledDatasetPath
+        .then(() => manipulate.loadMenu(manipulations,
+            {type: 'menu', metadata: {type: 'count'}}))
+        .then(count => {
+            manipulate.setTotalSubsetRecords(count);
+            m.redraw();
+        });
+
+    // PEEK
+    // wait briefly before running peek, to ensure a few observations are loaded in the dataset
+    Promise.all([promiseDatasetDoc, promiseDatasetPath])
+        .then(() => new Promise(resolve => setTimeout(() => resolve(), 1000)))
+        .then(() => {
+            resetPeek();
+            // will trigger further mongo calls if the secondary peek page is open
+            localStorage.setItem('peekHeader' + peekId, "TwoRavens " + workspace.d3m_config.name);
+        });
+
+    // PROBLEM DOC
+    let promiseProblemDoc = promiseDatasetDoc
+        .then(() => m.request(workspace.d3m_config.problem_schema_url))
+        .then(async response => {
+            // problem doc not supplied, so set the first discovered problem as selected, once preprocess loaded
+            if (!response.success) {
+                if (!newRavenConfig) return;
+                await promisePreprocess;
+
+                if (Object.keys(workspace.raven_config.problems).length === 0) {
+                    let problemID = generateProblemID();
+                    workspace.raven_config.problems = {
+                        [problemID]: {
+                            problemID,
+                            system: 'auto',
+                            predictors: [],
+                            targets: [],
+                            description: '',
+                            metric: 'meanSquaredError',
+                            metrics: [],
+                            task: 'regression',
+                            subTask: 'univariate',
+
+                            evaluationMethod: 'kFold',
+                            testSize: undefined,
+                            stratified: undefined,
+                            randomSeed: undefined,
+
+                            meaningful: false,
+                            manipulations: [],
+                            solutions: {
+                                d3m: {},
+                                rook: {}
+                            },
+                            selectedSource: undefined, // 'd3m' or 'rook'
+                            selectedSolutions: {
+                                d3m: undefined,
+                                rook: undefined
+                            },
+                            tags: {
+                                transformed: [],
+                                weights: [], // singleton list
+                                crossSection: [],
+                                time: [],
+                                nominal: [],
+                                loose: [] // variables displayed in the force diagram, but not in any groups
+                            }
+                        }
+                    };
+                }
+
+                let problemFirst = Object.values(workspace.raven_config.problems)[0];
+                let problemCopy = getProblemCopy(problemFirst);
+                workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+                setSelectedProblem(problemCopy.problemID);
+
+                console.log('Task 1: Initiating');
+                m.redraw();
+                return;
+            }
+
+            console.log('Task 1: Complete, problemDoc loaded');
+
+            taskPreferences.task1_finished = true;
+            let problemDoc = response.data;
+            datamartPreferences.hints = problemDoc.dataAugmentation;
+
+            if (newRavenConfig) {
+                // if swandive, columns cannot be extracted from datasetDoc
+                if (swandive) await promisePreprocess;
+
+                let defaultProblem = buildDefaultProblem(problemDoc);
+
+                // add the default problems to the list of problems
+                let problemCopy = getProblemCopy(defaultProblem);
+
+                defaultProblem.defaultProblem = true;
+
+                workspace.raven_config.problems[defaultProblem.problemID] = defaultProblem;
+                workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+                /**
+                 * Note: mongodb data retrieval initiated here
+                 *   setSelectedProblem -> loadMenu (manipulate.js) -> getData (manipulate.js)
+                 */
+                setSelectedProblem(problemCopy.problemID);
+            }
+        })
+        .then(m.redraw);
+
+    try {
+        await Promise.all([
+            promiseDatasetPath,
+            promiseDatasetDoc,
+            promiseSampledDatasetPath,
+            promiseProblemDoc
+        ]);
+
+        if (awaitPreprocess)
+            await promisePreprocess;
+
+        m.redraw();
+
+        return true
+    } catch (err) {
+        console.error(err);
+        return false
     }
-
-    // ---------------------------------------
-    // 4.b. Read the d3m problem schema and add to problems
-    // ...and make a call to Hello to check TA2 is up.  If we get this far, data are guaranteed to exist for the frontend
-    // ---------------------------------------
-    console.log('---------------------------------------');
-    console.log("-- Workspace: 4.b. Read the d3m problem schema and add to problems --");
-
-    // ---------------------------------------
-    // Retrieve the problem schema....
-    // ---------------------------------------
-
-    // url example: /config/d3m-config/get-problem-schema/json/39
-    //
-    let d3mPS = workspace.d3m_config.problem_schema_url;
-    let problemDoc = await m.request(d3mPS);
-    // console.log("prob schema data: ", res);
-    if(typeof problemDoc.success === 'undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
-        // This is a Task 2 assignment
-        // console.log("DID WE GET HERE?");
-        setTask1_finished(true);
-        buttonClasses.btnDiscover = 'btn-success';
-        buttonClasses.btnSubmitDisc = 'btn-success';
-        buttonClasses.btnEstimate = 'btn-success';
-
-    } else if (!problemDoc.success){                       // Task 1 is when res.success==false
-        // This is a Task 1 assignment: no problem doc.
-        task2_finished = true;
-        problemDocExists = false;
-    } else alertLog("Something Unusual happened reading problem schema.");
-
-
-    if(problemDocExists){
-        console.log("Task 2: Problem Doc Exists");
-
-        // Note: There is no res.success field in this return state
-        // if (!res.success){
-        //   alertError('problem schema not available: ' + res.message);
-        //   return
-        // }
-
-        // making it case insensitive because the case seems to disagree all too often
-        if (failset.includes(problemDoc.about.taskType.toUpperCase())) {
-            if(IS_D3M_DOMAIN){
-                console.log('D3M WARNING: failset  task type found');
-            }
-            swandive = true;
-        }
-
-        // store the resourceId of the table being used in the raven_config (must persist)
-        workspace.raven_config.resourceId = workspace.datasetDoc.dataResources
-            .find(resource => resource.resType === 'table').resID;
-
-        // create the default problem provided by d3m
-        let targets = problemDoc.inputs.data
-            .flatMap(source => source.targets.map(targ => targ.colName));
-        let predictors = swandive
-            ? Object.keys(variableSummaries)
-                .filter(column => column !== 'd3mIndex' && !targets.includes(column))
-            : newWorkspace.datasetDoc.dataResources // if swandive false, then datadoc has column labeling
-                .filter(resource => resource.resType === 'table')
-                .flatMap(resource => resource.columns
-                    .filter(column => column.role[0] !== 'index' && !targets.includes(column.colName))
-                    .map(column => column.colName));
-
-        console.log('pdoc targets: ' + JSON.stringify(targets));
-
-        let defaultProblem = {
-            problemID: problemDoc.about.problemID,
-            system: 'auto',
-            version: problemDoc.about.version,
-            predictors: predictors,
-            targets: targets,
-            description: problemDoc.about.problemDescription,
-            metric: problemDoc.inputs.performanceMetrics[0].metric,
-            metrics: problemDoc.inputs.performanceMetrics.slice(1).map(elem => elem.metric),
-            task: problemDoc.about.taskType,
-            subTask: problemDoc.about.taskSubtype,
-            meaningful: false,
-            evaluationMethod: 'kFold',
-            manipulations: [],
-            solutions: {
-                d3m: {},
-                rook: {}
-            },
-            selectedSource: undefined, // 'd3m' or 'rook'
-            selectedSolutions: {
-                d3m: undefined,
-                rook: undefined
-            },
-            tags: {
-                transformed: [],
-                weights: [], // singleton list
-                crossSection: [],
-                time: [],
-                nominal: Object.keys(variableSummaries)
-                    .filter(variable => variableSummaries[variable].nature === 'nominal'),
-                loose: [] // variables displayed in the force diagram, but not in any groups
-            }
-        };
-        if (!defaultProblem.subTask) {
-            if (defaultProblem.task === 'classification' || defaultProblem.task === 'semisupervisedClassification')
-                defaultProblem.subTask = variableSummaries[defaultProblem.targets[0]].binary === 'yes' ? 'binary' : 'multiClass'
-            else if (defaultProblem.task === 'regression' || defaultProblem.task === 'semisupervisedRegression')
-                defaultProblem.subTask = defaultProblem.predictors.length > 1 ? 'multivariate' : 'univariate'
-            else
-                defaultProblem.subTask = Object.keys(applicableMetrics[defaultProblem.task])[0]
-        }
-
-        // add the default problems to the list of problems
-        let problemCopy = getProblemCopy(defaultProblem);
-
-        workspace.raven_config.problems[problemDoc.about.problemID] = defaultProblem;
-        workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
-        /**
-         * Note: mongodb data retrieval initiated here
-         *   setSelectedProblem -> loadMenu (manipulate.js) -> getData (manipulate.js)
-         */
-        setSelectedProblem(problemCopy.problemID);
-
-    } else console.log("Task 1: No Problem Doc");
-
-
-    return true;
 };
 
 /**
@@ -1237,7 +1363,7 @@ export let loadWorkspace = async newWorkspace => {
  5. Start the user session /Hello
  */
 
-export async function load() {
+export async function load({awaitPreprocess}={}) {
     console.log('---------------------------------------');
     console.log('-- initial load, app.js - load() --');
     if (!IS_D3M_DOMAIN) {
@@ -1283,7 +1409,7 @@ export async function load() {
     console.log('---------------------------------------');
     console.log('-- 2. Load workspace --');
 
-    let success = await loadWorkspace(workspace);
+    let success = await loadWorkspace(workspace, {awaitPreprocess});
     if (!success){
       // alertError('Failed to load workspace');
       return;
@@ -1296,12 +1422,23 @@ export async function load() {
     console.log('---------------------------------------');
     console.log("-- 5. Start the user session /Hello --");
 
-    let problemDoc = await makeRequest(D3M_SVC_URL + '/Hello', {});
-    if (problemDoc) {
-        setTask1_finished(true);
-        if (problemDoc.success !== true) {
-            const user_err_msg = "Failed to make Hello connection with TA2! status code: " + problemDoc.message;
-            setModal(user_err_msg, "Error Connecting to TA2", true, "Reset", false, locationReload);
+    let responseTA2 = await makeRequest(D3M_SVC_URL + '/Hello', {});
+    if (responseTA2) {
+        if (responseTA2.success !== true) {
+          //  const user_err_msg = "We were unable to connect to the TA2 system.  It may not be ready.  Please try again.  (status code: " + problemDoc.message + ")";
+            setModal(
+                m('div', [
+                    m('p', {class: 'h5'}, "We were unable to connect to the TA2 system."),
+                    m('p', {class: 'h5'}, "It may not be ready."),
+                    m('p', {class: 'h5'}, "Please try again using the button below."),
+                    m('hr'),
+                    m('p', "Technical details: " + responseTA2.message),
+                  ]),
+                  "Error Connecting to the TA2",
+                  true,
+                  "Retry TA2 Connection",
+                  false,
+                  locationReload);
             return;
         } else {
 
@@ -1309,10 +1446,10 @@ export async function load() {
             // Format and show the TA2 name in the footer
             // ----------------------------------------------
             let ta2Version;
-            if (typeof problemDoc.data.version !== 'undefined') {
-                ta2Version = problemDoc.data.version;
+            if (typeof responseTA2.data.version !== 'undefined') {
+                ta2Version = responseTA2.data.version;
             }
-            let ta2Name = problemDoc.data.userAgent;
+            let ta2Name = responseTA2.data.userAgent;
             if (ta2Version) {
                 ta2Name += ' (API: ' + ta2Version + ')';
             }
@@ -1324,63 +1461,8 @@ export async function load() {
     // hopscotch tutorial
     if (tutorial_mode) {
         console.log('Starting Hopscotch Tour');
-        hopscotch.startTour(mytour());
+        hopscotch.startTour(initialTour());
     }
-
-}
-
-/**
-   called on app start
-   @param {string} fileid
-   @param {string} hostname
-   @param {string} ddiurl
-   @param {string} dataurl
-   @param {string} apikey
-*/
-
-
-export function main(fileid, hostname, ddiurl, dataurl, apikey) {
-    if (PRODUCTION && fileid === '') {
-        let msg = 'Error: No fileid has been provided.';
-        alertError(msg);
-        throw new Error(msg);
-    }
-
-    let dataverseurl = hostname ? 'https://' + hostname :
-        PRODUCTION ? DATAVERSE_URL :
-        'http://localhost:8080';
-    // if file id supplied, assume we are dealing with dataverse and cook a standard dataverse data access url
-    // with the fileid supplied and the hostname we have supplied or configured
-    dataurl = fileid && !dataurl ? `${dataverseurl}/api/access/datafile/${fileid}?key=${apikey}` : dataurl;
-    cdb('--dataurl: ' + dataurl);
-    cdb('--dataverseurl: ' + dataverseurl);
-
-    // indicators for showing membership above arcs
-    // let indicator = (degree) => d3.svg.circle()
-    //     .cx( RADIUS )//(RADIUS+35) * Math.sin(degree))
-    //     .cy( RADIUS )//(RADIUS+35) * Math.cos(degree))
-    //     .r(3);
-    // ind1 = indicator(1);
-    // ind2 = indicator(1.2);
-
-    // assume locations are consistent based on d3m directory structure
-    let d3mRootPath = '';
-    let d3mDataName = '';
-    let d3mData = null;
-    let d3mPreprocess = '';
-    let d3mPS = '';
-    let d3mDS = '';
-
-    // default to Fearon Laitin
-    let data = 'data/' + (false ? 'PUMS5small' : 'fearonLaitin');
-    // let metadataurl = ddiurl || (fileid ? `${dataverseurl}/api/meta/datafile/${fileid}` : data + '.xml');
-    // read pre-processed metadata and data
-    let pURL = dataurl ? `${dataurl}&format=prep` : data + '.json';
-
-    if (IS_D3M_DOMAIN) {
-        pURL = d3mPreprocess;
-    }
-    load(d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL);
 
 }
 
@@ -1423,7 +1505,7 @@ export let toggle = (collection, obj) => {
 /** needs doc */
 export function helpmaterials(type) {
     if(type=="video"){
-        var win = window.open("http://2ra.vn/demos/d3mintegrationdemo.mp4", '_blank');
+        var win = window.open("http://2ra.vn/demos/index.html", '_blank');
         win.focus();
     }else{
         var win = window.open("http://2ra.vn/papers/tworavens-d3mguide.pdf", '_blank');
@@ -1446,7 +1528,7 @@ export function downloadIncomplete() {
     called by switching to results mode
 */
 export async function estimate() {
-    isResultsClicked = true;
+    taskPreferences.isResultsClicked = true;
 
     let selectedProblem = getSelectedProblem();
 
@@ -1468,8 +1550,6 @@ export async function estimate() {
         return;
     }
 
-    buttonLadda.btnEstimate = !swandive;
-
     if (swandive) {
         alertError('estimate() function. Check app.js error with swandive (err: 003)');
         return;
@@ -1477,53 +1557,84 @@ export async function estimate() {
 
     m.redraw();
 
-    // prepare expected/actual values for plotting of solution results (replaces rookpipe)
-    getData({
-        method: 'aggregate',
-        query: JSON.stringify(queryMongo.buildPipeline(
-            [...workspace.raven_config.hardManipulations, ...selectedProblem.manipulations, {
-                type: 'menu',
-                metadata: {
-                    type: 'data',
-                    variables: ['d3mIndex', ...selectedProblem.targets],
-                    sample: results.recordLimit
-                }
-            }],
-            workspace.raven_config.variablesInitial)['pipeline'])
-    }).then(data => selectedProblem.actualValues = data).then(m.redraw)
-        .catch(() => alertWarn('Dependent variables have not been loaded. Some plots will not load.'))
+    // let nominalVars = new Set(getNominalVariables(selectedProblem));
+    // let predictorVars = getPredictorVariables(selectedProblem);
+    //
+    // let hasNominal = [...selectedProblem.targets, ...predictorVars]
+    //     .some(variable => nominalVars.has(variable));
+    // let hasManipulation = selectedProblem.manipulations.length > 0;
 
-    let nominalVars = new Set(getNominalVariables(selectedProblem));
-    let predictorVars = getPredictorVariables(selectedProblem);
-
-    let hasNominal = [...selectedProblem.targets, ...predictorVars]
-        .some(variable => nominalVars.has(variable));
-    let hasManipulation = selectedProblem.manipulations.length > 0;
-
-    let needsProblemCopy = hasManipulation || hasNominal;
-
-    let datasetPath = workspace.datasetUrl;
+    // let needsProblemCopy = hasManipulation || hasNominal;
+    //
+    let datasetPath = workspace.datasetPath;
     // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
-    if (needsProblemCopy) {
-        let {data_path, metadata_path} = await buildProblemUrl(selectedProblem);
-        selectedProblem.datasetDocPath = metadata_path;
-        datasetPath = data_path;
-    } else delete selectedProblem.datasetDocPath;
+    // if (needsProblemCopy) {
+    //     let {data_path, metadata_path} = await buildProblemUrl(selectedProblem);
+    //     selectedProblem.datasetDocPath = metadata_path;
+    //     datasetPath = data_path;
+    // } else delete selectedProblem.datasetDocPath;
 
     // initiate rook solver
     callSolverEnabled && callSolver(selectedProblem, datasetPath);
 
-    let datasetDocPath = selectedProblem.datasetDocPath || workspace.d3m_config.dataset_schema;
+    // let datasetDocPath = selectedProblem.datasetDocPath || workspace.d3m_config.dataset_schema;
+    let datasetDocPath = workspace.d3m_config.dataset_schema;
+
+    let response = await m.request({
+        method: 'POST',
+        url: D3M_SVC_URL + '/get-train-test-split',
+        data: {
+            dataset_schema: workspace.d3m_config.dataset_schema,
+            train_test_ratio: selectedProblem.trainTestRatio
+        }
+    });
+
+    if (!response.success) {
+        alertError(response.message);
+        return;
+    }
+    let datasetDocPathTrain = response.data.dataset_schemas.train;
+    let datasetDocPathTest = response.data.dataset_schemas.test;
+    selectedProblem.indices = response.data.sample_test_indices;
 
     let allParams = {
         searchSolutionParams: solverD3M.GRPC_SearchSolutionsRequest(selectedProblem),
-        fitSolutionDefaultParams: solverD3M.GRPC_GetFitSolutionRequest(datasetDocPath),
-        produceSolutionDefaultParams: solverD3M.GRPC_ProduceSolutionRequest(datasetDocPath),
+        fitSolutionDefaultParams: solverD3M.GRPC_GetFitSolutionRequest(datasetDocPathTrain),
+        produceSolutionDefaultParams: solverD3M.GRPC_ProduceSolutionRequest(datasetDocPathTest),
         scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath)
     };
 
+    if (variableSummariesLoaded) {
+        let partialsDatasetDocPath;
+        selectedProblem.d3mSolverState = 'preparing partials data';
+        m.redraw();
+        try {
+            let partialsLocationInfo = await m.request({
+                method: 'POST',
+                url: ROOK_SVC_URL + 'partials.app',
+                data: {metadata: variableSummaries}
+            });
+            if (!partialsLocationInfo.success) {
+                // alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
+                throw partialsLocationInfo.message;
+            } else {
+                selectedProblem.partialsDatasetPath = partialsLocationInfo.data.partialsDatasetPath;
+                partialsDatasetDocPath = partialsLocationInfo.data.partialsDatasetDocPath;
+            }
+        } catch(err) {
+            cdb(err);
+            // alertError(`Error: call to partials.app failed`);
+        }
+
+        if (partialsDatasetDocPath)
+            allParams.partialsSolutionParams = solverD3M.GRPC_ProduceSolutionRequest(partialsDatasetDocPath);
+
+        selectedProblem.d3mSolverState = 'initiating the search for solutions';
+        m.redraw();
+    }
+
     console.warn("#debug allParams");
-    console.log(allParams);
+    console.log(JSON.stringify(allParams));
 
     let res = await makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', allParams);
 
@@ -1539,7 +1650,9 @@ export async function estimate() {
 
     // route streamed responses with this searchId to this problem
     selectedProblem.d3mSearchId = res.data.searchId;
-    m.redraw()
+
+    selectedProblem.d3mSolverState = '';
+    m.redraw();
 }
 
 export async function makeRequest(url, data) {
@@ -1574,7 +1687,6 @@ export async function makeRequest(url, data) {
     */
 
     if (!IS_D3M_DOMAIN) {
-        buttonLadda.btnEstimate = false;
         m.redraw()
     }
     return res;
@@ -1590,7 +1702,7 @@ export async function callSolver(prob, datasetPath=undefined) {
     let hasNominal = getNominalVariables(prob).length > 0;
 
     if (!datasetPath)
-        datasetPath = hasManipulation || hasNominal ? await buildDatasetUrl(prob) : workspace.datasetUrl;
+        datasetPath = hasManipulation || hasNominal ? await buildDatasetUrl(prob) : workspace.datasetPath;
 
     // solutions.rook[ravenID] = cachedResponse;
     let params = {
@@ -1624,7 +1736,7 @@ export async function callSolver(prob, datasetPath=undefined) {
 
     m.redraw();
 
-    for (let param of params) await makeRequest(ROOK_SVC_URL + 'solverapp', Object.assign({
+    for (let param of params) await makeRequest(ROOK_SVC_URL + 'caret.app', Object.assign({
         problem: probReduced,
         dataset_path: datasetPath,
         samples: prob.actualValues && prob.actualValues.map(point => point.d3mIndex)
@@ -1643,7 +1755,7 @@ export async function callSolver(prob, datasetPath=undefined) {
 
         // add to rook solutions
         Object.assign(prob.solutions.rook, response.results);
-        let selectedPipelines = results.getSolutions(prob);
+        let selectedPipelines = results.getSelectedSolutions(prob);
         if (selectedPipelines.length === 0) results.setSelectedSolution(prob, 'rook', Object.keys(prob.solutions.rook)[0]);
         m.redraw()
     });
@@ -1684,8 +1796,7 @@ export function discovery(problems) {
     // filter out problems with target of null
     // e.g. [{"target":null, "predictors":null,"transform":0, ...},]
     //
-    problems = problems.filter(yeTarget => yeTarget.target)
-
+    problems = problems.filter(yeTarget => yeTarget.target && yeTarget.target in variableSummaries);
 
     return problems.reduce((out, prob) => {
         let problemID = generateProblemID();
@@ -1730,8 +1841,8 @@ export function discovery(problems) {
         // coerceArray un-mangles data from R, in cases where you are expecting an array that could potentially be of length one
         let coerceArray = data => Array.isArray(data) ? data : [data];
 
-        console.log('variableSummaries:' + JSON.stringify(variableSummaries))
-        console.log('>> prob:' +  JSON.stringify(prob))
+        // console.log('variableSummaries:' + JSON.stringify(variableSummaries))
+        // console.log('>> prob:' +  JSON.stringify(prob))
 
         out[problemID] = {
             problemID,
@@ -1753,8 +1864,8 @@ export function discovery(problems) {
             },
             selectedSource: undefined, // 'd3m' or 'rook'
             selectedSolutions: {
-                d3m: undefined,
-                rook: undefined
+                d3m: [],
+                rook: []
             },
             tags: {
                 transformed: [...getTransformVariables(manips)], // this is used when updating manipulations pipeline
@@ -1773,12 +1884,22 @@ export function discovery(problems) {
 }
 
 export let setVariableSummaries = state => {
+    if (!state) return;
+
+    // Brian says d3mIndex should not be visible to the user,
+    //   but has knock-on effects currently:
+    // delete state.d3mIndex;
+
     variableSummaries = state;
 
     // quality of life
     Object.keys(variableSummaries).forEach(variable => variableSummaries[variable].name = variable);
+    window.variableSummaries = variableSummaries;
+
+    variableSummariesLoaded = true;
 };
 export let variableSummaries = {};
+export let variableSummariesLoaded = false;
 
 export let setDatasetSummary = state => datasetSummary = state;
 export let datasetSummary = {};
@@ -1817,42 +1938,43 @@ export let getCurrentWorkspaceMessage = () => { return currentWorkspaceSaveMsg; 
  *  ravens_config data to the user workspace.
  *    e.g. updates the workspace saved in the database
  */
-export let saveUserWorkspace = () => {
-  console.log('-- saveUserWorkspace --');
+export let saveUserWorkspace = (silent = false) => {
+    console.log('-- saveUserWorkspace --');
 
-  // clear modal message
-  setSaveCurrentWorkspaceWindowOpen(false);
-  setCurrentWorkspaceMessageSuccess('');
+    // clear modal message
+    !silent && setSaveCurrentWorkspaceWindowOpen(false);
+    setCurrentWorkspaceMessageSuccess('');
 
 
-  if(!('user_workspace_id' in workspace)) {
-    setCurrentWorkspaceMessageError('Cannot save the workspace. The workspace id was not found. (saveUserWorkspace)');
-    setSaveCurrentWorkspaceWindowOpen(true);
-    return;
-  }
-
-  let raven_config_save_url = '/user-workspaces/raven-configs/json/save/' + workspace.user_workspace_id;
-
-  console.log('data to save: ' + JSON.stringify(workspace.raven_config))
-
-  m.request({
-      method: "POST",
-      url: raven_config_save_url,
-      data: {raven_config: workspace.raven_config}
-  })
-  .then(function(save_result) {
-    console.log(save_result);
-    if (save_result.success){
-      setCurrentWorkspaceMessageSuccess('The workspace was saved!')
-    } else {
-      setCurrentWorkspaceMessageError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
+    if (!('user_workspace_id' in workspace)) {
+        setCurrentWorkspaceMessageError('Cannot save the workspace. The workspace id was not found. (saveUserWorkspace)');
+        setSaveCurrentWorkspaceWindowOpen(true);
+        return;
     }
-    setSaveCurrentWorkspaceWindowOpen(true);
-  })
+
+    let raven_config_save_url = '/user-workspaces/raven-configs/json/save/' + workspace.user_workspace_id;
+
+    console.log('data to save: ' + JSON.stringify(workspace.raven_config))
+
+    m.request({
+        method: "POST",
+        url: raven_config_save_url,
+        data: {raven_config: workspace.raven_config}
+    })
+        .then(function (save_result) {
+            console.log(save_result);
+            if (save_result.success) {
+                setCurrentWorkspaceMessageSuccess('The workspace was saved!')
+            } else {
+                setCurrentWorkspaceMessageError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
+            }
+            !silent && setSaveCurrentWorkspaceWindowOpen(true);
+        })
 };
 /*
  * END: saveUserWorkspace
  */
+
 
  /*
  *  Variables related to API info window
@@ -1860,6 +1982,7 @@ export let saveUserWorkspace = () => {
 export let isAPIInfoWindowOpen = false;
 // Open/close modal window
 export let setAPIInfoWindowOpen = (boolVal) => isAPIInfoWindowOpen = boolVal;
+
 
 
 // TA2 server information for display in modal
@@ -1928,83 +2051,100 @@ export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
   *  workspace as new one, with a new name.
   *    - placeholder with random name
   */
- export async function saveAsNewWorkspace(){
-   console.log('-- saveAsNewWorkspace --');
+export async function saveAsNewWorkspace() {
+    console.log('-- saveAsNewWorkspace --');
 
-   // hide save/cancel buttons
-   setDisplaySaveNameButtonRow(false);
+    // hide save/cancel buttons
+    setDisplaySaveNameButtonRow(false);
 
-   // get the current workspace id
-   if(!('user_workspace_id' in workspace)) {
+    // get the current workspace id
+    if (!('user_workspace_id' in workspace)) {
 
-     // show save/cancel buttons
-     setDisplaySaveNameButtonRow(true);
+        // show save/cancel buttons
+        setDisplaySaveNameButtonRow(true);
 
-     return {
-             success: false,
-             message: 'Cannot save the workspace. The workspace' +
-                      ' id was not found. (saveAsNewWorkspace)'
-            };
-   }
+        return {
+            success: false,
+            message: 'Cannot save the workspace. The workspace' +
+                ' id was not found. (saveAsNewWorkspace)'
+        };
+    }
 
-   // new workspace name
-   // let new_workspace_name = 'new_ws_' + Math.random().toString(36).substring(7);
-   let new_workspace_name = getNewWorkspaceName();
+    // new workspace name
+    // let new_workspace_name = 'new_ws_' + Math.random().toString(36).substring(7);
+    let new_workspace_name = getNewWorkspaceName();
 
-   if (!new_workspace_name){
+    if (!new_workspace_name) {
 
-     // show save/cancel buttons
-     setDisplaySaveNameButtonRow(true);
+        // show save/cancel buttons
+        setDisplaySaveNameButtonRow(true);
 
-     setNewWorkspaceMessageError('Please enter a new workspace name.');
-     return;
-   }
+        setNewWorkspaceMessageError('Please enter a new workspace name.');
+        return;
+    }
 
-   console.log('new_workspace_name: ' + new_workspace_name);
+    console.log('new_workspace_name: ' + new_workspace_name);
 
-   // save url
-   let raven_config_save_url = '/user-workspaces/raven-configs/json/save-as-new/' + workspace.user_workspace_id;
+    // save url
+    let raven_config_save_url = '/user-workspaces/raven-configs/json/save-as-new/' + workspace.user_workspace_id;
 
-   await m.request({
-       method: "POST",
-       url: raven_config_save_url,
-       data: {new_workspace_name: new_workspace_name,
-              raven_config: workspace.raven_config}
-   })
-   .then(function(save_result) {
-     console.log('save_result: ' + JSON.stringify(save_result.success));
-      // Failed! show error and return
-      if (!save_result.success){
-         // show save/cancel buttons
-         setDisplaySaveNameButtonRow(true);
+    let save_result = await m.request({
+        method: "POST",
+        url: raven_config_save_url,
+        data: {
+            new_workspace_name: new_workspace_name,
+            raven_config: workspace.raven_config
+        }
+    });
+    console.log('save_result: ' + JSON.stringify(save_result.success));
+    // Failed! show error and return
+    if (!save_result.success) {
+        // show save/cancel buttons
+        setDisplaySaveNameButtonRow(true);
 
-         setNewWorkspaceMessageError(save_result.message);
-         return;
-      }
+        setNewWorkspaceMessageError(save_result.message);
+        m.redraw();
+        return;
+    }
 
-      /*
-       * Success! Update the workspace data,
-       *  but keep the datasetDoc
-       */
+    /*
+     * Success! Update the workspace data,
+     *  but keep the datasetDoc
+     */
 
-      // point to the existing DatasetDoc
-      let currentDatasetDoc = workspace.datasetDoc;
+    // point to the existing DatasetDoc
+    let currentDatasetDoc = workspace.datasetDoc;
 
-      // load the new workspace
-      workspace = save_result.data;
+    // load the new workspace
+    workspace = save_result.data;
 
-      // attach the existing dataseDoc
-      workspace.datasetDoc = currentDatasetDoc;
+    // attach the existing dataseDoc
+    workspace.datasetDoc = currentDatasetDoc;
 
-      //console.log(save_result.data);
-      setNewWorkspaceMessageSuccess('The new workspace has been saved!');
-      setDisplayCloseButtonRow(true);
-   })
- };
- /*
-  * END: saveAsNewWorkspace
-  */
+    workspace.datasetPath = await getDatasetPath(workspace.d3m_config.problem_data_info);
 
+
+    if (!workspace.datasetPath) {
+        // shouldn't reach here, setDatasetUrl adds failure modal
+        // alertWarn('FAILED TO SET DATASET URL. Please check the logs.');
+        setNewWorkspaceMessageError('An error occurred saving the new workspace.');
+        setDisplayCloseButtonRow(true);
+
+    } else {
+        setNewWorkspaceMessageSuccess('The new workspace has been saved!');
+        setDisplayCloseButtonRow(true);
+    }
+    m.redraw();
+}
+/*
+ * END: saveAsNewWorkspace
+ */
+
+export let isSelectedProblem = (probID) => {
+  let selProblem = getSelectedProblem();
+  if (!selProblem) return false;
+  return (selProblem.problemID === probID)? true : false;
+}
 
 export let getSelectedProblem = () => {
     if (!workspace) return;
@@ -2019,6 +2159,9 @@ export let getResultsProblem = () => {
     return ravenConfig.problems[ravenConfig.resultsProblem];
 };
 
+/*
+ *  Return the problem description--or autogenerate one
+ */
 export function getDescription(problem) {
     if (problem.description) return problem.description;
     let predictors = getPredictorVariables(problem);
@@ -2026,12 +2169,12 @@ export function getDescription(problem) {
 }
 
 export let setTask = (task, problem) => {
-    if (task === problem.task || !(supportedTasks.includes(task))) return;
+    if (task === problem.task) return; //  || !(supportedTasks.includes(task))
     problem.task = task;
-    if (task === 'classification' || task === 'semisupervisedClassification')
-        setSubTask(variableSummaries[problem.targets[0]].binary === 'yes' ? 'binary' : 'multiClass', problem)
-    else if (task === 'regression' || task === 'semisupervisedRegression')
-        setSubTask(problem.predictors.length > 1 ? 'multivariate' : 'univariate', problem)
+    if (task.toLowerCase() === 'classification' || task.toLowerCase() === 'semisupervisedclassification')
+        setSubTask(variableSummaries[problem.targets[0]].binary === 'yes' ? 'binary' : 'multiClass', problem);
+    else if (task.toLowerCase() === 'regression' || task.toLowerCase() === 'semisupervisedregression')
+        setSubTask(problem.predictors.length > 1 ? 'multivariate' : 'univariate', problem);
     else if (!(problem.subTask in applicableMetrics[task]))
         setSubTask(Object.keys(applicableMetrics[task])[0], problem)
 
@@ -2052,7 +2195,19 @@ export let setSubTask = (subTask, problem) => {
 };
 
 export let getSubtask = problem => {
-    if (['regression', 'semisupervisedRegression'].includes(problem.task)) return getPredictorVariables(problem).length > 1 ? 'multivariate' : 'univariate';
+    if (['regression', 'semisupervisedregression'].includes(problem.task.toLowerCase())) return getPredictorVariables(problem).length > 1 ? 'multivariate' : 'univariate';
+
+    if (!problem.subTask && variableSummaries[problem.targets[0]]) {
+        if (problem.task.toLowerCase() === 'classification' || problem.task.toLowerCase() === 'semisupervisedclassification')
+            problem.subTask = variableSummaries[problem.targets[0]].binary === 'yes' ? 'binary' : 'multiClass';
+        else if (problem.task.toLowerCase() === 'regression' || problem.task.toLowerCase() === 'semisupervisedregression')
+            problem.subTask = problem.predictors.length > 1 ? 'multivariate' : 'univariate';
+        else
+            problem.subTask = Object.keys(applicableMetrics[problem.task])[0]
+    } else if (!problem.subTask && !variableSummaries[problem.targets[0]]) {
+        return Object.keys(applicableMetrics[problem.task])[0];
+    }
+
     return problem.subTask
 };
 
@@ -2073,9 +2228,10 @@ export let setMetric = (metric, problem, all=false) => {
 
 // get all predictors, including those that only have an arrow to a target
 export let getPredictorVariables = problem => {
+    if (!problem) return;
     let arrowPredictors = (problem.pebbleLinks || [])
         .filter(link => problem.targets.includes(link.target) && link.right)
-        .map(link => link.source)
+        .map(link => link.source);
 
     // union arrow predictors with predictor group
     return [...new Set([...problem.predictors, ...arrowPredictors])]
@@ -2086,7 +2242,7 @@ export let getNominalVariables = problem => {
     return [...new Set([
         ...selectedProblem.tags.nominal,
         // targets in a classification problem are also nominal
-        ...['classification', 'semisupervisedClassification'].includes(selectedProblem.task)
+        ...['classification', 'semisupervisedclassification'].includes(selectedProblem.task.toLowerCase())
             ? selectedProblem.targets : []
     ])];
 };
@@ -2100,14 +2256,27 @@ export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
     step.manual.forEach(manual => out.add(manual.name));
 
     return out;
-}, new Set());
+}, new Set())
 
 export function setSelectedProblem(problemID) {
     let ravenConfig = workspace.raven_config;
 
     if (!problemID || ravenConfig.selectedProblem === problemID) return;
+
     ravenConfig.selectedProblem = problemID;
     let problem = getSelectedProblem();
+    console.log('problem: ' + JSON.stringify(problem));
+
+    // Behavioral Logging
+    let logParams = {
+        feature_id: 'SET_SELECTED_PROBLEM',
+        activity_l1: 'DATA_PREPARATION',
+        activity_l2: 'PROBLEM_DEFINITION',
+        other: {problem: problem}
+
+    };
+    saveSystemLogEntry(logParams);
+
 
     updateRightPanelWidth();
 
@@ -2198,6 +2367,9 @@ export function handleMaterializeDataMessage(msg_data){
   //
   const previewDatamartId = msg_data.data.datamart_id;
   datamartPreferences.cached[previewDatamartId] = msg_data.data;
+  let previewDatamartIndex = datamartPreferences.results[datamartPreferences.sourceMode]
+      .findIndex(entry => previewDatamartId === datamartPreferences.getData(entry, 'id'));
+  datamartPreferences.setPreviewButtonState(previewDatamartIndex, false);
 
   // Format the data_preview
   //
@@ -2216,32 +2388,119 @@ export function handleMaterializeDataMessage(msg_data){
 
 } // end handleMaterializeDataMessage
 
-export function handleAugmentDataMessage(msg_data){
 
-  if (!msg_data) {
-      console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
-      return;
-  }
-
-  // Hide the modal
-  datamartPreferences.modalShown = undefined;
-  datamartPreferences.isAugmenting = false;
-
-  if (msg_data.success === false) {
-    setModal("Error: " + msg_data.user_message,
-             "Data Augmentation Failed", true, "Close", true);
-    return;
-  }
-
-  setModal("Success: " + msg_data.user_message,
-           "Data Augmentation Succeeded!", true, "Switch to augmented dataset", false, () => {
-      setModal(undefined, undefined, false)
-      load()
-      });
+/**
+ *  After a search by dataset:
+ *  - Display the results on the Datamart
+ */
+ export async function handleSearchbyDataset(msg_data) {
 
 
-  // console.log('datamart_id: ' + msg_data.data.datamart_id);
-  // console.log('filesize: ' + msg_data.data.filesize);
+    if (!msg_data) {
+        console.log('handleSearchbyDataset: Error.  "msg_data" undefined');
+        return;
+    }
+    console.log('handleSearchbyDataset');
+    console.log(JSON.stringify(msg_data));
+
+    // Need datamart name, even if an error
+    //
+    let datamartName = msg_data.data.datamart_name;
+
+
+    if (msg_data.success) {
+        let response_info = {
+            success: true,
+            data: msg_data.data.search_results
+        }
+        datamartPreferences.handleSearchResults(datamartName, response_info);
+    } else {
+        datamartPreferences.handleSearchResults(datamartName, msg_data);
+    }
+} // end: handleSearchbyDataset
+
+/**
+ *  After an augment:
+ *  - Load the new workspace
+ *  - Move the old selected problem manipulations to hardManipulations
+ *  - Set the old selected problem as the new selected problem (sans manipulations)
+ */
+export async function handleAugmentDataMessage(msg_data) {
+
+    if (!msg_data) {
+        console.log('handleAugmentDataMessage: Error.  "msg_data" undefined');
+        return;
+    }
+
+    // Hide the modal
+    datamartPreferences.modalShown = undefined;
+    datamartPreferences.isAugmenting = false;
+
+    if (msg_data.success === false) {
+        setModal("Error: " + msg_data.user_message,
+            "Data Augmentation Failed", true, "Close", true);
+        return;
+    }
+
+    setModal("Success: " + msg_data.user_message,
+        "Data Augmentation Succeeded!", true, "Switch to augmented dataset", false, async () => {
+
+            setModal(undefined, undefined, false);
+
+            // (1) Preserve necessary info from current workspace
+            //
+            let priorSelectedProblem = getSelectedProblem();
+            let priorHardManipulations = workspace.raven_config.hardManipulations;
+            let priorVariablesInitial = workspace.raven_config.variablesInitial;
+
+            // (2) load the new workspace
+            //
+            let ws_obj = JSON.parse(msg_data.data.workspace_json_string);
+            console.log('--- 2a new workspace: ' + JSON.stringify(ws_obj));
+            let priorDatasetName = workspace.d3m_config.name;
+            await loadWorkspace(ws_obj);
+
+            // (3) store prior manipulations
+            //
+
+            // - Copy manipulations from the orig selected problem to the
+            // workspace's priorManipulations.
+            // - Clear the orig. selected problem manipulations
+            workspace.raven_config.priorManipulations = [
+                ...priorHardManipulations,
+                ...priorSelectedProblem.manipulations
+            ];
+            priorSelectedProblem.manipulations = [];
+
+            // (4) update ids of the orig selected problem to avoid clashes
+            //
+            priorSelectedProblem.problemID = priorDatasetName;
+            delete priorSelectedProblem.provenanceID;
+            priorSelectedProblem.pending = false;
+            priorSelectedProblem.edited = false;
+
+            // (5) add the old problem to the current problems list
+            //
+            workspace.raven_config.problems[priorSelectedProblem.problemID] = priorSelectedProblem;
+
+            // (6) add a problem with new columns added to predictors, and set it to the selected problem
+            let problemCopy = getProblemCopy(priorSelectedProblem);
+
+            problemCopy.predictors.push(...workspace.raven_config.variablesInitial
+                .filter(newVariable => !priorVariablesInitial.includes(newVariable)));
+
+            workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+            setSelectedProblem(problemCopy.problemID);
+
+            // Close augment and go to variables tab
+            setLeftTab(LEFT_TAB_NAME_VARIABLES);
+
+            saveUserWorkspace(true)
+        });
+
+
+    // console.log('datamart_id: ' + msg_data.data.datamart_id);
+    // console.log('filesize: ' + msg_data.data.filesize);
 
 } // end: handleAugmentDataMessage
 
@@ -2272,4 +2531,45 @@ export let omniSort = (a, b) => {
     if (typeof a === 'number') return a - b;
     if (typeof a === 'string') return  a.localeCompare(b);
     return (a < b) ? -1 : 1;
+};
+
+
+export function melt(data, factors, value="value", variable="variable") {
+    factors = new Set(factors);
+    let outData = [];
+    data.forEach(record => {
+        let UID = [...factors].reduce((out, idx) => {
+            out[idx] = record[idx];
+            return out;
+        }, {});
+
+        Object.keys(record)
+            .filter(key => !factors.has(key))
+            .forEach(idxMelted => outData.push(Object.assign(
+                {}, UID,
+                {[variable]: idxMelted, [value]: record[idxMelted]})))
+    });
+    return outData;
+}
+
+// replacement: allow duplicates in samples
+// ordered: preserve the order in the original array
+export let sample = (arr, n=1, replacement=false, ordered=false) => {
+    let indices = [];
+    if (replacement)
+        indices = Array.from({length: n})
+            .map(() => Math.floor(Math.random() * arr.length));
+    else {
+        let buckets = Array.from({length: arr.length}).map((_, i) => i);
+
+        indices = Array.from({length: Math.min(n, arr.length)}).map(() => {
+            let index = Math.floor(Math.random() * buckets.length);
+            let temp = buckets[index];
+            buckets.splice(index, 1);
+            return temp;
+        });
+    }
+
+    if (ordered) indices = indices.sort();
+    return indices.map(i => arr[i]);
 };

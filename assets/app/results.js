@@ -1,5 +1,4 @@
 import m from 'mithril';
-import * as jStat from 'jstat';
 
 import * as app from "./app";
 import * as plots from "./plots";
@@ -17,13 +16,13 @@ import Button from "../common/views/Button";
 import Icon from "../common/views/Icon";
 import MenuTabbed from "../common/views/MenuTabbed";
 
-import {bold} from "./index";
+import {bold, italicize, preformatted} from "./index";
 import PlotVegaLite from "./views/PlotVegaLite";
 import ConfusionMatrix from "./views/ConfusionMatrix";
 import Flowchart from "./views/Flowchart";
-import {omniSort} from "./app";
-
-export let recordLimit = 1000;
+import ButtonRadio from "../common/views/ButtonRadio";
+import VariableImportance from "./views/VariableImportance";
+import ModalVanilla from "../common/views/ModalVanilla";
 
 export let leftpanel = () => {
 
@@ -32,19 +31,15 @@ export let leftpanel = () => {
 
     if (!resultsProblem) return;
 
-    let loader = id => m(`#loading${id}.loader-small`, {
-        style: {
-            display: 'inline-block',
-            margin: 'auto',
-            position: 'relative',
-            top: '40%',
-            transform: 'translateY(-50%)'
-        }
-    });
-
     let resultsContent = [
         m('div', {style: {display: 'inline-block', margin: '1em'}},
-            m('h4', `${ravenConfig.resultsProblem} (${resultsProblem.targets.join(', ')})`),
+            m('h4', `${ravenConfig.resultsProblem} for `, m('div[style=display:inline-block]', m(Dropdown, {
+                id: 'targetDropdown',
+                items: resultsProblem.targets,
+                activeItem: resultsPreferences.target,
+                onclickChild: value => resultsPreferences.target = value,
+                style: {'margin-left': '1em'}
+            }))),
             // m(Dropdown, {
             //     id: 'pipelineDropdown',
             //     items: Object.keys(ravenConfig.problems).filter(key =>
@@ -70,13 +65,24 @@ export let leftpanel = () => {
             sections: [
                 {
                     idSuffix: 'DiscoveredSolutions',
-                    value: [m('[style=display:inline-block;margin-right:1em]', 'Discovered Solutions'), app.getResultsProblem().d3mSearchId !== undefined && loader('D3M')],
+                    value: [
+                        m('[style=display:inline-block;margin-right:1em]', 'Discovered Solutions'),
+                        resultsProblem.d3mSolverState !== undefined && [
+                            common.loaderSmall('D3M'),
+                            m('div[style=font-size:medium;margin-left:1em;display:inline-block]', resultsProblem.d3mSolverState)
+                        ]
+                    ],
                     contents: m(Table, {
                         id: 'pipelineTable',
-                        data: Object.keys(resultsProblem.solutions.d3m)
-                            .map(pipelineId => Object.assign(
-                                {ID: pipelineId, Solution: extractD3MModel(resultsProblem.solutions.d3m[pipelineId])},
-                                extractD3MScores(resultsProblem.solutions.d3m[pipelineId]))),
+                        data: Object.values(resultsProblem.solutions.d3m)
+                            .map(solution => getSolutionAdapter(resultsProblem, solution))
+                            .map(adapter => Object.assign({
+                                    ID: String(adapter.getName()), Solution: adapter.getModel()
+                                },
+                                [resultsProblem.metric, ...resultsProblem.metrics]
+                                    .reduce((out, metric) => Object.assign(out, {
+                                        [metric]: app.formatPrecision(adapter.getScore(metric))
+                                    }), {}))),
                         sortable: true,
                         sortHeader: selectedMetric.d3m,
                         setSortHeader: header => selectedMetric.d3m = header,
@@ -87,7 +93,10 @@ export let leftpanel = () => {
                 },
                 app.callSolverEnabled && {
                     idSuffix: 'BaselineSolutions',
-                    value: [m('[style=display:inline-block;margin-right:1em]', 'Baselines'), app.workspace.raven_config.rook === app.getResultsProblem() && loader('Rook')],
+                    value: [
+                        m('[style=display:inline-block;margin-right:1em]', 'Baselines'),
+                        // app.workspace.raven_config.rook === resultsProblem && common.loaderSmall('Rook')
+                    ],
                     contents: [
                         // m(Subpanel, {
                         //     id: 'addModelSubpanel',
@@ -116,35 +125,79 @@ export let leftpanel = () => {
         })
     ];
 
+    /*
+      This is the Left Menu with tabs:  Problems | Solutions
+     */
     let tabbedResults = m(MenuTabbed, {
         id: 'resultsMenu',
+        attrsAll: {style: {height: 'calc(100% - 8px)'}},
         currentTab: leftTabResults,
         callback: setLeftTabResults,
         sections: [
             {
                 value: 'Problems',
-                contents: m(Table, {
-                    data: Object.keys(app.workspace.raven_config.problems)
-                        .filter(problemId => 'd3mSearchId' in app.workspace.raven_config.problems[problemId])
-                        .map(problemId => app.workspace.raven_config.problems[problemId])
-                        .map(problem => [
-                            problem.problemID,
-                            problem.targets.join(', '),
-                            problem.d3mSearchId,
-                            m(Button, {
-                                title: 'stop the search',
-                                class: 'btn-sm',
-                                onclick: () => solverD3M.stopSearch(problem.d3mSearchId)
-                            }, m(Icon, {name: 'stop'}))
-                        ]),
-                    headers: ['Name', 'Targets', 'Search ID', 'Stop'],
-                    activeRow: app.workspace.raven_config.resultsProblem,
-                    onclick: app.setResultsProblem
-                })
+                contents: [
+                    Object.keys(otherSearches).length > 0 && m('h4', 'Within Workspace'),
+                    'All searches being conducted for this workspace are listed below. ' +
+                    'You may select searches for other problems in the workspace to view their solutions.',
+                    m(Table, {
+                        data: Object.keys(app.workspace.raven_config.problems)
+                            .filter(problemId => 'd3mSearchId' in app.workspace.raven_config.problems[problemId])
+                            .map(problemId => app.workspace.raven_config.problems[problemId])
+                            .map(problem => [
+                                problem.problemID,
+                                problem.targets.join(', '),
+                                problem.d3mSearchId,
+                                problem.d3mSolverState === undefined ? 'stopped' : 'running',
+                                problem.d3mSolverState !== undefined && m(Button, {
+                                    title: 'stop the search',
+                                    class: 'btn-sm',
+                                    onclick: () => {
+                                      // User clicks the 'Stop' button next to
+                                      // a particular problem search
+
+                                      // behavioral logging
+                                      let logParams = {
+                                                    feature_id: 'RESULTS_STOP_PROBLEM_SEARCH',
+                                                    activity_l1: 'MODEL_SELECTION',
+                                                    activity_l2: 'PROBLEM_SEARCH_SELECTION'
+                                                  };
+                                      app.saveSystemLogEntry(logParams);
+
+                                      solverD3M.stopSearch(problem.d3mSearchId);
+                                    }
+                                }, m(Icon, {name: 'stop'}))
+                            ]),
+                        headers: ['Name', 'Targets', 'Search ID', 'State', 'Stop'],
+                        activeRow: app.workspace.raven_config.resultsProblem,
+                        onclick: app.setResultsProblem
+                    }),
+                    Object.keys(otherSearches).length > 0 && [
+                        m('h4', 'Beyond Workspace'),
+                        'The backend is also searching for solutions under these search IDs. ' +
+                        'These searches could be remnants from a prior workspace, or concurrently being searched in a second workspace. ' +
+                        'Solutions for these searches cannot be viewed from this workspace.',
+                        m(Table, {
+                            data: Object.keys(otherSearches)
+                                .map(searchID => [
+                                    '?',
+                                    '?',
+                                    searchID,
+                                    otherSearches[searchID].running ? 'potentially running' : 'stopped',
+                                    otherSearches[searchID].running && m(Button, {
+                                        title: 'stop the search',
+                                        class: 'btn-sm',
+                                        onclick: () => solverD3M.stopSearch(searchID)
+                                    }, m(Icon, {name: 'stop'}))
+                                ]),
+                            headers: ['Name', 'Targets', 'Search ID', 'State', 'Stop']
+                        })
+                    ]
+                ]
             },
             {
                 value: 'Solutions',
-                contents: resultsContent
+                contents: resultsContent,
             }
         ]
     });
@@ -152,7 +205,7 @@ export let leftpanel = () => {
     return m(Panel, {
             side: 'left',
             label: 'Results',
-            hover: false,
+            hover: window.innerWidth < 1000,
             width: '600px'
         },
         // there seems to be a strange mithril bug here - when returning back to model from results,
@@ -166,14 +219,21 @@ export class CanvasSolutions {
 
     oninit() {
         this.confusionFactor = undefined;
+        this.confusionMode = 'Stack';
         app.updateRightPanelWidth()
     }
 
-    predictionSummary(problem, summaries) {
+    predictionSummary(problem, adapters) {
 
-        let setConfusionFactor = factor => this.confusionFactor = factor === 'undefined' ? undefined : factor;
-        summaries = summaries.filter(summary => summary.fittedValues || summary.actualValues);
-        if (problem.task === 'regression') {
+        if (problem.task.toLowerCase().includes('regression') || problem.task.toLowerCase() === 'timeseriesforecasting') {
+            let summaries = adapters.map(adapter => ({
+                name: adapter.getName(),
+                fittedValues: adapter.getFittedValues(resultsPreferences.target),
+                actualValues: adapter.getActualValues(resultsPreferences.target)
+            })).filter(summary => summary.fittedValues && summary.actualValues);
+
+            if (summaries.length === 0) return common.loader('PredictionSummary');
+
             let xData = summaries.reduce((out, summary) =>
                 Object.assign(out, {[summary.name]: summary.fittedValues}), {});
             let yData = summaries.reduce((out, summary) =>
@@ -191,55 +251,199 @@ export class CanvasSolutions {
             }))
         }
 
-        if (problem.task === 'classification') {
-            let confusionData = summaries
-                .map(summary => Object.assign({name: summary.name},
-                    generateConfusionData(summary.actualValues, summary.fittedValues, this.confusionFactor) || {}))
-                .filter(instance => 'data' in instance)
-                .sort((a, b) => sortPipelineTable(a.score, b.score));
+        if (problem.task.toLowerCase().includes('classification')) {
 
-            // prevent invalid confusion matrix selections
-            if (this.confusionMatrixSolution === undefined || !confusionData.find(data => data.name === this.confusionMatrixSolution))
-                this.confusionMatrixSolution = (confusionData[0] || {}).name;
+            let summaries = adapters.map(adapter => ({
+                name: adapter.getName(),
+                confusionMatrix: adapter.getConfusionMatrix(resultsPreferences.target)
+            })).filter(summary => summary.confusionMatrix);
+            if (summaries.length === 0) return common.loader('PredictionSummary');
+
+            let setConfusionFactor = factor => this.confusionFactor = factor === 'undefined' ? undefined : factor;
+
+            // ignore summaries without confusion matrices
+            summaries = summaries.filter(summary => summary.confusionMatrix);
+            if (summaries.length === 0) return;
+
+            // collect classes from all summaries
+            let classes = [...new Set(summaries.flatMap(summary => summary.confusionMatrix.classes))]
+
+            // convert to 2x2 if factor is set
+            if (this.confusionFactor !== undefined)
+                summaries.forEach(summary => summary.confusionMatrix = confusionMatrixFactor(
+                    summary.confusionMatrix.data,
+                    summary.confusionMatrix.classes,
+                    this.confusionFactor));
+
+            // prevent invalid confusion matrix selection
+            if (this.confusionMatrixSolution === undefined || !summaries.find(summary => summary.name === this.confusionMatrixSolution))
+                this.confusionMatrixSolution = summaries[0].name;
 
             return [
-                confusionData.length > 0 && m('div[style=margin-bottom:1em]',
+                m('div[style=margin-bottom:1em]',
                     m('label#confusionFactorLabel', 'Confusion Matrix Factor: '),
                     m('[style=display:inline-block]', m(Dropdown, {
                         id: 'confusionFactorDropdown',
-                        items: ['undefined', ...confusionData[0].allClasses],
+                        items: ['undefined', ...classes],
                         activeItem: this.confusionFactor,
                         onclickChild: setConfusionFactor,
                         style: {'margin-left': '1em'}
                     }))),
-                m(MenuTabbed, {
+                summaries.length > 1 && m('div',
+                    m('label', 'Confusion Matrix Mode:'),
+                    m(ButtonRadio, {
+                        id: 'confusionModeButtonBar',
+                        onclick: mode => this.confusionMode = mode,
+                        activeSection: this.confusionMode,
+                        sections: [
+                            {value: 'Stack', title: 'render confusion matrices in the same space'},
+                            {value: 'List', title: 'render confusion matrices above/below each other'}
+                        ],
+                        attrsAll: {style: {'margin-left': '1em', width: '10em', display: 'inline-block'}},
+                    })),
+                m('label', 'Pipeline:'),
+                m({Stack: MenuTabbed, List: MenuHeaders}[this.confusionMode], {
                     id: 'confusionMenu',
                     currentTab: this.confusionMatrixSolution,
                     callback: solutionId => this.confusionMatrixSolution = solutionId,
-                    sections: confusionData.map(confusionInstance => ({
-                        value: confusionInstance.name,
+                    sections: summaries.map(summary => ({
+                        value: summary.name,
                         contents: [
-                            confusionInstance.data.length === 2 && m(Table, {
+                            summary.confusionMatrix.classes.length === 2 && m(Table, {
                                 id: 'resultsPerformanceTable',
                                 headers: ['metric', 'score'],
-                                data: generatePerformanceData(confusionInstance.data),
+                                data: generatePerformanceData(summary.confusionMatrix.data),
                                 attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
                             }),
-                            confusionInstance.data.length < 100 ? m('div', {
+                            summary.confusionMatrix.data.length < 100 ? summary.confusionMatrix.classes.length > 0 ? m('div', {
                                 style: {'min-height': '500px', 'min-width': '500px'}
-                            }, m(ConfusionMatrix, Object.assign({}, confusionInstance, {
-                                id: 'resultsConfusionMatrixContainer' + confusionInstance.name,
-                                title: `Confusion Matrix: Solution ${confusionInstance.name} for ${problem.targets[0]}`,
+                            }, m(ConfusionMatrix, Object.assign({}, summary.confusionMatrix, {
+                                id: 'resultsConfusionMatrixContainer' + summary.name,
+                                title: `Confusion Matrix for ${problem.targets[0]}`,
                                 startColor: '#ffffff', endColor: '#e67e22',
                                 margin: {left: 10, right: 10, top: 50, bottom: 10},
                                 attrsAll: {style: {height: '600px'}}
-                            }))) : 'Too many classes for confusion matrix!'
+                            })))
+                                : 'Too few classes for confusion matrix! There is a data mismatch.'
+                                : 'Too many classes for confusion matrix!'
                         ]
                     }))
                 })
             ]
         }
     };
+
+    scoresSummary(problem, adapters) {
+
+        if (resultsPreferences.plotScores === 'all')
+            adapters = getSolutions(problem).map(solution => getSolutionAdapter(problem, solution));
+
+        return [
+            m('div', m('[style=display:inline-block]', 'Graph'), m(ButtonRadio, {
+                id: 'plotScoresButtonBar',
+                onclick: mode => resultsPreferences.plotScores = mode,
+                activeSection: resultsPreferences.plotScores,
+                sections: [{value: 'all'}, {value: 'selected'}],
+                attrsAll: {style: {'margin': '0 .5em', display: 'inline-block', width: 'auto'}},
+                attrsButtons: {class: 'btn-sm', style: {width: 'auto'}},
+            }), m('[style=display:inline-block]', 'solutions.')),
+            [problem.metric, ...problem.metrics].map(metric => m(PlotVegaLite, {
+                specification: {
+                    "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+                    "description": `${metric} scores for ${problem.problemID}.`,
+                    data: {values: adapters.map(adapter => ({
+                            ID: adapter.getName(),
+                            [metric]: adapter.getScore(metric)
+                        })).filter(point => point[metric] !== undefined)},
+                    "mark": "bar",
+                    "encoding": {
+                        "x": {"field": 'ID', "type": "nominal"},
+                        "y": {
+                            "field": metric, "type": "quantitative",
+                            scale: (metric in app.d3mMetricDomains)
+                                ? {domain: app.d3mMetricDomains[metric]}
+                                : {}
+                        },
+                        "tooltip": [
+                            {"field": 'ID', "type": "nominal"},
+                            {"field": metric, "type": "quantitative"}
+                        ]
+                    }
+                }
+            }))
+        ]
+    }
+
+    variableImportance(problem, adapter) {
+
+        let importanceContent = common.loader('VariableImportance');
+
+        if (resultsPreferences.mode === 'PDP') {
+            importanceContent = [
+                m('label', 'Importance for predictor:'),
+                m(Dropdown, {
+                    id: 'predictorImportanceDropdown',
+                    items: problem.predictors,
+                    onclickChild: mode => resultsPreferences.predictor = mode,
+                    activeItem: resultsPreferences.predictor,
+                })
+            ];
+
+            let importanceData = ({
+                EFD: adapter.getImportanceEFD,
+                Partials: adapter.getImportancePartials
+            })[resultsPreferences.mode](resultsPreferences.predictor);
+
+            if (importanceData) importanceContent.push(m(VariableImportance, {
+                mode: resultsPreferences.mode,
+                data: importanceData,
+                problem: problem,
+                predictor: resultsPreferences.predictor,
+                target: resultsPreferences.target,
+                yLabel: valueLabel,
+                variableLabel: variableLabel
+            }));
+            else importanceContent.push(common.loader('VariableImportance'))
+        }
+        else {
+            let importanceData = problem.predictors.reduce((out, predictor) => Object.assign(out, {[predictor]: ({
+                EFD: adapter.getImportanceEFD,
+                Partials: adapter.getImportancePartials
+            })[resultsPreferences.mode](predictor)}), {});
+
+            // reassign content if some data is not undefined
+            let importancePlots = Object.keys(importanceData).map(predictor => importanceData[predictor] && [
+                bold(predictor),
+                m(VariableImportance, {
+                    mode: resultsPreferences.mode,
+                    data: importanceData[predictor],
+                    problem: problem,
+                    predictor,
+                    target: resultsPreferences.target,
+                    yLabel: valueLabel,
+                    variableLabel: variableLabel
+                })
+            ]).filter(_ => _);
+
+            if (importancePlots.length > 0) importanceContent = [
+                m('div[style=margin: 1em]', italicize("Empirical first differences"), ` is a tool to measure variable importance from the empirical distribution of the data. The "${valueLabel}" axis refers to the frequency of the dependent variable as the predictor (x) varies along its domain. Parts of the domain where the fitted and actual values align indicate high utility from the predictor.`),
+                importancePlots
+            ];
+        }
+        return [
+            m('label', 'Variable importance mode:'),
+            m(ButtonRadio, {
+                id: 'modeImportanceButtonBar',
+                onclick: mode => resultsPreferences.mode = mode,
+                activeSection: resultsPreferences.mode,
+                sections: [
+                    {value: 'EFD', title: 'empirical first differences'},
+                    {value: 'Partials', title: 'model prediction as predictor varies over its domain'}
+                ]
+            }),
+            importanceContent
+        ]
+    }
 
     visualizePipeline(solution) {
 
@@ -325,6 +529,12 @@ export class CanvasSolutions {
         let {problem} = vnode.attrs;
         if (!problem) return;
 
+        // ensure valid state of selected predictor, target
+        if (!problem.predictors.includes(resultsPreferences.predictor))
+            resultsPreferences.predictor = problem.predictors[0];
+        if (!problem.targets.includes(resultsPreferences.target))
+            resultsPreferences.target = problem.targets[0];
+
         let problemSummary = m(Subpanel, {
             style: {margin: '0px 1em'},
             header: 'Problem Description',
@@ -346,17 +556,18 @@ export class CanvasSolutions {
             data: [
                 ['Dependent Variables', problem.targets],
                 ['Predictors', app.getPredictorVariables(problem)],
-                ['Description', problem.description],
+                ['Description', preformatted(app.getDescription(problem))],
                 ['Task', problem.task]
             ]
         }));
 
-        let selectedSolutions = getSolutions(problem);
+        let selectedSolutions = getSelectedSolutions(problem);
         if (selectedSolutions.length === 0)
             return m('div', {style: {margin: '1em 0px'}}, problemSummary);
 
-        let solutionSummaries = selectedSolutions
-            .map(solution => solutionAdapter(problem, solution)).filter(_=>_);
+        let solutionAdapters = selectedSolutions
+            .map(solution => getSolutionAdapter(problem, solution));
+        let firstAdapter = solutionAdapters[0];
         let firstSolution = selectedSolutions[0];
 
         let solutionSummary = selectedSolutions.length === 1 && m(Subpanel, {
@@ -395,18 +606,54 @@ export class CanvasSolutions {
             header: 'Prediction Summary',
             shown: resultsSubpanels['Prediction Summary'],
             setShown: state => {
-              resultsSubpanels['Prediction Summary'] = state;
-              if(state){
-                // behavioral logging
-                let logParams = {
-                              feature_id: 'VIEW_PREDICTION_SUMMARY',
-                              activity_l1: 'MODEL_SELECTION',
-                              activity_l2: 'MODEL_EXPLANATION'
-                            };
-                app.saveSystemLogEntry(logParams);
-              }
+                resultsSubpanels['Prediction Summary'] = state;
+                if (state) {
+                    // behavioral logging
+                    let logParams = {
+                        feature_id: 'VIEW_PREDICTION_SUMMARY',
+                        activity_l1: 'MODEL_SELECTION',
+                        activity_l2: 'MODEL_EXPLANATION'
+                    };
+                    app.saveSystemLogEntry(logParams);
+                }
             }
-        }, this.predictionSummary(problem, solutionSummaries));
+        }, resultsSubpanels['Prediction Summary'] && this.predictionSummary(problem, solutionAdapters));
+
+        let scoresSummary = m(Subpanel, {
+            style: {margin: '0px 1em'},
+            header: 'Scores Summary',
+            shown: resultsSubpanels['Scores Summary'],
+            setShown: state => {
+                resultsSubpanels['Scores Summary'] = state;
+                if (state) {
+                    // behavioral logging
+                    let logParams = {
+                        feature_id: 'VIEW_SCORES_SUMMARY',
+                        activity_l1: 'MODEL_SELECTION',
+                        activity_l2: 'MODEL_EXPLANATION'
+                    };
+                    app.saveSystemLogEntry(logParams);
+                }
+            }
+        }, resultsSubpanels['Scores Summary'] && this.scoresSummary(problem, solutionAdapters));
+
+        let variableImportance = firstAdapter && firstAdapter.getSource() === 'd3m' && m(Subpanel, {
+            style: {margin: '0px 1em'},
+            header: 'Variable Importance',
+            shown: resultsSubpanels['Variable Importance'],
+            setShown: state => {
+                resultsSubpanels['Variable Importance'] = state;
+                if(state){
+                    // behavioral logging
+                    let logParams = {
+                        feature_id: 'VIEW_VARIABLE_IMPORTANCE',
+                        activity_l1: 'MODEL_SELECTION',
+                        activity_l2: 'MODEL_EXPLANATION'
+                    };
+                    app.saveSystemLogEntry(logParams);
+                }
+            }
+        }, resultsSubpanels['Variable Importance'] && this.variableImportance(problem, firstAdapter));
 
         let visualizePipelinePanel = selectedSolutions.length === 1 && firstSolution.source === 'd3m' && m(Subpanel, {
             style: {margin: '0px 1em'},
@@ -424,7 +671,7 @@ export class CanvasSolutions {
                 app.saveSystemLogEntry(logParams);
               }
             }
-        }, this.visualizePipeline(firstSolution));
+        }, resultsSubpanels['Visualize Pipeline'] && this.visualizePipeline(firstSolution));
 
         let performanceStatsContents = firstSolution.source === 'rook' && Object.keys(firstSolution.models)
             .filter(target => firstSolution.models[target].statistics)
@@ -511,6 +758,8 @@ export class CanvasSolutions {
             problemSummary,
             solutionSummary,
             predictionSummary,
+            scoresSummary,
+            variableImportance,
             visualizePipelinePanel,
             performanceStats,
             coefficientMatrix,
@@ -520,26 +769,47 @@ export class CanvasSolutions {
     }
 }
 
+let getSolutionAdapter = (problem, solution) => ({
+    rook: solverRook.getSolutionAdapter, d3m: solverD3M.getSolutionAdapter
+}[solution.source](problem, solution));
 
-let solutionAdapter = (problem, solution) => {
-    let solver = {rook: solverRook, d3m: solverD3M}[solution.source];
-    let target = problem.targets[0];
+/*
+  Set the leftTab value
+ */
+let leftTabResults = 'Solutions'; // default value
 
-    return {
-        name: solver.getName(problem, solution),
-        actualValues: solver.getActualValues(problem, solution, target),
-        fittedValues: solver.getFittedValues(problem, solution, target),
-        score: solver.getScore(problem, solution, target),
-        targets: problem.targets,
-        predictors: app.getPredictorVariables(problem),
-        description: solver.getDescription(problem, solution),
-        task: solver.getTask(problem, solution),
-        model: solver.getModel(problem, solution)
-    };
+/*
+  The name of the tab will bring the selected tab to the forefront,
+  similar to clicking the tab button
+ */
+let setLeftTabResults = tabName => {
+
+  leftTabResults = tabName;
+  console.log('tab: ' + tabName);
+
+  // behavioral logging
+  let logParams = tabName === 'Solutions' ? {
+                feature_id: 'RESULTS_VIEW_SOLUTIONS',
+                activity_l1: 'MODEL_SELECTION',
+                activity_l2: 'MODEL_SUMMARIZATION',
+              }: {
+                feature_id: 'RESULTS_VIEW_PROBLEM_SEARCHES',
+                activity_l1: 'MODEL_SELECTION',
+                activity_l2: 'PROBLEM_SEARCH_SELECTION',
+              }
+  app.saveSystemLogEntry(logParams);
+
+}
+let resultsPreferences = {
+    mode: 'EFD',
+    predictor: undefined,
+    target: undefined,
+    plotScores: 'all'
 };
 
-let leftTabResults = 'Solutions';
-let setLeftTabResults = tab => leftTabResults = tab;
+// labels for variable importance X/Y axes
+export let valueLabel = "Observation";
+export let variableLabel = "Dependent Variable";
 
 export let selectedMetric = {
     d3m: undefined,
@@ -548,26 +818,30 @@ export let selectedMetric = {
 
 // array of metrics to sort low to high
 export let reverseSet = [
-    "accuracy", "precision", "recall",
-    "meanSquaredError", "rootMeanSquaredError", "meanAbsoluteError"
+    "meanSquaredError", "rootMeanSquaredError", "meanAbsoluteError", "hammingLoss", "rank", "loss"
 ];
+
+// searchID: {running: true} for searchIDs streamed back from TA2 that are not in the workspace
+export let otherSearches = {};
 
 /**
  Sort the Pipeline table, putting the best score at the top
  */
 let sortPipelineTable = (a, b) => typeof a === 'string'
-    ? omniSort(a, b)
+    ? app.omniSort(a, b)
     : (b - a) * (reverseSet.includes(selectedMetric.d3m) ? -1 : 1);
 
 let resultsSubpanels = {
     'Prediction Summary': true,
+    'Scores Summary': false,
     'Variance Inflation': false,
     'ANOVA Tables': false,
     'Coefficients': false,
     'Performance Statistics': false,
     'Visualize Pipeline': false,
     'Solution Description': false,
-    'Problem Description': false
+    'Problem Description': false,
+    'Variable Importance': false
 };
 
 
@@ -582,8 +856,10 @@ export let setSelectedSolution = (problem, source, solutionId) => {
     };
 
     if (!problem) return;
+    if (!(source in problem.selectedSolutions)) problem.selectedSolutions[source] = [];
 
     if (modelComparison) {
+
         problem.selectedSolutions[source].includes(solutionId)
             ? app.remove(problem.selectedSolutions[source], solutionId)
             : problem.selectedSolutions[source].push(solutionId);
@@ -606,14 +882,26 @@ export let setSelectedSolution = (problem, source, solutionId) => {
 
 };
 
-
 export let getSolutions = (problem, source) => {
+    if (!problem) return [];
+
+    if (source) {
+        if (!(source in problem.solutions)) problem.solutions[source] = [];
+        Object.values(problem.solutions[source]);
+    }
+
+    return Object.values(problem.solutions)
+        .flatMap(source => Object.values(source))
+};
+
+export let getSelectedSolutions = (problem, source) => {
     if (!problem) return [];
 
     if (!source) return Object.keys(problem.selectedSolutions)
         .flatMap(source => problem.selectedSolutions[source]
-            .map(id => problem.solutions[source][id])).filter(_=>_)
+            .map(id => problem.solutions[source][id])).filter(_=>_);
 
+    problem.selectedSolutions[source] = problem.selectedSolutions[source] || [];
     return problem.selectedSolutions[source]
         .map(id => problem.solutions[source][id]).filter(_=>_)
 };
@@ -622,47 +910,13 @@ export let getSolutions = (problem, source) => {
 export let modelComparison = false;
 export let setModelComparison = state => {
     let resultsProblem = app.getResultsProblem();
-    let selectedSolutions = getSolutions(resultsProblem);
+    let selectedSolutions = getSelectedSolutions(resultsProblem);
 
     modelComparison = state;
     if (selectedSolutions.length > 1 && !modelComparison)
         setSelectedSolution(resultsProblem, selectedSolutions[0].source, selectedSolutions[0]);
 
 };
-
-/* Generates confusion table data and labels, given the expected and predicted values*/
-
-/* if a factor is passed, the resultant table will be 2x2 with respect to the factor */
-export function generateConfusionData(Y_true, Y_pred, factor = undefined) {
-    if (!Y_true || !Y_pred) return;
-
-    Y_true = Y_true.map(String);
-    Y_pred = Y_pred.map(String);
-
-    // combine actuals and predicted, and get all unique elements
-    let classes = [...new Set([...Y_true, ...Y_pred])].sort();
-    let allClasses = classes;
-
-    if (factor !== undefined) {
-        factor = String(factor);
-        Y_true = Y_true.map(obs => factor === obs ? factor : 'not ' + factor);
-        Y_pred = Y_pred.map(obs => factor === obs ? factor : 'not ' + factor);
-        classes = [...new Set([...Y_true, ...Y_pred])].sort()
-    }
-
-    // create a matrix of zeros
-    let data = Array.from({length: classes.length}, () => new Array(classes.length).fill(0));
-
-    // linearize the coordinate assignment stage
-    let indexOf = classes.reduce((out, clss, i) => {
-        out[clss] = i;
-        return out
-    }, {});
-    // increment the data matrix at the class coordinates of true and pred
-    Y_true.forEach((_, i) => data[indexOf[Y_true[i]]][indexOf[Y_pred[i]]]++);
-
-    return {data, classes, allClasses};
-}
 
 export let confusionMatrixFactor = (matrix, labels, factor) => {
     let collapsed = [[0, 0], [0, 0]];
@@ -671,12 +925,13 @@ export let confusionMatrixFactor = (matrix, labels, factor) => {
     ));
 
     return {
-        matrix: collapsed,
-        labels: [factor, 'not ' + factor]
+        data: collapsed,
+        classes: [factor, 'not ' + factor]
     }
 };
 
-/* generate an object containing accuracy, recall, precision, F1, given a 2x2 confusion data matrix */
+// generate an object containing accuracy, recall, precision, F1, given a 2x2 confusion data matrix
+// the positive class is the upper left block
 export function generatePerformanceData(confusionData2x2) {
 
     let tp = confusionData2x2[0][0];
@@ -703,178 +958,29 @@ export function generatePerformanceData(confusionData2x2) {
     }
 }
 
-export let extractD3MScores = solution => 'scores' in solution
-    ? solution.scores.reduce((out, score) => Object.assign(out, {[app.d3mMetricsInverted[score.metric.metric]]: app.formatPrecision(score.value.raw.double)}), {})
-    : {};
+export let showFinalPipelineModal = false;
+export let setShowFinalPipelineModal = state => showFinalPipelineModal = state;
 
-export let extractD3MModel = solution => 'pipeline' in solution
-    ? solution.pipeline.steps
-        .filter(step => ['regression', 'classification'].includes(step.primitive.primitive.pythonPath.split('.')[2]))
-        .map(step => step.primitive.primitive.pythonPath.replace(new RegExp('d3m\\.primitives\\.(regression|classification)\\.'), ''))
-        .join()
-    : '';
+export let finalPipelineModal = () => {
+    let resultsProblem = app.getResultsProblem();
 
+    let chosenSolution = getSolutions(resultsProblem, 'd3m').find(solution => solution.chosen);
+    if (!chosenSolution) return;
 
-// STATISTICS HELPER FUNCTIONS
+    let adapter = solverD3M.getSolutionAdapter(resultsProblem, chosenSolution);
 
-// covariance matrix returned by R
-let cov = [[1, .87, .28, .1, -.548], [.1, 2, .3, -.4, .5], [.85, .2, .46, .4, -.5], [.1, .2, .3, 4, .23], [.1, .2358, -3.25, .4, .23]];
-// coefficients returned by R
-let coefs = [.2, 2.3, .12, 2.8, 7.78].map(elem => [elem]); // map to a column vector
+    return m(ModalVanilla, {
+            id: 'finalPipelineModal',
+            setDisplay: setShowFinalPipelineModal
+        },
+        m('h4', 'Pipeline ', adapter.getName()),
+        'Task Two Complete. Your selected pipeline has been submitted.'
 
-// description of predictor variable to vary confidence band over
-let predictor = {min: -100, max: 100, index: 2};
-// fixed values for other predictors, likely the mean values of each other predictor
-let constants = [1, 2, 5, 2];
+        // * lots of room for cool activities *
 
-
-// ~~~~ helper functions
-
-// n linearly spaced points between min and max
-let linspace = (min, max, n) => Array.from({length: n})
-    .map((_, i) => min + (max - min) / (n - 1) * i);
-
-// outer broadcast of x and y on column i
-let broadcast = (x, y, i) => y.map(point => [...x.slice(0, i), point, ...x.slice(i)]);
-
-// dot product between vectors
-let dot = (x, y) => x.reduce((sum, _, i) => sum + x[i] * y[i], 0);
-
-// computes diagonal of x @ Sym @ x.T, where C must be symmetric
-let symmetricQuadraticDiag = (x, Sym) => x
-    .map(rowLeft => Sym.map(rowRight => dot(rowLeft, rowRight))) // left product
-    .map((rowLeft, i) => dot(rowLeft, x[i])); // right product
-
-// matrix product between A, B
-let product = (A, B) => A
-    .map(rowA => B[0].map((_, j) => rowA.reduce((sum, _, i) => sum + rowA[i] * B[i][j], 0)));
-
-let makeEllipse = (p1, p2, varCovMat) => {
-    // only consider interactions among two coefficients
-    varCovMat = [
-        [varCovMat[p1][p1], varCovMat[p1][p2]],
-        [varCovMat[p2][p1], varCovMat[p2][p2]]
-    ];
-
-    // λ^2 - trace(Σ)*λ + det(Σ)
-    let [a, b, c] = [1, -varCovMat[0][0] -varCovMat[1][1], varCovMat[0][0] * varCovMat[1][1] - 2 * varCovMat[0][1]];
-    let eigvals = [-1, 1].map(sign => (-b + sign * Math.sqrt(b * b - 4 * a * c)) / (2 * a));
-    let eigvecs = [
-        [varCovMat[0][1], eigvals[0] - varCovMat[0][0]],
-        [eigvals[1] - varCovMat[1][1], varCovMat[1][0]]
-    ];
-
-    let maximalEigvec = eigvecs[Number(Math.abs(eigvals[0]) < Math.abs(eigvals[1]))];
-
-    return {
-        angle: Math.atan2(maximalEigvec[1], maximalEigvec[0]) * 180 / Math.pi,
-        eigvals
-    }
+        // m(Table, {
+        //     id: 'finalPipelineTable',
+        //     data: []
+        // })
+    )
 };
-
-let getMean = data => data.reduce((sum, value) => sum + value, 0) / data.length;
-let getVariance = (data, ddof = 1) => {
-    let mean = getMean(data);
-    return data.reduce((sum, value) => (value - mean) ^ 2, 0) / (data.length - ddof);
-};
-
-
-/**
- * construct a multivariate confidence region, projected onto 'predictor' at 'constants'
- * @param varCovMat - pxp variance-covariance matrix of regression coefficients
- * @param coefficients - regression coefficients
- * @param predictor - {
- *     min, max - bounds to vary the predicted variable
- *     n - number of points to construct intervals for, within the bounds [min, max]
- *     index - column index of predictor within the design matrix
- * }
- * @param constants - fixed values for the other predictors
- * @param preferences - specified in makeIntervals.
- *                      'statistic' should either be 'workingHotelling' (simultaneous) or 't' (pointwise)
- * @returns {*} - list of [lower, upper] intervals
- */
-let makeGLMBands = (varCovMat, coefficients, predictor, constants, preferences) => {
-    let {min, max, index, n = 100} = predictor;
-    let observations = broadcast(constants, linspace(min, max, n), index);
-    let fittedValues = product(observations, coefficients).map(row => row[0]); // product produces a column vector
-    let variances = symmetricQuadraticDiag(observations, varCovMat);
-
-    return makeIntervals(Object.assign({
-        values: fittedValues,
-        variances,
-        statistic: 'workingHotelling',
-        ddof: varCovMat.length
-    }, preferences))
-};
-
-/**
- * construct a set of confidence intervals with the specified parameters
- * @param values - construct intervals for each of these values
- * @param variances - variance of each value
- * @param statistic - workingHotelling, scheffe, bonferroni, tukey, t
- * @param type - mean or prediction
- * @param family - glm family
- * @param alpha - 100(1 - alpha)% confidence
- * @param n - number of observations in entire dataset
- * @param ddof - delta degrees of freedom (p for regression intervals, used in statistic computation)
- * @param MSE - mean squared error of the regression model, estimated sample variance (needed for prediction interval only)
- * @param m - mean of m predictions in the prediction interval (optional)
- * @returns {*} - list of [lower, upper] intervals
- */
-let makeIntervals = ({values, variances, statistic, type, family, alpha, n, ddof, MSE, m}) => {
-
-    // MSE is already included in the coefficient variance-covariance matrix
-    let stdErr = variances.map({
-        mean: _ => _,
-        prediction: x => (MSE * 1 / (m || 1)) + x,
-    }[type]).map(Math.sqrt);
-
-    let g = values.length;
-
-    let statValue = {
-        // simultaneous region over regression surface
-        workingHotelling: Math.sqrt(ddof * jStat.centralF.inv(1 - alpha, ddof, n - ddof)),
-
-        // simultaneous set
-        scheffe: Math.sqrt(g * jStat.centralF.inv(1 - alpha, g, n - ddof)),
-        bonferroni: jStat.studentt.inv(1 - alpha / (2 * g), n - ddof),
-
-        // pointwise
-        t: jStat.studentt.inv(1 - alpha / 2, n - ddof)
-    }[statistic];
-
-    let invLink = {
-        gaussian: _ => _,
-        poisson: x => Math.exp(x),
-        exponential: x => -1 / x,
-        gamma: x => -1 / x,
-        binomial: x => 1 / (1 + Math.exp(x))
-    }[family];
-
-    return values
-        .map((val, i) => [-1, 1].map(sign => invLink(val + sign * statValue * stdErr[i])).sort())
-};
-
-// // ~~~~ compute confidence intervals
-// console.warn('GLM Bands');
-// console.log(makeGLMBands(cov, coefs, predictor, constants, {
-//     type: 'mean',
-//     statistic: 'workingHotelling',
-//     family: 'gaussian',
-//     alpha: .05,
-//     n: 2500,
-//     MSE: 1.2
-// }));
-//
-// console.warn('Set of intervals for coefficients');
-// console.log(makeIntervals({
-//     values: coefs.map(coef => coef[0]),
-//     variances: cov.map((_, i) => cov[i][i]),
-//     statistic: 'bonferroni',
-//     type: 'mean',
-//     family: 'gaussian',
-//     alpha: .05,
-//     n: 2500,
-//     ddof: 1,
-//     MSE: 1.2
-// }));

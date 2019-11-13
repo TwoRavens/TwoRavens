@@ -16,16 +16,16 @@ from django.db import transaction
 from tworaven_apps.utils.js_helper import get_js_boolean
 from tworaven_apps.utils.url_helper import add_trailing_slash,\
     remove_trailing_slash
-
+from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.configurations.util_path_check import are_d3m_paths_valid,\
     get_bad_paths, get_bad_paths_for_admin
+from tworaven_apps.configurations import static_vals as cstatic
 from tworaven_apps.configurations.static_vals import \
     (KEY_D3MINPUTDIR, KEY_D3M_DIR_ADDITIONAL_INPUTS)
 KEY_DATASET_SCHEMA = 'dataset_schema'
 
 KEY_PROBLEM_SCHEMA = 'problem_schema'
 KEY_PROBLEM_SCHEMA_URL = 'problem_schema_url'
-KEY_PROBLEM_ROOT = 'problem_root'
 
 KEY_PROBLEM_DATA_INFO = 'problem_data_info'
 
@@ -36,28 +36,25 @@ KEY_RAM = 'ram'
 
 D3M_FILE_ATTRIBUTES = [KEY_DATASET_SCHEMA, KEY_PROBLEM_SCHEMA]
 
-D3M_DIR_USER_PROBLEMS_ROOT = 'user_problems_root'
-D3M_DIR_TEMP_STORAGE_ROOT = 'temp_storage_root'
+D3M_DIR_USER_PROBLEMS_ROOT = 'problems'
 
 # /output - for testing only
 OPTIONAL_DIR_OUTPUT_ROOT = 'root_output_directory'
 
 
-D3M_DIR_ATTRIBUTES = ['training_data_root', KEY_PROBLEM_ROOT,
+D3M_DIR_ATTRIBUTES = ['training_data_root',
                       'pipeline_logs_root', 'executables_root',
-                      D3M_DIR_TEMP_STORAGE_ROOT, D3M_DIR_USER_PROBLEMS_ROOT]
+                      cstatic.KEY_D3M_USER_PROBLEMS_ROOT]
 D3M_VALUE_ATTRIBUTES = [KEY_TIMEOUT, KEY_CPUS, KEY_RAM]
-D3M_REQUIRED = D3M_FILE_ATTRIBUTES + ['training_data_root', KEY_PROBLEM_ROOT]
+D3M_REQUIRED = D3M_FILE_ATTRIBUTES + ['training_data_root',]
 
 EVAL_ATTRIBUTES_TO_REMOVE = [KEY_PROBLEM_SCHEMA,
-                             KEY_PROBLEM_ROOT,
                              KEY_PROBLEM_SCHEMA_URL] + \
                             D3M_VALUE_ATTRIBUTES
 
 # 8/9/2018 - D3M config change
 #
 D3M_REQUIRED.remove(KEY_PROBLEM_SCHEMA)
-D3M_REQUIRED.remove(KEY_PROBLEM_ROOT)
 
 # environment variable name to store a d3m config filepath for startup
 CONFIG_JSON_PATH = 'CONFIG_JSON_PATH'
@@ -75,7 +72,6 @@ class D3MConfiguration(TimeStampedModel):
     "training_data_root": "/baseball/data",
     "pipeline_logs_root": "/outputs/logs",
     "executables_root": "/outputs/executables",
-    "temp_storage_root": "/temp"
     }
     """
     name = models.CharField('Dataset Id',
@@ -117,6 +113,8 @@ class D3MConfiguration(TimeStampedModel):
                         help_text='Input: Path to the dataset schema')
 
     problem_schema = models.TextField(\
+                        cstatic.KEY_D3MPROBLEMPATH,
+                        blank=True,
                         help_text='Input: Path to the problem schema')
 
     training_data_root = models.TextField(\
@@ -125,12 +123,8 @@ class D3MConfiguration(TimeStampedModel):
                         help_text=('Input: Path to the root directory of the'
                                    ' dataset described by dataset_schema'))
 
-    problem_root = models.TextField(\
-                    blank=True,
-                    help_text=('Path to the root directory of the'
-                               ' problem.'))
-
     root_output_directory = models.TextField(\
+                        cstatic.KEY_D3MOUTPUTDIR,
                         blank=True,
                         help_text=(('Not an official field.  Used for testing'
                                     ' to determine the "/output" directory')))
@@ -152,11 +146,6 @@ class D3MConfiguration(TimeStampedModel):
                                ' - (or system-) generated problems'
                                ' for the part of TA(3+2) that involves'
                                ' generating additional problems.'))
-
-    temp_storage_root = models.TextField(\
-                        blank=True,
-                        help_text=('Temporary storage root for performers'
-                                   ' to use.'))
 
     additional_inputs = models.TextField(\
                         blank=True,
@@ -217,12 +206,25 @@ class D3MConfiguration(TimeStampedModel):
 
         super(D3MConfiguration, self).save(*args, **kwargs)
 
+    @staticmethod
+    def set_as_default(d3m_config):
+        if not isinstance(d3m_config, D3MConfiguration):
+            return err_resp('"d3m_config" is not a D3MConfiguration object')
+
+        d3m_config.is_default = True
+        d3m_config.save()
+
+        if d3m_config.is_default:
+            return ok_resp('Default set!')
+
+        return err_resp('Default NOT set. Save failed.')
+
 
     def get_json_string(self, indent=2):
         """Return json string"""
         return json.dumps(self.to_dict(), indent=indent)
 
-    def to_ta2_config_test(self, mnt_volume='/ravens_volume', save_shortened_names=False):
+    def xto_ta2_config_test(self, mnt_volume='/ravens_volume', save_shortened_names=False):
         """Return a dict in TA2 format to use with mounted volume"""
         od = OrderedDict()
         d3m_attributes = D3M_FILE_ATTRIBUTES + \
@@ -248,11 +250,10 @@ class D3MConfiguration(TimeStampedModel):
                  'description',
                  'd3m_input_dir',
                  'dataset_schema', 'problem_schema',
-                 'training_data_root', 'problem_root',
+                 'training_data_root',
                  'pipeline_logs_root', 'executables_root',
                  'user_problems_root',
                  'additional_inputs',
-                 'temp_storage_root',
                  OPTIONAL_DIR_OUTPUT_ROOT,
                  'timeout', 'cpus', 'ram', 'env_values']
         date_attrs = ['created', 'modified']
@@ -270,10 +271,10 @@ class D3MConfiguration(TimeStampedModel):
 
 
         od[KEY_PROBLEM_SCHEMA_URL] = reverse('view_get_problem_schema_by_id',
-                                           kwargs=dict(d3m_config_id=self.id))
+                                             kwargs=dict(d3m_config_id=self.id))
 
         od[KEY_PROBLEM_DATA_INFO] = reverse('view_get_problem_data_info_by_id',
-                                          kwargs=dict(d3m_config_id=self.id))
+                                            kwargs=dict(d3m_config_id=self.id))
 
         od['config_url'] = reverse('view_d3m_details_json',
                                    kwargs=dict(d3m_config_id=self.id))

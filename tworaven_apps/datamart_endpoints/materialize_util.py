@@ -125,6 +125,10 @@ class MaterializeUtil(BasicErrCheck):
             return False
 
         self.user_workspace = ws_info.result_obj
+
+        if not self.websocket_id:
+            self.websocket_id = self.user_workspace.user.username
+
         return True
 
     def show_info(self):

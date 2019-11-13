@@ -1,17 +1,11 @@
 node_modules/
 npm-debug.log
 
-# currently in rook directory
-#rook/
-rook/output*.png
-rook/.Rapp.history
-rook/.RData
-rook/.Rhistory
-rook/config.json
-rook/result.json
-rook/test.json
-rook/rook-files/*
-rook/log_*
+R/output*.png
+R/.Rapp.history
+R/.RData
+R/.Rhistory
+R/log_*
 
 #build/
 data/preprocessSubset*.txt
@@ -48,22 +42,23 @@ data/d3m/o_196seed/data/.Rapp.history
 setup/r-setup/RINSTALL.*.LOG
 
 ravens_volume/test_output/*
+ravens_volume/reports/*
 !ravens_volume/test_output/placeholder.md
 ravens_volume/manipulation_data/*
 ravens_volume/config_*.json
 ravens_volume/32_wikiqa
-rook/rook-files/o_185/data/trainDatamerged.tsv
-rook/rook-files/o_185/preprocess/preprocess.json
 assets/pkgs/swagger-ui/dist/*.map
 .Rhistory
 ravens_volume/test_data/*/search_config.json
 ravens_volume/test_data/*/search_config.json
 #ravens_volume/test_data/01_TEST_SOURCE/placeholder.md
 
+# ignore redis dumpfile
+dump.rdb
 
 # IDE
 .idea/
-rook/preprocess/.Rapp.history
+R/preprocess/.Rapp.history
 ravens_volume/db_mongo
 ravens-test/cypress/screenshots/
 ravens-test/cypress/videos/

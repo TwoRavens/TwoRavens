@@ -24,7 +24,7 @@ COPY ./README.md /var/webapps/TwoRavens
 # -------------------------------------
 # Set production environment variable
 # -------------------------------------
-ENV ROOK_USE_PRODUCTION_MODE=yes \
+ENV FLASK_USE_PRODUCTION_MODE=yes \
     EVENTDATA_PRODUCTION_MODE=yes \
     EVENTDATA_PRODUCTION_SERVER_ADDRESS=http://149.165.156.33:5002/api/data? \
     EVENTDATA_SERVER_API_KEY="api_key=CD75737EF4CAC292EE17B85AAE4B6" \

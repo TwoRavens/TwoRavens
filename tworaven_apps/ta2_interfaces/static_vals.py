@@ -5,7 +5,7 @@ Many are keys sent from the UI
 """
 # form name
 
-
+DATASET_DOC_FNAME = 'datasetDoc.json'
 
 KEY_GRPC_JSON = 'grpcrequest'
 
@@ -65,7 +65,11 @@ FIT_SOLUTION = 'FitSolution'
 GET_FIT_SOLUTION_RESULTS = 'GetFitSolutionResults'
 
 PRODUCE_SOLUTION = 'ProduceSolution'
+PRODUCE_SOLUTION_PARTIALS = 'ProduceSolution_PARTIALS'
+
+
 GET_PRODUCE_SOLUTION_RESULTS = 'GetProduceSolutionResults'
+GET_PARTIALS_SOLUTION_RESULTS = 'GetPartialsSolutionResults'
 
 SCORE_SOLUTION = 'ScoreSolution'
 GET_SCORE_SOLUTION_RESULTS = 'GetScoreSolutionResults'
@@ -78,12 +82,16 @@ SOLUTION_EXPORT = 'SolutionExport'
 # ------------------------------------------
 # params sent from the UI
 # ------------------------------------------
+SR_REQUEST_TYPE = 'request_type'  # StoredRequest attribute
+SR_SEARCH_ID = 'search_id'
+
 ENDGetSearchSolutionsResults = 'ENDGetSearchSolutionsResults'
 
 KEY_SEARCH_SOLUTION_PARAMS = 'searchSolutionParams'
 KEY_FIT_SOLUTION_DEFAULT_PARAMS = 'fitSolutionDefaultParams'
 KEY_SCORE_SOLUTION_DEFAULT_PARAMS = 'scoreSolutionDefaultParams'
 KEY_PRODUCE_SOLUTION_DEFAULT_PARAMS = 'produceSolutionDefaultParams'
+KEY_PARTIALS_SOLUTION_PARAMS = 'partialsSolutionParams'
 
 REQUIRED_INPUT_KEYS = [(KEY_SEARCH_SOLUTION_PARAMS, SEARCH_SOLUTIONS),
                        (KEY_FIT_SOLUTION_DEFAULT_PARAMS, 'FitSolution'),

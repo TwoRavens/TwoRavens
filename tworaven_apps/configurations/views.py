@@ -12,6 +12,9 @@ from tworaven_apps.configurations.utils import \
     (get_latest_d3m_config,
      get_d3m_filepath,
      get_train_data_info)
+from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
+from tworaven_apps.utils.json_helper import json_loads, json_dumps
+
 from tworaven_apps.utils.view_helper import \
     (get_json_error,
      get_json_success)
@@ -97,11 +100,15 @@ def view_get_dataset_schema(request, d3m_config_id=None):
     """Return the dataset_schema file"""
     return view_get_config_file(request, KEY_DATASET_SCHEMA, d3m_config_id)
 
+    # return view_get_config_file(request, 'KEY_D', d3m_config_id)
+
 @csrf_exempt
 def view_get_config_file(request, config_key, d3m_config_id=None):
     """Get contents of a file specified in the config"""
     if not config_key in D3M_FILE_ATTRIBUTES:
-        raise Http404('config_key not found!')
+        user_msg = (f'Config key "{config_key}" not found!'
+                    f' (view_get_config_file)')
+        return JsonResponse(get_json_error(user_msg))
 
     if d3m_config_id is None:
         d3m_config = get_latest_d3m_config()
@@ -109,15 +116,36 @@ def view_get_config_file(request, config_key, d3m_config_id=None):
         d3m_config = D3MConfiguration.objects.filter(id=d3m_config_id).first()
 
     if d3m_config is None:
-        raise Http404('Config not found!')
+        user_msg = 'Config not found!'
+        return JsonResponse(get_json_error(user_msg))
+
+    # Make sure the config has a value.
+    # For example the D3MPROBLEMPATH may be blank
+    #
+    if not getattr(d3m_config, config_key):
+        user_msg = f'Sorry! The config does not have a "{config_key}" value!'
+        return JsonResponse(get_json_error(user_msg))
 
     filepath_info = get_d3m_filepath(d3m_config, config_key)
     if not filepath_info.success:
-        return JsonResponse(get_json_error(filepath_info.err_msg))
+        user_msg = f'{filepath_info.err_msg} (view_get_config_file)'
+        return JsonResponse(get_json_error(user_msg))
 
-    response = FileResponse(open(filepath_info.result_obj, 'rb'))
+    # Relatively small files...
+    # response = FileResponse(open(filepath_info.result_obj, 'rb'))
+    # return response
 
-    return response
+    fcontent = open(filepath_info.result_obj, 'r').read()
+
+    json_info = json_loads(fcontent)
+    if not json_info.success:
+        user_msg = f'{json_info.err_msg} (view_get_config_file)'
+        return JsonResponse(get_json_error(user_msg))
+
+    return JsonResponse(get_json_success(\
+                            'Success!',
+                            data=json_info.result_obj))
+
 
 @csrf_exempt
 def view_get_problem_data_info(request, d3m_config_id=None):
@@ -128,19 +156,19 @@ def view_get_problem_data_info(request, d3m_config_id=None):
         d3m_config = D3MConfiguration.objects.filter(id=d3m_config_id).first()
 
     if d3m_config is None:
-        raise Http404('Config not found!')
+        user_msg = 'Config not found! (view_get_problem_data_info)'
+        return JsonResponse(get_json_error(user_msg))
 
     is_pretty = request.GET.get('pretty', False)
 
-    info_dict, err_msg = get_train_data_info(d3m_config)
+    train_data_info = get_train_data_info(d3m_config)
 
-    if err_msg:
-        resp_dict = dict(success=False,
-                         message=err_msg)
+    if not train_data_info.success:
+        resp_dict = get_json_error(train_data_info.err_msg)
 
     else:
-        resp_dict = dict(success=True,
-                         data=info_dict)
+        resp_dict = get_json_success('It worked',
+                                     data=train_data_info.result_obj)
 
     if is_pretty is not False:   # return this as a formatted string?
         config_str = '<pre>%s<pre>' % \

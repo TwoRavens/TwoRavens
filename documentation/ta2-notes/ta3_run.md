@@ -1,3 +1,8 @@
+## If you need to update any dependencies
+
+Go through the list of update commands in
+  - `update_dependencies.md`
+
 ## Run the TA3 for an external TA2
 
 These are the additional instructions, following those in:
@@ -31,9 +36,13 @@ For each command below, **FIRST**:
     ```
     fab run_with_ta2
     ```
-4. Rook
+4. R applications
     ```
-    fab run_rook
+    fab run_flash
+    ```
+5. If Mongo is not up then:
+    ```
+    mongod --config /usr/local/etc/mongod.conf
     ```
 
 ## Open Browser
