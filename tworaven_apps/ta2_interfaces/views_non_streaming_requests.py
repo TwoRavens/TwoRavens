@@ -9,6 +9,8 @@ from django.shortcuts import render
 from django.http import JsonResponse    #, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
+
 from tworaven_apps.raven_auth.models import User
 from tworaven_apps.ta2_interfaces.models import StoredRequest, StoredResponse
 
@@ -208,7 +210,6 @@ def view_end_search_solutions(request):
     if not req_body_info.success:
         return JsonResponse(get_json_error(req_body_info.err_msg))
 
-
     # --------------------------------
     # Behavioral logging
     # --------------------------------
@@ -227,6 +228,10 @@ def view_end_search_solutions(request):
 
     if not search_info.success:
         return JsonResponse(get_json_error(search_info.err_msg))
+
+    # The session is over, write the log entries files
+    #
+    LogEntryMaker.write_user_log_from_request(request)
 
     json_info = get_json_success('success!', data=search_info.result_obj)
     return JsonResponse(json_info, safe=False)

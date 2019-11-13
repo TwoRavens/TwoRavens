@@ -203,7 +203,7 @@ def end_search_solutions(raven_json_str=None, **kwargs):
 
 
 
-def stop_search_solutions(raven_json_str=None):
+def stop_search_solutions(raven_json_str=None, **kwarg):
     """
     Send a StopSearchSolutionsRequest to the StopSearchSolutions command
     """

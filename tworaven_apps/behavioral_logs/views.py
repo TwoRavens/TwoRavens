@@ -23,6 +23,8 @@ from tworaven_apps.behavioral_logs.log_formatter \
     import BehavioralLogFormatter
 from tworaven_apps.behavioral_logs import static_vals as bl_static
 
+from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
+
 from tworaven_apps.utils.view_helper import get_session_key
 from tworaven_apps.utils.random_info import get_timestamp_string
 
@@ -130,15 +132,18 @@ def view_create_log_entry_verbose(request):
 @csrf_exempt
 def view_create_log_entry(request, is_verbose=False):
     """Make log entry endpoint"""
+    ws_info = get_latest_user_workspace(request)
+    if not ws_info.success:
+        user_msg = 'User workspace not found: %s' % ws_info.err_msg
+        return JsonResponse(get_json_error(user_msg))
+
+    user_workspace = ws_info.result_obj
 
     # ----------------------------------------
     # Get the user and session_key
     # ----------------------------------------
-    user_info = get_authenticated_user(request)
-    if not user_info.success:
-        return JsonResponse(get_json_error(user_info.err_msg))
+    user = user_workspace.user
 
-    user = user_info.result_obj
     session_key = get_session_key(request)
 
     # ----------------------------------------
@@ -170,7 +175,11 @@ def view_create_log_entry(request, is_verbose=False):
         return JsonResponse(get_json_error(user_msg, errors=f.errors))
 
 
-    log_create_info = LogEntryMaker.create_log_entry(user, log_data['type'], log_data)
+    log_create_info = LogEntryMaker.create_log_entry(\
+                            user_workspace,
+                            log_data['type'],
+                            log_data)
+
     if not log_create_info.success:
         return JsonResponse(get_json_error(log_create_info.err_msg))
 
