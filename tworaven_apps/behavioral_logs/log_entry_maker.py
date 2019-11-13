@@ -227,7 +227,7 @@ content = content.encode(encoding)
 
 cf = ContentFile(content)
 
-u.behavioral_log.save('rp_test', cfile)
+u.behavioral_log.save('rp_test', cf)
 
 
 print(content)

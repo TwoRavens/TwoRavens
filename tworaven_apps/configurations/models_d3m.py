@@ -105,6 +105,10 @@ class D3MConfiguration(TimeStampedModel):
                     default=False,
                     help_text='There can be either one default or no defaults')
 
+    is_selectable_dataset = models.BooleanField(\
+                    default=True,
+                    help_text='The user may choose this datast from a list')
+
     d3m_input_dir = models.TextField(KEY_D3MINPUTDIR,
                                      blank=True,
                                      help_text='Added in 2019 config.')
@@ -196,6 +200,7 @@ class D3MConfiguration(TimeStampedModel):
         #
         if self.is_user_config:
             self.is_default = False
+            self.is_selectable_dataset = False
 
         # If this is the default, set everything else to non-default
         if self.is_default:
