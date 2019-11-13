@@ -45,14 +45,14 @@ after_success:
   # -------------------------------------
   # Temp push, to test new multiuser
   # -------------------------------------
-  #- if [ "$TRAVIS_BRANCH" == "710-multi-dataset" ]; then
-  #  docker build -t tworavens/ravens-main:nov-test .;
-  #  docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-  #  docker push tworavens/ravens-main:nov-test;
-  #  fi
-  #  docker tag tworavens/ravens-main:develop tworavens/ravens-main:dm-demo3;
-  #  docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-  #  docker push tworavens/ravens-main:dm-demo3;
+  - if [ "$TRAVIS_BRANCH" == "719-blog" ]; then
+    docker build -t tworavens/ravens-main:nov-test .;
+    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+    docker push tworavens/ravens-main:nov-test;
+    fi
+    docker tag tworavens/ravens-main:develop tworavens/ravens-main:dm-demo3;
+    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+    docker push tworavens/ravens-main:dm-demo3;
   # -------------------------------------
   # Temp push, to test new k8s deploy
   # -------------------------------------

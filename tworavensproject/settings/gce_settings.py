@@ -69,7 +69,7 @@ DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
 # bucket name / project id
 #
 GS_BUCKET_NAME = os.environ.get('GS_BUCKET_NAME',
-                                '2ravens-metadata-dev-storage')
+                                '2ravens-behavioral-logs')
 
 GS_PROJECT_ID = os.environ.get('GS_PROJECT_ID',
                                'raven2-186120')
