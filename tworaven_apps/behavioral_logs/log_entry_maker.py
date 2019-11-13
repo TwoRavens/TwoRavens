@@ -142,7 +142,12 @@ class LogEntryMaker:
 
         # Log file name...
         #
-        log_name = slugify((f'{settings.RAVENS_SERVER_NAME}`_'
+        server_name = settings.RAVENS_SERVER_NAME
+        if not server_name:
+            server_name = 'unknown-server'
+        server_name = server_name.replace('.', '-')
+
+        log_name = slugify((f'{server_name}`_'
                             f'{user_workspace.user.id}_'
                             f'{user_workspace.d3m_config.name}_'
                             f'{get_timestamp_string()}'))
