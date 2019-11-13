@@ -292,7 +292,7 @@ export let leftpanel = forceData => {
                                 pipeline: problemPipeline
                             });
                             common.setPanelOpen('left');
-                            app.setLeftTab('Variables');
+                            app.setLeftTab(app.LEFT_TAB_NAME_VARIABLES);
                         }
                     }, 'Create New Variable'),
                 ]
@@ -566,7 +566,7 @@ export let leftpanel = forceData => {
         attrsAll: {style: {height: 'calc(100% - 50px)'}},
         currentTab: app.leftTab,
         callback: app.setLeftTab,
-        sections: sections.concat([
+        sections: DISPLAY_DATAMART_UI ? sections.concat([
             {
                 value: preprocessTabName,
                 id: 'preprocessInfoTab',
@@ -580,7 +580,7 @@ export let leftpanel = forceData => {
                     preferences: app.datamartPreferences,
                     dataPath: app.workspace.datasetPath,
                     endpoint: app.datamartURL,
-                    labelWidth: '10em'
+                    labelWidth: '10em',
                 })
             },
             {
@@ -589,7 +589,7 @@ export let leftpanel = forceData => {
                 display: 'none',
                 contents: summaryContent
             }
-        ])
+        ]) : sections
     }));
 };
 

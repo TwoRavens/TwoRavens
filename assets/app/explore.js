@@ -108,6 +108,17 @@ export class CanvasExplore {
                         || variate === 'multiple' && len < 2) {
                         return;
                     }
+
+                    // behavioral logging
+                    let logParams = {
+                                  feature_id: 'EXPLORE_MAKE_PLOTS',
+                                  activity_l1: 'MODEL_SELECTION',
+                                  activity_l2: 'MODEL_SEARCH',
+                                  other: {variate: variate}
+
+                                };
+                    app.saveSystemLogEntry(logParams);
+
                     m.route.set(`/explore/${variate}/${selected.join('/')}`);
                 }
             }, 'go'),
@@ -508,8 +519,17 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
             stringified = stringified.replace(/"tworavensVars"/g, $matvars);
         }
 
+        // behavioral logging
+        let logParams = {
+                      feature_id: 'EXPLORE_VIEW_PLOT',
+                      activity_l1: 'DATA_PREPARATION',
+                      activity_l2: 'DATA_EXPLORE',
+                      other: {plottype: plottype}
+                    };
+        app.saveSystemLogEntry(logParams);
+
         // VJD: if you enter this console.log into the vega editor https://vega.github.io/editor/#/edited the plot will render
-        console.log(stringified);
+        //console.log(stringified);
         return JSON.parse(stringified);
     };
 

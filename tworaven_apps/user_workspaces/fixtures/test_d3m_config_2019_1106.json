@@ -1,0 +1,29 @@
+[
+  {
+      "model": "configurations.d3mconfiguration",
+      "pk": 40,
+      "fields": {
+          "created": "2019-05-24T15:17:26.636Z",
+          "modified": "2019-05-24T15:17:26.641Z",
+          "name": "DA_college_debt_problem",
+          "orig_dataset_id": "DA_college_debt_problem",
+          "is_user_config": false,
+          "description": "",
+          "is_default": true,
+          "d3m_input_dir": "/ravens_volume/test_data/DA_college_debt_100",
+          "dataset_schema": "/ravens_volume/test_data/DA_college_debt_100/TRAIN/dataset_TRAIN/datasetDoc.json",
+          "problem_schema": "/ravens_volume/test_data/DA_college_debt_100/TRAIN/problem_TRAIN/problemDoc.json",
+          "training_data_root": "/ravens_volume/test_data/DA_college_debt_100/TRAIN/dataset_TRAIN",
+          "root_output_directory": "/ravens_volume/test_output/DA_college_debt_100",
+          "executables_root": "",
+          "pipeline_logs_root": "",
+          "user_problems_root": "/ravens_volume/test_output/DA_college_debt_100/user_problems_root",
+          "additional_inputs": "/ravens_volume/test_output/DA_college_debt_100/additional_inputs",
+          "timeout": 600,
+          "cpus": "1",
+          "ram": "1",
+          "env_values": "{\"D3MRUN\":\"ta2ta3\",\"D3MINPUTDIR\":\"/ravens_volume/test_data/DA_college_debt_100\",\"D3MPROBLEMPATH\":\"/ravens_volume/test_data/DA_college_debt_100/TRAIN/problem_TRAIN/problemDoc.json\",\"D3MOUTPUTDIR\":\"/ravens_volume/test_output/DA_college_debt_100\",\"D3MLOCALDIR\":\"/ravens_volume/test_output/DA_college_debt_100/local_dir\",\"D3MSTATICDIR\":\"/ravens_volume/test_output/DA_college_debt_100/static_dir\",\"D3MTIMEOUT\":\"600\",\"D3MCPU\":\"1\",\"D3MRAM\":1}",
+          "slug": "da_college_debt_problem"
+      }
+  }
+]

@@ -3,6 +3,8 @@ from collections import OrderedDict
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
 
+from django.contrib.auth.decorators import login_required
+
 from django.views.decorators.csrf import csrf_exempt
 from tworaven_apps.utils.view_helper import \
     (get_request_body,
@@ -19,29 +21,22 @@ from tworaven_apps.ta2_interfaces.static_vals import \
          GET_SEARCH_SOLUTIONS_RESULTS)
 
 
+@login_required
 def view_clear_grpc_stored_history(request):
-    """For develop, clear GPRC stored history"""
-    msg_list = []
-    for model_name in [StoredResponse, StoredRequest]:
-        mcnt = model_name.objects.count()
+    """For develop, clear GPRC stored history for a User"""
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
 
-        user_msg = '%d %s objects(s) found' % (mcnt, model_name.__name__)
-        print(f'\n{user_msg}')
-        msg_list.append(user_msg)
+    clear_info = SearchHistoryUtil.clear_grpc_stored_history(user_info.result_obj)
 
-        if mcnt > 0:
-            for meta_obj in model_name.objects.all().order_by('-id'):
-                meta_obj.delete()
-            print('Deleted...')
-            msg_list.append('Deleted...')
+    if not clear_info.success:
+        return HttpResponse(clear_info.err_msg)
 
-        else:
-            user_msg = f'No {model_name.__name__} objects found.'
-            print(f'\n{user_msg}')
-            msg_list.append(user_msg)
+    return HttpResponse('<br />'.join(clear_info.result_obj))
 
-    return HttpResponse('<br />'.join(msg_list))
 
+@login_required
 def view_grpc_search_history_json_no_id(request):
     """Pick an existing search history, if it exists"""
 
@@ -54,6 +49,7 @@ def view_grpc_search_history_json_no_id(request):
     return view_grpc_search_history_json(request, resp.search_id)
 
 
+@login_required
 def view_grpc_search_history_json(request, search_id):
     """View stored request/responses based on search_id"""
     if not search_id:
@@ -74,6 +70,7 @@ def view_grpc_search_history_json(request, search_id):
     return JsonResponse(user_info)
 
 
+@login_required
 def view_grpc_stored_history_no_id(request):
     """Pick an existing search history, if it exists"""
 

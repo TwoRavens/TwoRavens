@@ -219,16 +219,19 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
 
-# Store the CSRF in a session: https://docs.djangoproject.com/en/1.11/ref/settings/#std:setting-CSRF_USE_SESSIONS
-#CSRF_USE_SESSIONS = True
-CSRF_COOKIE_NAME = 'CSRF_2R'
+
+RAVENS_SERVER_NAME = os.environ.get('RAVENS_SERVER_NAME',
+                                    '2ravens.org')
+
+SESSION_COOKIE_NAME = os.environ.get('SESSION_COOKIE_NAME',
+                                     '2ravens_base')
+
+CSRF_COOKIE_NAME = os.environ.get('CSRF_COOKIE_NAME',
+                                  '2ravens_base_csrf')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
@@ -370,6 +373,12 @@ EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
 # -------------------------
 # Datamart related
 # -------------------------
+
+# 11/6/2019 - switch for multi-user testing
+#   passed as a boolean to .js
+DISPLAY_DATAMART_UI = strtobool(os.environ.get('DISPLAY_DATAMART_UI', 'True'))
+
+
 DATAMART_SHORT_TIMEOUT = 10 # seconds
 DATAMART_LONG_TIMEOUT = 5 * 60 # 5 minutes
 DATAMART_VERY_LONG_TIMEOUT = 10 * 60 # 8 minutes

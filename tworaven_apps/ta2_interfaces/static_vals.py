@@ -82,6 +82,9 @@ SOLUTION_EXPORT = 'SolutionExport'
 # ------------------------------------------
 # params sent from the UI
 # ------------------------------------------
+SR_REQUEST_TYPE = 'request_type'  # StoredRequest attribute
+SR_SEARCH_ID = 'search_id'
+
 ENDGetSearchSolutionsResults = 'ENDGetSearchSolutionsResults'
 
 KEY_SEARCH_SOLUTION_PARAMS = 'searchSolutionParams'

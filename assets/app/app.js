@@ -443,17 +443,13 @@ export let saveLogEntry = async logData => {
         url: save_log_entry_url,
         data: logData
     })
-        .then(function(save_result) {
-            // console.log(save_result);
-            /*
-            if (save_result.success){
-              setCurrentWorkspaceMessageSuccess('The workspace was saved!')
-            } else {
-              setCurrentWorkspaceMessageError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
-            }
-            setSaveCurrentWorkspaceWindowOpen(true);
-            */
-        })
+    .then(function(save_result) {
+        if (save_result.success){
+          // console.log('log entry saved');
+        } else {
+          console.log('log entry FAILED: ' + save_result.message);
+        }
+    })
 };
 
 // for debugging - if not in PRODUCTION, prints args
@@ -462,8 +458,12 @@ export let cdb = _ => PRODUCTION || console.log(_);
 export let k = 4; // strength parameter for group attraction/repulsion
 export let tutorial_mode = localStorage.getItem('tutorial_mode') !== 'false';
 
-export let leftTab = 'Variables'; // current tab in left panel
-export let leftTabHidden = 'Variables'; // stores the tab user was in before summary hover
+export let LEFT_TAB_NAME_VARIABLES = 'Variables';
+export let LEFT_TAB_NAME_DISCOVER = 'Discover';
+export let LEFT_TAB_NAME_AUGMENT = 'Augment';
+
+export let leftTab = LEFT_TAB_NAME_VARIABLES; // current tab in left panel
+export let leftTabHidden = LEFT_TAB_NAME_VARIABLES; // stores the tab user was in before summary hover
 
 export let rightTab = 'Problem'; // current tab in right panel
 
@@ -473,15 +473,29 @@ export let setRightTab = tab => {
     setFocusedPanel('right')
 };
 
-// call with a tab name to change the left tab in model mode
-export let setLeftTab = (tab) => {
-    leftTab = tab;
+/*
+  Model Mode
+  - Set the Left Tab: Variables | Discover | Augment
+  call with a tab name to change the left tab in model mode
+*/
+export let setLeftTab = (tabName) => {
+    leftTab = tabName;
+    console.log('tab: ' + tabName)
     updateLeftPanelWidth();
-    if (tab === 'Discover') taskPreferences.isDiscoveryClicked = true;
-    explore.setExploreVariate(tab === 'Discover' ? 'Problem' : 'Univariate');
+
+    // behavioral logging
+    let logParams = {
+        feature_id: 'VIEW_' + tabName.toUpperCase(),
+        activity_l1: 'DATA_PREPARATION',
+        activity_l2: 'PROBLEM_DEFINITION',
+    };
+    saveSystemLogEntry(logParams);
+
+    if (tabName === LEFT_TAB_NAME_DISCOVER) taskPreferences.isDiscoveryClicked = true;
+    explore.setExploreVariate(tabName === LEFT_TAB_NAME_DISCOVER ? 'Problem' : 'Univariate');
     setFocusedPanel('left');
 
-    if (tab === 'Discover' && !taskPreferences.task1_finished)
+    if (tabName === LEFT_TAB_NAME_DISCOVER && !taskPreferences.task1_finished)
         setTimeout(() => hopscotch.startTour(task1Tour), 100);
 };
 
@@ -1106,7 +1120,10 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
     window.workspace = workspace;
 
     d3.select("title").html("TwoRavens " + workspace.d3m_config.name);
-    setTimeout(() => search(datamartPreferences, datamartURL).then(m.redraw), 1000);
+
+    if (DISPLAY_DATAMART_UI){
+      setTimeout(() => search(datamartPreferences, datamartURL).then(m.redraw), 1000);
+    }
 
     let newRavenConfig = workspace.raven_config === null;
     if (newRavenConfig) workspace.raven_config = {
@@ -2245,8 +2262,21 @@ export function setSelectedProblem(problemID) {
     let ravenConfig = workspace.raven_config;
 
     if (!problemID || ravenConfig.selectedProblem === problemID) return;
+
     ravenConfig.selectedProblem = problemID;
     let problem = getSelectedProblem();
+    console.log('problem: ' + JSON.stringify(problem));
+
+    // Behavioral Logging
+    let logParams = {
+        feature_id: 'SET_SELECTED_PROBLEM',
+        activity_l1: 'DATA_PREPARATION',
+        activity_l2: 'PROBLEM_DEFINITION',
+        other: {problem: problem}
+
+    };
+    saveSystemLogEntry(logParams);
+
 
     updateRightPanelWidth();
 
@@ -2463,7 +2493,7 @@ export async function handleAugmentDataMessage(msg_data) {
             setSelectedProblem(problemCopy.problemID);
 
             // Close augment and go to variables tab
-            setLeftTab('Variables');
+            setLeftTab(LEFT_TAB_NAME_VARIABLES);
 
             saveUserWorkspace(true)
         });

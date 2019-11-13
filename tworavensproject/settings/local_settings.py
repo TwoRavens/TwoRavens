@@ -23,7 +23,16 @@ DATABASES = {
     }
 }
 
-SESSION_COOKIE_NAME = 'two_ravens_local'
+RAVENS_SERVER_NAME = os.environ.get('RAVENS_SERVER_NAME',
+                                    '2ravens.org')
+
+SESSION_COOKIE_NAME = os.environ.get('SESSION_COOKIE_NAME',
+                                     'two_ravens_local')
+
+CSRF_COOKIE_NAME = os.environ.get('CSRF_COOKIE_NAME',
+                                  'two_ravens_local_csrf')
+
+
 
 # where static files are collected
 STATIC_ROOT = join(LOCAL_SETUP_DIR, 'staticfiles')

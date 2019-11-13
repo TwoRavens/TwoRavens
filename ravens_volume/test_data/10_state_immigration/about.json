@@ -1,0 +1,13 @@
+{
+    "datasetID" : "state_immigration",
+    "datasetName" : "State Immigration Policy",
+    "description" : "Most research studying minority representation concludes that minorities enjoy better representation when they constitute a larger share of a constituency, but only through the partisanship and race/ethnicity of the representative. Other research finds that minorities receive worse representation when they constitute a larger share of a constituency. We argue that minority composition will have an independent effect on representation, but that this effect will differ depending on the representative\u2019s partisanship. We apply this theory to Latino composition and state legislative voting on immigration policy. We find that Latino composition has little effect on voting among Democratic legislators, who are less likely to vote in a restrictive direction on immigration than Republicans. However, Republicans are more likely to vote to restrict immigration as Latinos comprise a larger share of their district. Our findings suggest that scholars should consider the moderating effect of legislator partisanship when examining minority composition and representation. (2019-07-02)",
+    "license" : "CC0 - Public Domain Dedication",
+    "source" : "UNC Dataverse",
+    "sourceURI" : "https://doi.org/10.15139/S3/SOYP8I",
+    "approximateSize" : "388 kB",
+    "datasetSchemaVersion" : "3.3.1",
+    "redacted" : false,
+    "datasetVersion" : "1.0",
+    "digest" : ""
+}

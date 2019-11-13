@@ -1,12 +1,17 @@
 import json
+from collections import OrderedDict
 import csv
 from datetime import datetime as dt
+import os
 from os.path import isdir, isfile, getsize, join
-from collections import OrderedDict
+import shutil
+
 from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from django.views.decorators.csrf import csrf_exempt
 from tworaven_apps.utils import random_info
+from tworaven_apps.utils.file_util import create_directory
+from tworaven_apps.configurations import static_vals as d3m_static
 from tworaven_apps.configurations.models_d3m import D3MConfiguration,\
     D3M_FILE_ATTRIBUTES
 
@@ -191,3 +196,93 @@ def get_config_file_contents(d3m_config, config_key, as_dict=True):
         return err_resp(doc_info.err_msg)
 
     return ok_resp(doc_info.result_obj)
+
+def clear_output_directory(d3m_config):
+    """This deletes items in env_values.D3MOUTPUTDIR, if it exists.
+    Assuming paths similar to:
+        {
+          "D3MOUTPUTDIR":"/ravens_volume/test_output/38_sick",
+          "D3MLOCALDIR":"/ravens_volume/test_output/38_sick/local_dir",
+          "D3MSTATICDIR":"/ravens_volume/test_output/38_sick/static_dir"
+        }
+    OR
+        {
+          "D3MOUTPUTDIR":"/ravens_volume/test_output,
+          "D3MLOCALDIR":"/ravens_volume/test_output/local_dir",
+          "D3MSTATICDIR":"/ravens_volume/test_output/static_dir"
+        }
+    """
+    if not isinstance(d3m_config, D3MConfiguration):
+        return err_resp('d3m_config must be a D3MConfiguration object')
+
+    if not d3m_config.env_values:
+        return ok_resp('no env_values found')
+
+    output_path = d3m_config.env_values.get(d3m_static.KEY_D3MOUTPUTDIR, None)
+
+    dirs_to_keep = [d3m_config.env_values.get(d3m_static.KEY_D3MLOCALDIR, None),
+                    d3m_config.env_values.get(d3m_static.KEY_D3MSTATICDIR, None)]
+
+    dirs_to_keep = [x for x in dirs_to_keep
+                    if x and isdir(x)]
+
+    #   Delete all directories and files under output_path
+    #   EXCEPT: keep the directories localdir_path and staticdir_path,
+    #       deleting contents within them
+    #
+    for root, dirs, files in os.walk(output_path, topdown=False):
+        # Delete files
+        #
+        for fname in files:
+            if fname == 'placeholder.md':
+                continue
+            else:
+                file_to_remove = join(root, fname)
+                try:
+                    print('remove file:', file_to_remove)
+                    os.remove(file_to_remove)
+                except FileNotFoundError:
+                    pass
+                except OSError: # broader error check
+                    pass
+        for dname in dirs:
+            dir_to_remove = join(root, dname)
+            if dir_to_remove not in dirs_to_keep:
+                shutil.rmtree(dir_to_remove)
+                print('remove dir:', dir_to_remove)
+            else:
+                print('** skip dir:', dir_to_remove)
+
+
+def check_build_output_directories(d3m_config):
+    """Used when setting a new a d3m_config:
+        - check if the output directories exist
+        - build them if they don't"""
+    if not isinstance(d3m_config, D3MConfiguration):
+        return err_resp('d3m_config must be a D3MConfiguration object')
+
+    temp_path = None
+    output_path = d3m_config.env_values.get(d3m_static.KEY_D3MOUTPUTDIR)
+    if output_path:
+        temp_path = join(output_path, 'temp')
+
+    paths_to_check = [output_path,
+                      temp_path,
+                      d3m_config.env_values.get(d3m_static.KEY_D3MLOCALDIR),
+                      d3m_config.env_values.get(d3m_static.KEY_D3MSTATICDIR)]
+
+    paths_to_build = [x for x in paths_to_check
+                      if x and not isdir(x)]
+
+    fail_info = []
+    for build_path in paths_to_build:
+        path_info = create_directory(build_path)
+        if path_info.success:
+            print('directory created: ', build_path)
+        else:
+            err_msg = 'Failed to build directory: %s' % (path_info.err_msg)
+            fail_info.append(err_msg)
+    if fail_info:
+        return err_resp('\n'.join(fail_info))
+
+    return ok_resp('looks good')

@@ -40,7 +40,9 @@ if not os.path.isdir(STATIC_ROOT):
 
 SESSION_COOKIE_NAME = os.environ.get('SESSION_COOKIE_NAME',
                                      '2ravens_org_gce')
-CSRF_COOKIE_NAME = '2ravens_org_gce_csrf'
+
+CSRF_COOKIE_NAME = os.environ.get('CSRF_COOKIE_NAME',
+                                  '2ravens_org_csrf')
 
 # -----------------------------------
 # Note: SECRET_KEY and MONGO_CONNECTION_STRING

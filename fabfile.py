@@ -65,7 +65,21 @@ def make_d3m_configs_from_files():
     clear_d3m_configs()
 
     from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
-    loader = EnvConfigLoader.make_d3m_test_configs_env_based()
+    loader = EnvConfigLoader.make_d3m_test_configs_env_based('/ravens_volume/test_data')
+
+@task
+def make_d3m_configs_from_files_multiuser_test():
+    """11/2019 Make configs from /ravens_volume and loads them to db
+    Also make the input/output directories 1-level higher than usual
+    """
+    clear_d3m_configs()
+
+    from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
+
+    params = dict(is_multi_dataset_demo=True)
+    loader = EnvConfigLoader.make_d3m_test_configs_env_based(\
+                    '/ravens_volume/test_data',
+                    **params)
 
 
 @task
@@ -749,8 +763,10 @@ def set_eventdata_public_site():
 @task
 def set_2ravens_public_site():
     """Set the current Site to '2ravens.org'"""
-    set_django_site('2ravens.org',
-                    '2ravens.org')
+    domain_name = os.environ.get('RAVENS_SERVER_NAME',
+                                 '2ravens.org')
+    set_django_site(domain_name,
+                    domain_name)
 
 
 @task

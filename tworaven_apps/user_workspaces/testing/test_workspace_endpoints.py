@@ -26,7 +26,7 @@ assert isfile(TEST_RAVEN_CONFIG_FILE), \
 class WorkspaceEndpointTests(TestCase):
 
     fixtures = ['test_data_2019_0605.json',
-                'test_d3m_config_2019_0605']
+                'test_d3m_config_2019_1106']
 
     def setUp(self):
         # test client

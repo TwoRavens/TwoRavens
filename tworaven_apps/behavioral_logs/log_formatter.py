@@ -158,3 +158,25 @@ class BehavioralLogFormatter(BasicErrCheck):
                 'activity_l2',
                 'other',
                 'mandatory']
+
+    @staticmethod
+    def delete_logs_for_user(user):
+        """Delete BehavioralLogEntry objects for the given user"""
+        if not isinstance(user, User):
+            return err_resp('"user" must be a User object')
+
+        log_entry_info = BehavioralLogFormatter.get_log_entries(user)
+        if not log_entry_info.success:
+            return log_entry_info
+
+        log_entries = log_entry_info.result_obj
+
+        num_entries = log_entries.count()
+
+        if num_entries > 0:
+            log_entries.delete()
+            user_msg = f'Log entries deleted: %s' % num_entries
+        else:
+            user_msg = 'No log entries to delete'
+
+        return err_resp(user_msg)
