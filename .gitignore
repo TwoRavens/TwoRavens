@@ -65,3 +65,6 @@ ravens-test/cypress/screenshots/
 ravens-test/cypress/videos/
 dev_scripts/output
 ravens_volume/test_data/05_incarceration/TRAIN/dataset_TRAIN/tables/learningData copy.csv
+
+# automl solvers
+catboost/

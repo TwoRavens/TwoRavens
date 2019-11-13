@@ -161,7 +161,7 @@ def reformat_gelpi_avdan(dataset_name):
     }
 
     problem_doc['searchOptions'] = {
-        'timeBoundSearch': 10,
+        'timeBoundSearch': 60,
         'solutionsLimit': 5
     }
 
@@ -380,6 +380,6 @@ reformat_gleditsch_ward(
 reformat_goldstone('TR13a_Goldstone_Table_1_Full', "pitf_tab1_mod1.tsv")
 reformat_goldstone('TR13b_Goldstone_Table_3_Full', "pitf_tab3_allpreds.tsv")
 reformat_goldstone('TR13c_Goldstone_Table_3_Fearon_Laitin', "pitf_tab3_modFL.tsv")
-reformat_goldstone('TR13c_Goldstone_Table_3_PITF', "pitf_tab3_modPITF.tsv")
+reformat_goldstone('TR13d_Goldstone_Table_3_PITF', "pitf_tab3_modPITF.tsv")
 
 shutil.rmtree(data_intermediate_dir)

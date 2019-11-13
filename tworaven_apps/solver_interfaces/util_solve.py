@@ -1,4 +1,4 @@
-from util_search import (
+from tworaven_apps.solver_interfaces.util_search import (
     SearchAutoSklearn,
     SearchCaret,
     SearchH2O,
@@ -10,7 +10,7 @@ from util_search import (
 
 
 class Solve(object):
-    def __init__(self, system, specification, callback_found, system_params=None, callback_params=None):
+    def __init__(self, system, specification, callback_found, system_params=None, search_id=None):
         self.system = system
         self.specification = specification
         self.system_params = system_params or {}
@@ -26,7 +26,7 @@ class Solve(object):
             self.specification['search'],
             self.system_params,
             callback_found,
-            callback_params=callback_params)
+            search_id=search_id)
 
     def run(self):
         return self.search.run()

@@ -362,6 +362,7 @@ export let handleSolveCompleteResponse = response => {
 
     solvedProblem.solverState[data.system].thinking = false;
     solvedProblem.solverState[data.system].message = response.additional_info.message;
+    solvedProblem.solverState[data.system].elapsed_time = response.data.elapsed_time;
     m.redraw()
 };
 

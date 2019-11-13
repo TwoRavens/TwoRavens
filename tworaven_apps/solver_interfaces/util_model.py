@@ -11,8 +11,8 @@ import h2o
 import pandas
 from scipy.sparse import csr_matrix
 
-from model import SAVED_MODELS_PATH, R_SERVICE, get_metric
-from util_dataset import Dataset
+from tworaven_apps.solver_interfaces.model import SAVED_MODELS_PATH, R_SERVICE, get_metric
+from tworaven_apps.solver_interfaces.util_dataset import Dataset
 from collections import defaultdict
 
 from sklearn import model_selection
@@ -20,9 +20,12 @@ from sklearn import model_selection
 
 class Model(object):
     def __init__(self, model, system, predictors, targets, model_id=None, search_id=None, train_specification=None, task=None):
+        if model_id is None:
+            model_id = self.get_model_id()
+
         self.model = model
         self.system = system
-        self.model_id = model_id or str(uuid.uuid4())
+        self.model_id = model_id
         self.search_id = search_id
         self.predictors = predictors
         self.targets = targets
@@ -30,6 +33,10 @@ class Model(object):
         # which dataset model is currently trained on
         self.train_specification = train_specification
         self.task = task
+
+    @staticmethod
+    def get_model_id():
+        return str(uuid.uuid4())
 
     @abc.abstractmethod
     def describe(self):
@@ -85,6 +92,7 @@ class Model(object):
                 task=metadata['task'])
 
         if metadata['system'] == 'h2o':
+            h2o.init()
             return ModelH2O(
                 model=h2o.load_model(os.path.join(model_folder_path, metadata['model_filename'])),
                 model_id=model_id,
@@ -294,6 +302,7 @@ class ModelSklearn(Model):
                 'predictors': self.predictors,
                 'targets': self.targets,
                 'train_specification': self.train_specification,
+                'search_id': self.search_id,
                 'task': self.task
             }, metadata_file)
 
@@ -509,10 +518,12 @@ class ModelH2O(Model):
             json.dump({
                 'system': self.system,
                 'model_id': self.model_id,
-                'model_filename': model_folder_path.replace(model_path, ''),
+                'search_id': self.search_id,
+                'model_filename': os.path.basename(model_path),
                 'predictors': self.predictors,
                 'targets': self.targets,
-                'train_specification': self.train_specification
+                'train_specification': self.train_specification,
+                'task': self.task
             }, metadata_file)
 
 
@@ -597,7 +608,8 @@ class ModelLudwig(Model):
             json.dump({
                 'system': self.system,
                 'model_id': self.model_id,
-                'model_filename': model_folder_path.replace(model_path, ''),
+                'search_id': self.search_id,
+                'model_filename': model_path.replace(model_folder_path, ''),
                 'predictors': self.predictors,
                 'targets': self.targets,
                 'task': self.task

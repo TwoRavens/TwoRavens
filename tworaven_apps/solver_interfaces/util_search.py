@@ -1,25 +1,20 @@
 
-import json
 import pandas
-import numpy as np
 from scipy.sparse.csr import csr_matrix
 from sklearn.impute import SimpleImputer
 
-from model import R_SERVICE, KEY_SUCCESS, KEY_MESSAGE, KEY_DATA, get_metric, should_maximize
-from util_dataset import Dataset
-from util_model import ModelSklearn, ModelH2O, ModelLudwig
+from tworaven_apps.solver_interfaces.model import R_SERVICE, KEY_SUCCESS, KEY_MESSAGE, KEY_DATA
+from tworaven_apps.solver_interfaces.util_dataset import Dataset
+from tworaven_apps.solver_interfaces.util_model import ModelSklearn, ModelH2O, ModelLudwig
 
 import uuid
 import abc
 import requests
-import sys
 
 # PREPROCESSING
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
-
-from sklearn.metrics.scorer import make_scorer
 
 
 def preprocess(dataframe, specification):
@@ -54,19 +49,25 @@ def preprocess(dataframe, specification):
 class Search(object):
     system = None
 
-    def __init__(self, specification, system_params, callback_found=lambda model, params: None, callback_params=None):
-        self.search_id = str(uuid.uuid4())
+    def __init__(self, specification, system_params, callback_found=lambda model: None, search_id=None):
+        if search_id is None:
+            search_id = self.get_search_id()
+
+        self.search_id = search_id
         self.specification = specification
         self.system_params = system_params
         self.callback_found = callback_found
-        self.callback_params = callback_params
+
+    @staticmethod
+    def get_search_id():
+        return str(uuid.uuid4())
 
     @abc.abstractmethod
     def run(self):
         pass
 
     @staticmethod
-    def load(system, specification, system_params=None, callback_found=lambda model: None):
+    def load(system, specification, system_params=None, callback_found=lambda model: None, search_id=None):
         return {
             'auto_sklearn': SearchAutoSklearn,
             'caret': SearchCaret,
@@ -76,7 +77,8 @@ class Search(object):
         }[system](
             specification=specification,
             system_params=system_params,
-            callback_found=callback_found)
+            callback_found=callback_found,
+            search_id=search_id)
 
 
 class SearchAutoSklearn(Search):
@@ -149,7 +151,7 @@ class SearchAutoSklearn(Search):
             task=self.specification['problem']['taskType'])
         model.save()
 
-        self.callback_found(model, self.callback_params)
+        self.callback_found(model)
 
         return {
             KEY_SUCCESS: True,
@@ -166,7 +168,6 @@ class SearchCaret(Search):
 
     def run(self):
         return requests.post(R_SERVICE + 'caretSolve.app', json={
-            'callback_params': self.callback_params,
             'search_id': self.search_id,
             'specification': self.specification,
             'system_params': self.system_params
@@ -264,9 +265,8 @@ class SearchH2O(Search):
                 predictors=X,
                 targets=[y],
                 task=self.specification['problem']['taskType'])
-            model.save()
 
-            self.callback_found(model, self.callback_params)
+            self.callback_found(model)
 
         return {
             KEY_SUCCESS: True,
@@ -326,7 +326,7 @@ class SearchTPOT(Search):
                 task=self.specification['problem']['taskType'])
             model.save()
 
-            self.callback_found(model, self.callback_params)
+            self.callback_found(model)
 
         return {
             KEY_SUCCESS: True,
@@ -353,27 +353,35 @@ class SearchMLBox(Search):
 
         stimulus, preprocessor = preprocess(dataframe, self.specification)
 
-        automl = {
+        strategies = {
+            'REGRESSION': ["LightGBM", "RandomForest", "ExtraTrees", "Tree", "Bagging", "AdaBoost", "Linear"],
+            'CLASSIFICATION': ["LightGBM", "RandomForest", "ExtraTrees", "Tree", "Bagging", "AdaBoost", "Linear"],
+        }
+
+        solver = {
             'REGRESSION': mlbox.model.regression.Regressor,
             'CLASSIFICATION': mlbox.model.classification.Classifier
-        }[self.specification['problem']['taskType']](**self.system_params)
+        }
 
-        if issubclass(type(stimulus), csr_matrix):
-            stimulus = stimulus.toarray()
+        for strategy in strategies[self.specification['problem']['taskType']]:
+            automl = solver[self.specification['problem']['taskType']](strategy=strategy, **self.system_params)
 
-        automl.fit(df_train=pandas.DataFrame(stimulus), y_train=dataframe[y])
+            if issubclass(type(stimulus), csr_matrix):
+                stimulus = stimulus.toarray()
 
-        model = ModelSklearn(
-            automl,
-            system='mlbox',
-            search_id=self.search_id,
-            predictors=X,
-            targets=[y],
-            preprocess=preprocessor,
-            task=self.specification['problem']['taskType'])
-        model.save()
+            automl.fit(df_train=pandas.DataFrame(stimulus), y_train=dataframe[y])
 
-        self.callback_found(model, self.callback_params)
+            model = ModelSklearn(
+                automl,
+                system='mlbox',
+                search_id=self.search_id,
+                predictors=X,
+                targets=[y],
+                preprocess=preprocessor,
+                task=self.specification['problem']['taskType'])
+            model.save()
+
+            self.callback_found(model)
 
         return {
             KEY_SUCCESS: True,
@@ -426,7 +434,7 @@ class SearchLudwig(Search):
             task=self.specification['problem']['taskType'])
 
         model.save()
-        self.callback_found(model, self.callback_params)
+        self.callback_found(model)
 
         return {
             KEY_SUCCESS: True,
@@ -477,7 +485,7 @@ class SearchMLJarSupervised(Search):
                 task=self.specification['problem']['taskType'])
 
             model.save()
-            self.callback_found(model, self.callback_params)
+            self.callback_found(model)
 
         return {
             KEY_SUCCESS: True,

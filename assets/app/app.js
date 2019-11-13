@@ -896,7 +896,7 @@ export let applicableMetrics = {
 };
 
 export let solvers = {
-    'tpot': {"generations": 1, population_size: 20},
+    'tpot': {"generations": 4, population_size: 20},
     'auto_sklearn': {},
     'h2o': {},
     'caret': {
