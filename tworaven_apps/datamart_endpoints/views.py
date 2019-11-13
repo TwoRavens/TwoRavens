@@ -210,7 +210,7 @@ def api_search(request):
 
     success, results_obj_err = DatamartJobUtil.datamart_search(\
                                     form.cleaned_data['query'],
-                                    **dict(user=user_info.result_obj))
+                                    **dict(user_workspace=user_workspace))
     if not success:
         return JsonResponse(get_json_error(results_obj_err))
 
