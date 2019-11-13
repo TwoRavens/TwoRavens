@@ -18,7 +18,7 @@ data_output_dir = os.path.abspath('/ravens_volume/test_data')
 os.makedirs(data_output_dir, exist_ok=True)
 
 
-def reformat_chenowith_ulfelder(dataset_name, predictors_function, dropna=False):
+def reformat_chenowith_ulfelder(dataset_name, predictors_function):
     targets = ['nvc.start.1']
 
     dataframe_train_nas = pd.read_csv(
@@ -32,13 +32,17 @@ def reformat_chenowith_ulfelder(dataset_name, predictors_function, dropna=False)
     dataframe_train[targets[0]] = dataframe_train_nas[[targets[0]]]
     dataframe_test[targets[0]] = dataframe_test_nas[[targets[0]]]
 
-    if dropna:
-        dataframe_train.dropna(inplace=True)
-        dataframe_test.dropna(inplace=True)
+    dataframe_train.insert(0, 'd3mIndex', range(len(dataframe_train)))
+    dataframe_test.insert(0, 'd3mIndex', [i + len(dataframe_train) for i in range(len(dataframe_test))])
+
+    dataframe_train.dropna(inplace=True)
+    dataframe_test.dropna(inplace=True)
+
+    dataframe_train.reset_index(drop=True, inplace=True)
+    dataframe_test.reset_index(drop=True, inplace=True)
 
     dataframe = pd.concat([dataframe_train, dataframe_test], ignore_index=True)
 
-    predictors = dataframe.columns.values
     # build intermediate data file
     intermediate_data_path = os.path.join(data_intermediate_dir, dataset_name, 'learningData.csv')
     os.makedirs(os.path.dirname(intermediate_data_path), exist_ok=True)
@@ -56,7 +60,6 @@ def reformat_chenowith_ulfelder(dataset_name, predictors_function, dropna=False)
         },
         problem={
             'targets': targets,
-            'predictors': predictors,
             'time': ['year'],
             'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1'],
             'taskType': 'classification',
@@ -83,12 +86,16 @@ def reformat_chenowith_ulfelder(dataset_name, predictors_function, dropna=False)
     with open(problem_doc_path, 'r') as problem_file:
         problem_doc = json.load(problem_file)
 
-    problem_doc['inputs']['sampleSplits'] = {
+    problem_doc['splitOptions'] = {
         'splitsFile': 'sampleSplits.csv',
         'splitsDir': os.path.dirname(sample_splits_path),
-        'testSize': None,
-        'method': 'holdout'
     }
+
+    problem_doc['searchOptions'] = {
+        'timeBoundSearch': 10,
+        'solutionsLimit': 5
+    }
+
     with open(problem_doc_path, 'w') as problem_file:
         json.dump(problem_doc, problem_file)
 
@@ -102,10 +109,13 @@ def reformat_gelpi_avdan(dataset_name):
 
     dataframe = dataframe[predictors + targets + ['year']]
 
+    dataframe.insert(0, 'd3mIndex', range(len(dataframe)))
+    dataframe.dropna(inplace=True)
+    dataframe.reset_index(drop=True, inplace=True)
+
     # build intermediate data file
     intermediate_data_path = os.path.join(data_intermediate_dir, dataset_name, 'learningData.csv')
     os.makedirs(os.path.dirname(intermediate_data_path), exist_ok=True)
-    dataframe.dropna(inplace=True)
     dataframe.to_csv(intermediate_data_path, index=False)
 
     dataset_dir = os.path.join(data_output_dir, dataset_name)
@@ -120,7 +130,6 @@ def reformat_gelpi_avdan(dataset_name):
         },
         problem={
             'targets': targets,
-            'predictors': predictors,
             'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1'],
             'taskType': 'classification',
             'taskSubType': 'binary',
@@ -146,12 +155,16 @@ def reformat_gelpi_avdan(dataset_name):
     with open(problem_doc_path, 'r') as problem_file:
         problem_doc = json.load(problem_file)
 
-    problem_doc['inputs']['sampleSplits'] = {
+    problem_doc['splitOptions'] = {
         'splitsFile': 'sampleSplits.csv',
         'splitsDir': os.path.dirname(sample_splits_path),
-        'testSize': None,
-        'method': 'holdout'
     }
+
+    problem_doc['searchOptions'] = {
+        'timeBoundSearch': 10,
+        'solutionsLimit': 5
+    }
+
     with open(problem_doc_path, 'w') as problem_file:
         json.dump(problem_doc, problem_file)
 
@@ -164,11 +177,16 @@ def reformat_gleditsch_ward(dataset_name, predictors):
     dataframe_test = pd.read_csv(
         os.path.join(data_input_dir, 'GleditschWard2013/gw_tab1_test.tsv'), delimiter='\t')
 
-    dataframe_train.dropna(inplace=True)
-    dataframe_test.dropna(inplace=True)
-    dataframe = pd.concat([dataframe_train, dataframe_test])
+    dataframe_train = dataframe_train[predictors + targets]
+    dataframe_test = dataframe_test[predictors + targets]
 
-    dataframe = dataframe[predictors + targets]
+    dataframe_train.insert(0, 'd3mIndex', range(len(dataframe_train)))
+    dataframe_test.insert(0, 'd3mIndex', [i + len(dataframe_train) for i in range(len(dataframe_test))])
+
+    dataframe_train.reset_index(drop=True, inplace=True)
+    dataframe_test.reset_index(drop=True, inplace=True)
+
+    dataframe = pd.concat([dataframe_train, dataframe_test])
 
     # build intermediate data file
     intermediate_data_path = os.path.join(data_intermediate_dir, dataset_name, 'learningData.csv')
@@ -187,7 +205,6 @@ def reformat_gleditsch_ward(dataset_name, predictors):
         },
         problem={
             'targets': targets,
-            'predictors': predictors,
             'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1'],
             'taskType': 'classification',
             'taskSubType': 'binary',
@@ -213,12 +230,16 @@ def reformat_gleditsch_ward(dataset_name, predictors):
     with open(problem_doc_path, 'r') as problem_file:
         problem_doc = json.load(problem_file)
 
-    problem_doc['inputs']['sampleSplits'] = {
+    problem_doc['splitOptions'] = {
         'splitsFile': 'sampleSplits.csv',
         'splitsDir': os.path.dirname(sample_splits_path),
-        'testSize': None,
-        'method': 'holdout'
     }
+
+    problem_doc['searchOptions'] = {
+        'timeBoundSearch': 10,
+        'solutionsLimit': 5
+    }
+
     with open(problem_doc_path, 'w') as problem_file:
         json.dump(problem_doc, problem_file)
 
@@ -229,13 +250,15 @@ def reformat_goldstone(dataset_name, dataset_filename):
     dataframe = pd.read_csv(
         os.path.join(data_input_dir, 'GoldstoneEtAl2013', dataset_filename), delimiter='\t')
 
+    dataframe.insert(0, 'd3mIndex', range(len(dataframe)))
+    dataframe.dropna(inplace=True)
+    dataframe.reset_index(drop=True, inplace=True)
+
     # build intermediate data file
     intermediate_data_path = os.path.join(data_intermediate_dir, dataset_name, 'learningData.csv')
     os.makedirs(os.path.dirname(intermediate_data_path), exist_ok=True)
-    dataframe.dropna(inplace=True)
-    dataframe.to_csv(intermediate_data_path, index=False)
 
-    predictors = dataframe.columns.values[1:]
+    dataframe.to_csv(intermediate_data_path, index=False)
 
     dataset_dir = os.path.join(data_output_dir, dataset_name)
     if os.path.exists(dataset_dir):
@@ -249,7 +272,6 @@ def reformat_goldstone(dataset_name, dataset_filename):
         },
         problem={
             'targets': targets,
-            'predictors': predictors,
             'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1'],
             'taskType': 'classification',
             'taskSubType': 'binary',
@@ -261,6 +283,18 @@ def reformat_goldstone(dataset_name, dataset_filename):
             }
         }
     )
+
+    problem_doc_path = os.path.join(data_output_dir, dataset_name, 'TRAIN', 'problem_TRAIN', 'problemDoc.json')
+    with open(problem_doc_path, 'r') as problem_file:
+        problem_doc = json.load(problem_file)
+
+    problem_doc['searchOptions'] = {
+        'timeBoundSearch': 10,
+        'solutionsLimit': 5
+    }
+
+    with open(problem_doc_path, 'w') as problem_file:
+        json.dump(problem_doc, problem_file)
 
 
 def cu_base(dataframe):
@@ -328,12 +362,6 @@ reformat_chenowith_ulfelder('TR10b_Chen_Ulf_Grievances', cu_grievances)
 reformat_chenowith_ulfelder('TR10c_Chen_Ulf_Resource_Mobilization', cu_resource_mobilization)
 reformat_chenowith_ulfelder('TR10d_Chen_Ulf_Modernization', cu_modernization)
 reformat_chenowith_ulfelder('TR10e_Chen_Ulf_Political_Opportunity', cu_political_opportunity)
-
-reformat_chenowith_ulfelder('TR10a_DENSE_Chen_Ulf_Base', cu_base, dropna=True)
-reformat_chenowith_ulfelder('TR10b_DENSE_Chen_Ulf_Grievances', cu_grievances, dropna=True)
-reformat_chenowith_ulfelder('TR10c_DENSE_Chen_Ulf_Resource_Mobilization', cu_resource_mobilization, dropna=True)
-reformat_chenowith_ulfelder('TR10d_DENSE_Chen_Ulf_Modernization', cu_modernization, dropna=True)
-reformat_chenowith_ulfelder('TR10e_DENSE_Chen_Ulf_Political_Opportunity', cu_political_opportunity, dropna=True)
 
 reformat_gelpi_avdan('TR11_Gelpi_Avdan')
 

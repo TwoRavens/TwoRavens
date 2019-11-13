@@ -226,39 +226,14 @@ class ModelSklearn(Model):
         # REFIT
         dataframe_train = Dataset(specification['train']).get_dataframe().dropna()
 
-        stimulus = dataframe_train[self.predictors]
-        if self.preprocess:
-            stimulus = self.preprocess.transform(stimulus)
-
-        if self.system == 'mlbox':
-            if issubclass(type(stimulus), csr_matrix):
-                stimulus = stimulus.toarray()
-            stimulus = pandas.DataFrame(stimulus)
-
-        if self.system == 'mljar-supervised':
-            stimulus = pandas.DataFrame(stimulus)
-            stimulus.columns = [str(i).strip() for i in stimulus.columns]
-
+        stimulus = self.make_stimulus(dataframe_train[self.predictors])
         self.fit(stimulus, dataframe_train[self.targets[0]], specification['train'])
 
         # PRODUCE
         dataframe = Dataset(specification['input']).get_dataframe().dropna()
         dataframe.reset_index(drop=True, inplace=True)
 
-        stimulus = dataframe[self.predictors]
-
-        if self.preprocess:
-            stimulus = self.preprocess.transform(stimulus)
-
-        if self.system == 'mlbox':
-            if issubclass(type(stimulus), csr_matrix):
-                stimulus = stimulus.toarray()
-            stimulus = pandas.DataFrame(stimulus)
-
-        if self.system == 'mljar-supervised':
-            stimulus = pandas.DataFrame(stimulus)
-            stimulus.columns = [str(i).strip() for i in stimulus.columns]
-
+        stimulus = self.make_stimulus(dataframe[self.predictors])
         output_directory_path = specification['output']['resource_uri'].replace('file://', '')
         output_path = '/' + os.path.join(
             *output_directory_path.split('/'),

@@ -90,7 +90,8 @@ export let getD3MAdapter = problem => ({
         // route streamed responses with this searchId to this problem
         problem.solverState.d3m.searchId = res.data.searchId;
         problem.solverState.d3m.message = 'searching for solutions';
-        problem.selectedSolutions.d3m = [];
+        problem.selectedSolutions.d3m = problem.selectedSolutions.d3m || [];
+        problem.solutions.d3m = problem.solutions.d3m || {};
         m.redraw();
     },
     search: () => {
@@ -592,10 +593,10 @@ export function GRPC_SearchSolutionsRequest(problem, datasetDocUrl) {
     return {
         userAgent: TA3_GRPC_USER_AGENT, // set on django
         version: TA3TA2_API_VERSION, // set on django
-        timeBoundSearch: problem.timeBoundSearch || 0,
-        timeBoundRun: problem.timeBoundRun || 0,
-        rankSolutionsLimit: problem.solutionsLimit || 0,
-        priority: problem.priority || 0,
+        timeBoundSearch: problem.searchOptions.timeBoundSearch || 0,
+        timeBoundRun: problem.searchOptions.timeBoundRun || 0,
+        rankSolutionsLimit: problem.searchOptions.solutionsLimit || 0,
+        priority: problem.searchOptions.priority || 0,
         allowedValueTypes: ['DATASET_URI', 'CSV_URI'],
         problem: GRPC_ProblemDescription(problem),
         template: GRPC_PipelineDescription(problem),
@@ -674,12 +675,12 @@ export function GRPC_ScoreSolutionRequest(problem, datasetDocUrl) {
         users: [{id: 'TwoRavens', chosen: false, reason: ""}],
         // note: FL only using KFOLD in latest iteration (3/8/2019)
         configuration: {
-            method: app.d3mEvaluationMethods[problem.evaluationMethod] || "K_FOLD",
+            method: app.d3mEvaluationMethods[problem.scoreOptions.evaluationMethod] || "K_FOLD",
             folds: problem.folds || 0,
-            trainTestRatio: problem.trainTestRatio || 0,
-            shuffle: problem.shuffle || false,
-            randomSeed: problem.shuffleRandomSeed || 0,
-            stratified: problem.stratified || false
+            trainTestRatio: problem.scoreOptions.trainTestRatio || 0,
+            shuffle: problem.scoreOptions.shuffle || false,
+            randomSeed: problem.scoreOptions.randomSeed || 0,
+            stratified: problem.scoreOptions.stratified || false
         }
     };
 }

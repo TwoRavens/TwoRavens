@@ -89,6 +89,7 @@ class SearchAutoSklearn(Search):
         dataset = Dataset(self.specification['input'])
 
         dataframe = dataset.get_dataframe().dropna()
+        dataframe.reset_index(drop=True, inplace=True)
         stimulus, preprocessor = preprocess(dataframe, self.specification)
 
         x = self.specification['problem']['predictors']
@@ -106,7 +107,7 @@ class SearchAutoSklearn(Search):
             self.system_params['resampling_strategy_arguments']['shuffle'] = config.get('shuffle', False)
 
             if config['method'] == "HOLDOUT":
-                self.system_params['resampling_strategy'] = 'holdout'
+                self.system_params['resampling_strategy'] = 'holdOut'
                 self.system_params['resampling_strategy_arguments']['train_size'] = max(0, config.get('trainTestRatio')) or .6
 
             if config['method'] == "K_FOLD":

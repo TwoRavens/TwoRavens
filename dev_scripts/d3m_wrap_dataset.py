@@ -172,7 +172,8 @@ def d3m_load_resource(path):
     else:
         return None
 
-    data.insert(0, 'd3mIndex', range(len(data)))
+    if 'd3mIndex' not in data:
+        data.insert(0, 'd3mIndex', range(len(data)))
     return data
 
 

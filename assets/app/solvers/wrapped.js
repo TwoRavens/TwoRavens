@@ -54,15 +54,15 @@ export let getSolverSpecification = async (problem, systemId) => {
 let SPEC_search = problem => ({
     "input": {
         // search with 'all' if no out of sample split
-        "resource_uri": 'file://' + (problem.outOfSampleSplit
+        "resource_uri": 'file://' + (problem.splitOptions.outOfSampleSplit
             ? ((problem.datasetPathsManipulated || {}).train || problem.datasetPaths.train)
             : ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all))
     },
     'problem': SPEC_problem(problem),
-    "timeBoundSearch": (problem.timeBoundSearch || .5) * 60,
-    "timeBoundRun": problem.timeBoundRun && problem.timeBoundRun * 60,
-    "rankSolutionsLimit": problem.solutionsLimit,
-    "priority": problem.priority,
+    "timeBoundSearch": (problem.searchOptions.timeBoundSearch || .5) * 60,
+    "timeBoundRun": problem.searchOptions.timeBoundRun && problem.searchOptions.timeBoundRun * 60,
+    "rankSolutionsLimit": problem.searchOptions.solutionsLimit,
+    "priority": problem.searchOptions.priority,
 
     // pass the same criteria the models will be scored on to the search phase
     "performanceMetric": {"metric": app.d3mMetrics[problem.metric]},
@@ -80,18 +80,18 @@ let SPEC_problem = problem => ({
 });
 
 let SPEC_configuration = problem => ({
-    "folds": problem.folds || 10,
-    "method": app.d3mEvaluationMethods[problem.evaluationMethod],
-    "randomSeed": problem.shuffleRandomSeed,
-    "shuffle": problem.shuffle,
-    "stratified": problem.stratified,
-    "trainTestRatio": problem.trainTestRatio
+    "folds": problem.scoreOptions.folds || 10,
+    "method": app.d3mEvaluationMethods[problem.scoreOptions.evaluationMethod],
+    "randomSeed": problem.scoreOptions.randomSeed,
+    "shuffle": problem.scoreOptions.shuffle,
+    "stratified": problem.scoreOptions.stratified,
+    "trainTestRatio": problem.scoreOptions.trainTestRatio
 });
 
 let SPEC_produce = problem => {
-    let train_split = problem.outOfSampleSplit ? 'train' : 'all';
+    let train_split = problem.splitOptions.outOfSampleSplit ? 'train' : 'all';
     let predict_types = ['RAW', 'PROBABILITIES'];
-    let dataset_types = problem.outOfSampleSplit ? ['test', 'train'] : ['all'];
+    let dataset_types = problem.splitOptions.outOfSampleSplit ? ['test', 'train'] : ['all'];
     if (problem.datasetPaths.partials) dataset_types.push('partials');
 
     let produces = predict_types.map(predict_type => ({
@@ -111,7 +111,7 @@ let SPEC_produce = problem => {
         }
     }));
 
-    if (problem.outOfSampleSplit)
+    if (problem.splitOptions.outOfSampleSplit)
         produces.push(...dataset_types.flatMap(dataset_type => predict_types.flatMap(predict_type => ({
             'train': {
                 'name': 'train',
@@ -167,7 +167,7 @@ export let getSystemAdapterWrapped = systemId => problem => ({
             system: systemId,
             specification: await getSolverSpecification(problem, systemId),
             system_params: systemParams[systemId],
-            timeout: (problem.timeBoundSearch || .5) * 60 * 2
+            timeout: (problem.searchOptions.timeBoundSearch || .5) * 60 * 2
         }
     }).then(response => {
         if (!response.success) {
@@ -187,7 +187,7 @@ export let getSystemAdapterWrapped = systemId => problem => ({
             system: systemId,
             specification: await getSolverSpecification(problem, systemId),
             system_params: systemParams[systemId],
-            timeout: (problem.timeBoundSearch || .5) * 60 * 2
+            timeout: (problem.searchOptions.timeBoundSearch || .5) * 60 * 2
         }
     }),
     describe: solutionId => m.request(SOLVER_SVC_URL + 'Describe', {

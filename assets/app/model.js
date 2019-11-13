@@ -634,26 +634,53 @@ export let rightpanel = () => {
                         id: 'outOfSampleSplit',
                         onclick: value => {
                             if (isLocked) return;
-                            selectedProblem.outOfSampleSplit = value === 'True';
+                            selectedProblem.splitOptions.outOfSampleSplit = value === 'True';
                         },
-                        activeSection: selectedProblem.outOfSampleSplit ? 'True' : 'False',
+                        activeSection: selectedProblem.splitOptions.outOfSampleSplit ? 'True' : 'False',
                         sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
                     }),
-                    selectedProblem.outOfSampleSplit && [
+                    selectedProblem.splitOptions.outOfSampleSplit && [
                         m('label[style=margin-top:0.5em]', 'In-sample-ratio. This ratio is used for model training, the rest is used for out-of-sample scoring and diagnostics.'),
                         m(TextField, {
-                            id: 'sampleRatioOption',
+                            id: 'ratioSplitsOption',
                             disabled: isLocked,
-                            value: selectedProblem.sampleTrainTestRatio || 0,
-                            onblur: !isLocked && (value => selectedProblem.sampleTrainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
+                            value: selectedProblem.splitOptions.trainTestRatio || 0,
+                            onblur: !isLocked && (value => selectedProblem.splitOptions.trainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
                             style: {'margin-bottom': '1em'}
                         }),
+                        m('label[style=margin-top:0.5em]', 'Stratify'),
+                        m(ButtonRadio, {
+                            id: 'stratifiedSplitOption',
+                            onclick: value => {
+                                if (isLocked) return;
+                                selectedProblem.splitOptions.stratified = value === 'True';
+                            },
+                            activeSection: selectedProblem.splitOptions.stratified ? 'True' : 'False',
+                            sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
+                        }),
+                        m('label[style=margin-top:0.5em]', 'Shuffle'),
+                        m(ButtonRadio, {
+                            id: 'shuffleSplitsOption',
+                            onclick: !isLocked && (value => selectedProblem.splitOptions.shuffle = value === 'True'),
+                            activeSection: selectedProblem.splitOptions.shuffle ? 'True' : 'False',
+                            sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
+                        }),
+                        selectedProblem.splitOptions.shuffle && [
+                            m('label[style=margin-top:0.5em]', 'Random seed'),
+                            m(TextField, {
+                                id: 'randomSeedSplitsOption',
+                                disabled: isLocked,
+                                value: selectedProblem.splitOptions.randomSeed || 0,
+                                oninput: !isLocked && (value => selectedProblem.splitOptions.randomSeed = parseFloat(value.replace(/\D/g,'')) || undefined),
+                                style: {'margin-bottom': '1em'}
+                            })
+                        ],
                         m('label[style=margin-top:0.5em]', 'Splits file (optional)'),
                         m(TextField, {
                             id: 'textFieldSampleSplitsFile',
                             disabled: isLocked,
-                            value: selectedProblem.sampleSplitsFile,
-                            onblur: !isLocked && (value => selectedProblem.sampleSplitsFile = value),
+                            value: selectedProblem.splitOptions.splitsFile,
+                            onblur: !isLocked && (value => selectedProblem.splitOptions.splitsFile = value),
                             style: {'margin-bottom': '1em'}
                         })
                     ]),
@@ -665,51 +692,51 @@ export let rightpanel = () => {
                     m('label', 'Approximate time bound for overall pipeline search, in minutes. Leave empty for unlimited time.'),
                     m(TextField, {
                         id: 'timeBoundOption',
-                        value: selectedProblem.timeBoundSearch || '',
+                        value: selectedProblem.searchOptions.timeBoundSearch || '',
                         disabled: isLocked,
-                        oninput: !isLocked && (value => selectedProblem.timeBoundSearch = value.replace(/[^\d.-]/g, '')),
-                        onblur: !isLocked && (value => selectedProblem.timeBoundSearch = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
+                        oninput: !isLocked && (value => selectedProblem.searchOptions.timeBoundSearch = value.replace(/[^\d.-]/g, '')),
+                        onblur: !isLocked && (value => selectedProblem.searchOptions.timeBoundSearch = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
                         style: {'margin-bottom': '1em'}
                     }),
                     m('label', 'Approximate time bound for predicting with a single pipeline, in minutes. Leave empty for unlimited time.'),
                     m(TextField, {
-                        id: 'timeBoundPipelineOption',
+                        id: 'timeBoundRunOption',
                         disabled: isLocked,
-                        value: selectedProblem.timeBoundRun || '',
-                        oninput: !isLocked && (value => selectedProblem.timeBoundRun = value.replace(/[^\d.-]/g, '')),
-                        onblur: !isLocked && (value => selectedProblem.timeBoundRun = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
+                        value: selectedProblem.searchOptions.timeBoundRun || '',
+                        oninput: !isLocked && (value => selectedProblem.searchOptions.timeBoundRun = value.replace(/[^\d.-]/g, '')),
+                        onblur: !isLocked && (value => selectedProblem.searchOptions.timeBoundRun = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
                         style: {'margin-bottom': '1em'}
                     }),
                     m('label', 'Priority'),
                     m(TextField, {
                         id: 'priorityOption',
                         disabled: isLocked,
-                        value: selectedProblem.priority || '',
-                        oninput: !isLocked && (value => selectedProblem.priority = value.replace(/[^\d.-]/g, '')),
-                        onblur: !isLocked && (value => selectedProblem.priority = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
+                        value: selectedProblem.searchOptions.priority || '',
+                        oninput: !isLocked && (value => selectedProblem.searchOptions.priority = value.replace(/[^\d.-]/g, '')),
+                        onblur: !isLocked && (value => selectedProblem.searchOptions.priority = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
                         style: {'margin-bottom': '1em'}
                     }),
                     m('label', 'Limit on number of solutions'),
                     m(TextField, {
                         id: 'solutionsLimitOption',
                         disabled: isLocked,
-                        value: selectedProblem.solutionsLimit || '',
-                        oninput: !isLocked && (value => selectedProblem.solutionsLimit = Math.max(0, parseInt(value.replace(/\D/g,''))) || undefined),
+                        value: selectedProblem.searchOptions.solutionsLimit || '',
+                        oninput: !isLocked && (value => selectedProblem.searchOptions.solutionsLimit = Math.max(0, parseInt(value.replace(/\D/g,''))) || undefined),
                         style: {'margin-bottom': '1em'}
                     })
                 ),
                 m(Subpanel, {
-                        header: 'Scoring Options',
+                        header: 'Score Options',
                         defaultShown: false,
                         style: {margin: '1em'}
                     },
                     m('label', 'Evaluation Method'),
                     m(Dropdown, {
-                        id: 'evaluationMethodScoringOption',
+                        id: 'evaluationMethodScoreOption',
                         items: Object.keys(app.d3mEvaluationMethods),
-                        activeItem: selectedProblem.evaluationMethod,
+                        activeItem: selectedProblem.scoreOptions.evaluationMethod,
                         onclickChild: child => {
-                            selectedProblem.evaluationMethod = child;
+                            selectedProblem.scoreOptions.evaluationMethod = child;
                             delete selectedProblem.unedited;
                             // will trigger the call to solver, if a menu that needs that info is shown
                             app.setSolverPending(true);
@@ -717,50 +744,50 @@ export let rightpanel = () => {
                         style: {'margin-bottom': '1em'},
                         disabled: isLocked
                     }),
-                    selectedProblem.evaluationMethod === 'kFold' && [
+                    selectedProblem.scoreOptions.evaluationMethod === 'kFold' && [
                         m('label[style=margin-top:0.5em]', 'Number of Folds'),
                         m(TextField, {
-                            id: 'foldsScoringOption',
+                            id: 'foldsScoreOption',
                             disabled: isLocked,
-                            value: selectedProblem.folds || '',
-                            oninput: !isLocked && (value => selectedProblem.folds = parseFloat(value.replace(/\D/g,'')) || undefined),
+                            value: selectedProblem.scoreOptions.folds || '',
+                            oninput: !isLocked && (value => selectedProblem.scoreOptions.folds = parseFloat(value.replace(/\D/g,'')) || undefined),
                             style: {'margin-bottom': '1em'}
                         }),
-                        m('label', 'Stratified Folds'),
-                        m(ButtonRadio, {
-                            id: 'shuffleScoringOption',
-                            onclick: value => {
-                                if (isLocked) return;
-                                selectedProblem.stratified = value === 'True';
-                            },
-                            activeSection: selectedProblem.stratified ? 'True' : 'False',
-                            sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
-                        }),
                     ],
-                    selectedProblem.evaluationMethod === 'holdout' && [
+                    selectedProblem.scoreOptions.evaluationMethod === 'holdOut' && [
                         m('label[style=margin-top:0.5em]', 'Train/Test Ratio'),
                         m(TextField, {
-                            id: 'ratioOption',
+                            id: 'ratioScoreOption',
                             disabled: isLocked,
-                            value: selectedProblem.trainTestRatio || 0,
-                            onblur: !isLocked && (value => selectedProblem.trainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
+                            value: selectedProblem.scoreOptions.trainTestRatio || 0,
+                            onblur: !isLocked && (value => selectedProblem.scoreOptions.trainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
                             style: {'margin-bottom': '1em'}
                         })
                     ],
-                    m('label[style=margin-top:0.5em]', 'Shuffle'),
+                    m('label', 'Stratify'),
                     m(ButtonRadio, {
-                        id: 'shuffleScoringOption',
-                        onclick: !isLocked && (value => selectedProblem.shuffle = value === 'True'),
-                        activeSection: selectedProblem.shuffle ? 'True' : 'False',
+                        id: 'stratifiedScoreOption',
+                        onclick: value => {
+                            if (isLocked) return;
+                            selectedProblem.scoreOptions.stratified = value === 'True';
+                        },
+                        activeSection: selectedProblem.scoreOptions.stratified ? 'True' : 'False',
                         sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
                     }),
-                    selectedProblem.shuffle && [
-                        m('label[style=margin-top:0.5em]', 'Shuffle random seed'),
+                    m('label[style=margin-top:0.5em]', 'Shuffle'),
+                    m(ButtonRadio, {
+                        id: 'shuffleScoreOption',
+                        onclick: !isLocked && (value => selectedProblem.scoreOptions.shuffle = value === 'True'),
+                        activeSection: selectedProblem.scoreOptions.shuffle ? 'True' : 'False',
+                        sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
+                    }),
+                    selectedProblem.scoreOptions.shuffle && [
+                        m('label[style=margin-top:0.5em]', 'Random seed'),
                         m(TextField, {
-                            id: 'shuffleSeedScoringOption',
+                            id: 'randomSeedScoreOption',
                             disabled: isLocked,
-                            value: selectedProblem.shuffleRandomSeed || 0,
-                            oninput: !isLocked && (value => selectedProblem.shuffleRandomSeed = parseFloat(value.replace(/\D/g,'')) || undefined),
+                            value: selectedProblem.scoreOptions.randomSeed || 0,
+                            oninput: !isLocked && (value => selectedProblem.scoreOptions.randomSeed = parseFloat(value.replace(/\D/g,'')) || undefined),
                             style: {'margin-bottom': '1em'}
                         })
                     ],
@@ -1375,10 +1402,12 @@ let D3M_problemDoc = problem => ({
             }))
         },
         dataSplits: Object.entries({
-            method: problem.evaluationMethod,
-            testSize: problem.trainTestRatio,
-            stratified: problem.stratified,
-            randomSeed: problem.randomSeed
+            method: problem.scoreOptions.evaluationMethod,
+            testSize: problem.scoreOptions.trainTestRatio,
+            stratified: problem.scoreOptions.stratified,
+            shuffle: problem.scoreOptions.shuffle,
+            randomSeed: problem.scoreOptions.randomSeed,
+            splitsFile: problem.scoreOptions.splitsFile
         })
             // remove keys with undefined values
             .filter(entry => entry[1] !== undefined)

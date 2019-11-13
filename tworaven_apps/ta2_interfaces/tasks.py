@@ -189,11 +189,6 @@ def stream_and_store_results(raven_json_str, stored_request_id,
 @celery_app.task()
 def split_dataset(configuration, workspace):
 
-    DEFAULT_RATIO = .7
-    train_test_ratio = configuration.get('train_test_ratio', DEFAULT_RATIO)
-    if not (0 >= train_test_ratio > 1):
-        train_test_ratio = DEFAULT_RATIO
-
     dataset_schema = json.load(open(configuration['dataset_schema'], 'r'))
     resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
 
@@ -210,19 +205,25 @@ def split_dataset(configuration, workspace):
     dataframe.dropna(inplace=True)
     dataframe.reset_index(drop=True, inplace=True)
 
+    DEFAULT_RATIO = .7
+    train_test_ratio = configuration.get('train_test_ratio', DEFAULT_RATIO)
+    if not (0 >= train_test_ratio > 1):
+        train_test_ratio = DEFAULT_RATIO
+
     random_seed = configuration.get('random_seed', 0)
     sample_limit = configuration.get('sample_limit', 1000)
     temporal_variable = configuration.get('temporal_variable')
 
     # TODO: use d3m splitting primitive
-    in_out_sample_splits_file_dir = configuration.get('in_out_sample_splits_file')
-    if in_out_sample_splits_file_dir:
-        splits_dataframe = pd.read_csv(in_out_sample_splits_file_dir)
-        train_indices = set(splits_dataframe[splits_dataframe.type == 'TRAIN']['d3mIndex'].tolist())
-        test_indices = set(splits_dataframe[splits_dataframe.type == 'TEST']['d3mIndex'].tolist())
+    splits_file_path = configuration.get('splits_file_path')
+    if splits_file_path:
+        splits_dataframe = pd.read_csv(splits_file_path)
+        train_indices = set(splits_dataframe[splits_dataframe['type'] == 'TRAIN']['d3mIndex'].tolist())
+        test_indices = set(splits_dataframe[splits_dataframe['type'] == 'TEST']['d3mIndex'].tolist())
+
         splits = {
-            'train': dataframe[dataframe.d3mIndex.isin(train_indices)],
-            'test': dataframe[dataframe.d3mIndex.isin(test_indices)],
+            'train': dataframe[dataframe['d3mIndex'].astype(int).isin(train_indices)],
+            'test': dataframe[dataframe['d3mIndex'].astype(int).isin(test_indices)],
             'stratify': False
         }
 

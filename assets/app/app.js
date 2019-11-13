@@ -283,13 +283,14 @@ export function setSelectedMode(mode) {
             workspace.raven_config.resultsProblem = selectedProblem.problemID;
 
             // denote as solved problem
-            selectedProblem.solverState = {};
+            if (!selectedProblem.solverState)
+                selectedProblem.solverState = {};
             selectedProblem.system = 'solved';
 
             if (!results.resultsPreferences.dataSplit)
                 results.resultsPreferences.dataSplit = 'test';
 
-            if (results.resultsPreferences.dataSplit !== 'all' && !getResultsProblem().outOfSampleSplit)
+            if (results.resultsPreferences.dataSplit !== 'all' && !getResultsProblem().splitOptions.outOfSampleSplit)
                 results.resultsPreferences.dataSplit = 'all';
         }
 
@@ -1065,6 +1066,7 @@ let getDatasetDoc = async dataset_schema_url => {
 
 let buildDefaultProblem = problemDoc => {
 
+    console.log('problemDoc', problemDoc);
     // create the default problem provided by d3m
     let targets = problemDoc.inputs.data
         .flatMap(source => source.targets.map(targ => targ.colName));
@@ -1078,7 +1080,11 @@ let buildDefaultProblem = problemDoc => {
                 .filter(column => !column.role.includes('index') && !targets.includes(column.colName))
                 .map(column => column.colName));
 
-    let defaultProblem = {
+    if (!problemDoc.inputs.dataSplits)
+        problemDoc.inputs.dataSplits = {};
+
+    // defaultProblem
+    return {
         problemID: problemDoc.about.problemID,
         system: 'auto',
         version: problemDoc.about.version,
@@ -1090,28 +1096,39 @@ let buildDefaultProblem = problemDoc => {
         task: problemDoc.about.taskType,
         subTask: problemDoc.about.taskSubtype,
 
-        outOfSampleSplit: true,
-        sampleTrainTestRatio: (problemDoc.inputs.sampleSplits || {}).testSize || 0.35,
-        sampleSplitsFile: (problemDoc.inputs.sampleSplits || {}).splitsFile,
-        sampleSplitsDir: (problemDoc.inputs.sampleSplits || {}).splitsDir,
+        splitOptions: Object.assign({
+            outOfSampleSplit: true,
+            // evaluationMethod can only be holdOut
+            trainTestRatio: problemDoc.inputs.dataSplits.testSize || 0.35,
+            stratified: problemDoc.inputs.dataSplits.stratified,
+            shuffle: problemDoc.inputs.dataSplits.shuffle,
+            randomSeed: problemDoc.inputs.dataSplits.randomSeed,
+            splitsFile: undefined,
+            splitsDir: undefined,
+        }, problemDoc.splitOptions || {}),
 
-        evaluationMethod: problemDoc.inputs.dataSplits.method || 'kFold',
-        trainTestRatio: problemDoc.inputs.dataSplits.testSize,
-        stratified: problemDoc.inputs.dataSplits.stratified,
-        randomSeed: problemDoc.inputs.dataSplits.randomSeed,
-        splitsFile: problemDoc.inputs.dataSplits.splitsFile,
+        searchOptions: Object.assign({
+            timeBoundSearch: undefined,
+            timeBoundRun: undefined,
+            priority: undefined,
+            solutionsLimit: undefined
+        },problemDoc.searchOptions || {}),
+
+        scoreOptions: {
+            evaluationMethod: problemDoc.inputs.dataSplits.method || 'kFold',
+            folds: problemDoc.inputs.dataSplits.folds || 10,
+            trainTestRatio: problemDoc.inputs.dataSplits.testSize || 0.35,
+            stratified: problemDoc.inputs.dataSplits.stratified,
+            shuffle: problemDoc.inputs.dataSplits.shuffle,
+            randomSeed: problemDoc.inputs.dataSplits.randomSeed,
+            splitsFile: problemDoc.inputs.dataSplits.splitsFile
+        },
 
         meaningful: false,
         manipulations: [],
-        solutions: {
-            d3m: {},
-            rook: {}
-        },
-        selectedSource: undefined, // 'd3m' or 'rook'
-        selectedSolutions: {
-            d3m: undefined,
-            rook: undefined
-        },
+        solutions: {},
+        selectedSource: undefined,
+        selectedSolutions: {},
         tags: {
             transformed: [],
             weights: [], // singleton list
@@ -1125,8 +1142,6 @@ let buildDefaultProblem = problemDoc => {
             loose: [] // variables displayed in the force diagram, but not in any groups
         }
     };
-
-    return defaultProblem;
 };
 
 /*
@@ -1367,27 +1382,41 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                             predictors: [],
                             targets: [],
                             description: '',
-                            metric: 'meanSquaredError',
+                            metric: undefined,
                             metrics: [],
                             task: 'regression',
                             subTask: 'univariate',
 
-                            evaluationMethod: 'kFold',
-                            testSize: undefined,
-                            stratified: undefined,
-                            randomSeed: undefined,
+                            splitOptions: {
+                                outOfSampleSplit: true,
+                                trainTestRatio: 0.35,
+                                stratified: false,
+                                shuffle: true,
+                                randomSeed: undefined,
+                                splitsFile: undefined,
+                                splitsDir: undefined,
+                            },
+                            searchOptions: {
+                                timeBoundSearch: undefined,
+                                timeBoundRun: undefined,
+                                priority: undefined,
+                                solutionsLimit: undefined
+                            },
+                            scoreOptions: {
+                                evaluationMethod: 'kFold',
+                                folds: 10,
+                                trainTestRatio: 0.35,
+                                stratified: false,
+                                shuffle: true,
+                                randomSeed: undefined,
+                                splitsFile: undefined,
+                            },
 
                             meaningful: false,
                             manipulations: [],
-                            solutions: {
-                                d3m: {},
-                                rook: {}
-                            },
-                            selectedSource: undefined, // 'd3m' or 'rook'
-                            selectedSolutions: {
-                                d3m: undefined,
-                                rook: undefined
-                            },
+                            solutions: {},
+                            selectedSource: undefined,
+                            selectedSolutions: {},
                             tags: {
                                 transformed: [],
                                 weights: [], // singleton list
@@ -1694,22 +1723,23 @@ export let materializeTrainTest = async problem => {
         method: 'POST',
         url: D3M_SVC_URL + '/get-train-test-split',
         data: {
-            do_split: problem.outOfSampleSplit,
+            do_split: problem.splitOptions.outOfSampleSplit,
+            train_test_ratio: problem.splitOptions.trainTestRatio,
+            stratified: problem.splitOptions.stratified,
+            shuffle: problem.splitOptions.shuffle,
+            random_seed: problem.splitOptions.randomSeed,
+            splits_file_path: problem.splitOptions.splitsDir && problem.splitOptions.splitsFile && (problem.splitOptions.splitsDir + '/' + problem.splitOptions.splitsFile),
+
             temporal_variable: temporalVariables[0],
             nominal_variables: getNominalVariables(problem),
             dataset_schema: problem.datasetSchemas.all,
-            train_test_ratio: problem.trainTestRatio,
-            stratified: problem.stratified,
-            splits_file: problem.sampleSplitsDir && problem.sampleSplitsFile && (problem.sampleSplitsDir + '/' + problem.sampleSplitsFile),
-            shuffle: problem.shuffle,
-            random_seed: problem.randomSeed,
         }
     });
 
     if (!response.success) {
         console.warn('Materialize train/test error:', response.message);
         alertWarn('Unable to create out-of-sample split. Using entire dataset for training and for in-sample testing.');
-        problem.outOfSampleSplit = false;
+        problem.splitOptions.outOfSampleSplit = false;
         return false;
     }
 
@@ -1809,19 +1839,35 @@ export function discovery(problems) {
             subTask: 'taskSubtypeUndefined',
             meaningful: false,
 
-            outOfSampleSplit: true,
-            sampleTrainTestRatio: 0.7,
-            evaluationMethod: 'kFold',
+            splitOptions: {
+                outOfSampleSplit: true,
+                trainTestRatio: 0.35,
+                stratified: false,
+                shuffle: true,
+                randomSeed: undefined,
+                splitsFile: undefined,
+                splitsDir: undefined,
+            },
+            searchOptions: {
+                timeBoundSearch: undefined,
+                timeBoundRun: undefined,
+                priority: undefined,
+                solutionsLimit: undefined
+            },
+            scoreOptions: {
+                evaluationMethod: 'kFold',
+                folds: 10,
+                trainTestRatio: 0.35,
+                stratified: false,
+                shuffle: true,
+                randomSeed: undefined,
+                splitsFile: undefined,
+            },
+
             manipulations: manips,
-            solutions: {
-                d3m: {},
-                rook: {}
-            },
-            selectedSource: undefined, // 'd3m' or 'rook'
-            selectedSolutions: {
-                d3m: [],
-                rook: []
-            },
+            solutions: {},
+            selectedSource: undefined,
+            selectedSolutions: {},
             tags: {
                 transformed: [...getTransformVariables(manips)], // this is used when updating manipulations pipeline
                 weights: [], // singleton list
@@ -1830,8 +1876,7 @@ export function discovery(problems) {
                 nominal: Object.keys(variableSummaries)
                     .filter(variable => variableSummaries[variable].nature === 'nominal'),
                 loose: [] // variables displayed in the force diagram, but not in any groups
-            },
-            summaries: {} // this gets populated below
+            }
         };
         setTask(inferIsCategorical(variableSummaries[prob.targets[0]]) ? 'classification' : 'regression', out[problemID]);
         return out;

@@ -56,7 +56,7 @@ export let leftpanel = () => {
                 style: {'margin-left': '1em'}
             })), ' on data split ', m('div[style=display:inline-block]', m(Dropdown, {
                 id: 'dataSplitDropdown',
-                items: ['all'].concat(resultsProblem.outOfSampleSplit ? ['test', 'train'] : []),
+                items: ['all'].concat(resultsProblem.splitOptions.outOfSampleSplit ? ['test', 'train'] : []),
                 activeItem: resultsPreferences.dataSplit,
                 onclickChild: value => resultsPreferences.dataSplit = value,
                 style: {'margin-left': '1em'}
