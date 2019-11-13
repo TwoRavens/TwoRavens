@@ -157,6 +157,8 @@ class LogEntryMaker:
 
         # Write the CSV content to a ContentFile object
         #
+        encoding = 'utf-8'
+
         csv_output = io.StringIO()
         blf = BehavioralLogFormatter(csv_output_object=csv_output,
                                      log_entries=log_entry_info.result_obj)
@@ -165,9 +167,13 @@ class LogEntryMaker:
             user_msg = 'Error: %s' % blf.get_error_message()
             return err_resp(user_msg)
 
-        #csv_output = blf.get_csv_output_object()
+        content = csv_output.getvalue()
 
-        user_workspace.behavioral_log.save(log_name, csv_output)
+        content = content.encode(encoding)
+
+        cfile = ContentFile(content)
+
+        user_workspace.behavioral_log.save(log_name, cfile)
 
         return ok_resp(log_name)
 
@@ -193,3 +199,33 @@ class LogEntryMaker:
         for line in data:
             writer.writerow(line)
         """
+
+"""
+from tworaven_apps.user_workspaces.models import UserWorkspace
+from django.core.files.base import ContentFile
+import io
+import csv
+
+u = UserWorkspace.objects.all().first()
+
+csv_output = io.StringIO()
+encoding = 'utf-8'
+
+
+writer = csv.writer(csv_output, quoting=csv.QUOTE_NONNUMERIC)
+
+writer.writerow([x for x in range(1,10)])
+
+content = csv_output.getvalue()
+
+content = content.encode(encoding)
+
+cf = ContentFile(content)
+
+u.behavioral_log.save('rp_test', cfile)
+
+
+print(content)
+
+
+"""
