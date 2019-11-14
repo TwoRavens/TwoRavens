@@ -64,7 +64,7 @@ class PreprocessUtil(BasicErrCheck):
         self.datastub = kwargs.get('datastub', None)
 
         # Flag - should python preprocess be used
-        self.use_python_preprocess = kwargs.get('use_python_preprocess', False)
+        self.use_python_preprocess = kwargs.get('use_python_preprocess', True)
 
         # Option to read 1st line of file and fix duplicate columns names
         #

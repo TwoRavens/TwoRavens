@@ -514,7 +514,7 @@ export let loadImportanceEFDData = async (problem, solution) => {
                     levels: app.getNominalVariables(problem)
                         .map(variable => {
                             if (app.variableSummaries[variable].nature === 'nominal')
-                                return {[variable]: Object.keys(app.variableSummaries[variable].plotvalues)}
+                                return {[variable]: Object.keys(app.variableSummaries[variable].plotValues)}
                         }).reduce((out, variable) => Object.assign(out, variable), {}),
                     targets: problem.targets,
                     predictors: problem.predictors,

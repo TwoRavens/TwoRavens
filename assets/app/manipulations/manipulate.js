@@ -669,7 +669,7 @@ export let inferType = variable => {
     if (variableMetadata[variable].types.indexOf('date') !== -1) type = 'date';
 
     // switch to discrete if there is a small number of unique values
-    if (type === 'continuous' && variableMetadata[variable].uniques <= 10) type = 'discrete';
+    if (type === 'continuous' && variableMetadata[variable].uniqueCount <= 10) type = 'discrete';
     return type;
 };
 

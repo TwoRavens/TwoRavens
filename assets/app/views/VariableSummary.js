@@ -48,21 +48,21 @@ export default class VariableSummary {
         };
 
         if (this.densityType === 'PDF') {
-            if (variable.plottype === 'continuous') plot = m(PlotVegaLite, {
-                data: variable.plotx.map((_, i) => ({x: variable.plotx[i], y: variable.ploty[i]})),
+            if (variable.pdfPlotType === 'continuous') plot = m(PlotVegaLite, {
+                data: variable.pdfPlotX.map((_, i) => ({x: variable.pdfPlotX[i], y: variable.pdfPlotY[i]})),
                 specification: continuousSpecification,
                 identifier: 'x'
             });
 
-            if (variable.plottype === 'bar'){
+            if (!variable.pdfPlotType || variable.pdfPlotType === 'bar'){
                 let barLimit = 15;
-                let keys = Object.keys(variable.plotvalues);
+                let keys = Object.keys(variable.plotValues);
 
                 if (keys.length > barLimit) filteredMessage = true;
                 plot = m(PlotVegaLite, {
-                    data: Object.keys(variable.plotvalues)
+                    data: Object.keys(variable.plotValues)
                         .filter((key, i) => keys.length < barLimit || !(i % parseInt(keys.length / barLimit)) || i === keys.length - 1)
-                        .map(value => ({x: value, y: variable.plotvalues[value]})),
+                        .map(value => ({x: value, y: variable.plotValues[value]})),
                     specification: barSpecification,
                     identifier: 'x'
                 })
@@ -70,13 +70,13 @@ export default class VariableSummary {
         }
 
         if (this.densityType === 'CDF') {
-            if (variable.cdfplottype === 'continuous') plot = m(PlotVegaLite, {
-                data: variable.cdfplotx.map((_, i) => ({x: variable.cdfplotx[i], y: variable.cdfploty[i]})),
+            if (variable.cdfPlotType === 'continuous') plot = m(PlotVegaLite, {
+                data: variable.cdfPlotX.map((_, i) => ({x: variable.cdfPlotX[i], y: variable.cdfPlotY[i]})),
                 specification: continuousSpecification,
                 identifier: 'x'
             });
-            if (variable.cdfplottype === 'bar') plot = m(PlotVegaLite, {
-                data: variable.cdfplotx.map((_, i) => ({x: variable.cdfplotx[i], y: variable.cdfploty[i]})),
+            if (variable.cdfPlotType === 'bar') plot = m(PlotVegaLite, {
+                data: variable.cdfPlotX.map((_, i) => ({x: variable.cdfPlotX[i], y: variable.cdfPlotY[i]})),
                 specification: barSpecification,
                 identifier: 'x'
             });
@@ -99,7 +99,7 @@ export default class VariableSummary {
                 onclick: type => this.densityType = type
             }),
             plot && m('div', {style: {'max-height': '300px', 'text-align': 'center', margin: '1em'}}, plot),
-            filteredMessage && italicize(`Only a subset of the ${variable.uniques} unique values are plotted.`),
+            filteredMessage && italicize(`Only a subset of the ${variable.uniqueCount} unique values are plotted.`),
             m(Table, {
                 id: 'varSummaryTable',
                 data: formatVariableSummary(variable)
@@ -126,26 +126,28 @@ export let formatVariableSummary = variable => {
     const precision = 4;
 
     let data = {
-        'Mean': formatPrecision(variable.mean, precision) + (variable.meanCI
-            ? ` (${formatPrecision(variable.meanCI.lowerBound, precision)}, ${formatPrecision(variable.meanCI.upperBound, precision)})`
-            : ''),
+        'Mean': formatPrecision(variable.mean, precision),
         'Median': formatPrecision(variable.median, precision),
-        'Most Freq': rint(variable.mode),
-        'Most Freq Occurrences': rint(variable.freqmode),
-        'Median Freq': variable.mid,
-        'Mid Freq Occurrences': rint(variable.freqmid),
-        'Least Freq': variable.fewest,
-        'Least Freq Occurrences': rint(variable.freqfewest),
-        'Std Dev (Sample)': formatPrecision(variable.sd, precision),
+        'Mode Values': variable.mode.map(rint),
+        'Mode Frequency': Math.round(variable.modeFreq),
+        'Midpoint': (variable.midpoint || []).length === 0 ? undefined : variable.midpoint,
+        'Midpoint Freq': (variable.midpoint || []).length === 0 ? undefined : Math.round(variable.midpointFreq),
+        'Least Freq': variable.fewestValues,
+        'Least Freq Occurrences': Math.round(variable.fewestFreq),
+        'Std Dev (Sample)': formatPrecision(variable.stdDev, precision),
         'Minimum': formatPrecision(variable.min, precision),
         'Maximum': formatPrecision(variable.max, precision),
-        'Invalid': rint(variable.invalid),
-        'Valid': rint(variable.valid),
-        'Uniques': rint(variable.uniques),
-        'Herfindahl': formatPrecision(variable.herfindahl)
+        'Invalid Count': Math.round(variable.invalidCount),
+        'Valid Count': Math.round(variable.validCount),
+        'Unique Count': Math.round(variable.uniqueCount),
+        'Herfindahl Index': formatPrecision(variable.herfindahlIndex),
+        'Num/Char': variable.numchar,
+        'Nature': variable.nature,
+        'Binary': String(variable.binary),
+        'Interval': variable.interval
     };
 
     return Object.keys(data)
-        .filter(key => data[key] !== "" && data[key] !== undefined && !isNaN(data[key])) // drop all keys with nonexistent values
+        .filter(key => data[key] !== "" && data[key] !== undefined) // drop all keys with nonexistent values
         .reduce((out, key) => Object.assign(out, {[key]: data[key]}), {})
 };

@@ -207,12 +207,12 @@ export function panelPlots() {
         let node = allNodes[ids[i]];
         node.setxplot = false;
         node.subsetplot = false;
-        if (node.plottype === "continuous" & node.setxplot == false) {
+        if (node.pdfPlotType === "continuous" & node.setxplot == false) {
             node.setxplot = true;
             density(node, div = "setxLeft", priv);
             node.subsetplot = true;
             density(node, div = "Summary", priv);
-        } else if (node.plottype === "bar" & node.setxplot == false) {
+        } else if (node.pdfPlotType === "bar" & node.setxplot == false) {
             node.setxplot = true;
             bars(node, div = "setxLeft", priv);
             node.subsetplot = true;
@@ -314,7 +314,7 @@ export function subsetSelect(btn) {
             if (zparams.zsubset[j][1] != "")
                 zparams.zsubset[j][1] = Number(zparams.zsubset[j][1]);
         }
-        zparams.zplot.push(allNodes[temp].plottype);
+        zparams.zplot.push(allNodes[temp].pdfPlotType);
         if (zparams.zsubset[j][1] != "")
             subsetEmpty = false; // only need to check one
     }
@@ -423,10 +423,10 @@ export function subsetSelect(btn) {
         for (var key in jsondata) {
             var myIndex = findNodeIndex(key);
 
-            allNodes[myIndex].plotx = undefined;
-            allNodes[myIndex].ploty = undefined;
-            allNodes[myIndex].plotvalues = undefined;
-            allNodes[myIndex].plottype = "";
+            allNodes[myIndex].pdfPlotX = undefined;
+            allNodes[myIndex].pdfPlotY = undefined;
+            allNodes[myIndex].plotValues = undefined;
+            allNodes[myIndex].pdfPlotType = "";
 
             $.extend(true, allNodes[myIndex], jsondata[key]);
             allNodes[myIndex].subsetplot = false;
@@ -596,10 +596,10 @@ function singlePlot(pred) {
     let node = allNodes[i];
     node.setxplot = false;
     node.subsetplot = false;
-    if (node.plottype === "continuous" & node.setxplot == false) {
+    if (node.pdfPlotType === "continuous" & node.setxplot == false) {
         node.setxplot = true;
         density(node, div = "setxLeftTopRight", priv);
-    } else if (node.plottype === "bar" & node.setxplot == false) {
+    } else if (node.pdfPlotType === "bar" & node.setxplot == false) {
         node.setxplot = true;
         bars(node, div = "setxLeftTopRight", priv);
     }
@@ -981,18 +981,18 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
     var plot_nodes = app.nodes.slice();
     for (let node of plot_nodes) {
         if (node.name === PlotNameA) {
-            if (node.plottype === "continuous") {
+            if (node.pdfPlotType === "continuous") {
                 continuous_n++;
                 density_cross(node);
-            } else if (node.plottype === "bar") {
+            } else if (node.pdfPlotType === "bar") {
                 bar_n++;
                 bar_cross(node);
             }
         } else if (node.name === PlotNameB) {
-            if (node.plottype === "continuous") {
+            if (node.pdfPlotType === "continuous") {
                 continuous_n++;
                 density_cross(node);
-            } else if (node.plottype === "bar") {
+            } else if (node.pdfPlotType === "bar") {
                 bar_n++;
                 bar_cross(node);
             }
@@ -1034,13 +1034,13 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
     // this is the function to add  the density plot if any
     function density_cross(density_env, a, method_name) {
         // setup the x_cord according to the size given by user
-        var yVals = density_env.ploty;
-        var xVals = density_env.plotx;
+        var yVals = density_env.pdfPlotY;
+        var xVals = density_env.pdfPlotX;
 
         // an array of objects
         var data2 = [];
-        for (var i = 0; i < density_env.plotx.length; i++) {
-            data2.push({x: density_env.plotx[i], y: density_env.ploty[i]});
+        for (var i = 0; i < density_env.pdfPlotX.length; i++) {
+            data2.push({x: density_env.pdfPlotX[i], y: density_env.pdfPlotY[i]});
         }
         data2.forEach(function (d) {
             d.x = +d.x;
@@ -1192,7 +1192,7 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
         var plotXaxis = true;
 
         // Data
-        var keys = Object.keys(bar_env.plotvalues);
+        var keys = Object.keys(bar_env.plotValues);
         var yVals = new Array;
         var ciUpperVals = new Array;
         var ciLowerVals = new Array;
@@ -1204,13 +1204,13 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
         if (bar_env.nature === "nominal") {
             var xi = 0;
             for (var i = 0; i < keys.length; i++) {
-                if (bar_env.plotvalues[keys[i]] == 0) {
+                if (bar_env.plotValues[keys[i]] == 0) {
                     continue;
                 }
-                yVals[xi] = bar_env.plotvalues[keys[i]];
+                yVals[xi] = bar_env.plotValues[keys[i]];
                 xVals[xi] = xi;
                 if ($private) {
-                    if (bar_env.plotvaluesCI) {
+                    if (bar_env.plotValuesCI) {
                         ciLowerVals[xi] = bar_env.plotValuesCI.lowerBound[keys[i]];
                         ciUpperVals[xi] = bar_env.plotValuesCI.upperBound[keys[i]];
                     }
@@ -1225,12 +1225,12 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
             ciLowerVals.sort((a, b) => b.y - a.y); // ?
         } else {
             for (var i = 0; i < keys.length; i++) {
-                yVals[i] = bar_env.plotvalues[keys[i]];
+                yVals[i] = bar_env.plotValues[keys[i]];
                 xVals[i] = Number(keys[i]);
                 if ($private) {
-                    if (bar_env.plotvaluesCI) {
-                        ciLowerVals[i] = bar_env.plotvaluesCI.lowerBound[keys[i]];
-                        ciUpperVals[i] = bar_env.plotvaluesCI.upperBound[keys[i]];
+                    if (bar_env.plotValuesCI) {
+                        ciLowerVals[i] = bar_env.plotValuesCI.lowerBound[keys[i]];
+                        ciUpperVals[i] = bar_env.plotValuesCI.upperBound[keys[i]];
                     }
                     ciSize = ciUpperVals[i] - ciLowerVals[i];
                 }
@@ -1365,10 +1365,10 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
         var string = JSON.stringify(obj);
         for (var i = 0; i < plot_nodes.length; i++) {
             if (plot_nodes[i].name === A) {
-                if (plot_nodes[i].plottype === "continuous") {
+                if (plot_nodes[i].pdfPlotType === "continuous") {
                     remove("#plotsvg_id");
                     density_cross(plot_nodes[i], a, method_name);
-                } else if (plot_nodes[i].plottype === "bar") {
+                } else if (plot_nodes[i].pdfPlotType === "bar") {
                     remove("#plotsvg1_id");
                     bar_cross(plot_nodes[i], a, method_name);
                 }
@@ -1387,10 +1387,10 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
         var string = JSON.stringify(obj);
         for (var i = 0; i < plot_nodes.length; i++) {
             if (plot_nodes[i].name === A) {
-                if (plot_nodes[i].plottype === "continuous") {
+                if (plot_nodes[i].pdfPlotType === "continuous") {
                     remove("#plotsvg_id");
                     density_cross(plot_nodes[i], a, method_name);
-                } else if (plot_nodes[i].plottype === "bar") {
+                } else if (plot_nodes[i].pdfPlotType === "bar") {
                     remove("#plotsvg1_id");
                     bar_cross(plot_nodes[i], a, method_name);
                 }
@@ -1406,8 +1406,8 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
         var arr_y = [];
         var arr_x = [];
 
-        arr_y = plot_ev.cdfploty;// cdfploty data stored
-        arr_x = plot_ev.cdfplotx;// cdfplotx data stored
+        arr_y = plot_ev.cdfPlotY;// cdfPlotY data stored
+        arr_x = plot_ev.cdfPlotX;// cdfPlotX data stored
 
         var Upper_limitY = d3.max(arr_y);
         var Lower_limitY = d3.min(arr_y);
@@ -1468,7 +1468,7 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
     }
 
     function equimass_bar(plot_ev, n) {
-        var keys = Object.keys(plot_ev.plotvalues);
+        var keys = Object.keys(plot_ev.plotValues);
         var k = keys.length;
         var temp = [];
         var count = 0;
@@ -2842,16 +2842,16 @@ export function barsSubset(node) {
     myname = myname.replace(/\(|\)/g, "");
 
     // Data
-    var keys = Object.keys(node.plotvalues);
+    var keys = Object.keys(node.plotValues);
     var yVals = new Array;
     var xVals = new Array;
     var yValKey = new Array;
 
     var xi = 0;
     for (var i = 0; i < keys.length; i++) {
-        if (node.plotvalues[keys[i]] == 0)
+        if (node.plotValues[keys[i]] == 0)
             continue;
-        yVals[xi] = node.plotvalues[keys[i]];
+        yVals[xi] = node.plotValues[keys[i]];
         xVals[xi] = xi;
         yValKey.push({
             y: yVals[xi],

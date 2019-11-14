@@ -753,7 +753,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
                 'continuous': 'density-plot',
                 'bar': 'bar-plot',
                 'collapsed': 'speck-plot'
-            }[(attrs.summaries[pebble] || {}).plottype];
+            }[(attrs.summaries[pebble] || {}).pdfPlotType] || 'bar-plot';
 
             // delete old plot if plot type changed
             if (!this.classList.contains(className))
@@ -796,7 +796,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
     context.selectors.pebbles
         .select('g.density-plot').each(function (pebble) {
         let summary = attrs.summaries[pebble];
-        if (!summary || !summary.plotx) {
+        if (!summary || !summary.pdfPlotX) {
             d3.select(this).selectAll('path')
                 .data([]).exit().remove();
             return;
@@ -806,10 +806,10 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
         let height = context.nodes[pebble].radius * 0.75;
 
         let xScale = d3.scaleLinear()
-            .domain(d3.extent(summary.plotx))
+            .domain(d3.extent(summary.pdfPlotX))
             .range([0, width]);
         let yScale = d3.scaleLinear()
-            .domain(d3.extent(summary.ploty))
+            .domain(d3.extent(summary.pdfPlotY))
             .range([height, 0]);
 
         let area = d3.area()
@@ -832,7 +832,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
 
         // rebind the path datum regardless of if path existed
         d3.select(this).selectAll('path')
-            .datum(summary.plotx.map((x_i, i) => ({x: summary.plotx[i], y: summary.ploty[i]})))
+            .datum(summary.pdfPlotX.map((x_i, i) => ({x: summary.pdfPlotX[i], y: summary.pdfPlotY[i]})))
             .transition()
             .duration(attrs.selectTransitionDuration)
             .attr("d", area)
@@ -843,7 +843,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
         .select('g.bar-plot').each(function (pebble) {
         let summary = attrs.summaries[pebble];
 
-        if (!summary || !summary.plotvalues) {
+        if (!summary || !summary.plotValues) {
             d3.select(this).selectAll('rect')
                 .data([]).exit().remove();
             return;
@@ -854,12 +854,12 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
 
         let barPadding = .015; // Space between bars
         let barLimit = 15;
-        let keys = Object.keys(summary.plotvalues);
+        let keys = Object.keys(summary.plotValues);
         let data = keys
             .filter((key, i) => keys.length < barLimit || !(i % parseInt(keys.length / barLimit)) || i === keys.length - 1)
             .map((key, i) => ({
                 x: summary.nature === 'nominal' ? i : Number(key),
-                y: summary.plotvalues[key]
+                y: summary.plotValues[key]
             })).sort((a, b) => b.x - a.x);
 
         let maxY = d3.max(data, d => d.y);

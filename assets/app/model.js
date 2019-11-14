@@ -46,7 +46,7 @@ export class CanvasModel {
                 nodes: forceDiagramNodesReadOnly,
                 // these attributes may change dynamically, (the problem could change)
                 onDragOut: pebble => {
-                    let pebbles = forceData.summaries[pebble] && forceData.summaries[pebble].plottype === 'collapsed'
+                    let pebbles = forceData.summaries[pebble] && forceData.summaries[pebble].pdfPlotType === 'collapsed'
                         ? forceData.summaries[pebble].childNodes : [pebble];
 
                     pebbles.forEach(pebble => setGroup(selectedProblem, 'None', pebble));
@@ -56,7 +56,7 @@ export class CanvasModel {
                     m.redraw();
                 },
                 onDragOver: (pebble, groupId) => {
-                    let pebbles = forceData.summaries[pebble.name].plottype === 'collapsed'
+                    let pebbles = forceData.summaries[pebble.name].pdfPlotType === 'collapsed'
                         ? forceData.summaries[pebble.name].childNodes : [pebble.name];
 
                     console.log('on drag over', groupId);
@@ -477,7 +477,7 @@ export let leftpanel = forceData => {
 
     if (summaryPebble && forceData.pebbles.includes(summaryPebble)) {
         // if hovered over a collapsed pebble, then expand summaryPebble into all children pebbles
-        let summaryPebbles = forceData.summaries[summaryPebble] && forceData.summaries[summaryPebble].plottype === 'collapsed'
+        let summaryPebbles = forceData.summaries[summaryPebble] && forceData.summaries[summaryPebble].pdfPlotType === 'collapsed'
             ? [...forceData.summaries[summaryPebble].childNodes]
             : [summaryPebble];
 
@@ -956,7 +956,7 @@ export let buildForceData = problem => {
                     .forEach(group => combinedGroups[group.name].nodes.add(mergedName));
 
                 summaries[mergedName] = {
-                    plottype: 'collapsed',
+                    pdfPlotType: 'collapsed',
                     childNodes: partition
                 };
 
@@ -1179,7 +1179,7 @@ export let mutateNodes = problem => (state, context) => {
 
     // set the base color of each node
     pebbles.forEach(pebble => {
-        if (state.summaries[pebble] && state.summaries[pebble].plottype === 'collapsed') {
+        if (state.summaries[pebble] && state.summaries[pebble].pdfPlotType === 'collapsed') {
             context.nodes[pebble].strokeWidth = 0;
             context.nodes[pebble].nodeCol = 'transparent';
             context.nodes[pebble].strokeColor = 'transparent';
