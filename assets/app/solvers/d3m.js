@@ -969,7 +969,7 @@ export function GRPC_ProblemDescription(problem) {
     };
 }
 
-export function GRPC_SearchSolutionsRequest(problem) {
+export function GRPC_SearchSolutionsRequest(problem, datasetDocUrl) {
     return {
         userAgent: TA3_GRPC_USER_AGENT, // set on django
         version: TA3TA2_API_VERSION, // set on django
@@ -980,7 +980,7 @@ export function GRPC_SearchSolutionsRequest(problem) {
         allowedValueTypes: ['DATASET_URI', 'CSV_URI'],
         problem: GRPC_ProblemDescription(problem),
         template: GRPC_PipelineDescription(problem),
-        inputs: [{dataset_uri: 'file://' + app.workspace.d3m_config.dataset_schema}]
+        inputs: [{dataset_uri: 'file://' + datasetDocUrl}]
     };
 }
 

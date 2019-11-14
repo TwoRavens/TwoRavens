@@ -1584,6 +1584,7 @@ export async function estimate() {
         method: 'POST',
         url: D3M_SVC_URL + '/get-train-test-split',
         data: {
+            nominal_variables: getNominalVariables(selectedProblem),
             dataset_schema: workspace.d3m_config.dataset_schema,
             train_test_ratio: selectedProblem.trainTestRatio
         }
@@ -1595,13 +1596,14 @@ export async function estimate() {
     }
     let datasetDocPathTrain = response.data.dataset_schemas.train;
     let datasetDocPathTest = response.data.dataset_schemas.test;
+    let datasetDocPathAll = response.data.dataset_schemas.all;
     selectedProblem.indices = response.data.sample_test_indices;
 
     let allParams = {
-        searchSolutionParams: solverD3M.GRPC_SearchSolutionsRequest(selectedProblem),
+        searchSolutionParams: solverD3M.GRPC_SearchSolutionsRequest(selectedProblem, datasetDocPathAll),
         fitSolutionDefaultParams: solverD3M.GRPC_GetFitSolutionRequest(datasetDocPathTrain),
         produceSolutionDefaultParams: solverD3M.GRPC_ProduceSolutionRequest(datasetDocPathTest),
-        scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath)
+        scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPathAll)
     };
 
     if (variableSummariesLoaded) {

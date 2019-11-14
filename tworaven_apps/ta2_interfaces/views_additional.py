@@ -34,6 +34,8 @@ import json
 from d3m.container.dataset import Dataset
 
 from sklearn.model_selection import train_test_split
+import pandas as pd
+import numpy as np
 
 
 @csrf_exempt
@@ -235,11 +237,21 @@ def get_train_test_split(request):
     resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
 
     dataset = Dataset.load(f'file://{req_info["dataset_schema"]}')
-    dataframe = dataset[resource_schema['resID']]
-    dataframe_train, dataframe_test = train_test_split(dataframe, train_size=req_info.get('train_test_ratio', .7))
+    dataframe = pd.DataFrame(dataset[resource_schema['resID']])
 
-    datasetDocs = {}
-    for role, dataframe_partition in (('train', dataframe_train), ('test', dataframe_test)):
+    # rows with NaN values become object rows, which may contain multiple types. The NaN values become empty strings
+    # this converts '' to np.nan in non-nominal columns, so that nan may be dropped
+    # perhaps in a future version of d3m, the dataset loader could use pandas extension types instead of objects
+    nominals = req_info.get('nominals', [])
+    for column in [col for col in dataframe.columns.values if col not in nominals]:
+        dataframe[column].replace('', np.nan, inplace=True)
+
+    dataframe.dropna(inplace=True)
+    dataframe.reset_index(drop=True, inplace=True)
+
+    print(dataframe)
+
+    def write_dataset(role, writable_dataframe):
         dest_dir_info = create_destination_directory(user_workspace, role=role)
         if not dest_dir_info.success:
             return JsonResponse(get_json_error(dest_dir_info.err_msg))
@@ -249,10 +261,19 @@ def get_train_test_split(request):
         shutil.rmtree(dest_directory)
         shutil.copytree(user_workspace.d3m_config.training_data_root, dest_directory)
         os.remove(csv_path)
-        dataframe_partition.to_csv(csv_path)
+        writable_dataframe.to_csv(csv_path)
 
-        datasetDoc_path = path.join(dest_directory, 'datasetDoc.json')
-        datasetDocs[role] = datasetDoc_path
+        return path.join(dest_directory, 'datasetDoc.json')
+
+    dataframe_train, dataframe_test = train_test_split(dataframe, train_size=req_info.get('train_test_ratio', .7))
+
+    datasetDocs = {
+        'all': write_dataset('all', dataframe),
+        'train': write_dataset('train', dataframe_train),
+        'test': write_dataset('test', dataframe_test)
+    }
+
+    print('datasetDocs', datasetDocs)
 
     sample_test_indices = dataframe_test['d3mIndex'].astype('int32')\
         .sample(n=req_info.get("sampleCount", min(1000, len(dataframe_test)))).tolist()
