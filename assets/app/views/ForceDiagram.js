@@ -353,11 +353,6 @@ export default class ForceDiagram {
                             }), {});
                     }
 
-                    if (onDragOver) {
-                        Object.keys(hullCoords).filter(groupId => isInside(dragCoord, hullCoords[groupId]))
-                            .forEach(groupId => onDragOver(d3.event.subject, groupId))
-                    }
-
                     if (onDragAway) {
                         groups
                             .filter(group => group.nodes.has(d3.event.subject.name))
@@ -374,6 +369,11 @@ export default class ForceDiagram {
                                     .some(coord => mag(sub(coord, centroidReduced)) * 5 > distanceDragged);
                             })
                             .forEach(group => onDragAway(d3.event.subject, group.name))
+                    }
+
+                    if (onDragOver) {
+                        Object.keys(hullCoords).filter(groupId => isInside(dragCoord, hullCoords[groupId]))
+                            .forEach(groupId => onDragOver(d3.event.subject, groupId))
                     }
 
                     if (this.isPinned || d3.event.subject.name === this.hoverPebble || d3.event.subject.name === this.selectedPebble) return;
