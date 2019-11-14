@@ -907,9 +907,9 @@ export function buildMenu(step) {
                 out[variable + '-mean'] = {$avg: '$' + variable};
                 out[variable + '-max'] = {$max: '$' + variable};
                 out[variable + '-min'] = {$min: '$' + variable};
-                out[variable + '-sd'] = {$stdDevPop: '$' + variable};
-                out[variable + '-valid'] = {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 1, 0]}};
-                out[variable + '-invalid'] = {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 0, 1]}};
+                out[variable + '-stdDev'] = {$stdDevPop: '$' + variable};
+                out[variable + '-validCount'] = {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 1, 0]}};
+                out[variable + '-invalidCount'] = {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 0, 1]}};
                 out[variable + '-types'] = {$addToSet: {$type: '$' + variable}};
                 out[variable + '-uniques'] = {$addToSet: '$' + variable};
                 return out;
@@ -921,9 +921,9 @@ export function buildMenu(step) {
                     mean: '$' + variable + '-mean',
                     max: '$' + variable + '-max',
                     min: '$' + variable + '-min',
-                    sd: '$' + variable + '-sd',
-                    valid: '$' + variable + '-valid',
-                    invalid: '$' + variable + '-invalid',
+                    stdDev: '$' + variable + '-stdDev',
+                    validCount: '$' + variable + '-validCount',
+                    invalidCount: '$' + variable + '-invalidCount',
                     types: '$' + variable + '-types',
                     uniques: {$size: '$' + variable + '-uniques'}
                 };

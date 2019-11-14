@@ -188,7 +188,7 @@ export class CanvasExplore {
                                 this.node = app.variableSummaries[x];
                             },
                             oncreate(vnode) {
-                                let plot = (this.node || {}).plottype === 'continuous' ? densityNode : barsNode;
+                                let plot = (this.node || {}).pdfPlotType === 'continuous' ? densityNode : barsNode;
                                 this.node && plot(this.node, vnode.dom, 110, true);
                             },
                             onupdate(vnode) {
@@ -197,7 +197,7 @@ export class CanvasExplore {
                                     : x;
                                 let node = app.variableSummaries[targetName];
                                 if (node && node !== this.node) {
-                                    let plot = node.plottype === 'continuous' ? densityNode : barsNode;
+                                    let plot = node.pdfPlotType === 'continuous' ? densityNode : barsNode;
                                     plot(node, vnode.dom, 110, true);
                                     this.node = node;
                                 }
@@ -239,7 +239,7 @@ export class CanvasExplore {
             if (variate === 'bivariate' || variate === 'trivariate')
                 filtered = `${filtered} ${schemas.multiple}`;
 
-            let plotNode = nodes[0] && nodes[0].plottype === 'continuous' ? density : bars;
+            let plotNode = nodes[0] && nodes[0].pdfPlotType === 'continuous' ? density : bars;
 
             return m('div',
                 m('div', {
@@ -396,9 +396,9 @@ let getPlotType = (pt, pn) => {
 
     // returns true if uniques is equal to, one less than, or two less than the number of valid observations
     function uniqueValids(pn) {
-        return pn.uniques === pn.valid ? true :
-            pn.uniques === pn.valid - 1 ? true :
-                pn.uniques === pn.valid - 2 ? true : false;
+        return pn.uniqueCount === pn.validCount ? true :
+            pn.uniqueCount === pn.validCount - 1 ? true :
+                pn.uniqueCount === pn.validCount - 2 ? true : false;
     }
 
     if (pn.length > 3) return ['scattermatrix', 'aaa'];
@@ -406,8 +406,8 @@ let getPlotType = (pt, pn) => {
     let vt = "";
 
     for (let i = 0; i < pn.length; i++) {
-        myCons[i] = pn[i].plottype === 'continuous' ? true : false;
-        pn[i].plottype === 'continuous' ? vt = vt + 'q' : vt = vt + 'n';
+        myCons[i] = pn[i].pdfPlotType === 'continuous' ? true : false;
+        pn[i].pdfPlotType === 'continuous' ? vt = vt + 'q' : vt = vt + 'n';
     }
 
     if (pt != "") return [pt, vt];
@@ -614,7 +614,7 @@ export let setExploreVariate = variate => exploreVariate = variate;
 export function density(node, div, priv) {
     if (!div) return alertError("Error: incorrect div selected for plots: " + div);
 
-    let [xVals, yVals] = [node.plotx, node.ploty];
+    let [xVals, yVals] = [node.pdfPlotX, node.pdfPlotY];
     if (priv && node.plotCI) {
         let [upperError, lowerError] = ['upperBound', 'lowerBound'].map(
             bound => xVals.map((x, i) => ({x: +x, y: +node.plotCI[bound][i]})));
@@ -659,7 +659,7 @@ export function density(node, div, priv) {
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
     plotsvg.append("path")
-        .datum(xVals.map((x, i) => ({x: +x, y: +node.ploty[i]})))
+        .datum(xVals.map((x, i) => ({x: +x, y: +node.pdfPlotY[i]})))
         .attr("class", "area")
         .style('fill', 'steelblue')
         .attr("d", area);
@@ -683,7 +683,7 @@ export function bars(node, div, priv) {
     var plotXaxis = true;
 
     // Data
-    var keys = Object.keys(node.plotvalues);
+    var keys = Object.keys(node.plotValues);
     var yVals = new Array;
     var ciUpperVals = new Array;
     var ciLowerVals = new Array;
@@ -695,12 +695,12 @@ export function bars(node, div, priv) {
     if (node.nature == "nominal") {
         var xi = 0;
         for (var i = 0; i < keys.length; i++) {
-            if (node.plotvalues[keys[i]] == 0)
+            if (node.plotValues[keys[i]] == 0)
                 continue;
-            yVals[xi] = node.plotvalues[keys[i]];
+            yVals[xi] = node.plotValues[keys[i]];
             xVals[xi] = xi;
             if (priv) {
-                if (node.plotvaluesCI) {
+                if (node.plotValuesCI) {
                     ciLowerVals[xi] = node.plotValuesCI.lowerBound[keys[i]];
                     ciUpperVals[xi] = node.plotValuesCI.upperBound[keys[i]];
                 }
@@ -719,13 +719,13 @@ export function bars(node, div, priv) {
         ciLowerVals.sort((a, b) => b.y - a.y); // ?
     } else {
         for (var i = 0; i < keys.length; i++) {
-            // console.log("plotvalues in bars");
-            yVals[i] = node.plotvalues[keys[i]];
+            // console.log("plotValues in bars");
+            yVals[i] = node.plotValues[keys[i]];
             xVals[i] = Number(keys[i]);
             if (priv) {
-                if (node.plotvaluesCI) {
-                    ciLowerVals[i] = node.plotvaluesCI.lowerBound[keys[i]];
-                    ciUpperVals[i] = node.plotvaluesCI.upperBound[keys[i]];
+                if (node.plotValuesCI) {
+                    ciLowerVals[i] = node.plotValuesCI.lowerBound[keys[i]];
+                    ciUpperVals[i] = node.plotValuesCI.upperBound[keys[i]];
                 }
                 ciSize = ciUpperVals[i] - ciLowerVals[i];
             }
@@ -735,7 +735,7 @@ export function bars(node, div, priv) {
     if ((yVals.length > 15 & node.numchar == "numeric") || (yVals.length > 5 & node.numchar == "character"))
         plotXaxis = false;
     var maxY = d3.max(yVals); // in the future, set maxY to the value of the maximum confidence limit
-    if (priv && node.plotvaluesCI) maxY = d3.max(ciUpperVals);
+    if (priv && node.plotValuesCI) maxY = d3.max(ciUpperVals);
     var minX = d3.min(xVals);
     var maxX = d3.max(xVals);
 
@@ -804,10 +804,10 @@ export function densityNode(node, obj, radius, explore) {
 
     d3.select(obj).selectAll("svg").remove();
 
-    var yVals = node.ploty;
-    var xVals = node.plotx;
+    var yVals = node.pdfPlotY;
+    var xVals = node.pdfPlotX;
     // array of objects
-    let data2 = node.plotx.map((x, i) => ({x: +x, y: +node.ploty[i]}));
+    let data2 = node.pdfPlotX.map((x, i) => ({x: +x, y: +node.pdfPlotY[i]}));
 
     // default radius 40
 
@@ -869,7 +869,7 @@ export function barsNode(node, obj, radius, explore) {
     var topScale = 1.2; // Multiplicative factor to assign space at top within graph - currently removed from implementation
 
     // Data
-    var keys = Object.keys(node.plotvalues);
+    var keys = Object.keys(node.plotValues);
     var yVals = new Array;
     var xVals = new Array;
     var yValKey = new Array;
@@ -877,9 +877,9 @@ export function barsNode(node, obj, radius, explore) {
     if (node.nature === "nominal") {
         var xi = 0;
         for (var i = 0; i < keys.length; i++) {
-            if (node.plotvalues[keys[i]] == 0)
+            if (node.plotValues[keys[i]] == 0)
                 continue;
-            yVals[xi] = node.plotvalues[keys[i]];
+            yVals[xi] = node.plotValues[keys[i]];
             xVals[xi] = xi;
             yValKey.push({y: yVals[xi], x: keys[i]});
             xi = xi + 1;
@@ -888,7 +888,7 @@ export function barsNode(node, obj, radius, explore) {
         yVals.sort((a, b) => b - a); // array of y values, the height of the bars
     } else {
         for (var i = 0; i < keys.length; i++) {
-            yVals[i] = node.plotvalues[keys[i]];
+            yVals[i] = node.plotValues[keys[i]];
             xVals[i] = Number(keys[i]);
         }
     }

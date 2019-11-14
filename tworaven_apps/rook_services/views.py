@@ -37,6 +37,7 @@ from tworaven_apps.ta2_interfaces import static_vals as ta2_static
 from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
 from tworaven_apps.behavioral_logs import static_vals as bl_static
 from tworaven_apps.rook_services import static_vals as rook_static
+from tworaven_apps.utils.raven_json_encoder import RavenJSONEncoder
 
 LOGGER = logging.getLogger(__name__)
 
@@ -90,7 +91,7 @@ def view_rook_preprocess(request):
     info = get_json_success('it worked',
                             data=putil.get_preprocess_data())
 
-    return JsonResponse(info)
+    return JsonResponse(info, encoder=RavenJSONEncoder)
 
 
 def log_preprocess_call(user, json_data, session_id=''):

@@ -480,7 +480,6 @@ export let setRightTab = tab => {
 */
 export let setLeftTab = (tabName) => {
     leftTab = tabName;
-    console.log('tab: ' + tabName)
     updateLeftPanelWidth();
 
     // behavioral logging
@@ -1209,20 +1208,22 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                 Object.values(workspace.raven_config.problems)
                     .forEach(problem => problem.tags.nominal = nominals);
                 // merge discovery into problem set if constructing a new raven config
-                Object.assign(workspace.raven_config.problems, discovery(preprocess.dataset.discovery));
+
+                // TODO: DISCOVERY
+                // Object.assign(workspace.raven_config.problems, discovery(preprocess.dataset.discovery));
             }
         })
         .then(m.redraw)
-        .catch(err => {
-            setModal(m('div', m('p', "Preprocess failed."),
-                m('p', '(p: 2)')),
-                "Failed to load basic data.",
-                true,
-                "Reload Page",
-                false,
-                locationReload);
-            throw err;
-        });
+        // .catch(err => {
+        //     setModal(m('div', m('p', "Preprocess failed."),
+        //         m('p', '(p: 2)')),
+        //         "Failed to load basic data.",
+        //         true,
+        //         "Reload Page",
+        //         false,
+        //         locationReload);
+        //     throw err;
+        // });
 
     // RECORD COUNT
     // wait until after sampling returns, because dataset is loaded into mongo
@@ -1880,7 +1881,7 @@ export function discovery(problems) {
             },
             summaries: {} // this gets populated below
         };
-        setTask(variableSummaries[prob.target].plottype === "bar" ? 'classification' : 'regression', out[problemID])
+        setTask(inferIsCategorical(variableSummaries[prob.target]) ? 'classification' : 'regression', out[problemID])
         return out;
     }, {});
 }
@@ -2574,4 +2575,10 @@ export let sample = (arr, n=1, replacement=false, ordered=false) => {
 
     if (ordered) indices = indices.sort();
     return indices.map(i => arr[i]);
+};
+
+let inferIsCategorical = variableSummary => {
+    if (variableSummary.nature === 'nominal') return true;
+    if (variableSummary.nature === 'ordinal' && variableSummary.uniqueCount <= 20) return true;
+    return false;
 };
