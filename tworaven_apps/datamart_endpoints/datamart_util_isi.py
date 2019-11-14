@@ -152,13 +152,13 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
         # --------------------------------
         isi_search_url = get_isi_url() + '/new/search_data'
 
-        if 'user' in kwargs:
+        if 'user_workspace' in kwargs:
             log_data = dict(feature_id=f'POST|{isi_search_url}',
                             activity_l1=bl_static.L1_DATA_PREPARATION,
                             activity_l2=bl_static.L2_DATA_SEARCH,
                             path=isi_search_url)
 
-            log_info = LogEntryMaker.create_datamart_entry(kwargs['user'], log_data)
+            log_info = LogEntryMaker.create_datamart_entry(kwargs['user_workspace'], log_data)
             print('log_info', log_info)
             print('id', log_info.result_obj.id)
         try:
@@ -291,7 +291,7 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
                         activity_l2=bl_static.L2_DATA_DOWNLOAD,
                         path=isi_materialize_url)
 
-        LogEntryMaker.create_datamart_entry(user_workspace.user, log_data)
+        LogEntryMaker.create_datamart_entry(user_workspace, log_data)
 
         try:
             print('isi_materialize_url', isi_materialize_url)
@@ -411,7 +411,7 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
                         activity_l2=bl_static.L2_DATA_AUGMENT,
                         path=augment_url)
 
-        LogEntryMaker.create_datamart_entry(user_workspace.user, log_data)
+        LogEntryMaker.create_datamart_entry(user_workspace, log_data)
         # ----------------------------
 
         try:

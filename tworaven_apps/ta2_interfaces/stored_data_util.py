@@ -6,7 +6,7 @@ from tworaven_apps.ta2_interfaces.models import \
      STATUS_IN_PROGRESS, STATUS_ERROR, STATUS_COMPLETE)
 from tworaven_apps.ta2_interfaces import static_vals as ta2_static
 from tworaven_apps.ta2_interfaces.req_search_solutions import \
-        (end_search_solutions,)
+        (end_search_solutions, stop_search_solutions)
 from tworaven_apps.utils.json_helper import json_loads
 
 class StoredRequestUtil(object):
@@ -115,10 +115,17 @@ class StoredRequestUtil(object):
 
             params = dict(user=user)
 
-            search_info = end_search_solutions(end_req_json_str, **params)
-
+            stop_search_info = stop_search_solutions(end_req_json_str, **params)
             # Results are getting logged, so not doing much here
-            if search_info.success:
+            if stop_search_info.success:
+                pass
+            else:
+                # error message at `search_info.err_msg`
+                pass
+
+            end_search_info = end_search_solutions(end_req_json_str, **params)
+            # Results are getting logged, so not doing much here
+            if end_search_info.success:
                 pass
             else:
                 # error message at `search_info.err_msg`

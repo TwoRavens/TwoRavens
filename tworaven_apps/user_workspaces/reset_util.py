@@ -16,6 +16,7 @@ from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 from tworaven_apps.ta2_interfaces.search_history_util import SearchHistoryUtil
 
 from tworaven_apps.behavioral_logs.log_formatter import BehavioralLogFormatter
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
 
 from tworaven_apps.user_workspaces.models import UserWorkspace
 from tworaven_apps.user_workspaces import utils as ws_util
@@ -112,7 +113,17 @@ class ResetUtil(BasicErrCheck):
         else:
             print(clear_info.err_msg)
 
-        # (4) Clear behavioral logs for current user
+
+        # (4a) Write out any behavioral logs for the workspace
+        #
+        if self.user_workspace:
+            log_info = LogEntryMaker.write_user_log(self.user_workspace)
+            if log_info.success:
+                print('log written: ', log_info.result_obj)
+            else:
+                print('log writing failed: ', log_info.err_msg)
+
+        # (4b) Clear behavioral logs for current user
         #
         log_clear = BehavioralLogFormatter.delete_logs_for_user(self.user)
         if log_clear.success:

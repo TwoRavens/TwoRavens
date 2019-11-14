@@ -61,13 +61,13 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
         # --------------------------------
         # Behavioral logging
         # --------------------------------
-        if 'user' in kwargs:
+        if 'user_workspace' in kwargs:
             log_data = dict(feature_id=f'POST|by-dataset|{search_url}',
                             activity_l1=bl_static.L1_DATA_PREPARATION,
                             activity_l2=bl_static.L2_DATA_SEARCH,
                             path=search_url)
 
-            LogEntryMaker.create_datamart_entry(kwargs['user'], log_data)
+            LogEntryMaker.create_datamart_entry(kwargs['user_workspace'], log_data)
         # --------------------------------
 
         # --------------------------------
@@ -266,7 +266,7 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
                         activity_l2=bl_static.L2_DATA_DOWNLOAD,
                         path=download_url)
 
-        LogEntryMaker.create_datamart_entry(user_workspace.user, log_data)
+        LogEntryMaker.create_datamart_entry(user_workspace, log_data)
 
         # ----------------------------
         # Download the file!
@@ -352,7 +352,7 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
                         activity_l2=bl_static.L2_DATA_AUGMENT,
                         path=augment_url)
 
-        LogEntryMaker.create_datamart_entry(user_workspace.user, log_data)
+        LogEntryMaker.create_datamart_entry(user_workspace, log_data)
         # ----------------------------
 
         # ---------------------------------

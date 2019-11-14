@@ -7,13 +7,13 @@ class BehavioralLogEntryAdmin(admin.ModelAdmin):
     save_on_top = True
     # search_fields = ('',)
     list_display = ('user',
+                    'type',
+                    'activity_l1',
+                    'activity_l2',
                     'session_key',
                     'other',
                     'is_optional',
                     'feature_id',
-                    'type',
-                    'activity_l1',
-                    'activity_l2',
                     'created',
                     )
 

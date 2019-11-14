@@ -349,14 +349,27 @@ class EnvConfigLoader(BasicErrCheck):
                                  'ravens_volume',
                                  'test_data')
 
+        selected_name_list = kwargs.get(cstatic.SELECTED_NAME_LIST)
+        if selected_name_list:
+            print('Load these datasets: ', '\n'.join(selected_name_list))
+
         cnt = 0
         for dname in os.listdir(base_data_dir):
             #if not dname[0].isdigit():
             #    if dname not in ['TR1_Greed_Versus_Grievance']:
             #        continue
-            cnt += 1
             fullpath = join(base_data_dir, dname)
+
+            # Are there datasets to include/skip
+            #
+            if selected_name_list and dname not in selected_name_list:
+                # Not in the selected_name_list, Skip it
+                #print('Skipping!', dname)
+                continue
+
+            cnt += 1
             msgt('(%d) Make config: %s' % (cnt, fullpath))
+
             attempt_info = EnvConfigLoader.make_config_from_directory(fullpath, **kwargs)
             if attempt_info.success:
                 print('It worked!  Created: %s' % attempt_info.result_obj)

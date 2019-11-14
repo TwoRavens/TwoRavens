@@ -15,7 +15,7 @@ from tworaven_apps.user_workspaces import utils as ws_utils
 
 from tworaven_apps.raven_auth.models import User
 
-
+from tworaven_apps.configurations.models_d3m import D3MConfiguration
 from tworaven_apps.behavioral_logs.models import BehavioralLogEntry
 from tworaven_apps.behavioral_logs.forms import BehavioralLogEntryForm
 from tworaven_apps.behavioral_logs.log_formatter import \
@@ -30,6 +30,14 @@ class BehavioralLogTests(TestCase):
     fixtures = ['test_user_info_2019_0607.json',]
 
     def setUp(self):
+
+        config = D3MConfiguration.objects.all().first()
+        if config:
+            config.is_default = True
+            config.save()
+            print('config', config)
+        else:
+            print('no config')
         # test client
         pass
 
@@ -49,7 +57,7 @@ class BehavioralLogTests(TestCase):
                            params,
                            content_type='application/json').json()
 
-        #print('resp', resp)
+        print('resp', resp)
         self.assertTrue(not resp['success'])
 
     def test_20_log_entry_valid(self):
@@ -77,7 +85,8 @@ class BehavioralLogTests(TestCase):
                            params,
                            content_type='application/json').json()
 
-        #print('resp', resp)
+
+        print('resp', resp)
         self.assertTrue(resp['success'])
         self.assertTrue(resp['data']['id'])
 

@@ -1,324 +1,297 @@
 {
-    "about": {
-            "datasetID" : "incarceration",
-            "datasetName" : "Incarceration in American States",
-            "description" : "This paper examines the differential effects of social capital on policy equity in state outcomes. Specifically, it explores the relationship between social capital and incarceration rates in the American states paying particular attention to racial disparities in incarcerations rates. Building on work by Hero (2003, 2007), I present a theoretical explanation and empirical support for how social capital operates differently under different racial contexts. I argue that social capital enhances social empathy in homogenous contexts and social controls in diverse contexts. Using state-level longitudinal data on the contiguous states, I find that social capital is positively associated with incarcerations, but only for African Americans. Furthermore, the effects of social capital appear to be conditional on racial context where this relationship is stronger as minority group size increases. (2017-03-09)",
-            "license" : "CC0 - Public Domain Dedication",
-            "source" : "UNC Dataverse",
-            "sourceURI" : "https://doi.org/10.15139/S3/SMKJFZ",
-            "approximateSize" : "",
-            "datasetSchemaVersion" : "3.3.1",
-            "redacted" : false,
-            "datasetVersion" : "1.0",
-            "digest" : ""
-    },
-    "dataResources": [
+  "about": {
+    "datasetID": "incarceration",
+    "datasetName": "Incarceration in American States",
+    "description": "This paper examines the differential effects of social capital on policy equity in state outcomes. Specifically, it explores the relationship between social capital and incarceration rates in the American states paying particular attention to racial disparities in incarcerations rates. Building on work by Hero (2003, 2007), I present a theoretical explanation and empirical support for how social capital operates differently under different racial contexts. I argue that social capital enhances social empathy in homogenous contexts and social controls in diverse contexts. Using state-level longitudinal data on the contiguous states, I find that social capital is positively associated with incarcerations, but only for African Americans. Furthermore, the effects of social capital appear to be conditional on racial context where this relationship is stronger as minority group size increases. (2017-03-09)",
+    "license": "CC0 - Public Domain Dedication",
+    "source": "UNC Dataverse",
+    "sourceURI": "https://doi.org/10.15139/S3/SMKJFZ",
+    "approximateSize": "",
+    "datasetSchemaVersion": "3.3.1",
+    "redacted": false,
+    "datasetVersion": "1.0",
+    "digest": "d2c9fbff56dd58839f19181c554253d4ce80a9a9d811e4898442f0aa854afbc1"
+  },
+  "dataResources": [
+    {
+      "resID": "learningData",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
         {
-            "resID": "learningData",
-            "resPath": "tables/learningData.csv",
-            "resType": "table",
-            "resFormat": [
-                "text/csv"
-            ],
-            "isCollection": false,
-            "columns": [
-                {
-                    "colIndex": 0,
-                    "colName": "d3mIndex",
-                    "colType": "integer",
-                    "role": [
-                        "index"
-                    ]
-                },
-                {
-                    "colIndex": 1,
-                    "colName": "state_name",
-                    "colType": "categorical",
-                    "colDescription": "State Name",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 2,
-                    "colName": "year",
-                    "colType": "integer",
-                    "colDescription": "Year",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 3,
-                    "colName": "fips",
-                    "colType": "integer",
-                    "colDescription": "FIPS State Code",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 4,
-                    "colName": "fips_year",
-                    "colType": "integer",
-                    "colDescription": "FIPS Code + Year",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 5,
-                    "colName": "violent_crime_rate",
-                    "colType": "real",
-                    "colDescription": "Total Violent Crimes per 100",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 6,
-                    "colName": "property_crime_rate",
-                    "colType": "real",
-                    "colDescription": "Total Property Crimes per 100",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 7,
-                    "colName": "divorce_rate",
-                    "colType": "real",
-                    "colDescription": "Divorces per 1",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 8,
-                    "colName": "pct_women_legislature",
-                    "colType": "real",
-                    "colDescription": "Percent Females in State Legislature",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 9,
-                    "colName": "social_capital_index",
-                    "colType": "real",
-                    "colDescription": "Social Capital Index",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 10,
-                    "colName": "pct_black_popluation",
-                    "colType": "real",
-                    "colDescription": "Percent Black Population",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 11,
-                    "colName": "vote_inelligible_felons_rate",
-                    "colType": "real",
-                    "colDescription": "Voting-Ineligible Felons per 100",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 12,
-                    "colName": "poverty_inequality_ratio",
-                    "colType": "real",
-                    "colDescription": "Poverty Inequality (Black/White Ratio)",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 13,
-                    "colName": "education_inequality_ratio",
-                    "colType": "real",
-                    "colDescription": "Education Inequality (Black/White Ratio)",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 14,
-                    "colName": "poverty_rate",
-                    "colType": "real",
-                    "colDescription": "Poverty Rate",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 15,
-                    "colName": "unemployment_rate",
-                    "colType": "real",
-                    "colDescription": "Unemployment Rate",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 16,
-                    "colName": "government_ideology",
-                    "colType": "real",
-                    "colDescription": "ADA/COPE measure of state govt ideology",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 17,
-                    "colName": "pct_democrats_legislature",
-                    "colType": "real",
-                    "colDescription": "Percent Democrats in State Legislature",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 18,
-                    "colName": "racial_diversity",
-                    "colType": "real",
-                    "colDescription": "Racial Diversity (Blau Index)",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 19,
-                    "colName": "gsp_per_capita",
-                    "colType": "real",
-                    "colDescription": "Gross State Product (GSP) per Capita (in 2007 $1000)",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 20,
-                    "colName": "pct_with_college_deg",
-                    "colType": "real",
-                    "colDescription": "Percent with College Degree",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 21,
-                    "colName": "social_capital_X_diversity",
-                    "colType": "real",
-                    "colDescription": "Social Capital x Racial Diversity",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 22,
-                    "colName": "total_inmates_rate",
-                    "colType": "real",
-                    "colDescription": "Total Inmates per 100",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 23,
-                    "colName": "white_inmates_rate",
-                    "colType": "real",
-                    "colDescription": "White Inmates per 100",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 24,
-                    "colName": "black_inmates_rate",
-                    "colType": "real",
-                    "colDescription": "Black Inmates per 100",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 25,
-                    "colName": "incarceration_ratio",
-                    "colType": "real",
-                    "colDescription": "Black/White Incarceration Ratio",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 26,
-                    "colName": "ln_incarceration_ratio",
-                    "colType": "real",
-                    "colDescription": "Logged Black/White Incarceration Ratio",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 27,
-                    "colName": "ln_pct_black_population",
-                    "colType": "real",
-                    "colDescription": "ln(Percent Black Population)",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 28,
-                    "colName": "social_capital_X_ln_pct_black",
-                    "colType": "real",
-                    "colDescription": "Social Capital x ln(Percent Black)",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 29,
-                    "colName": "three_strikes_law",
-                    "colType": "categorical",
-                    "colDescription": "Three Strikes Law (Yes/No)",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 30,
-                    "colName": "court_clearance_rate",
-                    "colType": "real",
-                    "colDescription": "Trial Court Clearance Rate",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 31,
-                    "colName": "drug_arrest_rate",
-                    "colType": "real",
-                    "colDescription": "Drug Arrests / Population",
-                    "role": [
-                        "attribute"
-                    ]
-                },
-                {
-                    "colIndex": 32,
-                    "colName": "pct_black_legislature",
-                    "colType": "real",
-                    "colDescription": "Percent African Americans in State Legislature",
-                    "role": [
-                        "attribute"
-                    ]
-                }
-            ]
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "state_name",
+          "colType": "categorical",
+          "colDescription": "State Name",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 2,
+          "colName": "year",
+          "colType": "integer",
+          "colDescription": "Year",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 3,
+          "colName": "fips",
+          "colType": "integer",
+          "colDescription": "FIPS State Code",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 4,
+          "colName": "fips_year",
+          "colType": "integer",
+          "colDescription": "FIPS Code + Year",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 5,
+          "colName": "violent_crime_rate",
+          "colType": "real",
+          "colDescription": "Total Violent Crimes per 100,000 population",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 6,
+          "colName": "property_crime_rate",
+          "colType": "real",
+          "colDescription": "Total Property Crimes per 100,000 population",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 7,
+          "colName": "divorce_rate",
+          "colType": "real",
+          "colDescription": "Divorces per 1,000 Population",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 8,
+          "colName": "pct_women_legislature",
+          "colType": "real",
+          "colDescription": "Percent Females in State Legislature",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 9,
+          "colName": "social_capital_index",
+          "colType": "real",
+          "colDescription": "Social Capital Index",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 10,
+          "colName": "pct_black_popluation",
+          "colType": "real",
+          "colDescription": "Percent Black Population",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 11,
+          "colName": "vote_inelligible_felons_rate",
+          "colType": "real",
+          "colDescription": "Voting-Ineligible Felons per 100,000",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 12,
+          "colName": "poverty_inequality_ratio",
+          "colType": "real",
+          "colDescription": "Poverty Inequality (Black/White Ratio)",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 13,
+          "colName": "education_inequality_ratio",
+          "colType": "real",
+          "colDescription": "Education Inequality (Black/White Ratio)",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 14,
+          "colName": "poverty_rate",
+          "colType": "real",
+          "colDescription": "Poverty Rate",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 15,
+          "colName": "unemployment_rate",
+          "colType": "real",
+          "colDescription": "Unemployment Rate",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 16,
+          "colName": "government_ideology",
+          "colType": "real",
+          "colDescription": "ADA/COPE measure of state govt ideology",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 17,
+          "colName": "pct_democrats_legislature",
+          "colType": "real",
+          "colDescription": "Percent Democrats in State Legislature",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 18,
+          "colName": "racial_diversity",
+          "colType": "real",
+          "colDescription": "Racial Diversity (Blau Index)",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 19,
+          "colName": "gsp_per_capita",
+          "colType": "real",
+          "colDescription": "Gross State Product (GSP) per Capita (in 2007 $1000)",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 20,
+          "colName": "pct_with_college_deg",
+          "colType": "real",
+          "colDescription": "Percent with College Degree",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 21,
+          "colName": "social_capital_X_diversity",
+          "colType": "real",
+          "colDescription": "Social Capital x Racial Diversity",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 22,
+          "colName": "total_inmates_rate",
+          "colType": "real",
+          "colDescription": "Total Inmates per 100,000 population",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 23,
+          "colName": "incarceration_ratio",
+          "colType": "real",
+          "colDescription": "Black/White Incarceration Ratio",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 24,
+          "colName": "ln_pct_black_population",
+          "colType": "real",
+          "colDescription": "ln(Percent Black Population)",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 25,
+          "colName": "social_capital_X_ln_pct_black",
+          "colType": "real",
+          "colDescription": "Social Capital x ln(Percent Black)",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 26,
+          "colName": "three_strikes_law",
+          "colType": "categorical",
+          "colDescription": "Three Strikes Law (Yes/No)",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 27,
+          "colName": "court_clearance_rate",
+          "colType": "real",
+          "colDescription": "Trial Court Clearance Rate",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 28,
+          "colName": "drug_arrest_rate",
+          "colType": "real",
+          "colDescription": "Drug Arrests / Population",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 29,
+          "colName": "pct_black_legislature",
+          "colType": "real",
+          "colDescription": "Percent African Americans in State Legislature",
+          "role": [
+            "attribute"
+          ]
         }
-    ]
+      ]
+    }
+  ]
 }
