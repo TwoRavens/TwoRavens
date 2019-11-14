@@ -663,7 +663,8 @@ def solution_export3(user, raven_json, **kwargs):
     log_data = dict(session_key=session_key,
                     feature_id=ta2_static.SOLUTION_EXPORT,
                     activity_l1=bl_static.L1_MODEL_SELECTION,
-                    activity_l2=bl_static.L2_MODEL_EXPORT)
+                    activity_l2=bl_static.L2_MODEL_EXPORT,
+                    other=raven_json)
 
     LogEntryMaker.create_ta2ta3_entry(user, log_data)
 

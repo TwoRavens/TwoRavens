@@ -293,7 +293,8 @@ class SearchSolutionsHelper(BasicErrCheck):
         log_data = dict(session_key=self.session_key,
                         feature_id=ta2_static.GET_SEARCH_SOLUTIONS_RESULTS,
                         activity_l1=bl_static.L1_MODEL_SELECTION,
-                        activity_l2=bl_static.L2_MODEL_SEARCH)
+                        activity_l2=bl_static.L2_MODEL_SEARCH,
+                        other=params_dict)
 
         LogEntryMaker.create_ta2ta3_entry(self.user_object, log_data)
 
@@ -537,7 +538,8 @@ class SearchSolutionsHelper(BasicErrCheck):
         log_data = dict(session_key=self.session_key,
                         feature_id=ta2_static.DESCRIBE_SOLUTION,
                         activity_l1=bl_static.L1_MODEL_SELECTION,
-                        activity_l2=bl_static.L2_MODEL_SUMMARIZATION)
+                        activity_l2=bl_static.L2_MODEL_SUMMARIZATION,
+                        other=req_params)
 
         LogEntryMaker.create_ta2ta3_entry(self.user_object, log_data)
 

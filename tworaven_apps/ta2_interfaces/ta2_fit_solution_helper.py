@@ -153,7 +153,8 @@ class FitSolutionHelper(BasicErrCheck):
         log_data = dict(session_key=self.session_key,
                         feature_id=ta2_static.FIT_SOLUTION,
                         activity_l1=bl_static.L1_MODEL_SELECTION,
-                        activity_l2=bl_static.L2_MODEL_EXPLANATION)
+                        activity_l2=bl_static.L2_MODEL_EXPLANATION,
+                        other=self.fit_params)
 
         LogEntryMaker.create_ta2ta3_entry(self.user_object, log_data)
 
@@ -270,7 +271,8 @@ class FitSolutionHelper(BasicErrCheck):
         log_data = dict(session_key=self.session_key,
                         feature_id=ta2_static.GET_FIT_SOLUTION_RESULTS,
                         activity_l1=bl_static.L1_MODEL_SELECTION,
-                        activity_l2=bl_static.L2_MODEL_EXPLANATION)
+                        activity_l2=bl_static.L2_MODEL_EXPLANATION,
+                        other=params_dict)
 
         LogEntryMaker.create_ta2ta3_entry(self.user_object, log_data)
 

@@ -79,7 +79,7 @@ def view_hello(request):
     log_data = dict(session_key=get_session_key(request),
                     feature_id=ta2_static.HELLO,
                     activity_l1=bl_static.L1_SYSTEM_ACTIVITY,
-                    activity_l2=bl_static.L2_LAUNCH_TA3)
+                    activity_l2=bl_static.L2_APP_LAUNCH)
 
     LogEntryMaker.create_ta2ta3_entry(user_info.result_obj, log_data)
 

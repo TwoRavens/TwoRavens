@@ -32,7 +32,7 @@ class LogEntryMaker:
 
     @staticmethod
     def create_system_entry(user, log_data):
-        """Add a TA2TA3 entry"""
+        """Add a system entry"""
         assert isinstance(log_data, dict),\
             'log_data must be a python dict. (create_system_entry)'
 
@@ -45,7 +45,7 @@ class LogEntryMaker:
 
     @staticmethod
     def create_system_entry_with_workspace(user_workspace, log_data):
-        """Add a TA2TA3 entry"""
+        """Add a system entry"""
         assert isinstance(log_data, dict),\
             'log_data must be a python dict. (create_system_entry_with_workspace)'
 
@@ -58,7 +58,7 @@ class LogEntryMaker:
 
     @staticmethod
     def create_datamart_entry(user_workspace, log_data):
-        """Add a TA2TA3 entry"""
+        """Add a datamart entry"""
         assert isinstance(log_data, dict),\
             'log_data must be a python dict. (create_datamart_entry)'
 
