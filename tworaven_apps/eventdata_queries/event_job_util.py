@@ -3,6 +3,10 @@ import csv
 import json
 import logging
 import types
+import subprocess
+import datetime
+import shlex
+import traceback
 
 from django.conf import settings
 from collections import OrderedDict
@@ -488,8 +492,12 @@ class EventJobUtil(object):
 
 
     @staticmethod
-    def import_dataset(database, collection, datafile, reload=False, column_names=None, indexes=None):
-        """Key method to load a Datafile (csv) into Mongo as a new collection"""
+    def import_dataset(
+            database, collection, data_path,
+            reload=False, header=True, columns=None,
+            indexes=None, delimiter=None):
+        """Key method to load a Datafile into Mongo as a new collection"""
+
         retrieve_util = MongoRetrieveUtil(database, collection)
         db_info = retrieve_util.get_mongo_db(database)
         if not db_info.success:
@@ -505,32 +513,104 @@ class EventJobUtil(object):
             else:
                 return ok_resp(settings.MONGO_COLLECTION_PREFIX + collection)
 
-        if not datafile:
+        if not data_path:
             return err_resp('The file_uri cannot be None or an empty string.')
 
-        if not os.path.exists(datafile):
+        if not os.path.exists(data_path):
             return err_resp(collection + ' not found')
         # Convert the file uri to a path
         #
-        fpath, err_msg = format_file_uri_to_path(datafile)
+        fpath, err_msg = format_file_uri_to_path(data_path)
         if err_msg:
             return err_resp(err_msg)
 
-        dcr = DuplicateColumnRemover(datafile)
+        # return if collection exists and reloading is off
+        if settings.MONGO_COLLECTION_PREFIX + collection in db.list_collection_names() and not reload:
+            return ok_resp(settings.MONGO_COLLECTION_PREFIX + collection)
 
-        with open(datafile, 'r') as csv_file:
-            csv_reader = csv.reader(csv_file, delimiter=',')
+        import_commands = []
 
-            # discard header
-            next(csv_reader)
+        # ignore first line
+        if header:
+            import_commands.append(f'tail --lines +2')
 
-            # use duplicate column name removal headers instead
-            columns = [encode_variable(value) for value in column_names or dcr.updated_columns]
+        # standardize column metadata to dict
+        if not columns:
+            columns = DuplicateColumnRemover(data_path).updated_columns
+        if type(columns) is list:
+            columns = {col: None for col in columns}
 
-            for observation in csv_reader:
-                db[settings.MONGO_COLLECTION_PREFIX + collection].insert_one({
-                    col: infer_type(val) for col, val in zip(columns, observation)
-                })
+        # standardize dict's tworavens types to mongo, try to be flexible with alternative words
+        def mongofy_type(value):
+            return {
+                bool: 'boolean', 'boolean': 'boolean',
+                str: 'string', 'string': 'string',
+                int: 'int32', 'int32': 'int32', 'int': 'int32',
+                float: 'double', 'double': 'double', 'float': 'double',
+                datetime.datetime: 'date', 'date': 'date'
+            }.get(value, 'auto')
+        columns = {col: mongofy_type(columns[col]) for col in columns}
+
+        try:
+            def sanitize(column):
+                return encode_variable(column).replace('"', '\\"')
+            field_names = ','.join(f"{sanitize(col)}.{columns.get(col, 'auto')}()" for col in columns)
+
+            delimiter_type = 'csv'
+            if os.path.splitext(data_path)[1] == 'tsv':
+                delimiter_type = 'tsv'
+            if delimiter in [None, ',']:
+                pass
+            elif delimiter == '\t':
+                delimiter_type = 'tsv'
+            else:
+                import_commands.append(f'tr "{delimiter}" "\t" <')
+                delimiter_type = 'tsv'
+
+            delimiter = {'csv': ',', 'tsv': '\t'}[delimiter_type]
+
+            import_commands.append(f'mongoimport'
+                                   f' --db {database}'
+                                   f' --collection {settings.MONGO_COLLECTION_PREFIX + collection}'
+                                   f' --type {delimiter_type}'
+                                   f' --ignoreBlanks'
+                                   f' --columnsHaveTypes'
+                                   f' --parseGrace autoCast'
+                                   f' --drop'
+                                   f' --numInsertionWorkers=4'
+                                   f' --fields "{field_names}"')
+
+            # the first command takes the data path, which is piped through the other commands
+            import_commands[0] = import_commands[0] + ' ' + data_path
+
+            print('mongoimport command:')
+            print(' | '.join(import_commands))
+
+            # pipe each command to the next
+            process = subprocess.Popen(shlex.split(import_commands[0]), stdout=subprocess.PIPE)
+            for command in import_commands[1:]:
+                process = subprocess.Popen(shlex.split(command), stdin=process.stdout, stdout=subprocess.PIPE)
+            process.communicate()
+
+        except Exception as err:
+            # slower, secondary import if first fails
+            print(err)
+            print(traceback.format_exc())
+            print('mongoimport failed. Running row-by-row insertion instead.')
+            db[settings.MONGO_COLLECTION_PREFIX + collection].drop()
+            with open(data_path, 'r') as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=delimiter)
+
+                # discard header
+                next(csv_reader)
+
+                # use duplicate column name removal headers instead
+                columns = [encode_variable(value) for value in columns]
+
+                for observation in csv_reader:
+                    db[settings.MONGO_COLLECTION_PREFIX + collection].insert_one({
+                        col: infer_type(val) for col, val in zip(columns, observation)
+                    })
 
         if indexes:
             for index in indexes:
@@ -654,3 +734,9 @@ class EventJobUtil(object):
             'data_path': temp_data_filepath,
             'metadata_path': temp_metadata_filepath
         })
+
+#
+# EventJobUtil.import_dataset(
+#     'tworavens', 'test',
+#     '/home/shoe/ravens_volume/solvers/produce/1ee20684-ca0d-4847-b7f0-2595f3594dc1.csv',
+#     reload=True, columns={'d3mIndex': 'int', 'p_0': 'float', 'p_1': 'float'})

@@ -66,7 +66,6 @@ gnome-terminal --tab -- /bin/bash -c 'echo -ne "\033]0;django\007"; fuser -k 808
 gnome-terminal --tab -- /bin/bash -c "echo -ne '\033]0;ta2 $1\007'; docker kill ta2_server; fab run_ta2_$1_choose_config:$DATA_ID"
 gnome-terminal --tab -- /bin/bash -c 'echo -ne "\033]0;celery\007"; fab celery_run_with_ta2'
 gnome-terminal --tab -- /bin/bash -c 'echo -ne "\033]0;flask R\007"; fuser -k 8000/tcp; fab run_R'
-gnome-terminal --tab -- /bin/bash -c 'echo -ne "\033]0;flask automl\007"; fuser -k 8001/tcp; fuser -k 54321/tcp; fab run_automl'
 gnome-terminal --tab -- /bin/bash -c 'echo -ne "\033]0;mongod\007"; mongod --shutdown; mongod'
 gnome-terminal --tab -- /bin/bash -c 'echo -ne "\033]0;redis\007"; redis-cli stop; redis-server'
 

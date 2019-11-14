@@ -49,7 +49,7 @@ def solve_task(websocket_id, system_id, specification, system_params=None, searc
         result = solver.run()
     except Exception:
         logger.info("caught traceback when running solver:")
-        logger.info(traceback.format_exc(), flush=True)
+        logger.info(traceback.format_exc())
         ws_msg = WebsocketMessage.get_fail_message_with_data( \
             RECEIVE_SOLVE_MSG,
             'solve failed due to exception',

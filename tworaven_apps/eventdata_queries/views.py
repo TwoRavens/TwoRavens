@@ -481,7 +481,7 @@ def api_get_data(request):
     EventJobUtil.import_dataset(
         settings.TWORAVENS_MONGO_DB_NAME,
         json_req_obj['collection_name'],
-        datafile=json_req_obj.get('datafile', None),
+        data_path=json_req_obj.get('datafile', None),
         reload=json_req_obj.get('reload', None))
 
     # apply the manipulations

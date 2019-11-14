@@ -68,3 +68,4 @@ ravens_volume/test_data/05_incarceration/TRAIN/dataset_TRAIN/tables/learningData
 
 # automl solvers
 catboost/
+catboost_info/
