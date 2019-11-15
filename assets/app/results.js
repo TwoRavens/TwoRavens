@@ -886,7 +886,8 @@ export let setSelectedSolution = (problem, source, solutionId) => {
             let adapter = getSolutionAdapter(problem, chosenSolution);
             let score = adapter.getScore(problem.metric);
             if (score !== undefined){
-              logParams.other = {solutionId: solutionId,
+              logParams.other = {
+                          solutionId: chosenSolution.pipeline.id,
                           rank: getProblemRank(problem.solutions[source], solutionId),
                           performance: score,
                           metric: selectedMetric[source],

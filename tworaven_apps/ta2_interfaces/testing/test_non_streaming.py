@@ -119,8 +119,15 @@ class NonStreamingTests(TestCase):
         self.assertTrue(json_resp['success'])
         self.assertTrue('data' in json_resp)
 
-        self.assertEqual(BehavioralLogEntry.objects.filter(\
-                            feature_id=ta2_static.END_SEARCH_SOLUTIONS).count(), 1)
+        print(ta2_static.END_SEARCH_SOLUTIONS)
+
+        # Updated so that ending the search flushes the log to a file
+        #  and deletes the entries...
+        #
+        cnt = BehavioralLogEntry.objects.all().count()
+        self.assertEqual(cnt, 0)
+        #self.assertEqual(BehavioralLogEntry.objects.filter(\
+        #                    feature_id=ta2_static.END_SEARCH_SOLUTIONS).count(), 0)
 
 
     def test_040_StopSearchSolutions(self):

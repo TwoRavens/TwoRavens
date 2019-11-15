@@ -1167,6 +1167,7 @@ export async function handleDescribeSolutionResponse(response) {
     debugLog(JSON.stringify(response));
 
     // the pipeline template is the only useful information
+
     solvedProblem.solutions.d3m[response.pipelineId].pipeline = response.pipeline;
     m.redraw();
 }

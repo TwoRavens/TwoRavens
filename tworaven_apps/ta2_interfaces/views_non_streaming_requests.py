@@ -203,14 +203,18 @@ def view_search_solutions(request):
 @csrf_exempt
 def view_end_search_solutions(request):
     """gRPC: Call from UI with a EndSearchSolutionsRequest"""
+    print('view_end_search_solutions 1')
     user_info = get_authenticated_user(request)
     if not user_info.success:
         return JsonResponse(get_json_error(user_info.err_msg))
     user = user_info.result_obj
 
+    print('view_end_search_solutions 2')
     req_body_info = get_request_body(request)
     if not req_body_info.success:
         return JsonResponse(get_json_error(req_body_info.err_msg))
+
+    print('view_end_search_solutions 3')
 
     # --------------------------------
     # Behavioral logging
@@ -220,7 +224,8 @@ def view_end_search_solutions(request):
                     activity_l1=bl_static.L1_SYSTEM_ACTIVITY,
                     activity_l2=bl_static.L2_ACTIVITY_BLANK)
 
-    LogEntryMaker.create_ta2ta3_entry(user_info.result_obj, log_data)
+    LogEntryMaker.create_ta2ta3_entry(user, log_data)
+    print('view_end_search_solutions 4')
 
     # Let's call the TA2 and end the session!
     #
