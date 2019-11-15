@@ -98,7 +98,9 @@ export let setPeekInlineShown = state => {
  */
 export let logEntryPeekUsed = is_external => {
 
-  let logParams = {feature_id: 'PEEK', activity_l1: 'DATA_PREPARATION'};
+  let logParams = {feature_id: 'PEEK',
+                   activity_l1: 'DATA_PREPARATION',
+                   activity_l2: 'DATA_EXPLORATION'};
   if (is_external){
     logParams.feature_id = 'PEEK_NEW_WINDOW';
   }
