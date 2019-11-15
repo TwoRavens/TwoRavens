@@ -231,12 +231,11 @@ export let leftpanel = forceData => {
                             'item-weight': selectedProblem.tags.weights
                         },
                         callback: varName => {
-                            let selectedProblem = app.getSelectedProblem();
                             setGroup(selectedProblem, [
                                 ...selectedProblem.predictors,
                                 ...selectedProblem.targets,
                                 ...selectedProblem.tags.loose
-                            ].includes(varName) && 'Loose', varName);
+                            ].includes(varName) ? 'None' : 'Loose', varName);
                             app.resetPeek();
                         },
                         popup: x => m('div', m('h4', 'Summary Statistics for ' + x), m(Table, {attrsAll: {class: 'table-sm'}, data: formatVariableSummary(app.variableSummaries[x])})),
