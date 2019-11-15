@@ -507,8 +507,6 @@ class EventJobUtil(object):
         if not datafile:
             return err_resp('The file_uri cannot be None or an empty string.')
 
-        print('loading')
-        print(datafile)
         if not os.path.exists(datafile):
             return err_resp(collection + ' not found')
         # Convert the file uri to a path

@@ -4,217 +4,181 @@
 ##
 ##  6/23/19
 ##
+okResult <- function(data=NULL, message=NULL) list(
+    success=jsonlite::unbox(TRUE),
+    data=data,
+    message=jsonlite::unbox(message)
+)
 
 
-partials.app <- function(partialsParams){
+errResult <- function(message=NULL, data=NULL) list(
+    success=jsonlite::unbox(FALSE),
+    message=jsonlite::unbox(message),
+    data=data
+)
+
+partials.app <- function(partialsParams) {
+    print('entering partials app')
     requirePackages(packageList.any)
 
-    warning<-FALSE
-    result <-list()
-    mydataloc <- ""
-    mydata <- data.frame()
+    pathOutput <- partialsParams$path_output
+    if (is.null(pathOutput) || !file.exists(pathOutput))
+        return(jsonlite::toJSON(errResult(paste0('Invalid output path: ', toString(pathOutput)))))
 
-    print('entering partials app')
+    md <- partialsParams$metadata
+    if (is.null(md))
+        return(jsonlite::toJSON(errResult('"metadata" is a required field.')))
 
-    if(production){
-        sink(file = stderr(), type = "output")
-    }
+    md$d3mIndex <- NULL
 
-	if(!warning){
-        md <-   list()   # rebuild to resemble original structure in metadata file
-        md$variables <- jsonlite::fromJSON(readLines(partialsParams$metadataPath))
-        print(md)
+    print(jsonlite::toJSON(md))
 
-        if(length(md$variables) == 0){ 
-                warning <- TRUE
-                result <- list(warning="No metadata included.")
-        }
-	}
+    dataResult <- tryCatch({
 
-    #if(!warning){
-    #    # mydatasetDoc <- partialsParams$datasetDoc
-    #    mydatasetDocLoc <- partialsParams$datasetDocLoc
-    #    print(mydatasetDocLoc)
-    #
-    #    if(length(mydatasetDocLoc) == 0){ 
-    #            warning <- TRUE
-    #            result <- list(warning="No datasetDoc location included.")
-    #    }
-    #}
+        #########################################################
+        ## Construct dataset of partials from metadata values
 
-    if(!warning){
-        mydataloc <- partialsParams$dataloc
+        k <- length(md)
+        s <- 10
 
-        if(length(mydataloc) == 0){ 
-                warning <- TRUE
-                result <- list(warning="No data location included.")
-        }
-    }
-
-    #if(!warning){
-    #    tryCatch({
-    #        mydatasetDoc <- read(mydatasetDocLoc)
-    #    },
-    #    error=function(err){
-    #        warning <<- TRUE
-    #        result <<- list(warning=paste("Partials construction error: ", err))
-    #    })
-    #}
-
-    if(!warning){
-        tryCatch({
-
-            #########################################################
-            ## Construct dataset of partials from metadata values
-
-            k <- length(md$variables)
-            s <- 10
-
-            index <- rep(0,k+1)  # 0 if no leading observation of means, 1 if leading observation of means
-            natures <- rep(NA,k)
-            for(i in 1:k){
-                natures[i] <- md$variables[[i]]$nature
-                if(md$variables[[i]]$valid==0){
-                    index[i+1]<-index[i] + 2
-                }else if(natures[i]=="nominal"){
-                    index[i+1]<-index[i] + min(length(names(md$variables[[i]]$plotvalues)),s)       # Or md$variables[[i]]$uniques, but includes NA
-                }else if((natures[i]=="ordinal")  & (md$variables[[i]]$binary=="yes")){
-                    index[i+1]<-index[i] + 2
-                }else{
-                    index[i+1]<-index[i] + s
-                }
+        index <- rep(0,k+1)  # 0 if no leading observation of means, 1 if leading observation of means
+        natures <- rep(NA,k)
+        for(i in 1:k){
+            natures[i] <- md[[i]][['nature']]
+            if(md[[i]][['validCount']]==0){
+                index[i+1]<-index[i] + 2
+            }else if(natures[i]=="nominal"){
+                index[i+1]<-index[i] + min(length(names(md[[i]][['plotValues']])),s)       # Or md[[i]][['uniqueCount']], but includes NA
+            }else if((natures[i]=="ordinal") && (md[[i]][['binary']]=="yes")){
+                index[i+1]<-index[i] + 2
+            }else{
+                index[i+1]<-index[i] + s
             }
+        }
 
-            l <- index[k+1]
+        l <- index[k+1]
 
-            baseline <- list()
-            allnames <- rep(NA,k)
-            movement <- list()
+        baseline <- list()
+        allnames <- rep(NA,k)
+        movement <- list()
 
-            print("index")
-            print(index)
-
-
-            for(i in 1:k){
-
-                #nature currently is {"nominal" , "ordinal" , "interval" , "ratio" , "percent" , "other"}
-                nature <- natures[i]
-                print(md$variables[[i]]$varnamesSumStat)
+        print("index")
+        print(index)
 
 
-                if(md$variables[[i]]$valid==0){      # Some variables come out of augmentation with no valid values
-                    print("escaped due to no valid values")
-                    temp <- rep("",l)
-                    tempseq <- rep("", index[i+1]-index[i] )
-                    print(tempseq)
-                    tdf <- data.frame(tempseq)
-                    names(tdf) <- md$variables[[i]]$varnamesSumStat
-                    movement[[i]] <- tdf
-                    baseline[[i]] <- temp
-                }else if(nature=="nominal"){
-                    temp <- rep(md$variables[[i]]$mode, l)    # But might be NA?
-                    tempseq <- sort(sample(names(md$variables[[i]]$plotvalues), size=min(s,index[i+1]-index[i])))      # shouldn't these agree by this point?
-                    print(tempseq)
-                    temp[(index[i]+1):index[i+1]] <- tempseq
+        for(i in 1:k){
 
-                    tdf <- data.frame(tempseq)
-                    names(tdf) <- md$variables[[i]]$varnamesSumStat
-                    movement[[i]] <- tdf
+            #nature currently is {"nominal" , "ordinal" , "interval" , "ratio" , "percent" , "other"}
+            nature <- natures[i]
+            print(md[[i]][['name']])
 
-                    baseline[[i]] <- temp
-                }else if(nature=="ordinal"){
-                    temp <- rep(md$variables[[i]]$median, l)  # But might not be value in dataset? Or NA.
-                    if(md$variables[[i]]$binary=="yes"){
-                        tempseq <- c(md$variables[[i]]$min, md$variables[[i]]$max)
-                    }else{
-                        tempseq <- seq(from=md$variables[[i]]$min, to=md$variables[[i]]$max, length=s)
-                    }
-                    print(tempseq)
-                    temp[(index[i]+1):index[i+1]] <- tempseq
+            if (md[[i]][['validCount']] == 0){      # Some variables come out of augmentation with no valid values
+                print("escaped due to no valid values")
+                temp <- rep("",l)
+                tempseq <- rep("", index[i+1]-index[i] )
+                print(tempseq)
+                tdf <- data.frame(tempseq)
+                names(tdf) <- md[[i]][['name']]
+                movement[[i]] <- tdf
+                baseline[[i]] <- temp
+            } else if (nature == "nominal") {
+                temp <- rep(md[[i]][['mode']], l)    # But might be NA?
+                tempseq <- sort(sample(names(md[[i]][['plotValues']]), size=min(s,index[i+1]-index[i])))      # shouldn't these agree by this point?
+                print(tempseq)
+                temp[(index[i]+1):index[i+1]] <- tempseq
 
-                    tdf <- data.frame(tempseq)
-                    names(tdf) <- md$variables[[i]]$varnamesSumStat
-                    movement[[i]] <- tdf
+                tdf <- data.frame(tempseq)
+                names(tdf) <- md[[i]][['name']]
+                movement[[i]] <- tdf
 
-                    baseline[[i]] <- temp
-                }else if(nature=="interval"){
-                    baseline[[i]] <- "interval"
-                }else if(nature=="ratio"){
-                    temp <- rep(md$variables[[i]]$median, l)
-                    print(tempseq)
-                    tempseq <- seq(from=md$variables[[i]]$min, to=md$variables[[i]]$max, length=s)
-                    temp[(index[i]+1):index[i+1]] <- tempseq
-
-                    tdf <- data.frame(tempseq)
-                    names(tdf) <- md$variables[[i]]$varnamesSumStat
-                    movement[[i]] <- tdf
-
-                    baseline[[i]] <- temp
-                }else if(nature=="percent"){
-                    temp <- rep(md$variables[[i]]$median, l)
-                    tempseq <- seq(from=md$variables[[i]]$min, to=md$variables[[i]]$max, length=s)
-                    print(tempseq)
-                    
-                    temp[(index[i]+1):index[i+1]] <- tempseq
-
-                    tdf <- data.frame(tempseq)
-                    names(tdf) <- md$variables[[i]]$varnamesSumStat
-                    movement[[i]] <- tdf
-
-                    baseline[[i]] <- temp
-                }else if(nature=="other"){
-                    baseline[[i]] <- "other"
+                baseline[[i]] <- temp
+            }else if(nature=="ordinal"){
+                temp <- rep(md[[i]][['median']], l)  # But might not be value in dataset? Or NA.
+                if(md[[i]][['binary']]=="yes"){
+                    tempseq <- c(md[[i]][['min']], md[[i]][['max']])
                 }else{
-                    baseline[[i]] <- NA
+                    tempseq <- seq(from=md[[i]][['min']], to=md[[i]][['max']], length=s)
                 }
-                allnames[i] <- md$variables[[i]]$varnamesSumStat
+                print(tempseq)
+                temp[(index[i]+1):index[i+1]] <- tempseq
 
+                tdf <- data.frame(tempseq)
+                names(tdf) <- md[[i]][['name']]
+                movement[[i]] <- tdf
+
+                baseline[[i]] <- temp
+            }else if(nature=="interval"){
+                baseline[[i]] <- "interval"
+            }else if(nature=="ratio"){
+                temp <- rep(md[[i]][['median']], l)
+                print(tempseq)
+                tempseq <- seq(from=md[[i]][['min']], to=md[[i]][['max']], length=s)
+                temp[(index[i]+1):index[i+1]] <- tempseq
+
+                tdf <- data.frame(tempseq)
+                names(tdf) <- md[[i]][['name']]
+                movement[[i]] <- tdf
+
+                baseline[[i]] <- temp
+            }else if(nature=="percent"){
+                temp <- rep(md[[i]][['median']], l)
+                tempseq <- seq(from=md[[i]][['min']], to=md[[i]][['max']], length=s)
+                print(tempseq)
+
+                temp[(index[i]+1):index[i+1]] <- tempseq
+
+                tdf <- data.frame(tempseq)
+                names(tdf) <- md[[i]][['name']]
+                movement[[i]] <- tdf
+
+                baseline[[i]] <- temp
+            }else if(nature=="other"){
+                baseline[[i]] <- "other"
+            }else{
+                baseline[[i]] <- NA
             }
-            mydata <- data.frame(matrix(unlist(baseline), nrow=l, byrow=FALSE),stringsAsFactors=FALSE)
-            names(mydata) <- allnames
-            names(movement) <- allnames
-        },
-        error=function(err){
-            warning <<- TRUE
-            result <<- list(warning=paste("Partials construction error: ", err))
-        })
-    }
-    print(result)
+            allnames[i] <- md[[i]][['name']]
+
+        }
+        mydata <- data.frame(matrix(unlist(baseline), nrow=l, byrow=FALSE),stringsAsFactors=FALSE)
+        names(mydata) <- allnames
+        mydata <- cbind(d3mIndex=rownames(mydata), mydata)
+        names(movement) <- allnames
+        
+        okResult(list(datatable=mydata, movement=movement))
+
+    }, error=function(err) errResult(paste0("Partials construction error: ", toString(err))))
+
+    if (!dataResult$success) return(jsonlite::toJSON(dataResult))
+    data <- dataResult$data$datatable
+    movement <- dataResult$data$movement
+
+    print(data)
+    print(movement)
 
     #########################################################
     ## Write dataset of partials to desired location
 
-    if(!warning){
-        merge_name_data <- "/tables/learningData.csv"
-        merge_name_summary <- "/tables/partialsSummary.json"
-        merge_name_datasetDoc <- "/datasetDoc.json"
-        merge_name_tables <- "/tables"
-        outtables <- paste(mydataloc, merge_name_tables, sep="")
-        outdata <- paste(mydataloc, merge_name_data, sep="")
-        outdatasetDoc <- paste(mydataloc, merge_name_datasetDoc, sep="")
-        outsummary <- paste(mydataloc, merge_name_summary, sep="")
-        print(outdata[1])
-        print(outdatasetDoc[1])
+    pathTables <- file.path(pathOutput, "tables")
+    pathData <- file.path(pathTables, "learningData.csv")
+    pathSummary <- file.path(pathOutput, "partialsSummary.json")
+    pathDatasetDoc <- file.path(pathOutput, "datasetDoc.json")
+    
+    if (dir.exists(pathTables)) unlink(pathTables, recursive=T)
+    dir.create(pathTables, recursive=TRUE)
+  
+    write.csv(data, pathData, row.names=FALSE, col.names=TRUE,quote=FALSE)
+    write(jsonlite:::toJSON(movement), pathSummary)
 
-        # R won't write to a directory that doesn't exist.
-        if (!dir.exists(outtables)){
-            dir.create(outtables, recursive = TRUE)
-        }
-
-        write.csv(mydata, outdata[1], row.names=FALSE, col.names=TRUE)
-        write(jsonlite:::toJSON(movement), outsummary[1])
-        #write(mydatasetDoc, outdatasetDoc[1])
-
-        # Path to partials dataset
-        result <- list(
-            partialsDatasetDocPath = jsonlite::unbox(outdatasetDoc[1]),
-            partialsDatasetPath = jsonlite::unbox(outsummary[1]))
-    }
-
-
-    if(production){
-        sink()
-    }
-
-    return(jsonlite:::toJSON(result))
+    jsonlite::toJSON(okResult(list(
+        partialsDatasetDocPath=jsonlite::unbox(pathDatasetDoc),
+        partialsDatasetPath=jsonlite::unbox(pathSummary)
+    )))
 }
+
+# partials.app(list(
+#     metadata=list(
+#         variables=jsonlite::fromJSON(readLines('/home/shoe/Desktop/variableSummaries.json'))
+#     ),
+#     path_output='/home/shoe/Desktop/partialsTest'
+# ))
