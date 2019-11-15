@@ -275,7 +275,7 @@ def split_dataset(configuration, workspace):
         shutil.rmtree(dest_directory)
         shutil.copytree(workspace.d3m_config.training_data_root, dest_directory)
         os.remove(csv_path)
-        splits[role].to_csv(csv_path, index=False)
+        writable_dataframe.to_csv(csv_path, index=False)
 
         sample_count = configuration.get("sampleCount", min(sample_limit, len(writable_dataframe)))
         indices = writable_dataframe['d3mIndex'].astype('int32') \

@@ -589,99 +589,62 @@ function websocketMessage(e) {
     //console.log('data:' + JSON.stringify(msg_obj));
     let msg_data = msg_obj['message'];
 
-    console.log('msg_data');
-    console.log(msg_data);
-
     if (msg_data.msg_type === undefined) {
         console.log('streamSocket.onmessage: Error, "msg_data.msg_type" not specified!');
         return;
     }
 
-    if (msg_data.msg_type === 'receive_describe_msg') {
-        solverWrapped.handleDescribeResponse(msg_data);
-        return;
-    }
-    if (msg_data.msg_type === 'receive_score_msg') {
-        solverWrapped.handleScoreResponse(msg_data);
-        return;
-    }
-    if (msg_data.msg_type === 'receive_produce_msg') {
-        solverWrapped.handleProduceResponse(msg_data);
-        return;
-    }
-    if (msg_data.msg_type === 'receive_solve_msg') {
-        console.log("receive solve message", msg_data);
-        solverWrapped.handleSolveCompleteResponse(msg_data);
-        return;
-    }
+    console.groupCollapsed(`WS: ${msg_data.msg_type || 'unknown'}`);
 
-    if (msg_data.msg_type === 'receive_describe_msg') {
-        solverWrapped.handleDescribeResponse(msg_data);
-        return;
-    }
-    if (msg_data.msg_type === 'receive_score_msg') {
-        solverWrapped.handleScoreResponse(msg_data);
-        return;
-    }
-    if (msg_data.msg_type === 'receive_produce_msg') {
-        solverWrapped.handleProduceResponse(msg_data);
-        return;
-    }
-    if (msg_data.msg_type === 'receive_solve_msg') {
-        console.log("receive solve message", msg_data);
-        solverWrapped.handleSolveCompleteResponse(msg_data);
-        return;
-    }
+    try {
+        console.log(msg_data);
+        if (msg_data.msg_type === 'receive_describe_msg')
+            solverWrapped.handleDescribeResponse(msg_data);
+        if (msg_data.msg_type === 'receive_score_msg')
+            solverWrapped.handleScoreResponse(msg_data);
+        if (msg_data.msg_type === 'receive_produce_msg')
+            solverWrapped.handleProduceResponse(msg_data);
+        if (msg_data.msg_type === 'receive_solve_msg')
+            solverWrapped.handleSolveCompleteResponse(msg_data);
 
-    if (msg_data.data === undefined && msg_data.msg_type !== 'DATAMART_AUGMENT_PROCESS') {
-        debugLog('streamSocket.onmessage: Error, "msg_data.data" type not specified!');
-        debugLog('full data: ' + JSON.stringify(msg_data));
-        debugLog('---------------------------------------------');
-        return;
-    }
+        if (msg_data.data === undefined && msg_data.msg_type !== 'DATAMART_AUGMENT_PROCESS') {
+            debugLog('streamSocket.onmessage: Error, "msg_data.data" type not specified!');
+            debugLog('full data: ' + JSON.stringify(msg_data));
+            debugLog('---------------------------------------------');
+        }
 
-    debugLog('Got it! Message type: ' + msg_data.msg_type);
-    debugLog('full data: ' + JSON.stringify(msg_data));
-    //JSON.stringify(msg_data));
-
-    if (msg_data.msg_type === 'GetSearchSolutionsResults') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        solverD3M.handleGetSearchSolutionResultsResponse(msg_data.data);
-    }
-    else if (msg_data.msg_type === 'DescribeSolution') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        solverD3M.handleDescribeSolutionResponse(msg_data.data);
-    }
-    else if (msg_data.msg_type === 'GetScoreSolutionResults') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        solverD3M.handleGetScoreSolutionResultsResponse(msg_data.data);
-    }
-    else if (msg_data.msg_type === 'GetProduceSolutionResults') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        solverD3M.handleGetProduceSolutionResultsResponse(msg_data.data);
-    }
-    else if (msg_data.msg_type === 'GetFitSolutionResults') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        debugLog('No handler: Currently not using GetFitSolutionResultsResponse...');
-    }
-    else if (msg_data.msg_type === 'ENDGetSearchSolutionsResults') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        solverD3M.handleENDGetSearchSolutionsResults(msg_data.data);
-    }
-    else if (msg_data.msg_type === 'DATAMART_MATERIALIZE_PROCESS') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        handleMaterializeDataMessage(msg_data);
-    }
-    else if (msg_data.msg_type === 'DATAMART_AUGMENT_PROCESS') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        handleAugmentDataMessage(msg_data);
-    }
-    else if (msg_data.msg_type === 'DATAMART_SEARCH_BY_DATASET') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        handleSearchbyDataset(msg_data);
-    }
-    else {
-        console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
+        if (msg_data.msg_type === 'GetSearchSolutionsResults') {
+            debugLog(msg_data.msg_type + ' recognized!');
+            solverD3M.handleGetSearchSolutionResultsResponse(msg_data.data);
+        } else if (msg_data.msg_type === 'DescribeSolution') {
+            debugLog(msg_data.msg_type + ' recognized!');
+            solverD3M.handleDescribeSolutionResponse(msg_data.data);
+        } else if (msg_data.msg_type === 'GetScoreSolutionResults') {
+            debugLog(msg_data.msg_type + ' recognized!');
+            solverD3M.handleGetScoreSolutionResultsResponse(msg_data.data);
+        } else if (msg_data.msg_type === 'GetProduceSolutionResults') {
+            debugLog(msg_data.msg_type + ' recognized!');
+            solverD3M.handleGetProduceSolutionResultsResponse(msg_data.data);
+        } else if (msg_data.msg_type === 'GetFitSolutionResults') {
+            debugLog(msg_data.msg_type + ' recognized!');
+            debugLog('No handler: Currently not using GetFitSolutionResultsResponse...');
+        } else if (msg_data.msg_type === 'ENDGetSearchSolutionsResults') {
+            debugLog(msg_data.msg_type + ' recognized!');
+            solverD3M.handleENDGetSearchSolutionsResults(msg_data.data);
+        } else if (msg_data.msg_type === 'DATAMART_MATERIALIZE_PROCESS') {
+            debugLog(msg_data.msg_type + ' recognized!');
+            handleMaterializeDataMessage(msg_data);
+        } else if (msg_data.msg_type === 'DATAMART_AUGMENT_PROCESS') {
+            debugLog(msg_data.msg_type + ' recognized!');
+            handleAugmentDataMessage(msg_data);
+        } else if (msg_data.msg_type === 'DATAMART_SEARCH_BY_DATASET') {
+            debugLog(msg_data.msg_type + ' recognized!');
+            handleSearchbyDataset(msg_data);
+        } else {
+            console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
+        }
+    } finally {
+        console.groupEnd();
     }
 }
 //-------------------------------------------------
@@ -909,9 +872,6 @@ export let solvers = {
     'mljar-supervised': {},
     'ludwig': {}
 };
-
-export let modelResults = {};
-
 
 export let modelResults = {};
 
@@ -1508,15 +1468,16 @@ export async function load({awaitPreprocess}={}) {
     // 1. Retrieve the configuration information
     //  dev view: http://127.0.0.1:8080/user-workspaces/d3m-configs/json/latest?pretty
     // ---------------------------------------
-    console.log('---------------------------------------');
-    console.log('-- 1. Retrieve the configuration information --');
-
     // let d3m_config_url = '/user-workspaces/d3m-configs/json/latest';
     let raven_config_url = '/user-workspaces/raven-configs/json/list';
     let config_result = await m.request({
         method: "POST",
         url: raven_config_url
     });
+
+    console.groupCollapsed('1. Retrieve the configuration information');
+    console.log(JSON.stringify(config_result));
+    console.groupEnd();
 
     // console.log(JSON.stringify(config_result));
 
@@ -1540,23 +1501,23 @@ export async function load({awaitPreprocess}={}) {
     // ---------------------------------------
     // 2. Load workspace
     // ---------------------------------------
-    console.log('---------------------------------------');
-    console.log('-- 2. Load workspace --');
+    console.groupCollapsed('2. Load workspace');
 
     let success = await loadWorkspace(workspace, {awaitPreprocess});
+    console.groupEnd();
     if (!success){
       // alertError('Failed to load workspace');
       return;
     }
 
     /**
-     * 5. Start the user session
+     * 3. Start the user session
      * rpc rpc Hello (HelloRequest) returns (HelloResponse) {}
      */
-    console.log('---------------------------------------');
-    console.log("-- 5. Start the user session /Hello --");
-
     let responseTA2 = await m.request(D3M_SVC_URL + '/Hello', {});
+    console.groupCollapsed('3. Start user session Hello');
+    console.log(JSON.stringify(responseTA2));
+    console.groupEnd();
     if (responseTA2) {
         if (responseTA2.success !== true) {
           //  const user_err_msg = "We were unable to connect to the TA2 system.  It may not be ready.  Please try again.  (status code: " + problemDoc.message + ")";

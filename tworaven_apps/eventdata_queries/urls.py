@@ -73,10 +73,6 @@ urlpatterns = [
          views.api_get_data,
          name='api_get_data'),
 
-    path(r'api/import-dataset',
-         views.api_import_dataset,
-         name='api_import_dataset'),
-
     path(r'api/mongo-healthcheck',
          views.api_mongo_healthcheck,
          name='api_mongo_healthcheck'),

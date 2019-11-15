@@ -17,7 +17,7 @@ def util_results_confusion_matrix(data_pointer, metadata):
     if not response.success:
         return {KEY_SUCCESS: False, KEY_DATA: response.err_msg}
 
-    results_collection_name = metadata['collectionName'] + '_produce_' + str(metadata['solutionId'])
+    results_collection_name = metadata['collectionName'] + '_produce_' + str(metadata['produceId'])
 
     util = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
@@ -136,7 +136,7 @@ def util_results_importance_efd(data_pointer, metadata):
         metadata['collectionName'],
         datafile=metadata['collectionPath'])
 
-    results_collection_name = metadata['collectionName'] + '_solution_' + str(metadata['solutionId'])
+    results_collection_name = metadata['collectionName'] + '_produce_' + str(metadata['produceId'])
 
     util = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,

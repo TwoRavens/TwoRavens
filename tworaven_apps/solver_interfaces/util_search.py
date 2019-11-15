@@ -191,6 +191,8 @@ class SearchH2O(Search):
         y = self.specification['problem']['targets'][0]
 
         if self.specification['problem']['taskType'] == 'CLASSIFICATION':
+            if train.types[y] == u'real':
+                train[y] = train[y].ascharacter()
             # For classification, response should be a factor
             train[y] = train[y].asfactor()
 

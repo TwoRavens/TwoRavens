@@ -523,8 +523,3 @@ def api_get_data(request):
     return JsonResponse(\
                 get_json_success('it worked',
                                  data=json_comply(results_obj_err)))
-
-
-@csrf_exempt
-def api_import_dataset(collection):
-    return EventJobUtil.import_dataset(settings.TWORAVENS_MONGO_DB_NAME, collection)

@@ -152,18 +152,18 @@ export let leftpanel = () => {
                                     title: 'stop the search',
                                     class: 'btn-sm',
                                     onclick: () => {
-                                      // User clicks the 'Stop' button next to
-                                      // a particular problem search
+                                        // User clicks the 'Stop' button next to
+                                        // a particular problem search
 
-                                      // behavioral logging
-                                      let logParams = {
-                                                    feature_id: 'RESULTS_STOP_PROBLEM_SEARCH',
-                                                    activity_l1: 'MODEL_SELECTION',
-                                                    activity_l2: 'PROBLEM_SEARCH_SELECTION'
-                                                  };
-                                      app.saveSystemLogEntry(logParams);
+                                        // behavioral logging
+                                        let logParams = {
+                                            feature_id: 'RESULTS_STOP_PROBLEM_SEARCH',
+                                            activity_l1: 'MODEL_SELECTION',
+                                            activity_l2: 'PROBLEM_SEARCH_SELECTION'
+                                        };
+                                        app.saveSystemLogEntry(logParams);
 
-                                      solverD3M.stopSearch(problem.d3mSearchId);
+                                        solverD3M.stopSearch(problem.d3mSearchId);
                                     }
                                 }, m(Icon, {name: 'stop'}))
                             ]),
@@ -224,6 +224,13 @@ export class CanvasSolutions {
 
     predictionSummary(problem, adapters) {
 
+        if (adapters.every(adapter => !adapter.getDataPointer(resultsPreferences.dataSplit))) {
+            return [
+                'Waiting for solver to produce predictions.',
+                common.loader('PredictionSummary')
+            ]
+        }
+
         if (problem.task.toLowerCase().includes('regression') || problem.task.toLowerCase() === 'timeseriesforecasting') {
             let summaries = adapters.map(adapter => ({
                 name: adapter.getName(),
@@ -231,7 +238,10 @@ export class CanvasSolutions {
                 actualValues: adapter.getActualValues(resultsPreferences.target)
             })).filter(summary => summary.fittedValues && summary.actualValues);
 
-            if (summaries.length === 0) return common.loader('PredictionSummary');
+            if (summaries.length === 0) return [
+                'Processing predictions.',
+                common.loader('PredictionSummary')
+            ];
 
             let xData = summaries.reduce((out, summary) =>
                 Object.assign(out, {[summary.name]: summary.fittedValues}), {});
@@ -256,7 +266,11 @@ export class CanvasSolutions {
                 name: adapter.getName(),
                 confusionMatrix: adapter.getConfusionMatrix(resultsPreferences.target)
             })).filter(summary => summary.confusionMatrix);
-            if (summaries.length === 0) return common.loader('PredictionSummary');
+
+            if (summaries.length === 0) return [
+                'Processing data from backend.',
+                common.loader('PredictionSummary')
+            ];
 
             let setConfusionFactor = factor => this.confusionFactor = factor === 'undefined' ? undefined : factor;
 
@@ -855,23 +869,23 @@ let leftTabResults = 'Solutions'; // default value
  */
 let setLeftTabResults = tabName => {
 
-  leftTabResults = tabName;
-  console.log('tab: ' + tabName);
+    leftTabResults = tabName;
+    console.log('tab: ' + tabName);
 
-  // behavioral logging
-  let logParams = tabName === 'Solutions' ? {
-                feature_id: 'RESULTS_VIEW_SOLUTIONS',
-                activity_l1: 'MODEL_SELECTION',
-                activity_l2: 'MODEL_SUMMARIZATION',
-              }: {
-                feature_id: 'RESULTS_VIEW_PROBLEM_SEARCHES',
-                activity_l1: 'MODEL_SELECTION',
-                activity_l2: 'PROBLEM_SEARCH_SELECTION',
-              }
-  app.saveSystemLogEntry(logParams);
+    // behavioral logging
+    let logParams = tabName === 'Solutions' ? {
+        feature_id: 'RESULTS_VIEW_SOLUTIONS',
+        activity_l1: 'MODEL_SELECTION',
+        activity_l2: 'MODEL_SUMMARIZATION',
+    } : {
+        feature_id: 'RESULTS_VIEW_PROBLEM_SEARCHES',
+        activity_l1: 'MODEL_SELECTION',
+        activity_l2: 'PROBLEM_SEARCH_SELECTION',
+    };
+    app.saveSystemLogEntry(logParams);
+};
 
-}
-let resultsPreferences = {
+export let resultsPreferences = {
     mode: 'EFD',
     predictor: undefined,
     target: undefined,
@@ -890,13 +904,6 @@ export let reverseSet = [
 
 // searchID: {running: true} for searchIDs streamed back from TA2 that are not in the workspace
 export let otherSearches = {};
-
-/**
- Sort the Pipeline table, putting the best score at the top
- */
-let sortPipelineTable = (a, b) => typeof a === 'string'
-    ? app.omniSort(a, b)
-    : (b - a) * (reverseSet.includes(resultsPreferences.selectedMetric) ? -1 : 1);
 
 let resultsSubpanels = {
     'Prediction Summary': true,
@@ -1458,6 +1465,9 @@ export let loadConfusionData = async (problem, adapter) => {
         ...resultsQuery
     ], app.workspace.raven_config.variablesInitial)['pipeline'];
 
+    let produceId = dataPointer
+        .substr(dataPointer.lastIndexOf('/') + 1)
+        .replace('.csv', '');
     let tempQuery = JSON.stringify(resultsData.id.query);
     let response;
     try {
@@ -1470,7 +1480,7 @@ export let loadConfusionData = async (problem, adapter) => {
                     collectionName: app.workspace.d3m_config.name,
                     collectionPath: app.workspace.datasetPath,
                     query: compiled,
-                    solutionId: adapter.getSolutionId()
+                    produceId
                 }
             }
         });
@@ -1533,7 +1543,9 @@ export let loadImportanceEFDData = async (problem, adapter) => {
     ], app.workspace.raven_config.variablesInitial)['pipeline'];
 
     let tempQuery = JSON.stringify(resultsData.id.query);
-
+    let produceId = dataPointer
+        .substr(dataPointer.lastIndexOf('/') + 1)
+        .replace('.csv', '');
     let response;
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
@@ -1541,7 +1553,7 @@ export let loadImportanceEFDData = async (problem, adapter) => {
             data: {
                 data_pointer: dataPointer,
                 metadata: {
-                    solutionId: adapter.getSolutionId(),
+                    produceId,
                     levels: app.getNominalVariables(problem)
                         .map(variable => {
                             if (app.variableSummaries[variable].nature === 'nominal')

@@ -72,8 +72,10 @@ export let getD3MAdapter = problem => ({
 
         let allParams = await getSolverSpecification(problem);
 
-        console.warn("#debug allParams");
+        console.groupCollapsed('Initiating Search on D3M');
+        console.log("allParams");
         console.log(JSON.stringify(allParams));
+        console.groupEnd();
 
         let res = await m.request(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', {method: 'POST', data: allParams});
 

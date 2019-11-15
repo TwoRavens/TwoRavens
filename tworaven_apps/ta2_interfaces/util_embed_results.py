@@ -102,29 +102,7 @@ class FileEmbedUtil(object):
 
         return self.final_results
 
-
-    def get_embed_result(self, file_uri, is_second_try=False):
-        """Get the content from the file and format a JSON snippet
-        that includes that content.
-
-        Example response 1:
-            {
-              "success":true,
-              "data":[
-                 {"preds":"36.17124"},
-                 {"preds":"29.85256"},
-                 {"preds":"30.85256"}
-              ]
-           }
-
-        Example response 2:
-          {
-              "success":false,
-              "err_code":"FILE_NOT_FOUND",
-              "message":"The file was not found."
-           }
-        """
-        py_list = None
+    def load_results_into_mongo(self, file_uri, collection_name, is_second_try=False):
 
         if not file_uri:
             err_code = ERR_CODE_FILE_URI_NOT_SET

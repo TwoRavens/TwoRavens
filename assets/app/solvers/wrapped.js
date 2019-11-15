@@ -19,6 +19,8 @@ export let getSolverSpecification = async (problem, systemId) => {
     problem.datasetIndices = {};
     problem.datasetSchemasManipulated = {};
     problem.datasetPathsManipulated = {};
+    if (!problem.selectedSolutions[systemId])
+        problem.selectedSolutions[systemId] = [];
 
     problem.solverState[systemId] = {thinking: true};
 
@@ -43,11 +45,18 @@ export let getSolverSpecification = async (problem, systemId) => {
     problem.solverState[systemId].message = 'initiating the search for solutions';
     m.redraw();
 
-    return {
+    let allParams = {
         'search': SPEC_search(problem),
         'produce': SPEC_produce(problem),
         'score': SPEC_score(problem)
     };
+
+    console.groupCollapsed(`Initiating Search on ${systemId}`);
+    console.log("allParams");
+    console.log(JSON.stringify(allParams));
+    console.groupEnd();
+
+    return allParams;
 };
 
 // GRPC_SearchSolutionsRequest

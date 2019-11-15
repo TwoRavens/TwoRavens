@@ -383,15 +383,20 @@ class ModelH2O(Model):
         configuration = specification['configuration']
         resource_uri = Dataset(specification['input']).get_resource_uri()
         data = h2o.import_file(resource_uri)
+        y = self.targets[0]
         if 'CLASSIFICATION' in self.task:
-            data[self.targets[0]] = data[self.targets[0]].asfactor()
+            if data.types[y] == u'real':
+                data[y] = data[y].ascharacter()
+            data[y] = data[y].asfactor()
 
         results = pandas.DataFrame({
             'predict': self.model.predict(data).as_data_frame()['predict'],
-            'actual': data[self.targets[0]].as_data_frame()[self.targets[0]]
+            'actual': data[y].as_data_frame()[y]
         }).dropna()
 
         if 'CLASSIFICATION' in self.task:
+            if data.types[y] == u'real':
+                data[y] = data[y].ascharacter()
             results['actual'] = results['actual'].astype(int)
 
         scores = []
@@ -402,7 +407,7 @@ class ModelH2O(Model):
                         results['actual'],
                         results['predict']),
                     'metric': metric_schema,
-                    'target': self.targets[0]
+                    'target': y
                 })
             except ValueError as err:
                 print(f'Could not evaluate metric: {str(metric_schema)}')
@@ -455,7 +460,10 @@ class ModelH2O(Model):
         predict_type = configuration.get('predict_type', 'RAW')
 
         train = h2o.import_file(Dataset(specification['train']).get_resource_uri())
+        y = self.targets[0]
         if 'CLASSIFICATION' in self.task:
+            if train.types[y] == u'real':
+                train[y] = train[y].ascharacter()
             train[self.targets[0]] = train[self.targets[0]].asfactor()
 
         self.fit(train, specification['train'])
@@ -463,7 +471,9 @@ class ModelH2O(Model):
         test_dataset = Dataset(specification['input'])
         data = h2o.import_file(test_dataset.get_resource_uri())
         if 'CLASSIFICATION' in self.task:
-            data[self.targets[0]] = data[self.targets[0]].asfactor()
+            if data.types[y] == u'real':
+                data[y] = data[y].ascharacter()
+            data[y] = data[y].asfactor()
 
         # retry once
         try:
@@ -473,8 +483,10 @@ class ModelH2O(Model):
 
         if predict_type == 'RAW':
             if 'CLASSIFICATION' in self.task:
+                if data.types[y] == u'real':
+                    data[y] = data[y].ascharacter()
                 predictions = predictions[['predict']]
-            predictions.columns = [self.targets[0]]
+            predictions.columns = [y]
         else:
             # TODO: standardize probability column names
             predictions.drop('predict', 1, inplace=True)
