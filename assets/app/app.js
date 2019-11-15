@@ -267,7 +267,7 @@ export function set_mode(mode) {
     if (currentMode !== mode) {
         if (mode === 'model' && manipulate.pendingHardManipulation) {
             let ravenConfig = workspace.raven_config;
-            buildDatasetPreprocess(ravenConfig).then(response => {
+            buildDatasetPreprocess().then(response => {
                 if (!response.success) alertLog(response.message);
                 else {
                     setVariableSummaries(response.data.variables);
@@ -295,48 +295,17 @@ export function set_mode(mode) {
     resetPeek();
 }
 
-// TODO: should have an early exit if the manipulations are empty
-export let buildDatasetPreprocess = async ravenConfig => await getData({
-    method: 'aggregate',
-    query: JSON.stringify(queryMongo.buildPipeline(
-        ravenConfig.hardManipulations,
-        ravenConfig.variablesInitial)['pipeline']),
-    export: 'dataset'
-}).then(url => m.request({
-    method: 'POST',
-    url: ROOK_SVC_URL + 'preprocess.app',
-    data: {
-        data: url,
-        datastub: workspace.d3m_config.name
-    }
-}));
+export let buildDatasetPreprocess = () => getPreprocess(
+    JSON.stringify(queryMongo.buildPipeline(
+        workspace.raven_config.hardManipulations,
+        workspace.raven_config.variablesInitial)['pipeline']));
 
-export let buildProblemPreprocess = async (ravenConfig, problem) => await getData({
-    method: 'aggregate',
-    query: JSON.stringify(queryMongo.buildPipeline(
-        [...ravenConfig.hardManipulations, ...problem.manipulations, {
-            type: 'menu',
-            metadata: {
-                type: 'data',
-                nominal: getNominalVariables(problem),
-                sample: 5000
-            }
-        }],
-        ravenConfig.variablesInitial)['pipeline']),
-    export: 'dataset'
-}).then(url => m.request({
-    method: 'POST',
-    url: ROOK_SVC_URL + 'preprocess.app',
-    data: {
-        data: url,
-        datastub: workspace.d3m_config.name,
-        l1_activity: 'PROBLEM_DEFINITION',
-        l2_activity: 'PROBLEM_SPECIFICATION'
-    }
-})).then(response => {
-    if (!response.success) alertError(response.message);
-    else return response.data.variables
-});
+export let buildProblemPreprocess = problem => getPreprocess(JSON.stringify(queryMongo.buildPipeline(
+    [...workspace.raven_config.hardManipulations, ...problem.manipulations, {
+        type: 'menu',
+        metadata: {type: 'data', nominal: getNominalVariables(problem), sample: 5000}
+    }],
+    workspace.raven_config.variablesInitial)['pipeline']));
 
 
 export async function buildDatasetUrl(problem, lastStep) {
@@ -1093,11 +1062,11 @@ let getDatasetPath = async problem_data_info => {
     return problem_info_result.data.source_data_path;
 };
 
-export let getPreprocess = async (datasetPath, query) => {
-    if (query) datasetPath = await getData({
+export let getPreprocess = async query => {
+    let datasetPath = query ? await getData({
         method: 'aggregate', query,
         export: 'dataset'
-    });
+    }) : workspace.raven_config.datasetPath;
 
     let response = await m.request({
         method: 'POST',
@@ -1209,23 +1178,34 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                     .filter(variable => variableSummaries[variable].nature === 'nominal');
                 Object.values(workspace.raven_config.problems)
                     .forEach(problem => problem.tags.nominal = nominals);
-                // merge discovery into problem set if constructing a new raven config
-
-                // TODO: DISCOVERY
-                // Object.assign(workspace.raven_config.problems, discovery(preprocess.dataset.discovery));
             }
         })
         .then(m.redraw)
-        // .catch(err => {
-        //     setModal(m('div', m('p', "Preprocess failed."),
-        //         m('p', '(p: 2)')),
-        //         "Failed to load basic data.",
-        //         true,
-        //         "Reload Page",
-        //         false,
-        //         locationReload);
-        //     throw err;
-        // });
+        .catch(err => {
+            setModal(m('div', m('p', "Preprocess failed."),
+                m('p', '(p: 2)')),
+                "Failed to load basic data.",
+                true,
+                "Reload Page",
+                false,
+                locationReload);
+            throw err;
+        });
+
+    // DISCOVERY
+    let promiseDiscovery = promiseSampledDatasetPath
+        .then(sampledDatasetPath => m.request(ROOK_SVC_URL + 'discovery.app', {
+            method: 'POST',
+            data: {path: sampledDatasetPath}
+        }))
+        .then(response => {
+            if (!response.success) {
+                console.warn(response.message);
+                return;
+            }
+            // merge discovery into problem set if constructing a new raven config
+            promisePreprocess.then(_ => Object.assign(workspace.raven_config.problems, discovery(response.data)))
+        });
 
     // RECORD COUNT
     // wait until after sampling returns, because dataset is loaded into mongo
@@ -1345,7 +1325,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
         ]);
 
         if (awaitPreprocess)
-            await promisePreprocess;
+            await Promise.all([promisePreprocess, promiseDiscovery]);
 
         m.redraw();
 
@@ -1797,54 +1777,46 @@ export let hexToRgba = (hex, alpha) => {
  *  Process problems
  */
 export function discovery(problems) {
-
     // filter out problems with target of null
     // e.g. [{"target":null, "predictors":null,"transform":0, ...},]
     //
-    problems = problems.filter(yeTarget => yeTarget.target && yeTarget.target in variableSummaries);
+    problems = problems.filter(problem => problem.targets && problem.targets.every(target => target in variableSummaries));
 
     return problems.reduce((out, prob) => {
         let problemID = generateProblemID();
         let manips = [];
 
-        if (prob.subsetObs) {
-            manips.push({
-                type: 'subset',
-                id: 'subset ' + manips.length,
-                abstractQuery: [{
-                    id: problemID + '-' + String(0) + '-' + String(1),
-                    name: prob.subsetObs,
-                    show_op: false,
-                    cancellable: true,
-                    subset: 'automated'
-                }],
-                nodeId: 2,
-                groupId: 1
-            })
+        prob.subsetObs.forEach(subsetObs => manips.push({
+            type: 'subset',
+            id: 'subset ' + manips.length,
+            abstractQuery: [{
+                id: problemID + '-' + String(0) + '-' + String(1),
+                name: subsetObs,
+                show_op: false,
+                cancellable: true,
+                subset: 'automated'
+            }],
+            nodeId: 2,
+            groupId: 1
+        }));
+
+        // skip if transformations are present, D3M primitives cannot handle
+        if (!IS_D3M_DOMAIN) {
+            prob.transform.forEach(transformObs => {
+                let [variable, transform] = transformObs.split('=').map(_ => _.trim());
+                manips.push({
+                    type: 'transform',
+                    transforms: [{
+                        name: variable,
+                        equation: transform
+                    }],
+                    expansions: [],
+                    binnings: [],
+                    manual: [],
+                    id: 'transform ' + manips.length,
+                });
+            });
         }
-
-        if (prob.transform) {
-            // skip if transformations are present, D3M primitives cannot handle
-            if (IS_D3M_DOMAIN) return out;
-
-            let [variable, transform] = prob.transform.split('=').map(_ => _.trim());
-            manips.push({
-                type: 'transform',
-                transforms: [{
-                    name: variable,
-                    equation: transform
-                }],
-                expansions: [],
-                binnings: [],
-                manual: [],
-                id: 'transform ' + manips.length,
-            })
-        }
-
-        // R can't represent scalars
-        // So R json libraries demote singletons to scalars in serialization.
-        // coerceArray un-mangles data from R, in cases where you are expecting an array that could potentially be of length one
-        let coerceArray = data => Array.isArray(data) ? data : [data];
 
         // console.log('variableSummaries:' + JSON.stringify(variableSummaries))
         // console.log('>> prob:' +  JSON.stringify(prob))
@@ -1853,8 +1825,8 @@ export function discovery(problems) {
             problemID,
             system: "auto",
             description: undefined,
-            predictors: [...coerceArray(prob.predictors), ...getTransformVariables(manips)],
-            targets: [prob.target],
+            predictors: [...prob.predictors, ...getTransformVariables(manips)],
+            targets: prob.targets,
             // NOTE: if the target is manipulated, the metric/task could be wrong
             metric: undefined,
             metrics: [], // secondary evaluation metrics
@@ -1883,7 +1855,7 @@ export function discovery(problems) {
             },
             summaries: {} // this gets populated below
         };
-        setTask(inferIsCategorical(variableSummaries[prob.target]) ? 'classification' : 'regression', out[problemID])
+        setTask(inferIsCategorical(variableSummaries[prob.targets[0]]) ? 'classification' : 'regression', out[problemID]);
         return out;
     }, {});
 }
@@ -2297,8 +2269,8 @@ export function setSelectedProblem(problemID) {
         .then(m.redraw);
 
     // update preprocess
-    buildProblemPreprocess(ravenConfig, problem)
-        .then(setVariableSummaries)
+    buildProblemPreprocess(problem)
+        .then(preprocess => setVariableSummaries(preprocess.variables))
         .then(m.redraw);
 
     resetPeek();

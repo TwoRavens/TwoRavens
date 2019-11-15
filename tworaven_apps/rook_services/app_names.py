@@ -2,18 +2,15 @@
 Constants used to track the app names and url between the frontend and rook
 """
 
-HEALTH_CHECK_APP = 'HEALTH_CHECK_APP'
-
-
-
-PREPROCESS_ROOK_APP_NAME = 'preprocess.app'
-PARTIALS_ROOK_APP_NAME = 'partials.app'
-CARET_APP_NAME = 'caret.app'
-PLOTDATA_APP_NAME = 'plotdata.app'
-REPORT_APP_NAME = 'report.app'
+DISCOVERY_R_APP_NAME = 'discovery.app'
+PARTIALS_R_APP_NAME = 'partials.app'
+CARET_R_NAME = 'caret.app'
+PLOTDATA_R_NAME = 'plotdata.app'
+REPORT_R_NAME = 'report.app'
 
 EXPLORE_APP = 'EXPLORE_APP'
 PLOTDATA_APP = 'PLOTDATA_APP'
+HEALTH_CHECK_APP = 'HEALTH_CHECK_APP'
 PARTIALS_APP = 'PARTIALS_APP'
 
 DATA_KEY = 'arguments'
@@ -29,12 +26,12 @@ DATA_KEY = 'arguments'
 ROOK_APP_NAMES = [
     # (standard     frontend   backend )
 
-    ('PREPROCESS_APP', PREPROCESS_ROOK_APP_NAME, PREPROCESS_ROOK_APP_NAME),
-    ('CARET_APP', CARET_APP_NAME, CARET_APP_NAME),
-    (PLOTDATA_APP, PLOTDATA_APP_NAME, PLOTDATA_APP_NAME),
-    ('ROOK_REPORT_APP', REPORT_APP_NAME, REPORT_APP_NAME),
+    ('DISCOVERY_APP', DISCOVERY_R_APP_NAME, DISCOVERY_R_APP_NAME),
+    ('CARET_APP', CARET_R_NAME, CARET_R_NAME),
+    (PLOTDATA_APP, PLOTDATA_R_NAME, PLOTDATA_R_NAME),
+    ('ROOK_REPORT_APP', REPORT_R_NAME, REPORT_R_NAME),
     (HEALTH_CHECK_APP, 'healthCheck.app', 'healthCheck.app'),
-    (PARTIALS_APP, PARTIALS_ROOK_APP_NAME, PARTIALS_ROOK_APP_NAME),  # construct partials dataset
+    (PARTIALS_APP, PARTIALS_R_APP_NAME, PARTIALS_R_APP_NAME),  # construct partials dataset
 ]
 
 # Look up by frontend name, 2nd entry in triple

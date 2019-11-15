@@ -551,9 +551,9 @@ export let setQueryUpdated = async state => {
 
         selectedProblem.tags.transformed = [...app.getTransformVariables(selectedProblem.manipulations)];
 
-        app.buildProblemPreprocess(ravenConfig, selectedProblem)
-            .then(summaries => {
-                if (summaries) app.setVariableSummaries(summaries)
+        app.buildProblemPreprocess(selectedProblem)
+            .then(preprocess => {
+                if (preprocess) app.setVariableSummaries(preprocess.variables)
             }).then(m.redraw);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
