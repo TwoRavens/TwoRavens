@@ -37,20 +37,20 @@ preprocess <- if (is.null(params$metadata)) jsonlite::fromJSON(params$path) else
 
 variableNames <- names(preprocess$variables)
 variableNames <- variableNames[variableNames != 'd3mIndex']
-if (length(variableNames) < 20) {
-  
-  continuousVars <- variableNames[sapply(variableNames, function(name) preprocess$variables[[name]]$numchar == 'numeric')]
-  dataCorrelation <- matrix(preprocess$dataset$covarianceMatrix, nrow=length(continuousVars))
-
-  rownames(dataCorrelation) <- continuousVars
-  colnames(dataCorrelation) <- continuousVars
-
-  cat('## Covariance Matrix \n')
-
-  dataCorrelation[lower.tri(dataCorrelation)] <- NA
-  ggplot2::ggplot(data = reshape2::melt(dataCorrelation, na.rm = TRUE),
-         ggplot2::aes(x=Var1, y=Var2, fill=value)) + ggplot2::geom_tile()
-}
+# if (length(variableNames) < 20) {
+#
+#   continuousVars <- variableNames[sapply(variableNames, function(name) identical(preprocess$variables[[name]]$numchar, 'numeric'))]
+#   dataCorrelation <- matrix(preprocess$dataset$covarianceMatrix, nrow=length(continuousVars))
+#
+#   rownames(dataCorrelation) <- continuousVars
+#   colnames(dataCorrelation) <- continuousVars
+#
+#   cat('## Covariance Matrix \n')
+#
+#   dataCorrelation[lower.tri(dataCorrelation)] <- NA
+#   ggplot2::ggplot(data = reshape2::melt(dataCorrelation, na.rm = TRUE),
+#                   ggplot2::aes(x=Var1, y=Var2, fill=value)) + ggplot2::geom_tile()
+# }
 ```
 
 
@@ -61,51 +61,51 @@ renderVariable <- function(variableName) {
   cat(paste('##', variableName, '\n'))
   variable <- preprocess$variables[[variableName]]
   attributes <- names(variable)
-  
+
   plotLeft <- grid::nullGrob()
   plotRight <- grid::nullGrob()
-  if (variable$plottype == 'continuous') {
+  if (!is.null(variable[['pdfPlotType']]) && identical(variable[['pdfPlotType']], 'continuous')) {
     dataPlot <- data.frame(
-      x=variable$plotx,
-      y=variable$ploty)
+      x=variable$pdfPlotX,
+      y=variable$pdfPlotY)
     plotLeft <- ggplot() + geom_area(aes(y = y, x = x), data = dataPlot,
         stat="identity") + ggtitle('Probability Density')
   }
-  else if (variable$plottype == 'bar' && length(variable$plotvalues) < 20) {
+  else if (!is.null(variable[['plotValues']]) & length(variable$plotValues) < 20) {
     dataPlot <- data.frame(
-      x=names(variable$plotvalues),
-      y=as.vector(unlist(variable$plotvalues)))
+      x=names(variable$plotValues),
+      y=as.vector(unlist(variable$plotValues)))
     plotLeft <- ggplot() + geom_bar(aes(y = y, x = x), data = dataPlot,
         stat="identity") + ggtitle('Probability Density')
   }
 
-  if (variable$cdfplottype == 'continuous') {
+  if (identical(variable$cdfPlotType, 'continuous')) {
     dataPlot <- data.frame(
-      x=variable$cdfplotx,
-      y=variable$cdfploty)
+      x=variable$cdfPlotX,
+      y=variable$cdfPlotY)
     plotRight <- ggplot() + geom_area(aes(y = y, x = x), data = dataPlot,
         stat="identity") + ggtitle('Cumulative Density')
   }
-  else if (variable$cdfplottype == 'bar') {
+  else if (identical(variable$cdfPlotType, 'bar')) {
     dataPDF <- data.frame(
-      x=preprocess$variables[[variableName]]$cdfplotx,
-      y=preprocess$variables[[variableName]]$cdfploty)
+      x=preprocess$variables[[variableName]]$cdfPlotX,
+      y=preprocess$variables[[variableName]]$cdfPlotY)
     plotRight <- ggplot() + geom_bar(aes(y = y, x = x), data = dataPDF,
         stat="identity") + ggtitle('Cumulative Density')
   }
   gridExtra::grid.arrange(plotLeft, plotRight, nrow = 1)
   cat('\n')
   cat('\n')
-  
-  statistics <- sapply(keepStatistics, function(statisticName) variable[[statisticName]])
+
+  statistics <- sapply(keepStatistics, function(statisticName) toString(variable[[statisticName]]))
   names(statistics) <- keepStatistics
-  
+
   print(xtable::xtable(as.data.frame(statistics)))
   cat('\n')
   cat('\n')
 }
 
-keepStatistics <- c('binary', 'fewest', 'freqfewest', 'freqmid', 'freqmode', 'herfindahl', 'interval', 'invalid', 'max', 'mean', 'median', 'mid', 'mode', 'nature', 'numchar', 'sd', 'uniques', 'valid')
+keepStatistics <- c('binary', 'fewestValues', 'fewestFreq', 'midpointFreq', 'modeFreq', 'herfindahlIndex', 'interval', 'invalidCount', 'max', 'mean', 'median', 'midpoint', 'mode', 'nature', 'numchar', 'stdDev', 'uniqueCount', 'validCount')
 
 for (variableName in variableNames) renderVariable(variableName)
 ```
