@@ -175,8 +175,7 @@ def create_destination_directory(user_workspace, role):
 @csrf_exempt
 def view_partials_app(request):
     """For the partials app, a new/unique directory is created
-    for R to write to.  In addition, the current datasetDoc is
-    written to this location.
+    for R to write to.
     """
     # -----------------------------
     # get the app info
@@ -213,7 +212,6 @@ def view_partials_app(request):
     dest_dir_info = create_destination_directory(user_workspace, role='partials')
     print('dest_dir_info', dest_dir_info)
 
-
     if not dest_dir_info.success:
         return JsonResponse(get_json_error(dest_dir_info.err_msg))
 
@@ -238,24 +236,7 @@ def view_partials_app(request):
 
     # Pass the new partials directory to rook
     #
-    raven_data['dataloc'] = dest_folderpath
-
-    # write metadata to temporary file, to avoid passing large data through url arguments
-    metadata_path = join(dest_folderpath, 'metadata.json')
-    with open(metadata_path, 'w') as metadata_file:
-        json.dump(raven_data['metadata'], metadata_file)
-    raven_data['metadataPath'] = metadata_path
-    del raven_data['metadata']
-
-    session_key = get_session_key(request)
-    raven_data[ROOK_ZESSIONID] = session_key
-
-    # dump JSON to text
-    #
-    raven_data_text_info = json_dumps(raven_data)
-    if not raven_data_text_info.success:
-        user_msg = 'Failed to convert data to JSON. (partials app)'
-        return JsonResponse(get_json_error(user_msg))
+    raven_data['path_output'] = dest_folderpath
 
     # --------------------------------
     # Behavioral logging
@@ -265,7 +246,7 @@ def view_partials_app(request):
     activity_l1 = bl_static.L1_PROBLEM_DEFINITION
     activity_l2 = bl_static.L2_ACTIVITY_BLANK
 
-    log_data = dict(session_key=session_key,
+    log_data = dict(session_key=get_session_key(request),
                     feature_id=feature_id,
                     activity_l1=activity_l1,
                     activity_l2=activity_l2)
@@ -284,28 +265,12 @@ def view_partials_app(request):
 
     print('status code from rook call: %s' % rservice_req.status_code)
 
-    # response in this format:
-    #  ["/ravens_volume/test_output/196_autoMpg/additional_inputs/partials/ws_33/2019-07-12_17-40-50/datasetDoc.json"]
-
     rook_json_info = json_loads(rservice_req.text)
     if not rook_json_info.success:
         user_msg = '%s (partials)' % rook_json_info.err_msg
         return JsonResponse(get_json_error(user_msg))
 
-    rook_json = rook_json_info.result_obj
-
-    print(rook_json)
-
-    if isinstance(rook_json, dict) and rook_json:
-        return JsonResponse(\
-                get_json_success('Partials call finished.',
-                                 data=rook_json))
-
-    user_msg = ('Expected a dict from Rook.'
-                ' Found: %s (partials)') % rservice_req.text
-    return JsonResponse(get_json_error(user_msg))
-
-
+    return JsonResponse(rook_json_info.result_obj)
 
 
 @csrf_exempt
