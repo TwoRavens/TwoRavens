@@ -9,8 +9,6 @@ from django.shortcuts import render
 from django.http import JsonResponse    #, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 
-from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
-
 from tworaven_apps.raven_auth.models import User
 from tworaven_apps.ta2_interfaces.models import StoredRequest, StoredResponse
 
@@ -36,6 +34,9 @@ from tworaven_apps.utils.view_helper import SESSION_KEY, get_session_key
 
 from tworaven_apps.ta2_interfaces.ta2_search_solutions_helper import \
         SearchSolutionsHelper
+
+from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
+from tworaven_apps.user_workspaces.reset_util import ResetUtil
 
 from tworaven_apps.ta2_interfaces import static_vals as ta2_static
 from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
@@ -205,6 +206,7 @@ def view_end_search_solutions(request):
     user_info = get_authenticated_user(request)
     if not user_info.success:
         return JsonResponse(get_json_error(user_info.err_msg))
+    user = user_info.result_obj
 
     req_body_info = get_request_body(request)
     if not req_body_info.success:
@@ -222,7 +224,7 @@ def view_end_search_solutions(request):
 
     # Let's call the TA2 and end the session!
     #
-    params = dict(user=user_info.result_obj)
+    params = dict(user=user)
     search_info = end_search_solutions(req_body_info.result_obj,
                                        **params)
 
@@ -231,7 +233,15 @@ def view_end_search_solutions(request):
 
     # The session is over, write the log entries files
     #
-    LogEntryMaker.write_user_log_from_request(request)
+    #LogEntryMaker.write_user_log_from_request(request)
+    # User is done at this point!
+    # Write out the log and delete it....
+    user_workspace = None
+    ws_info = get_latest_user_workspace(request)
+    if ws_info.success:
+        user_workspace = ws_info.result_obj
+    ResetUtil.write_and_clear_behavioral_logs(user, user_workspace)
+
 
     json_info = get_json_success('success!', data=search_info.result_obj)
     return JsonResponse(json_info, safe=False)
