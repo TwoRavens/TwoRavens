@@ -28,6 +28,7 @@ from tworaven_apps.ta2_interfaces.basic_problem_writer import BasicProblemWriter
 
 from tworaven_apps.raven_auth.models import User
 from tworaven_apps.user_workspaces.models import UserWorkspace
+from tworaven_apps.utils.url_helper import format_file_uri_to_path
 
 LOGGER = logging.getLogger(__name__)
 
@@ -503,8 +504,18 @@ class EventJobUtil(object):
             else:
                 return ok_resp(settings.MONGO_COLLECTION_PREFIX + collection)
 
+        if not datafile:
+            return err_resp('The file_uri cannot be None or an empty string.')
+
+        print('loading')
+        print(datafile)
         if not os.path.exists(datafile):
             return err_resp(collection + ' not found')
+        # Convert the file uri to a path
+        #
+        fpath, err_msg = format_file_uri_to_path(datafile)
+        if err_msg:
+            return err_resp(err_msg)
 
         dcr = DuplicateColumnRemover(datafile)
 
