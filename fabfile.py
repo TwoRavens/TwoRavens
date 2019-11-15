@@ -99,8 +99,9 @@ def make_d3m_configs_from_files_multiuser_test_limited():
     params[cstatic.SELECTED_NAME_LIST] = ['05_incarceration',
                                           '10_state_immigration',
                                           '185_baseball',
-                                          '196_autoMpg',
-                                          'DA_poverty_estimation']
+                                          #'196_autoMpg',
+                                          #'DA_poverty_estimation'
+                                          ]
 
     loader = EnvConfigLoader.make_d3m_test_configs_env_based(\
                     '/ravens_volume/test_data',
