@@ -27,11 +27,7 @@ else:
     - tworavens-preprocess via pypi: https://pypi.org/project/tworavens-preprocess/
 
 """
-import csv
-from io import StringIO
-import json
 from os.path import isfile
-from datetime import datetime as dt
 import requests
 
 # source: https://pypi.org/project/tworavens-preprocess/
@@ -39,13 +35,8 @@ from raven_preprocess.preprocess_runner import PreprocessRunner
 
 from tworaven_apps.data_prep_utils.duplicate_column_remover import DuplicateColumnRemover
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
-from tworaven_apps.rook_services.rook_app_info import RookAppInfo
-from tworaven_apps.rook_services.app_names import \
-    (PREPROCESS_ROOK_APP_NAME)
+
 from tworaven_apps.utils.json_helper import json_dumps, json_loads
-from tworaven_apps.utils.dict_helper import column_uniquify
-from tworaven_apps.utils.basic_response import (ok_resp,
-                                                err_resp)
 
 
 
@@ -75,11 +66,7 @@ class PreprocessUtil(BasicErrCheck):
 
         self.column_names = None
 
-        if self.use_python_preprocess:
-            self.run_python_preprocess()
-        else:
-            self.set_rook_app_info()
-            self.run_preprocess()
+        self.run_preprocess()
 
 
     def get_preprocess_data_as_json(self, indent=None):
@@ -103,16 +90,6 @@ class PreprocessUtil(BasicErrCheck):
         return self.preprocess_data
 
 
-    def set_rook_app_info(self):
-        """Create a RookAppInfo object"""
-
-        self.rook_app_info = RookAppInfo.get_appinfo_from_url(PREPROCESS_ROOK_APP_NAME)
-        if self.rook_app_info is None:
-            err_msg = ('unknown rook app: "{0}" (please add "{0}" to '
-                       ' "tworaven_apps/rook_services/app_names.py")').format(\
-                       PREPROCESS_ROOK_APP_NAME,)
-            self.add_error_message(err_msg)
-
     def get_call_data(self):
         """Format data for rook call"""
         if self.has_error():
@@ -134,7 +111,7 @@ class PreprocessUtil(BasicErrCheck):
         return None
 
 
-    def run_python_preprocess(self):
+    def run_preprocess(self):
         """Run preprocess steps"""
         if self.has_error():
             return
@@ -171,67 +148,6 @@ class PreprocessUtil(BasicErrCheck):
         # retrieve the data as a python OrderedDict
         #
         self.preprocess_data = runner.get_final_dict()
-
-
-    def run_preprocess(self):
-        """Run preprocess steps"""
-        if self.has_error():
-            return
-
-        # Make sure file exists
-        #
-        if not (self.source_path and isfile(self.source_path)):
-            self.add_error_message('File not found: %s' % self.source_path)
-            return
-
-        # Fix duplicate columns
-        #
-        if self.fix_duplicate_columns:
-            dcr = DuplicateColumnRemover(self.source_path)
-            self.column_names = dcr.updated_columns
-
-            self.column_names = [requests.utils.quote(column) for column in self.column_names]
-
-            if dcr.has_error():
-                user_msg = (f'Augment error during column checks: '
-                            f'{dcr.get_error_message()}')
-                self.add_error_message(user_msg)
-                return
-
-        # Set datastub, if not set
-        #
-        if not self.datastub:
-            time_now = dt.now().strftime('%Y-%m-%d_%H-%M-%S')
-            self.datastub = 'config_%s' % time_now
-
-        # Format call data
-        #
-        call_data = self.get_call_data()
-        if not call_data:
-            return
-
-        rook_svc_url = self.rook_app_info.get_rook_server_url()
-
-        # Call R services
-        #
-        try:
-            rservice_req = requests.post(rook_svc_url,
-                                         json=call_data)
-        except ConnectionError:
-            err_msg = 'R Server not responding: %s' % rook_svc_url
-            self.add_err_msg(err_msg)
-            return
-
-        #  Convert rook text to an OrderedDict
-        #
-        result_info = json_loads(rservice_req.text)
-        if not result_info.success:
-            user_msg = ('Failed to convert preprocess data '
-                        ' to JSON: %s') % result_info.err_msg
-            self.add_err_msg(user_msg)
-            return
-
-        self.preprocess_data = result_info.result_obj
 
 
 """

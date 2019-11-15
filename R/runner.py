@@ -34,8 +34,6 @@ def task_handler(task):
     robjects.r.source('setup.R')
     robjects.r.source('utils.R')
 
-    robjects.r.source('preprocess/preprocess.R')
-
     for app in os.listdir('apps/'):
         if app.endswith('.R'):
             robjects.r.source(f'apps/{app}')

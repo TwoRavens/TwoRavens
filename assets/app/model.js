@@ -48,7 +48,6 @@ export class CanvasModel {
                 onDragOut: pebble => {
                     let pebbles = forceData.summaries[pebble] && forceData.summaries[pebble].pdfPlotType === 'collapsed'
                         ? forceData.summaries[pebble].childNodes : [pebble];
-
                     pebbles.forEach(pebble => setGroup(selectedProblem, 'None', pebble));
                     selectedProblem.pebbleLinks = (selectedProblem.pebbleLinks || [])
                         .filter(link => link.target !== pebble && link.source !== pebble);
@@ -58,8 +57,6 @@ export class CanvasModel {
                 onDragOver: (pebble, groupId) => {
                     let pebbles = forceData.summaries[pebble.name].pdfPlotType === 'collapsed'
                         ? forceData.summaries[pebble.name].childNodes : [pebble.name];
-
-                    console.log('on drag over', groupId);
                     pebbles.forEach(pebble => setGroup(selectedProblem, groupId, pebble));
                     app.resetPeek();
                     m.redraw();
@@ -67,12 +64,7 @@ export class CanvasModel {
                 onDragAway: (pebble, groupId) => {
                     let pebbles = forceData.summaries[pebble.name] && forceData.summaries[pebble.name].pdfPlotType === 'collapsed'
                         ? forceData.summaries[pebble.name].childNodes : [pebble.name];
-
-                    console.log('pebble dragged away', pebble);
-                    console.log(pebbles);
-                    console.log(groupId);
-                    pebbles
-                        .forEach(pebble => setGroup(selectedProblem, 'Loose', pebble));
+                    pebbles.forEach(pebble => setGroup(selectedProblem, 'Loose', pebble));
                     app.resetPeek();
                     m.redraw();
                 },
