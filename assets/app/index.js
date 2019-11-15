@@ -39,7 +39,6 @@ import ModalWorkspace from "./views/ModalWorkspace";
 import Body_EventData from './eventdata/Body_EventData';
 import Body_Dataset from "./views/Body_Dataset";
 
-// import {efdCategoricalData, efdContinuousData, tempProblem} from "./variableImportanceDataSample";
 import {getSelectedProblem} from "./app";
 import {buildDatasetUrl} from "./app";
 import {alertWarn} from "./app";

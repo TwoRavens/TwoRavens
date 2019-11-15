@@ -39,7 +39,7 @@ urlpatterns = (
          name='view_retrieve_d3m_confusion_data'),
 
     path(r'retrieve-output-EFD-data',
-         views_additional.view_retrieve_d3m_EFD_data,
+         views_additional.view_retrieve_d3m_efd_data,
          name='view_retrieve_d3m_EFD_data'),
 
     path(r'get-train-test-split',
