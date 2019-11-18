@@ -98,7 +98,7 @@ export let vegaTimeLineChart = (xData, realData, fittedData, xName, yName, title
                 "mark": "line",
                 //TODO Need to change the type of 'x' after merge the preprocess branch, it should be 'temporal' if that's the case, otherwise, try 'quantitative'
                 "encoding": {
-                    "x": {"field": xName, "type": "temporal", "axis": {"title": xName}},
+                    "x": {"field": xName, "type": "quantitative", "axis": {"title": xName}},
                     "y": {"field": yName, "type": "quantitative", "axis": {"title": yName}},
                     "color": {"field": legendName, "type": "nominal"},
                     "tooltip": {"field": "tworavensLabel", "type": "nominal"}
