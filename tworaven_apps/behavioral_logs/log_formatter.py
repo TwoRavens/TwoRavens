@@ -138,13 +138,13 @@ class BehavioralLogFormatter(BasicErrCheck):
         if not isinstance(log_entry, BehavioralLogEntry):
             return None
 
-        csv_data = [log_entry.created,
+        csv_data = [log_entry.created.isoformat(),
                     log_entry.feature_id,
                     log_entry.type,
                     log_entry.activity_l1,
                     log_entry.activity_l2,
                     log_entry.other_to_string(),
-                    'F' if log_entry.is_optional else 'T'
+                    #'F' if log_entry.is_optional else 'T'
                     ]
 
         return csv_data
@@ -158,8 +158,7 @@ class BehavioralLogFormatter(BasicErrCheck):
                 'type',
                 'activity_l1',
                 'activity_l2',
-                'other',
-                'mandatory']
+                'other']
 
     @staticmethod
     def delete_logs_for_user(user):

@@ -982,26 +982,43 @@ export let buildForceData = problem => {
 
 export let setGroup = (problem, group, name) => {
     delete problem.unedited;
+
+    // behavioral logging
+    let logParams = {
+        feature_id: 'blank',
+        activity_l1: 'PROBLEM_DEFINITION',
+        activity_l2: 'PROBLEM_SPECIFICATION',
+        other: {variable: name, problem: problem.problemID }
+      }
+
+  //  console.log('problem: ' + problem.problemID);
+//    console.log('problem: ' + JSON.stringify(problem))
     if (group === 'Loose') {
         !problem.tags.loose.includes(name) && problem.tags.loose.push(name);
         app.remove(problem.targets, name);
         app.remove(problem.predictors, name);
+        logParams.feature_id = 'MODEL_ADD_VARIABLE';
     }
     else if (group === 'Predictors') {
         !problem.predictors.includes(name) && problem.predictors.push(name);
         app.remove(problem.targets, name);
         app.remove(problem.tags.loose, name);
+        logParams.feature_id = 'MODEL_ADD_VARIABLE_AS_PREDICTOR';
     }
     else if (group === 'Targets') {
         !problem.targets.includes(name) && problem.targets.push(name);
         app.remove(problem.predictors, name);
         app.remove(problem.tags.loose, name);
+        logParams.feature_id = 'MODEL_ADD_VARIABLE_AS_TARGET';
     }
     else if (group === 'None' || group === undefined) {
         app.remove(problem.predictors, name);
         app.remove(problem.tags.loose, name);
         app.remove(problem.targets, name);
+        logParams.feature_id = 'MODEL_REMOVE_VARIABLE';
     }
+    // console.log(logParams);
+    app.saveSystemLogEntry(logParams);
 
     app.resetPeek();
 };

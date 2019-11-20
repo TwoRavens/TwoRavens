@@ -293,7 +293,8 @@ class SearchSolutionsHelper(BasicErrCheck):
         log_data = dict(session_key=self.session_key,
                         feature_id=ta2_static.GET_SEARCH_SOLUTIONS_RESULTS,
                         activity_l1=bl_static.L1_MODEL_SELECTION,
-                        activity_l2=bl_static.L2_MODEL_SEARCH)
+                        activity_l2=bl_static.L2_MODEL_SEARCH,
+                        other=params_dict)
 
         LogEntryMaker.create_ta2ta3_entry(self.user_object, log_data)
 
@@ -359,6 +360,22 @@ class SearchSolutionsHelper(BasicErrCheck):
                 # -----------------------------------------
                 stored_resp_info = StoredResponse.add_stream_success_response(\
                                     stored_request, result_json)
+
+
+                # -----------------------------------------
+                # Tracking this in the behavioral log,
+                #  e.g. checking time lapse between creation
+                #   of solution and if user investigates this model,
+                #  later, if at all
+                # -----------------------------------------
+                log_data = dict(session_key=self.session_key,
+                                feature_id=ta2_static.GET_SEARCH_SOLUTIONS_RESULTS_RESPONSE,
+                                activity_l1=bl_static.L1_MODEL_SELECTION,
+                                activity_l2=bl_static.L2_MODEL_SEARCH,
+                                other=result_json)
+
+                LogEntryMaker.create_ta2ta3_entry(self.user_object, log_data)
+
 
                 # -----------------------------------------
                 # Make sure the response was saved (probably won't happen)
@@ -537,7 +554,8 @@ class SearchSolutionsHelper(BasicErrCheck):
         log_data = dict(session_key=self.session_key,
                         feature_id=ta2_static.DESCRIBE_SOLUTION,
                         activity_l1=bl_static.L1_MODEL_SELECTION,
-                        activity_l2=bl_static.L2_MODEL_SUMMARIZATION)
+                        activity_l2=bl_static.L2_MODEL_SUMMARIZATION,
+                        other=req_params)
 
         LogEntryMaker.create_ta2ta3_entry(self.user_object, log_data)
 
@@ -573,13 +591,15 @@ class SearchSolutionsHelper(BasicErrCheck):
 
         describe_data[ta2_static.KEY_PIPELINE_ID] = pipeline_id
         describe_data[ta2_static.KEY_SEARCH_ID] = self.search_id
+        describe_data[ta2_static.KEY_SOLUTION_ID] = solution_id
         describe_data.move_to_end(ta2_static.KEY_PIPELINE_ID, last=False)
 
         # params = dict()
         # if not stored_request.pipeline_id:
         #    params['pipeline_id'] = describe_data[KEY_PIPELINE_ID]
 
-        stored_info = StoredResponse.add_success_response(stored_request,
+        stored_info = StoredResponse.add_success_response(\
+                                            stored_request,
                                             describe_data,
                                             pipeline_id=pipeline_id)
 
@@ -589,6 +609,22 @@ class SearchSolutionsHelper(BasicErrCheck):
         print(f'run_describe_solution 3. stored_info.result_obj.pipeline_id: {stored_info.result_obj.pipeline_id}')
 
         print(f'run_describe_solution 4. stored_request.pipeline_id: {stored_request.pipeline_id}')
+
+
+        # -----------------------------------------
+        # Tracking this in the behavioral log,
+        #  e.g. checking time lapse between creation
+        #   of solution and if user investigates this model,
+        #  later, if at all
+        # -----------------------------------------
+        log_data = dict(session_key=self.session_key,
+                        feature_id=ta2_static.DESCRIBE_SOLUTION_RESPONSE,
+                        activity_l1=bl_static.L1_MODEL_SELECTION,
+                        activity_l2=bl_static.L2_MODEL_SEARCH,
+                        other=describe_data)
+
+        LogEntryMaker.create_ta2ta3_entry(self.user_object, log_data)
+
 
         # -----------------------------------------------
         # send responses back to WebSocket

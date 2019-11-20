@@ -845,7 +845,9 @@ let resultsSubpanels = {
 };
 
 
-// when selected, the key/value [mode]: [pipelineID] is set.
+/*
+  Set a new selected solution
+*/
 export let setSelectedSolution = (problem, source, solutionId) => {
     solutionId = String(solutionId);
 
@@ -875,12 +877,47 @@ export let setSelectedSolution = (problem, source, solutionId) => {
         // set behavioral logging
         logParams.feature_id = 'RESULTS_SELECT_SOLUTION';
         logParams.activity_l2 = 'MODEL_SUMMARIZATION';
+
+        // ------------------------------------------------
+        // Logging, include score, rank, and solutionId
+        // ------------------------------------------------
+        let chosenSolution = problem.solutions[source][solutionId];
+        if (chosenSolution){
+            let adapter = getSolutionAdapter(problem, chosenSolution);
+            let score = adapter.getScore(problem.metric);
+            if (score !== undefined){
+              logParams.other = {
+                          solutionId: chosenSolution.pipeline.id,
+                          rank: getProblemRank(problem.solutions[source], solutionId),
+                          performance: score,
+                          metric: selectedMetric[source],
+                          };
+            //  console.log(JSON.str)
+            }
+        } else{
+            console.log('>>>> NOPE! no chosenSolution');
+        }
+
+        // ------------------------------------------------
+        // ------------------------------------------------
     }
 
     // record behavioral logging
     app.saveSystemLogEntry(logParams);
 
 };
+
+
+
+export let getProblemRank = (solutions, solutionId) => {
+    let cnt = 0;
+    for (let solutionKey of Object.keys(solutions).reverse()) {
+        cnt += 1;
+        if (solutionKey === solutionId) return String(cnt);
+    };
+   return String(-1);
+}
+
 
 export let getSolutions = (problem, source) => {
     if (!problem) return [];

@@ -98,7 +98,9 @@ export let setPeekInlineShown = state => {
  */
 export let logEntryPeekUsed = is_external => {
 
-  let logParams = {feature_id: 'PEEK', activity_l1: 'DATA_PREPARATION'};
+  let logParams = {feature_id: 'PEEK',
+                   activity_l1: 'DATA_PREPARATION',
+                   activity_l2: 'DATA_EXPLORATION'};
   if (is_external){
     logParams.feature_id = 'PEEK_NEW_WINDOW';
   }
@@ -251,10 +253,10 @@ export function set_mode(mode) {
      * Make an entry in the behavioral logs
      */
     let logParams = {
-                      feature_id: mode.toUpperCase(),
+                      feature_id: mode.toUpperCase() + '_MODE_SWITCH',
                       activity_l2: 'SWITCH_MODE'
                     };
-    if (is_model_mode){ logParams.activity_l1 = 'MODEL_SELECTION'};
+    if (is_model_mode){ logParams.activity_l1 = 'PROBLEM_DEFINITION'};
     if (is_explore_mode){ logParams.activity_l1 = 'DATA_PREPARATION'};
     if (is_results_mode){ logParams.activity_l1 = 'MODEL_SELECTION'};
     if (is_manipulate_mode){ logParams.activity_l1 = 'DATA_PREPARATION'};

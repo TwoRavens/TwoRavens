@@ -59,7 +59,11 @@ UPDATE_PROBLEM = 'UpdateProblem'
 SEARCH_SOLUTIONS = 'SearchSolutions'
 GET_SEARCH_SOLUTIONS_RESULTS = 'GetSearchSolutionsResults'
 
+GET_SEARCH_SOLUTIONS_RESULTS_RESPONSE = 'GetSearchSolutionsResultsResponse'
+
+
 DESCRIBE_SOLUTION = 'DescribeSolution'
+DESCRIBE_SOLUTION_RESPONSE = 'DescribeSolutionResponse'
 
 FIT_SOLUTION = 'FitSolution'
 GET_FIT_SOLUTION_RESULTS = 'GetFitSolutionResults'

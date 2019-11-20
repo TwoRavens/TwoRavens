@@ -160,7 +160,8 @@ class ProduceSolutionHelper(BasicErrCheck):
         log_data = dict(session_key=self.session_key,
                         feature_id=ta2_static.PRODUCE_SOLUTION,
                         activity_l1=bl_static.L1_MODEL_SELECTION,
-                        activity_l2=bl_static.L2_MODEL_EXPLANATION)
+                        activity_l2=bl_static.L2_MODEL_EXPLANATION,
+                        other=self.produce_params)
 
         LogEntryMaker.create_ta2ta3_entry(self.user_object, log_data)
 
@@ -286,7 +287,8 @@ class ProduceSolutionHelper(BasicErrCheck):
         log_data = dict(session_key=self.session_key,
                         feature_id=ta2_static.GET_PRODUCE_SOLUTION_RESULTS,
                         activity_l1=bl_static.L1_MODEL_SELECTION,
-                        activity_l2=bl_static.L2_MODEL_EXPLANATION)
+                        activity_l2=bl_static.L2_MODEL_EXPLANATION,
+                        other=params_dict)
 
         LogEntryMaker.create_ta2ta3_entry(self.user_object, log_data)
 

@@ -148,7 +148,8 @@ class ScoreSolutionHelper(BasicErrCheck):
         log_data = dict(session_key=self.session_key,
                         feature_id=ta2_static.SCORE_SOLUTION,
                         activity_l1=bl_static.L1_MODEL_SELECTION,
-                        activity_l2=bl_static.L2_MODEL_SUMMARIZATION)
+                        activity_l2=bl_static.L2_MODEL_SUMMARIZATION,
+                        other=self.score_params)
 
         LogEntryMaker.create_ta2ta3_entry(self.user_object, log_data)
 
@@ -265,7 +266,8 @@ class ScoreSolutionHelper(BasicErrCheck):
         log_data = dict(session_key=self.session_key,
                         feature_id=ta2_static.GET_SCORE_SOLUTION_RESULTS,
                         activity_l1=bl_static.L1_MODEL_SELECTION,
-                        activity_l2=bl_static.L2_MODEL_SUMMARIZATION)
+                        activity_l2=bl_static.L2_MODEL_SUMMARIZATION,
+                        other=params_dict)
 
         LogEntryMaker.create_ta2ta3_entry(self.user_object, log_data)
 
