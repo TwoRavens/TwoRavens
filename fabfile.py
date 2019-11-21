@@ -81,6 +81,31 @@ def make_d3m_configs_from_files_multiuser_test():
                     '/ravens_volume/test_data',
                     **params)
 
+@task
+def make_d3m_configs_from_files_multiuser_test_limited():
+    """11/2019 Make configs from /ravens_volume and loads them to db
+    Also make the input/output directories 1-level higher than usual
+    """
+    clear_d3m_configs()
+
+    from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
+    from tworaven_apps.configurations import static_vals as cstatic
+
+    params = dict(is_multi_dataset_demo=True)
+
+    # Names of directories of datasets that should be available to users
+    #   - This can also be updated in the admin
+    #
+    params[cstatic.SELECTED_NAME_LIST] = ['05_incarceration',
+                                          '10_state_immigration',
+                                          '185_baseball',
+                                          #'196_autoMpg',
+                                          #'DA_poverty_estimation'
+                                          ]
+
+    loader = EnvConfigLoader.make_d3m_test_configs_env_based(\
+                    '/ravens_volume/test_data',
+                    **params)
 
 @task
 def clear_d3m_configs():

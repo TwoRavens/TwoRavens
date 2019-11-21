@@ -65,6 +65,11 @@ class UserWorkspace(TimeStampedModel):
                                            blank=True,
                                            null=True)
 
+    behavioral_log = models.FileField(\
+                    help_text='Behavioral log',
+                    upload_to='behavioral_logs/%Y/%m/%d/',
+                    blank=True)
+
     hash_id = models.CharField(help_text='(auto-generated)',
                                max_length=255,
                                blank=True)

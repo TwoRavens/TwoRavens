@@ -108,7 +108,7 @@ def log_preprocess_call(user, json_data, session_id=''):
     #
     activity_l2_val = json_data[bl_static.KEY_L2_ACTIVITY] \
                       if bl_static.KEY_L2_ACTIVITY in json_data \
-                      else bl_static.L2_ACTIVITY_BLANK
+                      else bl_static.L2_DATA_EXPLORE
 
     log_data = dict(session_key=session_id,
                     feature_id=rook_static.PREPROCESS_DATA,

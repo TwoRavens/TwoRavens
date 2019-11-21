@@ -1,18 +1,32 @@
-legislator_id,integer,{},Unique identifier for each legislator
-name,string,{},Legislator name
-district_number,categorical,{},State legislative district
-state_abbreviation,categorical,{},State postal abbreviation
-state_name,categorical,{},Legislator's state
-district,categorical,{},Legislator's district with number and year
-fips,categorical,{},State FIPS code
-bill_number,categorical,{},Bill number
-vote_direction,categorical,"{'0.0':'expansive','1.0':'restrictive'}",Legislator votes cast on Project Vote Smart’s "Key Votes" on immigration
-percent_latino_population,real,{},Percent Latino population in legislative district
-district_ideology_score,real,{},Tausanovitch and Warshaw district ideology. Higher values (closer to 1) are associated with more conservative district ideologies, while lower values (closer to -1) are associated with more liberal district ideologies
-southern_state,categorical,"{'0.0':'non-south','1.0':'south'}",Southern state
-borders_mexico,categorical,"{'0.0':'not border district','1.0':'border district'}",District that borders Mexico
-immigration_impact,categorical,"{'0.0':'expansive bill','1.0':'restrictive bill'}",Bill impact on immigration
-state_control,categorical,"{'0.0':'republican','1.0':'democratic'}",Party control of state legislature
-legislator_party,categorical,"{'0':'republican','1':'democratic'}",Legislator party affiliation
-legislator_latino,categorical,"{'0.0':'non-latino','1.0':'latino'}",Legislator ethnicity
-legislator_ideology_score,real,{},"McCarty and Shor legislator ideology. Higher values (closer to 3) are associated with more conservative legislator ideologies, while lower values (closer to -3) are associated with more liberal legislator ideologies"
+state_name,categorical,{},State Name
+year,integer,{},Year
+fips,integer,{},FIPS State Code
+fips_year,integer,{},FIPS Code + Year
+violent_crime_rate,real,{},"Total Violent Crimes per 100,000 population"
+property_crime_rate,real,{},"Total Property Crimes per 100,000 population"
+divorce_rate,real,{},"Divorces per 1,000 Population"
+pct_women_legislature,real,{},Percent Females in State Legislature
+social_capital_index,real,{},Social Capital Index
+pct_black_popluation,real,{},Percent Black Population
+vote_inelligible_felons_rate,real,{},"Voting-Ineligible Felons per 100,000"
+poverty_inequality_ratio,real,{},Poverty Inequality (Black/White Ratio)
+education_inequality_ratio,real,{},Education Inequality (Black/White Ratio)
+poverty_rate,real,{},Poverty Rate
+unemployment_rate,real,{},Unemployment Rate
+government_ideology,real,{},"ADA/COPE measure of state govt ideology"
+pct_democrats_legislature,real,{},Percent Democrats in State Legislature
+racial_diversity,real,{},Racial Diversity (Blau Index)
+gsp_per_capita,real,{},Gross State Product (GSP) per Capita (in 2007 $1000)
+pct_with_college_deg,real,{},Percent with College Degree
+social_capital_X_diversity,real,{},Social Capital x Racial Diversity
+total_inmates_rate,real,{},"Total Inmates per 100,000 population"
+null
+null
+incarceration_ratio,real,{},Black/White Incarceration Ratio
+null
+ln_pct_black_population,real,{},ln(Percent Black Population)
+social_capital_X_ln_pct_black,real,{},Social Capital x ln(Percent Black)
+three_strikes_law,categorical,"{'1.0':'Yes','0.0':'No'}",Three Strikes Law (Yes/No)
+court_clearance_rate,real,{},Trial Court Clearance Rate
+drug_arrest_rate,real,{},Drug Arrests / Population
+pct_black_legislature,real,{},Percent African Americans in State Legislature

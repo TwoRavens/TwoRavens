@@ -170,9 +170,11 @@ def api_search(request):
     """Search the datamart with a JSON request.  The 'source' will
     determine which datamart to search"""
     # for logging
-    user_info = get_authenticated_user(request)
-    if not user_info.success:
-        return JsonResponse(get_json_error(user_info.err_msg))
+    ws_info = get_latest_user_workspace(request)
+    if not ws_info.success:
+        user_msg = 'User workspace not found: %s' % ws_info.err_msg
+        return JsonResponse(get_json_error(user_msg))
+    user_workspace = ws_info.result_obj
 
     success, json_req_obj = get_request_body_as_json(request)
 
@@ -208,7 +210,7 @@ def api_search(request):
 
     success, results_obj_err = DatamartJobUtil.datamart_search(\
                                     form.cleaned_data['query'],
-                                    **dict(user=user_info.result_obj))
+                                    **dict(user_workspace=user_workspace))
     if not success:
         return JsonResponse(get_json_error(results_obj_err))
 

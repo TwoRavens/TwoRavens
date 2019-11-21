@@ -21,10 +21,11 @@ admin.site.register(AppConfiguration, AppConfigurationAdmin)
 class D3MConfigurationAdmin(admin.ModelAdmin):
     save_on_top = True
     search_fields = ('name',)
-    list_editable = ('is_default',)
+    list_editable = ('is_default', 'is_selectable_dataset')
     list_filter = ('is_user_config',)
     list_display = ('name',
                     'is_default',
+                    'is_selectable_dataset',
                     'is_user_config',
                     'dataset_schema',
                     'problem_schema',

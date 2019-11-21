@@ -41,7 +41,7 @@ cp -r /var/webapps/TwoRavens/ravens_volume/. /ravens_volume/
 
 # (30) Make D3M config files
 printf "\n(20) Make D3M config files"
-fab make_d3m_configs_from_files_multiuser_test
+fab make_d3m_configs_from_files_multiuser_test_limited
 
 # (40) if it exists, attempt to load info from D3MINPUTDIR
 printf "\n(40) Copy data to ravens_volume"

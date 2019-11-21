@@ -4,3 +4,9 @@ gunicorn==19.9.0
 # mySQL
 #
 mysqlclient==1.3.13
+
+# Google buckets / Django storages
+# - for behavioral logs
+#
+django-storages==1.7.1
+google-cloud-storage==1.22.0

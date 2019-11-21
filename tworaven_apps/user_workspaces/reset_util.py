@@ -16,6 +16,9 @@ from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
 from tworaven_apps.ta2_interfaces.search_history_util import SearchHistoryUtil
 
 from tworaven_apps.behavioral_logs.log_formatter import BehavioralLogFormatter
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
+
+from tworaven_apps.raven_auth.models import User
 
 from tworaven_apps.user_workspaces.models import UserWorkspace
 from tworaven_apps.user_workspaces import utils as ws_util
@@ -51,6 +54,35 @@ class ResetUtil(BasicErrCheck):
     def get_d3m_config(self):
         """Return the d3m_config--it can be None"""
         return self.d3m_config
+
+
+    @staticmethod
+    def write_and_clear_behavioral_logs(user, user_workspace):
+        """Write out any behavioral logs files
+        and delete the entries from the database"""
+        if not isinstance(user, User):
+            return err_resp('user was not a User object')
+
+        if user_workspace and not isinstance(user_workspace, UserWorkspace):
+            return err_resp('user_workspace was not a UserWorkspace object')
+
+        # Write out any behavioral logs for the workspace
+        #
+        if user_workspace:
+            log_info = LogEntryMaker.write_user_log(user_workspace)
+            if log_info.success:
+                print('log written: ', log_info.result_obj)
+            else:
+                print('log writing failed: ', log_info.err_msg)
+
+        # clear behavioral logs for current user
+        #
+        log_clear = BehavioralLogFormatter.delete_logs_for_user(user)
+        if log_clear.success:
+            print('\n'.join(log_clear.result_obj))
+        else:
+            print(log_clear.err_msg)
+
 
     def retrieve_examine_workspace(self):
         """Was the workspace set.  If not, see if it can be retrieved"""
@@ -112,13 +144,9 @@ class ResetUtil(BasicErrCheck):
         else:
             print(clear_info.err_msg)
 
-        # (4) Clear behavioral logs for current user
+        # (4) Write out and clear behavioral_logs
         #
-        log_clear = BehavioralLogFormatter.delete_logs_for_user(self.user)
-        if log_clear.success:
-            print('\n'.join(log_clear.result_obj))
-        else:
-            print(log_clear.err_msg)
+        ResetUtil.write_and_clear_behavioral_logs(self.user, self.user_workspace)
 
         # (5) Clear user workspaces
         #

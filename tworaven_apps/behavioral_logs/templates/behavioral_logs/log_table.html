@@ -23,7 +23,7 @@
         <td>{{ entry.feature_id }}</td>
 
         {# Determine cell color #}
-        {% if entry.type == 'TA23API' %}
+        {% if entry.type == 'TA23API' or entry.type == 'API' %}
           <td class="table-default">
         {% elif entry.type == 'SYSTEM' %}
           <td class="table-info">

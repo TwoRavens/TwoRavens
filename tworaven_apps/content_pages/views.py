@@ -8,17 +8,17 @@ from django.contrib.auth.decorators import login_required
 from django.conf import settings
 
 from tworaven_apps.utils.view_helper import \
-    (get_request_body, get_request_body_as_json,
+    (get_request_body,
      get_json_error,
      get_json_success)
 
 from tworaven_apps.configurations.models import AppConfiguration
 from tworaven_apps.utils.view_helper import get_session_key
 from tworaven_apps.ta2_interfaces.grpc_util import TA3TA2Util
-from tworaven_apps.user_workspaces.utils import \
-    (get_latest_d3m_user_config_by_request,)
 from tworaven_apps.configurations.utils import get_latest_d3m_config
-
+from tworaven_apps.behavioral_logs import static_vals as bl_static
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
+from tworaven_apps.utils.view_helper import get_authenticated_user
 
 def view_pebbles_home(request):
     """Serve up the workspace, the current home page.
@@ -29,6 +29,11 @@ def view_pebbles_home(request):
     app_config = AppConfiguration.get_config()
     if app_config is None:
         return HttpResponseRedirect(reverse('view_no_domain_config_error'))
+
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+    user = user_info.result_obj
 
     # Is this D3M Mode?  If so, make sure:
     #  (1) there is D3M config information
@@ -59,6 +64,14 @@ def view_pebbles_home(request):
                  WEBSOCKET_PREFIX=settings.WEBSOCKET_PREFIX,
                  GIT_BRANCH_INFO=settings.GIT_BRANCH_INFO)
 
+
+
+    log_data = dict(session_key=session_key,
+                    feature_id=bl_static.FID_START_RAVENS_PEBBLES_PAGE,
+                    activity_l1=bl_static.L1_DATA_PREPARATION,
+                    activity_l2=bl_static.L2_DATA_OPEN)
+
+    LogEntryMaker.create_system_entry(user, log_data)
     #print('-' * 40)
     #print(dinfo['app_config'])
 

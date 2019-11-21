@@ -32,7 +32,9 @@ from tworaven_apps.configurations.utils import \
 def view_list_dataset_choices(request):
     """List datasets for a user to examine"""
 
-    configs = D3MConfiguration.objects.all().order_by('-is_default', 'name')
+    params = dict(is_selectable_dataset=True)
+    configs = D3MConfiguration.objects.filter(**params\
+                    ).order_by('-is_default', 'name')
 
     info = dict(title='Available Datasets',
                 configs=configs)
@@ -60,6 +62,11 @@ def view_select_dataset(request, config_id=None):
     new_d3m_config = D3MConfiguration.objects.filter(id=config_id).first()
     if not new_d3m_config:
         raise Http404(f'D3MConfiguration not found for id {config_id}')
+
+    if not new_d3m_config.is_selectable_dataset:
+        user_msg = (f'This dataset is not available for'
+                    f' selection {new_d3m_config}')
+        return JsonResponse(get_json_error(user_msg))
 
     # Tries to fetch the UserWorkspace and is ready to "reset"
     #   by clearing logs, stopping searches, etc.

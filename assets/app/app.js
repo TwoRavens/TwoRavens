@@ -98,7 +98,9 @@ export let setPeekInlineShown = state => {
  */
 export let logEntryPeekUsed = is_external => {
 
-  let logParams = {feature_id: 'PEEK', activity_l1: 'DATA_PREPARATION'};
+  let logParams = {feature_id: 'PEEK',
+                   activity_l1: 'DATA_PREPARATION',
+                   activity_l2: 'DATA_EXPLORATION'};
   if (is_external){
     logParams.feature_id = 'PEEK_NEW_WINDOW';
   }
@@ -251,10 +253,10 @@ export function set_mode(mode) {
      * Make an entry in the behavioral logs
      */
     let logParams = {
-                      feature_id: mode.toUpperCase(),
+                      feature_id: mode.toUpperCase() + '_MODE_SWITCH',
                       activity_l2: 'SWITCH_MODE'
                     };
-    if (is_model_mode){ logParams.activity_l1 = 'MODEL_SELECTION'};
+    if (is_model_mode){ logParams.activity_l1 = 'PROBLEM_DEFINITION'};
     if (is_explore_mode){ logParams.activity_l1 = 'DATA_PREPARATION'};
     if (is_results_mode){ logParams.activity_l1 = 'MODEL_SELECTION'};
     if (is_manipulate_mode){ logParams.activity_l1 = 'DATA_PREPARATION'};
@@ -1584,6 +1586,7 @@ export async function estimate() {
         method: 'POST',
         url: D3M_SVC_URL + '/get-train-test-split',
         data: {
+            nominal_variables: getNominalVariables(selectedProblem),
             dataset_schema: workspace.d3m_config.dataset_schema,
             train_test_ratio: selectedProblem.trainTestRatio
         }
@@ -1595,13 +1598,14 @@ export async function estimate() {
     }
     let datasetDocPathTrain = response.data.dataset_schemas.train;
     let datasetDocPathTest = response.data.dataset_schemas.test;
+    let datasetDocPathAll = response.data.dataset_schemas.all;
     selectedProblem.indices = response.data.sample_test_indices;
 
     let allParams = {
-        searchSolutionParams: solverD3M.GRPC_SearchSolutionsRequest(selectedProblem),
+        searchSolutionParams: solverD3M.GRPC_SearchSolutionsRequest(selectedProblem, datasetDocPathAll),
         fitSolutionDefaultParams: solverD3M.GRPC_GetFitSolutionRequest(datasetDocPathTrain),
         produceSolutionDefaultParams: solverD3M.GRPC_ProduceSolutionRequest(datasetDocPathTest),
-        scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath)
+        scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPathAll)
     };
 
     if (variableSummariesLoaded) {

@@ -203,7 +203,7 @@ def end_search_solutions(raven_json_str=None, **kwargs):
 
 
 
-def stop_search_solutions(raven_json_str=None):
+def stop_search_solutions(raven_json_str=None, **kwarg):
     """
     Send a StopSearchSolutionsRequest to the StopSearchSolutions command
     """
@@ -663,7 +663,8 @@ def solution_export3(user, raven_json, **kwargs):
     log_data = dict(session_key=session_key,
                     feature_id=ta2_static.SOLUTION_EXPORT,
                     activity_l1=bl_static.L1_MODEL_SELECTION,
-                    activity_l2=bl_static.L2_MODEL_EXPORT)
+                    activity_l2=bl_static.L2_MODEL_EXPORT,
+                    other=raven_json)
 
     LogEntryMaker.create_ta2ta3_entry(user, log_data)
 
@@ -698,6 +699,7 @@ def solution_export3(user, raven_json, **kwargs):
 
     StoredResponse.add_success_response(stored_request,
                                         resp_json_dict_info.result_obj)
+
     return ok_resp(resp_json_str)
 
 

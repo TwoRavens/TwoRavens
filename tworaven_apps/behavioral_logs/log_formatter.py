@@ -117,11 +117,14 @@ class BehavioralLogFormatter(BasicErrCheck):
         if self.has_error():
             return None
 
-        content_to_format = [self.get_header_line_items()]
+        content_to_format = [BehavioralLogFormatter.get_header_line_items()]
         for log_entry in self.log_entries:
-            fmt_items = self.get_log_entry_as_list(log_entry)
-            if self.has_error():
+            fmt_items = BehavioralLogFormatter.get_log_entry_as_list(log_entry)
+            if not fmt_items:
+                user_msg = 'log_entry must be a BehavioralLogEntry object'
+                self.add_err_msg(user_msg)
                 return
+
             content_to_format.append(fmt_items)
 
         writer = csv.writer(self.csv_output_object,
@@ -129,26 +132,25 @@ class BehavioralLogFormatter(BasicErrCheck):
 
         writer.writerows(content_to_format)
 
-
-    def get_log_entry_as_list(self, log_entry):
+    @staticmethod
+    def get_log_entry_as_list(log_entry):
         """Format log entry into a list for the csv writer"""
         if not isinstance(log_entry, BehavioralLogEntry):
-            user_msg = 'log_entry must be a BehavioralLogEntry object'
-            self.add_err_msg(user_msg)
             return None
 
-        csv_data = [log_entry.created,
+        csv_data = [log_entry.created.isoformat(),
                     log_entry.feature_id,
                     log_entry.type,
                     log_entry.activity_l1,
                     log_entry.activity_l2,
                     log_entry.other_to_string(),
-                    'F' if log_entry.is_optional else 'T'
+                    #'F' if log_entry.is_optional else 'T'
                     ]
 
         return csv_data
 
-    def get_header_line_items(self):
+    @staticmethod
+    def get_header_line_items():
         """Format object into csv line"""
 
         return ['created',
@@ -156,8 +158,7 @@ class BehavioralLogFormatter(BasicErrCheck):
                 'type',
                 'activity_l1',
                 'activity_l2',
-                'other',
-                'mandatory']
+                'other']
 
     @staticmethod
     def delete_logs_for_user(user):

@@ -46,55 +46,33 @@ export class CanvasModel {
                 nodes: forceDiagramNodesReadOnly,
                 // these attributes may change dynamically, (the problem could change)
                 onDragOut: pebble => {
-                    delete selectedProblem.unedited;
-
                     let pebbles = forceData.summaries[pebble] && forceData.summaries[pebble].plottype === 'collapsed'
                         ? forceData.summaries[pebble].childNodes : [pebble];
 
-                    pebbles.forEach(pebble => {
-                        app.remove(selectedProblem.tags.loose, pebble);
-                        app.remove(selectedProblem.predictors, pebble);
-                        app.remove(selectedProblem.targets, pebble);
-                    });
+                    pebbles.forEach(pebble => setGroup(selectedProblem, 'None', pebble));
                     selectedProblem.pebbleLinks = (selectedProblem.pebbleLinks || [])
                         .filter(link => link.target !== pebble && link.source !== pebble);
                     app.resetPeek();
                     m.redraw();
                 },
                 onDragOver: (pebble, groupId) => {
-                    delete selectedProblem.unedited;
-
                     let pebbles = forceData.summaries[pebble.name].plottype === 'collapsed'
                         ? forceData.summaries[pebble.name].childNodes : [pebble.name];
 
-                    pebbles.forEach(pebble => {
-                        if (groupId === 'Predictors' && !selectedProblem.predictors.includes(pebble)) {
-                            selectedProblem.predictors.push(pebble);
-                            app.remove(selectedProblem.targets, pebble);
-                            app.remove(selectedProblem.tags.loose, pebble);
-                        }
-                        if (groupId === 'Targets' && !selectedProblem.targets.includes(pebble)) {
-                            selectedProblem.targets.push(pebble);
-                            app.remove(selectedProblem.predictors, pebble);
-                            app.remove(selectedProblem.tags.loose, pebble);
-                        }
-                    });
+                    console.log('on drag over', groupId);
+                    pebbles.forEach(pebble => setGroup(selectedProblem, groupId, pebble));
                     app.resetPeek();
                     m.redraw();
                 },
                 onDragAway: (pebble, groupId) => {
-                    delete selectedProblem.unedited;
-                    let pebbles = forceData.summaries[pebble.name] && forceData.summaries[pebble.name].plottype === 'collapsed'
+                    let pebbles = forceData.summaries[pebble.name] && forceData.summaries[pebble.name].pdfPlotType === 'collapsed'
                         ? forceData.summaries[pebble.name].childNodes : [pebble.name];
 
-                    pebbles.forEach(pebble => {
-                        if (groupId === 'Predictors')
-                            app.remove(selectedProblem.predictors, pebble);
-                        if (groupId === 'Targets')
-                            app.remove(selectedProblem.targets, pebble);
-                        if (!selectedProblem.tags.loose.includes(pebble))
-                            selectedProblem.tags.loose.push(pebble);
-                    });
+                    console.log('pebble dragged away', pebble);
+                    console.log(pebbles);
+                    console.log(groupId);
+                    pebbles
+                        .forEach(pebble => setGroup(selectedProblem, 'Loose', pebble));
                     app.resetPeek();
                     m.redraw();
                 },
@@ -252,18 +230,12 @@ export let leftpanel = forceData => {
                             'item-time': selectedProblem.tags.time,
                             'item-weight': selectedProblem.tags.weights
                         },
-                        callback: x => {
-                            let selectedProblem = app.getSelectedProblem();
-                            delete selectedProblem.unedited;
-
-                            if (selectedProblem.predictors.includes(x))
-                                app.remove(selectedProblem.predictors, x);
-                            else if (selectedProblem.targets.includes(x))
-                                app.remove(selectedProblem.targets, x);
-                            else if (selectedProblem.tags.loose.includes(x))
-                                app.remove(selectedProblem.tags.loose, x);
-                            else selectedProblem.tags.loose.push(x);
-
+                        callback: varName => {
+                            setGroup(selectedProblem, [
+                                ...selectedProblem.predictors,
+                                ...selectedProblem.targets,
+                                ...selectedProblem.tags.loose
+                            ].includes(varName) ? 'None' : 'Loose', varName);
                             app.resetPeek();
                         },
                         popup: x => m('div', m('h4', 'Summary Statistics for ' + x), m(Table, {attrsAll: {class: 'table-sm'}, data: formatVariableSummary(app.variableSummaries[x])})),
@@ -524,8 +496,8 @@ export let leftpanel = forceData => {
                     ].filter(_=>_),
                     enforce: true,
                     attrsAll: {placeholder: 'add to group'},
-                    oninput: value => setGroup(value, variableName),
-                    onblur: value => setGroup(value, variableName),
+                    oninput: value => setGroup(selectedProblem, value, variableName),
+                    onblur: value => setGroup(selectedProblem, value, variableName),
                 }),
                 m('div', {style: {width: '100%'}}, bold('Member of: '), m(ListTags, {
                     tags: [
@@ -534,12 +506,7 @@ export let leftpanel = forceData => {
                         selectedProblem.predictors.includes(variableName) && 'Predictors'
                     ].filter(_=>_),
                     ondelete: tag => {
-                        delete selectedProblem.unedited;
-                        app.remove({
-                            'Loose': selectedProblem.tags.loose,
-                            'Targets': selectedProblem.targets,
-                            'Predictors': selectedProblem.predictors
-                        }[tag], variableName);
+                        setGroup(selectedProblem, 'Loose', variableName);
                         app.resetPeek()
                     }
                 })),
@@ -1013,26 +980,46 @@ export let buildForceData = problem => {
 };
 
 
-export let setGroup = (group, name) => {
-    let selectedProblem = app.getSelectedProblem();
-    delete selectedProblem.unedited;
-    ({
-        'Loose': () => {
-            !selectedProblem.tags.loose.includes(name) && selectedProblem.tags.loose.push(name);
-            app.remove(selectedProblem.targets, name);
-            app.remove(selectedProblem.predictors, name);
-        },
-        'Predictors': () => {
-            !selectedProblem.predictors.includes(name) && selectedProblem.predictors.push(name);
-            app.remove(selectedProblem.targets, name);
-            app.remove(selectedProblem.tags.loose, name);
-        },
-        'Targets': () => {
-            !selectedProblem.targets.includes(name) && selectedProblem.targets.push(name);
-            app.remove(selectedProblem.predictors, name);
-            app.remove(selectedProblem.tags.loose, name);
-        }
-    }[group] || Function)();
+export let setGroup = (problem, group, name) => {
+    delete problem.unedited;
+
+    // behavioral logging
+    let logParams = {
+        feature_id: 'blank',
+        activity_l1: 'PROBLEM_DEFINITION',
+        activity_l2: 'PROBLEM_SPECIFICATION',
+        other: {variable: name, problem: problem.problemID }
+      }
+
+  //  console.log('problem: ' + problem.problemID);
+//    console.log('problem: ' + JSON.stringify(problem))
+    if (group === 'Loose') {
+        !problem.tags.loose.includes(name) && problem.tags.loose.push(name);
+        app.remove(problem.targets, name);
+        app.remove(problem.predictors, name);
+        logParams.feature_id = 'MODEL_ADD_VARIABLE';
+    }
+    else if (group === 'Predictors') {
+        !problem.predictors.includes(name) && problem.predictors.push(name);
+        app.remove(problem.targets, name);
+        app.remove(problem.tags.loose, name);
+        logParams.feature_id = 'MODEL_ADD_VARIABLE_AS_PREDICTOR';
+    }
+    else if (group === 'Targets') {
+        !problem.targets.includes(name) && problem.targets.push(name);
+        app.remove(problem.predictors, name);
+        app.remove(problem.tags.loose, name);
+        logParams.feature_id = 'MODEL_ADD_VARIABLE_AS_TARGET';
+    }
+    else if (group === 'None' || group === undefined) {
+        app.remove(problem.predictors, name);
+        app.remove(problem.tags.loose, name);
+        app.remove(problem.targets, name);
+        logParams.feature_id = 'MODEL_REMOVE_VARIABLE';
+    }
+    // console.log(logParams);
+    app.saveSystemLogEntry(logParams);
+
     app.resetPeek();
 };
 
@@ -1226,10 +1213,7 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                 name: 'Predictor',
                 attrs: {fill: common.gr1Color},
                 onclick: d => {
-                    delete problem.unedited;
-                    app.toggle(problem.tags.loose, d);
-                    app.remove(problem.targets, d);
-                    app.toggle(problem.predictors, d);
+                    setGroup(problem, problem.predictors.includes(d) ? 'Loose' : 'Predictors', d);
                     forceDiagramState.setSelectedPebble(d);
                     app.resetPeek();
                 }
@@ -1239,10 +1223,7 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                 name: 'Dep Var',
                 attrs: {fill: common.dvColor},
                 onclick: d => {
-                    delete problem.unedited;
-                    app.toggle(problem.tags.loose, d);
-                    app.remove(problem.predictors, d);
-                    app.toggle(problem.targets, d);
+                    setGroup(problem, problem.targets.includes(d) ? 'Loose' : 'Targets', d);
                     forceDiagramState.setSelectedPebble(d);
                     app.resetPeek();
                 }
@@ -1302,7 +1283,6 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                         problem.tags.weights = [];
                     else {
                         problem.tags.weights = [d];
-                        app.remove(problem.targets, d);
                         app.remove(problem.tags.time, d);
                         app.remove(problem.tags.nominal, d);
                         app.remove(problem.tags.crossSection, d);

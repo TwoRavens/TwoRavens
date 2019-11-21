@@ -66,3 +66,4 @@ D3M_OUTPUT_SUBDIRECTORIES = (\
 
         USER_PROBLEMS_ROOT_DIR_NAME, # self-added to coincide with user_problems_root
                             )
+SELECTED_NAME_LIST = 'selected_name_list'

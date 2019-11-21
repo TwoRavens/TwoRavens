@@ -3,7 +3,7 @@
 #
 #-r ../submodules/raven-metadata-service/requirements/10_preprocess.txt
 
-Django==2.1.10
+Django==2.1.11
 django-model-utils==3.0.0
 django-webpack-loader==0.6.0
 jsonfield==2.0.2
@@ -12,7 +12,6 @@ jsonfield==2.0.2
 # downgrade for d3m package
 requests==2.19.1
 
-django-storages==1.7.1
 
 # fabric for dev: to run npm and test server with one command
 #
