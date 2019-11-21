@@ -1,3 +1,4 @@
+from django.db import models
 import math
 import sklearn.metrics
 
@@ -75,3 +76,12 @@ def should_maximize(specification):
         return False
 
     raise NotImplementedError
+
+
+class StatisticalModel(models.Model):
+    model_id = models.AutoField(primary_key=True)
+    created_on = models.DateTimeField(auto_now_add=True)
+    user = models.CharField(max_length=256)
+
+    class Meta:
+        ordering = ['created_on']

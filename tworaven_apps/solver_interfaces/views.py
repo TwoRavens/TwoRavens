@@ -9,7 +9,7 @@ from tworaven_apps.utils.view_helper import (
 import json
 import os
 
-from tworaven_apps.solver_interfaces.model import (
+from tworaven_apps.solver_interfaces.models import (
     KEY_SUCCESS,
     KEY_DATA,
     KEY_MESSAGE,

@@ -12,7 +12,7 @@ import pandas
 from ludwig.api import LudwigModel
 from scipy.sparse import csr_matrix
 
-from tworaven_apps.solver_interfaces.model import SAVED_MODELS_PATH, R_SERVICE, get_metric
+from tworaven_apps.solver_interfaces.models import SAVED_MODELS_PATH, R_SERVICE, get_metric, StatisticalModel
 from tworaven_apps.solver_interfaces.util_dataset import Dataset
 from collections import defaultdict
 
@@ -22,7 +22,8 @@ from sklearn import model_selection
 class Model(object):
     def __init__(self, model, system, predictors, targets, model_id=None, search_id=None, train_specification=None, task=None):
         if model_id is None:
-            model_id = self.get_model_id()
+            db_model = StatisticalModel.objects.create()
+            model_id = 'oss-' + str(db_model.model_id)
 
         self.model = model
         self.system = system
@@ -34,10 +35,6 @@ class Model(object):
         # which dataset model is currently trained on
         self.train_specification = train_specification
         self.task = task
-
-    @staticmethod
-    def get_model_id():
-        return str(uuid.uuid4())
 
     @abc.abstractmethod
     def describe(self):
@@ -573,9 +570,6 @@ class ModelLudwig(Model):
             dataframe[target] = dataframe[target].astype(str)
 
         predicted = self.model.predict(dataframe)
-
-        print(dataframe[target])
-        print(predicted)
 
         scores = []
         for metric in specification['performanceMetrics']:

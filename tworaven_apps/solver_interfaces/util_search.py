@@ -4,7 +4,7 @@ from scipy.sparse.csr import csr_matrix
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import make_scorer
 
-from tworaven_apps.solver_interfaces.model import \
+from tworaven_apps.solver_interfaces.models import \
     R_SERVICE, KEY_SUCCESS, KEY_MESSAGE, KEY_DATA, \
     get_metric, should_maximize
 from tworaven_apps.solver_interfaces.util_dataset import Dataset

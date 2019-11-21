@@ -4,7 +4,7 @@ import traceback
 from tworaven_apps.ta2_interfaces.websocket_message import WebsocketMessage
 from tworavensproject.celery import celery_app
 
-from tworaven_apps.solver_interfaces.model import (
+from tworaven_apps.solver_interfaces.models import (
     KEY_DATA,
     RECEIVE_SOLVE_MSG,
     RECEIVE_SEARCH_MSG,
