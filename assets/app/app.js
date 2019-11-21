@@ -858,21 +858,6 @@ export let applicableMetrics = {
     }
 };
 
-export let solvers = {
-    'tpot': {"generations": 4, population_size: 20},
-    'auto_sklearn': {},
-    'h2o': {},
-    'caret': {
-        trControlParams: {},
-        models: [
-            {method: 'glm'}
-        ]
-    },
-    'mlbox': {},
-    'mljar-supervised': {},
-    'ludwig': {}
-};
-
 export let modelResults = {};
 
 

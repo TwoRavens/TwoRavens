@@ -172,7 +172,8 @@ partials.app <- function(partialsParams) {
 
     jsonlite::toJSON(okResult(list(
         partialsDatasetDocPath=jsonlite::unbox(pathDatasetDoc),
-        partialsDatasetPath=jsonlite::unbox(pathSummary)
+        partialsDatasetPath=jsonlite::unbox(pathData),
+        partialsSummaryPath=jsonlite::unbox(pathSummary)
     )))
 }
 

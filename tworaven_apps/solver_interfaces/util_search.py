@@ -2,8 +2,11 @@
 import pandas
 from scipy.sparse.csr import csr_matrix
 from sklearn.impute import SimpleImputer
+from sklearn.metrics import make_scorer
 
-from tworaven_apps.solver_interfaces.model import R_SERVICE, KEY_SUCCESS, KEY_MESSAGE, KEY_DATA
+from tworaven_apps.solver_interfaces.model import \
+    R_SERVICE, KEY_SUCCESS, KEY_MESSAGE, KEY_DATA, \
+    get_metric, should_maximize
 from tworaven_apps.solver_interfaces.util_dataset import Dataset
 from tworaven_apps.solver_interfaces.util_model import ModelSklearn, ModelH2O, ModelLudwig
 
@@ -15,6 +18,8 @@ import requests
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
+
+import multiprocessing
 
 
 def preprocess(dataframe, specification):
@@ -128,6 +133,10 @@ class SearchAutoSklearn(Search):
         # self.system_params['tmp_folder'] = tmp_folder
         # self.system_params['output_folder'] = output_folder
         # self.system_params['delete_tmp_folder_after_terminate'] = False
+
+        # turn off daemon flag from the currently running process, to allow child processes from auto_sklearn fit
+        multiprocessing.current_process()._config['daemon'] = False
+        # self.system_params['n_jobs'] = 1
 
         # valid system params
         # https://automl.github.io/auto-sklearn/master/api.html#api
@@ -295,6 +304,22 @@ class SearchTPOT(Search):
 
         self.system_params['config_dict'] = 'TPOT sparse'
 
+        # if 'configuration' in self.specification:
+        #     config = self.specification['configuration']
+        #
+        #     if config['method'] == "HOLDOUT":
+        #         self.system_params['cv'] =
+        #
+        #     if config['method'] == "K_FOLD":
+        #         self.system_params['cv'] =
+
+        if self.specification.get('timeBoundSearch'):
+            self.system_params['max_time_mins'] = self.specification.get('timeBoundSearch') / 60.
+
+        if self.specification.get('timeBoundRun'):
+            self.system_params['max_eval_time_mins'] = self.specification.get('timeBoundRun') / 60.
+
+        # custom scorers cause unidentified SIGSEGV upon exit of search
         # scorer = make_scorer(
         #     get_metric(self.specification['performanceMetric']),
         #     greater_is_better=should_maximize(self.specification['performanceMetric']))
@@ -402,6 +427,9 @@ class SearchLudwig(Search):
             "REGRESSION": 'numerical',
             "CLASSIFICATION": 'category'
         }[self.specification['problem']['taskType']]
+
+        if self.specification['problem']['taskType'] == 'CLASSIFICATION':
+            dataframe[targets[0]] = dataframe[targets[0]].astype(str)
 
         # https://github.com/uber/ludwig/blob/master/tests/integration_tests/utils.py
         model_definition = {

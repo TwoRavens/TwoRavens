@@ -183,6 +183,9 @@ def reformat_gleditsch_ward(dataset_name, predictors):
     dataframe_train.insert(0, 'd3mIndex', range(len(dataframe_train)))
     dataframe_test.insert(0, 'd3mIndex', [i + len(dataframe_train) for i in range(len(dataframe_test))])
 
+    dataframe_train.dropna(inplace=True)
+    dataframe_test.dropna(inplace=True)
+
     dataframe_train.reset_index(drop=True, inplace=True)
     dataframe_test.reset_index(drop=True, inplace=True)
 

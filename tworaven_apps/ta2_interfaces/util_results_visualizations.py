@@ -104,11 +104,13 @@ def util_results_confusion_matrix(data_pointer, metadata):
 
     target_matrices = {}
 
+    print(response)
+
     for target in metadata['targets']:
         target_matrices[target] = {}
 
         # populate 2D sparse data structure
-        for cell in response[1][0][target]:
+        for cell in next(response[1])[target]:
             # construct row if not exists
             if not cell['actual'] in target_matrices[target]:
                 target_matrices[target][cell['actual']] = {}
@@ -261,5 +263,5 @@ def util_results_importance_efd(data_pointer, metadata):
 
     return {
         KEY_SUCCESS: response[0],
-        KEY_DATA: response[1][0] if response[0] else response[1]
+        KEY_DATA: next(response[1]) if response[0] else response[1]
     }

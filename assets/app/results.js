@@ -853,7 +853,7 @@ let getSolutionTable = (problem, systemId) => {
         setSortHeader: header => resultsPreferences.selectedMetric = header,
         sortDescending: !reverseSet.includes(resultsPreferences.selectedMetric),
         activeRow: new Set(adapters
-            .filter(adapter => problem.selectedSolutions[adapter.getSystemId()].includes(adapter.getSolutionId()))),
+            .filter(adapter => (problem.selectedSolutions[adapter.getSystemId()] || '').includes(adapter.getSolutionId()))),
         onclick: adapter => setSelectedSolution(problem, adapter.getSystemId(), adapter.getSolutionId())
     })
 };
@@ -1547,32 +1547,33 @@ export let loadImportanceEFDData = async (problem, adapter) => {
         .substr(dataPointer.lastIndexOf('/') + 1)
         .replace('.csv', '');
     let response;
-    try {
-        response = await m.request(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
-            method: 'POST',
-            data: {
-                data_pointer: dataPointer,
-                metadata: {
-                    produceId,
-                    levels: app.getNominalVariables(problem)
-                        .map(variable => {
-                            if (app.variableSummaries[variable].nature === 'nominal')
-                                return {[variable]: Object.keys(app.variableSummaries[variable].plotvalues)}
-                        }).reduce((out, variable) => Object.assign(out, variable), {}),
-                    targets: problem.targets,
-                    predictors: problem.predictors,
-                    collectionName: app.workspace.d3m_config.name,
-                    collectionPath: app.workspace.datasetPath,
-                    query: compiled
-                }
+    response = await m.request(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
+        method: 'POST',
+        data: {
+            data_pointer: dataPointer,
+            metadata: {
+                produceId,
+                levels: app.getNominalVariables(problem)
+                    .map(variable => {
+                        if (app.variableSummaries[variable].plotValues)
+                            return {[variable]: Object.keys(app.variableSummaries[variable].plotValues)}
+                    }).reduce((out, variable) => Object.assign(out, variable), {}),
+                targets: problem.targets,
+                predictors: problem.predictors,
+                collectionName: app.workspace.d3m_config.name,
+                collectionPath: app.workspace.datasetPath,
+                query: compiled
             }
-        });
+        }
+    });
 
-        if (!response.success)
-            throw response.data;
+    if (!response.success)
+        throw response.data;
+    try {
+
 
     } catch (err) {
-        console.warn("retrieve-output-confusion-data error");
+        console.warn("retrieve-output-EFD-data error");
         console.log(err);
         // app.alertWarn('Variable importance EFD data has not been loaded. Some plots will not load.');
         return;

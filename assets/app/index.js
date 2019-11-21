@@ -612,34 +612,6 @@ class Body {
                         });
                     }
                 }, 'Export All Results'),
-                m('h4', 'Open Source Solver System Debugger'),
-
-                m('div', {style: 'margin:1em'},
-                    Object.keys(app.solvers).map(system_name => m(Button, {
-                        style: {margin: '.5em'},
-                        onclick: async () => {
-                            let selectedProblem = app.getSelectedProblem();
-                            console.warn(selectedProblem);
-                            let specification = solverWrapped.getSolverSpecification(selectedProblem);
-
-                            console.log(JSON.stringify(specification));
-
-                            let response = await m.request('/solver-service/Solve', {
-                                method: 'POST',
-                                data: {
-                                    system: system_name,
-                                    system_params: app.solvers[system_name],
-                                    timeout: 999999999,
-                                    specification
-                                }
-                            });
-
-                            if (!response.success) console.log(response);
-                        }
-                    }, system_name))),
-
-                m('div', {style: 'overflow:auto'},
-                    m(Table, {data: Object.values(app.modelResults)})),
 
                 m('h4', 'TA2 System Debugger'),
                 m(Button, {

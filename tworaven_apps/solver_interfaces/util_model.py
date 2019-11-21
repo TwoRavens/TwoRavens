@@ -9,6 +9,7 @@ import requests
 import joblib
 import h2o
 import pandas
+from ludwig.api import LudwigModel
 from scipy.sparse import csr_matrix
 
 from tworaven_apps.solver_interfaces.model import SAVED_MODELS_PATH, R_SERVICE, get_metric
@@ -84,7 +85,7 @@ class Model(object):
 
         if metadata['system'] == 'ludwig':
             return ModelLudwig(
-                model=joblib.load(os.path.join(model_folder_path, 'model.joblib')),
+                model=LudwigModel.load(model_folder_path),
                 predictors=metadata['predictors'],
                 targets=metadata['targets'],
                 model_id=model_id,
@@ -105,6 +106,7 @@ class Model(object):
         raise ValueError(f'System type "{metadata["system"]}" is not recognized.')
 
     def make_splits(self, configuration, data):
+        print('my data', data)
 
         if configuration['method'] == 'K_FOLD':
             split_arguments = {
@@ -120,11 +122,18 @@ class Model(object):
                         model_selection.KFold(**split_arguments).split(data))
 
         elif configuration['method'] == 'HOLDOUT':
-            return [model_selection.train_test_split(
-                data,
-                test_size=float(configuration.get('trainTestRatio', 0.35)),
-                stratify=self.targets[0] if configuration.get('stratified') else None,
-                random_state=configuration.get('randomSeed'))]
+            try:
+                return [model_selection.train_test_split(
+                    data,
+                    test_size=float(configuration.get('trainTestRatio', 0.35)),
+                    stratify=data[self.targets[0]] if configuration.get('stratified') else None,
+                    random_state=configuration.get('randomSeed'))]
+            except TypeError:
+                return [model_selection.train_test_split(
+                    data,
+                    test_size=float(configuration.get('trainTestRatio', 0.35)),
+                    stratify=None,
+                    random_state=configuration.get('randomSeed'))]
         else:
             raise ValueError(f'Invalid evaluation method: {configuration.method}')
 
@@ -549,28 +558,39 @@ class ModelLudwig(Model):
             "model": 'multilayer feedforward network',
             "description": str(self.model),
             "model_id": self.model_id,
+            "search_id": self.search_id,
             "system": self.system
         }
 
     def score(self, specification):
+        # TODO: refitting -> respect configuration
+        configuration = specification['configuration']
 
-        dataset = Dataset(specification['input'])
-        dataframe = dataset.get_dataframe()
+        dataframe = Dataset(specification['input']).get_dataframe()
 
-        predicted = self.model.predict(dataframe).as_data_frame()
-
-        # H2O supports only one target
         target = self.targets[0]
+        if self.task == 'CLASSIFICATION':
+            dataframe[target] = dataframe[target].astype(str)
+
+        predicted = self.model.predict(dataframe)
+
+        print(dataframe[target])
+        print(predicted)
 
         scores = []
         for metric in specification['performanceMetrics']:
             scores.append({
-                'value': get_metric(metric)(dataframe[target], predicted),
+                'value': get_metric(metric)(dataframe[target], predicted[f'{target}_predictions']),
                 'metric': metric,
                 'target': target
             })
 
-        return scores
+        return {
+            'search_id': self.search_id,
+            'model_id': self.model_id,
+            'scores': scores,
+            'system': self.system
+        }
 
     def produce(self, specification):
         configuration = specification.get('configuration', {})
@@ -578,8 +598,15 @@ class ModelLudwig(Model):
 
         dataset = Dataset(specification['input'])
         dataframe = dataset.get_dataframe()
+        predictions = self.model.predict(dataframe)
 
-        predictions = self.model.predict(dataframe).as_data_frame()
+        if predict_type == 'RAW':
+            predictions = predictions[[f'{self.targets[0]}_predictions']]
+            predictions.columns = [self.targets[0]]
+
+        if predict_type == 'PROBABILITIES':
+            predictions = predictions[[i for i in predictions.columns.values if i.startswith(f'{self.targets}_probabilities_')]]
+
         predictions.insert(0, 'd3mIndex', dataframe['d3mIndex'])
 
         output_directory_path = specification['output']['resource_uri'].replace('file://', '')
@@ -615,13 +642,14 @@ class ModelLudwig(Model):
         if not os.path.exists(metadata_path):
             os.makedirs(model_folder_path)
 
-        model_path = self.model.save(path=model_folder_path)
+        self.model.save(model_folder_path)
+
         with open(metadata_path, 'w') as metadata_file:
             json.dump({
                 'system': self.system,
                 'model_id': self.model_id,
                 'search_id': self.search_id,
-                'model_filename': model_path.replace(model_folder_path, ''),
+                'model_filename': model_folder_path,
                 'predictors': self.predictors,
                 'targets': self.targets,
                 'task': self.task

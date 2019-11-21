@@ -155,7 +155,7 @@ let SPEC_score = problem => [{
 }];
 
 let systemParams = {
-    'tpot': {"generations": 1, population_size: 20},
+    'tpot': {"generations": 100, 'population_size': 100},
     'auto_sklearn': {},
     'h2o': {},
     'caret': {
