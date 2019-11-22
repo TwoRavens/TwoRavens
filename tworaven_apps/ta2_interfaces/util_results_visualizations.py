@@ -4,6 +4,10 @@ from tworaven_apps.eventdata_queries.event_job_util import EventJobUtil
 from tworaven_apps.eventdata_queries.mongo_retrieve_util import MongoRetrieveUtil
 from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
 
+# import pyperclip
+# import json
+import random
+
 
 def util_results_confusion_matrix(data_pointer, metadata):
     """Get the content from the file and format a JSON snippet
@@ -104,8 +108,6 @@ def util_results_confusion_matrix(data_pointer, metadata):
 
     target_matrices = {}
 
-    print(response)
-
     for target in metadata['targets']:
         target_matrices[target] = {}
 
@@ -132,11 +134,13 @@ def util_results_confusion_matrix(data_pointer, metadata):
 
 
 def util_results_importance_efd(data_pointer, metadata):
+    LIMIT_UNIQUE_LEVELS = 20
+
     # make sure the base dataset is loaded
     EventJobUtil.import_dataset(
         settings.TWORAVENS_MONGO_DB_NAME,
         metadata['collectionName'],
-        datafile=metadata['collectionPath'])
+        data_path=metadata['collectionPath'])
 
     results_collection_name = metadata['collectionName'] + '_produce_' + str(metadata['produceId'])
 
@@ -148,24 +152,55 @@ def util_results_importance_efd(data_pointer, metadata):
 
     # populate levels if not passed (for example, numeric column tagged as categorical)
     for key in metadata['levels']:
-        if not metadata['levels'][key]:
-            response = util.run_query([
-                *metadata['query'],
-                {"$group": {"_id": f"${key}"}},
-            ], 'aggregate')
+        # levels are passed, but levels have lost type information (json object keys are coerced to string)
+        # if not metadata['levels'][key]:
+        response = util.run_query([
+            *metadata['query'],
+            {"$group": {"_id": f"${key}", "count": {'$sum': 1}}},
+            {'$sort': {'count': -1}},
+            {"$sample": {"size": LIMIT_UNIQUE_LEVELS}}
+        ], 'aggregate')
 
-            if not response[0]:
-                return {KEY_SUCCESS: False, KEY_DATA: response[1]}
-            metadata['levels'][key] = [doc['_id'] for doc in response[1]]
+        if not response[0]:
+            return {KEY_SUCCESS: False, KEY_DATA: response[1]}
+        metadata['levels'][key] = [doc['_id'] for doc in response[1]]
 
+        # limit the number of unique levels
+        if len(metadata['levels'][key]) > LIMIT_UNIQUE_LEVELS:
+            metadata['levels'][key] = random.sample(metadata['levels'][key], k=LIMIT_UNIQUE_LEVELS)
+
+    # fitted versions of variables have same levels as their originals
     metadata['levels'].update({
         'fitted ' + key: metadata['levels'][key] for key in metadata['levels']
     })
+    # renamed variables have the same levels as their originals
+    metadata['levels'].update({
+        'actual ' + key: metadata['levels'][key] for key in metadata['levels']
+    })
+
+    # print('metadata levels', metadata['levels'])
 
     def is_categorical(variable, levels):
         return variable in levels
 
     def branch_target(variable, levels):
+        if is_categorical(variable, levels):
+            return {f'{variable}-{level}': {
+                "$avg": {"$cond": [{"$eq": [f"${variable}", level]}, 1, 0]}
+            } for level in metadata['levels'][variable]}
+        # compute mean of fitted and actual
+        return {
+            f'fitted {variable}': {"$avg": f'$fitted {variable}'},
+            f'actual {variable}': {"$avg": f'$actual {variable}'},
+            'error': {'$sum': {"$pow": [{'$subtract': [f'$fitted {variable}', f'$actual {variable}']}, 2]}}
+        }
+
+    def aggregate_targets(variables, levels):
+        return {k: v for d in
+                [branch_target(target, levels) for target in variables]
+                for k, v in d.items()}
+
+    def branch_target_levels(variable, levels):
         if is_categorical(variable, levels):
             return {
                 f'{variable}-{level}': {
@@ -173,13 +208,13 @@ def util_results_importance_efd(data_pointer, metadata):
                 } for level in metadata['levels'][variable]}
         return {variable: {"$avg": f'${variable}'}}
 
-    def aggregate_targets(variables, levels):
+    def aggregate_target_levels(variables, levels):
         return {k: v for d in [
-            *[branch_target('fitted ' + target, levels) for target in variables],
-            *[branch_target('actual ' + target, levels) for target in variables]
+            *[branch_target_levels('fitted ' + target, levels) for target in variables],
+            *[branch_target_levels('actual ' + target, levels) for target in variables]
         ] for k, v in d.items()}
 
-    target_aggregator = aggregate_targets(metadata['targets'], metadata['levels'])
+    target_aggregator = aggregate_target_levels(metadata['targets'], metadata['levels'])
 
     query = [
         *metadata['query'],
@@ -243,8 +278,6 @@ def util_results_importance_efd(data_pointer, metadata):
         },
     ]
 
-    print(query)
-
     try:
         status = EventJobUtil.import_dataset(
             settings.TWORAVENS_MONGO_DB_NAME,
@@ -257,11 +290,55 @@ def util_results_importance_efd(data_pointer, metadata):
         response = list(util.run_query(query, method='aggregate'))
 
     finally:
-        EventJobUtil.delete_dataset(
-            settings.TWORAVENS_MONGO_DB_NAME,
-            results_collection_name)
+        pass
+        # EventJobUtil.delete_dataset(
+        #     settings.TWORAVENS_MONGO_DB_NAME,
+        #     results_collection_name)
+
+    if not response[0]:
+        return {
+            KEY_SUCCESS: response[0],
+            KEY_DATA: response[1]
+        }
+
+    data = next(response[1])
+
+    def kernel_linear(size):
+        return list(range(1, size // 2 + 2)) + list(range(size // 2, 0, -1))
+
+    def kernel_uniform(size):
+        return [1] * size
+
+    def smooth(kernel, data, predictor):
+        if len(kernel) % 2 != 1:
+            raise ValueError('Kernel must be odd-length')
+        # normalize kernel
+        kernel = [i / sum(kernel) for i in kernel]
+
+        # clip indices for data access on kernel offsets at edges
+        def clip(x):
+            return max(0, min(len(data) - 1, x))
+
+        offset = len(kernel) // 2
+        smoothed = []
+        for i in range(len(data)):
+            smoothed.append({
+                **{
+                    level: sum(weight * data[clip(i + j_level - offset)][level]
+                               for j_level, weight in enumerate(kernel))
+                    for level in data[i].keys() if level != predictor
+                },
+                **{predictor: data[i][predictor]}
+            })
+        return smoothed
+
+    # pyperclip.copy(json.dumps({"query": query, "data": data}, indent=4))
+    for predictor in metadata['predictors']:
+        if not is_categorical(predictor, metadata['levels']):
+            data[predictor] = smooth(kernel_linear(size=7), data[predictor], predictor)
 
     return {
-        KEY_SUCCESS: response[0],
-        KEY_DATA: next(response[1]) if response[0] else response[1]
+        KEY_SUCCESS: True,
+        KEY_DATA: data
     }
+

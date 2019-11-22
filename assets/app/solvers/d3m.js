@@ -36,12 +36,12 @@ export let getSolverSpecification = async problem => {
 
     let allParams = {
         searchSolutionParams: GRPC_SearchSolutionsRequest(problem, problem.datasetSchemas.all),
-        fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(problem.datasetSchemas[problem.outOfSampleSplit ? 'train' : 'all']),
+        fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(problem.datasetSchemas[problem.splitOptions.outOfSampleSplit ? 'train' : 'all']),
         scoreSolutionDefaultParams: GRPC_ScoreSolutionRequest(problem, problem.datasetSchemas.all),
         produceSolutionDefaultParams: {}
     };
 
-    if (problem.outOfSampleSplit) {
+    if (problem.splitOptions.outOfSampleSplit) {
         allParams.produceSolutionDefaultParams.test = GRPC_ProduceSolutionRequest(problem.datasetSchemas.test);
         allParams.produceSolutionDefaultParams.train = GRPC_ProduceSolutionRequest(problem.datasetSchemas.train);
     } else
