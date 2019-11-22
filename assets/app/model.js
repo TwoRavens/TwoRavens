@@ -169,13 +169,6 @@ export let leftpanel = forceData => {
 
     let ravenConfig = app.workspace.raven_config;
     let selectedProblem = app.getSelectedProblem();
-
-    try {
-        console.log(app.getNominalVariables(selectedProblem))
-    }
-    catch (err) {
-        err
-    }
     
     if (!ravenConfig) return;
 

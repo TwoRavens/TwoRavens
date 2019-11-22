@@ -67,7 +67,9 @@ export default class VariableImportance {
                 "encoding": {
                     "x": {"field": predictor, "type": "quantitative"},
                     "y": {"field": yLabel, "type": "quantitative"},
-                    "color": {"field": variableLabel, "type": "nominal"},
+                    // "color": {"field": variableLabel, "type": "nominal"},
+                    'opacity': {"field": 'target', 'type': 'nominal'},
+                    'color': {"field": 'level', 'type': 'nominal'},
                     "tooltip": [
                         {"field": yLabel, "type": "quantitative"},
                         {"field": variableLabel, "type": "nominal"},

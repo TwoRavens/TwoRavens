@@ -1597,6 +1597,15 @@ export let loadImportanceEFDData = async (problem, adapter) => {
                 : response.data[predictor],
             [predictor], valueLabel, variableLabel));
 
+    Object.keys(response.data)
+        .forEach(predictor => response.data[predictor]
+            .forEach(point => {
+                point.target = point[variableLabel].split(' ')[0];
+                point.level = point[variableLabel].split('-').pop();
+            }));
+
+    window.efdData = response.data;
+
     resultsData.importanceEFD = response.data;
     resultsData.importanceEFDLoading = false;
 

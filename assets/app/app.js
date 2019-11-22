@@ -600,20 +600,20 @@ function websocketMessage(e) {
         console.log(msg_data);
         if (msg_data.msg_type === 'receive_describe_msg')
             solverWrapped.handleDescribeResponse(msg_data);
-        if (msg_data.msg_type === 'receive_score_msg')
+        else if (msg_data.msg_type === 'receive_score_msg')
             solverWrapped.handleScoreResponse(msg_data);
-        if (msg_data.msg_type === 'receive_produce_msg')
+        else if (msg_data.msg_type === 'receive_produce_msg')
             solverWrapped.handleProduceResponse(msg_data);
-        if (msg_data.msg_type === 'receive_solve_msg')
+        else if (msg_data.msg_type === 'receive_solve_msg')
             solverWrapped.handleSolveCompleteResponse(msg_data);
 
-        if (msg_data.data === undefined && msg_data.msg_type !== 'DATAMART_AUGMENT_PROCESS') {
+        else if (msg_data.data === undefined && msg_data.msg_type !== 'DATAMART_AUGMENT_PROCESS') {
             debugLog('streamSocket.onmessage: Error, "msg_data.data" type not specified!');
             debugLog('full data: ' + JSON.stringify(msg_data));
             debugLog('---------------------------------------------');
         }
 
-        if (msg_data.msg_type === 'GetSearchSolutionsResults') {
+        else if (msg_data.msg_type === 'GetSearchSolutionsResults') {
             debugLog(msg_data.msg_type + ' recognized!');
             solverD3M.handleGetSearchSolutionResultsResponse(msg_data.data);
         } else if (msg_data.msg_type === 'DescribeSolution') {
