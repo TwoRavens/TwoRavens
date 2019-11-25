@@ -949,6 +949,10 @@ export let setSelectedSolution = (problem, systemId, solutionId) => {
     if (!problem) return;
     if (!(systemId in problem.selectedSolutions)) problem.selectedSolutions[systemId] = [];
 
+    // TODO: find a better place for this/code pattern. Unsetting this here is ugly
+    resultsData.importancePartialsICEFitted = undefined;
+    resultsData.importancePartialsICEFittedLoading = false;
+
     if (modelComparison) {
 
         problem.selectedSolutions[systemId].includes(solutionId)
