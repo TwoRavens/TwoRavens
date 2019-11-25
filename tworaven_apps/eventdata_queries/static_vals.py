@@ -24,4 +24,4 @@ UT_DALLAS_COLLECTIONS = ['cline_phoenix_fbis.json',
                          # 'cline_speed.json',
                          'icews.json',
                          'phoenix_rt.json',
-                         'terrier.json'] + ACLED_COLLECTIONS
+                         'terrier.json'] # + ACLED_COLLECTIONS
