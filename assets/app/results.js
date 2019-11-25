@@ -33,7 +33,7 @@ export let leftpanel = () => {
 
     if (!resultsProblem) return;
 
-    let solverSystemNames = ['auto_sklearn', 'tpot', 'mlbox', 'ludwig', 'h2o', 'caret'];
+    let solverSystemNames = ['auto_sklearn', 'tpot', 'mlbox', 'ludwig', 'h2o']; // 'caret'
 
     // mljar-supervised only supports binary classification
     if (resultsProblem.task && resultsProblem.subTask &&
@@ -393,38 +393,9 @@ export class CanvasSolutions {
 
         let importanceContent = common.loader('VariableImportance');
 
-        if (resultsPreferences.mode === 'PDP') {
-            importanceContent = [
-                m('label', 'Importance for predictor:'),
-                m(Dropdown, {
-                    id: 'predictorImportanceDropdown',
-                    items: problem.predictors,
-                    onclickChild: mode => resultsPreferences.predictor = mode,
-                    activeItem: resultsPreferences.predictor,
-                })
-            ];
-
-            let importanceData = ({
-                EFD: adapter.getImportanceEFD,
-                Partials: adapter.getImportancePartials
-            })[resultsPreferences.mode](resultsPreferences.predictor);
-
-            if (importanceData) importanceContent.push(m(VariableImportance, {
-                mode: resultsPreferences.mode,
-                data: importanceData,
-                problem: problem,
-                predictor: resultsPreferences.predictor,
-                target: resultsPreferences.target,
-                yLabel: valueLabel,
-                variableLabel: variableLabel
-            }));
-            else importanceContent.push(common.loader('VariableImportance'))
-        } else {
+        if (resultsPreferences.mode === 'EFD') {
             let importanceData = problem.predictors.reduce((out, predictor) => Object.assign(out, {
-                [predictor]: ({
-                    EFD: adapter.getImportanceEFD,
-                    Partials: adapter.getImportancePartials
-                })[resultsPreferences.mode](predictor)
+                [predictor]: adapter.getImportancePartialsEFD(predictor)
             }), {});
 
             // reassign content if some data is not undefined
@@ -441,10 +412,54 @@ export class CanvasSolutions {
                 })
             ]).filter(_ => _);
 
-            if (importancePlots.length > 0) importanceContent = [
-                m('div[style=margin: 1em]', italicize("Empirical first differences"), ` is a tool to measure variable importance from the empirical distribution of the data. The "${valueLabel}" axis refers to the frequency of the dependent variable as the predictor (x) varies along its domain. Parts of the domain where the fitted and actual values align indicate high utility from the predictor.`),
+            if (importancePlots.length > 0) importanceContent = m('div', [
+                m('div[style=margin: 1em]', italicize("Empirical first differences"), ` is a tool to measure variable importance from the empirical distribution of the data. The "${valueLabel}" axis refers to the frequency of the dependent variable as the predictor (x) varies along its domain. Parts of the domain where the fitted and actual values align indicate high utility from the predictor. If the fitted and actual values are nearly identical, then the two lines may be indistinguishable.`),
                 importancePlots
+            ]);
+        }
+        if (resultsPreferences.mode === 'Partials') {
+            let importancePlots = [
+                m('div[style=margin: 1em]', italicize("Partials"), ` shows the prediction of the model as one predictor is varied, and the other predictors are held at their mean.`),
             ];
+            app.getPredictorVariables(problem).forEach(predictor => {
+                let importanceData = adapter.getImportancePartialsPE(predictor);
+                if (importanceData) importancePlots.push(m(VariableImportance, {
+                    mode: 'Partials',
+                    data: importanceData,
+                    problem: problem,
+                    predictor: predictor,
+                    target: resultsPreferences.target,
+                    yLabel: valueLabel,
+                    variableLabel: variableLabel
+                }))
+            });
+            if (importancePlots.length > 0) importanceContent = importancePlots;
+        }
+        if (resultsPreferences.mode === 'ICE') {
+            importanceContent = [
+                m('div[style=margin: 1em]', italicize("Individual conditional expectations"), ` draws one line for each individual in the data, as the selected predictor is varied. A random sample of individuals are chosen from the dataset. The red line is the average of the individuals over the target. The red line is the mean of the target variable over all individuals.`),
+                m('label', 'Importance for predictor:'),
+                m(Dropdown, {
+                    id: 'predictorImportanceDropdown',
+                    items: problem.predictors,
+                    onclickChild: mode => resultsPreferences.predictor = mode,
+                    activeItem: resultsPreferences.predictor,
+                })
+            ];
+
+            let importanceData = adapter.getImportancePartialsICE(resultsPreferences.predictor);
+
+            if (importanceData) importanceContent.push(m(VariableImportance, {
+                mode: 'ICE',
+                data: importanceData,
+                problem: problem,
+                predictor: resultsPreferences.predictor,
+                target: resultsPreferences.target,
+                yLabel: valueLabel,
+                variableLabel: variableLabel
+            }))
+            else importanceContent.push(common.loader('VariableImportance'))
+
         }
         return [
             m('label', 'Variable importance mode:'),
@@ -454,7 +469,8 @@ export class CanvasSolutions {
                 activeSection: resultsPreferences.mode,
                 sections: [
                     {value: 'EFD', title: 'empirical first differences'},
-                    {value: 'Partials', title: 'model prediction as predictor varies over its domain'}
+                    app.getResultsProblem().datasetPaths.partials && {value: 'Partials', title: 'model prediction as predictor varies over its domain'},
+                    {value: 'ICE', title: 'individual conditional expectation'}
                 ]
             }),
             importanceContent
@@ -978,6 +994,8 @@ export let setSelectedSolution = (problem, systemId, solutionId) => {
     // record behavioral logging
     app.saveSystemLogEntry(logParams);
 
+    // for easy debugging
+    window.selectedSolution = getSelectedSolutions(problem)[0];
 };
 
 
@@ -1110,67 +1128,82 @@ export let resultsData = {
     confusionLoading: {},
 
     // cached data is specific to the solution (tends to be larger)
-    importanceEFD: undefined,
-    importanceEFDLoading: false,
+    importancePartialsEFD: undefined,
+    importancePartialsEFDLoading: false,
 
     // this has melted data for both actual and fitted values
-    importancePartialsFitted: {},
-    importancePartialsFittedLoading: {},
+    importancePartialsPEFitted: {},
+    importancePartialsPEFittedLoading: {},
 
-    // this has only the essential predictor data that the dataset was fit with
-    importancePartialsActual: undefined,
-    importancePartialsActualLoading: false,
+    // this has melted data for both actual and fitted values
+    importancePartialsICEFitted: undefined,
+    importancePartialsICEFittedLoading: false,
 
     id: {
         query: [],
         problemID: undefined,
         solutionID: undefined,
-        dataSplit: undefined
+        dataSplit: undefined,
+        predictor: undefined,
+        target: undefined
     }
 };
+window.resultsData = resultsData;
 
+// TODO: just need to add menu element, some debug probably needed
+// manipulations to apply to data after joining predictions
 export let resultsQuery = [];
 
 export let recordLimit = 1000;
 
-export let loadProblemData = async problem => {
+export let loadProblemData = async (problem, predictor=undefined) => {
+    // unload ICE data if predictor changed
+    if (predictor && predictor !== resultsData.id.predictor) {
+        resultsData.id.predictor = predictor;
+        resultsData.importancePartialsICEFitted = undefined;
+        resultsData.importancePartialsICEFittedLoading = false;
+    }
+
+    // complete reset if problemId, query, dataSplit or target changed
     if (resultsData.id.problemID === problem.problemID &&
         JSON.stringify(resultsData.id.query) === JSON.stringify(resultsQuery) &&
-        resultsData.id.dataSplit === resultsPreferences.dataSplit)
+        resultsData.id.dataSplit === resultsPreferences.dataSplit &&
+        resultsData.id.target === resultsPreferences.target)
         return;
 
     resultsData.id.query = resultsQuery;
     resultsData.id.problemID = problem.problemID;
     resultsData.id.solutionID = undefined;
     resultsData.id.dataSplit = resultsPreferences.dataSplit;
+    resultsData.id.target = resultsPreferences.target;
 
-    // problem specific, one problem stored
+    // specific to problem and target, data reused across all solutions for one target
     resultsData.actuals = undefined;
     resultsData.actualsLoading = false;
 
-    // solution specific, all solutions stored
+    // specific to solution and target, all solutions stored for one target
     resultsData.fitted = {};
     resultsData.fittedLoading = {};
 
-    // solution specific, all solutions stored
+    // specific to solution and target, all solutions stored for one target
     resultsData.confusion = {};
     resultsData.confusionLoading = {};
 
-    // solution specific, one solution stored
-    resultsData.importanceEFD = undefined;
-    resultsData.importanceEFDLoading = false;
+    // specific to solution and target, one solution stored for one target
+    resultsData.importancePartialsEFD = undefined;
+    resultsData.importancePartialsEFDLoading = false;
 
-    // solution specific, all solution stored
-    resultsData.importancePartialsFitted = {};
-    resultsData.importancePartialsFittedLoading = {};
+    // specific to solution and target, all solutions stored for one target
+    resultsData.importancePartialsPEFitted = {};
+    resultsData.importancePartialsPEFittedLoading = {};
 
-    // problem specific, one problem scored
-    resultsData.importancePartialsActual = undefined;
-    resultsData.importancePartialsActualLoading = false;
+    // specific to combo of solution, predictor and target
+    resultsData.importancePartialsICEFitted = undefined;
+    resultsData.importancePartialsICEFittedLoading = false;
 };
 
-export let loadSolutionData = async (problem, adapter) => {
-    await loadProblemData(problem);
+export let loadSolutionData = async (problem, adapter, predictor=undefined) => {
+    await loadProblemData(problem, predictor);
 
     if (resultsData.id.solutionID === adapter.getSolutionId())
         return;
@@ -1178,11 +1211,11 @@ export let loadSolutionData = async (problem, adapter) => {
     resultsData.id.solutionID = adapter.getSolutionId();
 
     // solution specific, one solution stored
-    resultsData.importanceEFD = undefined;
-    resultsData.importanceEFDLoading = false;
+    resultsData.importancePartialsEFD = undefined;
+    resultsData.importancePartialsEFDLoading = false;
 };
 
-export let loadActualValues = async problem => {
+export let loadActualData = async problem => {
 
     // reset if id is different
     await loadProblemData(problem);
@@ -1250,7 +1283,7 @@ export let loadActualValues = async problem => {
     m.redraw()
 };
 
-export let loadFittedValues = async (problem, adapter) => {
+export let loadFittedData = async (problem, adapter) => {
     // load dependencies, which can clear loading state if problem, etc. changed
     await loadSolutionData(problem, adapter);
 
@@ -1311,63 +1344,10 @@ export let loadFittedValues = async (problem, adapter) => {
     m.redraw();
 };
 
-export let loadImportancePartialsActualData = async problem => {
-    await loadProblemData(problem);
-
-    // don't attempt to load if there is no data
-    if (!problem.datasetPaths.partials) return;
-
-    // don't load if systems are already in loading state
-    if (resultsData.importancePartialsActualLoading)
-        return;
-
-    // don't load if already loaded
-    if (resultsData.importancePartialsActual)
-        return;
-
-    // begin blocking additional requests to load
-    resultsData.importancePartialsActualLoading = true;
-
-    let tempQuery = JSON.stringify(resultsData.id.query);
-    let response;
-    try {
-        response = await m.request(D3M_SVC_URL + `/retrieve-output-data`, {
-            method: 'POST',
-            data: {data_pointer: problem.datasetPaths.partials}
-        });
-
-        if (!response.success) {
-            console.warn(response.data);
-            throw response.data;
-        }
-    } catch (err) {
-        app.alertWarn('Partials actual data has not been loaded. Some plots will not load.');
-        return;
-    }
-
-    // don't accept response if current problem has changed
-    if (resultsData.id.problemID !== problem.problemID)
-        return;
-
-    // don't accept if query changed
-    if (JSON.stringify(resultsData.id.query) !== tempQuery)
-        return;
-
-    // convert to structure:
-    // {predictor1: [values along domain], predictor2: ...}
-    resultsData.importancePartialsActual = Object.keys(response.data)
-        .reduce((out, predictor) => Object.assign(out,
-            {[predictor]: response.data[predictor].map(point => point[predictor])}),
-            {});
-    resultsData.importancePartialsActualLoading = false;
-
-    m.redraw();
-};
-
-export let loadImportancePartialsFittedData = async (problem, adapter) => {
+export let loadImportancePartialsPEFittedData = async (problem, adapter) => {
 
     // load dependencies, which can clear loading state if problem, etc. changed
-    await loadImportancePartialsActualData(problem);
+    await loadProblemData(problem);
 
     let dataPointer = adapter.getDataPointer('partials');
 
@@ -1375,19 +1355,15 @@ export let loadImportancePartialsFittedData = async (problem, adapter) => {
     if (!dataPointer) return;
 
     // don't load if systems are already in loading state
-    if (resultsData.importancePartialsFittedLoading[adapter.getSolutionId()])
+    if (resultsData.importancePartialsPEFittedLoading[adapter.getSolutionId()])
         return;
 
     // don't load if already loaded
-    if (resultsData.importancePartialsFitted[adapter.getSolutionId()])
-        return;
-
-    // don't load if dependencies are not loaded
-    if (!resultsData.importancePartialsActual)
+    if (resultsData.importancePartialsPEFitted[adapter.getSolutionId()])
         return;
 
     // begin blocking additional requests to load
-    resultsData.importancePartialsFittedLoading[adapter.getSolutionId()] = true;
+    resultsData.importancePartialsPEFittedLoading[adapter.getSolutionId()] = true;
 
     let tempQuery = JSON.stringify(resultsData.id.query);
     let response;
@@ -1402,7 +1378,7 @@ export let loadImportancePartialsFittedData = async (problem, adapter) => {
             throw response.data;
         }
     } catch (err) {
-        app.alertWarn('Partials data has not been loaded. Some plots will not load.');
+        app.alertWarn('PE data has not been loaded. Some plots will not load.');
         return;
     }
 
@@ -1414,21 +1390,21 @@ export let loadImportancePartialsFittedData = async (problem, adapter) => {
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
 
+    console.log('partials resp data', response.data);
     // convert unlabeled string table to predictor format
     let offset = 0;
-    resultsData.importancePartialsFitted[adapter.getSolutionId()] = Object.keys(resultsData.importancePartialsActual).reduce((out, predictor) => {
-        let nextOffset = offset + resultsData.importancePartialsActual[predictor].length;
+    resultsData.importancePartialsPEFitted[adapter.getSolutionId()] = Object.keys(problem.partialsSummaryPE).reduce((out, predictor) => {
+        let nextOffset = offset + problem.partialsSummaryPE[predictor].length;
         // for each point along the domain of the predictor
         out[predictor] = response.data.slice(offset, nextOffset)
         // for each target specified in the problem
-            .map(point => problem.targets.reduce((out, target, i) =>
-                Object.assign(out, {[target]: parseNumeric(point[i])}), {}))
-            // for only the first target specified in the problem
-            .map(point => ({[problem.targets[0]]: parseNumeric(point['0'])}));
+            .map(point => problem.targets.reduce((out_point, target) => Object.assign(out_point, {
+                    [target]: app.inferIsCategorical(target) ? point[target] : parseNumeric(point[target])
+                }), {}));
         offset = nextOffset;
         return out;
     }, {});
-    resultsData.importancePartialsFittedLoading[adapter.getSolutionId()] = false;
+    resultsData.importancePartialsPEFittedLoading[adapter.getSolutionId()] = false;
 
     m.redraw();
 };
@@ -1504,8 +1480,6 @@ export let loadConfusionData = async (problem, adapter) => {
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
 
-    // TODO: this is only index zero if there is one target
-    // TODO: multilabel problems will have d3mIndex collisions
     resultsData.confusion[adapter.getSolutionId()] = response.data;
     resultsData.confusionLoading[adapter.getSolutionId()] = false;
 
@@ -1514,7 +1488,7 @@ export let loadConfusionData = async (problem, adapter) => {
 };
 
 // importance from empirical first differences
-export let loadImportanceEFDData = async (problem, adapter) => {
+export let loadImportancePartialsEFDData = async (problem, adapter) => {
     // load dependencies, which can clear loading state if problem, etc. changed
     await loadSolutionData(problem, adapter);
 
@@ -1525,15 +1499,15 @@ export let loadImportanceEFDData = async (problem, adapter) => {
         return;
 
     // don't load if systems are already in loading state
-    if (resultsData.importanceEFDLoading)
+    if (resultsData.importancePartialsEFDLoading)
         return;
 
     // don't load if already loaded
-    if (resultsData.importanceEFD)
+    if (resultsData.importancePartialsEFD)
         return;
 
     // begin blocking additional requests to load
-    resultsData.importanceEFDLoading = true;
+    resultsData.importancePartialsEFDLoading = true;
 
     // how to construct actual values after manipulation
     let compiled = queryMongo.buildPipeline([
@@ -1547,31 +1521,30 @@ export let loadImportanceEFDData = async (problem, adapter) => {
         .substr(dataPointer.lastIndexOf('/') + 1)
         .replace('.csv', '');
     let response;
-    response = await m.request(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
-        method: 'POST',
-        data: {
-            data_pointer: dataPointer,
-            metadata: {
-                produceId,
-                levels: app.getNominalVariables(problem)
-                    .map(variable => {
-                        if (app.variableSummaries[variable].plotValues)
-                            return {[variable]: Object.keys(app.variableSummaries[variable].plotValues)}
-                    }).reduce((out, variable) => Object.assign(out, variable), {}),
-                targets: problem.targets,
-                predictors: problem.predictors,
-                collectionName: app.workspace.d3m_config.name,
-                collectionPath: app.workspace.datasetPath,
-                query: compiled
-            }
-        }
-    });
 
-    if (!response.success)
-        throw response.data;
     try {
+        response = await m.request(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
+            method: 'POST',
+            data: {
+                data_pointer: dataPointer,
+                metadata: {
+                    produceId,
+                    levels: app.getNominalVariables(problem)
+                        .map(variable => {
+                            if (app.variableSummaries[variable].plotValues)
+                                return {[variable]: Object.keys(app.variableSummaries[variable].plotValues)}
+                        }).reduce((out, variable) => Object.assign(out, variable), {}),
+                    targets: problem.targets,
+                    predictors: problem.predictors,
+                    collectionName: app.workspace.d3m_config.name,
+                    collectionPath: app.workspace.datasetPath,
+                    query: compiled
+                }
+            }
+        });
 
-
+        if (!response.success)
+            throw response.data;
     } catch (err) {
         console.warn("retrieve-output-EFD-data error");
         console.log(err);
@@ -1597,6 +1570,7 @@ export let loadImportanceEFDData = async (problem, adapter) => {
                 : response.data[predictor],
             [predictor], valueLabel, variableLabel));
 
+    // add more granular categorical columns from the compound key 'variableLabel'
     Object.keys(response.data)
         .forEach(predictor => response.data[predictor]
             .forEach(point => {
@@ -1604,10 +1578,60 @@ export let loadImportanceEFDData = async (problem, adapter) => {
                 point.level = point[variableLabel].split('-').pop();
             }));
 
-    window.efdData = response.data;
+    resultsData.importancePartialsEFD = response.data;
+    resultsData.importancePartialsEFDLoading = false;
 
-    resultsData.importanceEFD = response.data;
-    resultsData.importanceEFDLoading = false;
+    // apply state changes to the page
+    m.redraw();
+};
+
+// importance from empirical first differences
+export let loadImportancePartialsICEFittedData = async (problem, adapter, predictor) => {
+    // load dependencies, which can clear loading state if problem, etc. changed
+    await loadSolutionData(problem, adapter, predictor);
+
+    let dataPointerPredictors = problem.datasetPaths['ICE_synthetic_' + predictor];
+    let dataPointerFitted = adapter.getDataPointer('ICE_synthetic_' + predictor);
+
+    // don't load if data is not available
+    if (!dataPointerFitted || !dataPointerPredictors)
+        return;
+
+    // don't load if systems are already in loading state
+    if (resultsData.importancePartialsICEFittedLoading)
+        return;
+
+    // don't load if already loaded
+    if (resultsData.importancePartialsICEFitted)
+        return;
+
+    // begin blocking additional requests to load
+    resultsData.importancePartialsICEFittedLoading = true;
+
+    let tempQuery = JSON.stringify(resultsData.id.query);
+
+    let response = await m.request(D3M_SVC_URL + `/retrieve-output-ICE-data`, {
+        method: 'POST',
+        data: {
+            data_pointer_predictors: dataPointerPredictors,
+            data_pointer_fitted: dataPointerFitted,
+            variable: predictor
+        }
+    });
+
+    if (!response.success)
+        throw response.data;
+
+    // don't accept response if current problem has changed
+    if (resultsData.id.problemID !== problem.problemID)
+        return;
+
+    // don't accept if query changed
+    if (JSON.stringify(resultsQuery) !== tempQuery)
+        return;
+
+    resultsData.importancePartialsICEFitted = response.data;
+    resultsData.importancePartialsICEFittedLoading = false;
 
     // apply state changes to the page
     m.redraw();

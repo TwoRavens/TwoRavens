@@ -155,14 +155,14 @@ def view_R_healthcheck(request):
     return HttpResponse(rservice_req.text)
 
 
-def create_destination_directory(user_workspace, role):
+def create_destination_directory(user_workspace, name):
     """Used to add a write directory for the partials app"""
     if not isinstance(user_workspace, UserWorkspace):
         return err_resp('Error "user_workspace" must be a UserWorkspace object.')
 
     # build destination path for partials app
     dest_dir_path = join(user_workspace.d3m_config.additional_inputs,
-                         role,
+                         name,
                          f'ws_{user_workspace.id}',
                          get_timestamp_string())
 
@@ -210,7 +210,7 @@ def view_partials_app(request):
 
     # Create a directory for rook to write to
     #
-    dest_dir_info = create_destination_directory(user_workspace, role='partials')
+    dest_dir_info = create_destination_directory(user_workspace, name='partials')
     print('dest_dir_info', dest_dir_info)
 
     if not dest_dir_info.success:

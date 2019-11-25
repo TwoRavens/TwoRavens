@@ -53,8 +53,7 @@ RUN apt-get install -y r-base
 # -------------------------------------
 #   - Preprocess related R packages
 # -------------------------------------
-RUN R -e 'install.packages("rjson", repos="http://cran.rstudio.org")' && \
-    R -e 'install.packages("DescTools", repos="http://cran.rstudio.org")' && \
+RUN R -e 'install.packages("DescTools", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("XML", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("jsonlite", repos="http://cran.rstudio.org")'
 

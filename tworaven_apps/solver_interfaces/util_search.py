@@ -358,6 +358,7 @@ class SearchTPOT(Search):
 
 class SearchMLBox(Search):
     system = 'mlbox'
+    FAST_DEBUG = False
 
     def run(self):
         import mlbox.model.classification
@@ -375,6 +376,12 @@ class SearchMLBox(Search):
             'REGRESSION': ["LightGBM", "RandomForest", "ExtraTrees", "Tree", "Bagging", "AdaBoost", "Linear"],
             'CLASSIFICATION': ["LightGBM", "RandomForest", "ExtraTrees", "Tree", "Bagging", "AdaBoost", "Linear"],
         }
+
+        if self.FAST_DEBUG:
+            strategies = {
+                'REGRESSION': ["RandomForest"],
+                'CLASSIFICATION': ["RandomForest"],
+            }
 
         solver = {
             'REGRESSION': mlbox.model.regression.Regressor,

@@ -153,27 +153,26 @@ partials.app <- function(partialsParams) {
     data <- dataResult$data$datatable
     movement <- dataResult$data$movement
 
-    print(data)
-    print(movement)
+    for (variable in names(movement))
+        movement[[variable]] <- movement[[variable]][[variable]]
+
 
     #########################################################
     ## Write dataset of partials to desired location
 
     pathTables <- file.path(pathOutput, "tables")
     pathData <- file.path(pathTables, "learningData.csv")
-    pathSummary <- file.path(pathOutput, "partialsSummary.json")
     pathDatasetDoc <- file.path(pathOutput, "datasetDoc.json")
     
     if (dir.exists(pathTables)) unlink(pathTables, recursive=T)
     dir.create(pathTables, recursive=TRUE)
   
     write.csv(data, pathData, row.names=FALSE, col.names=TRUE,quote=FALSE)
-    write(jsonlite:::toJSON(movement), pathSummary)
 
     jsonlite::toJSON(okResult(list(
         partialsDatasetDocPath=jsonlite::unbox(pathDatasetDoc),
         partialsDatasetPath=jsonlite::unbox(pathData),
-        partialsSummaryPath=jsonlite::unbox(pathSummary)
+        partialsSummary=movement
     )))
 }
 

@@ -11,10 +11,10 @@ from django.http import JsonResponse, HttpResponse, HttpResponseNotFound
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 
-from tworaven_apps.ta2_interfaces.tasks import split_dataset
+from tworaven_apps.ta2_interfaces.tasks import split_dataset, create_ice_datasets
 from tworaven_apps.R_services.views import create_destination_directory
 from tworaven_apps.ta2_interfaces.util_results_visualizations import (
-    util_results_confusion_matrix, util_results_importance_efd)
+    util_results_confusion_matrix, util_results_importance_efd, util_results_importance_ice)
 from tworaven_apps.ta2_interfaces.grpc_util import TA3TA2Util
 from tworaven_apps.ta2_interfaces.static_vals import KEY_DATA_POINTER, KEY_INDICES
 from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
@@ -27,9 +27,14 @@ from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
 from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 
+import pandas as pd
+import numpy as np
 from os import path
 
 import traceback
+
+from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
+
 
 @csrf_exempt
 @cache_page(settings.PAGE_CACHE_TIME)
@@ -197,6 +202,25 @@ def view_retrieve_d3m_efd_data(request):
 
 
 @csrf_exempt
+def view_retrieve_d3m_ice_data(request):
+    req_body_info = get_request_body_as_json(request)
+    if not req_body_info.success:
+        return JsonResponse(get_json_error(req_body_info.err_msg))
+
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    req_info = req_body_info.result_obj
+    return JsonResponse({
+        KEY_SUCCESS: True,
+        KEY_DATA: util_results_importance_ice(
+            req_info['data_pointer_predictors'],
+            req_info['data_pointer_fitted'],
+            req_info['variable'])})
+
+
+@csrf_exempt
 def get_train_test_split(request):
     """Expects a JSON request containing "datasetDoc_path"
     For example: { "datasetDoc_path": "/datasetDoc.json"}
@@ -231,6 +255,43 @@ def get_train_test_split(request):
         response = {
             "success": False,
             "message": "Internal error while splitting dataset."
+        }
+
+    return JsonResponse(response)
+
+
+@csrf_exempt
+def get_ice_partials_datasets(request):
+    # request body
+    req_body_info = get_request_body_as_json(request)
+    if not req_body_info.success:
+        return JsonResponse(get_json_error(req_body_info.err_msg))
+    req_info = req_body_info.result_obj
+
+    # workspace
+    user_workspace_info = get_latest_user_workspace(request)
+    if not user_workspace_info.success:
+        return JsonResponse(get_json_error(user_workspace_info.err_msg))
+    user_workspace = user_workspace_info.result_obj
+
+    # user
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    try:
+        response = {
+            "success": True,
+            "data": create_ice_datasets(req_info, user_workspace),
+            "message": "create ICE datasets successful"
+        }
+
+    except Exception:
+        print("caught traceback when creating ICE datasets:", flush=True)
+        print(traceback.format_exc(), flush=True)
+        response = {
+            "success": False,
+            "message": "Internal error while creating ICE datasets."
         }
 
     return JsonResponse(response)

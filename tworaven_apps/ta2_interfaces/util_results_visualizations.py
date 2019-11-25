@@ -7,6 +7,142 @@ from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
 # import pyperclip
 # import json
 import random
+import pandas as pd
+
+
+def util_results_real_clustered(data_pointer, metadata):
+    GRID_SIZE = 100
+    response = EventJobUtil.import_dataset(
+        settings.TWORAVENS_MONGO_DB_NAME,
+        metadata['collectionName'],
+        metadata['collectionPath'])
+
+    if not response.success:
+        return {KEY_SUCCESS: False, KEY_DATA: response.err_msg}
+
+    results_collection_name = metadata['collectionName'] + '_produce_' + str(metadata['produceId'])
+
+    mongo_util_base = MongoRetrieveUtil(
+        settings.TWORAVENS_MONGO_DB_NAME,
+        settings.MONGO_COLLECTION_PREFIX + metadata['collectionName'])
+    if mongo_util_base.has_error():
+        return {KEY_SUCCESS: False, KEY_DATA: mongo_util_base.get_error_message()}
+
+    mongo_util_fitted = MongoRetrieveUtil(
+        settings.TWORAVENS_MONGO_DB_NAME,
+        settings.MONGO_COLLECTION_PREFIX + metadata['collectionName'])
+    if mongo_util_fitted.has_error():
+        return {KEY_SUCCESS: False, KEY_DATA: mongo_util_fitted.get_error_message()}
+
+    def normalize(variable, minimum, maximum, scale=1):
+        return {"$divide": [{"subtract": [variable, minimum]}, (maximum - minimum) * scale]}
+
+    try:
+        status = EventJobUtil.import_dataset(
+            settings.TWORAVENS_MONGO_DB_NAME,
+            results_collection_name,
+            data_pointer,
+            indexes=['d3mIndex'])
+
+        if not status.success:
+            return {KEY_SUCCESS: False, KEY_DATA: status.err_msg}
+
+        # COMPUTE ACTUAL BOUNDS
+        bounds = {}
+        response = list(mongo_util_base.run_query([
+            *metadata['query'],
+            {"$group": {
+                "_id": 0,
+                **{f'min_{target}': {"$min": f"${target}"} for target in metadata['targets']},
+                **{f'max_{target}': {"$max": f"${target}"} for target in metadata['targets']}
+            }}
+        ], method='aggregate'))
+
+        if not response[0]:
+            return {KEY_SUCCESS: response[0], KEY_DATA: response[1]}
+
+        bounds['actual'] = {target: [
+            response[0][f'min_{target}'],
+            response[0][f'max_{target}']
+        ] for target in metadata['targets']}
+
+        # COMPUTE FITTED BOUNDS
+        response = list(mongo_util_fitted.run_query([
+            {"$group": {
+                "_id": 0,
+                **{f'min_{target}': {"$min": f"${target}"} for target in metadata['targets']},
+                **{f'max_{target}': {"$max": f"${target}"} for target in metadata['targets']}
+            }}
+        ], method='aggregate'))
+
+        if not response[0]:
+            return {KEY_SUCCESS: response[0], KEY_DATA: response[1]}
+
+        bounds['fitted'] = {target: [
+            response[0][f'min_{target}'],
+            response[0][f'max_{target}']
+        ] for target in metadata['targets']}
+
+        # GRID CLUSTERING
+        query = [
+            *metadata['query'],
+            {
+                "$project": {
+                    **{
+                        name: 1 for name in metadata['targets']
+                    },
+                    **{'d3mIndex': 1}
+                }
+            },
+            {
+                "$lookup": {
+                    "from": settings.MONGO_COLLECTION_PREFIX + results_collection_name,
+                    "localField": "d3mIndex",
+                    "foreignField": "d3mIndex",
+                    "as": "results_collection"
+                }
+            },
+            {
+                "$unwind": "$results_collection"
+            },
+            {
+                "$project": {
+                    **{
+                        'fitted_' + name: f"$results_collection\\.{name}" for name in metadata['targets']
+                    },
+                    **{
+                        'actual_' + name: f"${name}" for name in metadata['targets']
+                    },
+                    **{"_id": 0}}
+            },
+            {
+                "$facet": {
+                    target: [
+                        {
+                            "$group": {
+                                "_id": {
+                                    'x': {'$toInt': normalize(f'$fitted_{target}', *bounds['fitted'], GRID_SIZE)},
+                                    'y': {'$toInt': normalize(f'$actual_{target}', *bounds['fitted'], GRID_SIZE)}
+                                },
+                                'fitted': {"$avg": f'$fitted_{target}'},
+                                'actual': {"$avg": f'$actual_{target}'},
+                                'count': {'$sum': 1}
+                            }
+                        },
+                        {'$project': {'_id': 0}}
+                    ]
+                    for target in metadata['targets']}
+            }
+        ]
+
+        response = list(mongo_util_base.run_query(query, method='aggregate'))
+
+    finally:
+        EventJobUtil.delete_dataset(
+            settings.TWORAVENS_MONGO_DB_NAME,
+            results_collection_name)
+
+    return {KEY_SUCCESS: response[0], KEY_DATA: response[1][0] if response[0] else response[1]}
 
 
 def util_results_confusion_matrix(data_pointer, metadata):
@@ -342,3 +478,10 @@ def util_results_importance_efd(data_pointer, metadata):
         KEY_DATA: data
     }
 
+
+def util_results_importance_ice(data_pointer_X, data_pointer_Y, variable):
+    return pd.read_csv(data_pointer_X)[['d3mIndex', variable, 'd3mIndexOriginal']].merge(
+        pd.read_csv(data_pointer_Y),
+        left_on='d3mIndex',
+        right_on='d3mIndex',
+        how='inner').drop(columns=['d3mIndex']).to_dict('records')

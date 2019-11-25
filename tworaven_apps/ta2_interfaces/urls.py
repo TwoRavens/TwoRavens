@@ -43,9 +43,17 @@ urlpatterns = (
          views_additional.view_retrieve_d3m_efd_data,
          name='view_retrieve_d3m_EFD_data'),
 
+    path(r'retrieve-output-ICE-data',
+         views_additional.view_retrieve_d3m_ice_data,
+         name='view_retrieve_d3m_ICE_data'),
+
     path(r'get-train-test-split',
          views_additional.get_train_test_split,
          name='get-train-test-split'),
+
+    path(r'get-ICE-datasets',
+         views_additional.get_ice_partials_datasets,
+         name='get-ICE-datasets'),
 
     re_path((r'stored-request/(?P<hash_id>[\w]{40,200})$'),
             views_saved_requests.view_stored_request,

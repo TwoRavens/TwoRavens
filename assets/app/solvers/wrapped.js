@@ -27,9 +27,16 @@ export let getSolverSpecification = async (problem, systemId) => {
     // add partials dataset to to datasetSchemas and datasetPaths
     problem.solverState[systemId].message = 'preparing partials data';
     m.redraw();
-    if (!app.materializePartialsPromise[problem.problemID])
-        app.materializePartialsPromise[problem.problemID] = app.materializePartials(problem);
-    await app.materializePartialsPromise[problem.problemID];
+    if (!app.materializePartialsPEPromise[problem.problemID])
+        app.materializePartialsPEPromise[problem.problemID] = app.materializePartialsPE(problem);
+    await app.materializePartialsPEPromise[problem.problemID];
+
+    // add ICE datasets to to datasetSchemas and datasetPaths
+    problem.solverState[systemId].message = 'preparing ICE data';
+    m.redraw();
+    if (!app.materializePartialsICEPromise[problem.problemID])
+        app.materializePartialsICEPromise[problem.problemID] = app.materializePartialsICE(problem);
+    await app.materializePartialsICEPromise[problem.problemID];
 
     // add train/test datasets to datasetSchemas and datasetPaths
     problem.solverState[systemId].message = 'preparing train/test splits';
@@ -120,6 +127,24 @@ let SPEC_produce = problem => {
         }
     }));
 
+    // add ice datasets
+    produces.push(...problem.predictors.map(predictor => ({
+        'train': {
+            'name': 'all',
+            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
+        },
+        'input': {
+            'name': 'ICE_synthetic_' + predictor,
+            'resource_uri': 'file://' + problem.datasetPaths['ICE_synthetic_' + predictor]
+        },
+        'configuration': {
+            'predict_type': "RAW"
+        },
+        'output': {
+            'resource_uri': 'file:///ravens_volume/solvers/produce/'
+        }
+    })));
+
     if (problem.splitOptions.outOfSampleSplit)
         produces.push(...dataset_types.flatMap(dataset_type => predict_types.flatMap(predict_type => ({
             'train': {
@@ -170,26 +195,30 @@ let systemParams = {
 };
 
 export let getSystemAdapterWrapped = systemId => problem => ({
-    solve: async () => m.request(SOLVER_SVC_URL + 'Solve', {
-        method: 'POST',
-        data: {
-            system: systemId,
-            specification: await getSolverSpecification(problem, systemId),
-            system_params: systemParams[systemId],
-            timeout: (problem.searchOptions.timeBoundSearch || .5) * 60 * 2
-        }
-    }).then(response => {
-        if (!response.success) {
-            app.alertWarn(response.message);
-            return;
-        }
-        problem.solutions[systemId] = problem.solutions[systemId] || {};
-        problem.solverState[systemId].message = 'searching for solutions';
-        problem.solverState[systemId].searchId = response.data.search_id;
-        problem.selectedSolutions[systemId] = [];
-        results.resultsPreferences.selectedMetric = problem.metric;
-        m.redraw()
-    }),
+    solve: async () => {
+        if (!app.isProblemValid(problem)) return;
+
+        m.request(SOLVER_SVC_URL + 'Solve', {
+            method: 'POST',
+            data: {
+                system: systemId,
+                specification: await getSolverSpecification(problem, systemId),
+                system_params: systemParams[systemId],
+                timeout: (problem.searchOptions.timeBoundSearch || .5) * 60 * 2
+            }
+        }).then(response => {
+            if (!response.success) {
+                app.alertWarn(response.message);
+                return;
+            }
+            problem.solutions[systemId] = problem.solutions[systemId] || {};
+            problem.solverState[systemId].message = 'searching for solutions';
+            problem.solverState[systemId].searchId = response.data.search_id;
+            problem.selectedSolutions[systemId] = [];
+            results.resultsPreferences.selectedMetric = problem.metric;
+            m.redraw()
+        })
+    },
     search: async () => m.request(SOLVER_SVC_URL + 'Search', {
         method: 'POST',
         data: {
@@ -243,7 +272,7 @@ export let getSolutionAdapter = (problem, solution) => ({
     },
     getActualValues: target => {
         // lazy data loading
-        results.loadActualValues(problem);
+        results.loadActualData(problem);
 
         let problemData = results.resultsData.actuals;
         // cached data is current, return it
@@ -252,7 +281,7 @@ export let getSolutionAdapter = (problem, solution) => ({
     getFittedValues: target => {
         let adapter = getSolutionAdapter(problem, solution);
         // lazy data loading
-        results.loadFittedValues(problem, adapter);
+        results.loadFittedData(problem, adapter);
 
         if (!results.resultsData.actuals) return;
         if (!results.resultsData.fitted[solution.model_id]) return;
@@ -275,27 +304,34 @@ export let getSolutionAdapter = (problem, solution) => ({
     getDescription: () => solution.description,
     getTask: () => '',
     getModel: () => solution.model || '',
-    getImportanceEFD: predictor => {
+    getImportancePartialsEFD: predictor => {
         let adapter = getSolutionAdapter(problem, solution);
-        results.loadImportanceEFDData(problem, adapter);
+        results.loadImportancePartialsEFDData(problem, adapter);
 
-        if (results.resultsData.importanceEFD)
-            return results.resultsData.importanceEFD[predictor];
+        if (results.resultsData.importancePartialsEFD)
+            return results.resultsData.importancePartialsEFD[predictor];
     },
-    getImportancePartials: predictor => {
+    getImportancePartialsPE: predictor => {
         let adapter = getSolutionAdapter(problem, solution);
-        results.loadImportancePartialsFittedData(problem, adapter);
+        results.loadImportancePartialsPEFittedData(problem, adapter);
 
-        if (!results.resultsData.importancePartialsActual) return;
-        if (!results.resultsData.importancePartialsFitted[solution.model_id]) return;
+        if (!results.resultsData.importancePartialsPEFitted[solution.model_id]) return;
 
         return app.melt(
-            results.resultsData.importancePartialsActual[predictor]
+            problem.partialsSummaryPE[predictor]
                 .map((x, i) => Object.assign({[predictor]: x},
-                    results.resultsData.importancePartialsFitted[solution.model_id][predictor][i])),
+                    results.resultsData.importancePartialsPEFitted[solution.model_id][predictor][i])),
             [predictor],
             results.valueLabel, results.variableLabel);
     },
+    getImportancePartialsICE: predictor => {
+        let adapter = getSolutionAdapter(problem, solution);
+        results.loadImportancePartialsICEFittedData(problem, adapter, predictor);
+
+        if (results.resultsData.importancePartialsICEFitted) {
+            return results.resultsData.importancePartialsICEFitted
+        }
+    }
 });
 
 let findProblem = data => {
@@ -437,10 +473,6 @@ let constants = [1, 2, 5, 2];
 
 // ~~~~ helper functions
 
-// n linearly spaced points between min and max
-let linspace = (min, max, n) => Array.from({length: n})
-    .map((_, i) => min + (max - min) / (n - 1) * i);
-
 // outer broadcast of x and y on column i
 let broadcast = (x, y, i) => y.map(point => [...x.slice(0, i), point, ...x.slice(i)]);
 
@@ -502,7 +534,7 @@ let getVariance = (data, ddof = 1) => {
  */
 let makeGLMBands = (varCovMat, coefficients, predictor, constants, preferences) => {
     let {min, max, index, n = 100} = predictor;
-    let observations = broadcast(constants, linspace(min, max, n), index);
+    let observations = broadcast(constants, app.linspace(min, max, n), index);
     let fittedValues = product(observations, coefficients).map(row => row[0]); // product produces a column vector
     let variances = symmetricQuadraticDiag(observations, varCovMat);
 

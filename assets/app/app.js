@@ -353,7 +353,7 @@ export async function buildDatasetUrl(problem, lastStep, dataPath, collectionNam
     let body = {
         method: 'aggregate',
         query: JSON.stringify(compiled),
-        export: 'dataset'
+        export: 'csv'
     };
 
     if (dataPath) body.datafile = dataPath;
@@ -389,7 +389,7 @@ export async function buildProblemUrl(problem, lastStep, dataPath, collectionNam
     let body = {
         method: 'aggregate',
         query: JSON.stringify(compiled),
-        export: 'problem',
+        export: 'dataset',
         metadata: JSON.stringify(metadata)
     };
 
@@ -666,7 +666,6 @@ export let priv = true;
 // if no columns in the datasetDoc, swandive is enabled
 // swandive set to true if task is in failset
 export let swandive = false;
-let failset = ["TIME_SERIES_FORECASTING","GRAPH_MATCHING","LINK_PREDICTION","timeSeriesForecasting","graphMatching","linkPrediction"];
 
 // replacement for javascript's blocking 'alert' function, draws a popup similar to 'alert'
 export let alertLog = (value, shown) => {
@@ -1147,7 +1146,7 @@ let getDatasetPath = async problem_data_info => {
 export let getPreprocess = async query => {
     let datasetPath = query ? await getData({
         method: 'aggregate', query,
-        export: 'dataset'
+        export: 'csv'
     }) : workspace.raven_config.datasetPath;
 
     let response = await m.request({
@@ -1236,7 +1235,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
             query: JSON.stringify(queryMongo.buildPipeline([
                 ...manipulations, {type: 'menu', metadata: {type: 'data', sample: 5000}}
             ], workspace.raven_config.variablesInitial)['pipeline']),
-            export: 'dataset'
+            export: 'csv'
         }));
 
     // PREPROCESS
@@ -1264,6 +1263,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
         })
         .then(m.redraw)
         .catch(err => {
+            console.error(err);
             setModal(m('div', m('p', "Preprocess failed."),
                 m('p', '(p: 2)')),
                 "Failed to load basic data.",
@@ -1632,8 +1632,10 @@ export let materializeManipulations = async (problem, schemaIds) => {
 };
 
 // materializing partials may only happen once per problem, all calls wait for same response
-export let materializePartialsPromise = {};
-export let materializePartials = async problem => {
+export let materializePartialsPEPromise = {};
+export let materializePartialsPE = async problem => {
+
+    console.log('materializing partials')
 
     if (!variableSummariesLoaded)
         return;
@@ -1645,15 +1647,78 @@ export let materializePartials = async problem => {
             data: {metadata: variableSummaries}
         });
         if (!partialsLocationInfo.success) {
-            // alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
+            alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
             throw partialsLocationInfo.message;
         } else {
             problem.datasetSchemas.partials = partialsLocationInfo.data.partialsDatasetDocPath;
-            problem.datasetPaths.partials = partialsLocationInfo.data.partialsDatasetPath
+            problem.datasetPaths.partials = partialsLocationInfo.data.partialsDatasetPath;
+            problem.partialsSummaryPE = partialsLocationInfo.data.partialsSummary;
         }
     } catch(err) {
         cdb(err);
-        // alertError(`Error: call to partials.app failed`);
+        // alertError(`Error: }call to partials.app failed`);
+    }
+};
+
+
+// BUILD DOMAINS
+export let ICE_SAMPLE_MAX_SIZE = 50;
+export let ICE_DOMAIN_MAX_SIZE = 20;
+export let materializePartialsICEPromise = {};
+export let materializePartialsICE = async problem => {
+    console.log('materializing ICE partials');
+
+    if (!variableSummariesLoaded) return;
+    let categoricals = getNominalVariables(problem).filter(variable => problem.predictors.includes(variable));
+
+    let abstractPipeline = [...workspace.raven_config.hardManipulations, problem.manipulations];
+    let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
+
+    let facets = categoricals.reduce((facets, variable) => Object.assign(facets, {
+        [variable]: [
+            {$group: {_id: '$' + variable, count: {$sum: 1}}},
+            {$sort: {_id: -1}},
+            {$limit: ICE_DOMAIN_MAX_SIZE},
+            {$project: {[variable]: '$_id'}}
+        ]
+    }), {});
+
+    let levels = Object.keys(facets).length > 0 ? (await getData({
+        method: 'aggregate',
+        query: JSON.stringify([
+            ...compiled,
+            {$facet: facets}
+        ])
+    }))[0] : {};
+
+    let domains = problem.predictors.reduce((domains, predictor) => Object.assign(domains, {
+        [predictor]: categoricals.includes(predictor)
+            ? levels[predictor].map(entry => entry[predictor])
+            : linspace(variableSummaries[predictor].min, variableSummaries[predictor].max, ICE_DOMAIN_MAX_SIZE)
+    }), {});
+
+    // BUILD SAMPLE DATASET
+    let samplePaths = await getData({
+        method: 'aggregate',
+        query: JSON.stringify([...compiled, {$sample: {size: ICE_SAMPLE_MAX_SIZE}}, {$project: {_id: 0}}]),
+        export: 'dataset',
+        metadata: JSON.stringify(queryMongo.translateDatasetDoc(compiled, workspace.datasetDoc, problem))
+    });
+
+    // BUILD ICE DATASETS
+    let partialsLocationInfo = await m.request({
+        method: 'POST',
+        url: D3M_SVC_URL + '/get-ICE-datasets',
+        data: {domains, dataset_schema: samplePaths.metadata_path}
+    });
+    if (!partialsLocationInfo.success) {
+        alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
+        throw partialsLocationInfo.message;
+    } else {
+        Object.assign(problem.datasetSchemas, partialsLocationInfo.data.dataset_schemas);
+        Object.assign(problem.datasetPaths, partialsLocationInfo.data.dataset_paths);
+        problem.partialsICESampleCount = partialsLocationInfo.data.sample_count;
+        problem.partialsDomains = domains;
     }
 };
 
@@ -2246,8 +2311,11 @@ export function setSelectedProblem(problemID) {
 
     // will trigger the call to solver, if a menu that needs that info is shown
     setSolverPending(true);
+
+    window.selectedProblem = problem;
 }
 
+// TODO: consider combining resultsProblem and selectedProblem
 export function setResultsProblem(problemID) {
     workspace.raven_config.resultsProblem = problemID;
     let problem = getResultsProblem();
@@ -2257,6 +2325,8 @@ export function setResultsProblem(problemID) {
 
     if (results.resultsPreferences.dataSplit !== 'all' && !problem.outOfSampleSplit)
         results.resultsPreferences.dataSplit = 'all';
+
+    window.resultsProblem = problem;
 }
 
 export function getProblemCopy(problemSource) {
@@ -2527,8 +2597,29 @@ export let sample = (arr, n=1, replacement=false, ordered=false) => {
     return indices.map(i => arr[i]);
 };
 
-let inferIsCategorical = variableSummary => {
+export let inferIsCategorical = variableSummary => {
     if (variableSummary.nature === 'nominal') return true;
     if (variableSummary.nature === 'ordinal' && variableSummary.uniqueCount <= 20) return true;
     return false;
 };
+
+export let isProblemValid = problem => {
+    let valid = true;
+    if (problem.task.toLowerCase() === 'timeseriesforecasting' && problem.tags.time.length === 0) {
+        alertError('One variable must be marked as temporal to solve a time series forecasting problem.')
+        valid = false;
+    }
+    if (problem.predictors.length === 0) {
+        alertError('At least one predictor is required.');
+        valid = false;
+    }
+    if (problem.targets.length === 0) {
+        alertError('At least one target is required.');
+        valid = false;
+    }
+    return valid;
+};
+
+// n linearly spaced points between min and max
+let linspace = (min, max, n) => Array.from({length: n})
+    .map((_, i) => min + (max - min) / (n - 1) * i);

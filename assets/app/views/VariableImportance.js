@@ -1,6 +1,7 @@
 import m from 'mithril';
 import PlotVegaLite from "./PlotVegaLite";
 import * as app from "../app";
+import * as common from '../../common/common';
 
 export default class VariableImportance {
     plotEFD(vnode) {
@@ -132,10 +133,52 @@ export default class VariableImportance {
         });
     }
 
+    plotICE(vnode) {
+        // target doesn't matter, all are plotted together
+        let {problem, data, predictor, target} = vnode.attrs;
+        let nominals = app.getNominalVariables(problem);
+
+        // TODO: how should the combinations of categorical predictor/targets work?
+        // LINE PLOT
+        return m(PlotVegaLite, {
+            data,
+            identifier: predictor,
+            specification: {
+                "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+                "description": `Independent conditional expectations for ${predictor}.`,
+                // data: {values: melted},
+                "layer": [
+                    {
+                        "mark": "line",
+                        "encoding": {
+                            "x": {"field": predictor, "type": nominals.includes(predictor) ? "nominal" : 'quantitative'},
+                            "y": {"field": target, "type": nominals.includes(target) ? "nominal" : 'quantitative', title: target},
+                            'color': {
+                                "field": 'd3mIndexOriginal',
+                                'type': 'nominal',
+                                "scale": {"range": ["gray"]},
+                                'legend': false
+                            }
+                        }
+                    },
+                    {
+                        "mark": "line",
+                        "encoding": {
+                            "x": {"field": predictor, "type": nominals.includes(predictor) ? "nominal" : 'quantitative'},
+                            "y": {"aggregate": 'mean', "field": target, "type": nominals.includes(target) ? "nominal" : 'quantitative'},
+                            "color": {"value": common.selVarColor},
+                            "size": {"value": 5}
+                        }
+                    }
+                ]
+            }
+        })
+    }
+
     view(vnode) {
         let {mode} = vnode.attrs;
 
-        let importanceTypes = {EFD: this.plotEFD, Partials: this.plotPartials};
+        let importanceTypes = {EFD: this.plotEFD, Partials: this.plotPartials, ICE: this.plotICE};
         return mode in importanceTypes && importanceTypes[mode](vnode)
     }
 }

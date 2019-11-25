@@ -21,9 +21,16 @@ export let getSolverSpecification = async problem => {
     problem.solverState.d3m = {thinking: true};
     problem.solverState.d3m.message = 'preparing partials data';
     m.redraw();
-    if (!app.materializePartialsPromise[problem.problemID])
-        app.materializePartialsPromise[problem.problemID] = app.materializePartials(problem);
-    await app.materializePartialsPromise[problem.problemID];
+    if (!app.materializePartialsPEPromise[problem.problemID])
+        app.materializePartialsPEPromise[problem.problemID] = app.materializePartialsPE(problem);
+    await app.materializePartialsPEPromise[problem.problemID];
+
+    // add ICE datasets to to datasetSchemas and datasetPaths
+    problem.solverState.d3m.message = 'preparing ICE data';
+    m.redraw();
+    if (!app.materializePartialsICEPromise[problem.problemID])
+        app.materializePartialsICEPromise[problem.problemID] = app.materializePartialsICE(problem);
+    await app.materializePartialsICEPromise[problem.problemID];
 
     problem.solverState.d3m.message = 'preparing train/test splits';
     m.redraw();
@@ -38,17 +45,11 @@ export let getSolverSpecification = async problem => {
         searchSolutionParams: GRPC_SearchSolutionsRequest(problem, problem.datasetSchemas.all),
         fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(problem.datasetSchemas[problem.splitOptions.outOfSampleSplit ? 'train' : 'all']),
         scoreSolutionDefaultParams: GRPC_ScoreSolutionRequest(problem, problem.datasetSchemas.all),
-        produceSolutionDefaultParams: {}
+        produceSolutionDefaultParams: Object.keys(problem.datasetSchemas)
+            .reduce((produces, dataSplit) => Object.assign(produces, {
+                [dataSplit]: GRPC_ProduceSolutionRequest(problem.datasetSchemas[dataSplit])
+            }), {})
     };
-
-    if (problem.splitOptions.outOfSampleSplit) {
-        allParams.produceSolutionDefaultParams.test = GRPC_ProduceSolutionRequest(problem.datasetSchemas.test);
-        allParams.produceSolutionDefaultParams.train = GRPC_ProduceSolutionRequest(problem.datasetSchemas.train);
-    } else
-        allParams.produceSolutionDefaultParams.all = GRPC_ProduceSolutionRequest(problem.datasetSchemas.all);
-
-    if (problem.datasetSchemas.partials)
-        allParams.produceSolutionDefaultParams.partials = GRPC_ProduceSolutionRequest(problem.datasetSchemas.partials);
 
     return allParams;
 };
@@ -57,6 +58,7 @@ export let getD3MAdapter = problem => ({
     solve: async () => {
         // return if current problem is already being solved
         if ('d3m' in problem.solverState) return;
+        if (!app.isProblemValid(problem)) return;
         console.log("solving:", problem);
 
         problem.solverState.d3m = {thinking: true};
@@ -119,7 +121,7 @@ export let getSolutionAdapter = (problem, solution) => ({
     getDataPointer: pointerId => (solution.produce || {})[pointerId],
     getActualValues: target => {
         // lazy data loading
-        results.loadActualValues(problem);
+        results.loadActualData(problem);
 
         let problemData = results.resultsData.actuals;
         // cached data is current, return it
@@ -128,7 +130,7 @@ export let getSolutionAdapter = (problem, solution) => ({
     getFittedValues: target => {
         let adapter = getSolutionAdapter(problem, solution);
         // lazy data loading
-        results.loadFittedValues(problem, adapter);
+        results.loadFittedData(problem, adapter);
 
         if (!results.resultsData.actuals) return;
         if (!results.resultsData.fitted[solution.pipelineId]) return;
@@ -157,27 +159,34 @@ export let getSolutionAdapter = (problem, solution) => ({
             .map(step => step.primitive.primitive.pythonPath.replace(new RegExp('d3m\\.primitives\\.(regression|classification|semisupervised_classification|semisupervised_regression)\\.'), ''))
             .join()
         : '',
-    getImportanceEFD: predictor => {
+    getImportancePartialsEFD: predictor => {
         let adapter = getSolutionAdapter(problem, solution);
-        results.loadImportanceEFDData(problem, adapter);
+        results.loadImportancePartialsEFDData(problem, adapter);
 
-        if (results.resultsData.importanceEFD)
-            return results.resultsData.importanceEFD[predictor];
+        if (results.resultsData.importancePartialsEFD)
+            return results.resultsData.importancePartialsEFD[predictor];
     },
-    getImportancePartials: predictor => {
+    getImportancePartialsPE: predictor => {
         let adapter = getSolutionAdapter(problem, solution);
-        results.loadImportancePartialsFittedData(problem, adapter);
+        results.loadImportancePartialsPEFittedData(problem, adapter);
 
-        if (!results.resultsData.importancePartialsActual) return;
-        if (!results.resultsData.importancePartialsFitted[solution.pipelineId]) return;
+        if (!results.resultsData.importancePartialsPEFitted[solution.pipelineId]) return;
 
         return app.melt(
-            results.resultsData.importancePartialsActual[predictor]
+            problem.partialsSummaryPE[predictor]
                 .map((x, i) => Object.assign({[predictor]: x},
-                    results.resultsData.importancePartialsFitted[solution.pipelineId][predictor][i])),
+                    results.resultsData.importancePartialsPEFitted[solution.pipelineId][predictor][i])),
             [predictor],
             results.valueLabel, results.variableLabel);
     },
+    getImportancePartialsICE: predictor => {
+        let adapter = getSolutionAdapter(problem, solution);
+        results.loadImportancePartialsICEFittedData(problem, adapter, predictor);
+
+        if (results.resultsData.importancePartialsICEFitted) {
+            return results.resultsData.importancePartialsICEFitted
+        }
+    }
 });
 
 // no new pipelines will be found under searchId

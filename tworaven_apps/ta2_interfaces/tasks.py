@@ -266,7 +266,7 @@ def split_dataset(configuration, workspace):
         splits = run_split()
 
     def write_dataset(role, writable_dataframe):
-        dest_dir_info = create_destination_directory(workspace, role=role)
+        dest_dir_info = create_destination_directory(workspace, name=role)
         if not dest_dir_info.success:
             return JsonResponse(get_json_error(dest_dir_info.err_msg))
 
@@ -293,13 +293,13 @@ def split_dataset(configuration, workspace):
         'test': test_datasetDoc
     }
 
-    datasetCsvs = {
+    dataset_paths = {
         'all': all_datasetCsv,
         'train': train_datasetCsv,
         'test': test_datasetCsv
     }
 
-    datasetIndices = {
+    dataset_schemas = {
         'all': all_indices,
         'train': train_indices,
         'test': test_indices
@@ -307,7 +307,75 @@ def split_dataset(configuration, workspace):
 
     return {
         'dataset_schemas': datasetDocs,
-        'dataset_paths': datasetCsvs,
-        'indices': datasetIndices,
+        'dataset_paths': dataset_paths,
+        'indices': dataset_schemas,
         'stratified': splits['stratify']
+    }
+
+
+@celery_app.task
+def create_ice_datasets(configuration, workspace):
+
+    ICE_SAMPLE_SIZE = 50
+    ICE_DOMAIN_MAX_SIZE = 100
+
+    dataset_schema = json.load(open(configuration['dataset_schema'], 'r'))
+    resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
+
+    dataset = Dataset.load(f'file://{configuration["dataset_schema"]}')
+    dataframe = dataset[resource_schema['resID']]
+
+    domains = configuration['domains']
+    # METADATA OF SCHEMA:
+    # {variable: [domain], ...}
+
+    sample_indices = np.random.randint(low=0, high=len(dataframe), size=min(len(dataframe), ICE_SAMPLE_SIZE))
+    dataframe = dataframe.iloc[sample_indices] # [['d3mIndex', *domains.keys()]] # can't drop unused columns because of d3m
+
+    def write_dataset(name, writable_dataframe):
+        dest_dir_info = create_destination_directory(workspace, name=name)
+        if not dest_dir_info.success:
+            return JsonResponse(get_json_error(dest_dir_info.err_msg))
+
+        dest_directory = dest_dir_info.result_obj
+        csv_path = os.path.join(dest_directory, resource_schema['resPath'])
+        shutil.rmtree(dest_directory)
+        shutil.copytree(workspace.d3m_config.training_data_root, dest_directory)
+        os.remove(csv_path)
+        writable_dataframe.to_csv(csv_path, index=False)
+
+        return path.join(dest_directory, 'datasetDoc.json'), csv_path
+
+    dataset_schemas = {}
+    dataset_paths = {}
+
+    print(dataframe)
+
+    new_column_names = list(dataframe.columns.values)
+    new_column_names[0] = new_column_names[0] + 'Original'
+
+    for predictor in domains:
+        synthetic_data = []
+        predictor_idx = list(dataframe.columns.values).index(predictor)
+        for row_idx in range(len(dataframe)):
+            row = dataframe.iloc[row_idx].tolist()
+
+            for support_member in domains[predictor][:ICE_DOMAIN_MAX_SIZE]:
+                row_copy = list(row)
+                row_copy[predictor_idx] = support_member
+                synthetic_data.append(row_copy)
+
+        synthetic_data = pd.DataFrame(synthetic_data, columns=new_column_names)
+
+        synthetic_data.insert(0, 'd3mIndex', list(range(len(synthetic_data))))
+
+        dataset_name = 'ICE_synthetic_' + predictor
+        dataset_schema, dataset_path = write_dataset(dataset_name, synthetic_data)
+        dataset_schemas[dataset_name] = dataset_schema
+        dataset_paths[dataset_name] = dataset_path
+
+    return {
+        'dataset_schemas': dataset_schemas,
+        'dataset_paths': dataset_paths,
+        'sample_count': len(dataframe)
     }

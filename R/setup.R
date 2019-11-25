@@ -6,7 +6,7 @@ packageList.caret.app <- c('caret', 'R.utils', "rpart", "ranger", "naivebayes", 
 packageList.none <- c('Amelia', "Rcpp","VGAM", "dplyr", "devtools", "nloptr", "XML")
 
 # all known apps use these packages
-packageList.any <- c('jsonlite', 'rjson', 'DescTools')
+packageList.any <- c('jsonlite', 'DescTools')
 
 installPackages <- function(packageList) {
     print(paste("load packages...", sep=""))

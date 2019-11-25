@@ -7,9 +7,7 @@ import numpy as np
 import requests
 
 import joblib
-import h2o
 import pandas
-from ludwig.api import LudwigModel
 from scipy.sparse import csr_matrix
 
 from tworaven_apps.solver_interfaces.models import SAVED_MODELS_PATH, R_SERVICE, get_metric, StatisticalModel
@@ -81,6 +79,7 @@ class Model(object):
                 task=metadata['task'])
 
         if metadata['system'] == 'ludwig':
+            from ludwig.api import LudwigModel
             return ModelLudwig(
                 model=LudwigModel.load(model_folder_path),
                 predictors=metadata['predictors'],
@@ -90,6 +89,7 @@ class Model(object):
                 task=metadata['task'])
 
         if metadata['system'] == 'h2o':
+            import h2o
             h2o.init()
             return ModelH2O(
                 model=h2o.load_model(os.path.join(model_folder_path, metadata['model_filename'])),
@@ -386,6 +386,7 @@ class ModelH2O(Model):
         self.model.train(y=self.targets[0], x=self.predictors, training_frame=data)
 
     def score(self, specification):
+        import h2o
         configuration = specification['configuration']
         resource_uri = Dataset(specification['input']).get_resource_uri()
         data = h2o.import_file(resource_uri)
@@ -462,6 +463,7 @@ class ModelH2O(Model):
         }
 
     def produce(self, specification):
+        import h2o
         configuration = specification.get('configuration', {})
         predict_type = configuration.get('predict_type', 'RAW')
 
@@ -525,6 +527,7 @@ class ModelH2O(Model):
         }
 
     def save(self):
+        import h2o
         model_folder_path = os.path.join(SAVED_MODELS_PATH, self.model_id)
         metadata_path = os.path.join(model_folder_path, 'metadata.json')
 
