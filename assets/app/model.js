@@ -103,7 +103,8 @@ export class CanvasModel {
                 m(Button, {
                     id: 'btnForce', style: {margin: '0px .5em'},
                     onclick: () => forceDiagramState.isPinned = !forceDiagramState.isPinned,
-                    title: 'pin the variable pebbles to the page'
+                    title: 'pin the variable pebbles to the page',
+                    class: forceDiagramState.isPinned && 'active'
                 }, m(Icon, {name: 'pin'})),
                 m(Button, {
                     id: 'btnEraser', style: {margin: '0px .5em'},

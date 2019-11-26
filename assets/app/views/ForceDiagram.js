@@ -262,8 +262,10 @@ export default class ForceDiagram {
                     }
                     this.isDragging = true;
                     if (!d3.event.active) this.force.alphaTarget(1).restart();
-                    d3.event.subject.fx = d3.event.subject.x;
-                    d3.event.subject.fy = d3.event.subject.y;
+                    if (d3.event.subject.x !== undefined)
+                        d3.event.subject.fx = d3.event.subject.x;
+                    if (d3.event.subject.y !== undefined)
+                        d3.event.subject.fy = d3.event.subject.y;
                     this.startDragLocation = [d3.event.subject.x, d3.event.subject.y];
                     m.redraw()
                 })
@@ -298,13 +300,13 @@ export default class ForceDiagram {
                                 let nodeNames = [...groups.find(group => group.name === groupId).nodes];
                                 if (isInside(dragCoord, hullCoords[groupId])) {
                                     this.frozenGroups[groupId] = true;
-                                    nodeNames.forEach(node => {
+                                    !this.isPinned && nodeNames.forEach(node => {
                                         this.nodes[node].fx = this.nodes[node].x;
                                         this.nodes[node].fy = this.nodes[node].y;
                                     })
                                 }
                                 else if (this.frozenGroups[groupId]) {
-                                    nodeNames.forEach(node => {
+                                    !this.isPinned && nodeNames.forEach(node => {
                                         if (node === (this.selectedPebble || {}).name) return;
                                         delete this.nodes[node].fx;
                                         delete this.nodes[node].fy;
@@ -318,7 +320,7 @@ export default class ForceDiagram {
                     this.isDragging = false;
                     if (!d3.event.active) this.force.alphaTarget(0);
 
-                    Object.keys(this.frozenGroups).forEach(groupId => {
+                    !this.isPinned && Object.keys(this.frozenGroups).forEach(groupId => {
                         let nodeNames = [...groups.find(group => group.name === groupId).nodes];
                         nodeNames.forEach(node => {
                             if (node === (this.selectedPebble || {}).name) return;
