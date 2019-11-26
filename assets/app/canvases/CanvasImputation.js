@@ -3,13 +3,18 @@ import * as common from "../../common/common";
 import {getData} from "../app";
 import TextField from "../../common/views/TextField";
 import ButtonRadio from "../../common/views/ButtonRadio";
-import Dropdown from "../../common/views/Dropdown";
 import Table from "../../common/views/Table";
 
 
 let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
 
 let labelOffset = '15em';
+let mongoTypes = {
+    'numeric': ['double', 'int', 'long', 'decimal'],
+    'bool': ['bool'],
+    'string': ['string'],
+    'date': ['date']
+};
 
 export default class CanvasImputation {
     oninit({attrs}) {
@@ -22,14 +27,12 @@ export default class CanvasImputation {
         setDefault(preferences, 'selectedVariables', new Set());
         setDefault(preferences, 'variableSummary', metadata.variables);
 
-        setDefault(preferences, 'nullValue', '');
-        setDefault(preferences, 'nullValueType', 'character');
+        setDefault(preferences, 'nullValues', '');
 
         setDefault(preferences, 'imputationMode', 'Replace');
         setDefault(preferences, 'replacementMode', 'Nullify');
 
         setDefault(preferences, 'customValue', '');
-        setDefault(preferences, 'customValueType', 'character');
 
         setDefault(preferences, 'statisticMode', 'Mean');
 
@@ -57,33 +60,30 @@ export default class CanvasImputation {
             this.loadData(preferences.selectedVariables, pipeline)
         };
 
-        preferences.getReplacementValue = prefs => {
+        preferences.parseType = (variableType, value) => (({
+            'string': _ => _,
+            'numeric': parseFloat,
+            'date': v => new Date(v).toISOString(),
+            'bool': v => !(v.toLowerCase().startsWith('f') || v.startsWith('0') || v.toLowerCase().startsWith('n'))
+        })[variableType](value));
+
+        preferences.getReplacementValues = (prefs) => {
             if (prefs.replacementMode === 'Nullify') {
                 return [...prefs.selectedVariables].reduce((out, variable) => {
                     out[variable] = null;
                     return out;
                 }, {})
             }
-            if (prefs.replacementMode === 'Custom') {
-                let replacementValue = prefs.customValueType === 'numeric'
-                    ? parseFloat(prefs.customValue)
-                    : IS_D3M_DOMAIN
-                        ? 'missing_value'
-                        : prefs.customValue;
-
-                return [...prefs.selectedVariables].reduce((out, variable) => {
-                    out[variable] = replacementValue;
-                    return out;
-                }, {})
-            }
-            if (prefs.replacementMode === 'Statistic') {
-                return [...prefs.selectedVariables].reduce((out, variable) => {
-                    out[variable] = prefs.variableSummary[variable][{
-                        'Mean': 'mean', 'Minimum': 'min', 'Maximum': 'max', 'Median': 'median', 'Most Frequent': 'mode'
-                    }[prefs.statisticMode]];
-                    return out;
-                }, {})
-            }
+            if (prefs.replacementMode === 'Custom') return [...preferences.selectedVariables]
+                .reduce((values, variable) => Object.assign(values, {
+                    [variable]: preferences.parseType(prefs.variableTypes[variable], preferences.customValue)
+                }), {});
+            if (prefs.replacementMode === 'Statistic') return [...prefs.selectedVariables].reduce((out, variable) => {
+                out[variable] = prefs.variableSummary[variable][{
+                    'Mean': 'mean', 'Minimum': 'min', 'Maximum': 'max'
+                }[prefs.statisticMode]];
+                return out;
+            }, {})
         }
     }
 
@@ -113,10 +113,20 @@ export default class CanvasImputation {
     view({attrs}) {
         let {preferences, pipeline} = attrs;
 
-        let nullValue = preferences.nullValueType === 'numeric'
-            ? parseFloat(preferences.nullValue) : preferences.nullValue;
+        preferences.variableTypes = [...preferences.selectedVariables].reduce((types, variable) => {
+            let type = preferences.variableSummary[variable].types.filter(type => type !== 'null')[0];
+            types[variable] = Object.keys(mongoTypes).find(mongoType => mongoTypes[mongoType].includes(type));
+            return types;
+        }, {});
 
-        let replacementValue = preferences.imputationMode === 'Replace' && preferences.getReplacementValue(preferences);
+        let nullValues = [...preferences.selectedVariables]
+            .reduce((values, variable) => Object.assign(values, {
+                [variable]: preferences.nullValues.split(' ')
+                    .map(nullValue => preferences.parseType(preferences.variableTypes[variable], nullValue))
+            }), {});
+
+        let replacementValues = preferences.imputationMode === 'Replace' && preferences
+            .getReplacementValues(preferences);
 
         return m('div#canvasTransform', {
                 style: {
@@ -127,24 +137,15 @@ export default class CanvasImputation {
             },
 
             m('div',
-                m(`label#nullValueLabel[style=width:${labelOffset}]`, 'Missing value:'),
+                m(`label#nullValuesLabel[style=width:${labelOffset}]`, 'Missing value:'),
                 m(TextField, {
-                    id: 'nullValueTextField',
-                    oninput: value => preferences.nullValue = value,
+                    id: 'nullValuesTextField',
+                    oninput: value => preferences.nullValues = value,
                     style: {width: `calc(100% - ${labelOffset})`, display: 'inline-block'}
                 })),
 
-            m('div',
-                m(`label#nullValueTypeLabel[style=width:${labelOffset}]`, 'Missing value type:'),
-                m('[style=display:inline-block]', m(Dropdown, {
-                    id: 'nullValueType',
-                    items: ['character', 'numeric'],
-                    activeItem: preferences.nullValueType,
-                    onclickChild: value => preferences.nullValueType = value
-                }))),
-
             // D3M sklearn imputer doesn't support listwise deletion
-            !IS_D3M_DOMAIN && m('div',
+            m('div',
                 m(`label#imputationModeLabel[style=width:${labelOffset}]`, 'Action to take:'),
                 m(ButtonRadio, {
                     id: 'imputationModeButtonBar',
@@ -174,36 +175,25 @@ export default class CanvasImputation {
 
                 preferences.replacementMode === 'Custom' && [
                     // D3M sklearn imputer doesn't support custom string replacements
-                    (!IS_D3M_DOMAIN || preferences.customValueType !== 'character') &&  m('div',
-                        m(`label#nullValueLabel[style=width:${labelOffset}]`, 'Replacement value:'),
+                    m('div',
+                        m(`label#customValueLabel[style=width:${labelOffset}]`, 'Replacement value:'),
                         m(TextField, {
                             id: 'customValueTextField',
                             oninput: value => preferences.customValue = value,
                             style: {width: `calc(100% - ${labelOffset})`, display: 'inline-block'}
-                        })),
-                    !IS_D3M_DOMAIN && m('div',
-                        m(`label#customValueTypeLabel[style=width:${labelOffset}]`, 'Replacement type:'),
-                        m('[style=display:inline-block]', m(Dropdown, {
-                            id: 'customValueType',
-                            items: ['character', 'numeric'],
-                            activeItem: preferences.customValueType,
-                            onclickChild: value => preferences.customValueType = value
-                        })))
+                        }))
                 ],
 
                 preferences.replacementMode === 'Statistic' && [
                     m('div',
-                        m(`label#nullValueLabel[style=width:${labelOffset}]`, 'Replacement statistic:'),
+                        m(`label#statisticModeLabel[style=width:${labelOffset}]`, 'Replacement statistic:'),
                         m(ButtonRadio, {
                             id: 'statisticModeButtonBar',
                             onclick: mode => preferences.statisticMode = mode,
                             activeSection: preferences.statisticMode,
-                            sections: IS_D3M_DOMAIN ? [
+                            sections: [
                                     {value: 'Mean', title: 'replace the null value with the mean of the column'},
-                                    {value: 'Median', title: 'replace the null value with the median of the column'},
-                                    {value: 'Most Frequent', title: 'replace the null value with the most frequent value of the column'},
-                                ] : [
-                                    {value: 'Mean', title: 'replace the null value with the mean of the column'},
+                                    // {value: 'Median', title: 'replace the null value with the median of the column'},
                                     {value: 'Minimum', title: 'replace the null value with the minimum of the column'},
                                     {value: 'Maximum', title: 'replace the null value with the maximum of the column'}
                                 ],
@@ -230,7 +220,7 @@ export default class CanvasImputation {
                 data: {
                     'Replace': replaceMissing,
                     'Delete': deleteMissing
-                }[preferences.imputationMode](this.data, nullValue, replacementValue),
+                }[preferences.imputationMode](this.data, nullValues, replacementValues),
                 attrsAll: {
                     style: {
                         margin: '1em auto', width: 'auto',
@@ -243,14 +233,14 @@ export default class CanvasImputation {
     }
 }
 
-let replaceMissing = (data, missing, replacement) => data.map(row => Object.keys(row).reduce((out, col) => {
-    out[col] = row[col] === missing
+let replaceMissing = (data, missing, replacement) => data.map(row => Object.keys(row).filter(col => col in missing).reduce((out, col) => {
+    out[col] = (missing[col] || []).includes(row[col])
         ? m(`[style=background-color:${common.gr2Color};min-width:1em;min-height:1em]`, replacement[col])
         : row[col];
     return out;
 }, {}));
 
-let deleteMissing = (data, missing) => data.map(row => Object.values(row).some(val => val === missing)
+let deleteMissing = (data, missing) => data.map(row => Object.keys(row).some(variable => missing[variable].includes(row[variable]))
     ? Object.keys(row).reduce((out, col) => {
         out[col] = m(`[style=text-decoration:line-through;${row[col] === missing ? 'background-color:' +
             common.gr2Color : ''}]`, row[col]);

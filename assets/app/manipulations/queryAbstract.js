@@ -223,9 +223,8 @@ function makeAbstractBranch(step, preferences, metadata, name) {
         let branch = {
             id: String(step.imputationId++),
             imputationMode: preferences.imputationMode,
-            nullValue: preferences.nullValueType === 'numeric'
-                ? parseFloat(preferences.nullValue) : preferences.nullValue,
-            nullValueType: preferences.nullValueType
+            nullValues: preferences.nullValues,
+            variableTypes: preferences.variableTypes
         };
 
         if (preferences.imputationMode === 'Delete') return Object.assign(branch, {
@@ -234,7 +233,7 @@ function makeAbstractBranch(step, preferences, metadata, name) {
 
         if (preferences.imputationMode === 'Replace') {
             Object.assign(branch, {
-                replacementValues: preferences.getReplacementValue(preferences),
+                replacementValues: preferences.getReplacementValues(preferences),
                 statisticMode: preferences.statisticMode,
                 replacementMode: preferences.replacementMode
             });

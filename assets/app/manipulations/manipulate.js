@@ -52,6 +52,7 @@ export function menu(compoundPipeline) {
             }, 'Cancel'),
             m(Button, {
                 id: 'btnStage',
+                class: 'btn-success',
                 style: {
                     right: `calc(${common.panelOpen['right'] ? '500' : '16'}px + ${common.panelMargin}*2)`,
                     bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px + ${app.peekInlineShown && app.peekData ? app.peekInlineHeight : '0px'})`,
@@ -357,7 +358,7 @@ export class PipelineFlowchart {
                                         common.setPanelOpen('left');
                                     }
                                 }, plus, ' Constraint'),
-                                !IS_D3M_DOMAIN && m(Button, {
+                                m(Button, {
                                     id: 'btnAddGroup',
                                     class: ['btn-sm'],
                                     style: {margin: '0.5em'},
@@ -451,7 +452,7 @@ export class PipelineFlowchart {
             }),
             editable && [
                 // D3M primitives don't support transforms
-                !IS_D3M_DOMAIN && m(Button, {
+                m(Button, {
                     id: 'btnAddTransform',
                     title: 'construct new columns',
                     disabled: !isEnabled(),
@@ -481,7 +482,7 @@ export class PipelineFlowchart {
                     })
                 }, plus, ' Subset Step'),
                 // D3M primitives don't support aggregations
-                !IS_D3M_DOMAIN && aggregate !== false && m(Button, {
+                aggregate !== false && m(Button, {
                     id: 'btnAddAggregate',
                     title: 'group rows that match criteria',
                     disabled: !isEnabled(),
@@ -682,7 +683,7 @@ export let setConstraintType = (type, pipeline) => {
 
         constraintMetadata.max = varMeta.max;
         constraintMetadata.min = varMeta.min;
-        constraintMetadata.buckets = Math.min(Math.max(10, Math.floor(varMeta.valid / 10)), 100);
+        constraintMetadata.buckets = Math.min(Math.max(10, Math.floor(varMeta.validCount / 10)), 100);
 
         if (varMeta.types.includes('string')) {
             alertLog(`A density plot cannot be drawn for the nominal variable ${column}. Switching to discrete.`);

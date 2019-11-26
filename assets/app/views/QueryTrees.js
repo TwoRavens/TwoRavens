@@ -380,16 +380,10 @@ export class TreeImputation {
     buildTreeData(step, editable) {
         return step.imputations.map((imputation, i) => ({
             id: imputation.id,
-            name: `${i + 1}: ${imputation.imputationMode} ${imputation.nullValue}`,
+            name: `${i + 1}: ${imputation.imputationMode} ${imputation.nullValues}`,
             cancellable: editable,
             show_op: false,
-            children: [
-                {
-                    id: imputation.id + 'NullValueType',
-                    name: 'Null Value Type: ' + imputation.nullValueType,
-                    show_op: false, cancellable: false
-                }
-            ].concat(imputation.imputationMode === 'Delete' ? [
+            children: imputation.imputationMode === 'Delete' ? [
                 {
                     id: imputation.id + 'Variables',
                     name: imputation.variables.size + ' Variables',
@@ -416,13 +410,7 @@ export class TreeImputation {
                     name: 'Replacement Mode: ' + imputation.replacementMode,
                     show_op: false, cancellable: false
                 }
-            ].concat(imputation.replacementMode === 'Custom' ? [
-                {
-                    id: imputation.id + 'ReplacementType',
-                    name: 'Replacement Type: ' + imputation.customValueType,
-                    show_op: false, cancellable: false
-                }
-            ] : []))
+            ]
         }))
     }
 
