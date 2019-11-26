@@ -97,7 +97,7 @@ export default class VariableImportance {
                 "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
                 "description": `Partials for ${predictor}.`,
                 data: {values: data},
-                "mark": "point",
+                "mark": "line",
                 "encoding": {
                     "x": {"field": predictor, "type": nominals.includes(predictor) ? "nominal" : 'quantitative'},
                     "y": {"field": yLabel, "type": nominals.includes(target) ? "nominal" : "quantitative"},

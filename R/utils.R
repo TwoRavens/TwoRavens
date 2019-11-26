@@ -2,7 +2,18 @@
 ##  3/3/15
 ##
 
+# wrap data returned from apps and tryCatch statements (similar to rust results enums)
+okResult <- function(data=NULL, message=NULL) list(
+    success=jsonlite::unbox(TRUE),
+    data=data,
+    message=jsonlite::unbox(message)
+)
 
+errResult <- function(message=NULL, data=NULL) list(
+    success=jsonlite::unbox(FALSE),
+    message=jsonlite::unbox(message),
+    data=data
+)
 
 # Presently unused attempt at a termination function so as to streamline code for warnings
 terminate<-function(response,warning){

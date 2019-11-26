@@ -1564,6 +1564,14 @@ export let loadImportancePartialsEFDData = async (problem, adapter) => {
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
 
+    let responseImportance = await m.request(ROOK_SVC_URL + 'efdimportance.app', {
+        method: 'POST',
+        data: {efdData: response.data}
+    });
+    // reorder response.data predictors based on importance
+    if (responseImportance.success) response.data = responseImportance.data
+        .reduce((data, variable) => Object.assign(data, {[variable]: response.data[variable]}), {});
+
     let nominals = app.getNominalVariables(problem);
 
     // melt predictor data once, opposed to on every redraw

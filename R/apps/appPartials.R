@@ -4,18 +4,6 @@
 ##
 ##  6/23/19
 ##
-okResult <- function(data=NULL, message=NULL) list(
-    success=jsonlite::unbox(TRUE),
-    data=data,
-    message=jsonlite::unbox(message)
-)
-
-
-errResult <- function(message=NULL, data=NULL) list(
-    success=jsonlite::unbox(FALSE),
-    message=jsonlite::unbox(message),
-    data=data
-)
 
 partials.app <- function(partialsParams) {
     print('entering partials app')
