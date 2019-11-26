@@ -5,6 +5,7 @@ import {formatPrecision, saveSystemLogEntry} from "../app";
 import Table from "../../common/views/Table";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import {italicize} from "../index";
+import * as app from '../app';
 
 
 export default class VariableSummary {
@@ -75,7 +76,8 @@ export default class VariableSummary {
                 specification: continuousSpecification,
                 identifier: 'x'
             });
-            if (variable.cdfPlotType === 'bar') plot = m(PlotVegaLite, {
+            let isCategorical = app.getNominalVariables(app.getSelectedProblem()).includes(variable.name);
+            if (!isCategorical && variable.cdfPlotType === 'bar') plot = m(PlotVegaLite, {
                 data: variable.cdfPlotX.map((_, i) => ({x: variable.cdfPlotX[i], y: variable.cdfPlotY[i]})),
                 specification: barSpecification,
                 identifier: 'x'
