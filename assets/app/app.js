@@ -280,7 +280,6 @@ export function setSelectedMode(mode) {
             let copiedProblem = getProblemCopy(selectedProblem);
 
             workspace.raven_config.problems[copiedProblem.problemID] = copiedProblem;
-            workspace.raven_config.resultsProblem = selectedProblem.problemID;
 
             // denote as solved problem
             if (!selectedProblem.solverState)
@@ -290,7 +289,7 @@ export function setSelectedMode(mode) {
             if (!results.resultsPreferences.dataSplit)
                 results.resultsPreferences.dataSplit = 'test';
 
-            if (results.resultsPreferences.dataSplit !== 'all' && !getResultsProblem().splitOptions.outOfSampleSplit)
+            if (results.resultsPreferences.dataSplit !== 'all' && !selectedProblem.splitOptions.outOfSampleSplit)
                 results.resultsPreferences.dataSplit = 'all';
         }
 
@@ -652,8 +651,7 @@ function websocketMessage(e) {
 // when set, a problem's Task, Subtask and Metric may not be edited
 export let lockToggle = true;
 export let setLockToggle = state => {
-    let selectedProblem = getSelectedProblem();
-    if (state && selectedProblem.system === 'solved') hopscotch.startTour(lockTour(selectedProblem));
+    if (state && selectedProblem.system === 'solved') hopscotch.startTour(lockTour());
     else {
         hopscotch.endTour(true);
         lockToggle = state;
@@ -935,15 +933,13 @@ export let task1Tour = {
 };
 
 // appears when a user attempts to edit when the toggle is set
-export let lockTour = problem => ({
+export let lockTour = () => ({
     id: "lock_toggle",
     i18n: {doneBtn:'Ok'},
     showCloseButton: true,
     scrollDuration: 300,
     steps: [
-        step("btnLock", "left", "Locked Mode", problem.system === 'solved'
-            ? `<p>This problem cannot be edited, because it already has solutions.</p>`
-            : `<p>Click the lock button to enable editing.</p>`)
+        step("btnLock", "left", "Locked Mode", `<p>Click the lock button to enable editing.</p>`)
     ]
 });
 
@@ -2163,12 +2159,6 @@ export let getSelectedProblem = () => {
     if (!ravenConfig) return;
     return ravenConfig.problems[ravenConfig.selectedProblem];
 };
-export let getResultsProblem = () => {
-    if (!workspace) return;
-    let ravenConfig = workspace.raven_config;
-    if (!ravenConfig) return;
-    return ravenConfig.problems[ravenConfig.resultsProblem];
-};
 
 /*
  *  Return the problem description--or autogenerate one
@@ -2312,21 +2302,10 @@ export function setSelectedProblem(problemID) {
     // will trigger the call to solver, if a menu that needs that info is shown
     setSolverPending(true);
 
-    window.selectedProblem = problem;
-}
-
-// TODO: consider combining resultsProblem and selectedProblem
-export function setResultsProblem(problemID) {
-    workspace.raven_config.resultsProblem = problemID;
-    let problem = getResultsProblem();
-
-    if (!results.resultsPreferences.dataSplit)
-        results.resultsPreferences.dataSplit = 'test';
-
     if (results.resultsPreferences.dataSplit !== 'all' && !problem.outOfSampleSplit)
         results.resultsPreferences.dataSplit = 'all';
 
-    window.resultsProblem = problem;
+    window.selectedProblem = problem;
 }
 
 export function getProblemCopy(problemSource) {
@@ -2336,7 +2315,8 @@ export function getProblemCopy(problemSource) {
         provenanceID: problemSource.problemID,
         unedited: true,
         pending: true,
-        system: 'user'
+        system: 'user',
+        results: undefined
     });
 }
 

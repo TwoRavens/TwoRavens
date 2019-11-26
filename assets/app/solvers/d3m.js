@@ -902,15 +902,15 @@ export async function handleENDGetSearchSolutionsResults(response) {
  */
 export async function endsession() {
     app.taskPreferences.isSubmittingPipelines = true;
-    let resultsProblem = app.getResultsProblem();
+    let selectedProblem = app.getSelectedProblem();
 
-    let solutions = resultsProblem.solutions;
+    let solutions = selectedProblem.solutions;
     if (Object.keys(solutions.d3m).length === 0) {
         alertError("No pipelines exist. Cannot mark problem as complete.");
         return;
     }
 
-    let selectedPipelines = results.getSelectedSolutions(resultsProblem, 'd3m');
+    let selectedPipelines = results.getSelectedSolutions(selectedProblem, 'd3m');
     if (selectedPipelines.length === 0) {
         alertWarn("No pipeline is selected. Cannot mark problem as complete");
         return;
@@ -984,97 +984,4 @@ export async function endsession() {
         status.name = 'Error from pipeline submission.';
         alertError(m(Table, {data: status}))
     }
-}
-
-/*
- * End any running searches and display message
- */
-export let endAllSearches2 = async () => {
-  console.log('--- Stop any running searches ---');
-  Object.keys(app.workspace.raven_config.problems).map(problemId => {
-    //
-    // For problems with a 'd3mSearchId', send a EndSearchSolutions call
-    //
-    let yeProblem = app.workspace.raven_config.problems[problemId];
-    let d3mSearchIdToStop = isKeyDefined(yeProblem, 'd3mSearchId');
-    console.log('endAllSearches2: ' + d3mSearchIdToStop);
-
-    if (d3mSearchIdToStop !== undefined){
-      console.log(`end search: ${d3mSearchIdToStop}`);
-      let endResp = app.makeRequest(D3M_SVC_URL + '/EndSearchSolutions',
-                                         {searchId: d3mSearchIdToStop});
-      console.log(JSON.stringify(endResp))
-    }
-  })
-} // end: endAllSearches2
-
-/*
- *  Given a problem, check if it has a d3mSearchId.
- *  If it does, then send an EndSearchSolutions call
- */
-export let endSearch2 = async problem => {
-  let d3mSearchIdToStop = isKeyDefined(problem, 'd3mSearchId');
-  console.log('endSearch2: ' + d3mSearchIdToStop);
-
-  if (d3mSearchIdToStop !== undefined){
-    console.log(`stop search: ${d3mSearchIdToStop}`);
-    let endResp = await app.makeRequest(D3M_SVC_URL + '/EndSearchSolutions',
-                                       {searchId: d3mSearchIdToStop});
-    console.log(JSON.stringify(endResp))
-  }
-} // end: endSearch2
-
-/*
-let endAllSearches2 = async () => Object.keys(app.workspace.raven_config.problems).map(problemId => {
-   let problemInfo = app.workspace.raven_config.problems[problemId];
-   console.log(problemId);
-   let d3mSearchIdToStop = isKeyDefined(problemInfo, 'd3mSearchId');
-   if (d3mSearchIdToStop !== undefined){
-     console.log('stop it: ' + d3mSearchIdToStop);
-     let endResp = await app.makeRequest(D3M_SVC_URL + '/EndSearchSolutions',
-                                        {searchId: d3mSearchIdToStop});
-     console.log(JSON.stringify(endResp))
-
-   }else{
-     console.log('nuthing running');
-   }
-})
-*/
-
-/**
- rpc SolutionExport (SolutionExportRequest) returns (SolutionExportResponse) {}
-
- Example call:
- {
-       "fittedSolutionId": "solutionId_gtk2c2",
-       "rank": 0.122
-       "searchId": "17"
-  }
-
- Note: "searchId" is not part of the gRPC call but used for server
- side tracking.
-
- */
-let exportCount = 0;
-export async function exportSolution(solutionId) {
-    exportCount++;
-
-    let response = await m.request(D3M_SVC_URL + '/SolutionExport3', {method: 'POST', data: {
-        solutionId,
-        rank: 1.01 - 0.01 * exportCount,
-        searchId: app.getResultsProblem().solverState.d3m.searchId
-    }});
-
-    console.log('--------------------------')
-    console.log(' -- SolutionExport3 --')
-    console.log(JSON.stringify(response));
-
-    console.log('--------------------------')
-    if (response === undefined){
-        console.log('Failed to write executable for solutionId ' + solutionId);
-    } else if (!response.success){
-        setModal(response.message,"Solution export failed", true, 'Close', true,
-            () => setModal('',"", false));
-    }
-    return response;
 }

@@ -84,7 +84,6 @@ class Body {
 
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
 
-        let resultsProblem = app.getResultsProblem();
         let selectedProblem = app.getSelectedProblem();
 
         let drawForceDiagram = (app.is_model_mode || app.is_explore_mode) && selectedProblem && Object.keys(app.variableSummaries).length > 0;
@@ -115,7 +114,7 @@ class Body {
                 m('div', {
                         style: {width: '100%', height: '100%', position: 'relative'},
                     },
-                    app.is_results_mode && m(MainCarousel, {previousMode: this.previousMode}, m(results.CanvasSolutions, {problem: resultsProblem})),
+                    app.is_results_mode && m(MainCarousel, {previousMode: this.previousMode}, m(results.CanvasSolutions, {problem: selectedProblem})),
                     app.is_explore_mode && m(MainCarousel, {previousMode: this.previousMode}, m(explore.CanvasExplore, {variables: exploreVariables, variate})),
                     app.is_model_mode && m(MainCarousel, {previousMode: this.previousMode}, m(model.CanvasModel, {drawForceDiagram, forceData}))
                 )
@@ -140,7 +139,6 @@ class Body {
             linkInfo.newWin === true ? window.open(linkInfo.url) : window.location.href = linkInfo.url;
         }
 
-        let resultsProblem = app.getResultsProblem();
         let selectedProblem = app.getSelectedProblem();
 
         let createBreadcrumb = () => {
@@ -163,21 +161,17 @@ class Body {
                     ))
             ];
 
-            let pathProblem = {
-                'model': selectedProblem, 'results': resultsProblem
-            }[app.currentMode];
-
-            if (pathProblem) path.push(m(Icon, {name: 'chevron-right'}), m(Popper, {
+            if (selectedProblem) path.push(m(Icon, {name: 'chevron-right'}), m(Popper, {
                 content: () => m(Table, {
-                    data: {'targets': pathProblem.targets, 'predictors': pathProblem.predictors,'description': preformatted(app.getDescription(pathProblem).description)}
+                    data: {'targets': selectedProblem.targets, 'predictors': selectedProblem.predictors,'description': preformatted(app.getDescription(selectedProblem).description)}
                 })
-            }, m('h4[style=display: inline-block; margin: .25em 1em]', pathProblem.problemID)));
+            }, m('h4[style=display: inline-block; margin: .25em 1em]', selectedProblem.problemID)));
 
-            let selectedSolutions = results.getSelectedSolutions(resultsProblem);
+            let selectedSolutions = results.getSelectedSolutions(selectedProblem);
             if (app.is_results_mode && selectedSolutions.length === 1 && selectedSolutions[0]) {
                 path.push(m(Icon, {name: 'chevron-right'}), m('h4[style=display: inline-block; margin: .25em 1em]', ({
                     [selectedSolutions[0].systemId]: solverWrapped.getSolutionAdapter, d3m: solverD3M.getSolutionAdapter
-                })[selectedSolutions[0].systemId](pathProblem, selectedSolutions[0]).getName()))
+                })[selectedSolutions[0].systemId](selectedProblem, selectedSolutions[0]).getName()))
             }
 
             return path;
@@ -202,7 +196,7 @@ class Body {
             m('div', {style: {'flex-grow': 1}}),
 
 
-            app.currentMode === 'results' && resultsProblem && Object.keys(resultsProblem.solutions.d3m || {}).length > 0 && m(ButtonLadda, {
+            app.currentMode === 'results' && selectedProblem && Object.keys(selectedProblem.solutions.d3m || {}).length > 0 && m(ButtonLadda, {
                 id: 'btnEndSession',
                 class: 'ladda-label ladda-button ' + (app.taskPreferences.task2_finished ? 'btn-secondary' : 'btn-success'),
                 onclick: solverD3M.endsession,
@@ -600,7 +594,7 @@ class Body {
                 m('h4', 'Organize all models/datasets'),
                 m(Button, {
                     onclick: () => {
-                        let problem = app.getResultsProblem();
+                        let problem = app.getSelectedProblem();
                         m.request(D3M_SVC_URL + '/ExportSolutions', {
                             method: 'POST',
                             data: results.getSummaryData(problem)

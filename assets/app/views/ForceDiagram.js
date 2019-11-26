@@ -358,7 +358,7 @@ export default class ForceDiagram {
                             .filter(group => group.nodes.has(d3.event.subject.name))
                             .filter(group => {
                                 if (group.nodes.size === 2)
-                                    return mag(sub(...hullCoords[group.name])) > 4000;
+                                    return mag(sub(...hullCoords[group.name])) > 1000;
 
                                 let reducedHull = hullCoords[group.name]
                                     .filter(coord => coord[0] !== dragCoord[0] && coord[1] !== dragCoord[1]);

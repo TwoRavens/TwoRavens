@@ -29,16 +29,15 @@ import * as queryMongo from "./manipulations/queryMongo";
 export let leftpanel = () => {
 
     let ravenConfig = app.workspace.raven_config;
-    let resultsProblem = app.getResultsProblem();
 
-    if (!resultsProblem) return;
+    if (!selectedProblem) return;
 
     let solverSystemNames = ['auto_sklearn', 'tpot', 'mlbox', 'ludwig', 'h2o']; // 'caret'
 
     // mljar-supervised only supports binary classification
-    if (resultsProblem.task && resultsProblem.subTask &&
-        resultsProblem.task.toLowerCase().includes('classification') &&
-        resultsProblem.subTask.toLowerCase().includes('binary'))
+    if (selectedProblem.task && selectedProblem.subTask &&
+        selectedProblem.task.toLowerCase().includes('classification') &&
+        selectedProblem.subTask.toLowerCase().includes('binary'))
         solverSystemNames.push('mljar-supervised');
 
     let solverSystems = solverSystemNames
@@ -48,15 +47,15 @@ export let leftpanel = () => {
 
     let resultsContent = [
         m('div', {style: {display: 'inline-block', margin: '1em'}},
-            m('h4', `${ravenConfig.resultsProblem} for `, m('div[style=display:inline-block]', m(Dropdown, {
+            m('h4', `${ravenConfig.selectedProblem} for `, m('div[style=display:inline-block]', m(Dropdown, {
                 id: 'targetDropdown',
-                items: resultsProblem.targets,
+                items: selectedProblem.targets,
                 activeItem: resultsPreferences.target,
                 onclickChild: value => resultsPreferences.target = value,
                 style: {'margin-left': '1em'}
             })), ' on data split ', m('div[style=display:inline-block]', m(Dropdown, {
                 id: 'dataSplitDropdown',
-                items: ['all'].concat(resultsProblem.splitOptions.outOfSampleSplit ? ['test', 'train'] : []),
+                items: ['all'].concat(selectedProblem.splitOptions.outOfSampleSplit ? ['test', 'train'] : []),
                 activeItem: resultsPreferences.dataSplit,
                 onclickChild: value => resultsPreferences.dataSplit = value,
                 style: {'margin-left': '1em'}
@@ -66,8 +65,8 @@ export let leftpanel = () => {
             //     items: Object.keys(ravenConfig.problems).filter(key =>
             //         Object.keys(ravenConfig.problems[key].solutions)
             //             .reduce((sum, source) => sum + Object.keys(ravenConfig.problems[key].solutions[source]).length, 0)),
-            //     activeItem: ravenConfig.resultsProblem,
-            //     onclickChild: app.setResultsProblem
+            //     activeItem: ravenConfig.selectedProblem,
+            //     onclickChild: app.setSelectedProblem
             // })
         ),
         m('div#modelComparisonOption', {style: {displayx: 'inline-block'}},
@@ -94,13 +93,13 @@ export let leftpanel = () => {
                             solver: systemId,
                             action: m(Button, {
                                 class: 'btn-sm',
-                                onclick: () => solverSystems[systemId](resultsProblem).solve(),
-                                disabled: !!(resultsProblem.solverState[systemId] || {}).thinking
-                            }, !!(resultsProblem.solverState[systemId] || {}).thinking ? 'Solving' : 'Solve'),
-                            state: resultsProblem.solverState[systemId] && m('',
-                                resultsProblem.solverState[systemId].thinking && common.loaderSmall(systemId),
+                                onclick: () => solverSystems[systemId](selectedProblem).solve(),
+                                disabled: !!(selectedProblem.solverState[systemId] || {}).thinking
+                            }, !!(selectedProblem.solverState[systemId] || {}).thinking ? 'Solving' : 'Solve'),
+                            state: selectedProblem.solverState[systemId] && m('',
+                                selectedProblem.solverState[systemId].thinking && common.loaderSmall(systemId),
                                 m('div[style=font-size:medium;margin-left:1em;display:inline-block]',
-                                    resultsProblem.solverState[systemId].message)
+                                    selectedProblem.solverState[systemId].message)
                             ),
                         })),
                         headers: ['solver', 'action', 'state'],
@@ -113,12 +112,12 @@ export let leftpanel = () => {
                 },
                 !solutionsCombined && solverSystems.map(solver => ({
                     value: solver.systemId + ' Solutions',
-                    contents: getSolutionTable(resultsProblem, solver.systemId)
+                    contents: getSolutionTable(selectedProblem, solver.systemId)
                 })),
                 solutionsCombined && {
                     idSuffix: 'allSolutions',
                     value: 'All Solutions',
-                    contents: getSolutionTable(resultsProblem)
+                    contents: getSolutionTable(selectedProblem)
                 }
             ]
         })
@@ -168,8 +167,8 @@ export let leftpanel = () => {
                                 }, m(Icon, {name: 'stop'}))
                             ]),
                         headers: ['Name', 'Targets', 'Search ID', 'State', 'Stop'],
-                        activeRow: app.workspace.raven_config.resultsProblem,
-                        onclick: app.setResultsProblem
+                        activeRow: app.workspace.raven_config.selectedProblem,
+                        onclick: app.setSelectedProblem
                     }),
                     Object.keys(otherSearches).length > 0 && [
                         m('h4', 'Beyond Workspace'),
@@ -469,7 +468,7 @@ export class CanvasSolutions {
                 activeSection: resultsPreferences.mode,
                 sections: [
                     {value: 'EFD', title: 'empirical first differences'},
-                    app.getResultsProblem().datasetPaths.partials && {value: 'Partials', title: 'model prediction as predictor varies over its domain'},
+                    problem.datasetPaths.partials && {value: 'Partials', title: 'model prediction as predictor varies over its domain'},
                     {value: 'ICE', title: 'individual conditional expectation'}
                 ]
             }),
@@ -906,7 +905,8 @@ export let resultsPreferences = {
     predictor: undefined,
     target: undefined,
     plotScores: 'all',
-    selectedMetric: undefined
+    selectedMetric: undefined,
+    dataSplit: 'test'
 };
 
 // labels for variable importance X/Y axes
@@ -1041,12 +1041,12 @@ export let getSelectedSolutions = (problem, systemId) => {
 // When enabled, multiple pipelineTable pipelineIDs may be selected at once
 export let modelComparison = false;
 export let setModelComparison = state => {
-    let resultsProblem = app.getResultsProblem();
-    let selectedSolutions = getSelectedSolutions(resultsProblem);
+    let selectedProblem = app.getSelectedProblem();
+    let selectedSolutions = getSelectedSolutions(selectedProblem);
 
     modelComparison = state;
     if (selectedSolutions.length > 1 && !modelComparison)
-        setSelectedSolution(resultsProblem, selectedSolutions[0].systemId, selectedSolutions[0]);
+        setSelectedSolution(selectedProblem, selectedSolutions[0].systemId, selectedSolutions[0]);
 
 };
 
@@ -1094,12 +1094,12 @@ export let showFinalPipelineModal = false;
 export let setShowFinalPipelineModal = state => showFinalPipelineModal = state;
 
 export let finalPipelineModal = () => {
-    let resultsProblem = app.getResultsProblem();
+    let selectedProblem = app.getSelectedProblem();
 
-    let chosenSolution = getSolutions(resultsProblem, 'd3m').find(solution => solution.chosen);
+    let chosenSolution = getSolutions(selectedProblem, 'd3m').find(solution => solution.chosen);
     if (!chosenSolution) return;
 
-    let adapter = solverD3M.getSolutionAdapter(resultsProblem, chosenSolution);
+    let adapter = solverD3M.getSolutionAdapter(selectedProblem, chosenSolution);
 
     return m(ModalVanilla, {
             id: 'finalPipelineModal',

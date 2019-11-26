@@ -55,6 +55,7 @@ export class CanvasModel {
                     m.redraw();
                 },
                 onDragOver: (pebble, groupId) => {
+                    if (groupId === 'Loose') return;
                     let pebbles = forceData.summaries[pebble.name].pdfPlotType === 'collapsed'
                         ? forceData.summaries[pebble.name].childNodes : [pebble.name];
                     pebbles.forEach(pebble => setGroup(selectedProblem, groupId, pebble));
@@ -416,7 +417,7 @@ export let leftpanel = forceData => {
 
                             let clickedProblem = problems[problemID];
                             if (clickedProblem.system === 'solved') {
-                                app.setResultsProblem(problemID);
+                                app.setSelectedProblem(problemID);
                                 app.setSelectedMode('results');
                                 return;
                             }
@@ -576,7 +577,22 @@ export let rightpanel = () => {
                 style: 'right:2em;position:fixed;z-index:1000;margin:0.5em',
                 disabled: selectedProblem.system === 'solved'
             }, m(Icon, {name: isLocked ? 'lock' : 'pencil'})),
-            m('div#problemConfiguration', {onclick: () => isLocked && hopscotch.startTour(app.lockTour(selectedProblem)), style: 'float: left'},
+            m('div#problemConfiguration', {onclick: () => {
+                if (selectedProblem.system === 'solved') {
+                    app.alertError(m('div', 'This problem already has solutions. Would you like to edit a copy of this problem instead?', m(Button, {
+                        style: 'margin:1em',
+                        onclick: () => {
+                            let problemCopy = app.getProblemCopy(selectedProblem);
+                            workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+                            app.setShowModalAlerts(false);
+                            app.setSelectedProblem(problemCopy.problemID);
+                        }
+                    }, 'Edit Copy')));
+                    m.redraw();
+                    return;
+                }
+                isLocked && hopscotch.startTour(app.lockTour())
+                    }, style: 'float: left'},
                 m('label', 'Task Type'),
                 m(Dropdown, {
                     id: 'taskType',
@@ -1033,6 +1049,20 @@ export let buildForceData = problem => {
 
 
 export let setGroup = (problem, group, name) => {
+    if (problem.system === 'solved') {
+        app.alertError(m('div', 'This problem already has solutions. Would you like to edit a copy of this problem instead?', m(Button, {
+            style: 'margin:1em',
+            onclick: () => {
+                let problemCopy = app.getProblemCopy(problem);
+                workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+                app.setShowModalAlerts(false);
+                app.setSelectedProblem(problemCopy.problemID);
+                setGroup(problemCopy, group, name);
+            }
+        }, 'Edit Copy')));
+        m.redraw();
+        return;
+    }
     delete problem.unedited;
 
     // behavioral logging
@@ -1094,6 +1124,19 @@ export let forceDiagramState = {
 
 let setContextPebble = pebble => {
     let selectedProblem = app.getSelectedProblem();
+    if (selectedProblem.system === 'solved') {
+        app.alertError(m('div', 'This problem already has solutions. Would you like to edit a copy of this problem instead?', m(Button, {
+            style: 'margin:1em',
+            onclick: () => {
+                let problemCopy = app.getProblemCopy(selectedProblem);
+                workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+                app.setShowModalAlerts(false);
+                app.setSelectedProblem(problemCopy.problemID);
+            }
+        }, 'Edit Copy')));
+        m.redraw();
+        return;
+    }
 
     delete selectedProblem.unedited;
     d3.event.preventDefault(); // block browser context menu
