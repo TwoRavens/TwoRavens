@@ -29,13 +29,31 @@ def solve_task(websocket_id, system_id, specification, system_params=None, searc
     def solve_found_async(model: Model):
         model.save()
 
-        describe_task.delay(websocket_id, model.model_id)
+        # h2o cannot handle multiple processes importing the same file at the same time
+        # all tasks are run serially
+        if model.system == 'h2o':
+            describe_task(websocket_id, model.model_id)
 
-        for score_spec in specification['score']:
-            score_task.delay(websocket_id, model.model_id, score_spec)
+            for score_spec in specification['score']:
+                try:
+                    score_task(websocket_id, model.model_id, score_spec)
+                except Exception:
+                    pass
 
-        for produce_spec in specification['produce']:
-            produce_task.delay(websocket_id, model.model_id, produce_spec)
+            for produce_spec in specification['produce']:
+                try:
+                    produce_task(websocket_id, model.model_id, produce_spec)
+                except Exception:
+                    pass
+
+        else:
+            describe_task.delay(websocket_id, model.model_id)
+
+            for score_spec in specification['score']:
+                score_task.delay(websocket_id, model.model_id, score_spec)
+
+            for produce_spec in specification['produce']:
+                produce_task.delay(websocket_id, model.model_id, produce_spec)
 
     solver = Solve(
         system=system_id,
