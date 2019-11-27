@@ -56,6 +56,28 @@ export default class VariableImportance {
             }
         });
 
+        if (nominals.includes(target)) return m(PlotVegaLite, {
+            data,
+            identifier: predictor,
+            specification: {
+                "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+                "description": `Empirical First Differences for ${predictor}.`,
+                // data: {values: melted},
+                "mark": "line",
+                "encoding": {
+                    "x": {"field": predictor, "type": "quantitative"},
+                    "y": {"field": yLabel, "type": "quantitative", title: 'Probability'},
+                    "color": {"field": 'level', "type": "nominal"},
+                    'opacity': {"field": 'target', 'type': 'nominal'},
+                    "tooltip": [
+                        {"field": yLabel, "type": "quantitative"},
+                        {"field": variableLabel, "type": "nominal"},
+                        {"field": predictor, "type": "quantitative"}
+                    ]
+                }
+            }
+        });
+
         // LINE PLOT
         return m(PlotVegaLite, {
             data,
@@ -67,10 +89,8 @@ export default class VariableImportance {
                 "mark": "line",
                 "encoding": {
                     "x": {"field": predictor, "type": "quantitative"},
-                    "y": {"field": yLabel, "type": "quantitative"},
-                    // "color": {"field": variableLabel, "type": "nominal"},
+                    "y": {"field": yLabel, "type": "quantitative", title: 'Target'},
                     'opacity': {"field": 'target', 'type': 'nominal'},
-                    'color': {"field": 'level', 'type': 'nominal'},
                     "tooltip": [
                         {"field": yLabel, "type": "quantitative"},
                         {"field": variableLabel, "type": "nominal"},
@@ -90,34 +110,69 @@ export default class VariableImportance {
 
         let nominals = app.getNominalVariables(problem);
 
-        // SCATTER PLOT
-        if (nominals.includes(predictor) || nominals.includes(target)) return m(PlotVegaLite, {
-            // data,
+        // if both predictor and target are nominal, or if just predictor is nominal
+        if (nominals.includes(predictor)) return m(PlotVegaLite, {
             specification: {
                 "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
                 "description": `Partials for ${predictor}.`,
-                data: {values: data},
-                "mark": "line",
+                data: {values: data.filter(point => point[variableLabel] === target)},
+                "mark": 'point',
                 "encoding": {
-                    "x": {"field": predictor, "type": nominals.includes(predictor) ? "nominal" : 'quantitative'},
-                    "y": {"field": yLabel, "type": nominals.includes(target) ? "nominal" : "quantitative"},
+                    "x": {"field": predictor, "type": "nominal"},
+                    "y": {"field": yLabel, "type": "nominal"},
                     "color": {"field": variableLabel, "type": "nominal"},
                     "tooltip": [
-                        {"field": yLabel, "type": nominals.includes(target) ? "nominal" : "quantitative"},
+                        {"field": yLabel, "type": "nominal"},
                         {"field": variableLabel, "type": "nominal"},
-                        {"field": predictor, "type": nominals.includes(predictor) ? "nominal" : "quantitative"}
+                        {"field": predictor, "type": "nominal"}
                     ]
                 }
             }
         });
 
+        // if target nominal and predictor is continuous
+        if (nominals.includes(target)) {
+            // connect continuous horizontal segments
+            let horizontalGroup = 0;
+            let horizontalValue = data[0][yLabel];
+            data.forEach(point => {
+                if (point[yLabel] !== horizontalValue) {
+                    horizontalValue = point[yLabel];
+                    horizontalGroup++;
+                }
+                point.horizontalGroup = horizontalGroup;
+            });
+            return m(PlotVegaLite, {
+                specification: {
+                    "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+                    "description": `Partials for ${predictor}.`,
+                    data: {values: data.filter(point => point[variableLabel] === target)},
+                    "mark": {
+                        type: 'line',
+                        point: true
+                    },
+                    "encoding": {
+                        "x": {"field": predictor, "type": 'quantitative'},
+                        "y": {"field": yLabel, "type": "nominal"},
+                        "detail": {"field": "horizontalGroup", "type": "nominal"},
+                        "tooltip": [
+                            {"field": yLabel, "type": "nominal"},
+                            {"field": variableLabel, "type": "nominal"},
+                            {"field": predictor, "type": "quantitative"}
+                        ]
+                    }
+                }
+            });
+        }
+
+        // if both are continuous
         // LINE CHART
         return m(PlotVegaLite, {
             // data,
             specification: {
                 "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
                 "description": `Partials for ${predictor}.`,
-                data: {values: data},
+                data: {values: data.filter(point => point[variableLabel] === target)},
                 "mark": "line",
                 "encoding": {
                     "x": {"field": predictor, "type": "quantitative"},

@@ -143,32 +143,32 @@ export let getSolutionAdapter = (problem, solution) => ({
             .map(step => step.primitive.primitive.pythonPath.replace(new RegExp('d3m\\.primitives\\.(regression|classification|semisupervised_classification|semisupervised_regression)\\.'), ''))
             .join()
         : '',
-    getImportancePartialsEFD: predictor => {
+    getImportanceEFD: predictor => {
         let adapter = getSolutionAdapter(problem, solution);
-        results.loadImportancePartialsEFDData(problem, adapter);
+        results.loadImportanceEFDData(problem, adapter);
 
-        if (results.resultsData.importancePartialsEFD)
-            return results.resultsData.importancePartialsEFD[predictor];
+        if (results.resultsData.importanceEFD)
+            return results.resultsData.importanceEFD[predictor];
     },
-    getImportancePartialsPE: predictor => {
+    getImportancePartials: predictor => {
         let adapter = getSolutionAdapter(problem, solution);
-        results.loadImportancePartialsPEFittedData(problem, adapter);
+        results.loadImportancePartialsFittedData(problem, adapter);
 
-        if (!results.resultsData.importancePartialsPEFitted[solution.pipelineId]) return;
+        if (!results.resultsData.importancePartialsFitted[solution.pipelineId]) return;
 
         return app.melt(
             problem.partialsSummaryPE[predictor]
                 .map((x, i) => Object.assign({[predictor]: x},
-                    results.resultsData.importancePartialsPEFitted[solution.pipelineId][predictor][i])),
+                    results.resultsData.importancePartialsFitted[solution.pipelineId][predictor][i])),
             [predictor],
             results.valueLabel, results.variableLabel);
     },
-    getImportancePartialsICE: predictor => {
+    getImportanceICE: predictor => {
         let adapter = getSolutionAdapter(problem, solution);
-        results.loadImportancePartialsICEFittedData(problem, adapter, predictor);
+        results.loadImportanceICEFittedData(problem, adapter, predictor);
 
-        if (results.resultsData.importancePartialsICEFitted) {
-            return results.resultsData.importancePartialsICEFitted
+        if (results.resultsData.importanceICEFitted) {
+            return results.resultsData.importanceICEFitted
         }
     }
 });

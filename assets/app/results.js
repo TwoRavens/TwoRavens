@@ -391,16 +391,16 @@ export class CanvasSolutions {
 
         let importanceContent = common.loader('VariableImportance');
 
-        if (resultsPreferences.mode === 'EFD') {
+        if (resultsPreferences.importanceMode === 'EFD') {
             let importanceData = problem.predictors.reduce((out, predictor) => Object.assign(out, {
-                [predictor]: adapter.getImportancePartialsEFD(predictor)
+                [predictor]: adapter.getImportanceEFD(predictor)
             }), {});
 
             // reassign content if some data is not undefined
             let importancePlots = Object.keys(importanceData).map(predictor => importanceData[predictor] && [
                 bold(predictor),
                 m(VariableImportance, {
-                    mode: resultsPreferences.mode,
+                    mode: resultsPreferences.importanceMode,
                     data: importanceData[predictor],
                     problem: problem,
                     predictor,
@@ -410,17 +410,19 @@ export class CanvasSolutions {
                 })
             ]).filter(_ => _);
 
+            let isCategorical = app.getNominalVariables(problem).includes(resultsPreferences.target);
             if (importancePlots.length > 0) importanceContent = m('div', [
-                m('div[style=margin: 1em]', italicize("Empirical first differences"), ` is a tool to measure variable importance from the empirical distribution of the data. The "${valueLabel}" axis refers to the frequency of the dependent variable as the predictor (x) varies along its domain. Parts of the domain where the fitted and actual values align indicate high utility from the predictor. If the fitted and actual values are nearly identical, then the two lines may be indistinguishable.`),
+                m('div[style=margin: 1em]', italicize("Empirical first differences"), ` is a tool to measure variable importance from the empirical distribution of the data. The Y axis refers to the ${isCategorical ? 'probability of each level' : 'expectation'} of the dependent variable as the predictor (x) varies along its domain. Parts of the domain where the fitted and actual values align indicate high utility from the predictor. If the fitted and actual values are nearly identical, then the two lines may be indistinguishable.`),
                 importancePlots
             ]);
         }
-        if (resultsPreferences.mode === 'Partials') {
+
+        if (resultsPreferences.importanceMode === 'Partials') {
             let importancePlots = [
                 m('div[style=margin: 1em]', italicize("Partials"), ` shows the prediction of the model as one predictor is varied, and the other predictors are held at their mean.`),
             ];
             app.getPredictorVariables(problem).forEach(predictor => {
-                let importanceData = adapter.getImportancePartialsPE(predictor);
+                let importanceData = adapter.getImportancePartials(predictor);
                 if (importanceData) importancePlots.push(m(VariableImportance, {
                     mode: 'Partials',
                     data: importanceData,
@@ -433,9 +435,9 @@ export class CanvasSolutions {
             });
             if (importancePlots.length > 0) importanceContent = importancePlots;
         }
-        if (resultsPreferences.mode === 'ICE') {
+        if (resultsPreferences.importanceMode === 'PDP/ICE') {
             importanceContent = [
-                m('div[style=margin: 1em]', italicize("Individual conditional expectations"), ` draws one line for each individual in the data, as the selected predictor is varied. A random sample of individuals are chosen from the dataset. The red line is the average of the individuals over the target. The red line is the mean of the target variable over all individuals.`),
+                m('div[style=margin: 1em]', italicize("Individual conditional expectations"), ` draws one line for each individual in the data, as the selected predictor is varied. A random sample of individuals are chosen from the dataset. The red line is the average of the individuals over the target. The red line is the mean of the partial dependency plot- the average of the target variable over all individuals.`),
                 m('label', 'Importance for predictor:'),
                 m(Dropdown, {
                     id: 'predictorImportanceDropdown',
@@ -445,7 +447,7 @@ export class CanvasSolutions {
                 })
             ];
 
-            let importanceData = adapter.getImportancePartialsICE(resultsPreferences.predictor);
+            let importanceData = adapter.getImportanceICE(resultsPreferences.predictor);
 
             if (importanceData) importanceContent.push(m(VariableImportance, {
                 mode: 'ICE',
@@ -463,12 +465,12 @@ export class CanvasSolutions {
             m('label', 'Variable importance mode:'),
             m(ButtonRadio, {
                 id: 'modeImportanceButtonBar',
-                onclick: mode => resultsPreferences.mode = mode,
-                activeSection: resultsPreferences.mode,
+                onclick: mode => resultsPreferences.importanceMode = mode,
+                activeSection: resultsPreferences.importanceMode,
                 sections: [
                     {value: 'EFD', title: 'empirical first differences'},
                     problem.datasetPaths.partials && {value: 'Partials', title: 'model prediction as predictor varies over its domain'},
-                    {value: 'ICE', title: 'individual conditional expectation'}
+                    {value: 'PDP/ICE', title: 'partial dependence plot/individual conditional expectation'}
                 ]
             }),
             importanceContent
@@ -704,7 +706,7 @@ export class CanvasSolutions {
             }
         }, resultsSubpanels['Scores Summary'] && this.scoresSummary(problem, solutionAdapters));
 
-        let variableImportance = firstAdapter && m(Subpanel, {
+        let variableImportance = selectedSolutions.length === 1 && m(Subpanel, {
             style: {margin: '0px 1em'},
             header: 'Variable Importance',
             shown: resultsSubpanels['Variable Importance'],
@@ -949,8 +951,8 @@ export let setSelectedSolution = (problem, systemId, solutionId) => {
     if (!(systemId in problem.selectedSolutions)) problem.selectedSolutions[systemId] = [];
 
     // TODO: find a better place for this/code pattern. Unsetting this here is ugly
-    resultsData.importancePartialsICEFitted = undefined;
-    resultsData.importancePartialsICEFittedLoading = false;
+    resultsData.importanceICEFitted = undefined;
+    resultsData.importanceICEFittedLoading = false;
 
     if (modelComparison) {
 
@@ -1127,16 +1129,16 @@ export let resultsData = {
     confusionLoading: {},
 
     // cached data is specific to the solution (tends to be larger)
-    importancePartialsEFD: undefined,
-    importancePartialsEFDLoading: false,
+    importanceEFD: undefined,
+    importanceEFDLoading: false,
 
     // this has melted data for both actual and fitted values
-    importancePartialsPEFitted: {},
-    importancePartialsPEFittedLoading: {},
+    importancePartialsFitted: {},
+    importancePartialsFittedLoading: {},
 
     // this has melted data for both actual and fitted values
-    importancePartialsICEFitted: undefined,
-    importancePartialsICEFittedLoading: false,
+    importanceICEFitted: undefined,
+    importanceICEFittedLoading: false,
 
     id: {
         query: [],
@@ -1159,8 +1161,8 @@ export let loadProblemData = async (problem, predictor=undefined) => {
     // unload ICE data if predictor changed
     if (predictor && predictor !== resultsData.id.predictor) {
         resultsData.id.predictor = predictor;
-        resultsData.importancePartialsICEFitted = undefined;
-        resultsData.importancePartialsICEFittedLoading = false;
+        resultsData.importanceICEFitted = undefined;
+        resultsData.importanceICEFittedLoading = false;
     }
 
     // complete reset if problemId, query, dataSplit or target changed
@@ -1185,16 +1187,16 @@ export let loadProblemData = async (problem, predictor=undefined) => {
     resultsData.confusionLoading = {};
 
     // specific to solution and target, one solution stored for one target
-    resultsData.importancePartialsEFD = undefined;
-    resultsData.importancePartialsEFDLoading = false;
+    resultsData.importanceEFD = undefined;
+    resultsData.importanceEFDLoading = false;
 
     // specific to solution and target, all solutions stored for one target
-    resultsData.importancePartialsPEFitted = {};
-    resultsData.importancePartialsPEFittedLoading = {};
+    resultsData.importancePartialsFitted = {};
+    resultsData.importancePartialsFittedLoading = {};
 
     // specific to combo of solution, predictor and target
-    resultsData.importancePartialsICEFitted = undefined;
-    resultsData.importancePartialsICEFittedLoading = false;
+    resultsData.importanceICEFitted = undefined;
+    resultsData.importanceICEFittedLoading = false;
 };
 
 export let loadSolutionData = async (problem, adapter, predictor=undefined) => {
@@ -1206,8 +1208,8 @@ export let loadSolutionData = async (problem, adapter, predictor=undefined) => {
     resultsData.id.solutionID = adapter.getSolutionId();
 
     // solution specific, one solution stored
-    resultsData.importancePartialsEFD = undefined;
-    resultsData.importancePartialsEFDLoading = false;
+    resultsData.importanceEFD = undefined;
+    resultsData.importanceEFDLoading = false;
 };
 
 export let loadFittedVsActuals = async (problem, adapter) => {
@@ -1366,7 +1368,7 @@ export let loadConfusionData = async (problem, adapter) => {
     m.redraw();
 };
 
-export let loadImportancePartialsPEFittedData = async (problem, adapter) => {
+export let loadImportancePartialsFittedData = async (problem, adapter) => {
 
     // load dependencies, which can clear loading state if problem, etc. changed
     await loadProblemData(problem);
@@ -1377,15 +1379,15 @@ export let loadImportancePartialsPEFittedData = async (problem, adapter) => {
     if (!dataPointer) return;
 
     // don't load if systems are already in loading state
-    if (resultsData.importancePartialsPEFittedLoading[adapter.getSolutionId()])
+    if (resultsData.importancePartialsFittedLoading[adapter.getSolutionId()])
         return;
 
     // don't load if already loaded
-    if (resultsData.importancePartialsPEFitted[adapter.getSolutionId()])
+    if (resultsData.importancePartialsFitted[adapter.getSolutionId()])
         return;
 
     // begin blocking additional requests to load
-    resultsData.importancePartialsPEFittedLoading[adapter.getSolutionId()] = true;
+    resultsData.importancePartialsFittedLoading[adapter.getSolutionId()] = true;
 
     let tempQuery = JSON.stringify(resultsData.id.query);
     let response;
@@ -1414,7 +1416,7 @@ export let loadImportancePartialsPEFittedData = async (problem, adapter) => {
 
     // convert unlabeled string table to predictor format
     let offset = 0;
-    resultsData.importancePartialsPEFitted[adapter.getSolutionId()] = Object.keys(problem.partialsSummaryPE).reduce((out, predictor) => {
+    resultsData.importancePartialsFitted[adapter.getSolutionId()] = Object.keys(problem.partialsSummaryPE).reduce((out, predictor) => {
         let nextOffset = offset + problem.partialsSummaryPE[predictor].length;
         // for each point along the domain of the predictor
         out[predictor] = response.data.slice(offset, nextOffset)
@@ -1425,13 +1427,13 @@ export let loadImportancePartialsPEFittedData = async (problem, adapter) => {
         offset = nextOffset;
         return out;
     }, {});
-    resultsData.importancePartialsPEFittedLoading[adapter.getSolutionId()] = false;
+    resultsData.importancePartialsFittedLoading[adapter.getSolutionId()] = false;
 
     m.redraw();
 };
 
 // importance from empirical first differences
-export let loadImportancePartialsEFDData = async (problem, adapter) => {
+export let loadImportanceEFDData = async (problem, adapter) => {
     // load dependencies, which can clear loading state if problem, etc. changed
     await loadSolutionData(problem, adapter);
 
@@ -1442,15 +1444,15 @@ export let loadImportancePartialsEFDData = async (problem, adapter) => {
         return;
 
     // don't load if systems are already in loading state
-    if (resultsData.importancePartialsEFDLoading)
+    if (resultsData.importanceEFDLoading)
         return;
 
     // don't load if already loaded
-    if (resultsData.importancePartialsEFD)
+    if (resultsData.importanceEFD)
         return;
 
     // begin blocking additional requests to load
-    resultsData.importancePartialsEFDLoading = true;
+    resultsData.importanceEFDLoading = true;
 
     // how to construct actual values after manipulation
     let compiled = queryMongo.buildPipeline([
@@ -1529,15 +1531,15 @@ export let loadImportancePartialsEFDData = async (problem, adapter) => {
                 point.level = point[variableLabel].split('-').pop();
             }));
 
-    resultsData.importancePartialsEFD = response.data;
-    resultsData.importancePartialsEFDLoading = false;
+    resultsData.importanceEFD = response.data;
+    resultsData.importanceEFDLoading = false;
 
     // apply state changes to the page
     m.redraw();
 };
 
 // importance from empirical first differences
-export let loadImportancePartialsICEFittedData = async (problem, adapter, predictor) => {
+export let loadImportanceICEFittedData = async (problem, adapter, predictor) => {
     // load dependencies, which can clear loading state if problem, etc. changed
     await loadSolutionData(problem, adapter, predictor);
 
@@ -1549,15 +1551,15 @@ export let loadImportancePartialsICEFittedData = async (problem, adapter, predic
         return;
 
     // don't load if systems are already in loading state
-    if (resultsData.importancePartialsICEFittedLoading)
+    if (resultsData.importanceICEFittedLoading)
         return;
 
     // don't load if already loaded
-    if (resultsData.importancePartialsICEFitted)
+    if (resultsData.importanceICEFitted)
         return;
 
     // begin blocking additional requests to load
-    resultsData.importancePartialsICEFittedLoading = true;
+    resultsData.importanceICEFittedLoading = true;
 
     let tempQuery = JSON.stringify(resultsData.id.query);
 
@@ -1581,8 +1583,8 @@ export let loadImportancePartialsICEFittedData = async (problem, adapter, predic
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
 
-    resultsData.importancePartialsICEFitted = response.data;
-    resultsData.importancePartialsICEFittedLoading = false;
+    resultsData.importanceICEFitted = response.data;
+    resultsData.importanceICEFittedLoading = false;
 
     // apply state changes to the page
     m.redraw();

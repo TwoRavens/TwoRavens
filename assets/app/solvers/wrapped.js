@@ -290,32 +290,32 @@ export let getSolutionAdapter = (problem, solution) => ({
     getDescription: () => solution.description,
     getTask: () => '',
     getModel: () => solution.model || '',
-    getImportancePartialsEFD: predictor => {
+    getImportanceEFD: predictor => {
         let adapter = getSolutionAdapter(problem, solution);
-        results.loadImportancePartialsEFDData(problem, adapter);
+        results.loadImportanceEFDData(problem, adapter);
 
-        if (results.resultsData.importancePartialsEFD)
-            return results.resultsData.importancePartialsEFD[predictor];
+        if (results.resultsData.importanceEFD)
+            return results.resultsData.importanceEFD[predictor];
     },
-    getImportancePartialsPE: predictor => {
+    getImportancePartials: predictor => {
         let adapter = getSolutionAdapter(problem, solution);
-        results.loadImportancePartialsPEFittedData(problem, adapter);
+        results.loadImportancePartialsFittedData(problem, adapter);
 
-        if (!results.resultsData.importancePartialsPEFitted[solution.model_id]) return;
+        if (!results.resultsData.importancePartialsFitted[solution.model_id]) return;
 
         return app.melt(
             problem.partialsSummaryPE[predictor]
                 .map((x, i) => Object.assign({[predictor]: x},
-                    results.resultsData.importancePartialsPEFitted[solution.model_id][predictor][i])),
+                    results.resultsData.importancePartialsFitted[solution.model_id][predictor][i])),
             [predictor],
             results.valueLabel, results.variableLabel);
     },
-    getImportancePartialsICE: predictor => {
+    getImportanceICE: predictor => {
         let adapter = getSolutionAdapter(problem, solution);
-        results.loadImportancePartialsICEFittedData(problem, adapter, predictor);
+        results.loadImportanceICEFittedData(problem, adapter, predictor);
 
-        if (results.resultsData.importancePartialsICEFitted) {
-            return results.resultsData.importancePartialsICEFitted
+        if (results.resultsData.importanceICEFitted) {
+            return results.resultsData.importanceICEFitted
         }
     }
 });
