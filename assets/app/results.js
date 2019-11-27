@@ -230,32 +230,31 @@ export class CanvasSolutions {
             ]
         }
 
-        if (problem.task.toLowerCase().includes('regression') || problem.task.toLowerCase() === 'timeseriesforecasting') {
+        if (problem.task.toLowerCase().includes('regression')) {
             let summaries = adapters.map(adapter => ({
                 name: adapter.getName(),
-                fittedValues: adapter.getFittedValues(resultsPreferences.target),
-                actualValues: adapter.getActualValues(resultsPreferences.target)
-            })).filter(summary => summary.fittedValues && summary.actualValues);
+                fittedVsActual: adapter.getFittedVsActuals(resultsPreferences.target),
+            })).filter(summary => summary.fittedVsActual);
 
             if (summaries.length === 0) return [
                 'Processing predictions.',
                 common.loader('PredictionSummary')
             ];
 
-            let xData = summaries.reduce((out, summary) =>
-                Object.assign(out, {[summary.name]: summary.fittedValues}), {});
-            let yData = summaries.reduce((out, summary) =>
-                Object.assign(out, {[summary.name]: summary.actualValues}), {});
-
             let xName = 'Fitted Values';
             let yName = 'Actual Values';
-            let title = 'Fitted vs. Actuals for predicting ' + problem.targets.join(', ');
-            let legendName = 'Solution Name';
+            let countName = 'count';
+            let groupName = 'Solution Name';
+            let title = 'Fitted vs. Actuals for predicting ' + resultsPreferences.target;
+
+            summaries.forEach(summary => summary.fittedVsActual.map(entry => entry[groupName] = summary.name));
 
             return m('div', {
                 style: {'height': '500px'}
             }, m(PlotVegaLite, {
-                specification: plots.vegaScatter(xData, yData, xName, yName, title, legendName),
+                specification: plots.vegaScatter(
+                    summaries.flatMap(summary => summary.fittedVsActual),
+                    xName, yName, groupName, countName, title),
             }))
         }
 
@@ -1120,12 +1119,8 @@ export let finalPipelineModal = () => {
 
 // these variables hold indices, predictors, predicted and actual data
 export let resultsData = {
-    actuals: undefined,
-    actualsLoading: false,
-
-    // cached data is specific to the problem
-    fitted: {},
-    fittedLoading: {},
+    fittedVsActual: {},
+    fittedVsActualLoading: {},
 
     // cached data is specific to the problem
     confusion: {},
@@ -1181,13 +1176,9 @@ export let loadProblemData = async (problem, predictor=undefined) => {
     resultsData.id.dataSplit = resultsPreferences.dataSplit;
     resultsData.id.target = resultsPreferences.target;
 
-    // specific to problem and target, data reused across all solutions for one target
-    resultsData.actuals = undefined;
-    resultsData.actualsLoading = false;
-
     // specific to solution and target, all solutions stored for one target
-    resultsData.fitted = {};
-    resultsData.fittedLoading = {};
+    resultsData.fittedVsActual = {};
+    resultsData.fittedVsActualLoading = {};
 
     // specific to solution and target, all solutions stored for one target
     resultsData.confusion = {};
@@ -1219,115 +1210,65 @@ export let loadSolutionData = async (problem, adapter, predictor=undefined) => {
     resultsData.importancePartialsEFDLoading = false;
 };
 
-export let loadActualData = async problem => {
-
-    // reset if id is different
-    await loadProblemData(problem);
-
-    // don't load if systems are already in loading state
-    if (resultsData.actualsLoading)
-        return;
-
-    // don't load if already loaded
-    if (resultsData.actuals)
-        return;
-
-    // begin blocking additional requests to load
-    resultsData.actualsLoading = true;
-
-    let tempQuery = JSON.stringify(resultsData.id.query);
-    let response;
-    try {
-        response = await app.getData({
-            method: 'aggregate',
-            query: JSON.stringify(queryMongo.buildPipeline(
-                [
-                    ...workspace.raven_config.hardManipulations,
-                    ...problem.manipulations,
-                    {
-                        type: "subset",
-                        abstractQuery: [
-                            {
-                                column: "d3mIndex",
-                                children: problem.indices[resultsPreferences.dataSplit].map(index => ({value: index})),
-                                subset: 'discrete',
-                                type: 'rule'
-                            }
-                        ]
-                    },
-                    {
-                        type: 'menu',
-                        metadata: {
-                            type: 'data',
-                            variables: ['d3mIndex', ...problem.targets],
-                            sample: recordLimit
-                        }
-                    },
-                ],
-                workspace.raven_config.variablesInitial)['pipeline'])
-        })
-    } catch (err) {
-        console.warn('Dependent variable loading failed:');
-        console.warn(err);
-        app.alertWarn('Dependent variables have not been loaded. Some plots will not load.');
-        return;
-    }
-
-    // don't accept if problemID changed
-    if (resultsData.id.problemID !== problem.problemID)
-        return;
-
-    // don't accept if query changed
-    if (JSON.stringify(resultsData.id.query) !== tempQuery)
-        return;
-
-    resultsData.actuals = response;
-    resultsData.actualsLoading = false;
-
-    m.redraw()
-};
-
-export let loadFittedData = async (problem, adapter) => {
-    // load dependencies, which can clear loading state if problem, etc. changed
+export let loadFittedVsActuals = async (problem, adapter) => {
     await loadSolutionData(problem, adapter);
 
     let dataPointer = adapter.getDataPointer(resultsPreferences.dataSplit);
 
-    // don't attempt to load if there is no data
-    if (!dataPointer) return;
+    // don't load if data is not available
+    if (!dataPointer)
+        return;
+
+    // fitted vs actuals don't apply for non-regression problems
+    if (!['regression', 'semisupervisedregression'].includes(problem.task.toLowerCase()))
+        return;
 
     // don't load if systems are already in loading state
-    if (resultsData.fittedLoading[adapter.getSolutionId()])
+    if (resultsData.fittedVsActualLoading[adapter.getSolutionId()])
         return;
 
     // don't load if already loaded
-    if (adapter.getSolutionId() in resultsData.fitted)
-        return;
-
-    // don't load if dependencies are not loaded
-    if (!resultsData.actuals)
+    if (adapter.getSolutionId() in resultsData.fittedVsActual)
         return;
 
     // begin blocking additional requests to load
-    resultsData.fittedLoading[adapter.getSolutionId()] = true;
+    resultsData.fittedVsActualLoading[adapter.getSolutionId()] = true;
 
+    // how to construct actual values after manipulation
+    let compiled = queryMongo.buildPipeline([
+        ...app.workspace.raven_config.hardManipulations,
+        ...problem.manipulations,
+        ...resultsQuery
+    ], app.workspace.raven_config.variablesInitial)['pipeline'];
+
+    let produceId = dataPointer
+        .substr(dataPointer.lastIndexOf('/') + 1)
+        .replace('.csv', '');
     let tempQuery = JSON.stringify(resultsData.id.query);
     let response;
     try {
-        response = await m.request(D3M_SVC_URL + `/retrieve-output-data`, {
+        response = await m.request(D3M_SVC_URL + `/retrieve-output-fitted-vs-actuals-data`, {
             method: 'POST',
             data: {
                 data_pointer: dataPointer,
-                indices: resultsData.actuals.map(point => String(point.d3mIndex))
+                metadata: {
+                    targets: problem.targets,
+                    collectionName: app.workspace.d3m_config.name,
+                    collectionPath: app.workspace.datasetPath,
+                    query: compiled,
+                    produceId
+                }
             }
         });
 
         if (!response.success) {
-            console.warn(response.data);
+            console.warn(response);
             throw response.data;
         }
     } catch (err) {
-        app.alertWarn('Solution data has not been loaded. Some plots will not load.');
+        console.warn("retrieve-output-fitted-vs-actuals-data error");
+        console.log(err);
+        app.alertWarn('Fitted vs Actuals data has not been loaded. Some plots will not load.');
         return;
     }
 
@@ -1335,83 +1276,17 @@ export let loadFittedData = async (problem, adapter) => {
     if (resultsData.id.problemID !== problem.problemID)
         return;
 
-    // don't accept if query changed
-    if (JSON.stringify(resultsData.id.query) !== tempQuery)
-        return;
-
-    resultsData.fitted[adapter.getSolutionId()] = response.data
-        .reduce((out, point) => Object.assign(out, {
-            [point['d3mIndex'] || point['']]: problem.targets
-                .reduce((out, target) => Object.assign(out, {[target]: parseNumeric(point[target])}), {})
-        }), {});
-    resultsData.fittedLoading[adapter.getSolutionId()] = false;
-    m.redraw();
-};
-
-export let loadImportancePartialsPEFittedData = async (problem, adapter) => {
-
-    // load dependencies, which can clear loading state if problem, etc. changed
-    await loadProblemData(problem);
-
-    let dataPointer = adapter.getDataPointer('partials');
-
-    // don't attempt to load if there is no data
-    if (!dataPointer) return;
-
-    // don't load if systems are already in loading state
-    if (resultsData.importancePartialsPEFittedLoading[adapter.getSolutionId()])
-        return;
-
-    // don't load if already loaded
-    if (resultsData.importancePartialsPEFitted[adapter.getSolutionId()])
-        return;
-
-    // begin blocking additional requests to load
-    resultsData.importancePartialsPEFittedLoading[adapter.getSolutionId()] = true;
-
-    let tempQuery = JSON.stringify(resultsData.id.query);
-    let response;
-    try {
-        response = await m.request(D3M_SVC_URL + `/retrieve-output-data`, {
-            method: 'POST',
-            data: {data_pointer: dataPointer}
-        });
-
-        if (!response.success) {
-            console.warn(response.data);
-            throw response.data;
-        }
-    } catch (err) {
-        app.alertWarn('PE data has not been loaded. Some plots will not load.');
-        return;
-    }
-
-    // don't accept response if current problem has changed
-    if (resultsData.id.problemID !== problem.problemID)
-        return;
-
-    // don't accept if query changed
+    // don't accept response if query changed
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
 
-    console.log('partials resp data', response.data);
-    // convert unlabeled string table to predictor format
-    let offset = 0;
-    resultsData.importancePartialsPEFitted[adapter.getSolutionId()] = Object.keys(problem.partialsSummaryPE).reduce((out, predictor) => {
-        let nextOffset = offset + problem.partialsSummaryPE[predictor].length;
-        // for each point along the domain of the predictor
-        out[predictor] = response.data.slice(offset, nextOffset)
-        // for each target specified in the problem
-            .map(point => problem.targets.reduce((out_point, target) => Object.assign(out_point, {
-                    [target]: app.inferIsCategorical(target) ? point[target] : parseNumeric(point[target])
-                }), {}));
-        offset = nextOffset;
-        return out;
-    }, {});
-    resultsData.importancePartialsPEFittedLoading[adapter.getSolutionId()] = false;
+    resultsData.fittedVsActual[adapter.getSolutionId()] = response.data;
+    resultsData.fittedVsActualLoading[adapter.getSolutionId()] = false;
 
+    // apply state changes to the page
     m.redraw();
 };
+
 
 export let loadConfusionData = async (problem, adapter) => {
     // load dependencies, which can clear loading state if problem, etc. changed
@@ -1488,6 +1363,70 @@ export let loadConfusionData = async (problem, adapter) => {
     resultsData.confusionLoading[adapter.getSolutionId()] = false;
 
     // apply state changes to the page
+    m.redraw();
+};
+
+export let loadImportancePartialsPEFittedData = async (problem, adapter) => {
+
+    // load dependencies, which can clear loading state if problem, etc. changed
+    await loadProblemData(problem);
+
+    let dataPointer = adapter.getDataPointer('partials');
+
+    // don't attempt to load if there is no data
+    if (!dataPointer) return;
+
+    // don't load if systems are already in loading state
+    if (resultsData.importancePartialsPEFittedLoading[adapter.getSolutionId()])
+        return;
+
+    // don't load if already loaded
+    if (resultsData.importancePartialsPEFitted[adapter.getSolutionId()])
+        return;
+
+    // begin blocking additional requests to load
+    resultsData.importancePartialsPEFittedLoading[adapter.getSolutionId()] = true;
+
+    let tempQuery = JSON.stringify(resultsData.id.query);
+    let response;
+    try {
+        response = await m.request(D3M_SVC_URL + `/retrieve-output-data`, {
+            method: 'POST',
+            data: {data_pointer: dataPointer}
+        });
+
+        if (!response.success) {
+            console.warn(response.data);
+            throw response.data;
+        }
+    } catch (err) {
+        app.alertWarn('PE data has not been loaded. Some plots will not load.');
+        return;
+    }
+
+    // don't accept response if current problem has changed
+    if (resultsData.id.problemID !== problem.problemID)
+        return;
+
+    // don't accept if query changed
+    if (JSON.stringify(resultsQuery) !== tempQuery)
+        return;
+
+    // convert unlabeled string table to predictor format
+    let offset = 0;
+    resultsData.importancePartialsPEFitted[adapter.getSolutionId()] = Object.keys(problem.partialsSummaryPE).reduce((out, predictor) => {
+        let nextOffset = offset + problem.partialsSummaryPE[predictor].length;
+        // for each point along the domain of the predictor
+        out[predictor] = response.data.slice(offset, nextOffset)
+        // for each target specified in the problem
+            .map(point => problem.targets.reduce((out_point, target) => Object.assign(out_point, {
+                [target]: app.inferIsCategorical(target) ? point[target] : parseNumeric(point[target])
+            }), {}));
+        offset = nextOffset;
+        return out;
+    }, {});
+    resultsData.importancePartialsPEFittedLoading[adapter.getSolutionId()] = false;
+
     m.redraw();
 };
 

@@ -277,17 +277,13 @@ def split_dataset(configuration, workspace):
         os.remove(csv_path)
         writable_dataframe.to_csv(csv_path, index=False)
 
-        sample_count = configuration.get("sampleCount", min(sample_limit, len(writable_dataframe)))
-        indices = writable_dataframe['d3mIndex'].astype('int32') \
-            .sample(n=sample_count).tolist()
+        return path.join(dest_directory, 'datasetDoc.json'), csv_path
 
-        return path.join(dest_directory, 'datasetDoc.json'), csv_path, indices
+    all_datasetDoc, all_datasetCsv = write_dataset('all', dataframe)
+    train_datasetDoc, train_datasetCsv = write_dataset('train', splits['train'])
+    test_datasetDoc, test_datasetCsv = write_dataset('test', splits['test'])
 
-    all_datasetDoc, all_datasetCsv, all_indices = write_dataset('all', dataframe)
-    train_datasetDoc, train_datasetCsv, train_indices = write_dataset('train', splits['train'])
-    test_datasetDoc, test_datasetCsv, test_indices = write_dataset('test', splits['test'])
-
-    datasetDocs = {
+    dataset_docs = {
         'all': all_datasetDoc,
         'train': train_datasetDoc,
         'test': test_datasetDoc
@@ -299,16 +295,9 @@ def split_dataset(configuration, workspace):
         'test': test_datasetCsv
     }
 
-    dataset_schemas = {
-        'all': all_indices,
-        'train': train_indices,
-        'test': test_indices
-    }
-
     return {
-        'dataset_schemas': datasetDocs,
+        'dataset_schemas': dataset_docs,
         'dataset_paths': dataset_paths,
-        'indices': dataset_schemas,
         'stratified': splits['stratify']
     }
 

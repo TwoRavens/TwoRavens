@@ -35,6 +35,10 @@ urlpatterns = (
          views_additional.view_download_report_file,
          name='view_download_report_file'),
 
+    path(r'retrieve-output-fitted-vs-actuals-data',
+         views_additional.view_retrieve_fitted_vs_actuals_data,
+         name='view_retrieve_fitted_vs_actuals_data'),
+
     path(r'retrieve-output-confusion-data',
          views_additional.view_retrieve_d3m_confusion_data,
          name='view_retrieve_d3m_confusion_data'),

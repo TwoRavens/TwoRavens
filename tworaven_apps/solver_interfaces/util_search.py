@@ -20,7 +20,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 
 import multiprocessing
-
+import os
 
 def preprocess(dataframe, specification):
 
@@ -358,7 +358,7 @@ class SearchTPOT(Search):
 
 class SearchMLBox(Search):
     system = 'mlbox'
-    FAST_DEBUG = False
+    FAST_DEBUG = os.environ.get('AUTOML_FAST_DEBUG', 'no') == 'yes'
 
     def run(self):
         import mlbox.model.classification

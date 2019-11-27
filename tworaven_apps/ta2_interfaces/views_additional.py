@@ -14,7 +14,10 @@ from django.views.decorators.csrf import csrf_exempt
 from tworaven_apps.ta2_interfaces.tasks import split_dataset, create_ice_datasets
 from tworaven_apps.R_services.views import create_destination_directory
 from tworaven_apps.ta2_interfaces.util_results_visualizations import (
-    util_results_confusion_matrix, util_results_importance_efd, util_results_importance_ice)
+    util_results_confusion_matrix,
+    util_results_importance_efd,
+    util_results_importance_ice,
+    util_results_real_clustered)
 from tworaven_apps.ta2_interfaces.grpc_util import TA3TA2Util
 from tworaven_apps.ta2_interfaces.static_vals import KEY_DATA_POINTER, KEY_INDICES
 from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
@@ -153,6 +156,26 @@ filename = "sample_pdf.pdf"
     response['Content-Disposition'] = 'attachment; filename="' + filename + '"'
     return response
 """
+
+@csrf_exempt
+def view_retrieve_fitted_vs_actuals_data(request):
+
+    req_body_info = get_request_body_as_json(request)
+    if not req_body_info.success:
+        return JsonResponse(get_json_error(req_body_info.err_msg))
+
+    req_info = req_body_info.result_obj
+    if not KEY_DATA_POINTER in req_info:
+        user_msg = ('No key found: "%s"' % KEY_DATA_POINTER)
+        return JsonResponse(get_json_error(user_msg))
+
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    return JsonResponse(util_results_real_clustered(
+        req_info[KEY_DATA_POINTER],
+        metadata=req_info['metadata']))
 
 
 @csrf_exempt

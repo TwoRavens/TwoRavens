@@ -35,7 +35,7 @@ def util_results_real_clustered(data_pointer, metadata):
         return {KEY_SUCCESS: False, KEY_DATA: mongo_util_fitted.get_error_message()}
 
     def normalize(variable, minimum, maximum, scale=1):
-        return {"$divide": [{"subtract": [variable, minimum]}, (maximum - minimum) * scale]}
+        return {"$divide": [{"$subtract": [variable, minimum]}, (maximum - minimum) / scale]}
 
     try:
         status = EventJobUtil.import_dataset(
@@ -61,9 +61,10 @@ def util_results_real_clustered(data_pointer, metadata):
         if not response[0]:
             return {KEY_SUCCESS: response[0], KEY_DATA: response[1]}
 
+        record = next(response[1])
         bounds['actual'] = {target: [
-            response[0][f'min_{target}'],
-            response[0][f'max_{target}']
+            record[f'min_{target}'],
+            record[f'max_{target}']
         ] for target in metadata['targets']}
 
         # COMPUTE FITTED BOUNDS
@@ -78,9 +79,10 @@ def util_results_real_clustered(data_pointer, metadata):
         if not response[0]:
             return {KEY_SUCCESS: response[0], KEY_DATA: response[1]}
 
+        record = next(response[1])
         bounds['fitted'] = {target: [
-            response[0][f'min_{target}'],
-            response[0][f'max_{target}']
+            record[f'min_{target}'],
+            record[f'max_{target}']
         ] for target in metadata['targets']}
 
         # GRID CLUSTERING
@@ -121,11 +123,11 @@ def util_results_real_clustered(data_pointer, metadata):
                         {
                             "$group": {
                                 "_id": {
-                                    'x': {'$toInt': normalize(f'$fitted_{target}', *bounds['fitted'], GRID_SIZE)},
-                                    'y': {'$toInt': normalize(f'$actual_{target}', *bounds['fitted'], GRID_SIZE)}
+                                    'x': {'$toInt': normalize(f'$fitted_{target}', *bounds['fitted'][target], GRID_SIZE)},
+                                    'y': {'$toInt': normalize(f'$actual_{target}', *bounds['actual'][target], GRID_SIZE)}
                                 },
-                                'fitted': {"$avg": f'$fitted_{target}'},
-                                'actual': {"$avg": f'$actual_{target}'},
+                                'Fitted Values': {"$avg": f'$fitted_{target}'},
+                                'Actual Values': {"$avg": f'$actual_{target}'},
                                 'count': {'$sum': 1}
                             }
                         },
@@ -135,14 +137,17 @@ def util_results_real_clustered(data_pointer, metadata):
             }
         ]
 
+        print(query)
+
         response = list(mongo_util_base.run_query(query, method='aggregate'))
 
     finally:
-        EventJobUtil.delete_dataset(
-            settings.TWORAVENS_MONGO_DB_NAME,
-            results_collection_name)
+        pass
+        # EventJobUtil.delete_dataset(
+        #     settings.TWORAVENS_MONGO_DB_NAME,
+        #     results_collection_name)
 
-    return {KEY_SUCCESS: response[0], KEY_DATA: response[1][0] if response[0] else response[1]}
+    return {KEY_SUCCESS: response[0], KEY_DATA: next(response[1]) if response[0] else response[1]}
 
 
 def util_results_confusion_matrix(data_pointer, metadata):

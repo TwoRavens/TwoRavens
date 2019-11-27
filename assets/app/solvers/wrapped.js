@@ -270,25 +270,11 @@ export let getSolutionAdapter = (problem, solution) => ({
                 produce.configuration.predict_type === predict_type);
         return produce && produce.data_pointer;
     },
-    getActualValues: target => {
-        // lazy data loading
-        results.loadActualData(problem);
-
-        let problemData = results.resultsData.actuals;
-        // cached data is current, return it
-        return problemData && problemData.map(point => point[target]);
-    },
-    getFittedValues: target => {
+    getFittedVsActuals: target => {
         let adapter = getSolutionAdapter(problem, solution);
-        // lazy data loading
-        results.loadFittedData(problem, adapter);
-
-        if (!results.resultsData.actuals) return;
-        if (!results.resultsData.fitted[solution.model_id]) return;
-
-        // cached data is current, return it
-        return results.resultsData.actuals.map(point => point.d3mIndex)
-            .map(sample => results.resultsData.fitted[solution.model_id][sample][target])
+        results.loadFittedVsActuals(problem, adapter);
+        if (adapter.getSolutionId() in results.resultsData.fittedVsActual)
+            return results.resultsData.fittedVsActual[adapter.getSolutionId()][target];
     },
     getConfusionMatrix: target => {
         let adapter = getSolutionAdapter(problem, solution);

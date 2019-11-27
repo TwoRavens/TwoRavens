@@ -59,6 +59,8 @@ fab clear_d3m_configs
 
 # prevent package installation in R. This must be set within the 2ravens virtualenv
 export FLASK_USE_PRODUCTION_MODE=yes
+# limit the strategies in mlbox to ones that run immediately, for quick results debugging
+export AUTOML_FAST_DEBUG=yes
 
 # rename tab; move into repo; set working env; kill django; kill webpack; run django; close tab;
 ttab -G 'echo -ne "\033]0;django\007"; cd '$install_directory'; workon 2ravens; lsof -ti:8080 | xargs kill; ps -ef | grep webpack | awk "{print $2}" | xargs kill; fab run_with_ta2; exit'

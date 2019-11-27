@@ -1755,7 +1755,6 @@ export let materializeTrainTest = async problem => {
 
     problem.datasetPaths.train = response.data.dataset_paths.train;
     problem.datasetPaths.test = response.data.dataset_paths.test;
-    problem.indices = response.data.indices;
 
     return true;
 };
@@ -2302,7 +2301,7 @@ export function setSelectedProblem(problemID) {
     // will trigger the call to solver, if a menu that needs that info is shown
     setSolverPending(true);
 
-    if (results.resultsPreferences.dataSplit !== 'all' && !problem.outOfSampleSplit)
+    if (results.resultsPreferences.dataSplit !== 'all' && !problem.splitOptions.outOfSampleSplit)
         results.resultsPreferences.dataSplit = 'all';
 
     window.selectedProblem = problem;
