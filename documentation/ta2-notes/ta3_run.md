@@ -38,7 +38,7 @@ For each command below, **FIRST**:
     ```
 4. R applications
     ```
-    fab run_flash
+    fab run_flask
     ```
 5. If Mongo is not up then:
     ```
