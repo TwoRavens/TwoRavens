@@ -193,39 +193,103 @@ export default class VariableImportance {
         let {problem, data, predictor, target} = vnode.attrs;
         let nominals = app.getNominalVariables(problem);
 
-        // TODO: how should the combinations of categorical predictor/targets work?
-        // LINE PLOT
+        if (nominals.includes(predictor)) return 'PDP/ICE plots are not meaningful when both the predictor and target is categorical.';
+
+        if (nominals.includes(target)) {
+
+            let d3mIndexOriginal;
+            let left;
+
+            return m(PlotVegaLite, {
+                specification: {
+                    "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+                    "description": `Independent conditional expectations for ${predictor}.`,
+                    'data': {
+                        'values': Object.values(data.reduce((edges, point) => {
+                            let right = {[target]: point[target], [predictor]: point[predictor]};
+                            if (d3mIndexOriginal === point.d3mIndexOriginal) {
+                                let key = JSON.stringify([left, right]);
+                                edges[key] = edges[key] || {left, right, count: 0};
+                                edges[key].count++;
+                            } else d3mIndexOriginal = point.d3mIndexOriginal;
+                            left = right;
+                            return edges;
+                        }, {})).flatMap((edge, i) => [
+                            {
+                                [predictor]: edge.left[predictor],
+                                [target]: edge.left[target],
+                                edgeId: i,
+                                count: edge.count
+                            },
+                            {
+                                [predictor]: edge.right[predictor],
+                                [target]: edge.right[target],
+                                edgeId: i,
+                                count: edge.count
+                            }
+                        ])
+                    },
+                    "mark": {
+                        'type': "trail",
+                        'color': 'gray'
+                    },
+                    "encoding": {
+                        "x": {"field": predictor, "type": 'quantitative'},
+                        "y": {"field": target, "type": "nominal", 'title': target},
+                        "size": {"field": 'count', "type": 'quantitative', "scale": {"type": "log", 'range': [2, 10]}},
+                        "detail": {
+                            "field": "edgeId",
+                            "type": "nominal",
+                            'legend': false
+                        },
+                        'tooltip': [
+                            {'field': predictor, 'type': 'quantitative'},
+                            {'field': target, 'type': 'nominal'},
+                            {'field': 'count', 'type': 'quantitative'}
+                        ]
+                    }
+                }
+            })
+        }
+
+        // continuous predictor and target
         return m(PlotVegaLite, {
-            data,
             identifier: predictor,
             specification: {
                 "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
                 "description": `Independent conditional expectations for ${predictor}.`,
-                // data: {values: melted},
                 "layer": [
                     {
-                        "mark": "line",
+                        "mark": {
+                            'type': "line",
+                            'color': 'gray'
+                        },
                         "encoding": {
-                            "x": {"field": predictor, "type": nominals.includes(predictor) ? "nominal" : 'quantitative'},
-                            "y": {"field": target, "type": nominals.includes(target) ? "nominal" : 'quantitative', title: target},
-                            'color': {
-                                "field": 'd3mIndexOriginal',
-                                'type': 'nominal',
-                                "scale": {"range": ["gray"]},
-                                'legend': false
-                            }
+                            "x": {"field": predictor, "type": 'quantitative'},
+                            "y": {"field": target, "type": 'quantitative', 'title': target},
+                            'detail': {"field": 'd3mIndexOriginal', 'type': 'nominal', 'legend': false}
                         }
                     },
                     {
-                        "mark": "line",
+                        "mark": {
+                            'type': "line",
+                            'color': common.selVarColor,
+                            'size': 5
+                        },
                         "encoding": {
-                            "x": {"field": predictor, "type": nominals.includes(predictor) ? "nominal" : 'quantitative'},
-                            "y": {"aggregate": 'mean', "field": target, "type": nominals.includes(target) ? "nominal" : 'quantitative'},
-                            "color": {"value": common.selVarColor},
-                            "size": {"value": 5}
+                            "x": {
+                                "field": predictor,
+                                "type": 'quantitative'
+                            },
+                            "y": {
+                                "aggregate": 'mean',
+                                "field": target,
+                                "type": 'quantitative'
+                            },
                         }
                     }
                 ]
+
             }
         })
     }

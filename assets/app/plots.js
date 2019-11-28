@@ -27,7 +27,7 @@ export let vegaScatter = (data, xName, yName, groupName, countName, title='') =>
                         {"field": groupName, "type": "nominal"},
                         {"field": countName, "type": "quantitative"},
                     ],
-                    "size": {"field": countName, "type": "quantitative"}
+                    "size": {"field": countName, "type": "quantitative", "bin": true}
                 }
             },
             {

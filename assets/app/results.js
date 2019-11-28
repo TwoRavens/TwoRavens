@@ -436,8 +436,15 @@ export class CanvasSolutions {
             if (importancePlots.length > 0) importanceContent = importancePlots;
         }
         if (resultsPreferences.importanceMode === 'PDP/ICE') {
+            let isCategorical = app.getNominalVariables(problem).includes(resultsPreferences.target);
+
             importanceContent = [
-                m('div[style=margin: 1em]', italicize("Individual conditional expectations"), ` draws one line for each individual in the data, as the selected predictor is varied. A random sample of individuals are chosen from the dataset. The red line is the average of the individuals over the target. The red line is the mean of the partial dependency plot- the average of the target variable over all individuals.`),
+                m('div[style=margin: 1em]',
+                    italicize("Individual conditional expectations"), ` draws one line for each individual in the data, as the selected predictor is varied. `
+                    + `A random sample of individuals are chosen from the dataset. `
+                    + (isCategorical
+                        ? 'The thickness of the lines is relative to the number of observations present at each level.'
+                        : 'The red line is a partial dependency plot- the average of the target variable over all individuals.')),
                 m('label', 'Importance for predictor:'),
                 m(Dropdown, {
                     id: 'predictorImportanceDropdown',
