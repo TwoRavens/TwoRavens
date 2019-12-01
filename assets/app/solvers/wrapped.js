@@ -27,16 +27,16 @@ export let getSolverSpecification = async (problem, systemId) => {
     // add partials dataset to to datasetSchemas and datasetPaths
     problem.solverState[systemId].message = 'preparing partials data';
     m.redraw();
-    if (!app.materializePartialsPEPromise[problem.problemID])
-        app.materializePartialsPEPromise[problem.problemID] = app.materializePartialsPE(problem);
-    await app.materializePartialsPEPromise[problem.problemID];
+    if (!app.materializePartialsPromise[problem.problemID])
+        app.materializePartialsPromise[problem.problemID] = app.materializePartials(problem);
+    await app.materializePartialsPromise[problem.problemID];
 
     // add ICE datasets to to datasetSchemas and datasetPaths
     problem.solverState[systemId].message = 'preparing ICE data';
     m.redraw();
-    if (!app.materializePartialsICEPromise[problem.problemID])
-        app.materializePartialsICEPromise[problem.problemID] = app.materializePartialsICE(problem);
-    await app.materializePartialsICEPromise[problem.problemID];
+    if (!app.materializeICEPromise[problem.problemID])
+        app.materializeICEPromise[problem.problemID] = app.materializeICE(problem);
+    await app.materializeICEPromise[problem.problemID];
 
     // add train/test datasets to datasetSchemas and datasetPaths
     problem.solverState[systemId].message = 'preparing train/test splits';
@@ -110,40 +110,7 @@ let SPEC_produce = problem => {
     let dataset_types = problem.splitOptions.outOfSampleSplit ? ['test', 'train'] : ['all'];
     if (problem.datasetPaths.partials) dataset_types.push('partials');
 
-    let produces = predict_types.map(predict_type => ({
-        'train': {
-            'name': 'all',
-            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
-        },
-        'input': {
-            'name': 'all',
-            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
-        },
-        'configuration': {
-            'predict_type': predict_type
-        },
-        'output': {
-            'resource_uri': 'file:///ravens_volume/solvers/produce/'
-        }
-    }));
-
-    // add ice datasets
-    produces.push(...problem.predictors.map(predictor => ({
-        'train': {
-            'name': 'all',
-            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
-        },
-        'input': {
-            'name': 'ICE_synthetic_' + predictor,
-            'resource_uri': 'file://' + problem.datasetPaths['ICE_synthetic_' + predictor]
-        },
-        'configuration': {
-            'predict_type': "RAW"
-        },
-        'output': {
-            'resource_uri': 'file:///ravens_volume/solvers/produce/'
-        }
-    })));
+    let produces = [];
 
     if (problem.splitOptions.outOfSampleSplit)
         produces.push(...dataset_types.flatMap(dataset_type => predict_types.flatMap(predict_type => ({
@@ -164,6 +131,42 @@ let SPEC_produce = problem => {
                 'resource_uri': 'file:///ravens_volume/solvers/produce/'
             }
         }))));
+
+    predict_types.forEach(predict_type => produces.push({
+        'train': {
+            'name': 'all',
+            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
+        },
+        'input': {
+            'name': 'all',
+            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
+        },
+        'configuration': {
+            'predict_type': predict_type
+        },
+        'output': {
+            'resource_uri': 'file:///ravens_volume/solvers/produce/'
+        }
+    }));
+
+    // add ice datasets
+    app.getPredictorVariables(problem).forEach(predictor => produces.push({
+        'train': {
+            'name': 'all',
+            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
+        },
+        'input': {
+            'name': 'ICE_synthetic_' + predictor,
+            'resource_uri': 'file://' + problem.datasetPaths['ICE_synthetic_' + predictor]
+        },
+        'configuration': {
+            'predict_type': "RAW"
+        },
+        'output': {
+            'resource_uri': 'file:///ravens_volume/solvers/produce/'
+        }
+    }));
+
 
     return produces
 };
@@ -256,70 +259,6 @@ export let getSystemAdapterWrapped = systemId => problem => ({
     }
 });
 
-
-// functions to extract information from D3M response format
-export let getSolutionAdapter = (problem, solution) => ({
-    getName: () => solution.model_id,
-    getSystemId: () => solution.system,
-    getSolutionId: () => solution.model_id,
-    getDataPointer: (dataSplit, predict_type='RAW') => {
-
-        let produce = (solution.produce || [])
-            .find(produce =>
-                produce.input.name === dataSplit &&
-                produce.configuration.predict_type === predict_type);
-        return produce && produce.data_pointer;
-    },
-    getFittedVsActuals: target => {
-        let adapter = getSolutionAdapter(problem, solution);
-        results.loadFittedVsActuals(problem, adapter);
-        if (adapter.getSolutionId() in results.resultsData.fittedVsActual)
-            return results.resultsData.fittedVsActual[adapter.getSolutionId()][target];
-    },
-    getConfusionMatrix: target => {
-        let adapter = getSolutionAdapter(problem, solution);
-        results.loadConfusionData(problem, adapter);
-        if (solution.model_id in results.resultsData.confusion)
-            return results.resultsData.confusion[solution.model_id][target];
-    },
-    getScore: metric => {
-        if (!solution.scores) return;
-        let evaluation = solution.scores.find(score => app.d3mMetricsInverted[score.metric.metric] === metric);
-        return evaluation && evaluation.value
-    },
-    getDescription: () => solution.description,
-    getTask: () => '',
-    getModel: () => solution.model || '',
-    getImportanceEFD: predictor => {
-        let adapter = getSolutionAdapter(problem, solution);
-        results.loadImportanceEFDData(problem, adapter);
-
-        if (results.resultsData.importanceEFD)
-            return results.resultsData.importanceEFD[predictor];
-    },
-    getImportancePartials: predictor => {
-        let adapter = getSolutionAdapter(problem, solution);
-        results.loadImportancePartialsFittedData(problem, adapter);
-
-        if (!results.resultsData.importancePartialsFitted[solution.model_id]) return;
-
-        return app.melt(
-            problem.partialsSummaryPE[predictor]
-                .map((x, i) => Object.assign({[predictor]: x},
-                    results.resultsData.importancePartialsFitted[solution.model_id][predictor][i])),
-            [predictor],
-            results.valueLabel, results.variableLabel);
-    },
-    getImportanceICE: predictor => {
-        let adapter = getSolutionAdapter(problem, solution);
-        results.loadImportanceICEFittedData(problem, adapter, predictor);
-
-        if (results.resultsData.importanceICEFitted) {
-            return results.resultsData.importanceICEFitted
-        }
-    }
-});
-
 let findProblem = data => {
     let problems = ((app.workspace || {}).raven_config || {}).problems || {};
     let solvedProblemId = Object.keys(problems)
@@ -332,6 +271,8 @@ let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
 let setRecursiveDefault = (obj, map) => map
     .reduce((obj, pair) => setDefault(obj, pair[0], pair[1]), obj);
 
+// TODO: determine why django sometimes fails to provide a model id
+let unknownSolutions = 0;
 export let handleDescribeResponse = response => {
     let data = response.data;
     let solvedProblem = findProblem(data);
@@ -341,8 +282,17 @@ export let handleDescribeResponse = response => {
     }
 
     if (response.success) {
+        if (!data.model_id) data.model_id = `oss-unknown-${unknownSolutions++}`;
+
         setRecursiveDefault(solvedProblem.solutions, [
-            [data.system, {}], [data.model_id, data]]);
+            [data.system, {}], [data.model_id, {}]]);
+        Object.assign(solvedProblem.solutions[data.system][data.model_id], {
+            name: data.model,
+            description: data.description,
+            solutionId: data.model_id,
+            searchId: data.search_id,
+            systemId: data.system
+        });
 
         let selectedSolutions = results.getSelectedSolutions(solvedProblem);
         if (selectedSolutions.length === 0) results.setSelectedSolution(solvedProblem, data.system, data.model_id);
@@ -399,7 +349,7 @@ export let handleSolveCompleteResponse = response => {
 
 export let downloadModel = async solution => m.request(SOLVER_SVC_URL + 'Download', {
     method: 'POST',
-    data: {model_id: solution.model_id}
+    data: {model_id: solution.solutionId}
 }).then(response => {
     if (!response.success) {
         alertWarn("Unable to prepare model for downloading.");

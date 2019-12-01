@@ -1627,59 +1627,31 @@ export let materializeManipulations = async (problem, schemaIds) => {
         }))
 };
 
-// materializing partials may only happen once per problem, all calls wait for same response
-export let materializePartialsPEPromise = {};
-export let materializePartialsPE = async problem => {
+// should be equivalent to partials.app
+// loads up linearly spaced observations along domain and non-mangled levels/counts
+let loadPredictorDomains = async problem => {
+    if (problem.levels || problem.domain) return;
 
-    console.log('materializing partials')
-
-    if (!variableSummariesLoaded)
-        return;
-
-    try {
-        let partialsLocationInfo = await m.request({
-            method: 'POST',
-            url: ROOK_SVC_URL + 'partials.app',
-            data: {metadata: variableSummaries}
-        });
-        if (!partialsLocationInfo.success) {
-            alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
-            throw partialsLocationInfo.message;
-        } else {
-            problem.datasetSchemas.partials = partialsLocationInfo.data.partialsDatasetDocPath;
-            problem.datasetPaths.partials = partialsLocationInfo.data.partialsDatasetPath;
-            problem.partialsSummaryPE = partialsLocationInfo.data.partialsSummary;
-        }
-    } catch(err) {
-        cdb(err);
-        // alertError(`Error: }call to partials.app failed`);
-    }
-};
-
-
-// BUILD DOMAINS
-export let ICE_SAMPLE_MAX_SIZE = 50;
-export let ICE_DOMAIN_MAX_SIZE = 20;
-export let materializePartialsICEPromise = {};
-export let materializePartialsICE = async problem => {
-    console.log('materializing ICE partials');
-
-    if (!variableSummariesLoaded) return;
-    let categoricals = getNominalVariables(problem).filter(variable => problem.predictors.includes(variable));
+    if (!variableSummariesLoaded) throw "variable summaries are not loaded";
+    let predictors = getPredictorVariables(problem);
+    let categoricals = getNominalVariables(problem).filter(variable => predictors.includes(variable));
 
     let abstractPipeline = [...workspace.raven_config.hardManipulations, problem.manipulations];
     let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
 
-    let facets = categoricals.reduce((facets, variable) => Object.assign(facets, {
-        [variable]: [
-            {$group: {_id: '$' + variable, count: {$sum: 1}}},
-            {$sort: {_id: -1}},
-            {$limit: ICE_DOMAIN_MAX_SIZE},
-            {$project: {[variable]: '$_id'}}
-        ]
-    }), {});
+    let facets = categoricals
+        .filter(variable => variableSummaries[variable].validCount > 0)
+        .reduce((facets, variable) => Object.assign(facets, {
+            [variable]: [
+                {$group: {_id: '$' + variable, count: {$sum: 1}}},
+                {$sort: {count: -1, _id: 1}},
+                {$limit: ICE_DOMAIN_MAX_SIZE},
+                {$project: {'_id': 0, level: '$_id', count: 1}}
+            ]
+        }), {});
 
-    let levels = Object.keys(facets).length > 0 ? (await getData({
+    // {[variable]: [{'level': level, 'count': count}, ...]}
+    problem.levels = Object.keys(facets).length > 0 ? (await getData({
         method: 'aggregate',
         query: JSON.stringify([
             ...compiled,
@@ -1687,11 +1659,75 @@ export let materializePartialsICE = async problem => {
         ])
     }))[0] : {};
 
-    let domains = problem.predictors.reduce((domains, predictor) => Object.assign(domains, {
-        [predictor]: categoricals.includes(predictor)
-            ? levels[predictor].map(entry => entry[predictor])
-            : linspace(variableSummaries[predictor].min, variableSummaries[predictor].max, ICE_DOMAIN_MAX_SIZE)
-    }), {});
+    // {[variable]: *samples along domain*}
+    problem.domains = predictors.reduce((domains, predictor) => {
+        let summary = variableSummaries[predictor];
+        if (!summary.validCount)
+            domains[predictor] = [];
+        else if (categoricals.includes(predictor))
+            domains[predictor] = problem.levels[predictor].map(entry => entry.level);
+        else {
+            if (variableSummaries[predictor].binary)
+                domains[predictor] = [variableSummaries[predictor].min, variableSummaries[predictor].max];
+            else
+                domains[predictor] = linspace(
+                    variableSummaries[predictor].min,
+                    variableSummaries[predictor].max,
+                    ICE_DOMAIN_MAX_SIZE)
+        }
+        return domains;
+    }, {})
+};
+
+// materializing partials may only happen once per problem, all calls wait for same response
+export let materializePartialsPromise = {};
+export let materializePartials = async problem => {
+
+    console.log('materializing partials');
+    await loadPredictorDomains(problem);
+
+    // BUILD BASE DATASET (one record)
+    let dataset = [Object.keys(variableSummaries)
+        .reduce((record, variable) => Object.assign(record, {
+            [variable]: variable in problem.levels
+                ? problem.levels[variable][0].level // take most frequent level (first mode)
+                : variableSummaries[variable].median
+        }), {})];
+
+    // BUILD PARTIALS DATASETS
+    let partialsLocationInfo = await m.request({
+        method: 'POST',
+        url: D3M_SVC_URL + '/get-partials-datasets',
+        data: {
+            domains: problem.domains,
+            dataset_schema: workspace.datasetDoc,
+            dataset,
+            separate_variables: false,
+            name: 'partials'
+        }
+    });
+    if (!partialsLocationInfo.success) {
+        alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
+        throw partialsLocationInfo.message;
+    } else {
+        Object.assign(problem.datasetSchemas, partialsLocationInfo.data.dataset_schemas);
+        Object.assign(problem.datasetPaths, partialsLocationInfo.data.dataset_paths);
+    }
+};
+
+
+// BUILD DOMAINS
+export let ICE_SAMPLE_MAX_SIZE = 50;
+export let ICE_DOMAIN_MAX_SIZE = 20;
+
+export let materializeICEPromise = {};
+export let materializeICE = async problem => {
+    console.log('materializing ICE partials');
+
+    await loadPredictorDomains(problem);
+
+    let abstractPipeline = [...workspace.raven_config.hardManipulations, problem.manipulations];
+    let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
 
     // BUILD SAMPLE DATASET
     let samplePaths = await getData({
@@ -1704,8 +1740,13 @@ export let materializePartialsICE = async problem => {
     // BUILD ICE DATASETS
     let partialsLocationInfo = await m.request({
         method: 'POST',
-        url: D3M_SVC_URL + '/get-ICE-datasets',
-        data: {domains, dataset_schema: samplePaths.metadata_path}
+        url: D3M_SVC_URL + '/get-partials-datasets',
+        data: {
+            domains: problem.domains,
+            dataset_schema_path: samplePaths.metadata_path,
+            separate_variables: true,
+            name: 'ICE_synthetic_'
+        }
     });
     if (!partialsLocationInfo.success) {
         alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
@@ -1713,8 +1754,6 @@ export let materializePartialsICE = async problem => {
     } else {
         Object.assign(problem.datasetSchemas, partialsLocationInfo.data.dataset_schemas);
         Object.assign(problem.datasetPaths, partialsLocationInfo.data.dataset_paths);
-        problem.partialsICESampleCount = partialsLocationInfo.data.sample_count;
-        problem.partialsDomains = domains;
     }
 };
 
@@ -1746,6 +1785,7 @@ export let materializeTrainTest = async problem => {
     if (!response.success) {
         console.warn('Materialize train/test error:', response.message);
         alertWarn('Unable to create out-of-sample split. Using entire dataset for training and for in-sample testing.');
+        results.resultsPreferences.dataSplit = 'all';
         problem.splitOptions.outOfSampleSplit = false;
         return false;
     }

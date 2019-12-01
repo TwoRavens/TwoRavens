@@ -36,10 +36,11 @@ export default class PlotVegaLite {
             this.dataKeys = undefined;
 
             // include padding in width/height calculations
-            specification.autosize = {
+            if (!('autosize' in specification)) specification.autosize = {
                 "type": "fit",
                 "contains": "padding"
             };
+            // if ('vconcat' in specification) specification.vconcat.forEach(spec => spec.width = this.width);
             if (data) specification.data = {name: 'embedded'};
 
             let options = {actions: false};

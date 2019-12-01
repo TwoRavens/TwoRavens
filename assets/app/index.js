@@ -169,9 +169,8 @@ class Body {
 
             let selectedSolutions = results.getSelectedSolutions(selectedProblem);
             if (app.is_results_mode && selectedSolutions.length === 1 && selectedSolutions[0]) {
-                path.push(m(Icon, {name: 'chevron-right'}), m('h4[style=display: inline-block; margin: .25em 1em]', ({
-                    [selectedSolutions[0].systemId]: solverWrapped.getSolutionAdapter, d3m: solverD3M.getSolutionAdapter
-                })[selectedSolutions[0].systemId](selectedProblem, selectedSolutions[0]).getName()))
+                path.push(m(Icon, {name: 'chevron-right'}), m('h4[style=display: inline-block; margin: .25em 1em]',
+                    results.getSolutionAdapter(selectedProblem, selectedSolutions[0]).getSolutionId()))
             }
 
             return path;

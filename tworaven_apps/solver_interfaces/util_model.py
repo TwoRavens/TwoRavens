@@ -103,7 +103,6 @@ class Model(object):
         raise ValueError(f'System type "{metadata["system"]}" is not recognized.')
 
     def make_splits(self, configuration, data):
-        print('my data', data)
 
         if configuration['method'] == 'K_FOLD':
             split_arguments = {

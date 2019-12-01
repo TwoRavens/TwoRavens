@@ -7,10 +7,6 @@ urlpatterns = (
         views.view_rp_test,
         name='view_rp_test'),
 
-    url(r'^partials.app$',
-        views.view_partials_app,
-        name='view_partials_app'),
-
     url(r'^preprocess.app$',
         views.view_R_preprocess,
         name='view_R_preprocess'),

@@ -11,8 +11,7 @@ from django.http import JsonResponse, HttpResponse, HttpResponseNotFound
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 
-from tworaven_apps.ta2_interfaces.tasks import split_dataset, create_ice_datasets
-from tworaven_apps.R_services.views import create_destination_directory
+from tworaven_apps.ta2_interfaces.tasks import split_dataset, create_partials_datasets
 from tworaven_apps.ta2_interfaces.util_results_visualizations import (
     util_results_confusion_matrix,
     util_results_importance_efd,
@@ -22,10 +21,12 @@ from tworaven_apps.ta2_interfaces.grpc_util import TA3TA2Util
 from tworaven_apps.ta2_interfaces.static_vals import KEY_DATA_POINTER, KEY_INDICES
 from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
 
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
+from tworaven_apps.behavioral_logs import static_vals as bl_static
+
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
-     get_json_error,
-     get_json_success)
+     get_json_error, get_session_key)
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
 from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
@@ -284,7 +285,7 @@ def get_train_test_split(request):
 
 
 @csrf_exempt
-def get_ice_partials_datasets(request):
+def get_partials_datasets(request):
     # request body
     req_body_info = get_request_body_as_json(request)
     if not req_body_info.success:
@@ -302,19 +303,25 @@ def get_ice_partials_datasets(request):
     if not user_info.success:
         return JsonResponse(get_json_error(user_info.err_msg))
 
+    activity_l1 = bl_static.L1_PROBLEM_DEFINITION
+    activity_l2 = bl_static.L2_ACTIVITY_BLANK
+
+    log_data = dict(session_key=get_session_key(request),
+                    feature_id='PARTIALS_APP',
+                    activity_l1=activity_l1,
+                    activity_l2=activity_l2)
+
+    LogEntryMaker.create_system_entry(user_workspace.user, log_data)
+
     try:
-        response = {
-            "success": True,
-            "data": create_ice_datasets(req_info, user_workspace),
-            "message": "create ICE datasets successful"
-        }
+        response = create_partials_datasets(req_info, user_workspace)
 
     except Exception:
         print("caught traceback when creating ICE datasets:", flush=True)
         print(traceback.format_exc(), flush=True)
         response = {
-            "success": False,
-            "message": "Internal error while creating ICE datasets."
+            KEY_SUCCESS: False,
+            KEY_DATA: "Internal error while creating ICE datasets."
         }
 
     return JsonResponse(response)

@@ -195,10 +195,10 @@ def util_results_confusion_matrix(data_pointer, metadata):
         {
             "$project": {
                 **{
-                    'fitted_' + name: f"$results_collection\\.{name}" for name in metadata['targets']
+                    'Predicted_' + name: f"$results_collection\\.{name}" for name in metadata['targets']
                 },
                 **{
-                    'actual_' + name: f"${name}" for name in metadata['targets']
+                    'Actual_' + name: f"${name}" for name in metadata['targets']
                 },
                 **{"_id": 0}}
         },
@@ -207,20 +207,20 @@ def util_results_confusion_matrix(data_pointer, metadata):
                 target: [
                     {
                         "$group": {
-                            '_id': {'actual': f'$actual_{target}', 'fitted': f'$fitted_{target}'},
+                            '_id': {'Actual': f'$Actual_{target}', 'Predicted': f'$Predicted_{target}'},
                             'count': {'$sum': 1}
                         }
                     },
                     {
                         "$project": {
-                            'actual': '$_id\\.actual',
-                            'fitted': '$_id\\.fitted',
+                            'Actual': '$_id\\.Actual',
+                            'Predicted': '$_id\\.Predicted',
                             'count': 1,
                             '_id': 0
                         }
                     },
                     {
-                        "$sort": {'actual': 1}
+                        "$sort": {'Actual': 1}
                     }
                 ] for target in metadata['targets']
             }
@@ -247,31 +247,17 @@ def util_results_confusion_matrix(data_pointer, metadata):
     if not response[0]:
         return {KEY_SUCCESS: response[0], KEY_DATA: response[1]}
 
-    target_matrices = {}
+    data = next(response[1])
 
-    for target in metadata['targets']:
-        target_matrices[target] = {}
-
-        # populate 2D sparse data structure
-        for cell in next(response[1])[target]:
-            # construct row if not exists
-            if not cell['actual'] in target_matrices[target]:
-                target_matrices[target][cell['actual']] = {}
-
-            target_matrices[target][cell['actual']][cell['fitted']] = cell['count']
-
-        labels = list(target_matrices[target].keys())
-
-        # convert to dense matrix
-        target_matrices[target] = {
-            "data": [
-                [target_matrices[target][actual].get(fitted, 0) for fitted in labels]
-                for actual in labels
-            ],
-            "classes": labels
+    return {
+        KEY_SUCCESS: response[0],
+        KEY_DATA: {
+            target: {
+                'data': data[target],
+                'classes': list(set(map(lambda x: x['Actual'], data[target])))
+            } for target in data.keys()
         }
-
-    return {KEY_SUCCESS: response[0], KEY_DATA: target_matrices}
+    }
 
 
 def util_results_importance_efd(data_pointer, metadata):
@@ -291,35 +277,36 @@ def util_results_importance_efd(data_pointer, metadata):
     if util.has_error():
         return {KEY_SUCCESS: False, KEY_DATA: util.get_error_message()}
 
-    # populate levels if not passed (for example, numeric column tagged as categorical)
-    for key in metadata['levels']:
+    levels = {}
+    # populate levels (for example, numeric column tagged as categorical)
+    for variable in metadata['categoricals']:
         # levels are passed, but levels have lost type information (json object keys are coerced to string)
-        # if not metadata['levels'][key]:
+        # if not levels[key]:
         response = util.run_query([
             *metadata['query'],
-            {"$group": {"_id": f"${key}", "count": {'$sum': 1}}},
-            {'$sort': {'count': -1}},
-            {"$sample": {"size": LIMIT_UNIQUE_LEVELS}}
+            {"$group": {"_id": f"${variable}", "count": {'$sum': 1}}},
+            {'$sort': {'count': -1, '_id': 1}},
+            {"$limit": LIMIT_UNIQUE_LEVELS}
         ], 'aggregate')
 
         if not response[0]:
             return {KEY_SUCCESS: False, KEY_DATA: response[1]}
-        metadata['levels'][key] = [doc['_id'] for doc in response[1]]
+        levels[variable] = [doc['_id'] for doc in response[1]]
 
         # limit the number of unique levels
-        if len(metadata['levels'][key]) > LIMIT_UNIQUE_LEVELS:
-            metadata['levels'][key] = random.sample(metadata['levels'][key], k=LIMIT_UNIQUE_LEVELS)
+        if len(levels[variable]) > LIMIT_UNIQUE_LEVELS:
+            levels[variable] = levels[variable][:LIMIT_UNIQUE_LEVELS]
 
     # fitted versions of variables have same levels as their originals
-    metadata['levels'].update({
-        'fitted ' + key: metadata['levels'][key] for key in metadata['levels']
+    levels.update({
+        'fitted ' + key: levels[key] for key in levels
     })
     # renamed variables have the same levels as their originals
-    metadata['levels'].update({
-        'actual ' + key: metadata['levels'][key] for key in metadata['levels']
+    levels.update({
+        'actual ' + key: levels[key] for key in levels
     })
 
-    # print('metadata levels', metadata['levels'])
+    # print('metadata levels', levels)
 
     def is_categorical(variable, levels):
         return variable in levels
@@ -328,7 +315,7 @@ def util_results_importance_efd(data_pointer, metadata):
         if is_categorical(variable, levels):
             return {f'{variable}-{level}': {
                 "$avg": {"$cond": [{"$eq": [f"${variable}", level]}, 1, 0]}
-            } for level in metadata['levels'][variable]}
+            } for level in levels[variable]}
         # compute mean of fitted and actual
         return {
             f'fitted {variable}': {"$avg": f'$fitted {variable}'},
@@ -346,7 +333,7 @@ def util_results_importance_efd(data_pointer, metadata):
             return {
                 f'{variable}-{level}': {
                     "$avg": {"$cond": [{"$eq": [f"${variable}", level]}, 1, 0]}
-                } for level in metadata['levels'][variable]}
+                } for level in levels[variable]}
         return {variable: {"$avg": f'${variable}'}}
 
     def aggregate_target_levels(variables, levels):
@@ -355,7 +342,7 @@ def util_results_importance_efd(data_pointer, metadata):
             *[branch_target_levels('actual ' + target, levels) for target in variables]
         ] for k, v in d.items()}
 
-    target_aggregator = aggregate_target_levels(metadata['targets'], metadata['levels'])
+    target_aggregator = aggregate_target_levels(metadata['targets'], levels)
 
     query = [
         *metadata['query'],
@@ -388,9 +375,15 @@ def util_results_importance_efd(data_pointer, metadata):
                 predictor: [
                     {
                         "$group": {
-                            **{"_id": f'${predictor}'},
+                            **{"_id": f'${predictor}', 'count': {"$sum": 1}},
                             **target_aggregator
                         }
+                    },
+                    {
+                        "$sort": {"count": -1, '_id': 1}
+                    },
+                    {
+                        "$limit": 20
                     },
                     {
                         "$project": {
@@ -399,7 +392,7 @@ def util_results_importance_efd(data_pointer, metadata):
                             **{"_id": 0}
                         }
                     }
-                ] if is_categorical(predictor, metadata['levels']) else [
+                ] if is_categorical(predictor, levels) else [
                     {
                         "$bucketAuto": {
                             "groupBy": f'${predictor}',
@@ -475,7 +468,7 @@ def util_results_importance_efd(data_pointer, metadata):
 
     # pyperclip.copy(json.dumps({"query": query, "data": data}, indent=4))
     for predictor in metadata['predictors']:
-        if not is_categorical(predictor, metadata['levels']):
+        if not is_categorical(predictor, levels):
             data[predictor] = smooth(kernel_linear(size=7), data[predictor], predictor)
 
     return {

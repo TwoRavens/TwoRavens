@@ -216,7 +216,6 @@ export let leftpanel = () => {
 export class CanvasSolutions {
 
     oninit() {
-        this.confusionFactor = undefined;
         this.confusionMode = 'Stack';
         app.updateRightPanelWidth()
     }
@@ -232,7 +231,7 @@ export class CanvasSolutions {
 
         if (problem.task.toLowerCase().includes('regression')) {
             let summaries = adapters.map(adapter => ({
-                name: adapter.getName(),
+                name: adapter.getSolutionId(),
                 fittedVsActual: adapter.getFittedVsActuals(resultsPreferences.target),
             })).filter(summary => summary.fittedVsActual);
 
@@ -261,7 +260,7 @@ export class CanvasSolutions {
         if (problem.task.toLowerCase().includes('classification')) {
 
             let summaries = adapters.map(adapter => ({
-                name: adapter.getName(),
+                name: adapter.getSolutionId(),
                 confusionMatrix: adapter.getConfusionMatrix(resultsPreferences.target)
             })).filter(summary => summary.confusionMatrix);
 
@@ -270,7 +269,7 @@ export class CanvasSolutions {
                 common.loader('PredictionSummary')
             ];
 
-            let setConfusionFactor = factor => this.confusionFactor = factor === 'undefined' ? undefined : factor;
+            let setConfusionFactor = factor => resultsPreferences.factor = factor === 'undefined' ? undefined : factor;
 
             // ignore summaries without confusion matrices
             summaries = summaries.filter(summary => summary.confusionMatrix);
@@ -280,11 +279,11 @@ export class CanvasSolutions {
             let classes = [...new Set(summaries.flatMap(summary => summary.confusionMatrix.classes))]
 
             // convert to 2x2 if factor is set
-            if (this.confusionFactor !== undefined)
+            if (resultsPreferences.factor !== undefined)
                 summaries.forEach(summary => summary.confusionMatrix = confusionMatrixFactor(
                     summary.confusionMatrix.data,
                     summary.confusionMatrix.classes,
-                    this.confusionFactor));
+                    resultsPreferences.factor));
 
             // prevent invalid confusion matrix selection
             if (this.confusionMatrixSolution === undefined || !summaries.find(summary => summary.name === this.confusionMatrixSolution))
@@ -296,7 +295,7 @@ export class CanvasSolutions {
                     m('[style=display:inline-block]', m(Dropdown, {
                         id: 'confusionFactorDropdown',
                         items: ['undefined', ...classes],
-                        activeItem: this.confusionFactor,
+                        activeItem: resultsPreferences.factor,
                         onclickChild: setConfusionFactor,
                         style: {'margin-left': '1em'}
                     }))),
@@ -317,24 +316,23 @@ export class CanvasSolutions {
                     id: 'confusionMenu',
                     currentTab: this.confusionMatrixSolution,
                     callback: solutionId => this.confusionMatrixSolution = solutionId,
-                    sections: summaries.map(summary => ({
+                    sections: summaries.map((summary, i) => ({
                         value: summary.name,
                         contents: [
-                            this.confusionFactor !== undefined && m(Table, {
-                                id: 'resultsPerformanceTable',
-                                headers: ['metric', 'score'],
-                                data: generatePerformanceData(summary.confusionMatrix.data),
-                                attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
-                            }),
-                            summary.confusionMatrix.data.length < 100 ? summary.confusionMatrix.classes.length > 0 ? m('div', {
-                                    style: {'min-height': '500px', 'min-width': '500px'}
-                                }, m(ConfusionMatrix, Object.assign({}, summary.confusionMatrix, {
-                                    id: 'resultsConfusionMatrixContainer' + summary.name,
-                                    title: `Confusion Matrix for ${problem.targets[0]}`,
-                                    startColor: '#ffffff', endColor: '#e67e22',
-                                    margin: {left: 10, right: 10, top: 50, bottom: 10},
-                                    attrsAll: {style: {height: '600px'}}
-                                })))
+                            resultsPreferences.factor !== undefined && m('div',
+                                i === 0 || this.confusionMode === 'Stack' ? `The scores in this table may differ from those in the left panel or the scores summary. These scores are computed without cross-validation, directly on the ${resultsPreferences.dataSplit} data split, when the positive class is ${resultsPreferences.factor}.` : '',
+                                m(Table, {
+                                    id: 'resultsPerformanceTable',
+                                    headers: ['metric', 'score'],
+                                    data: generatePerformanceData(summary.confusionMatrix.data, resultsPreferences.factor),
+                                    attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
+                                })),
+                            summary.confusionMatrix.classes.length < 100 ? summary.confusionMatrix.classes.length > 0 ? m(PlotVegaLite, {
+                                    specification: plots.vegaConfusionMatrix(
+                                        summary.confusionMatrix.data,
+                                        summary.confusionMatrix.classes,
+                                        'Predicted', 'Actual', 'count',
+                                        `Confusion Matrix for ${problem.targets[0]}`)})
                                 : 'Too few classes for confusion matrix! There is a data mismatch.'
                                 : 'Too many classes for confusion matrix!'
                         ]
@@ -364,7 +362,7 @@ export class CanvasSolutions {
                     "description": `${metric} scores for ${problem.problemID}.`,
                     data: {
                         values: adapters.map(adapter => ({
-                            ID: adapter.getName(),
+                            ID: adapter.getSolutionId(),
                             [metric]: adapter.getScore(metric)
                         })).filter(point => point[metric] !== undefined)
                     },
@@ -406,7 +404,8 @@ export class CanvasSolutions {
                     predictor,
                     target: resultsPreferences.target,
                     yLabel: valueLabel,
-                    variableLabel: variableLabel
+                    variableLabel: variableLabel,
+                    summary: app.variableSummaries[predictor]
                 })
             ]).filter(_ => _);
 
@@ -423,17 +422,24 @@ export class CanvasSolutions {
             ];
             app.getPredictorVariables(problem).forEach(predictor => {
                 let importanceData = adapter.getImportancePartials(predictor);
-                if (importanceData) importancePlots.push(m(VariableImportance, {
-                    mode: 'Partials',
-                    data: importanceData,
-                    problem: problem,
-                    predictor: predictor,
-                    target: resultsPreferences.target,
-                    yLabel: valueLabel,
-                    variableLabel: variableLabel
-                }))
+                if (importanceData) importancePlots.push(m('div',
+                    bold(predictor),
+                    m(VariableImportance, {
+                        mode: 'Partials',
+                        data: importanceData,
+                        problem: problem,
+                        predictor: predictor,
+                        target: resultsPreferences.target,
+                        yLabel: valueLabel,
+                        variableLabel: variableLabel,
+                        summary: app.variableSummaries[predictor]
+                    })
+                    // !categoricals.includes(predictor) && m(PlotVegaLite, {
+                    //     specification: plots.vegaDensityHeatmap(app.variableSummaries[predictor])
+                    // })
+                ));
             });
-            if (importancePlots.length > 0) importanceContent = importancePlots;
+            if (importancePlots.length > 0) importanceContent = m('div', {style: 'overflow:auto'}, importancePlots);
         }
         if (resultsPreferences.importanceMode === 'PDP/ICE') {
             let isCategorical = app.getNominalVariables(problem).includes(resultsPreferences.target);
@@ -456,15 +462,16 @@ export class CanvasSolutions {
 
             let importanceData = adapter.getImportanceICE(resultsPreferences.predictor);
 
-            if (importanceData) importanceContent.push(m(VariableImportance, {
+            if (importanceData) importanceContent.push(m('div', {style: 'overflow:auto'}, m(VariableImportance, {
                 mode: 'ICE',
                 data: importanceData,
                 problem: problem,
                 predictor: resultsPreferences.predictor,
                 target: resultsPreferences.target,
                 yLabel: valueLabel,
-                variableLabel: variableLabel
-            }))
+                variableLabel: variableLabel,
+                summary: app.variableSummaries[resultsPreferences.predictor]
+            })));
             else importanceContent.push(common.loader('VariableImportance'))
 
         }
@@ -659,7 +666,7 @@ export class CanvasSolutions {
 
                 })],
                 ['Description', firstAdapter.getDescription()],
-                ['Model', firstAdapter.getModel()]
+                ['Model', firstAdapter.getName()]
             ].concat(firstSolution.systemId === 'caret' ? [
                 ['Label', firstSolution.meta.label],
                 ['Caret/R Method', firstSolution.meta.method],
@@ -847,9 +854,66 @@ export class CanvasSolutions {
     }
 }
 
-let getSolutionAdapter = (problem, solution) => ({
-    [solution.systemId]: solverWrapped.getSolutionAdapter, d3m: solverD3M.getSolutionAdapter
-}[solution.systemId](problem, solution));
+// functions to extract information from D3M response format
+export let getSolutionAdapter = (problem, solution) => ({
+    getName: () => solution.name,
+    getDescription: () => solution.description,
+    getSystemId: () => solution.systemId,
+    getSolutionId: () => solution.solutionId || 'unknown',
+    getDataPointer: (dataSplit, predict_type='RAW') => {
+        let produce = (solution.produce || [])
+            .find(produce =>
+                produce.input.name === dataSplit &&
+                produce.configuration.predict_type === predict_type);
+        return produce && produce.data_pointer;
+    },
+    getFittedVsActuals: target => {
+        let adapter = getSolutionAdapter(problem, solution);
+        loadFittedVsActuals(problem, adapter);
+        if (solution.solutionId in resultsData.fittedVsActual)
+            return resultsData.fittedVsActual[solution.solutionId][target];
+    },
+    getConfusionMatrix: target => {
+        let adapter = getSolutionAdapter(problem, solution);
+        loadConfusionData(problem, adapter);
+        if (solution.solutionId in resultsData.confusion)
+            return resultsData.confusion[solution.solutionId][target];
+    },
+    getScore: metric => {
+        if (!solution.scores) return;
+        let evaluation = solution.scores.find(score => app.d3mMetricsInverted[score.metric.metric] === metric);
+        return evaluation && evaluation.value
+    },
+    getImportanceEFD: predictor => {
+        let adapter = getSolutionAdapter(problem, solution);
+        loadImportanceEFDData(problem, adapter);
+
+        if (resultsData.importanceEFD)
+            return resultsData.importanceEFD[predictor];
+    },
+    getImportancePartials: predictor => {
+        let adapter = getSolutionAdapter(problem, solution);
+        loadImportancePartialsFittedData(problem, adapter);
+
+        if (!resultsData.importancePartialsFitted[solution.solutionId]) return;
+
+        return app.melt(
+            problem.domains[predictor]
+                .map((x, i) => Object.assign({[predictor]: x},
+                    resultsData.importancePartialsFitted[solution.solutionId][predictor][i])),
+            [predictor],
+            valueLabel, variableLabel);
+    },
+    getImportanceICE: predictor => {
+        let adapter = getSolutionAdapter(problem, solution);
+        loadImportanceICEFittedData(problem, adapter, predictor);
+
+        if (resultsData.importanceICEFitted) {
+            return resultsData.importanceICEFitted
+        }
+    }
+});
+
 
 let getSolutionTable = (problem, systemId) => {
     let solutions = systemId
@@ -862,7 +926,7 @@ let getSolutionTable = (problem, systemId) => {
     let data = adapters
     // extract data for each row (identification and scores)
         .map(adapter => Object.assign({
-                adapter, ID: String(adapter.getName()), Solver: adapter.getSystemId(), Solution: adapter.getModel()
+                adapter, ID: String(adapter.getSolutionId()), Solver: adapter.getSystemId(), Solution: adapter.getName()
             },
             [problem.metric, ...problem.metrics]
                 .reduce((out, metric) => Object.assign(out, {
@@ -893,7 +957,6 @@ let leftTabResults = 'Solutions'; // default value
 let setLeftTabResults = tabName => {
 
     leftTabResults = tabName;
-    console.log('tab: ' + tabName);
 
     // behavioral logging
     let logParams = tabName === 'Solutions' ? {
@@ -909,9 +972,10 @@ let setLeftTabResults = tabName => {
 };
 
 export let resultsPreferences = {
-    mode: 'EFD',
+    importanceMode: 'EFD',
     predictor: undefined,
     target: undefined,
+    factor: undefined,
     plotScores: 'all',
     selectedMetric: undefined,
     dataSplit: 'test'
@@ -1053,31 +1117,55 @@ export let setModelComparison = state => {
     let selectedSolutions = getSelectedSolutions(selectedProblem);
 
     modelComparison = state;
-    if (selectedSolutions.length > 1 && !modelComparison)
-        setSelectedSolution(selectedProblem, selectedSolutions[0].systemId, selectedSolutions[0]);
-
+    if (selectedSolutions.length > 1 && !modelComparison) {
+        let adapter = getSolutionAdapter(selectedProblem, selectedSolutions[0]);
+        setSelectedSolution(selectedProblem, adapter.getSystemId(), adapter.getSolutionId());
+    }
 };
 
-export let confusionMatrixFactor = (matrix, labels, factor) => {
-    let collapsed = [[0, 0], [0, 0]];
-    labels.forEach((xLabel, x) => labels.forEach((yLabel, y) =>
-        collapsed[xLabel === factor ? 0 : 1][yLabel === factor ? 0 : 1] += matrix[x][y]
-    ));
+// mutate the confusion data to create significance and explanation fields
+export let interpretConfusionMatrix = data => {
+    let actualCounts = data
+        .reduce((counts, point) => Object.assign(counts, {[point.Actual]: (counts[point.Actual] || 0) + point.count}), {});
 
+    data.forEach(point => {
+        point.microCount = point.count / actualCounts[point.Actual];
+        point.explanation = point.Predicted === point.Actual
+            ? `There are ${point.count} observations where the model correctly predicts class ${point.Predicted}.`
+            : `There are ${point.count} observations where the model incorrectly predicts class ${point.Predicted}, but the actual class is ${point.Actual}.`
+        point.significance = +point.microCount > 0.5
+            ? `This cell is significant because it contains the majority of observations when the factor is ${point.Actual}.`
+            : `Predictions from the model when the actual factor is ${point.Actual} are relatively unlikely to be ${point.Predicted}.`;
+    })
+};
+
+export let confusionMatrixFactor = (data, labels, factor) => {
+    let matrix = [[0, 0], [0, 0]];
+
+    data.forEach(point =>
+        matrix[Number(point.Predicted === factor)][Number(point.Actual === factor)] += point.count);
+
+    data = [
+        {Predicted: factor, Actual: factor, count: matrix[1][1]},
+        {Predicted: factor, Actual: 'not ' + factor, count: matrix[1][0]},
+        {Predicted: 'not ' + factor, Actual: factor, count: matrix[0][1]},
+        {Predicted: 'not ' + factor, Actual: 'not ' + factor, count: matrix[0][0]}
+    ];
+    interpretConfusionMatrix(data);
     return {
-        data: collapsed,
+        data: data,
         classes: [factor, 'not ' + factor]
     }
 };
 
 // generate an object containing accuracy, recall, precision, F1, given a 2x2 confusion data matrix
 // the positive class is the upper left block
-export function generatePerformanceData(confusionData2x2) {
+export function generatePerformanceData(data2x2, positiveFactor) {
 
-    let tp = confusionData2x2[0][0];
-    let fn = confusionData2x2[0][1];
-    let fp = confusionData2x2[1][0];
-    let tn = confusionData2x2[1][1];
+    let tp = (data2x2.find(point => (point.Predicted === positiveFactor) && (point.Actual === positiveFactor)) || {count: 0}).count;
+    let fn = (data2x2.find(point => (point.Predicted !== positiveFactor) && (point.Actual === positiveFactor)) || {count: 0}).count;
+    let fp = (data2x2.find(point => (point.Predicted === positiveFactor) && (point.Actual !== positiveFactor)) || {count: 0}).count;
+    let tn = (data2x2.find(point => (point.Predicted !== positiveFactor) && (point.Actual !== positiveFactor)) || {count: 0}).count;
 
     let p = tp + fn;
     let n = fp + tn;
@@ -1107,13 +1195,13 @@ export let finalPipelineModal = () => {
     let chosenSolution = getSolutions(selectedProblem, 'd3m').find(solution => solution.chosen);
     if (!chosenSolution) return;
 
-    let adapter = solverD3M.getSolutionAdapter(selectedProblem, chosenSolution);
+    let adapter = getSolutionAdapter(selectedProblem, chosenSolution);
 
     return m(ModalVanilla, {
             id: 'finalPipelineModal',
             setDisplay: setShowFinalPipelineModal
         },
-        m('h4', 'Pipeline ', adapter.getName()),
+        m('h4', 'Pipeline ', adapter.getSolutionId()),
         'Task Two Complete. Your selected pipeline has been submitted.'
 
         // * lots of room for cool activities *
@@ -1368,6 +1456,9 @@ export let loadConfusionData = async (problem, adapter) => {
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
 
+    Object.keys(response.data)
+        .forEach(variable => interpretConfusionMatrix(response.data[variable].data));
+
     resultsData.confusion[adapter.getSolutionId()] = response.data;
     resultsData.confusionLoading[adapter.getSolutionId()] = false;
 
@@ -1423,8 +1514,8 @@ export let loadImportancePartialsFittedData = async (problem, adapter) => {
 
     // convert unlabeled string table to predictor format
     let offset = 0;
-    resultsData.importancePartialsFitted[adapter.getSolutionId()] = Object.keys(problem.partialsSummaryPE).reduce((out, predictor) => {
-        let nextOffset = offset + problem.partialsSummaryPE[predictor].length;
+    resultsData.importancePartialsFitted[adapter.getSolutionId()] = Object.keys(problem.domains).reduce((out, predictor) => {
+        let nextOffset = offset + problem.domains[predictor].length;
         // for each point along the domain of the predictor
         out[predictor] = response.data.slice(offset, nextOffset)
         // for each target specified in the problem
@@ -1481,13 +1572,9 @@ export let loadImportanceEFDData = async (problem, adapter) => {
                 data_pointer: dataPointer,
                 metadata: {
                     produceId,
-                    levels: app.getNominalVariables(problem)
-                        .map(variable => {
-                            if (app.variableSummaries[variable].plotValues)
-                                return {[variable]: Object.keys(app.variableSummaries[variable].plotValues)}
-                        }).reduce((out, variable) => Object.assign(out, variable), {}),
                     targets: problem.targets,
-                    predictors: problem.predictors,
+                    predictors: app.getPredictorVariables(problem),
+                    categoricals: app.getNominalVariables(problem),
                     collectionName: app.workspace.d3m_config.name,
                     collectionPath: app.workspace.datasetPath,
                     query: compiled

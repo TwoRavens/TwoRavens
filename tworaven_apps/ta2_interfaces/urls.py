@@ -55,9 +55,9 @@ urlpatterns = (
          views_additional.get_train_test_split,
          name='get-train-test-split'),
 
-    path(r'get-ICE-datasets',
-         views_additional.get_ice_partials_datasets,
-         name='get-ICE-datasets'),
+    path(r'get-partials-datasets',
+         views_additional.get_partials_datasets,
+         name='get-partials-datasets'),
 
     re_path((r'stored-request/(?P<hash_id>[\w]{40,200})$'),
             views_saved_requests.view_stored_request,
