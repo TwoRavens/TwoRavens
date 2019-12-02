@@ -894,12 +894,12 @@ export let getSolutionAdapter = (problem, solution) => ({
         let adapter = getSolutionAdapter(problem, solution);
         loadImportancePartialsFittedData(problem, adapter);
 
-        if (!resultsData.importancePartialsFitted[solution.solutionId]) return;
+        if (!resultsData.importancePartialsFitted[adapter.getSolutionId()]) return;
 
         return app.melt(
             problem.domains[predictor]
                 .map((x, i) => Object.assign({[predictor]: x},
-                    resultsData.importancePartialsFitted[solution.solutionId][predictor][i])),
+                    resultsData.importancePartialsFitted[adapter.getSolutionId()][predictor][i])),
             [predictor],
             valueLabel, variableLabel);
     },
@@ -1499,7 +1499,8 @@ export let loadImportancePartialsFittedData = async (problem, adapter) => {
             throw response.data;
         }
     } catch (err) {
-        app.alertWarn('PE data has not been loaded. Some plots will not load.');
+        console.error(err);
+        app.alertWarn('Partials data has not been loaded. Some plots will not load.');
         return;
     }
 

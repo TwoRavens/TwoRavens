@@ -16,7 +16,6 @@ export let getSolverSpecification = async (problem, systemId) => {
     problem.datasetPaths = problem.datasetPaths || {
         all: app.workspace.datasetPath
     };
-    problem.datasetIndices = {};
     problem.datasetSchemasManipulated = {};
     problem.datasetPathsManipulated = {};
     if (!problem.selectedSolutions[systemId])

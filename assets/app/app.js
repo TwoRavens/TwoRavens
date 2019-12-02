@@ -1932,9 +1932,7 @@ export function discovery(problems) {
 export let setVariableSummaries = state => {
     if (!state) return;
 
-    // Brian says d3mIndex should not be visible to the user,
-    //   but has knock-on effects currently:
-    // delete state.d3mIndex;
+    delete state.d3mIndex;
 
     variableSummaries = state;
 

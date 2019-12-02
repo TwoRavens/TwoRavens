@@ -293,7 +293,9 @@ class BasicProblemWriter(BasicErrCheck):
                                          #delimiter='\t',
                                          extrasaction='ignore')
             dict_writer.writeheader()
-            dict_writer.writerows(data_source)
+            # writerows would be better, but it is bugged- incomplete lines are written
+            for record in data_source:
+                dict_writer.writerow(record)
 
         self.new_filepath = fullpath
 

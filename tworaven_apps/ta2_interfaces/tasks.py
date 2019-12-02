@@ -369,7 +369,9 @@ def create_partials_datasets(configuration, workspace):
     dataset_paths = {}
 
     new_column_names = list(dataframe.columns.values)
-    new_column_names[0] = str(new_column_names[0]) + 'Original'
+    if 'd3mIndex' in new_column_names:
+        d3mIndexIndex = new_column_names.index('d3mIndex')
+        new_column_names[d3mIndexIndex] = str(new_column_names[d3mIndexIndex]) + 'Original'
 
     union_datasets = []
     for predictor in domains:

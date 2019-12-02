@@ -423,19 +423,20 @@ def util_results_importance_efd(data_pointer, metadata):
 
         response = list(util.run_query(query, method='aggregate'))
 
+        if not response[0]:
+            return {
+                KEY_SUCCESS: response[0],
+                KEY_DATA: response[1]
+            }
+
+        # exhaust cursor before dropping dataset
+        data = next(response[1])
+
     finally:
         pass
         # EventJobUtil.delete_dataset(
         #     settings.TWORAVENS_MONGO_DB_NAME,
         #     results_collection_name)
-
-    if not response[0]:
-        return {
-            KEY_SUCCESS: response[0],
-            KEY_DATA: response[1]
-        }
-
-    data = next(response[1])
 
     def kernel_linear(size):
         return list(range(1, size // 2 + 2)) + list(range(size // 2, 0, -1))

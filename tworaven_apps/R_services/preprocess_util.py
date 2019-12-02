@@ -140,6 +140,9 @@ class PreprocessUtil(BasicErrCheck):
 
         if not run_info.success:
             self.add_err_msg(run_info.err_msg)
+            print('preprocess failed')
+            print(run_info)
+            return
 
         runner = run_info.result_obj
 

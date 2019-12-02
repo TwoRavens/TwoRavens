@@ -32,9 +32,9 @@ export default class VariableImportance {
                                 title: false
                             },
                             "y": {"field": variableLabel, "type": "nominal"},
-                            "color": {"field": yLabel, "type": "quantitative"},
+                            "color": {"field": yLabel, "type": "quantitative", title: 'Probability'},
                             "tooltip": [
-                                {"field": yLabel, "type": "quantitative"},
+                                {"field": yLabel, "type": "quantitative", title: 'Probability'},
                                 {"field": variableLabel, "type": "nominal"},
                                 {"field": predictor, "type": "nominal"}
                             ]
@@ -47,7 +47,15 @@ export default class VariableImportance {
                         },
                         'encoding': {
                             'x': {'field': 'level', 'type': 'nominal', 'title': predictor},
-                            'opacity': {'field': 'count', 'type': 'quantitative', scale: {range: [0, 1]}, legend: false},
+                            'opacity': {
+                                'field': 'count',
+                                'type': 'quantitative',
+                                'scale': {
+                                    domain: [0, Math.max(...problem.levels[predictor].map(point => point.count))],
+                                    range: [0, 1]
+                                },
+                                'legend': false
+                            },
                             "tooltip": [
                                 {"field": 'count', "type": "quantitative"}
                             ]
@@ -83,7 +91,11 @@ export default class VariableImportance {
             }
         });
 
-        let densities = getDensities(summary);
+        let predictorSupport = data.map(point => point[predictor]);
+        let predictorMin = Math.min(...predictorSupport);
+        let predictorMax = Math.max(...predictorSupport);
+
+        let densities = getDensities(summary, predictorMin, predictorMax);
 
         if (nominals.includes(target)) return m(PlotVegaLite, {
             specification: {
@@ -97,7 +109,7 @@ export default class VariableImportance {
                             "x": {
                                 "field": predictor,
                                 "type": "quantitative",
-                                scale: {domain: [summary.min, summary.max]},
+                                scale: {domain: [predictorMin, predictorMax]},
                                 axis: {labels: axisLabels},
                                 title: false
                             },
@@ -105,7 +117,7 @@ export default class VariableImportance {
                             "color": {"field": 'level', "type": "nominal", 'title': target},
                             'opacity': {"field": 'target', 'type': 'nominal'},
                             "tooltip": [
-                                {"field": yLabel, "type": "quantitative"},
+                                {"field": yLabel, "type": "quantitative", title: 'Probability'},
                                 {"field": variableLabel, "type": "nominal"},
                                 {"field": predictor, "type": "quantitative"}
                             ]
@@ -118,7 +130,7 @@ export default class VariableImportance {
                             'x': {
                                 'field': predictor,
                                 'type': 'quantitative',
-                                'scale': {domain: [summary.min, summary.max]},
+                                'scale': {domain: [predictorMin, predictorMax]},
                                 'title': predictor
                             },
                             'x2': {'field': 'to', 'type': 'quantitative'},
@@ -145,14 +157,14 @@ export default class VariableImportance {
                         "encoding": {
                             "x": {
                                 "field": predictor, "type": "quantitative",
-                                scale: {domain: [summary.min, summary.max]},
+                                scale: {domain: [predictorMin, predictorMax]},
                                 axis: {labels: axisLabels},
                                 title: false
                             },
                             "y": {"field": yLabel, "type": "quantitative", title: target},
                             'opacity': {"field": 'target', 'type': 'nominal'},
                             "tooltip": [
-                                {"field": yLabel, "type": "quantitative"},
+                                {"field": yLabel, "type": "quantitative", title: target},
                                 {"field": variableLabel, "type": "nominal"},
                                 {"field": predictor, "type": "quantitative"}
                             ]
@@ -165,7 +177,7 @@ export default class VariableImportance {
                             'x': {
                                 'field': predictor,
                                 'type': 'quantitative',
-                                'scale': {domain: [summary.min, summary.max]},
+                                'scale': {domain: [predictorMin, predictorMax]},
                                 'title': predictor
                             },
                             'x2': {'field': 'to', 'type': 'quantitative'},
@@ -222,7 +234,15 @@ export default class VariableImportance {
                         },
                         'encoding': {
                             'x': {'field': 'level', 'type': 'nominal', 'title': predictor},
-                            'opacity': {'field': 'count', 'type': 'quantitative', scale: {range: [0, 1]}, legend: false},
+                            'opacity': {
+                                'field': 'count',
+                                'type': 'quantitative',
+                                'scale': {
+                                    domain: [0, Math.max(...problem.levels[predictor].map(point => point.count))],
+                                    range: [0, 1]
+                                },
+                                'legend': false
+                            },
                             "tooltip": [
                                 {"field": 'count', "type": "quantitative"}
                             ]
@@ -232,7 +252,11 @@ export default class VariableImportance {
             }
         });
 
-        let densities = getDensities(summary);
+        let predictorSupport = data.map(point => point[predictor]);
+        let predictorMin = Math.min(...predictorSupport);
+        let predictorMax = Math.max(...predictorSupport);
+
+        let densities = getDensities(summary, predictorMin, predictorMax);
         // if target nominal and predictor is continuous
         if (nominals.includes(target)) {
             // connect continuous horizontal segments
@@ -261,7 +285,7 @@ export default class VariableImportance {
                                     // make sure rug plot matches with this plot's x axis
                                     "field": predictor,
                                     "type": 'quantitative',
-                                    scale: {domain: [summary.min, summary.max]},
+                                    scale: {domain: [predictorMin, predictorMax]},
                                     axis: {labels: axisLabels},
                                     title: false
                                 },
@@ -281,7 +305,7 @@ export default class VariableImportance {
                                 'x': {
                                     'field': predictor,
                                     'type': 'quantitative',
-                                    'scale': {domain: [summary.min, summary.max]},
+                                    'scale': {domain: [predictorMin, predictorMax]},
                                     'title': predictor
                                 },
                                 'x2': {'field': 'to', 'type': 'quantitative'},
@@ -311,7 +335,7 @@ export default class VariableImportance {
                             "x": {
                                 "field": predictor,
                                 "type": "quantitative",
-                                scale: {domain: [summary.min, summary.max]},
+                                scale: {domain: [predictorMin, predictorMax]},
                                 axis: {labels: axisLabels},
                                 title: false
                             },
@@ -331,7 +355,7 @@ export default class VariableImportance {
                             'x': {
                                 'field': predictor,
                                 'type': 'quantitative',
-                                'scale': {domain: [summary.min, summary.max]},
+                                'scale': {domain: [predictorMin, predictorMax]},
                                 'title': predictor
                             },
                             'x2': {'field': 'to', 'type': 'quantitative'},
@@ -353,7 +377,11 @@ export default class VariableImportance {
 
         if (nominals.includes(predictor)) return 'PDP/ICE plots are not meaningful when both the predictor and target is categorical.';
 
-        let densities = getDensities(summary);
+        let predictorSupport = data.map(point => point[predictor]);
+        let predictorMin = Math.min(...predictorSupport);
+        let predictorMax = Math.max(...predictorSupport);
+
+        let densities = getDensities(summary, predictorMin, predictorMax);
         if (nominals.includes(target)) {
 
             let d3mIndexOriginal;
@@ -397,7 +425,7 @@ export default class VariableImportance {
                             "encoding": {
                                 "x": {
                                     "field": predictor, "type": 'quantitative',
-                                    scale: {domain: [summary.min, summary.max]},
+                                    scale: {domain: [predictorMin, predictorMax]},
                                     axis: {labels: axisLabels},
                                     title: false
                                 },
@@ -422,7 +450,7 @@ export default class VariableImportance {
                                 'x': {
                                     'field': predictor,
                                     'type': 'quantitative',
-                                    'scale': {domain: [summary.min, summary.max]},
+                                    'scale': {domain: [predictorMin, predictorMax]},
                                     'title': predictor
                                 },
                                 'x2': {'field': 'to', 'type': 'quantitative'},
@@ -455,7 +483,7 @@ export default class VariableImportance {
                                     "x": {
                                         "field": predictor,
                                         "type": 'quantitative',
-                                        'scale': {domain: [summary.min, summary.max]},
+                                        'scale': {domain: [predictorMin, predictorMax]},
                                     },
                                     "y": {"field": target, "type": 'quantitative', 'title': target},
                                     'detail': {"field": 'd3mIndexOriginal', 'type': 'nominal', 'legend': false}
@@ -488,7 +516,7 @@ export default class VariableImportance {
                             'x': {
                                 'field': predictor,
                                 'type': 'quantitative',
-                                'scale': {domain: [summary.min, summary.max]},
+                                'scale': {domain: [predictorMin, predictorMax]},
                                 'title': predictor
                             },
                             'x2': {'field': 'to', 'type': 'quantitative'},
@@ -507,12 +535,16 @@ export default class VariableImportance {
         let {mode} = vnode.attrs;
 
         let importanceTypes = {EFD: this.plotEFD, Partials: this.plotPartials, ICE: this.plotICE};
-        return mode in importanceTypes && importanceTypes[mode](vnode)
+        return mode in importanceTypes && m('div', {
+            // HACK: vconcat width is unsupported in vega-lite- the legends are not included in the fit calculation
+            //       the maximum legend size is 223px
+            style: {width: 'calc(100% - 223px)'}
+        }, importanceTypes[mode](vnode))
     }
 }
 
 
-let getDensities = summary => {
+let getDensities = (summary, min, max) => {
 
     let pdfPlotX = [...summary.pdfPlotX];
     let pdfPlotY = [...summary.pdfPlotY];
@@ -521,12 +553,12 @@ let getDensities = summary => {
     // drop observations (*) more than one point outside of min/max bounds (|)
     // x      x        x         x      x      x         x
     // *          |                  |         *         *
-    let minIndex = pdfPlotX.findIndex(v => v >= summary.min);
+    let minIndex = pdfPlotX.findIndex(v => v >= min);
     if (minIndex > 0) {
         pdfPlotX.splice(0, minIndex - 1);
         pdfPlotY.splice(0, minIndex - 1);
     }
-    let maxIndex = pdfPlotX.findIndex(v => v >= summary.max);
+    let maxIndex = pdfPlotX.findIndex(v => v >= max);
     if (maxIndex !== undefined) {
         let nRemove = maxIndex - len;
         if (nRemove > 0) {
@@ -541,14 +573,14 @@ let getDensities = summary => {
     // if exists, move the observation outside the bound on the left and right to the bounds (linearly interpolated)
     //     x  x        x         x      x      x    x
     //     |                                        |
-    if (pdfPlotX[0] < summary.min) {
-        let weight = proportion(summary.pdfPlotX[0], summary.pdfPlotX[1], summary.min);
-        pdfPlotX[0] = summary.min;
+    if (pdfPlotX[0] < min) {
+        let weight = proportion(summary.pdfPlotX[0], summary.pdfPlotX[1], min);
+        pdfPlotX[0] = min;
         pdfPlotY[0] = pdfPlotY[0] * weight + pdfPlotY[1] * (1 - weight);
     }
-    if (pdfPlotX[len - 1] > summary.max) {
-        let weight = proportion(summary.pdfPlotX[len - 2], summary.pdfPlotX[len - 1], summary.max);
-        pdfPlotX[len - 1] = summary.max;
+    if (pdfPlotX[len - 1] > max) {
+        let weight = proportion(summary.pdfPlotX[len - 2], summary.pdfPlotX[len - 1], max);
+        pdfPlotX[len - 1] = max;
         pdfPlotY[len - 1] = pdfPlotY[len - 2] * weight + pdfPlotY[len - 1] * (1 - weight);
 
     }
@@ -563,11 +595,11 @@ let getDensities = summary => {
             ? pdfPlotX[i]
             : (pdfPlotX[i] + pdfPlotX[i + 1]) / 2;
 
-        if (left > summary.min && right < summary.max) densities.push({
+        if (left > min && right < max) densities.push({
             [summary.name]: left, 'to': right, 'density': pdfPlotY[i - 1]
         });
         left = right;
     });
 
     return densities;
-}
+};
