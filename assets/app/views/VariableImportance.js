@@ -201,7 +201,11 @@ export default class VariableImportance {
                         data: {values: data},
                         "mark": 'point',
                         "encoding": {
-                            "x": {"field": predictor, "type": "nominal"},
+                            "x": {
+                                 "field": predictor, "type": "nominal",
+                                axis: {labels: axisLabels},
+                                title: false
+                            },
                             "y": {"field": yLabel, "type": "nominal"},
                             "color": {"field": variableLabel, "type": "nominal"},
                             "tooltip": [

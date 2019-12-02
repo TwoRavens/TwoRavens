@@ -272,7 +272,6 @@ let setRecursiveDefault = (obj, map) => map
     .reduce((obj, pair) => setDefault(obj, pair[0], pair[1]), obj);
 
 // TODO: determine why django sometimes fails to provide a model id
-let unknownSolutions = 0;
 export let handleDescribeResponse = response => {
     let data = response.data;
     let solvedProblem = findProblem(data);
@@ -282,7 +281,10 @@ export let handleDescribeResponse = response => {
     }
 
     if (response.success) {
-        if (!data.model_id) data.model_id = `oss-unknown-${unknownSolutions++}`;
+        if (!data.model_id) {
+            console.error('invalid data', data);
+            return;
+        }
 
         setRecursiveDefault(solvedProblem.solutions, [
             [data.system, {}], [data.model_id, {}]]);

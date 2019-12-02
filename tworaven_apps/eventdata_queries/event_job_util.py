@@ -532,7 +532,7 @@ class EventJobUtil(object):
 
         # ignore first line
         if header:
-            import_commands.append(f'tail --lines +2')
+            import_commands.append(f'tail -n +2')
 
         # standardize column metadata to dict
         if not columns:

@@ -1,7 +1,6 @@
 import m from 'mithril';
 
 import * as app from "./app";
-import {workspace} from "./app";
 import * as plots from "./plots";
 
 import * as solverWrapped from './solvers/wrapped';
