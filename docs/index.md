@@ -5,7 +5,7 @@
 # Applications
 
 The project has 3 core applications:
-* D3M
+* [D3M](/D3M/index.md) Date-Driven Discovery of Models interface.
 * [Event Data](/EventData/index.md) provides access to openly available event datasets.
 * [Metadata Service](/Metadata/index.md)
 

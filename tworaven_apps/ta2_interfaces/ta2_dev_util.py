@@ -202,7 +202,7 @@ class TA2Helper(BasicErrCheck):
         print('INPUT', self.data_input_dir)
         print('OUTPUT', self.data_output_dir)
 
-        docker_cmd = ('docker run --rm'
+        docker_cmd = ('sudo docker run --rm'
                       ' --name ta2_server'
                       ' {4}'
                       ' {2}'
