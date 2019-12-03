@@ -124,12 +124,17 @@ class Model(object):
                     test_size=float(configuration.get('trainTestRatio', 0.35)),
                     stratify=data[self.targets[0]] if configuration.get('stratified') else None,
                     random_state=configuration.get('randomSeed'))]
-            except TypeError:
-                return [model_selection.train_test_split(
-                    data,
-                    test_size=float(configuration.get('trainTestRatio', 0.35)),
-                    stratify=None,
-                    random_state=configuration.get('randomSeed'))]
+            except (TypeError, ValueError):
+                try:
+                    return [model_selection.train_test_split(
+                        data,
+                        test_size=float(configuration.get('trainTestRatio', 0.35)),
+                        stratify=None,
+                        random_state=configuration.get('randomSeed'))]
+                except (TypeError, ValueError):
+                    return [model_selection.train_test_split(
+                        data,
+                        random_state=configuration.get('randomSeed'))]
         else:
             raise ValueError(f'Invalid evaluation method: {configuration.method}')
 
@@ -198,16 +203,20 @@ class ModelSklearn(Model):
                 predicted.columns = [self.targets[0]]
 
             for metric in specification['performanceMetrics']:
-                split_scores[json.dumps(metric)].append(get_metric(metric)(actual, predicted))
-                split_weights[json.dumps(metric)].append(test_split.size)
+                try:
+                    split_scores[json.dumps(metric)].append(get_metric(metric)(actual, predicted))
+                    split_weights[json.dumps(metric)].append(test_split.size)
+                except ValueError:
+                    pass
 
         scores = []
         for metric in split_scores:
-            scores.append({
-                'value': np.average(split_scores[metric], weights=split_weights[metric]),
-                'metric': json.loads(metric),
-                'target': self.targets[0]
-            })
+            if split_scores[metric]:
+                scores.append({
+                    'value': np.average(split_scores[metric], weights=split_weights[metric]),
+                    'metric': json.loads(metric),
+                    'target': self.targets[0]
+                })
 
         return {
             'search_id': self.search_id,

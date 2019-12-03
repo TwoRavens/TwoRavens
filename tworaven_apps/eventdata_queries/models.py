@@ -46,6 +46,14 @@ SEARCH_PARAMETERS = (SEARCH_KEY_NAME,
                      SEARCH_KEY_DESCRIPTION,)   # USERNAME)
 
 
+class MongoDataset(TimeStampedModel):
+    name = models.CharField(primary_key=True, blank=False, max_length=128)
+    loading = models.BooleanField(blank=True, default=True)
+
+    class Meta:
+        ordering = ['created']
+
+
 class EventDataSavedQuery(TimeStampedModel):
     """ Model to store queries"""
     name = models.CharField(blank=False,

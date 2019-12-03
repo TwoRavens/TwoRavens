@@ -27,7 +27,7 @@ export let vegaScatter = (data, xName, yName, groupName, countName, title='') =>
                         {"field": groupName, "type": "nominal"},
                         {"field": countName, "type": "quantitative"},
                     ],
-                    "size": {"field": countName, "type": "quantitative", "bin": true}
+                    "size": {"field": countName, "type": "quantitative", "bin": {'binned': true, "minstep": 1}}
                 }
             },
             {
@@ -57,8 +57,8 @@ export let vegaConfusionMatrix = (data, classes, xName, yName, countName, title)
         {"calculate": 'datum.Predicted === datum.Actual', 'as': 'diagonal'}
     ],
     'encoding': {
-        "x": {"field": xName, "type": "nominal", "scale": {"domain": classes}},
-        "y": {"field": yName, "type": "nominal", "scale": {"domain": classes}},
+        "x": {"field": xName, "type": "nominal", "scale": {"domain": classes}, spacing: 0},
+        "y": {"field": yName, "type": "nominal", "scale": {"domain": classes}, spacing: 0},
     },
     'layer': [
         {

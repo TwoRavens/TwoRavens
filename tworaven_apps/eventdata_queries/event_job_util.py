@@ -7,9 +7,13 @@ import subprocess
 import datetime
 import shlex
 import traceback
+import time
 
 from django.conf import settings
 from collections import OrderedDict
+
+from django.db import transaction
+from django.db.utils import IntegrityError
 
 from tworaven_apps.data_prep_utils.duplicate_column_remover import DuplicateColumnRemover
 from tworaven_apps.utils.view_helper import get_json_error
@@ -21,7 +25,7 @@ from tworaven_apps.eventdata_queries.models import \
      SEARCH_PARAMETERS, SEARCH_KEY_NAME,
      SEARCH_KEY_DESCRIPTION,
      IN_PROCESS, ERROR, COMPLETE,
-     DATA_PARTITIONS)
+     DATA_PARTITIONS, MongoDataset)
 from tworaven_apps.eventdata_queries.dataverse.temporary_file_maker import TemporaryFileMaker
 from tworaven_apps.eventdata_queries.dataverse.dataverse_publish_dataset import DataversePublishDataset
 from tworaven_apps.eventdata_queries.dataverse.dataverse_list_files_dataset import ListFilesInDataset
@@ -505,13 +509,43 @@ class EventJobUtil(object):
 
         db = db_info.result_obj
 
-        # upload dataset if it does not exist
-        #
-        if settings.MONGO_COLLECTION_PREFIX + collection in db.list_collection_names():
+        collection_name = settings.MONGO_COLLECTION_PREFIX + collection
+
+        # dataset already loaded in mongo
+        if collection_name in db.list_collection_names():
             if reload:
-                db[settings.MONGO_COLLECTION_PREFIX + collection].drop()
+                db[collection_name].drop()
+                MongoDataset.objects.select_for_update().filter(name=collection_name).delete()
             else:
-                return ok_resp(settings.MONGO_COLLECTION_PREFIX + collection)
+                # print('data in database, no data in django, not reloading')
+                # make sure database entry exists
+                dataset_records = MongoDataset.objects.select_for_update().filter(name=collection_name)
+                if dataset_records:
+                    dataset_record = dataset_records[0]
+                    dataset_record.loading = False
+                    dataset_record.save()
+                else:
+                    MongoDataset.objects.create(name=collection_name, loading=False)
+
+                return ok_resp({'collection': collection_name})
+        else:
+            # if data is not loaded, make sure record is not in database
+            try:
+                MongoDataset.objects.select_for_update().filter(name=collection_name).delete()
+            except MongoDataset.DoesNotExist:
+                pass
+                # print('data not loaded, and no data in django')
+
+        # create lockable record
+        if not MongoDataset.objects.select_for_update().filter(name=collection_name):
+            MongoDataset.objects.create(name=collection_name, loading=True)
+
+        # lock on record
+        dataset_record = MongoDataset.objects.select_for_update().get(name=collection_name)
+        if not dataset_record.loading:
+            return ok_resp({'collection': collection_name})
+
+        # print(collection_name + ' does not yet exist. Importing.\n\n\n\n')
 
         if not data_path:
             return err_resp('The file_uri cannot be None or an empty string.')
@@ -523,10 +557,6 @@ class EventJobUtil(object):
         fpath, err_msg = format_file_uri_to_path(data_path)
         if err_msg:
             return err_resp(err_msg)
-
-        # return if collection exists and reloading is off
-        if settings.MONGO_COLLECTION_PREFIX + collection in db.list_collection_names() and not reload:
-            return ok_resp(settings.MONGO_COLLECTION_PREFIX + collection)
 
         import_commands = []
 
@@ -592,12 +622,15 @@ class EventJobUtil(object):
                 process = subprocess.Popen(shlex.split(command), stdin=process.stdout, stdout=subprocess.PIPE)
             process.communicate()
 
+            for column in columns.keys():
+                db[collection_name].update({column: {'$exists': False}}, {'$set': {column: None}}, multi=True)
+
         except Exception as err:
             # slower, secondary import if first fails
             print(err)
             print(traceback.format_exc())
             print('mongoimport failed. Running row-by-row insertion instead.')
-            db[settings.MONGO_COLLECTION_PREFIX + collection].drop()
+            db[collection_name].drop()
             with open(data_path, 'r') as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=delimiter)
 
@@ -608,16 +641,19 @@ class EventJobUtil(object):
                 columns = [encode_variable(value) for value in columns]
 
                 for observation in csv_reader:
-                    db[settings.MONGO_COLLECTION_PREFIX + collection].insert_one({
+                    db[collection_name].insert_one({
                         col: infer_type(val) for col, val in zip(columns, observation)
                     })
 
         if indexes:
             for index in indexes:
-                print('creating index ', index, ' on ', settings.MONGO_COLLECTION_PREFIX + collection)
-                db[settings.MONGO_COLLECTION_PREFIX + collection].create_index(index)
+                # print('creating index ', index, ' on ', collection_name)
+                db[collection_name].create_index(index)
 
-        return ok_resp({'collection': settings.MONGO_COLLECTION_PREFIX + collection})
+        dataset_record.loading = False
+        dataset_record.save()
+
+        return ok_resp({'collection': collection_name})
 
     @staticmethod
     def delete_dataset(database, collection):
@@ -631,7 +667,7 @@ class EventJobUtil(object):
         db[collection].drop()
 
     @staticmethod
-    def export_dataset(user_workspace, collection, data):
+    def export_csv(user_workspace, collection, data):
         """Export the dataset using the 'BasicProblemWriter' """
         if not isinstance(user_workspace, UserWorkspace):
             user_msg = ('The user_workspace was not set correctly.'
@@ -660,7 +696,7 @@ class EventJobUtil(object):
         return ok_resp(bpw.new_filepath)
 
     @staticmethod
-    def export_problem(user_workspace, data, metadata):
+    def export_dataset(user_workspace, data, metadata):
         """Export the problem in a D3M-compatible format"""
         if not isinstance(user_workspace, UserWorkspace):
             user_msg = ('The user_workspace was not set correctly.'

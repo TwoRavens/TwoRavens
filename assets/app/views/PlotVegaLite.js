@@ -43,12 +43,12 @@ export default class PlotVegaLite {
             // if ('vconcat' in specification) specification.vconcat.forEach(spec => spec.width = this.width);
             if (data) specification.data = {name: 'embedded'};
 
-            let options = {actions: false};
-            if ('vconcat' in specification) width && specification.vconcat.forEach(spec => spec.width = width);
-            else if ('hconcat' in specification) height && specification.hconcat.forEach(spec => spec.height = height);
+            let options = {actions: true};
+            if ('vconcat' in specification) width && specification.vconcat.forEach(spec => spec.width = spec.width || width);
+            else if ('hconcat' in specification) height && specification.hconcat.forEach(spec => spec.height = spec.height || height);
             else {
-                if (width) options.width = width;
-                if (height) options.height = height;
+                if (width) options.width = options.width || width;
+                if (height) options.height = options.height || height;
             }
 
             // mask repeated warnings about outdated vega-lite specification

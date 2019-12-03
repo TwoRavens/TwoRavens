@@ -397,37 +397,42 @@ export async function buildProblemUrl(problem, lastStep, dataPath, collectionNam
     return await getData(body);
 }
 
-export let getData = async body => m.request({
-    url: mongoURL + 'get-data',
-    method: 'POST',
-    data: Object.assign({
-        datafile: workspace.datasetPath, // location of the dataset csv
-        collection_name: workspace.d3m_config.name // collection/dataset name
-    }, body)
-}).then(response => {
-    // console.log('-- getData --');
-    if (!response.success) throw response;
+let getDataPromise;
+export let getData = async body => {
+    if (getDataPromise) await getDataPromise;
+    getDataPromise = m.request({
+        url: mongoURL + 'get-data',
+        method: 'POST',
+        data: Object.assign({
+            datafile: workspace.datasetPath, // location of the dataset csv
+            collection_name: workspace.d3m_config.name // collection/dataset name
+        }, body)
+    }).then(response => {
+        // console.log('-- getData --');
+        if (!response.success) throw response;
 
-    // parse Infinity, -Infinity, NaN from unambiguous string literals. Coding handled in python function 'json_comply'
-    let jsonParseLiteral = obj => {
-        if (obj === undefined || obj === null) return obj;
-        if (Array.isArray(obj)) return obj.map(jsonParseLiteral);
+        // parse Infinity, -Infinity, NaN from unambiguous string literals. Coding handled in python function 'json_comply'
+        let jsonParseLiteral = obj => {
+            if (obj === undefined || obj === null) return obj;
+            if (Array.isArray(obj)) return obj.map(jsonParseLiteral);
 
-        if (typeof obj === 'object') return Object.keys(obj).reduce((acc, key) => {
-            acc[key] = jsonParseLiteral(obj[key]);
-            return acc;
-        }, {});
+            if (typeof obj === 'object') return Object.keys(obj).reduce((acc, key) => {
+                acc[key] = jsonParseLiteral(obj[key]);
+                return acc;
+            }, {});
 
-        if (typeof obj === 'string') {
-            if (obj === '***TWORAVENS_INFINITY***') return Infinity;
-            if (obj === '***TWORAVENS_NEGATIVE_INFINITY') return -Infinity;
-            if (obj === '***TWORAVENS_NAN***') return NaN;
-        }
+            if (typeof obj === 'string') {
+                if (obj === '***TWORAVENS_INFINITY***') return Infinity;
+                if (obj === '***TWORAVENS_NEGATIVE_INFINITY') return -Infinity;
+                if (obj === '***TWORAVENS_NAN***') return NaN;
+            }
 
-        return obj;
-    };
-    return jsonParseLiteral(response.data);
-});
+            return obj;
+        };
+        return jsonParseLiteral(response.data);
+    });
+    return getDataPromise;
+};
 
 
 export let saveSystemLogEntry = async logData => {
@@ -1729,6 +1734,7 @@ export let materializeICE = async problem => {
     let abstractPipeline = [...workspace.raven_config.hardManipulations, problem.manipulations];
     let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
 
+    console.log(compiled);
     // BUILD SAMPLE DATASET
     let samplePaths = await getData({
         method: 'aggregate',

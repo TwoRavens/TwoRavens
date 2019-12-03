@@ -71,12 +71,15 @@ export default class VariableImportance {
             specification: {
                 "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
                 "description": `Empirical First Differences for ${predictor}.`,
-                'layers': [
+                'vconcat': [
                     {
                         'data': {'values': data},
                         "mark": "bar",
                         "encoding": {
-                            "x": {"field": variableLabel, "type": "nominal", title: ''},
+                            "x": {
+                                "field": variableLabel,
+                                "type": "nominal", title: ''
+                            },
                             "y": {"field": yLabel, "type": "quantitative"},
                             "column": {"field": predictor, "type": "ordinal"},
                             "color": {"field": variableLabel, "type": "nominal"},
@@ -110,8 +113,8 @@ export default class VariableImportance {
                                 "field": predictor,
                                 "type": "quantitative",
                                 scale: {domain: [predictorMin, predictorMax]},
-                                axis: {labels: axisLabels},
-                                title: false
+                                axis: {labels: densities === undefined ? true : axisLabels},
+                                title: densities === undefined ? predictor : false
                             },
                             "y": {"field": yLabel, "type": "quantitative", title: 'Probability'},
                             "color": {"field": 'level', "type": "nominal", 'title': target},
@@ -122,7 +125,8 @@ export default class VariableImportance {
                                 {"field": predictor, "type": "quantitative"}
                             ]
                         }
-                    },
+                    }
+                ].concat(densities ? [
                     {
                         'mark': 'rect',
                         'data': {'values': densities},
@@ -140,7 +144,7 @@ export default class VariableImportance {
                             ]
                         }
                     }
-                ]
+                ] : [])
             }
         });
 
@@ -158,8 +162,8 @@ export default class VariableImportance {
                             "x": {
                                 "field": predictor, "type": "quantitative",
                                 scale: {domain: [predictorMin, predictorMax]},
-                                axis: {labels: axisLabels},
-                                title: false
+                                axis: {labels: densities === undefined ? true : axisLabels},
+                                title: densities === undefined ? predictor : false
                             },
                             "y": {"field": yLabel, "type": "quantitative", title: target},
                             'opacity': {"field": 'target', 'type': 'nominal'},
@@ -169,7 +173,8 @@ export default class VariableImportance {
                                 {"field": predictor, "type": "quantitative"}
                             ]
                         }
-                    },
+                    }
+                ].concat(densities ? [
                     {
                         'mark': 'rect',
                         'data': {'values': densities},
@@ -187,7 +192,7 @@ export default class VariableImportance {
                             ]
                         }
                     }
-                ]
+                ] : [])
             }
         })
     }
@@ -286,10 +291,10 @@ export default class VariableImportance {
                                     "field": predictor,
                                     "type": 'quantitative',
                                     scale: {domain: [predictorMin, predictorMax]},
-                                    axis: {labels: axisLabels},
-                                    title: false
+                                    axis: {labels: densities === undefined ? true : axisLabels},
+                                    title: densities === undefined ? predictor : false
                                 },
-                                "y": {"field": yLabel, "type": "nominal"},
+                                "y": {"field": yLabel, "type": "nominal", title: target, scale: {zero: false}},
                                 "detail": {"field": "horizontalGroup", "type": "nominal"},
                                 "tooltip": [
                                     {"field": yLabel, "type": "nominal"},
@@ -297,7 +302,8 @@ export default class VariableImportance {
                                     {"field": predictor, "type": "quantitative"}
                                 ]
                             }
-                        },
+                        }
+                    ].concat(densities ? [
                         {
                             'mark': 'rect',
                             'data': {'values': densities},
@@ -315,7 +321,7 @@ export default class VariableImportance {
                                 ]
                             }
                         }
-                    ]
+                    ] : [])
                 }
             });
         }
@@ -327,7 +333,7 @@ export default class VariableImportance {
             specification: {
                 "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
                 "description": `Partials for ${predictor}.`,
-                'layer': [
+                'vconcat': [
                     {
                         data: {values: data},
                         "mark": "line",
@@ -336,10 +342,10 @@ export default class VariableImportance {
                                 "field": predictor,
                                 "type": "quantitative",
                                 scale: {domain: [predictorMin, predictorMax]},
-                                axis: {labels: axisLabels},
-                                title: false
+                                axis: {labels: densities === undefined ? true : axisLabels},
+                                title: densities === undefined ? predictor : false
                             },
-                            "y": {"field": yLabel, "type": "quantitative"},
+                            "y": {"field": yLabel, "type": "quantitative", title: target, scale: {zero: false}},
                             "color": {"field": variableLabel, "type": "nominal"},
                             "tooltip": [
                                 {"field": yLabel, "type": "quantitative"},
@@ -347,7 +353,8 @@ export default class VariableImportance {
                                 {"field": predictor, "type": "quantitative"}
                             ]
                         }
-                    },
+                    }
+                ].concat(densities ? [
                     {
                         'mark': 'rect',
                         'data': {'values': densities},
@@ -365,7 +372,7 @@ export default class VariableImportance {
                             ]
                         }
                     }
-                ]
+                ] : [])
             }
         });
     }
@@ -426,10 +433,10 @@ export default class VariableImportance {
                                 "x": {
                                     "field": predictor, "type": 'quantitative',
                                     scale: {domain: [predictorMin, predictorMax]},
-                                    axis: {labels: axisLabels},
-                                    title: false
+                                    axis: {labels: densities === undefined ? true : axisLabels},
+                                    title: densities === undefined ? predictor : false
                                 },
-                                "y": {"field": target, "type": "nominal", 'title': target},
+                                "y": {"field": target, "type": "nominal", title: target, scale: {zero: false}},
                                 "size": {"field": 'count', "type": 'quantitative', "scale": {"type": "log", 'range': [2, 10]}},
                                 "detail": {
                                     "field": "edgeId",
@@ -442,7 +449,8 @@ export default class VariableImportance {
                                     {'field': 'count', 'type': 'quantitative'}
                                 ]
                             }
-                        },
+                        }
+                    ].concat(densities ? [
                         {
                             'mark': 'rect',
                             'data': {'values': densities},
@@ -460,7 +468,7 @@ export default class VariableImportance {
                                 ]
                             }
                         }
-                    ]
+                    ] : [])
                 }
             })
         }
@@ -484,8 +492,10 @@ export default class VariableImportance {
                                         "field": predictor,
                                         "type": 'quantitative',
                                         'scale': {domain: [predictorMin, predictorMax]},
+                                        axis: {labels: densities === undefined ? true : axisLabels},
+                                        title: densities === undefined ? predictor : false
                                     },
-                                    "y": {"field": target, "type": 'quantitative', 'title': target},
+                                    "y": {"field": target, "type": 'quantitative', title: target, scale: {zero: false}},
                                     'detail': {"field": 'd3mIndexOriginal', 'type': 'nominal', 'legend': false}
                                 }
                             },
@@ -508,7 +518,8 @@ export default class VariableImportance {
                                 }
                             }
                         ]
-                    },
+                    }
+                ].concat(densities ? [
                     {
                         'mark': 'rect',
                         'data': {'values': densities},
@@ -526,7 +537,7 @@ export default class VariableImportance {
                             ]
                         }
                     }
-                ]
+                ] : [])
             }
         })
     }
@@ -546,60 +557,62 @@ export default class VariableImportance {
 
 let getDensities = (summary, min, max) => {
 
-    let pdfPlotX = [...summary.pdfPlotX];
-    let pdfPlotY = [...summary.pdfPlotY];
-    let len = summary.pdfPlotX.length;
+    if (summary.pdfPlotType) {
+        let pdfPlotX = [...summary.pdfPlotX];
+        let pdfPlotY = [...summary.pdfPlotY];
+        let len = summary.pdfPlotX.length;
 
-    // drop observations (*) more than one point outside of min/max bounds (|)
-    // x      x        x         x      x      x         x
-    // *          |                  |         *         *
-    let minIndex = pdfPlotX.findIndex(v => v >= min);
-    if (minIndex > 0) {
-        pdfPlotX.splice(0, minIndex - 1);
-        pdfPlotY.splice(0, minIndex - 1);
-    }
-    let maxIndex = pdfPlotX.findIndex(v => v >= max);
-    if (maxIndex !== undefined) {
-        let nRemove = maxIndex - len;
-        if (nRemove > 0) {
-            pdfPlotX.splice(-nRemove, nRemove);
-            pdfPlotY.splice(-nRemove, nRemove);
+        // drop observations (*) more than one point outside of min/max bounds (|)
+        // x      x        x         x      x      x         x
+        // *          |                  |         *         *
+        let minIndex = pdfPlotX.findIndex(v => v >= min);
+        if (minIndex > 0) {
+            pdfPlotX.splice(0, minIndex - 1);
+            pdfPlotY.splice(0, minIndex - 1);
         }
-    }
+        let maxIndex = pdfPlotX.findIndex(v => v >= max);
+        if (maxIndex !== undefined) {
+            let nRemove = maxIndex - len;
+            if (nRemove > 0) {
+                pdfPlotX.splice(-nRemove, nRemove);
+                pdfPlotY.splice(-nRemove, nRemove);
+            }
+        }
 
-    //     l   c          r
-    let proportion = (l, r, c) => (c - l) / (r - l);
+        //     l   c          r
+        let proportion = (l, r, c) => (c - l) / (r - l);
 
-    // if exists, move the observation outside the bound on the left and right to the bounds (linearly interpolated)
-    //     x  x        x         x      x      x    x
-    //     |                                        |
-    if (pdfPlotX[0] < min) {
-        let weight = proportion(summary.pdfPlotX[0], summary.pdfPlotX[1], min);
-        pdfPlotX[0] = min;
-        pdfPlotY[0] = pdfPlotY[0] * weight + pdfPlotY[1] * (1 - weight);
-    }
-    if (pdfPlotX[len - 1] > max) {
-        let weight = proportion(summary.pdfPlotX[len - 2], summary.pdfPlotX[len - 1], max);
-        pdfPlotX[len - 1] = max;
-        pdfPlotY[len - 1] = pdfPlotY[len - 2] * weight + pdfPlotY[len - 1] * (1 - weight);
+        // if exists, move the observation outside the bound on the left and right to the bounds (linearly interpolated)
+        //     x  x        x         x      x      x    x
+        //     |                                        |
+        if (pdfPlotX[0] < min) {
+            let weight = proportion(summary.pdfPlotX[0], summary.pdfPlotX[1], min);
+            pdfPlotX[0] = min;
+            pdfPlotY[0] = pdfPlotY[0] * weight + pdfPlotY[1] * (1 - weight);
+        }
+        if (pdfPlotX[len - 1] > max) {
+            let weight = proportion(summary.pdfPlotX[len - 2], summary.pdfPlotX[len - 1], max);
+            pdfPlotX[len - 1] = max;
+            pdfPlotY[len - 1] = pdfPlotY[len - 2] * weight + pdfPlotY[len - 1] * (1 - weight);
 
-    }
+        }
 
-    // compute edges of bins between kernel density samples
-    // x      x        x         x      x      x         x
-    // |  |       |        |        |      |       |     |
-    let left = pdfPlotX[0];
-    let densities = [];
-    pdfPlotY.forEach((_, i) => {
-        let right = i === pdfPlotX.length
-            ? pdfPlotX[i]
-            : (pdfPlotX[i] + pdfPlotX[i + 1]) / 2;
+        // compute edges of bins between kernel density samples
+        // x      x        x         x      x      x         x
+        // |  |       |        |        |      |       |     |
+        let left = pdfPlotX[0];
+        let densities = [];
+        pdfPlotY.forEach((_, i) => {
+            let right = i === pdfPlotX.length
+                ? pdfPlotX[i]
+                : (pdfPlotX[i] + pdfPlotX[i + 1]) / 2;
 
-        if (left > min && right < max) densities.push({
-            [summary.name]: left, 'to': right, 'density': pdfPlotY[i - 1]
+            if (left > min && right < max) densities.push({
+                [summary.name]: left, 'to': right, 'density': pdfPlotY[i - 1]
+            });
+            left = right;
         });
-        left = right;
-    });
 
-    return densities;
+        return densities;
+    }
 };

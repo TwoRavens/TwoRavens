@@ -137,8 +137,6 @@ def util_results_real_clustered(data_pointer, metadata):
             }
         ]
 
-        print(query)
-
         response = list(mongo_util_base.run_query(query, method='aggregate'))
 
     finally:

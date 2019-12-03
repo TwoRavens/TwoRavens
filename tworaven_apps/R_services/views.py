@@ -190,7 +190,6 @@ def view_R_route(request, app_name_in_url):
     # -----------------------------
     # look for the "solaJSON" variable in the POST
     # -----------------------------
-    print('rook_app_info', rook_app_info)
     if request.POST and UI_KEY_SOLA_JSON in request.POST:
         # this is a POST with a JSON string under the key solaJSON key
         raven_data_text = request.POST[UI_KEY_SOLA_JSON]
@@ -240,7 +239,7 @@ def view_R_route(request, app_name_in_url):
                         dict(success=False,
                              message='Failed to convert data to JSON'))
 
-    print('raven_data_text', raven_data_text)
+    # print('raven_data_text', raven_data_text)
 
     app_data = json.loads(raven_data_text)
 
@@ -282,7 +281,7 @@ def view_R_route(request, app_name_in_url):
 
     print('status code from rook call: %s' % rservice_req.status_code)
 
-    print('rook text: %s' % rservice_req.text)
+    # print('rook text: %s' % rservice_req.text)
     return HttpResponse(rservice_req.text)
 
 

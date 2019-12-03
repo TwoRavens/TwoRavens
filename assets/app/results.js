@@ -268,8 +268,6 @@ export class CanvasSolutions {
                 common.loader('PredictionSummary')
             ];
 
-            let setConfusionFactor = factor => resultsPreferences.factor = factor === 'undefined' ? undefined : factor;
-
             // ignore summaries without confusion matrices
             summaries = summaries.filter(summary => summary.confusionMatrix);
             if (summaries.length === 0) return;
@@ -289,13 +287,14 @@ export class CanvasSolutions {
                 this.confusionMatrixSolution = summaries[0].name;
 
             return [
-                m('div[style=margin-bottom:1em]',
-                    m('label#confusionFactorLabel', 'Confusion Matrix Factor: '),
+                m('div[style=margin-bottom:1em]', 'Set the confusion matrix factor to view a confusion matrix where all other factors/levels are collapsed into a single class.',
+                    m('br'),
+                    m('label#confusionFactorLabel', 'Active factor/level: '),
                     m('[style=display:inline-block]', m(Dropdown, {
                         id: 'confusionFactorDropdown',
                         items: ['undefined', ...classes],
                         activeItem: resultsPreferences.factor,
-                        onclickChild: setConfusionFactor,
+                        onclickChild: setResultsFactor,
                         style: {'margin-left': '1em'}
                     }))),
                 summaries.length > 1 && m('div',
@@ -331,7 +330,7 @@ export class CanvasSolutions {
                                         summary.confusionMatrix.data,
                                         summary.confusionMatrix.classes,
                                         'Predicted', 'Actual', 'count',
-                                        `Confusion Matrix for ${problem.targets[0]}`)})
+                                        `Confusion Matrix for ${problem.targets[0]}${resultsPreferences.factor ? (' factor ' + resultsPreferences.factor) : ''}`)})
                                 : 'Too few classes for confusion matrix! There is a data mismatch.'
                                 : 'Too many classes for confusion matrix!'
                         ]
@@ -398,7 +397,8 @@ export class CanvasSolutions {
                 bold(predictor),
                 m(VariableImportance, {
                     mode: resultsPreferences.importanceMode,
-                    data: importanceData[predictor],
+                    data: importanceData[predictor]
+                        .filter(point => resultsPreferences.factor === undefined || String(resultsPreferences.factor) === point.level),
                     problem: problem,
                     predictor,
                     target: resultsPreferences.target,
@@ -411,6 +411,20 @@ export class CanvasSolutions {
             let isCategorical = app.getNominalVariables(problem).includes(resultsPreferences.target);
             if (importancePlots.length > 0) importanceContent = m('div', [
                 m('div[style=margin: 1em]', italicize("Empirical first differences"), ` is a tool to measure variable importance from the empirical distribution of the data. The Y axis refers to the ${isCategorical ? 'probability of each level' : 'expectation'} of the dependent variable as the predictor (x) varies along its domain. Parts of the domain where the fitted and actual values align indicate high utility from the predictor. If the fitted and actual values are nearly identical, then the two lines may be indistinguishable.`),
+
+                problem.task.toLowerCase().includes('classification') && m('div[style=margin-bottom:1em]', 'Set the factor to filter EFD plots to a single class/factor/level.',
+                    m('br'),
+                    m('label#resultsFactorLabel', 'Active factor/level: '),
+                    m('[style=display:inline-block]', m(Dropdown, {
+                        id: 'resultsFactorDropdown',
+                        items: [
+                            'undefined',
+                            ...new Set(Object.values(importanceData)[0].map(point => point.level).sort(app.omniSort))
+                        ],
+                        activeItem: resultsPreferences.factor,
+                        onclickChild: setResultsFactor,
+                        style: {'margin-left': '1em'}
+                    }))),
                 importancePlots
             ]);
         }
@@ -980,6 +994,8 @@ export let resultsPreferences = {
     dataSplit: 'test'
 };
 
+let setResultsFactor = factor => resultsPreferences.factor = factor === 'undefined' ? undefined : factor;
+
 // labels for variable importance X/Y axes
 export let valueLabel = "Observation";
 export let variableLabel = "Dependent Variable";
@@ -1140,9 +1156,10 @@ export let interpretConfusionMatrix = data => {
 
 export let confusionMatrixFactor = (data, labels, factor) => {
     let matrix = [[0, 0], [0, 0]];
+    factor = String(factor);
 
     data.forEach(point =>
-        matrix[Number(point.Predicted === factor)][Number(point.Actual === factor)] += point.count);
+        matrix[Number(String(point.Predicted) === factor)][Number(String(point.Actual) === factor)] += point.count);
 
     data = [
         {Predicted: factor, Actual: factor, count: matrix[1][1]},
@@ -1455,8 +1472,19 @@ export let loadConfusionData = async (problem, adapter) => {
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
 
+
     Object.keys(response.data)
-        .forEach(variable => interpretConfusionMatrix(response.data[variable].data));
+        .forEach(variable => {
+            if (response.data[variable].classes.length < 10) {
+                let extraPoints = [];
+                response.data[variable].classes.forEach(levelActual => response.data[variable].classes.forEach(levelPredicted => {
+                    if (!response.data[variable].data.find(point => point.Actual === levelActual && point.Predicted === levelPredicted))
+                        extraPoints.push({Actual: levelActual, Predicted: levelPredicted, count: 0})
+                }));
+                response.data[variable].data.push(...extraPoints);
+            }
+            interpretConfusionMatrix(response.data[variable].data)
+        });
 
     resultsData.confusion[adapter.getSolutionId()] = response.data;
     resultsData.confusionLoading[adapter.getSolutionId()] = false;

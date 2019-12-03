@@ -52,7 +52,7 @@ import Icon from "../common/views/Icon";
 
 import {alertLog, alertWarn, alertError} from "./app";
 import * as queryMongo from "./manipulations/queryMongo";
-import {recordLimit} from "./solvers/d3m";
+let recordLimit = 5000;
 
 
 // adds some padding, sets the size so the content fills nicely in the page

@@ -500,14 +500,14 @@ def api_get_data(request):
 
     # export single data file
     if json_req_obj.get('export') == 'csv':
-        success, results_obj_err = EventJobUtil.export_dataset(\
+        success, results_obj_err = EventJobUtil.export_csv(\
             user_workspace,
             settings.MONGO_COLLECTION_PREFIX + json_req_obj['collection_name'],
             results_obj_err)
 
     # export single data file in problem format
     elif json_req_obj.get('export') == 'dataset':
-        success, results_obj_err = EventJobUtil.export_problem(\
+        success, results_obj_err = EventJobUtil.export_dataset(\
             user_workspace,
             results_obj_err,
             json.loads(json_req_obj['metadata']))

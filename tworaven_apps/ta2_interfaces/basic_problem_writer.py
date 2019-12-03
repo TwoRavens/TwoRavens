@@ -177,7 +177,6 @@ class BasicProblemWriter(BasicErrCheck):
             self.add_error_message(user_msg)
             return False
 
-
         if not fullpath:
             self.add_error_message('"fullpath" is not specified (cannot be blank)')
             return False

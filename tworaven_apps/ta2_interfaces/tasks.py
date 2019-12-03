@@ -376,8 +376,7 @@ def create_partials_datasets(configuration, workspace):
     union_datasets = []
     for predictor in domains:
         synthetic_data = []
-        print(dataframe.columns.values)
-        predictor_idx = list(dataframe.columns.values).index(predictor)
+        predictor_idx = new_column_names.index(predictor)
         for row_idx in range(len(dataframe)):
             row = dataframe.iloc[row_idx].tolist()
 
