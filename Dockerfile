@@ -16,7 +16,8 @@ RUN apt-get update && \
     iputils-ping \
     telnet \
     sqlite3 \
-    vim
+    vim \
+    swig
 
 # -------------------------------------
 # Set the workdir
