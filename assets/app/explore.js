@@ -91,7 +91,7 @@ export class CanvasExplore {
                         .slice(Math.max(0, exploreVariables.length - maxVariables));
                 },
                 activeSection: exploreVariate,
-                sections: app.leftTab === 'Discover' ? [{value: 'Problem'}] : [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]
+                sections: app.leftTab === 'Discover' ? [{value: 'Problem'}] : [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multivariate'}]
             }),
             m(Button, {
                 id: 'exploreGo',
@@ -105,7 +105,7 @@ export class CanvasExplore {
                         || variate === 'problem' && len !== 1
                         || variate === 'bivariate' && len !== 2
                         || variate === 'trivariate' && len !== 3
-                        || variate === 'multiple' && len < 2) {
+                        || variate === 'multivariate' && len < 2) {
                         return;
                     }
 
@@ -153,7 +153,8 @@ export class CanvasExplore {
 
                                 if (exploreVariate === 'Multivariate') {
                                     exploreVariables.includes(x)
-                                        ? app.remove(exploreVariables, x) : exploreVariables.push(x);
+                                        ? app.remove(exploreVariables, x)
+                                        : exploreVariables.push(x);
                                     return;
                                 }
 
@@ -234,15 +235,10 @@ export class CanvasExplore {
             });
 
             if (nodes.length === 0) return;
-
-            let filtered = schemas[variate];
-            if (variate === 'bivariate' || variate === 'trivariate')
-                filtered = `${filtered} ${schemas.multiple}`;
-
             let plotNode = nodes[0] && nodes[0].pdfPlotType === 'continuous' ? density : bars;
 
             return m('div',
-                m('div', {
+                m('div#explorePlotBar', {
                         style: {
                             'margin-bottom': '1em',
                             'overflow-x': 'scroll',
@@ -250,7 +246,7 @@ export class CanvasExplore {
                             width: '100%'
                         }
                     },
-                    filtered.split(' ').map(x => m("figure", {style: 'display: inline-block'}, [
+                    getRelevantPlots(nodes, variate).map(x => m("figure", {style: 'display: inline-block'}, [
                             m(`img#${x}_img[alt=${x}][height=140px][width=260px][src=/static/images/${x}.png]`, {
                                 onclick: _ => plotVega(nodes, x, selectedProblem),
                                 style: thumbsty(nodes, x)
@@ -261,13 +257,13 @@ export class CanvasExplore {
                 m('#plot', {
                     style: 'display: block;height:500px',
                     oncreate: innerVnode => nodes.length > 1
-                        ? plotVega(nodes)
+                        ? plotVega(nodes, getRelevantPlots(nodes, variate)[0])
                         : plotNode(nodes[0], innerVnode.dom, true)
                 })
             );
         };
 
-        if (['problem', 'univariate', 'bivariate', 'trivariate', 'multiple'].includes(variate)) return wrapCanvas(
+        if (['problem', 'univariate', 'bivariate', 'trivariate', 'multivariate'].includes(variate)) return wrapCanvas(
             m(Button, {
                 onclick: () => {
                     m.route.set('/explore');
@@ -281,6 +277,23 @@ export class CanvasExplore {
         );
     }
 }
+
+export let getRelevantPlots = (nodes, variate) => {
+    let filtered = schemas[variate];
+    if (variate === 'bivariate' || variate === 'trivariate')
+        filtered = `${filtered} ${schemas.multivariate}`;
+
+    let plotGroups = {
+        'recommended': [],
+        'unknown': [],
+        'discouraged': []
+    };
+    filtered.split(' ').forEach(schemaName => {
+        let isRecommended = getIsRecommended(nodes, schemaName);
+        plotGroups[isRecommended === undefined ? 'unknown' : isRecommended ? 'recommended' : 'discouraged'].push(schemaName)
+    });
+    return Object.values(plotGroups).flatMap(_=>_);
+};
 
 export let exploreVariables = [];
 
@@ -374,7 +387,7 @@ let schemas = {
     trivariate: 'bubbletri groupedbartri horizgroupbar scattertri bubbleqqq ' +
         'scatterqqq trellisscatterqqn heatmapnnq dotdashqqn tablebubblennq ' +
         'stackedbarnnn facetbox facetheatmap groupedbarnqq',
-    multiple: 'binnedcrossfilter scattermatrix'
+    multivariate: 'binnedcrossfilter scattermatrix'
 };
 
 let approps = {
@@ -557,7 +570,7 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
         let plotvars = getNames(mypn);
 
         let compiled = queryMongo.buildPipeline(
-            [...app.workspace.raven_config.hardManipulations, ...problem.manipulations, {
+            [...app.workspace.raven_config.hardManipulations || [], ...problem.manipulations || [], {
                 type: 'menu',
                 metadata: {
                     type: 'data',
@@ -597,12 +610,27 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
 export function thumbsty(plotNodes, thumb) {
     if (!approps) return {};
 
-    let plottype = getPlotType("", plotNodes);
-    if (!plottype) return {};
+    let isRecommended = getIsRecommended(plotNodes, thumb);
+    if (isRecommended === undefined) return {};
 
-    return approps[plottype[1]].indexOf(thumb) > -1
-        ? {border: "2px solid #0F0", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}
-        : {border: "2px solid #F00", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"};
+    let styling = {
+        "border-radius": "3px",
+        padding: "5px",
+        margin: "3%", cursor: "pointer"
+    };
+
+    styling.border = isRecommended
+        ? "2px solid " + common.csColor
+        : "2px solid " + common.errorColor;
+
+    return styling;
+}
+
+export function getIsRecommended(plotNodes, thumb) {
+    let plotType = getPlotType("", plotNodes);
+
+    if (!plotType) return;
+    return (approps[plotType[1]] || []).indexOf(thumb) > -1;
 }
 
 export let exploreVariate = 'Univariate';
