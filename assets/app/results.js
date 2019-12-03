@@ -398,7 +398,7 @@ export class CanvasSolutions {
                 m(VariableImportance, {
                     mode: resultsPreferences.importanceMode,
                     data: importanceData[predictor]
-                        .filter(point => resultsPreferences.factor === undefined || String(resultsPreferences.factor) === point.level),
+                        .filter(point => resultsPreferences.factor === undefined || String(resultsPreferences.factor) === String(point.level)),
                     problem: problem,
                     predictor,
                     target: resultsPreferences.target,
@@ -685,15 +685,14 @@ export class CanvasSolutions {
                 ['Caret/R Method', firstSolution.meta.method],
                 ['Tags', firstSolution.meta.tags],
             ] : firstSolution.systemId === 'd3m' ? [
-                ['Pipeline ID', firstSolution.pipelineId],
                 ['Status', firstSolution.status],
                 ['Created', new Date(firstSolution.created).toUTCString()]
             ] : [
-                ['Model Zip', m(Button, {
-                    onclick: () => {
-                        solverWrapped.downloadModel(firstSolution.model_pointer)
-                    }
-                }, 'Download')]
+                // ['Model Zip', m(Button, {
+                //     onclick: () => {
+                //         solverWrapped.downloadModel(firstSolution.model_pointer)
+                //     }
+                // }, 'Download')]
             ])
         }));
 
@@ -1061,7 +1060,7 @@ export let setSelectedSolution = (problem, systemId, solutionId) => {
         // ------------------------------------------------
         // Logging, include score, rank, and solutionId
         // ------------------------------------------------
-        let chosenSolution = problem.solutions[source][solutionId];
+        let chosenSolution = problem.solutions[systemId][solutionId];
         if (chosenSolution){
             let adapter = getSolutionAdapter(problem, chosenSolution);
             let score = adapter.getScore(problem.metric);
@@ -1070,7 +1069,7 @@ export let setSelectedSolution = (problem, systemId, solutionId) => {
                           solutionId: chosenSolution.pipeline.id,
                           rank: getProblemRank(problem.solutions[source], solutionId),
                           performance: score,
-                          metric: selectedMetric[source],
+                          metric: resultsPreferences.selectedMetric,
                           };
             //  console.log(JSON.str)
             }
@@ -1178,15 +1177,16 @@ export let confusionMatrixFactor = (data, labels, factor) => {
 // the positive class is the upper left block
 export function generatePerformanceData(data2x2, positiveFactor) {
 
-    let tp = (data2x2.find(point => (point.Predicted === positiveFactor) && (point.Actual === positiveFactor)) || {count: 0}).count;
-    let fn = (data2x2.find(point => (point.Predicted !== positiveFactor) && (point.Actual === positiveFactor)) || {count: 0}).count;
-    let fp = (data2x2.find(point => (point.Predicted === positiveFactor) && (point.Actual !== positiveFactor)) || {count: 0}).count;
-    let tn = (data2x2.find(point => (point.Predicted !== positiveFactor) && (point.Actual !== positiveFactor)) || {count: 0}).count;
+    positiveFactor = String(positiveFactor);
+    let tp = (data2x2.find(point => (String(point.Predicted) === positiveFactor) && (String(point.Actual) === positiveFactor)) || {count: 0}).count;
+    let fn = (data2x2.find(point => (String(point.Predicted) !== positiveFactor) && (String(point.Actual) === positiveFactor)) || {count: 0}).count;
+    let fp = (data2x2.find(point => (String(point.Predicted) === positiveFactor) && (String(point.Actual) !== positiveFactor)) || {count: 0}).count;
+    let tn = (data2x2.find(point => (String(point.Predicted) !== positiveFactor) && (String(point.Actual) !== positiveFactor)) || {count: 0}).count;
 
     let p = tp + fn;
     let n = fp + tn;
 
-    let round = (number, digits) => Math.round(number * Math.pow(10, digits)) / Math.pow(10, digits)
+    let round = (number, digits) => Math.round(number * Math.pow(10, digits)) / Math.pow(10, digits);
 
     return {
         f1: round(2 * tp / (2 * tp + fp + fn), 2),

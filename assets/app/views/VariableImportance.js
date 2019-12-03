@@ -15,55 +15,59 @@ export default class VariableImportance {
         let nominals = app.getNominalVariables(problem);
 
         // HEAT MAP
-        if (nominals.includes(predictor) && nominals.includes(target)) return m(PlotVegaLite, {
-            // data,
-            specification: {
-                "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
-                "description": `Empirical First Differences for ${predictor}.`,
-                'vconcat': [
-                    {
-                        'data': {'values': data},
-                        "mark": "rect",
-                        "encoding": {
-                            "x": {
-                                "field": predictor,
-                                "type": "nominal",
-                                axis: {labels: axisLabels},
-                                title: false
-                            },
-                            "y": {"field": variableLabel, "type": "nominal"},
-                            "color": {"field": yLabel, "type": "quantitative", title: 'Probability'},
-                            "tooltip": [
-                                {"field": yLabel, "type": "quantitative", title: 'Probability'},
-                                {"field": variableLabel, "type": "nominal"},
-                                {"field": predictor, "type": "nominal"}
-                            ]
-                        }
-                    },
-                    {
-                        'mark': 'rect',
-                        'data': {
-                            'values': problem.levels[predictor]
-                        },
-                        'encoding': {
-                            'x': {'field': 'level', 'type': 'nominal', 'title': predictor},
-                            'opacity': {
-                                'field': 'count',
-                                'type': 'quantitative',
-                                'scale': {
-                                    domain: [0, Math.max(...problem.levels[predictor].map(point => point.count))],
-                                    range: [0, 1]
+        if (nominals.includes(predictor) && nominals.includes(target)) {
+            // vega-lite emits an invalid canvas gradient when all colors are equal. Fixed in newer version
+            if (data.every(point => point[yLabel] === data[0][yLabel])) return 'All probabilities are equal.';
+            return m(PlotVegaLite, {
+                // data,
+                specification: {
+                    "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+                    "description": `Empirical First Differences for ${predictor}.`,
+                    'vconcat': [
+                        {
+                            'data': {'values': data},
+                            "mark": "rect",
+                            "encoding": {
+                                "x": {
+                                    "field": predictor,
+                                    "type": "nominal",
+                                    axis: {labels: axisLabels},
+                                    title: false
                                 },
-                                'legend': false
+                                "y": {"field": variableLabel, "type": "nominal"},
+                                "color": {"field": yLabel, "type": "quantitative", title: 'Probability'},
+                                "tooltip": [
+                                    {"field": yLabel, "type": "quantitative", title: 'Probability'},
+                                    {"field": variableLabel, "type": "nominal"},
+                                    {"field": predictor, "type": "nominal"}
+                                ]
+                            }
+                        },
+                        {
+                            'mark': 'rect',
+                            'data': {
+                                'values': problem.levels[predictor]
                             },
-                            "tooltip": [
-                                {"field": 'count', "type": "quantitative"}
-                            ]
+                            'encoding': {
+                                'x': {'field': 'level', 'type': 'nominal', 'title': predictor},
+                                'opacity': {
+                                    'field': 'count',
+                                    'type': 'quantitative',
+                                    'scale': {
+                                        domain: [0, Math.max(...problem.levels[predictor].map(point => point.count))],
+                                        range: [0, 1]
+                                    },
+                                    'legend': false
+                                },
+                                "tooltip": [
+                                    {"field": 'count', "type": "quantitative"}
+                                ]
+                            }
                         }
-                    }
-                ]
-            }
-        });
+                    ]
+                }
+            });
+        }
 
         // BAR CHART
         if (nominals.includes(predictor)) return m(PlotVegaLite, {
