@@ -115,12 +115,12 @@ export let getD3MAdapter = problem => ({
 
 // no new pipelines will be found under searchId
 // pipelines under searchId are also wiped/no longer accessible
-export let endSearch = async searchId => searchId !== undefined && m.request(D3M_SVC_URL + '/EndSearchSolutions', {searchId})
-    .then(handleCompletedSearch(searchId));
+export let endSearch = async searchId => searchId !== undefined && m.request(D3M_SVC_URL + '/EndSearchSolutions', {method: 'POST', data: {searchId}})
+    .then(handleCompletedSearch(parseInt(searchId)));
 // no new pipelines will be found under searchId
 // discovered pipelines will remain accessible for produce calls
-export let stopSearch = async searchId => searchId !== undefined && m.request(D3M_SVC_URL + '/StopSearchSolutions', {searchId})
-    .then(handleCompletedSearch(searchId));
+export let stopSearch = async searchId => searchId !== undefined && m.request(D3M_SVC_URL + '/StopSearchSolutions', {method: 'POST', data: {searchId}})
+    .then(handleCompletedSearch(parseInt(searchId)));
 
 let handleCompletedSearch = searchId => response => {
     if (!response.success) {
@@ -134,6 +134,7 @@ let handleCompletedSearch = searchId => response => {
         return;
     }
     let solvedProblem = Object.values(app.workspace.raven_config.problems)
+        .filter(problem => 'searchId' in ((problem.solverState || {}).d3m || {}))
         .find(problem => problem.solverState.d3m.searchId === String(searchId));
 
     if (solvedProblem) {
@@ -150,8 +151,9 @@ let handleCompletedSearch = searchId => response => {
  * Note: not all problems have a d3mSearchId
  */
 export let endAllSearches = async () => Object.keys(app.workspace.raven_config.problems)
+    .filter(problem => 'searchId' in ((problem.solverState || {}).d3m || {}))
     .map(problemId => app.workspace.raven_config.problems[problemId].solverState.d3m.searchId)
-    .forEach(searchId => searchId && endSearch(searchId));
+    .forEach(searchId => searchId && endSearch(parseInt(searchId)));
 
 /*
  * Iterate through the problems and stop any ongoing searches
@@ -159,8 +161,9 @@ export let endAllSearches = async () => Object.keys(app.workspace.raven_config.p
  *  Note: not all problems have a d3mSearchId
  */
 export let stopAllSearches = async () => Object.keys(app.workspace.raven_config.problems)
+    .filter(problem => 'searchId' in ((problem.solverState || {}).d3m || {}))
     .map(problemId => app.workspace.raven_config.problems[problemId].solverState.d3m.searchId)
-    .forEach(searchId => searchId && stopSearch(searchId));
+    .forEach(searchId => searchId && stopSearch(parseInt(searchId)));
 
 // ------------------------------------------
 //      create pipeline template

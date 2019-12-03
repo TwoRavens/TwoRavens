@@ -29,6 +29,7 @@ export let leftpanel = () => {
 
     let ravenConfig = app.workspace.raven_config;
 
+    let selectedProblem = app.getSelectedProblem();
     if (!selectedProblem) return;
 
     let solverSystemNames = ['auto_sklearn', 'tpot', 'mlbox', 'ludwig', 'h2o']; // 'caret'
@@ -139,14 +140,14 @@ export let leftpanel = () => {
                     'You may select searches for other problems in the workspace to view their solutions.',
                     m(Table, {
                         data: Object.keys(app.workspace.raven_config.problems)
-                            .filter(problemId => 'solverState' in app.workspace.raven_config.problems[problemId])
+                            .filter(problemId => 'd3m' in ((app.workspace.raven_config.problems[problemId] || {}).solverState || {}))
                             .map(problemId => app.workspace.raven_config.problems[problemId])
                             .map(problem => [
                                 problem.problemID,
                                 problem.targets.join(', '),
-                                problem.d3mSearchId,
-                                problem.d3mSolverState === undefined ? 'stopped' : 'running',
-                                problem.d3mSolverState !== undefined && m(Button, {
+                                problem.solverState.d3m.searchId,
+                                problem.solverState.d3m.thinking ? 'running' : 'stopped',
+                                problem.solverState.d3m.thinking && m(Button, {
                                     title: 'stop the search',
                                     class: 'btn-sm',
                                     onclick: () => {
@@ -161,7 +162,7 @@ export let leftpanel = () => {
                                         };
                                         app.saveSystemLogEntry(logParams);
 
-                                        solverD3M.stopSearch(problem.d3mSearchId);
+                                        solverD3M.stopSearch(problem.solverState.d3m.searchId);
                                     }
                                 }, m(Icon, {name: 'stop'}))
                             ]),
@@ -273,7 +274,7 @@ export class CanvasSolutions {
             if (summaries.length === 0) return;
 
             // collect classes from all summaries
-            let classes = [...new Set(summaries.flatMap(summary => summary.confusionMatrix.classes))]
+            let classes = [...new Set(summaries.flatMap(summary => summary.confusionMatrix.classes))];
 
             // convert to 2x2 if factor is set
             if (resultsPreferences.factor !== undefined)
@@ -650,31 +651,12 @@ export class CanvasSolutions {
             data: [
                 ['System', firstAdapter.getSystemId()],
                 ['Downloads', m(Table, {
-                    data: firstSolution.systemId === 'd3m' ? [
-                        {
-                            'name': 'train',
-                            'predict type': 'RAW',
-                            'input': m(Button, {onclick: () => app.downloadFile(problem.datasetPaths.train)}, 'Download'),
-                            // 'output': 'MISSING',
-                        },
-                        {
-                            'name': 'test',
-                            'predict type': 'RAW',
-                            'input': m(Button, {onclick: () => app.downloadFile(problem.datasetPaths.test)}, 'Download'),
-                            'output': m(Button, {onclick: () => app.downloadFile(firstSolution.data_pointer)}, 'Download'),
-                        },
-                        {
-                            'name': 'partials',
-                            'predict type': 'RAW',
-                            'input': m(Button, {onclick: () => app.downloadFile(problem.datasetPaths.partials)}, 'Download'),
-                            'output': m(Button, {onclick: () => app.downloadFile(firstSolution.data_pointer_partials)}, 'Download'),
-                        }
-                    ] : (firstSolution.produce || []).map(produce =>
+                    data: (firstSolution.produce || []).map(produce =>
                         ({
                             'name': produce.input.name,
                             'predict type': produce.configuration.predict_type,
                             'input': m(Button, {onclick: () => app.downloadFile(produce.input.resource_uri)}, 'Download'),
-                            'output': m(Button, {onclick: () => app.downloadFile('file:///' + produce.data_pointer)}, 'Download'),
+                            'output': m(Button, {onclick: () => app.downloadFile('file://' + produce.data_pointer)}, 'Download'),
                         }))
 
                 })],
@@ -685,8 +667,8 @@ export class CanvasSolutions {
                 ['Caret/R Method', firstSolution.meta.method],
                 ['Tags', firstSolution.meta.tags],
             ] : firstSolution.systemId === 'd3m' ? [
-                ['Status', firstSolution.status],
-                ['Created', new Date(firstSolution.created).toUTCString()]
+                // ['Status', firstSolution.status],
+                // ['Created', new Date(firstSolution.created).toUTCString()]
             ] : [
                 // ['Model Zip', m(Button, {
                 //     onclick: () => {
@@ -1066,8 +1048,8 @@ export let setSelectedSolution = (problem, systemId, solutionId) => {
             let score = adapter.getScore(problem.metric);
             if (score !== undefined){
               logParams.other = {
-                          solutionId: chosenSolution.pipeline.id,
-                          rank: getProblemRank(problem.solutions[source], solutionId),
+                          solutionId: chosenSolution.solutionId,
+                          rank: getProblemRank(problem.solutions[systemId], solutionId),
                           performance: score,
                           metric: resultsPreferences.selectedMetric,
                           };
@@ -1095,9 +1077,9 @@ export let getProblemRank = (solutions, solutionId) => {
     for (let solutionKey of Object.keys(solutions).reverse()) {
         cnt += 1;
         if (solutionKey === solutionId) return String(cnt);
-    };
+    }
    return String(-1);
-}
+};
 
 
 export let getSolutions = (problem, source) => {
@@ -1146,7 +1128,7 @@ export let interpretConfusionMatrix = data => {
         point.microCount = point.count / actualCounts[point.Actual];
         point.explanation = point.Predicted === point.Actual
             ? `There are ${point.count} observations where the model correctly predicts class ${point.Predicted}.`
-            : `There are ${point.count} observations where the model incorrectly predicts class ${point.Predicted}, but the actual class is ${point.Actual}.`
+            : `There are ${point.count} observations where the model incorrectly predicts class ${point.Predicted}, but the actual class is ${point.Actual}.`;
         point.significance = +point.microCount > 0.5
             ? `This cell is significant because it contains the majority of observations when the factor is ${point.Actual}.`
             : `Predictions from the model when the actual factor is ${point.Actual} are relatively unlikely to be ${point.Predicted}.`;
@@ -1265,8 +1247,6 @@ window.resultsData = resultsData;
 // TODO: just need to add menu element, some debug probably needed
 // manipulations to apply to data after joining predictions
 export let resultsQuery = [];
-
-export let recordLimit = 1000;
 
 export let loadProblemData = async (problem, predictor=undefined) => {
     // unload ICE data if predictor changed
