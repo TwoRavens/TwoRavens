@@ -202,7 +202,9 @@ class TA2Helper(BasicErrCheck):
         print('INPUT', self.data_input_dir)
         print('OUTPUT', self.data_output_dir)
 
-        docker_cmd = ('sudo docker run --rm'
+        # sudo is not necessary if just trying to run a local image?
+        # If trying to download and run into an issue, then use sudo
+        docker_cmd = ('docker run --rm'
                       ' --name ta2_server'
                       ' {4}'
                       ' {2}'
