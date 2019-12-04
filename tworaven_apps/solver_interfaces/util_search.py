@@ -22,6 +22,7 @@ from sklearn.compose import ColumnTransformer
 import multiprocessing
 import os
 
+
 def preprocess(dataframe, specification):
 
     X = specification['problem']['predictors']
@@ -107,19 +108,21 @@ class SearchAutoSklearn(Search):
         # if os.path.exists(output_folder):
         #     shutil.rmtree(output_folder)
 
-        if 'configuration' in self.specification:
-            config = self.specification['configuration']
-
-            self.system_params['resampling_strategy_arguments'] = self.system_params.get('resampling_strategy_arguments', {})
-            self.system_params['resampling_strategy_arguments']['shuffle'] = config.get('shuffle', False)
-
-            if config['method'] == "HOLDOUT":
-                self.system_params['resampling_strategy'] = 'holdOut'
-                self.system_params['resampling_strategy_arguments']['train_size'] = max(0, config.get('trainTestRatio')) or .6
-
-            if config['method'] == "K_FOLD":
-                self.system_params['resampling_strategy'] = 'cv'
-                self.system_params['resampling_strategy_arguments']['folds'] = config.get('folds') or 10
+        # TODO: auto_sklearn has a bug with weak references when certain non-default options are used.
+        #       Just avoiding this bug for now
+        # if 'configuration' in self.specification:
+        #     config = self.specification['configuration']
+        #
+        #     self.system_params['resampling_strategy_arguments'] = self.system_params.get('resampling_strategy_arguments', {})
+        #     self.system_params['resampling_strategy_arguments']['shuffle'] = config.get('shuffle', False)
+        #
+        #     if config['method'] == "HOLDOUT":
+        #         self.system_params['resampling_strategy'] = 'holdOut'
+        #         self.system_params['resampling_strategy_arguments']['train_size'] = max(0, config.get('trainTestRatio')) or .6
+        #
+        #     if config['method'] == "K_FOLD":
+        #         self.system_params['resampling_strategy'] = 'cv'
+        #         self.system_params['resampling_strategy_arguments']['folds'] = config.get('folds') or 10
 
         if self.specification.get('timeBoundSearch'):
             self.system_params['time_left_for_this_task'] = self.specification.get('timeBoundSearch')
@@ -136,7 +139,7 @@ class SearchAutoSklearn(Search):
 
         # turn off daemon flag from the currently running process, to allow child processes from auto_sklearn fit
         multiprocessing.current_process()._config['daemon'] = False
-        # self.system_params['n_jobs'] = 1
+        self.system_params['n_jobs'] = 1
 
         # valid system params
         # https://automl.github.io/auto-sklearn/master/api.html#api
@@ -145,10 +148,10 @@ class SearchAutoSklearn(Search):
             'CLASSIFICATION': autosklearn.classification.AutoSklearnClassifier
         }[self.specification['problem']['taskType']](**self.system_params)
 
-        automl.fit(stimulus, dataframe[y])
+        automl.fit(stimulus.copy(), dataframe[y].copy())
 
-        if self.system_params['resampling_strategy'] == 'cv':
-            automl.refit(stimulus, dataframe[y])
+        # if self.system_params.get('resampling_strategy') == 'cv':
+        automl.refit(stimulus, dataframe[y])
 
         model = ModelSklearn(
             automl,
@@ -324,6 +327,7 @@ class SearchTPOT(Search):
         #     get_metric(self.specification['performanceMetric']),
         #     greater_is_better=should_maximize(self.specification['performanceMetric']))
         # self.system_params['scoring'] = scorer
+        self.system_params['n_jobs'] = 1
 
         automl = {
             'REGRESSION': tpot.TPOTRegressor,

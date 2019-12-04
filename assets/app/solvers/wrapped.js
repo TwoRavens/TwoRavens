@@ -313,6 +313,8 @@ export let handleProduceResponse = response => {
     if (response.success) {
         setRecursiveDefault(solvedProblem.solutions, [
             [data.system, {}], [data.model_id, {}], ['produce', []]]);
+        solvedProblem.solutions[data.system][data.model_id].solutionId = data.model_id;
+        solvedProblem.solutions[data.system][data.model_id].systemId = data.system;
         solvedProblem.solutions[data.system][data.model_id].produce.push(data.produce);
         m.redraw()
     }
@@ -329,6 +331,8 @@ export let handleScoreResponse = response => {
     if (response.success) {
         setRecursiveDefault(solvedProblem.solutions, [
             [data.system, {}], [data.model_id, {}], ['scores', []]]);
+        solvedProblem.solutions[data.system][data.model_id].solutionId = data.model_id;
+        solvedProblem.solutions[data.system][data.model_id].systemId = data.system;
         solvedProblem.solutions[data.system][data.model_id].scores.push(...data.scores);
         m.redraw()
     }

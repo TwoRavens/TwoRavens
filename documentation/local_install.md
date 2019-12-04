@@ -250,6 +250,8 @@ Some solvers require additional setup:
         ```
         brew cask install homebrew/cask-versions/adoptopenjdk8
         ```
+    On Linux, install auto_sklearn dependencies:
+        `sudo apt-get install build-essential swig`
 
 # 4. Run a local MongoDB instance
 
