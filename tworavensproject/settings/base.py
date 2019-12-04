@@ -333,6 +333,9 @@ REDIS_PORT = os.environ.get('REDIS_PORT', 6379)
 CELERY_BROKER_URL = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)
 CELERY_RESULT_BACKEND = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)
 
+# discard a process after executing task, because automl solvers are incredibly leaky
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 1
+
 # ---------------------------
 # EventData: depositing Dataverse data
 # ---------------------------
