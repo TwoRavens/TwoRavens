@@ -40,6 +40,7 @@
     "octicons": "^8.5.0",
     "popper.js": "^1.15.0",
     "randomatic": "^3.1.1",
+    "ttab": "^0.6.1",
     "vega": "^4.4.0",
     "vega-embed": "^3.30.0",
     "vega-lite": "^3.4.0"

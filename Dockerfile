@@ -45,13 +45,13 @@ RUN git clone --recursive https://github.com/dmlc/xgboost && \
     make -j4 && \
     cd python-package; python setup.py install
 
-# RUN pip3 install setuptools
 
 RUN pip3 install mlbox
 RUN pip3 install ludwig
 RUN pip3 install h2o
-RUN pip3 install auto_sklearn
+RUN pip3 install -e git+https://github.com/automl/auto-sklearn.git@b5b16f398cc218dfdaf991fa3638782756e8222b#egg=auto_sklearn
 RUN pip3 install mljar-supervised
+RUN pip3 install scipy>=1.3.1
 RUN pip3 install tpot
 
 # RUN pip3 install auto_sklearn
