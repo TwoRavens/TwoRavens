@@ -30,8 +30,9 @@ def solve_task(websocket_id, system_id, specification, system_params=None, searc
         model.save()
 
         # h2o cannot handle multiple processes importing the same file at the same time
+        # auto_sklearn seems to be very fragile in a worker context
         # all tasks are run serially
-        if model.system == 'h2o':
+        if model.system == 'h2o' or model.system == 'auto_sklearn':
             describe_task(websocket_id, model.model_id)
 
             for score_spec in specification['score']:

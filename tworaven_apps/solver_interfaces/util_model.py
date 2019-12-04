@@ -241,6 +241,8 @@ class ModelSklearn(Model):
         else:
             self.model.fit(stimulus, target)
 
+        self.save()
+
     def produce(self, specification):
         configuration = specification.get('configuration', {})
         predict_type = configuration.get('predict_type', 'RAW')
@@ -392,6 +394,7 @@ class ModelH2O(Model):
         self.train_specification = specification_str
 
         self.model.train(y=self.targets[0], x=self.predictors, training_frame=data)
+        self.save()
 
     def score(self, specification):
         import h2o

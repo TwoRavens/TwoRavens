@@ -33,8 +33,12 @@ D'Orazio, Vito, Marcus Deng, and Michael Shoemate. "TwoRavens for Event Data." I
 Honaker, James, and Vito D'Orazio. "Statistical Modeling by Gesture: A Graphical, Browser-based Statistical Interface for Data Repositories," in Extended Proceedings of ACM Hypertext, 2014.
 
 # Team
-TwoRavens is led by [James Honaker](http://hona.kr/), [Vito D'Orazio](http://vitodorazio.com), and [Raman Prasad](https://github.com/raprasad).
+TwoRavens is led by Co-PIs [James Honaker](http://hona.kr/) and [Vito D'Orazio](http://vitodorazio.com). 
 
-This project would not be possible without the excellent contributions of our research assistants: Kripanshu Bhargava, Rohit Bhattacharjee,  Marcus Deng, Sruti Jain, Aaron Lebo, Mital Modha, and Michael Shoemate.
+[Raman Prasad](https://github.com/raprasad) is the project's senior developer, and [Michael Shoemate](https://github.com/shoeboxam) is the project's junior developer.
+
+Current research assistants include [Aaron Lebo](https://github.com/aaron-lebo) and [Yu Lin](https://github.com/voidstrike).
+
+This project would not be possible without the excellent contributions of our past research assistants: Kripanshu Bhargava, Rohit Bhattacharjee, Marcus Deng, Sruti Jain, Mital Modha, and Anh Pham.
 
 
