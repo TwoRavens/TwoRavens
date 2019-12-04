@@ -125,12 +125,12 @@ EXPOSE 8080
 # -------------------------------------
 # Copy the scripts: gce_start, d3m_start
 # -------------------------------------
-#COPY startup_script/ta3_search /usr/bin/ta3_search
-COPY startup_script/gce_start.sh /usr/bin/gce_start.sh
+# COPY startup_script/ta3_search /usr/bin/ta3_search
+# COPY startup_script/gce_start.sh /usr/bin/gce_start.sh
 COPY startup_script/d3m_start_multiuser.sh /usr/bin/d3m_start_multiuser.sh
 COPY startup_script/d3m_start.sh /usr/bin/d3m_start.sh
 
-RUN chmod u+x /usr/bin/gce_start.sh /usr/bin/d3m_start.sh /usr/bin/d3m_start_multiuser.sh
+RUN chmod u+x /usr/bin/d3m_start.sh /usr/bin/d3m_start_multiuser.sh
 
 # -------------------------------------
 # Idle the container on startup so it
