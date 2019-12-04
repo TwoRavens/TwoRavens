@@ -13,7 +13,7 @@ services:
   - docker
 
 before_install:
-  - sudo apt-get install libgnutls28-dev
+  - sudo apt-get -y install libgnutls28-dev swig
 
 install:
   # Build/test dependencies
