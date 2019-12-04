@@ -17,7 +17,13 @@ RUN apt-get update && \
     telnet \
     sqlite3 \
     vim \
-    swig
+    swig \
+    build-essential
+
+# -------------------------------------
+# Pip update
+# -------------------------------------
+RUN pip install --upgrade pip
 
 # -------------------------------------
 # Set the workdir
@@ -28,6 +34,28 @@ WORKDIR /var/webapps/TwoRavens
 # Copy over the requirements and run them
 # -------------------------------------
 COPY ./requirements/ ./requirements
+RUN pip3 install cpython
+RUN pip3 install pyrfr
+RUN pip3 install tensorflow==1.13.1
+
+# Install XGBoost library
+#
+RUN git clone --recursive https://github.com/dmlc/xgboost && \
+    cd xgboost && \
+    make -j4 && \
+    cd python-package; python setup.py install
+
+# RUN pip3 install setuptools
+
+RUN pip3 install mlbox
+RUN pip3 install ludwig
+RUN pip3 install h2o
+RUN pip3 install auto_sklearn
+RUN pip3 install mljar-supervised
+RUN pip3 install tpot
+
+# RUN pip3 install auto_sklearn
+# RUN pip3 install mlbox ludwig h2o mljar-supervised tpot
 RUN pip3 install --no-cache-dir -r requirements/prod.txt
 
 # -------------------------------------
@@ -54,6 +82,9 @@ ENV DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container2 \
     CODE_REPOSITORY=/var/webapps/TwoRavens \
     LC_ALL=C.UTF-8 \
     ALLOW_SOCIAL_AUTH=False
+
+#    export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+#     AUTOML_FAST_DEBUG=yes
 
 # -------------------------------------
 # Create a volume for sharing between containers

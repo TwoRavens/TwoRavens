@@ -28,12 +28,6 @@ celery==4.3.0
 # redis==2.10.6
 redis==3.2.0
 
-# for the ta3_search callback
-#Flask==0.12.2
-
-# for nist k8s templates
-Jinja2==2.10.1
-
 # libcurl==7.43.0.1
 
 # django channels/daphne
@@ -92,4 +86,3 @@ h2o
 auto_sklearn
 mljar-supervised
 tpot
-
