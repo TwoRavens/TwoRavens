@@ -7,7 +7,7 @@ rm(list=ls())
 library(jsonlite)
 library(foreign)
 
-seed_skeleton <- function(data, name, fraction=0.2, ID=NULL, citation="", description="", depvarname=NULL, taskType=NULL, taskSubType="", metric=NULL, seed=123 ){
+seed_skeleton <- function(data, name, subsample=NULL, fraction=0.2, ID=NULL, citation="", description="", depvarname=NULL, taskType=NULL, taskSubType="", metric=NULL, seed=123){
 
   set.seed=seed
 
@@ -19,6 +19,18 @@ seed_skeleton <- function(data, name, fraction=0.2, ID=NULL, citation="", descri
   myresID <- "0"
 
 
+  # Subsample number of observations
+
+  if(!is.null(subsample)){
+    data<-na.omit(data)
+    cat("subsampling dataset")
+    ## NOTE: Should check there are enough cases to subsample
+    ## NOTE: Should check subsample argument value is valid
+    myindex<-sample(1:nrow(data), size=subsample, replace=FALSE)
+    data<-data[myindex,]
+  }
+
+
   ## add d3mIndex
 
   d3mIndex <- 1:nrow(data)
@@ -28,6 +40,8 @@ seed_skeleton <- function(data, name, fraction=0.2, ID=NULL, citation="", descri
   if(!(fraction>0) & !(fraction<1)){
     print("Argument `fraction` should be 0 < fraction < 1 and represent the fraction of the data to put reserve for the test data.")
   }
+
+
 
   paths <- c(paste(name, c("_dataset","_problem","_solution","_dataset/tables"), sep=""), 
             "SCORE", paste("TEST", c("","/dataset_TEST","/dataset_TEST/tables","/problem_TEST"), sep=""), 
@@ -138,6 +152,9 @@ seed_skeleton <- function(data, name, fraction=0.2, ID=NULL, citation="", descri
 }
 
 
+
+ethdata <- read.csv("PHEM_Weekly_22.csv")
+seed_skeleton(data=ethdata, name="TR10_Ethiopia_Health", subsample=1000, depvarname="TMalaria_OutP_Cases", ID="Ethiopia_Health", description="Emergency Health data at the weekly reporting level, by woreda", taskType="regression", taskSubType="", metric="rootMeanSquaredError")
 
 fldata <- read.dta("repdata.dta")
 seed_skeleton(data=fldata, name="TR1_Greed_Versus_Grievance", depvarname="onset", ID="Greed_Versus_Grievance", description="Replication data for Fearon and Laitin greed versus grievance analysis", taskType="classification", taskSubType="binary", metric="f1Macro")
