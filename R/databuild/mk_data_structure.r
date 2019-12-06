@@ -64,9 +64,9 @@ seed_skeleton <- function(data, name, subsample=NULL, fraction=0.2, ID=NULL, cit
   testdata <- data[testindex,]
   traindata <- data[-testindex,]
 
-  write.csv(data, paste(name, "/", name, "_dataset/tables/learningData.csv", sep=""))
-  write.csv(testdata, paste(name, "/", "TEST/dataset_TEST/tables/learningData.csv", sep=""))
-  write.csv(traindata, paste(name, "/", "TRAIN/dataset_TRAIN/tables/learningData.csv", sep=""))
+  write.csv(data, paste(name, "/", name, "_dataset/tables/learningData.csv", sep=""), row.names=FALSE)
+  write.csv(testdata, paste(name, "/", "TEST/dataset_TEST/tables/learningData.csv", sep=""), row.names=FALSE)
+  write.csv(traindata, paste(name, "/", "TRAIN/dataset_TRAIN/tables/learningData.csv", sep=""), row.names=FALSE)
 
   ## Write various versions of datasetDoc.json
 
@@ -153,8 +153,10 @@ seed_skeleton <- function(data, name, subsample=NULL, fraction=0.2, ID=NULL, cit
 
 
 
-ethdata <- read.csv("PHEM_Weekly_22.csv")
-seed_skeleton(data=ethdata, name="TR10_Ethiopia_Health", subsample=1000, depvarname="TMalaria_OutP_Cases", ID="Ethiopia_Health", description="Emergency Health data at the weekly reporting level, by woreda", taskType="regression", taskSubType="", metric="rootMeanSquaredError")
+ethdata <- read.csv("PHEM_Weekly_24.csv")
+#seed_skeleton(data=ethdata, name="TR10_Ethiopia_Health", subsample=1000, depvarname="TMalaria_OutP_Cases", ID="Ethiopia_Health", description="Emergency Health data at the weekly reporting level, by woreda", taskType="regression", taskSubType="", metric="rootMeanSquaredError")
+seed_skeleton(data=ethdata, name="TR13_Ethiopia_Health", subsample=1000, depvarname="TMalariaOutPCases", ID="Ethiopia_Health", description="Emergency Health data at the weekly reporting level, by woreda", taskType="regression", taskSubType="", metric="rootMeanSquaredError")
+
 
 fldata <- read.dta("repdata.dta")
 seed_skeleton(data=fldata, name="TR1_Greed_Versus_Grievance", depvarname="onset", ID="Greed_Versus_Grievance", description="Replication data for Fearon and Laitin greed versus grievance analysis", taskType="classification", taskSubType="binary", metric="f1Macro")
