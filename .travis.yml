@@ -13,7 +13,7 @@ services:
   - docker
 
 before_install:
-  - sudo apt-get install libgnutls28-dev
+  - sudo apt-get -y install libgnutls28-dev swig
 
 install:
   # Build/test dependencies
@@ -45,10 +45,10 @@ after_success:
   # -------------------------------------
   # Temp push, to test new multiuser
   # -------------------------------------
-  #- if [ "$TRAVIS_BRANCH" == "713-behavioral-log" ]; then
-  #  docker build -t tworavens/ravens-main:nov-test .;
+  #- if [ "$TRAVIS_BRANCH" == "758-automl-dockerfile" ]; then
+  #  docker build -t tworavens/ravens-main:dec-test .;
   #  docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-  #  docker push tworavens/ravens-main:nov-test;
+  #  docker push tworavens/ravens-main:dec-test;
   #  fi
   # -------------------------------------
   # Temp push, to test new k8s deploy

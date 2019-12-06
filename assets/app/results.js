@@ -32,7 +32,10 @@ export let leftpanel = () => {
     let selectedProblem = app.getSelectedProblem();
     if (!selectedProblem) return;
 
-    let solverSystemNames = ['auto_sklearn', 'tpot', 'mlbox', 'ludwig', 'h2o']; // 'caret'
+    // Available systems
+    //  Note: h2o - requires Java
+    //
+    let solverSystemNames = ['auto_sklearn', 'tpot', 'mlbox', 'ludwig']; // 'h2o', 'caret'
 
     // mljar-supervised only supports binary classification
     if (selectedProblem.task && selectedProblem.subTask &&

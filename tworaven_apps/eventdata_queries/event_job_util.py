@@ -501,6 +501,7 @@ class EventJobUtil(object):
             reload=False, header=True, columns=None,
             indexes=None, delimiter=None):
         """Key method to load a Datafile into Mongo as a new collection"""
+        print('--> import_dataset --')
 
         retrieve_util = MongoRetrieveUtil(database, collection)
         db_info = retrieve_util.get_mongo_db(database)
@@ -512,12 +513,13 @@ class EventJobUtil(object):
         collection_name = settings.MONGO_COLLECTION_PREFIX + collection
 
         # dataset already loaded in mongo
+        #
         if collection_name in db.list_collection_names():
             if reload:
                 db[collection_name].drop()
                 MongoDataset.objects.select_for_update().filter(name=collection_name).delete()
             else:
-                # print('data in database, no data in django, not reloading')
+                print('--> import_dataset: data in database, no data in django, not reloading')
                 # make sure database entry exists
                 dataset_records = MongoDataset.objects.select_for_update().filter(name=collection_name)
                 if dataset_records:
@@ -558,19 +560,29 @@ class EventJobUtil(object):
         if err_msg:
             return err_resp(err_msg)
 
+        # for mongoimport commands
+        #
         import_commands = []
 
-        # ignore first line
+        # -------------------------------------
+        # ignore first line of input files
+        # -------------------------------------
         if header:
             import_commands.append(f'tail -n +2')
 
+        # -------------------------------------
         # standardize column metadata to dict
+        # -------------------------------------
         if not columns:
             columns = DuplicateColumnRemover(data_path).updated_columns
-        if type(columns) is list:
+
+        if isinstance(columns, list):
             columns = {col: None for col in columns}
 
-        # standardize dict's tworavens types to mongo, try to be flexible with alternative words
+        # -------------------------------------
+        # standardize dict's tworavens types to mongo,
+        # try to be flexible with alternative words
+        # -------------------------------------
         def mongofy_type(value):
             return {
                 bool: 'boolean', 'boolean': 'boolean',
@@ -581,23 +593,36 @@ class EventJobUtil(object):
             }.get(value, 'auto')
         columns = {col: mongofy_type(columns[col]) for col in columns}
 
-        try:
-            def sanitize(column):
-                return encode_variable(column).replace('"', '\\"')
-            field_names = ','.join(f"{sanitize(col)}.{columns.get(col, 'auto')}()" for col in columns)
 
-            delimiter_type = 'csv'
-            if os.path.splitext(data_path)[1] == 'tsv':
-                delimiter_type = 'tsv'
-            if delimiter in [None, ',']:
-                pass
-            elif delimiter == '\t':
-                delimiter_type = 'tsv'
-            else:
-                import_commands.append(f'tr "{delimiter}" "\t" <')
-                delimiter_type = 'tsv'
+        # -------------------------------------
+        # Prepare field names and set delimiter
+        #    for Mongo import/insert
+        # -------------------------------------
+        def sanitize(column):
+            return encode_variable(column).replace('"', '\\"')
 
-            delimiter = {'csv': ',', 'tsv': '\t'}[delimiter_type]
+        field_names = ','.join(f"{sanitize(col)}.{columns.get(col, 'auto')}()" for col in columns)
+        print('field_names', field_names)
+        delimiter_type = 'csv'
+        if os.path.splitext(data_path)[1] == 'tsv':
+            delimiter_type = 'tsv'
+        if delimiter in [None, ',']:
+            pass
+        elif delimiter == '\t':
+            delimiter_type = 'tsv'
+        else:
+            import_commands.append(f'tr "{delimiter}" "\t" <')
+            delimiter_type = 'tsv'
+
+        delimiter = {'csv': ',', 'tsv': '\t'}[delimiter_type]
+
+        # ------------------------------------------
+        # TEMP skip this for k8s...
+        # ---
+        # Prepare and run the mongoimport command
+        # ------------------------------------------
+        # try:
+        if False:  # try:
 
             import_commands.append(f'mongoimport'
                                    f' --db {database}'
@@ -613,23 +638,25 @@ class EventJobUtil(object):
             # the first command takes the data path, which is piped through the other commands
             import_commands[0] = import_commands[0] + ' ' + data_path
 
-            print('mongoimport command:')
-            print(' | '.join(import_commands))
+            print('--> import_dataset: mongoimport command:')
+            print('-->' + ' | '.join(import_commands))
 
             # pipe each command to the next
+            print('--> start subprocess')
             process = subprocess.Popen(shlex.split(import_commands[0]), stdout=subprocess.PIPE)
             for command in import_commands[1:]:
+                print('--> command (bracketed): [%s]' % command)
                 process = subprocess.Popen(shlex.split(command), stdin=process.stdout, stdout=subprocess.PIPE)
             process.communicate()
 
             for column in columns.keys():
                 db[collection_name].update({column: {'$exists': False}}, {'$set': {column: None}}, multi=True)
 
-        except Exception as err:
+        else: #except Exception as err:
             # slower, secondary import if first fails
-            print(err)
-            print(traceback.format_exc())
-            print('mongoimport failed. Running row-by-row insertion instead.')
+            #print('--> mongo err: [%s]' % err)
+            #print(traceback.format_exc())
+            print('--> import_dataset: mongoimport failed. Running row-by-row insertion instead.')
             db[collection_name].drop()
             with open(data_path, 'r') as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=delimiter)

@@ -16,7 +16,25 @@ RUN apt-get update && \
     iputils-ping \
     telnet \
     sqlite3 \
-    vim
+    vim \
+    swig \
+    build-essential
+
+# -------------------------------------
+# Install Redis client
+# -------------------------------------
+RUN cd /tmp && \
+    wget http://download.redis.io/redis-stable.tar.gz && \
+    tar xvzf redis-stable.tar.gz && \
+    cd redis-stable && \
+    make && \
+    cp src/redis-cli /usr/local/bin/ && \
+    chmod 755 /usr/local/bin/redis-cli
+    
+# -------------------------------------
+# Pip update
+# -------------------------------------
+RUN pip install --upgrade pip
 
 # -------------------------------------
 # Set the workdir
@@ -27,6 +45,28 @@ WORKDIR /var/webapps/TwoRavens
 # Copy over the requirements and run them
 # -------------------------------------
 COPY ./requirements/ ./requirements
+RUN pip3 install cpython
+RUN pip3 install pyrfr
+RUN pip3 install tensorflow==1.13.1
+
+# Install XGBoost library
+#
+RUN git clone --recursive https://github.com/dmlc/xgboost && \
+    cd xgboost && \
+    make -j4 && \
+    cd python-package; python setup.py install
+
+
+RUN pip3 install mlbox
+RUN pip3 install ludwig
+RUN pip3 install h2o
+RUN pip3 install -e git+https://github.com/automl/auto-sklearn.git@b5b16f398cc218dfdaf991fa3638782756e8222b#egg=auto_sklearn
+RUN pip3 install mljar-supervised
+RUN pip3 install scipy>=1.3.1
+RUN pip3 install tpot
+
+# RUN pip3 install auto_sklearn
+# RUN pip3 install mlbox ludwig h2o mljar-supervised tpot
 RUN pip3 install --no-cache-dir -r requirements/prod.txt
 
 # -------------------------------------
@@ -53,6 +93,9 @@ ENV DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container2 \
     CODE_REPOSITORY=/var/webapps/TwoRavens \
     LC_ALL=C.UTF-8 \
     ALLOW_SOCIAL_AUTH=False
+
+#    export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+#     AUTOML_FAST_DEBUG=yes
 
 # -------------------------------------
 # Create a volume for sharing between containers
@@ -93,12 +136,12 @@ EXPOSE 8080
 # -------------------------------------
 # Copy the scripts: gce_start, d3m_start
 # -------------------------------------
-#COPY startup_script/ta3_search /usr/bin/ta3_search
-COPY startup_script/gce_start.sh /usr/bin/gce_start.sh
+# COPY startup_script/ta3_search /usr/bin/ta3_search
+# COPY startup_script/gce_start.sh /usr/bin/gce_start.sh
 COPY startup_script/d3m_start_multiuser.sh /usr/bin/d3m_start_multiuser.sh
 COPY startup_script/d3m_start.sh /usr/bin/d3m_start.sh
 
-RUN chmod u+x /usr/bin/gce_start.sh /usr/bin/d3m_start.sh /usr/bin/d3m_start_multiuser.sh
+RUN chmod u+x /usr/bin/d3m_start.sh /usr/bin/d3m_start_multiuser.sh
 
 # -------------------------------------
 # Idle the container on startup so it
