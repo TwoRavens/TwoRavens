@@ -102,29 +102,7 @@ class FileEmbedUtil(object):
 
         return self.final_results
 
-
-    def get_embed_result(self, file_uri, is_second_try=False):
-        """Get the content from the file and format a JSON snippet
-        that includes that content.
-
-        Example response 1:
-            {
-              "success":true,
-              "data":[
-                 {"preds":"36.17124"},
-                 {"preds":"29.85256"},
-                 {"preds":"30.85256"}
-              ]
-           }
-
-        Example response 2:
-          {
-              "success":false,
-              "err_code":"FILE_NOT_FOUND",
-              "message":"The file was not found."
-           }
-        """
-        py_list = None
+    def load_results_into_mongo(self, file_uri, collection_name, is_second_try=False):
 
         if not file_uri:
             err_code = ERR_CODE_FILE_URI_NOT_SET
@@ -184,6 +162,111 @@ class FileEmbedUtil(object):
                        ' Size was %s bytes but the limit is %s bytes.') %\
                        (add_commas_to_number(fsize),
                         add_commas_to_number(settings.MAX_EMBEDDABLE_FILE_SIZE))
+            return self.format_embed_err(ERR_CODE_FILE_TOO_LARGE_TO_EMBED,
+                                         err_msg)
+
+
+        # If it's a JSON file, read and return it
+        #
+        if self.is_json_file_type(fpath):
+            # Return the file directly
+            response_data = self.load_and_return_json_file(fpath)
+            if not response_data[KEY_SUCCESS]:
+                return response_data
+
+        # If it's a csv file, read, convert to JSON and return it
+        #
+        else:
+            # The d3mIndex is written out to the column 'd3mIndex'
+            (py_list, err_msg2) = convert_csv_file_to_json(fpath, to_string=False, index_column='d3mIndex', indices=self.indices)
+            if err_msg2:
+                return self.format_embed_err(ERR_CODE_FAILED_JSON_CONVERSION,
+                                             err_msg2)
+
+            response_data = OrderedDict()
+            response_data[KEY_SUCCESS] = True
+            response_data[KEY_DATA] = py_list
+
+        return response_data
+
+    def get_embed_result(self, file_uri, is_second_try=False):
+        """Get the content from the file and format a JSON snippet
+        that includes that content.
+        Example response 1:
+            {
+              "success":true,
+              "data":[
+                 {"preds":"36.17124"},
+                 {"preds":"29.85256"},
+                 {"preds":"30.85256"}
+              ]
+           }
+        Example response 2:
+          {
+              "success":false,
+              "err_code":"FILE_NOT_FOUND",
+              "message":"The file was not found."
+           }
+        """
+        py_list = None
+
+        if not file_uri:
+            err_code = ERR_CODE_FILE_URI_NOT_SET
+            err_msg = 'The file_uri cannot be None or an empty string.'
+            return self.format_embed_err(err_code, err_msg)
+
+        # Convert the file uri to a path
+        #
+        fpath, err_msg = format_file_uri_to_path(file_uri)
+        if err_msg:
+            return self.format_embed_err(ERR_CODE_FILE_URI_BAD_FORMAT,
+                                         err_msg)
+
+        self.attempted_file_paths.append(fpath)
+
+        # Is this path a file?
+        #
+        if not isfile(fpath):
+
+            # For local testing, we'll try to map the :/output path back...
+            #
+            if fpath.startswith(D3M_OUTPUT_DIR) and not is_second_try:
+                return self.attempt_test_output_directory(fpath)
+            else:
+                if is_second_try:
+                    path_list = ['%s' % p for p in self.attempted_file_paths]
+                    err_msg = ('File not found: %s'
+                               ' (Paths attempted: %s)') % \
+                              (fpath, ', '.join(path_list))
+                else:
+                    err_msg = 'File not found: %s' % fpath
+
+                return self.format_embed_err(ERR_CODE_FILE_NOT_FOUND,
+                                             err_msg)
+
+        # Are these file types embeddable?
+        #
+        if not self.is_accepted_file_type(fpath):
+            err_msg = self.get_embed_file_type_err_msg()
+            return self.format_embed_err(ERR_CODE_UNHANDLED_FILE_TYPE,
+                                         err_msg)
+
+        # Attempt to get the file size, which may throw an
+        # error if the file is not reachable
+        try:
+            fsize = getsize(fpath)
+        except OSError as ex_obj:
+            err_msg = 'Not able to open file: %s' % fpath
+            return self.format_embed_err(ERR_CODE_FILE_NOT_REACHABLE,
+                                         err_msg)
+
+        # Is the file too large to embed? if indices are set, then this check is ignored
+        #
+        if not self.indices and fsize > settings.MAX_EMBEDDABLE_FILE_SIZE:
+            err_msg = ('This file was too large to embed.'
+                       ' Size was %s bytes but the limit is %s bytes.') % \
+                      (add_commas_to_number(fsize),
+                       add_commas_to_number(settings.MAX_EMBEDDABLE_FILE_SIZE))
             return self.format_embed_err(ERR_CODE_FILE_TOO_LARGE_TO_EMBED,
                                          err_msg)
 

@@ -1,4 +1,4 @@
-# Note: This only runs the Django app, not the rook services
+# Note: This only runs the Django app, not the flask services
 FROM python:3.6.8
 MAINTAINER TwoRavens http://2ra.vn/
 

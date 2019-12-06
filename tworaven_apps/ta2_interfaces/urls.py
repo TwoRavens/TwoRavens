@@ -5,7 +5,8 @@ from tworaven_apps.ta2_interfaces import (\
         views_additional,
         views_streaming_requests,
         views_saved_requests,
-        views_non_streaming_requests,)
+        views_non_streaming_requests,
+        views_debug,)
 
 urlpatterns = (
 
@@ -34,17 +35,29 @@ urlpatterns = (
          views_additional.view_download_report_file,
          name='view_download_report_file'),
 
+    path(r'retrieve-output-fitted-vs-actuals-data',
+         views_additional.view_retrieve_fitted_vs_actuals_data,
+         name='view_retrieve_fitted_vs_actuals_data'),
+
     path(r'retrieve-output-confusion-data',
          views_additional.view_retrieve_d3m_confusion_data,
          name='view_retrieve_d3m_confusion_data'),
 
     path(r'retrieve-output-EFD-data',
-         views_additional.view_retrieve_d3m_EFD_data,
+         views_additional.view_retrieve_d3m_efd_data,
          name='view_retrieve_d3m_EFD_data'),
+
+    path(r'retrieve-output-ICE-data',
+         views_additional.view_retrieve_d3m_ice_data,
+         name='view_retrieve_d3m_ICE_data'),
 
     path(r'get-train-test-split',
          views_additional.get_train_test_split,
          name='get-train-test-split'),
+
+    path(r'get-partials-datasets',
+         views_additional.get_partials_datasets,
+         name='get-partials-datasets'),
 
     re_path((r'stored-request/(?P<hash_id>[\w]{40,200})$'),
             views_saved_requests.view_stored_request,
@@ -146,4 +159,7 @@ urlpatterns = (
          views_non_streaming_requests.view_list_primitives,
          name='ListPrimitives'),
 
+    path(r'ExportSolutions',
+         views_debug.view_export_solutions,
+         name='ExportSolutions'),
 )

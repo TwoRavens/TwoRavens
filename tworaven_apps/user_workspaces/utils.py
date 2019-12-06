@@ -305,7 +305,6 @@ def get_user_workspaces(user, create_if_not_found=True):
 
     if (not has_current_workspace) or (workspaces.count() == 0):
         if create_if_not_found:
-            print('make new one!')
             ws_info = create_new_user_workspace(user, d3m_config)
             if not ws_info.success:
                 return err_resp('%s (get_user_workspaces)' %\

@@ -502,9 +502,6 @@ class SearchSolutionsHelper(BasicErrCheck):
 
         produce_params = self.all_search_params[ta2_static.KEY_PRODUCE_SOLUTION_DEFAULT_PARAMS]
 
-        # This is used downstream for a 2nd Produce Solutions call
-        partials_solution_params = self.all_search_params.get(ta2_static.KEY_PARTIALS_SOLUTION_PARAMS, None)
-
         # ----------------------------------
         # Start the async process
         # ----------------------------------
@@ -516,8 +513,7 @@ class SearchSolutionsHelper(BasicErrCheck):
                             fit_params,
                             search_id=self.search_id,
                             produce_params=produce_params,
-                            session_key=self.session_key,
-                            partials_solution_params=partials_solution_params
+                            session_key=self.session_key
                             )
 
 

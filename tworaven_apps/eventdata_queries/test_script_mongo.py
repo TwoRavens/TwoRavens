@@ -79,7 +79,7 @@ def run_test2():
         "Hall_of_Fame": 1}
     collection = 'my_collection'
 
-    info = EventJobUtil.export_dataset(collection, [info])
+    info = EventJobUtil.export_csv(collection, [info])
     print(info)
     if info.success:
         print(info.result_obj)

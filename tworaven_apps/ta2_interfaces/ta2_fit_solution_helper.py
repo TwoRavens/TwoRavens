@@ -47,9 +47,7 @@ class FitSolutionHelper(BasicErrCheck):
         self.search_id = kwargs.get('search_id', None)
         self.produce_params = kwargs.get('produce_params')
 
-        # If present, this is used to make a 2nd DescribeSolution call
-        #   for partials
-        self.partials_solution_params = kwargs.get('partials_solution_params')
+        self.produce_dataset_name = kwargs.get('produce_dataset_name')
 
         self.session_key = kwargs.get('session_key', '')
 
@@ -317,7 +315,7 @@ class FitSolutionHelper(BasicErrCheck):
 
                 result_json = msg_json_info.result_obj
 
-                if not ta2_static.KEY_FITTED_SOLUTION_ID in result_json:
+                if ta2_static.KEY_FITTED_SOLUTION_ID not in result_json:
                     user_msg = '"%s" not found in response to JSON: %s' % \
                                (ta2_static.KEY_FITTED_SOLUTION_ID, result_json)
 
@@ -381,23 +379,13 @@ class FitSolutionHelper(BasicErrCheck):
                 #  then trigger ProduceSolution
                 #
                 if fitted_solution_id:
-                    #
-                    # Potentially make 2 ProduceSolution calls
 
-                    # 1st - the regular one
-                    #
-                    self.check_fit_progress(self.produce_params,
-                                            fitted_solution_id,
-                                            result_json)
-
-                    # 2nd - one using partials data (optional)
-                    #
-                    print('Make 2nd Produce Solution with Partials')
-                    if self.partials_solution_params:
-                        self.check_fit_progress(self.partials_solution_params,
+                    for produce_dataset_name in self.produce_params:
+                        print('Make Produce Solution with:', produce_dataset_name)
+                        self.check_fit_progress(self.produce_params[produce_dataset_name],
                                                 fitted_solution_id,
                                                 result_json,
-                                                is_partials_call=True)
+                                                produce_dataset_name=produce_dataset_name)
 
         except grpc.RpcError as err_obj:
             stored_request.set_error_status(str(err_obj))
@@ -418,7 +406,7 @@ class FitSolutionHelper(BasicErrCheck):
         assert isinstance(result_json, dict), 'result_json must be a dict'
         assert fitted_solution_id, 'fitted_solution_id must be set'
 
-        is_partials_call = kwargs.get('is_partials_call', False)
+        produce_dataset_name = kwargs.get('produce_dataset_name')
 
         # --------------------------------------------
         # Check if the progress.state == 'COMPLETED'
@@ -445,9 +433,13 @@ class FitSolutionHelper(BasicErrCheck):
             LOGGER.error(user_msg)
             return
 
+        print('produce 0')
+        print(params_for_produce)
+
         prod_params = dict(params_for_produce)
         prod_params[ta2_static.KEY_FITTED_SOLUTION_ID] = fitted_solution_id
 
+        print('produce 0.5')
         ProduceSolutionHelper.make_produce_solution_call.delay(\
                                     self.pipeline_id,
                                     self.websocket_id,
@@ -455,4 +447,4 @@ class FitSolutionHelper(BasicErrCheck):
                                     prod_params,
                                     search_id=self.search_id,
                                     session_key=self.session_key,
-                                    is_partials_call=is_partials_call)
+                                    produce_dataset_name=produce_dataset_name)

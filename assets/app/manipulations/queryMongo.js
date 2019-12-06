@@ -2,7 +2,7 @@ import jsep from 'jsep';
 import {alignmentData} from "../app";
 
 // functions for generating database queries
-// subset queries are built typically built from pipelines witin app.manipulations. An additional menu step may be added too
+// subset queries are built from manipulations pipelines. An additional menu step may be added too
 
 // build*() functions are pure and return mongo queries. There is one per step type, and one for the overall pipeline
 // process*() functions are for constructing the subset query, relative to a specific node, group, or rule on the query tree
@@ -278,26 +278,41 @@ export function expansionTerms(preferences) {
 
 // ~~~~ IMPUTATION ~~~~
 export function buildImputation(imputations) {
+    let parseType = (variableType, value) => (({
+        'string': _ => _,
+        'numeric': parseFloat,
+        'date': v => new Date(v).toISOString(),
+        'bool': v => !(v.toLowerCase().startsWith('f') || v.startsWith('0') || v.toLowerCase().startsWith('n'))
+    })[variableType](value));
+
     return imputations.map(imputation => {
+        let nullValues = Object.keys(imputation.variableTypes)
+            .reduce((values, variable) => Object.assign(values, {
+                [variable]: imputation.nullValues.split(' ')
+                    .map(nullValue => parseType(imputation.variableTypes[variable], nullValue))
+            }), {});
         if (imputation.imputationMode === 'Delete') return {
             $match: [...imputation.variables].reduce((out, variable) => {
-                out[variable] = {$ne: imputation.nullValue};
+                out[variable] = {$nin: nullValues[variable]};
                 return out;
             }, {})
         };
 
-        if (imputation.imputationMode === 'Replace') return {
-            $addFields: Object.keys(imputation.replacementValues).reduce((out, variable) => {
-                out[variable] = {
-                    $cond: {
-                        if: {$eq: ['$' + variable, imputation.nullValue]},
-                        then: imputation.replacementValues[variable],
-                        else: '$' + variable
-                    }
-                };
-                return out;
-            }, {})
-        };
+        if (imputation.imputationMode === 'Replace') {
+
+            return {
+                $addFields: Object.keys(imputation.replacementValues).reduce((out, variable) => {
+                    out[variable] = {
+                        $cond: {
+                            if: {$in: ['$' + variable, nullValues[variable]]},
+                            then: imputation.replacementValues[variable],
+                            else: '$' + variable
+                        }
+                    };
+                    return out;
+                }, {})
+            };
+        }
     })
 }
 
@@ -843,6 +858,7 @@ export function buildMenu(step) {
     ];
 
     if (metadata.type === 'continuous') {
+        console.log('buckets', metadata);
         let boundaries = Array(metadata.buckets + 1).fill(0).map((arr, i) => metadata.min + i * (metadata.max - metadata.min) / metadata.buckets);
         boundaries[boundaries.length - 1] += 1; // the upper bound is exclusive
         return [
@@ -907,9 +923,9 @@ export function buildMenu(step) {
                 out[variable + '-mean'] = {$avg: '$' + variable};
                 out[variable + '-max'] = {$max: '$' + variable};
                 out[variable + '-min'] = {$min: '$' + variable};
-                out[variable + '-sd'] = {$stdDevPop: '$' + variable};
-                out[variable + '-valid'] = {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 1, 0]}};
-                out[variable + '-invalid'] = {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 0, 1]}};
+                out[variable + '-stdDev'] = {$stdDevPop: '$' + variable};
+                out[variable + '-validCount'] = {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 1, 0]}};
+                out[variable + '-invalidCount'] = {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 0, 1]}};
                 out[variable + '-types'] = {$addToSet: {$type: '$' + variable}};
                 out[variable + '-uniques'] = {$addToSet: '$' + variable};
                 return out;
@@ -921,9 +937,9 @@ export function buildMenu(step) {
                     mean: '$' + variable + '-mean',
                     max: '$' + variable + '-max',
                     min: '$' + variable + '-min',
-                    sd: '$' + variable + '-sd',
-                    valid: '$' + variable + '-valid',
-                    invalid: '$' + variable + '-invalid',
+                    stdDev: '$' + variable + '-stdDev',
+                    validCount: '$' + variable + '-validCount',
+                    invalidCount: '$' + variable + '-invalidCount',
                     types: '$' + variable + '-types',
                     uniques: {$size: '$' + variable + '-uniques'}
                 };

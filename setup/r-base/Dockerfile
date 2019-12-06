@@ -40,7 +40,6 @@ RUN  R -e 'install.packages("Rcpp", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("Amelia", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("Rook", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("jsonlite", repos="http://cran.rstudio.org")' && \
-    R -e 'install.packages("rjson", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("devtools", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("DescTools", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("nloptr", repos="http://cran.rstudio.org")' && \

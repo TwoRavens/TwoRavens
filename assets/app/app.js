@@ -3,6 +3,7 @@
 */
 import hopscotch from 'hopscotch';
 import m from 'mithril';
+window.m = m;
 
 import $ from 'jquery';
 import * as d3 from 'd3';
@@ -16,6 +17,7 @@ import {locationReload, setModal} from '../common/views/Modal';
 
 import * as queryMongo from "./manipulations/queryMongo";
 import * as solverD3M from './solvers/d3m';
+import * as solverWrapped from './solvers/wrapped';
 
 import * as model from './model';
 import * as manipulate from './manipulations/manipulate';
@@ -185,9 +187,12 @@ export async function updatePeek(pipeline) {
     m.redraw();
 }
 
-export let downloadFile = async datasetUrl => {
+export let downloadFile = async (datasetUrl, contentType) => {
+    console.log(datasetUrl);
     if (!datasetUrl) return;
-    let downloadUrl = D3M_SVC_URL + '/download-file?' + m.buildQueryString({data_pointer: datasetUrl});
+    let data = {data_pointer: datasetUrl};
+    if (contentType) data['content_type'] = contentType;
+    let downloadUrl = D3M_SVC_URL + '/download-file?' + m.buildQueryString(data);
 
     console.warn('Download URL');
     console.log(downloadUrl);
@@ -229,7 +234,7 @@ export let is_explore_mode = false;
 export let is_results_mode = false;
 export let is_manipulate_mode = false;
 
-export function set_mode(mode) {
+export function setSelectedMode(mode) {
     mode = mode ? mode.toLowerCase() : 'model';
 
     // remove empty steps when leaving manipulate mode
@@ -265,9 +270,32 @@ export function set_mode(mode) {
 
 
     if (currentMode !== mode) {
-        if (mode === 'model' && manipulate.pendingHardManipulation) {
+        if (is_results_mode) {
+            taskPreferences.isResultsClicked = true;
+            let selectedProblem = getSelectedProblem();
+
+            // a solved problem, and its copy, are not pending
+            selectedProblem.pending = false;
+
+            let copiedProblem = getProblemCopy(selectedProblem);
+
+            workspace.raven_config.problems[copiedProblem.problemID] = copiedProblem;
+
+            // denote as solved problem
+            if (!selectedProblem.solverState)
+                selectedProblem.solverState = {};
+            selectedProblem.system = 'solved';
+
+            if (!results.resultsPreferences.dataSplit)
+                results.resultsPreferences.dataSplit = 'test';
+
+            if (results.resultsPreferences.dataSplit !== 'all' && !selectedProblem.splitOptions.outOfSampleSplit)
+                results.resultsPreferences.dataSplit = 'all';
+        }
+
+        if (is_model_mode && manipulate.pendingHardManipulation) {
             let ravenConfig = workspace.raven_config;
-            buildDatasetPreprocess(ravenConfig).then(response => {
+            buildDatasetPreprocess().then(response => {
                 if (!response.success) alertLog(response.message);
                 else {
                     setVariableSummaries(response.data.variables);
@@ -283,63 +311,24 @@ export function set_mode(mode) {
         m.redraw()
     }
 
-    if (is_results_mode) {
-        let resultsProblem = getResultsProblem();
-
-        // reload the results if on the results tab and there are pending changes
-        if (!resultsProblem || solverPending)
-            estimate();
-    }
-
     // cause the peek table to redraw
     resetPeek();
 }
 
-// TODO: should have an early exit if the manipulations are empty
-export let buildDatasetPreprocess = async ravenConfig => await getData({
-    method: 'aggregate',
-    query: JSON.stringify(queryMongo.buildPipeline(
-        ravenConfig.hardManipulations,
-        ravenConfig.variablesInitial)['pipeline']),
-    export: 'dataset'
-}).then(url => m.request({
-    method: 'POST',
-    url: ROOK_SVC_URL + 'preprocess.app',
-    data: {
-        data: url,
-        datastub: workspace.d3m_config.name
-    }
-}));
+export let buildDatasetPreprocess = () => getPreprocess(
+    JSON.stringify(queryMongo.buildPipeline(
+        workspace.raven_config.hardManipulations,
+        workspace.raven_config.variablesInitial)['pipeline']));
 
-export let buildProblemPreprocess = async (ravenConfig, problem) => await getData({
-    method: 'aggregate',
-    query: JSON.stringify(queryMongo.buildPipeline(
-        [...ravenConfig.hardManipulations, ...problem.manipulations, {
-            type: 'menu',
-            metadata: {
-                type: 'data',
-                nominal: getNominalVariables(problem),
-                sample: 5000
-            }
-        }],
-        ravenConfig.variablesInitial)['pipeline']),
-    export: 'dataset'
-}).then(url => m.request({
-    method: 'POST',
-    url: ROOK_SVC_URL + 'preprocess.app',
-    data: {
-        data: url,
-        datastub: workspace.d3m_config.name,
-        l1_activity: 'PROBLEM_DEFINITION',
-        l2_activity: 'PROBLEM_SPECIFICATION'
-    }
-})).then(response => {
-    if (!response.success) alertError(response.message);
-    else return response.data.variables
-});
+export let buildProblemPreprocess = problem => getPreprocess(JSON.stringify(queryMongo.buildPipeline(
+    [...workspace.raven_config.hardManipulations, ...problem.manipulations, {
+        type: 'menu',
+        metadata: {type: 'data', nominal: getNominalVariables(problem), sample: 5000}
+    }],
+    workspace.raven_config.variablesInitial)['pipeline']));
 
 
-export async function buildDatasetUrl(problem, lastStep) {
+export async function buildDatasetUrl(problem, lastStep, dataPath, collectionName) {
 
     let steps = [
         ...workspace.raven_config.hardManipulations,
@@ -360,19 +349,28 @@ export async function buildDatasetUrl(problem, lastStep) {
 
     let compiled = queryMongo.buildPipeline([...steps, problemStep], workspace.raven_config.variablesInitial)['pipeline'];
 
-    return await getData({
+    let body = {
         method: 'aggregate',
         query: JSON.stringify(compiled),
-        export: 'dataset'
-    });
+        export: 'csv'
+    };
+
+    if (dataPath) body.datafile = dataPath;
+    if (collectionName) body.collection_name = collectionName;
+    return await getData(body);
 }
 
-export async function buildProblemUrl(problem) {
+export async function buildProblemUrl(problem, lastStep, dataPath, collectionName) {
+
+    let steps = [
+        ...workspace.raven_config.hardManipulations,
+        ...problem.manipulations,
+    ];
+    if (lastStep) steps = steps.slice(0, steps.indexOf(lastStep));
 
     let variables = ['d3mIndex', ...getPredictorVariables(problem), ...problem.targets];
     let abstractPipeline = [
-        ...workspace.raven_config.hardManipulations,
-        ...problem.manipulations,
+        ...steps,
         {
             type: 'menu',
             metadata: {
@@ -387,45 +385,54 @@ export async function buildProblemUrl(problem) {
     let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
     let metadata = queryMongo.translateDatasetDoc(compiled, workspace.datasetDoc, problem);
 
-    return await getData({
+    let body = {
         method: 'aggregate',
         query: JSON.stringify(compiled),
-        export: 'problem',
+        export: 'dataset',
         metadata: JSON.stringify(metadata)
-    });
+    };
+
+    if (dataPath) body.datafile = dataPath;
+    if (collectionName) body.collection_name = collectionName;
+    return await getData(body);
 }
 
-export let getData = async body => m.request({
-    url: mongoURL + 'get-data',
-    method: 'POST',
-    data: Object.assign({
-        datafile: workspace.datasetPath, // location of the dataset csv
-        collection_name: workspace.d3m_config.name // collection/dataset name
-    }, body)
-}).then(response => {
-    // console.log('-- getData --');
-    if (!response.success) throw response;
+let getDataPromise;
+export let getData = async body => {
+    if (getDataPromise) await getDataPromise;
+    getDataPromise = m.request({
+        url: mongoURL + 'get-data',
+        method: 'POST',
+        data: Object.assign({
+            datafile: workspace.datasetPath, // location of the dataset csv
+            collection_name: workspace.d3m_config.name // collection/dataset name
+        }, body)
+    }).then(response => {
+        // console.log('-- getData --');
+        if (!response.success) throw response;
 
-    // parse Infinity, -Infinity, NaN from unambiguous string literals. Coding handled in python function 'json_comply'
-    let jsonParseLiteral = obj => {
-        if (obj === undefined || obj === null) return obj;
-        if (Array.isArray(obj)) return obj.map(jsonParseLiteral);
+        // parse Infinity, -Infinity, NaN from unambiguous string literals. Coding handled in python function 'json_comply'
+        let jsonParseLiteral = obj => {
+            if (obj === undefined || obj === null) return obj;
+            if (Array.isArray(obj)) return obj.map(jsonParseLiteral);
 
-        if (typeof obj === 'object') return Object.keys(obj).reduce((acc, key) => {
-            acc[key] = jsonParseLiteral(obj[key]);
-            return acc;
-        }, {});
+            if (typeof obj === 'object') return Object.keys(obj).reduce((acc, key) => {
+                acc[key] = jsonParseLiteral(obj[key]);
+                return acc;
+            }, {});
 
-        if (typeof obj === 'string') {
-            if (obj === '***TWORAVENS_INFINITY***') return Infinity;
-            if (obj === '***TWORAVENS_NEGATIVE_INFINITY') return -Infinity;
-            if (obj === '***TWORAVENS_NAN***') return NaN;
-        }
+            if (typeof obj === 'string') {
+                if (obj === '***TWORAVENS_INFINITY***') return Infinity;
+                if (obj === '***TWORAVENS_NEGATIVE_INFINITY') return -Infinity;
+                if (obj === '***TWORAVENS_NAN***') return NaN;
+            }
 
-        return obj;
-    };
-    return jsonParseLiteral(response.data);
-});
+            return obj;
+        };
+        return jsonParseLiteral(response.data);
+    });
+    return getDataPromise;
+};
 
 
 export let saveSystemLogEntry = async logData => {
@@ -482,7 +489,6 @@ export let setRightTab = tab => {
 */
 export let setLeftTab = (tabName) => {
     leftTab = tabName;
-    console.log('tab: ' + tabName)
     updateLeftPanelWidth();
 
     // behavioral logging
@@ -545,14 +551,41 @@ if (!IS_EVENTDATA_DOMAIN) {
 // Initialize a websocket for this page
 //-------------------------------------------------
 export let wsLink = WEBSOCKET_PREFIX + window.location.host +
-               '/ws/connect/' + username + '/';
-console.log('streamSocket connection made: ' + wsLink);
-export let streamSocket = new WebSocket(wsLink);
+    '/ws/connect/' + username + '/';
+function connectWebsocket() {
+    let ws = null;
 
+    function start() {
+
+        try {
+            ws = new WebSocket(wsLink);
+        } catch (err) {
+            console.log('Cannot connect to streamSocket:', wsLink)
+        }
+        ws.onopen = function () {
+            console.log('Connected to streamSocket:', wsLink);
+        };
+        ws.onmessage = websocketMessage;
+        ws.onclose = function () {
+            console.log('Attempting reconnect to streamSocket:', wsLink);
+            check();
+        };
+    }
+
+    function check() {
+        if (!ws || ws.readyState === 3) start();
+    }
+
+    start();
+
+    setInterval(check, 10000);
+}
+
+document.addEventListener("DOMContentLoaded", connectWebsocket);
 export let streamMsgCnt = 0;
 //  messages received.
 //
-streamSocket.onmessage = function (e) {
+function websocketMessage(e) {
     streamMsgCnt++;
     debugLog(streamMsgCnt + ') message received! ' + e);
     // parse the data into JSON
@@ -565,72 +598,69 @@ streamSocket.onmessage = function (e) {
         return;
     }
 
-    if (msg_data.data === undefined && msg_data.msg_type !== 'DATAMART_AUGMENT_PROCESS') {
-        debugLog('streamSocket.onmessage: Error, "msg_data.data" type not specified!');
-        debugLog('full data: ' + JSON.stringify(msg_data));
-        debugLog('---------------------------------------------');
-        return;
-    }
+    console.groupCollapsed(`WS: ${msg_data.msg_type || 'unknown'}`);
 
-    debugLog('Got it! Message type: ' + msg_data.msg_type);
-    debugLog('full data: ' + JSON.stringify(msg_data));
-    //JSON.stringify(msg_data));
+    try {
+        console.log(msg_data);
+        if (msg_data.msg_type === 'receive_describe_msg')
+            solverWrapped.handleDescribeResponse(msg_data);
+        else if (msg_data.msg_type === 'receive_score_msg')
+            solverWrapped.handleScoreResponse(msg_data);
+        else if (msg_data.msg_type === 'receive_produce_msg')
+            solverWrapped.handleProduceResponse(msg_data);
+        else if (msg_data.msg_type === 'receive_solve_msg')
+            solverWrapped.handleSolveCompleteResponse(msg_data);
 
-    if (msg_data.msg_type === 'GetSearchSolutionsResults') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        solverD3M.handleGetSearchSolutionResultsResponse(msg_data.data);
+        else if (msg_data.data === undefined && msg_data.msg_type !== 'DATAMART_AUGMENT_PROCESS') {
+            debugLog('streamSocket.onmessage: Error, "msg_data.data" type not specified!');
+            debugLog('full data: ' + JSON.stringify(msg_data));
+            debugLog('---------------------------------------------');
+        }
+
+        else if (msg_data.msg_type === 'GetSearchSolutionsResults') {
+            debugLog(msg_data.msg_type + ' recognized!');
+            solverD3M.handleGetSearchSolutionResultsResponse(msg_data.data);
+        } else if (msg_data.msg_type === 'DescribeSolution') {
+            debugLog(msg_data.msg_type + ' recognized!');
+            solverD3M.handleDescribeSolutionResponse(msg_data.data);
+        } else if (msg_data.msg_type === 'GetScoreSolutionResults') {
+            debugLog(msg_data.msg_type + ' recognized!');
+            solverD3M.handleGetScoreSolutionResultsResponse(msg_data.data);
+        } else if (msg_data.msg_type === 'GetProduceSolutionResults') {
+            debugLog(msg_data.msg_type + ' recognized!');
+            solverD3M.handleGetProduceSolutionResultsResponse(msg_data.data);
+        } else if (msg_data.msg_type === 'GetFitSolutionResults') {
+            debugLog(msg_data.msg_type + ' recognized!');
+            debugLog('No handler: Currently not using GetFitSolutionResultsResponse...');
+        } else if (msg_data.msg_type === 'ENDGetSearchSolutionsResults') {
+            debugLog(msg_data.msg_type + ' recognized!');
+            solverD3M.handleENDGetSearchSolutionsResults(msg_data.data);
+        } else if (msg_data.msg_type === 'DATAMART_MATERIALIZE_PROCESS') {
+            debugLog(msg_data.msg_type + ' recognized!');
+            handleMaterializeDataMessage(msg_data);
+        } else if (msg_data.msg_type === 'DATAMART_AUGMENT_PROCESS') {
+            debugLog(msg_data.msg_type + ' recognized!');
+            handleAugmentDataMessage(msg_data);
+        } else if (msg_data.msg_type === 'DATAMART_SEARCH_BY_DATASET') {
+            debugLog(msg_data.msg_type + ' recognized!');
+            handleSearchbyDataset(msg_data);
+        } else {
+            console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
+        }
+    } finally {
+        console.groupEnd();
     }
-    else if (msg_data.msg_type === 'DescribeSolution') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        solverD3M.handleDescribeSolutionResponse(msg_data.data);
-    }
-    else if (msg_data.msg_type === 'GetScoreSolutionResults') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        solverD3M.handleGetScoreSolutionResultsResponse(msg_data.data);
-    }
-    else if (msg_data.msg_type === 'GetProduceSolutionResults') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        solverD3M.handleGetProduceSolutionResultsResponse(msg_data.data, 'fittedValues');
-    }
-    else if (msg_data.msg_type === 'GetPartialsSolutionResults') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        solverD3M.handleGetProduceSolutionResultsResponse(msg_data.data, 'partialsValues');
-    }
-    else if (msg_data.msg_type === 'GetFitSolutionResults') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        debugLog('No handler: Currently not using GetFitSolutionResultsResponse...');
-    }
-    else if (msg_data.msg_type === 'ENDGetSearchSolutionsResults') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        solverD3M.handleENDGetSearchSolutionsResults(msg_data.data);
-    }
-    else if (msg_data.msg_type === 'DATAMART_MATERIALIZE_PROCESS') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        handleMaterializeDataMessage(msg_data);
-    }
-    else if (msg_data.msg_type === 'DATAMART_AUGMENT_PROCESS') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        handleAugmentDataMessage(msg_data);
-    }
-    else if (msg_data.msg_type === 'DATAMART_SEARCH_BY_DATASET') {
-        debugLog(msg_data.msg_type + ' recognized!');
-        handleSearchbyDataset(msg_data);
-    }
-    else {
-        console.log('streamSocket.onmessage: Error, Unknown message type: ' + msg_data.msg_type);
-    }
-};
-streamSocket.onclose = function(e) {
-      console.error('streamSocket closed unexpectedly');
-};
+}
 //-------------------------------------------------
 
 // when set, a problem's Task, Subtask and Metric may not be edited
 export let lockToggle = true;
 export let setLockToggle = state => {
-    let selectedProblem = getSelectedProblem();
-    if (state && selectedProblem.system === 'solved') hopscotch.startTour(lockTour(selectedProblem));
-    else lockToggle = state;
+    if (state && selectedProblem.system === 'solved') hopscotch.startTour(lockTour());
+    else {
+        hopscotch.endTour(true);
+        lockToggle = state;
+    }
 };
 export let isLocked = problem => lockToggle || problem.system === 'solved';
 
@@ -639,7 +669,6 @@ export let priv = true;
 // if no columns in the datasetDoc, swandive is enabled
 // swandive set to true if task is in failset
 export let swandive = false;
-let failset = ["TIME_SERIES_FORECASTING","GRAPH_MATCHING","LINK_PREDICTION","timeSeriesForecasting","graphMatching","linkPrediction"];
 
 // replacement for javascript's blocking 'alert' function, draws a popup similar to 'alert'
 export let alertLog = (value, shown) => {
@@ -780,7 +809,7 @@ export let d3mMetricsInverted = Object.keys(d3mMetrics)
     .reduce((out, key) => Object.assign(out, {[d3mMetrics[key]]: key}), {});
 
 export let d3mEvaluationMethods = {
-    holdout: "HOLDOUT",
+    holdOut: "HOLDOUT",
     kFold: "K_FOLD"
 };
 
@@ -830,6 +859,9 @@ export let applicableMetrics = {
         multivariate: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared']
     }
 };
+
+export let modelResults = {};
+
 
 export let byId = id => document.getElementById(id);
 // export let byId = id => {console.log(id); return document.getElementById(id);}
@@ -906,15 +938,13 @@ export let task1Tour = {
 };
 
 // appears when a user attempts to edit when the toggle is set
-export let lockTour = problem => ({
+export let lockTour = () => ({
     id: "lock_toggle",
     i18n: {doneBtn:'Ok'},
     showCloseButton: true,
     scrollDuration: 300,
     steps: [
-        step("btnLock", "left", "Locked Mode", problem.system === 'solved'
-            ? `<p>This problem cannot be edited, because it already has solutions.</p>`
-            : `<p>Click the lock button to enable editing.</p>`)
+        step("btnLock", "left", "Locked Mode", `<p>Click the lock button to enable editing.</p>`)
     ]
 });
 
@@ -981,6 +1011,7 @@ let getDatasetDoc = async dataset_schema_url => {
 
 let buildDefaultProblem = problemDoc => {
 
+    console.log('problemDoc', problemDoc);
     // create the default problem provided by d3m
     let targets = problemDoc.inputs.data
         .flatMap(source => source.targets.map(targ => targ.colName));
@@ -994,7 +1025,11 @@ let buildDefaultProblem = problemDoc => {
                 .filter(column => !column.role.includes('index') && !targets.includes(column.colName))
                 .map(column => column.colName));
 
-    let defaultProblem = {
+    if (!problemDoc.inputs.dataSplits)
+        problemDoc.inputs.dataSplits = {};
+
+    // defaultProblem
+    return {
         problemID: problemDoc.about.problemID,
         system: 'auto',
         version: problemDoc.about.version,
@@ -1006,22 +1041,39 @@ let buildDefaultProblem = problemDoc => {
         task: problemDoc.about.taskType,
         subTask: problemDoc.about.taskSubtype,
 
-        evaluationMethod: problemDoc.inputs.dataSplits.method || 'kFold',
-        testSize: problemDoc.inputs.dataSplits.trainTestRatio,
-        stratified: problemDoc.inputs.dataSplits.stratified,
-        randomSeed: problemDoc.inputs.dataSplits.randomSeed,
+        splitOptions: Object.assign({
+            outOfSampleSplit: true,
+            // evaluationMethod can only be holdOut
+            trainTestRatio: problemDoc.inputs.dataSplits.testSize || 0.35,
+            stratified: problemDoc.inputs.dataSplits.stratified,
+            shuffle: problemDoc.inputs.dataSplits.shuffle,
+            randomSeed: problemDoc.inputs.dataSplits.randomSeed,
+            splitsFile: undefined,
+            splitsDir: undefined,
+        }, problemDoc.splitOptions || {}),
+
+        searchOptions: Object.assign({
+            timeBoundSearch: undefined,
+            timeBoundRun: undefined,
+            priority: undefined,
+            solutionsLimit: undefined
+        },problemDoc.searchOptions || {}),
+
+        scoreOptions: {
+            evaluationMethod: problemDoc.inputs.dataSplits.method || 'kFold',
+            folds: problemDoc.inputs.dataSplits.folds || 10,
+            trainTestRatio: problemDoc.inputs.dataSplits.testSize || 0.35,
+            stratified: problemDoc.inputs.dataSplits.stratified,
+            shuffle: problemDoc.inputs.dataSplits.shuffle,
+            randomSeed: problemDoc.inputs.dataSplits.randomSeed,
+            splitsFile: problemDoc.inputs.dataSplits.splitsFile
+        },
 
         meaningful: false,
         manipulations: [],
-        solutions: {
-            d3m: {},
-            rook: {}
-        },
-        selectedSource: undefined, // 'd3m' or 'rook'
-        selectedSolutions: {
-            d3m: undefined,
-            rook: undefined
-        },
+        solutions: {},
+        selectedSource: undefined,
+        selectedSolutions: {},
         tags: {
             transformed: [],
             weights: [], // singleton list
@@ -1035,8 +1087,6 @@ let buildDefaultProblem = problemDoc => {
             loose: [] // variables displayed in the force diagram, but not in any groups
         }
     };
-
-    return defaultProblem;
 };
 
 /*
@@ -1094,11 +1144,11 @@ let getDatasetPath = async problem_data_info => {
     return problem_info_result.data.source_data_path;
 };
 
-export let getPreprocess = async (datasetPath, query) => {
-    if (query) datasetPath = await getData({
+export let getPreprocess = async query => {
+    let datasetPath = query ? await getData({
         method: 'aggregate', query,
-        export: 'dataset'
-    });
+        export: 'csv'
+    }) : workspace.raven_config.datasetPath;
 
     let response = await m.request({
         method: 'POST',
@@ -1186,7 +1236,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
             query: JSON.stringify(queryMongo.buildPipeline([
                 ...manipulations, {type: 'menu', metadata: {type: 'data', sample: 5000}}
             ], workspace.raven_config.variablesInitial)['pipeline']),
-            export: 'dataset'
+            export: 'csv'
         }));
 
     // PREPROCESS
@@ -1210,12 +1260,11 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                     .filter(variable => variableSummaries[variable].nature === 'nominal');
                 Object.values(workspace.raven_config.problems)
                     .forEach(problem => problem.tags.nominal = nominals);
-                // merge discovery into problem set if constructing a new raven config
-                Object.assign(workspace.raven_config.problems, discovery(preprocess.dataset.discovery));
             }
         })
         .then(m.redraw)
         .catch(err => {
+            console.error(err);
             setModal(m('div', m('p', "Preprocess failed."),
                 m('p', '(p: 2)')),
                 "Failed to load basic data.",
@@ -1224,6 +1273,21 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                 false,
                 locationReload);
             throw err;
+        });
+
+    // DISCOVERY
+    let promiseDiscovery = promiseSampledDatasetPath
+        .then(sampledDatasetPath => m.request(ROOK_SVC_URL + 'discovery.app', {
+            method: 'POST',
+            data: {path: sampledDatasetPath}
+        }))
+        .then(response => {
+            if (!response.success) {
+                console.warn(response.message);
+                return;
+            }
+            // merge discovery into problem set if constructing a new raven config
+            promisePreprocess.then(_ => Object.assign(workspace.raven_config.problems, discovery(response.data)))
         });
 
     // RECORD COUNT
@@ -1264,27 +1328,41 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                             predictors: [],
                             targets: [],
                             description: '',
-                            metric: 'meanSquaredError',
+                            metric: undefined,
                             metrics: [],
                             task: 'regression',
                             subTask: 'univariate',
 
-                            evaluationMethod: 'kFold',
-                            testSize: undefined,
-                            stratified: undefined,
-                            randomSeed: undefined,
+                            splitOptions: {
+                                outOfSampleSplit: true,
+                                trainTestRatio: 0.35,
+                                stratified: false,
+                                shuffle: true,
+                                randomSeed: undefined,
+                                splitsFile: undefined,
+                                splitsDir: undefined,
+                            },
+                            searchOptions: {
+                                timeBoundSearch: undefined,
+                                timeBoundRun: undefined,
+                                priority: undefined,
+                                solutionsLimit: undefined
+                            },
+                            scoreOptions: {
+                                evaluationMethod: 'kFold',
+                                folds: 10,
+                                trainTestRatio: 0.35,
+                                stratified: false,
+                                shuffle: true,
+                                randomSeed: undefined,
+                                splitsFile: undefined,
+                            },
 
                             meaningful: false,
                             manipulations: [],
-                            solutions: {
-                                d3m: {},
-                                rook: {}
-                            },
-                            selectedSource: undefined, // 'd3m' or 'rook'
-                            selectedSolutions: {
-                                d3m: undefined,
-                                rook: undefined
-                            },
+                            solutions: {},
+                            selectedSource: undefined,
+                            selectedSolutions: {},
                             tags: {
                                 transformed: [],
                                 weights: [], // singleton list
@@ -1344,7 +1422,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
         ]);
 
         if (awaitPreprocess)
-            await promisePreprocess;
+            await Promise.all([promisePreprocess, promiseDiscovery]);
 
         m.redraw();
 
@@ -1376,15 +1454,16 @@ export async function load({awaitPreprocess}={}) {
     // 1. Retrieve the configuration information
     //  dev view: http://127.0.0.1:8080/user-workspaces/d3m-configs/json/latest?pretty
     // ---------------------------------------
-    console.log('---------------------------------------');
-    console.log('-- 1. Retrieve the configuration information --');
-
     // let d3m_config_url = '/user-workspaces/d3m-configs/json/latest';
     let raven_config_url = '/user-workspaces/raven-configs/json/list';
     let config_result = await m.request({
         method: "POST",
         url: raven_config_url
     });
+
+    console.groupCollapsed('1. Retrieve the configuration information');
+    console.log(JSON.stringify(config_result));
+    console.groupEnd();
 
     // console.log(JSON.stringify(config_result));
 
@@ -1408,23 +1487,23 @@ export async function load({awaitPreprocess}={}) {
     // ---------------------------------------
     // 2. Load workspace
     // ---------------------------------------
-    console.log('---------------------------------------');
-    console.log('-- 2. Load workspace --');
+    console.groupCollapsed('2. Load workspace');
 
     let success = await loadWorkspace(workspace, {awaitPreprocess});
+    console.groupEnd();
     if (!success){
       // alertError('Failed to load workspace');
       return;
     }
 
     /**
-     * 5. Start the user session
+     * 3. Start the user session
      * rpc rpc Hello (HelloRequest) returns (HelloResponse) {}
      */
-    console.log('---------------------------------------');
-    console.log("-- 5. Start the user session /Hello --");
-
-    let responseTA2 = await makeRequest(D3M_SVC_URL + '/Hello', {});
+    let responseTA2 = await m.request(D3M_SVC_URL + '/Hello', {});
+    console.groupCollapsed('3. Start user session Hello');
+    console.log(JSON.stringify(responseTA2));
+    console.groupEnd();
     if (responseTA2) {
         if (responseTA2.success !== true) {
           //  const user_err_msg = "We were unable to connect to the TA2 system.  It may not be ready.  Please try again.  (status code: " + problemDoc.message + ")";
@@ -1526,246 +1605,205 @@ export function downloadIncomplete() {
     return false;
 }
 
-/**
-    called by switching to results mode
-*/
-export async function estimate() {
-    taskPreferences.isResultsClicked = true;
+export let materializeManipulations = async (problem, schemaIds) => {
 
-    let selectedProblem = getSelectedProblem();
+    let nominalVars = new Set(getNominalVariables(problem));
+    let predictorVars = getPredictorVariables(problem);
 
-    // return if current problem is already being solved
-    if ('d3mSearchId' in selectedProblem) return;
+    let hasNominal = [...problem.targets, ...predictorVars]
+        .some(variable => nominalVars.has(variable));
+    let hasManipulation = problem.manipulations.length > 0;
 
-    // a solved problem, and its copy, are not pending
-    selectedProblem.pending = false;
+    let needsProblemCopy = hasManipulation || hasNominal;
 
-    let copiedProblem = getProblemCopy(selectedProblem);
-
-    workspace.raven_config.problems[copiedProblem.problemID] = copiedProblem;
-    workspace.raven_config.resultsProblem = selectedProblem.problemID;
-
-    selectedProblem.system = 'solved';
-
-    if (!IS_D3M_DOMAIN){
-        // inactive.estimateNonD3M()
+    if (!needsProblemCopy)
         return;
-    }
 
-    if (swandive) {
-        alertError('estimate() function. Check app.js error with swandive (err: 003)');
-        return;
-    }
-
-    m.redraw();
-
-    // let nominalVars = new Set(getNominalVariables(selectedProblem));
-    // let predictorVars = getPredictorVariables(selectedProblem);
-    //
-    // let hasNominal = [...selectedProblem.targets, ...predictorVars]
-    //     .some(variable => nominalVars.has(variable));
-    // let hasManipulation = selectedProblem.manipulations.length > 0;
-
-    // let needsProblemCopy = hasManipulation || hasNominal;
-    //
-    let datasetPath = workspace.datasetPath;
     // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
-    // if (needsProblemCopy) {
-    //     let {data_path, metadata_path} = await buildProblemUrl(selectedProblem);
-    //     selectedProblem.datasetDocPath = metadata_path;
-    //     datasetPath = data_path;
-    // } else delete selectedProblem.datasetDocPath;
+    Object.keys(problem.datasetSchemas)
+        // only apply manipulations to a preset list of schema ids
+        .filter(schemaId => schemaIds === undefined || schemaId in schemaIds)
+        // ignore schemas with manipulations
+        .filter(schemaId => !(schemaId in problem.datasetSchemasManipulated))
+        // build manipulated dataset for schema
+        .forEach(schemaId => buildProblemUrl(problem).then(({data_path, metadata_path}) => {
+            problem.datasetSchemasManipulated[schemaId] = metadata_path;
+            problem.datasetPathsManipulated[schemaId] = data_path;
+        }))
+};
 
-    // initiate rook solver
-    callSolverEnabled && callSolver(selectedProblem, datasetPath);
+// should be equivalent to partials.app
+// loads up linearly spaced observations along domain and non-mangled levels/counts
+let loadPredictorDomains = async problem => {
+    if (problem.levels || problem.domain) return;
 
-    // let datasetDocPath = selectedProblem.datasetDocPath || workspace.d3m_config.dataset_schema;
-    let datasetDocPath = workspace.d3m_config.dataset_schema;
+    if (!variableSummariesLoaded) throw "variable summaries are not loaded";
+    let predictors = getPredictorVariables(problem);
+    let categoricals = getNominalVariables(problem).filter(variable => predictors.includes(variable));
+
+    let abstractPipeline = [...workspace.raven_config.hardManipulations, problem.manipulations];
+    let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
+
+    let facets = categoricals
+        .filter(variable => variableSummaries[variable].validCount > 0)
+        .reduce((facets, variable) => Object.assign(facets, {
+            [variable]: [
+                {$group: {_id: '$' + variable, count: {$sum: 1}}},
+                {$sort: {count: -1, _id: 1}},
+                {$limit: ICE_DOMAIN_MAX_SIZE},
+                {$project: {'_id': 0, level: '$_id', count: 1}}
+            ]
+        }), {});
+
+    // {[variable]: [{'level': level, 'count': count}, ...]}
+    problem.levels = Object.keys(facets).length > 0 ? (await getData({
+        method: 'aggregate',
+        query: JSON.stringify([
+            ...compiled,
+            {$facet: facets}
+        ])
+    }))[0] : {};
+
+    // {[variable]: *samples along domain*}
+    problem.domains = predictors.reduce((domains, predictor) => {
+        let summary = variableSummaries[predictor];
+        if (!summary.validCount)
+            domains[predictor] = [];
+        else if (categoricals.includes(predictor))
+            domains[predictor] = problem.levels[predictor].map(entry => entry.level);
+        else {
+            if (variableSummaries[predictor].binary)
+                domains[predictor] = [variableSummaries[predictor].min, variableSummaries[predictor].max];
+            else
+                domains[predictor] = linspace(
+                    variableSummaries[predictor].min,
+                    variableSummaries[predictor].max,
+                    ICE_DOMAIN_MAX_SIZE)
+        }
+        return domains;
+    }, {})
+};
+
+// materializing partials may only happen once per problem, all calls wait for same response
+export let materializePartialsPromise = {};
+export let materializePartials = async problem => {
+
+    console.log('materializing partials');
+    await loadPredictorDomains(problem);
+
+    // BUILD BASE DATASET (one record)
+    let dataset = [Object.keys(variableSummaries)
+        .reduce((record, variable) => Object.assign(record, {
+            [variable]: variable in problem.levels
+                ? problem.levels[variable][0].level // take most frequent level (first mode)
+                : variableSummaries[variable].median
+        }), {})];
+
+    // BUILD PARTIALS DATASETS
+    let partialsLocationInfo = await m.request({
+        method: 'POST',
+        url: D3M_SVC_URL + '/get-partials-datasets',
+        data: {
+            domains: problem.domains,
+            dataset_schema: workspace.datasetDoc,
+            dataset,
+            separate_variables: false,
+            name: 'partials'
+        }
+    });
+    if (!partialsLocationInfo.success) {
+        alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
+        throw partialsLocationInfo.message;
+    } else {
+        Object.assign(problem.datasetSchemas, partialsLocationInfo.data.dataset_schemas);
+        Object.assign(problem.datasetPaths, partialsLocationInfo.data.dataset_paths);
+    }
+};
+
+
+// BUILD DOMAINS
+export let ICE_SAMPLE_MAX_SIZE = 50;
+export let ICE_DOMAIN_MAX_SIZE = 20;
+
+export let materializeICEPromise = {};
+export let materializeICE = async problem => {
+    console.log('materializing ICE partials');
+
+    await loadPredictorDomains(problem);
+
+    let abstractPipeline = [...workspace.raven_config.hardManipulations, problem.manipulations];
+    let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
+
+    console.log(compiled);
+    // BUILD SAMPLE DATASET
+    let samplePaths = await getData({
+        method: 'aggregate',
+        query: JSON.stringify([...compiled, {$sample: {size: ICE_SAMPLE_MAX_SIZE}}, {$project: {_id: 0}}]),
+        export: 'dataset',
+        metadata: JSON.stringify(queryMongo.translateDatasetDoc(compiled, workspace.datasetDoc, problem))
+    });
+
+    // BUILD ICE DATASETS
+    let partialsLocationInfo = await m.request({
+        method: 'POST',
+        url: D3M_SVC_URL + '/get-partials-datasets',
+        data: {
+            domains: problem.domains,
+            dataset_schema_path: samplePaths.metadata_path,
+            separate_variables: true,
+            name: 'ICE_synthetic_'
+        }
+    });
+    if (!partialsLocationInfo.success) {
+        alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
+        throw partialsLocationInfo.message;
+    } else {
+        Object.assign(problem.datasetSchemas, partialsLocationInfo.data.dataset_schemas);
+        Object.assign(problem.datasetPaths, partialsLocationInfo.data.dataset_paths);
+    }
+};
+
+// materializing splits may only happen once per problem, all calls wait for same response
+export let materializeTrainTestPromise = {};
+export let materializeTrainTest = async problem => {
+
+    let temporalVariables = problem.task.toLowerCase() === 'timeseriesforecasting' ? problem.tags.time : [];
+    if (temporalVariables.length > 1)
+        alertWarn(`Multiple temporal variables found. Using the first temporal variable to split: ${temporalVariables[0]}`);
 
     let response = await m.request({
         method: 'POST',
         url: D3M_SVC_URL + '/get-train-test-split',
         data: {
-            nominal_variables: getNominalVariables(selectedProblem),
-            dataset_schema: workspace.d3m_config.dataset_schema,
-            train_test_ratio: selectedProblem.trainTestRatio
+            do_split: problem.splitOptions.outOfSampleSplit,
+            train_test_ratio: problem.splitOptions.trainTestRatio,
+            stratified: problem.splitOptions.stratified,
+            shuffle: problem.splitOptions.shuffle,
+            random_seed: problem.splitOptions.randomSeed,
+            splits_file_path: problem.splitOptions.splitsDir && problem.splitOptions.splitsFile && (problem.splitOptions.splitsDir + '/' + problem.splitOptions.splitsFile),
+
+            temporal_variable: temporalVariables[0],
+            nominal_variables: getNominalVariables(problem),
+            dataset_schema: problem.datasetSchemas.all,
         }
     });
 
     if (!response.success) {
-        alertError(response.message);
-        return;
-    }
-    let datasetDocPathTrain = response.data.dataset_schemas.train;
-    let datasetDocPathTest = response.data.dataset_schemas.test;
-    let datasetDocPathAll = response.data.dataset_schemas.all;
-    selectedProblem.indices = response.data.sample_test_indices;
-
-    let allParams = {
-        searchSolutionParams: solverD3M.GRPC_SearchSolutionsRequest(selectedProblem, datasetDocPathAll),
-        fitSolutionDefaultParams: solverD3M.GRPC_GetFitSolutionRequest(datasetDocPathTrain),
-        produceSolutionDefaultParams: solverD3M.GRPC_ProduceSolutionRequest(datasetDocPathTest),
-        scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPathAll)
-    };
-
-    if (variableSummariesLoaded) {
-        let partialsDatasetDocPath;
-        selectedProblem.d3mSolverState = 'preparing partials data';
-        m.redraw();
-        try {
-            let partialsLocationInfo = await m.request({
-                method: 'POST',
-                url: ROOK_SVC_URL + 'partials.app',
-                data: {metadata: variableSummaries}
-            });
-            if (!partialsLocationInfo.success) {
-                // alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
-                throw partialsLocationInfo.message;
-            } else {
-                selectedProblem.partialsDatasetPath = partialsLocationInfo.data.partialsDatasetPath;
-                partialsDatasetDocPath = partialsLocationInfo.data.partialsDatasetDocPath;
-            }
-        } catch(err) {
-            cdb(err);
-            // alertError(`Error: call to partials.app failed`);
-        }
-
-        if (partialsDatasetDocPath)
-            allParams.partialsSolutionParams = solverD3M.GRPC_ProduceSolutionRequest(partialsDatasetDocPath);
-
-        selectedProblem.d3mSolverState = 'initiating the search for solutions';
-        m.redraw();
+        console.warn('Materialize train/test error:', response.message);
+        alertWarn('Unable to create out-of-sample split. Using entire dataset for training and for in-sample testing.');
+        results.resultsPreferences.dataSplit = 'all';
+        problem.splitOptions.outOfSampleSplit = false;
+        return false;
     }
 
-    console.warn("#debug allParams");
-    console.log(JSON.stringify(allParams));
+    problem.datasetSchemas.train = response.data.dataset_schemas.train;
+    problem.datasetSchemas.test = response.data.dataset_schemas.test;
 
-    let res = await makeRequest(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', allParams);
+    problem.datasetPaths.train = response.data.dataset_paths.train;
+    problem.datasetPaths.test = response.data.dataset_paths.test;
 
-    if (!res || !res.success) {
-        solverD3M.handleENDGetSearchSolutionsResults();
-        alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
-        m.redraw();
-        return;
-    }
-
-    // sort resulting pipelines by the primary metric by default
-    results.selectedMetric.d3m = selectedProblem.metric;
-
-    // route streamed responses with this searchId to this problem
-    selectedProblem.d3mSearchId = res.data.searchId;
-
-    selectedProblem.d3mSolverState = '';
-    m.redraw();
-}
-
-export async function makeRequest(url, data) {
-    // console.log('url:', url);
-    // console.log('POST:', data);
-    let res;
-    try {
-        res = await m.request(url, {method: 'POST', data: data});
-        // console.log('response:', res);
-        // oftentimes rook fails with a {warning: '...'} JSON
-        if (res && 'warning' in res && Object.keys(res).length === 1) {
-            // alertWarn('Warning: ' + res.warning);
-            solverD3M.end_ta3_search(false, res.warning);
-        }
-    } catch(err) {
-        solverD3M.end_ta3_search(false, err);
-        cdb(err);
-        alertError(`Error: call to ${url} failed`);
-    }
-
-   /*
-    // call end_ta3_search if status != OK
-    // status may be in different places for different calls though, and this is not worth doing at the moment
-    let myreg = /d3m-service/g;
-    let isd3mcall = myreg.test(url);
-    if(isd3mcall) {
-        let mystatus = res.responseInfo.status.code.toUpperCase();
-        if(mystatus != "OK") {
-            solverD3M.end_ta3_search(false, "grpc response status not ok");
-        }
-    }
-    */
-
-    if (!IS_D3M_DOMAIN) {
-        m.redraw()
-    }
-    return res;
-}
-
-
-export let callSolverEnabled = false;
-// takes as input problem, calls rooksolver, and stores result
-export async function callSolver(prob, datasetPath=undefined) {
-    setSolverPending(false);
-
-    let hasManipulation = [...workspace.raven_config.hardManipulations, ...prob.manipulations].length > 0;
-    let hasNominal = getNominalVariables(prob).length > 0;
-
-    if (!datasetPath)
-        datasetPath = hasManipulation || hasNominal ? await buildDatasetUrl(prob) : workspace.datasetPath;
-
-    // solutions.rook[ravenID] = cachedResponse;
-    let params = {
-        regression: [
-            {method: 'lm'}, // old faithful
-            {method: 'pcr'}, // principal components regression
-            {method: 'glmnet'}, // lasso/ridge
-            {method: 'rpart'}, // regression tree
-            {method: 'knn'}, // k nearest neighbors
-            {method: 'earth'}, // regression splines
-            {method: 'svmLinear'} // linear support vector regression
-        ],
-        classification: [
-            ...(variableSummaries[prob.targets[0]].unique == 2 ? [
-                {method: 'glm', hyperparameters: {family: 'binomial'}},
-                {method: 'glmnet', hyperparameters: {family: 'binomial'}},
-            ] : []),
-            {method: 'lda'}, // linear discriminant analysis
-            {method: 'qda'}, // quadratic discriminant analysis
-            {method: 'rpart'}, // decision tree
-            {method: 'svmLinear'}, // support vector machine
-            {method: 'naive_bayes'},
-            {method: 'knn'}
-        ]
-    }[prob.task];
-
-    // keep the problem light
-    let probReduced = Object.assign({}, prob);
-    delete probReduced.solutions;
-    delete probReduced.metric;
-
-    m.redraw();
-
-    for (let param of params) await makeRequest(ROOK_SVC_URL + 'caret.app', Object.assign({
-        problem: probReduced,
-        dataset_path: datasetPath,
-        samples: prob.actualValues && prob.actualValues.map(point => point.d3mIndex)
-    }, param)).then(response => {
-        // assign source and remove errant fits
-        Object.keys(response.results)
-            .forEach(result => {
-
-                response.results[result].source = 'rook';
-                if ('error' in response.results[result])
-                    delete response.results[result];
-                else if (Object.keys(response.results[result].models)
-                    .some(target => 'error' in response.results[result].models[target]))
-                    delete response.results[result]
-            });
-
-        // add to rook solutions
-        Object.assign(prob.solutions.rook, response.results);
-        let selectedPipelines = results.getSelectedSolutions(prob);
-        if (selectedPipelines.length === 0) results.setSelectedSolution(prob, 'rook', Object.keys(prob.solutions.rook)[0]);
-        m.redraw()
-    });
-
-    m.redraw();
-}
+    return true;
+};
 
 // programmatically deselect every selected variable
 export let erase = () => {
@@ -1796,54 +1834,46 @@ export let hexToRgba = (hex, alpha) => {
  *  Process problems
  */
 export function discovery(problems) {
-
     // filter out problems with target of null
     // e.g. [{"target":null, "predictors":null,"transform":0, ...},]
     //
-    problems = problems.filter(yeTarget => yeTarget.target && yeTarget.target in variableSummaries);
+    problems = problems.filter(problem => problem.targets && problem.targets.every(target => target in variableSummaries));
 
     return problems.reduce((out, prob) => {
         let problemID = generateProblemID();
         let manips = [];
 
-        if (prob.subsetObs) {
-            manips.push({
-                type: 'subset',
-                id: 'subset ' + manips.length,
-                abstractQuery: [{
-                    id: problemID + '-' + String(0) + '-' + String(1),
-                    name: prob.subsetObs,
-                    show_op: false,
-                    cancellable: true,
-                    subset: 'automated'
-                }],
-                nodeId: 2,
-                groupId: 1
-            })
+        prob.subsetObs.forEach(subsetObs => manips.push({
+            type: 'subset',
+            id: 'subset ' + manips.length,
+            abstractQuery: [{
+                id: problemID + '-' + String(0) + '-' + String(1),
+                name: subsetObs,
+                show_op: false,
+                cancellable: true,
+                subset: 'automated'
+            }],
+            nodeId: 2,
+            groupId: 1
+        }));
+
+        // skip if transformations are present, D3M primitives cannot handle
+        if (!IS_D3M_DOMAIN) {
+            prob.transform.forEach(transformObs => {
+                let [variable, transform] = transformObs.split('=').map(_ => _.trim());
+                manips.push({
+                    type: 'transform',
+                    transforms: [{
+                        name: variable,
+                        equation: transform
+                    }],
+                    expansions: [],
+                    binnings: [],
+                    manual: [],
+                    id: 'transform ' + manips.length,
+                });
+            });
         }
-
-        if (prob.transform) {
-            // skip if transformations are present, D3M primitives cannot handle
-            if (IS_D3M_DOMAIN) return out;
-
-            let [variable, transform] = prob.transform.split('=').map(_ => _.trim());
-            manips.push({
-                type: 'transform',
-                transforms: [{
-                    name: variable,
-                    equation: transform
-                }],
-                expansions: [],
-                binnings: [],
-                manual: [],
-                id: 'transform ' + manips.length,
-            })
-        }
-
-        // R can't represent scalars
-        // So R json libraries demote singletons to scalars in serialization.
-        // coerceArray un-mangles data from R, in cases where you are expecting an array that could potentially be of length one
-        let coerceArray = data => Array.isArray(data) ? data : [data];
 
         // console.log('variableSummaries:' + JSON.stringify(variableSummaries))
         // console.log('>> prob:' +  JSON.stringify(prob))
@@ -1852,25 +1882,44 @@ export function discovery(problems) {
             problemID,
             system: "auto",
             description: undefined,
-            predictors: [...coerceArray(prob.predictors), ...getTransformVariables(manips)],
-            targets: [prob.target],
+            predictors: [...prob.predictors, ...getTransformVariables(manips)],
+            targets: prob.targets,
             // NOTE: if the target is manipulated, the metric/task could be wrong
             metric: undefined,
             metrics: [], // secondary evaluation metrics
             task: undefined,
             subTask: 'taskSubtypeUndefined',
             meaningful: false,
-            evaluationMethod: 'kFold',
+
+            splitOptions: {
+                outOfSampleSplit: true,
+                trainTestRatio: 0.35,
+                stratified: false,
+                shuffle: true,
+                randomSeed: undefined,
+                splitsFile: undefined,
+                splitsDir: undefined,
+            },
+            searchOptions: {
+                timeBoundSearch: undefined,
+                timeBoundRun: undefined,
+                priority: undefined,
+                solutionsLimit: undefined
+            },
+            scoreOptions: {
+                evaluationMethod: 'kFold',
+                folds: 10,
+                trainTestRatio: 0.35,
+                stratified: false,
+                shuffle: true,
+                randomSeed: undefined,
+                splitsFile: undefined,
+            },
+
             manipulations: manips,
-            solutions: {
-                d3m: {},
-                rook: {}
-            },
-            selectedSource: undefined, // 'd3m' or 'rook'
-            selectedSolutions: {
-                d3m: [],
-                rook: []
-            },
+            solutions: {},
+            selectedSource: undefined,
+            selectedSolutions: {},
             tags: {
                 transformed: [...getTransformVariables(manips)], // this is used when updating manipulations pipeline
                 weights: [], // singleton list
@@ -1879,10 +1928,9 @@ export function discovery(problems) {
                 nominal: Object.keys(variableSummaries)
                     .filter(variable => variableSummaries[variable].nature === 'nominal'),
                 loose: [] // variables displayed in the force diagram, but not in any groups
-            },
-            summaries: {} // this gets populated below
+            }
         };
-        setTask(variableSummaries[prob.target].plottype === "bar" ? 'classification' : 'regression', out[problemID])
+        setTask(inferIsCategorical(variableSummaries[prob.targets[0]]) ? 'classification' : 'regression', out[problemID]);
         return out;
     }, {});
 }
@@ -1890,9 +1938,7 @@ export function discovery(problems) {
 export let setVariableSummaries = state => {
     if (!state) return;
 
-    // Brian says d3mIndex should not be visible to the user,
-    //   but has knock-on effects currently:
-    // delete state.d3mIndex;
+    delete state.d3mIndex;
 
     variableSummaries = state;
 
@@ -2156,12 +2202,6 @@ export let getSelectedProblem = () => {
     if (!ravenConfig) return;
     return ravenConfig.problems[ravenConfig.selectedProblem];
 };
-export let getResultsProblem = () => {
-    if (!workspace) return;
-    let ravenConfig = workspace.raven_config;
-    if (!ravenConfig) return;
-    return ravenConfig.problems[ravenConfig.resultsProblem];
-};
 
 /*
  *  Return the problem description--or autogenerate one
@@ -2260,7 +2300,7 @@ export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
     step.manual.forEach(manual => out.add(manual.name));
 
     return out;
-}, new Set())
+}, new Set());
 
 export function setSelectedProblem(problemID) {
     let ravenConfig = workspace.raven_config;
@@ -2296,18 +2336,19 @@ export function setSelectedProblem(problemID) {
         .then(m.redraw);
 
     // update preprocess
-    buildProblemPreprocess(ravenConfig, problem)
-        .then(setVariableSummaries)
+    buildProblemPreprocess(problem)
+        .then(preprocess => setVariableSummaries(preprocess.variables))
         .then(m.redraw);
 
     resetPeek();
 
     // will trigger the call to solver, if a menu that needs that info is shown
     setSolverPending(true);
-}
 
-export function setResultsProblem(problemID) {
-    workspace.raven_config.resultsProblem = problemID;
+    if (results.resultsPreferences.dataSplit !== 'all' && !problem.splitOptions.outOfSampleSplit)
+        results.resultsPreferences.dataSplit = 'all';
+
+    window.selectedProblem = problem;
 }
 
 export function getProblemCopy(problemSource) {
@@ -2317,7 +2358,8 @@ export function getProblemCopy(problemSource) {
         provenanceID: problemSource.problemID,
         unedited: true,
         pending: true,
-        system: 'user'
+        system: 'user',
+        results: undefined
     });
 }
 
@@ -2577,3 +2619,30 @@ export let sample = (arr, n=1, replacement=false, ordered=false) => {
     if (ordered) indices = indices.sort();
     return indices.map(i => arr[i]);
 };
+
+export let inferIsCategorical = variableSummary => {
+    if (variableSummary.nature === 'nominal') return true;
+    if (variableSummary.nature === 'ordinal' && variableSummary.uniqueCount <= 20) return true;
+    return false;
+};
+
+export let isProblemValid = problem => {
+    let valid = true;
+    if (problem.task.toLowerCase() === 'timeseriesforecasting' && problem.tags.time.length === 0) {
+        alertError('One variable must be marked as temporal to solve a time series forecasting problem.')
+        valid = false;
+    }
+    if (problem.predictors.length === 0) {
+        alertError('At least one predictor is required.');
+        valid = false;
+    }
+    if (problem.targets.length === 0) {
+        alertError('At least one target is required.');
+        valid = false;
+    }
+    return valid;
+};
+
+// n linearly spaced points between min and max
+let linspace = (min, max, n) => Array.from({length: n})
+    .map((_, i) => min + (max - min) / (n - 1) * i);

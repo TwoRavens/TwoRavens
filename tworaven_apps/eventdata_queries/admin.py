@@ -2,7 +2,7 @@ from django.contrib import admin
 from tworaven_apps.eventdata_queries.models import \
     (EventDataSavedQuery,
      ArchiveQueryJob,
-     UserNotification)
+     UserNotification, MongoDataset)
 
 
 class EventDataSavedQueryAdmin(admin.ModelAdmin):
@@ -59,3 +59,14 @@ class UserNotificationAdmin(admin.ModelAdmin):
 
 
 admin.site.register(UserNotification, UserNotificationAdmin)
+
+
+class MongoDatasetAdmin(admin.ModelAdmin):
+    list_display = ('created',
+                    'name',
+                    'loading')
+
+    save_on_top = True
+
+
+admin.site.register(MongoDataset, MongoDatasetAdmin)

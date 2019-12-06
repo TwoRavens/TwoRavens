@@ -24,7 +24,7 @@ With the last command, Webpack will run in the background, detect any changes yo
 Download and install R at https://www.r-project.org. Execute the following with R to install R packages:
 
 ```
-install.packages(c("VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "Zelig"))
+install.packages(c("VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite", "devtools", "DescTools", "Zelig"))
 ```
 
 Note: this requires libssl-dev on Ubuntu 17.04.

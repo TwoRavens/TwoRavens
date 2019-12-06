@@ -19,7 +19,7 @@ except Exception as e:
     print("WARNING: Can't configure Django. %s" % e)
 
 
-from tworaven_apps.rook_services.preprocess_util import PreprocessUtil
+from tworaven_apps.R_services.preprocess_util import PreprocessUtil
 
 def test_preprocess():
 

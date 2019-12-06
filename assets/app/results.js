@@ -3,7 +3,7 @@ import m from 'mithril';
 import * as app from "./app";
 import * as plots from "./plots";
 
-import * as solverRook from './solvers/rook';
+import * as solverWrapped from './solvers/wrapped';
 import * as solverD3M from './solvers/d3m';
 
 import * as common from "./../common/common";
@@ -23,21 +23,41 @@ import Flowchart from "./views/Flowchart";
 import ButtonRadio from "../common/views/ButtonRadio";
 import VariableImportance from "./views/VariableImportance";
 import ModalVanilla from "../common/views/ModalVanilla";
+import * as queryMongo from "./manipulations/queryMongo";
 
 export let leftpanel = () => {
 
     let ravenConfig = app.workspace.raven_config;
-    let resultsProblem = app.getResultsProblem();
 
-    if (!resultsProblem) return;
+    let selectedProblem = app.getSelectedProblem();
+    if (!selectedProblem) return;
+
+    let solverSystemNames = ['auto_sklearn', 'tpot', 'mlbox', 'ludwig', 'h2o']; // 'caret'
+
+    // mljar-supervised only supports binary classification
+    if (selectedProblem.task && selectedProblem.subTask &&
+        selectedProblem.task.toLowerCase().includes('classification') &&
+        selectedProblem.subTask.toLowerCase().includes('binary'))
+        solverSystemNames.push('mljar-supervised');
+
+    let solverSystems = solverSystemNames
+        .reduce((out, systemId) => Object.assign(out, {
+            [systemId]: solverWrapped.getSystemAdapterWrapped(systemId)
+        }), {d3m: solverD3M.getD3MAdapter});
 
     let resultsContent = [
         m('div', {style: {display: 'inline-block', margin: '1em'}},
-            m('h4', `${ravenConfig.resultsProblem} for `, m('div[style=display:inline-block]', m(Dropdown, {
+            m('h4', `${ravenConfig.selectedProblem} for `, m('div[style=display:inline-block]', m(Dropdown, {
                 id: 'targetDropdown',
-                items: resultsProblem.targets,
+                items: selectedProblem.targets,
                 activeItem: resultsPreferences.target,
                 onclickChild: value => resultsPreferences.target = value,
+                style: {'margin-left': '1em'}
+            })), ' on data split ', m('div[style=display:inline-block]', m(Dropdown, {
+                id: 'dataSplitDropdown',
+                items: ['all'].concat(selectedProblem.splitOptions.outOfSampleSplit ? ['test', 'train'] : []),
+                activeItem: resultsPreferences.dataSplit,
+                onclickChild: value => resultsPreferences.dataSplit = value,
                 style: {'margin-left': '1em'}
             }))),
             // m(Dropdown, {
@@ -45,11 +65,11 @@ export let leftpanel = () => {
             //     items: Object.keys(ravenConfig.problems).filter(key =>
             //         Object.keys(ravenConfig.problems[key].solutions)
             //             .reduce((sum, source) => sum + Object.keys(ravenConfig.problems[key].solutions[source]).length, 0)),
-            //     activeItem: ravenConfig.resultsProblem,
-            //     onclickChild: app.setResultsProblem
+            //     activeItem: ravenConfig.selectedProblem,
+            //     onclickChild: app.setSelectedProblem
             // })
         ),
-        m('div#modelComparisonOption', {style: {display: 'inline-block'}},
+        m('div#modelComparisonOption', {style: {displayx: 'inline-block'}},
             m('input#modelComparisonCheck[type=checkbox]', {
                 onclick: m.withAttr("checked", setModelComparison),
                 checked: modelComparison,
@@ -60,66 +80,44 @@ export let leftpanel = () => {
                 style: {display: 'inline-block'}
             }, 'Model Comparison')
         ),
+
         m(MenuHeaders, {
             id: 'pipelineMenu',
             sections: [
                 {
-                    idSuffix: 'DiscoveredSolutions',
-                    value: [
-                        m('[style=display:inline-block;margin-right:1em]', 'Discovered Solutions'),
-                        resultsProblem.d3mSolverState !== undefined && [
-                            common.loaderSmall('D3M'),
-                            m('div[style=font-size:medium;margin-left:1em;display:inline-block]', resultsProblem.d3mSolverState)
-                        ]
-                    ],
+                    idSuffix: 'solvers',
+                    value: 'Solvers',
                     contents: m(Table, {
-                        id: 'pipelineTable',
-                        data: Object.values(resultsProblem.solutions.d3m)
-                            .map(solution => getSolutionAdapter(resultsProblem, solution))
-                            .map(adapter => Object.assign({
-                                    ID: String(adapter.getName()), Solution: adapter.getModel()
-                                },
-                                [resultsProblem.metric, ...resultsProblem.metrics]
-                                    .reduce((out, metric) => Object.assign(out, {
-                                        [metric]: app.formatPrecision(adapter.getScore(metric))
-                                    }), {}))),
-                        sortable: true,
-                        sortHeader: selectedMetric.d3m,
-                        setSortHeader: header => selectedMetric.d3m = header,
-                        sortDescending: !reverseSet.includes(selectedMetric.d3m),
-                        activeRow: new Set(resultsProblem.selectedSolutions.d3m),
-                        onclick: pipelineId => setSelectedSolution(resultsProblem, 'd3m', pipelineId)
+                        id: 'solverTable',
+                        data: Object.keys(solverSystems).map(systemId => ({
+                            solver: systemId,
+                            action: m(Button, {
+                                class: 'btn-sm',
+                                onclick: () => solverSystems[systemId](selectedProblem).solve(),
+                                disabled: !!(selectedProblem.solverState[systemId] || {}).thinking
+                            }, !!(selectedProblem.solverState[systemId] || {}).thinking ? 'Solving' : 'Solve'),
+                            state: selectedProblem.solverState[systemId] && m('',
+                                selectedProblem.solverState[systemId].thinking && common.loaderSmall(systemId),
+                                m('div[style=font-size:medium;margin-left:1em;display:inline-block]',
+                                    selectedProblem.solverState[systemId].message)
+                            ),
+                        })),
+                        headers: ['solver', 'action', 'state'],
+                        tableTags: m('colgroup',
+                            m('col', {span: 1, width: '15em'}),
+                            m('col', {span: 1, width: '3em'}),
+                            m('col', {span: 1}))
                     })
-                },
-                app.callSolverEnabled && {
-                    idSuffix: 'BaselineSolutions',
-                    value: [
-                        m('[style=display:inline-block;margin-right:1em]', 'Baselines'),
-                        // app.workspace.raven_config.rook === resultsProblem && common.loaderSmall('Rook')
-                    ],
-                    contents: [
-                        // m(Subpanel, {
-                        //     id: 'addModelSubpanel',
-                        //     onclick: app.setResultsProblem
-                        // }),
 
-                        m(Table, {
-                            id: 'pipelineTable',
-                            headers: ['Solution', 'Score'],
-                            data: Object.keys(resultsProblem.solutions.rook)
-                                .map(solutionId => [
-                                    solutionId,
-                                    solverRook.getScore(resultsProblem, resultsProblem.solutions.rook[solutionId])
-                                ]),
-                            sortHeader: 'Score',
-                            sortFunction: sortPipelineTable,
-                            activeRow: new Set(resultsProblem.selectedSolutions.rook),
-                            onclick: pipelineId => setSelectedSolution(resultsProblem, 'rook', pipelineId),
-                            tableTags: m('colgroup',
-                                m('col', {span: 1}),
-                                m('col', {span: 1, width: '30%'}))
-                        })
-                    ]
+                },
+                !solutionsCombined && solverSystems.map(solver => ({
+                    value: solver.systemId + ' Solutions',
+                    contents: getSolutionTable(selectedProblem, solver.systemId)
+                })),
+                solutionsCombined && {
+                    idSuffix: 'allSolutions',
+                    value: 'All Solutions',
+                    contents: getSolutionTable(selectedProblem)
                 }
             ]
         })
@@ -142,35 +140,35 @@ export let leftpanel = () => {
                     'You may select searches for other problems in the workspace to view their solutions.',
                     m(Table, {
                         data: Object.keys(app.workspace.raven_config.problems)
-                            .filter(problemId => 'd3mSearchId' in app.workspace.raven_config.problems[problemId])
+                            .filter(problemId => 'd3m' in ((app.workspace.raven_config.problems[problemId] || {}).solverState || {}))
                             .map(problemId => app.workspace.raven_config.problems[problemId])
                             .map(problem => [
                                 problem.problemID,
                                 problem.targets.join(', '),
-                                problem.d3mSearchId,
-                                problem.d3mSolverState === undefined ? 'stopped' : 'running',
-                                problem.d3mSolverState !== undefined && m(Button, {
+                                problem.solverState.d3m.searchId,
+                                problem.solverState.d3m.thinking ? 'running' : 'stopped',
+                                problem.solverState.d3m.thinking && m(Button, {
                                     title: 'stop the search',
                                     class: 'btn-sm',
                                     onclick: () => {
-                                      // User clicks the 'Stop' button next to
-                                      // a particular problem search
+                                        // User clicks the 'Stop' button next to
+                                        // a particular problem search
 
-                                      // behavioral logging
-                                      let logParams = {
-                                                    feature_id: 'RESULTS_STOP_PROBLEM_SEARCH',
-                                                    activity_l1: 'MODEL_SELECTION',
-                                                    activity_l2: 'PROBLEM_SEARCH_SELECTION'
-                                                  };
-                                      app.saveSystemLogEntry(logParams);
+                                        // behavioral logging
+                                        let logParams = {
+                                            feature_id: 'RESULTS_STOP_PROBLEM_SEARCH',
+                                            activity_l1: 'MODEL_SELECTION',
+                                            activity_l2: 'PROBLEM_SEARCH_SELECTION'
+                                        };
+                                        app.saveSystemLogEntry(logParams);
 
-                                      solverD3M.stopSearch(problem.d3mSearchId);
+                                        solverD3M.stopSearch(problem.solverState.d3m.searchId);
                                     }
                                 }, m(Icon, {name: 'stop'}))
                             ]),
                         headers: ['Name', 'Targets', 'Search ID', 'State', 'Stop'],
-                        activeRow: app.workspace.raven_config.resultsProblem,
-                        onclick: app.setResultsProblem
+                        activeRow: app.workspace.raven_config.selectedProblem,
+                        onclick: app.setSelectedProblem
                     }),
                     Object.keys(otherSearches).length > 0 && [
                         m('h4', 'Beyond Workspace'),
@@ -218,75 +216,86 @@ export let leftpanel = () => {
 export class CanvasSolutions {
 
     oninit() {
-        this.confusionFactor = undefined;
         this.confusionMode = 'Stack';
         app.updateRightPanelWidth()
     }
 
     predictionSummary(problem, adapters) {
 
+        if (adapters.every(adapter => !adapter.getDataPointer(resultsPreferences.dataSplit))) {
+            return [
+                'Waiting for solver to produce predictions.',
+                common.loader('PredictionSummary')
+            ]
+        }
+
         if (problem.task.toLowerCase().includes('regression') || problem.task.toLowerCase() === 'timeseriesforecasting') {
             let summaries = adapters.map(adapter => ({
-                name: adapter.getName(),
-                fittedValues: adapter.getFittedValues(resultsPreferences.target),
-                actualValues: adapter.getActualValues(resultsPreferences.target)
-            })).filter(summary => summary.fittedValues && summary.actualValues);
+                name: adapter.getSolutionId(),
+                fittedVsActual: adapter.getFittedVsActuals(resultsPreferences.target),
+            })).filter(summary => summary.fittedVsActual);
 
-            if (summaries.length === 0) return common.loader('PredictionSummary');
-
-            let xData = summaries.reduce((out, summary) =>
-                Object.assign(out, {[summary.name]: summary.fittedValues}), {});
-            let yData = summaries.reduce((out, summary) =>
-                Object.assign(out, {[summary.name]: summary.actualValues}), {});
+            if (summaries.length === 0) return [
+                'Processing predictions.',
+                common.loader('PredictionSummary')
+            ];
 
             let xName = 'Fitted Values';
             let yName = 'Actual Values';
-            let title = 'Fitted vs. Actuals for predicting ' + problem.targets.join(', ');
-            let legendName = 'Solution Name';
+            let countName = 'count';
+            let groupName = 'Solution Name';
+            let title = 'Fitted vs. Actuals for predicting ' + resultsPreferences.target;
+
+            summaries.forEach(summary => summary.fittedVsActual.map(entry => entry[groupName] = summary.name));
 
             return m('div', {
                 style: {'height': '500px'}
             }, m(PlotVegaLite, {
-                specification: plots.vegaScatter(xData, yData, xName, yName, title, legendName),
+                specification: plots.vegaScatter(
+                    summaries.flatMap(summary => summary.fittedVsActual),
+                    xName, yName, groupName, countName, title),
             }))
         }
 
         if (problem.task.toLowerCase().includes('classification')) {
 
             let summaries = adapters.map(adapter => ({
-                name: adapter.getName(),
+                name: adapter.getSolutionId(),
                 confusionMatrix: adapter.getConfusionMatrix(resultsPreferences.target)
             })).filter(summary => summary.confusionMatrix);
-            if (summaries.length === 0) return common.loader('PredictionSummary');
 
-            let setConfusionFactor = factor => this.confusionFactor = factor === 'undefined' ? undefined : factor;
+            if (summaries.length === 0) return [
+                'Processing data from backend.',
+                common.loader('PredictionSummary')
+            ];
 
             // ignore summaries without confusion matrices
             summaries = summaries.filter(summary => summary.confusionMatrix);
             if (summaries.length === 0) return;
 
             // collect classes from all summaries
-            let classes = [...new Set(summaries.flatMap(summary => summary.confusionMatrix.classes))]
+            let classes = [...new Set(summaries.flatMap(summary => summary.confusionMatrix.classes))];
 
             // convert to 2x2 if factor is set
-            if (this.confusionFactor !== undefined)
+            if (resultsPreferences.factor !== undefined)
                 summaries.forEach(summary => summary.confusionMatrix = confusionMatrixFactor(
                     summary.confusionMatrix.data,
                     summary.confusionMatrix.classes,
-                    this.confusionFactor));
+                    resultsPreferences.factor));
 
             // prevent invalid confusion matrix selection
             if (this.confusionMatrixSolution === undefined || !summaries.find(summary => summary.name === this.confusionMatrixSolution))
                 this.confusionMatrixSolution = summaries[0].name;
 
             return [
-                m('div[style=margin-bottom:1em]',
-                    m('label#confusionFactorLabel', 'Confusion Matrix Factor: '),
+                m('div[style=margin-bottom:1em]', 'Set the confusion matrix factor to view a confusion matrix where all other factors/levels are collapsed into a single class.',
+                    m('br'),
+                    m('label#confusionFactorLabel', 'Active factor/level: '),
                     m('[style=display:inline-block]', m(Dropdown, {
                         id: 'confusionFactorDropdown',
                         items: ['undefined', ...classes],
-                        activeItem: this.confusionFactor,
-                        onclickChild: setConfusionFactor,
+                        activeItem: resultsPreferences.factor,
+                        onclickChild: setResultsFactor,
                         style: {'margin-left': '1em'}
                     }))),
                 summaries.length > 1 && m('div',
@@ -306,24 +315,23 @@ export class CanvasSolutions {
                     id: 'confusionMenu',
                     currentTab: this.confusionMatrixSolution,
                     callback: solutionId => this.confusionMatrixSolution = solutionId,
-                    sections: summaries.map(summary => ({
+                    sections: summaries.map((summary, i) => ({
                         value: summary.name,
                         contents: [
-                            summary.confusionMatrix.classes.length === 2 && m(Table, {
-                                id: 'resultsPerformanceTable',
-                                headers: ['metric', 'score'],
-                                data: generatePerformanceData(summary.confusionMatrix.data),
-                                attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
-                            }),
-                            summary.confusionMatrix.data.length < 100 ? summary.confusionMatrix.classes.length > 0 ? m('div', {
-                                style: {'min-height': '500px', 'min-width': '500px'}
-                            }, m(ConfusionMatrix, Object.assign({}, summary.confusionMatrix, {
-                                id: 'resultsConfusionMatrixContainer' + summary.name,
-                                title: `Confusion Matrix for ${problem.targets[0]}`,
-                                startColor: '#ffffff', endColor: '#e67e22',
-                                margin: {left: 10, right: 10, top: 50, bottom: 10},
-                                attrsAll: {style: {height: '600px'}}
-                            })))
+                            resultsPreferences.factor !== undefined && m('div',
+                                i === 0 || this.confusionMode === 'Stack' ? `The scores in this table may differ from those in the left panel or the scores summary. These scores are computed without cross-validation, directly on the ${resultsPreferences.dataSplit} data split, when the positive class is ${resultsPreferences.factor}.` : '',
+                                m(Table, {
+                                    id: 'resultsPerformanceTable',
+                                    headers: ['metric', 'score'],
+                                    data: generatePerformanceData(summary.confusionMatrix.data, resultsPreferences.factor),
+                                    attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
+                                })),
+                            summary.confusionMatrix.classes.length < 100 ? summary.confusionMatrix.classes.length > 0 ? m(PlotVegaLite, {
+                                    specification: plots.vegaConfusionMatrix(
+                                        summary.confusionMatrix.data,
+                                        summary.confusionMatrix.classes,
+                                        'Predicted', 'Actual', 'count',
+                                        `Confusion Matrix for ${problem.targets[0]}${resultsPreferences.factor ? (' factor ' + resultsPreferences.factor) : ''}`)})
                                 : 'Too few classes for confusion matrix! There is a data mismatch.'
                                 : 'Too many classes for confusion matrix!'
                         ]
@@ -351,10 +359,12 @@ export class CanvasSolutions {
                 specification: {
                     "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
                     "description": `${metric} scores for ${problem.problemID}.`,
-                    data: {values: adapters.map(adapter => ({
-                            ID: adapter.getName(),
+                    data: {
+                        values: adapters.map(adapter => ({
+                            ID: adapter.getSolutionId(),
                             [metric]: adapter.getScore(metric)
-                        })).filter(point => point[metric] !== undefined)},
+                        })).filter(point => point[metric] !== undefined)
+                    },
                     "mark": "bar",
                     "encoding": {
                         "x": {"field": 'ID', "type": "nominal"},
@@ -378,8 +388,83 @@ export class CanvasSolutions {
 
         let importanceContent = common.loader('VariableImportance');
 
-        if (resultsPreferences.mode === 'PDP') {
+        if (resultsPreferences.importanceMode === 'EFD') {
+            let importanceData = problem.predictors.reduce((out, predictor) => Object.assign(out, {
+                [predictor]: adapter.getImportanceEFD(predictor)
+            }), {});
+
+            // reassign content if some data is not undefined
+            let importancePlots = Object.keys(importanceData).map(predictor => importanceData[predictor] && [
+                bold(predictor),
+                m(VariableImportance, {
+                    mode: resultsPreferences.importanceMode,
+                    data: importanceData[predictor]
+                        .filter(point => resultsPreferences.factor === undefined || String(resultsPreferences.factor) === String(point.level)),
+                    problem: problem,
+                    predictor,
+                    target: resultsPreferences.target,
+                    yLabel: valueLabel,
+                    variableLabel: variableLabel,
+                    summary: app.variableSummaries[predictor]
+                })
+            ]).filter(_ => _);
+
+            let isCategorical = app.getNominalVariables(problem).includes(resultsPreferences.target);
+            if (importancePlots.length > 0) importanceContent = m('div', [
+                m('div[style=margin: 1em]', italicize("Empirical first differences"), ` is a tool to measure variable importance from the empirical distribution of the data. The Y axis refers to the ${isCategorical ? 'probability of each level' : 'expectation'} of the dependent variable as the predictor (x) varies along its domain. Parts of the domain where the fitted and actual values align indicate high utility from the predictor. If the fitted and actual values are nearly identical, then the two lines may be indistinguishable.`),
+
+                problem.task.toLowerCase().includes('classification') && m('div[style=margin-bottom:1em]', 'Set the factor to filter EFD plots to a single class/factor/level.',
+                    m('br'),
+                    m('label#resultsFactorLabel', 'Active factor/level: '),
+                    m('[style=display:inline-block]', m(Dropdown, {
+                        id: 'resultsFactorDropdown',
+                        items: [
+                            'undefined',
+                            ...new Set(Object.values(importanceData)[0].map(point => point.level).sort(app.omniSort))
+                        ],
+                        activeItem: resultsPreferences.factor,
+                        onclickChild: setResultsFactor,
+                        style: {'margin-left': '1em'}
+                    }))),
+                importancePlots
+            ]);
+        }
+
+        if (resultsPreferences.importanceMode === 'Partials') {
+            let importancePlots = [
+                m('div[style=margin: 1em]', italicize("Partials"), ` shows the prediction of the model as one predictor is varied, and the other predictors are held at their mean.`),
+            ];
+            app.getPredictorVariables(problem).forEach(predictor => {
+                let importanceData = adapter.getImportancePartials(predictor);
+                if (importanceData) importancePlots.push(m('div',
+                    bold(predictor),
+                    m(VariableImportance, {
+                        mode: 'Partials',
+                        data: importanceData,
+                        problem: problem,
+                        predictor: predictor,
+                        target: resultsPreferences.target,
+                        yLabel: valueLabel,
+                        variableLabel: variableLabel,
+                        summary: app.variableSummaries[predictor]
+                    })
+                    // !categoricals.includes(predictor) && m(PlotVegaLite, {
+                    //     specification: plots.vegaDensityHeatmap(app.variableSummaries[predictor])
+                    // })
+                ));
+            });
+            if (importancePlots.length > 0) importanceContent = m('div', {style: 'overflow:auto'}, importancePlots);
+        }
+        if (resultsPreferences.importanceMode === 'PDP/ICE') {
+            let isCategorical = app.getNominalVariables(problem).includes(resultsPreferences.target);
+
             importanceContent = [
+                m('div[style=margin: 1em]',
+                    italicize("Individual conditional expectations"), ` draws one line for each individual in the data, as the selected predictor is varied. `
+                    + `A random sample of individuals are chosen from the dataset. `
+                    + (isCategorical
+                        ? 'The thickness of the lines is relative to the number of observations present at each level.'
+                        : 'The red line is a partial dependency plot- the average of the target variable over all individuals.')),
                 m('label', 'Importance for predictor:'),
                 m(Dropdown, {
                     id: 'predictorImportanceDropdown',
@@ -389,56 +474,31 @@ export class CanvasSolutions {
                 })
             ];
 
-            let importanceData = ({
-                EFD: adapter.getImportanceEFD,
-                Partials: adapter.getImportancePartials
-            })[resultsPreferences.mode](resultsPreferences.predictor);
+            let importanceData = adapter.getImportanceICE(resultsPreferences.predictor);
 
-            if (importanceData) importanceContent.push(m(VariableImportance, {
-                mode: resultsPreferences.mode,
+            if (importanceData) importanceContent.push(m('div', {style: 'overflow:auto'}, m(VariableImportance, {
+                mode: 'ICE',
                 data: importanceData,
                 problem: problem,
                 predictor: resultsPreferences.predictor,
                 target: resultsPreferences.target,
                 yLabel: valueLabel,
-                variableLabel: variableLabel
-            }));
+                variableLabel: variableLabel,
+                summary: app.variableSummaries[resultsPreferences.predictor]
+            })));
             else importanceContent.push(common.loader('VariableImportance'))
-        }
-        else {
-            let importanceData = problem.predictors.reduce((out, predictor) => Object.assign(out, {[predictor]: ({
-                EFD: adapter.getImportanceEFD,
-                Partials: adapter.getImportancePartials
-            })[resultsPreferences.mode](predictor)}), {});
 
-            // reassign content if some data is not undefined
-            let importancePlots = Object.keys(importanceData).map(predictor => importanceData[predictor] && [
-                bold(predictor),
-                m(VariableImportance, {
-                    mode: resultsPreferences.mode,
-                    data: importanceData[predictor],
-                    problem: problem,
-                    predictor,
-                    target: resultsPreferences.target,
-                    yLabel: valueLabel,
-                    variableLabel: variableLabel
-                })
-            ]).filter(_ => _);
-
-            if (importancePlots.length > 0) importanceContent = [
-                m('div[style=margin: 1em]', italicize("Empirical first differences"), ` is a tool to measure variable importance from the empirical distribution of the data. The "${valueLabel}" axis refers to the frequency of the dependent variable as the predictor (x) varies along its domain. Parts of the domain where the fitted and actual values align indicate high utility from the predictor.`),
-                importancePlots
-            ];
         }
         return [
             m('label', 'Variable importance mode:'),
             m(ButtonRadio, {
                 id: 'modeImportanceButtonBar',
-                onclick: mode => resultsPreferences.mode = mode,
-                activeSection: resultsPreferences.mode,
+                onclick: mode => resultsPreferences.importanceMode = mode,
+                activeSection: resultsPreferences.importanceMode,
                 sections: [
                     {value: 'EFD', title: 'empirical first differences'},
-                    {value: 'Partials', title: 'model prediction as predictor varies over its domain'}
+                    problem.datasetPaths.partials && {value: 'Partials', title: 'model prediction as predictor varies over its domain'},
+                    {value: 'PDP/ICE', title: 'partial dependence plot/individual conditional expectation'}
                 ]
             }),
             importanceContent
@@ -540,16 +600,16 @@ export class CanvasSolutions {
             header: 'Problem Description',
             shown: resultsSubpanels['Problem Description'],
             setShown: state => {
-               resultsSubpanels['Problem Description'] = state;
-               if(state){
-                 // behavioral logging
-                 let logParams = {
-                               feature_id: 'VIEW_PROBLEM_DESCRIPTION',
-                               activity_l1: 'MODEL_SELECTION',
-                               activity_l2: 'MODEL_EXPLANATION'
-                             };
-                 app.saveSystemLogEntry(logParams);
-               }
+                resultsSubpanels['Problem Description'] = state;
+                if (state) {
+                    // behavioral logging
+                    let logParams = {
+                        feature_id: 'VIEW_PROBLEM_DESCRIPTION',
+                        activity_l1: 'MODEL_SELECTION',
+                        activity_l2: 'MODEL_EXPLANATION'
+                    };
+                    app.saveSystemLogEntry(logParams);
+                }
             }
         }, m(Table, {
             headers: ['Variable', 'Data'],
@@ -575,30 +635,47 @@ export class CanvasSolutions {
             header: 'Solution Description',
             shown: resultsSubpanels['Solution Description'],
             setShown: state => {
-              resultsSubpanels['Solution Description'] = state;
-              if(state){
-                // behavioral logging
-                let logParams = {
-                              feature_id: 'VIEW_SOLUTION_DESCRIPTION',
-                              activity_l1: 'MODEL_SELECTION',
-                              activity_l2: 'MODEL_EXPLANATION'
-                            };
-                app.saveSystemLogEntry(logParams);
-              }
+                resultsSubpanels['Solution Description'] = state;
+                if (state) {
+                    // behavioral logging
+                    let logParams = {
+                        feature_id: 'VIEW_SOLUTION_DESCRIPTION',
+                        activity_l1: 'MODEL_SELECTION',
+                        activity_l2: 'MODEL_EXPLANATION'
+                    };
+                    app.saveSystemLogEntry(logParams);
+                }
             }
         }, m(Table, {
             headers: ['Variable', 'Data'],
             data: [
-                ['Source', firstSolution.source]
-            ].concat(firstSolution.source === 'rook' ? [
+                ['System', firstAdapter.getSystemId()],
+                ['Downloads', m(Table, {
+                    data: (firstSolution.produce || []).map(produce =>
+                        ({
+                            'name': produce.input.name,
+                            'predict type': produce.configuration.predict_type,
+                            'input': m(Button, {onclick: () => app.downloadFile(produce.input.resource_uri)}, 'Download'),
+                            'output': m(Button, {onclick: () => app.downloadFile('file://' + produce.data_pointer)}, 'Download'),
+                        }))
+
+                })],
+                ['Description', firstAdapter.getDescription()],
+                ['Model', firstAdapter.getName()]
+            ].concat(firstSolution.systemId === 'caret' ? [
                 ['Label', firstSolution.meta.label],
                 ['Caret/R Method', firstSolution.meta.method],
-                ['Tags', firstSolution.meta.tags]
-            ] : firstSolution.source === 'd3m' ? [
-                ['Pipeline ID', firstSolution.pipelineId],
-                ['Status', firstSolution.status],
-                ['Created', new Date(firstSolution.created).toUTCString()]
-            ] : [])
+                ['Tags', firstSolution.meta.tags],
+            ] : firstSolution.systemId === 'd3m' ? [
+                // ['Status', firstSolution.status],
+                // ['Created', new Date(firstSolution.created).toUTCString()]
+            ] : [
+                // ['Model Zip', m(Button, {
+                //     onclick: () => {
+                //         solverWrapped.downloadModel(firstSolution.model_pointer)
+                //     }
+                // }, 'Download')]
+            ])
         }));
 
         let predictionSummary = m(Subpanel, {
@@ -637,13 +714,13 @@ export class CanvasSolutions {
             }
         }, resultsSubpanels['Scores Summary'] && this.scoresSummary(problem, solutionAdapters));
 
-        let variableImportance = firstAdapter && firstAdapter.getSource() === 'd3m' && m(Subpanel, {
+        let variableImportance = selectedSolutions.length === 1 && m(Subpanel, {
             style: {margin: '0px 1em'},
             header: 'Variable Importance',
             shown: resultsSubpanels['Variable Importance'],
             setShown: state => {
                 resultsSubpanels['Variable Importance'] = state;
-                if(state){
+                if (state) {
                     // behavioral logging
                     let logParams = {
                         feature_id: 'VIEW_VARIABLE_IMPORTANCE',
@@ -655,25 +732,25 @@ export class CanvasSolutions {
             }
         }, resultsSubpanels['Variable Importance'] && this.variableImportance(problem, firstAdapter));
 
-        let visualizePipelinePanel = selectedSolutions.length === 1 && firstSolution.source === 'd3m' && m(Subpanel, {
+        let visualizePipelinePanel = selectedSolutions.length === 1 && firstSolution.systemId === 'd3m' && m(Subpanel, {
             style: {margin: '0px 1em'},
             header: 'Visualize Pipeline',
             shown: resultsSubpanels['Visualize Pipeline'],
             setShown: state => {
-              resultsSubpanels['Visualize Pipeline'] = state;
-              if(state){
-                // behavioral logging
-                let logParams = {
-                              feature_id: 'VIEW_VISUALIZE_PIPELINE',
-                              activity_l1: 'MODEL_SELECTION',
-                              activity_l2: 'MODEL_EXPLANATION'
-                            };
-                app.saveSystemLogEntry(logParams);
-              }
+                resultsSubpanels['Visualize Pipeline'] = state;
+                if (state) {
+                    // behavioral logging
+                    let logParams = {
+                        feature_id: 'VIEW_VISUALIZE_PIPELINE',
+                        activity_l1: 'MODEL_SELECTION',
+                        activity_l2: 'MODEL_EXPLANATION'
+                    };
+                    app.saveSystemLogEntry(logParams);
+                }
             }
         }, resultsSubpanels['Visualize Pipeline'] && this.visualizePipeline(firstSolution));
 
-        let performanceStatsContents = firstSolution.source === 'rook' && Object.keys(firstSolution.models)
+        let performanceStatsContents = firstSolution.systemId === 'caret' && Object.keys(firstSolution.models)
             .filter(target => firstSolution.models[target].statistics)
             .map(target => m('div',
                 m('h5', target),
@@ -687,14 +764,16 @@ export class CanvasSolutions {
             setShown: state => resultsSubpanels['Performance Statistics'] = state
         }, performanceStatsContents);
 
-        let coefficientsContents = firstSolution.source === 'rook' && Object.keys(firstSolution.models)
+        let coefficientsContents = firstSolution.systemId === 'caret' && Object.keys(firstSolution.models)
             .filter(target => firstSolution.models[target].coefficients !== undefined)
             .map(target => m('div',
                 m('h5', target),
-                m(Table, {data: ['intercept', ...app.getPredictorVariables(problem)].map((predictor, i) => [
+                m(Table, {
+                    data: ['intercept', ...app.getPredictorVariables(problem)].map((predictor, i) => [
                         predictor,
                         firstSolution.models[target].coefficients[i]
-                    ])}),
+                    ])
+                }),
                 firstSolution.models[target].coefficientCovarianceMatrix && m(ConfusionMatrix, {
                     id: target + 'CovarianceMatrix',
                     title: 'Coefficient Covariance Matrix for ' + target,
@@ -726,7 +805,7 @@ export class CanvasSolutions {
                 'P-value': row['Pr(>F)']
             }));
 
-        let anovaTablesContent = firstSolution.source === 'rook' && Object.keys(firstSolution.models)
+        let anovaTablesContent = firstSolution.systemId === 'caret' && Object.keys(firstSolution.models)
             .filter(target => firstSolution.models[target].anova)
             .map(target => m('div',
                 m('h5', target),
@@ -738,7 +817,7 @@ export class CanvasSolutions {
             setShown: state => resultsSubpanels['ANOVA Tables'] = state
         }, anovaTablesContent);
 
-        let VIFContents = firstSolution.source === 'rook' && Object.keys(firstSolution.models)
+        let VIFContents = firstSolution.systemId === 'caret' && Object.keys(firstSolution.models)
             .filter((target, i) => i === 0 && firstSolution.models[target].vif)
             .map(target => m('div',
                 m(Table, {
@@ -769,9 +848,96 @@ export class CanvasSolutions {
     }
 }
 
-let getSolutionAdapter = (problem, solution) => ({
-    rook: solverRook.getSolutionAdapter, d3m: solverD3M.getSolutionAdapter
-}[solution.source](problem, solution));
+// functions to extract information from D3M response format
+export let getSolutionAdapter = (problem, solution) => ({
+    getName: () => solution.name,
+    getDescription: () => solution.description,
+    getSystemId: () => solution.systemId,
+    getSolutionId: () => solution.solutionId || 'unknown',
+    getDataPointer: (dataSplit, predict_type='RAW') => {
+        let produce = (solution.produce || [])
+            .find(produce =>
+                produce.input.name === dataSplit &&
+                produce.configuration.predict_type === predict_type);
+        return produce && produce.data_pointer;
+    },
+    getFittedVsActuals: target => {
+        let adapter = getSolutionAdapter(problem, solution);
+        loadFittedVsActuals(problem, adapter);
+        if (solution.solutionId in resultsData.fittedVsActual)
+            return resultsData.fittedVsActual[solution.solutionId][target];
+    },
+    getConfusionMatrix: target => {
+        let adapter = getSolutionAdapter(problem, solution);
+        loadConfusionData(problem, adapter);
+        if (solution.solutionId in resultsData.confusion)
+            return resultsData.confusion[solution.solutionId][target];
+    },
+    getScore: metric => {
+        if (!solution.scores) return;
+        let evaluation = solution.scores.find(score => app.d3mMetricsInverted[score.metric.metric] === metric);
+        return evaluation && evaluation.value
+    },
+    getImportanceEFD: predictor => {
+        let adapter = getSolutionAdapter(problem, solution);
+        loadImportanceEFDData(problem, adapter);
+
+        if (resultsData.importanceEFD)
+            return resultsData.importanceEFD[predictor];
+    },
+    getImportancePartials: predictor => {
+        let adapter = getSolutionAdapter(problem, solution);
+        loadImportancePartialsFittedData(problem, adapter);
+
+        if (!resultsData.importancePartialsFitted[adapter.getSolutionId()]) return;
+
+        return app.melt(
+            problem.domains[predictor]
+                .map((x, i) => Object.assign({[predictor]: x},
+                    resultsData.importancePartialsFitted[adapter.getSolutionId()][predictor][i])),
+            [predictor],
+            valueLabel, variableLabel);
+    },
+    getImportanceICE: predictor => {
+        let adapter = getSolutionAdapter(problem, solution);
+        loadImportanceICEFittedData(problem, adapter, predictor);
+
+        if (resultsData.importanceICEFitted) {
+            return resultsData.importanceICEFitted
+        }
+    }
+});
+
+
+let getSolutionTable = (problem, systemId) => {
+    let solutions = systemId
+        ? Object.values(problem.solutions[systemId])
+        : Object.keys(problem.solutions)
+            .flatMap(systemId => Object.values(problem.solutions[systemId]));
+
+    let adapters = solutions.map(solution => getSolutionAdapter(problem, solution));
+
+    let data = adapters
+    // extract data for each row (identification and scores)
+        .map(adapter => Object.assign({
+                adapter, ID: String(adapter.getSolutionId()), Solver: adapter.getSystemId(), Solution: adapter.getName()
+            },
+            [problem.metric, ...problem.metrics]
+                .reduce((out, metric) => Object.assign(out, {
+                    [metric]: app.formatPrecision(adapter.getScore(metric))
+                }), {})));
+
+    return m(Table, {
+        id: 'solutionTable' + (systemId || ''), data,
+        sortable: true, showUID: false,
+        sortHeader: resultsPreferences.selectedMetric,
+        setSortHeader: header => resultsPreferences.selectedMetric = header,
+        sortDescending: !reverseSet.includes(resultsPreferences.selectedMetric),
+        activeRow: new Set(adapters
+            .filter(adapter => (problem.selectedSolutions[adapter.getSystemId()] || '').includes(adapter.getSolutionId()))),
+        onclick: adapter => setSelectedSolution(problem, adapter.getSystemId(), adapter.getSolutionId())
+    })
+};
 
 /*
   Set the leftTab value
@@ -784,37 +950,36 @@ let leftTabResults = 'Solutions'; // default value
  */
 let setLeftTabResults = tabName => {
 
-  leftTabResults = tabName;
-  console.log('tab: ' + tabName);
+    leftTabResults = tabName;
 
-  // behavioral logging
-  let logParams = tabName === 'Solutions' ? {
-                feature_id: 'RESULTS_VIEW_SOLUTIONS',
-                activity_l1: 'MODEL_SELECTION',
-                activity_l2: 'MODEL_SUMMARIZATION',
-              }: {
-                feature_id: 'RESULTS_VIEW_PROBLEM_SEARCHES',
-                activity_l1: 'MODEL_SELECTION',
-                activity_l2: 'PROBLEM_SEARCH_SELECTION',
-              }
-  app.saveSystemLogEntry(logParams);
+    // behavioral logging
+    let logParams = tabName === 'Solutions' ? {
+        feature_id: 'RESULTS_VIEW_SOLUTIONS',
+        activity_l1: 'MODEL_SELECTION',
+        activity_l2: 'MODEL_SUMMARIZATION',
+    } : {
+        feature_id: 'RESULTS_VIEW_PROBLEM_SEARCHES',
+        activity_l1: 'MODEL_SELECTION',
+        activity_l2: 'PROBLEM_SEARCH_SELECTION',
+    };
+    app.saveSystemLogEntry(logParams);
+};
 
-}
-let resultsPreferences = {
-    mode: 'EFD',
+export let resultsPreferences = {
+    importanceMode: 'EFD',
     predictor: undefined,
     target: undefined,
-    plotScores: 'all'
+    factor: undefined,
+    plotScores: 'all',
+    selectedMetric: undefined,
+    dataSplit: 'test'
 };
+
+let setResultsFactor = factor => resultsPreferences.factor = factor === 'undefined' ? undefined : factor;
 
 // labels for variable importance X/Y axes
 export let valueLabel = "Observation";
 export let variableLabel = "Dependent Variable";
-
-export let selectedMetric = {
-    d3m: undefined,
-    rook: undefined
-};
 
 // array of metrics to sort low to high
 export let reverseSet = [
@@ -823,13 +988,6 @@ export let reverseSet = [
 
 // searchID: {running: true} for searchIDs streamed back from TA2 that are not in the workspace
 export let otherSearches = {};
-
-/**
- Sort the Pipeline table, putting the best score at the top
- */
-let sortPipelineTable = (a, b) => typeof a === 'string'
-    ? app.omniSort(a, b)
-    : (b - a) * (reverseSet.includes(selectedMetric.d3m) ? -1 : 1);
 
 let resultsSubpanels = {
     'Prediction Summary': true,
@@ -844,11 +1002,10 @@ let resultsSubpanels = {
     'Variable Importance': false
 };
 
+let solutionsCombined = true;
 
-/*
-  Set a new selected solution
-*/
-export let setSelectedSolution = (problem, source, solutionId) => {
+// when selected, the key/value [mode]: [pipelineID] is set.
+export let setSelectedSolution = (problem, systemId, solutionId) => {
     solutionId = String(solutionId);
 
     // set behavioral logging
@@ -858,13 +1015,17 @@ export let setSelectedSolution = (problem, source, solutionId) => {
     };
 
     if (!problem) return;
-    if (!(source in problem.selectedSolutions)) problem.selectedSolutions[source] = [];
+    if (!(systemId in problem.selectedSolutions)) problem.selectedSolutions[systemId] = [];
+
+    // TODO: find a better place for this/code pattern. Unsetting this here is ugly
+    resultsData.importanceICEFitted = undefined;
+    resultsData.importanceICEFittedLoading = false;
 
     if (modelComparison) {
 
-        problem.selectedSolutions[source].includes(solutionId)
-            ? app.remove(problem.selectedSolutions[source], solutionId)
-            : problem.selectedSolutions[source].push(solutionId);
+        problem.selectedSolutions[systemId].includes(solutionId)
+            ? app.remove(problem.selectedSolutions[systemId], solutionId)
+            : problem.selectedSolutions[systemId].push(solutionId);
 
         // set behavioral logging
         logParams.feature_id = 'RESULTS_COMPARE_SOLUTIONS';
@@ -872,7 +1033,7 @@ export let setSelectedSolution = (problem, source, solutionId) => {
     } else {
         problem.selectedSolutions = Object.keys(problem.selectedSolutions)
             .reduce((out, source) => Object.assign(out, {[source]: []}, {}), {});
-        problem.selectedSolutions[source] = [solutionId];
+        problem.selectedSolutions[systemId] = [solutionId];
 
         // set behavioral logging
         logParams.feature_id = 'RESULTS_SELECT_SOLUTION';
@@ -881,16 +1042,16 @@ export let setSelectedSolution = (problem, source, solutionId) => {
         // ------------------------------------------------
         // Logging, include score, rank, and solutionId
         // ------------------------------------------------
-        let chosenSolution = problem.solutions[source][solutionId];
+        let chosenSolution = problem.solutions[systemId][solutionId];
         if (chosenSolution){
             let adapter = getSolutionAdapter(problem, chosenSolution);
             let score = adapter.getScore(problem.metric);
             if (score !== undefined){
               logParams.other = {
-                          solutionId: chosenSolution.pipeline.id,
-                          rank: getProblemRank(problem.solutions[source], solutionId),
+                          solutionId: chosenSolution.solutionId,
+                          rank: getProblemRank(problem.solutions[systemId], solutionId),
                           performance: score,
-                          metric: selectedMetric[source],
+                          metric: resultsPreferences.selectedMetric,
                           };
             //  console.log(JSON.str)
             }
@@ -905,6 +1066,8 @@ export let setSelectedSolution = (problem, source, solutionId) => {
     // record behavioral logging
     app.saveSystemLogEntry(logParams);
 
+    // for easy debugging
+    window.selectedSolution = getSelectedSolutions(problem)[0];
 };
 
 
@@ -914,9 +1077,9 @@ export let getProblemRank = (solutions, solutionId) => {
     for (let solutionKey of Object.keys(solutions).reverse()) {
         cnt += 1;
         if (solutionKey === solutionId) return String(cnt);
-    };
+    }
    return String(-1);
-}
+};
 
 
 export let getSolutions = (problem, source) => {
@@ -931,55 +1094,81 @@ export let getSolutions = (problem, source) => {
         .flatMap(source => Object.values(source))
 };
 
-export let getSelectedSolutions = (problem, source) => {
+export let getSelectedSolutions = (problem, systemId) => {
     if (!problem) return [];
 
-    if (!source) return Object.keys(problem.selectedSolutions)
-        .flatMap(source => problem.selectedSolutions[source]
-            .map(id => problem.solutions[source][id])).filter(_=>_);
+    if (!systemId) return Object.keys(problem.selectedSolutions)
+        .flatMap(systemId => problem.selectedSolutions[systemId]
+            .map(id => problem.solutions[systemId][id])).filter(_ => _);
 
-    problem.selectedSolutions[source] = problem.selectedSolutions[source] || [];
-    return problem.selectedSolutions[source]
-        .map(id => problem.solutions[source][id]).filter(_=>_)
+    problem.selectedSolutions[systemId] = problem.selectedSolutions[systemId] || [];
+    return problem.selectedSolutions[systemId]
+        .map(id => problem.solutions[systemId][id]).filter(_ => _)
 };
 
 // When enabled, multiple pipelineTable pipelineIDs may be selected at once
 export let modelComparison = false;
 export let setModelComparison = state => {
-    let resultsProblem = app.getResultsProblem();
-    let selectedSolutions = getSelectedSolutions(resultsProblem);
+    let selectedProblem = app.getSelectedProblem();
+    let selectedSolutions = getSelectedSolutions(selectedProblem);
 
     modelComparison = state;
-    if (selectedSolutions.length > 1 && !modelComparison)
-        setSelectedSolution(resultsProblem, selectedSolutions[0].source, selectedSolutions[0]);
-
+    if (selectedSolutions.length > 1 && !modelComparison) {
+        let adapter = getSolutionAdapter(selectedProblem, selectedSolutions[0]);
+        setSelectedSolution(selectedProblem, adapter.getSystemId(), adapter.getSolutionId());
+    }
 };
 
-export let confusionMatrixFactor = (matrix, labels, factor) => {
-    let collapsed = [[0, 0], [0, 0]];
-    labels.forEach((xLabel, x) => labels.forEach((yLabel, y) =>
-        collapsed[xLabel === factor ? 0 : 1][yLabel === factor ? 0 : 1] += matrix[x][y]
-    ));
+// mutate the confusion data to create significance and explanation fields
+export let interpretConfusionMatrix = data => {
+    let actualCounts = data
+        .reduce((counts, point) => Object.assign(counts, {[point.Actual]: (counts[point.Actual] || 0) + point.count}), {});
 
+    data.forEach(point => {
+        point.microCount = point.count / actualCounts[point.Actual];
+        point.explanation = point.Predicted === point.Actual
+            ? `There are ${point.count} observations where the model correctly predicts class ${point.Predicted}.`
+            : `There are ${point.count} observations where the model incorrectly predicts class ${point.Predicted}, but the actual class is ${point.Actual}.`;
+        point.significance = +point.microCount > 0.5
+            ? `This cell is significant because it contains the majority of observations when the factor is ${point.Actual}.`
+            : `Predictions from the model when the actual factor is ${point.Actual} are relatively unlikely to be ${point.Predicted}.`;
+    })
+};
+
+export let confusionMatrixFactor = (data, labels, factor) => {
+    let matrix = [[0, 0], [0, 0]];
+    factor = String(factor);
+
+    data.forEach(point =>
+        matrix[Number(String(point.Predicted) === factor)][Number(String(point.Actual) === factor)] += point.count);
+
+    data = [
+        {Predicted: factor, Actual: factor, count: matrix[1][1]},
+        {Predicted: factor, Actual: 'not ' + factor, count: matrix[1][0]},
+        {Predicted: 'not ' + factor, Actual: factor, count: matrix[0][1]},
+        {Predicted: 'not ' + factor, Actual: 'not ' + factor, count: matrix[0][0]}
+    ];
+    interpretConfusionMatrix(data);
     return {
-        data: collapsed,
+        data: data,
         classes: [factor, 'not ' + factor]
     }
 };
 
 // generate an object containing accuracy, recall, precision, F1, given a 2x2 confusion data matrix
 // the positive class is the upper left block
-export function generatePerformanceData(confusionData2x2) {
+export function generatePerformanceData(data2x2, positiveFactor) {
 
-    let tp = confusionData2x2[0][0];
-    let fn = confusionData2x2[0][1];
-    let fp = confusionData2x2[1][0];
-    let tn = confusionData2x2[1][1];
+    positiveFactor = String(positiveFactor);
+    let tp = (data2x2.find(point => (String(point.Predicted) === positiveFactor) && (String(point.Actual) === positiveFactor)) || {count: 0}).count;
+    let fn = (data2x2.find(point => (String(point.Predicted) !== positiveFactor) && (String(point.Actual) === positiveFactor)) || {count: 0}).count;
+    let fp = (data2x2.find(point => (String(point.Predicted) === positiveFactor) && (String(point.Actual) !== positiveFactor)) || {count: 0}).count;
+    let tn = (data2x2.find(point => (String(point.Predicted) !== positiveFactor) && (String(point.Actual) !== positiveFactor)) || {count: 0}).count;
 
     let p = tp + fn;
     let n = fp + tn;
 
-    let round = (number, digits) => Math.round(number * Math.pow(10, digits)) / Math.pow(10, digits)
+    let round = (number, digits) => Math.round(number * Math.pow(10, digits)) / Math.pow(10, digits);
 
     return {
         f1: round(2 * tp / (2 * tp + fp + fn), 2),
@@ -999,18 +1188,18 @@ export let showFinalPipelineModal = false;
 export let setShowFinalPipelineModal = state => showFinalPipelineModal = state;
 
 export let finalPipelineModal = () => {
-    let resultsProblem = app.getResultsProblem();
+    let selectedProblem = app.getSelectedProblem();
 
-    let chosenSolution = getSolutions(resultsProblem, 'd3m').find(solution => solution.chosen);
+    let chosenSolution = getSolutions(selectedProblem, 'd3m').find(solution => solution.chosen);
     if (!chosenSolution) return;
 
-    let adapter = solverD3M.getSolutionAdapter(resultsProblem, chosenSolution);
+    let adapter = getSolutionAdapter(selectedProblem, chosenSolution);
 
     return m(ModalVanilla, {
             id: 'finalPipelineModal',
             setDisplay: setShowFinalPipelineModal
         },
-        m('h4', 'Pipeline ', adapter.getName()),
+        m('h4', 'Pipeline ', adapter.getSolutionId()),
         'Task Two Complete. Your selected pipeline has been submitted.'
 
         // * lots of room for cool activities *
@@ -1021,3 +1210,516 @@ export let finalPipelineModal = () => {
         // })
     )
 };
+
+
+// these variables hold indices, predictors, predicted and actual data
+export let resultsData = {
+    fittedVsActual: {},
+    fittedVsActualLoading: {},
+
+    // cached data is specific to the problem
+    confusion: {},
+    confusionLoading: {},
+
+    // cached data is specific to the solution (tends to be larger)
+    importanceEFD: undefined,
+    importanceEFDLoading: false,
+
+    // this has melted data for both actual and fitted values
+    importancePartialsFitted: {},
+    importancePartialsFittedLoading: {},
+
+    // this has melted data for both actual and fitted values
+    importanceICEFitted: undefined,
+    importanceICEFittedLoading: false,
+
+    id: {
+        query: [],
+        problemID: undefined,
+        solutionID: undefined,
+        dataSplit: undefined,
+        predictor: undefined,
+        target: undefined
+    }
+};
+window.resultsData = resultsData;
+
+// TODO: just need to add menu element, some debug probably needed
+// manipulations to apply to data after joining predictions
+export let resultsQuery = [];
+
+export let loadProblemData = async (problem, predictor=undefined) => {
+    // unload ICE data if predictor changed
+    if (predictor && predictor !== resultsData.id.predictor) {
+        resultsData.id.predictor = predictor;
+        resultsData.importanceICEFitted = undefined;
+        resultsData.importanceICEFittedLoading = false;
+    }
+
+    // complete reset if problemId, query, dataSplit or target changed
+    if (resultsData.id.problemID === problem.problemID &&
+        JSON.stringify(resultsData.id.query) === JSON.stringify(resultsQuery) &&
+        resultsData.id.dataSplit === resultsPreferences.dataSplit &&
+        resultsData.id.target === resultsPreferences.target)
+        return;
+
+    resultsData.id.query = resultsQuery;
+    resultsData.id.problemID = problem.problemID;
+    resultsData.id.solutionID = undefined;
+    resultsData.id.dataSplit = resultsPreferences.dataSplit;
+    resultsData.id.target = resultsPreferences.target;
+
+    // specific to solution and target, all solutions stored for one target
+    resultsData.fittedVsActual = {};
+    resultsData.fittedVsActualLoading = {};
+
+    // specific to solution and target, all solutions stored for one target
+    resultsData.confusion = {};
+    resultsData.confusionLoading = {};
+
+    // specific to solution and target, one solution stored for one target
+    resultsData.importanceEFD = undefined;
+    resultsData.importanceEFDLoading = false;
+
+    // specific to solution and target, all solutions stored for one target
+    resultsData.importancePartialsFitted = {};
+    resultsData.importancePartialsFittedLoading = {};
+
+    // specific to combo of solution, predictor and target
+    resultsData.importanceICEFitted = undefined;
+    resultsData.importanceICEFittedLoading = false;
+};
+
+export let loadSolutionData = async (problem, adapter, predictor=undefined) => {
+    await loadProblemData(problem, predictor);
+
+    if (resultsData.id.solutionID === adapter.getSolutionId())
+        return;
+
+    resultsData.id.solutionID = adapter.getSolutionId();
+
+    // solution specific, one solution stored
+    resultsData.importanceEFD = undefined;
+    resultsData.importanceEFDLoading = false;
+};
+
+export let loadFittedVsActuals = async (problem, adapter) => {
+    await loadSolutionData(problem, adapter);
+
+    let dataPointer = adapter.getDataPointer(resultsPreferences.dataSplit);
+
+    // don't load if data is not available
+    if (!dataPointer)
+        return;
+
+    // fitted vs actuals don't apply for non-regression problems
+    if (!['regression', 'semisupervisedregression', 'timeseriesforecasting'].includes(problem.task.toLowerCase()))
+        return;
+
+    // don't load if systems are already in loading state
+    if (resultsData.fittedVsActualLoading[adapter.getSolutionId()])
+        return;
+
+    // don't load if already loaded
+    if (adapter.getSolutionId() in resultsData.fittedVsActual)
+        return;
+
+    // begin blocking additional requests to load
+    resultsData.fittedVsActualLoading[adapter.getSolutionId()] = true;
+
+    // how to construct actual values after manipulation
+    let compiled = queryMongo.buildPipeline([
+        ...app.workspace.raven_config.hardManipulations,
+        ...problem.manipulations,
+        ...resultsQuery
+    ], app.workspace.raven_config.variablesInitial)['pipeline'];
+
+    let produceId = dataPointer
+        .substr(dataPointer.lastIndexOf('/') + 1)
+        .replace('.csv', '');
+    let tempQuery = JSON.stringify(resultsData.id.query);
+    let response;
+    try {
+        response = await m.request(D3M_SVC_URL + `/retrieve-output-fitted-vs-actuals-data`, {
+            method: 'POST',
+            data: {
+                data_pointer: dataPointer,
+                metadata: {
+                    targets: problem.targets,
+                    collectionName: app.workspace.d3m_config.name,
+                    collectionPath: app.workspace.datasetPath,
+                    query: compiled,
+                    produceId
+                }
+            }
+        });
+
+        if (!response.success) {
+            console.warn(response);
+            throw response.data;
+        }
+    } catch (err) {
+        console.warn("retrieve-output-fitted-vs-actuals-data error");
+        console.log(err);
+        app.alertWarn('Fitted vs Actuals data has not been loaded. Some plots will not load.');
+        return;
+    }
+
+    // don't accept response if current problem has changed
+    if (resultsData.id.problemID !== problem.problemID)
+        return;
+
+    // don't accept response if query changed
+    if (JSON.stringify(resultsQuery) !== tempQuery)
+        return;
+
+    resultsData.fittedVsActual[adapter.getSolutionId()] = response.data;
+    resultsData.fittedVsActualLoading[adapter.getSolutionId()] = false;
+
+    // apply state changes to the page
+    m.redraw();
+};
+
+
+export let loadConfusionData = async (problem, adapter) => {
+    // load dependencies, which can clear loading state if problem, etc. changed
+    await loadSolutionData(problem, adapter);
+
+    let dataPointer = adapter.getDataPointer(resultsPreferences.dataSplit);
+
+    // don't load if data is not available
+    if (!dataPointer)
+        return;
+
+    // confusion matrices don't apply for non-classification problems
+    if (!['classification', 'semisupervisedclassification', 'vertexclassification'].includes(problem.task.toLowerCase()))
+        return;
+
+    // don't load if systems are already in loading state
+    if (resultsData.confusionLoading[adapter.getSolutionId()])
+        return;
+
+    // don't load if already loaded
+    if (adapter.getSolutionId() in resultsData.confusion)
+        return;
+
+    // begin blocking additional requests to load
+    resultsData.confusionLoading[adapter.getSolutionId()] = true;
+
+    // how to construct actual values after manipulation
+    let compiled = queryMongo.buildPipeline([
+        ...app.workspace.raven_config.hardManipulations,
+        ...problem.manipulations,
+        ...resultsQuery
+    ], app.workspace.raven_config.variablesInitial)['pipeline'];
+
+    let produceId = dataPointer
+        .substr(dataPointer.lastIndexOf('/') + 1)
+        .replace('.csv', '');
+    let tempQuery = JSON.stringify(resultsData.id.query);
+    let response;
+    try {
+        response = await m.request(D3M_SVC_URL + `/retrieve-output-confusion-data`, {
+            method: 'POST',
+            data: {
+                data_pointer: dataPointer,
+                metadata: {
+                    targets: problem.targets,
+                    collectionName: app.workspace.d3m_config.name,
+                    collectionPath: app.workspace.datasetPath,
+                    query: compiled,
+                    produceId
+                }
+            }
+        });
+
+        if (!response.success) {
+            console.warn(response);
+            throw response.data;
+        }
+    } catch (err) {
+        console.warn("retrieve-output-confusion-data error");
+        console.log(err);
+        app.alertWarn('Confusion matrix data has not been loaded. Some plots will not load.');
+        return;
+    }
+
+    // don't accept response if current problem has changed
+    if (resultsData.id.problemID !== problem.problemID)
+        return;
+
+    // don't accept response if query changed
+    if (JSON.stringify(resultsQuery) !== tempQuery)
+        return;
+
+
+    Object.keys(response.data)
+        .forEach(variable => {
+            if (response.data[variable].classes.length < 10) {
+                let extraPoints = [];
+                response.data[variable].classes.forEach(levelActual => response.data[variable].classes.forEach(levelPredicted => {
+                    if (!response.data[variable].data.find(point => point.Actual === levelActual && point.Predicted === levelPredicted))
+                        extraPoints.push({Actual: levelActual, Predicted: levelPredicted, count: 0})
+                }));
+                response.data[variable].data.push(...extraPoints);
+            }
+            interpretConfusionMatrix(response.data[variable].data)
+        });
+
+    resultsData.confusion[adapter.getSolutionId()] = response.data;
+    resultsData.confusionLoading[adapter.getSolutionId()] = false;
+
+    // apply state changes to the page
+    m.redraw();
+};
+
+export let loadImportancePartialsFittedData = async (problem, adapter) => {
+
+    // load dependencies, which can clear loading state if problem, etc. changed
+    await loadProblemData(problem);
+
+    let dataPointer = adapter.getDataPointer('partials');
+
+    // don't attempt to load if there is no data
+    if (!dataPointer) return;
+
+    // don't load if systems are already in loading state
+    if (resultsData.importancePartialsFittedLoading[adapter.getSolutionId()])
+        return;
+
+    // don't load if already loaded
+    if (resultsData.importancePartialsFitted[adapter.getSolutionId()])
+        return;
+
+    // begin blocking additional requests to load
+    resultsData.importancePartialsFittedLoading[adapter.getSolutionId()] = true;
+
+    let tempQuery = JSON.stringify(resultsData.id.query);
+    let response;
+    try {
+        response = await m.request(D3M_SVC_URL + `/retrieve-output-data`, {
+            method: 'POST',
+            data: {data_pointer: dataPointer}
+        });
+
+        if (!response.success) {
+            console.warn(response.data);
+            throw response.data;
+        }
+    } catch (err) {
+        console.error(err);
+        app.alertWarn('Partials data has not been loaded. Some plots will not load.');
+        return;
+    }
+
+    // don't accept response if current problem has changed
+    if (resultsData.id.problemID !== problem.problemID)
+        return;
+
+    // don't accept if query changed
+    if (JSON.stringify(resultsQuery) !== tempQuery)
+        return;
+
+    // convert unlabeled string table to predictor format
+    let offset = 0;
+    resultsData.importancePartialsFitted[adapter.getSolutionId()] = Object.keys(problem.domains).reduce((out, predictor) => {
+        let nextOffset = offset + problem.domains[predictor].length;
+        // for each point along the domain of the predictor
+        out[predictor] = response.data.slice(offset, nextOffset)
+        // for each target specified in the problem
+            .map(point => problem.targets.reduce((out_point, target) => Object.assign(out_point, {
+                [target]: app.inferIsCategorical(target) ? point[target] : parseNumeric(point[target])
+            }), {}));
+        offset = nextOffset;
+        return out;
+    }, {});
+    resultsData.importancePartialsFittedLoading[adapter.getSolutionId()] = false;
+
+    m.redraw();
+};
+
+// importance from empirical first differences
+export let loadImportanceEFDData = async (problem, adapter) => {
+    // load dependencies, which can clear loading state if problem, etc. changed
+    await loadSolutionData(problem, adapter);
+
+    let dataPointer = adapter.getDataPointer(resultsPreferences.dataSplit);
+
+    // don't load if data is not available
+    if (!dataPointer)
+        return;
+
+    // don't load if systems are already in loading state
+    if (resultsData.importanceEFDLoading)
+        return;
+
+    // don't load if already loaded
+    if (resultsData.importanceEFD)
+        return;
+
+    // begin blocking additional requests to load
+    resultsData.importanceEFDLoading = true;
+
+    // how to construct actual values after manipulation
+    let compiled = queryMongo.buildPipeline([
+        ...app.workspace.raven_config.hardManipulations,
+        ...problem.manipulations,
+        ...resultsQuery
+    ], app.workspace.raven_config.variablesInitial)['pipeline'];
+
+    let tempQuery = JSON.stringify(resultsData.id.query);
+    let produceId = dataPointer
+        .substr(dataPointer.lastIndexOf('/') + 1)
+        .replace('.csv', '');
+    let response;
+
+    try {
+        response = await m.request(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
+            method: 'POST',
+            data: {
+                data_pointer: dataPointer,
+                metadata: {
+                    produceId,
+                    targets: problem.targets,
+                    predictors: app.getPredictorVariables(problem),
+                    categoricals: app.getNominalVariables(problem),
+                    collectionName: app.workspace.d3m_config.name,
+                    collectionPath: app.workspace.datasetPath,
+                    query: compiled
+                }
+            }
+        });
+
+        if (!response.success)
+            throw response.data;
+    } catch (err) {
+        console.warn("retrieve-output-EFD-data error");
+        console.log(err);
+        // app.alertWarn('Variable importance EFD data has not been loaded. Some plots will not load.');
+        return;
+    }
+
+    // don't accept response if current problem has changed
+    if (resultsData.id.problemID !== problem.problemID)
+        return;
+
+    // don't accept if query changed
+    if (JSON.stringify(resultsQuery) !== tempQuery)
+        return;
+
+    let responseImportance = await m.request(ROOK_SVC_URL + 'efdimportance.app', {
+        method: 'POST',
+        data: {efdData: response.data}
+    });
+    // reorder response.data predictors based on importance
+    if (responseImportance.success) response.data = responseImportance.data
+        .reduce((data, variable) => Object.assign(data, {[variable]: response.data[variable]}), {});
+
+    let nominals = app.getNominalVariables(problem);
+
+    // melt predictor data once, opposed to on every redraw
+    Object.keys(response.data)
+        .forEach(predictor => response.data[predictor] = app.melt(
+            nominals.includes(predictor)
+                ? app.sample(response.data[predictor], 20, false, true)
+                : response.data[predictor],
+            [predictor], valueLabel, variableLabel));
+
+    // add more granular categorical columns from the compound key 'variableLabel'
+    Object.keys(response.data)
+        .forEach(predictor => response.data[predictor]
+            .forEach(point => {
+                point.target = point[variableLabel].split(' ')[0];
+                point.level = point[variableLabel].split('-').pop();
+            }));
+
+    resultsData.importanceEFD = response.data;
+    resultsData.importanceEFDLoading = false;
+
+    // apply state changes to the page
+    m.redraw();
+};
+
+// importance from empirical first differences
+export let loadImportanceICEFittedData = async (problem, adapter, predictor) => {
+    // load dependencies, which can clear loading state if problem, etc. changed
+    await loadSolutionData(problem, adapter, predictor);
+
+    let dataPointerPredictors = problem.datasetPaths['ICE_synthetic_' + predictor];
+    let dataPointerFitted = adapter.getDataPointer('ICE_synthetic_' + predictor);
+
+    // don't load if data is not available
+    if (!dataPointerFitted || !dataPointerPredictors)
+        return;
+
+    // don't load if systems are already in loading state
+    if (resultsData.importanceICEFittedLoading)
+        return;
+
+    // don't load if already loaded
+    if (resultsData.importanceICEFitted)
+        return;
+
+    // begin blocking additional requests to load
+    resultsData.importanceICEFittedLoading = true;
+
+    let tempQuery = JSON.stringify(resultsData.id.query);
+
+    let response = await m.request(D3M_SVC_URL + `/retrieve-output-ICE-data`, {
+        method: 'POST',
+        data: {
+            data_pointer_predictors: dataPointerPredictors,
+            data_pointer_fitted: dataPointerFitted,
+            variable: predictor
+        }
+    });
+
+    if (!response.success)
+        throw response.data;
+
+    // don't accept response if current problem has changed
+    if (resultsData.id.problemID !== problem.problemID)
+        return;
+
+    // don't accept if query changed
+    if (JSON.stringify(resultsQuery) !== tempQuery)
+        return;
+
+    resultsData.importanceICEFitted = response.data;
+    resultsData.importanceICEFittedLoading = false;
+
+    // apply state changes to the page
+    m.redraw();
+};
+
+let parseNumeric = value => isNaN(parseFloat(value)) ? value : parseFloat(value);
+
+
+export let getSummaryData = problem => ({
+    dataset_name: app.workspace.d3m_config.name,
+    problem: problem,
+    solutions: getSolutions(problem)
+        .map(solution => {
+            let adapter = getSolutionAdapter(problem, solution);
+            let systemId = adapter.getSystemId();
+
+            let outputs = systemId === 'd3m' ? Object.keys(solution.produce).map(key =>
+                ({
+                    'name': key,
+                    'predict type': 'RAW',
+                    'output': solution.produce[key]
+                })) : (solution.produce || []).map(produce =>
+                ({
+                    'name': produce.input.name,
+                    'predict type': produce.configuration.predict_type,
+                    'output': '/' + produce.data_pointer,
+                }));
+
+            return {
+                outputs,
+                solution: solution,
+                solutionId: adapter.getSolutionId(),
+                systemId: adapter.getSystemId()
+            }
+        })
+});

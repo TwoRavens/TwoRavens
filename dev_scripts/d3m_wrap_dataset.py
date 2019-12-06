@@ -7,7 +7,7 @@ import os
 #   -> https://gitlab.datadrivendiscovery.org/MIT-LL/d3m_data_supply/blob/shared/schemas/datasetSchema.json
 DTYPES = {
     'int64': 'integer',
-    'float64': 'float',
+    'float64': 'real',
     'bool': 'boolean',
     'object': 'string',
     'datetime64': 'dateTime',
@@ -16,7 +16,7 @@ DTYPES = {
 
 DSV_EXTENSIONS = ['.csv', '.tsv', '.xlsx', '.xls']
 
-DATASET_SCHEMA_VERSION = '3.1.2'
+DATASET_SCHEMA_VERSION = '3.2.0'
 PROBLEM_SCHEMA_VERSION = '3.2.0'
 
 
@@ -36,14 +36,13 @@ def d3m_wrap_dataset(outputDir, dataPaths, about, problem):
     # construct a mapping to output paths
     outDataPaths = {}
     for dataPath in dataPaths:
-
+        offset = 1
         if os.path.splitext(dataPath)[1] in DSV_EXTENSIONS:
-            filename, extension = os.path.splitext(os.path.basename(dataPath))
+            # filename, extension = os.path.splitext(os.path.basename(dataPath))
             # TODO: disable this line once paths aren't hardcoded to 'learningData'
             filename = 'learningData'
 
             candidateName = os.path.join('tables', filename + '.csv')
-            offset = 1
             while candidateName in outDataPaths:
                 offset += 1
                 filename, extension = os.path.splitext(os.path.basename(dataPath))
@@ -51,20 +50,24 @@ def d3m_wrap_dataset(outputDir, dataPaths, about, problem):
 
             outDataPaths[candidateName] = dataPath
 
-    def infer_role(column_name):
+    def infer_roles(column_name):
+        roles = []
         if column_name == 'd3mIndex':
-            return 'index'
-        if column_name in targets:
-            return 'suggestedTarget'
-        return 'attribute'
+            roles.append('index')
+        elif column_name in targets:
+            roles.append('suggestedTarget')
+        else:
+            roles.append('attribute')
+
+        if column_name in problem.get('time', []):
+            roles.append('timeIndicator')
+        return roles
 
     targetConfigs = []
-    print(outDataPaths)
     # individually load, index, analyze, and save each dataset
     resourceConfigs = []
     for resIndex, outDataPath in enumerate(outDataPaths):
         data = d3m_load_resource(outDataPaths[outDataPath])
-
         if issubclass(type(data), pd.DataFrame):
 
             resourceID = os.path.splitext(os.path.basename(outDataPath))[0]
@@ -75,7 +78,7 @@ def d3m_wrap_dataset(outputDir, dataPaths, about, problem):
                     'colIndex': colIndex,
                     'colName': colName,
                     'colType': DTYPES.get(str(colType), None) or 'unknown',
-                    'role': [infer_role(colName)]
+                    'role': infer_roles(colName)
                 }
                 columnConfigs.append(columnConfig)
                 if columnConfig['role'][0] == 'suggestedTarget':
@@ -96,7 +99,7 @@ def d3m_wrap_dataset(outputDir, dataPaths, about, problem):
                         'colIndex': i,
                         'colName': column[0],
                         'colType': DTYPES.get(str(column[1]), None) or 'unknown',
-                        'role': [infer_role(column[0])]
+                        'role': infer_roles(column[0])
                     } for i, column in enumerate(zip(data.columns.values, data.dtypes))
                 ]
             })
@@ -109,7 +112,7 @@ def d3m_wrap_dataset(outputDir, dataPaths, about, problem):
 
         fullDataPath = os.path.join(datasetDir, outDataPath)
         os.makedirs(os.path.dirname(fullDataPath), exist_ok=True)
-        data.to_csv(fullDataPath)
+        data.to_csv(fullDataPath, index=False)
 
     # write dataset config
     with open(os.path.join(datasetDir, 'datasetDoc.json'), 'w') as datasetDoc:
@@ -131,6 +134,7 @@ def d3m_wrap_dataset(outputDir, dataPaths, about, problem):
                 'problemID': problemID,
                 'problemName': problem.get('problemName', about['datasetName'] + ' problem'),
                 'taskType': problem.get('taskType', 'regression'),
+                'taskSubType': problem.get('taskSubType', 'regression'),
                 'problemSchemaVersion': PROBLEM_SCHEMA_VERSION,
                 'problemVersion': '1.0'
             },
@@ -141,15 +145,15 @@ def d3m_wrap_dataset(outputDir, dataPaths, about, problem):
                         {**{'targetIndex': targetIndex}, **target} for targetIndex, target in enumerate(targetConfigs)
                     ]
                 }],
-                'dataSplits': {
+                'dataSplits': problem.get('dataSplits', {
                     "method": "holdOut",
                     "testSize": 0.35,
                     "stratified": False,
                     "numRepeats": 0,
                     "splitsFile": "dataSplits.csv"
-                },
+                }),
                 'performanceMetrics': [
-                    {'metric': problem.get('metric', 'rootMeanSquaredError')}
+                    {'metric': metric} for metric in problem.get('metrics', ['rootMeanSquaredError'])
                 ],
                 "expectedOutputs": {
                     "predictionsFile": "predictions.csv"
@@ -168,7 +172,8 @@ def d3m_load_resource(path):
     else:
         return None
 
-    data.insert(0, 'd3mIndex', range(len(data)))
+    if 'd3mIndex' not in data:
+        data.insert(0, 'd3mIndex', range(len(data)))
     return data
 
 

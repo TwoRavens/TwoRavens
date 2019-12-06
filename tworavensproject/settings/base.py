@@ -77,8 +77,9 @@ INSTALLED_APPS = [
 
     'tworaven_apps.configurations', # UI domain/mode configuration
     'tworaven_apps.ta2_interfaces', # sending UI through to TA2 and back again
+    'tworaven_apps.solver_interfaces',
     'tworaven_apps.content_pages',
-    'tworaven_apps.rook_services', # sending UI calls to rook and back again
+    'tworaven_apps.R_services', # sending UI calls to rook and back again
     'tworaven_apps.api_docs',
     'tworaven_apps.call_captures', # capture data sent from UI out to rook/TA2
     'tworaven_apps.eventdata_queries', # eventdata API services
@@ -331,6 +332,9 @@ REDIS_PORT = os.environ.get('REDIS_PORT', 6379)
 
 CELERY_BROKER_URL = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)
 CELERY_RESULT_BACKEND = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)
+
+# discard a process after executing task, because automl solvers are incredibly leaky
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 1
 
 # ---------------------------
 # EventData: depositing Dataverse data

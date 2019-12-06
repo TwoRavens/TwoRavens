@@ -14,7 +14,7 @@ import * as model from './model';
 
 import * as manipulate from './manipulations/manipulate';
 
-import * as solverRook from "./solvers/rook";
+import * as solverWrapped from "./solvers/wrapped";
 import * as solverD3M from "./solvers/d3m";
 
 import * as common from '../common/common';
@@ -39,7 +39,6 @@ import ModalWorkspace from "./views/ModalWorkspace";
 import Body_EventData from './eventdata/Body_EventData';
 import Body_Dataset from "./views/Body_Dataset";
 
-// import {efdCategoricalData, efdContinuousData, tempProblem} from "./variableImportanceDataSample";
 import {getSelectedProblem} from "./app";
 import {buildDatasetUrl} from "./app";
 import {alertWarn} from "./app";
@@ -60,7 +59,7 @@ export let abbreviate = (text, length) => text.length > length
 class Body {
     oninit() {
         app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
-        app.set_mode('model');
+        app.setSelectedMode('model');
         this.TA2URL = D3M_SVC_URL + '/SearchDescribeFitScoreSolutions';
     }
 
@@ -78,14 +77,13 @@ class Body {
         // after calling m.route.set, the params for mode, variate, vars don't update in the first redraw.
         // checking window.location.href is a workaround, permits changing mode from url bar
         if (window.location.href.includes(mode) && mode !== app.currentMode)
-            app.set_mode(mode);
+            app.setSelectedMode(mode);
 
         let exploreVariables = (vars ? vars.split('/') : [])
             .filter(variable => variable in app.variableSummaries);
 
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
 
-        let resultsProblem = app.getResultsProblem();
         let selectedProblem = app.getSelectedProblem();
 
         let drawForceDiagram = (app.is_model_mode || app.is_explore_mode) && selectedProblem && Object.keys(app.variableSummaries).length > 0;
@@ -116,7 +114,7 @@ class Body {
                 m('div', {
                         style: {width: '100%', height: '100%', position: 'relative'},
                     },
-                    app.is_results_mode && m(MainCarousel, {previousMode: this.previousMode}, m(results.CanvasSolutions, {problem: resultsProblem})),
+                    app.is_results_mode && m(MainCarousel, {previousMode: this.previousMode}, m(results.CanvasSolutions, {problem: selectedProblem})),
                     app.is_explore_mode && m(MainCarousel, {previousMode: this.previousMode}, m(explore.CanvasExplore, {variables: exploreVariables, variate})),
                     app.is_model_mode && m(MainCarousel, {previousMode: this.previousMode}, m(model.CanvasModel, {drawForceDiagram, forceData}))
                 )
@@ -141,7 +139,6 @@ class Body {
             linkInfo.newWin === true ? window.open(linkInfo.url) : window.location.href = linkInfo.url;
         }
 
-        let resultsProblem = app.getResultsProblem();
         let selectedProblem = app.getSelectedProblem();
 
         let createBreadcrumb = () => {
@@ -164,21 +161,16 @@ class Body {
                     ))
             ];
 
-            let pathProblem = {
-                'model': selectedProblem, 'results': resultsProblem
-            }[app.currentMode];
-
-            if (pathProblem) path.push(m(Icon, {name: 'chevron-right'}), m(Popper, {
+            if (selectedProblem) path.push(m(Icon, {name: 'chevron-right'}), m(Popper, {
                 content: () => m(Table, {
-                    data: {'targets': pathProblem.targets, 'predictors': pathProblem.predictors,'description': preformatted(app.getDescription(pathProblem).description)}
+                    data: {'targets': selectedProblem.targets, 'predictors': selectedProblem.predictors,'description': preformatted(app.getDescription(selectedProblem).description)}
                 })
-            }, m('h4[style=display: inline-block; margin: .25em 1em]', pathProblem.problemID)));
+            }, m('h4[style=display: inline-block; margin: .25em 1em]', selectedProblem.problemID)));
 
-            let selectedSolutions = results.getSelectedSolutions(resultsProblem);
+            let selectedSolutions = results.getSelectedSolutions(selectedProblem);
             if (app.is_results_mode && selectedSolutions.length === 1 && selectedSolutions[0]) {
-                path.push(m(Icon, {name: 'chevron-right'}), m('h4[style=display: inline-block; margin: .25em 1em]', ({
-                    rook: solverRook.getSolutionAdapter, d3m: solverD3M.getSolutionAdapter
-                })[selectedSolutions[0].source](pathProblem, selectedSolutions[0]).getName()))
+                path.push(m(Icon, {name: 'chevron-right'}), m('h4[style=display: inline-block; margin: .25em 1em]',
+                    results.getSolutionAdapter(selectedProblem, selectedSolutions[0]).getSolutionId()))
             }
 
             return path;
@@ -203,7 +195,7 @@ class Body {
             m('div', {style: {'flex-grow': 1}}),
 
 
-            app.currentMode === 'results' && resultsProblem && Object.keys(resultsProblem.solutions.d3m).length > 0 && m(ButtonLadda, {
+            app.currentMode === 'results' && selectedProblem && Object.keys(selectedProblem.solutions.d3m || {}).length > 0 && m(ButtonLadda, {
                 id: 'btnEndSession',
                 class: 'ladda-label ladda-button ' + (app.taskPreferences.task2_finished ? 'btn-secondary' : 'btn-success'),
                 onclick: solverD3M.endsession,
@@ -217,7 +209,7 @@ class Body {
                 attrsButtons: {
                     // class: 'btn-sm',
                     style: {width: "auto"}},
-                onclick: app.set_mode,
+                onclick: app.setSelectedMode,
                 activeSection: app.currentMode || 'model',
                 sections: [
                     {value: 'Model'},
@@ -598,40 +590,31 @@ class Body {
                     id: 'modalTA2Debug',
                     setDisplay: app.setShowModalTA2Debug
                 },
+                m('h4', 'Organize all models/datasets'),
+                m(Button, {
+                    onclick: () => {
+                        let problem = app.getSelectedProblem();
+                        m.request(D3M_SVC_URL + '/ExportSolutions', {
+                            method: 'POST',
+                            data: results.getSummaryData(problem)
+                        }).then(response => {
+                            if (response.success) {
+                                console.warn(response.data);
+                            }
+                            else console.error(response.message);
+                        });
+                    }
+                }, 'Export All Results'),
+
                 m('h4', 'TA2 System Debugger'),
                 m(Button, {
                     style: {margin: '1em'},
                     onclick: async () => {
-
-                        let selectedProblem = app.getSelectedProblem();
-
-
-                        let nominalVars = new Set(app.getNominalVariables(selectedProblem));
-                        let predictorVars = app.getPredictorVariables(selectedProblem);
-
-                        let hasNominal = [...selectedProblem.targets, ...predictorVars]
-                            .some(variable => nominalVars.has(variable));
-                        let hasManipulation = selectedProblem.manipulations.length > 0;
-
-                        let needsProblemCopy = hasManipulation || hasNominal;
-
-                        // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
-                        if (needsProblemCopy) {
-                            let {metadata_path} = await app.buildProblemUrl(selectedProblem);
-                            selectedProblem.datasetDocPath = metadata_path;
-                        } else delete selectedProblem.datasetDocPath;
-
-                        let datasetDocPath = selectedProblem.datasetDocPath || app.workspace.d3m_config.dataset_schema;
-
-                        this.TA2Post = JSON.stringify({
-                            searchSolutionParams: solverD3M.GRPC_SearchSolutionsRequest(selectedProblem),
-                            fitSolutionDefaultParams: solverD3M.GRPC_GetFitSolutionRequest(datasetDocPath),
-                            produceSolutionDefaultParams: solverD3M.GRPC_ProduceSolutionRequest(datasetDocPath),
-                            scoreSolutionDefaultParams: solverD3M.GRPC_ScoreSolutionRequest(selectedProblem, datasetDocPath)
-                        });
+                        this.TA2Post = JSON.stringify(await solverD3M.getSolverSpecification(app.getSelectedProblem()));
                         m.redraw()
                     }
                 }, 'Prepare'),
+
                 m(Button, {
                     style: {margin: '1em'},
                     onclick: () => {
@@ -812,6 +795,7 @@ class Body {
      */
 
     static leftpanel(mode, forceData) {
+
         if (mode === 'manipulate') return manipulate.leftpanel();
         if (mode === 'results') return results.leftpanel();
         return model.leftpanel(forceData);

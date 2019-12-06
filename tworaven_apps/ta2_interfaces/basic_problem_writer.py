@@ -1,29 +1,15 @@
 """Class for creating a User Defined Problem file and writing it
 to an output file"""
 import csv
-import json
-from datetime import datetime as dt
 import os
-from os.path import (basename, dirname, isdir, isfile,
+import types
+from os.path import (dirname, isfile,
                      join, normpath, split, splitext)
-from collections import OrderedDict
 from tworaven_apps.utils.json_helper import json_dumps
-from tworaven_apps.utils.mongo_util import infer_type, quote_val
-from tworaven_apps.utils.view_helper import \
-    (get_request_body_as_json,
-     get_json_error,
-     get_json_success)
 from tworaven_apps.utils.basic_response import (ok_resp,
-                                                err_resp,
-                                                err_resp_with_data)
+                                                err_resp)
 
-from django.template.loader import render_to_string
-
-from tworaven_apps.utils import random_info
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
-from tworaven_apps.configurations.models_d3m import KEY_PROBLEM_SCHEMA
-from tworaven_apps.user_workspaces.utils import \
-    (get_latest_d3m_user_config,)
 
 OUTPUT_PROBLEMS_DIR = '/output/problems' # temp use while eval specs worked on
 ERR_MSG_UNEXPECTED_DIRECTORY = 'Unexpected base directory'
@@ -40,7 +26,7 @@ class BasicProblemWriter(BasicErrCheck):
     def __init__(self, user_workspace, filename, data, **kwargs):
         """
         filename - may also include a directory, but not fullpath
-        file_data - data to write
+        file_data - data to write, may be list or generator
         write_directory - optional base directory if no directory in the config
         """
         self.user_workspace = user_workspace
@@ -191,7 +177,6 @@ class BasicProblemWriter(BasicErrCheck):
             self.add_error_message(user_msg)
             return False
 
-
         if not fullpath:
             self.add_error_message('"fullpath" is not specified (cannot be blank)')
             return False
@@ -232,7 +217,7 @@ class BasicProblemWriter(BasicErrCheck):
         #  - converting it to JSON,
         #  - on failure, convert it to a string.
         # -------------------------------------
-        if not isinstance(self.file_data, str):
+        elif not isinstance(self.file_data, str):
             json_info = json_dumps(self.file_data)
             if json_info.success:
                 self.file_data = json_info.result_obj
@@ -264,30 +249,42 @@ class BasicProblemWriter(BasicErrCheck):
             self.add_err_msg('Only used if "is_csv_data" is True')
             return False
 
-        # Expects data to be a python list
+        # Expects data to be a python list or generator
         #
-        if not isinstance(self.file_data, list):
+        if not isinstance(self.file_data, list) and not isinstance(self.file_data, types.GeneratorType):
             self.add_err_msg(('For "write_data_as_csv",'
-                              ' expected "data" to be a python list'))
+                              ' expected "data" to be a python list or generator'))
             return False
 
-        # Expects data to be a non-empty list
+        # Expects data to be non-empty
         #
-        if not self.file_data:
+        if isinstance(self.file_data, list) and not self.file_data:
             self.add_err_msg(('For "write_data_as_csv",'
                               ' expected "file_data" to be at least 1 row'))
             return False
 
-
-        if not isinstance(self.file_data[0], dict):
+        if isinstance(self.file_data, list) and not isinstance(self.file_data[0], dict):
             self.add_err_msg(('For "write_data_as_csv",'
                               ' expected "file_data" to contains rows of dict'))
             return False
 
-        columns = list(self.file_data[0].keys())
+        first_row = None
+        data_source = None
 
-        # Write to a .csv file, using tab delimiter
-        #
+        if isinstance(self.file_data, list):
+            first_row = self.file_data[0]
+            data_source = self.file_data
+
+        if isinstance(self.file_data, types.GeneratorType):
+            first_row = next(self.file_data)
+
+            def file_data():
+                yield first_row
+                yield from self.file_data
+            data_source = file_data()
+
+        columns = list(first_row.keys())
+
         with open(fullpath, 'w', newline='') as output_file:
             dict_writer = csv.DictWriter(output_file,
                                          quoting=self.quoting,
@@ -295,7 +292,9 @@ class BasicProblemWriter(BasicErrCheck):
                                          #delimiter='\t',
                                          extrasaction='ignore')
             dict_writer.writeheader()
-            dict_writer.writerows(self.file_data)
+            # writerows would be better, but it is bugged- incomplete lines are written
+            for record in data_source:
+                dict_writer.writerow(record)
 
         self.new_filepath = fullpath
 

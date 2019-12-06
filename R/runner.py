@@ -25,16 +25,14 @@ flask_app.debug = not production
 
 # multiprocessing.Process is buffered, stdout must be flushed manually
 def debug(*values):
-    print(*values)
-    sys.stdout.flush()
+    print(*values, flush=True)
 
 
 def task_handler(task):
     robjects.r.source("config.R")
     robjects.r.source('setup.R')
     robjects.r.source('utils.R')
-
-    robjects.r.source('preprocess/preprocess.R')
+    robjects.r.source('utilsCaret.R')
 
     for app in os.listdir('apps/'):
         if app.endswith('.R'):
@@ -93,7 +91,8 @@ def default():
 # convert nested python objects to nested R objects
 def r_cast(content):
     robjects.r.library('jsonlite')
-    return robjects.r['fromJSON'](json.dumps(content))
+    # simplifyDataFrame=False: don't mangle simple lists
+    return robjects.r['fromJSON'](json.dumps(content), simplifyDataFrame=False)
 
 
 # convert nested R objects to nested python objects

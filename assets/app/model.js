@@ -46,9 +46,8 @@ export class CanvasModel {
                 nodes: forceDiagramNodesReadOnly,
                 // these attributes may change dynamically, (the problem could change)
                 onDragOut: pebble => {
-                    let pebbles = forceData.summaries[pebble] && forceData.summaries[pebble].plottype === 'collapsed'
+                    let pebbles = forceData.summaries[pebble] && forceData.summaries[pebble].pdfPlotType === 'collapsed'
                         ? forceData.summaries[pebble].childNodes : [pebble];
-
                     pebbles.forEach(pebble => setGroup(selectedProblem, 'None', pebble));
                     selectedProblem.pebbleLinks = (selectedProblem.pebbleLinks || [])
                         .filter(link => link.target !== pebble && link.source !== pebble);
@@ -56,10 +55,9 @@ export class CanvasModel {
                     m.redraw();
                 },
                 onDragOver: (pebble, groupId) => {
-                    let pebbles = forceData.summaries[pebble.name].plottype === 'collapsed'
+                    if (groupId === 'Loose') return;
+                    let pebbles = forceData.summaries[pebble.name].pdfPlotType === 'collapsed'
                         ? forceData.summaries[pebble.name].childNodes : [pebble.name];
-
-                    console.log('on drag over', groupId);
                     pebbles.forEach(pebble => setGroup(selectedProblem, groupId, pebble));
                     app.resetPeek();
                     m.redraw();
@@ -67,12 +65,7 @@ export class CanvasModel {
                 onDragAway: (pebble, groupId) => {
                     let pebbles = forceData.summaries[pebble.name] && forceData.summaries[pebble.name].pdfPlotType === 'collapsed'
                         ? forceData.summaries[pebble.name].childNodes : [pebble.name];
-
-                    console.log('pebble dragged away', pebble);
-                    console.log(pebbles);
-                    console.log(groupId);
-                    pebbles
-                        .forEach(pebble => setGroup(selectedProblem, 'Loose', pebble));
+                    pebbles.forEach(pebble => setGroup(selectedProblem, 'Loose', pebble));
                     app.resetPeek();
                     m.redraw();
                 },
@@ -110,7 +103,8 @@ export class CanvasModel {
                 m(Button, {
                     id: 'btnForce', style: {margin: '0px .5em'},
                     onclick: () => forceDiagramState.isPinned = !forceDiagramState.isPinned,
-                    title: 'pin the variable pebbles to the page'
+                    title: 'pin the variable pebbles to the page',
+                    class: forceDiagramState.isPinned && 'active'
                 }, m(Icon, {name: 'pin'})),
                 m(Button, {
                     id: 'btnEraser', style: {margin: '0px .5em'},
@@ -177,7 +171,7 @@ export let leftpanel = forceData => {
 
     let ravenConfig = app.workspace.raven_config;
     let selectedProblem = app.getSelectedProblem();
-
+    
     if (!ravenConfig) return;
 
     let sections = [];
@@ -424,8 +418,8 @@ export let leftpanel = forceData => {
 
                             let clickedProblem = problems[problemID];
                             if (clickedProblem.system === 'solved') {
-                                app.setResultsProblem(problemID);
-                                app.set_mode('results');
+                                app.setSelectedProblem(problemID);
+                                app.setSelectedMode('results');
                                 return;
                             }
                             if (selectedProblem.problemID === problemID) return;
@@ -477,7 +471,7 @@ export let leftpanel = forceData => {
 
     if (summaryPebble && forceData.pebbles.includes(summaryPebble)) {
         // if hovered over a collapsed pebble, then expand summaryPebble into all children pebbles
-        let summaryPebbles = forceData.summaries[summaryPebble] && forceData.summaries[summaryPebble].plottype === 'collapsed'
+        let summaryPebbles = forceData.summaries[summaryPebble] && forceData.summaries[summaryPebble].pdfPlotType === 'collapsed'
             ? [...forceData.summaries[summaryPebble].childNodes]
             : [summaryPebble];
 
@@ -584,7 +578,22 @@ export let rightpanel = () => {
                 style: 'right:2em;position:fixed;z-index:1000;margin:0.5em',
                 disabled: selectedProblem.system === 'solved'
             }, m(Icon, {name: isLocked ? 'lock' : 'pencil'})),
-            m('div#problemConfiguration', {onclick: () => isLocked && hopscotch.startTour(app.lockTour(selectedProblem)), style: 'float: left'},
+            m('div#problemConfiguration', {onclick: () => {
+                if (selectedProblem.system === 'solved') {
+                    app.alertError(m('div', 'This problem already has solutions. Would you like to edit a copy of this problem instead?', m(Button, {
+                        style: 'margin:1em',
+                        onclick: () => {
+                            let problemCopy = app.getProblemCopy(selectedProblem);
+                            workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+                            app.setShowModalAlerts(false);
+                            app.setSelectedProblem(problemCopy.problemID);
+                        }
+                    }, 'Edit Copy')));
+                    m.redraw();
+                    return;
+                }
+                isLocked && hopscotch.startTour(app.lockTour())
+                    }, style: 'float: left'},
                 m('label', 'Task Type'),
                 m(Dropdown, {
                     id: 'taskType',
@@ -633,6 +642,66 @@ export let rightpanel = () => {
                 selectedProblem.metrics.length > 0 && m('label', 'Secondary Performance Metrics'),
                 m(ListTags, {readonly: isLocked, tags: selectedProblem.metrics, ondelete: metric => app.remove(selectedProblem.metrics, metric)}),
                 m(Subpanel, {
+                        header: 'Split Options',
+                        defaultShown: false,
+                        style: {margin: '1em'}
+                    },
+                    m('label', 'Prepare in/out-of-sample splits.'),
+                    m(ButtonRadio, {
+                        id: 'outOfSampleSplit',
+                        onclick: value => {
+                            if (isLocked) return;
+                            selectedProblem.splitOptions.outOfSampleSplit = value === 'True';
+                        },
+                        activeSection: selectedProblem.splitOptions.outOfSampleSplit ? 'True' : 'False',
+                        sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
+                    }),
+                    selectedProblem.splitOptions.outOfSampleSplit && [
+                        m('label[style=margin-top:0.5em]', 'In-sample-ratio. This ratio is used for model training, the rest is used for out-of-sample scoring and diagnostics.'),
+                        m(TextField, {
+                            id: 'ratioSplitsOption',
+                            disabled: isLocked,
+                            value: selectedProblem.splitOptions.trainTestRatio || 0,
+                            onblur: !isLocked && (value => selectedProblem.splitOptions.trainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
+                            style: {'margin-bottom': '1em'}
+                        }),
+                        m('label[style=margin-top:0.5em]', 'Stratify'),
+                        m(ButtonRadio, {
+                            id: 'stratifiedSplitOption',
+                            onclick: value => {
+                                if (isLocked) return;
+                                selectedProblem.splitOptions.stratified = value === 'True';
+                            },
+                            activeSection: selectedProblem.splitOptions.stratified ? 'True' : 'False',
+                            sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
+                        }),
+                        m('label[style=margin-top:0.5em]', 'Shuffle'),
+                        m(ButtonRadio, {
+                            id: 'shuffleSplitsOption',
+                            onclick: !isLocked && (value => selectedProblem.splitOptions.shuffle = value === 'True'),
+                            activeSection: selectedProblem.splitOptions.shuffle ? 'True' : 'False',
+                            sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
+                        }),
+                        selectedProblem.splitOptions.shuffle && [
+                            m('label[style=margin-top:0.5em]', 'Random seed'),
+                            m(TextField, {
+                                id: 'randomSeedSplitsOption',
+                                disabled: isLocked,
+                                value: selectedProblem.splitOptions.randomSeed || 0,
+                                oninput: !isLocked && (value => selectedProblem.splitOptions.randomSeed = parseFloat(value.replace(/\D/g,'')) || undefined),
+                                style: {'margin-bottom': '1em'}
+                            })
+                        ],
+                        m('label[style=margin-top:0.5em]', 'Splits file (optional)'),
+                        m(TextField, {
+                            id: 'textFieldSampleSplitsFile',
+                            disabled: isLocked,
+                            value: selectedProblem.splitOptions.splitsFile,
+                            onblur: !isLocked && (value => selectedProblem.splitOptions.splitsFile = value),
+                            style: {'margin-bottom': '1em'}
+                        })
+                    ]),
+                m(Subpanel, {
                         header: 'Search Options',
                         defaultShown: false,
                         style: {margin: '1em'}
@@ -640,51 +709,51 @@ export let rightpanel = () => {
                     m('label', 'Approximate time bound for overall pipeline search, in minutes. Leave empty for unlimited time.'),
                     m(TextField, {
                         id: 'timeBoundOption',
-                        value: selectedProblem.timeBound || '',
+                        value: selectedProblem.searchOptions.timeBoundSearch || '',
                         disabled: isLocked,
-                        oninput: !isLocked && (value => selectedProblem.timeBound = value.replace(/[^\d.-]/g, '')),
-                        onblur: !isLocked && (value => selectedProblem.timeBound = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
+                        oninput: !isLocked && (value => selectedProblem.searchOptions.timeBoundSearch = value.replace(/[^\d.-]/g, '')),
+                        onblur: !isLocked && (value => selectedProblem.searchOptions.timeBoundSearch = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
                         style: {'margin-bottom': '1em'}
                     }),
                     m('label', 'Approximate time bound for predicting with a single pipeline, in minutes. Leave empty for unlimited time.'),
                     m(TextField, {
-                        id: 'timeBoundPipelineOption',
+                        id: 'timeBoundRunOption',
                         disabled: isLocked,
-                        value: selectedProblem.timeBoundRun || '',
-                        oninput: !isLocked && (value => selectedProblem.timeBoundRun = value.replace(/[^\d.-]/g, '')),
-                        onblur: !isLocked && (value => selectedProblem.timeBoundRun = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
+                        value: selectedProblem.searchOptions.timeBoundRun || '',
+                        oninput: !isLocked && (value => selectedProblem.searchOptions.timeBoundRun = value.replace(/[^\d.-]/g, '')),
+                        onblur: !isLocked && (value => selectedProblem.searchOptions.timeBoundRun = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
                         style: {'margin-bottom': '1em'}
                     }),
                     m('label', 'Priority'),
                     m(TextField, {
                         id: 'priorityOption',
                         disabled: isLocked,
-                        value: selectedProblem.priority || '',
-                        oninput: !isLocked && (value => selectedProblem.priority = value.replace(/[^\d.-]/g, '')),
-                        onblur: !isLocked && (value => selectedProblem.priority = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
+                        value: selectedProblem.searchOptions.priority || '',
+                        oninput: !isLocked && (value => selectedProblem.searchOptions.priority = value.replace(/[^\d.-]/g, '')),
+                        onblur: !isLocked && (value => selectedProblem.searchOptions.priority = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
                         style: {'margin-bottom': '1em'}
                     }),
                     m('label', 'Limit on number of solutions'),
                     m(TextField, {
                         id: 'solutionsLimitOption',
                         disabled: isLocked,
-                        value: selectedProblem.solutionsLimit || '',
-                        oninput: !isLocked && (value => selectedProblem.solutionsLimit = Math.max(0, parseInt(value.replace(/\D/g,''))) || undefined),
+                        value: selectedProblem.searchOptions.solutionsLimit || '',
+                        oninput: !isLocked && (value => selectedProblem.searchOptions.solutionsLimit = Math.max(0, parseInt(value.replace(/\D/g,''))) || undefined),
                         style: {'margin-bottom': '1em'}
                     })
                 ),
                 m(Subpanel, {
-                        header: 'Scoring Options',
+                        header: 'Score Options',
                         defaultShown: false,
                         style: {margin: '1em'}
                     },
                     m('label', 'Evaluation Method'),
                     m(Dropdown, {
-                        id: 'evaluationMethodScoringOption',
+                        id: 'evaluationMethodScoreOption',
                         items: Object.keys(app.d3mEvaluationMethods),
-                        activeItem: selectedProblem.evaluationMethod,
+                        activeItem: selectedProblem.scoreOptions.evaluationMethod,
                         onclickChild: child => {
-                            selectedProblem.evaluationMethod = child;
+                            selectedProblem.scoreOptions.evaluationMethod = child;
                             delete selectedProblem.unedited;
                             // will trigger the call to solver, if a menu that needs that info is shown
                             app.setSolverPending(true);
@@ -692,50 +761,50 @@ export let rightpanel = () => {
                         style: {'margin-bottom': '1em'},
                         disabled: isLocked
                     }),
-                    selectedProblem.evaluationMethod === 'kFold' && [
+                    selectedProblem.scoreOptions.evaluationMethod === 'kFold' && [
                         m('label[style=margin-top:0.5em]', 'Number of Folds'),
                         m(TextField, {
-                            id: 'foldsScoringOption',
+                            id: 'foldsScoreOption',
                             disabled: isLocked,
-                            value: selectedProblem.folds || '',
-                            oninput: !isLocked && (value => selectedProblem.folds = parseFloat(value.replace(/\D/g,'')) || undefined),
+                            value: selectedProblem.scoreOptions.folds || '',
+                            oninput: !isLocked && (value => selectedProblem.scoreOptions.folds = parseFloat(value.replace(/\D/g,'')) || undefined),
                             style: {'margin-bottom': '1em'}
                         }),
-                        m('label', 'Stratified Folds'),
-                        m(ButtonRadio, {
-                            id: 'shuffleScoringOption',
-                            onclick: value => {
-                                if (isLocked) return;
-                                selectedProblem.stratified = value === 'True';
-                            },
-                            activeSection: selectedProblem.stratified ? 'True' : 'False',
-                            sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
-                        }),
                     ],
-                    selectedProblem.evaluationMethod === 'holdout' && [
+                    selectedProblem.scoreOptions.evaluationMethod === 'holdOut' && [
                         m('label[style=margin-top:0.5em]', 'Train/Test Ratio'),
                         m(TextField, {
-                            id: 'ratioOption',
+                            id: 'ratioScoreOption',
                             disabled: isLocked,
-                            value: selectedProblem.trainTestRatio || 0,
-                            onblur: !isLocked && (value => selectedProblem.trainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
+                            value: selectedProblem.scoreOptions.trainTestRatio || 0,
+                            onblur: !isLocked && (value => selectedProblem.scoreOptions.trainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
                             style: {'margin-bottom': '1em'}
                         })
                     ],
-                    m('label[style=margin-top:0.5em]', 'Shuffle'),
+                    m('label', 'Stratify'),
                     m(ButtonRadio, {
-                        id: 'shuffleScoringOption',
-                        onclick: !isLocked && (value => selectedProblem.shuffle = value === 'True'),
-                        activeSection: selectedProblem.shuffle ? 'True' : 'False',
+                        id: 'stratifiedScoreOption',
+                        onclick: value => {
+                            if (isLocked) return;
+                            selectedProblem.scoreOptions.stratified = value === 'True';
+                        },
+                        activeSection: selectedProblem.scoreOptions.stratified ? 'True' : 'False',
                         sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
                     }),
-                    selectedProblem.shuffle && [
-                        m('label[style=margin-top:0.5em]', 'Shuffle random seed'),
+                    m('label[style=margin-top:0.5em]', 'Shuffle'),
+                    m(ButtonRadio, {
+                        id: 'shuffleScoreOption',
+                        onclick: !isLocked && (value => selectedProblem.scoreOptions.shuffle = value === 'True'),
+                        activeSection: selectedProblem.scoreOptions.shuffle ? 'True' : 'False',
+                        sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
+                    }),
+                    selectedProblem.scoreOptions.shuffle && [
+                        m('label[style=margin-top:0.5em]', 'Random seed'),
                         m(TextField, {
-                            id: 'shuffleSeedScoringOption',
+                            id: 'randomSeedScoreOption',
                             disabled: isLocked,
-                            value: selectedProblem.shuffleRandomSeed || 0,
-                            oninput: !isLocked && (value => selectedProblem.shuffleRandomSeed = parseFloat(value.replace(/\D/g,'')) || undefined),
+                            value: selectedProblem.scoreOptions.randomSeed || 0,
+                            oninput: !isLocked && (value => selectedProblem.scoreOptions.randomSeed = parseFloat(value.replace(/\D/g,'')) || undefined),
                             style: {'margin-bottom': '1em'}
                         })
                     ],
@@ -956,7 +1025,7 @@ export let buildForceData = problem => {
                     .forEach(group => combinedGroups[group.name].nodes.add(mergedName));
 
                 summaries[mergedName] = {
-                    plottype: 'collapsed',
+                    pdfPlotType: 'collapsed',
                     childNodes: partition
                 };
 
@@ -981,6 +1050,20 @@ export let buildForceData = problem => {
 
 
 export let setGroup = (problem, group, name) => {
+    if (problem.system === 'solved') {
+        app.alertError(m('div', 'This problem already has solutions. Would you like to edit a copy of this problem instead?', m(Button, {
+            style: 'margin:1em',
+            onclick: () => {
+                let problemCopy = app.getProblemCopy(problem);
+                workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+                app.setShowModalAlerts(false);
+                app.setSelectedProblem(problemCopy.problemID);
+                setGroup(problemCopy, group, name);
+            }
+        }, 'Edit Copy')));
+        m.redraw();
+        return;
+    }
     delete problem.unedited;
 
     // behavioral logging
@@ -1042,6 +1125,19 @@ export let forceDiagramState = {
 
 let setContextPebble = pebble => {
     let selectedProblem = app.getSelectedProblem();
+    if (selectedProblem.system === 'solved') {
+        app.alertError(m('div', 'This problem already has solutions. Would you like to edit a copy of this problem instead?', m(Button, {
+            style: 'margin:1em',
+            onclick: () => {
+                let problemCopy = app.getProblemCopy(selectedProblem);
+                workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+                app.setShowModalAlerts(false);
+                app.setSelectedProblem(problemCopy.problemID);
+            }
+        }, 'Edit Copy')));
+        m.redraw();
+        return;
+    }
 
     delete selectedProblem.unedited;
     d3.event.preventDefault(); // block browser context menu
@@ -1179,7 +1275,7 @@ export let mutateNodes = problem => (state, context) => {
 
     // set the base color of each node
     pebbles.forEach(pebble => {
-        if (state.summaries[pebble] && state.summaries[pebble].plottype === 'collapsed') {
+        if (state.summaries[pebble] && state.summaries[pebble].pdfPlotType === 'collapsed') {
             context.nodes[pebble].strokeWidth = 0;
             context.nodes[pebble].nodeCol = 'transparent';
             context.nodes[pebble].strokeColor = 'transparent';
@@ -1350,10 +1446,12 @@ let D3M_problemDoc = problem => ({
             }))
         },
         dataSplits: Object.entries({
-            method: problem.evaluationMethod,
-            testSize: problem.trainTestRatio,
-            stratified: problem.stratified,
-            randomSeed: problem.randomSeed
+            method: problem.scoreOptions.evaluationMethod,
+            testSize: problem.scoreOptions.trainTestRatio,
+            stratified: problem.scoreOptions.stratified,
+            shuffle: problem.scoreOptions.shuffle,
+            randomSeed: problem.scoreOptions.randomSeed,
+            splitsFile: problem.scoreOptions.splitsFile
         })
             // remove keys with undefined values
             .filter(entry => entry[1] !== undefined)
@@ -1390,8 +1488,14 @@ export async function submitDiscProb() {
             let problemProblemSchema = D3M_problemDoc(problem);
             let filename_api = problem.problemID + '/ss_api.json';
             let filename_ps = problem.problemID + '/problem_schema.json';
-            app.makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
-            app.makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
+            m.request(D3M_SVC_URL + '/store-user-problem', {
+                method: 'POST',
+                data: {filename: filename_api, data: problemApiCall}
+            });
+            m.request(D3M_SVC_URL + '/store-user-problem', {
+                method: 'POST',
+                data: {filename: filename_ps, data: problemProblemSchema}
+            });
 
             let meaningful = problem.meaningful ? 'yes' : 'no';
             let lineForCSV = `${problem.problemID},${problem.system},${meaningful}`;
@@ -1404,7 +1508,10 @@ export async function submitDiscProb() {
 
     // write the CSV file requested by NIST that describes properties of the solutions
     console.log(outputCSV);
-    let res3 = await app.makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: 'labels.csv', data: outputCSV.join('\n')});
+    let res3 = await m.request(D3M_SVC_URL + '/store-user-problem', {
+        method: 'POST',
+        data: {filename: 'labels.csv', data: outputCSV.join('\n')}
+    });
 
     // Remove the button Submit Discovered problem button
     //

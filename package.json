@@ -35,8 +35,8 @@
     "jstat": "^1.9.1",
     "ladda": "^1.0.5",
     "latex-parser": "^0.6.2",
-    "mithril": "^1.1.6",
-    "npm": "^6.11.3",
+    "mithril": "^1.1.7",
+    "npm": "^6.12.1",
     "octicons": "^8.5.0",
     "popper.js": "^1.15.0",
     "randomatic": "^3.1.1",
@@ -52,6 +52,6 @@
     "css-loader": "^2.1.1",
     "extract-text-webpack-plugin": "^2.1.0",
     "webpack": "^2.7.0",
-    "webpack-bundle-tracker": "^0.3.0"
+    "webpack-bundle-tracker": "^0.4.3"
   }
 }

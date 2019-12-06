@@ -5,37 +5,39 @@ Functions for when the UI sends JSON requests to route to TA2s as gRPC calls
 """
 from urllib import parse
 from os.path import basename, isfile
-from django.shortcuts import render
 from django.conf import settings
 from django.http import JsonResponse, HttpResponse, HttpResponseNotFound
 
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 
-from tworaven_apps.rook_services.views import create_destination_directory
-from tworaven_apps.ta2_interfaces.util_results_importance_EFD import ImportanceEFDUtil
-from tworaven_apps.ta2_interfaces.util_results_confusion import ConfusionUtil
+from tworaven_apps.ta2_interfaces.tasks import split_dataset, create_partials_datasets
+from tworaven_apps.ta2_interfaces.util_results_visualizations import (
+    util_results_confusion_matrix,
+    util_results_importance_efd,
+    util_results_importance_ice,
+    util_results_real_clustered)
 from tworaven_apps.ta2_interfaces.grpc_util import TA3TA2Util
 from tworaven_apps.ta2_interfaces.static_vals import KEY_DATA_POINTER, KEY_INDICES
 from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
-from tworaven_apps.ta2_interfaces.util_pipeline_check import PipelineInfoUtil
+
+from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
+from tworaven_apps.behavioral_logs import static_vals as bl_static
+
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
-     get_json_error,
-     get_json_success)
+     get_json_error, get_session_key)
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
 from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 
-import shutil
-from os import path
-import os
-import json
-from d3m.container.dataset import Dataset
-
-from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
+from os import path
+
+import traceback
+
+from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
 
 
 @csrf_exempt
@@ -91,10 +93,10 @@ def view_download_file(request):
         user_msg = ('No key found: "%s"' % KEY_DATA_POINTER)
         return JsonResponse(get_json_error(user_msg))
 
-    data_pointer = parse.unquote(data_pointer)
+    data_pointer = parse.unquote(data_pointer).replace('file://', '')
 
     if not path.exists(data_pointer):
-        user_msg = ('No file found: "%s"' % KEY_DATA_POINTER)
+        user_msg = ('No file found: "%s"' % data_pointer)
         return JsonResponse(get_json_error(user_msg))
 
     with open(data_pointer, 'r', encoding="ISO-8859-1") as file_download:
@@ -119,7 +121,7 @@ def view_download_report_file(request):
     data_pointer = parse.unquote(data_pointer)
 
     if not isfile(data_pointer):
-        user_msg = ('No file found: "%s"' % KEY_DATA_POINTER)
+        user_msg = ('No file found: "%s"' % data_pointer)
         return JsonResponse(get_json_error(user_msg))
 
     # Read the report and send it back as an attachment
@@ -156,6 +158,26 @@ filename = "sample_pdf.pdf"
     return response
 """
 
+@csrf_exempt
+def view_retrieve_fitted_vs_actuals_data(request):
+
+    req_body_info = get_request_body_as_json(request)
+    if not req_body_info.success:
+        return JsonResponse(get_json_error(req_body_info.err_msg))
+
+    req_info = req_body_info.result_obj
+    if not KEY_DATA_POINTER in req_info:
+        user_msg = ('No key found: "%s"' % KEY_DATA_POINTER)
+        return JsonResponse(get_json_error(user_msg))
+
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    return JsonResponse(util_results_real_clustered(
+        req_info[KEY_DATA_POINTER],
+        metadata=req_info['metadata']))
+
 
 @csrf_exempt
 def view_retrieve_d3m_confusion_data(request):
@@ -175,17 +197,13 @@ def view_retrieve_d3m_confusion_data(request):
     if not user_info.success:
         return JsonResponse(get_json_error(user_info.err_msg))
 
-    statistics_util = ConfusionUtil(req_info[KEY_DATA_POINTER],
-                                         metadata=req_info['metadata'],
-                                         user=user_info.result_obj)
-    if statistics_util.has_error:
-        return JsonResponse(get_json_error(statistics_util.error_message))
-
-    return JsonResponse(statistics_util.get_final_results())
+    return JsonResponse(util_results_confusion_matrix(
+        req_info[KEY_DATA_POINTER],
+        metadata=req_info['metadata']))
 
 
 @csrf_exempt
-def view_retrieve_d3m_EFD_data(request):
+def view_retrieve_d3m_efd_data(request):
     """Expects a JSON request containing "data_pointer"
     For example: { "data_pointer": "file:///output/predictions/0001.csv"}
     """
@@ -202,13 +220,28 @@ def view_retrieve_d3m_EFD_data(request):
     if not user_info.success:
         return JsonResponse(get_json_error(user_info.err_msg))
 
-    statistics_util = ImportanceEFDUtil(req_info[KEY_DATA_POINTER],
-                                         metadata=req_info['metadata'],
-                                         user=user_info.result_obj)
-    if statistics_util.has_error:
-        return JsonResponse(get_json_error(statistics_util.error_message))
+    return JsonResponse(util_results_importance_efd(
+        req_info[KEY_DATA_POINTER],
+        metadata=req_info['metadata']))
 
-    return JsonResponse(statistics_util.get_final_results())
+
+@csrf_exempt
+def view_retrieve_d3m_ice_data(request):
+    req_body_info = get_request_body_as_json(request)
+    if not req_body_info.success:
+        return JsonResponse(get_json_error(req_body_info.err_msg))
+
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    req_info = req_body_info.result_obj
+    return JsonResponse({
+        KEY_SUCCESS: True,
+        KEY_DATA: util_results_importance_ice(
+            req_info['data_pointer_predictors'],
+            req_info['data_pointer_fitted'],
+            req_info['variable'])})
 
 
 @csrf_exempt
@@ -233,55 +266,62 @@ def get_train_test_split(request):
     if not user_info.success:
         return JsonResponse(get_json_error(user_info.err_msg))
 
-    dataset_schema = json.load(open(req_info['dataset_schema'], 'r'))
-    resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
+    try:
+        response = {
+            "success": True,
+            "data": split_dataset(req_info, user_workspace),
+            "message": "data partitioning successful"
+        }
 
-    dataset = Dataset.load(f'file://{req_info["dataset_schema"]}')
-    dataframe = pd.DataFrame(dataset[resource_schema['resID']])
+    except Exception:
+        print("caught traceback when splitting data:", flush=True)
+        print(traceback.format_exc(), flush=True)
+        response = {
+            "success": False,
+            "message": "Internal error while splitting dataset."
+        }
 
-    # rows with NaN values become object rows, which may contain multiple types. The NaN values become empty strings
-    # this converts '' to np.nan in non-nominal columns, so that nan may be dropped
-    # perhaps in a future version of d3m, the dataset loader could use pandas extension types instead of objects
-    nominals = req_info.get('nominals', [])
-    for column in [col for col in dataframe.columns.values if col not in nominals]:
-        dataframe[column].replace('', np.nan, inplace=True)
+    return JsonResponse(response)
 
-    dataframe.dropna(inplace=True)
-    dataframe.reset_index(drop=True, inplace=True)
 
-    print(dataframe)
+@csrf_exempt
+def get_partials_datasets(request):
+    # request body
+    req_body_info = get_request_body_as_json(request)
+    if not req_body_info.success:
+        return JsonResponse(get_json_error(req_body_info.err_msg))
+    req_info = req_body_info.result_obj
 
-    def write_dataset(role, writable_dataframe):
-        dest_dir_info = create_destination_directory(user_workspace, role=role)
-        if not dest_dir_info.success:
-            return JsonResponse(get_json_error(dest_dir_info.err_msg))
+    # workspace
+    user_workspace_info = get_latest_user_workspace(request)
+    if not user_workspace_info.success:
+        return JsonResponse(get_json_error(user_workspace_info.err_msg))
+    user_workspace = user_workspace_info.result_obj
 
-        dest_directory = dest_dir_info.result_obj
-        csv_path = os.path.join(dest_directory, resource_schema['resPath'])
-        shutil.rmtree(dest_directory)
-        shutil.copytree(user_workspace.d3m_config.training_data_root, dest_directory)
-        os.remove(csv_path)
-        writable_dataframe.to_csv(csv_path)
+    # user
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
 
-        return path.join(dest_directory, 'datasetDoc.json')
+    activity_l1 = bl_static.L1_PROBLEM_DEFINITION
+    activity_l2 = bl_static.L2_ACTIVITY_BLANK
 
-    dataframe_train, dataframe_test = train_test_split(dataframe, train_size=req_info.get('train_test_ratio', .7))
+    log_data = dict(session_key=get_session_key(request),
+                    feature_id='PARTIALS_APP',
+                    activity_l1=activity_l1,
+                    activity_l2=activity_l2)
 
-    datasetDocs = {
-        'all': write_dataset('all', dataframe),
-        'train': write_dataset('train', dataframe_train),
-        'test': write_dataset('test', dataframe_test)
-    }
+    LogEntryMaker.create_system_entry(user_workspace.user, log_data)
 
-    print('datasetDocs', datasetDocs)
+    try:
+        response = create_partials_datasets(req_info, user_workspace)
 
-    sample_test_indices = dataframe_test['d3mIndex'].astype('int32')\
-        .sample(n=req_info.get("sampleCount", min(1000, len(dataframe_test)))).tolist()
+    except Exception:
+        print("caught traceback when creating ICE datasets:", flush=True)
+        print(traceback.format_exc(), flush=True)
+        response = {
+            KEY_SUCCESS: False,
+            KEY_DATA: "Internal error while creating ICE datasets."
+        }
 
-    return JsonResponse({
-        "success": True, "data": {
-            'dataset_schemas': datasetDocs,
-            'sample_test_indices': sample_test_indices
-        },
-        "message": "data partitioning successful"
-    })
+    return JsonResponse(response)

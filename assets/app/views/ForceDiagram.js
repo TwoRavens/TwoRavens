@@ -262,8 +262,10 @@ export default class ForceDiagram {
                     }
                     this.isDragging = true;
                     if (!d3.event.active) this.force.alphaTarget(1).restart();
-                    d3.event.subject.fx = d3.event.subject.x;
-                    d3.event.subject.fy = d3.event.subject.y;
+                    if (d3.event.subject.x !== undefined)
+                        d3.event.subject.fx = d3.event.subject.x;
+                    if (d3.event.subject.y !== undefined)
+                        d3.event.subject.fy = d3.event.subject.y;
                     this.startDragLocation = [d3.event.subject.x, d3.event.subject.y];
                     m.redraw()
                 })
@@ -298,13 +300,13 @@ export default class ForceDiagram {
                                 let nodeNames = [...groups.find(group => group.name === groupId).nodes];
                                 if (isInside(dragCoord, hullCoords[groupId])) {
                                     this.frozenGroups[groupId] = true;
-                                    nodeNames.forEach(node => {
+                                    !this.isPinned && nodeNames.forEach(node => {
                                         this.nodes[node].fx = this.nodes[node].x;
                                         this.nodes[node].fy = this.nodes[node].y;
                                     })
                                 }
                                 else if (this.frozenGroups[groupId]) {
-                                    nodeNames.forEach(node => {
+                                    !this.isPinned && nodeNames.forEach(node => {
                                         if (node === (this.selectedPebble || {}).name) return;
                                         delete this.nodes[node].fx;
                                         delete this.nodes[node].fy;
@@ -318,7 +320,7 @@ export default class ForceDiagram {
                     this.isDragging = false;
                     if (!d3.event.active) this.force.alphaTarget(0);
 
-                    Object.keys(this.frozenGroups).forEach(groupId => {
+                    !this.isPinned && Object.keys(this.frozenGroups).forEach(groupId => {
                         let nodeNames = [...groups.find(group => group.name === groupId).nodes];
                         nodeNames.forEach(node => {
                             if (node === (this.selectedPebble || {}).name) return;
@@ -358,7 +360,7 @@ export default class ForceDiagram {
                             .filter(group => group.nodes.has(d3.event.subject.name))
                             .filter(group => {
                                 if (group.nodes.size === 2)
-                                    return mag(sub(...hullCoords[group.name])) > 4000;
+                                    return mag(sub(...hullCoords[group.name])) > 1000;
 
                                 let reducedHull = hullCoords[group.name]
                                     .filter(coord => coord[0] !== dragCoord[0] && coord[1] !== dragCoord[1]);
@@ -753,7 +755,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
                 'continuous': 'density-plot',
                 'bar': 'bar-plot',
                 'collapsed': 'speck-plot'
-            }[(attrs.summaries[pebble] || {}).plottype];
+            }[(attrs.summaries[pebble] || {}).pdfPlotType] || 'bar-plot';
 
             // delete old plot if plot type changed
             if (!this.classList.contains(className))
@@ -796,7 +798,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
     context.selectors.pebbles
         .select('g.density-plot').each(function (pebble) {
         let summary = attrs.summaries[pebble];
-        if (!summary || !summary.plotx) {
+        if (!summary || !summary.pdfPlotX) {
             d3.select(this).selectAll('path')
                 .data([]).exit().remove();
             return;
@@ -806,10 +808,10 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
         let height = context.nodes[pebble].radius * 0.75;
 
         let xScale = d3.scaleLinear()
-            .domain(d3.extent(summary.plotx))
+            .domain(d3.extent(summary.pdfPlotX))
             .range([0, width]);
         let yScale = d3.scaleLinear()
-            .domain(d3.extent(summary.ploty))
+            .domain(d3.extent(summary.pdfPlotY))
             .range([height, 0]);
 
         let area = d3.area()
@@ -832,7 +834,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
 
         // rebind the path datum regardless of if path existed
         d3.select(this).selectAll('path')
-            .datum(summary.plotx.map((x_i, i) => ({x: summary.plotx[i], y: summary.ploty[i]})))
+            .datum(summary.pdfPlotX.map((x_i, i) => ({x: summary.pdfPlotX[i], y: summary.pdfPlotY[i]})))
             .transition()
             .duration(attrs.selectTransitionDuration)
             .attr("d", area)
@@ -843,7 +845,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
         .select('g.bar-plot').each(function (pebble) {
         let summary = attrs.summaries[pebble];
 
-        if (!summary || !summary.plotvalues) {
+        if (!summary || !summary.plotValues) {
             d3.select(this).selectAll('rect')
                 .data([]).exit().remove();
             return;
@@ -854,12 +856,12 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
 
         let barPadding = .015; // Space between bars
         let barLimit = 15;
-        let keys = Object.keys(summary.plotvalues);
+        let keys = Object.keys(summary.plotValues);
         let data = keys
             .filter((key, i) => keys.length < barLimit || !(i % parseInt(keys.length / barLimit)) || i === keys.length - 1)
             .map((key, i) => ({
                 x: summary.nature === 'nominal' ? i : Number(key),
-                y: summary.plotvalues[key]
+                y: summary.plotValues[key]
             })).sort((a, b) => b.x - a.x);
 
         let maxY = d3.max(data, d => d.y);

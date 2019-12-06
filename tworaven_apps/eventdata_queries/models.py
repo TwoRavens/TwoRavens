@@ -33,7 +33,7 @@ TYPE_OPTIONS = (SUBSET, AGGREGATE)
 TYPE_CHOICES = [(x, x) for x in TYPE_OPTIONS]
 STATUS_CHOICES = [(x, x) for x in STATUS_STATES]
 METHOD_CHOICES = (u'find', u'aggregate', u'count')  # the valid mongodb collection methods
-EXPORT_CHOICES = (u'dataset', u'problem')
+EXPORT_CHOICES = (u'csv', u'dataset')
 HOST_CHOICES = (u'TwoRavens', 'UTDallas')
 DATA_PARTITIONS = (u'TEST', u'TRAIN')
 
@@ -44,6 +44,14 @@ SEARCH_KEY_DESCRIPTION = u'description'
 
 SEARCH_PARAMETERS = (SEARCH_KEY_NAME,
                      SEARCH_KEY_DESCRIPTION,)   # USERNAME)
+
+
+class MongoDataset(TimeStampedModel):
+    name = models.CharField(primary_key=True, blank=False, max_length=128)
+    loading = models.BooleanField(blank=True, default=True)
+
+    class Meta:
+        ordering = ['created']
 
 
 class EventDataSavedQuery(TimeStampedModel):

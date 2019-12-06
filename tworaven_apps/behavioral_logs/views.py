@@ -151,13 +151,10 @@ def view_create_log_entry(request, is_verbose=False):
     log_data = json_info.result_obj
     log_data.update(dict(session_key=session_key))
 
-    print('log_data 1') #, log_data)
     # Default L2 to unkown
     #
     if not bl_static.KEY_L2_ACTIVITY in log_data:
         log_data[bl_static.KEY_L2_ACTIVITY] = bl_static.L2_ACTIVITY_BLANK
-
-    print('log_data 2') #, log_data)
 
     # Note: this form is also used by the LogEntryMaker
     #   - redundant but ok for now, want to return form errors

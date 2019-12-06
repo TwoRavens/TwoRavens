@@ -12,13 +12,15 @@ urlpatterns = [
 
     url(r'^auth/', include('tworaven_apps.raven_auth.urls')),
 
-    url(r'^rook-custom/', include('tworaven_apps.rook_services.urls')),
+    url(r'^rook-custom/', include('tworaven_apps.R_services.urls')),
 
     url(r'^config/', include('tworaven_apps.configurations.urls')),
 
     url(r'^eventdata/', include('tworaven_apps.eventdata_queries.urls')),
 
     url(r'^d3m-service/', include('tworaven_apps.ta2_interfaces.urls')),
+
+    url(r'^solver-service/', include('tworaven_apps.solver_interfaces.urls')),
 
     url(r'^ws-views/', include('tworaven_apps.websocket_views.urls')),
 

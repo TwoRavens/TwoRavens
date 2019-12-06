@@ -8,7 +8,7 @@ from django.http import \
     (JsonResponse, HttpResponse)
 from django.views.decorators.csrf import csrf_exempt
 
-from tworaven_apps.rook_services.make_datadocs_util import MakeDatadocsUtil
+from tworaven_apps.R_services.make_datadocs_util import MakeDatadocsUtil
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
      get_json_error,
@@ -481,7 +481,7 @@ def api_get_data(request):
     EventJobUtil.import_dataset(
         settings.TWORAVENS_MONGO_DB_NAME,
         json_req_obj['collection_name'],
-        datafile=json_req_obj.get('datafile', None),
+        data_path=json_req_obj.get('datafile', None),
         reload=json_req_obj.get('reload', None))
 
     # apply the manipulations
@@ -498,17 +498,23 @@ def api_get_data(request):
     if not success:
         return JsonResponse(get_json_error(results_obj_err))
 
-    if json_req_obj.get('export') == 'dataset':
-        success, results_obj_err = EventJobUtil.export_dataset(\
+    # export single data file
+    if json_req_obj.get('export') == 'csv':
+        success, results_obj_err = EventJobUtil.export_csv(\
             user_workspace,
             settings.MONGO_COLLECTION_PREFIX + json_req_obj['collection_name'],
             results_obj_err)
 
-    if json_req_obj.get('export') == 'problem':
-        success, results_obj_err = EventJobUtil.export_problem(\
+    # export single data file in problem format
+    elif json_req_obj.get('export') == 'dataset':
+        success, results_obj_err = EventJobUtil.export_dataset(\
             user_workspace,
             results_obj_err,
             json.loads(json_req_obj['metadata']))
+
+    # since we aren't exporting to files, exhaust the mongo cursor
+    else:
+        results_obj_err = list(results_obj_err)
 
     if not success:
         return JsonResponse(get_json_error(results_obj_err))
@@ -517,8 +523,3 @@ def api_get_data(request):
     return JsonResponse(\
                 get_json_success('it worked',
                                  data=json_comply(results_obj_err)))
-
-
-@csrf_exempt
-def api_import_dataset(collection):
-    return EventJobUtil.import_dataset(settings.TWORAVENS_MONGO_DB_NAME, collection)

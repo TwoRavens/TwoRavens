@@ -60,6 +60,7 @@ D3M_REQUIRED.remove(KEY_PROBLEM_SCHEMA)
 CONFIG_JSON_PATH = 'CONFIG_JSON_PATH'
 D3M_SEARCH_CONFIG_NAME = 'search_config.json'
 
+
 class D3MConfiguration(TimeStampedModel):
     """
     Allow settings of javascript global variables via the database.

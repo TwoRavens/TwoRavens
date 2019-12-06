@@ -1,0 +1,86 @@
+{
+  "about": {
+    "datasetID": "LL1_PHEM_weeklyData_malnutrition_dataset_SCORE",
+    "datasetName": "LL1 PHEM weeklyData malnutrition dataset",
+    "description": "This data is provided by Ethiopian Public Health Institute (PHEM). It contains weekly reported cases of malnutrition at the level of Woreda for the years 2017 to 2019.",
+    "citation": "",
+    "license": "Unknown",
+    "source": "Ethiopian Public Health Institute (PHEM)",
+    "sourceURI": "",
+    "datasetSchemaVersion": "4.0.0",
+    "redacted": false,
+    "datasetVersion": "4.0.0",
+    "digest": "a7664665fd1b52ce6a176a81437b38d965be16491a4b7871edd5613923ed9234"
+  },
+  "dataResources": [
+    {
+      "resID": "learningData",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": {
+        "text/csv": [
+          "csv"
+        ]
+      },
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "RegionName",
+          "colType": "categorical",
+          "role": [
+            "attribute",
+            "suggestedGroupingKey"
+          ]
+        },
+        {
+          "colIndex": 2,
+          "colName": "ZoneName",
+          "colType": "categorical",
+          "role": [
+            "attribute",
+            "suggestedGroupingKey"
+          ]
+        },
+        {
+          "colIndex": 3,
+          "colName": "WoredaName",
+          "colType": "categorical",
+          "role": [
+            "attribute",
+            "suggestedGroupingKey"
+          ]
+        },
+        {
+          "colIndex": 4,
+          "colName": "dateTime",
+          "colType": "dateTime",
+          "role": [
+            "attribute",
+            "timeIndicator"
+          ],
+          "timeGranularity": {
+            "value": 1,
+            "units": "weeks"
+          }
+        },
+        {
+          "colIndex": 5,
+          "colName": "Malnutrition_total_Cases",
+          "colType": "integer",
+          "role": [
+            "suggestedTarget"
+          ]
+        }
+      ]
+    }
+  ]
+}

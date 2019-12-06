@@ -1,4 +1,4 @@
-## This is a configuration file for Rook apps
+## This is a configuration file for R apps
 
 
 
@@ -9,43 +9,21 @@ production <- identical(Sys.getenv(x='FLASK_USE_PRODUCTION_MODE', unset="no"), "
 
 #print(paste("production: ", production, sep=""))
 
-
 d3m_mode <- TRUE
-addPrivacy<-TRUE      ## Toggle:  TRUE - Add .apps for differential privacy, FALSE - Do not add privacy .apps
 
 # -------------------------------------
 # start: rook output file path
 # -------------------------------------
 # Set the path where rook apps can write output
 #
-default_output_path <- paste(getwd(), "/rook-files/", sep="")
-PREPROCESS_OUTPUT_PATH <- Sys.getenv(x='PREPROCESS_OUTPUT_PATH', unset=default_output_path)
-
 default_report_path <- "/ravens_volume/reports"
 REPORT_OUTPUT_PATH <- Sys.getenv(x='REPORT_OUTPUT_PATH', unset=default_report_path)
 
-# Make sure the path exists
-#
-if (nchar(PREPROCESS_OUTPUT_PATH)==0){
-	print("EXISTING: PREPROCESS_OUTPUT_PATH is not set.")
-	stop()
-}
+default_models_path = '/ravens_volume/solvers/models/'
+SAVED_MODELS_PATH = Sys.getenv(x='SAVED_MODELS_PATH', unset=default_models_path)
 
-# Make sure the path ends with "/"
-#
-if(substring(PREPROCESS_OUTPUT_PATH, nchar(PREPROCESS_OUTPUT_PATH)) != "/"){
-	 PREPROCESS_OUTPUT_PATH <- paste(PREPROCESS_OUTPUT_PATH, "/", sep="")
-}
-#print(paste("PREPROCESS_OUTPUT_PATH: ", PREPROCESS_OUTPUT_PATH, sep=""))
+default_solver_service = 'http://localhost:8080/solver-service/'
+DJANGO_SOLVER_SERVICE = Sys.getenv(x='DJANGO_SOLVER_SERVICE', unset=default_solver_service)
+RECEIVE_ENDPOINT = paste0(DJANGO_SOLVER_SERVICE, 'Receive')
 
-# -------------------------------------
-# end: rook output file path
-# -------------------------------------
-
-if(production){
-	server_name <- ""
-} else {
-	server_name <- "http://127.0.0.1:8080"
-}
-
-options(error=traceback)
+options(error=traceback, warn=1)

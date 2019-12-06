@@ -982,7 +982,6 @@ export class ModalDatamart {
 }
 
 export let search = async (preferences, endpoint, includeDataset=true, includeQuery=true) => {
-    console.log('Datamart/search by dataset');
 
     // preserve state after async is awaited
     let sourceMode = preferences.sourceMode;

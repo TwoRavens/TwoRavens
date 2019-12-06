@@ -17,7 +17,7 @@ from tworaven_apps.utils.json_helper import json_dumps # json_loads
 from tworaven_apps.utils.file_util import \
     (create_directory, move_file, write_file, read_file_contents)
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
-from tworaven_apps.rook_services.make_datadocs_util import MakeDatadocsUtil
+from tworaven_apps.R_services.make_datadocs_util import MakeDatadocsUtil
 from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
 from tworaven_apps.ta2_interfaces.websocket_message import WebsocketMessage
 from tworaven_apps.data_prep_utils.static_vals import DATAMART_AUGMENT_PROCESS

@@ -43,11 +43,10 @@ class ProduceSolutionHelper(BasicErrCheck):
         self.websocket_id = websocket_id
         self.user_id = user_id
         self.user_object = None
-
         self.produce_params = produce_params
         self.search_id = kwargs.get('search_id', None)
         self.session_key = kwargs.get('session_key', None)
-        self.is_partials_call = kwargs.get('is_partials_call', None)
+        self.produce_dataset_name = kwargs.get('produce_dataset_name')
 
         self.get_user()
         self.check_produce_params()
@@ -77,14 +76,17 @@ class ProduceSolutionHelper(BasicErrCheck):
             self.add_err_msg('produce_params must be a python dict')
             return False
 
+        print(self.produce_params, flush=True)
+        print('test')
         # Iterate through the expectd keys
         #
         expected_keys = [ta2_static.KEY_FITTED_SOLUTION_ID, 'inputs',
                          'exposeOutputs', 'exposeValueTypes']
 
+        print('check:', self.produce_params)
         for key in expected_keys:
-            if not key in self.produce_params:
-                user_msg = ('produce_params for pipeline "%s" is missing key: %s') % \
+            if key not in self.produce_params:
+                user_msg = ('produce_params for pipeline "%s" dataset "%s" is missing key: %s') % \
                             (self.pipeline_id, key)
                 self.send_websocket_err_msg(ta2_static.PRODUCE_SOLUTION, user_msg)
                 return False
@@ -105,12 +107,13 @@ class ProduceSolutionHelper(BasicErrCheck):
                                 pipeline_id, websocket_id,
                                 user_id, produce_params, **kwargs)
 
+        print('produce 1')
         if produce_helper.has_error():
             user_msg = ('ProduceSolution failure for pipeline (%s): %s') % \
                         (pipeline_id, produce_helper.get_error_message())
 
             ws_msg = WebsocketMessage.get_fail_message(\
-                        ProduceSolutionHelper.GRCP_PRODUCE_SOLUTION, user_msg)
+                        ta2_static.PRODUCE_SOLUTION, user_msg)
 
             ws_msg.send_message(websocket_id)
             LOGGER.info('ProduceSolutionHelper: %s', user_msg)
@@ -118,8 +121,8 @@ class ProduceSolutionHelper(BasicErrCheck):
 
         LOGGER.info('ProduceSolutionHelper: OK!')
 
+        print('produce 2')
         produce_helper.run_process()
-
 
 
     def run_process(self):
@@ -139,11 +142,7 @@ class ProduceSolutionHelper(BasicErrCheck):
         # --------------------------------
         # (2) Save the request to the db
         # --------------------------------
-        if self.is_partials_call:
-            req_type = ta2_static.PRODUCE_SOLUTION_PARTIALS
-        else:
-            req_type = ta2_static.PRODUCE_SOLUTION
-
+        req_type = ta2_static.PRODUCE_SOLUTION
 
         stored_request = StoredRequest(\
                         user=self.user_object,
@@ -168,8 +167,7 @@ class ProduceSolutionHelper(BasicErrCheck):
         # ----------------------------------
         # Run FitSolution
         # ----------------------------------
-        produce_info = produce_solution(json_str_input,
-                                        is_partials_call=self.is_partials_call)
+        produce_info = produce_solution(json_str_input)
         if not produce_info.success:
             StoredResponse.add_err_response(stored_request,
                                             produce_info.err_msg)
@@ -209,6 +207,7 @@ class ProduceSolutionHelper(BasicErrCheck):
         #
         StoredResponse.add_success_response(stored_request, result_json)
 
+        print('produce 3')
 
         self.run_get_produce_solution_responses(result_json[ta2_static.KEY_REQUEST_ID])
 
@@ -217,14 +216,10 @@ class ProduceSolutionHelper(BasicErrCheck):
         """Send an error messsage over websockets"""
         assert grpc_call, 'grpc_call is required'
 
-        if grpc_call == ta2_static.GET_PRODUCE_SOLUTION_RESULTS:
-            if self.is_partials_call:
-                print('is_partials_call:', is_partials_call)
-                grpc_call = ta2_static.GET_PARTIALS_SOLUTION_RESULTS
-
-        user_msg = '%s error; pipeline %s: %s' % \
+        user_msg = '%s error; pipeline %s; dataset %s: %s' % \
                    (grpc_call,
                     self.pipeline_id,
+                    self.produce_dataset_name,
                     user_msg)
 
         # ----------------------------------
@@ -376,15 +371,17 @@ class ProduceSolutionHelper(BasicErrCheck):
                     # wait for next message...
                     continue
 
-                ws_msg_type = ta2_static.GET_PARTIALS_SOLUTION_RESULTS \
-                              if self.is_partials_call else \
-                              ta2_static. GET_PRODUCE_SOLUTION_RESULTS
+                ws_msg_type = ta2_static.GET_PRODUCE_SOLUTION_RESULTS
 
+                print('produce', self.produce_dataset_name, stored_response.as_dict())
                 ws_msg = WebsocketMessage.get_success_message(\
                             ws_msg_type,
                             'it worked.',
                             msg_cnt=msg_cnt,
-                            data=stored_response.as_dict())
+                            data={
+                                'produce_dataset_name': self.produce_dataset_name,
+                                **stored_response.as_dict()
+                            })
 
                 LOGGER.info('ws_msg: %s', ws_msg)
                 #print('ws_msg', ws_msg.as_dict())

@@ -43,13 +43,14 @@ setup/r-setup/RINSTALL.*.LOG
 
 ravens_volume/test_output/*
 ravens_volume/reports/*
+ravens_volume/solvers/
+ravens_volume/test_output_auto_sklearn/
 !ravens_volume/test_output/placeholder.md
 ravens_volume/manipulation_data/*
 ravens_volume/config_*.json
 ravens_volume/32_wikiqa
 assets/pkgs/swagger-ui/dist/*.map
 .Rhistory
-ravens_volume/test_data/*/search_config.json
 ravens_volume/test_data/*/search_config.json
 #ravens_volume/test_data/01_TEST_SOURCE/placeholder.md
 
@@ -64,3 +65,7 @@ ravens-test/cypress/screenshots/
 ravens-test/cypress/videos/
 dev_scripts/output
 ravens_volume/test_data/05_incarceration/TRAIN/dataset_TRAIN/tables/learningData copy.csv
+
+# automl solvers
+catboost/
+catboost_info/
