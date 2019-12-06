@@ -132,7 +132,7 @@ class SearchUtil(BasicErrCheck):
             self.add_err_msg(search_info.err_msg)
             return False
 
-        print('search_info', search_info.result_obj)
+        # print('search_info', search_info.result_obj)
 
         self.search_results = search_info.result_obj
 

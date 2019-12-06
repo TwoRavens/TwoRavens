@@ -10,6 +10,9 @@ reset_util = ResetUtil(user=user, **dict(request=requeset_obj))
 if not reset_util.has_error():
     reset_util.start_the_reset()
 """
+from celery.task import control as celery_control
+from tworavensproject.celery import celery_app
+
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.ta2_interfaces.stored_data_util import StoredRequestUtil
@@ -116,14 +119,68 @@ class ResetUtil(BasicErrCheck):
         if not self.d3m_config:
             self.d3m_config = get_latest_d3m_config()
 
+    @staticmethod
+    def clear_celery_tasks():
+        """Remove pending, active, and reserved Celery tasks
+        ref: https://stackoverflow.com/questions/7149074/deleting-all-pending-tasks-in-celery-rabbitmq
+        """
+        print('-- clear_celery_tasks --')
+        print('- redis flush too...')
+        import shlex, subprocess
+
+        process = subprocess.Popen(shlex.split('redis-cli FLUSHALL'), stdout=subprocess.PIPE)
+        try:
+            presult = process.communicate()
+            print('redis flush result: ', presult)
+        except ValueError as err_obj:
+            print('redis flush ValueError: ', err_obj)
+            pass
+
+        # return
+
+        # ----------------------------
+        # (1) remove pending tasks
+        # ----------------------------
+        print('(1) celery: remove pending tasks')
+        celery_app.control.purge()
+
+        # ----------------------------
+        # (2) remove active tasks
+        # ----------------------------
+        print('(2) celery: remove active tasks')
+        i = celery_control.inspect()
+        active_tasks = i.active()
+        if active_tasks:
+            for hostname in active_tasks:
+                tasks = active_tasks[hostname]
+                for task in tasks:
+                    celery_control.revoke(task['id'], terminate=True)
+
+        # ----------------------------
+        # (3) remove reserved tasks
+        # ----------------------------
+        print('(3) celery: remove reserved tasks')
+        jobs = i.reserved()
+        if jobs:
+            for hostname in jobs:
+                tasks = jobs[hostname]
+                for task in tasks:
+                    celery_control.revoke(task['id'], terminate=True)
+
+
     def start_the_reset(self):
         """Reset various logs/directories, as appropriate"""
         if self.has_error():
             return
 
+
         # (1) stop any TA2 Searches using the request history
         #
         StoredRequestUtil.stop_search_requests(**dict(user=self.user))
+
+        # (1a) Stop/Delete any celery tasks
+        #
+        ResetUtil.clear_celery_tasks()
 
         # (2) Clear TA2/TA3 output directory
         #

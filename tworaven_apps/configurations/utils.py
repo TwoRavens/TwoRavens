@@ -239,7 +239,7 @@ def clear_output_directory(d3m_config):
             else:
                 file_to_remove = join(root, fname)
                 try:
-                    print('remove file:', file_to_remove)
+                    # print('remove file:', file_to_remove)
                     os.remove(file_to_remove)
                 except FileNotFoundError:
                     pass
@@ -249,7 +249,7 @@ def clear_output_directory(d3m_config):
             dir_to_remove = join(root, dname)
             if dir_to_remove not in dirs_to_keep:
                 shutil.rmtree(dir_to_remove)
-                print('remove dir:', dir_to_remove)
+                # print('remove dir:', dir_to_remove)
             else:
                 print('** skip dir:', dir_to_remove)
 

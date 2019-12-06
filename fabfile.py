@@ -96,11 +96,12 @@ def make_d3m_configs_from_files_multiuser_test_limited():
     # Names of directories of datasets that should be available to users
     #   - This can also be updated in the admin
     #
-    params[cstatic.SELECTED_NAME_LIST] = ['05_incarceration',
-                                          '10_state_immigration',
+    params[cstatic.SELECTED_NAME_LIST] = [#'05_incarceration',
+                                          #'10_state_immigration',
                                           '185_baseball',
-                                          #'196_autoMpg',
-                                          #'DA_poverty_estimation'
+                                          '196_autoMpg',
+                                          'LL1_PHEM_weeklyData_malnutrition',
+                                          'DA_poverty_estimation',
                                           ]
 
     loader = EnvConfigLoader.make_d3m_test_configs_env_based(\

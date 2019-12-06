@@ -300,6 +300,11 @@ D3MRAM = os.environ.get('D3MRAM', None)
 # D3MTIMEOUT - time limit for the search phase (available to the pod), in seconds
 D3MTIMEOUT = os.environ.get('D3MTIMEOUT', None)
 
+# ---------------------------
+# R Server base
+# ---------------------------
+R_DEV_SERVER_BASE = os.environ.get('R_DEV_SERVER_BASE',
+                                   'http://0.0.0.0:8000/')
 
 # ---------------------------
 # D3M - TA2 settings

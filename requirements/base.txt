@@ -24,16 +24,20 @@ grpcio-tools==1.21.1
 
 # For long-running GRPC requests
 #
+kombu==4.6.4  # 4.6.5 has a bug...
 celery==4.3.0
 # redis==2.10.6
 redis==3.2.0
 
+<<<<<<< HEAD
 # for the ta3_search callback
 #Flask==0.12.2
 
 # for nist k8s templates
 Jinja2==2.10.1
 
+=======
+>>>>>>> develop
 # libcurl==7.43.0.1
 
 # django channels/daphne
@@ -65,6 +69,7 @@ GitPython==2.1.11
 
 # for dataset loading
 -e git+https://gitlab.com/datadrivendiscovery/d3m.git@devel#egg=d3m
+<<<<<<< HEAD
 
 # for eventdata and d3m results joins and tpot
 #
@@ -72,6 +77,15 @@ pandas>=0.24.2
 
 # for the confusion matrix and solvers and tpot
 #
+=======
+
+# for eventdata and d3m results joins and tpot
+#
+pandas>=0.24.2
+
+# for the confusion matrix and solvers and tpot
+#
+>>>>>>> develop
 scikit-learn==0.21.3
 
 # for tpot
@@ -91,4 +105,7 @@ h2o
 -e git+https://github.com/automl/auto-sklearn.git@b5b16f398cc218dfdaf991fa3638782756e8222b#egg=auto_sklearn
 mljar-supervised
 tpot
+<<<<<<< HEAD
 
+=======
+>>>>>>> develop
