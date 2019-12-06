@@ -5,7 +5,7 @@
 # Applications
 
 The project has 3 core applications:
-* [D3M](/D3M/index.md) Date-Driven Discovery of Models interface.
+* [D3M](/D3M/index.md) Data-Driven Discovery of Models interface.
 * [Event Data](/EventData/index.md) provides access to openly available event datasets.
 * [Metadata Service](/Metadata/index.md)
 
@@ -17,13 +17,13 @@ Demo [Metadata Service](http://metadata.2ravens.org)
 # Metadata Service Samples/Benchmarks
 
 | Dataverse | Size | # Rows | # Columns | Time | First 100 Rows* | Result |
-| --- | --- | --- | --- | --- | --- | --- | 
+| --- | --- | --- | --- | --- | --- | --- |
 | [ajps_replication_raw_wide.tab](https://dataverse.harvard.edu/file.xhtml?persistentId=doi:10.7910/DVN/CQXHTH/UGSMIP&version=1.0) | 86.5 kB  | 360 | 66 | 0.23 s | [.tab](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/CQXHTH_ajps_lebanon_raw_wide.tab) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/CQXHTH_ajps_lebanon_raw_wide.json) |
 | [sectoral_value_added.csv](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/FE0UYM&version=1.0) | 380.4 kB  | 900 | 26 | 0.25 s | [.csv](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/sectoral_value_added.csv) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/sectoral_value_added.json) |
 | [cces2008_primaryvote.tab](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OQ64S8&version=1.0) | 1.0 MB  | 3200 | 7 | 0.19 s | [.tab](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/OQ64S8_cces2008_primaryvote.tab) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/OQ64S8_cces2008_primaryvote.json) |
 | [food_range_sez_adj.csv](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/RQOZIJ&version=1.0) | 415.5 kB  | 4239 | 1 | 0.05 s | [.csv](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/RQOZIJ_food_range_sez_adj.csv) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/RQOZIJ_food_range_sez_adj.json) |
 | [data.tab](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/XVPHO1&version=1.0) | 1 GB  | 43522 | 1021 | 96.89 s | [.tab](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/XVPHO1_data.tab) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/XVPHO1_data.json) |
-* please see the Dataverse link for the full file 
+* please see the Dataverse link for the full file
 
 # Related Publications
 Gil, Yolanda, James Honaker, Shikhar Gupta, Yibo Ma, Vito D'Orazio, Daniel Garijo, Shruti Gadewar, Qifan Yang, and Neda Jahanshad. "Towards human-guided machine learning." In Proceedings of the 24th International Conference on Intelligent User Interfaces, pp. 614-624. ACM, 2019.
@@ -33,12 +33,10 @@ D'Orazio, Vito, Marcus Deng, and Michael Shoemate. "TwoRavens for Event Data." I
 Honaker, James, and Vito D'Orazio. "Statistical Modeling by Gesture: A Graphical, Browser-based Statistical Interface for Data Repositories," in Extended Proceedings of ACM Hypertext, 2014.
 
 # Team
-TwoRavens is led by Co-PIs [James Honaker](http://hona.kr/) and [Vito D'Orazio](http://vitodorazio.com). 
+TwoRavens is led by Co-PIs [James Honaker](http://hona.kr/) and [Vito D'Orazio](http://vitodorazio.com).
 
 [Raman Prasad](https://github.com/raprasad) is the project's senior developer, and [Michael Shoemate](https://github.com/shoeboxam) is the project's junior developer.
 
 Current research assistants include [Aaron Lebo](https://github.com/aaron-lebo) and [Yu Lin](https://github.com/voidstrike).
 
 This project would not be possible without the excellent contributions of our past research assistants: Kripanshu Bhargava, Rohit Bhattacharjee, Marcus Deng, Sruti Jain, Mital Modha, and Anh Pham.
-
-
