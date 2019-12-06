@@ -124,6 +124,11 @@ class ResetUtil(BasicErrCheck):
         """Remove pending, active, and reserved Celery tasks
         ref: https://stackoverflow.com/questions/7149074/deleting-all-pending-tasks-in-celery-rabbitmq
         """
+        print('-- clear_celery_tasks --')
+        print('SKIPPING!  redis flush instead')
+        import shlex, subprocess
+        process = subprocess.Popen(shlex.split('redis-cli FLUSHALL'), stdout=subprocess.PIPE)
+        process.communicate()
         # ----------------------------
         # (1) remove pending tasks
         # ----------------------------
