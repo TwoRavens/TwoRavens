@@ -1,11 +1,12 @@
 from django.db import models
+from django.conf import settings
 import math
 import sklearn.metrics
 
 SAVED_MODELS_PATH = '/ravens_volume/solvers/models/'
 EXPORTED_MODELS_PATH = '/ravens_volume/solvers/exported/'
 
-R_SERVICE = 'http://0.0.0.0:8000/'
+R_SERVICE = settings.R_DEV_SERVER_BASE  #'http://0.0.0.0:8000/'
 
 KEY_SUCCESS = 'success'
 KEY_DATA = 'data'

@@ -125,10 +125,19 @@ class ResetUtil(BasicErrCheck):
         ref: https://stackoverflow.com/questions/7149074/deleting-all-pending-tasks-in-celery-rabbitmq
         """
         print('-- clear_celery_tasks --')
-        print('SKIPPING!  redis flush instead')
+        print('- redis flush too...')
         import shlex, subprocess
+
         process = subprocess.Popen(shlex.split('redis-cli FLUSHALL'), stdout=subprocess.PIPE)
-        process.communicate()
+        try:
+            presult = process.communicate()
+            print('redis flush result: ', presult)
+        except ValueError as err_obj:
+            print('redis flush ValueError: ', err_obj)
+            pass
+
+        # return
+
         # ----------------------------
         # (1) remove pending tasks
         # ----------------------------
