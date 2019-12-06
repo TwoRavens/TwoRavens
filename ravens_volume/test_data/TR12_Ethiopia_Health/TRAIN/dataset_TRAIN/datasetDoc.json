@@ -76,7 +76,7 @@
         },
         {
           "colIndex": 10,
-          "colName": "TMSuspected.Fever.Examined",
+          "colName": "TMSuspected_Fever_Examined",
           "colType": "integer",
           "role": ["attribute"]
         },
@@ -130,55 +130,55 @@
         },
         {
           "colIndex": 19,
-          "colName": "Typhoid.fever_OutP_Cases",
+          "colName": "Typhoid_fever_OutP_Cases",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 20,
-          "colName": "Typhoid.fever_InP_Cases",
+          "colName": "Typhoid_fever_InP_Cases",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 21,
-          "colName": "Typhoid.fever_InP_Deaths",
+          "colName": "Typhoid_fever_InP_Deaths",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 22,
-          "colName": "Relapsing.fever_OutP_Cases",
+          "colName": "Relapsing_fever_OutP_Cases",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 23,
-          "colName": "Relapsing.fever_InP_Cases",
+          "colName": "Relapsing_fever_InP_Cases",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 24,
-          "colName": "Relapsing.fever_InP_Deaths",
+          "colName": "Relapsing_fever_InP_Deaths",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 25,
-          "colName": "Epidemic.Typhus_OutP_Cases",
+          "colName": "Epidemic_Typhus_OutP_Cases",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 26,
-          "colName": "Epidemic.Typhus_InP_Cases",
+          "colName": "Epidemic_Typhus_InP_Cases",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 27,
-          "colName": "Epidemic.Typhus_InP_Deaths",
+          "colName": "Epidemic_Typhus_InP_Deaths",
           "colType": "integer",
           "role": ["attribute"]
         },
@@ -202,13 +202,13 @@
         },
         {
           "colIndex": 31,
-          "colName": "AFP.Polio_Cases",
+          "colName": "AFP_Polio_Cases",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 32,
-          "colName": "AFP.Polio_Deaths",
+          "colName": "AFP_Polio_Deaths",
           "colType": "integer",
           "role": ["attribute"]
         },
@@ -226,25 +226,25 @@
         },
         {
           "colIndex": 35,
-          "colName": "Cholera.AWD_Cases",
+          "colName": "Cholera_AWD_Cases",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 36,
-          "colName": "Cholera.AWD_Deaths",
+          "colName": "Cholera_AWD_Deaths",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 37,
-          "colName": "Dracunculiasis.Guinea.worm_Cases",
+          "colName": "Dracunculiasis_Guinea_worm_Cases",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 38,
-          "colName": "Dracunculiasis.Guinea.worm_Deaths",
+          "colName": "Dracunculiasis_Guinea_worm_Deaths",
           "colType": "integer",
           "role": ["attribute"]
         },
@@ -262,25 +262,25 @@
         },
         {
           "colIndex": 41,
-          "colName": "Neonatal.Tetanus_Cases",
+          "colName": "Neonatal_Tetanus_Cases",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 42,
-          "colName": "Neonatal.Tetanus_Deaths",
+          "colName": "Neonatal_Tetanus_Deaths",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 43,
-          "colName": "Pandemic.Influenza_Cases",
+          "colName": "Pandemic_Influenza_Cases",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 44,
-          "colName": "Pandemic.Influenza_Deaths",
+          "colName": "Pandemic_Influenza_Deaths",
           "colType": "integer",
           "role": ["attribute"]
         },
@@ -310,37 +310,37 @@
         },
         {
           "colIndex": 49,
-          "colName": "Small.pox_Cases",
+          "colName": "Small_pox_Cases",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 50,
-          "colName": "Small.pox_Deaths",
+          "colName": "Small_pox_Deaths",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 51,
-          "colName": "Viral.hemorrhagic.fever_Cases",
+          "colName": "Viral_hemorrhagic_fever_Cases",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 52,
-          "colName": "Viral.hemorrhagic.fever_Deaths",
+          "colName": "Viral_hemorrhagic_fever_Deaths",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 53,
-          "colName": "Yellow.fever_Cases",
+          "colName": "Yellow_fever_Cases",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 54,
-          "colName": "Yellow.fever_Deaths",
+          "colName": "Yellow_fever_Deaths",
           "colType": "integer",
           "role": ["attribute"]
         },
@@ -352,61 +352,61 @@
         },
         {
           "colIndex": 56,
-          "colName": "No.of.Gov_HPs.expected.by.RHB",
+          "colName": "No_of_Gov_HPs_expected_by_RHB",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 57,
-          "colName": "No.of.Gov_HCs.expected.by.RHB",
+          "colName": "No_of_Gov_HCs_expected_by_RHB",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 58,
-          "colName": "No.of.Gov_Hosps.expected.by.RHB",
+          "colName": "No_of_Gov_Hosps_expected_by_RHB",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 59,
-          "colName": "No.of.NGOHF.expected.by.RHB",
+          "colName": "No_of_NGOHF_expected_by_RHB",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 60,
-          "colName": "No.of.OtherHFs.expected.by.RHB",
+          "colName": "No_of_OtherHFs_expected_by_RHB",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 61,
-          "colName": "No.of.Gov_HPs.Reported",
+          "colName": "No_of_Gov_HPs_Reported",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 62,
-          "colName": "No.of.Gov_HCs.Reported",
+          "colName": "No_of_Gov_HCs_Reported",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 63,
-          "colName": "No.of.Gov_Hosps.Reported",
+          "colName": "No_of_Gov_Hosps_Reported",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 64,
-          "colName": "No.of.NGOHFs.Reported",
+          "colName": "No_of_NGOHFs_Reported",
           "colType": "integer",
           "role": ["attribute"]
         },
         {
           "colIndex": 65,
-          "colName": "No.of.OthersHF.Reported",
+          "colName": "No_of_OthersHF_Reported",
           "colType": "integer",
           "role": ["attribute"]
         },
