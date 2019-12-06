@@ -7,7 +7,7 @@
     "license": "Unknown",
     "source": "Ethiopian Public Health Institute (PHEM)",
     "sourceURI": "",
-    "datasetSchemaVersion": "4.0.0",
+    "datasetSchemaVersion": "3.3.0",
     "redacted": false,
     "datasetVersion": "4.0.0",
     "digest": "2cc28296e8a8f06005b48c5465f6bbb9914a0823191dbc1e3f2548de418cf792"
@@ -17,11 +17,9 @@
       "resID": "learningData",
       "resPath": "tables/learningData.csv",
       "resType": "table",
-      "resFormat": {
-        "text/csv": [
-          "csv"
-        ]
-      },
+      "resFormat": [
+        "text/csv"
+      ],
       "isCollection": false,
       "columns": [
         {

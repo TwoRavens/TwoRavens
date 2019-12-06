@@ -232,7 +232,7 @@ export class CanvasSolutions {
             ]
         }
 
-        if (problem.task.toLowerCase().includes('regression')) {
+        if (problem.task.toLowerCase().includes('regression') || problem.task.toLowerCase() === 'timeseriesforecasting') {
             let summaries = adapters.map(adapter => ({
                 name: adapter.getSolutionId(),
                 fittedVsActual: adapter.getFittedVsActuals(resultsPreferences.target),
@@ -1316,7 +1316,7 @@ export let loadFittedVsActuals = async (problem, adapter) => {
         return;
 
     // fitted vs actuals don't apply for non-regression problems
-    if (!['regression', 'semisupervisedregression'].includes(problem.task.toLowerCase()))
+    if (!['regression', 'semisupervisedregression', 'timeseriesforecasting'].includes(problem.task.toLowerCase()))
         return;
 
     // don't load if systems are already in loading state

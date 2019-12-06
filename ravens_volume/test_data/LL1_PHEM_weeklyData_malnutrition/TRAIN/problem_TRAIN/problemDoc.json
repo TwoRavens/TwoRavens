@@ -3,13 +3,8 @@
     "problemID": "LL1_PHEM_weeklyData_malnutrition_problem",
     "problemName": "LL1 PHEM weeklyData malnutrition forecasting problem",
     "problemDescription": "This is a timeseries forecasting problem. The task is to estimate weekly malnutrition rate for recent year based on data from past years.",
-    "taskKeywords": [
-      "timeSeries",
-      "forecasting",
-      "grouped",
-      "tabular"
-    ],
-    "problemSchemaVersion": "4.0.0",
+    "taskType": "timeSeriesForecasting",
+    "problemSchemaVersion": "3.3.0",
     "problemVersion": "1.0"
   },
   "inputs": {
