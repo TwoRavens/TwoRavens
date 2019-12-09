@@ -4,7 +4,7 @@ TwoRavens Metadata Service
 The TwoRaven Metadata Service (TRMS) provides the summary statistics that power the TwoRaven interface via using the preprocessed tabular data (Currently, it supports CSV, TAB, XLS and XLSX files). 
 This documentation describes the JSON specification language and how to use TRMS in your application.
 
-# Metadata Service Samples/Benchmarks
+# Samples/Benchmarks
 
 | Dataverse | Size | # Rows | # Columns | Time | First 100 Rows* | Result |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -13,6 +13,7 @@ This documentation describes the JSON specification language and how to use TRMS
 | [cces2008_primaryvote.tab](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OQ64S8&version=1.0) | 1.0 MB  | 3200 | 7 | 0.19 s | [.tab](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/OQ64S8_cces2008_primaryvote.tab) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/OQ64S8_cces2008_primaryvote.json) |
 | [food_range_sez_adj.csv](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/RQOZIJ&version=1.0) | 415.5 kB  | 4239 | 1 | 0.05 s | [.csv](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/RQOZIJ_food_range_sez_adj.csv) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/RQOZIJ_food_range_sez_adj.json) |
 | [data.tab](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/XVPHO1&version=1.0) | 1 GB  | 43522 | 1021 | 96.89 s | [.tab](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/XVPHO1_data.tab) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/XVPHO1_data.json) |
+
 * please see the Dataverse link for the full file
 
 # Guide
