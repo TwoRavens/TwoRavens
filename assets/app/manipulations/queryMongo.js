@@ -87,17 +87,25 @@ export function buildPipeline(pipeline, variables = new Set()) {
 
 // ~~~~ TRANSFORMS ~~~~
 export let unaryFunctions = new Set([
-    'abs', 'ceil', 'exp', 'floor', 'ln', 'log10', 'sqrt', 'trunc', // math
+    'abs', 'ceil', 'exp', 'floor', 'ln', 'log10', 'sqrt',
+    'trunc', 'round', //
     'and', 'not', 'or', // logic
     'trim', 'toLower', 'toUpper', // string
-    'toBool', 'toDouble', 'toInt', 'toString' // type
+    'toBool', 'toDouble', 'toInt', 'toString', // type
+    'sin', 'cos', 'tan', // trig
+    'asin', 'acos', 'atan', // inverse trig
+    'asinh', 'acosh', 'atanh',  // hyperbolic
+    'degreesToRadians', 'radiansToDegrees', // unit conversions
 ]);
 export let binaryFunctions = new Set([
     'divide', 'log', 'mod', 'pow', 'subtract', // math
     'eq', 'gt', 'gte', 'lt', 'lte', 'ne', // comparison
-    'dateFromString'
+    'dateFromString',
+    'atan2', // signed arc tan
+    'trunc' // to specific number of digits
 ]);
 export let ternaryFunctions = new Set([
+    'if',
     'lag' // custom function taking variable, index, and lag
 ]);
 export let variadicFunctions = new Set([
@@ -118,7 +126,8 @@ export let binaryOperators = {
     '%': 'mod',
     '*': 'multiply',
     '^': 'pow',
-    '-': 'subtract'
+    '-': 'subtract',
+    '===': 'eq'
 };
 
 export let dateStringFormats = {
@@ -167,26 +176,32 @@ export function buildEquation(text, variables) {
             }
             if (ternaryFunctions.has(tree.callee.name) && tree['arguments'].length === 3) {
                 usedTerms.ternaryFunctions.add(tree.callee.name);
-                let laggedName = `${tree['arguments'][0]}-lagged-${tree['arguments'][2]}`;
 
-                // lookup with offset index
-                pipeline.push(
-                    {
-                        $lookup: {
-                            from: workspace.d3m_config.name,
-                            let: {rightIndex: `$${tree['arguments'][1]}`},
-                            pipeline: [
-                                {$addFields: {index: {$add: ["$$rightIndex", -tree['arguments'][2]]}}},
-                                {$match: {$expr: {$eq: ['$$rightIndex', tree['arguments'][1]]}}},
-                                {$project: {value: `$${tree['arguments'][0]}`}}
-                            ],
-                            as: laggedName
-                        }
-                    },
-                    {$unwind: laggedName},
-                    {$addFields: {[`${laggedName}\\.value`]: laggedName}});
+                if (tree.callee.name === 'lag') {
+                    let laggedName = `${tree['arguments'][0]}-lagged-${tree['arguments'][2]}`;
 
-                return '$' + laggedName
+                    // lookup with offset index
+                    pipeline.push(
+                        {
+                            $lookup: {
+                                from: workspace.d3m_config.name,
+                                let: {rightIndex: `$${tree['arguments'][1]}`},
+                                pipeline: [
+                                    {$addFields: {index: {$add: ["$$rightIndex", -tree['arguments'][2]]}}},
+                                    {$match: {$expr: {$eq: ['$$rightIndex', tree['arguments'][1]]}}},
+                                    {$project: {value: `$${tree['arguments'][0]}`}}
+                                ],
+                                as: laggedName
+                            }
+                        },
+                        {$unwind: laggedName},
+                        {$addFields: {[`${laggedName}\\.value`]: laggedName}});
+
+                    return '$' + laggedName
+                }
+                if (tree.callee.name === 'if') {
+                    return {$switch: tree.arguments.map(parse)}
+                }
             }
             if (variadicFunctions.has(tree.callee.name)) {
                 usedTerms.variadicFunctions.add(tree.callee.name);
@@ -746,7 +761,7 @@ export function buildAggregation(unitMeasures, accumulations) {
             },
             {$project: {combine: {$setUnion: columnsDyad.map(column => '$' + column)}}},
             {$unwind: "$combine"},
-            {$replaceRoot: {newRoot: "$combine"}}
+            {$replaceWith: {newRoot: "$combine"}}
         ]);
     } else if (columnsNonDyad.length) {
         reformatter = reformatter.concat([
@@ -1117,7 +1132,7 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
         if ('$facet' in step) throw '$facet D3M datasetDoc.json translation not implemented';
         if ('$group' in step) throw '$group D3M datasetDoc.json translation not implemented';
         if ('$redact' in step) throw '$redact D3M datasetDoc.json translation not implemented';
-        if ('$replaceRoot' in step) throw '$replaceRoot D3M datasetDoc.json translation not implemented';
+        if ('$replaceWith' in step) throw '$replaceWith D3M datasetDoc.json translation not implemented';
         if ('$unwind' in step) throw '$unwind D3M datasetDoc.json translation not implemented';
 
         return outColumns;

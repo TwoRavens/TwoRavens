@@ -4,44 +4,6 @@ import * as d3 from 'd3';
 
 
 import * as app from './app';
-import * as box2d from './vega-schemas/box2d';
-import * as scatter from './vega-schemas/scatter';
-import * as stackedbar from './vega-schemas/stackedbar';
-import * as line from './vega-schemas/line';
-import * as tableheat from './vega-schemas/tableheat';
-import * as groupedbar from './vega-schemas/groupedbar';
-import * as strip from './vega-schemas/strip';
-import * as aggbar from './vega-schemas/aggbar';
-import * as binnedscatter from './vega-schemas/binnedscatter';
-import * as step from './vega-schemas/step';
-import * as area from './vega-schemas/area';
-import * as binnedtableheat from './vega-schemas/binnedtableheat';
-import * as averagediff from './vega-schemas/averagediff';
-import * as scattermeansd from './vega-schemas/scattermeansd';
-import * as scattermatrix from './vega-schemas/multi/scattermatrix';
-import * as simplebar from './vega-schemas/univariate/simplebar';
-import * as histogram from './vega-schemas/univariate/histogram';
-import * as areauni from './vega-schemas/univariate/areauni';
-import * as histogrammean from './vega-schemas/univariate/histogrammean';
-import * as dot from './vega-schemas/univariate/dot';
-import * as trellishist from './vega-schemas/trellishist';
-import * as horizon from './vega-schemas/horizon';
-import * as interactivebarmean from './vega-schemas/interactivebarmean';
-import * as binnedcrossfilter from './vega-schemas/multi/binnedcrossfilter';
-import * as scattertri from './vega-schemas/trivariate/scattertri';
-import * as groupedbartri from './vega-schemas/trivariate/groupedbartri';
-import * as horizgroupbar from './vega-schemas/trivariate/horizgroupbar';
-import * as bubbletri from './vega-schemas/trivariate/bubbletri';
-import * as bubbleqqq from './vega-schemas/trivariate/bubbleqqq';
-import * as scatterqqq from './vega-schemas/trivariate/scatterqqq';
-import * as trellisscatterqqn from './vega-schemas/trivariate/trellisscatterqqn';
-import * as heatmapnnq from './vega-schemas/trivariate/heatmapnnq';
-import * as dotdashqqn from './vega-schemas/trivariate/dotdashqqn';
-import * as tablebubblennq from './vega-schemas/trivariate/tablebubblennq';
-import * as stackedbarnnn from './vega-schemas/trivariate/stackedbarnnn';
-import * as facetbox from './vega-schemas/trivariate/facetbox';
-import * as facetheatmap from './vega-schemas/trivariate/facetheatmap';
-import * as groupedbarnqq from './vega-schemas/trivariate/groupedbarnqq';
 
 import * as common from "../common/common";
 import ButtonRadio from "../common/views/ButtonRadio";
@@ -337,47 +299,6 @@ let plotMap = {
     facetbox: "Faceted Box Plot",
     facetheatmap: "Faceted Heatmap",
     groupedbarnqq: "Grouped Bar with Binned Z"
-};
-
-let schemaMap = {
-    box: box2d,
-    scatter: scatter,
-    stackedbar: stackedbar,
-    line: line,
-    tableheat: tableheat,
-    groupedbar: groupedbar,
-    strip: strip,
-    aggbar: aggbar,
-    binnedscatter: binnedscatter,
-    step: step,
-    area: area,
-    binnedtableheat: binnedtableheat,
-    averagediff: averagediff,
-    scattermeansd: scattermeansd,
-    scattermatrix: scattermatrix,
-    simplebar: simplebar,
-    histogram: histogram,
-    areauni: areauni,
-    histogrammean: histogrammean,
-    trellishist: trellishist,
-    interactivebarmean: interactivebarmean,
-    dot: dot,
-    horizon: horizon,
-    binnedcrossfilter: binnedcrossfilter,
-    scattertri: scattertri,
-    groupedbartri: groupedbartri,
-    bubbletri: bubbletri,
-    horizgroupbar: horizgroupbar,
-    bubbleqqq: bubbleqqq,
-    scatterqqq: scatterqqq,
-    trellisscatterqqn: trellisscatterqqn,
-    heatmapnnq: heatmapnnq,
-    dotdashqqn: dotdashqqn,
-    tablebubblennq: tablebubblennq,
-    stackedbarnnn: stackedbarnnn,
-    facetbox: facetbox,
-    facetheatmap: facetheatmap,
-    groupedbarnqq: groupedbarnqq
 };
 
 let schemas = {
