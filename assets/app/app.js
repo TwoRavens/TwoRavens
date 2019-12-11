@@ -2216,7 +2216,7 @@ export let setTask = (task, problem) => {
     if (task === problem.task) return; //  || !(supportedTasks.includes(task))
     problem.task = task;
     if (task.toLowerCase() === 'classification' || task.toLowerCase() === 'semisupervisedclassification')
-        setSubTask(variableSummaries[problem.targets[0]].binary === 'yes' ? 'binary' : 'multiClass', problem);
+        setSubTask(variableSummaries[problem.targets[0]].binary ? 'binary' : 'multiClass', problem);
     else if (task.toLowerCase() === 'regression' || task.toLowerCase() === 'semisupervisedregression')
         setSubTask(problem.predictors.length > 1 ? 'multivariate' : 'univariate', problem);
     else if (!(problem.subTask in applicableMetrics[task]))
@@ -2243,7 +2243,7 @@ export let getSubtask = problem => {
 
     if (!problem.subTask && variableSummaries[problem.targets[0]]) {
         if (problem.task.toLowerCase() === 'classification' || problem.task.toLowerCase() === 'semisupervisedclassification')
-            problem.subTask = variableSummaries[problem.targets[0]].binary === 'yes' ? 'binary' : 'multiClass';
+            problem.subTask = variableSummaries[problem.targets[0]].binary ? 'binary' : 'multiClass';
         else if (problem.task.toLowerCase() === 'regression' || problem.task.toLowerCase() === 'semisupervisedregression')
             problem.subTask = problem.predictors.length > 1 ? 'multivariate' : 'univariate';
         else
