@@ -201,12 +201,12 @@ def split_dataset(configuration, workspace):
     # rows with NaN values become object rows, which may contain multiple types. The NaN values become empty strings
     # this converts '' to np.nan in non-nominal columns, so that nan may be dropped
     # perhaps in a future version of d3m, the dataset loader could use pandas extension types instead of objects
-    # nominals = configuration.get('nominals', [])
-    # for column in [col for col in dataframe.columns.values if col not in nominals]:
-    #     dataframe[column].replace('', np.nan, inplace=True)
-    #
-    # dataframe.dropna(inplace=True)
-    # dataframe.reset_index(drop=True, inplace=True)
+    nominals = configuration.get('nominals', [])
+    for column in [col for col in dataframe.columns.values if col not in nominals]:
+        dataframe[column].replace('', np.nan, inplace=True)
+    
+    dataframe.dropna(inplace=True)
+    dataframe.reset_index(drop=True, inplace=True)
 
     DEFAULT_RATIO = .7
     train_test_ratio = configuration.get('train_test_ratio', DEFAULT_RATIO)
