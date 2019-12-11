@@ -26,7 +26,7 @@ import * as explore from './explore';
 import {bold, linkURLwithText, linkURL, link} from "./index";
 import {getClearWorkspacesLink, clearWorkpacesAndReloadPage} from "./utils";
 
-import {search} from "./datamart/Datamart";
+import * as datamart from './datamart/Datamart';
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -403,7 +403,7 @@ export let getData = async body => {
     getDataPromise = m.request({
         url: mongoURL + 'get-data',
         method: 'POST',
-        data: Object.assign({
+        body: Object.assign({
             datafile: workspace.datasetPath, // location of the dataset csv
             collection_name: workspace.d3m_config.name // collection/dataset name
         }, body)
@@ -450,7 +450,7 @@ export let saveLogEntry = async logData => {
     m.request({
         method: "POST",
         url: save_log_entry_url,
-        data: logData
+        body: logData
     })
     .then(function(save_result) {
         if (save_result.success){
@@ -724,6 +724,8 @@ export let datamartPreferences = {
     }
 };
 
+datamart.setDefaultPreferences(datamartPreferences);
+
 // eventually read this from the schema with real descriptions
 // metrics, tasks, and subtasks as specified in D3M schemas
 // MEAN SQUARED ERROR IS SET TO SAME AS RMSE. MSE is in schema but not proto
@@ -957,7 +959,10 @@ export let lockTour = () => ({
     b. Read the d3m problem schema and add to problems
  */
 
-export let workspace;
+export let workspace = {
+    datasetPath: '/home/shoe/TwoRavens/ravens_volume/test_data/196_autoMpg/TRAIN/dataset_TRAIN/tables/learningData.csv',
+    d3m_config: {name: 'autompg'}
+};
 
 export let getCurrentWorkspaceName = () => {
     return (workspace || {}).name || '(no workspace name)';
@@ -1153,7 +1158,7 @@ export let getPreprocess = async query => {
     let response = await m.request({
         method: 'POST',
         url: ROOK_SVC_URL + 'preprocess.app',
-        data: {
+        body: {
             data: datasetPath,
             datastub: workspace.d3m_config.name,
             l1_activity: 'PROBLEM_DEFINITION',
@@ -1174,7 +1179,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
     d3.select("title").html("TwoRavens " + workspace.d3m_config.name);
 
     if (DISPLAY_DATAMART_UI){
-      setTimeout(() => search(datamartPreferences, datamartURL).then(m.redraw), 1000);
+      setTimeout(() => datamart.search(datamartPreferences, datamartURL).then(m.redraw), 1000);
     }
 
     let newRavenConfig = workspace.raven_config === null;
@@ -1243,7 +1248,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
     let promisePreprocess = promiseSampledDatasetPath
         .then(sampledDatasetPath => m.request(ROOK_SVC_URL + 'preprocess.app', {
             method: 'POST',
-            data: {data: sampledDatasetPath, datastub: workspace.d3m_config.name}
+            body: {data: sampledDatasetPath, datastub: workspace.d3m_config.name}
         }))
         .then(response => {
             if (!response.success) alertError(response.message);
@@ -1279,7 +1284,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
     let promiseDiscovery = promiseSampledDatasetPath
         .then(sampledDatasetPath => m.request(ROOK_SVC_URL + 'discovery.app', {
             method: 'POST',
-            data: {path: sampledDatasetPath}
+            body: {path: sampledDatasetPath}
         }))
         .then(response => {
             if (!response.success) {
@@ -1703,7 +1708,7 @@ export let materializePartials = async problem => {
     let partialsLocationInfo = await m.request({
         method: 'POST',
         url: D3M_SVC_URL + '/get-partials-datasets',
-        data: {
+        body: {
             domains: problem.domains,
             dataset_schema: workspace.datasetDoc,
             dataset,
@@ -1747,7 +1752,7 @@ export let materializeICE = async problem => {
     let partialsLocationInfo = await m.request({
         method: 'POST',
         url: D3M_SVC_URL + '/get-partials-datasets',
-        data: {
+        body: {
             domains: problem.domains,
             dataset_schema_path: samplePaths.metadata_path,
             separate_variables: true,
@@ -1774,7 +1779,7 @@ export let materializeTrainTest = async problem => {
     let response = await m.request({
         method: 'POST',
         url: D3M_SVC_URL + '/get-train-test-split',
-        data: {
+        body: {
             do_split: problem.splitOptions.outOfSampleSplit,
             train_test_ratio: problem.splitOptions.trainTestRatio,
             stratified: problem.splitOptions.stratified,
@@ -2012,7 +2017,7 @@ export let saveUserWorkspace = (silent = false) => {
     m.request({
         method: "POST",
         url: raven_config_save_url,
-        data: {raven_config: workspace.raven_config}
+        body: {raven_config: workspace.raven_config}
     })
         .then(function (save_result) {
             console.log(save_result);
@@ -2144,7 +2149,7 @@ export async function saveAsNewWorkspace() {
     let save_result = await m.request({
         method: "POST",
         url: raven_config_save_url,
-        data: {
+        body: {
             new_workspace_name: new_workspace_name,
             raven_config: workspace.raven_config
         }

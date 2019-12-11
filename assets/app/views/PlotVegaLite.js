@@ -40,6 +40,8 @@ export default class PlotVegaLite {
                 "type": "fit",
                 "contains": "padding"
             };
+
+            console.log(data);
             // if ('vconcat' in specification) specification.vconcat.forEach(spec => spec.width = this.width);
             if (data) specification.data = {name: 'embedded'};
 
@@ -53,7 +55,7 @@ export default class PlotVegaLite {
 
             // mask repeated warnings about outdated vega-lite specification
             let tempWarn = console.warn;
-            console.warn = _ => _;
+            // console.warn = _ => _;
 
             try {
                 vegaEmbed(vnode.dom, specification, options).then(result => {

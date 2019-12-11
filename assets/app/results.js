@@ -74,7 +74,7 @@ export let leftpanel = () => {
         ),
         m('div#modelComparisonOption', {style: {displayx: 'inline-block'}},
             m('input#modelComparisonCheck[type=checkbox]', {
-                onclick: m.withAttr("checked", setModelComparison),
+                onclick: function() {setModelComparison(this.checked)}, // withAttr
                 checked: modelComparison,
                 style: {margin: '.25em'}
             }),
@@ -1345,7 +1345,7 @@ export let loadFittedVsActuals = async (problem, adapter) => {
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-fitted-vs-actuals-data`, {
             method: 'POST',
-            data: {
+            body: {
                 data_pointer: dataPointer,
                 metadata: {
                     targets: problem.targets,
@@ -1424,7 +1424,7 @@ export let loadConfusionData = async (problem, adapter) => {
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-confusion-data`, {
             method: 'POST',
-            data: {
+            body: {
                 data_pointer: dataPointer,
                 metadata: {
                     targets: problem.targets,
@@ -1502,7 +1502,7 @@ export let loadImportancePartialsFittedData = async (problem, adapter) => {
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-data`, {
             method: 'POST',
-            data: {data_pointer: dataPointer}
+            body: {data_pointer: dataPointer}
         });
 
         if (!response.success) {
@@ -1579,7 +1579,7 @@ export let loadImportanceEFDData = async (problem, adapter) => {
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
             method: 'POST',
-            data: {
+            body: {
                 data_pointer: dataPointer,
                 metadata: {
                     produceId,
@@ -1612,7 +1612,7 @@ export let loadImportanceEFDData = async (problem, adapter) => {
 
     let responseImportance = await m.request(ROOK_SVC_URL + 'efdimportance.app', {
         method: 'POST',
-        data: {efdData: response.data}
+        body: {efdData: response.data}
     });
     // reorder response.data predictors based on importance
     if (responseImportance.success) response.data = responseImportance.data
@@ -1670,7 +1670,7 @@ export let loadImportanceICEFittedData = async (problem, adapter, predictor) => 
 
     let response = await m.request(D3M_SVC_URL + `/retrieve-output-ICE-data`, {
         method: 'POST',
-        data: {
+        body: {
             data_pointer_predictors: dataPointerPredictors,
             data_pointer_fitted: dataPointerFitted,
             variable: predictor

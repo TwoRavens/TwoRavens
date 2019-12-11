@@ -2,7 +2,7 @@ var path = require('path');
 var webpack = require('webpack');   // for django-webpack
 var BundleTracker = require('webpack-bundle-tracker');     // for django-webpack
 
-var ExtractTextPlugin = require('extract-text-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
     context: __dirname,
@@ -13,27 +13,35 @@ module.exports = {
     },
     devtool: 'eval-source-map',
     module: {
-        rules: [{
-            test: /\.js$/,
-            exclude: /node_modules/,
-            loader: 'babel-loader',
-            options: {
-                presets: ['es2015']
+        rules: [
+            {
+                test: /\.js$/,
+                exclude: /node_modules/,
+                loader: 'babel-loader',
+                options: {
+                    presets: ['es2015']
+                }
+            },
+            {
+                test: /\.css$/,
+                use: [
+                    {loader: MiniCssExtractPlugin.loader},
+                    'css-loader',
+                ],
+            },
+            {
+                test: /\.png$/,
+                use: [{
+                    loader: 'file-loader',
+                    options: {}
+                }]
             }
-          }, {
-            test: /\.css$/,
-            use: ExtractTextPlugin.extract({use: 'css-loader'}), 
-          }, {
-            test: /\.png$/,
-            use: [{
-                loader: 'file-loader',
-                options: {}
-            }]
-          }
-        ] 
+        ]
     },
     plugins: [
-        new ExtractTextPlugin('tworavens_styles-[hash].css'),
+        new MiniCssExtractPlugin({
+            filename: 'tworavens_styles-[hash].css',
+        }),
         new BundleTracker({filename: './webpack-stats.json'})
     ]
 };

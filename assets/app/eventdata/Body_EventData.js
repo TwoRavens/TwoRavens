@@ -71,7 +71,7 @@ export default class Body_EventData {
         // Load the metadata for all available datasets
         m.request({
             url: mongoURL + 'get-metadata',
-            data: {'collections': null}, // no specific dataset passed, so it returns all
+            body: {'collections': null}, // no specific dataset passed, so it returns all
             method: 'POST'
         }).then(eventdata.setMetadata).catch(eventdata.laddaStopAll);
     }

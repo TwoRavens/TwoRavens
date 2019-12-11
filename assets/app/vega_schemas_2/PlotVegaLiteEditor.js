@@ -1,92 +1,291 @@
 import m from 'mithril';
 
-import TwoPanel from "../../common/views/TwoPanel";
-import PlotVegaLiteQuery from "./PlotVegaLiteQuery";
-import PlotVegaLiteConfigure from "./PlotVegaLiteConfigure";
+import Table from "../../common/views/Table";
+import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
+import Dropdown from "../../common/views/Dropdown";
+import Icon from "../../common/views/Icon";
+import TextField from "../../common/views/TextField";
+import Button from "../../common/views/Button";
 
 export default class PlotVegaLiteEditor {
-
-    view(vnode) {
-        let {configuration, getData, abstractQuery, summaries, nominals} = vnode.attrs;
-        let varTypes = Object.keys(summaries).reduce((types, variable) => Object.assign(types, {
-            [variable]: nominals.has(variable)
-                ? 'nominal' : summaries[variable].nature === 'ordinal'
-                    ? 'ordinal'
-                    : 'quantitative'
-        }), {});
-
-        return m(TwoPanel, {
-            left: m(PlotVegaLiteQuery, {
-                getData,
-                specification: makeSpecification(configuration, varTypes),
-                abstractQuery,
-                summaries
-            }),
-            right: m(PlotVegaLiteConfigure, {
-                configuration,
-                variables: Object.keys(summaries)
-            })
-        })
+    oninit(vnode) {
+        this.pendingSecondaryVariable = '';
     }
-}
+    view(vnode) {
+        let {configuration, variables} = vnode.attrs;
 
-let makeSpecification = (configuration, varTypes) => {
-    return Object.assign(
-        {
-            "$schema": "https://vega.github.io/schema/vega-lite/v3.json"
-        },
-        configuration.layers ? {
-            layer: (configuration.layers || []).map(layer => makeLayer(layer, varTypes))
-        } : {},
-        configuration.vconcat ? {
-            vconcat: (configuration.vconcat || []).map(layer => makeLayer(layer, varTypes))
-        } : {},
-        configuration.layers ? {
-            hconcat: (configuration.hconcat || []).map(layer => makeLayer(layer, varTypes))
-        } : {},
-        makeLayer(configuration, varTypes))
-};
+        let multi = 'layers' in configuration
+            ? 'layers'
+            : ('vconcat' in configuration)
+                ? 'vconcat'
+                : ('hconcat' in configuration)
+                    ? 'hconcat' : undefined;
 
-let makeLayer = (layer, varTypes) => {
-    if ((layer.channels || []).length === 0) return {};
-    let orientation = (layer.channels || []).find(channel => channel.name === 'primary axis').orientation || 'x';
-    let spec = {};
+        return [
+            m('div', {
+                style: {
+                    margin: '1em',
+                    padding: '1em',
+                    'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
+                }
+            }, this.layerEditor(configuration, variables)),
 
-    spec.encodings = layer.channels.reduce((spec, channel) => {
+            ([
+                {
+                    key: 'layers',
+                    button: 'Add layer',
+                    name: 'Layers'
+                },
+                {
+                    key: 'vconcat',
+                    button: 'Add plot below',
+                    name: 'Vertical Concatenate'
+                },
+                {
+                    key: 'hconcat',
+                    button: 'Add plot beside',
+                    name: 'Horizontal Stack'
+                }
+            ]).map(multiType => [
+                (multi === multiType.key || !multi) && [
+                    (configuration[multiType.key] || [])
+                        .map(layer => m('div', {
+                                style: {
+                                    margin: '1em',
+                                    padding: '1em',
+                                    'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
+                                }
+                            },
+                            m(Button, {
+                                onclick: () => {
+                                    remove(configuration[multiType.key], layer);
+                                    if (configuration[multiType.key].length === 0) delete configuration[multiType.key];
+                                }
+                            }, m(Icon, {name: 'x'})),
+                            this.layerEditor(layer, variables)
+                        )),
+
+                    m('div[style=margin:1em]',
+                        m('h4', multiType.name),
+                        m(Button, {
+                            onclick: () => {
+                                configuration[multiType.key] = configuration[multiType.key] || [];
+                                configuration[multiType.key].push({
+                                    mark: 'point'
+                                })
+                            }
+                        }, multiType.button))
+                ],
+            ])
+
+        ];
+    }
+
+    layerEditor(configuration, variables) {
+
+        configuration.channels = configuration.channels || [];
+
+        let secondaryAxis = configuration.channels.find(channel => channel.name === 'secondary axis');
+        if (secondaryAxis) {
+            if (!secondaryAxis.variables) secondaryAxis.variables = [];
+            if (secondaryAxis.variables.length > 1)
+                variables = variables.concat([secondaryAxis.key, secondaryAxis.value]);
+        }
+
+        let allChannels = [
+            'primary axis',
+            'secondary axis',
+            'size',
+            'color',
+            'order',
+            'shape',
+            'opacity',
+            'row',
+            'column',
+            'detail',
+            'fillOpacity',
+            'strokeWidth',
+            'text',
+            'tooltip',
+        ];
+
+        let allMarks = [
+            "bar",
+            "circle",
+            "square",
+            "tick",
+            "line",
+            "area",
+            "point",
+            'rect',
+            'rule'
+        ];
+
+        let unusedChannels = allChannels
+            .filter(channelName => !configuration.channels
+                .find(channel => channel.name === channelName && !channel.delete));
+
+        if (unusedChannels.includes('primary axis')) {
+            configuration.channels.push({name: 'primary axis'});
+            remove(unusedChannels, 'primary axis')
+        }
+
+        if (!('mark' in configuration))
+            configuration.mark = 'point';
+
+        return [
+            m('h4', 'Mark'),
+            m(Table, {
+                data: [
+                    [
+                        'Type',
+                        m(Dropdown, {
+                            items: allMarks,
+                            activeItem: configuration.mark,
+                            onclickChild: value => configuration.mark = value
+                        })
+                    ]
+                ]
+            }),
+            m('h4', 'Channels'),
+            m(Table, {
+                headers: ['channel', 'variable(s)', '', ''],
+                data: [
+                    ...configuration.channels
+                        .filter(channel => !channel.deleted)
+                        .map(channel => !channel.delete && this.channelEditor(channel, variables)),
+                    unusedChannels.length > 0 && [
+                        m(Dropdown, {
+                            items: unusedChannels,
+                            activeItem: 'Add Channel',
+                            onclickChild: value => {
+                                let priorChannel = configuration.channels.find(channel => channel.name === value);
+                                if (priorChannel) delete priorChannel.delete;
+                                else configuration.channels.push({name: value})
+                            }
+                        }), undefined, undefined, undefined]
+                ]
+            }),
+        ];
+    }
+
+    channelEditor(channel, variables) {
+
+        let aggregators = [
+            'none',
+            'count',
+            'valid',
+            'missing',
+            'sum',
+            'mean',
+            'average',
+            'stdDev',
+            'min',
+            'max',
+            'q1',
+            'median',
+            'q3'
+        ];
+
         if (channel.name === 'primary axis') {
-            return Object.assign(spec, {
-                [orientation]: {field: channel.variable, type: varTypes[channel.variable]}
-            })
+            return [
+                channel.name,
+                m(TextFieldSuggestion, {
+                    value: channel.variable,
+                    suggestions: variables,
+                    enforce: true,
+                    oninput: value => channel.variable = value,
+                    onblur: value => channel.variable = value
+                }),
+                m(Dropdown, {
+                    id: 'targetDropdown',
+                    items: ['x', 'y'],
+                    activeItem: channel.orientation || 'x',
+                    onclickChild: value => channel.orientation = value,
+                    style: {'margin-left': '1em'}
+                }),
+                m('div', {onclick: () => channel.delete = true}, m(Icon, {name: 'x'}))
+            ]
         }
 
         if (channel.name === 'secondary axis') {
-            if (channel.variables.length === 0) return spec;
-            if (!channel.variables.every(variable => varTypes[variable] === varTypes[channel.variables[0]])) {
-                throw "Type mismatch. Types of secondary variables must match"
-            }
-            if (channel.variables.length === 1) return Object.assign({
-                [orientation === 'x' ? 'y' : 'x']: {field: channel.variable, type: varTypes[channel.variable]}
-            });
-
-            spec.transforms = spec.transforms || [];
-            // TODO: add folding transform
-            spec.transforms.push({
-                fold: '',
-                as: 'folded'
-            });
-
-            return Object.assign(spec, {
-                [orientation === 'x' ? 'y' : 'x']: {field: 'folded', type: varTypes[channel.variables[0]]}
-            })
+            if (!channel.variables) channel.variables = [];
+            if (!channel.key) channel.key = 'field';
+            if (!channel.value) channel.value = 'value';
+            if (!channel.aggregation) channel.aggregation = 'none';
+            return [
+                channel.name,
+                // variables
+                m(Table, {
+                    attrsAll: {
+                        style: {
+                            background: 'rgba(0,0,0,.05)',
+                            'border-radius': '.5em',
+                            'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
+                            margin: '10px 0'
+                        }
+                    },
+                    data: [
+                        ...channel.variables.map(variable => [
+                            variable,
+                            m('div', {onclick: () => remove(channel.variables, variable)}, m(Icon, {name: 'x'}))
+                        ]),
+                        [
+                            m(TextFieldSuggestion, {
+                                value: this.pendingSecondaryVariable,
+                                suggestions: variables,
+                                enforce: true,
+                                oninput: value => this.pendingSecondaryVariable = value,
+                                onblur: value => {
+                                    this.pendingSecondaryVariable = '';
+                                    channel.variables.push(value)
+                                }
+                            }),
+                            undefined
+                        ]
+                    ]
+                }),
+                m('div',
+                    channel.variables.length > 1 && m('div',
+                        m('label', 'Key variable:'), m(TextField, {
+                            value: channel.key,
+                            oninput: value => channel.key = value,
+                            onblur: value => channel.key = value
+                        }),
+                        m('br'),
+                        m('label', 'Value variable:'), m(TextField, {
+                            value: channel.value,
+                            oninput: value => channel.value = value,
+                            onblur: value => channel.value = value
+                        })
+                    ),
+                    m('label', 'Aggregation:'),
+                    m(Dropdown, {
+                        id: 'loginDropdown',
+                        items: aggregators,
+                        activeItem: channel.aggregation,
+                        onclickChild: child => channel.aggregation = child
+                    })
+                ),
+                m('div', {onclick: () => channel.delete = true}, m(Icon, {name: 'x'}))
+            ]
         }
+        return [
+            channel.name,
+            m(TextFieldSuggestion, {
+                value: channel.variable,
+                suggestions: variables,
+                enforce: true,
+                oninput: value => channel.variable = value,
+                onblur: value => channel.variable = value
+            }),
+            undefined,
+            m('div', {onclick: () => channel.delete = true}, m(Icon, {name: 'x'}))
+        ];
+    }
+}
 
-        // TODO: more detailed marks
-        if ('mark' in layer) spec.mark = layer.mark;
-
-        // all other channels
-        return Object.assign(spec, {
-            [channel.name]: {field: channel.variable, type: varTypes[channel.variable]}
-        })
-    }, {});
-    return spec;
+export let remove = (arr, obj) => {
+    let idx = arr.indexOf(obj);
+    idx !== -1 && arr.splice(idx, 1);
 };

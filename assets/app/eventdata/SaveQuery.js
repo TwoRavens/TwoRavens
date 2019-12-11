@@ -118,7 +118,7 @@ export default class SaveQuery {
 
                     let response = await m.request({
                         url: '/eventdata/api/add-query',
-                        data: preferences,
+                        body: preferences,
                         method: 'POST'
                     });
                     this.errors = response.errors;

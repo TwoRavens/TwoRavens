@@ -22,35 +22,35 @@ export default class VariableSummary {
         let filteredMessage;
 
         let continuousSpecification = {
-            "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+            "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
             "mark": "area",
             "encoding": {
                 "x": {
-                    "field": "x", "type": "quantitative"
+                    "field": "domain", "type": "quantitative", extent: [0, 2000]
                 },
                 "y": {
-                    "field": "y", "type": "quantitative",
+                    "field": "pdf", "type": "quantitative",
                     "axis": {"title": "density"}
                 }
             }
         };
 
         let barSpecification = {
-            "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+            "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
             "mark": "bar",
             "encoding": {
                 "y": {
-                    "field": "x", "type": "ordinal"
+                    "field": "domain", "type": "ordinal", 'title': ''
                 },
                 "x": {
-                    "field": "y", "type": "quantitative",
+                    "field": "counts", "type": "quantitative", 'title': ''
                 }
             }
         };
 
         if (this.densityType === 'PDF') {
             if (variable.pdfPlotType === 'continuous') plot = m(PlotVegaLite, {
-                data: variable.pdfPlotX.map((_, i) => ({x: variable.pdfPlotX[i], y: variable.pdfPlotY[i]})),
+                data: variable.pdfPlotX.map((_, i) => ({domain: variable.pdfPlotX[i], pdf: variable.pdfPlotY[i]})),
                 specification: continuousSpecification,
                 identifier: 'x'
             });
@@ -63,7 +63,7 @@ export default class VariableSummary {
                 plot = m(PlotVegaLite, {
                     data: Object.keys(variable.plotValues)
                         .filter((key, i) => keys.length < barLimit || !(i % parseInt(keys.length / barLimit)) || i === keys.length - 1)
-                        .map(value => ({x: value, y: variable.plotValues[value]})),
+                        .map(value => ({domain: value, counts: variable.plotValues[value]})),
                     specification: barSpecification,
                     identifier: 'x'
                 })
@@ -72,13 +72,13 @@ export default class VariableSummary {
 
         if (this.densityType === 'CDF') {
             if (variable.cdfPlotType === 'continuous') plot = m(PlotVegaLite, {
-                data: variable.cdfPlotX.map((_, i) => ({x: variable.cdfPlotX[i], y: variable.cdfPlotY[i]})),
+                data: variable.cdfPlotX.map((_, i) => ({domain: variable.cdfPlotX[i], pdf: variable.cdfPlotY[i]})),
                 specification: continuousSpecification,
                 identifier: 'x'
             });
             let isCategorical = app.getNominalVariables(app.getSelectedProblem()).includes(variable.name);
             if (!isCategorical && variable.cdfPlotType === 'bar') plot = m(PlotVegaLite, {
-                data: variable.cdfPlotX.map((_, i) => ({x: variable.cdfPlotX[i], y: variable.cdfPlotY[i]})),
+                data: variable.cdfPlotX.map((_, i) => ({domain: variable.cdfPlotX[i], counts: variable.cdfPlotY[i]})),
                 specification: barSpecification,
                 identifier: 'x'
             });
@@ -100,7 +100,7 @@ export default class VariableSummary {
                 activeSection: this.densityType,
                 onclick: type => this.densityType = type
             }),
-            plot && m('div', {style: {'max-height': '300px', 'text-align': 'center', margin: '1em'}}, plot),
+            plot && m('div', {style: {'text-align': 'center', margin: '1em'}}, plot),
             filteredMessage && italicize(`Only a subset of the ${variable.uniqueCount} unique values are plotted.`),
             m(Table, {
                 id: 'varSummaryTable',

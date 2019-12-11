@@ -79,7 +79,7 @@ export let getD3MAdapter = problem => ({
         console.log(JSON.stringify(allParams));
         console.groupEnd();
 
-        let res = await m.request(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', {method: 'POST', data: allParams});
+        let res = await m.request(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', {method: 'POST', body: allParams});
 
         if (!res || !res.success) {
             handleENDGetSearchSolutionsResults();
@@ -115,11 +115,11 @@ export let getD3MAdapter = problem => ({
 
 // no new pipelines will be found under searchId
 // pipelines under searchId are also wiped/no longer accessible
-export let endSearch = async searchId => searchId !== undefined && m.request(D3M_SVC_URL + '/EndSearchSolutions', {method: 'POST', data: {searchId}})
+export let endSearch = async searchId => searchId !== undefined && m.request(D3M_SVC_URL + '/EndSearchSolutions', {method: 'POST', body: {searchId}})
     .then(handleCompletedSearch(parseInt(searchId)));
 // no new pipelines will be found under searchId
 // discovered pipelines will remain accessible for produce calls
-export let stopSearch = async searchId => searchId !== undefined && m.request(D3M_SVC_URL + '/StopSearchSolutions', {method: 'POST', data: {searchId}})
+export let stopSearch = async searchId => searchId !== undefined && m.request(D3M_SVC_URL + '/StopSearchSolutions', {method: 'POST', body: {searchId}})
     .then(handleCompletedSearch(parseInt(searchId)));
 
 let handleCompletedSearch = searchId => response => {
@@ -930,11 +930,11 @@ let exportCount = 0;
 export async function exportSolution(solutionId) {
     exportCount++;
 
-    let response = await m.request(D3M_SVC_URL + '/SolutionExport3', {
+    let response = await m.request(D3M_SVC_URL + '/SolutionExport3', {method: 'POST', body: {
         solutionId,
         rank: 1.01 - 0.01 * exportCount,
         searchId: app.getSelectedProblem().solverState.d3m.searchId
-    });
+    }});
 
     console.log('--------------------------')
     console.log(' -- SolutionExport3 --')

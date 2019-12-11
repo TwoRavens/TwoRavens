@@ -174,7 +174,7 @@ export async function updateRequest(url) {
     //console.log('POST:', data);
     let res;
     try {
-        res = await m.request(url, {method: 'POST', data: {}});       // maybe change the POST and data
+        res = await m.request(url, {method: 'POST', body: {}});       // maybe change the POST and data
         //console.log('response:', res);
         if (Object.keys(res)[0] === 'warning') {
             alertWarn('Warning: ' + res.warning);
@@ -3195,7 +3195,7 @@ export function ta3_search_message(user_msg) {
 
     try {
         let res = m.request(end_search_url,
-                            {method: 'POST', data: ta3_search_message});
+                            {method: 'POST', body: ta3_search_message});
         console.log('ta3_search_message succeeded:' + res);
     } catch (err) {
         console.log('ta3_search_message failed: ' + err);

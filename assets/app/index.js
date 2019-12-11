@@ -42,7 +42,7 @@ import {getSelectedProblem} from "./app";
 import {buildDatasetUrl} from "./app";
 import {alertWarn} from "./app";
 import ButtonLadda from "./views/LaddaButton";
-import PlotVegaLiteEditor from "./vega_schemas_2/PlotVegaLiteEditor";
+import PlotVegaLiteWrapper from "./vega_schemas_2/PlotVegaLiteWrapper";
 import {workspace} from "./app";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
@@ -597,7 +597,7 @@ class Body {
                         let problem = app.getSelectedProblem();
                         m.request(D3M_SVC_URL + '/ExportSolutions', {
                             method: 'POST',
-                            data: results.getSummaryData(problem)
+                            body: results.getSummaryData(problem)
                         }).then(response => {
                             if (response.success) {
                                 console.warn(response.data);
@@ -621,7 +621,7 @@ class Body {
                     onclick: () => {
                         m.request(this.TA2URL, {
                             method: "POST",
-                            data: JSON.parse(this.TA2Post)
+                            body: JSON.parse(this.TA2Post)
                         }).then(console.log).then(m.redraw)
                     }
                 }, 'Send'),
@@ -891,7 +891,7 @@ let standaloneDatamart = () => {
 let variableSummariesTemp;
 m.request(ROOK_SVC_URL + 'preprocess.app', {
     method: 'POST',
-    data: {
+    body: {
         data: '/ravens_volume/test_data/185_baseball/TRAIN/dataset_TRAIN/tables/learningData.csv',
         datastub: 'BASEBALL_TEST'
     }
@@ -916,8 +916,7 @@ else {
         '/datamart': {render: standaloneDatamart},
         '/testPlot': {
             render: () => [
-                // for testing plot redraw speeds
-                app.variableSummaries && m(PlotVegaLiteEditor, {
+                app.variableSummaries && m(PlotVegaLiteWrapper, {
                     getData: app.getData,
                     variables: Object.keys(app.variableSummaries),
                     nominals: new Set(['Hall_of_Fame', 'Position']),

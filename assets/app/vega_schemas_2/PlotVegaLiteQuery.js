@@ -14,9 +14,17 @@ export default class PlotVegaLiteQuery {
 
         let {abstractQuery, summaries} = vnode.attrs;
 
+        abstractQuery = abstractQuery || [];
+
+        window.specification = specification;
+        window.plotState = this;
+
         // unload all if base query changed
         let baseQuery = JSON.stringify(abstractQuery);
-        if (baseQuery !== this.baseQuery) this.datasets = {};
+        if (baseQuery !== this.baseQuery) {
+            this.baseQuery = baseQuery;
+            this.datasets = {};
+        }
 
         // load each data source if not loaded
         ([
@@ -25,21 +33,15 @@ export default class PlotVegaLiteQuery {
             ...(specification.vconcat || []),
             ...(specification.hconcat || [])
         ])
-            .filter(layer => 'transform' in layer)
             .forEach(layer => {
-                let layerSchema = JSON.stringify(layer);
-                if (!(layerSchema in this.datasets) && !(layerSchema in this.isLoading)) {
-                    this.datasets[layerSchema] = undefined;
-                    this.isLoading[layerSchema] = true;
-                    let dataQuery = [];
-                    if (abstractQuery)
-                        dataQuery.push(...queryMongo.buildPipeline(abstractQuery, workspace.variablesInitial)['pipeline']);
-                    if (layer.transform)
-                        dataQuery.push(...translateVegaLite(layer.transform, summaries));
+                let compiled = JSON.stringify(getQuery(abstractQuery, layer, summaries));
+                if (!(compiled in this.datasets) && !(compiled in this.isLoading)) {
+                    this.datasets[compiled] = undefined;
+                    this.isLoading[compiled] = true;
 
-                    getData(dataQuery).then(data => {
-                        this.datasets[layerSchema] = data;
-                        this.isLoading[layerSchema] = false;
+                    getData({method: 'aggregate', query: compiled}).then(data => {
+                        this.datasets[compiled] = data;
+                        this.isLoading[compiled] = false;
                     });
                 }
             });
@@ -50,17 +52,23 @@ export default class PlotVegaLiteQuery {
         delete specificationStripped.vconcat;
         delete specificationStripped.hconcat;
 
-        let baseSpecification = JSON.stringify(specification);
-        if (baseSpecification in this.datasets) {
-            if (!this.datasets[baseSpecification]) return;
-            specification.data = {values: this.datasets[baseSpecification]};
+        let baseQueryCompiled = JSON.stringify(getQuery(abstractQuery, specification, summaries));
+        if (baseQueryCompiled in this.datasets) {
+            if (!this.datasets[baseQueryCompiled]) return;
+            specificationStripped.data = {values: this.datasets[baseQueryCompiled]};
+            delete specificationStripped.transform;
         }
 
         let pruneSpec = label => {
             let subSpec = (specification[label] || [])
-                .filter(layer => JSON.stringify(layer) in this.datasets)
-                .map(layer => Object.assign({data: {values: this.datasets[JSON.stringify(layer)]}}, layer));
-            if (subSpec.length > 0) specificationStripped[label] = subSpec;
+                .filter(layer => JSON.stringify(getQuery(abstractQuery, layer, summaries)) in this.datasets)
+                .map(layer => Object.assign({data: {
+                    values: this.datasets[JSON.stringify(getQuery(abstractQuery, layer, summaries))]
+                }}, layer));
+            if (subSpec.length > 0) {
+                specificationStripped[label] = subSpec;
+                specificationStripped[label].forEach(spec => delete spec.transform);
+            }
         };
         pruneSpec('level');
         pruneSpec('hconcat');
@@ -80,7 +88,16 @@ let translateVegaLite = (transforms, summaries) => transforms.flatMap(transform 
 
     if ('aggregate' in transform) {
         let pipelinePre = [];
-        let pipelinePost = [];
+        let pipelinePost = [
+            {
+                $addFields: transform.groupBy.reduce((fields, grouper) => Object.assign(fields, {
+                    [grouper]: '$_id\\.' + grouper
+                }), {})
+            },
+            // {
+            //     $project: {_id: 0}
+            // }
+        ];
 
         let isOrderStatistic = measure => ['q1', 'median', 'q3'].includes(measure.op);
         let orderStatistics = transform.aggregate.filter(isOrderStatistic);
@@ -246,4 +263,47 @@ let translateVegaLite = (transforms, summaries) => transforms.flatMap(transform 
     ];
 
     if ('sample' in transform) return [{$sample: {size: transform.sample}}];
+
+    if ('fold' in transform) {
+        if (!transform.as) transform.as = ['key', 'value'];
+        return [
+            {
+                $facet: transform.fold.reduce((facets, variable) => Object.assign(facets, {[variable]: [
+                    {$addFields: {[transform.as[0]]: variable, [transform.as[1]]: '$' + variable}},
+                    {$project: {[variable]: 0, _id: 0}}
+                ]}), {})
+            },
+            {
+                $project: {'combine': {$setUnion: transform.fold.map(variable => '$' + variable)}}
+            },
+            {
+                $unwind: "$combine"
+            },
+            {
+                $replaceRoot: {newRoot: "$combine"}
+            },
+            {
+                $project: {_id: 0}
+            },
+            {
+                $sort: {[transform.as[0]]: 1}
+            }
+        ]
+    }
 });
+
+
+let getQuery = (abstractQuery, layer, summaries) => {
+
+    let dataQuery = [];
+    // TODO: pull from workspace.variablesInitial
+    if (abstractQuery)
+        dataQuery.push(...queryMongo.buildPipeline(abstractQuery, Object.keys(summaries))['pipeline']);
+    if (layer.transform)
+        dataQuery.push(...translateVegaLite(layer.transform, summaries));
+    dataQuery.push({$project: {_id: 0}});
+    dataQuery.push({$sample: {size: 100}});
+
+    console.log(dataQuery);
+    return dataQuery;
+};

@@ -33,7 +33,7 @@ export default class CanvasSavedQueries {
 
         let response = await m.request({
             url: '/eventdata/api/' + (Object.keys(search).length === 0 ? 'list' : 'search'),
-            data: search,
+            body: search,
             method: 'POST'
         });
 

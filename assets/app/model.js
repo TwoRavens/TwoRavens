@@ -527,7 +527,7 @@ export let leftpanel = forceData => {
         attrsAll: {style: {height: 'calc(100% - 50px)'}},
         currentTab: app.leftTab,
         callback: app.setLeftTab,
-        sections: DISPLAY_DATAMART_UI ? sections.concat([
+        sections: sections.concat([
             {
                 value: preprocessTabName,
                 id: 'preprocessInfoTab',
@@ -535,7 +535,7 @@ export let leftpanel = forceData => {
                 title: 'Data Log',
                 contents: m(PreprocessInfo,{})
             },
-            {
+            DISPLAY_DATAMART_UI && {
                 value: 'Augment',
                 contents: m(Datamart, {
                     preferences: app.datamartPreferences,
@@ -550,7 +550,7 @@ export let leftpanel = forceData => {
                 display: 'none',
                 contents: summaryContent
             }
-        ]) : sections
+        ])
     }));
 };
 
@@ -1490,11 +1490,11 @@ export async function submitDiscProb() {
             let filename_ps = problem.problemID + '/problem_schema.json';
             m.request(D3M_SVC_URL + '/store-user-problem', {
                 method: 'POST',
-                data: {filename: filename_api, data: problemApiCall}
+                body: {filename: filename_api, data: problemApiCall}
             });
             m.request(D3M_SVC_URL + '/store-user-problem', {
                 method: 'POST',
-                data: {filename: filename_ps, data: problemProblemSchema}
+                body: {filename: filename_ps, data: problemProblemSchema}
             });
 
             let meaningful = problem.meaningful ? 'yes' : 'no';
@@ -1510,7 +1510,7 @@ export async function submitDiscProb() {
     console.log(outputCSV);
     let res3 = await m.request(D3M_SVC_URL + '/store-user-problem', {
         method: 'POST',
-        data: {filename: 'labels.csv', data: outputCSV.join('\n')}
+        body: {filename: 'labels.csv', data: outputCSV.join('\n')}
     });
 
     // Remove the button Submit Discovered problem button
