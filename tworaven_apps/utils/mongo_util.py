@@ -19,8 +19,23 @@ def quote_val(value):
     return value
 
 
-def infer_type(value):
+python_caster = {
+    'boolean': bool,
+    'string': str,
+    'int32': int,
+    'double': float,
+    'date': parser.parse
+}
+
+
+def infer_type(value, value_type=None):
     """Used when loading data into a Mongo collection"""
+
+    if value_type in python_caster:
+        try:
+            return python_caster[value_type](value)
+        except Exception:
+            return
 
     try:
         return int(value)
@@ -32,10 +47,10 @@ def infer_type(value):
     except ValueError:
         pass
 
-#     try:
-#         return parser.parse(value)
-#     except ValueError:
-#         pass
+    try:
+        return parser.parse(value)
+    except Exception:
+        pass
 
     if not len(value):
         return None

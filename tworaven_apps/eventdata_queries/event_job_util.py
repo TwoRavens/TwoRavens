@@ -586,10 +586,10 @@ class EventJobUtil(object):
         def mongofy_type(value):
             return {
                 bool: 'boolean', 'boolean': 'boolean',
-                str: 'string', 'string': 'string',
-                int: 'int32', 'int32': 'int32', 'int': 'int32',
-                float: 'double', 'double': 'double', 'float': 'double',
-                datetime.datetime: 'date', 'date': 'date'
+                str: 'string', 'string': 'string', 'nominal': 'string',
+                int: 'int32', 'int32': 'int32', 'int': 'int32', 'integer': 'int32',
+                float: 'double', 'double': 'double', 'float': 'double', 'ordinal': 'double',
+                datetime.datetime: 'date', 'date': 'date', 'dateTime': 'date'
             }.get(value, 'auto')
         columns = {col: mongofy_type(columns[col]) for col in columns}
 
@@ -602,7 +602,6 @@ class EventJobUtil(object):
             return encode_variable(column).replace('"', '\\"')
 
         field_names = ','.join(f"{sanitize(col)}.{columns.get(col, 'auto')}()" for col in columns)
-        print('field_names', field_names)
         delimiter_type = 'csv'
         if os.path.splitext(data_path)[1] == 'tsv':
             delimiter_type = 'tsv'
@@ -621,8 +620,8 @@ class EventJobUtil(object):
         # ---
         # Prepare and run the mongoimport command
         # ------------------------------------------
-        # try:
-        if False:  # try:
+        try:
+            # raise NotImplementedError('mongoimport utility is not installed in production environment')
 
             import_commands.append(f'mongoimport'
                                    f' --db {database}'
@@ -652,10 +651,10 @@ class EventJobUtil(object):
             for column in columns.keys():
                 db[collection_name].update({column: {'$exists': False}}, {'$set': {column: None}}, multi=True)
 
-        else: #except Exception as err:
+        except Exception as err:
             # slower, secondary import if first fails
-            #print('--> mongo err: [%s]' % err)
-            #print(traceback.format_exc())
+            print('--> mongo err: [%s]' % err)
+            print(traceback.format_exc())
             print('--> import_dataset: mongoimport failed. Running row-by-row insertion instead.')
             db[collection_name].drop()
             with open(data_path, 'r') as csv_file:
@@ -664,12 +663,12 @@ class EventJobUtil(object):
                 # discard header
                 next(csv_reader)
 
-                # use duplicate column name removal headers instead
-                columns = [encode_variable(value) for value in columns]
+                # # use duplicate column name removal headers instead
+                # column_names = [encode_variable(value) for value in columns]
 
                 for observation in csv_reader:
                     db[collection_name].insert_one({
-                        col: infer_type(val) for col, val in zip(columns, observation)
+                        encode_variable(col): infer_type(val, columns[col]) for col, val in zip(columns, observation)
                     })
 
         if indexes:

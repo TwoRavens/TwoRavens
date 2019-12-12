@@ -554,7 +554,7 @@ export let setQueryUpdated = async state => {
 
         app.buildProblemPreprocess(selectedProblem)
             .then(preprocess => {
-                // if (preprocess) app.setVariableSummaries(preprocess.variables)
+                if (preprocess) app.setVariableSummaries(preprocess.variables)
             }).then(m.redraw);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};

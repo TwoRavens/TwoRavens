@@ -298,7 +298,7 @@ export function setSelectedMode(mode) {
             buildDatasetPreprocess().then(response => {
                 if (!response.success) alertLog(response.message);
                 else {
-                    // setVariableSummaries(response.data.variables);
+                    setVariableSummaries(response.data.variables);
                     ravenConfig.problems = discovery(response.data.dataset.discovery);
                 }
             });
@@ -1232,9 +1232,24 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                 setVariableSummaries(resourceTable.columns.reduce((summaries, columnSchema) => Object.assign(summaries, {
                     [columnSchema.colName]: {
                         name: columnSchema.colName,
-                        nature: {categorical: 'nominal', integer: 'ordinal', real: 'ordinal'}[columnSchema.colType],
+                        nature: {
+                            boolean: 'nominal',
+                            integer: 'ordinal',
+                            real: 'ordinal',
+                            string: 'nominal',
+                            categorical: 'nominal',
+                            dateTime: 'nominal',
+                        }[columnSchema.colType] || 'nominal',
+                        rawType: {
+                            boolean: 'string',
+                            integer: 'integer',
+                            real: 'double',
+                            string: 'string',
+                            categorical: 'string',
+                            dateTime: 'dateTime',
+                        }[columnSchema.colType] || 'string'
                     }
-                }), {}))
+                }), {}));
             }
             // TODO: endpoint to retrieve column names if columns not present in datasetDoc
             else swandive = true;
@@ -1248,7 +1263,9 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
             query: JSON.stringify(queryMongo.buildPipeline([
                 ...manipulations, {type: 'menu', metadata: {type: 'data', sample: 5000}}
             ], workspace.raven_config.variablesInitial)['pipeline']),
-
+            columns: Object.keys(variableSummaries).reduce((columns, variable) => Object.assign(columns, {
+                [variable]: variableSummaries[variable].rawType
+            }), {}),
             export: 'csv'
         }));
 
@@ -1264,7 +1281,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
         })
         .then(preprocess => {
             if (!preprocess) return;
-            // setVariableSummaries(preprocess.variables);
+            setVariableSummaries(preprocess.variables);
             setDatasetSummary(preprocess.dataset);
 
             if (newRavenConfig) {
@@ -1967,13 +1984,25 @@ export function discovery(problems) {
 export let setVariableSummaries = state => {
     if (!state) return;
 
-    delete state.d3mIndex;
+    // uncommenting will break ingest column ordering
+    // delete state.d3mIndex;
 
     variableSummaries = state;
 
     // quality of life
     Object.keys(variableSummaries).forEach(variable => variableSummaries[variable].name = variable);
     window.variableSummaries = variableSummaries;
+
+    // get the raw type
+    Object.keys(variableSummaries)
+        .filter(variable => !('rawType' in variableSummaries[variable]))
+        .forEach(variable => {
+            let summary = variableSummaries[variable];
+            if (summary.numchar === 'character')
+                summary.rawType = 'string';
+            else summary.rawType = summary.interval === 'continuous'
+                ? 'double' : 'integer'
+        });
 
     variableSummariesLoaded = true;
 };
@@ -2365,9 +2394,9 @@ export function setSelectedProblem(problemID) {
         .then(m.redraw);
 
     // update preprocess
-    // buildProblemPreprocess(problem)
-    //     .then(preprocess => setVariableSummaries(preprocess.variables))
-    //     .then(m.redraw);
+    buildProblemPreprocess(problem)
+        .then(preprocess => setVariableSummaries(preprocess.variables))
+        .then(m.redraw);
 
     resetPeek();
 
