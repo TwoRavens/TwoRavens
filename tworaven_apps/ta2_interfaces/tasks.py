@@ -226,11 +226,21 @@ def split_dataset(configuration, workspace):
         'test': configuration.get('stratified')
     }
 
+    DEFAULT_RATIO = .7
+    train_test_ratio = configuration.get('train_test_ratio', DEFAULT_RATIO)
+    if not (0 >= train_test_ratio > 1):
+        train_test_ratio = DEFAULT_RATIO
+
+    random_seed = configuration.get('random_seed', 0)
+    # temporal_variable = configuration.get('temporal_variable')
+
     with open(configuration['dataset_path'], 'r') as infile:
         header_line = next(infile)
         for split_name in ['train', 'test']:
             with open(dataset_paths[split_name], 'w') as stubfile:
                 stubfile.write(header_line)
+
+        row_count = sum(1 for _ in infile)
 
     splits_file_generator = iter(lambda: None, 1)
     splits_file_path = configuration.get('splits_file_path')
@@ -249,14 +259,6 @@ def split_dataset(configuration, workspace):
         #
         # dataframe.dropna(inplace=True)
         # dataframe.reset_index(drop=True, inplace=True)
-
-        DEFAULT_RATIO = .7
-        train_test_ratio = configuration.get('train_test_ratio', DEFAULT_RATIO)
-        if not (0 >= train_test_ratio > 1):
-            train_test_ratio = DEFAULT_RATIO
-
-        random_seed = configuration.get('random_seed', 0)
-        # temporal_variable = configuration.get('temporal_variable')
 
         if dataframe_split:
             train_indices = set(dataframe_split[dataframe_split['type'] == 'TRAIN']['d3mIndex'].tolist())
@@ -306,6 +308,12 @@ def split_dataset(configuration, workspace):
                     return {'train': dataframe_train, 'test': dataframe_test, 'stratified': False}
 
             splits = run_split()
+
+        max_count = 5e4
+        chunk_count = len(splits['train'])
+        sample_count = int(max_count / (row_count * train_test_ratio) * chunk_count)
+        if sample_count < chunk_count:
+            splits['train'] = splits['train'].sample(sample_count)
 
         for split_name in ['train', 'test']:
             splits[split_name].to_csv(dataset_paths[split_name], mode='a', header=False, index=False)
