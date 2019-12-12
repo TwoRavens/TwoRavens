@@ -43,7 +43,7 @@ export default class VariableImportance {
                                 ]
                             }
                         },
-                        {
+                        predictor in problem.levels ? {
                             'mark': 'rect',
                             'data': {
                                 'values': problem.levels[predictor]
@@ -54,7 +54,7 @@ export default class VariableImportance {
                                     'field': 'count',
                                     'type': 'quantitative',
                                     'scale': {
-                                        domain: [0, Math.max(...problem.levels[predictor].map(point => point.count))],
+                                        domain: [0, Math.max(0, ...problem.levels[predictor].map(point => point.count))],
                                         range: [0, 1]
                                     },
                                     'legend': false
@@ -63,7 +63,7 @@ export default class VariableImportance {
                                     {"field": 'count', "type": "quantitative"}
                                 ]
                             }
-                        }
+                        } : {}
                     ]
                 }
             });
@@ -236,7 +236,7 @@ export default class VariableImportance {
                             ]
                         }
                     },
-                    {
+                    predictor in problem.levels ? {
                         'mark': 'rect',
                         'data': {
                             'values': problem.levels[predictor]
@@ -256,7 +256,7 @@ export default class VariableImportance {
                                 {"field": 'count', "type": "quantitative"}
                             ]
                         }
-                    }
+                    } : {}
                 ]
             }
         });
