@@ -28,15 +28,20 @@ else:
 
 """
 from os.path import isfile
+import os
 import requests
 
 # source: https://pypi.org/project/tworavens-preprocess/
 from raven_preprocess.preprocess_runner import PreprocessRunner
 
+from tworaven_apps.eventdata_queries.mongo_retrieve_util import MongoRetrieveUtil
 from tworaven_apps.data_prep_utils.duplicate_column_remover import DuplicateColumnRemover
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.utils.json_helper import json_dumps, json_loads
-
+import json
+from tworaven_apps.utils.raven_json_encoder import RavenJSONEncoder
+from tworaven_apps.utils.mongo_util import encode_variable
+from tworavensproject import settings
 
 
 class PreprocessUtil(BasicErrCheck):
@@ -120,6 +125,29 @@ class PreprocessUtil(BasicErrCheck):
             self.add_error_message('File not found: %s' % self.source_path)
             return
 
+        mongo_util_base = MongoRetrieveUtil(
+            settings.TWORAVENS_MONGO_DB_NAME,
+            settings.MONGO_PREPROCESS_COLLECTION_NAME)
+
+        db_tworavens = None
+        if not mongo_util_base.has_error():
+            db_info = mongo_util_base.get_mongo_db(settings.TWORAVENS_MONGO_DB_NAME)
+            if db_info.success:
+                db_tworavens = db_info.result_obj
+
+        if not mongo_util_base.has_error() \
+                and settings.MONGO_PREPROCESS_COLLECTION_NAME in db_tworavens.list_collection_names():
+            query_response = mongo_util_base.run_query({
+                'path': self.source_path,
+                'time': os.path.getmtime(self.source_path)
+            }, method='find')
+
+            if query_response.success:
+                matches = list(query_response.result_obj)
+                if len(matches) == 1:
+                    self.preprocess_data = matches[0].data
+                    return
+
         # Fix duplicate columns
         #
         if self.fix_duplicate_columns:
@@ -150,6 +178,21 @@ class PreprocessUtil(BasicErrCheck):
         #
         self.preprocess_data = runner.get_final_dict()
 
+        if db_tworavens:
+            preprocess = json.loads(json.dumps(self.preprocess_data, cls=RavenJSONEncoder))
+
+            db_tworavens[settings.MONGO_PREPROCESS_COLLECTION_NAME].insert_one({
+                'path': self.source_path,
+                'time': os.path.getmtime(self.source_path),
+                'data': self.mongo_rewrite(preprocess)
+            })
+
+    def mongo_rewrite(self, data):
+        if issubclass(type(data), list):
+            return [self.mongo_rewrite(elem) for elem in data]
+        if issubclass(type(data), dict):
+            return {encode_variable(k): self.mongo_rewrite(v) for k, v in data.items()}
+        return data
 
 """
 from tworaven_apps.R_services.preprocess_util import PreprocessUtil

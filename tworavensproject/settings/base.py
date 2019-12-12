@@ -359,6 +359,7 @@ MONGO_CONNECTION_STRING = os.environ.get('MONGO_CONNECTION_STRING', '')
 # database for storing manipulations
 TWORAVENS_MONGO_DB_NAME = os.environ.get('TWORAVENS_MONGO_DB_NAME', 'tworavens')
 MONGO_COLLECTION_PREFIX = 'tr_'  # mongo collection names may not start with a number
+MONGO_PREPROCESS_COLLECTION_NAME = 'INTERNAL_PREPROCESS'
 
 # -------------------------
 # EventData: mongo related
