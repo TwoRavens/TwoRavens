@@ -16,13 +16,14 @@ seed_skeleton <- function(data, name, samplesize=NULL, fraction=0.2, ID=NULL, ci
   }
 
   myTargetIndex <- 0
-  myresID <- "0"
+  myresID <- "learningData"
 
 
   # Sample number of observations
 
   if(!is.null(samplesize)){
-    data<-na.omit(data)
+    data[is.na(data)] <- 0  # Hack for present
+    #data<-na.omit(data)
     cat("sampling dataset")
     ## NOTE: Should check there are enough cases to subsample
     ## NOTE: Should check subsample argument value is valid
@@ -71,6 +72,8 @@ seed_skeleton <- function(data, name, samplesize=NULL, fraction=0.2, ID=NULL, ci
   write.csv(data, paste(name, "/", name, "_dataset/tables/learningData.csv", sep=""), row.names=FALSE)
   write.csv(testdata, paste(name, "/", "TEST/dataset_TEST/tables/learningData.csv", sep=""), row.names=FALSE)
   write.csv(traindata, paste(name, "/", "TRAIN/dataset_TRAIN/tables/learningData.csv", sep=""), row.names=FALSE)
+
+  
 
   ## Write various versions of datasetDoc.json
 
@@ -168,7 +171,7 @@ seed_skeleton <- function(data, name, samplesize=NULL, fraction=0.2, ID=NULL, ci
 
 fldata <- read.dta("repdata.dta")
 fldata$onset[fldata$onset==4] <- 1
-seed_skeleton(data=fldata, samplesize=450000, name="TR21_Large_Scale_Greed", depvarname="onset", ID="Greed_Versus_Grievance", description="Replication data for Fearon and Laitin greed versus grievance analysis", taskType="classification", taskSubType="binary", metric="f1Macro")
+seed_skeleton(data=fldata, samplesize=100000, name="TR24_Large_Scale_Greed", depvarname="onset", ID="Greed_Versus_Grievance", description="Replication data for Fearon and Laitin greed versus grievance analysis", taskType="classification", taskSubType="binary", metric="f1Macro")
 
 
 
