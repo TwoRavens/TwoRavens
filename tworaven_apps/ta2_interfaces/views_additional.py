@@ -60,6 +60,8 @@ def view_get_problem_schema(request):
 def view_retrieve_d3m_output_data(request):
     """Expects a JSON request containing "data_pointer", and optionally indices
     For example: { "data_pointer": "file:///output/predictions/0001.csv", "indices": [1,2,3,10]}
+
+    an alternative is calling /eventdata/api/get-data with a path to the dataset, and a mongo find or aggregation query
     """
     req_body_info = get_request_body_as_json(request)
     if not req_body_info.success:

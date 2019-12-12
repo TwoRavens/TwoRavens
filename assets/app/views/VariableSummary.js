@@ -1,7 +1,6 @@
 import m from 'mithril';
 import * as d3 from "d3";
 import PlotVegaLite from "./PlotVegaLite";
-import {formatPrecision, saveSystemLogEntry} from "../app";
 import Table from "../../common/views/Table";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import {italicize} from "../index";
@@ -55,7 +54,7 @@ export default class VariableSummary {
                 identifier: 'x'
             });
 
-            if (!variable.pdfPlotType || variable.pdfPlotType === 'bar'){
+            if ((!variable.pdfPlotType || variable.pdfPlotType === 'bar') && variable.plotValues){
                 let barLimit = 15;
                 let keys = Object.keys(variable.plotValues);
 
@@ -128,21 +127,21 @@ export let formatVariableSummary = variable => {
     const precision = 4;
 
     let data = {
-        'Mean': formatPrecision(variable.mean, precision),
-        'Median': formatPrecision(variable.median, precision),
-        'Mode Values': variable.mode.map(rint),
+        'Mean': app.formatPrecision(variable.mean, precision),
+        'Median': app.formatPrecision(variable.median, precision),
+        'Mode Values': variable.mode && variable.mode.map(rint),
         'Mode Frequency': Math.round(variable.modeFreq),
         'Midpoint': (variable.midpoint || []).length === 0 ? undefined : variable.midpoint,
         'Midpoint Freq': (variable.midpoint || []).length === 0 ? undefined : Math.round(variable.midpointFreq),
         'Least Freq': variable.fewestValues,
         'Least Freq Occurrences': Math.round(variable.fewestFreq),
-        'Std Dev (Sample)': formatPrecision(variable.stdDev, precision),
-        'Minimum': formatPrecision(variable.min, precision),
-        'Maximum': formatPrecision(variable.max, precision),
+        'Std Dev (Sample)': app.formatPrecision(variable.stdDev, precision),
+        'Minimum': app.formatPrecision(variable.min, precision),
+        'Maximum': app.formatPrecision(variable.max, precision),
         'Invalid Count': Math.round(variable.invalidCount),
         'Valid Count': Math.round(variable.validCount),
         'Unique Count': Math.round(variable.uniqueCount),
-        'Herfindahl Index': formatPrecision(variable.herfindahlIndex),
+        'Herfindahl Index': app.formatPrecision(variable.herfindahlIndex),
         'Num/Char': variable.numchar,
         'Nature': variable.nature,
         'Binary': String(variable.binary),
@@ -150,6 +149,6 @@ export let formatVariableSummary = variable => {
     };
 
     return Object.keys(data)
-        .filter(key => data[key] !== "" && data[key] !== undefined) // drop all keys with nonexistent values
+        .filter(key => data[key] !== "" && data[key] !== undefined && !isNaN(data[key])) // drop all keys with nonexistent values
         .reduce((out, key) => Object.assign(out, {[key]: data[key]}), {})
 };

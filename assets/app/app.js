@@ -298,7 +298,7 @@ export function setSelectedMode(mode) {
             buildDatasetPreprocess().then(response => {
                 if (!response.success) alertLog(response.message);
                 else {
-                    setVariableSummaries(response.data.variables);
+                    // setVariableSummaries(response.data.variables);
                     ravenConfig.problems = discovery(response.data.dataset.discovery);
                 }
             });
@@ -1225,10 +1225,17 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
             // store the resourceId of the table being used in the raven_config (must persist)
             workspace.raven_config.resourceId = resourceTable.resID;
 
-            if ('columns' in resourceTable)
+            if ('columns' in resourceTable) {
                 workspace.raven_config.variablesInitial = resourceTable.columns
                     .sort((a, b) => omniSort(a.colIndex, b.colIndex))
                     .map(column => column.colName);
+                setVariableSummaries(resourceTable.columns.reduce((summaries, columnSchema) => Object.assign(summaries, {
+                    [columnSchema.colName]: {
+                        name: columnSchema.colName,
+                        nature: {categorical: 'nominal', integer: 'ordinal', real: 'ordinal'}[columnSchema.colType],
+                    }
+                }), {}))
+            }
             // TODO: endpoint to retrieve column names if columns not present in datasetDoc
             else swandive = true;
         })
@@ -1241,6 +1248,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
             query: JSON.stringify(queryMongo.buildPipeline([
                 ...manipulations, {type: 'menu', metadata: {type: 'data', sample: 5000}}
             ], workspace.raven_config.variablesInitial)['pipeline']),
+
             export: 'csv'
         }));
 
@@ -1256,7 +1264,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
         })
         .then(preprocess => {
             if (!preprocess) return;
-            setVariableSummaries(preprocess.variables);
+            // setVariableSummaries(preprocess.variables);
             setDatasetSummary(preprocess.dataset);
 
             if (newRavenConfig) {
@@ -1640,9 +1648,11 @@ export let materializeManipulations = async (problem, schemaIds) => {
 // should be equivalent to partials.app
 // loads up linearly spaced observations along domain and non-mangled levels/counts
 let loadPredictorDomains = async problem => {
-    if (problem.levels || problem.domain) return;
+    if (problem.levels || problem.domain) return {success: true, message: 'predictor domains already loaded'};
 
-    if (!variableSummariesLoaded) throw "variable summaries are not loaded";
+    if (!variableSummariesLoaded)
+        return {success: false, message: "variable summaries are not loaded"};
+
     let predictors = getPredictorVariables(problem);
     let categoricals = getNominalVariables(problem).filter(variable => predictors.includes(variable));
 
@@ -1650,7 +1660,7 @@ let loadPredictorDomains = async problem => {
     let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
 
     let facets = categoricals
-        .filter(variable => variableSummaries[variable].validCount > 0)
+        .filter(variable => variableSummaries[variable].validCount !== 0)
         .reduce((facets, variable) => Object.assign(facets, {
             [variable]: [
                 {$group: {_id: '$' + variable, count: {$sum: 1}}},
@@ -1672,12 +1682,14 @@ let loadPredictorDomains = async problem => {
     // {[variable]: *samples along domain*}
     problem.domains = predictors.reduce((domains, predictor) => {
         let summary = variableSummaries[predictor];
-        if (!summary.validCount)
+        if (summary.validCount === 0)
             domains[predictor] = [];
         else if (categoricals.includes(predictor))
             domains[predictor] = problem.levels[predictor].map(entry => entry.level);
         else {
-            if (variableSummaries[predictor].binary)
+            if (!('min' in variableSummaries[predictor]) || !('max' in variableSummaries[predictor]) || !('binary' in variableSummaries[predictor]))
+                return domains;
+            else if (variableSummaries[predictor].binary)
                 domains[predictor] = [variableSummaries[predictor].min, variableSummaries[predictor].max];
             else
                 domains[predictor] = linspace(
@@ -1686,7 +1698,9 @@ let loadPredictorDomains = async problem => {
                     ICE_DOMAIN_MAX_SIZE)
         }
         return domains;
-    }, {})
+    }, {});
+
+    return {success: true}
 };
 
 // materializing partials may only happen once per problem, all calls wait for same response
@@ -1694,7 +1708,9 @@ export let materializePartialsPromise = {};
 export let materializePartials = async problem => {
 
     console.log('materializing partials');
-    await loadPredictorDomains(problem);
+    let responseLoadPredictorDomains = await loadPredictorDomains(problem);
+    if (!responseLoadPredictorDomains.success)
+        return responseLoadPredictorDomains;
 
     // BUILD BASE DATASET (one record)
     let dataset = [Object.keys(variableSummaries)
@@ -1717,8 +1733,7 @@ export let materializePartials = async problem => {
         }
     });
     if (!partialsLocationInfo.success) {
-        alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
-        throw partialsLocationInfo.message;
+        alertWarn('Call for partials data failed. ' + (partialsLocationInfo.message || ''));
     } else {
         Object.assign(problem.datasetSchemas, partialsLocationInfo.data.dataset_schemas);
         Object.assign(problem.datasetPaths, partialsLocationInfo.data.dataset_paths);
@@ -1734,7 +1749,9 @@ export let materializeICEPromise = {};
 export let materializeICE = async problem => {
     console.log('materializing ICE partials');
 
-    await loadPredictorDomains(problem);
+    let responseLoadPredictorDomains = await loadPredictorDomains(problem);
+    if (!responseLoadPredictorDomains.success)
+        return responseLoadPredictorDomains;
 
     let abstractPipeline = [...workspace.raven_config.hardManipulations, problem.manipulations];
     let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
@@ -1748,20 +1765,24 @@ export let materializeICE = async problem => {
         metadata: JSON.stringify(queryMongo.translateDatasetDoc(compiled, workspace.datasetDoc, problem))
     });
 
+    let partialsLocationInfo;
+    try {
+        partialsLocationInfo = await m.request({
+            method: 'POST',
+            url: D3M_SVC_URL + '/get-partials-datasets',
+            body: {
+                domains: problem.domains,
+                dataset_schema_path: samplePaths.metadata_path,
+                separate_variables: true,
+                name: 'ICE_synthetic_'
+            }
+        })
+    } catch (err) {
+        partialsLocationInfo = {success: false, message: String(err)}
+    }
     // BUILD ICE DATASETS
-    let partialsLocationInfo = await m.request({
-        method: 'POST',
-        url: D3M_SVC_URL + '/get-partials-datasets',
-        body: {
-            domains: problem.domains,
-            dataset_schema_path: samplePaths.metadata_path,
-            separate_variables: true,
-            name: 'ICE_synthetic_'
-        }
-    });
     if (!partialsLocationInfo.success) {
-        alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
-        throw partialsLocationInfo.message;
+        alertWarn('Call for ICE data failed. ' + (partialsLocationInfo.message || ''));
     } else {
         Object.assign(problem.datasetSchemas, partialsLocationInfo.data.dataset_schemas);
         Object.assign(problem.datasetPaths, partialsLocationInfo.data.dataset_paths);
@@ -2344,9 +2365,9 @@ export function setSelectedProblem(problemID) {
         .then(m.redraw);
 
     // update preprocess
-    buildProblemPreprocess(problem)
-        .then(preprocess => setVariableSummaries(preprocess.variables))
-        .then(m.redraw);
+    // buildProblemPreprocess(problem)
+    //     .then(preprocess => setVariableSummaries(preprocess.variables))
+    //     .then(m.redraw);
 
     resetPeek();
 
