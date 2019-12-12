@@ -1785,6 +1785,7 @@ export let materializeTrainTest = async problem => {
             temporal_variable: temporalVariables[0],
             nominal_variables: getNominalVariables(problem),
             dataset_schema: problem.datasetSchemas.all,
+            dataset_path: problem.datasetPaths.all
         }
     });
 
