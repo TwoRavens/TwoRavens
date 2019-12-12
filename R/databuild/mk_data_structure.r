@@ -7,7 +7,7 @@ rm(list=ls())
 library(jsonlite)
 library(foreign)
 
-seed_skeleton <- function(data, name, subsample=NULL, fraction=0.2, ID=NULL, citation="", description="", depvarname=NULL, taskType=NULL, taskSubType="", metric=NULL, seed=123){
+seed_skeleton <- function(data, name, sample=NULL, fraction=0.2, ID=NULL, citation="", description="", depvarname=NULL, taskType=NULL, taskSubType="", metric=NULL, seed=123){
 
   set.seed=seed
 
@@ -21,12 +21,16 @@ seed_skeleton <- function(data, name, subsample=NULL, fraction=0.2, ID=NULL, cit
 
   # Subsample number of observations
 
-  if(!is.null(subsample)){
+  if(!is.null(sample)){
     data<-na.omit(data)
     cat("subsampling dataset")
     ## NOTE: Should check there are enough cases to subsample
     ## NOTE: Should check subsample argument value is valid
-    myindex<-sample(1:nrow(data), size=subsample, replace=FALSE)
+    if (sample>nrow(data))
+      myreplace = TRUE
+    else
+      myreplace = FALSE
+    myindex<-sample(1:nrow(data), size=subsample, replace=myreplace)
     data<-data[myindex,]
   }
 
@@ -155,8 +159,8 @@ seed_skeleton <- function(data, name, subsample=NULL, fraction=0.2, ID=NULL, cit
 
 
 ethdata <- read.csv("PHEM_Weekly_24.csv")
-#seed_skeleton(data=ethdata, name="TR10_Ethiopia_Health", subsample=1000, depvarname="TMalaria_OutP_Cases", ID="Ethiopia_Health", description="Emergency Health data at the weekly reporting level, by woreda", taskType="regression", taskSubType="", metric="rootMeanSquaredError")
-seed_skeleton(data=ethdata, name="TR13_Ethiopia_Health", subsample=1000, depvarname="TMalariaOutPCases", ID="Ethiopia_Health", description="Emergency Health data at the weekly reporting level, by woreda", taskType="regression", taskSubType="", metric="rootMeanSquaredError")
+#seed_skeleton(data=ethdata, name="TR10_Ethiopia_Health", sample=1000, depvarname="TMalaria_OutP_Cases", ID="Ethiopia_Health", description="Emergency Health data at the weekly reporting level, by woreda", taskType="regression", taskSubType="", metric="rootMeanSquaredError")
+seed_skeleton(data=ethdata, name="TR13_Ethiopia_Health", sample=1000, depvarname="TMalariaOutPCases", ID="Ethiopia_Health", description="Emergency Health data at the weekly reporting level, by woreda", taskType="regression", taskSubType="", metric="rootMeanSquaredError")
 
 fldata <- read.dta("repdata.dta")
 seed_skeleton(data=fldata, name="TR1_Greed_Versus_Grievance", depvarname="onset", ID="Greed_Versus_Grievance", description="Replication data for Fearon and Laitin greed versus grievance analysis", taskType="classification", taskSubType="binary", metric="f1Macro")
