@@ -7,7 +7,7 @@ rm(list=ls())
 library(jsonlite)
 library(foreign)
 
-seed_skeleton <- function(data, name, sample=NULL, fraction=0.2, ID=NULL, citation="", description="", depvarname=NULL, taskType=NULL, taskSubType="", metric=NULL, seed=123){
+seed_skeleton <- function(data, name, samplesize=NULL, fraction=0.2, ID=NULL, citation="", description="", depvarname=NULL, taskType=NULL, taskSubType="", metric=NULL, seed=123){
 
   set.seed=seed
 
@@ -19,18 +19,18 @@ seed_skeleton <- function(data, name, sample=NULL, fraction=0.2, ID=NULL, citati
   myresID <- "0"
 
 
-  # Subsample number of observations
+  # Sample number of observations
 
-  if(!is.null(sample)){
+  if(!is.null(samplesize)){
     data<-na.omit(data)
-    cat("subsampling dataset")
+    cat("sampling dataset")
     ## NOTE: Should check there are enough cases to subsample
     ## NOTE: Should check subsample argument value is valid
-    if (sample>nrow(data))
+    if (samplesize>nrow(data))
       myreplace = TRUE
     else
       myreplace = FALSE
-    myindex<-sample(1:nrow(data), size=subsample, replace=myreplace)
+    myindex<-sample(1:nrow(data), size=samplesize, replace=myreplace)
     data<-data[myindex,]
   }
 
@@ -158,20 +158,27 @@ seed_skeleton <- function(data, name, sample=NULL, fraction=0.2, ID=NULL, citati
 
 
 
-ethdata <- read.csv("PHEM_Weekly_24.csv")
-#seed_skeleton(data=ethdata, name="TR10_Ethiopia_Health", sample=1000, depvarname="TMalaria_OutP_Cases", ID="Ethiopia_Health", description="Emergency Health data at the weekly reporting level, by woreda", taskType="regression", taskSubType="", metric="rootMeanSquaredError")
-seed_skeleton(data=ethdata, name="TR13_Ethiopia_Health", sample=1000, depvarname="TMalariaOutPCases", ID="Ethiopia_Health", description="Emergency Health data at the weekly reporting level, by woreda", taskType="regression", taskSubType="", metric="rootMeanSquaredError")
+#ethdata <- read.csv("PHEM_Weekly_24.csv")
+#seed_skeleton(data=ethdata, name="TR10_Ethiopia_Health", samplesize=1000, depvarname="TMalaria_OutP_Cases", ID="Ethiopia_Health", description="Emergency Health data at the weekly reporting level, by woreda", taskType="regression", taskSubType="", metric="rootMeanSquaredError")
+#seed_skeleton(data=ethdata, name="TR13_Ethiopia_Health", samplesize=1000, depvarname="TMalariaOutPCases", ID="Ethiopia_Health", description="Emergency Health data at the weekly reporting level, by woreda", taskType="regression", taskSubType="", metric="rootMeanSquaredError")
+
+#fldata <- read.dta("repdata.dta")
+#seed_skeleton(data=fldata, name="TR1_Greed_Versus_Grievance", depvarname="onset", ID="Greed_Versus_Grievance", description="Replication data for Fearon and Laitin greed versus grievance analysis", taskType="classification", taskSubType="binary", metric="f1Macro")
+
 
 fldata <- read.dta("repdata.dta")
-seed_skeleton(data=fldata, name="TR1_Greed_Versus_Grievance", depvarname="onset", ID="Greed_Versus_Grievance", description="Replication data for Fearon and Laitin greed versus grievance analysis", taskType="classification", taskSubType="binary", metric="f1Macro")
+fldata$onset[fldata$onset==4] <- 1
+seed_skeleton(data=fldata, samplesize=450000, name="TR21_Large_Scale_Greed", depvarname="onset", ID="Greed_Versus_Grievance", description="Replication data for Fearon and Laitin greed versus grievance analysis", taskType="classification", taskSubType="binary", metric="f1Macro")
 
-chdata <- read.dta("sxprepdata.dta")
-seed_skeleton(data=chdata, name="TR2_Resource_Curse", depvarname="chwars", ID="Resource_Curse", description="Replication data for Collier and Hoeffler resource curse analysis", taskType="classification", taskSubType="multiClass", metric="f1Macro")
 
-pitfdata1<-read.delim("pitf_tab1_mod1.tsv")
-pitfdata2<-read.delim("pitf_tab3_modFL.tsv")
-pitfdata3<-read.delim("pitf_tab3_modPITF.tsv")
-seed_skeleton(data=pitfdata1, name="TR3a_PITF", depvarname="sftpcons", ID="Forecasting_Political_Instability", description="Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, primary model.", taskType="classification", taskSubType="binary", metric="f1Macro")
-seed_skeleton(data=pitfdata2, name="TR3b_PITF", depvarname="sftpcons", ID="Forecasting_Political_Instability", description="Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, with Fearon and Laitin comparison.", taskType="classification", taskSubType="binary", metric="f1Macro")
-seed_skeleton(data=pitfdata3, name="TR3c_PITF", depvarname="sftpcons", ID="Forecasting_Political_Instability", description="Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, primary model on Fearon Laitin observations", taskType="classification", taskSubType="binary", metric="f1Macro")
+
+#chdata <- read.dta("sxprepdata.dta")
+#seed_skeleton(data=chdata, name="TR2_Resource_Curse", depvarname="chwars", ID="Resource_Curse", description="Replication data for Collier and Hoeffler resource curse analysis", taskType="classification", taskSubType="multiClass", metric="f1Macro")
+
+#pitfdata1<-read.delim("pitf_tab1_mod1.tsv")
+#pitfdata2<-read.delim("pitf_tab3_modFL.tsv")
+#pitfdata3<-read.delim("pitf_tab3_modPITF.tsv")
+#seed_skeleton(data=pitfdata1, name="TR3a_PITF", depvarname="sftpcons", ID="Forecasting_Political_Instability", description="Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, primary model.", taskType="classification", taskSubType="binary", metric="f1Macro")
+#seed_skeleton(data=pitfdata2, name="TR3b_PITF", depvarname="sftpcons", ID="Forecasting_Political_Instability", description="Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, with Fearon and Laitin comparison.", taskType="classification", taskSubType="binary", metric="f1Macro")
+#seed_skeleton(data=pitfdata3, name="TR3c_PITF", depvarname="sftpcons", ID="Forecasting_Political_Instability", description="Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, primary model on Fearon Laitin observations", taskType="classification", taskSubType="binary", metric="f1Macro")
 
