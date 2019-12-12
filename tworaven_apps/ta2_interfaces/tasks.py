@@ -210,15 +210,18 @@ def split_dataset(configuration, workspace):
 
     train_datasetDoc, train_datasetCsv = get_dataset_paths('train')
     test_datasetDoc, test_datasetCsv = get_dataset_paths('test')
+    all_datasetDoc, all_datasetCsv = get_dataset_paths('all')
 
     dataset_schemas = {
         'train': train_datasetDoc,
-        'test': test_datasetDoc
+        'test': test_datasetDoc,
+        'all': all_datasetDoc
     }
 
     dataset_paths = {
         'train': train_datasetCsv,
-        'test': test_datasetCsv
+        'test': test_datasetCsv,
+        'all': all_datasetCsv
     }
 
     dataset_stratified = {
@@ -239,6 +242,8 @@ def split_dataset(configuration, workspace):
         for split_name in ['train', 'test']:
             with open(dataset_paths[split_name], 'w') as stubfile:
                 stubfile.write(header_line)
+        with open(dataset_paths['all'], 'w') as stubfile:
+            stubfile.write(header_line)
 
         row_count = sum(1 for _ in infile)
 
@@ -310,14 +315,20 @@ def split_dataset(configuration, workspace):
             splits = run_split()
 
         max_count = 5e4
-        chunk_count = len(splits['train'])
-        sample_count = int(max_count / (row_count * train_test_ratio) * chunk_count)
-        if sample_count < chunk_count:
-            splits['train'] = splits['train'].sample(sample_count)
+        chunk_count = len(dataframe)
+        sample_count = int(max_count / row_count * chunk_count)
 
         for split_name in ['train', 'test']:
+            if sample_count < chunk_count:
+                splits[split_name] = splits[split_name].sample(sample_count)
+
             splits[split_name].to_csv(dataset_paths[split_name], mode='a', header=False, index=False)
             dataset_stratified[split_name] = dataset_stratified[split_name] and splits['stratified']
+
+        if sample_count < chunk_count:
+            dataframe = dataframe.sample(sample_count)
+
+        dataframe.to_csv(dataset_paths['all'], mode='a', header=False, index=False)
 
     return {
         'dataset_schemas': dataset_schemas,

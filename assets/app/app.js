@@ -1797,9 +1797,11 @@ export let materializeTrainTest = async problem => {
         return false;
     }
 
+    problem.datasetSchemas.all = response.data.dataset_schemas.all;
     problem.datasetSchemas.train = response.data.dataset_schemas.train;
     problem.datasetSchemas.test = response.data.dataset_schemas.test;
 
+    problem.datasetPaths.all = response.data.dataset_paths.all;
     problem.datasetPaths.train = response.data.dataset_paths.train;
     problem.datasetPaths.test = response.data.dataset_paths.test;
 
