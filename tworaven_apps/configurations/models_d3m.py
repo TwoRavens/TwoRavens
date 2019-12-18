@@ -9,7 +9,7 @@ import json
 import jsonfield
 from django.db import models
 from django.urls import reverse
-from django.template.defaultfilters import slugify
+from django.utils.text import slugify
 
 from model_utils.models import TimeStampedModel
 from django.db import transaction

@@ -1,35 +1,37 @@
 """
-** For working with new user datasets, use the "user_dataset_util.py" 
+** For working with new user datasets, use the "user_dataset_util.py" **
 
-For the **augment process**, complete the following steps:
+Complete the following steps:
 
-- retrieve the user's workspace
 - construct folders to replicate the D3M format
-- move the augmented file into the new folders, renaming it
-- create problem docs using rook endpoint and move files into new folder structure
+- move the user file into the new folders, renaming it
+- create a dataset doc
+- X - create problem docs using rook endpoint and move files into new folder structure
 - build and save a new D3m config database entry based on the new folders
 
 """
 from os.path import dirname, isdir, isfile, join
 from collections import OrderedDict
 
+from django.utils.text import slugify
+
 from tworaven_apps.utils.dict_helper import get_dict_value
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
-from tworaven_apps.utils.json_helper import json_dumps # json_loads
 from tworaven_apps.utils.file_util import \
-    (create_directory, move_file, write_file, read_file_contents)
+    (create_directory)
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
-from tworaven_apps.R_services.make_datadocs_util import MakeDatadocsUtil
+
+from tworaven_apps.raven_auth.models import User
+
 from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
 from tworaven_apps.ta2_interfaces.websocket_message import WebsocketMessage
-from tworaven_apps.data_prep_utils.static_vals import DATAMART_AUGMENT_PROCESS
+from tworaven_apps.data_prep_utils.static_vals import ADD_USER_DATASET_PROCESS
+from tworaven_apps.data_prep_utils.dataset_doc_maker import DatasetDocMaker
+
 from tworaven_apps.configurations.utils import \
     (get_config_file_contents,)
 from tworaven_apps.user_workspaces.utils import \
-    (get_user_workspace_by_id,
-     create_new_user_workspace)
-
-from tworaven_apps.datamart_endpoints import static_vals as dm_static
+    (create_new_user_workspace,)
 
 from tworaven_apps.utils.random_info import \
     (get_alpha_string,)
@@ -37,6 +39,7 @@ from tworaven_apps.utils.random_info import \
 from tworaven_apps.configurations.models_d3m import \
     (KEY_DATASET_SCHEMA,
      KEY_PROBLEM_SCHEMA)
+
 from tworavensproject.celery import celery_app
 
 import logging
@@ -44,36 +47,52 @@ import logging
 LOGGER = logging.getLogger(__name__)
 
 
-class NewDatasetUtil(BasicErrCheck):
+class UserDatasetUtil(BasicErrCheck):
     """Create a config based on a dict containing key value
     pairs based on the D3M environment variables
     - Includes static method to load from actual environment variables
     - Verify required directories
     - Create any needed subdirectories"""
 
-    def __init__(self, user_workspace_id, source_file, **kwargs):
+    def __init__(self, user_id, orig_source_file, writable_output_dir, **kwargs):
         """Only need a dataset id to start"""
-        self.user_workspace_id = user_workspace_id
-        self.user_workspace = None
-        self.d3m_config = None
+        self.user_id = user_id
+        self.user = None
 
-        self.dataset_id = None
-        self.orig_source_file = source_file
-        self.orig_dataset_doc = kwargs.get(dm_static.KEY_DATASET_DOC_PATH, None)
+        # Where the new dataset folders/files will be created
+        self.writable_output_dir = writable_output_dir
+        self.orig_source_file = orig_source_file
+
+        self.new_dataset_dir = None
 
         # optional for websocket messages
         #
         self.websocket_id = kwargs.get('websocket_id')
 
+        # optional new dataset name
+        #
+        self.dataset_name = kwargs.get('dataset_name')
+        if not self.dataset_name:
+            self.dataset_name = f'dataset_{get_alpha_string(7)}'
+
+        #self.user_workspace_id = user_workspace_id
+        #self.user_workspace = None
+
+        self.d3m_config = None
+
+        self.dataset_id = None
+
+
         # to be created
         self.dataset_id = None
         self.dataset_root_dir = None
-        self.tables_dir = None  # where source file is copied: learningData.csv
+        self.dataset_tables_dir = None  # where source file is copied: learningData.csv
         self.dataset_dir = None
         self.problem_dir = None # where problem dir will be written
 
         # destination for the self.orig_source_file
         self.new_source_file = None
+
         # destination for the self.orig_dataset_doc
         self.new_dataset_doc_file = None
 
@@ -85,10 +104,10 @@ class NewDatasetUtil(BasicErrCheck):
 
 
     @staticmethod
-    def make_new_dataset_call(user_workspace_id, source_file, **kwargs):
+    def make_new_dataset(user_id, source_file, writable_output_dir, **kwargs):
         """Return the result of a SearchSolutions call.
         If successful, an async process is kicked off"""
-        if not user_workspace_id:
+        if not user_id:
             return err_resp('user_workspace_id must be set')
 
         if not source_file:
@@ -97,71 +116,35 @@ class NewDatasetUtil(BasicErrCheck):
         if not isfile(source_file):
             return err_resp('source_file not found: %s' % source_file)
 
+        if not isdir(writable_output_dir):
+            return err_resp('writable_output_dir not found: %s' % writable_output_dir)
 
-        # Async task to run augment process
+        # Async task to run new dataset process
         #
-        NewDatasetUtil.kick_off_augment_steps.delay(\
-                user_workspace_id, source_file, **kwargs)
+        UserDatasetUtil.kick_off_new_dataset_steps.delay(\
+                user_id, source_file, writable_output_dir, **kwargs)
 
-        return ok_resp('augment process started')
+        return ok_resp('make_new_dataset process started')
+
 
     @staticmethod
     @celery_app.task(ignore_result=True)
-    def kick_off_augment_steps(user_workspace_id, source_file, **kwargs):
+    def kick_off_new_dataset_steps(user_id, source_file, writable_output_dir, **kwargs):
         """Run this async"""
-        ndu = NewDatasetUtil(user_workspace_id, source_file, **kwargs)
+        user_dataset_util = UserDatasetUtil(\
+                            user_id, source_file, writable_output_dir, **kwargs)
 
 
     @staticmethod
-    def create_dataset_id(old_id=None):
+    def create_dataset_id(dataset_name=None):
         """Construct an updated Dataset id"""
-        if old_id:
-            aug_idx = old_id.find('-aug-')
-            if aug_idx > 1:
-                # to stop appending multiple '-aug-rndchr' strings
-                old_id = old_id[:aug_idx]
+        if dataset_name:
+            return '%s-%s' % (dataset_name,
+                              get_alpha_string(6))
 
-            return '%s-aug-%s' % (old_id,
-                                  get_alpha_string(6))
-            #return '%s-%s-%s' % (old_id,
-            #                     get_timestamp_string(no_breaks=True),
-            #s                     get_alpha_string(6))
-
-        return 'aug-%s' % (get_alpha_string(6),)
+        return 'dataset-%s' % (get_alpha_string(6),)
                                  #get_timestamp_string(no_breaks=True))
 
-
-    def retrieve_workspace(self):
-        """Retrieve UserWorkspace and D3M config"""
-        ws_info = get_user_workspace_by_id(self.user_workspace_id)
-        if not ws_info.success:
-            self.send_websocket_err_msg(ws_info.err_msg)
-            return False
-
-        self.user_workspace = ws_info.result_obj
-        self.d3m_config = self.user_workspace.d3m_config
-        self.dataset_id = NewDatasetUtil.create_dataset_id(self.d3m_config.name)
-        return True
-
-    def show_info(self):
-        """Some debug print statements"""
-        print('dataset_id', self.dataset_id)
-        print('\ntables dir', self.tables_dir)
-        print('\nproblem dir', self.problem_dir)
-        print('\nnew_source_file', self.new_source_file)
-        print('\nnew_dataset_doc_file', self.new_dataset_doc_file)
-
-        if self.rook_params:
-            print('rook_info keys', self.rook_params.keys())
-            """
-            rook_info = json_dumps(self.rook_params, indent=4)
-            if rook_info.success:
-                print('rook_info', rook_info.result_obj)
-            """
-        else:
-            print('no rook params')
-        print('\nnew_d3m_config', self.new_d3m_config)
-        print('\nnew_workspace', self.new_workspace)
 
     def send_websocket_err_msg(self, user_msg):
         """Send an error messsage over websockets"""
@@ -179,7 +162,7 @@ class NewDatasetUtil(BasicErrCheck):
         # ----------------------------------
         # Send Websocket message
         # ----------------------------------
-        ws_msg = WebsocketMessage.get_fail_message(DATAMART_AUGMENT_PROCESS,
+        ws_msg = WebsocketMessage.get_fail_message(ADD_USER_DATASET_PROCESS,
                                                    user_msg)
         ws_msg.send_message(self.websocket_id)
 
@@ -193,35 +176,40 @@ class NewDatasetUtil(BasicErrCheck):
     def run_construct_dataset(self):
         """Go through the steps...."""
         LOGGER.info('>>> run_construct_dataset')
-        if not isfile(self.orig_source_file):
-            user_msg = 'File does not exists: %s' % self.orig_source_file
+
+        try:
+            self.user = User.objects.get(pk=self.user_id)
+        except User.DoesNotExist:
+            user_msg = 'No user found for id: %s' % self.user_id
             self.send_websocket_err_msg(user_msg)
             return
 
-        LOGGER.info('(1) retrieve workspace')
-        if not self.retrieve_workspace():
+        if not isfile(self.orig_source_file):
+            user_msg = f'File does not exists: {self.orig_source_file}'
+            self.send_websocket_err_msg(user_msg)
             return
 
-        LOGGER.info('(2) construct_folders')
+        if not isdir(self.writable_output_dir):
+            user_msg = f'Directory does not exists: {self.writable_output_dir}'
+            self.send_websocket_err_msg(user_msg)
+            return
+
+        LOGGER.info('(1) construct_folders')
         if not self.construct_folders():
             return
 
-        LOGGER.info('(3) move_source_files')
-        if not self.move_source_files():
+        LOGGER.info('(2) create dataset doc + move file to .csv')
+        if not self.create_files():
             return
 
-        #LOGGER.info('(4) create problem docs (and dataset doc, if needed)')
-        #if not self.create_problem_data_docs():
-        #    return
-
-        LOGGER.info('(4) create_new_config')
+        LOGGER.info('(3) create_new_config')
         self.create_new_config()
 
         # self.send_websocket_err_msg(':( - the augment did not work')
 
         if not self.has_error() and self.websocket_id:
             ws_msg = WebsocketMessage.get_success_message(\
-                        DATAMART_AUGMENT_PROCESS,
+                        ADD_USER_DATASET_PROCESS,
                         'New user workspace created: %s' % self.new_workspace,
                         msg_cnt=1)
             ws_msg.send_message(self.websocket_id)
@@ -236,8 +224,7 @@ class NewDatasetUtil(BasicErrCheck):
         if self.has_error():
             return
 
-        params = dict(orig_dataset_id=self.d3m_config.name,
-                      is_default_config=False,  # don't want it as default for everyone
+        params = dict(is_default_config=False,  # don't want it as default for everyone
                       is_user_config=True)
 
         print('create_new_config 1')
@@ -258,11 +245,10 @@ class NewDatasetUtil(BasicErrCheck):
         # Create new UserWorkspace
         # ---------------------------
         print('create_new_config 4')
-        params = dict(previous_workspace=self.user_workspace)
         ws_info = create_new_user_workspace(\
-                                    self.user_workspace.user,
-                                    self.new_d3m_config,
-                                    **params)
+                                    self.user,
+                                    self.new_d3m_config)
+
         if not ws_info.success:
             self.send_websocket_err_msg('Error creating workspace: %s' % \
                              ws_info.err_msg)
@@ -276,7 +262,7 @@ class NewDatasetUtil(BasicErrCheck):
 
 
     def construct_folders(self):
-        """Create the folder structure"""
+        """Create the folder structure + D3MConfig object"""
         """
            new_dataset_id
            └── TRAIN
@@ -291,24 +277,18 @@ class NewDatasetUtil(BasicErrCheck):
         if self.has_error():
             return False
 
-        d3m_config = self.user_workspace.d3m_config #et_latest_d3m_config()
-        if not d3m_config:
-            user_msg = 'Latest D3M configuration not found. (construct_folders)'
+        if not isdir(self.writable_output_dir):
+            user_msg = f'UserDatasetUtil. This directory does not exist: {self.writable_output_dir}'
             self.send_websocket_err_msg(user_msg)
             return False
 
-        if (not d3m_config.additional_inputs) or \
-            (not isdir(d3m_config.additional_inputs)):
-            user_msg = ('Additional inputs folder does not exist! %s') % \
-                        (d3m_config.additional_inputs,)
-            self.send_websocket_err_msg(user_msg)
-            return False
+        self.dataset_id = slugify(self.dataset_name[:15] + get_alpha_string(4))
+
+        self.dataset_root_dir = join(self.writable_output_dir, self.dataset_id)
 
         # ---------------------------------------
-        # Create the problem_TRAIN
+        # Create the problem_TRAIN directory
         # ---------------------------------------
-        self.dataset_root_dir = join(d3m_config.additional_inputs,
-                                     self.dataset_id)
         self.problem_dir = join(self.dataset_root_dir,
                                 'TRAIN',
                                 'problem_TRAIN')
@@ -323,62 +303,33 @@ class NewDatasetUtil(BasicErrCheck):
         # ---------------------------------------
         # Create the tables dir
         # ---------------------------------------
-        self.tables_dir = join(self.dataset_root_dir,
-                               'TRAIN',
-                               'dataset_TRAIN',
-                               'tables')
-        LOGGER.info('       - tables_dir: %s', self.tables_dir)
+        self.dataset_tables_dir = join(self.dataset_root_dir,
+                                       'TRAIN',
+                                       'dataset_TRAIN',
+                                       'tables')
 
-        dir_info = create_directory(self.tables_dir)
+        dir_info = create_directory(self.dataset_tables_dir)
         if not dir_info.success:
             self.send_websocket_err_msg(dir_info.err_msg)
             return False
-        self.dataset_dir = dirname(self.tables_dir)
+        self.dataset_dir = dirname(self.dataset_tables_dir)
         return True
 
-    def move_source_files(self):
-        """Copy file to learningData.csv
-        If it exists, also move the new dataset doc
-        """
+
+    def create_files(self):
+        """Create a dataset doc and conver/move the source file"""
         if self.has_error():
             return False
 
-        self.new_source_file = join(self.tables_dir, 'learningData.csv')
-        if isfile(self.new_source_file):
-            user_msg = 'Destination file already exists: %s' % self.new_source_file
-            self.send_websocket_err_msg(user_msg)
+        ddm = DatasetDocMaker(self.orig_source_file, self.dataset_dir)
+
+        if ddm.has_error():
+            self.send_websocket_err_msg(ddm.error_message)
             return False
 
-        move_info = move_file(self.orig_source_file, self.new_source_file)
-        if not move_info.success:
-            self.send_websocket_err_msg('Failed to move data file: %s' % move_info.err_msg)
-            return False
-
-        # -----------------------------------------------------------
-        # Optional: move the dataset doc, if it exists
-        #   e.g. NYU augment includes a datasetDoc.json`
-        # -----------------------------------------------------------
-        if not self.orig_dataset_doc:
-            return True
-
-
-        if not isfile(self.orig_dataset_doc):
-            user_msg = (f'The new DatasetDoc was not found: '
-                        f' {self.orig_dataset_doc}')
-            self.send_websocket_err_msg(user_msg)
-            return False
-
-        # Set the destination as TRAIN/dataset_TRAIN
-        #  (tables_dir = .../TRAIN/dataset_TRAIN/tables)
-        #
-        self.new_dataset_doc_file = join(dirname(self.tables_dir),
-                                         'datasetDoc.json')
-
-        move_info2 = move_file(self.orig_dataset_doc, self.new_dataset_doc_file)
-        if not move_info2.success:
-            self.send_websocket_err_msg('Failed to move data file: %s' % \
-                                        move_info2.err_msg)
-            return False
+        print('it worked!')
+        print(ddm.dataset_doc_path)
+        print(ddm.final_data_file_path)
 
         return True
 
@@ -531,134 +482,3 @@ class NewDatasetUtil(BasicErrCheck):
         params['datasetDoc'] = dataset_doc
 
         return params
-
-
-    def xxcreate_problem_data_docs(self):
-        """NOT USED.  NO PROBLEM DOC NEEDED. Send params to rook app"""
-        if self.has_error():
-            return False
-
-        self.rook_params = self.get_makedoc_rook_params()
-        if not self.rook_params:
-            return False
-
-        """
-        Warning: This is copying what is in mkdocs for now.
-         - The problem should be sourced from raven_config
-         - The target columns may not be the same as the original dataset
-            - To do: find correct column in new dataset doc
-        """
-        # -------------------------------------------------
-        # Update the index of the target variable to by
-        #  locating its position in the new datasetDoc
-        # -------------------------------------------------
-        print('type(self.rook_params)', type(self.rook_params))
-        dependent_varname = self.rook_params['targets'][0]['colName']
-        dependent_idx = None
-
-        # Iterate through columns until it is found
-        for col_info in self.rook_params['datasetDoc']['dataResources'][0]['columns']:
-            if col_info.get('colName') == dependent_varname:
-                dependent_idx = col_info['colIndex']
-
-        if not dependent_idx:
-            self.add_err_msg(\
-                    (f'Could not find "colIdx" of the target, within'
-                     f' the new datasetDoc.  colName: "{dependent_varname}"'))
-            return False
-
-        # Make the update
-        self.rook_params['targets'][0]['colIndex'] = dependent_idx
-
-        # ----------------------------------------
-        # Update the problemDoc
-        # ----------------------------------------
-        new_pdoc = self.rook_params['problemDoc']
-
-        new_pdoc['about']['problemID'] = '%s_problem' % self.rook_params['datasetid']
-
-        new_pdoc['about']['problemName'] = '%s_problem' % self.rook_params['name']
-
-        new_pdoc['about']['taskType'] = self.rook_params['taskType']
-
-        if 'taskSubType' in new_pdoc['about']:
-            new_pdoc['about']['taskSubType'] = self.rook_params['taskSubType']
-            if new_pdoc['about']['taskSubType'] == "remove":
-                del new_pdoc['about']['taskSubType']
-
-        # May be incorrect, the column order may not have been kept
-        #
-        new_pdoc['inputs']['data'][0]['targets'] = self.rook_params['targets']
-
-        new_pdoc['inputs']['performanceMetrics'] = self.rook_params['performanceMetrics']
-
-        new_pdoc['inputs']['data'][0]['datasetID'] = self.rook_params['datasetid']
-
-        # -----------------------------
-        # write problemDoc
-        # -----------------------------
-        pdoc_json_info = json_dumps(new_pdoc, indent=4)
-        if not pdoc_json_info.success:
-            user_msg = 'Failed to convert the problemDoc to JSON. (augment id:5)'
-            self.send_websocket_err_msg(user_msg)
-            return False
-
-        problem_doc_path = join(self.problem_dir, 'problemDoc.json')
-        finfo2 = write_file(problem_doc_path, pdoc_json_info.result_obj)
-        if not finfo2.success:
-            self.send_websocket_err_msg(finfo2.err_msg)
-            return False
-
-        return True
-
-    def xx_deprecated_create_problem_data_docs(self):
-        """No longer used! No problem doc needed!  Send params to rook app"""
-        if self.has_error():
-            return False
-
-        self.rook_params = self.get_makedoc_rook_params()
-        if not self.rook_params:
-            return False
-
-        import json
-        print('self.rook_params', json.dumps(self.rook_params, indent=4))
-
-        md_util = MakeDatadocsUtil(rook_params=self.rook_params)
-        if md_util.has_error():
-            self.send_websocket_err_msg('Rook error. %s' % md_util.get_error_message())
-            return False
-
-        # -----------------------------
-        # write datasetDoc
-        # -----------------------------
-        if self.new_dataset_doc_file and isfile(self.new_dataset_doc_file):
-            pass # use the datasetDoc.json from the datamart
-        else:
-            doc_info = md_util.get_dataset_doc_string()
-            if not doc_info.success:
-                self.send_websocket_err_msg('Rook datasetDoc error. %s' % \
-                                 doc_info.err_msg)
-                return False
-
-            dataset_doc_path = join(self.dataset_dir, 'datasetDoc.json')
-            finfo = write_file(dataset_doc_path, doc_info.result_obj)
-            if not finfo.success:
-                self.send_websocket_err_msg(finfo.err_msg)
-                return False
-
-        # -----------------------------
-        # write problemDoc
-        # -----------------------------
-        doc_info2 = md_util.get_problem_doc_string()
-        if not doc_info2.success:
-            self.send_websocket_err_msg('Rook problemDoc error. %s' % \
-                             doc_info2.err_msg)
-            return False
-
-        problem_doc_path = join(self.problem_dir, 'problemDoc.json')
-        finfo2 = write_file(problem_doc_path, doc_info2.result_obj)
-        if not finfo2.success:
-            self.send_websocket_err_msg(finfo2.err_msg)
-            return False
-
-        return True
