@@ -2,3 +2,9 @@
 DATAMART_AUGMENT_PROCESS = 'DATAMART_AUGMENT_PROCESS'
 
 ADD_USER_DATASET_PROCESS = 'ADD_USER_DATASET_PROCESS'
+
+EXT_CSV = '.csv'
+
+DATASET_NAME_FROM_UI = 'name'   # from dataset.js
+
+DATASET_NAME = 'dataset_name'   # from dataset.js

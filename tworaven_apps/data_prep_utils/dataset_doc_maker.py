@@ -34,10 +34,10 @@ PROBLEM_SCHEMA_VERSION = '3.2.0'
 class DatasetDocMaker(BasicErrCheck):
     """Create a DatasetDoc and optional ProblemDoc"""
 
-    def __init__(self, input_data_path, dataset_output_dir, **kwargs): # about, problem={}):
+    def __init__(self, input_data_paths, dataset_output_dir, **kwargs): # about, problem={}):
 
         self.problem = kwargs.get('problem', {})
-        self.input_data_path = input_data_path
+        self.input_data_paths = input_data_paths
         self.dataset_output_dir = dataset_output_dir
 
         self.targets = self.problem.get('targets', [])
@@ -59,34 +59,22 @@ class DatasetDocMaker(BasicErrCheck):
 
         dataset_id = self.about['datasetName'].replace(' ', '_')
 
-        """
-        datasetPath = join(outputDir, datasetID)
-
-        datasetDir = join(datasetPath, 'TRAIN', 'dataset_TRAIN')
-        problemDir = join(datasetPath, 'TRAIN', 'problem_TRAIN')
-
-        os.makedirs(datasetDir, exist_ok=True)
-        os.makedirs(problemDir, exist_ok=True)
-        """
-        """
-
         # construct a mapping to output paths
-        outDataPaths = {}
-        for dataPath in self.dataPaths:
+        inout_data_paths = OrderedDict()
+        for src_data_path in self.input_data_paths:
             offset = 1
-            if os.path.splitext(dataPath)[1] in DSV_EXTENSIONS:
-                # filename, extension = os.path.splitext(os.path.basename(dataPath))
+            if os.path.splitext(src_data_path)[1] in DSV_EXTENSIONS:
+                # filename, extension = os.path.splitext(os.path.basename(src_data_path))
                 # TODO: disable this line once paths aren't hardcoded to 'learningData'
                 filename = 'learningData'
 
-                candidateName = join('tables', filename + '.csv')
-                while candidateName in outDataPaths:
+                candidate_name = join('tables', filename + '.csv')
+                while candidate_name in inout_data_paths.values():
                     offset += 1
-                    filename, extension = os.path.splitext(os.path.basename(dataPath))
-                    candidateName = join('tables', filename + offset + '.csv')
+                    #_name, extension = os.path.splitext(os.path.basename(src_data_path))
+                    candidate_name = join('tables', f'{filename}{offset}.csv')
+                inout_data_paths[src_data_path] = candidate_name
 
-                outDataPaths[candidateName] = dataPath
-        """
         def infer_roles(column_name):
             """Infer column role"""
             roles = []
@@ -105,58 +93,67 @@ class DatasetDocMaker(BasicErrCheck):
         # individually load, index, analyze, and save each dataset
         resource_configs = []
 
-        data = self.d3m_load_resource(self.input_data_path)
-        if not isinstance(data, pd.DataFrame):
-            user_msg = (f'Failed to load the file into a'
-                        f' data frame: {self.input_data_path}')
-            self.add_err_msg(user_msg)
-            return
+        # Iterate through input files / proposed output files
+        #   - Open the input file and write it as a .csv
+        #   - From each input file, gather information for the dataset doc
+        #
+        for input_path, output_data_path in inout_data_paths.items():
 
-        resourceID = os.path.splitext(os.path.basename(self.input_data_path))[0]
+            data = self.d3m_load_resource(input_path)
+            if not isinstance(data, pd.DataFrame):
+                user_msg = (f'Failed to load the file into a'
+                            f' data frame: {input_data_path}')
+                self.add_err_msg(user_msg)
+                return
 
-        columnConfigs = []
-        for colIndex, (colName, colType) in enumerate(zip(data.columns.values, data.dtypes)):
-            columnConfig = {
-                'colIndex': colIndex,
-                'colName': colName,
-                'colType': DTYPES.get(str(colType), None) or 'unknown',
-                'role': infer_roles(colName)
-            }
-            columnConfigs.append(columnConfig)
-            if columnConfig['role'][0] == 'suggestedTarget':
-                target_configs.append({
-                    'resID': resourceID,
+            resourceID = os.path.splitext(os.path.basename(input_path))[0]
+
+            columnConfigs = []
+            for colIndex, (colName, colType) in enumerate(zip(data.columns.values, data.dtypes)):
+                columnConfig = {
                     'colIndex': colIndex,
-                    'colName': colName
-                })
+                    'colName': colName,
+                    'colType': DTYPES.get(str(colType), None) or 'unknown',
+                    'role': infer_roles(colName)
+                }
+                columnConfigs.append(columnConfig)
+                if columnConfig['role'][0] == 'suggestedTarget':
+                    target_configs.append({
+                        'resID': resourceID,
+                        'colIndex': colIndex,
+                        'colName': colName
+                    })
 
-        output_data_path = join('tables', 'learningData.csv')
+            # output_data_path = join('tables', 'learningData.csv')
 
-        resource_configs.append({
-            'resID': resourceID,
-            'resPath': output_data_path,
-            'resType': 'table',
-            'resFormat': ['text/csv'],
-            'isCollection': False,
-            'columns': [
-                {
-                    'colIndex': i,
-                    'colName': column[0],
-                    'colType': DTYPES.get(str(column[1]), None) or 'unknown',
-                    'role': infer_roles(column[0])
-                } for i, column in enumerate(zip(data.columns.values, data.dtypes))
-            ]
-        })
+            resource_configs.append({
+                'resID': resourceID,
+                'resPath': output_data_path,
+                'resType': 'table',
+                'resFormat': ['text/csv'],
+                'isCollection': False,
+                'columns': [
+                    {
+                        'colIndex': i,
+                        'colName': column[0],
+                        'colType': DTYPES.get(str(column[1]), None) or 'unknown',
+                        'role': infer_roles(column[0])
+                    } for i, column in enumerate(zip(data.columns.values, data.dtypes))
+                ]
+            })
 
-        self.final_data_file_path = join(self.dataset_output_dir,
-                                         output_data_path)
+            final_data_file_path = join(self.dataset_output_dir,
+                                        output_data_path)
 
-        dir_info = create_directory(dirname(self.final_data_file_path))
-        if not dir_info.success:
-            self.add_err_msg(dir_info.err_msg)
-            return
 
-        data.to_csv(self.final_data_file_path, index=False)
+            #print('final_data_file_path', final_data_file_path)
+
+            dir_info = create_directory(dirname(final_data_file_path))
+            if not dir_info.success:
+                self.add_err_msg(dir_info.err_msg)
+                return
+
+            data.to_csv(final_data_file_path, index=False)
 
         # write dataset config
         self.dataset_doc_path = join(self.dataset_output_dir, 'datasetDoc.json')

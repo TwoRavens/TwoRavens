@@ -7,6 +7,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, Http404, JsonResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
+from django.conf import settings
 
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
@@ -14,6 +15,10 @@ from django.views.decorators.csrf import csrf_exempt
 from tworaven_apps.solver_interfaces.models import KEY_MESSAGE
 from tworaven_apps.ta2_interfaces.tasks import create_destination_directory
 from tworaven_apps.utils.view_helper import get_authenticated_user
+from tworaven_apps.data_prep_utils import static_vals as dp_static
+
+from tworaven_apps.utils.file_util import \
+    (create_directory, read_file_contents)
 
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
@@ -36,7 +41,7 @@ from tworaven_apps.configurations.utils import \
 from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
 from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
-
+from tworaven_apps.data_prep_utils.user_dataset_util import UserDatasetUtil
 
 @csrf_exempt
 def view_upload_dataset(request):
@@ -46,29 +51,57 @@ def view_upload_dataset(request):
         return JsonResponse(get_json_error(user_workspace_info.err_msg))
     user_workspace = user_workspace_info.result_obj
 
+    # Destination directory for learningData.csv, learningData#.csv, etc.
+    #   and about.json
+    #
     dest_dir_info = create_destination_directory(user_workspace, 'uploaded')
     if not dest_dir_info[KEY_SUCCESS]:
         return JsonResponse(get_json_error(dest_dir_info.err_msg))
     dest_directory = dest_dir_info[KEY_DATA]
 
+    print('view_upload_dataset. dest_directory', dest_directory)
+
+    # Save the about.json
+    #
     json_info = json_loads(request.POST.get('metadata'))
     if not json_info.success:
         return JsonResponse(get_json_error(json_info.err_msg))
 
     # save json data
-    with open(os.path.join(dest_directory, 'about.json'), 'w') as metadata_file:
-        json.dump(json_info.result_obj, metadata_file)
+    dataset_name = None
+    if dp_static.DATASET_NAME_FROM_UI in json_info.result_obj:
+        dataset_name = json_info.result_obj[dp_static.DATASET_NAME_FROM_UI]
 
-    # save file data
+    #with open(os.path.join(dest_directory, 'about.json'), 'w') as metadata_file:
+    #    json.dump(json_info.result_obj, metadata_file)
+
+    # Save data files
+    #
     for idx, file in enumerate(request.FILES.getlist('files')):
         with open(os.path.join(dest_directory, f'learningData{idx + 1 if idx else ""}.csv'), 'wb+') as outfile:
             for chunk in file.chunks():
                 outfile.write(chunk)
 
-    return JsonResponse({
-        KEY_SUCCESS: True,
-        KEY_MESSAGE: 'file upload completed successfully'
-    })
+    print('dest_directory', dest_directory)
+
+    # Create new dataset folders/etc
+    #
+    additional_inputs_dir = user_workspace.d3m_config.additional_inputs
+    created = create_directory(additional_inputs_dir)
+    if not created.success:
+        return JsonResponse(get_json_error(created.err_msg))
+
+    new_dataset_info = UserDatasetUtil.make_new_dataset(\
+                            user_workspace.user.id,
+                            dest_directory,
+                            settings.TWORAVENS_USER_DATASETS_DIR,
+                            **{dp_static.DATASET_NAME: dataset_name})
+
+    if not new_dataset_info.success:
+        return JsonResponse(get_json_error(new_dataset_info.err_msg))
+    #udu = UserDatasetUtil(1, input_files, output_dir)
+
+    return JsonResponse(get_json_success('file upload completed successfully'))
 
 
 @login_required
@@ -98,12 +131,23 @@ def view_list_dataset_choices(request):
     configs_serializable = [{key: getattr(config, key) for key in ['id', 'name']} for config in configs]
     return JsonResponse({KEY_SUCCESS: True, KEY_DATA: configs_serializable})
 
+@login_required
+def view_select_dataset_json_resp(request, config_id):
+    """Same as selecting a new dataset but instead of reloading
+    the page, send back a JSON response."""
+
+    return view_select_dataset(request,
+                               config_id=config_id,
+                               **dict(json_resp=True))
+
 
 @login_required
-def view_select_dataset(request, config_id=None):
+def view_select_dataset(request, config_id=None, **kwargs):
     """Clear lots of existing data and switch datasets"""
     if config_id is None:
         raise Http404('"config_id" is required')
+
+    json_resp = kwargs.get('json_resp', False)
 
     # The user is required...
     #
@@ -156,6 +200,9 @@ def view_select_dataset(request, config_id=None):
     else:
         print(set_info.err_msg)
 
-    # (7) Redirect to pebbles page
+    # (7) Redirect to pebbles page or send JSON success
     #
+    if json_resp:
+        return JsonResponse(get_json_success('New dataset ready.'))
+
     return HttpResponseRedirect(reverse('home'))

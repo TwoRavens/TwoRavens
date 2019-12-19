@@ -30,6 +30,12 @@ urlpatterns = (
             views_new_dataset.view_select_dataset,
             name='view_select_dataset'),
 
+    re_path(r'^select-dataset-json-resp/(?P<config_id>\d{1,7})$',
+            views_new_dataset.view_select_dataset_json_resp,
+            name='view_select_dataset_json_resp'),
+
+
+
     re_path(r'^select-dataset/$',
             views_new_dataset.view_select_dataset,
             name='view_select_dataset_base'),

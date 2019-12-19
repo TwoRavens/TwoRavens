@@ -10,6 +10,7 @@ Complete the following steps:
 - build and save a new D3m config database entry based on the new folders
 
 """
+import os
 from os.path import dirname, isdir, isfile, join
 from collections import OrderedDict
 
@@ -24,9 +25,12 @@ from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.raven_auth.models import User
 
 from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
+from tworaven_apps.configurations.models_d3m import D3MConfiguration
 from tworaven_apps.ta2_interfaces.websocket_message import WebsocketMessage
 from tworaven_apps.data_prep_utils.static_vals import ADD_USER_DATASET_PROCESS
 from tworaven_apps.data_prep_utils.dataset_doc_maker import DatasetDocMaker
+
+from tworaven_apps.data_prep_utils import static_vals as dp_static
 
 from tworaven_apps.configurations.utils import \
     (get_config_file_contents,)
@@ -54,14 +58,14 @@ class UserDatasetUtil(BasicErrCheck):
     - Verify required directories
     - Create any needed subdirectories"""
 
-    def __init__(self, user_id, orig_source_file, writable_output_dir, **kwargs):
+    def __init__(self, user_id, orig_source_files, writable_output_dir, **kwargs):
         """Only need a dataset id to start"""
         self.user_id = user_id
         self.user = None
 
         # Where the new dataset folders/files will be created
         self.writable_output_dir = writable_output_dir
-        self.orig_source_file = orig_source_file
+        self.orig_source_files = orig_source_files
 
         self.new_dataset_dir = None
 
@@ -71,7 +75,7 @@ class UserDatasetUtil(BasicErrCheck):
 
         # optional new dataset name
         #
-        self.dataset_name = kwargs.get('dataset_name')
+        self.dataset_name = kwargs.get(dp_static.DATASET_NAME)
         if not self.dataset_name:
             self.dataset_name = f'dataset_{get_alpha_string(7)}'
 
@@ -90,9 +94,6 @@ class UserDatasetUtil(BasicErrCheck):
         self.dataset_dir = None
         self.problem_dir = None # where problem dir will be written
 
-        # destination for the self.orig_source_file
-        self.new_source_file = None
-
         # destination for the self.orig_dataset_doc
         self.new_dataset_doc_file = None
 
@@ -104,27 +105,38 @@ class UserDatasetUtil(BasicErrCheck):
 
 
     @staticmethod
-    def make_new_dataset(user_id, source_file, writable_output_dir, **kwargs):
+    def make_new_dataset(user_id, source_dir, writable_output_dir, **kwargs):
         """Return the result of a SearchSolutions call.
         If successful, an async process is kicked off"""
         if not user_id:
             return err_resp('user_workspace_id must be set')
 
-        if not source_file:
-            return err_resp('source_file must be set')
-
-        if not isfile(source_file):
-            return err_resp('source_file not found: %s' % source_file)
+        if not isdir(source_dir):
+            return err_resp('source_dir not found: %s' % source_dir)
 
         if not isdir(writable_output_dir):
             return err_resp('writable_output_dir not found: %s' % writable_output_dir)
 
-        # Async task to run new dataset process
-        #
-        UserDatasetUtil.kick_off_new_dataset_steps.delay(\
-                user_id, source_file, writable_output_dir, **kwargs)
+        source_files = [join(source_dir, x)
+                        for x in os.listdir(source_dir)
+                        if x.lower().endswith(dp_static.EXT_CSV)]
 
-        return ok_resp('make_new_dataset process started')
+        if not source_files:
+            return err_resp(f'No source files found in directory: {source_dir}')
+
+        udu = UserDatasetUtil(1, source_files, writable_output_dir, **kwargs)
+        if udu.has_error():
+            return err_resp(udu.error_message)
+
+        return ok_resp('it worked')
+
+        # check for about.json
+
+
+        #UserDatasetUtil.kick_off_new_dataset_steps.delay(\
+        #        user_id, source_files, writable_output_dir, **kwargs)
+
+        #return ok_resp('make_new_dataset process started')
 
 
     @staticmethod
@@ -184,10 +196,11 @@ class UserDatasetUtil(BasicErrCheck):
             self.send_websocket_err_msg(user_msg)
             return
 
-        if not isfile(self.orig_source_file):
-            user_msg = f'File does not exists: {self.orig_source_file}'
-            self.send_websocket_err_msg(user_msg)
-            return
+        for src_file in self.orig_source_files:
+            if not isfile(src_file):
+                user_msg = f'File does not exists: {src_file}'
+                self.send_websocket_err_msg(user_msg)
+                return
 
         if not isdir(self.writable_output_dir):
             user_msg = f'Directory does not exists: {self.writable_output_dir}'
@@ -227,7 +240,7 @@ class UserDatasetUtil(BasicErrCheck):
         params = dict(is_default_config=True,  # don't want it as default for everyone
                       is_user_config=False)
 
-        print('create_new_config 1')
+        print('create_new_config 1', self.dataset_root_dir)
         ecl_info = EnvConfigLoader.make_config_from_directory(\
                                     self.dataset_root_dir, **params)
 
@@ -239,7 +252,17 @@ class UserDatasetUtil(BasicErrCheck):
             return
 
         self.new_d3m_config = ecl_info.result_obj
-        print('create_new_config 3; new_d3m_config ', self.new_d3m_config)
+
+        # Put this code somewhere else! lke EnvConfigLoader
+        #
+        new_config_name = self.dataset_name
+        offset = 1
+        while D3MConfiguration.objects.filter(name=new_config_name).count() > 0:
+            offset += 1
+            new_config_name = f'{self.dataset_name}-{str(offset).zfill(3)}'
+
+        self.new_d3m_config.name = new_config_name
+        self.new_d3m_config.save()
 
         # -------------------------
         # Create new UserWorkspace
@@ -321,7 +344,7 @@ class UserDatasetUtil(BasicErrCheck):
         if self.has_error():
             return False
 
-        ddm = DatasetDocMaker(self.orig_source_file, self.dataset_dir)
+        ddm = DatasetDocMaker(self.orig_source_files, self.dataset_dir)
 
         if ddm.has_error():
             self.send_websocket_err_msg(ddm.error_message)
@@ -332,153 +355,3 @@ class UserDatasetUtil(BasicErrCheck):
         print(ddm.final_data_file_path)
 
         return True
-
-    def get_makedoc_rook_params(self):
-        """Prepare the problem and dataset docs
-        info to send to mkdocs class:
-
-        datafile: path to data file
-
-        ---------------------------
-        # DATA DOC vals
-        ---------------------------
-        datasetid: datasetID from DATA DOC plus timestamp plus unique id
-
-        name: datasetName from DATA DOC plus (augmented)
-
-        description: description from DATA DOC, plus maybe any description of augmented data
-
-        citation: citation in data doc, plus maybe anything from augmented data
-
-        ---------------------------
-        # PROBLEM DOC vals
-        ---------------------------
-        taskType: taskType from PROBLEM DOC
-
-        taskSubType: taskSubType from PROBLEM DOC
-            - Optional! don't send if it's not there
-
-        targets: data.targets[...] from PROBLEM DOC, can be more than one object
-
-        metric: performanceMetrics[...] from PROBLEM DOC, can be more than one
-
-        performanceMetrics: performanceMetrics[...] from problem doc, can be more than one
-
-        problemDoc: entire problemDoc.json
-        datasetDoc: entire datasetDoc.json
-        """
-        if self.has_error():
-            return None
-
-        params = OrderedDict()
-
-        params['datafile'] = self.new_source_file
-        params['datasetid'] = self.dataset_id
-
-        # --------------------------------
-        # get dataset doc info. If one doesn't exist
-        #   from datamart, then make one
-        # --------------------------------
-        if self.new_dataset_doc_file and isfile(self.new_dataset_doc_file):
-            read_info = read_file_contents(self.new_dataset_doc_file,
-                                           as_dict=True)
-            if not read_info.success:
-                user_msg = ('Failed to open the dataset doc. %s') % \
-                            (read_info.err_msg,)
-                self.send_websocket_err_msg(user_msg)
-                return None
-            dataset_doc = read_info.result_obj
-        else:
-            dataset_doc = get_config_file_contents(self.d3m_config,
-                                                   KEY_DATASET_SCHEMA)
-            if not dataset_doc.success:
-                user_msg = ('Failed to open the dataset doc. %s') % \
-                            (dataset_doc.err_msg,)
-                self.send_websocket_err_msg(user_msg)
-                return None
-            dataset_doc = dataset_doc.result_obj
-
-        # name
-        #
-        doc_val_info = get_dict_value(dataset_doc, 'about', 'datasetName')
-        if doc_val_info.success:
-            params['name'] = '%s (augmented)' % doc_val_info.result_obj
-        else:
-            self.send_websocket_err_msg('about.datasetName not found in dataset doc')
-            return None
-
-        # description - optional
-        #
-        doc_val_info = get_dict_value(dataset_doc, 'about', 'description')
-        if doc_val_info.success:
-            params['description'] = '%s (augmented)' % doc_val_info.result_obj
-        else:
-            params['description'] = '(augmented data)'
-
-        # citation
-        #
-        doc_val_info = get_dict_value(dataset_doc, 'about', 'citation')
-        if doc_val_info.success:
-            params['citation'] = '[augmented] %s' % doc_val_info.result_obj
-        else:
-            params['citation'] = '(no citation)'
-
-        # --------------------------------
-        # get problem doc info
-        # --------------------------------
-        problem_doc = get_config_file_contents(self.d3m_config,
-                                               KEY_PROBLEM_SCHEMA)
-        if not problem_doc.success:
-            user_msg = ('Failed to open the problem doc. %s') % \
-                        (problem_doc.err_msg,)
-            self.send_websocket_err_msg(user_msg)
-            return None
-        problem_doc = problem_doc.result_obj
-
-        # taskType - required
-        #
-        task_type = get_dict_value(problem_doc, 'about', 'taskType')
-        if task_type.success:
-            params['taskType'] = task_type.result_obj
-        else:
-            self.send_websocket_err_msg('about.taskType not found in problem doc')
-            return None
-
-        # taskSubType - optional
-        #
-        subtask_type = get_dict_value(problem_doc, 'about', 'taskSubType')
-        if subtask_type.success:
-            params['taskSubType'] = subtask_type.result_obj
-
-        # targets
-        #
-        doc_val_info = get_dict_value(problem_doc, 'inputs', 'data')
-        if not doc_val_info.success:
-            self.send_websocket_err_msg('inputs.data not found in problem doc')
-            return None
-
-        if not doc_val_info.result_obj:
-            self.send_websocket_err_msg('inputs.data list is empty found in problem doc')
-            return None
-
-        try:
-            params['targets'] = doc_val_info.result_obj[0]['targets']
-        except KeyError:
-            self.send_websocket_err_msg('inputs.data.targets not found in problem doc')
-            return None
-
-        # performanceMetrics
-        #
-        doc_val_info = get_dict_value(problem_doc, 'inputs', 'performanceMetrics')
-        if not doc_val_info.success:
-            self.send_websocket_err_msg('inputs.performanceMetrics not found in problem doc')
-            return None
-        params['performanceMetrics'] = doc_val_info.result_obj
-
-
-        # Full docs at the end
-        #
-        params['problemDoc'] = problem_doc
-        params['datasetDoc'] = dataset_doc
-
-        return params
