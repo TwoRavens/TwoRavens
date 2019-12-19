@@ -175,12 +175,9 @@ seed_skeleton(data=fldata, samplesize=100000, name="TR24_Large_Scale_Greed", dep
 
 
 
-#chdata <- read.dta("sxprepdata.dta")
-#seed_skeleton(data=chdata, name="TR2_Resource_Curse", depvarname="chwars", ID="Resource_Curse", description="Replication data for Collier and Hoeffler resource curse analysis", taskType="classification", taskSubType="multiClass", metric="f1Macro")
-
-#pitfdata1<-read.delim("pitf_tab1_mod1.tsv")
-#pitfdata2<-read.delim("pitf_tab3_modFL.tsv")
-#pitfdata3<-read.delim("pitf_tab3_modPITF.tsv")
-#seed_skeleton(data=pitfdata1, name="TR3a_PITF", depvarname="sftpcons", ID="Forecasting_Political_Instability", description="Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, primary model.", taskType="classification", taskSubType="binary", metric="f1Macro")
-#seed_skeleton(data=pitfdata2, name="TR3b_PITF", depvarname="sftpcons", ID="Forecasting_Political_Instability", description="Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, with Fearon and Laitin comparison.", taskType="classification", taskSubType="binary", metric="f1Macro")
-#seed_skeleton(data=pitfdata3, name="TR3c_PITF", depvarname="sftpcons", ID="Forecasting_Political_Instability", description="Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, primary model on Fearon Laitin observations", taskType="classification", taskSubType="binary", metric="f1Macro")
+pitfdata1<-read.delim("pitf_tab1_mod1.tsv")
+pitfdata2<-read.delim("pitf_tab3_modFL.tsv")
+pitfdata3<-read.delim("pitf_tab3_modPITF.tsv")
+seed_skeleton(data=pitfdata1, name="TR3a_PITF", depvarname="sftpcons", ID="Forecasting_Political_Instability", description="Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, primary model.", taskType="classification", taskSubType="binary", metric="f1Macro")
+seed_skeleton(data=pitfdata2, name="TR3b_PITF", depvarname="sftpcons", ID="Forecasting_Political_Instability", description="Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, with Fearon and Laitin comparison.", taskType="classification", taskSubType="binary", metric="f1Macro")
+seed_skeleton(data=pitfdata3, name="TR3c_PITF", depvarname="sftpcons", ID="Forecasting_Political_Instability", description="Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, primary model on Fearon Laitin observations", taskType="classification", taskSubType="binary", metric="f1Macro")
