@@ -1,31 +1,28 @@
 ![teaser](/static/teaser.png)
 
-**TwoRavens** is a Web application for statistical modeling. Given a dataset, it automatically identifies interesting relationships and builds models to predict outcomes. Researchers impart substantive knowledge to define new problems and build better models to help solve their research question.
+The **TwoRavens** project is a suite of applications designed to bring researchers to insights fast. Our main application facilitates intuitive machine learning, model discovery, and data exploration for researchers.  As our intelligent back-end automatically seeks interesting relationships in the data and builds models to predict outcomes, researchers impart substantive knowledge about their data and own research questions to guide the automated generation of AI assistance for data analysis in an interactive paradigm we call _human-guided machine learning_.
 
-# Applications
+**TwoRavens for Event Data** is designed for researchers to easily structure raw event data into usable time-series formats. Researchers can browse openly available event datasets, construct queries to select types of events and sets of actors, and view and download resulting time-series data. Dates and locations are standardized across datasets to allow for comparisons and identical queries.
+
+**TwoRavens Metadata Service** is our data profiler. It provides the summary information used by our main application to visualize and explore data. Researchers may pip install this component for local use.
+
+
+# Application Documentation
 
 The project has 3 core applications:
 * [D3M](/D3M/index.md) Data-Driven Discovery of Models interface.
 * [Event Data](/EventData/index.md) provides access to openly available event datasets.
 * [Metadata Service](/Metadata/index.md)
 
-# Live Demos
+# Demos
 Demo [TwoRavens D3M](http://2ravens.org) \\
 Demo [TwoRavens for Event Data](http://eventdata.2ravens.org) \\
-Demo [Metadata Service](http://metadata.2ravens.org)
-
-# Metadata Service Samples/Benchmarks
-
-| Dataverse | Size | # Rows | # Columns | Time | First 100 Rows* | Result |
-| --- | --- | --- | --- | --- | --- | --- |
-| [ajps_replication_raw_wide.tab](https://dataverse.harvard.edu/file.xhtml?persistentId=doi:10.7910/DVN/CQXHTH/UGSMIP&version=1.0) | 86.5 kB  | 360 | 66 | 0.23 s | [.tab](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/CQXHTH_ajps_lebanon_raw_wide.tab) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/CQXHTH_ajps_lebanon_raw_wide.json) |
-| [sectoral_value_added.csv](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/FE0UYM&version=1.0) | 380.4 kB  | 900 | 26 | 0.25 s | [.csv](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/sectoral_value_added.csv) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/sectoral_value_added.json) |
-| [cces2008_primaryvote.tab](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OQ64S8&version=1.0) | 1.0 MB  | 3200 | 7 | 0.19 s | [.tab](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/OQ64S8_cces2008_primaryvote.tab) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/OQ64S8_cces2008_primaryvote.json) |
-| [food_range_sez_adj.csv](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/RQOZIJ&version=1.0) | 415.5 kB  | 4239 | 1 | 0.05 s | [.csv](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/RQOZIJ_food_range_sez_adj.csv) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/RQOZIJ_food_range_sez_adj.json) |
-| [data.tab](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/XVPHO1&version=1.0) | 1 GB  | 43522 | 1021 | 96.89 s | [.tab](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/XVPHO1_data.tab) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/XVPHO1_data.json) |
-* please see the Dataverse link for the full file
+Demo [Metadata Service](http://metadata.2ravens.org)\\
+Video demo [TwoRavens Demos](http://2ra.vn/demos/index.html)
 
 # Related Publications
+D'Orazio, Vito, James Honaker, Raman Prasad, and Michael Shoemate. "Modeling and Forecasting Armed Conflict: AutoML with Human-Guided Machine Learning." In IEEE Big Data: 3rd International Workshop on Big Data Analytics for Cyber Intelligence and Defense (BDA4CID) IEEE, 2019.
+
 Gil, Yolanda, James Honaker, Shikhar Gupta, Yibo Ma, Vito D'Orazio, Daniel Garijo, Shruti Gadewar, Qifan Yang, and Neda Jahanshad. "Towards human-guided machine learning." In Proceedings of the 24th International Conference on Intelligent User Interfaces, pp. 614-624. ACM, 2019.
 
 D'Orazio, Vito, Marcus Deng, and Michael Shoemate. "TwoRavens for Event Data." In 2018 IEEE International Conference on Information Reuse and Integration (IRI), pp. 394-401. IEEE, 2018.

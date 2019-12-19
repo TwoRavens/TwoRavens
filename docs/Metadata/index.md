@@ -4,6 +4,16 @@ TwoRavens Metadata Service
 The TwoRaven Metadata Service (TRMS) provides the summary statistics that power the TwoRaven interface via using the preprocessed tabular data (Currently, it supports CSV, TAB, XLS and XLSX files). 
 This documentation describes the JSON specification language and how to use TRMS in your application.
 
+# Samples/Benchmarks
+
+| Dataverse | Size | # Rows | # Columns | Time | First 100 Rows* | Result |
+| --- | --- | --- | --- | --- | --- | --- |
+| [ajps_replication_raw_wide.tab](https://dataverse.harvard.edu/file.xhtml?persistentId=doi:10.7910/DVN/CQXHTH/&version=1.0) | 86.5 kB  | 360 | 66 | 0.23 s | [.tab](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/CQXHTH_ajps_lebanon_raw_wide.tab) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/CQXHTH_ajps_lebanon_raw_wide.json) |
+| [sectoral_value_added.csv](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/FE0UYM&version=1.0) | 380.4 kB  | 900 | 26 | 0.25 s | [.csv](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/sectoral_value_added.csv) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/sectoral_value_added.json) |
+| [cces2008_primaryvote.tab](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OQ64S8&version=1.0) | 1.0 MB  | 3200 | 7 | 0.19 s | [.tab](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/OQ64S8_cces2008_primaryvote.tab) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/OQ64S8_cces2008_primaryvote.json) |
+| [data.tab](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/XVPHO1&version=1.0) | 972 MB  | 43522 | 1021 | 96.89 s | [.tab](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/XVPHO1_data.tab) | [.json](https://github.com/TwoRavens/raven-metadata-service/blob/develop/test_data/XVPHO1_data.json) |
+
+* please see the Dataverse link for the full file
 
 # Guide
 * JSON Output Structure

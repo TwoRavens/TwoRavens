@@ -1,4 +1,4 @@
-## 
+##
 ##  Build a folder structure and metadata to resemble MIT-LincolnLabs seed datasets
 ##
 
@@ -48,8 +48,8 @@ seed_skeleton <- function(data, name, samplesize=NULL, fraction=0.2, ID=NULL, ci
 
 
 
-  paths <- c(paste(name, c("_dataset","_problem","_solution","_dataset/tables"), sep=""), 
-            "SCORE", paste("TEST", c("","/dataset_TEST","/dataset_TEST/tables","/problem_TEST"), sep=""), 
+  paths <- c(paste(name, c("_dataset","_problem","_solution","_dataset/tables"), sep=""),
+            "SCORE", paste("TEST", c("","/dataset_TEST","/dataset_TEST/tables","/problem_TEST"), sep=""),
             paste("TRAIN", c("","/dataset_TRAIN","/dataset_TRAIN/tables","/problem_TRAIN"), sep="") )
 
   print(paths)
@@ -73,7 +73,7 @@ seed_skeleton <- function(data, name, samplesize=NULL, fraction=0.2, ID=NULL, ci
   write.csv(testdata, paste(name, "/", "TEST/dataset_TEST/tables/learningData.csv", sep=""), row.names=FALSE)
   write.csv(traindata, paste(name, "/", "TRAIN/dataset_TRAIN/tables/learningData.csv", sep=""), row.names=FALSE)
 
-  
+
 
   ## Write various versions of datasetDoc.json
 
@@ -95,7 +95,7 @@ seed_skeleton <- function(data, name, samplesize=NULL, fraction=0.2, ID=NULL, ci
     }else {
       temprole <- "attribute"
     }
-    
+
     # can't judge categorical
     typevar <- na.omit(tempdata)
     if(!is.numeric(typevar)){
@@ -105,12 +105,12 @@ seed_skeleton <- function(data, name, samplesize=NULL, fraction=0.2, ID=NULL, ci
     } else {
       temptype <- "integer"
     }
-    
+
     temp <- list(colIndex=i-1, colName=allNames[i], colType=temptype, role=I(temprole))
     columnlist[[i]]<- temp
   }
 
-  
+
   if(!locatedDV){
     print("No variable name in dataset matched supplied `depvarname` argument.")
   }
@@ -137,9 +137,9 @@ seed_skeleton <- function(data, name, samplesize=NULL, fraction=0.2, ID=NULL, ci
 
   ## Write various versions of datasetDoc.json
 
-  problemdoclist <- list(about=list(problemID=paste(name,"_problem",sep=""), problemName=ID, problemDescription=description, taskType=taskType, taskSubType=taskSubType, problemVersion="1.0", problemSchemaVersion="3.0"), 
-    inputs=list(data=list(list(datasetID=datasetID, targets=list(list(targetIndex= myTargetIndex, resID=myresID, colIndex=depvarColIndex, colName=depvarname)) )), 
-    dataSplits=list(method="holdOut", testSize=fraction), performanceMetrics=list(list(metric=metric))), 
+  problemdoclist <- list(about=list(problemID=paste(name,"_problem",sep=""), problemName=ID, problemDescription=description, taskType=taskType, taskSubType=taskSubType, problemVersion="1.0", problemSchemaVersion="3.0"),
+    inputs=list(data=list(list(datasetID=datasetID, targets=list(list(targetIndex= myTargetIndex, resID=myresID, colIndex=depvarColIndex, colName=depvarname)) )),
+    dataSplits=list(method="holdOut", testSize=fraction), performanceMetrics=list(list(metric=metric))),
     expectedOutputs=list(predictionsFile="predictions.csv"))
 
   problemDoc <- toJSON(problemdoclist, auto_unbox=TRUE, pretty=TRUE)
@@ -184,4 +184,3 @@ seed_skeleton(data=fldata, samplesize=100000, name="TR24_Large_Scale_Greed", dep
 #seed_skeleton(data=pitfdata1, name="TR3a_PITF", depvarname="sftpcons", ID="Forecasting_Political_Instability", description="Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, primary model.", taskType="classification", taskSubType="binary", metric="f1Macro")
 #seed_skeleton(data=pitfdata2, name="TR3b_PITF", depvarname="sftpcons", ID="Forecasting_Political_Instability", description="Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, with Fearon and Laitin comparison.", taskType="classification", taskSubType="binary", metric="f1Macro")
 #seed_skeleton(data=pitfdata3, name="TR3c_PITF", depvarname="sftpcons", ID="Forecasting_Political_Instability", description="Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, primary model on Fearon Laitin observations", taskType="classification", taskSubType="binary", metric="f1Macro")
-
