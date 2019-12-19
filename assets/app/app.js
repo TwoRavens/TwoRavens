@@ -1837,6 +1837,7 @@ export let hexToRgba = (hex, alpha) => {
  *  Process problems
  */
 export function discovery(problems) {
+    console.log('-------------  Discover!!!  -------------')
     // filter out problems with target of null
     // e.g. [{"target":null, "predictors":null,"transform":0, ...},]
     //

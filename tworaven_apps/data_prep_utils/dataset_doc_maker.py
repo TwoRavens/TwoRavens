@@ -151,7 +151,7 @@ class DatasetDocMaker(BasicErrCheck):
         self.final_data_file_path = join(self.dataset_output_dir,
                                          output_data_path)
 
-        dir_info = create_directory(dirname(self.final_data_file_path)
+        dir_info = create_directory(dirname(self.final_data_file_path))
         if not dir_info.success:
             self.add_err_msg(dir_info.err_msg)
             return

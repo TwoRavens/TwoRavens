@@ -18,7 +18,7 @@ from django.utils.text import slugify
 from tworaven_apps.utils.dict_helper import get_dict_value
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.utils.file_util import \
-    (create_directory)
+    (create_directory,)
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 
 from tworaven_apps.raven_auth.models import User
@@ -224,8 +224,8 @@ class UserDatasetUtil(BasicErrCheck):
         if self.has_error():
             return
 
-        params = dict(is_default_config=False,  # don't want it as default for everyone
-                      is_user_config=True)
+        params = dict(is_default_config=True,  # don't want it as default for everyone
+                      is_user_config=False)
 
         print('create_new_config 1')
         ecl_info = EnvConfigLoader.make_config_from_directory(\
