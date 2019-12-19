@@ -8,9 +8,10 @@ import hopscotch from 'hopscotch';
 import m from 'mithril';
 
 import * as app from './app';
-import * as results from './results';
-import * as explore from './explore';
-import * as model from './model';
+import * as dataset from "./modes/dataset";
+import * as model from './modes/model';
+import * as explore from './modes/explore';
+import * as results from './modes/results';
 
 import * as manipulate from './manipulations/manipulate';
 
@@ -96,7 +97,7 @@ class Body {
             this.footer(app.currentMode),
             app.workspace && Body.leftpanel(app.currentMode, forceData),
             app.workspace && Body.rightpanel(app.currentMode),
-            app.workspace && Body.manipulations(),
+            app.workspace && manipulate.constraintMenu && Body.manipulations(),
 
             app.peekInlineShown && this.peekTable(),
 
@@ -106,7 +107,7 @@ class Body {
                         top: common.heightHeader,
                         height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`,
                         bottom: common.heightFooter,
-                        display: app.is_manipulate_mode || (app.rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'none' : 'block',
+                        display: (app.rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'none' : 'block',
                         'background-color': app.swandive ? 'grey' : 'transparent'
                     }
                 },
@@ -114,6 +115,7 @@ class Body {
                 m('div', {
                         style: {width: '100%', height: '100%', position: 'relative'},
                     },
+                    app.is_dataset_mode && m(MainCarousel, {previousMode: this.previousMode}, m(dataset.CanvasDataset, {})),
                     app.is_results_mode && m(MainCarousel, {previousMode: this.previousMode}, m(results.CanvasSolutions, {problem: selectedProblem})),
                     app.is_explore_mode && m(MainCarousel, {previousMode: this.previousMode}, m(explore.CanvasExplore, {variables: exploreVariables, variate})),
                     app.is_model_mode && m(MainCarousel, {previousMode: this.previousMode}, m(model.CanvasModel, {drawForceDiagram, forceData}))
@@ -187,9 +189,6 @@ class Body {
             },
             m('div', {style: {'flex-grow': 1}}),
 
-            m(Button, {
-                onclick: () => window.open('/#!/dataset')
-            }, 'Dataset Description'),
             app.workspace && createBreadcrumb(),
 
             m('div', {style: {'flex-grow': 1}}),
@@ -212,10 +211,11 @@ class Body {
                 onclick: app.setSelectedMode,
                 activeSection: app.currentMode || 'model',
                 sections: [
+                    {value: 'Dataset'},
                     {value: 'Model'},
                     {value: 'Explore'},
                     {value: 'Results', attrsInterface: {class: (!app.taskPreferences.isResultsClicked && app.taskPreferences.task1_finished && !app.taskPreferences.task2_finished) ? 'btn-success' : 'btn-secondary'}}
-                ], // mode 'Manipulate' diabled
+                ],
 
                 // attrsButtons: {class: ['btn-sm']}, // if you'd like small buttons (btn-sm should be applied to individual buttons, not the entire component)
                 // attrsButtons: {style: {width: 'auto'}}
@@ -795,8 +795,7 @@ class Body {
      */
 
     static leftpanel(mode, forceData) {
-
-        if (mode === 'manipulate') return manipulate.leftpanel();
+        if (mode === 'dataset') return manipulate.leftpanel();
         if (mode === 'results') return results.leftpanel();
         return model.leftpanel(forceData);
     }
@@ -808,7 +807,7 @@ class Body {
 
     static manipulations() {
         let selectedProblem = app.getSelectedProblem();
-        return (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu([
+        return (app.is_dataset_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu([
             ...app.workspace.raven_config.hardManipulations,
             ...(app.is_model_mode ? selectedProblem.manipulations : [])
         ])  // the identifier for which pipeline to edit
@@ -818,7 +817,7 @@ class Body {
 
 class MainCarousel {
     oninit(){
-        this.modeOrder = ['model', 'explore', 'results']
+        this.modeOrder = ['dataset', 'model', 'explore', 'results']
     }
     // NOTE: onbeforeremove must be leaky, because the state is not updated before passing
     onbeforeremove(vnode) {
@@ -895,7 +894,7 @@ if (IS_EVENTDATA_DOMAIN) {
 }
 else {
     m.route(document.body, '/model', {
-        '/dataset': {render: () => m(Body_Dataset, {image: '/static/images/TwoRavens.png'})},
+        '/dataset_pdf': {render: () => m(Body_Dataset, {image: '/static/images/TwoRavens.png'})},
         '/datamart': {render: standaloneDatamart},
         // '/testPlot': {
         //     render: () => [

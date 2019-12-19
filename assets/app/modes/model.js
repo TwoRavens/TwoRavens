@@ -2,37 +2,37 @@ import * as d3 from "d3";
 import m from "mithril";
 import hopscotch from 'hopscotch';
 
-import * as app from "./app";
-import * as manipulate from "./manipulations/manipulate";
+import * as app from "../app";
+import * as manipulate from "../manipulations/manipulate";
 import * as explore from "./explore";
-import * as solverD3M from "./solvers/d3m";
+import * as solverD3M from "../solvers/d3m";
 
-import * as common from "../common/common";
-import Button from "../common/views/Button";
-import Icon from "../common/views/Icon";
-import Subpanel from "../common/views/Subpanel";
-import TextField from "../common/views/TextField";
-import PanelList from "../common/views/PanelList";
-import Table from "../common/views/Table";
-import TextFieldSuggestion from "../common/views/TextFieldSuggestion";
-import ListTags from "../common/views/ListTags";
-import Panel from "../common/views/Panel";
-import MenuTabbed from "../common/views/MenuTabbed";
-import Dropdown from "../common/views/Dropdown";
-import ButtonRadio from "../common/views/ButtonRadio";
-import MenuHeaders from "../common/views/MenuHeaders";
-import Checkbox from "../common/views/Checkbox";
+import * as common from "../../common/common";
+import Button from "../../common/views/Button";
+import Icon from "../../common/views/Icon";
+import Subpanel from "../../common/views/Subpanel";
+import TextField from "../../common/views/TextField";
+import PanelList from "../../common/views/PanelList";
+import Table from "../../common/views/Table";
+import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
+import ListTags from "../../common/views/ListTags";
+import Panel from "../../common/views/Panel";
+import MenuTabbed from "../../common/views/MenuTabbed";
+import Dropdown from "../../common/views/Dropdown";
+import ButtonRadio from "../../common/views/ButtonRadio";
+import MenuHeaders from "../../common/views/MenuHeaders";
+import Checkbox from "../../common/views/Checkbox";
 
-import ForceDiagram, {groupBuilder, groupLinkBuilder, linkBuilder, pebbleBuilderLabeled} from "./views/ForceDiagram";
-import VariableSummary, {formatVariableSummary} from "./views/VariableSummary";
-import ButtonLadda from "./views/LaddaButton";
-import PreprocessInfo from "./views/PreprocessInfo";
-import Flowchart from "./views/Flowchart";
+import ForceDiagram, {groupBuilder, groupLinkBuilder, linkBuilder, pebbleBuilderLabeled} from "../views/ForceDiagram";
+import VariableSummary, {formatVariableSummary} from "../views/VariableSummary";
+import ButtonLadda from "../views/LaddaButton";
+import PreprocessInfo from "../views/PreprocessInfo";
+import Flowchart from "../views/Flowchart";
 
-import Datamart from "./datamart/Datamart";
+import Datamart from "../datamart/Datamart";
 
-import {bold, boldPlain, preformatted} from "./index";
-import {setModal} from "../common/views/Modal";
+import {bold, boldPlain, preformatted} from "../index";
+import {setModal} from "../../common/views/Modal";
 
 
 export class CanvasModel {

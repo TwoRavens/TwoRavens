@@ -1,4 +1,7 @@
 """Views for User Workspaces"""
+import json
+import os
+
 from django.shortcuts import render
 
 from django.http import HttpResponse, Http404, JsonResponse, HttpResponseRedirect
@@ -6,6 +9,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
+
+from tworaven_apps.solver_interfaces.models import KEY_MESSAGE
+from tworaven_apps.ta2_interfaces.tasks import create_destination_directory
 from tworaven_apps.utils.view_helper import get_authenticated_user
 
 from tworaven_apps.utils.view_helper import \
@@ -26,15 +33,51 @@ from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
 from tworaven_apps.configurations.utils import \
     (get_latest_d3m_config,)
+from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
+from tworaven_apps.utils.json_helper import json_loads
+from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
+
+
+@csrf_exempt
+def view_upload_dataset(request):
+    """Upload dataset and metadata"""
+    user_workspace_info = get_latest_user_workspace(request)
+    if not user_workspace_info.success:
+        return JsonResponse(get_json_error(user_workspace_info.err_msg))
+    user_workspace = user_workspace_info.result_obj
+
+    dest_dir_info = create_destination_directory(user_workspace, 'uploaded')
+    if not dest_dir_info[KEY_SUCCESS]:
+        return JsonResponse(get_json_error(dest_dir_info.err_msg))
+    dest_directory = dest_dir_info[KEY_DATA]
+
+    json_info = json_loads(request.POST.get('metadata'))
+    if not json_info.success:
+        return JsonResponse(get_json_error(json_info.err_msg))
+
+    # save json data
+    with open(os.path.join(dest_directory, 'about.json'), 'w') as metadata_file:
+        json.dump(json_info.result_obj, metadata_file)
+
+    # save file data
+    for idx, file in enumerate(request.FILES.getlist('files')):
+        with open(os.path.join(dest_directory, f'learningData{idx + 1 if idx else ""}.csv'), 'wb+') as outfile:
+            for chunk in file.chunks():
+                outfile.write(chunk)
+
+    return JsonResponse({
+        KEY_SUCCESS: True,
+        KEY_MESSAGE: 'file upload completed successfully'
+    })
 
 
 @login_required
-def view_list_dataset_choices(request):
+def view_list_dataset_choices_html(request):
     """List datasets for a user to examine"""
 
     params = dict(is_selectable_dataset=True)
-    configs = D3MConfiguration.objects.filter(**params\
-                    ).order_by('-is_default', 'name')
+    configs = D3MConfiguration.objects.filter(**params \
+                                              ).order_by('-is_default', 'name')
 
     info = dict(title='Available Datasets',
                 configs=configs)
@@ -42,7 +85,19 @@ def view_list_dataset_choices(request):
     return render(request,
                   'user_workspaces/view_list_dataset_choices.html',
                   info)
-    #render('view_list_dataset_choices')
+    #render('view_list_dataset_choices_html')
+
+
+@csrf_exempt
+def view_list_dataset_choices(request):
+    """List datasets for a user to examine"""
+
+    params = dict(is_selectable_dataset=True)
+    configs = D3MConfiguration.objects.filter(**params).order_by('-is_default', 'name')
+
+    configs_serializable = [{key: getattr(config, key) for key in ['id', 'name']} for config in configs]
+    return JsonResponse({KEY_SUCCESS: True, KEY_DATA: configs_serializable})
+
 
 @login_required
 def view_select_dataset(request, config_id=None):

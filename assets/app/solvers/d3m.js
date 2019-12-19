@@ -1,7 +1,7 @@
 import m from "mithril";
 
 import * as app from '../app.js';
-import * as results from "../results";
+import * as results from "../modes/results";
 
 import {alertError, alertWarn, debugLog, swandive} from "../app";
 

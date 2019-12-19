@@ -1,29 +1,29 @@
 import m from 'mithril';
 
-import * as app from "./app";
-import * as plots from "./plots";
+import * as app from "../app";
+import * as plots from "../plots";
 
-import * as solverWrapped from './solvers/wrapped';
-import * as solverD3M from './solvers/d3m';
+import * as solverWrapped from '../solvers/wrapped';
+import * as solverD3M from '../solvers/d3m';
 
-import * as common from "./../common/common";
-import Table from "./../common/views/Table";
-import Dropdown from "./../common/views/Dropdown";
-import Panel from "../common/views/Panel";
-import Subpanel from "../common/views/Subpanel";
-import MenuHeaders from "../common/views/MenuHeaders";
-import Button from "../common/views/Button";
-import Icon from "../common/views/Icon";
-import MenuTabbed from "../common/views/MenuTabbed";
+import * as common from "../../common/common";
+import Table from "../../common/views/Table";
+import Dropdown from "../../common/views/Dropdown";
+import Panel from "../../common/views/Panel";
+import Subpanel from "../../common/views/Subpanel";
+import MenuHeaders from "../../common/views/MenuHeaders";
+import Button from "../../common/views/Button";
+import Icon from "../../common/views/Icon";
+import MenuTabbed from "../../common/views/MenuTabbed";
 
-import {bold, italicize, preformatted} from "./index";
-import PlotVegaLite from "./views/PlotVegaLite";
-import ConfusionMatrix from "./views/ConfusionMatrix";
-import Flowchart from "./views/Flowchart";
-import ButtonRadio from "../common/views/ButtonRadio";
-import VariableImportance from "./views/VariableImportance";
-import ModalVanilla from "../common/views/ModalVanilla";
-import * as queryMongo from "./manipulations/queryMongo";
+import {bold, italicize, preformatted} from "../index";
+import PlotVegaLite from "../views/PlotVegaLite";
+import ConfusionMatrix from "../views/ConfusionMatrix";
+import Flowchart from "../views/Flowchart";
+import ButtonRadio from "../../common/views/ButtonRadio";
+import VariableImportance from "../views/VariableImportance";
+import ModalVanilla from "../../common/views/ModalVanilla";
+import * as queryMongo from "../manipulations/queryMongo";
 
 export let leftpanel = () => {
 
