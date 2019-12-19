@@ -19,10 +19,10 @@ import * as queryMongo from "./manipulations/queryMongo";
 import * as solverD3M from './solvers/d3m';
 import * as solverWrapped from './solvers/wrapped';
 
-import * as model from './model';
+import * as model from './modes/model';
 import * as manipulate from './manipulations/manipulate';
-import * as results from "./results";
-import * as explore from './explore';
+import * as results from "./modes/results";
+import * as explore from './modes/explore';
 import {bold, linkURLwithText, linkURL, link} from "./index";
 import {getClearWorkspacesLink, clearWorkpacesAndReloadPage} from "./utils";
 
@@ -56,7 +56,7 @@ window.addEventListener('mouseup', (e) => peekMouseUp(e));
 export let peekMouseMove = (e) => {
     if (!peekInlineIsResizing) return;
 
-    let menuId = is_manipulate_mode || (rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'canvas' : 'main';
+    let menuId = is_dataset_mode || (rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'canvas' : 'main';
     let percent = (1 - e.clientY / byId(menuId).clientHeight) * 100;
 
     setPeekInlineHeight(`calc(${Math.max(percent, 0)}% + ${common.heightFooter})`);
@@ -140,7 +140,7 @@ export async function updatePeek(pipeline) {
             skip: peekSkip,
             limit: peekLimit,
             variables,
-            nominal: !is_manipulate_mode && getNominalVariables(problem)
+            nominal: !is_dataset_mode && getNominalVariables(problem)
                 .filter(variable => variables.includes(variable))
         }
     };
@@ -232,13 +232,13 @@ export let currentMode;
 export let is_model_mode = true;
 export let is_explore_mode = false;
 export let is_results_mode = false;
-export let is_manipulate_mode = false;
+export let is_dataset_mode = false;
 
 export function setSelectedMode(mode) {
     mode = mode ? mode.toLowerCase() : 'model';
 
     // remove empty steps when leaving manipulate mode
-    if (workspace && is_manipulate_mode && mode !== 'manipulate') {
+    if (workspace && is_dataset_mode && mode !== 'dataset') {
         let ravenConfig = workspace.raven_config;
         ravenConfig.hardManipulations = ravenConfig.hardManipulations.filter(step => {
             if (step.type === 'subset' && step.abstractQuery.length === 0) return false;
@@ -249,22 +249,22 @@ export function setSelectedMode(mode) {
         });
     }
 
+    is_dataset_mode = mode === 'dataset';
     is_model_mode = mode === 'model';
     is_explore_mode = mode === 'explore';
     is_results_mode = mode === 'results';
-    is_manipulate_mode = mode === 'manipulate';
 
     /*
      * Make an entry in the behavioral logs
      */
     let logParams = {
-                      feature_id: mode.toUpperCase() + '_MODE_SWITCH',
-                      activity_l2: 'SWITCH_MODE'
-                    };
-    if (is_model_mode){ logParams.activity_l1 = 'PROBLEM_DEFINITION'};
-    if (is_explore_mode){ logParams.activity_l1 = 'DATA_PREPARATION'};
-    if (is_results_mode){ logParams.activity_l1 = 'MODEL_SELECTION'};
-    if (is_manipulate_mode){ logParams.activity_l1 = 'DATA_PREPARATION'};
+        feature_id: mode.toUpperCase() + '_MODE_SWITCH',
+        activity_l2: 'SWITCH_MODE'
+    };
+    if (is_model_mode) logParams.activity_l1 = 'PROBLEM_DEFINITION';
+    if (is_explore_mode) logParams.activity_l1 = 'DATA_PREPARATION';
+    if (is_results_mode) logParams.activity_l1 = 'MODEL_SELECTION';
+    if (is_dataset_mode) logParams.activity_l1 = 'DATA_PREPARATION';
 
     saveSystemLogEntry(logParams);
 
@@ -296,10 +296,13 @@ export function setSelectedMode(mode) {
         if (is_model_mode && manipulate.pendingHardManipulation) {
             let ravenConfig = workspace.raven_config;
             buildDatasetPreprocess().then(response => {
-                if (!response.success) alertLog(response.message);
-                else {
-                    setVariableSummaries(response.data.variables);
-                    ravenConfig.problems = discovery(response.data.dataset.discovery);
+                if (response.preprocess)
+                    setVariableSummaries(response.preprocess.variables);
+                if (response.discovery) {
+                    ravenConfig.problems = discovery(response.discovery);
+                    let problemCopy = getProblemCopy(Object.values(ravenConfig.problems)[0]);
+                    ravenConfig.problems[problemCopy.problemID] = problemCopy;
+                    setSelectedProblem(problemCopy.problemID);
                 }
             });
         }
@@ -342,7 +345,7 @@ export async function buildDatasetUrl(problem, lastStep, dataPath, collectionNam
         metadata: {
             type: 'data',
             variables,
-            nominal: !is_manipulate_mode && getNominalVariables(problem)
+            nominal: !is_dataset_mode && getNominalVariables(problem)
                 .filter(variable => variables.includes(variable))
         }
     };
@@ -376,7 +379,7 @@ export async function buildProblemUrl(problem, lastStep, dataPath, collectionNam
             metadata: {
                 type: 'data',
                 variables,
-                nominal: !is_manipulate_mode && getNominalVariables(problem)
+                nominal: !is_dataset_mode && getNominalVariables(problem)
                     .filter(variable => variables.includes(variable))
             }
         }
@@ -1150,7 +1153,9 @@ export let getPreprocess = async query => {
         export: 'csv'
     }) : workspace.raven_config.datasetPath;
 
-    let response = await m.request({
+    let results = {};
+
+    let promisePreprocess = m.request({
         method: 'POST',
         url: ROOK_SVC_URL + 'preprocess.app',
         data: {
@@ -1159,10 +1164,22 @@ export let getPreprocess = async query => {
             l1_activity: 'PROBLEM_DEFINITION',
             l2_activity: 'PROBLEM_SPECIFICATION'
         }
+    }).then(response => {
+        if (!response.success) alertError(response.message);
+        else results.preprocess = response.data;
     });
 
-    if (!response.success) alertError(response.message);
-    else return response.data;
+    let promiseDiscovery = m.request(ROOK_SVC_URL + 'discovery.app', {
+        method: 'POST',
+        data: {path: datasetPath}
+    }).then(response => {
+        if (!response.success) console.warn(response.message);
+        else results.discovery = response.data;
+    });
+
+    await Promise.all([promisePreprocess, promiseDiscovery]);
+
+    return results
 };
 
 export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
@@ -1317,7 +1334,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
             // problem doc not supplied, so set the first discovered problem as selected, once preprocess loaded
             if (!response.success) {
                 if (!newRavenConfig) return;
-                await promisePreprocess;
+                await promiseDiscovery;
 
                 if (Object.keys(workspace.raven_config.problems).length === 0) {
                     let problemID = generateProblemID();
@@ -2341,7 +2358,7 @@ export function setSelectedProblem(problemID) {
 
     // update preprocess
     buildProblemPreprocess(problem)
-        .then(preprocess => setVariableSummaries(preprocess.variables))
+        .then(response => setVariableSummaries(response.preprocess.variables))
         .then(m.redraw);
 
     resetPeek();

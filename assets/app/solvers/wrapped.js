@@ -2,7 +2,7 @@ import * as jStat from "jstat";
 import m from 'mithril';
 
 import * as app from '../app';
-import * as results from "../results";
+import * as results from "../modes/results";
 import {alertWarn} from "../app";
 
 export let SOLVER_SVC_URL = '/solver-service/';

@@ -56,6 +56,7 @@ fi
 : $(fab celery_restart)
 
 fab clear_d3m_configs
+fab make_d3m_configs_from_files
 
 # prevent package installation in R. This must be set within the 2ravens virtualenv
 export FLASK_USE_PRODUCTION_MODE=yes

@@ -43,7 +43,7 @@ def view_pebbles_home(request):
         # (1) Is there a valid D3M config?
         d3m_config_info = get_latest_d3m_config()
         if not d3m_config_info:
-            return HttpResponseRedirect(reverse('view_list_dataset_choices'))
+            return HttpResponseRedirect(reverse('view_list_dataset_choices_html'))
             # return HttpResponseRedirect(reverse('view_d3m_config_error'))
 
         session_key = get_session_key(request)

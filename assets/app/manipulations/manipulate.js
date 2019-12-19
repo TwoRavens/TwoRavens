@@ -18,7 +18,6 @@ import Table from "../../common/views/Table";
 
 import * as common from '../../common/common';
 
-import * as model from "../model";
 import * as app from "../app";
 import {alertError, alertLog} from "../app";
 
@@ -42,7 +41,7 @@ export function menu(compoundPipeline) {
                     right: `calc(${common.panelOpen['right'] ? '500' : '16'}px + ${common.panelMargin}*2 + 70px)`,
                     bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px + ${app.peekInlineShown && app.peekData ? app.peekInlineHeight : '0px'})`,
                     position: 'fixed',
-                    'z-index': 100,
+                    'z-index': 101,
                     'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
                 },
                 onclick: () => {
@@ -57,7 +56,7 @@ export function menu(compoundPipeline) {
                     right: `calc(${common.panelOpen['right'] ? '500' : '16'}px + ${common.panelMargin}*2)`,
                     bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px + ${app.peekInlineShown && app.peekData ? app.peekInlineHeight : '0px'})`,
                     position: 'fixed',
-                    'z-index': 100,
+                    'z-index': 101,
                     'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
                 },
                 onclick: async () => {
@@ -82,7 +81,12 @@ export function menu(compoundPipeline) {
         ],
 
         m(Canvas, {
-            attrsAll: {style: {height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`}}
+            attrsAll: {
+                style: {
+                    height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`,
+                    'z-index': 100
+                }
+            }
         }, canvas(compoundPipeline))
     ];
 }
@@ -247,32 +251,6 @@ export function varList() {
             })
         ]
     ]
-}
-
-
-// hardcoded to manipulations mode
-export function rightpanel() {
-
-    if (!app.workspace.d3m_config.name) return;
-
-    return m(Panel, {
-            side: 'right',
-            label: 'Pipeline',
-            hover: true,
-            width: model.rightPanelWidths['Manipulate'],
-            attrsAll: {
-                onclick: () => app.setFocusedPanel('right'),
-                style: {
-                    'z-index': 100 + (app.focusedPanel === 'right'),
-                    // subtract header, spacer, spacer, scrollbar, table, and footer
-                    height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown && app.peekData ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
-                }
-            }
-        }, m(PipelineFlowchart, {
-            compoundPipeline: app.workspace.raven_config.hardManipulations,
-            pipeline: app.workspace.raven_config.hardManipulations,
-            editable: true
-        }));
 }
 
 export class PipelineFlowchart {
@@ -523,7 +501,7 @@ let datasetChangedTour = {
     steps: [
         {
             target: 'btnModel',
-            placement: 'top',
+            placement: 'bottom',
             title: 'Dataset Changed',
             content: 'The dataset has changed. Upon switching back to model mode, new problems will be inferred and any existing problem pipelines will be erased.'
         }
@@ -535,7 +513,7 @@ export let pendingHardManipulation = false;
 export let setQueryUpdated = async state => {
 
     // the first time we have an edit to the hard manipulations:
-    if (app.is_manipulate_mode) {
+    if (app.is_dataset_mode) {
         if (!pendingHardManipulation && state) {
             hopscotch.startTour(datasetChangedTour, 0);
             app.workspace.raven_config.problems = [];
@@ -544,7 +522,7 @@ export let setQueryUpdated = async state => {
     }
 
     // if we have an edit to the problem manipulations
-    if (!app.is_manipulate_mode) {
+    if (!app.is_dataset_mode) {
 
         let selectedProblem = app.getSelectedProblem();
 
@@ -553,8 +531,8 @@ export let setQueryUpdated = async state => {
         selectedProblem.tags.transformed = [...app.getTransformVariables(selectedProblem.manipulations)];
 
         app.buildProblemPreprocess(selectedProblem)
-            .then(preprocess => {
-                if (preprocess) app.setVariableSummaries(preprocess.variables)
+            .then(response => {
+                if (response.preprocess) app.setVariableSummaries(response.preprocess.variables)
             }).then(m.redraw);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
