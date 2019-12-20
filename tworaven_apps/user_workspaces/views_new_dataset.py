@@ -1,7 +1,7 @@
 """Views for User Workspaces"""
 import json
 import os
-
+from os.path import join, splitext
 from django.shortcuts import render
 
 from django.http import HttpResponse, Http404, JsonResponse, HttpResponseRedirect
@@ -18,12 +18,16 @@ from tworaven_apps.utils.view_helper import get_authenticated_user
 from tworaven_apps.data_prep_utils import static_vals as dp_static
 
 from tworaven_apps.utils.file_util import \
-    (create_directory, read_file_contents)
+    (create_directory,
+     create_directory_add_timestamp,
+     read_file_contents)
 
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
      get_json_error,
      get_json_success)
+
+from tworaven_apps.utils.random_info import get_alpha_string
 
 from tworaven_apps.configurations.models_d3m import D3MConfiguration
 from tworaven_apps.configurations.utils import \
@@ -46,6 +50,8 @@ from tworaven_apps.data_prep_utils.user_dataset_util import UserDatasetUtil
 @csrf_exempt
 def view_upload_dataset(request):
     """Upload dataset and metadata"""
+    print('FILE_UPLOAD_MAX_MEMORY_SIZE:', settings.FILE_UPLOAD_MAX_MEMORY_SIZE)
+
     user_workspace_info = get_latest_user_workspace(request)
     if not user_workspace_info.success:
         return JsonResponse(get_json_error(user_workspace_info.err_msg))
@@ -54,10 +60,14 @@ def view_upload_dataset(request):
     # Destination directory for learningData.csv, learningData#.csv, etc.
     #   and about.json
     #
-    dest_dir_info = create_destination_directory(user_workspace, 'uploaded')
-    if not dest_dir_info[KEY_SUCCESS]:
+    dest_dir_info = create_directory_add_timestamp(\
+                        join(settings.TWORAVENS_USER_DATASETS_DIR,
+                             f'uploads_{user_workspace.user.id}',
+                             get_alpha_string(6)))
+
+    if not dest_dir_info.success:
         return JsonResponse(get_json_error(dest_dir_info.err_msg))
-    dest_directory = dest_dir_info[KEY_DATA]
+    dest_directory = dest_dir_info.result_obj
 
     print('view_upload_dataset. dest_directory', dest_directory)
 
@@ -75,10 +85,22 @@ def view_upload_dataset(request):
     #with open(os.path.join(dest_directory, 'about.json'), 'w') as metadata_file:
     #    json.dump(json_info.result_obj, metadata_file)
 
-    # Save data files
+    # Save data files.  They don't have to be .csv, that's handled latter,
+    #     e.g. convert from .tab, .tsv, xls, etc.
     #
     for idx, file in enumerate(request.FILES.getlist('files')):
-        with open(os.path.join(dest_directory, f'learningData{idx + 1 if idx else ""}.csv'), 'wb+') as outfile:
+        print(file.name)
+        _fname, fext = splitext(file.name)
+        if not fext.lower() in dp_static.VALID_EXTENSIONS:
+            # no extension found, won't be able to open it
+            user_msg = (f'The extension for this file was not recognized: "{file.name}".'
+                        f' Valid extensions: {", ".join(dp_static.VALID_EXTENSIONS)}.')
+
+            return JsonResponse(get_json_error(user_msg))
+
+        new_filename = join(dest_directory,
+                            f'learningData{idx + 1 if idx else ""}{fext.lower()}')
+        with open(new_filename, 'wb+') as outfile:
             for chunk in file.chunks():
                 outfile.write(chunk)
 

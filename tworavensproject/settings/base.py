@@ -32,8 +32,9 @@ sys.path.append(TWORAVENS_COMMON_DIR)
 
 
 
-#FILE_UPLOAD_MAX_MEMORY_SIZE = os.environ.get('FILE_UPLOAD_MAX_MEMORY_SIZE',
-#                                             8326032)
+FILE_UPLOAD_MAX_MEMORY_SIZE = os.environ.get('FILE_UPLOAD_MAX_MEMORY_SIZE',
+                                             24 * 1024000)   # bytes
+DATA_UPLOAD_MAX_MEMORY_SIZE = FILE_UPLOAD_MAX_MEMORY_SIZE
 
 # -----------------------------------------
 # Directory for user contributed datasets
@@ -414,7 +415,7 @@ EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
 
 # 11/6/2019 - switch for multi-user testing
 #   passed as a boolean to .js
-DISPLAY_DATAMART_UI = strtobool(os.environ.get('DISPLAY_DATAMART_UI', 'True'))
+DISPLAY_DATAMART_UI = strtobool(os.environ.get('DISPLAY_DATAMART_UI', 'False'))
 
 
 DATAMART_SHORT_TIMEOUT = 10 # seconds

@@ -11,7 +11,7 @@ Complete the following steps:
 
 """
 import os
-from os.path import dirname, isdir, isfile, join
+from os.path import dirname, isdir, isfile, join, splitext
 from collections import OrderedDict
 
 from django.utils.text import slugify
@@ -119,7 +119,7 @@ class UserDatasetUtil(BasicErrCheck):
 
         source_files = [join(source_dir, x)
                         for x in os.listdir(source_dir)
-                        if x.lower().endswith(dp_static.EXT_CSV)]
+                        if splitext(x.lower())[1] in dp_static.VALID_EXTENSIONS]
 
         if not source_files:
             return err_resp(f'No source files found in directory: {source_dir}')
@@ -305,7 +305,7 @@ class UserDatasetUtil(BasicErrCheck):
             self.send_websocket_err_msg(user_msg)
             return False
 
-        self.dataset_id = slugify(self.dataset_name[:15] + get_alpha_string(4))
+        self.dataset_id = slugify(self.dataset_name[:15] + '-' + get_alpha_string(4))
 
         self.dataset_root_dir = join(self.writable_output_dir, self.dataset_id)
 

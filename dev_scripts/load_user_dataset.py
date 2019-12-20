@@ -29,11 +29,14 @@ def test_new_dataset_load(user_id, input_files, output_dir):
 
 
 if __name__ == '__main__':
-    test_file = ('/ravens_volume/test_data/185_baseball/TRAIN/'
-                 'dataset_TRAIN/tables/learningData.csv')
+    #test_file = ('/ravens_volume/test_data/185_baseball/TRAIN/'
+    #             'dataset_TRAIN/tables/learningData.csv')
+    test_file = ('/Users/ramanprasad/Documents/github-rp/'
+                 'raven-metadata-service/test_data/data_student.tab')
     test_file2 = ('/ravens_volume/test_data/185_baseball/TRAIN/'
-                 'dataset_TRAIN/tables/learningData2.csv')
+                  'dataset_TRAIN/tables/learningData.csv')
     test_output_dir = '/Users/ramanprasad/Desktop/user_test'
+
 
     #test_dataset_doc_maker([test_file, test_file2], test_output_dir)
 

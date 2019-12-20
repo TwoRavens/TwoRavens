@@ -5,8 +5,13 @@ import os
 
 import pandas as pd
 
-from os.path import dirname, isdir, isfile, join
+from tworaven_apps.utils.basic_response import (ok_resp,
+                                                err_resp)
+from os.path import basename, dirname, isdir, isfile, join, splitext
 from collections import OrderedDict
+
+
+from tworaven_apps.data_prep_utils import static_vals as dp_static
 
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.utils.file_util import \
@@ -17,19 +22,8 @@ from tworaven_apps.utils.random_info import \
 
 # mapping from: https://pbpython.com/pandas_dtypes.html
 #   -> https://gitlab.datadrivendiscovery.org/MIT-LL/d3m_data_supply/blob/shared/schemas/datasetSchema.json
-DTYPES = {
-    'int64': 'integer',
-    'float64': 'real',
-    'bool': 'boolean',
-    'object': 'string',
-    'datetime64': 'dateTime',
-    'category': 'categorical'
-}
 
-DSV_EXTENSIONS = ['.csv', '.tsv', '.xlsx', '.xls']
 
-DATASET_SCHEMA_VERSION = '3.2.0'
-PROBLEM_SCHEMA_VERSION = '3.2.0'
 
 class DatasetDocMaker(BasicErrCheck):
     """Create a DatasetDoc and optional ProblemDoc"""
@@ -61,19 +55,30 @@ class DatasetDocMaker(BasicErrCheck):
 
         # construct a mapping to output paths
         inout_data_paths = OrderedDict()
+
+        print('-- Iterate through input files --')
         for src_data_path in self.input_data_paths:
             offset = 1
-            if os.path.splitext(src_data_path)[1] in DSV_EXTENSIONS:
-                # filename, extension = os.path.splitext(os.path.basename(src_data_path))
-                # TODO: disable this line once paths aren't hardcoded to 'learningData'
-                filename = 'learningData'
+            print('src_data_path', src_data_path)
 
-                candidate_name = join('tables', filename + '.csv')
-                while candidate_name in inout_data_paths.values():
-                    offset += 1
-                    #_name, extension = os.path.splitext(os.path.basename(src_data_path))
-                    candidate_name = join('tables', f'{filename}{offset}.csv')
-                inout_data_paths[src_data_path] = candidate_name
+            file_ext = splitext(src_data_path)[1].lower()
+            if not file_ext in dp_static.VALID_EXTENSIONS:
+                print('  -> Invalid extension, skipping: ', file_ext)
+                continue
+
+            # Set the output file name: learningData.csv, learningData_01.csv, etc.
+            filename = 'learningData'
+            candidate_name = join('tables', filename + '.csv')
+            while candidate_name in inout_data_paths.values():
+                offset += 1
+                offset_str = f'_{str(offset).zfill(2)}'
+                #_name, extension = os.path.splitext(os.path.basename(src_data_path))
+                candidate_name = join('tables', f'{filename}{offset_str}.csv')
+
+            inout_data_paths[src_data_path] = candidate_name
+            print(' -> post-conversion name:', candidate_name)
+
+        print('inout_data_paths', inout_data_paths)
 
         def infer_roles(column_name):
             """Infer column role"""
@@ -98,22 +103,27 @@ class DatasetDocMaker(BasicErrCheck):
         #   - From each input file, gather information for the dataset doc
         #
         for input_path, output_data_path in inout_data_paths.items():
+            #print('Doc Maker 3: Attempt to read:', input_path)
+            data_info = self.d3m_load_resource(input_path)
+            if not data_info.success:
+                self.add_err_msg(data_info.err_msg)
+                return
+            data = data_info.result_obj
 
-            data = self.d3m_load_resource(input_path)
             if not isinstance(data, pd.DataFrame):
                 user_msg = (f'Failed to load the file into a'
-                            f' data frame: {input_data_path}')
+                            f' data frame: {input_path}')
                 self.add_err_msg(user_msg)
                 return
 
-            resourceID = os.path.splitext(os.path.basename(input_path))[0]
+            resourceID = splitext(basename(input_path))[0]
 
             columnConfigs = []
             for colIndex, (colName, colType) in enumerate(zip(data.columns.values, data.dtypes)):
                 columnConfig = {
                     'colIndex': colIndex,
                     'colName': colName,
-                    'colType': DTYPES.get(str(colType), None) or 'unknown',
+                    'colType': dp_static.DTYPES.get(str(colType), None) or 'unknown',
                     'role': infer_roles(colName)
                 }
                 columnConfigs.append(columnConfig)
@@ -136,7 +146,7 @@ class DatasetDocMaker(BasicErrCheck):
                     {
                         'colIndex': i,
                         'colName': column[0],
-                        'colType': DTYPES.get(str(column[1]), None) or 'unknown',
+                        'colType': dp_static.DTYPES.get(str(column[1]), None) or 'unknown',
                         'role': infer_roles(column[0])
                     } for i, column in enumerate(zip(data.columns.values, data.dtypes))
                 ]
@@ -145,10 +155,8 @@ class DatasetDocMaker(BasicErrCheck):
             final_data_file_path = join(self.dataset_output_dir,
                                         output_data_path)
 
-
-            #print('final_data_file_path', final_data_file_path)
-
             dir_info = create_directory(dirname(final_data_file_path))
+
             if not dir_info.success:
                 self.add_err_msg(dir_info.err_msg)
                 return
@@ -162,7 +170,7 @@ class DatasetDocMaker(BasicErrCheck):
             dataset_doc.write(json.dumps({
                 'about': {**{
                     'datasetID': dataset_id,
-                    'datasetSchemaVersion': DATASET_SCHEMA_VERSION,
+                    'datasetSchemaVersion': dp_static.DATASET_SCHEMA_VERSION,
                     'redacted': True,
                     'digest': hashlib.sha256(self.about['datasetName'].encode()).hexdigest()
                 }, **self.about},
@@ -179,7 +187,7 @@ class DatasetDocMaker(BasicErrCheck):
                     'problemName': problem.get('problemName', about['datasetName'] + ' problem'),
                     'taskType': problem.get('taskType', 'regression'),
                     'taskSubType': problem.get('taskSubType', 'regression'),
-                    'problemSchemaVersion': PROBLEM_SCHEMA_VERSION,
+                    'problemSchemaVersion': dp_static.PROBLEM_SCHEMA_VERSION,
                     'problemVersion': '1.0'
                 },
                 'inputs': {
@@ -209,15 +217,35 @@ class DatasetDocMaker(BasicErrCheck):
 
     def d3m_load_resource(self, path):
         """Open data file and return a pandas data frame"""
-        if path.endswith('.csv'):
-            data = pd.read_csv(path, low_memory=False)
-        elif path.endswith('.tsv'):
-            data = pd.read_csv(path, delimiter='\t', low_memory=False)
-        elif os.path.splitext(path)[1] in ['.xlsx', '.xls']:
-            data = pd.read_excel(path)
-        else:
-            return None
+        print('-- d3m_load_resource --', path)
+        path_ext = splitext(path.lower())[1]
+
+        try:
+            if path_ext == dp_static.EXT_CSV:
+                print('csv file')
+                # csv file
+                #
+                data = pd.read_csv(path, low_memory=False)
+
+            elif path_ext in [dp_static.EXT_TSV, dp_static.EXT_TAB]:
+                print('Tab-delimited')
+                # Tab-delimited
+                #
+                data = pd.read_csv(path, delimiter='\t', low_memory=False)
+
+            elif path_ext in [dp_static.EXT_XLS, dp_static.EXT_XLSX]:
+                print('Excel file')
+                # Excel file
+                #
+                data = pd.read_excel(path)
+            else:
+                return err_resp('File extension not valid: %s' % path_ext)
+        except FileNotFoundError as err_obj:
+            return err_resp('File not found: %s' % err_obj)
+        except pd.errors.ParserError as err_obj:
+            return err_resp('Failed to open file: %s' % err_obj)
 
         if 'd3mIndex' not in data:
             data.insert(0, 'd3mIndex', range(len(data)))
-        return data
+
+        return ok_resp(data)
