@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 import os
 import sys
-from os.path import abspath, dirname, join
+from os.path import abspath, dirname, isdir, join
 from distutils.util import strtobool
 from git import Repo, InvalidGitRepositoryError
 
@@ -29,6 +29,36 @@ sys.path.append(TA3TA2_API_DIR)
 
 TWORAVENS_COMMON_DIR = join(BASE_DIR, 'assets', 'common')
 sys.path.append(TWORAVENS_COMMON_DIR)
+
+
+
+FILE_UPLOAD_MAX_MEMORY_SIZE = os.environ.get('FILE_UPLOAD_MAX_MEMORY_SIZE',
+                                             24 * 1024000)   # bytes
+DATA_UPLOAD_MAX_MEMORY_SIZE = FILE_UPLOAD_MAX_MEMORY_SIZE
+
+# -----------------------------------------
+# Directory for user contributed datasets
+# -----------------------------------------
+if os.environ.get('D3MOUTPUTDIR'):
+    TWORAVENS_USER_DATASETS_DIR = join(os.environ.get('D3MOUTPUTDIR'),
+                                       'TwoRavens_user_datasets')
+else:
+    TWORAVENS_USER_DATASETS_DIR = os.environ.get('TWORAVENS_USER_DATASETS_DIR',
+                                                 '/ravens_volume/TwoRavens_user_datasets')
+
+if not isdir(TWORAVENS_USER_DATASETS_DIR):
+    print((f'WARNING: the USER_ADDED_DATASETS_DIR is not'
+           f' available: {TWORAVENS_USER_DATASETS_DIR}'))
+    try:
+        os.makedirs(TWORAVENS_USER_DATASETS_DIR, exist_ok=True)
+        print(f'OK: able to create directory: {TWORAVENS_USER_DATASETS_DIR}')
+    except OSError as err_obj:
+        if not TWORAVENS_USER_DATASETS_DIR:
+            print((f'You must set this env variable to an existing directory'
+                   f' {TWORAVENS_USER_DATASETS_DIR}'))
+        else:
+            print(f'This directory MUST be available {TWORAVENS_USER_DATASETS_DIR}')
+        sys.exit(0)
 
 # -----------------------------------------------------
 # Link to copy of the raven-metadata-service
@@ -385,7 +415,7 @@ EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
 
 # 11/6/2019 - switch for multi-user testing
 #   passed as a boolean to .js
-DISPLAY_DATAMART_UI = strtobool(os.environ.get('DISPLAY_DATAMART_UI', 'True'))
+DISPLAY_DATAMART_UI = strtobool(os.environ.get('DISPLAY_DATAMART_UI', 'False'))
 
 
 DATAMART_SHORT_TIMEOUT = 10 # seconds

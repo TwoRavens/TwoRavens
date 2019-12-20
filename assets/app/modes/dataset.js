@@ -81,9 +81,14 @@ export class CanvasDataset {
                         preset.name,
                         m(Button, {
                             disabled: app.workspace.d3m_config.name === preset.name,
-                            onclick: () => m.request(`user-workspaces/select-dataset/${preset.id}`).then(response => {
+                            onclick: () => m.request(`user-workspaces/select-dataset-json-resp/${preset.id}`).then(response => {
                                 console.log('response dataset selection');
-                                console.log(response);
+                                console.log(response.message);
+                                if (response.success) {
+                                  location.reload();  // Restart!  Should load the new dataset
+                                }else{
+                                  console.log('Error loading new dataset!')
+                                }
                             })
                         }, app.workspace.d3m_config.name === preset.name ? 'Loaded' : 'Load')
                     ])
@@ -158,6 +163,16 @@ async function uploadDataset() {
         data: body,
     });
 
+
+    if (response.success) {
+      location.reload();  // Restart!  Should load the new dataset
+      return;
+    }else{
+      // clear files list
+      datasetPreferences.upload.files = [];
+    }
+
+    console.log('Upload dataset response: ' + response.message);
     uploadStatus = response.message;
     m.redraw();
 }

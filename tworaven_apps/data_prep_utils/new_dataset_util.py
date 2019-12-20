@@ -1,5 +1,7 @@
 """
-For the augment process, complete the following steps:
+** For working with new user datasets, use the "user_dataset_util.py" 
+
+For the **augment process**, complete the following steps:
 
 - retrieve the user's workspace
 - construct folders to replicate the D3M format
