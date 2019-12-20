@@ -5,6 +5,8 @@
 
 The following is tested on a Mac (OS 10.12.6). The Ubuntu install is based on 18.04, which will also work on [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
 
+Due to a required dependency, this will not install on "regular" Windows.
+
 ## A. Clone the repository
 
 - Use Github Desktop to pull down the [TwoRavens repository](https://github.com/TwoRavens/TwoRavens)
