@@ -3,7 +3,9 @@
 
 # Local Installation Instructions
 
-The following is tested on a Mac (OS 10.12.6).
+The following is tested on a Mac (OS 10.12.6). The Ubuntu install is based on 18.04, which will also work on [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
+
+Due to a required dependency, this will not install on "regular" Windows.
 
 ## A. Clone the repository
 
@@ -28,7 +30,7 @@ The following is tested on a Mac (OS 10.12.6).
 - Ubuntu:
   - Instructions are from here: https://github.com/nodesource/distributions/blob/master/README.md
     ```
-    curl -sL https://deb.nodesource.com/setup_11.x | sudo -E bash -
+    curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash -
     sudo apt-get install -y nodejs
     ```
 
@@ -91,7 +93,7 @@ Note: The TwoRavens application requires python 3.6+
      export WORKON_HOME=$HOME/.virtualenvs
      export PROJECT_HOME=$HOME/Devel
      VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
-     source ~/.local/bin/virtualenvwrapper.sh
+     source /usr/local/bin/virtualenvwrapper.sh
      ```
   4. You may need to install virtualenv:
      ```
@@ -110,6 +112,9 @@ Note: The TwoRavens application requires python 3.6+
     # note: within the virtualenv, pip defaults to pip3
     ```
 - Notes:
+  - Ubuntu: You will need to install several dependencies prior to this step:  
+    `sudo apt install libcurl4-openssl-dev libssl-dev swig`
+    `pip install Cython`
   - The D3M python package is not yet compatible with Python 3.7. Waiting for:
     `https://gitlab.com/datadrivendiscovery/d3m/merge_requests/199`
   - Mac: Python 3.6 installation can be done like this:
@@ -165,6 +170,9 @@ Note: The TwoRavens application requires python 3.6+
           - shortcut for: ```python manage.py runserver 8080```
       - (4) Start webpack
          - shortcut for ```npm start```
+
+- If you get an error about webpack not being installed:
+`npm install --only=dev`
 
 - Check if the application is running:
     - Go to: http://127.0.0.1:8080/
