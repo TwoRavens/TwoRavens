@@ -28,8 +28,8 @@ efdimportance.app <- function(everything) {
 	}
 
 	importanceMetric <- function(y, lambda=1){
-		print(length(y))
-		print(bonus(y))
+		#print(length(y))
+		#print(bonus(y))
 		#print(penalty(y))
 		im <- bonus(y)
 		if(length(y)>5){
@@ -37,8 +37,6 @@ efdimportance.app <- function(everything) {
 		}
 		return(im)
 	}
-
-    print("GOT HERE 1")
 
     allvars <- names(efdData)
     allcols <- names(efdData[[allvars[1]]][[1]])
