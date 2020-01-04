@@ -29,7 +29,7 @@ export default class VariableImportance {
                             "mark": "rect",
                             "encoding": {
                                 "x": {
-                                    "field": predictor,
+                                    "field": "predictor",
                                     "type": "nominal",
                                     axis: {labels: axisLabels},
                                     title: false
@@ -39,7 +39,7 @@ export default class VariableImportance {
                                 "tooltip": [
                                     {"field": yLabel, "type": "quantitative", title: 'Probability'},
                                     {"field": variableLabel, "type": "nominal"},
-                                    {"field": predictor, "type": "nominal"}
+                                    {"field": "predictor", "type": "nominal"}
                                 ]
                             }
                         },
@@ -85,12 +85,12 @@ export default class VariableImportance {
                                 "type": "nominal", title: ''
                             },
                             "y": {"field": yLabel, "type": "quantitative"},
-                            "column": {"field": predictor, "type": "ordinal"},
+                            "column": {"field": "predictor", "type": "ordinal"},
                             "color": {"field": variableLabel, "type": "nominal"},
                             "tooltip": [
                                 {"field": yLabel, "type": "quantitative"},
                                 {"field": variableLabel, "type": "nominal"},
-                                {"field": predictor, "type": "nominal"}
+                                {"field": "predictor", "type": "nominal"}
                             ]
                         }
                     }
@@ -98,7 +98,7 @@ export default class VariableImportance {
             }
         });
 
-        let predictorSupport = data.map(point => point[predictor]);
+        let predictorSupport = data.map(point => point["predictor"]);
         let predictorMin = Math.min(...predictorSupport);
         let predictorMax = Math.max(...predictorSupport);
 
@@ -114,7 +114,7 @@ export default class VariableImportance {
                         "mark": "line",
                         "encoding": {
                             "x": {
-                                "field": predictor,
+                                "field": "predictor",
                                 "type": "quantitative",
                                 scale: {domain: [predictorMin, predictorMax]},
                                 axis: {labels: densities === undefined ? true : axisLabels},
@@ -126,7 +126,7 @@ export default class VariableImportance {
                             "tooltip": [
                                 {"field": yLabel, "type": "quantitative", title: 'Probability'},
                                 {"field": variableLabel, "type": "nominal"},
-                                {"field": predictor, "type": "quantitative"}
+                                {"field": "predictor", "type": "quantitative"}
                             ]
                         }
                     }
@@ -164,7 +164,7 @@ export default class VariableImportance {
                         "mark": "line",
                         "encoding": {
                             "x": {
-                                "field": predictor, "type": "quantitative",
+                                "field": "predictor", "type": "quantitative",
                                 scale: {domain: [predictorMin, predictorMax]},
                                 axis: {labels: densities === undefined ? true : axisLabels},
                                 title: densities === undefined ? predictor : false
@@ -174,7 +174,7 @@ export default class VariableImportance {
                             "tooltip": [
                                 {"field": yLabel, "type": "quantitative", title: target},
                                 {"field": variableLabel, "type": "nominal"},
-                                {"field": predictor, "type": "quantitative"}
+                                {"field": "predictor", "type": "quantitative"}
                             ]
                         }
                     }

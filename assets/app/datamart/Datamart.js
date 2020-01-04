@@ -32,161 +32,6 @@ let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
 let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-right:1em;]', text);
 
 export default class Datamart {
-    oninit(vnode) {
-        // all menu state is held in preferences
-        let {preferences} = vnode.attrs;
-
-        // access information from NYU/ISI responses along these paths
-        setDefault(preferences, 'infoPaths', {
-            'NYU': {
-                'id': ['id'],
-                'row count': ['metadata', 'nb_rows'],
-                'name': ['metadata', 'name'],
-                'augmentation': ['augmentation'],
-                'score': ['score'],
-                'description': ['metadata', 'description'],
-                'size': ['metadata', 'size'],
-                'keywords': undefined,
-                'data': ['metadata'],
-                'join_columns': ['join_columns'],
-                'union_columns': ['union_columns']
-            },
-            'ISI': {
-                'id': ['datamart_id'],
-                'row count': undefined,
-                'name': ['metadata', 'title'],
-                'augmentation': ['augmentation'],
-                'score': ['score'],
-                'description': ['metadata', 'description'],
-                'size': ['metadata', 'size'],
-                'keywords': ['metadata', 'keywords'],
-                'data': ['metadata'],
-                'join_columns': ['join_columns'],
-                'union_columns': ['union_columns']
-            }
-        });
-
-        // Define the "getData" function
-        //
-        setDefault(preferences, 'getData', (result, attribute) => {
-            let path = preferences.infoPaths[preferences.sourceMode][attribute];
-            return path && path.reduce((out, term) => term in out && out[term], result)
-        });
-
-        // Show a datamart error message -- datamart specific
-        //
-        setDefault(preferences, 'showDatamartErrorMsg', (datamartSource, message) => {
-
-          // remove any success messages
-          delete preferences.success[datamartSource]; // remove "success"
-
-          // show the error message
-          preferences.error[datamartSource] =  m('b', {class: "h5"}, message);
-
-          m.redraw();
-
-        })
-
-        // Show a datamart success message -- datamart specific
-        //
-        setDefault(preferences, 'showDatamartSuccessMsg', (datamartSource, message) => {
-
-          // remove any success messages
-          delete preferences.error[datamartSource]; // remove "success"
-
-          // show the error message
-          preferences.success[datamartSource] =  m('b', {class: "h5"}, message);
-
-          m.redraw();
-        })
-
-        setDefault(preferences, 'handleSearchResults', (datamartSource, response) => {
-
-            // stop any UI search indicators
-            preferences.isSearching[datamartSource] = false;
-
-            console.log('datamartSource: ' + datamartSource);
-            console.log('response.success: ' + response.success);
-
-            /* -------------------------------------------
-             * Search failed, show message
-             * ------------------------------------------- */
-            if (!response.success) {
-                console.log('response: ' + JSON.stringify(response));
-                preferences.showDatamartErrorMsg(datamartSource, response.message);
-                return;
-            }
-
-            /* -------------------------------------------
-             * Search success, show results
-             * ------------------------------------------- */
-            console.log('results are back! ' + JSON.stringify(response));
-            // (moved sort to server side)
-            // clear array and add results
-            preferences.results[datamartSource].length = 0;
-            preferences.results[datamartSource].push(...response.data);
-
-            let numResults = preferences.results[datamartSource].length
-            console.log('Num results: ' + numResults);
-
-            if (numResults === 0) {
-                // No datasets found
-                delete preferences.success[datamartSource]; // remove "success"
-                preferences.error[datamartSource] = 'No datasets found.';
-
-            } else {
-                // Datasets found!
-                delete preferences.error[datamartSource]; // remove error
-
-                let numDatasetMsg = '';
-                if (numResults === 0){
-                    numDatasetMsg = 'Sorry! No datasets found.';
-                } else if (numResults === 1){
-                    numDatasetMsg = '1 dataset found.';
-                } else {
-                    numDatasetMsg += `${numResults} datasets found.`;
-                }
-
-                preferences.showDatamartSuccessMsg(datamartSource, numDatasetMsg);
-
-                console.log('msg: ' + numDatasetMsg);
-            }
-        });
-
-        setDefault(preferences, 'includeDataset', true);
-        setDefault(preferences, 'includeQuery', true);
-
-        setDefault(preferences, 'setPreviewButtonState', (idx, val) => {
-            preferences.previewButtonState[idx] = val;
-        });
-
-        setDefault(preferences, 'previewButtonState', {});
-
-        // set default menu state
-        setDefault(preferences, 'datamartMode', 'Search');
-        setDefault(preferences, 'isSearching', {ISI: false, NYU: false});
-        setDefault(preferences, 'searchTimeout', undefined);
-
-        setDefault(preferences, 'error', {ISI: undefined, NYU: undefined});
-        setDefault(preferences, 'success', {ISI: undefined, NYU: undefined});
-
-        // Set ISI or NYU
-        setDefault(preferences, 'sourceMode', 'NYU');
-
-        setDefault(preferences, 'leftJoinVariables', new Set());
-        setDefault(preferences, 'rightJoinVariables', new Set());
-
-        setDefault(preferences, 'datamartIndexMode', 'Link');
-
-        setDefault(preferences, 'indexLink', ''); // https://archive.ics.uci.edu/ml/machine-learning-databases/iris/bezdekIris.data
-        setDefault(preferences, 'indexFileType', 'csv');
-
-        setDefault(preferences, 'indexScrape', ''); // https://www.w3schools.com/html/html_tables.asp
-
-        setDefault(preferences, 'joinPairs', []);
-
-        setDefault(preferences, 'exactMatch', true);
-    }
 
     view(vnode) {
         let {
@@ -1023,4 +868,158 @@ export let search = async (preferences, endpoint, includeDataset=true, includeQu
         });
         preferences.handleSearchResults(sourceMode, response);
     }
+};
+
+export let setDatamartDefaults = preferences => {
+
+    // access information from NYU/ISI responses along these paths
+    setDefault(preferences, 'infoPaths', {
+        'NYU': {
+            'id': ['id'],
+            'row count': ['metadata', 'nb_rows'],
+            'name': ['metadata', 'name'],
+            'augmentation': ['augmentation'],
+            'score': ['score'],
+            'description': ['metadata', 'description'],
+            'size': ['metadata', 'size'],
+            'keywords': undefined,
+            'data': ['metadata'],
+            'join_columns': ['join_columns'],
+            'union_columns': ['union_columns']
+        },
+        'ISI': {
+            'id': ['datamart_id'],
+            'row count': undefined,
+            'name': ['metadata', 'title'],
+            'augmentation': ['augmentation'],
+            'score': ['score'],
+            'description': ['metadata', 'description'],
+            'size': ['metadata', 'size'],
+            'keywords': ['metadata', 'keywords'],
+            'data': ['metadata'],
+            'join_columns': ['join_columns'],
+            'union_columns': ['union_columns']
+        }
+    });
+
+    // Define the "getData" function
+    //
+    setDefault(preferences, 'getData', (result, attribute) => {
+        let path = preferences.infoPaths[preferences.sourceMode][attribute];
+        return path && path.reduce((out, term) => term in out && out[term], result)
+    });
+
+    // Show a datamart error message -- datamart specific
+    //
+    setDefault(preferences, 'showDatamartErrorMsg', (datamartSource, message) => {
+
+        // remove any success messages
+        delete preferences.success[datamartSource]; // remove "success"
+
+        // show the error message
+        preferences.error[datamartSource] =  m('b', {class: "h5"}, message);
+
+        m.redraw();
+
+    });
+
+    // Show a datamart success message -- datamart specific
+    //
+    setDefault(preferences, 'showDatamartSuccessMsg', (datamartSource, message) => {
+
+        // remove any success messages
+        delete preferences.error[datamartSource]; // remove "success"
+
+        // show the error message
+        preferences.success[datamartSource] =  m('b', {class: "h5"}, message);
+
+        m.redraw();
+    });
+
+    setDefault(preferences, 'handleSearchResults', (datamartSource, response) => {
+
+        // stop any UI search indicators
+        preferences.isSearching[datamartSource] = false;
+
+        console.log('datamartSource: ' + datamartSource);
+        console.log('response.success: ' + response.success);
+
+        /* -------------------------------------------
+         * Search failed, show message
+         * ------------------------------------------- */
+        if (!response.success) {
+            console.log('response: ' + JSON.stringify(response));
+            preferences.showDatamartErrorMsg(datamartSource, response.message);
+            return;
+        }
+
+        /* -------------------------------------------
+         * Search success, show results
+         * ------------------------------------------- */
+        console.log('results are back! ' + JSON.stringify(response));
+        // (moved sort to server side)
+        // clear array and add results
+        preferences.results[datamartSource].length = 0;
+        preferences.results[datamartSource].push(...response.data);
+
+        let numResults = preferences.results[datamartSource].length
+        console.log('Num results: ' + numResults);
+
+        if (numResults === 0) {
+            // No datasets found
+            delete preferences.success[datamartSource]; // remove "success"
+            preferences.error[datamartSource] = 'No datasets found.';
+
+        } else {
+            // Datasets found!
+            delete preferences.error[datamartSource]; // remove error
+
+            let numDatasetMsg = '';
+            if (numResults === 0){
+                numDatasetMsg = 'Sorry! No datasets found.';
+            } else if (numResults === 1){
+                numDatasetMsg = '1 dataset found.';
+            } else {
+                numDatasetMsg += `${numResults} datasets found.`;
+            }
+
+            preferences.showDatamartSuccessMsg(datamartSource, numDatasetMsg);
+
+            console.log('msg: ' + numDatasetMsg);
+        }
+    });
+
+    setDefault(preferences, 'includeDataset', true);
+    setDefault(preferences, 'includeQuery', true);
+
+    setDefault(preferences, 'setPreviewButtonState', (idx, val) => {
+        preferences.previewButtonState[idx] = val;
+    });
+
+    setDefault(preferences, 'previewButtonState', {});
+
+    // set default menu state
+    setDefault(preferences, 'datamartMode', 'Search');
+    setDefault(preferences, 'isSearching', {ISI: false, NYU: false});
+    setDefault(preferences, 'searchTimeout', undefined);
+
+    setDefault(preferences, 'error', {ISI: undefined, NYU: undefined});
+    setDefault(preferences, 'success', {ISI: undefined, NYU: undefined});
+
+    // Set ISI or NYU
+    setDefault(preferences, 'sourceMode', 'NYU');
+
+    setDefault(preferences, 'leftJoinVariables', new Set());
+    setDefault(preferences, 'rightJoinVariables', new Set());
+
+    setDefault(preferences, 'datamartIndexMode', 'Link');
+
+    setDefault(preferences, 'indexLink', ''); // https://archive.ics.uci.edu/ml/machine-learning-databases/iris/bezdekIris.data
+    setDefault(preferences, 'indexFileType', 'csv');
+
+    setDefault(preferences, 'indexScrape', ''); // https://www.w3schools.com/html/html_tables.asp
+
+    setDefault(preferences, 'joinPairs', []);
+
+    setDefault(preferences, 'exactMatch', true);
 };

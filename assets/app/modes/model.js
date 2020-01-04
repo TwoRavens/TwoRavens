@@ -507,7 +507,12 @@ export let leftpanel = forceData => {
                 m(VariableSummary, {variable: app.variableSummaries[variableName]})));
     }
 
-
+    sections.push({
+        value: 'Summary',
+        title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
+        display: 'none',
+        contents: summaryContent
+    });
 
     return m(Panel, {
         side: 'left',
@@ -527,30 +532,7 @@ export let leftpanel = forceData => {
         attrsAll: {style: {height: 'calc(100% - 50px)'}},
         currentTab: app.leftTab,
         callback: app.setLeftTab,
-        sections: DISPLAY_DATAMART_UI ? sections.concat([
-            {
-                value: preprocessTabName,
-                id: 'preprocessInfoTab',
-                display: 'none',
-                title: 'Data Log',
-                contents: m(PreprocessInfo,{})
-            },
-            {
-                value: 'Augment',
-                contents: m(Datamart, {
-                    preferences: app.datamartPreferences,
-                    dataPath: app.workspace.datasetPath,
-                    endpoint: app.datamartURL,
-                    labelWidth: '10em',
-                })
-            },
-            {
-                value: 'Summary',
-                title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
-                display: 'none',
-                contents: summaryContent
-            }
-        ]) : sections
+        sections: sections
     }));
 };
 

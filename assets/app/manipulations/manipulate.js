@@ -27,6 +27,7 @@ import hopscotch from 'hopscotch';
 
 import {formatVariableSummary} from '../views/VariableSummary';
 import Icon from "../../common/views/Icon";
+import Datamart from "../datamart/Datamart";
 
 
 export function menu(compoundPipeline) {
@@ -46,6 +47,8 @@ export function menu(compoundPipeline) {
                 },
                 onclick: () => {
                     setConstraintMenu(undefined);
+                    app.updateRightPanelWidth();
+                    app.updateLeftPanelWidth();
                     common.setPanelOpen('right');
                 }
             }, 'Cancel'),
@@ -75,6 +78,8 @@ export function menu(compoundPipeline) {
                         setConstraintMenu(undefined);
                         setQueryUpdated(true);
                         common.setPanelOpen('right');
+                        app.updateRightPanelWidth();
+                        app.updateLeftPanelWidth();
                     }
                 }
             }, 'Stage')
@@ -266,6 +271,7 @@ export class PipelineFlowchart {
         let isEnabled = () => {
             if (!pipeline.length) return true;
             let finalStep = pipeline.slice(-1)[0];
+            if (finalStep.type === 'augment') return false;
             if (finalStep.type === 'aggregate' && !finalStep.measuresAccum.length) return false;
             if (finalStep.type === 'subset' && !finalStep.abstractQuery.length) return false;
             if (finalStep.type === 'transform' && !(finalStep.transforms.length + finalStep.expansions.length + finalStep.manual.length)) return false;
@@ -298,6 +304,21 @@ export class PipelineFlowchart {
                             'line-height': '14px'
                         }
                     }, '×');
+
+                    if (step.type === 'augment') {
+                        content = m('div', {
+                            style: {
+                                height: '1000px',
+                                'white-space': 'normal',
+                                'text-align': 'left'
+                            }
+                        }, m(Datamart, {
+                            preferences: app.datamartPreferences,
+                            dataPath: app.workspace.datasetPath,
+                            endpoint: app.datamartURL,
+                            labelWidth: '10em',
+                        }))
+                    }
 
                     if (step.type === 'transform') {
                         content = m('div', {style: {'text-align': 'left'}},
@@ -429,6 +450,19 @@ export class PipelineFlowchart {
                 })
             }),
             editable && [
+                DISPLAY_DATAMART_UI && m(Button, {
+                    id: 'btnAddAugment',
+                    title: 'join columns with another dataset',
+                    disabled: !isEnabled(),
+                    class: 'btn-success',
+                    style: {margin: '0.5em'},
+                    onclick: () => {
+                        pipeline.push({
+                            type: 'augment',
+                            id: 'augment ' + pipeline.length
+                        })
+                    }
+                }, plus, ' Augment Step'),
                 // D3M primitives don't support transforms
                 m(Button, {
                     id: 'btnAddTransform',

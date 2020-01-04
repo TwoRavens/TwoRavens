@@ -364,7 +364,7 @@ def util_results_importance_efd(data_pointer, metadata):
                     'actual ' + name: f"${name}" for name in metadata['targets']
                 },
                 **{
-                    predictor: 1 for predictor in metadata['predictors']
+                    f"predictor {predictor}": f"${predictor}" for predictor in metadata['predictors']
                 },
                 **{"_id": 0}}
         },
@@ -373,7 +373,7 @@ def util_results_importance_efd(data_pointer, metadata):
                 predictor: [
                     {
                         "$group": {
-                            **{"_id": f'${predictor}', 'count': {"$sum": 1}},
+                            **{"_id": f'$predictor {predictor}', 'count': {"$sum": 1}},
                             **target_aggregator
                         }
                     },
@@ -385,7 +385,7 @@ def util_results_importance_efd(data_pointer, metadata):
                     },
                     {
                         "$project": {
-                            **{predictor: "$_id"},
+                            **{"predictor": "$_id"},
                             **{k: 1 for k in target_aggregator.keys()},
                             **{"_id": 0}
                         }
@@ -393,14 +393,14 @@ def util_results_importance_efd(data_pointer, metadata):
                 ] if is_categorical(predictor, levels) else [
                     {
                         "$bucketAuto": {
-                            "groupBy": f'${predictor}',
+                            "groupBy": f'$predictor {predictor}',
                             "buckets": 100,
                             "output": target_aggregator
                         }
                     },
                     {
                         "$project": {
-                            **{predictor: {"$avg": ["$_id\\.min", "$_id\\.max"]}},
+                            **{"predictor": {"$avg": ["$_id\\.min", "$_id\\.max"]}},
                             **{k: 1 for k in target_aggregator.keys()},
                             **{"_id": 0}
                         }
@@ -442,6 +442,7 @@ def util_results_importance_efd(data_pointer, metadata):
     def kernel_uniform(size):
         return [1] * size
 
+    print(data)
     def smooth(kernel, data, predictor):
         if len(kernel) % 2 != 1:
             raise ValueError('Kernel must be odd-length')
@@ -459,9 +460,9 @@ def util_results_importance_efd(data_pointer, metadata):
                 **{
                     level: sum(weight * data[clip(i + j_level - offset)][level]
                                for j_level, weight in enumerate(kernel))
-                    for level in data[i].keys() if level != predictor
+                    for level in data[i].keys() if level != "predictor"
                 },
-                **{predictor: data[i][predictor]}
+                **{"predictor": data[i]["predictor"]}
             })
         return smoothed
 

@@ -9,6 +9,7 @@ import * as app from "../app";
 import * as manipulate from "../manipulations/manipulate";
 import Table from "../../common/views/Table";
 import {preformatted} from "../index";
+import Paginated from "../../common/views/Paginated";
 
 export class CanvasDataset {
     oninit(vnode) {
@@ -29,14 +30,28 @@ export class CanvasDataset {
 
             m(ButtonRadio, {
                 id: 'ingestModeButtonBar',
-                onclick: mode => datasetPreferences.ingestMode = mode,
-                activeSection: datasetPreferences.ingestMode,
+                onclick: mode => datasetPreferences.datasourceMode = mode,
+                activeSection: datasetPreferences.datasourceMode,
                 sections: [
+                    {value: 'Current', title: 'information about currently loaded dataset'},
                     {value: 'Presets', title: 'pick from previously uploaded datasets'},
                     {value: 'Upload', title: 'upload a new dataset from your computer'}
                 ]
             }),
-            datasetPreferences.ingestMode === 'Upload' && m('div', {style: {'margin-top': '1em'}},
+            datasetPreferences.datasourceMode === 'Current' && app.workspace.datasetDoc && [
+                m(Button, {
+                    style: {margin: '1em'},
+                    onclick: () => window.open('/#!/dataset')
+                }, 'Generate Dataset Report'),
+                m(Table, {
+                    attrsAll: {
+                        style: {width: 'calc(100% + 2em)', 'margin-left': '-1em'}
+                    },
+                    data: Object.entries(app.workspace.datasetDoc.about)
+                        .map(row => [row[0], preformatted(row[1])])
+                })
+            ],
+            datasetPreferences.datasourceMode === 'Upload' && m('div', {style: {'margin-top': '1em'}},
                 m('div',
                     m('label[style=display:inline-block;width:100px]', 'Dataset Name'),
                     m('div[style=display:inline-block;max-width:300px]', m(TextField, {
@@ -50,7 +65,7 @@ export class CanvasDataset {
                     },
                     data: datasetPreferences.upload.files.map(file => ({
                         name: file.name,
-                        modified: file.lastModifiedDate.toLocaleString(),
+                        modified: file.lastModifiedDate && file.lastModifiedDate.toLocaleString(),
                         size: file.size,
                         type: file.type
                     }))
@@ -70,45 +85,39 @@ export class CanvasDataset {
                 }, 'Upload'),
                 m('div', {style: {display: 'inline-block'}}, uploadStatus)
             ),
-            datasetPreferences.ingestMode === 'Presets' && [
-                m(Table, {
-                    attrsAll: {
-                        style: {width: 'calc(100% + 2em)', 'margin-left': '-1em'}
-                    },
-                    // headers: ['ID', 'name', ''],
-                    data: datasetPreferences.presets.map(preset => [
-                        // preset.id,
-                        preset.name,
-                        m(Button, {
-                            disabled: app.workspace.d3m_config.name === preset.name,
-                            onclick: () => m.request(`user-workspaces/select-dataset-json-resp/${preset.id}`).then(response => {
-                                console.log('response dataset selection');
-                                console.log(response.message);
-                                if (response.success) {
-                                  location.reload();  // Restart!  Should load the new dataset
-                                }else{
-                                  console.log('Error loading new dataset!')
-                                }
-                            })
-                        }, app.workspace.d3m_config.name === preset.name ? 'Loaded' : 'Load')
-                    ])
+            datasetPreferences.datasourceMode === 'Presets' && [
+                m(Paginated, {
+                    data: datasetPreferences.presets,
+                    makePage: data => m(Table, {
+                        attrsAll: {
+                            style: {width: 'calc(100% + 2em)', 'margin-left': '-1em'}
+                        },
+                        // headers: ['ID', 'name', ''],
+                        data: data.map(preset => [
+                            // preset.id,
+                            preset.name,
+                            m(Button, {
+                                disabled: app.workspace.d3m_config.name === preset.name,
+                                onclick: () => m.request(`user-workspaces/select-dataset-json-resp/${preset.id}`).then(response => {
+                                    console.warn('response dataset selection');
+                                    console.log(response.message);
+                                    console.log(response);
+
+                                    if (response.success)
+                                        location.reload();  // Restart!  Should load the new dataset
+                                    else
+                                        console.log('Error loading new dataset!')
+                                })
+                            }, app.workspace.d3m_config.name === preset.name ? 'Loaded' : 'Load')
+                        ])
+                    }),
+                    limit: 10,
+                    page: datasetPreferences.presetPage,
+                    setPage: index => datasetPreferences.presetPage = index
                 })
+
             ]
         );
-
-        let datasetAbout = app.workspace.datasetDoc && [
-            m(Button, {
-                style: {margin: '1em'},
-                onclick: () => window.open('/#!/dataset')
-            }, 'Dataset Description'),
-            m(Table, {
-                attrsAll: {
-                    style: {width: 'calc(100% + 2em)', 'margin-left': '-1em'}
-                },
-                data: Object.entries(app.workspace.datasetDoc.about)
-                    .map(row => [row[0], preformatted(row[1])])
-            })
-        ];
 
         let manipulations = [
             m(manipulate.PipelineFlowchart, {
@@ -120,12 +129,11 @@ export class CanvasDataset {
 
         return m('div', {
                 style: {
-                    'max-width': '800px',
+                    'max-width': '1100px',
                     'margin': 'auto'
                 }
             },
             card('Datasource', datasource),
-            card('About', datasetAbout),
             card('Manipulations', manipulations),
         )
     }
@@ -181,7 +189,7 @@ async function uploadDataset() {
 export let uploadStatus;
 
 let datasetPreferences = {
-    ingestMode: 'Presets',
+    datasourceMode: 'Current',
     upload: {
         name: '',
         files: []
