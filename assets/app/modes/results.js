@@ -433,7 +433,7 @@ export class CanvasSolutions {
                     'importanceScores', adapter.getSolutionId(),'EFD', resultsPreferences.target
                 ]) || {});
 
-                let plotVariables = (sortedPredictors.length > 0 ? sortedPredictors.reversed() : Object.keys(importanceData))
+                let plotVariables = (sortedPredictors.length > 0 ? sortedPredictors.reverse() : Object.keys(importanceData))
                     .filter(predictor => importanceData[predictor]);
 
                 if (plotVariables.length > 0) importanceEFDContent = m('div', [
