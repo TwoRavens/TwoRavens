@@ -3,15 +3,16 @@ to an output file"""
 import csv
 import os
 import types
-from os.path import (dirname, isfile,
+from os.path import (dirname, isdir, isfile,
                      join, normpath, split, splitext)
 from tworaven_apps.utils.json_helper import json_dumps
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
 
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
+from tworaven_apps.utils.file_util import create_directory
 
-OUTPUT_PROBLEMS_DIR = '/output/problems' # temp use while eval specs worked on
+OUTPUT_PROBLEMS_DIR = '/ravens_volume/problems' # temp use while eval specs worked on
 ERR_MSG_UNEXPECTED_DIRECTORY = 'Unexpected base directory'
 ERR_MSG_NO_FILENAME = '"filename" is not specified (cannot be blank)'
 ERR_MSG_NO_DATA = '"data" is not specified (cannot be blank)'
@@ -39,11 +40,43 @@ class BasicProblemWriter(BasicErrCheck):
 
         # alternate write directory, if not, uses dirs in the d3m config
         #
-        self.write_directory = kwargs.get('write_directory', OUTPUT_PROBLEMS_DIR)
+        self.write_directory = self.get_write_directory(kwargs.get('write_directory'))
+        print('--- GET WRITE DIRECTORY ---', self.write_directory)
 
         self.new_filepath = None
 
-        self.write_file()
+        if not self.has_error():
+            self.write_file()
+
+
+    def get_write_directory(self, kwargs_write_dir):
+        """Determine the write directory"""
+        if self.has_error():
+            return
+        # Was it sent as a kwarg?
+        if kwargs_write_dir and isdir(kwargs_write_dir):
+            return kwargs_write_dir
+
+        # Use the d3m_config connected to the user workspace
+        #
+        if self.user_workspace:
+            output_dir = self.user_workspace.d3m_config.root_output_directory
+            output_dir = join(output_dir, 'problems')
+        else:
+            # Use the default/hard-coded directory
+            #
+            output_dir = OUTPUT_PROBLEMS_DIR
+
+        dir_info = create_directory(output_dir)
+        if dir_info.success:
+            return dir_info.result_obj
+
+        self.add_err_msg(dir_info.err_msg)
+        return None
+
+
+
+
 
     def check_filename(self):
         """check the filename"""
