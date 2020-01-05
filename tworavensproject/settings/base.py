@@ -415,7 +415,7 @@ EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
 
 # 11/6/2019 - switch for multi-user testing
 #   passed as a boolean to .js
-DISPLAY_DATAMART_UI = strtobool(os.environ.get('DISPLAY_DATAMART_UI', 'False'))
+DISPLAY_DATAMART_UI = strtobool(os.environ.get('DISPLAY_DATAMART_UI', 'True'))
 
 
 DATAMART_SHORT_TIMEOUT = 10 # seconds

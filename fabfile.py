@@ -98,9 +98,11 @@ def make_d3m_configs_from_files_multiuser_test_limited():
     #
     params[cstatic.SELECTED_NAME_LIST] = [#'05_incarceration',
                                           #'10_state_immigration',
+                                          'TR13_Ethiopia_Health',
+                                          'TR31_PRIO_GRID',
                                           '185_baseball',
                                           '196_autoMpg',
-                                          'LL1_PHEM_weeklyData_malnutrition',
+                                          # 'LL1_PHEM_weeklyData_malnutrition',
                                           'DA_poverty_estimation',
                                           ]
 
