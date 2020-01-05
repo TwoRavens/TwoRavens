@@ -1,0 +1,38 @@
+{
+  "about": {
+    "problemID": "TR13_Ethiopia_Health_problem",
+    "problemName": "Ethiopia_Health",
+    "problemDescription": "Emergency Health data at the weekly reporting level, by woreda",
+    "taskType": "regression",
+    "taskSubType": "",
+    "problemVersion": "1.0",
+    "problemSchemaVersion": "3.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "Ethiopia_Health_dataset",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "0",
+            "colIndex": 7,
+            "colName": "TMalariaOutPCases"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.2
+    },
+    "performanceMetrics": [
+      {
+        "metric": "rootMeanSquaredError"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

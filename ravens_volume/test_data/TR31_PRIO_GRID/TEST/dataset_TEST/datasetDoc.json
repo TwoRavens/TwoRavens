@@ -1,0 +1,368 @@
+{
+  "about": {
+    "datasetID": "TR31_PRIO_GRID",
+    "datasetName": "PRIO-GRID Data",
+    "description": "The PRIO-Grid data set is a spatio-temporal grid structure constructed to aid the compilation, management and analysis of spatial data within a time-consistent framework. It consists of quadratic grid cells that jointly cover all terrestrial areas of the world.",
+    "citation": "",
+    "datasetSchemaVersion": "3.0"
+  },
+  "dataResources": [
+    {
+      "resID": "0",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": ["text/csv"],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": ["index"]
+        },
+        {
+          "colIndex": 1,
+          "colName": "gid",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 2,
+          "colName": "year",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 3,
+          "colName": "agri_ih",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 4,
+          "colName": "barren_ih",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 5,
+          "colName": "bdist1",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 6,
+          "colName": "bdist2",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 7,
+          "colName": "bdist3",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 8,
+          "colName": "capdist",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 9,
+          "colName": "diamsec_y",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 10,
+          "colName": "diamprim_y",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 11,
+          "colName": "droughtcrop_speibase",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 12,
+          "colName": "droughtcrop_speigdm",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 13,
+          "colName": "droughtcrop_spi",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 14,
+          "colName": "droughtend_speibase",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 15,
+          "colName": "droughtend_speigdm",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 16,
+          "colName": "droughtend_spi",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 17,
+          "colName": "droughtstart_speibase",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 18,
+          "colName": "droughtstart_speigdm",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 19,
+          "colName": "droughtstart_spi",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 20,
+          "colName": "droughtyr_speibase",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 21,
+          "colName": "droughtyr_speigdm",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 22,
+          "colName": "droughtyr_spi",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 23,
+          "colName": "drug_y",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 24,
+          "colName": "excluded",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 25,
+          "colName": "forest_ih",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 26,
+          "colName": "gcp_mer",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 27,
+          "colName": "gcp_ppp",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 28,
+          "colName": "gcp_qual",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 29,
+          "colName": "gem_y",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 30,
+          "colName": "goldplacer_y",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 31,
+          "colName": "goldvein_y",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 32,
+          "colName": "goldsurface_y",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 33,
+          "colName": "grass_ih",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 34,
+          "colName": "gwarea",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 35,
+          "colName": "gwno",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 36,
+          "colName": "irrig_max",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 37,
+          "colName": "irrig_min",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 38,
+          "colName": "irrig_sd",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 39,
+          "colName": "irrig_sum",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 40,
+          "colName": "nlights_calib_mean",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 41,
+          "colName": "pasture_ih",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 42,
+          "colName": "petroleum_y",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 43,
+          "colName": "pop_gpw_sum",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 44,
+          "colName": "pop_hyd_sum",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 45,
+          "colName": "prec_gpcc",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 46,
+          "colName": "prec_gpcp",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 47,
+          "colName": "savanna_ih",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 48,
+          "colName": "shrub_ih",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 49,
+          "colName": "temp",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 50,
+          "colName": "urban_ih",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 51,
+          "colName": "water_ih",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 52,
+          "colName": "row",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 53,
+          "colName": "col",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 54,
+          "colName": "xcoord",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 55,
+          "colName": "ycoord",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 56,
+          "colName": "cmr_mean",
+          "colType": "real",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 57,
+          "colName": "civconf",
+          "colType": "integer",
+          "role": ["suggestedTarget"]
+        }
+      ]
+    }
+  ]
+}

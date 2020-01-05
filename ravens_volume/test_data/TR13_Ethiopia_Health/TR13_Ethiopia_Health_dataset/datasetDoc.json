@@ -1,0 +1,422 @@
+{
+  "about": {
+    "datasetID": "TR13_Ethiopia_Health",
+    "datasetName": "Ethiopia_Health",
+    "description": "Emergency Health data at the weekly reporting level, by woreda",
+    "citation": "",
+    "datasetSchemaVersion": "3.0"
+  },
+  "dataResources": [
+    {
+      "resID": "0",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": ["text/csv"],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": ["index"]
+        },
+        {
+          "colIndex": 1,
+          "colName": "RegionName",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 2,
+          "colName": "ZoneName",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 3,
+          "colName": "WoredaName",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 4,
+          "colName": "Year",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 5,
+          "colName": "EpidemicWeek",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 6,
+          "colName": "Month",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 7,
+          "colName": "TMalariaOutPCases",
+          "colType": "integer",
+          "role": ["suggestedTarget"]
+        },
+        {
+          "colIndex": 8,
+          "colName": "TMalariaInPCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 9,
+          "colName": "TMalariaInPDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 10,
+          "colName": "TMSuspectedFeverExamined",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 11,
+          "colName": "PosMalariaRDTorMicroscopyPFOutPCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 12,
+          "colName": "PosMalariaRDTorMicroscopyPVOutPCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 13,
+          "colName": "MeningitisOutPCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 14,
+          "colName": "MeningitisInPCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 15,
+          "colName": "MeningitisInPDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 16,
+          "colName": "DysenteryOutPCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 17,
+          "colName": "DysenteryInPCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 18,
+          "colName": "DysenteryInPDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 19,
+          "colName": "TyphoidfeverOutPCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 20,
+          "colName": "TyphoidfeverInPCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 21,
+          "colName": "TyphoidfeverInPDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 22,
+          "colName": "RelapsingfeverOutPCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 23,
+          "colName": "RelapsingfeverInPCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 24,
+          "colName": "RelapsingfeverInPDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 25,
+          "colName": "EpidemicTyphusOutPCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 26,
+          "colName": "EpidemicTyphusInPCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 27,
+          "colName": "EpidemicTyphusInPDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 28,
+          "colName": "MalnutritionOutPCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 29,
+          "colName": "MalnutritionInPCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 30,
+          "colName": "MalnutritionInPDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 31,
+          "colName": "AFPPolioCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 32,
+          "colName": "AFPPolioDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 33,
+          "colName": "AnthraxCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 34,
+          "colName": "AnthraxDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 35,
+          "colName": "CholeraAWDCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 36,
+          "colName": "CholeraAWDDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 37,
+          "colName": "DracunculiasisGuinea.wormCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 38,
+          "colName": "DracunculiasisGuineawormDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 39,
+          "colName": "MeaslesCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 40,
+          "colName": "MeaslesDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 41,
+          "colName": "NeonatalTetanusCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 42,
+          "colName": "NeonatalTetanusDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 43,
+          "colName": "PandemicInfluenzaCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 44,
+          "colName": "PandemicInfluenzaDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 45,
+          "colName": "RabiesCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 46,
+          "colName": "RabiesDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 47,
+          "colName": "SARSCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 48,
+          "colName": "SARSDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 49,
+          "colName": "SmallpoxCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 50,
+          "colName": "SmallpoxDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 51,
+          "colName": "ViralhemorrhagicfeverCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 52,
+          "colName": "ViralhemorrhagicfeverDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 53,
+          "colName": "YellowfeverCases",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 54,
+          "colName": "YellowfeverDeaths",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 55,
+          "colName": "MaternalDeath",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 56,
+          "colName": "NoofGovHPsexpectedbyRHB",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 57,
+          "colName": "NoofGovHCsexpectedbyRHB",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 58,
+          "colName": "NoofGovHospsexpectedbyRHB",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 59,
+          "colName": "NoofNGOHFexpectedbyRHB",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 60,
+          "colName": "NoofOtherHFsexpectedbyRHB",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 61,
+          "colName": "NoofGovHPsReported",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 62,
+          "colName": "NoofGovHCsReported",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 63,
+          "colName": "NoofGovHospsReported",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 64,
+          "colName": "NoofNGOHFsReported",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 65,
+          "colName": "NoofOthersHFReported",
+          "colType": "integer",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 66,
+          "colName": "Timeliness",
+          "colType": "categorical",
+          "role": ["attribute"]
+        }
+      ]
+    }
+  ]
+}
