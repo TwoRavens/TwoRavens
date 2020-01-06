@@ -1761,8 +1761,8 @@ let loadImportanceScore = async (problem, adapter, mode) => {
     if (mode === 'Partials')
         dataPointers = {'Partials': adapter.getDataPointer('partials')};
     if (mode === 'PDP/ICE')
-        dataPointers = app.getPredictorVariables(problem).reduce((out, predictor) => Object.assign({
-            [predictor]: 'ICE_synthetic_' + predictor
+        dataPointers = app.getPredictorVariables(problem).reduce((out, predictor) => Object.assign(out, {
+            [predictor]: adapter.getDataPointer('ICE_synthetic_' + predictor)
         }), {});
 
     // don't load if data is not available
@@ -1852,6 +1852,9 @@ let loadImportanceScore = async (problem, adapter, mode) => {
             return out;
         }, {});
 
+        console.log(partialsData);
+
+
 
     }
 
@@ -1878,9 +1881,11 @@ let loadImportanceScore = async (problem, adapter, mode) => {
         response = Object.keys(responses).reduce((out, resp) => {
             return {
                 success: out.success && resp.success,
-                data: {scores: Object.assign(out.data.scores, resp.data.scores)}
+                data: {scores: Object.assign(out.data.scores, resp.success ? resp.data.scores : {})}
             }
         }, {success: true, data: {}})
+
+        console.log(response);
     }
 
     // don't accept response if current problem has changed

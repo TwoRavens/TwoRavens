@@ -27,7 +27,7 @@ import hopscotch from 'hopscotch';
 
 import {formatVariableSummary} from '../views/VariableSummary';
 import Icon from "../../common/views/Icon";
-import Datamart from "../datamart/Datamart";
+import * as datamart from '../datamart/Datamart';
 
 
 export function menu(compoundPipeline) {
@@ -111,6 +111,13 @@ function canvas(compoundPipeline) {
 
     let {pipeline, variables} = queryMongo.buildPipeline(compoundPipeline, app.workspace.raven_config.variablesInitial);
 
+    if (constraintMenu.type === 'augment') return m(datamart.CanvasDatamart, {
+        preferences: app.datamartPreferences,
+        dataPath: app.workspace.datasetPath,
+        endpoint: app.datamartURL,
+        labelWidth: '10em',
+    });
+
     if (constraintMenu.type === 'transform') return m(CanvasTransform, {
         preferences: constraintPreferences,
         pipeline,
@@ -147,6 +154,9 @@ function canvas(compoundPipeline) {
 
 export function leftpanel() {
     if (!app.workspace.d3m_config.name || !constraintMenu)
+        return;
+
+    if (constraintMenu.step.type === 'augment')
         return;
 
     return m(Panel, {
@@ -312,12 +322,7 @@ export class PipelineFlowchart {
                                 'white-space': 'normal',
                                 'text-align': 'left'
                             }
-                        }, m(Datamart, {
-                            preferences: app.datamartPreferences,
-                            dataPath: app.workspace.datasetPath,
-                            endpoint: app.datamartURL,
-                            labelWidth: '10em',
-                        }))
+                        }, step.type + ' TAG TODO')
                     }
 
                     if (step.type === 'transform') {
@@ -457,10 +462,8 @@ export class PipelineFlowchart {
                     class: 'btn-success',
                     style: {margin: '0.5em'},
                     onclick: () => {
-                        pipeline.push({
-                            type: 'augment',
-                            id: 'augment ' + pipeline.length
-                        })
+                        let step = {type: 'augment', id: 'augment ' + pipeline.length};
+                        setConstraintMenu({type: 'augment', step, pipeline: compoundPipeline});
                     }
                 }, plus, ' Augment Step'),
                 // D3M primitives don't support transforms

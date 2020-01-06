@@ -129,7 +129,7 @@ export class CanvasDataset {
 
         return m('div', {
                 style: {
-                    'max-width': '1100px',
+                    'max-width': '800px',
                     'margin': 'auto'
                 }
             },

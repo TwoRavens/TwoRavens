@@ -29,9 +29,175 @@ import {datamartDatasetIndexSchema} from "./dataset_schema_2019_01";
 
 
 let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
-let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-right:1em;]', text);
+let warn = value => m('[style=color:#dc3545;display:inline-block;margin-right:1em;]', value);
 
-export default class Datamart {
+let makeCard = ({key, color, summary, labelWidth}) => m('table', {
+        style: {
+            'background': common.menuColor,
+            // 'border': common.borderColor,
+            margin: '1em',
+            'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)',
+            width: 'calc(100% - 2em)'
+        }
+    },
+    m('tr',
+        m('td', {
+            style: {
+                background: color,
+                height: '100%',
+                padding: '1em',
+                width: labelWidth || 0, // by default, 0 makes div width wrap content
+                'max-width': labelWidth || 0,
+                'word-break': 'break-word',
+                'border-right': common.borderColor
+            }
+        }, bold(key)),
+        m('td', {style: {width: 'calc(100% - 2em)'}}, summary))
+);
+
+let makeDatasetCard = (preferences, result, index, endpoint, labelWidth) => {
+
+    let getData = preferences.getData;
+    let cached = preferences.cached;
+
+    /**
+     *  Materialize: download a dataset based on a specific search result
+     */
+    let materializeData = async () => {
+        console.log(`materializeData ${index}`);
+        // Get the search result and find the dataset id.
+        //  May differ between Datamart.  See "infoPaths" above
+        //
+        let id = getData(result, 'id');
+        preferences.selectedResult = result;
+
+        if (!(id in cached)) {
+            preferences.setPreviewButtonState(index, true);
+            let sourceMode = preferences.sourceMode;
+
+            // Use the materialize endpoint.
+            //  Note: the materialized data is returned through websockets
+            //    but an intial message relays if the request worked.
+            //
+            let response = await m.request(endpoint + 'materialize-async', {
+                method: 'POST',
+                data: {
+                    search_result: JSON.stringify(preferences.selectedResult),
+                    source: preferences.sourceMode
+                    //  workspace_id: app.workspace.user_workspace_id
+                    //problem_id:
+                }
+            });
+            if (response.success) {
+                preferences.success[sourceMode] = 'Preview initiated ...';
+                delete preferences.error[sourceMode];
+            } else {
+                // show the response error message
+                delete preferences.success[sourceMode];
+                preferences.error[sourceMode] = response.message;
+            }
+        }
+
+        m.redraw();
+    };
+
+
+    let buttonAugment = m(Button, {
+        style: {'margin': '0em 0.25em'},
+        onclick: async () => {
+
+            preferences.selectedResult = result;
+
+            // set suggested pairs to join on automatically
+            let augmentationData = getData(result, 'augmentation') || {left_columns_names: []};
+            preferences.joinPairs = augmentationData.left_columns_names.map((_, j) => [
+                augmentationData.left_columns_names[j],
+                augmentationData.right_columns_names[j]
+            ]);
+
+            if (preferences.sourceMode === 'ISI')
+                preferences.modalShown = 'augment';
+
+            if (preferences.sourceMode === 'NYU') {
+                preferences.modalShown = 'augment';
+            }
+        }
+    }, 'Augment');
+
+    let buttonMetadata = m(Button, {
+        style: {'margin': '0em 0.25em'},
+        onclick: () => {
+            preferences.selectedResult = result;
+            preferences.modalShown = 'metadata';
+        }
+    }, 'Metadata');
+
+    let buttonPreview = m(ButtonLadda, {
+        id: 'buttonPreview' + index,
+        class: 'btn btn-secondary',
+        activeLadda: preferences.previewButtonState[index],
+        //disabled: preferences.previewButtonState[i] === true,
+
+        style: {'margin': '0em 0.25em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'},
+        onclick: async () => {
+            let id = getData(result, 'id');
+            preferences.selectedResult = result;
+
+            await materializeData();
+
+            if (id in cached)
+                preferences.modalShown = 'preview';
+
+            m.redraw();
+        }
+    }, 'Preview');
+
+    return makeCard({
+        key: m('', m('', getData(result, 'name') || ''),
+            m('p[style=font-weight:normal]', `(#${index + 1})`)),
+        color: preferences.selectedResult === result ? common.selVarColor : common.grayColor,
+        summary: m('div',
+            m('label[style=width:100%]', 'Relevance: ' + getData(result, 'score')),
+            buttonPreview,
+            buttonAugment,
+            buttonMetadata,
+            m(Table, {
+                attrsAll: {style: {'margin-top': '.5em'}},
+                data: [
+                    (getData(result, 'description') || '').length > 0 && [
+                        'Description', getData(result, 'description')
+                    ],
+                    getData(result, 'size') && [
+                        'Size (bytes)', numberWithCommas(getData(result, 'size'))
+                    ],
+                    getData(result, 'row count') && [
+                        'Size (rows)', getData(result, 'row count')
+                    ],
+                    getData(result, 'keywords') && [
+                        'Keywords', m(ListTags, {tags: getData(result, 'keywords'), readonly: true})
+                    ]
+                ]
+            })),
+        labelWidth
+    })
+};
+
+export class CanvasDatamart {
+    view(vnode) {
+        return m('div#canvasDatamart', {
+                style: {'height': '100%', 'width': '100%', 'padding-top': common.panelMargin}
+            },
+            m('div', {
+                style: {
+                    'max-width': '1200px',
+                    'margin': 'auto',
+                    'height': '100%'
+                }
+            }, m(Datamart, vnode.attrs)))
+    }
+}
+
+export class Datamart {
 
     view(vnode) {
         let {
@@ -46,7 +212,6 @@ export default class Datamart {
             query,    // https://datadrivendiscovery.org/wiki/display/work/Datamart+Query+API
             results,  // list of matched metadata
             indices,  // data to be attached to the upload
-            cached,   // summary info and paths related to materialized datasets
             getData
         } = preferences;
 
@@ -54,74 +219,6 @@ export default class Datamart {
             m('h5', 'The system is performing an augmentation.'),
             common.loader('DatamartAugmenting')
         );
-
-        let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
-
-        let makeCard = ({key, color, summary}) => m('table', {
-                style: {
-                    'background': common.menuColor,
-                    // 'border': common.borderColor,
-                    margin: '1em',
-                    'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)',
-                    width: 'calc(100% - 2em)'
-                }
-            },
-            m('tr',
-                m('td', {
-                    style: {
-                        background: color,
-                        height: '100%',
-                        padding: '1em',
-                        width: labelWidth || 0, // by default, 0 makes div width wrap content
-                        'max-width': labelWidth || 0,
-                        'word-break': 'break-word',
-                        'border-right': common.borderColor
-                    }
-                }, bold(key)),
-                m('td', {style: {width: 'calc(100% - 2em)'}}, summary))
-        );
-
-        /**
-         *  Materialize: download a dataset based on a specific search result
-         */
-        let materializeData = async i => {
-            console.log(`materializeData ${i}`);
-            // Get the search result and find the dataset id.
-            //  May differ between Datamart.  See "infoPaths" above
-            //
-            let id = getData(results[preferences.sourceMode][i], 'id');
-
-            preferences.selectedResult = results[preferences.sourceMode][i];
-
-            if (!(id in cached)) {
-                preferences.setPreviewButtonState(i, true);
-                let sourceMode = preferences.sourceMode;
-
-                // Use the materialize endpoint.
-                //  Note: the materialized data is returned through websockets
-                //    but an intial message relays if the request worked.
-                //
-                let response = await m.request(endpoint + 'materialize-async', {
-                    method: 'POST',
-                    data: {
-                        search_result: JSON.stringify(preferences.selectedResult),
-                        source: preferences.sourceMode
-                      //  workspace_id: app.workspace.user_workspace_id
-                        //problem_id:
-                    }
-                });
-                if (response.success) {
-                    preferences.success[sourceMode] = 'Preview initiated ...';
-                    delete preferences.error[sourceMode];
-                } else {
-                    // show the response error message
-                    delete preferences.success[sourceMode];
-                    preferences.error[sourceMode] = response.message;
-                }
-            }
-
-            m.redraw();
-        };
 
         let handleIndex = async index => {
             console.log('Datamart Index:', index);
@@ -149,56 +246,6 @@ export default class Datamart {
                 delete preferences.success[sourceMode]
             }
         };
-
-        let buttonAugment = i => m(Button, {
-            style: {'margin': '0em 0.25em'},
-            onclick: async () => {
-
-                preferences.selectedResult = results[preferences.sourceMode][i];
-
-                // set suggested pairs to join on automatically
-                let augmentationData = getData(results[preferences.sourceMode][i], 'augmentation') || {left_columns_names: []};
-                preferences.joinPairs = augmentationData.left_columns_names.map((_, j) => [
-                    augmentationData.left_columns_names[j],
-                    augmentationData.right_columns_names[j]
-                ]);
-
-                if (preferences.sourceMode === 'ISI')
-                    preferences.modalShown = 'augment';
-
-                if (preferences.sourceMode === 'NYU') {
-                    preferences.modalShown = 'augment';
-                }
-            }
-        }, 'Augment');
-
-        let buttonMetadata = i => m(Button, {
-            style: {'margin': '0em 0.25em'},
-            onclick: () => {
-                preferences.selectedResult = results[preferences.sourceMode][i];
-                preferences.modalShown = 'metadata';
-            }
-        }, 'Metadata');
-
-        let buttonPreview = i => m(ButtonLadda, {
-            id: 'buttonPreview' + i,
-            class: 'btn btn-secondary',
-            activeLadda: preferences.previewButtonState[i],
-            //disabled: preferences.previewButtonState[i] === true,
-
-            style: {'margin': '0em 0.25em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'},
-            onclick: async () => {
-                let id = getData(results[preferences.sourceMode][i], 'id');
-                preferences.selectedResult = results[preferences.sourceMode][i];
-
-                await materializeData(i);
-
-                if (id in cached)
-                    preferences.modalShown = 'preview';
-
-                m.redraw();
-            }
-        }, 'Preview');
 
         return m('div', {style: {width: '100%',
                 height: '100%',
@@ -472,34 +519,7 @@ export default class Datamart {
 
                     m('div#datamartResults', results[preferences.sourceMode]
                         .sort((a, b) => getData(b, 'score') - getData(a, 'score'))
-                        .map((result, i) => makeCard({
-                            key: m('', m('', getData(result, 'name') || ''),
-                                m('p[style=font-weight:normal]', `(#${i + 1})`)),
-                            color: preferences.selectedResult === result ? common.selVarColor : common.grayColor,
-                            summary: m('div',
-                                m('label[style=width:100%]', 'Relevance: ' + getData(result, 'score')),
-                                buttonPreview(i),
-
-                                buttonAugment(i),
-                                buttonMetadata(i),
-                                m(Table, {
-                                    attrsAll: {style: {'margin-top': '.5em'}},
-                                    data: [
-                                        (getData(result, 'description') || '').length > 0 && [
-                                            'Description', getData(result, 'description')
-                                        ],
-                                        getData(result, 'size') && [
-                                            'Size (bytes)', numberWithCommas(getData(result, 'size'))
-                                        ],
-                                        getData(result, 'row count') && [
-                                            'Size (rows)', getData(result, 'row count')
-                                        ],
-                                        getData(result, 'keywords') && [
-                                            'Keywords', m(ListTags, {tags: getData(result, 'keywords'), readonly: true})
-                                        ]
-                                    ]
-                                }))
-                        }))
+                        .map((result, i) => makeDatasetCard(preferences, result, i, endpoint, labelWidth))
                     )
                 ]
             }),
@@ -704,7 +724,7 @@ export class ModalDatamart {
                                 preferences.error[sourceMode] = m.trust(response.message);
                                 // turn off spinner
                                 preferences.isAugmenting = false;
-                                delete preferences.success[sourceMode]
+                                delete preferences.success[sourceMode];
                                 m.redraw()
                                 // preferences.isSearching[sourceMode] = false;
                             }
