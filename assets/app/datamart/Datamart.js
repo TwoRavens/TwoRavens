@@ -693,6 +693,12 @@ export class ModalDatamart {
                                     .map(rightCol => originalRightColumns.indexOf(rightCol)));
                             });
 
+                            // standardized summary of some key fields
+                            let summary = ['name', 'description', 'row count'].reduce((out, key) => Object.assign(out, {
+                                [key]: preferences.getData(preferences.selectedResult, key)
+                            }), {});
+                            summary.joinPairs = preferences.joinPairs;
+
                             let augment_api_data = {
                                 data_path: dataPath,
                                 search_result: JSON.stringify(preferences.selectedResult),
@@ -700,6 +706,7 @@ export class ModalDatamart {
                                 left_columns: JSON.stringify(joinLeftColumns),
                                 right_columns: JSON.stringify(joinRightColumns),
                                 exact_match: preferences.exactMatch,
+                                summary
                             };
 
                             console.log('augment_api_data: ' + JSON.stringify(augment_api_data));

@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {TreeAggregate, TreeImputation, TreeSubset, TreeTransform} from '../views/QueryTrees';
+import {TreeAggregate, TreeImputation, TreeSubset, TreeTransform, TreeAugment} from '../views/QueryTrees';
 import CanvasContinuous from '../canvases/CanvasContinuous';
 import CanvasDate from '../canvases/CanvasDate';
 import CanvasDiscrete from '../canvases/CanvasDiscrete';
@@ -52,7 +52,7 @@ export function menu(compoundPipeline) {
                     common.setPanelOpen('right');
                 }
             }, 'Cancel'),
-            m(Button, {
+            constraintMenu.step.type !== 'augment' && m(Button, {
                 id: 'btnStage',
                 class: 'btn-success',
                 style: {
@@ -316,13 +316,11 @@ export class PipelineFlowchart {
                     }, '×');
 
                     if (step.type === 'augment') {
-                        content = m('div', {
-                            style: {
-                                height: '1000px',
-                                'white-space': 'normal',
-                                'text-align': 'left'
-                            }
-                        }, step.type + ' TAG TODO')
+                        content = m('div', {style: {'text-align': 'left'}},
+                            // deleteButton, // TODO: undo augmentation by switching to previous workspace
+                            m('h4[style=font-size:16px;margin-left:0.5em]', 'Augmentation'),
+                            m(TreeAugment, {step, editable, redraw, setRedraw})
+                        )
                     }
 
                     if (step.type === 'transform') {
@@ -546,6 +544,8 @@ let datasetChangedTour = {
 };
 
 export let pendingHardManipulation = false;
+export let setPendingHardManipulation = state => pendingHardManipulation = state;
+
 // called when a query is updated
 export let setQueryUpdated = async state => {
 
@@ -694,7 +694,8 @@ export let setConstraintType = (type, pipeline) => {
     if (constraintMetadata.type === type) pipeline = undefined;
     constraintMetadata.type = type;
     if (constraintMetadata.type === 'continuous') {
-        let varMeta = variableMetadata[constraintMetadata.columns[0]];
+        let column = constraintMetadata.columns[0];
+        let varMeta = variableMetadata[column];
 
         constraintMetadata.max = varMeta.max;
         constraintMetadata.min = varMeta.min;

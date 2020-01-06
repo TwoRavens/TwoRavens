@@ -314,6 +314,9 @@ class AugmentUtil(BasicErrCheck):
                     ('The dataset has been augmented '
                      'and a new workspace created'),
                     msg_cnt=99,
-                    data=dict(workspace_json_string=ws_string_info.result_obj))
+                    data={
+                        'workspace_json_string': ws_string_info.result_obj,
+                        'augment_params': self.augment_params
+                    })
         ws_msg.send_message(self.websocket_id)
         LOGGER.info('(5c) sent!')

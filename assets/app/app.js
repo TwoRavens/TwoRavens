@@ -293,7 +293,8 @@ export function setSelectedMode(mode) {
                 results.resultsPreferences.dataSplit = 'all';
         }
 
-        if (is_model_mode && manipulate.pendingHardManipulation) {
+        if (!is_dataset_mode && manipulate.pendingHardManipulation) {
+            hopscotch.endTour(true);
             let ravenConfig = workspace.raven_config;
             buildDatasetPreprocess().then(response => {
                 if (response.preprocess)
@@ -305,6 +306,7 @@ export function setSelectedMode(mode) {
                     setSelectedProblem(problemCopy.problemID);
                 }
             });
+            manipulate.setPendingHardManipulation(false);
         }
 
         currentMode = mode;
@@ -472,7 +474,6 @@ export let tutorial_mode = localStorage.getItem('tutorial_mode') !== 'false';
 
 export let LEFT_TAB_NAME_VARIABLES = 'Variables';
 export let LEFT_TAB_NAME_DISCOVER = 'Discover';
-export let LEFT_TAB_NAME_AUGMENT = 'Augment';
 
 export let leftTab = LEFT_TAB_NAME_VARIABLES; // current tab in left panel
 export let leftTabHidden = LEFT_TAB_NAME_VARIABLES; // stores the tab user was in before summary hover
@@ -506,7 +507,7 @@ export let setLeftTab = (tabName) => {
     explore.setExploreVariate(tabName === LEFT_TAB_NAME_DISCOVER ? 'Problem' : 'Univariate');
     setFocusedPanel('left');
 
-    if (tabName === LEFT_TAB_NAME_DISCOVER && !taskPreferences.task1_finished)
+    if (tabName === LEFT_TAB_NAME_DISCOVER && !taskPreferences.task1_finished && tutorial_mode)
         setTimeout(() => hopscotch.startTour(task1Tour), 100);
 };
 
@@ -2533,13 +2534,16 @@ export async function handleAugmentDataMessage(msg_data) {
 
             // (3) store prior manipulations
             //
+            console.log(msg_data);
+            let augmentStep = Object.assign({type: 'augment'}, msg_data.data.augment_params);
 
             // - Copy manipulations from the orig selected problem to the
             // workspace's priorManipulations.
             // - Clear the orig. selected problem manipulations
             workspace.raven_config.priorManipulations = [
                 ...priorHardManipulations,
-                ...priorSelectedProblem.manipulations
+                ...priorSelectedProblem.manipulations,
+                augmentStep
             ];
             priorSelectedProblem.manipulations = [];
 

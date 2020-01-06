@@ -10,15 +10,15 @@ import * as manipulate from "../manipulations/manipulate";
 import Table from "../../common/views/Table";
 import {preformatted} from "../index";
 import Paginated from "../../common/views/Paginated";
+import MenuHeaders from "../../common/views/MenuHeaders";
 
 export class CanvasDataset {
-    oninit(vnode) {
-        m.request('user-workspaces/list-dataset-choices', {
+    oninit() {
+        if (!datasetPreferences.presets) m.request('user-workspaces/list-dataset-choices', {
             method: 'POST',
             body: {}
         }).then(response => {
             if (!response.success) return;
-            console.log(response);
             datasetPreferences.presets = response.data;
             m.redraw()
         })
@@ -119,13 +119,28 @@ export class CanvasDataset {
             ]
         );
 
-        let manipulations = [
-            m(manipulate.PipelineFlowchart, {
-                compoundPipeline: app.workspace.raven_config.hardManipulations,
-                pipeline: app.workspace.raven_config.hardManipulations,
-                editable: true
-            })
-        ];
+        let manipulationsMenu = m(MenuHeaders, {
+            id: 'manipulationsMenu',
+            attrsAll: {style: {height: '100%', overflow: 'auto'}},
+            sections: [
+                (workspace.raven_config.priorManipulations || []).length !== 0 && {
+                    value: 'Prior Pipeline',
+                    contents: m(manipulate.PipelineFlowchart, {
+                        compoundPipeline: workspace.raven_config.priorManipulations,
+                        pipeline: workspace.raven_config.priorManipulations,
+                        editable: false
+                    })
+                },
+                {
+                    value: 'Dataset Pipeline',
+                    contents: m(manipulate.PipelineFlowchart, {
+                        compoundPipeline: app.workspace.raven_config.hardManipulations,
+                        pipeline: app.workspace.raven_config.hardManipulations,
+                        editable: true
+                    })
+                }
+            ]
+        });
 
         return m('div', {
                 style: {
@@ -134,7 +149,7 @@ export class CanvasDataset {
                 }
             },
             card('Datasource', datasource),
-            card('Manipulations', manipulations),
+            card('Manipulations', manipulationsMenu),
         )
     }
 }

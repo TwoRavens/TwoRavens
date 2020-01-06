@@ -5,7 +5,7 @@ import Button from "../../common/views/Button";
 export default class TreeRender {
     view(vnode) {
         let {data, state, renderNode, callbacks} = vnode.attrs;
-
+        callbacks = callbacks || {};
         renderNode = renderNode || renderNodeFactory(callbacks);
 
         return data.map(datum => m('div',
