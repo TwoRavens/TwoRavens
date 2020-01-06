@@ -45,11 +45,11 @@ after_success:
   # -------------------------------------
   # Temp push, to test new multiuser
   # -------------------------------------
-  - if [ "$TRAVIS_BRANCH" == "772-order-mike" ]; then
-    docker build -t tworavens/ravens-main:jan-2020-01 .;
-    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-    docker push tworavens/ravens-main:jan-2020-01;
-    fi
+  #- if [ "$TRAVIS_BRANCH" == "some-branch-2010" ]; then
+  #  docker build -t tworavens/ravens-main:jan-2020-01 .;
+  #  docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+  #  docker push tworavens/ravens-main:jan-2020-01;
+  #  fi
   # -------------------------------------
   # Temp push, to test new k8s deploy
   # -------------------------------------
