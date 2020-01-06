@@ -26,7 +26,7 @@ import * as explore from './modes/explore';
 import {bold, linkURLwithText, linkURL, link} from "./index";
 import {getClearWorkspacesLink, clearWorkpacesAndReloadPage} from "./utils";
 
-import {search} from "./datamart/Datamart";
+import {search, setDatamartDefaults} from "./datamart/Datamart";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -522,6 +522,7 @@ export let panelWidth = {
 
 export let updateRightPanelWidth = () => {
     if (is_results_mode) common.panelOcclusion.right = '0px';
+    else if (is_dataset_mode) common.panelOcclusion.right = '0px';
     // else if (is_model_mode && !selectedProblem) common.panelOcclusion.right = common.panelMargin;
     else if (common.panelOpen['right']) {
         let tempWidth = {
@@ -532,8 +533,9 @@ export let updateRightPanelWidth = () => {
     }
     else panelWidth['right'] = `calc(${common.panelMargin}*2 + 16px)`;
 };
-let updateLeftPanelWidth = () => {
-    if (common.panelOpen['left'])
+export let updateLeftPanelWidth = () => {
+    if (is_dataset_mode && !manipulate.constraintMenu) common.panelOcclusion.left = '0px';
+    else if (common.panelOpen['left'])
         panelWidth['left'] = `calc(${common.panelMargin}*2 + ${model.leftPanelWidths[leftTab]})`;
     else panelWidth['left'] = `calc(${common.panelMargin}*2 + 16px)`;
 };
@@ -706,7 +708,7 @@ export let setShowModalDownload = state => showModalDownload = state;
 export let datamartPreferences = {
     // default state for query
     query: {
-      keywords: []
+        keywords: []
     },
     // potential new indices to submit to datamart
     indices: [],
@@ -726,6 +728,8 @@ export let datamartPreferences = {
       NYU: []
     }
 };
+
+if (DISPLAY_DATAMART_UI) setDatamartDefaults(datamartPreferences);
 
 // eventually read this from the schema with real descriptions
 // metrics, tasks, and subtasks as specified in D3M schemas
@@ -1190,8 +1194,8 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
 
     d3.select("title").html("TwoRavens " + workspace.d3m_config.name);
 
-    if (DISPLAY_DATAMART_UI){
-      setTimeout(() => search(datamartPreferences, datamartURL).then(m.redraw), 1000);
+    if (DISPLAY_DATAMART_UI) {
+        setTimeout(() => search(datamartPreferences, datamartURL).then(m.redraw), 1000);
     }
 
     let newRavenConfig = workspace.raven_config === null;
@@ -2667,3 +2671,10 @@ export let isProblemValid = problem => {
 // n linearly spaced points between min and max
 let linspace = (min, max, n) => Array.from({length: n})
     .map((_, i) => min + (max - min) / (n - 1) * i);
+
+
+export let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
+export let setRecursive = (obj, map) => map
+    .reduce((obj, pair) => setDefault(obj, pair[0], pair[1]), obj);
+export let getRecursive = (obj, map) => map
+    .reduce((obj, key) => obj ? obj[key] : undefined, obj);

@@ -266,10 +266,6 @@ let findProblem = data => {
     return problems[solvedProblemId];
 };
 
-let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
-let setRecursiveDefault = (obj, map) => map
-    .reduce((obj, pair) => setDefault(obj, pair[0], pair[1]), obj);
-
 // TODO: determine why django sometimes fails to provide a model id
 export let handleDescribeResponse = response => {
     let data = response.data;
@@ -285,7 +281,7 @@ export let handleDescribeResponse = response => {
             return;
         }
 
-        setRecursiveDefault(solvedProblem.solutions, [
+        app.setRecursive(solvedProblem.solutions, [
             [data.system, {}], [data.model_id, {}]]);
         Object.assign(solvedProblem.solutions[data.system][data.model_id], {
             name: data.model,
@@ -311,7 +307,7 @@ export let handleProduceResponse = response => {
     }
 
     if (response.success) {
-        setRecursiveDefault(solvedProblem.solutions, [
+        app.setRecursive(solvedProblem.solutions, [
             [data.system, {}], [data.model_id, {}], ['produce', []]]);
         solvedProblem.solutions[data.system][data.model_id].solutionId = data.model_id;
         solvedProblem.solutions[data.system][data.model_id].systemId = data.system;
@@ -329,7 +325,7 @@ export let handleScoreResponse = response => {
     }
 
     if (response.success) {
-        setRecursiveDefault(solvedProblem.solutions, [
+        app.setRecursive(solvedProblem.solutions, [
             [data.system, {}], [data.model_id, {}], ['scores', []]]);
         solvedProblem.solutions[data.system][data.model_id].solutionId = data.model_id;
         solvedProblem.solutions[data.system][data.model_id].systemId = data.system;

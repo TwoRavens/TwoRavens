@@ -56,12 +56,13 @@ fi
 : $(fab celery_restart)
 
 fab clear_d3m_configs
-fab make_d3m_configs_from_files
+: $(fab make_d3m_configs_from_files)
 
 # prevent package installation in R. This must be set within the 2ravens virtualenv
 export FLASK_USE_PRODUCTION_MODE=yes
 # limit the strategies in mlbox to ones that run immediately, for quick results debugging
 export AUTOML_FAST_DEBUG=yes
+export DISPLAY_DATAMART_UI=yes
 
 gnome-terminal --tab -- /bin/bash -c 'echo -ne "\033]0;django\007"; fuser -k 8080/tcp; fab run_with_ta2'
 gnome-terminal --tab -- /bin/bash -c "echo -ne '\033]0;ta2 $1\007'; docker kill ta2_server; fab run_ta2_$1_choose_config:$DATA_ID"

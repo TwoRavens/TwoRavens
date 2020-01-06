@@ -24,6 +24,7 @@ import ButtonRadio from "../../common/views/ButtonRadio";
 import VariableImportance from "../views/VariableImportance";
 import ModalVanilla from "../../common/views/ModalVanilla";
 import * as queryMongo from "../manipulations/queryMongo";
+import Paginated from "../../common/views/Paginated";
 
 export let leftpanel = () => {
 
@@ -254,7 +255,7 @@ export class CanvasSolutions {
             return m('div', {
                 style: {'height': '500px'}
             }, m(PlotVegaLite, {
-                specification: plots.vegaScatter(
+                specification: plots.vegaLiteScatter(
                     summaries.flatMap(summary => summary.fittedVsActual),
                     xName, yName, groupName, countName, title),
             }))
@@ -330,7 +331,7 @@ export class CanvasSolutions {
                                     attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
                                 })),
                             summary.confusionMatrix.classes.length < 100 ? summary.confusionMatrix.classes.length > 0 ? m(PlotVegaLite, {
-                                    specification: plots.vegaConfusionMatrix(
+                                    specification: plots.vegaLiteConfusionMatrix(
                                         summary.confusionMatrix.data,
                                         summary.confusionMatrix.classes,
                                         'Predicted', 'Actual', 'count',
@@ -387,78 +388,123 @@ export class CanvasSolutions {
         ]
     }
 
-    variableImportance(problem, adapter) {
+    variableImportance(problem, adapters) {
 
-        let importanceContent = common.loader('VariableImportance');
+        let adapter = adapters[0];
 
-        if (resultsPreferences.importanceMode === 'EFD') {
-            let importanceData = problem.predictors.reduce((out, predictor) => Object.assign(out, {
-                [predictor]: adapter.getImportanceEFD(predictor)
-            }), {});
+        let importanceScoresContent = [];
+        let importanceScores = adapters
+            .map(adapter => ({
+                'solution ID': adapter.getSolutionId(),
+                'scores': adapter.getImportanceScore(resultsPreferences.target, resultsPreferences.importanceMode)
+            }))
+            .filter(pair => pair.scores)
+            .flatMap(importanceObj => Object.keys(importanceObj.scores).map(predictor => ({
+                'solution ID': importanceObj['solution ID'],
+                'predictor': predictor,
+                'importance': importanceObj.scores[predictor]
+            })))
+            .reverse();
 
-            // reassign content if some data is not undefined
-            let importancePlots = Object.keys(importanceData).map(predictor => importanceData[predictor] && [
-                bold(predictor),
-                m(VariableImportance, {
-                    mode: resultsPreferences.importanceMode,
-                    data: importanceData[predictor]
-                        .filter(point => resultsPreferences.factor === undefined || String(resultsPreferences.factor) === String(point.level)),
-                    problem: problem,
-                    predictor,
-                    target: resultsPreferences.target,
-                    yLabel: valueLabel,
-                    variableLabel: variableLabel,
-                    summary: app.variableSummaries[predictor]
+        if (importanceScores.length) {
+            importanceScoresContent = [
+                bold('Importance Scores'),
+                m(PlotVegaLite, {
+                    specification: plots.vegaLiteImportancePlot(importanceScores, modelComparison)
                 })
-            ]).filter(_ => _);
-
-            let isCategorical = app.getNominalVariables(problem).includes(resultsPreferences.target);
-            if (importancePlots.length > 0) importanceContent = m('div', [
-                m('div[style=margin: 1em]', italicize("Empirical first differences"), ` is a tool to measure variable importance from the empirical distribution of the data. The Y axis refers to the ${isCategorical ? 'probability of each level' : 'expectation'} of the dependent variable as the predictor (x) varies along its domain. Parts of the domain where the fitted and actual values align indicate high utility from the predictor. If the fitted and actual values are nearly identical, then the two lines may be indistinguishable.`),
-
-                problem.task.toLowerCase().includes('classification') && m('div[style=margin-bottom:1em]', 'Set the factor to filter EFD plots to a single class/factor/level.',
-                    m('br'),
-                    m('label#resultsFactorLabel', 'Active factor/level: '),
-                    m('[style=display:inline-block]', m(Dropdown, {
-                        id: 'resultsFactorDropdown',
-                        items: [
-                            'undefined',
-                            ...new Set(Object.values(importanceData)[0].map(point => point.level).sort(app.omniSort))
-                        ],
-                        activeItem: resultsPreferences.factor,
-                        onclickChild: setResultsFactor,
-                        style: {'margin-left': '1em'}
-                    }))),
-                importancePlots
-            ]);
+            ]
         }
 
-        if (resultsPreferences.importanceMode === 'Partials') {
+        let importanceContent = [];
+
+        if (resultsPreferences.importanceMode === 'EFD') {
+            let isCategorical = app.getNominalVariables(problem).includes(resultsPreferences.target);
+            importanceContent.push(m('div[style=margin: 1em]', italicize("Empirical first differences"), ` is a tool to measure variable importance from the empirical distribution of the data. The Y axis refers to the ${isCategorical ? 'probability of each level' : 'expectation'} of the dependent variable as the predictor (x) varies along its domain. Parts of the domain where the fitted and actual values align indicate high utility from the predictor. If the fitted and actual values are nearly identical, then the two lines may be indistinguishable.`),);
+            importanceContent.push(importanceScoresContent);
+
+            let importanceEFDContent = common.loader('VariableImportance');
+            if (adapters.length === 1) {
+                let importanceData = problem.predictors.reduce((out, predictor) => Object.assign(out, {
+                    [predictor]: adapter.getImportanceEFD(predictor)
+                }), {});
+
+                // reassign content if some data is not undefined
+                let sortedPredictors = Object.keys(app.getRecursive(resultsData, [
+                    'importanceScores', adapter.getSolutionId(),'EFD', resultsPreferences.target
+                ]) || {});
+
+                let plotVariables = (sortedPredictors.length > 0 ? sortedPredictors.reverse() : Object.keys(importanceData))
+                    .filter(predictor => importanceData[predictor]);
+
+                if (plotVariables.length > 0) importanceEFDContent = m('div', [
+
+                    problem.task.toLowerCase().includes('classification') && m('div[style=margin-bottom:1em]', 'Set the factor to filter EFD plots to a single class/factor/level.',
+                        m('br'),
+                        m('label#resultsFactorLabel', 'Active factor/level: '),
+                        m('[style=display:inline-block]', m(Dropdown, {
+                            id: 'resultsFactorDropdown',
+                            items: [
+                                'undefined',
+                                ...new Set(Object.values(importanceData)[0].map(point => point.level).sort(app.omniSort))
+                            ],
+                            activeItem: resultsPreferences.factor,
+                            onclickChild: setResultsFactor,
+                            style: {'margin-left': '1em'}
+                        }))),
+                    m(Paginated, {
+                        data: plotVariables,
+                        makePage: variablesToPlot => variablesToPlot.map(predictor => [
+                            bold(predictor),
+                            m(VariableImportance, {
+                                mode: resultsPreferences.importanceMode,
+                                data: importanceData[predictor]
+                                    .filter(point => resultsPreferences.factor === undefined || String(resultsPreferences.factor) === String(point.level)),
+                                problem: problem,
+                                predictor,
+                                target: resultsPreferences.target,
+                                yLabel: valueLabel,
+                                variableLabel: variableLabel,
+                                summary: app.variableSummaries[predictor]
+                            })
+                        ]),
+                        limit: 10,
+                        page: resultsPreferences.importancePage,
+                        setPage: index => resultsPreferences.importancePage = index
+                    })
+                ]);
+                importanceContent.push(importanceEFDContent);
+            }
+        }
+
+        if (adapters.length === 1 && resultsPreferences.importanceMode === 'Partials') {
             let importancePlots = [
                 m('div[style=margin: 1em]', italicize("Partials"), ` shows the prediction of the model as one predictor is varied, and the other predictors are held at their mean.`),
             ];
-            app.getPredictorVariables(problem).forEach(predictor => {
-                let importanceData = adapter.getImportancePartials(predictor);
-                if (importanceData) importancePlots.push(m('div',
-                    bold(predictor),
+            let importancePartialsData = app.getPredictorVariables(problem).map(predictor => ({
+                predictor,
+                data: adapter.getImportancePartials(predictor)
+            })).filter(predictorEntry => predictorEntry.data);
+
+            if (importancePartialsData.length > 0) importanceContent = m('div', {style: 'overflow:auto'}, m(Paginated, {
+                data: importancePartialsData,
+                makePage: data => data.map(predictorEntry => m('div',
+                    bold(predictorEntry.predictor),
                     m(VariableImportance, {
                         mode: 'Partials',
-                        data: importanceData,
+                        data: predictorEntry.data,
                         problem: problem,
-                        predictor: predictor,
+                        predictor: predictorEntry.predictor,
                         target: resultsPreferences.target,
                         yLabel: valueLabel,
                         variableLabel: variableLabel,
-                        summary: app.variableSummaries[predictor]
-                    })
-                    // !categoricals.includes(predictor) && m(PlotVegaLite, {
-                    //     specification: plots.vegaDensityHeatmap(app.variableSummaries[predictor])
-                    // })
-                ));
-            });
-            if (importancePlots.length > 0) importanceContent = m('div', {style: 'overflow:auto'}, importancePlots);
+                        summary: app.variableSummaries[predictorEntry.predictor]
+                    }))),
+                limit: 10,
+                page: resultsPreferences.importancePage,
+                setPage: index => resultsPreferences.importancePage = index
+            }));
         }
-        if (resultsPreferences.importanceMode === 'PDP/ICE') {
+        if (adapters.length === 1 && resultsPreferences.importanceMode === 'PDP/ICE') {
             let isCategorical = app.getNominalVariables(problem).includes(resultsPreferences.target);
 
             importanceContent = [
@@ -717,7 +763,7 @@ export class CanvasSolutions {
             }
         }, resultsSubpanels['Scores Summary'] && this.scoresSummary(problem, solutionAdapters));
 
-        let variableImportance = selectedSolutions.length === 1 && m(Subpanel, {
+        let variableImportance = m(Subpanel, {
             style: {margin: '0px 1em'},
             header: 'Variable Importance',
             shown: resultsSubpanels['Variable Importance'],
@@ -733,7 +779,7 @@ export class CanvasSolutions {
                     app.saveSystemLogEntry(logParams);
                 }
             }
-        }, resultsSubpanels['Variable Importance'] && this.variableImportance(problem, firstAdapter));
+        }, resultsSubpanels['Variable Importance'] && this.variableImportance(problem, solutionAdapters));
 
         let visualizePipelinePanel = selectedSolutions.length === 1 && firstSolution.systemId === 'd3m' && m(Subpanel, {
             style: {margin: '0px 1em'},
@@ -908,6 +954,17 @@ export let getSolutionAdapter = (problem, solution) => ({
         if (resultsData.importanceICEFitted) {
             return resultsData.importanceICEFitted
         }
+    },
+    getImportanceScore: (target, mode) => {
+        let adapter = getSolutionAdapter(problem, solution);
+        loadImportanceScore(problem, adapter, mode);
+
+        return app.getRecursive(resultsData, [
+            'importanceScores',
+            adapter.getSolutionId(),
+            mode,
+            target
+        ]);
     }
 });
 
@@ -1610,14 +1667,6 @@ export let loadImportanceEFDData = async (problem, adapter) => {
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
 
-    let responseImportance = await m.request(ROOK_SVC_URL + 'efdimportance.app', {
-        method: 'POST',
-        data: {efdData: response.data}
-    });
-    // reorder response.data predictors based on importance
-    if (responseImportance.success) response.data = responseImportance.data
-        .reduce((data, variable) => Object.assign(data, {[variable]: response.data[variable]}), {});
-
     let nominals = app.getNominalVariables(problem);
 
     // melt predictor data once, opposed to on every redraw
@@ -1626,7 +1675,7 @@ export let loadImportanceEFDData = async (problem, adapter) => {
             nominals.includes(predictor)
                 ? app.sample(response.data[predictor], 20, false, true)
                 : response.data[predictor],
-            [predictor], valueLabel, variableLabel));
+            ["predictor"], valueLabel, variableLabel));
 
     // add more granular categorical columns from the compound key 'variableLabel'
     Object.keys(response.data)
@@ -1668,14 +1717,21 @@ export let loadImportanceICEFittedData = async (problem, adapter, predictor) => 
 
     let tempQuery = JSON.stringify(resultsData.id.query);
 
-    let response = await m.request(D3M_SVC_URL + `/retrieve-output-ICE-data`, {
-        method: 'POST',
-        data: {
-            data_pointer_predictors: dataPointerPredictors,
-            data_pointer_fitted: dataPointerFitted,
-            variable: predictor
-        }
-    });
+    let response;
+    try {
+        response = await m.request(D3M_SVC_URL + `/retrieve-output-ICE-data`, {
+            method: 'POST',
+            data: {
+                data_pointer_predictors: dataPointerPredictors,
+                data_pointer_fitted: dataPointerFitted,
+                variable: predictor
+            }
+        });
+    } catch (err) {
+        console.error(err);
+        app.alertWarn('ICE data has not been loaded. Some plots will not load.');
+        return;
+    }
 
     if (!response.success)
         throw response.data;
@@ -1692,6 +1748,184 @@ export let loadImportanceICEFittedData = async (problem, adapter, predictor) => 
     resultsData.importanceICEFittedLoading = false;
 
     // apply state changes to the page
+    m.redraw();
+};
+
+let loadImportanceScore = async (problem, adapter, mode) => {
+    // load dependencies, which can clear loading state if problem, etc. changed
+    await loadSolutionData(problem, adapter);
+
+    let dataPointers = [];
+    if (mode === 'EFD')
+        dataPointers = {'EFD': adapter.getDataPointer(resultsPreferences.dataSplit)};
+    if (mode === 'Partials')
+        dataPointers = {'Partials': adapter.getDataPointer('partials')};
+    if (mode === 'PDP/ICE')
+        dataPointers = app.getPredictorVariables(problem).reduce((out, predictor) => Object.assign(out, {
+            [predictor]: adapter.getDataPointer('ICE_synthetic_' + predictor)
+        }), {});
+
+    // don't load if data is not available
+    if (Object.values(dataPointers).some(pointer => !pointer))
+        return;
+
+    // don't load if systems are already in loading state
+    if (app.getRecursive(resultsData, ['importanceScoresLoading', adapter.getSolutionId(), mode]))
+        return;
+
+    // don't load if already loaded
+    if (app.getRecursive(resultsData, ['importanceScores', adapter.getSolutionId(), mode]))
+        return;
+
+    // begin blocking additional requests to load
+    app.setRecursive(resultsData, [['importanceScoresLoading', {}], [adapter.getSolutionId(), {}], [mode, true]]);
+
+    let tempQuery = JSON.stringify(resultsData.id.query);
+    let response;
+    if (mode === 'EFD') {
+        // how to construct actual values after manipulation
+        let dataPointer = dataPointers['EFD'];
+        let compiled = queryMongo.buildPipeline([
+            ...app.workspace.raven_config.hardManipulations,
+            ...problem.manipulations,
+            ...resultsQuery
+        ], app.workspace.raven_config.variablesInitial)['pipeline'];
+
+        let produceId = dataPointer
+            .substr(dataPointer.lastIndexOf('/') + 1)
+            .replace('.csv', '');
+
+        try {
+            response = await m.request(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
+                method: 'POST',
+                data: {
+                    data_pointer: dataPointer,
+                    metadata: {
+                        produceId,
+                        targets: problem.targets,
+                        predictors: app.getPredictorVariables(problem),
+                        categoricals: app.getNominalVariables(problem),
+                        collectionName: app.workspace.d3m_config.name,
+                        collectionPath: app.workspace.datasetPath,
+                        query: compiled
+                    }
+                }
+            });
+
+            if (!response.success)
+                throw response.data;
+        } catch (err) {
+            console.warn("retrieve-output-EFD-data error");
+            console.log(err);
+            // app.alertWarn('Variable importance EFD data has not been loaded. Some plots will not load.');
+            return;
+        }
+    }
+
+    if (mode === 'Partials') {
+        try {
+            response = await m.request(D3M_SVC_URL + `/retrieve-output-data`, {
+                method: 'POST',
+                data: {data_pointer: dataPointers['Partials']}
+            });
+
+            console.log(response);
+
+            if (!response.success) {
+                console.warn(response.data);
+                throw response.data;
+            }
+        } catch (err) {
+            console.error(err);
+            return;
+        }
+        let offset = 0;
+        let partialsData = Object.keys(problem.domains).reduce((out, predictor) => {
+            let nextOffset = offset + problem.domains[predictor].length;
+            // for each point along the domain of the predictor
+            out[predictor] = response.data.slice(offset, nextOffset)
+                // for each target specified in the problem
+                .map(point => problem.targets.reduce((out_point, target) => Object.assign(out_point, {
+                    [target]: app.inferIsCategorical(target) ? point[target] : parseNumeric(point[target])
+                }), {}));
+            offset = nextOffset;
+            return out;
+        }, {});
+
+        console.log(partialsData);
+
+
+
+    }
+
+    if (mode === 'PDP/ICE') {
+        let responses = {};
+        await Promise.all(Object.keys(dataPointers).map(async predictor => {
+            let dataPointerPredictors = problem.datasetPaths['ICE_synthetic_' + predictor];
+            if (!dataPointerPredictors) return;
+            try {
+                responses[predictor] = await m.request(D3M_SVC_URL + `/retrieve-output-ICE-data`, {
+                    method: 'POST',
+                    data: {
+                        data_pointer_predictors: dataPointerPredictors,
+                        data_pointer_fitted: dataPointers[predictor],
+                        variable: predictor
+                    }
+                });
+            } catch (err) {
+                console.error(err);
+                return;
+            }
+        }));
+        
+        response = Object.keys(responses).reduce((out, resp) => {
+            return {
+                success: out.success && resp.success,
+                data: {scores: Object.assign(out.data.scores, resp.success ? resp.data.scores : {})}
+            }
+        }, {success: true, data: {}})
+
+        console.log(response);
+    }
+
+    // don't accept response if current problem has changed
+    if (resultsData.id.problemID !== problem.problemID)
+        return;
+
+    // don't accept if query changed
+    if (JSON.stringify(resultsQuery) !== tempQuery)
+        return;
+
+    let responseImportance = await m.request(ROOK_SVC_URL + 'variableImportance.app', {
+        method: 'POST',
+        data: {
+            efdData: response.data,
+            targets: problem.targets,
+            categoricals: app.getNominalVariables(problem),
+            task: problem.task
+        }
+    });
+
+    if (!responseImportance.success) {
+        console.warn('collecting importance scores failed');
+        return;
+    }
+
+    // sort the importance scores dictionary for each target
+    Object.keys(responseImportance.data.scores).forEach(target =>
+        responseImportance.data.scores[target] = Object.keys(responseImportance.data.scores[target])
+            .sort((a, b) => responseImportance.data.scores[target][a] - responseImportance.data.scores[target][b])
+            .reduce((sorted, predictor) => Object.assign(sorted, {
+                [predictor]: responseImportance.data.scores[target][predictor]
+            }), {}));
+
+    // save importance scores into cache
+    app.setRecursive(resultsData, [
+        ['importanceScores', {}],
+        [adapter.getSolutionId(), {}],
+        [mode, responseImportance.data.scores]
+    ]);
+
     m.redraw();
 };
 

@@ -1,6 +1,6 @@
 
 // handles plotting multiple groups at the same time
-export let vegaScatter = (data, xName, yName, groupName, countName, title='') => {
+export let vegaLiteScatter = (data, xName, yName, groupName, countName, title='') => {
 
     return ({
         "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
@@ -49,7 +49,7 @@ export let vegaScatter = (data, xName, yName, groupName, countName, title='') =>
     });
 };
 
-export let vegaConfusionMatrix = (data, classes, xName, yName, countName, title) => ({
+export let vegaLiteConfusionMatrix = (data, classes, xName, yName, countName, title) => ({
     "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
     'data': {'values': data},
     'title': title,
@@ -90,7 +90,7 @@ export let vegaConfusionMatrix = (data, classes, xName, yName, countName, title)
 });
 
 // alternative to rug plot
-export let vegaDensityHeatmap = summary => {
+export let vegaLiteDensityHeatmap = summary => {
 
     let pdfPlotX = [...summary.pdfPlotX];
     let pdfPlotY = [...summary.pdfPlotY];
@@ -127,3 +127,39 @@ export let vegaDensityHeatmap = summary => {
         ]
     }
 };
+
+export let vegaLiteImportancePlot = (data, comparison) => ({
+    "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+    "description": `Variable importance scores`,
+    "mark": "bar",
+    "data": {
+        "values": data
+    },
+    "encoding": {
+        "x": {
+            "field": "solution ID",
+            "type": "nominal",
+            "sort": false
+        },
+        [comparison ? "column" : 'x']: {
+            "field": "predictor",
+            "type": "nominal",
+            "title": "",
+            "sort": comparison ? [...new Set(data.map(datum => datum.predictor))] : false
+        },
+        "y": {
+            "field": "importance",
+            "type": "quantitative"
+        },
+        "color": {
+            "field": "solution ID",
+            "type": "nominal",
+            "legend": null
+        },
+        "tooltip": [
+            {"field": 'importance', "type": "quantitative"},
+            {"field": 'predictor', "type": "nominal"},
+            {"field": 'solution ID', "type": "nominal"}
+        ]
+    }
+});
