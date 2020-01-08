@@ -886,6 +886,11 @@ export function buildMenu(step) {
 
     if (metadata.type === 'data') {
         let subset = [];
+        if (metadata.dropNA) subset.push({
+            $match: metadata.dropNA.reduce((query, variable) => Object.assign(query, {
+                [variable]: {$ne: null}
+            }), {})
+        });
         if (metadata.skip) subset.push({$skip: metadata.skip});
         if (metadata.limit) subset.push({$limit: metadata.limit});
         if (metadata.sample) subset.push({$sample: {size: metadata.sample}});

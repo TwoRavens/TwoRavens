@@ -575,24 +575,24 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
                 metadata: {
                     type: 'data',
                     variables: exploreVariables,
+                    dropNA: exploreVariables,
                     sample: recordLimit
                 }
             }],
             app.workspace.raven_config.variablesInitial)['pipeline'];
 
-        let json = {
-            plotdata: [JSON.stringify(await app.getData({
-                method: 'aggregate',
-                query: JSON.stringify(compiled)
-            }))],
-            plottype,
-            vars: plotvars
-        };
-
-        // write links to file & run R CMD
-        if (!json) {
+        let dataPathSampled = await app.getData({
+            method: 'aggregate',
+            query: JSON.stringify(compiled),
+            export: 'csv'
+        });
+        let jsonout = {plottype, plotvars, zd3mdata: dataPathSampled};
+        let response = await m.request(ROOK_SVC_URL + 'plotData.app', {method: 'POST', data: jsonout});
+        if (!response.success) {
+            console.warn(response.message);
             return;
         }
+        let json = response.data;
 
         let schema = schemaMap[plottype[0]];
         if (!schema) app.alertError("invalid plot type");
