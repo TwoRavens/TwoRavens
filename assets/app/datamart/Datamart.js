@@ -343,17 +343,17 @@ export class Datamart {
                             schema: datamartQueryInputSchema
                         })),
 
-                        // m(ButtonRadio, {
-                        //     id: 'dataSourceButtonBar',
-                        //     onclick: state => {
-                        //         preferences.sourceMode = state;
-                        //         preferences.selectedResult = undefined;
-                        //     },
-                        //     activeSection: preferences.sourceMode,
-                        //     sections: [{value: 'NYU'}, {value: 'ISI'}],
-                        //     attrsAll: {style: {margin: '1em', width: 'auto'}},
-                        //     attrsButtons: {style: {width: 'auto'}}
-                        // }),
+                        m(ButtonRadio, {
+                            id: 'dataSourceButtonBar',
+                            onclick: state => {
+                                preferences.sourceMode = state;
+                                preferences.selectedResult = undefined;
+                            },
+                            activeSection: preferences.sourceMode,
+                            sections: [{value: 'NYU'}, {value: 'ISI'}],
+                            attrsAll: {style: {margin: '1em', width: 'auto'}},
+                            attrsButtons: {style: {width: 'auto'}}
+                        }),
 
                         m('div', {style: {float: 'right'}},
                             m('div', {
@@ -1047,7 +1047,7 @@ export let setDatamartDefaults = preferences => {
     setDefault(preferences, 'success', {ISI: undefined, NYU: undefined});
 
     // Set ISI or NYU
-    setDefault(preferences, 'sourceMode', 'NYU');
+    setDefault(preferences, 'sourceMode', 'ISI');
 
     setDefault(preferences, 'leftJoinVariables', new Set());
     setDefault(preferences, 'rightJoinVariables', new Set());

@@ -60,7 +60,7 @@ export let abbreviate = (text, length) => text.length > length
 class Body {
     oninit() {
         app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
-        app.setSelectedMode('model');
+        app.setSelectedMode('dataset');
         this.TA2URL = D3M_SVC_URL + '/SearchDescribeFitScoreSolutions';
     }
 

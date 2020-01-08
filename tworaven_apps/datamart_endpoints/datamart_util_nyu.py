@@ -117,6 +117,11 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
         if query_dict is None and dataset_path is None:
             return err_resp('Either a query or dataset path must be supplied.')
 
+        if query_dict is not None and not isinstance(query_dict, dict):
+            user_msg = ('There is something wrong with the search parameters.'
+                        ' Please try again. (expected a dictionary)')
+            return err_resp(user_msg)
+
         search_url = get_nyu_url() + '/search'
 
         # --------------------------------

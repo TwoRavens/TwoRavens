@@ -79,7 +79,7 @@ class SearchUtil(BasicErrCheck):
 
         ws_msg = WebsocketMessage.get_success_message(\
                     dm_static.DATAMART_SEARCH_BY_DATASET,
-                    'The dataset search is complate',
+                    'The dataset search is complete',
                     data=resp_info)
 
         ws_msg.send_message(self.websocket_id)
@@ -112,6 +112,8 @@ class SearchUtil(BasicErrCheck):
         print('self.datamart_util', self.datamart_util)
         if self.datamart_name == dm_static.DATAMART_NYU_NAME:
             return self.run_nyu_search()
+        if self.datamart_name == dm_static.DATAMART_ISI_NAME:
+            return self.run_isi_search()
 
         user_msg = (f'Dataset search not available for datamart: '
                     f' {self.datamart_util.get_datamart_source()}')
@@ -125,6 +127,26 @@ class SearchUtil(BasicErrCheck):
                                 self.dataset_path,
                                 query=self.query,
                                 **params)
+
+        print('search worked?', search_info.success)
+
+        if not search_info.success:
+            self.add_err_msg(search_info.err_msg)
+            return False
+
+        # print('search_info', search_info.result_obj)
+
+        self.search_results = search_info.result_obj
+
+        return True
+
+    def run_isi_search(self):
+        """Run the ISI search"""
+        params = dict(user_workspace=self.user_workspace)
+        search_info = self.datamart_util.search_with_dataset( \
+            self.dataset_path,
+            query=self.query,
+            **params)
 
         print('search worked?', search_info.success)
 
