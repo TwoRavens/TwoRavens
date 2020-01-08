@@ -45,9 +45,9 @@ TypeGuessUtil
     * **continuous_check** (*Boolean*): A boolean flag that indicates the type of input column. Set to true if it is continuous, False otherwise.
     
 ---
-**chech_time** (var_series)
+**check_time** (var_series)
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Static method, check whether the input column is a time instance, return True if it is a time instance, False otherwise.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Static method, check whether the input column is a time instance, return 'year', 'month', 'day', or 'datetime' if it is a time instance, 'unknown' otherwise.
 
 * **Parameters**
     * **data_series** (*Pandas.Series*): A Pandas.Series entity contains one column of the input.
