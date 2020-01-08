@@ -574,8 +574,8 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
                 type: 'menu',
                 metadata: {
                     type: 'data',
-                    variables: exploreVariables,
-                    dropNA: exploreVariables,
+                    variables: plotvars,
+                    dropNA: plotvars,
                     sample: recordLimit
                 }
             }],
@@ -586,7 +586,7 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
             query: JSON.stringify(compiled),
             export: 'csv'
         });
-        let jsonout = {plottype, plotvars, zd3mdata: dataPathSampled};
+        let jsonout = {plottype, zd3mdata: dataPathSampled};
         let response = await m.request(ROOK_SVC_URL + 'plotData.app', {method: 'POST', data: jsonout});
         if (!response.success) {
             console.warn(response.message);
