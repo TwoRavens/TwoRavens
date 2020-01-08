@@ -11,10 +11,9 @@ import Table from "../../common/views/Table";
 import {preformatted} from "../index";
 import Paginated from "../../common/views/Paginated";
 import MenuHeaders from "../../common/views/MenuHeaders";
-
 export class CanvasDataset {
     oninit() {
-        if (!datasetPreferences.presets) m.request('user-workspaces/list-dataset-choices', {
+        if (!datasetPreferences.presets.length) m.request('user-workspaces/list-dataset-choices', {
             method: 'POST',
             body: {}
         }).then(response => {
@@ -99,10 +98,6 @@ export class CanvasDataset {
                             m(Button, {
                                 disabled: app.workspace.d3m_config.name === preset.name,
                                 onclick: () => m.request(`user-workspaces/select-dataset-json-resp/${preset.id}`).then(response => {
-                                    console.warn('response dataset selection');
-                                    console.log(response.message);
-                                    console.log(response);
-
                                     if (response.success)
                                         location.reload();  // Restart!  Should load the new dataset
                                     else

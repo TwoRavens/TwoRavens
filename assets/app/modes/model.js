@@ -837,7 +837,7 @@ export let rightpanel = () => {
                             steps: [{
                                 key: 'Nominal',
                                 color: common.nomColor,
-                                content: m('div', {style: {'text-align': 'left'}},
+                                content: m('div', {style: {'text-align': 'left', 'white-space': 'normal'}},
                                     m(ListTags, {
                                         tags: selectedProblem.tags.nominal,
                                         ondelete: name => app.remove(selectedProblem.tags.nominal, name)

@@ -98,7 +98,6 @@ class Body {
             app.workspace && Body.leftpanel(app.currentMode, forceData),
             app.workspace && Body.rightpanel(app.currentMode),
             app.workspace && manipulate.constraintMenu && Body.manipulations(),
-
             app.peekInlineShown && this.peekTable(),
 
             m(`#main`, {
@@ -484,7 +483,8 @@ class Body {
             app.workspace && m(ModalDatamart, {
                 preferences: app.datamartPreferences,
                 endpoint: app.datamartURL,
-                dataPath: app.workspace.datasetPath
+                dataPath: app.workspace.datasetPath,
+                manipulations: app.workspace.raven_config && app.workspace.raven_config.hardManipulations
             }),
 
             // Show basic API and Workspace Info
@@ -881,7 +881,8 @@ let standaloneDatamart = () => {
         m(ModalDatamart, {
             preferences: app.datamartPreferences,
             endpoint: app.datamartURL,
-            dataPath: app.workspace.datasetPath
+            dataPath: app.workspace.datasetPath,
+            manipulations: app.raven_config.hardManipulations
         })
     ]
 };
