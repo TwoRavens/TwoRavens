@@ -20,7 +20,12 @@ plotData.app <- function(everything) {
     return(jsonlite::toJSON(errResult("Problem with plottype.")))
   }
 
-  vars <- everything$plotvars
+
+  fileHandle <- file(dataurl, "r")
+  varsActualLine <- readLines(fileHandle, n=1)
+  close(fileHandle)
+  vars <- unname(unlist(read.table(text=varsActualLine, sep=",", check.names=FALSE, as.is=TRUE)))
+
   if (is.null(vars)) {
     return(jsonlite::toJSON(errResult("Problem with zvars.")))
   }
@@ -32,14 +37,10 @@ plotData.app <- function(everything) {
                plotdata <<- list()
 
                ## plot data
-               plotd <- mydata[,vars]
-               plotd <- na.omit(plotd)
-               if (nrow(plotd) > 1000) {
-                 plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),]
-               }
-               for (j in 1:ncol(plotd)) {
-                 plotd.coords <- plotd[,j]
-                 lab <- colnames(plotd)[j]
+               plotd <- mydata
+               for (j in 1:ncol(mydata)) {
+                 plotd.coords <- mydata[,j]
+                 lab <- colnames(mydata)[j]
                  plotdata[[lab]] <- list(varname=lab, data=plotd.coords)
                }
                rm(plotd)
@@ -60,13 +61,8 @@ plotData.app <- function(everything) {
                plotdata <<- list()
 
                ## plot data
-               plotd <- as.data.frame(mydata[,vars])
+               plotd <- as.data.frame(mydata)
                colnames(plotd) <- vars
-               plotd <- na.omit(plotd)
-               if (nrow(plotd) > 1000) {
-                 plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),,drop=FALSE]
-               }
-
                plotdata <- jsonlite::toJSON(plotd)
                rm(plotd)
 
@@ -86,12 +82,8 @@ plotData.app <- function(everything) {
                plotdata <<- list()
 
                ## plot data
-               plotd <- as.data.frame(mydata[,vars])
+               plotd <- as.data.frame(mydata)
                colnames(plotd) <- vars
-               plotd <- na.omit(plotd)
-               if (nrow(plotd) > 1000) {
-                 plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),,drop=FALSE]
-               }
 
                plotdata <- jsonlite::toJSON(plotd)
                rm(plotd)
@@ -112,12 +104,8 @@ plotData.app <- function(everything) {
                plotdata <<- list()
 
                ## plot data
-               plotd <- as.data.frame(mydata[,vars])
+               plotd <- as.data.frame(mydata)
                colnames(plotd) <- vars
-               plotd <- na.omit(plotd)
-               if (nrow(plotd) > 1000) {
-                 plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),,drop=FALSE]
-               }
 
                uniqueY <- unique(plotd[,2])
                plotdata <- jsonlite::toJSON(plotd)
@@ -139,12 +127,8 @@ plotData.app <- function(everything) {
                plotdata <<- list()
 
                ## plot data
-               plotd <- as.data.frame(mydata[,vars])
+               plotd <- as.data.frame(mydata)
                colnames(plotd) <- vars
-               plotd <- na.omit(plotd)
-               if (nrow(plotd) > 1000) {
-                 plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),,drop=FALSE]
-               }
 
                uniqueZ <- unique(plotd[,3])
                plotdata <- jsonlite::toJSON(plotd)
@@ -166,14 +150,8 @@ plotData.app <- function(everything) {
                plotdata <<- list()
 
                ## plot data
-               plotd <- as.data.frame(mydata[,vars])
+               plotd <- as.data.frame(mydata)
                colnames(plotd) <- vars
-               plotd <- na.omit(plotd)
-               if (nrow(plotd) > 1000) {
-                 plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),,drop=FALSE]
-               }
-
-               uniqueY <- unique(plotd[,2])
                plotdata <- jsonlite::toJSON(plotd)
                rm(plotd)
 
@@ -193,17 +171,11 @@ plotData.app <- function(everything) {
                plotdata <<- list()
 
                ## plot data
-               plotd <- as.data.frame(mydata[,vars])
+               plotd <- as.data.frame(mydata)
                colnames(plotd) <- vars
-               plotd <- na.omit(plotd)
-               if (nrow(plotd) > 1000) {
-                 plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),,drop=FALSE]
-               }
 
-               uniqueY <- unique(plotd[,2])
                plotdata <- jsonlite::toJSON(plotd)
                rm(plotd)
-
 
                if (length(plotdata) !=0) {
                  return(jsonlite::toJSON(okResult(list(plottype=plottype, vars=vars, plotdata=plotdata))))
@@ -221,13 +193,8 @@ plotData.app <- function(everything) {
                plotdata <<- list()
 
                ## plot data
-               plotd <- as.data.frame(mydata[,vars])
+               plotd <- as.data.frame(mydata)
                colnames(plotd) <- vars
-               plotd <- na.omit(plotd)
-               if (nrow(plotd) > 1000) {
-                 plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),,drop=FALSE]
-               }
-
                meanY <- mean(plotd[,2])
                plotdata <- jsonlite::toJSON(plotd)
                rm(plotd)
@@ -249,15 +216,10 @@ plotData.app <- function(everything) {
                plotdata <<- list()
 
                ## plot data
-               plotd <- as.data.frame(mydata[,vars])
+               plotd <- as.data.frame(mydata)
                colnames(plotd) <- vars
-               plotd <- na.omit(plotd)
-               if (nrow(plotd) > 1000) {
-                 plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),,drop=FALSE]
-               }
 
-               uniqueY <- unique(plotd[,2])
-               plotdata <- jsonlite:::toJSON(plotd)
+               plotdata <- jsonlite::toJSON(plotd)
                rm(plotd)
 
                if (length(plotdata) !=0) {
