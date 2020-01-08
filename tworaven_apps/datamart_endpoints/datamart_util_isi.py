@@ -98,7 +98,7 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
         print('datamart_upload, index', index)
         try:
             response = requests.post(
-                get_isi_url() + '/new/upload_metadata_list',
+                get_isi_url() + '/upload',
                 data=index.encode('utf-8'),
                 headers={'Content-Type': 'application/json'},
                 verify=False,
@@ -117,60 +117,162 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
         return ok_resp(response['data'])
 
     @staticmethod
-    def datamart_search(query_dict, **kwargs):
+    def search_with_dataset(dataset_path, query=None, **kwargs):
+        """Search the datamart using a dataset"""
+        if not isfile(dataset_path):
+            user_msg = ('The dataset file could not be found.')
+            return err_resp(user_msg)
+
+        search_url = get_isi_url() + '/search'
+
+        # --------------------------------
+        # Behavioral logging
+        # --------------------------------
+        if 'user_workspace' in kwargs:
+            log_data = dict(feature_id=f'POST|by-dataset|{search_url}',
+                            activity_l1=bl_static.L1_DATA_PREPARATION,
+                            activity_l2=bl_static.L2_DATA_SEARCH,
+                            path=search_url)
+
+            LogEntryMaker.create_datamart_entry(kwargs['user_workspace'], log_data)
+        # --------------------------------
+
+        # --------------------------------
+        # Query the datamart
+        # --------------------------------
+
+        query_json = None
+        if query:
+            formatted_json_info = json_dumps(query)
+            if not formatted_json_info.success:
+                return err_resp('Failed to convert query to JSON. %s' % \
+                                formatted_json_info.err_msg)
+            query_json = formatted_json_info.result_obj
+
+        print(f'formatted query: {query_json}')
+
+        try:
+            with open(dataset_path, 'rb') as dataset_p:
+                search_files = dict(data=dataset_p)
+                if query:
+                    search_files['query'] = query
+
+                limit = kwargs.get('limit', 100)
+            if not isinstance(limit, int):
+                user_msg = ('The results limit must be an'
+                            ' integer (datamart_search)')
+                return err_resp(user_msg)
+
+            with open(dataset_path, 'rb') as dataset_p:
+                try:
+                    response = requests.post(
+                        search_url,
+                        params={'max_return_docs': limit},
+                        json={'query_json': query_json},
+                        files={'data': dataset_p},
+                        verify=False,
+                        timeout=settings.DATAMART_LONG_TIMEOUT)
+
+                except requests.exceptions.Timeout as err_obj:
+                    return err_resp('Request timed out. responded with: %s' % err_obj)
+
+        except IOError as err_obj:
+            user_msg = (f'Failed to search with the dataset file.'
+                        f'  Technical: {err_obj}')
+            return err_resp(user_msg)
+
+        if response.status_code != 200:
+            print(str(response))
+            print(response.text)
+            return err_resp(('ISI Datamart internal server error.'
+                             ' status_code: %s') % response.status_code)
+
+        json_results = response.json()
+
+        # TODO: parse response
+        print('\n\n\n\nISI SEARCH WITH DATASET JSON RESULTS')
+        print(json_results)
+
+
+        if not json_results:
+            return err_resp('No datasets found. (%s)' % \
+                            (get_timestamp_string_readable(time_only=True),))
+
+        print('num results: ', len(json_results))
+
+        return ok_resp(json_results)
+
+
+    @staticmethod
+    def datamart_search(query_dict=None, dataset_path=None, **kwargs):
         """Search the ISI datamart"""
-        if not isinstance(query_dict, dict):
+
+        print('\n\n\nISI DATAMART SEARCH')
+
+        if query_dict is None and dataset_path is None:
+            return err_resp('Either a query or dataset path must be supplied.')
+
+        if query_dict is not None and not isinstance(query_dict, dict):
             user_msg = ('There is something wrong with the search parameters.'
                         ' Please try again. (expected a dictionary)')
             return err_resp(user_msg)
 
-        limit = kwargs.get('limit', 100)
-        if not isinstance(limit, int):
-            user_msg = ('The results limit must be an'
-                        ' integer (datamart_search)')
-            return err_resp(user_msg)
-
-
-        formatted_json_info = json_dumps(query_dict)
-        if not formatted_json_info.success:
-            return err_resp('Failed to convert query to JSON. %s' % \
-                            formatted_json_info.err_msg)
-
-        print(f'formatted query: {formatted_json_info.result_obj}')
-        files = {'query': ('query.json', formatted_json_info.result_obj)}
-
-        #files = {'query': ('query.json', query)}
-        #if data_path and os.path.exists(data_path):
-        #    files['file'] = open(data_path, 'r')
-
-        params = {'return_named_entity': False}
-        if limit:
-            params['max_return_docs'] = limit
+        search_url = get_isi_url() + '/search'
 
         # --------------------------------
-        # (2a) Behavioral logging
+        # Behavioral logging
         # --------------------------------
-        isi_search_url = get_isi_url() + '/new/search_data'
-
-        if 'user_workspace' in kwargs:
-            log_data = dict(feature_id=f'POST|{isi_search_url}',
+        if 'user' in kwargs:
+            log_data = dict(feature_id=f'POST|{search_url}',
                             activity_l1=bl_static.L1_DATA_PREPARATION,
                             activity_l2=bl_static.L2_DATA_SEARCH,
-                            path=isi_search_url)
+                            path=search_url)
 
-            log_info = LogEntryMaker.create_datamart_entry(kwargs['user_workspace'], log_data)
-            print('log_info', log_info)
-            print('id', log_info.result_obj.id)
-        try:
-            print('isi_search_url', isi_search_url)
-            response = requests.post(\
-                    isi_search_url,
-                    params=params,
-                    files=files,
-                    verify=False,
-                    timeout=settings.DATAMART_SHORT_TIMEOUT)
-        except requests.exceptions.Timeout as err_obj:
-            return err_resp('Request timed out. responded with: %s' % err_obj)
+            LogEntryMaker.create_datamart_entry(kwargs['user'], log_data)
+        # --------------------------------
+
+        # --------------------------------
+        # Query the datamart
+        # --------------------------------
+
+        query_json = None
+        if query_dict:
+            formatted_json_info = json_dumps(query_dict)
+            if not formatted_json_info.success:
+                return err_resp('Failed to convert query to JSON. %s' % \
+                                formatted_json_info.err_msg)
+            query_json = formatted_json_info.result_obj
+
+        print(f'formatted query: {query_json}')
+
+        if dataset_path:
+            limit = kwargs.get('limit', 100)
+            if not isinstance(limit, int):
+                user_msg = ('The results limit must be an'
+                            ' integer (datamart_search)')
+                return err_resp(user_msg)
+
+            try:
+                with open(dataset_path, 'rb') as dataset_p:
+                    try:
+                        response = requests.post(
+                            search_url,
+                            params={'max_return_docs': limit},
+                            json={'query_json': query_json},
+                            files={'data': dataset_p},
+                            verify=False,
+                            timeout=settings.DATAMART_LONG_TIMEOUT)
+
+                    except requests.exceptions.Timeout as err_obj:
+                        return err_resp('Request timed out. responded with: %s' % err_obj)
+
+            except IOError as err_obj:
+                user_msg = (f'Failed to search with the dataset file.'
+                            f'  Technical: {err_obj}')
+                return err_resp(user_msg)
+
+        else:
+            raise NotImplementedError('Augmentations on results without a dataset path are not implemented by ISI.')
 
         print('end seach')
 
@@ -186,31 +288,39 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
         #print('num_datasets', num_datasets)
         #print('iterating through....')
 
+
+
+        # TODO: clean out unneeded code
         # these fields are unnecessarily long
-        dataset_cnt = 0
-        processed_datasets = []
-        for dataset in response['data']:
-            try:
-                variable_data = dataset['metadata']['variables']
-            except KeyError:
-                continue    # skip to next record
-            dataset_cnt += 1
-
-            for variable in variable_data:
-                if 'semantic_type' in variable:
-                    del variable['semantic_type']
-            processed_datasets.append(dataset)
-
-        print('dataset_cnt', dataset_cnt)
+        # dataset_cnt = 0
+        # processed_datasets = []
+        # for dataset in response['data']:
+        #     try:
+        #         variable_data = dataset['metadata']['variables']
+        #     except KeyError:
+        #         continue    # skip to next record
+        #     dataset_cnt += 1
+        #
+        #     for variable in variable_data:
+        #         if 'semantic_type' in variable:
+        #             del variable['semantic_type']
+        #     processed_datasets.append(dataset)
+        #
+        # print('dataset_cnt', dataset_cnt)
         #print('processed_datasets', processed_datasets)
-
-        if not processed_datasets:
-            return err_resp('No datasets found. (%s)' % \
-                            (get_timestamp_string_readable(),))
+        #
+        # if not processed_datasets:
+        #     return err_resp('No datasets found. (%s)' % \
+        #                     (get_timestamp_string_readable(),))
 
         # Normally, the data is sorted by score in descending order,
         # but just in case...
         #
+
+        import json
+        print('DATAMART RESPONSE')
+        print(json.dumps(response))
+        processed_datasets = []
         sorted_data = sorted(processed_datasets,    #response['data'],
                              key=lambda k: k['score'],
                              reverse=True)
@@ -284,7 +394,7 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
         # ----------------------------
         # Behavioral logging
         # ----------------------------
-        isi_materialize_url = get_isi_url() + '/new/materialize_data'
+        isi_materialize_url = get_isi_url() + f'/download/{datamart_id}'
 
         log_data = dict(feature_id=f'GET|{isi_materialize_url}',
                         activity_l1=bl_static.L1_DATA_PREPARATION,
@@ -295,9 +405,10 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
 
         try:
             print('isi_materialize_url', isi_materialize_url)
+            # TODO: save the file by streaming blobs
             response = requests.get(\
                         isi_materialize_url,
-                        params={dm_static.KEY_ISI_DATAMART_ID: datamart_id},
+                        params={'id': datamart_id, 'format': 'csv'},
                         verify=False,
                         timeout=settings.DATAMART_LONG_TIMEOUT)
         except requests.exceptions.Timeout as err_obj:
@@ -401,7 +512,7 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
             'exact_match': exact_match
         })
 
-        augment_url = get_isi_url() + '/new/join_data'
+        augment_url = get_isi_url() + '/augment'
 
         # ----------------------------
         # Behavioral logging
@@ -414,16 +525,17 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
         LogEntryMaker.create_datamart_entry(user_workspace, log_data)
         # ----------------------------
 
+        # TODO: send in task from search, not datamart id
         try:
-            response = requests.post(\
-                    augment_url,
-                    files={'left_data': open(data_path, 'r')},
-                    data={'right_data': datamart_id,
-                          'left_columns': left_columns,
-                          'right_columns': right_columns,
-                          'exact_match': exact_match},
-                    verify=False,
-                    timeout=settings.DATAMART_VERY_LONG_TIMEOUT)
+            response = requests.post( \
+                augment_url,
+                params={
+                    'task': datamart_id,
+                    'format': 'd3m'
+                },
+                files={'data': open(data_path, 'r')},
+                verify=False,
+                timeout=settings.DATAMART_VERY_LONG_TIMEOUT)
 
         except requests.exceptions.Timeout as err_obj:
             return err_resp('Request timed out. responded with: %s' % err_obj)

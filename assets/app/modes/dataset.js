@@ -24,6 +24,7 @@ export class CanvasDataset {
     }
     view(vnode) {
         if (manipulate.constraintMenu) return;
+        if (!app.workspace) return;
 
         let datasource = m('div',
 
