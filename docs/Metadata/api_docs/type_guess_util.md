@@ -52,4 +52,10 @@ TypeGuessUtil
 * **Parameters**
     * **data_series** (*Pandas.Series*): A Pandas.Series entity contains one column of the input.
 
-    
+---
+**check_location** (var_series)
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Static method, check whether the input column is a location, return 'US state', 'country', or 'country subdivision' if it is, 'unknown' otherwise.
+
+* **Parameters**
+    * **data_series** (*Pandas.Series*): A Pandas.Series entity contains one column of the input.    
