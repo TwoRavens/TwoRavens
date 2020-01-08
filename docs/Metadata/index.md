@@ -256,6 +256,12 @@ Indicate whether the variable is either continuous or discrete, if it's a numeri
 
  * **type**: String
 
+### location
+
+'US state', 'country', 'country subdivision', or 'unknown'
+
+ * **type**: String
+
 ### invalidCount
 
 Counts the number of invalid observations, including missing values, nulls, NA's and any observation with a value enumerated in invalidSpecialCodes.
