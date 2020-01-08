@@ -252,7 +252,7 @@ Indicate whether the variable is either continuous or discrete, if it's a numeri
 
 ### time
 
-'year' (2020), 'month' (Jan or January), 'day' (Wed or Wednesday), 'datetime' (ISO-8061), or 'unknown'
+'year' (2020), 'month' (Jan or January), 'day' (Wed or Wednesday), 'datetime' (ISO 8601), or 'unknown'
 
  * **type**: String
 
