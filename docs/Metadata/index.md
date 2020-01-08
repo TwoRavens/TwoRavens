@@ -252,9 +252,9 @@ Indicate whether the variable is either continuous or discrete, if it's a numeri
 
 ### time
 
-Currently not available, it should return the format of timestamp if this variable is a timestamp.
+'year' (2020), 'month' (Jan or January), 'day' (Wed or Wednesday), 'datetime' (ISO-8061), or 'unknown'
 
- * **type**: String/None
+ * **type**: String
 
 ### invalidCount
 
