@@ -20,6 +20,8 @@ import TwoPanel from "../../common/views/TwoPanel";
 import Checkbox from "../../common/views/Checkbox";
 import Popper from "../../common/views/Popper";
 
+import * as queryMongo from '../manipulations/queryMongo';
+
 import ButtonLadda from "../views/LaddaButton";
 import {numberWithCommas} from '../utils';
 import {bold} from "../index";
@@ -215,6 +217,14 @@ export class Datamart {
             getData
         } = preferences;
 
+        // clear out cached results if the dataPath has changed since the previous search
+        if (dataPath !== preferences.cachedDataPath) {
+            Object.keys(results).forEach(source => results[source].length = 0);
+            preferences.cached = {};
+            preferences.success = {};
+            preferences.error = {};
+        }
+
         if (preferences.isAugmenting) return m('div',
             m('h5', 'The system is performing an augmentation.'),
             common.loader('DatamartAugmenting')
@@ -308,7 +318,7 @@ export class Datamart {
                                                     // auto-searching
                                                     clearTimeout(preferences.searchTimeout);
                                                     if (!preferences.includeDataset)
-                                                        preferences.searchTimeout = setTimeout(() => search(preferences, endpoint, preferences.includeDataset, preferences.includeQuery), 500)
+                                                        preferences.searchTimeout = setTimeout(() => search(preferences, endpoint, dataPath, preferences.includeDataset, preferences.includeQuery), 500)
                                                 }
                                             }, key))
                                     })
@@ -323,9 +333,9 @@ export class Datamart {
                                 // auto-searching
                                 clearTimeout(preferences.searchTimeout);
                                 if (e.code === 'Enter')
-                                    search(preferences, endpoint, preferences.includeDataset, preferences.includeQuery);
+                                    search(preferences, endpoint, dataPath, preferences.includeDataset, preferences.includeQuery);
                                 else if (!preferences.includeDataset && e.code !== 'Tab'){
-                                    preferences.searchTimeout = setTimeout(() => search(preferences, endpoint, preferences.includeDataset, preferences.includeQuery), 500);
+                                    preferences.searchTimeout = setTimeout(() => search(preferences, endpoint, dataPath, preferences.includeDataset, preferences.includeQuery), 500);
                                 }
                             }
                         }, m(JSONSchema, {
@@ -373,7 +383,7 @@ export class Datamart {
                             m(Button, {
                                     style: {float: 'right', margin: '1em'},
                                     disabled: preferences.isSearching[preferences.sourceMode],
-                                    onclick: () => search(preferences, endpoint, preferences.includeDataset, preferences.includeQuery)
+                                    onclick: () => search(preferences, endpoint, dataPath, preferences.includeDataset, preferences.includeQuery)
                                 },
                                 'Search')), // Datamart Search Call
 
@@ -541,10 +551,8 @@ export class ModalDatamart {
         let {
             preferences,
             endpoint,
-            dataPath, // where to load data from, to augment with
+            manipulations
         } = vnode.attrs;
-
-        // console.log('dataPath view 1: '+ dataPath);
 
         let {
             cached, // summary info and paths related to materialized datasets
@@ -676,11 +684,12 @@ export class ModalDatamart {
 
                             let sourceMode = preferences.sourceMode;
 
-                            let originalLeftColumns = app.workspace.raven_config.variablesInitial;
+                            let originalLeftColumns = [...queryMongo.buildPipeline(
+                                manipulations, app.workspace.raven_config.variablesInitial)['variables']];
 
                             // For ISI, this "preferences.selectedResult.metadata.columns" is
                             //    "preferences.selectedResult.metadata.variables"
-                            //
+                            // MIKE: @above   just use getData?
                             let originalRightColumns = preferences.selectedResult.metadata.columns.map(row => row.name);
 
                             let joinLeftColumns = [];
@@ -700,7 +709,7 @@ export class ModalDatamart {
                             summary.joinPairs = preferences.joinPairs;
 
                             let augment_api_data = {
-                                data_path: dataPath,
+                                data_path: preferences.cachedDataPath,
                                 search_result: JSON.stringify(preferences.selectedResult),
                                 source: preferences.sourceMode,
                                 left_columns: JSON.stringify(joinLeftColumns),
@@ -798,7 +807,8 @@ export class ModalDatamart {
                 m('div', {style: {width: 'calc(50% - 1em)', display: 'inline-block', 'vertical-align': 'top'}},
                     m(PanelList, {
                         id: 'leftColumns',
-                        items: Object.keys(app.variableSummaries),
+                        items: [...queryMongo.buildPipeline(
+                            manipulations, app.workspace.raven_config.variablesInitial)['variables']],
                         colors: {
                             [app.hexToRgba(preferences.isAugmenting ? common.grayColor : common.selVarColor)]:
                                 [...preferences.leftJoinVariables]
@@ -853,7 +863,7 @@ export class ModalDatamart {
     }
 }
 
-export let search = async (preferences, endpoint, includeDataset=true, includeQuery=true) => {
+export let search = async (preferences, endpoint, dataPath, includeDataset=true, includeQuery=true) => {
 
     // preserve state after async is awaited
     let sourceMode = preferences.sourceMode;
@@ -867,11 +877,14 @@ export let search = async (preferences, endpoint, includeDataset=true, includeQu
         return;
     }
 
+    // results are tied to data from dataPath
+    preferences.cachedDataPath = dataPath;
+
     // enable spinner
     preferences.isSearching[sourceMode] = true;
     m.redraw();
 
-    let searchParams = {source: sourceMode};
+    let searchParams = {source: sourceMode, dataset_path: dataPath};
     if (includeQuery) searchParams.query = JSON.stringify(preferences.query);
 
     if (includeDataset) {

@@ -89,7 +89,7 @@ export function menu(compoundPipeline) {
             attrsAll: {
                 style: {
                     height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`,
-                    'z-index': 100
+                    'z-index': 99
                 }
             }
         }, canvas(compoundPipeline))
@@ -113,7 +113,7 @@ function canvas(compoundPipeline) {
 
     if (constraintMenu.type === 'augment') return m(datamart.CanvasDatamart, {
         preferences: app.datamartPreferences,
-        dataPath: app.workspace.datasetPath,
+        dataPath: constraintMenu.step.dataPath,
         endpoint: app.datamartURL,
         labelWidth: '10em',
     });
@@ -459,8 +459,19 @@ export class PipelineFlowchart {
                     disabled: !isEnabled(),
                     class: 'btn-success',
                     style: {margin: '0.5em'},
-                    onclick: () => {
-                        let step = {type: 'augment', id: 'augment ' + pipeline.length};
+                    onclick: async () => {
+
+                        // write out manipulated dataset as input to datamart component, if there are hard manipulations
+                        let dataPath = workspace.datasetPath;
+                        if (workspace.raven_config.hardManipulations.length) dataPath = await app.getData({
+                            method: 'aggregate',
+                            query: JSON.stringify(queryMongo.buildPipeline(
+                                workspace.raven_config.hardManipulations,
+                                workspace.raven_config.variablesInitial)['pipeline']),
+                            export: 'csv'
+                        });
+                        let step = {type: 'augment', id: 'augment ' + pipeline.length, dataPath};
+
                         setConstraintMenu({type: 'augment', step, pipeline: compoundPipeline});
                     }
                 }, plus, ' Augment Step'),
@@ -604,6 +615,13 @@ export let setConstraintMenu = async (menu) => {
     if (menu === undefined) {
         constraintMenu = menu;
         app.resetPeek();
+        return;
+    }
+
+    // augment does not need most of the checks that the other manipulations need
+    if (menu.type === 'augment') {
+        constraintMenu = menu;
+        common.setPanelOpen('right', false);
         return;
     }
 

@@ -27,6 +27,7 @@ import {bold, linkURLwithText, linkURL, link} from "./index";
 import {getClearWorkspacesLink, clearWorkpacesAndReloadPage} from "./utils";
 
 import {search, setDatamartDefaults} from "./datamart/Datamart";
+import {setConstraintMenu} from "./manipulations/manipulate";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -268,6 +269,13 @@ export function setSelectedMode(mode) {
 
     saveSystemLogEntry(logParams);
 
+    // remove the constraint menu if the mode bar is clicked while modifying constraints
+    if (manipulate.constraintMenu) {
+        setConstraintMenu(undefined);
+        updateRightPanelWidth();
+        updateLeftPanelWidth();
+        common.setPanelOpen('right');
+    }
 
     if (currentMode !== mode) {
         if (is_results_mode) {
@@ -711,7 +719,7 @@ export let datamartPreferences = {
     query: {
         keywords: []
     },
-    // potential new indices to submit to datamart
+    // potential new indices to submit to datamart (used when uploading a dataset to datamart)
     indices: [],
 
     // search results
@@ -1195,10 +1203,6 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
 
     d3.select("title").html("TwoRavens " + workspace.d3m_config.name);
 
-    if (DISPLAY_DATAMART_UI) {
-        setTimeout(() => search(datamartPreferences, datamartURL).then(m.redraw), 1000);
-    }
-
     let newRavenConfig = workspace.raven_config === null;
     if (newRavenConfig) workspace.raven_config = {
         problemCount: 0, // used for generating new problem ID's
@@ -1217,7 +1221,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
 
     let manipulations = newRavenConfig ? [] : [
         ...workspace.raven_config.hardManipulations,
-        ...getSelectedProblem().manipulations
+        ...(getSelectedProblem() || {}).manipulations || []
     ];
 
     // ~~~~ BEGIN PROMISE GRAPH ~~~~
@@ -1432,7 +1436,22 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                  */
                 setSelectedProblem(problemCopy.problemID);
             }
+            else if (!(workspace.raven_config.selectedProblem in workspace.raven_config.problems)) {
+                await promiseDiscovery;
+                setSelectedProblem(Object.keys(workspace.raven_config.problems)[0])
+            }
         })
+        .then(m.redraw);
+
+    // DATAMART
+    if (DISPLAY_DATAMART_UI) promiseDatasetPath.then(() => workspace.raven_config.hardManipulations.length ? getData({
+        method: 'aggregate',
+        query: JSON.stringify(queryMongo.buildPipeline(
+            workspace.raven_config.hardManipulations,
+            workspace.raven_config.variablesInitial)['pipeline']),
+        export: 'csv',
+    }) : workspace.datasetPath)
+        .then(dataPath => search(datamartPreferences, datamartURL, dataPath))
         .then(m.redraw);
 
     try {
@@ -1908,7 +1927,9 @@ export function discovery(problems) {
             problemID,
             system: "auto",
             description: undefined,
-            predictors: [...prob.predictors, ...getTransformVariables(manips)],
+            // should include all variables (and transformed variables) that are not in target list
+            predictors: [...prob.predictors, ...getTransformVariables(manips)]
+                .filter(variable => !prob.targets.includes(variable)),
             targets: prob.targets,
             // NOTE: if the target is manipulated, the metric/task could be wrong
             metric: undefined,
@@ -2235,6 +2256,7 @@ export let getSelectedProblem = () => {
 export function getDescription(problem) {
     if (problem.description) return problem.description;
     let predictors = getPredictorVariables(problem);
+    if (problem.targets.length === 0 || predictors.length === 0) return "";
     return `${problem.targets} is predicted by ${predictors.slice(0, -1).join(", ")} ${predictors.length > 1 ? 'and ' : ''}${predictors[predictors.length - 1]}`;
 }
 
@@ -2542,33 +2564,33 @@ export async function handleAugmentDataMessage(msg_data) {
             // - Clear the orig. selected problem manipulations
             workspace.raven_config.priorManipulations = [
                 ...priorHardManipulations,
-                ...priorSelectedProblem.manipulations,
+                ...(priorSelectedProblem || {}).manipulations || [],
                 augmentStep
             ];
-            priorSelectedProblem.manipulations = [];
 
-            // (4) update ids of the orig selected problem to avoid clashes
-            //
-            priorSelectedProblem.problemID = priorDatasetName;
-            delete priorSelectedProblem.provenanceID;
-            priorSelectedProblem.pending = false;
-            priorSelectedProblem.edited = false;
+            if (priorSelectedProblem) {
+                // (4) update ids of the orig selected problem to avoid clashes
+                //
+                priorSelectedProblem.manipulations = [];
 
-            // (5) add the old problem to the current problems list
-            //
-            workspace.raven_config.problems[priorSelectedProblem.problemID] = priorSelectedProblem;
+                priorSelectedProblem.problemID = priorDatasetName;
+                delete priorSelectedProblem.provenanceID;
+                priorSelectedProblem.pending = false;
+                priorSelectedProblem.edited = false;
 
-            // (6) add a problem with new columns added to predictors, and set it to the selected problem
-            let problemCopy = getProblemCopy(priorSelectedProblem);
+                // (5) add the old problem to the current problems list
+                //
+                workspace.raven_config.problems[priorSelectedProblem.problemID] = priorSelectedProblem;
 
-            problemCopy.predictors.push(...workspace.raven_config.variablesInitial
-                .filter(newVariable => !priorVariablesInitial.includes(newVariable)));
+                // (6) add a problem with new columns added to predictors, and set it to the selected problem
+                let problemCopy = getProblemCopy(priorSelectedProblem);
 
-            workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
-            setSelectedProblem(problemCopy.problemID);
+                problemCopy.predictors.push(...workspace.raven_config.variablesInitial
+                    .filter(newVariable => !priorVariablesInitial.includes(newVariable)));
 
-            // Close augment and go to variables tab
-            setLeftTab(LEFT_TAB_NAME_VARIABLES);
+                workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+                setSelectedProblem(problemCopy.problemID);
+            }
 
             saveUserWorkspace(true)
         });
