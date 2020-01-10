@@ -1,5 +1,0 @@
-numpy>=1.6.1
-scipy>=0.9
-scikit-learn>=0.18.1
-pandas>=0.19.2
-networkx>=1.11
