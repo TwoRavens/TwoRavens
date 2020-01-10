@@ -738,6 +738,8 @@ export let datamartPreferences = {
     }
 };
 
+window.datamartPreferences = datamartPreferences;
+
 if (DISPLAY_DATAMART_UI) setDatamartDefaults(datamartPreferences);
 
 // eventually read this from the schema with real descriptions
@@ -2459,7 +2461,7 @@ export function handleMaterializeDataMessage(msg_data){
 
   // Save the data in the datamartPreferences object
   //
-  const previewDatamartId = msg_data.data.datamart_id;
+  const previewDatamartId = msg_data.data.id;
   datamartPreferences.cached[previewDatamartId] = msg_data.data;
   let previewDatamartIndex = datamartPreferences.results[datamartPreferences.sourceMode]
       .findIndex(entry => previewDatamartId === datamartPreferences.getData(entry, 'id'));

@@ -8,7 +8,7 @@ export default class TreeRender {
         callbacks = callbacks || {};
         renderNode = renderNode || renderNodeFactory(callbacks);
 
-        return data.map(datum => m('div',
+        return data.filter(_=>_).map(datum => m('div',
             m('div#nodeContainer', {
                     style: {display: 'inline-block', width: '100%'}
                 },

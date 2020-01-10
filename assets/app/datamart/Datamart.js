@@ -57,7 +57,7 @@ let makeCard = ({key, color, summary, labelWidth}) => m('table', {
         m('td', {style: {width: 'calc(100% - 2em)'}}, summary))
 );
 
-let makeDatasetCard = (preferences, result, index, endpoint, labelWidth) => {
+let makeDatasetCard = (preferences, result, index, manipulations, endpoint, labelWidth) => {
 
     let getData = preferences.getData;
     let cached = preferences.cached;
@@ -111,18 +111,31 @@ let makeDatasetCard = (preferences, result, index, endpoint, labelWidth) => {
             preferences.selectedResult = result;
 
             // set suggested pairs to join on automatically
-            let augmentationData = getData(result, 'augmentation') || {left_columns_names: []};
-            preferences.joinPairs = augmentationData.left_columns_names.map((_, j) => [
-                augmentationData.left_columns_names[j],
-                augmentationData.right_columns_names[j]
-            ]);
+            let augmentationData = getData(result, 'augmentation');
+
+            // NYU
+            if ('left_columns_names' in augmentationData)
+                preferences.joinPairs = augmentationData.left_columns_names.map((_, j) => [
+                    augmentationData.left_columns_names[j],
+                    augmentationData.right_columns_names[j]
+                ]);
+            // ISI
+            if ('left_columns' in augmentationData) {
+                let originalLeftColumns = [...queryMongo.buildPipeline(
+                    manipulations, app.workspace.raven_config.variablesInitial)['variables']];
+
+                preferences.joinPairs = augmentationData.left_columns.map((_, j) => [
+                    augmentationData.left_columns[j][0].map(colIndex => originalLeftColumns[colIndex]),
+                    [result.summary["Recommend Join Columns"]]
+                ]);
+            }
 
             if (preferences.sourceMode === 'ISI')
                 preferences.modalShown = 'augment';
 
-            if (preferences.sourceMode === 'NYU') {
+            if (preferences.sourceMode === 'NYU')
                 preferences.modalShown = 'augment';
-            }
+
         }
     }, 'Augment');
 
@@ -204,6 +217,7 @@ export class Datamart {
     view(vnode) {
         let {
             preferences,
+            manipulations,
             dataPath,   // where to load data from, to augment with
             labelWidth, // width of titles on left side of cards
             endpoint,   // Django app url
@@ -224,6 +238,9 @@ export class Datamart {
             preferences.success = {};
             preferences.error = {};
         }
+
+        // ISI doesn't support augmenting without a dataset
+        if (preferences.sourceMode === 'ISI') preferences.includeDataset = true;
 
         if (preferences.isAugmenting) return m('div',
             m('h5', 'The system is performing an augmentation.'),
@@ -529,7 +546,7 @@ export class Datamart {
 
                     m('div#datamartResults', results[preferences.sourceMode]
                         .sort((a, b) => getData(b, 'score') - getData(a, 'score'))
-                        .map((result, i) => makeDatasetCard(preferences, result, i, endpoint, labelWidth))
+                        .map((result, i) => makeDatasetCard(preferences, result, i, manipulations, endpoint, labelWidth))
                     )
                 ]
             }),
@@ -586,15 +603,6 @@ export class ModalDatamart {
             preferences.modalShown === 'metadata' && [
               m('h4', (getData(selectedResult, 'name') || '') + ' Metadata'),
               m('label[style=width:100%]', 'Score: ' + getData(selectedResult, 'score') || 0),
-              m(Table, {
-                  data: {
-                      'Join Columns': getData(selectedResult, 'join_columns') || '(no join columns)',
-                      'Union Columns': getData(selectedResult, 'union_columns') || '(no join columns)'
-                  },
-                  tableTags: m('colgroup',
-                      m('col', {span: 1}),
-                      m('col', {span: 1, width: '30%'}))
-              }),
               m('div[style=width:100%;overflow:auto]',
                 m(Table, {
                     data: getData(selectedResult, 'data'),
@@ -657,10 +665,10 @@ export class ModalDatamart {
                         m('div', {
                             style: {display: 'inline-block'},
                             onclick: () => {
-                                if (preferences.isAugmenting) return;
+                                if (preferences.isAugmenting || preferences.sourceMode === 'ISI') return;
                                 preferences.joinPairs.splice(preferences.joinPairs.findIndex(elem => elem === pair), 1)
                             }
-                        }, !preferences.isAugmenting && m(Icon, {name: 'x'})),
+                        }, !preferences.isAugmenting && preferences.sourceMode !== 'ISI' && m(Icon, {name: 'x'})),
                         m('div', {style: {'margin-left': '1em', display: 'inline-block'}},
                             `Joining [${pair[0].join(', ')}] with [${pair[1].join(', ')}]`)
                     ])),
@@ -687,36 +695,41 @@ export class ModalDatamart {
                             let originalLeftColumns = [...queryMongo.buildPipeline(
                                 manipulations, app.workspace.raven_config.variablesInitial)['variables']];
 
-                            // For ISI, this "preferences.selectedResult.metadata.columns" is
-                            //    "preferences.selectedResult.metadata.variables"
-                            // MIKE: @above   just use getData?
-                            let originalRightColumns = preferences.selectedResult.metadata.columns.map(row => row.name);
-
-                            let joinLeftColumns = [];
-                            let joinRightColumns = [];
-
-                            preferences.joinPairs.forEach(pair => {
-                                joinLeftColumns.push(pair[0]
-                                    .map(leftCol => originalLeftColumns.indexOf(leftCol)));
-                                joinRightColumns.push(pair[1]
-                                    .map(rightCol => originalRightColumns.indexOf(rightCol)));
-                            });
-
-                            // standardized summary of some key fields
-                            let summary = ['name', 'description', 'row count'].reduce((out, key) => Object.assign(out, {
-                                [key]: preferences.getData(preferences.selectedResult, key)
-                            }), {});
-                            summary.joinPairs = preferences.joinPairs;
 
                             let augment_api_data = {
                                 data_path: preferences.cachedDataPath,
                                 search_result: JSON.stringify(preferences.selectedResult),
                                 source: preferences.sourceMode,
-                                left_columns: JSON.stringify(joinLeftColumns),
-                                right_columns: JSON.stringify(joinRightColumns),
-                                exact_match: preferences.exactMatch,
-                                summary
+                                exact_match: preferences.exactMatch
                             };
+
+                            let summary = {};
+                            if (preferences.sourceMode === 'NYU') {
+                                // For ISI, this "preferences.selectedResult.metadata.columns" is
+                                //    "preferences.selectedResult.metadata.variables"
+                                let originalRightColumns = preferences.selectedResult.metadata.columns.map(row => row.name);
+
+                                let joinLeftColumns = [];
+                                let joinRightColumns = [];
+
+                                preferences.joinPairs.forEach(pair => {
+                                    joinLeftColumns.push(pair[0]
+                                        .map(leftCol => originalLeftColumns.indexOf(leftCol)));
+                                    joinRightColumns.push(pair[1]
+                                        .map(rightCol => originalRightColumns.indexOf(rightCol)));
+                                });
+                                summary.joinPairs = preferences.joinPairs;
+                                Object.assign(augment_api_data, {
+                                    left_columns: JSON.stringify(joinLeftColumns),
+                                    right_columns: JSON.stringify(joinRightColumns)
+                                });
+                            }
+
+                            // standardized summary of some key fields
+                            summary = ['name', 'description', 'row count'].reduce((out, key) => Object.assign(out, {
+                                [key]: preferences.getData(preferences.selectedResult, key)
+                            }), summary);
+                            augment_api_data.summary = summary;
 
                             console.log('augment_api_data: ' + JSON.stringify(augment_api_data));
 
@@ -749,115 +762,111 @@ export class ModalDatamart {
                             console.log(response);
                         }
                     }, 'Augment'),
-
-
-
                   ),
                     //m('p', "Please choose the variables to connect your dataset" +
                     //       " from the found dataset.")),
 
 
-                  // Listing of pairs
-                  //
-                  m('hr'),
-                  m('h4', 'Variable Pairs'),
+                preferences.sourceMode !== 'ISI' && [
+                    // Listing of pairs
+                    //
+                    m('hr'),
+                    m('h4', 'Variable Pairs'),
 
-                  m('div', [
-                      !preferences.joinPairs.length && [
-                          m('p', '(No pairs selected)'),
-                          m('p', 'Please connect the datasets using variables:')],
-                      preferences.joinPairs.length > 0 && m('p', '(Optional) To add another Variable Pair:'),
+                    m('div', [
+                        !preferences.joinPairs.length && [
+                            m('p', '(No pairs selected)'),
+                            m('p', 'Please connect the datasets using variables:')],
+                        preferences.joinPairs.length > 0 && m('p', '(Optional) To add another Variable Pair:'),
                         m('ol', [
                             m('li', 'Click on a variable from the ', bold("Your Dataset Variables"), ' column.'),
                             m('li', 'Select a variable from the ', bold("Found Dataset Variables"), ' column.'),
                             m('li', 'Click ', bold("Add Pairing"), '.  If desired, add additional pairings.'),
                             m('li', 'Click ', bold("Augment")),
+                        ]),
                     ]),
-                  ]),
 
-                  m('div', [
-                      m(ButtonPlain, {
-                          style: {margin: '1em 1em .5em 1em'},
-                          title: 'supply variables from both the left and right datasets',
+                    m('div', [
+                        m(ButtonPlain, {
+                            style: {margin: '1em 1em .5em 1em'},
+                            title: 'supply variables from both the left and right datasets',
 
-                          class: `${(!preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting === true) ? 'btn-default' : 'btn-success active'}`,
+                            class: `${(!preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting === true) ? 'btn-default' : 'btn-success active'}`,
 
-                          disabled: !preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting === true,
-                          onclick: () => {
-                              if (!preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting)
-                                  return;
+                            disabled: !preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting === true,
+                            onclick: () => {
+                                if (!preferences.leftJoinVariables.size || !preferences.rightJoinVariables.size || preferences.isAugmenting)
+                                    return;
 
-                              preferences.joinPairs.push([
-                                  [...preferences.leftJoinVariables],
-                                  [...preferences.rightJoinVariables]]);
+                                preferences.joinPairs.push([
+                                    [...preferences.leftJoinVariables],
+                                    [...preferences.rightJoinVariables]]);
 
-                              preferences.leftJoinVariables = new Set();
-                              preferences.rightJoinVariables = new Set();
+                                preferences.leftJoinVariables = new Set();
+                                preferences.rightJoinVariables = new Set();
 
-                          }
-                      }, 'Add Pairing'),
-                  ]),
-
-
-                m('hr'),
-
-                m('h4[style=width:calc(50% - 1em);display:inline-block]', 'Your Dataset Variables'),
-                m('h4[style=width:calc(50% - 1em);display:inline-block]', 'Found Dataset Variables'),
-
-                m('div', {style: {width: 'calc(50% - 1em)', display: 'inline-block', 'vertical-align': 'top'}},
-                    m(PanelList, {
-                        id: 'leftColumns',
-                        items: [...queryMongo.buildPipeline(
-                            manipulations, app.workspace.raven_config.variablesInitial)['variables']],
-                        colors: {
-                            [app.hexToRgba(preferences.isAugmenting ? common.grayColor : common.selVarColor)]:
-                                [...preferences.leftJoinVariables]
-                        },
-                        callback: variable => {
-                            if (preferences.isAugmenting) return;
-                            preferences.leftJoinVariables.has(variable)
-                                ? preferences.leftJoinVariables.delete(variable)
-                                : preferences.leftJoinVariables.add(variable);
-                            setTimeout(m.redraw, 1000);
-                        },
-                        attrsAll: {
-                            style: {
-                                background: 'rgba(0,0,0,.025)',
-                                'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
-                                'max-width': '30em',
-                                padding: '1em',
-                                margin: 'auto'
                             }
-                        }
-                    })),
-                m('div', {style: {width: 'calc(50% - 1em)', display: 'inline-block', 'vertical-align': 'top'}},
-                    m(PanelList, {
-                        id: 'rightColumns',
+                        }, 'Add Pairing'),
+                    ]),
 
-                        // For ISI, this "preferences.selectedResult.metadata.columns" is
-                        //    "preferences.selectedResult.metadata.variables"
-                        //
-                        items: selectedResult.metadata.columns.map(variable => variable.name),
-                        colors: {
-                            [app.hexToRgba(preferences.isAugmenting ? common.grayColor : common.selVarColor)]: [...preferences.rightJoinVariables]
-                        },
-                        callback: variable => {
-                            if (preferences.isAugmenting) return;
-                            preferences.rightJoinVariables.has(variable)
-                                ? preferences.rightJoinVariables.delete(variable)
-                                : preferences.rightJoinVariables.add(variable);
-                            setTimeout(m.redraw, 1000);
-                        },
-                        attrsAll: {
-                            style: {
-                                background: 'rgba(0,0,0,.025)',
-                                'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
-                                'max-width': '30em',
-                                padding: '1em',
-                                margin: 'auto'
+
+                    m('hr'),
+
+                    m('h4[style=width:calc(50% - 1em);display:inline-block]', 'Your Dataset Variables'),
+                    m('h4[style=width:calc(50% - 1em);display:inline-block]', 'Found Dataset Variables'),
+
+                    m('div', {style: {width: 'calc(50% - 1em)', display: 'inline-block', 'vertical-align': 'top'}},
+                        m(PanelList, {
+                            id: 'leftColumns',
+                            items: [...queryMongo.buildPipeline(
+                                manipulations, app.workspace.raven_config.variablesInitial)['variables']],
+                            colors: {
+                                [app.hexToRgba(preferences.isAugmenting ? common.grayColor : common.selVarColor)]:
+                                    [...preferences.leftJoinVariables]
+                            },
+                            callback: variable => {
+                                if (preferences.isAugmenting) return;
+                                preferences.leftJoinVariables.has(variable)
+                                    ? preferences.leftJoinVariables.delete(variable)
+                                    : preferences.leftJoinVariables.add(variable);
+                                setTimeout(m.redraw, 1000);
+                            },
+                            attrsAll: {
+                                style: {
+                                    background: 'rgba(0,0,0,.025)',
+                                    'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
+                                    'max-width': '30em',
+                                    padding: '1em',
+                                    margin: 'auto'
+                                }
                             }
-                        }
-                    }))
+                        })),
+                    m('div', {style: {width: 'calc(50% - 1em)', display: 'inline-block', 'vertical-align': 'top'}},
+                        m(PanelList, {
+                            id: 'rightColumns',
+                            items: selectedResult.metadata.columns.map(variable => variable.name),
+                            colors: {
+                                [app.hexToRgba(preferences.isAugmenting ? common.grayColor : common.selVarColor)]: [...preferences.rightJoinVariables]
+                            },
+                            callback: variable => {
+                                if (preferences.isAugmenting) return;
+                                preferences.rightJoinVariables.has(variable)
+                                    ? preferences.rightJoinVariables.delete(variable)
+                                    : preferences.rightJoinVariables.add(variable);
+                                setTimeout(m.redraw, 1000);
+                            },
+                            attrsAll: {
+                                style: {
+                                    background: 'rgba(0,0,0,.025)',
+                                    'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
+                                    'max-width': '30em',
+                                    padding: '1em',
+                                    margin: 'auto'
+                                }
+                            }
+                        }))
+                ]
+
             ]
         ])
     }
@@ -923,22 +932,18 @@ export let setDatamartDefaults = preferences => {
             'description': ['metadata', 'description'],
             'size': ['metadata', 'size'],
             'keywords': undefined,
-            'data': ['metadata'],
-            'join_columns': ['join_columns'],
-            'union_columns': ['union_columns']
+            'data': ['metadata']
         },
         'ISI': {
-            'id': ['datamart_id'],
-            'row count': undefined,
-            'name': ['metadata', 'title'],
+            'id': ['id'],
+            'row count': ['metadata', 0, 'metadata', 'dimension', 'length'], // TODO: don't implicitly count on the rowcount being first
+            'name': undefined,
             'augmentation': ['augmentation'],
             'score': ['score'],
-            'description': ['metadata', 'description'],
-            'size': ['metadata', 'size'],
-            'keywords': ['metadata', 'keywords'],
-            'data': ['metadata'],
-            'join_columns': ['join_columns'],
-            'union_columns': ['union_columns']
+            'description': ['summary', 'title'],
+            'size': undefined,
+            'keywords': undefined,
+            'data': ['metadata']
         }
     });
 
