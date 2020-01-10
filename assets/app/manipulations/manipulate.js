@@ -114,6 +114,7 @@ function canvas(compoundPipeline) {
     if (constraintMenu.type === 'augment') return m(datamart.CanvasDatamart, {
         preferences: app.datamartPreferences,
         dataPath: constraintMenu.step.dataPath,
+        manipulations: app.workspace.raven_config && app.workspace.raven_config.hardManipulations,
         endpoint: app.datamartURL,
         labelWidth: '10em',
     });

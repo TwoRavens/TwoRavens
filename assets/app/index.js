@@ -875,6 +875,7 @@ let standaloneDatamart = () => {
             m(Datamart, {
                 preferences: app.datamartPreferences,
                 dataPath: app.workspace.datasetPath,
+                manipulations: app.workspace.raven_config && app.workspace.raven_config.hardManipulations,
                 endpoint: app.datamartURL,
                 labelWidth: '10em'
             })),
@@ -882,7 +883,7 @@ let standaloneDatamart = () => {
             preferences: app.datamartPreferences,
             endpoint: app.datamartURL,
             dataPath: app.workspace.datasetPath,
-            manipulations: app.raven_config.hardManipulations
+            manipulations: app.workspace.raven_config && app.workspace.raven_config.hardManipulations
         })
     ]
 };

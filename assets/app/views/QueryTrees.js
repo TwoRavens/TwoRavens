@@ -40,19 +40,19 @@ export class TreeAugment {
                 cancellable: false,
                 show_op: false
             },
-            {
-                id: 'exact match',
-                name: 'Exact match: ' + step.exact_match,
-                cancellable: false,
-                show_op: false
-            },
+            // {
+            //     id: 'exact match',
+            //     name: 'Exact match: ' + step.exact_match,
+            //     cancellable: false,
+            //     show_op: false
+            // },
             {
                 id: 'source',
                 name: 'Data source: ' + step.source,
                 cancellable: false,
                 show_op: false
             },
-            {
+            step.source === 'NYU' && {
                 id: 'join pairs',
                 name: 'Join pairs',
                 cancellable: false,

@@ -193,6 +193,7 @@ class NewDatasetUtil(BasicErrCheck):
     def run_construct_dataset(self):
         """Go through the steps...."""
         LOGGER.info('>>> run_construct_dataset')
+        print(self.orig_source_file)
         if not isfile(self.orig_source_file):
             user_msg = 'File does not exists: %s' % self.orig_source_file
             self.send_websocket_err_msg(user_msg)

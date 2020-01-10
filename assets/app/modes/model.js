@@ -26,10 +26,7 @@ import Checkbox from "../../common/views/Checkbox";
 import ForceDiagram, {groupBuilder, groupLinkBuilder, linkBuilder, pebbleBuilderLabeled} from "../views/ForceDiagram";
 import VariableSummary, {formatVariableSummary} from "../views/VariableSummary";
 import ButtonLadda from "../views/LaddaButton";
-import PreprocessInfo from "../views/PreprocessInfo";
 import Flowchart from "../views/Flowchart";
-
-import Datamart from "../datamart/Datamart";
 
 import {bold, boldPlain, preformatted} from "../index";
 import {setModal} from "../../common/views/Modal";
