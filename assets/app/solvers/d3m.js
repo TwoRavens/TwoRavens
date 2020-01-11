@@ -490,8 +490,13 @@ let stepPlaceholder = (metadata, index) => [{
 // create problem definition for SearchSolutions call
 export function GRPC_ProblemDescription(problem) {
     let GRPC_Problem = {
-        taskType: app.d3mTaskType[problem.task],
-        taskSubtype: problem.taskSubtype || app.d3mTaskSubtype.subtypeNone,
+        taskKeywords: [
+            app.d3mTaskType[problem.task],
+            app.d3mTaskSubtype[problem.subTask],
+            app.d3mSupervision[problem.supervision],
+            ...problem.d3mTags.map(tag => app.d3mTags[tag]),
+            ...problem.resourceTypes.map(type => app.d3mResourceType[type])
+        ].filter(_=>_),
         performanceMetrics: [{metric: app.d3mMetrics[problem.metric]}]
     };
     if (GRPC_Problem.taskSubtype === 'taskSubtypeUndefined') delete GRPC_Problem.taskSubtype;

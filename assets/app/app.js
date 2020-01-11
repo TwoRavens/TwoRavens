@@ -3,6 +3,7 @@
 */
 import hopscotch from 'hopscotch';
 import m from 'mithril';
+// no use except for making it possible to play with m from the console
 window.m = m;
 
 import $ from 'jquery';
@@ -28,6 +29,7 @@ import {getClearWorkspacesLink, clearWorkpacesAndReloadPage} from "./utils";
 
 import {search, setDatamartDefaults} from "./datamart/Datamart";
 import {setConstraintMenu} from "./manipulations/manipulate";
+import {keywords} from "d3/build/package";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -215,10 +217,6 @@ export let formattingData = {};
 export let alignmentData = {};
 // ~~~~
 
-// when set, solver will be called if results menu is active
-export let solverPending = false;
-export let setSolverPending = state => solverPending = state;
-
 export let taskPreferences = {
     isDiscoveryClicked: false,
     isSubmittingProblems: false,
@@ -280,7 +278,6 @@ export function setSelectedMode(mode) {
     if (currentMode !== mode) {
         if (is_results_mode) {
             taskPreferences.isResultsClicked = true;
-            let selectedProblem = getSelectedProblem();
 
             // a solved problem, and its copy, are not pending
             selectedProblem.pending = false;
@@ -742,11 +739,8 @@ window.datamartPreferences = datamartPreferences;
 
 if (DISPLAY_DATAMART_UI) setDatamartDefaults(datamartPreferences);
 
-// eventually read this from the schema with real descriptions
 // metrics, tasks, and subtasks as specified in D3M schemas
-// MEAN SQUARED ERROR IS SET TO SAME AS RMSE. MSE is in schema but not proto
 export let d3mTaskType = {
-    taskTypeUndefined: "TASK_TYPE_UNDEFINED",
     classification: "CLASSIFICATION",
     regression: "REGRESSION",
     clustering: "CLUSTERING",
@@ -755,11 +749,67 @@ export let d3mTaskType = {
     vertexClassification: "VERTEX_CLASSIFICATION",
     communityDetection: "COMMUNITY_DETECTION",
     graphMatching: "GRAPH_MATCHING",
-    timeSeriesForecasting: "TIME_SERIES_FORECASTING",
+    forecasting: "FORECASTING",
     collaborativeFiltering: "COLLABORATIVE_FILTERING",
-    objectDetection: "OBJECT_DETECTION",
-    semiSupervisedClassification: "SEMISUPERVISED_CLASSIFICATION",
-    semiSupervisedRegression: "SEMISUPERVISED_REGRESSION",
+    objectDetection: "OBJECT_DETECTION"
+};
+
+export let d3mSupervision = {
+    semiSupervised: "SEMI_SUPERVISED",
+    unsupervised: "UNSUPERVISED",
+};
+
+export let d3mResourceType = {
+    tabular: "TABULAR",
+    relational: "RELATIONAL",
+    image: "IMAGE",
+    audio: "AUDIO",
+    video: "VIDEO",
+    speech: "SPEECH",
+    text: "TEXT",
+    graph: "GRAPH",
+    multiGraph: "MULTI_GRAPH",
+    timeSeries: "TIME_SERIES",
+};
+
+export let d3mTags = {
+    grouped: "GROUPED",
+    geospatial: "GEOSPATIAL",
+    remoteSensing: "REMOTE_SENSING",
+    lupi: "LUPI",
+    missingMetadata: "MISSING_METADATA"
+};
+
+export let keywordDefinitions = {
+    "semiSupervised": "semiSupervised learning task",
+    "unsupervised": "unsupervised learning task - no labeled dataset",
+
+    "binary": "binary classification task",
+    "multiClass": "multi-class classification task",
+    "multiLabel": "multi-label classification task",
+
+    "univariate": "applied to \"regression\" task with a single response variable",
+    "multivariate": "applied to \"regression\" task with more than one response variables",
+
+    "overlapping": "applied to \"communityDetection\" problems to indicate overlapping communites: multiple community memberships for nodes",
+    "nonOverlapping": "applied to \"communityDetection\" problems to indicate disjoint communites: single community memberships for nodes",
+
+    "tabular": "indicates data is tabular",
+    "relational": "indicates data is a relational database",
+    "image": "indicates data consists of raw images",
+    "audio": "indicates data consists of raw audio",
+    "video": "indicates data consists of raw video",
+    "speech": "indicates human speech data",
+    "text": "indicates data consists of raw text",
+    "graph": "indicates data consists of graphs",
+    "multiGraph": "indicates data consists of multigraphs",
+    "timeSeries": "indicates data consists of time series",
+
+    "grouped": "applied to time series data (or tabular data in general) to indicate that some columns should be grouped",
+    "geospatial": "indicates data contains geospatial information",
+    "remoteSensing": "indicates data contains remote-sensing data",
+    "lupi": "indicates the presence of privileged features: lupi",
+    "missingMetadata": "indicates that the metadata for dataset is not complete"
 };
 
 export let d3mTaskSubtype = {
@@ -774,6 +824,7 @@ export let d3mTaskSubtype = {
     nonOverlapping: "NONOVERLAPPING",
 };
 
+// MEAN SQUARED ERROR IS SET TO SAME AS RMSE. MSE is in schema but not proto
 export let d3mMetrics = {
     metricUndefined: "METRIC_UNDEFINED",
     accuracy: "ACCURACY",
@@ -853,12 +904,13 @@ export let applicableMetrics = {
         multiLabel: ['accuracy', 'f1Micro', 'f1Macro', 'rocAucMacro', 'jaccardSimilarityScore']
     },
     communityDetection: {
-        subTypeNone: ['normalizedMutualInformation']
+        overlapping: ['normalizedMutualInformation'],
+        nonOverlapping: ['normalizedMutualInformation']
     },
     graphMatching: {
         subTypeNone: ['accuracy', 'jaccardSimilarityScore']
     },
-    timeSeriesForecasting: {
+    forecasting: {
         subTypeNone: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared', 'precisionAtTopK']
     },
     collaborativeFiltering: {
@@ -866,15 +918,6 @@ export let applicableMetrics = {
     },
     objectDetection: {
         subTypeNone: ['objectDetectionAveragePrecision']
-    },
-    semiSupervisedClassification: {
-        binary: ['accuracy', 'precision', 'recall', 'f1', 'rocAuc'],
-        multiClass: ['accuracy', 'f1Micro', 'f1Macro', 'rocAucMicro', 'rocAucMacro', 'jaccardSimilarityScore'],
-        multiLabel: ['accuracy', 'f1Micro', 'f1Macro', 'rocAucMacro', 'jaccardSimilarityScore', 'hammingLoss']
-    },
-    semiSupervisedRegression: {
-        univariate: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared'],
-        multivariate: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared']
     }
 };
 
@@ -1046,6 +1089,21 @@ let buildDefaultProblem = problemDoc => {
     if (!problemDoc.inputs.dataSplits)
         problemDoc.inputs.dataSplits = {};
 
+    let findTask = keywords => Object.keys(d3mTaskType)
+        .find(key => keywords.includes(key)) || 'regression';
+    let findSupervision = keywords => Object.keys(d3mSupervision)
+        .find(key => keywords.includes(key));
+
+    let findSubtask = keywords => {
+        let task = findTask(keywords);
+        return keywords.find(keyword => Object.keys(applicableMetrics[task]).includes(keyword)) || 'subTypeNone'
+    };
+
+    let filterResourceType = keywords => Object.keys(d3mResourceType)
+        .filter(key => keywords.includes(key));
+    let filterD3MTags = keywords => Object.keys(d3mResourceType)
+        .filter(key => keywords.includes(key));
+
     // defaultProblem
     return {
         problemID: problemDoc.about.problemID,
@@ -1056,8 +1114,11 @@ let buildDefaultProblem = problemDoc => {
         description: problemDoc.about.problemDescription,
         metric: problemDoc.inputs.performanceMetrics[0].metric,
         metrics: problemDoc.inputs.performanceMetrics.slice(1).map(elem => elem.metric),
-        task: problemDoc.about.taskType,
-        subTask: problemDoc.about.taskSubtype,
+        task: findTask(problemDoc.about.taskKeywords),
+        subTask: findSubtask(problemDoc.about.taskKeywords),
+        supervision: findSupervision(problemDoc.about.taskKeywords),
+        resourceTypes: filterResourceType(problemDoc.about.taskKeywords),
+        d3mTags: filterD3MTags(problemDoc.about.taskKeywords),
 
         splitOptions: Object.assign({
             outOfSampleSplit: true,
@@ -1358,9 +1419,11 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                             description: '',
                             metric: undefined,
                             metrics: [],
-                            task: 'regression',
-                            subTask: 'univariate',
-
+                            task: 'classification',
+                            subTask: undefined,
+                            supervision: undefined,
+                            resourceTypes: ['tabular'],
+                            d3mTags: [],
                             splitOptions: {
                                 outOfSampleSplit: true,
                                 trainTestRatio: 0.35,
@@ -1810,7 +1873,7 @@ export let materializeICE = async problem => {
 export let materializeTrainTestPromise = {};
 export let materializeTrainTest = async problem => {
 
-    let temporalVariables = problem.task.toLowerCase() === 'timeseriesforecasting' ? problem.tags.time : [];
+    let temporalVariables = problem.task.toLowerCase() === 'forecasting' ? problem.tags.time : [];
     if (temporalVariables.length > 1)
         alertWarn(`Multiple temporal variables found. Using the first temporal variable to split: ${temporalVariables[0]}`);
 
@@ -1933,12 +1996,17 @@ export function discovery(problems) {
             predictors: [...prob.predictors, ...getTransformVariables(manips)]
                 .filter(variable => !prob.targets.includes(variable)),
             targets: prob.targets,
+            meaningful: false,
             // NOTE: if the target is manipulated, the metric/task could be wrong
             metric: undefined,
             metrics: [], // secondary evaluation metrics
             task: undefined,
-            subTask: 'taskSubtypeUndefined',
-            meaningful: false,
+            supervision: undefined,
+            classificationSubtype: undefined,
+            regressionSubtype: undefined,
+            communityDetectionSubtype: undefined,
+            resourceTypes: [],
+            d3mTags: [],
 
             splitOptions: {
                 outOfSampleSplit: true,
@@ -2239,12 +2307,6 @@ export async function saveAsNewWorkspace() {
  * END: saveAsNewWorkspace
  */
 
-export let isSelectedProblem = (probID) => {
-  let selProblem = getSelectedProblem();
-  if (!selProblem) return false;
-  return (selProblem.problemID === probID)? true : false;
-}
-
 export let getSelectedProblem = () => {
     if (!workspace) return;
     let ravenConfig = workspace.raven_config;
@@ -2265,42 +2327,65 @@ export function getDescription(problem) {
 export let setTask = (task, problem) => {
     if (task === problem.task) return; //  || !(supportedTasks.includes(task))
     problem.task = task;
-    if (task.toLowerCase() === 'classification' || task.toLowerCase() === 'semisupervisedclassification')
+    if (task.toLowerCase() === 'classification')
         setSubTask(variableSummaries[problem.targets[0]].binary ? 'binary' : 'multiClass', problem);
-    else if (task.toLowerCase() === 'regression' || task.toLowerCase() === 'semisupervisedregression')
+    else if (task.toLowerCase() === 'regression')
         setSubTask(problem.predictors.length > 1 ? 'multivariate' : 'univariate', problem);
     else if (!(problem.subTask in applicableMetrics[task]))
-        setSubTask(Object.keys(applicableMetrics[task])[0], problem)
+        setMetric(Object.keys(applicableMetrics[task])[0], problem);
 
     delete problem.unedited;
-    // will trigger the call to solver, if a menu that needs that info is shown
-    setSolverPending(true);
 };
 
 export let setSubTask = (subTask, problem) => {
     if (subTask === problem.subTask || !Object.keys(applicableMetrics[problem.task]).includes(subTask))
         return;
-    problem.subTask = subTask;
-    setMetric(applicableMetrics[problem.task][getSubtask(problem)][0], problem, true)
+    problem.resourceTypes = subTask;
 
     delete problem.unedited;
-    // will trigger the call to solver, if a menu that needs that info is shown
-    setSolverPending(true);
+};
+
+export let setSupervision = (supervision, problem) => {
+    if (supervision === problem.supervision || ![undefined, ...Object.keys(d3mSupervision)].includes(supervision))
+        return;
+    problem.supervision = supervision;
+
+    delete problem.unedited;
+};
+
+export let setResourceTypes = (types, problem) =>  {
+    types = types.filter(type => Object.keys(d3mResourceType).includes(type));
+    if (types.every(type => problem.resourceTypes.includes(type)) && types.length === problem.resourceTypes.length)
+        return;
+
+    problem.resourceTypes = types;
+
+    delete problem.unedited;
+};
+
+export let setD3MTags = (tags, problem)  => {
+    tags = tags.filter(type => Object.keys(d3mTags).includes(type));
+    if (tags.every(tag => problem.d3mTags.includes(tag)) && tags.length === problem.d3mTags.length)
+        return;
+
+    problem.d3mTags = tags;
+
+    delete problem.unedited;
 };
 
 export let getSubtask = problem => {
-    if (['regression', 'semisupervisedregression'].includes(problem.task.toLowerCase())) return getPredictorVariables(problem).length > 1 ? 'multivariate' : 'univariate';
+    if (problem.task.toLowerCase() === 'regression')
+        return getPredictorVariables(problem).length > 1 ? 'multivariate' : 'univariate';
 
     if (!problem.subTask && variableSummaries[problem.targets[0]]) {
-        if (problem.task.toLowerCase() === 'classification' || problem.task.toLowerCase() === 'semisupervisedclassification')
+        if (problem.task.toLowerCase() === 'classification')
             problem.subTask = variableSummaries[problem.targets[0]].binary ? 'binary' : 'multiClass';
-        else if (problem.task.toLowerCase() === 'regression' || problem.task.toLowerCase() === 'semisupervisedregression')
+        else if (problem.task.toLowerCase() === 'regression')
             problem.subTask = problem.predictors.length > 1 ? 'multivariate' : 'univariate';
         else
             problem.subTask = Object.keys(applicableMetrics[problem.task])[0]
-    } else if (!problem.subTask && !variableSummaries[problem.targets[0]]) {
+    } else if (!problem.subTask && !variableSummaries[problem.targets[0]])
         return Object.keys(applicableMetrics[problem.task])[0];
-    }
 
     return problem.subTask
 };
@@ -2308,16 +2393,14 @@ export let getSubtask = problem => {
 export let setMetric = (metric, problem, all=false) => {
     if (metric === problem.metric || !applicableMetrics[problem.task][getSubtask(problem)].includes(metric))
         return;
-    if (problem.metrics.includes(metric)) problem.metrics.push(problem.metric)
+    if (problem.metrics.includes(metric)) problem.metrics.push(problem.metric);
     problem.metric = metric;
-    remove(problem.metrics, metric)
+    remove(problem.metrics, metric);
 
     if (all) problem.metrics = applicableMetrics[problem.task][getSubtask(problem)]
-        .filter(elem => elem !== metric).sort()
+        .filter(elem => elem !== metric).sort();
 
     delete problem.unedited;
-    // will trigger the call to solver, if a menu that needs that info is shown
-    setSolverPending(true);
 };
 
 // get all predictors, including those that only have an arrow to a target
@@ -2336,7 +2419,7 @@ export let getNominalVariables = problem => {
     return [...new Set([
         ...selectedProblem.tags.nominal,
         // targets in a classification problem are also nominal
-        ...['classification', 'semisupervisedclassification'].includes(selectedProblem.task.toLowerCase())
+        ...selectedProblem.task.toLowerCase() === 'classification'
             ? selectedProblem.targets : []
     ])];
 };
@@ -2391,9 +2474,6 @@ export function setSelectedProblem(problemID) {
         .then(m.redraw);
 
     resetPeek();
-
-    // will trigger the call to solver, if a menu that needs that info is shown
-    setSolverPending(true);
 
     if (results.resultsPreferences.dataSplit !== 'all' && !problem.splitOptions.outOfSampleSplit)
         results.resultsPreferences.dataSplit = 'all';
@@ -2681,7 +2761,7 @@ export let inferIsCategorical = variableSummary => {
 
 export let isProblemValid = problem => {
     let valid = true;
-    if (problem.task.toLowerCase() === 'timeseriesforecasting' && problem.tags.time.length === 0) {
+    if (problem.task.toLowerCase() === 'forecasting' && problem.tags.time.length === 0) {
         alertError('One variable must be marked as temporal to solve a time series forecasting problem.')
         valid = false;
     }

@@ -30,6 +30,7 @@ import Flowchart from "../views/Flowchart";
 
 import {bold, boldPlain, preformatted} from "../index";
 import {setModal} from "../../common/views/Modal";
+import {setD3MTags} from "../app";
 
 
 export class CanvasModel {
@@ -612,8 +613,6 @@ export let rightpanel = () => {
                     onclickChild: metric => {
                         selectedProblem.metrics = [...selectedProblem.metrics, metric].sort(app.omniSort);
                         delete selectedProblem.unedited;
-                        // will trigger the call to solver, if a menu that needs that info is shown
-                        app.setSolverPending(true);
                     },
                     style: {'margin': '1em', 'margin-top': '0'},
                     disabled: isLocked
@@ -734,8 +733,6 @@ export let rightpanel = () => {
                         onclickChild: child => {
                             selectedProblem.scoreOptions.evaluationMethod = child;
                             delete selectedProblem.unedited;
-                            // will trigger the call to solver, if a menu that needs that info is shown
-                            app.setSolverPending(true);
                         },
                         style: {'margin-bottom': '1em'},
                         disabled: isLocked

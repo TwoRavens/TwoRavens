@@ -233,7 +233,7 @@ export class CanvasSolutions {
             ]
         }
 
-        if (problem.task.toLowerCase().includes('regression') || problem.task.toLowerCase() === 'timeseriesforecasting') {
+        if (problem.task.toLowerCase().includes('regression') || problem.task.toLowerCase() === 'forecasting') {
             let summaries = adapters.map(adapter => ({
                 name: adapter.getSolutionId(),
                 fittedVsActual: adapter.getFittedVsActuals(resultsPreferences.target),
@@ -1373,7 +1373,7 @@ export let loadFittedVsActuals = async (problem, adapter) => {
         return;
 
     // fitted vs actuals don't apply for non-regression problems
-    if (!['regression', 'semisupervisedregression', 'timeseriesforecasting'].includes(problem.task.toLowerCase()))
+    if (!['regression', 'semisupervisedregression', 'forecasting'].includes(problem.task.toLowerCase()))
         return;
 
     // don't load if systems are already in loading state
@@ -1452,7 +1452,7 @@ export let loadConfusionData = async (problem, adapter) => {
         return;
 
     // confusion matrices don't apply for non-classification problems
-    if (!['classification', 'semisupervisedclassification', 'vertexclassification'].includes(problem.task.toLowerCase()))
+    if (!['classification', 'vertexclassification'].includes(problem.task.toLowerCase()))
         return;
 
     // don't load if systems are already in loading state

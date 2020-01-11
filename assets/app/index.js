@@ -31,7 +31,7 @@ import Peek from '../common/views/Peek';
 import Table from '../common/views/Table';
 import TextField from '../common/views/TextField';
 import Popper from '../common/views/Popper';
-import Datamart, {ModalDatamart} from "./datamart/Datamart";
+import {ModalDatamart} from "./datamart/Datamart";
 
 import Icon from '../common/views/Icon';
 import ModalWorkspace from "./views/ModalWorkspace";
@@ -60,7 +60,7 @@ export let abbreviate = (text, length) => text.length > length
 class Body {
     oninit() {
         app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
-        app.setSelectedMode('dataset');
+        app.setSelectedMode('model');
         this.TA2URL = D3M_SVC_URL + '/SearchDescribeFitScoreSolutions';
     }
 
