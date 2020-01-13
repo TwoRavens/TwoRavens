@@ -73,7 +73,7 @@ message Score {
     // as the first and only fold, in which case the value of this field should be 0.
     int32 fold = 2;
     Value value = 4;
-    // Random seed used to run a pipeline for this score to be obtained.  
+    // Random seed used to run a pipeline for this score to be obtained.
     // Note, not setting this value means always using seed of 0.
     int32 random_seed = 5;
     // The normalized value of the scoring metric. Value is from the [0, 1] interval, where higher is better. Optional.
@@ -153,8 +153,8 @@ message SearchSolutionsRequest {
     // consist of only one primitive with fixed hyper-parameters to execute that one primitive.
     // Moreover, such fully specified pipelines with fixed hyper-parametres can have any
     // inputs and any outputs. Otherwise pipelines have to be from a Dataset container value
-    // to predictions Pandas dataframe. 
-    // While there are all these options possible, only a subset has to be supported by all 
+    // to predictions Pandas dataframe.
+    // While there are all these options possible, only a subset has to be supported by all
     // systems.  Minimum (baseline) requirements are that all TA2's support:
     //  - Omitted templates,
     //  - Partial pipelines with one placeholder step, at the last step in the pipeline template,
@@ -193,7 +193,7 @@ message SearchSolutionsRequest {
     //    that TA2 does not have to rank and return more solutions than the limit,
     //    which is useful when ranking is an expensive operation.
     int32 rank_solutions_limit = 10;
-    // Random seed used to initiate search.  Note, not setting this value means 
+    // Random seed used to initiate search.  Note, not setting this value means
     // always using seed of 0.
     int32 random_seed = 11;
 }
@@ -210,7 +210,7 @@ message SearchSolutionsResponse {
 // the search is stopped and the "GetSearchSolutionsResults" stream is closed by TA2
 // (as happens when the search is concluded on its own, or when a search is stopped
 // by "StopSearchSolutions"). Found solution IDs during the search are no longer valid
-// after this call.  
+// after this call.
 // All TA2's should support and respect this request as part of minimum (baseline) performance.
 message EndSearchSolutionsRequest {
     string search_id = 1;
@@ -580,8 +580,8 @@ message ListPrimitivesResponse {
 message HelloRequest {}
 
 // This response signifies that the TA2 is ready to begin a search.
-// For evaluation purposes, it is advisable that TA2's not respond positively until 
-// they have the primitives library loaded and are ready for to begin a search, otherwise 
+// For evaluation purposes, it is advisable that TA2's not respond positively until
+// they have the primitives library loaded and are ready for to begin a search, otherwise
 // the time required to load the library will count against them by the dummy TA3.
 // Starting to listen on gRPC port signals that system is running.
 message HelloResponse {

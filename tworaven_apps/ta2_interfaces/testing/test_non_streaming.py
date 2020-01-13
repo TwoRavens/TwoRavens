@@ -274,35 +274,6 @@ class NonStreamingTests(TestCase):
         self.assertTrue('requestId' in json_resp['data'])
 
 
-    def test_090_UpdateProblem(self):
-        """(90) Test UpdateProblem"""
-        msgt(self.test_090_UpdateProblem.__doc__)
-        # url and info for call
-        #
-        url = reverse('UpdateProblem')
-
-        req_str = render_to_string('test_requests/req_UpdateProblem2.json',
-                                   {})
-
-        response = self.client.post(url,
-                                    req_str,
-                                    content_type="application/json")
-
-        # 200 response
-        #
-        self.assertEqual(response.status_code, 200)
-
-        # convert to JSON
-        #
-        json_resp = response.json()
-        print('json_resp', json_resp)
-
-        self.assertTrue(json_resp['success'])
-        self.assertTrue('data' in json_resp)
-        self.assertEqual(json_resp['data'], {})
-
-        self.assertEqual(BehavioralLogEntry.objects.filter(\
-                            feature_id=ta2_static.UPDATE_PROBLEM).count(), 1)
 
     def test_100_ListPrimitives(self):
         """(100) Test ListPrimitives"""

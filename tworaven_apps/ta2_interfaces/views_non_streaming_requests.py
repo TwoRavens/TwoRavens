@@ -20,7 +20,7 @@ from tworaven_apps.ta2_interfaces.req_search_solutions import \
          produce_solution,
          solution_export, solution_export_with_saved_response,
          solution_export3,
-         update_problem, list_primitives)
+         list_primitives)
 
 from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.utils.view_helper import \
@@ -493,63 +493,6 @@ def view_solution_export3(request):
     json_info = get_json_success('success!', data=json_format_info.result_obj)
 
     return JsonResponse(json_info, safe=False)
-
-
-
-@csrf_exempt
-def view_update_problem(request):
-    """gRPC: Call from UI with a UpdateProblemRequest"""
-    user_info = get_authenticated_user(request)
-    if not user_info.success:
-        return JsonResponse(get_json_error(user_info.err_msg))
-
-
-    req_body_info = get_request_body(request)
-    if not req_body_info.success:
-        return JsonResponse(get_json_error(req_body_info.err_msg))
-
-    # Begin to log D3M call
-    #
-    call_entry = None
-    if ServiceCallEntry.record_d3m_call():
-        call_entry = ServiceCallEntry.get_dm3_entry(\
-                        request_obj=request,
-                        call_type=ta2_static.UPDATE_PROBLEM,
-                        request_msg=req_body_info.result_obj)
-
-    # --------------------------------
-    # Behavioral logging
-    # --------------------------------
-    log_data = dict(session_key=get_session_key(request),
-                    feature_id=ta2_static.UPDATE_PROBLEM,
-                    activity_l1=bl_static.L1_PROBLEM_DEFINITION,
-                    activity_l2=bl_static.L2_PROBLEM_SPECIFICATION)
-
-    LogEntryMaker.create_ta2ta3_entry(user_info.result_obj, log_data)
-
-
-    # Let's call the TA2!
-    #
-    search_info = update_problem(req_body_info.result_obj)
-    #print('search_info', search_info)
-    if not search_info.success:
-        return JsonResponse(get_json_error(search_info.err_msg))
-
-    # Convert JSON str to python dict - err catch here
-    #
-    json_format_info = json_loads(search_info.result_obj)
-    if not json_format_info.success:
-        return JsonResponse(get_json_error(json_format_info.err_msg))
-
-    # Save D3M log
-    #
-    if call_entry:
-        call_entry.save_d3m_response(json_format_info.result_obj)
-
-    json_info = get_json_success('success!', data=json_format_info.result_obj)
-
-    return JsonResponse(json_info, safe=False)
-
 
 
 @csrf_exempt
