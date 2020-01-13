@@ -8,6 +8,13 @@ from tworaven_apps.utils.json_helper import json_loads
 
 SESSION_KEY = 'session_key'
 
+
+def pybool_to_js(val):
+    """Change 1/True to 'true'
+    and 0/None/False to 'false'"""
+    return 'true' if val else 'false'
+
+
 def get_common_view_info(request):
     """For all pages, e.g. is user logged in, etc"""
 

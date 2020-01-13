@@ -36,7 +36,8 @@ export let leftpanel = () => {
     // Available systems
     //  Note: h2o - requires Java
     //
-    let solverSystemNames = ['auto_sklearn', 'tpot', 'mlbox', 'ludwig']; // 'h2o', 'caret'
+    // let solverSystemNames = ['auto_sklearn', 'tpot', 'mlbox', 'ludwig']; // 'h2o', 'caret'
+    let solverSystemNames = TA2_WRAPPED_SOLVERS;  // set in templates/index.html
 
     // mljar-supervised only supports binary classification
     if (selectedProblem.task && selectedProblem.subTask &&
@@ -44,10 +45,15 @@ export let leftpanel = () => {
         selectedProblem.subTask.toLowerCase().includes('binary'))
         solverSystemNames.push('mljar-supervised');
 
+    let d3m_solver_info = {};
+    if (TA2_D3M_SOLVER_ENABLED === true){
+      d3m_solver_info = {d3m: solverD3M.getD3MAdapter};
+    }
+
     let solverSystems = solverSystemNames
         .reduce((out, systemId) => Object.assign(out, {
             [systemId]: solverWrapped.getSystemAdapterWrapped(systemId)
-        }), {d3m: solverD3M.getD3MAdapter});
+        }), d3m_solver_info);
 
     let resultsContent = [
         m('div', {style: {display: 'inline-block', margin: '1em'}},
@@ -1876,7 +1882,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
                 return;
             }
         }));
-        
+
         response = Object.keys(responses).reduce((out, resp) => {
             return {
                 success: out.success && resp.success,
