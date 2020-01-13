@@ -357,8 +357,18 @@ def create_destination_directory(user_workspace, name):
 
 
 @celery_app.task
-def create_partials_datasets(configuration, workspace):
+def create_partials_datasets(configuration, workspace_id):
+    """Create partials datasets"""
     print(configuration)
+
+    try:
+        workspace = UserWorkspace.objects.get(pk=workspace_id)
+    except UserWorkspace.DoesNotExist:
+        return {
+            KEY_SUCCESS: False,
+            KEY_DATA: f' UserWorkspace not found for id {workspace_id}.'
+        }
+
     MAX_DATASET_SIZE = 50
     MAX_DOMAIN_SIZE = 100
     # load dataframe and dataset schema

@@ -314,7 +314,7 @@ def get_partials_datasets(request):
     LogEntryMaker.create_system_entry(user_workspace.user, log_data)
 
     try:
-        response = create_partials_datasets(req_info, user_workspace)
+        response = create_partials_datasets(req_info, user_workspace.id)
 
     except Exception:
         print("caught traceback when creating ICE datasets:", flush=True)
