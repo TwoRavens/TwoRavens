@@ -54,7 +54,6 @@ D3M_OUTPUT_DIR = '/output'
 # ------------------------------------------
 HELLO = 'Hello'
 LIST_PRIMITIVES = 'ListPrimitives'
-UPDATE_PROBLEM = 'UpdateProblem'
 
 SEARCH_SOLUTIONS = 'SearchSolutions'
 GET_SEARCH_SOLUTIONS_RESULTS = 'GetSearchSolutionsResults'
