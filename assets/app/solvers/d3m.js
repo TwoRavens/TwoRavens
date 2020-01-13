@@ -489,6 +489,13 @@ let stepPlaceholder = (metadata, index) => [{
 
 // create problem definition for SearchSolutions call
 export function GRPC_ProblemDescription(problem) {
+
+    let performanceMetric = {metric: app.d3mMetrics[problem.metric]};
+    if (['f1', 'precision', 'recall'].includes(problem.metric))
+        performanceMetric.posLabel = problem.positiveLabel || Object.keys((app.variableSummaries[problem.targets[0]].plotValues || {}))[0];
+    if (problem.metric === 'precisionAtTopK')
+        performanceMetric.k = problem.precisionAtTopK || 5;
+
     let GRPC_Problem = {
         taskKeywords: [
             app.d3mTaskType[problem.task],
@@ -497,24 +504,40 @@ export function GRPC_ProblemDescription(problem) {
             ...problem.d3mTags.map(tag => app.d3mTags[tag]),
             ...problem.resourceTypes.map(type => app.d3mResourceType[type])
         ].filter(_=>_),
-        performanceMetrics: [{metric: app.d3mMetrics[problem.metric]}]
+        performanceMetrics: [performanceMetric]
     };
-    if (GRPC_Problem.taskSubtype === 'taskSubtypeUndefined') delete GRPC_Problem.taskSubtype;
 
-    let GRPC_ProblemInput = [
-        {
-            datasetId: app.workspace.datasetDoc.about.datasetID,
-            targets: problem.targets.map(target => ({
-                resourceId: app.workspace.raven_config.resourceId,
-                columnIndex: Object.keys(app.variableSummaries).indexOf(target),  // Adjusted to match dataset doc
-                columnName: target
-            }))
-        }
-    ];
+    let GRPC_ProblemPrivilegedData = problem.tags.privileged.map((variable, i) => ({
+        privilegedDataIndex: i,
+        resourceId: app.workspace.raven_config.resourceId,
+        columnIndex: Object.keys(app.variableSummaries).indexOf(variable),
+        columnName: variable
+    }));
+
+    let GRPC_ForecastingHorizon = {};
+    if (problem.task === 'forecasting' && problem.forecastingHorizon) problemInput.forecastingHorizon = {
+        resourceId: app.workspace.raven_config.resourceId,
+            columnIndex: Object.keys(app.variableSummaries).indexOf(problem.forecastingHorizon.column),
+        columnName: problem.forecastingHorizon.column,
+        horizonValue: problem.forecastingHorizon.value
+    };
+
+    let GRPC_ProblemInput = {
+        datasetId: app.workspace.datasetDoc.about.datasetID,
+        targets: problem.targets.map((target, i) => ({
+            targetIndex: i,
+            resourceId: app.workspace.raven_config.resourceId,
+            columnIndex: Object.keys(app.variableSummaries).indexOf(target),
+            columnName: target,
+            clustersNumber: problem.task === 'clustering' ? problem.numClusters : undefined
+        })),
+        privilegedData: GRPC_ProblemPrivilegedData,
+        forecastingHorizon: GRPC_ForecastingHorizon
+    };
 
     return {
         problem: GRPC_Problem,
-        inputs: GRPC_ProblemInput,
+        inputs: [GRPC_ProblemInput],
         description: app.getDescription(problem),
         name: problem.problemId
     };

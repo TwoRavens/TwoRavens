@@ -29,7 +29,7 @@ import VariableSummary, {formatVariableSummary} from "../views/VariableSummary";
 import ButtonLadda from "../views/LaddaButton";
 import Flowchart from "../views/Flowchart";
 
-import {bold, boldPlain, preformatted} from "../index";
+import {bold, boldPlain, italicize, preformatted} from "../index";
 import {setModal} from "../../common/views/Modal";
 import {workspace} from "../app";
 
@@ -599,11 +599,39 @@ export let leftpanel = forceData => {
                         {
                             name: 'Time', active: selectedProblem.tags.time.includes(variableName),
                             onclick: () => setLabel(selectedProblem, 'time', variableName),
-                            title: 'Time variables indicate a temporal location.'
+                            title: m('div', {style: {'text-align': 'left', 'margin-left': '.5em'}},
+                                'Time variables indicate a temporal location.', m('br'), bold('Time Granularity:'),
+                                m('br'),
+                                m(TextField, {
+                                    id: 'timeGranularityValueTextField',
+                                    value: (selectedProblem.timeGranularity[variableName] || {}).value || '',
+                                    oninput: value => {
+                                        selectedProblem.timeGranularity[variableName] = selectedProblem.timeGranularity[variableName] || {};
+                                        selectedProblem.timeGranularity[variableName].value = value.replace(/[^\d.-]/g, '')
+                                    },
+                                    onblur: value => selectedProblem.timeGranularity[variableName].value =
+                                        Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined,
+                                    style: {
+                                        'margin-bottom': '1em',
+                                        width: 'calc(100% - 150px)',
+                                        display: 'inline-block'
+                                    }
+                                }),
+                                m('div', {style: {display: 'inline-block', width: '92px'}},
+                                    m(Dropdown, {
+                                        id: 'timeGranularityUnitsDropdown',
+                                        items: ["seconds", "minutes", "days", "weeks", "years", "unspecified"],
+                                        activeItem: (selectedProblem.timeGranularity[variableName] || {}).units || 'unspecified',
+                                        onclickChild: granularity => {
+                                            selectedProblem.timeGranularity[variableName] = selectedProblem.timeGranularity[variableName] || {};
+                                            selectedProblem.timeGranularity[variableName].units = granularity
+                                        }
+                                    }))
+                            ),
                         },
                         {
                             name: 'Weight', active: selectedProblem.tags.weights.includes(variableName),
-                            onclick: () => setLabel(selectedProblem, 'weight', variableName),
+                            onclick: () => setLabel(selectedProblem, 'weights', variableName),
                             title: 'A weight variable indicates the importance of individual observations.'
                         },
                         {
@@ -624,7 +652,7 @@ export let leftpanel = forceData => {
                         m(Popper, {
                             content: () => tag.title,
                             popperDuration: 10,
-                        }, m(Icon, {name: 'question'}))
+                        }, m(Icon, {name: 'question'})),
                     ])
                 }),
 
@@ -720,7 +748,50 @@ export let rightpanel = () => {
                         disabled: isLocked
                     })
                 ],
-                m('label', 'Primary Performance Metric'),
+
+                selectedProblem.task === 'forecasting' && [
+                    m('label', 'Forecast along a temporal variable.'),
+                    selectedProblem.tags.time.length > 0 ? m(Dropdown, {
+                        id: 'forecastingColumnDropdown',
+                        items: selectedProblem.tags.time,
+                        activeItem: (selectedProblem.forecastingHorizon || {}).column,
+                        onclickChild: column => {
+                            if (isLocked) return;
+                            selectedProblem.forecastingHorizon = selectedProblem.forecastingHorizon || {};
+                            selectedProblem.forecastingHorizon.column = column;
+                        },
+                        style: {'margin': '1em', 'margin-top': '0'},
+                        disabled: isLocked
+                    }) : [
+                        m('br'),
+                        italicize('No variables have been tagged as temporal. Click a node in the graph, and then tag it as "time" from the left panel.'),
+                        m('br'),  m('br')
+                    ],
+                    m('label', 'Horizon value. Choose how many time steps to forecast.'),
+                    m(TextField, {
+                        id: 'horizonValueTextField',
+                        disabled: isLocked,
+                        value: (selectedProblem.forecastingHorizon || {}).value || '',
+                        oninput: !isLocked && (value => {
+                            selectedProblem.forecastingHorizon = selectedProblem.forecastingHorizon || {};
+                            selectedProblem.forecastingHorizon.value = Math.max(0, parseInt(value.replace(/\D/g,''))) || undefined
+                        }),
+                        style: {'margin-bottom': '1em'}
+                    })
+                ],
+
+                selectedProblem.task === 'clustering' && [
+                    m('label', 'Number of Clusters (optional)'),
+                    m(TextField, {
+                        id: 'numClustersTextField',
+                        disabled: isLocked,
+                        value: selectedProblem.numClusters,
+                        oninput: !isLocked && (value => selectedProblem.numClusters = Math.max(0, parseInt(value.replace(/\D/g,''))) || undefined),
+                        style: {'margin-bottom': '1em'}
+                    })
+                ],
+
+                m('label', 'Primary Performance Metric. Models are trained to maximize this metric.'),
                 m(Dropdown, {
                     id: 'performanceMetric',
                     // TODO: filter based on https://datadrivendiscovery.org/wiki/display/work/Matrix+of+metrics
@@ -743,8 +814,35 @@ export let rightpanel = () => {
                     style: {'margin': '1em', 'margin-top': '0'},
                     disabled: isLocked
                 }),
-                selectedProblem.metrics.length > 0 && m('label', 'Secondary Performance Metrics'),
-                m(ListTags, {readonly: isLocked, tags: selectedProblem.metrics, ondelete: metric => app.remove(selectedProblem.metrics, metric)}),
+                m(ListTags, {
+                    readonly: isLocked,
+                    tags: selectedProblem.metrics,
+                    ondelete: metric => app.remove(selectedProblem.metrics, metric)
+                }),
+
+                [selectedProblem.metric, ...selectedProblem.metrics].find(metric => ['f1', 'precision', 'recall'].includes(metric)) && [
+                    m('label', 'Positive Class. Used for f1, precision, and recall metrics.'),
+                    m(Dropdown, {
+                        id: 'positiveClass',
+                        items: Object.keys(app.variableSummaries[selectedProblem.targets[0]].plotValues || {}),
+                        activeItem: selectedProblem.positiveLabel,
+                        onclickChild: label => selectedProblem.positiveLabel = label,
+                        style: {'margin': '1em', 'margin-top': '0'},
+                        disabled: isLocked
+                    }),
+                ],
+
+                [selectedProblem.metric, ...selectedProblem.metrics].find(metric => metric === 'precisionAtTopK') && [
+                    m('label', 'K, for Precision at top K'),
+                    m(TextField, {
+                        id: 'precisionAtTopKTextField',
+                        disabled: isLocked,
+                        value: selectedProblem.precisionAtTopK === undefined ? '' : selectedProblem.precisionAtTopK,
+                        oninput: !isLocked && (value => selectedProblem.precisionAtTopK = Math.max(0, parseInt(value.replace(/\D/g,''))) || undefined),
+                        style: {'margin-bottom': '1em'}
+                    })
+                ],
+
                 m(Subpanel, {
                         header: 'Split Options',
                         defaultShown: false,
@@ -1034,6 +1132,8 @@ export let buildForceData = problem => {
     let groups = [];
     let groupLinks = [];
 
+    let supervised = !['clustering', 'linkPrediction', 'communityDetection'].includes(problem.task);
+
     if (forceDiagramMode === 'variables') {
         groups = [
             {
@@ -1043,7 +1143,7 @@ export let buildForceData = problem => {
                 nodes: new Set(problem.predictors),
                 opacity: 0.3
             },
-            {
+            supervised && {
                 name: "Targets",
                 color: common.gr2Color,
                 colorBackground: app.swandive && 'grey',
@@ -1054,7 +1154,10 @@ export let buildForceData = problem => {
                 name: "Loose",
                 color: common.selVarColor,
                 colorBackground: "transparent",
-                nodes: new Set(problem.tags.loose),
+                nodes: new Set([
+                    ...problem.tags.loose,
+                    ...supervised ? [] : problem.targets
+                ]),
                 opacity: 0.0
             },
             // {
@@ -1064,7 +1167,7 @@ export let buildForceData = problem => {
             //     nodes: new Set(['INSTM', 'pctfedited^2', 'test', 'PCTFLOAN^3']),
             //     opacity: 0.4
             // }
-        ];
+        ].filter(_=>_);
 
         groupLinks = [
             {
@@ -1449,13 +1552,13 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
     },
     app.getNominalVariables(problem).includes(pebble) && {
         id: 'Nominal',
-        name: 'Nom',
+        name: 'Nominal',
         attrs: {fill: common.nomColor},
         onclick: d => setLabel(problem, 'nominal', d)
     },
     problem.tags.crossSection.includes(pebble) && {
         id: 'Cross',
-        name: 'Cross',
+        name: 'Cross Sectional',
         attrs: {fill: common.csColor},
         onclick: d => setLabel(problem, 'crossSection', d)
     },
@@ -1474,7 +1577,7 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
     problem.tags.time.includes(pebble) && {
         id: 'Time',
         name: 'Time',
-        attrs: {fill: common.timeColor},
+        attrs: {filcolDesl: common.timeColor},
         onclick: d => setLabel(problem, 'time', d)
     },
     problem.tags.weights.includes(pebble) && {

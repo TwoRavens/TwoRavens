@@ -892,6 +892,9 @@ export let applicableMetrics = {
         univariate: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared'],
         multivariate: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared']
     },
+    clustering: {
+        subTypeNone: ["meanSquaredError", "rootMeanSquaredError", "meanAbsoluteError", "jaccardSimilarityScore"]
+    },
     linkPrediction: {
         subTypeNone: ['accuracy', 'jaccardSimilarityScore']
     },
@@ -1077,6 +1080,10 @@ let buildDefaultProblem = problemDoc => {
     let targets = problemDoc.inputs.data
         .flatMap(source => source.targets.map(targ => targ.colName));
 
+    let clusteredTargets = problemDoc.inputs.data
+        .flatMap(source => source.targets.filter(targ => 'numClusters' in targ));
+    let numClusters = clusteredTargets.length > 0 ? clusteredTargets[0].numClusters : undefined;
+
     let predictors = swandive
         ? Object.keys(variableSummaries)
             .filter(column => column !== 'd3mIndex' && !targets.includes(column))
@@ -1119,8 +1126,12 @@ let buildDefaultProblem = problemDoc => {
         predictors: predictors,
         targets: targets,
         description: problemDoc.about.problemDescription,
+
         metric: problemDoc.inputs.performanceMetrics[0].metric,
         metrics: problemDoc.inputs.performanceMetrics.slice(1).map(elem => elem.metric),
+        positiveLabel: (problemDoc.inputs.performanceMetrics.find(metric => 'posLabel' in metric) || {}).posLabel,
+        precisionAtTopK: (problemDoc.inputs.performanceMetrics.find(metric => 'K' in metric) || {}).K,
+
         task: findTask(problemDoc.about.taskKeywords),
         subTask: findSubtask(problemDoc.about.taskKeywords),
         supervision: findSupervision(problemDoc.about.taskKeywords),
@@ -1175,7 +1186,21 @@ let buildDefaultProblem = problemDoc => {
             privileged: getTagsByRole('suggestedPrivilegedData'), // singleton list
             transformed: [],
             loose: [] // variables displayed in the force diagram, but not in any groups
-        }
+        },
+
+        numClusters: numClusters,
+        timeGranularity: workspace.datasetDoc.dataResources
+            .filter(resource => resource.resType === 'table')
+            .reduce((outer, resource) => Object.assign(outer,
+                resource.columns
+                    .filter(column => 'timeGranularity' in column)
+                    .reduce((inner, column) => Object.assign(inner, {
+                        [column.colName]: column.timeGranularity}), {})),
+                {}),
+        forecastingHorizon: problemDoc.inputs.forecastingHorizon ? {
+            column: problemDoc.inputs.forecastingHorizon.colName,
+            value: problemDoc.inputs.forecastingHorizon.horizonValue
+        } : {}
     };
 };
 
@@ -1476,7 +1501,8 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                                 privileged: [],
                                 transformed: [],
                                 loose: [] // variables displayed in the force diagram, but not in any groups
-                            }
+                            },
+                            timeGranularity: {}
                         }
                     };
                 }
@@ -2070,7 +2096,8 @@ export function discovery(problems) {
                 nominal: Object.keys(variableSummaries)
                     .filter(variable => variableSummaries[variable].nature === 'nominal'),
                 loose: [] // variables displayed in the force diagram, but not in any groups
-            }
+            },
+            timeGranularity: {}
         };
         setTask(inferIsCategorical(variableSummaries[prob.targets[0]]) ? 'classification' : 'regression', out[problemId]);
         return out;
@@ -2356,7 +2383,7 @@ export let setTask = (task, problem) => {
     else if (task.toLowerCase() === 'regression')
         setSubTask(problem.targets.length > 1 ? 'multivariate' : 'univariate', problem);
     else if (!(problem.subTask in applicableMetrics[task]))
-        setMetric(Object.keys(applicableMetrics[task])[0], problem);
+        setSubTask(Object.keys(applicableMetrics[task])[0], problem);
 
     delete problem.unedited;
 };
@@ -2364,7 +2391,7 @@ export let setTask = (task, problem) => {
 export let setSubTask = (subTask, problem) => {
     if (subTask === problem.subTask || !Object.keys(applicableMetrics[problem.task]).includes(subTask))
         return;
-    problem.resourceTypes = subTask;
+    problem.subTask = subTask;
 
     delete problem.unedited;
 };
