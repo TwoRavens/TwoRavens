@@ -1,3 +1,10 @@
+## v2019.7.9
+
+* Fix Data Augmentation encoding and decoding in problem description in utils.
+  [!150](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/150) 
+* Fix typo in decode problem related to privileged data in utils.
+  [!149](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/149)
+
 ## v2019.6.11
 
 * Updating d3m core package dependency to v2019.6.7.

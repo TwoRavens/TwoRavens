@@ -74,11 +74,6 @@ class CoreStub(object):
         request_serializer=core__pb2.SolutionExportRequest.SerializeToString,
         response_deserializer=core__pb2.SolutionExportResponse.FromString,
         )
-    self.UpdateProblem = channel.unary_unary(
-        '/Core/UpdateProblem',
-        request_serializer=core__pb2.UpdateProblemRequest.SerializeToString,
-        response_deserializer=core__pb2.UpdateProblemResponse.FromString,
-        )
     self.DataAvailable = channel.unary_unary(
         '/Core/DataAvailable',
         request_serializer=core__pb2.DataAvailableRequest.SerializeToString,
@@ -113,6 +108,16 @@ class CoreStub(object):
         '/Core/LoadFittedSolution',
         request_serializer=core__pb2.LoadFittedSolutionRequest.SerializeToString,
         response_deserializer=core__pb2.LoadFittedSolutionResponse.FromString,
+        )
+    self.SplitData = channel.unary_stream(
+        '/Core/SplitData',
+        request_serializer=core__pb2.SplitDataRequest.SerializeToString,
+        response_deserializer=core__pb2.SplitDataResponse.FromString,
+        )
+    self.ScorePredictions = channel.unary_unary(
+        '/Core/ScorePredictions',
+        request_serializer=core__pb2.ScorePredictionsRequest.SerializeToString,
+        response_deserializer=core__pb2.ScorePredictionsResponse.FromString,
         )
 
 
@@ -204,13 +209,6 @@ class CoreServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
-  def UpdateProblem(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
   def DataAvailable(self, request, context):
     # missing associated documentation comment in .proto file
     pass
@@ -254,6 +252,20 @@ class CoreServicer(object):
     raise NotImplementedError('Method not implemented!')
 
   def LoadFittedSolution(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def SplitData(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def ScorePredictions(self, request, context):
     # missing associated documentation comment in .proto file
     pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -323,11 +335,6 @@ def add_CoreServicer_to_server(servicer, server):
           request_deserializer=core__pb2.SolutionExportRequest.FromString,
           response_serializer=core__pb2.SolutionExportResponse.SerializeToString,
       ),
-      'UpdateProblem': grpc.unary_unary_rpc_method_handler(
-          servicer.UpdateProblem,
-          request_deserializer=core__pb2.UpdateProblemRequest.FromString,
-          response_serializer=core__pb2.UpdateProblemResponse.SerializeToString,
-      ),
       'DataAvailable': grpc.unary_unary_rpc_method_handler(
           servicer.DataAvailable,
           request_deserializer=core__pb2.DataAvailableRequest.FromString,
@@ -362,6 +369,16 @@ def add_CoreServicer_to_server(servicer, server):
           servicer.LoadFittedSolution,
           request_deserializer=core__pb2.LoadFittedSolutionRequest.FromString,
           response_serializer=core__pb2.LoadFittedSolutionResponse.SerializeToString,
+      ),
+      'SplitData': grpc.unary_stream_rpc_method_handler(
+          servicer.SplitData,
+          request_deserializer=core__pb2.SplitDataRequest.FromString,
+          response_serializer=core__pb2.SplitDataResponse.SerializeToString,
+      ),
+      'ScorePredictions': grpc.unary_unary_rpc_method_handler(
+          servicer.ScorePredictions,
+          request_deserializer=core__pb2.ScorePredictionsRequest.FromString,
+          response_serializer=core__pb2.ScorePredictionsResponse.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(

@@ -17,7 +17,7 @@ extend google.protobuf.FileOptions {
 
 // Date-based version string. Use this to populate version field in "SearchSolutionsRequest"
 // and "SearchSolutionsResponse" messages.
-option (protocol_version) = "2019.7.9";
+option (protocol_version) = "2019.12.4";
 
 enum EvaluationMethod {
     // Default value. Not to be used.
@@ -58,7 +58,8 @@ message ScoringConfiguration {
     double train_test_ratio = 3;
     // Shuffle data? Set to true if employed.
     bool shuffle = 4;
-    // Value for random seed to use for shuffling. Optional.
+    // Value for random seed to use for shuffling. Note, not setting this value
+    // means always using seed of 0.
     int32 random_seed = 5;
     // Do stratified k-fold? Set to true if employed.
     bool stratified = 6;
@@ -72,7 +73,8 @@ message Score {
     // as the first and only fold, in which case the value of this field should be 0.
     int32 fold = 2;
     Value value = 4;
-    // Random seed used to run a pipeline for this score to be obtained.
+    // Random seed used to run a pipeline for this score to be obtained.  
+    // Note, not setting this value means always using seed of 0.
     int32 random_seed = 5;
     // The normalized value of the scoring metric. Value is from the [0, 1] interval, where higher is better. Optional.
     Value normalized = 6;
@@ -110,22 +112,6 @@ message Progress {
     google.protobuf.Timestamp end = 4;
 }
 
-// Updates problem with new description. This also updates the problem description for all
-// ongoing solution searches associated with this problem. Internal behavior of TA2
-// is unspecified: it can simply start a new search using new problem description, or
-// it can start modifying solutions it has already found to new problem description, or
-// it can use it to further help narrow down ongoing solution searches. In any case, after
-// this call returns, all reported solutions for searches associated with this problem
-// should be for the updated problem description.
-message UpdateProblemRequest {
-    string search_id = 1;
-    // New problem description. It has to be provided in full and it replaces existing
-    // problem description.
-    ProblemDescription problem = 2;
-}
-
-message UpdateProblemResponse {}
-
 // Starts a new solution search. Found solutions have not necessary been fitted on the provided
 // inputs. Problem description and inputs are used only to help guide the search process.
 // Consider any found solutions to be just a static description of solutions at this stage.
@@ -136,8 +122,8 @@ message SearchSolutionsRequest {
     // Shall be set to "protocol_version" above.
     string version = 2;
     // Desired upper limit of time for solution search, expressed in minutes.
-    // Is suggestion, and TA2's should attempt to obey, but TA3's should realize may be
-    // violated. Default value of 0 (and any negative number) signifies no time bound.
+    // Default value of 0 (and any negative number) signifies no time bound.
+    // All TA2's should support and respect this request as part of minimum (baseline) performance.
     // See also time_bound_run.
     double time_bound_search = 3;
     // Value stating the priority of the search. If multiple searches are queued then highest
@@ -159,7 +145,7 @@ message SearchSolutionsRequest {
     // regular solution search is done. If template consists only of one placeholder step,
     // then a regular solution search is done to replace that step. If there is no placeholder
     // step, but template describes a full pipeline with free hyper-parameters, then this
-    // call becomes a hyper-paramater tuning call over free hyper-paramaters and found solutions
+    // call becomes a hyper-paramater tuning call over free hyper-parameters and found solutions
     // share the same pipeline, but different hyper-parameter configurations. If there is no
     // placeholder step and all hyper-parameters are fixed as part of the pipeline, then this
     // call only checks the given template and returns the solution with same pipeline back, to
@@ -167,8 +153,14 @@ message SearchSolutionsRequest {
     // consist of only one primitive with fixed hyper-parameters to execute that one primitive.
     // Moreover, such fully specified pipelines with fixed hyper-parametres can have any
     // inputs and any outputs. Otherwise pipelines have to be from a Dataset container value
-    // to predictions Pandas dataframe. While there are all these options possible, only a
-    // subset has to be supported by all systems. See README for more details.
+    // to predictions Pandas dataframe. 
+    // While there are all these options possible, only a subset has to be supported by all 
+    // systems.  Minimum (baseline) requirements are that all TA2's support:
+    //  - Omitted templates,
+    //  - Partial pipelines with one placeholder step, at the last step in the pipeline template,
+    //  - Fully specified pipelines without free hyper-parameters.
+    // See the Pipeline section of the README for more details, in particular the discussion of
+    // common requirements and possible relaxations.
     PipelineDescription template = 7;
     // Pipeline inputs used during solution search. They have to point to Dataset container
     // values. Order matters as each input is mapped to a template's input in order. Optional
@@ -177,8 +169,8 @@ message SearchSolutionsRequest {
     // Desire upper limit of time for one pass of the pipeline run expressed in minutes.
     // Expressed at time of search, TA2's should limit the search to solutions
     // that would not take longer than this for one pass of the pipeline run.
-    // Is suggestion, and TA2's should attempt to obey, but TA3's should realize may be
-    // violated. Default value of 0 (and any negative number) signifies no time bound.
+    // Default value of 0 (and any negative number) signifies no time bound.
+    // All TA2's should support and respect this request as part of minimum (baseline) performance.
     // This can also functionally be used as the time bound for scoring also.
     double time_bound_run = 9;
     // Suggested maximum number of solutions to rank. Default is 0. If it is 0, it means
@@ -201,6 +193,9 @@ message SearchSolutionsRequest {
     //    that TA2 does not have to rank and return more solutions than the limit,
     //    which is useful when ranking is an expensive operation.
     int32 rank_solutions_limit = 10;
+    // Random seed used to initiate search.  Note, not setting this value means 
+    // always using seed of 0.
+    int32 random_seed = 11;
 }
 
 // Call returns immediately with the ID. Use "GetFoundSolutions" call to get results.
@@ -215,7 +210,8 @@ message SearchSolutionsResponse {
 // the search is stopped and the "GetSearchSolutionsResults" stream is closed by TA2
 // (as happens when the search is concluded on its own, or when a search is stopped
 // by "StopSearchSolutions"). Found solution IDs during the search are no longer valid
-// after this call.
+// after this call.  
+// All TA2's should support and respect this request as part of minimum (baseline) performance.
 message EndSearchSolutionsRequest {
     string search_id = 1;
 }
@@ -384,6 +380,9 @@ message FitSolutionRequest {
     repeated ValueType expose_value_types = 4;
     // Any users associated with this call itself. Optional.
     repeated SolutionRunUser users = 5;
+    // Seed for pseudorandom number generator. Note, not setting this value
+    // means always using seed of 0.
+    int32 random_seed = 6;
 }
 
 message FitSolutionResponse {
@@ -472,8 +471,8 @@ message DataAvailableRequest {
     // Shall be set to "protocol_version" above.
     string version = 2;
     // Desired upper limit of time spend processing this data, expressed in minutes.
-    // Is suggestion, and TA2's should attempt to obey, but TA3's should realize may be
-    // violated. Default value of 0 (and any negative number) signifies no time bound.
+    // Default value of 0 (and any negative number) signifies no time bound.
+    // All TA2's should support and respect this request as part of minimum (baseline) performance.
     double time_bound = 3;
     // Value stating the priority for processing of this data. Larger number is higher
     // priority. If unspecified, by default priority is 0. Negative numbers have
@@ -483,6 +482,41 @@ message DataAvailableRequest {
 }
 
 message DataAvailableResponse {}
+
+message SplitDataRequest {
+    // The input dataset to be split.
+    Value input = 1;
+    // How to perform the split. Note that only HOLDOUT and K_FOLD make sense for the
+    // EvaluationMethod.
+    ScoringConfiguration scoring_configuration = 2;
+    // Which value types should be used for outputs.
+    // The order is important as the TA2 system will try value types in order until one works
+    // out, or an error will be returned instead of the value.
+    repeated ValueType allowed_value_types = 3;
+}
+
+message SplitDataResponse {
+    Value train_output = 1;
+    Value test_output = 2;
+    Value score_output = 3;
+}
+
+message ScorePredictionsRequest {
+    // Predictions computed on the data.
+    Value predictions = 1;
+    // Score data containing the true labels on the same split for comparison.
+    Value score_input = 4;
+    // Problem definition.
+    ProblemDescription problem = 2;
+    // List of metrics. If not empty, those metrics will be computed by the TA2 instead of the ones
+    // listed in the problem.
+    repeated ProblemPerformanceMetric metric = 3;
+}
+
+message ScorePredictionsResponse {
+    // Scores for the predictions.
+    repeated Score scores = 1;
+}
 
 // Save a solution that can be loaded later. (Pipeline description/ Pipeline run) Optional.
 message SaveSolutionRequest {
@@ -545,6 +579,11 @@ message ListPrimitivesResponse {
 // TA2 is ready.
 message HelloRequest {}
 
+// This response signifies that the TA2 is ready to begin a search.
+// For evaluation purposes, it is advisable that TA2's not respond positively until 
+// they have the primitives library loaded and are ready for to begin a search, otherwise 
+// the time required to load the library will count against them by the dummy TA3.
+// Starting to listen on gRPC port signals that system is running.
 message HelloResponse {
     // Some string identifying the name and version of the TA2 system.
     string user_agent = 1;
@@ -578,8 +617,6 @@ service Core {
 
     rpc SolutionExport (SolutionExportRequest) returns (SolutionExportResponse) {}
 
-    rpc UpdateProblem (UpdateProblemRequest) returns (UpdateProblemResponse) {}
-
     rpc DataAvailable (DataAvailableRequest) returns (DataAvailableResponse) {}
 
     rpc ListPrimitives (ListPrimitivesRequest) returns (ListPrimitivesResponse) {}
@@ -592,4 +629,7 @@ service Core {
 
     rpc SaveFittedSolution (SaveFittedSolutionRequest) returns (SaveFittedSolutionResponse) {}
     rpc LoadFittedSolution (LoadFittedSolutionRequest) returns (LoadFittedSolutionResponse) {}
+
+    rpc SplitData (SplitDataRequest) returns (stream SplitDataResponse) {}
+    rpc ScorePredictions (ScorePredictionsRequest) returns (ScorePredictionsResponse) {}
 }
