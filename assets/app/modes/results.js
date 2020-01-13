@@ -147,7 +147,7 @@ export let leftpanel = () => {
                             .filter(problemId => 'd3m' in ((app.workspace.raven_config.problems[problemId] || {}).solverState || {}))
                             .map(problemId => app.workspace.raven_config.problems[problemId])
                             .map(problem => [
-                                problem.problemID,
+                                problem.problemId,
                                 problem.targets.join(', '),
                                 problem.solverState.d3m.searchId,
                                 problem.solverState.d3m.thinking ? 'running' : 'stopped',
@@ -362,7 +362,7 @@ export class CanvasSolutions {
             [problem.metric, ...problem.metrics].map(metric => m(PlotVegaLite, {
                 specification: {
                     "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
-                    "description": `${metric} scores for ${problem.problemID}.`,
+                    "description": `${metric} scores for ${problem.problemId}.`,
                     data: {
                         values: adapters.map(adapter => ({
                             ID: adapter.getSolutionId(),
@@ -564,7 +564,6 @@ export class CanvasSolutions {
                 // special coloring is not enabled for now
                 // color: {
                 //     'data': common.grayColor,
-                //     'byudml': common.dvColor,
                 //     'sklearn_wrap': common.csColor
                 // }[pipeStep.primitive.python_path.split('.')[2]] || common.grayColor,
                 // the table is overkill, but we could certainly add more info here
@@ -1295,7 +1294,7 @@ export let resultsData = {
 
     id: {
         query: [],
-        problemID: undefined,
+        problemId: undefined,
         solutionID: undefined,
         dataSplit: undefined,
         predictor: undefined,
@@ -1317,14 +1316,14 @@ export let loadProblemData = async (problem, predictor=undefined) => {
     }
 
     // complete reset if problemId, query, dataSplit or target changed
-    if (resultsData.id.problemID === problem.problemID &&
+    if (resultsData.id.problemId === problem.problemId &&
         JSON.stringify(resultsData.id.query) === JSON.stringify(resultsQuery) &&
         resultsData.id.dataSplit === resultsPreferences.dataSplit &&
         resultsData.id.target === resultsPreferences.target)
         return;
 
     resultsData.id.query = resultsQuery;
-    resultsData.id.problemID = problem.problemID;
+    resultsData.id.problemId = problem.problemId;
     resultsData.id.solutionID = undefined;
     resultsData.id.dataSplit = resultsPreferences.dataSplit;
     resultsData.id.target = resultsPreferences.target;
@@ -1426,7 +1425,7 @@ export let loadFittedVsActuals = async (problem, adapter) => {
     }
 
     // don't accept response if current problem has changed
-    if (resultsData.id.problemID !== problem.problemID)
+    if (resultsData.id.problemId !== problem.problemId)
         return;
 
     // don't accept response if query changed
@@ -1505,7 +1504,7 @@ export let loadConfusionData = async (problem, adapter) => {
     }
 
     // don't accept response if current problem has changed
-    if (resultsData.id.problemID !== problem.problemID)
+    if (resultsData.id.problemId !== problem.problemId)
         return;
 
     // don't accept response if query changed
@@ -1573,7 +1572,7 @@ export let loadImportancePartialsFittedData = async (problem, adapter) => {
     }
 
     // don't accept response if current problem has changed
-    if (resultsData.id.problemID !== problem.problemID)
+    if (resultsData.id.problemId !== problem.problemId)
         return;
 
     // don't accept if query changed
@@ -1660,7 +1659,7 @@ export let loadImportanceEFDData = async (problem, adapter) => {
     }
 
     // don't accept response if current problem has changed
-    if (resultsData.id.problemID !== problem.problemID)
+    if (resultsData.id.problemId !== problem.problemId)
         return;
 
     // don't accept if query changed
@@ -1737,7 +1736,7 @@ export let loadImportanceICEFittedData = async (problem, adapter, predictor) => 
         throw response.data;
 
     // don't accept response if current problem has changed
-    if (resultsData.id.problemID !== problem.problemID)
+    if (resultsData.id.problemId !== problem.problemId)
         return;
 
     // don't accept if query changed
@@ -1889,7 +1888,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
     }
 
     // don't accept response if current problem has changed
-    if (resultsData.id.problemID !== problem.problemID)
+    if (resultsData.id.problemId !== problem.problemId)
         return;
 
     // don't accept if query changed

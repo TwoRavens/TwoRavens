@@ -284,7 +284,7 @@ export function setSelectedMode(mode) {
 
             let copiedProblem = getProblemCopy(selectedProblem);
 
-            workspace.raven_config.problems[copiedProblem.problemID] = copiedProblem;
+            workspace.raven_config.problems[copiedProblem.problemId] = copiedProblem;
 
             // denote as solved problem
             if (!selectedProblem.solverState)
@@ -307,8 +307,8 @@ export function setSelectedMode(mode) {
                 if (response.discovery) {
                     ravenConfig.problems = discovery(response.discovery);
                     let problemCopy = getProblemCopy(Object.values(ravenConfig.problems)[0]);
-                    ravenConfig.problems[problemCopy.problemID] = problemCopy;
-                    setSelectedProblem(problemCopy.problemID);
+                    ravenConfig.problems[problemCopy.problemId] = problemCopy;
+                    setSelectedProblem(problemCopy.problemId);
                 }
             });
             manipulate.setPendingHardManipulation(false);
@@ -1104,9 +1104,16 @@ let buildDefaultProblem = problemDoc => {
     let filterD3MTags = keywords => Object.keys(d3mResourceType)
         .filter(key => keywords.includes(key));
 
+    // extract a list of tagged variables from the datasetDoc's roles
+    let getTagsByRole = role => swandive ? [] : workspace.datasetDoc.dataResources
+        .filter(resource => resource.resType === 'table')
+        .flatMap(resource => resource.columns
+            .filter(column => column.role.includes(role))
+            .map(column => column.colName));
+
     // defaultProblem
     return {
-        problemID: problemDoc.about.problemID,
+        problemId: problemDoc.about.problemId,
         system: 'auto',
         version: problemDoc.about.version,
         predictors: predictors,
@@ -1154,15 +1161,19 @@ let buildDefaultProblem = problemDoc => {
         selectedSource: undefined,
         selectedSolutions: {},
         tags: {
-            transformed: [],
-            weights: [], // singleton list
-            crossSection: [],
-            time: swandive ? [] : workspace.datasetDoc.dataResources // if swandive false, then datadoc has column labeling
+            nominal: swandive ? [] : workspace.datasetDoc.dataResources
                 .filter(resource => resource.resType === 'table')
                 .flatMap(resource => resource.columns
-                    .filter(column => column.role.includes('timeIndicator') || column.colType === 'dateTime')
+                    .filter(column => column.colType === 'categorical')
                     .map(column => column.colName)),
-            nominal: [],
+            crossSection: getTagsByRole('suggestedGroupingKey'),
+            boundary: getTagsByRole('boundaryIndicator'),
+            location: getTagsByRole('locationIndicator'),
+            time: getTagsByRole('timeIndicator'),
+            weights: getTagsByRole('instanceWeight'), // singleton list
+            indexes: [...getTagsByRole('index'), ...getTagsByRole('multiIndex')],
+            privileged: getTagsByRole('suggestedPrivilegedData'), // singleton list
+            transformed: [],
             loose: [] // variables displayed in the force diagram, but not in any groups
         }
     };
@@ -1409,10 +1420,10 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                 await promiseDiscovery;
 
                 if (Object.keys(workspace.raven_config.problems).length === 0) {
-                    let problemID = generateProblemID();
+                    let problemId = generateProblemID();
                     workspace.raven_config.problems = {
-                        [problemID]: {
-                            problemID,
+                        [problemId]: {
+                            problemId,
                             system: 'auto',
                             predictors: [],
                             targets: [],
@@ -1455,11 +1466,15 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                             selectedSource: undefined,
                             selectedSolutions: {},
                             tags: {
-                                transformed: [],
-                                weights: [], // singleton list
-                                crossSection: [],
-                                time: [],
                                 nominal: [],
+                                crossSection: [],
+                                location: [],
+                                boundary: [],
+                                time: [],
+                                weights: [], // singleton list
+                                indexes: ['d3mIndex'],
+                                privileged: [],
+                                transformed: [],
                                 loose: [] // variables displayed in the force diagram, but not in any groups
                             }
                         }
@@ -1468,8 +1483,8 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
 
                 let problemFirst = Object.values(workspace.raven_config.problems)[0];
                 let problemCopy = getProblemCopy(problemFirst);
-                workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
-                setSelectedProblem(problemCopy.problemID);
+                workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
+                setSelectedProblem(problemCopy.problemId);
 
                 console.log('Task 1: Initiating');
                 m.redraw();
@@ -1493,13 +1508,13 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
 
                 defaultProblem.defaultProblem = true;
 
-                workspace.raven_config.problems[defaultProblem.problemID] = defaultProblem;
-                workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+                workspace.raven_config.problems[defaultProblem.problemId] = defaultProblem;
+                workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
                 /**
                  * Note: mongodb data retrieval initiated here
                  *   setSelectedProblem -> loadMenu (manipulate.js) -> getData (manipulate.js)
                  */
-                setSelectedProblem(problemCopy.problemID);
+                setSelectedProblem(problemCopy.problemId);
             }
             else if (!(workspace.raven_config.selectedProblem in workspace.raven_config.problems)) {
                 await promiseDiscovery;
@@ -1687,6 +1702,14 @@ export let toggle = (collection, obj) => {
     }
     else if (collection instanceof Set)
         collection.has(obj) ? collection.delete(obj) : collection.add(obj)
+};
+
+export let add = (collection, obj) => {
+    if (Array.isArray(collection)) {
+        !collection.includes(obj) && collection.push(obj);
+    }
+    else if (collection instanceof Set)
+        collection.add(obj)
 };
 
 /** needs doc */
@@ -1950,14 +1973,14 @@ export function discovery(problems) {
     problems = problems.filter(problem => problem.targets && problem.targets.every(target => target in variableSummaries));
 
     return problems.reduce((out, prob) => {
-        let problemID = generateProblemID();
+        let problemId = generateProblemID();
         let manips = [];
 
         prob.subsetObs.forEach(subsetObs => manips.push({
             type: 'subset',
             id: 'subset ' + manips.length,
             abstractQuery: [{
-                id: problemID + '-' + String(0) + '-' + String(1),
+                id: problemId + '-' + String(0) + '-' + String(1),
                 name: subsetObs,
                 show_op: false,
                 cancellable: true,
@@ -1988,8 +2011,8 @@ export function discovery(problems) {
         // console.log('variableSummaries:' + JSON.stringify(variableSummaries))
         // console.log('>> prob:' +  JSON.stringify(prob))
 
-        out[problemID] = {
-            problemID,
+        out[problemId] = {
+            problemId,
             system: "auto",
             description: undefined,
             // should include all variables (and transformed variables) that are not in target list
@@ -2002,9 +2025,7 @@ export function discovery(problems) {
             metrics: [], // secondary evaluation metrics
             task: undefined,
             supervision: undefined,
-            classificationSubtype: undefined,
-            regressionSubtype: undefined,
-            communityDetectionSubtype: undefined,
+            subTask: undefined,
             resourceTypes: [],
             d3mTags: [],
 
@@ -2041,21 +2062,24 @@ export function discovery(problems) {
                 transformed: [...getTransformVariables(manips)], // this is used when updating manipulations pipeline
                 weights: [], // singleton list
                 crossSection: [],
+                boundary: [],
+                location: [],
+                indexes: ['d3mIndex'],
+                privileged: [],
                 time: [],
                 nominal: Object.keys(variableSummaries)
                     .filter(variable => variableSummaries[variable].nature === 'nominal'),
                 loose: [] // variables displayed in the force diagram, but not in any groups
             }
         };
-        setTask(inferIsCategorical(variableSummaries[prob.targets[0]]) ? 'classification' : 'regression', out[problemID]);
+        setTask(inferIsCategorical(variableSummaries[prob.targets[0]]) ? 'classification' : 'regression', out[problemId]);
         return out;
     }, {});
 }
 
 export let setVariableSummaries = state => {
     if (!state) return;
-
-    delete state.d3mIndex;
+    // delete state.d3mIndex;
 
     variableSummaries = state;
 
@@ -2330,7 +2354,7 @@ export let setTask = (task, problem) => {
     if (task.toLowerCase() === 'classification')
         setSubTask(variableSummaries[problem.targets[0]].binary ? 'binary' : 'multiClass', problem);
     else if (task.toLowerCase() === 'regression')
-        setSubTask(problem.predictors.length > 1 ? 'multivariate' : 'univariate', problem);
+        setSubTask(problem.targets.length > 1 ? 'multivariate' : 'univariate', problem);
     else if (!(problem.subTask in applicableMetrics[task]))
         setMetric(Object.keys(applicableMetrics[task])[0], problem);
 
@@ -2381,7 +2405,7 @@ export let getSubtask = problem => {
         if (problem.task.toLowerCase() === 'classification')
             problem.subTask = variableSummaries[problem.targets[0]].binary ? 'binary' : 'multiClass';
         else if (problem.task.toLowerCase() === 'regression')
-            problem.subTask = problem.predictors.length > 1 ? 'multivariate' : 'univariate';
+            problem.subTask = problem.targets.length > 1 ? 'multivariate' : 'univariate';
         else
             problem.subTask = Object.keys(applicableMetrics[problem.task])[0]
     } else if (!problem.subTask && !variableSummaries[problem.targets[0]])
@@ -2435,12 +2459,12 @@ export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
     return out;
 }, new Set());
 
-export function setSelectedProblem(problemID) {
+export function setSelectedProblem(problemId) {
     let ravenConfig = workspace.raven_config;
 
-    if (!problemID || ravenConfig.selectedProblem === problemID) return;
+    if (!problemId || ravenConfig.selectedProblem === problemId) return;
 
-    ravenConfig.selectedProblem = problemID;
+    ravenConfig.selectedProblem = problemId;
     let problem = getSelectedProblem();
     console.log('problem: ' + JSON.stringify(problem));
 
@@ -2484,8 +2508,8 @@ export function setSelectedProblem(problemID) {
 export function getProblemCopy(problemSource) {
     // deep copy of original
     return Object.assign($.extend(true, {}, problemSource), {
-        problemID: generateProblemID(),
-        provenanceID: problemSource.problemID,
+        problemId: generateProblemID(),
+        provenanceID: problemSource.problemId,
         unedited: true,
         pending: true,
         system: 'user',
@@ -2493,13 +2517,13 @@ export function getProblemCopy(problemSource) {
     });
 }
 
-export let setCheckedDiscoveryProblem = (status, problemID) => {
+export let setCheckedDiscoveryProblem = (status, problemId) => {
     let ravenConfig = workspace.raven_config;
-    if (problemID)
-        ravenConfig.problems[problemID].meaningful = status;
+    if (problemId)
+        ravenConfig.problems[problemId].meaningful = status;
     else
         Object.keys(ravenConfig.problems)
-            .forEach(problemID => ravenConfig.problems[problemID].meaningful = status)
+            .forEach(problemId => ravenConfig.problems[problemId].meaningful = status)
 };
 
 
@@ -2655,14 +2679,14 @@ export async function handleAugmentDataMessage(msg_data) {
                 //
                 priorSelectedProblem.manipulations = [];
 
-                priorSelectedProblem.problemID = priorDatasetName;
+                priorSelectedProblem.problemId = priorDatasetName;
                 delete priorSelectedProblem.provenanceID;
                 priorSelectedProblem.pending = false;
                 priorSelectedProblem.edited = false;
 
                 // (5) add the old problem to the current problems list
                 //
-                workspace.raven_config.problems[priorSelectedProblem.problemID] = priorSelectedProblem;
+                workspace.raven_config.problems[priorSelectedProblem.problemId] = priorSelectedProblem;
 
                 // (6) add a problem with new columns added to predictors, and set it to the selected problem
                 let problemCopy = getProblemCopy(priorSelectedProblem);
@@ -2670,8 +2694,8 @@ export async function handleAugmentDataMessage(msg_data) {
                 problemCopy.predictors.push(...workspace.raven_config.variablesInitial
                     .filter(newVariable => !priorVariablesInitial.includes(newVariable)));
 
-                workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
-                setSelectedProblem(problemCopy.problemID);
+                workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
+                setSelectedProblem(problemCopy.problemId);
             }
 
             saveUserWorkspace(true)

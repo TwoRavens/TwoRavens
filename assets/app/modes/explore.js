@@ -126,10 +126,10 @@ export class CanvasExplore {
             m('br'),
 
             m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
-                // x could either be a problemID or a variable name
+                // x could either be a problemId or a variable name
                 (app.leftTab === 'Discover' ? Object.keys(app.workspace.raven_config.problems) : Object.keys(app.variableSummaries)).map(x => {
                     let selected = app.leftTab === 'Discover'
-                        ? x === selectedProblem.problemID
+                        ? x === selectedProblem.problemId
                         : exploreVariables.includes(x);
 
                     let targetName = app.leftTab === 'Discover'

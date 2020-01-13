@@ -26,23 +26,23 @@ export let getSolverSpecification = async (problem, systemId) => {
     // add partials dataset to to datasetSchemas and datasetPaths
     problem.solverState[systemId].message = 'preparing partials data';
     m.redraw();
-    if (!app.materializePartialsPromise[problem.problemID])
-        app.materializePartialsPromise[problem.problemID] = app.materializePartials(problem);
-    await app.materializePartialsPromise[problem.problemID];
+    if (!app.materializePartialsPromise[problem.problemId])
+        app.materializePartialsPromise[problem.problemId] = app.materializePartials(problem);
+    await app.materializePartialsPromise[problem.problemId];
 
     // add ICE datasets to to datasetSchemas and datasetPaths
     problem.solverState[systemId].message = 'preparing ICE data';
     m.redraw();
-    if (!app.materializeICEPromise[problem.problemID])
-        app.materializeICEPromise[problem.problemID] = app.materializeICE(problem);
-    await app.materializeICEPromise[problem.problemID];
+    if (!app.materializeICEPromise[problem.problemId])
+        app.materializeICEPromise[problem.problemId] = app.materializeICE(problem);
+    await app.materializeICEPromise[problem.problemId];
 
     // add train/test datasets to datasetSchemas and datasetPaths
     problem.solverState[systemId].message = 'preparing train/test splits';
     m.redraw();
-    if (!app.materializeTrainTestPromise[problem.problemID])
-        app.materializeTrainTestPromise[problem.problemID] = app.materializeTrainTest(problem, problem.datasetSchemas.all);
-    await app.materializeTrainTestPromise[problem.problemID];
+    if (!app.materializeTrainTestPromise[problem.problemId])
+        app.materializeTrainTestPromise[problem.problemId] = app.materializeTrainTest(problem, problem.datasetSchemas.all);
+    await app.materializeTrainTestPromise[problem.problemId];
 
     problem.solverState[systemId].message = 'applying manipulations to data';
     m.redraw();
@@ -86,7 +86,7 @@ let SPEC_search = problem => ({
 
 // GRPC_ProblemDescription
 let SPEC_problem = problem => ({
-    "name": problem.problemID,
+    "name": problem.problemId,
     "targets": problem.targets,
     "predictors": app.getPredictorVariables(problem),
     "categorical": app.getNominalVariables(problem),

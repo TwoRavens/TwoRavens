@@ -25,8 +25,8 @@ VALID_EXTENSIONS = (EXT_CSV,
 # ----------------------------------------------
 # For createing a datasetDoc
 # ----------------------------------------------
-DATASET_SCHEMA_VERSION = '3.2.0'    # create a datasetDoc
-PROBLEM_SCHEMA_VERSION = '3.2.0'
+DATASET_SCHEMA_VERSION = '4.0.0'    # create a datasetDoc
+PROBLEM_SCHEMA_VERSION = '4.0.0'
 
 # Map Pandas types to the types used in the datasetDoc
 #

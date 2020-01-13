@@ -21,22 +21,22 @@ export let getSolverSpecification = async problem => {
     problem.solverState.d3m = {thinking: true};
     problem.solverState.d3m.message = 'preparing partials data';
     m.redraw();
-    if (!app.materializePartialsPromise[problem.problemID])
-        app.materializePartialsPromise[problem.problemID] = app.materializePartials(problem);
-    await app.materializePartialsPromise[problem.problemID];
+    if (!app.materializePartialsPromise[problem.problemId])
+        app.materializePartialsPromise[problem.problemId] = app.materializePartials(problem);
+    await app.materializePartialsPromise[problem.problemId];
 
     // add ICE datasets to to datasetSchemas and datasetPaths
     problem.solverState.d3m.message = 'preparing ICE data';
     m.redraw();
-    if (!app.materializeICEPromise[problem.problemID])
-        app.materializeICEPromise[problem.problemID] = app.materializeICE(problem);
-    await app.materializeICEPromise[problem.problemID];
+    if (!app.materializeICEPromise[problem.problemId])
+        app.materializeICEPromise[problem.problemId] = app.materializeICE(problem);
+    await app.materializeICEPromise[problem.problemId];
 
     problem.solverState.d3m.message = 'preparing train/test splits';
     m.redraw();
-    if (!app.materializeTrainTestPromise[problem.problemID])
-        app.materializeTrainTestPromise[problem.problemID] = app.materializeTrainTest(problem, problem.datasetSchemas.all);
-    await app.materializeTrainTestPromise[problem.problemID];
+    if (!app.materializeTrainTestPromise[problem.problemId])
+        app.materializeTrainTestPromise[problem.problemId] = app.materializeTrainTest(problem, problem.datasetSchemas.all);
+    await app.materializeTrainTestPromise[problem.problemId];
 
     problem.solverState.d3m.message = 'initiating the search for solutions';
     m.redraw();
@@ -516,7 +516,7 @@ export function GRPC_ProblemDescription(problem) {
         problem: GRPC_Problem,
         inputs: GRPC_ProblemInput,
         description: app.getDescription(problem),
-        name: problem.problemID
+        name: problem.problemId
     };
 }
 

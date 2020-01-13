@@ -166,7 +166,7 @@ class Body {
                 content: () => m(Table, {
                     data: {'targets': selectedProblem.targets, 'predictors': selectedProblem.predictors,'description': preformatted(app.getDescription(selectedProblem).description)}
                 })
-            }, m('h4[style=display: inline-block; margin: .25em 1em]', selectedProblem.problemID)));
+            }, m('h4[style=display: inline-block; margin: .25em 1em]', selectedProblem.problemId)));
 
             let selectedSolutions = results.getSelectedSolutions(selectedProblem);
             if (app.is_results_mode && selectedSolutions.length === 1 && selectedSolutions[0]) {
