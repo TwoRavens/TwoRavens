@@ -37,18 +37,13 @@ export let leftpanel = () => {
     //  Note: h2o - requires Java
     //
     // let solverSystemNames = ['auto_sklearn', 'tpot', 'mlbox', 'ludwig']; // 'h2o', 'caret'
-    let solverSystemNames = TA2_WRAPPED_SOLVERS;  // set in templates/index.html
+    let solverCandidateNames = app.applicableSolvers[selectedProblem.task][app.getSubtask(selectedProblem)];
 
-    // mljar-supervised only supports binary classification
-    if (selectedProblem.task && selectedProblem.subTask &&
-        selectedProblem.task.toLowerCase().includes('classification') &&
-        selectedProblem.subTask.toLowerCase().includes('binary'))
-        solverSystemNames.push('mljar-supervised');
+    // only show solvers that are capable of solving this type of problem
+    let solverSystemNames = TA2_WRAPPED_SOLVERS // set in templates/index.html
+        .filter(name => solverCandidateNames.includes(name));
 
-    let d3m_solver_info = {};
-    if (TA2_D3M_SOLVER_ENABLED === true){
-      d3m_solver_info = {d3m: solverD3M.getD3MAdapter};
-    }
+    let d3m_solver_info = TA2_D3M_SOLVER_ENABLED ? {d3m: solverD3M.getD3MAdapter} : {};
 
     let solverSystems = solverSystemNames
         .reduce((out, systemId) => Object.assign(out, {

@@ -893,6 +893,9 @@ export let applicableMetrics = {
         univariate: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared'],
         multivariate: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared']
     },
+    forecasting: {
+        subTypeNone: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared', 'precisionAtTopK']
+    },
     clustering: {
         subTypeNone: ["meanSquaredError", "rootMeanSquaredError", "meanAbsoluteError", "jaccardSimilarityScore"]
     },
@@ -914,9 +917,6 @@ export let applicableMetrics = {
     graphMatching: {
         subTypeNone: ['accuracy', 'jaccardSimilarityScore']
     },
-    forecasting: {
-        subTypeNone: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared', 'precisionAtTopK']
-    },
     collaborativeFiltering: {
         subTypeNone: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared']
     },
@@ -925,8 +925,30 @@ export let applicableMetrics = {
     }
 };
 
-export let modelResults = {};
+let standardWrappedSolvers = ['tpot', 'mlbox', 'auto_sklearn', 'ludwig', 'h2o']; // caret, mljar-supervised
 
+export let applicableSolvers = {
+    classification: {
+        binary: ['mljar-supervised', ...standardWrappedSolvers],
+        multiClass: standardWrappedSolvers,
+        multiLabel: standardWrappedSolvers
+    },
+    regression: {
+        univariate: standardWrappedSolvers,
+        multivariate: standardWrappedSolvers
+    },
+    forecasting: {
+        subTypeNone: []
+    },
+    clustering: {subTypeNone: []},
+    linkPrediction: {subTypeNone: []},
+    vertexNomination: {subTypeNone: [], binary: []},
+    vertexClassification: {multiClass: [], multiLabel: []},
+    communityDetection: {overlapping: [], nonOverlapping: []},
+    graphMatching: {subTypeNone: []},
+    collaborativeFiltering: {subTypeNone: []},
+    objectDetection: {subTypeNone: []}
+};
 
 export let byId = id => document.getElementById(id);
 // export let byId = id => {console.log(id); return document.getElementById(id);}
