@@ -1965,3 +1965,75 @@ export let getSummaryData = problem => ({
             }
         })
 });
+
+export let prepareResultsDatasets = async (problem, solverId) => {
+    problem.datasetSchemas = problem.datasetSchemas || {
+        all: app.workspace.d3m_config.dataset_schema
+    };
+    problem.datasetPaths = problem.datasetPaths || {
+        all: app.workspace.datasetPath
+    };
+    problem.datasetSchemasManipulated = problem.datasetSchemasManipulated || {};
+    problem.datasetPathsManipulated = problem.datasetPathsManipulated || {};
+    problem.selectedSolutions[solverId] = problem.selectedSolutions[solverId] || [];
+
+    problem.solverState[solverId] = {thinking: true};
+    problem.solverState[solverId].message = 'preparing partials data';
+    m.redraw();
+    try {
+        if (!app.materializePartialsPromise[problem.problemId])
+            app.materializePartialsPromise[problem.problemId] = app.materializePartials(problem);
+        await app.materializePartialsPromise[problem.problemId];
+    } catch (err) {
+        console.error(err);
+        console.log('Materializing partials failed. Continuing without partials data.')
+    }
+
+    // add ICE datasets to to datasetSchemas and datasetPaths
+    problem.solverState[solverId].message = 'preparing ICE data';
+    m.redraw();
+    try {
+        if (!app.materializeICEPromise[problem.problemId])
+            app.materializeICEPromise[problem.problemId] = app.materializeICE(problem);
+        await app.materializeICEPromise[problem.problemId];
+    } catch (err) {
+        console.error(err);
+        console.log('Materializing ICE failed. Continuing without ICE data.')
+    }
+
+    problem.solverState[solverId].message = 'preparing train/test splits';
+    m.redraw();
+    try {
+        if (!app.materializeTrainTestPromise[problem.problemId])
+            app.materializeTrainTestPromise[problem.problemId] = app.materializeTrainTest(problem);
+        await app.materializeTrainTestPromise[problem.problemId];
+    } catch (err) {
+        console.error(err);
+        console.log('Materializing train/test splits failed. Continuing without splitting.')
+    }
+
+    problem.solverState[solverId].message = 'applying manipulations to data';
+    m.redraw();
+    try {
+        if (!app.materializeManipulationsPromise[problem.problemId])
+            app.materializeManipulationsPromise[problem.problemId] = app.materializeManipulations(problem, [
+                ...(problem.outOfSampleSplit ? ['train', 'test'] : ['all']),
+                'partials'
+            ]);
+        await app.materializeManipulationsPromise[problem.problemId];
+    } catch (err) {
+        console.error(err);
+        let shouldContinue = confirm('Applying data manipulations failed. Would you like to continue without data manipulations?');
+        if (!shouldContinue) {
+            delete problem.solverState[solverId].thinking;
+            m.redraw();
+            return;
+        }
+        problem.datasetColumnNames = app.workspace.raven_config.variablesInitial;
+        // console.log('Materializing manipulations failed. Continuing without manipulations.')
+    }
+
+    problem.solverState[solverId].message = 'initiating the search for solutions';
+    m.redraw();
+
+};

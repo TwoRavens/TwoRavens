@@ -11,6 +11,7 @@ from django.http import JsonResponse, HttpResponse, HttpResponseNotFound
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 
+from tworaven_apps.solver_interfaces.models import KEY_MESSAGE
 from tworaven_apps.ta2_interfaces.tasks import split_dataset, create_partials_datasets
 from tworaven_apps.ta2_interfaces.util_results_visualizations import (
     util_results_confusion_matrix,
@@ -31,8 +32,6 @@ from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
 from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 
-import pandas as pd
-import numpy as np
 from os import path
 
 import traceback
@@ -321,7 +320,7 @@ def get_partials_datasets(request):
         print(traceback.format_exc(), flush=True)
         response = {
             KEY_SUCCESS: False,
-            KEY_DATA: "Internal error while creating ICE datasets."
+            KEY_MESSAGE: "Internal error while creating ICE datasets."
         }
 
     return JsonResponse(response)

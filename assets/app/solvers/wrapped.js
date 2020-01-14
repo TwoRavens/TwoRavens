@@ -9,47 +9,7 @@ export let SOLVER_SVC_URL = '/solver-service/';
 
 
 export let getSolverSpecification = async (problem, systemId) => {
-
-    problem.datasetSchemas = problem.datasetSchemas || {
-        all: app.workspace.d3m_config.dataset_schema
-    };
-    problem.datasetPaths = problem.datasetPaths || {
-        all: app.workspace.datasetPath
-    };
-    problem.datasetSchemasManipulated = {};
-    problem.datasetPathsManipulated = {};
-    if (!problem.selectedSolutions[systemId])
-        problem.selectedSolutions[systemId] = [];
-
-    problem.solverState[systemId] = {thinking: true};
-
-    // add partials dataset to to datasetSchemas and datasetPaths
-    problem.solverState[systemId].message = 'preparing partials data';
-    m.redraw();
-    if (!app.materializePartialsPromise[problem.problemId])
-        app.materializePartialsPromise[problem.problemId] = app.materializePartials(problem);
-    await app.materializePartialsPromise[problem.problemId];
-
-    // add ICE datasets to to datasetSchemas and datasetPaths
-    problem.solverState[systemId].message = 'preparing ICE data';
-    m.redraw();
-    if (!app.materializeICEPromise[problem.problemId])
-        app.materializeICEPromise[problem.problemId] = app.materializeICE(problem);
-    await app.materializeICEPromise[problem.problemId];
-
-    // add train/test datasets to datasetSchemas and datasetPaths
-    problem.solverState[systemId].message = 'preparing train/test splits';
-    m.redraw();
-    if (!app.materializeTrainTestPromise[problem.problemId])
-        app.materializeTrainTestPromise[problem.problemId] = app.materializeTrainTest(problem, problem.datasetSchemas.all);
-    await app.materializeTrainTestPromise[problem.problemId];
-
-    problem.solverState[systemId].message = 'applying manipulations to data';
-    m.redraw();
-    await app.materializeManipulations(problem, ['train', 'test', 'partials']);
-
-    problem.solverState[systemId].message = 'initiating the search for solutions';
-    m.redraw();
+    await results.prepareResultsDatasets(problem, systemId);
 
     let allParams = {
         'search': SPEC_search(problem),

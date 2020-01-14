@@ -1072,12 +1072,12 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
         [getPredictorVariables(problem), 'attribute'],
         [problem.targets, 'suggestedTarget'],
         [problem.tags.privileged, 'suggestedPrivilegedData'],
-        [problem.tags.crossSection, 'suggestedGroupingVariable'],
+        [problem.tags.crossSection, 'suggestedGroupingKey'],
         [problem.tags.boundary, 'boundaryIndicator'],
         [problem.tags.location, 'locationIndicator'],
         [problem.tags.time, 'timeIndicator'],
-        [problem.tags.weight, 'instanceWeight'],
-        [problem.tags.index, 'index']
+        [problem.tags.weights, 'instanceWeight'],
+        [problem.tags.indexes, 'index']
     ].forEach(pair => pair[0]
         .forEach(variable => add(doc.dataResources[tableResourceIndex].columns
             .find(column => column.colName === variable).role, pair[1])));

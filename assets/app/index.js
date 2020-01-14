@@ -41,7 +41,7 @@ import Body_EventData from './eventdata/Body_EventData';
 import Body_Dataset from "./views/Body_Dataset";
 
 import {getSelectedProblem} from "./app";
-import {buildDatasetUrl} from "./app";
+import {buildCsvUrl} from "./app";
 import {alertWarn} from "./app";
 import ButtonLadda from "./views/LaddaButton";
 
@@ -420,7 +420,7 @@ class Body {
                                 class: 'btn-sm',
                                 onclick: async () => {
                                     let problem = getSelectedProblem();
-                                    let datasetUrl = await buildDatasetUrl(problem, manipulate.constraintMenu.step);
+                                    let datasetUrl = await buildCsvUrl(problem, manipulate.constraintMenu.step);
                                     if (!datasetUrl) alertWarn('Unable to prepare dataset for download.');
                                     app.downloadFile(datasetUrl)
                                 }
@@ -433,7 +433,7 @@ class Body {
                                 class: 'btn-sm',
                                 onclick: async () => {
                                     let problem = getSelectedProblem();
-                                    let datasetUrl = await buildDatasetUrl(problem);
+                                    let datasetUrl = await buildCsvUrl(problem);
                                     if (!datasetUrl) alertWarn('Unable to prepare dataset for download.');
                                     app.downloadFile(datasetUrl);
                                 }

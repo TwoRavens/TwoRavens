@@ -771,6 +771,7 @@ export let rightpanel = () => {
                     m(TextField, {
                         id: 'horizonValueTextField',
                         disabled: isLocked,
+                        placeholder: 10,
                         value: (selectedProblem.forecastingHorizon || {}).value || '',
                         oninput: !isLocked && (value => {
                             selectedProblem.forecastingHorizon = selectedProblem.forecastingHorizon || {};
@@ -1577,7 +1578,7 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
     problem.tags.time.includes(pebble) && {
         id: 'Time',
         name: 'Time',
-        attrs: {filcolDesl: common.timeColor},
+        attrs: {fill: common.timeColor},
         onclick: d => setLabel(problem, 'time', d)
     },
     problem.tags.weights.includes(pebble) && {

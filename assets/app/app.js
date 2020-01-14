@@ -338,7 +338,7 @@ export let buildProblemPreprocess = problem => getPreprocess(JSON.stringify(quer
     workspace.raven_config.variablesInitial)['pipeline']));
 
 
-export async function buildDatasetUrl(problem, lastStep, dataPath, collectionName) {
+export async function buildCsvUrl(problem, lastStep, dataPath, collectionName) {
 
     let steps = [
         ...workspace.raven_config.hardManipulations,
@@ -367,10 +367,11 @@ export async function buildDatasetUrl(problem, lastStep, dataPath, collectionNam
 
     if (dataPath) body.datafile = dataPath;
     if (collectionName) body.collection_name = collectionName;
-    return await getData(body);
+    return getData(body);
 }
 
-export async function buildProblemUrl(problem, lastStep, dataPath, collectionName) {
+export async function buildDatasetUrl(problem, lastStep, dataPath, collectionName, dataSchema) {
+    if (!dataSchema) dataSchema = workspace.datasetDoc;
 
     let steps = [
         ...workspace.raven_config.hardManipulations,
@@ -393,7 +394,7 @@ export async function buildProblemUrl(problem, lastStep, dataPath, collectionNam
     ];
 
     let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
-    let metadata = queryMongo.translateDatasetDoc(compiled, workspace.datasetDoc, problem);
+    let metadata = queryMongo.translateDatasetDoc(compiled, dataSchema, problem);
 
     let body = {
         method: 'aggregate',
@@ -404,7 +405,7 @@ export async function buildProblemUrl(problem, lastStep, dataPath, collectionNam
 
     if (dataPath) body.datafile = dataPath;
     if (collectionName) body.collection_name = collectionName;
-    return await getData(body);
+    return getData(body);
 }
 
 let getDataPromise;
@@ -1740,11 +1741,11 @@ export let add = (collection, obj) => {
 
 /** needs doc */
 export function helpmaterials(type) {
-    if(type=="video"){
-        var win = window.open("http://2ra.vn/demos/index.html", '_blank');
+    if (type === "video") {
+        let win = window.open("http://2ra.vn/demos/index.html", '_blank');
         win.focus();
-    }else{
-        var win = window.open("http://2ra.vn/papers/tworavens-d3mguide.pdf", '_blank');
+    } else {
+        let win = window.open("http://2ra.vn/papers/tworavens-d3mguide.pdf", '_blank');
         win.focus();
     }
     console.log(type);
@@ -1759,33 +1760,6 @@ export function downloadIncomplete() {
     // }
     return false;
 }
-
-export let materializeManipulations = async (problem, schemaIds) => {
-
-    let nominalVars = new Set(getNominalVariables(problem));
-    let predictorVars = getPredictorVariables(problem);
-
-    let hasNominal = [...problem.targets, ...predictorVars]
-        .some(variable => nominalVars.has(variable));
-    let hasManipulation = problem.manipulations.length > 0;
-
-    let needsProblemCopy = hasManipulation || hasNominal;
-
-    if (!needsProblemCopy)
-        return;
-
-    // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
-    Object.keys(problem.datasetSchemas)
-        // only apply manipulations to a preset list of schema ids
-        .filter(schemaId => schemaIds === undefined || schemaId in schemaIds)
-        // ignore schemas with manipulations
-        .filter(schemaId => !(schemaId in problem.datasetSchemasManipulated))
-        // build manipulated dataset for schema
-        .forEach(schemaId => buildProblemUrl(problem).then(({data_path, metadata_path}) => {
-            problem.datasetSchemasManipulated[schemaId] = metadata_path;
-            problem.datasetPathsManipulated[schemaId] = data_path;
-        }))
-};
 
 // should be equivalent to partials.app
 // loads up linearly spaced observations along domain and non-mangled levels/counts
@@ -1839,6 +1813,49 @@ let loadPredictorDomains = async problem => {
     }, {})
 };
 
+
+export let materializeManipulationsPromise = {};
+export let materializeManipulations = async (problem, schemaIds) => {
+
+    let newNominalVars = new Set(getNominalVariables(problem));
+    Object.keys(variableSummaries)
+        .filter(variable => variableSummaries[variable].numchar === 'character')
+        .forEach(variable => newNominalVars.delete(variable));
+    let hasNominalCast = [...problem.targets, ...getPredictorVariables(problem)]
+        .some(variable => newNominalVars.has(variable));
+
+    let hasManipulation = (workspace.raven_config.hardManipulations.length + problem.manipulations.length) > 0;
+
+    let needsDatasetRewrite = hasManipulation || hasNominalCast;
+    if (!needsDatasetRewrite) {
+        problem.datasetColumnNames = workspace.raven_config.variablesInitial;
+        return;
+    }
+
+    console.log('rewrite', Object.keys(problem.datasetSchemas));
+    console.log(Object.keys(problem.datasetSchemasManipulated));
+    // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
+    return Promise.all(Object.keys(problem.datasetSchemas)
+        // only apply manipulations to a preset list of schema ids
+        .filter(schemaId => schemaIds.includes(schemaId))
+        // ignore schemas with manipulations
+        .filter(schemaId => !(schemaId in problem.datasetSchemasManipulated))
+        .map(schemaId => {
+            console.log(schemaId);
+            return schemaId
+        })
+        // build manipulated dataset for schema
+        .map(schemaId => buildDatasetUrl(
+            problem, undefined, problem.datasetPaths[schemaId],
+            workspace.d3m_config.name + '_' + schemaId,
+            workspace.datasetDoc) // WARNING: as of 1/13/2020, all dataset docs passed here are the same as the original
+            .then(({data_path, metadata_path, column_names}) => {
+                problem.datasetSchemasManipulated[schemaId] = metadata_path;
+                problem.datasetPathsManipulated[schemaId] = data_path;
+                problem.datasetColumnNames = column_names;
+            }))).then(() => problem.useManipulations = true)
+};
+
 // materializing partials may only happen once per problem, all calls wait for same response
 export let materializePartialsPromise = {};
 export let materializePartials = async problem => {
@@ -1889,7 +1906,6 @@ export let materializeICE = async problem => {
     let abstractPipeline = [...workspace.raven_config.hardManipulations, problem.manipulations];
     let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
 
-    console.log(compiled);
     // BUILD SAMPLE DATASET
     let samplePaths = await getData({
         method: 'aggregate',
