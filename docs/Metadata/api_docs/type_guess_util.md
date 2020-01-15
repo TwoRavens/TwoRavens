@@ -61,9 +61,16 @@ This does a series of tests for each value in the series to verify the (currentl
 8. If "pandas.core.tools.datetimes._guess_datetime_format" is valid, return that value, otherwise '?'
 
 ---
-**check_location** (var_series)
+[**check_location** (var_series)](#check_location)
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Static method, check whether the input column is a location, return 'US state', 'country', or 'country subdivision' if it is, 'unknown' otherwise.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Static method, check whether the input column is a location, return 'US state', 'country', or 'country subdivision' if it is, None otherwise.
+
+This does a series of tests for each value in the series to verify the (currently predefined) threshold is met for good/bad matches, then returns the most common match (or None).
+
+1. Sanitize value
+2. Check if value is a US state using [us](https://github.com/unitedstates/python-us)
+3. Check if value is a country using [pycountry](https://github.com/flyingcircusio/pycountry)
+4. Check if value is a country subdivision using pycountry
 
 * **Parameters**
     * **data_series** (*Pandas.Series*): A Pandas.Series entity contains one column of the input.    
