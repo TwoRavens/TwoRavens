@@ -43,7 +43,6 @@ setup/r-setup/RINSTALL.*.LOG
 # specific TwoRavens directories
 # ---------------------------------
 .git
-submodules
 dev_scripts
 docs
 documentation
