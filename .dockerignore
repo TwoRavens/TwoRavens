@@ -38,5 +38,15 @@ pip-delete-this-directory.txt
 webpack-stats.json
 data/d3m/o_196seed/data/.Rapp.history
 setup/r-setup/RINSTALL.*.LOG
+
+# ---------------------------------
+# specific TwoRavens directories
+# ---------------------------------
 .git
-submodules/x*
+submodules
+dev_scripts
+docs
+documentation
+ravens-test
+xgboost
+assets/build

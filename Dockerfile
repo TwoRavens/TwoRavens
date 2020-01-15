@@ -30,7 +30,7 @@ RUN cd /tmp && \
     make && \
     cp src/redis-cli /usr/local/bin/ && \
     chmod 755 /usr/local/bin/redis-cli
-    
+
 # -------------------------------------
 # Pip update
 # -------------------------------------
