@@ -130,6 +130,12 @@ one) and predictions as output. This is the only pipeline TA2 is expected to sea
 But TA3 can fully specify any pipeline for TA2 to execute without any search
 (including a pipeline of just one primitive).
 
+If pipelines have the associated problem description provided, then this should 
+apply to the data at the beginning of the pipeline.  This is especially relevant 
+for partially specified pipelines; the problem description for a partially 
+specified pipeline should describe the data at the beginning of the pipeline, 
+not the end of the specified portion.
+
 Examples of "relaxations" of the common requirements are included. We expect
 that some TA2 systems will be able to work with those relaxed requirements,
 and TA3s can use those if available, but it is not expected that every TA2

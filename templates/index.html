@@ -36,9 +36,12 @@
           const ROOK_SVC_URL = '{{ app_config.rook_svc_url }}';
           const DATAVERSE_URL = '{{ app_config.dataverse_url }}';
           const D3M_SVC_URL = '{{ app_config.d3m_svc_url }}';
-
           const PRODUCTION = {{ app_config.production }};
           const privacyMode = {{ app_config.privacy_mode }};
+
+          const TA2_D3M_SOLVER_ENABLED = {{ TA2_D3M_SOLVER_ENABLED }};
+          const TA2_WRAPPED_SOLVERS = {{ TA2_WRAPPED_SOLVERS|safe }};
+
         {% else %}
           // ----------------------------
           // default settings if nothing in db

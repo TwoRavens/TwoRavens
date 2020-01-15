@@ -11,43 +11,17 @@ import Table from "../../common/views/Table";
 
 export let getSolverSpecification = async problem => {
 
-    problem.datasetSchemas = problem.datasetSchemas || {
-        all: app.workspace.d3m_config.dataset_schema
-    };
-    problem.datasetPaths = problem.datasetPaths || {
-        all: app.workspace.datasetPath
-    };
+    await results.prepareResultsDatasets(problem, 'd3m');
 
-    problem.solverState.d3m = {thinking: true};
-    problem.solverState.d3m.message = 'preparing partials data';
-    m.redraw();
-    if (!app.materializePartialsPromise[problem.problemID])
-        app.materializePartialsPromise[problem.problemID] = app.materializePartials(problem);
-    await app.materializePartialsPromise[problem.problemID];
-
-    // add ICE datasets to to datasetSchemas and datasetPaths
-    problem.solverState.d3m.message = 'preparing ICE data';
-    m.redraw();
-    if (!app.materializeICEPromise[problem.problemID])
-        app.materializeICEPromise[problem.problemID] = app.materializeICE(problem);
-    await app.materializeICEPromise[problem.problemID];
-
-    problem.solverState.d3m.message = 'preparing train/test splits';
-    m.redraw();
-    if (!app.materializeTrainTestPromise[problem.problemID])
-        app.materializeTrainTestPromise[problem.problemID] = app.materializeTrainTest(problem, problem.datasetSchemas.all);
-    await app.materializeTrainTestPromise[problem.problemID];
-
-    problem.solverState.d3m.message = 'initiating the search for solutions';
-    m.redraw();
+    let datasetSchemas = problem.useManipulations ? problem.datasetSchemasManipulated : problem.datasetSchemas;
 
     let allParams = {
-        searchSolutionParams: GRPC_SearchSolutionsRequest(problem, problem.datasetSchemas.all),
-        fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(problem.datasetSchemas[problem.splitOptions.outOfSampleSplit ? 'train' : 'all']),
-        scoreSolutionDefaultParams: GRPC_ScoreSolutionRequest(problem, problem.datasetSchemas.all),
-        produceSolutionDefaultParams: Object.keys(problem.datasetSchemas)
+        searchSolutionParams: GRPC_SearchSolutionsRequest(problem, datasetSchemas.all),
+        fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(datasetSchemas[problem.splitOptions.outOfSampleSplit ? 'train' : 'all']),
+        scoreSolutionDefaultParams: GRPC_ScoreSolutionRequest(problem, datasetSchemas.all),
+        produceSolutionDefaultParams: Object.keys(datasetSchemas)
             .reduce((produces, dataSplit) => Object.assign(produces, {
-                [dataSplit]: GRPC_ProduceSolutionRequest(problem.datasetSchemas[dataSplit])
+                [dataSplit]: GRPC_ProduceSolutionRequest(datasetSchemas[dataSplit])
             }), {})
     };
 
@@ -489,29 +463,60 @@ let stepPlaceholder = (metadata, index) => [{
 
 // create problem definition for SearchSolutions call
 export function GRPC_ProblemDescription(problem) {
-    let GRPC_Problem = {
-        taskType: app.d3mTaskType[problem.task],
-        taskSubtype: problem.taskSubtype || app.d3mTaskSubtype.subtypeNone,
-        performanceMetrics: [{metric: app.d3mMetrics[problem.metric]}]
-    };
-    if (GRPC_Problem.taskSubtype === 'taskSubtypeUndefined') delete GRPC_Problem.taskSubtype;
 
-    let GRPC_ProblemInput = [
-        {
-            datasetId: app.workspace.datasetDoc.about.datasetID,
-            targets: problem.targets.map(target => ({
-                resourceId: app.workspace.raven_config.resourceId,
-                columnIndex: Object.keys(app.variableSummaries).indexOf(target),  // Adjusted to match dataset doc
-                columnName: target
-            }))
-        }
-    ];
+    let performanceMetric = {metric: app.d3mMetrics[problem.metric]};
+    if (['f1', 'precision', 'recall'].includes(problem.metric))
+        performanceMetric.posLabel = problem.positiveLabel || Object.keys((app.variableSummaries[problem.targets[0]].plotValues || {}))[0];
+    if (problem.metric === 'precisionAtTopK')
+        performanceMetric.k = problem.precisionAtTopK || 5;
+
+    let GRPC_Problem = {
+        taskKeywords: [
+            app.d3mTaskType[problem.task],
+            app.d3mTaskSubtype[problem.subTask],
+            app.d3mSupervision[problem.supervision],
+            ...problem.d3mTags.map(tag => app.d3mTags[tag]),
+            ...problem.resourceTypes.map(type => app.d3mResourceType[type])
+        ].filter(_=>_),
+        performanceMetrics: [performanceMetric]
+    };
+
+    let GRPC_ProblemPrivilegedData = problem.tags.privileged.map((variable, i) => ({
+        privilegedDataIndex: i,
+        resourceId: app.workspace.raven_config.resourceId,
+        columnIndex: problem.datasetColumnNames.indexOf(variable),
+        columnName: variable
+    }));
+
+    let GRPC_ForecastingHorizon = {};
+    if (problem.task === 'forecasting' && (problem.forecastingHorizon.column || problem.tags.time.length > 0)) {
+        let horizonColumn = problem.forecastingHorizon.column || problem.tags.time[0];
+        GRPC_ForecastingHorizon = {
+            resourceId: app.workspace.raven_config.resourceId,
+            columnIndex: problem.datasetColumnNames.indexOf(horizonColumn),
+            columnName: horizonColumn,
+            horizonValue: problem.forecastingHorizon.value || 10
+        };
+    }
+
+    let GRPC_ProblemInput = {
+        datasetId: app.workspace.datasetDoc.about.datasetID,
+        targets: problem.targets.map((target, i) => ({
+            // targetIndex: i,
+            resourceId: app.workspace.raven_config.resourceId,
+            columnIndex: problem.datasetColumnNames.indexOf(target),
+            columnName: target,
+            clustersNumber: problem.task === 'clustering' ? problem.numClusters : undefined
+        })),
+        privilegedData: GRPC_ProblemPrivilegedData,
+        forecastingHorizon: GRPC_ForecastingHorizon
+    };
 
     return {
         problem: GRPC_Problem,
-        inputs: GRPC_ProblemInput,
+        inputs: [GRPC_ProblemInput],
         description: app.getDescription(problem),
-        name: problem.problemID
+        name: problem.problemId
     };
 }
 

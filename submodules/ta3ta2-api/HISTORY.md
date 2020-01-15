@@ -1,3 +1,42 @@
+## v2019.12.4
+
+* Updated to support the latest core package, v2019.11.10.
+
+    * `TaskType` and `TaskSubtype` have been replaced with repeated `TaskKeyword`.
+    * `ProblemInput` has now an optional `forecasting_horizon` field.
+
+    [#122](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/122)
+    [!155](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/155)
+* Adding files and modifications to distribute the protocol under
+  CC0 and Python implementation under Apache License, Version 2.0.
+  [#50](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/50)
+  [!152](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/152)
+* Removed `UpdateProblem`.
+  [#120](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/120)
+  [!151](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/151)
+* Minimum baseline requirements updated.  
+
+    * TA2's should respect timing bounds
+    * TA2's should respect fully specified pipelines 
+    * TA2's should respect `EndSearchSolutionsRequest`
+
+  [#117](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/117)
+  [!157](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/157)
+
+* Random seeds can now be specified for `SearchSolutionsRequest` and 
+  `FitSolutionRequest`.  Note that not specifying a seed means using seed of 0.
+[#93](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/93)
+[#125](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/125)
+[!153](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/153)
+[!161](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/161)
+* Added optional calls `SplitData` and `ScorePredictions`, allowing a TA3 manual 
+  access to the splits during the scoring process.
+  [#118](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/118)
+  [!154](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/154)
+* Clarified expected `HelloResponse` behavior and timing.
+  [#123](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/123)
+  [!159](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/159)
+
 ## v2019.7.9
 
 * Fix Data Augmentation encoding and decoding in problem description in utils.

@@ -177,43 +177,7 @@ class DatasetDocMaker(BasicErrCheck):
                 'dataResources': resource_configs
             }, indent=4))
 
-        # write problem
-        """
-        with open(join(problemDir, 'problemDoc.json'), 'w') as problemDoc:
-            problemID = problem.get('problemName', dataset_id + '_problem_TRAIN')
-            problemDoc.write(json.dumps({
-                'about': {
-                    'problemID': problemID,
-                    'problemName': problem.get('problemName', about['datasetName'] + ' problem'),
-                    'taskType': problem.get('taskType', 'regression'),
-                    'taskSubType': problem.get('taskSubType', 'regression'),
-                    'problemSchemaVersion': dp_static.PROBLEM_SCHEMA_VERSION,
-                    'problemVersion': '1.0'
-                },
-                'inputs': {
-                    'data': [{
-                        'datasetID': dataset_id,
-                        'targets': [
-                            {**{'targetIndex': targetIndex}, **target} for targetIndex, target in enumerate(target_configs)
-                        ]
-                    }],
-                    'dataSplits': problem.get('dataSplits', {
-                        "method": "holdOut",
-                        "testSize": 0.35,
-                        "stratified": False,
-                        "numRepeats": 0,
-                        "splitsFile": "dataSplits.csv"
-                    }),
-                    'performanceMetrics': [
-                        {'metric': metric} for metric in problem.get('metrics', ['rootMeanSquaredError'])
-                    ],
-                    "expectedOutputs": {
-                        "predictionsFile": "predictions.csv"
-                    }
-                }
-            }, indent=4))
-        """
-
+    
 
     def d3m_load_resource(self, path):
         """Open data file and return a pandas data frame"""

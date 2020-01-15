@@ -247,6 +247,7 @@ def split_dataset(configuration, workspace):
 
         row_count = sum(1 for _ in infile)
 
+    # by default, the split is trivially forever None, which exhausts all zips
     splits_file_generator = iter(lambda: None, 1)
     splits_file_path = configuration.get('splits_file_path')
     if splits_file_path:
@@ -314,12 +315,13 @@ def split_dataset(configuration, workspace):
 
             splits = run_split()
 
+        # max count of each split ['all', 'test', 'train']
         max_count = 5e4
         chunk_count = len(dataframe)
         sample_count = int(max_count / row_count * chunk_count)
 
         for split_name in ['train', 'test']:
-            if sample_count < chunk_count:
+            if sample_count < len(splits[split_name]):
                 splits[split_name] = splits[split_name].sample(sample_count)
 
             splits[split_name].to_csv(dataset_paths[split_name], mode='a', header=False, index=False)
@@ -357,8 +359,18 @@ def create_destination_directory(user_workspace, name):
 
 
 @celery_app.task
-def create_partials_datasets(configuration, workspace):
+def create_partials_datasets(configuration, workspace_id):
+    """Create partials datasets"""
     print(configuration)
+
+    try:
+        workspace = UserWorkspace.objects.get(pk=workspace_id)
+    except UserWorkspace.DoesNotExist:
+        return {
+            KEY_SUCCESS: False,
+            KEY_DATA: f' UserWorkspace not found for id {workspace_id}.'
+        }
+
     MAX_DATASET_SIZE = 50
     MAX_DOMAIN_SIZE = 100
     # load dataframe and dataset schema

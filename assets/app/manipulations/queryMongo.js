@@ -1,5 +1,5 @@
 import jsep from 'jsep';
-import {alignmentData} from "../app";
+import {alignmentData, getPredictorVariables} from "../app";
 
 // functions for generating database queries
 // subset queries are built from manipulations pipelines. An additional menu step may be added too
@@ -1065,5 +1065,22 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
                     : struct.colName === 'd3mIndex' ? 'index' : 'attribute'
             ]
         }));
+
+    let add = (collection, obj) => !collection.includes(obj) && collection.push(obj);
+
+    [
+        [getPredictorVariables(problem), 'attribute'],
+        [problem.targets, 'suggestedTarget'],
+        [problem.tags.privileged, 'suggestedPrivilegedData'],
+        [problem.tags.crossSection, 'suggestedGroupingKey'],
+        [problem.tags.boundary, 'boundaryIndicator'],
+        [problem.tags.location, 'locationIndicator'],
+        [problem.tags.time, 'timeIndicator'],
+        [problem.tags.weights, 'instanceWeight'],
+        [problem.tags.indexes, 'index']
+    ].forEach(pair => pair[0]
+        .forEach(variable => add(doc.dataResources[tableResourceIndex].columns
+            .find(column => column.colName === variable).role, pair[1])));
+
     return doc;
 };

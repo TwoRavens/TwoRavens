@@ -16,7 +16,7 @@ let solutionD3MExample = {
 };
 
 let problemExample = {
-    problemID: 'Problem 1',
+    problemId: 'Problem 1',
     predictors: ['bats'],
     targets: ['home_runs'],
     manipulations: manipulationExample,

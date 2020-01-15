@@ -47,7 +47,8 @@ TA2_IMAGE_INFO = [
 
     # Brown: may not be using D3MPORT
     (TA2_Brown,
-     'registry.datadrivendiscovery.org/ta2-submissions/ta2-brown/summer2019:latest',
+     'registry.datadrivendiscovery.org/zshang/docker_images:ta2',
+     #'registry.datadrivendiscovery.org/ta2-submissions/ta2-brown/summer2019:latest',
      #'registry.datadrivendiscovery.org/zshang/docker_images:ta2-new',
      ('-p 45042:45042  -e D3MPORT=45042 '
       '-e D3MCONTEXT=TESTING -e AM_ENV=DEBUG')),

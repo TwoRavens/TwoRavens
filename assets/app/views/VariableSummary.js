@@ -85,7 +85,10 @@ export default class VariableSummary {
         }
 
         return [
-            m('center', m('i', variable.labl)),
+            m('center', m('i',
+                (app.workspace.datasetDoc.dataResources
+                    .find(resource => resource.resType === 'table').columns
+                    .find(column => column.colName === variable.variableName) || {}).colDescription)),
             m(ButtonRadio, {
                 sections: [
                     {

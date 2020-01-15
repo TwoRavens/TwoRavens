@@ -9,47 +9,7 @@ export let SOLVER_SVC_URL = '/solver-service/';
 
 
 export let getSolverSpecification = async (problem, systemId) => {
-
-    problem.datasetSchemas = problem.datasetSchemas || {
-        all: app.workspace.d3m_config.dataset_schema
-    };
-    problem.datasetPaths = problem.datasetPaths || {
-        all: app.workspace.datasetPath
-    };
-    problem.datasetSchemasManipulated = {};
-    problem.datasetPathsManipulated = {};
-    if (!problem.selectedSolutions[systemId])
-        problem.selectedSolutions[systemId] = [];
-
-    problem.solverState[systemId] = {thinking: true};
-
-    // add partials dataset to to datasetSchemas and datasetPaths
-    problem.solverState[systemId].message = 'preparing partials data';
-    m.redraw();
-    if (!app.materializePartialsPromise[problem.problemID])
-        app.materializePartialsPromise[problem.problemID] = app.materializePartials(problem);
-    await app.materializePartialsPromise[problem.problemID];
-
-    // add ICE datasets to to datasetSchemas and datasetPaths
-    problem.solverState[systemId].message = 'preparing ICE data';
-    m.redraw();
-    if (!app.materializeICEPromise[problem.problemID])
-        app.materializeICEPromise[problem.problemID] = app.materializeICE(problem);
-    await app.materializeICEPromise[problem.problemID];
-
-    // add train/test datasets to datasetSchemas and datasetPaths
-    problem.solverState[systemId].message = 'preparing train/test splits';
-    m.redraw();
-    if (!app.materializeTrainTestPromise[problem.problemID])
-        app.materializeTrainTestPromise[problem.problemID] = app.materializeTrainTest(problem, problem.datasetSchemas.all);
-    await app.materializeTrainTestPromise[problem.problemID];
-
-    problem.solverState[systemId].message = 'applying manipulations to data';
-    m.redraw();
-    await app.materializeManipulations(problem, ['train', 'test', 'partials']);
-
-    problem.solverState[systemId].message = 'initiating the search for solutions';
-    m.redraw();
+    await results.prepareResultsDatasets(problem, systemId);
 
     let allParams = {
         'search': SPEC_search(problem),
@@ -86,7 +46,7 @@ let SPEC_search = problem => ({
 
 // GRPC_ProblemDescription
 let SPEC_problem = problem => ({
-    "name": problem.problemID,
+    "name": problem.problemId,
     "targets": problem.targets,
     "predictors": app.getPredictorVariables(problem),
     "categorical": app.getNominalVariables(problem),

@@ -1,10 +1,10 @@
 syntax = "proto3";
 option go_package = "pipeline";
 
-// Top level classification of the problem.
-enum TaskType {
+// Task keyword of the problem.
+enum TaskKeyword {
     // Default value. Not to be used.
-    TASK_TYPE_UNDEFINED = 0;
+    TASK_KEYWORD_UNDEFINED = 0;
 
     CLASSIFICATION = 1;
     REGRESSION = 2;
@@ -14,27 +14,32 @@ enum TaskType {
     VERTEX_CLASSIFICATION = 6;
     COMMUNITY_DETECTION = 7;
     GRAPH_MATCHING = 8;
-    TIME_SERIES_FORECASTING = 9;
+    FORECASTING = 9;
     COLLABORATIVE_FILTERING = 10;
     OBJECT_DETECTION = 11;
-    SEMISUPERVISED_CLASSIFICATION = 12;
-    SEMISUPERVISED_REGRESSION = 13;
-}
-
-// Secondary classification of the problem.
-enum TaskSubtype {
-    // Default value. Not to be used.
-    TASK_SUBTYPE_UNDEFINED = 0;
-
-    // No secondary task is applicable for this problem.
-    NONE = 1;
-    BINARY = 2;
-    MULTICLASS = 3;
-    MULTILABEL = 4;
-    UNIVARIATE = 5;
-    MULTIVARIATE = 6;
-    OVERLAPPING = 7;
-    NONOVERLAPPING = 8;
+    SEMISUPERVISED = 12;
+    BINARY = 13;
+    MULTICLASS = 14;
+    MULTILABEL = 15;
+    UNIVARIATE = 16;
+    MULTIVARIATE = 17;
+    OVERLAPPING = 18;
+    NONOVERLAPPING = 19;
+    TABULAR = 20;
+    RELATIONAL = 21;
+    IMAGE = 22;
+    AUDIO = 23;
+    VIDEO = 24;
+    SPEECH = 25;
+    TEXT = 26;
+    GRAPH = 27;
+    MULTIGRAPH = 28;
+    TIME_SERIES = 29;
+    GROUPED = 30;
+    GEOSPATIAL = 31;
+    REMOTE_SENSING = 32;
+    LUPI = 33;
+    MISSING_METADATA = 34;
 }
 
 // The evaluation metric for any potential solution.
@@ -87,8 +92,7 @@ message ProblemPerformanceMetric {
 }
 
 message Problem {
-    TaskType task_type = 5;
-    TaskSubtype task_subtype = 6;
+    repeated TaskKeyword task_keywords = 8;
     repeated ProblemPerformanceMetric performance_metrics = 7;
 }
 
@@ -107,6 +111,13 @@ message ProblemPrivilegedData {
     string column_name = 4;
 }
 
+message ForecastingHorizon {
+    string resource_id = 1;
+    int32 column_index = 2;
+    string column_name = 3;
+    double horizon_value = 4;
+}
+
 message ProblemInput {
     // Should match one of input datasets given to the pipeline search.
     // Every "Dataset" object has an "id" associated with it and is available
@@ -117,6 +128,7 @@ message ProblemInput {
     // A list of privileged data columns related to unavailable attributes during testing.
     // These columns do not have data available in the test split of a dataset.
     repeated ProblemPrivilegedData privileged_data = 3;
+    ForecastingHorizon forecasting_horizon = 4;
 }
 
 message DataAugmentation {

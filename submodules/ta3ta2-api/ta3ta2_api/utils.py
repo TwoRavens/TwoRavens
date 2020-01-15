@@ -343,8 +343,7 @@ def encode_problem_description(problem_description):
         performance_metrics.append(encode_performance_metric(performance_metric))
 
     problem = problem_pb2.Problem(
-        task_type=problem_description['problem']['task_type'].value,
-        task_subtype=problem_description['problem']['task_subtype'].value,
+        task_keywords=[task_keyword.value for task_keyword in problem_description['problem']['task_keywords']],
         performance_metrics=performance_metrics,
     )
 
@@ -373,8 +372,23 @@ def encode_problem_description(problem_description):
                 ),
             )
 
+        if 'forecasting_horizon' in problem_input:
+            forecasting_horizon = problem_pb2.ForecastingHorizon(
+                resource_id=problem_input['forecasting_horizon']['resource_id'],
+                column_index=problem_input['forecasting_horizon']['column_index'],
+                column_name=problem_input['forecasting_horizon']['column_name'],
+                horizon_value=problem_input['forecasting_horizon']['horizon_value'],
+            )
+        else:
+            forecasting_horizon = problem_pb2.ForecastingHorizon()
+
         inputs.append(
-            problem_pb2.ProblemInput(dataset_id=problem_input['dataset_id'], targets=targets, privileged_data=privileged_data),
+            problem_pb2.ProblemInput(
+                dataset_id=problem_input['dataset_id'],
+                targets=targets,
+                privileged_data=privileged_data,
+                forecasting_horizon=forecasting_horizon,
+            ),
         )
 
     data_augmentation = []
@@ -419,7 +433,7 @@ def decode_problem_description(problem_description, *, strict_digest=False, prob
         A problem description, or ``None`` if problem is not defined.
     """
 
-    if problem_description.problem.task_type == problem_pb2.TaskType.Value('TASK_TYPE_UNDEFINED') and problem_description.problem.task_subtype == problem_pb2.TaskSubtype.Value('TASK_SUBTYPE_UNDEFINED'):
+    if not problem_description.problem.task_keywords:
         return None
 
     if problem_class is None:
@@ -431,8 +445,7 @@ def decode_problem_description(problem_description, *, strict_digest=False, prob
         'name': problem_description.name,
         'schema': problem_module.PROBLEM_SCHEMA_VERSION,
         'problem': {
-            'task_type': problem_module.TaskType(problem_description.problem.task_type),
-            'task_subtype': problem_module.TaskSubtype(problem_description.problem.task_subtype),
+            'task_keywords': [problem_module.TaskKeyword(task_keyword) for task_keyword in problem_description.problem.task_keywords],
         },
     }
 
@@ -492,17 +505,25 @@ def decode_problem_description(problem_description, *, strict_digest=False, prob
                 },
             )
 
-        problem_input = {
+        problem_input_description = {
             'dataset_id': problem_input.dataset_id,
         }
 
         if targets:
-            problem_input['targets'] = targets
+            problem_input_description['targets'] = targets
 
         if privileged_data:
-            problem_input['privileged_data'] = privileged_data
+            problem_input_description['privileged_data'] = privileged_data
 
-        inputs.append(problem_input)
+        if problem_input.forecasting_horizon.horizon_value:
+            problem_input_description['forecasting_horizon'] = {
+                'resource_id': problem_input.forecasting_horizon.resource_id,
+                'column_index': problem_input.forecasting_horizon.column_index,
+                'column_name': problem_input.forecasting_horizon.column_name,
+                'horizon_value': problem_input.forecasting_horizon.horizon_value,
+            }
+
+        inputs.append(problem_input_description)
 
     if inputs:
         description['inputs'] = inputs

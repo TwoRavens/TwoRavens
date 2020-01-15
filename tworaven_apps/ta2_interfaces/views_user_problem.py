@@ -104,20 +104,7 @@ def view_store_basic_problem(request):
 
     return JsonResponse(info)
 
-    """
-    # example input:
-    {
-      "filename":"problem 13/schema.json",
-      "data": {
-        "problem":{"taskType":"REGRESSION","taskSubtype":"NONE","performanceMetrics":[{"metric":"MEAN_ABSOLUTE_ERROR"}]},
 
-        "inputs":[{"datasetId":"DA_poverty_estimation_problem_TRAIN-aug-iepqsu_problem",
-        "targets":[{"resourceId":"learningData","columnIndex":5,"columnName":"POVALL_2016"}]}],\
-
-        "description":"Socioeconomic indicators like poverty rates, population change, unemployment rates, and education levels vary geographically across U.S. States and counties. This dataset includes poverty indicators across different counties across all states of the US. The task is to estimate the number of people living in poverty in 2016 across counties in the US. This is a regression problem.",
-
-        "name":"problem 13"}}
-    """
 
 
 

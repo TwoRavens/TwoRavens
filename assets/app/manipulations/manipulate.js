@@ -590,8 +590,6 @@ export let setQueryUpdated = async state => {
             m.redraw();
         });
         app.resetPeek();
-        // will trigger the call to solver, if a menu that needs that info is shown
-        app.setSolverPending(true);
     }
 };
 

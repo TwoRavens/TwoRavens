@@ -31,7 +31,7 @@ import Peek from '../common/views/Peek';
 import Table from '../common/views/Table';
 import TextField from '../common/views/TextField';
 import Popper from '../common/views/Popper';
-import Datamart, {ModalDatamart} from "./datamart/Datamart";
+import {ModalDatamart} from "./datamart/Datamart";
 
 import Icon from '../common/views/Icon';
 import ModalWorkspace from "./views/ModalWorkspace";
@@ -41,7 +41,7 @@ import Body_EventData from './eventdata/Body_EventData';
 import Body_Dataset from "./views/Body_Dataset";
 
 import {getSelectedProblem} from "./app";
-import {buildDatasetUrl} from "./app";
+import {buildCsvUrl} from "./app";
 import {alertWarn} from "./app";
 import ButtonLadda from "./views/LaddaButton";
 
@@ -60,7 +60,7 @@ export let abbreviate = (text, length) => text.length > length
 class Body {
     oninit() {
         app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
-        app.setSelectedMode('dataset');
+        app.setSelectedMode('model');
         this.TA2URL = D3M_SVC_URL + '/SearchDescribeFitScoreSolutions';
     }
 
@@ -166,7 +166,7 @@ class Body {
                 content: () => m(Table, {
                     data: {'targets': selectedProblem.targets, 'predictors': selectedProblem.predictors,'description': preformatted(app.getDescription(selectedProblem).description)}
                 })
-            }, m('h4[style=display: inline-block; margin: .25em 1em]', selectedProblem.problemID)));
+            }, m('h4[style=display: inline-block; margin: .25em 1em]', selectedProblem.problemId)));
 
             let selectedSolutions = results.getSelectedSolutions(selectedProblem);
             if (app.is_results_mode && selectedSolutions.length === 1 && selectedSolutions[0]) {
@@ -420,7 +420,7 @@ class Body {
                                 class: 'btn-sm',
                                 onclick: async () => {
                                     let problem = getSelectedProblem();
-                                    let datasetUrl = await buildDatasetUrl(problem, manipulate.constraintMenu.step);
+                                    let datasetUrl = await buildCsvUrl(problem, manipulate.constraintMenu.step);
                                     if (!datasetUrl) alertWarn('Unable to prepare dataset for download.');
                                     app.downloadFile(datasetUrl)
                                 }
@@ -433,7 +433,7 @@ class Body {
                                 class: 'btn-sm',
                                 onclick: async () => {
                                     let problem = getSelectedProblem();
-                                    let datasetUrl = await buildDatasetUrl(problem);
+                                    let datasetUrl = await buildCsvUrl(problem);
                                     if (!datasetUrl) alertWarn('Unable to prepare dataset for download.');
                                     app.downloadFile(datasetUrl);
                                 }

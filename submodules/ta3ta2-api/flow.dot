@@ -9,12 +9,13 @@ digraph G {
   FitSolution;
   ProduceSolution;
   SolutionExport;
-  UpdateProblem;
   ListPrimitives;
   SaveSolution;
   LoadSolution;
   SaveFittedSolution;
   LoadFittedSolution;
+  SplitData;
+  ScorePredictions;
 
   node [style="filled", fillcolor="#ffdddd", shape="rectangle"];
   "outputs";
@@ -58,7 +59,12 @@ digraph G {
   solution_id -> SaveSolution;
   LoadSolution -> solution_id;
   rank -> SolutionExport
-  SearchSolutions -> UpdateProblem;
-  problem -> UpdateProblem;
   ListPrimitives -> primitives;
+  search -> SplitData;
+  SplitData -> train;
+  SplitData -> score;
+  SplitData -> test;
+  outputs -> ScorePredictions [penwidth=3.0];
+  score -> ScorePredictions;
+  ScorePredictions -> scores [penwidth=3.0];
 }

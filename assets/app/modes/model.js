@@ -22,14 +22,16 @@ import Dropdown from "../../common/views/Dropdown";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import MenuHeaders from "../../common/views/MenuHeaders";
 import Checkbox from "../../common/views/Checkbox";
+import Popper from '../../common/views/Popper';
 
 import ForceDiagram, {groupBuilder, groupLinkBuilder, linkBuilder, pebbleBuilderLabeled} from "../views/ForceDiagram";
 import VariableSummary, {formatVariableSummary} from "../views/VariableSummary";
 import ButtonLadda from "../views/LaddaButton";
 import Flowchart from "../views/Flowchart";
 
-import {bold, boldPlain, preformatted} from "../index";
+import {bold, boldPlain, italicize, preformatted} from "../index";
 import {setModal} from "../../common/views/Modal";
+import {workspace} from "../app";
 
 
 export class CanvasModel {
@@ -119,12 +121,86 @@ export class CanvasModel {
                         width: '150px'
                     }
                 }, [
-                    {id: "timeButton", vars: selectedProblem.tags.time, name: 'Time', borderColor: common.timeColor, innerColor: 'white', width: 1},
-                    {id: "csButton", vars: selectedProblem.tags.crossSection, name: 'Cross Sec', borderColor: common.csColor, innerColor: 'white', width:  1},
-                    {id: "dvButton", vars: selectedProblem.targets, name: 'Dep Var', borderColor: common.dvColor, innerColor: 'white', width: 1},
-                    {id: "nomButton", vars: selectedProblem.tags.nominal, name: 'Nominal', borderColor: common.nomColor, innerColor: 'white', width: 1},
-                    {id: "weightButton", vars: selectedProblem.tags.weights, name: 'Weight', borderColor: common.weightColor, innerColor: 'white', width: 1},
-                    {id: "predButton", vars: selectedProblem.predictors, name: 'Predictors', borderColor: common.gr1Color, innerColor: common.gr1Color, width: 0},
+                    {
+                        id: "nomButton",
+                        vars: selectedProblem.tags.nominal,
+                        name: 'Nominal',
+                        borderColor: common.nomColor,
+                        innerColor: 'white',
+                        width: 1
+                    },
+                    {
+                        id: "csButton",
+                        vars: selectedProblem.tags.crossSection,
+                        name: 'Cross Sec',
+                        borderColor: common.csColor,
+                        innerColor: 'white',
+                        width: 1
+                    },
+                    {
+                        id: "boundaryButton",
+                        vars: selectedProblem.tags.boundary,
+                        name: 'Boundary',
+                        borderColor: common.boundaryColor,
+                        innerColor: 'white',
+                        width: 1
+                    },
+                    {
+                        id: "locationButton",
+                        vars: selectedProblem.tags.location,
+                        name: 'Location',
+                        borderColor: common.locationColor,
+                        innerColor: 'white',
+                        width: 1
+                    },
+                    {
+                        id: "timeButton",
+                        vars: selectedProblem.tags.time,
+                        name: 'Time',
+                        borderColor: common.timeColor,
+                        innerColor: 'white',
+                        width: 1
+                    },
+                    {
+                        id: "weightButton",
+                        vars: selectedProblem.tags.weights,
+                        name: 'Weight',
+                        borderColor: common.weightColor,
+                        innerColor: 'white',
+                        width: 1
+                    },
+                    {
+                        id: "privilegedButton",
+                        vars: selectedProblem.tags.privileged,
+                        name: 'Privileged',
+                        borderColor: common.privilegedColor,
+                        innerColor: 'white',
+                        width: 1
+                    },
+                    {
+                        id: "indexButton",
+                        vars: selectedProblem.tags.indexes,
+                        name: 'Index',
+                        borderColor: common.indexColor,
+                        innerColor: 'white',
+                        width: 1
+                    },
+                    {
+                        id: "predButton",
+                        vars: selectedProblem.predictors,
+                        name: 'Predictors',
+                        borderColor: common.gr1Color,
+                        innerColor: common.gr1Color,
+                        width: 0
+                    },
+                    {
+                        id: "targetButton",
+                        vars: selectedProblem.targets,
+                        name: 'Targets',
+                        borderColor: common.gr2Color,
+                        innerColor: common.gr2Color,
+                        width: 0
+                    },
                     // {id: "priorsButton", vars: selectedProblem.predictors, name: 'Priors', borderColor: common.warnColor, innerColor: common.warnColor, width: 0},
                 ].filter(group => group.vars.length > 0).map(group =>
                     m(`#${group.id}[style=width:100% !important]`,
@@ -208,18 +284,20 @@ export let leftpanel = forceData => {
                         id: 'varList',
                         items: leftpanelVariables,
                         colors: {
-                            [app.hexToRgba(common.selVarColor)]: app.is_explore_mode ? selectedProblem.loose : explore.exploreVariables,
+                            [app.hexToRgba(common.selVarColor, .5)]: app.is_explore_mode ? selectedProblem.tags.loose : explore.exploreVariables,
                             [app.hexToRgba(common.gr1Color, .25)]: selectedProblem.predictors,
-                            [app.hexToRgba(common.selVarColor, .5)]: selectedProblem.tags.loose,
-                            [app.hexToRgba(common.taggedColor)]: app.is_explore_mode ? [] : selectedProblem.targets
+                            [app.hexToRgba(common.gr2Color, .25)]: app.is_explore_mode ? [] : selectedProblem.targets
                         },
                         classes: {
-                            'item-dependent': app.is_explore_mode ? [] : selectedProblem.targets,
                             'item-nominal': nominalVariables,
-                            'item-bordered': matchedVariables,
                             'item-cross-section': selectedProblem.tags.crossSection,
+                            'item-boundary': selectedProblem.tags.boundary,
+                            'item-location': selectedProblem.tags.location,
                             'item-time': selectedProblem.tags.time,
-                            'item-weight': selectedProblem.tags.weights
+                            'item-weight': selectedProblem.tags.weights,
+                            'item-privileged': selectedProblem.tags.privileged,
+                            'item-index': selectedProblem.tags.indexes,
+                            'item-matched': matchedVariables
                         },
                         callback: varName => {
                             setGroup(selectedProblem, [
@@ -291,9 +369,9 @@ export let leftpanel = forceData => {
         }, {});
 
     let formatProblem = problem => [
-        problem.problemID, // this is masked as the UID
+        problem.problemId, // this is masked as the UID
         !app.taskPreferences.task1_finished && m('[style=text-align:center]', {onclick: e=> e.stopPropagation()}, m(Checkbox, {
-            onclick: state => app.setCheckedDiscoveryProblem(state, problem.problemID),
+            onclick: state => app.setCheckedDiscoveryProblem(state, problem.problemId),
             checked: problem.meaningful
         })),
         problem.targets.join(', '),
@@ -339,15 +417,15 @@ export let leftpanel = forceData => {
                                 let problemCopy = app.getProblemCopy(selectedProblem);
                                 selectedProblem.pending = false;
 
-                                ravenConfig.problems[problemCopy.problemID] = problemCopy;
-                                app.setSelectedProblem(problemCopy.problemID);
+                                ravenConfig.problems[problemCopy.problemId] = problemCopy;
+                                app.setSelectedProblem(problemCopy.problemId);
                             }
                         }, 'Save'),
                         selectedProblem.manipulations.length !== 0 && m(Button, {
                             style: {float: 'right', margin: '-5px', 'margin-right': '1em'},
                             class: 'btn-sm',
                             disabled: app.rightTab === 'Manipulate' && common.panelOpen['right'],
-                            title: `view manipulations for ${selectedProblem.problemID}`,
+                            title: `view manipulations for ${selectedProblem.problemId}`,
                             onclick: () => {
                                 app.setRightTab('Manipulate');
                                 common.setPanelOpen('right');
@@ -411,38 +489,38 @@ export let leftpanel = forceData => {
                             'discovery-table-highlight': selectedProblem.provenanceID
                                 ? [selectedProblem.provenanceID] : []
                         },
-                        onclick: problemID => {
+                        onclick: problemId => {
 
-                            let clickedProblem = problems[problemID];
+                            let clickedProblem = problems[problemId];
                             if (clickedProblem.system === 'solved') {
-                                app.setSelectedProblem(problemID);
+                                app.setSelectedProblem(problemId);
                                 app.setSelectedMode('results');
                                 return;
                             }
-                            if (selectedProblem.problemID === problemID) return;
+                            if (selectedProblem.problemId === problemId) return;
 
                             if (clickedProblem.system === 'user') {
-                                app.setSelectedProblem(problemID);
+                                app.setSelectedProblem(problemId);
                                 return;
                             }
 
                             // delete current problem if no changes were made
                             if (selectedProblem.pending) {
                                 if (selectedProblem.unedited)
-                                    delete problems[selectedProblem.problemID];
-                                else if (confirm(`You have unsaved changes in the previous problem, ${selectedProblem.problemID}. Would you like to discard ${selectedProblem.problemID}?`))
+                                    delete problems[selectedProblem.problemId];
+                                else if (confirm(`You have unsaved changes in the previous problem, ${selectedProblem.problemId}. Would you like to discard ${selectedProblem.problemId}?`))
                                     selectedProblem.pending = false;
-                                else delete problems[selectedProblem.problemID];
+                                else delete problems[selectedProblem.problemId];
                             }
 
                             // create a copy of the autogenerated problem
                             if (clickedProblem.system === 'auto') {
                                 let copiedProblem = app.getProblemCopy(clickedProblem);
-                                problems[copiedProblem.problemID] = copiedProblem;
-                                app.setSelectedProblem(copiedProblem.problemID);
+                                problems[copiedProblem.problemId] = copiedProblem;
+                                app.setSelectedProblem(copiedProblem.problemId);
                             }
                         },
-                        activeRow: selectedProblem.problemID,
+                        activeRow: selectedProblem.problemId,
                         abbreviation: 40,
                         sortable: true
                     })
@@ -478,29 +556,106 @@ export let leftpanel = forceData => {
                     header: variableName,
                     defaultShown: false,
                     shown: summaryPebbles.length === 1 || undefined
-                }, m(TextFieldSuggestion, {
-                    id: 'groupSuggestionBox',
-                    suggestions: [
-                        !selectedProblem.tags.loose.includes(variableName) && 'Loose',
-                        !selectedProblem.targets.includes(variableName) && 'Targets',
-                        !selectedProblem.predictors.includes(variableName) && 'Predictors'
-                    ].filter(_=>_),
-                    enforce: true,
-                    attrsAll: {placeholder: 'add to group'},
-                    oninput: value => setGroup(selectedProblem, value, variableName),
-                    onblur: value => setGroup(selectedProblem, value, variableName),
+                },
+
+                m(Table, {
+                    attrsAll: {class: 'table-sm'},
+                    data: [
+                        {
+                            name: 'Predictor', active: selectedProblem.predictors.includes(variableName),
+                            onclick: () => setGroup(selectedProblem, selectedProblem.predictors.includes(variableName) ? 'Loose' : 'Predictors', variableName),
+                            title: 'Predictor variables are used to estimate the target variables.'
+                        },
+                        {
+                            name: 'Target', active: selectedProblem.targets.includes(variableName),
+                            onclick: () => setGroup(selectedProblem, selectedProblem.targets.includes(variableName) ? 'Loose' : 'Targets', variableName),
+                            title: 'Target variables are the variables of interest.'
+                        },
+                        {
+                            name: 'Loose', active: selectedProblem.tags.loose.includes(variableName),
+                            onclick: () => setGroup(selectedProblem, selectedProblem.tags.loose.includes(variableName) ? undefined : 'Loose', variableName),
+                            title: 'Loose variables are in the modeling space, but are not used in the model.'
+                        },
+                        {
+                            name: 'Nominal', active: selectedProblem.tags.nominal.includes(variableName),
+                            onclick: () => setLabel(selectedProblem, 'nominal', variableName),
+                            title: 'Nominal variables are text-based, and handled similarly to categorical variables.'
+                        },
+                        {
+                            name: 'Cross Section', active: selectedProblem.tags.crossSection.includes(variableName),
+                            onclick: () => setLabel(selectedProblem, 'crossSection', variableName),
+                            title: 'Cross sectional variables group observations into treatments.'
+                        },
+                        {
+                            name: 'Boundary', active: selectedProblem.tags.boundary.includes(variableName),
+                            onclick: () => setLabel(selectedProblem, 'boundary', variableName),
+                            title: 'Boundary variables are a string vector of numeric data points.'
+                        },
+                        {
+                            name: 'Location', active: selectedProblem.tags.location.includes(variableName),
+                            onclick: () => setLabel(selectedProblem, 'location', variableName),
+                            title: 'Location variables indicate a geospatial location.'
+                        },
+                        {
+                            name: 'Time', active: selectedProblem.tags.time.includes(variableName),
+                            onclick: () => setLabel(selectedProblem, 'time', variableName),
+                            title: m('div', {style: {'text-align': 'left', 'margin-left': '.5em'}},
+                                'Time variables indicate a temporal location.', m('br'), bold('Time Granularity:'),
+                                m('br'),
+                                m(TextField, {
+                                    id: 'timeGranularityValueTextField',
+                                    value: (selectedProblem.timeGranularity[variableName] || {}).value || '',
+                                    oninput: value => {
+                                        selectedProblem.timeGranularity[variableName] = selectedProblem.timeGranularity[variableName] || {};
+                                        selectedProblem.timeGranularity[variableName].value = value.replace(/[^\d.-]/g, '')
+                                    },
+                                    onblur: value => selectedProblem.timeGranularity[variableName].value =
+                                        Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined,
+                                    style: {
+                                        'margin-bottom': '1em',
+                                        width: 'calc(100% - 150px)',
+                                        display: 'inline-block'
+                                    }
+                                }),
+                                m('div', {style: {display: 'inline-block', width: '92px'}},
+                                    m(Dropdown, {
+                                        id: 'timeGranularityUnitsDropdown',
+                                        items: ["seconds", "minutes", "days", "weeks", "years", "unspecified"],
+                                        activeItem: (selectedProblem.timeGranularity[variableName] || {}).units || 'unspecified',
+                                        onclickChild: granularity => {
+                                            selectedProblem.timeGranularity[variableName] = selectedProblem.timeGranularity[variableName] || {};
+                                            selectedProblem.timeGranularity[variableName].units = granularity
+                                        }
+                                    }))
+                            ),
+                        },
+                        {
+                            name: 'Weight', active: selectedProblem.tags.weights.includes(variableName),
+                            onclick: () => setLabel(selectedProblem, 'weights', variableName),
+                            title: 'A weight variable indicates the importance of individual observations.'
+                        },
+                        {
+                            name: 'Privileged', active: selectedProblem.tags.privileged.includes(variableName),
+                            onclick: () => setLabel(selectedProblem, 'privileged', variableName),
+                            title: 'A privileged variable may or may not exist in the test set.'
+                        },
+                        {
+                            name: 'Index', active: selectedProblem.tags.indexes.includes(variableName),
+                            onclick: () => setLabel(selectedProblem, 'indexes', variableName),
+                            title: 'An index variable typically has one unique value per observation.'
+                        },
+                    ].map(tag => [
+                        m(Button, {
+                            onclick: tag.onclick,
+                            class: (tag.active ? 'active' : '') + ' btn-sm'
+                        }, tag.name),
+                        m(Popper, {
+                            content: () => tag.title,
+                            popperDuration: 10,
+                        }, m(Icon, {name: 'question'})),
+                    ])
                 }),
-                m('div', {style: {width: '100%'}}, bold('Member of: '), m(ListTags, {
-                    tags: [
-                        // selectedProblem.tags.loose.includes(variableName) && 'Loose',
-                        selectedProblem.targets.includes(variableName) && 'Targets',
-                        selectedProblem.predictors.includes(variableName) && 'Predictors'
-                    ].filter(_=>_),
-                    ondelete: tag => {
-                        setGroup(selectedProblem, 'Loose', variableName);
-                        app.resetPeek()
-                    }
-                })),
+
                 m(VariableSummary, {variable: app.variableSummaries[variableName]})));
     }
 
@@ -563,9 +718,9 @@ export let rightpanel = () => {
                         style: 'margin:1em',
                         onclick: () => {
                             let problemCopy = app.getProblemCopy(selectedProblem);
-                            workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+                            workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
                             app.setShowModalAlerts(false);
-                            app.setSelectedProblem(problemCopy.problemID);
+                            app.setSelectedProblem(problemCopy.problemId);
                         }
                     }, 'Edit Copy')));
                     m.redraw();
@@ -593,7 +748,51 @@ export let rightpanel = () => {
                         disabled: isLocked
                     })
                 ],
-                m('label', 'Primary Performance Metric'),
+
+                selectedProblem.task === 'forecasting' && [
+                    m('label', 'Forecast along a temporal variable.'),
+                    selectedProblem.tags.time.length > 0 ? m(Dropdown, {
+                        id: 'forecastingColumnDropdown',
+                        items: selectedProblem.tags.time,
+                        activeItem: (selectedProblem.forecastingHorizon || {}).column,
+                        onclickChild: column => {
+                            if (isLocked) return;
+                            selectedProblem.forecastingHorizon = selectedProblem.forecastingHorizon || {};
+                            selectedProblem.forecastingHorizon.column = column;
+                        },
+                        style: {'margin': '1em', 'margin-top': '0'},
+                        disabled: isLocked
+                    }) : [
+                        m('br'),
+                        italicize('No variables have been tagged as temporal. Click a node in the graph, and then tag it as "time" from the left panel.'),
+                        m('br'),  m('br')
+                    ],
+                    m('label', 'Horizon value. Choose how many time steps to forecast.'),
+                    m(TextField, {
+                        id: 'horizonValueTextField',
+                        disabled: isLocked,
+                        placeholder: 10,
+                        value: (selectedProblem.forecastingHorizon || {}).value || '',
+                        oninput: !isLocked && (value => {
+                            selectedProblem.forecastingHorizon = selectedProblem.forecastingHorizon || {};
+                            selectedProblem.forecastingHorizon.value = Math.max(0, parseInt(value.replace(/\D/g,''))) || undefined
+                        }),
+                        style: {'margin-bottom': '1em'}
+                    })
+                ],
+
+                selectedProblem.task === 'clustering' && [
+                    m('label', 'Number of Clusters (optional)'),
+                    m(TextField, {
+                        id: 'numClustersTextField',
+                        disabled: isLocked,
+                        value: selectedProblem.numClusters,
+                        oninput: !isLocked && (value => selectedProblem.numClusters = Math.max(0, parseInt(value.replace(/\D/g,''))) || undefined),
+                        style: {'margin-bottom': '1em'}
+                    })
+                ],
+
+                m('label', 'Primary Performance Metric. Models are trained to maximize this metric.'),
                 m(Dropdown, {
                     id: 'performanceMetric',
                     // TODO: filter based on https://datadrivendiscovery.org/wiki/display/work/Matrix+of+metrics
@@ -612,14 +811,39 @@ export let rightpanel = () => {
                     onclickChild: metric => {
                         selectedProblem.metrics = [...selectedProblem.metrics, metric].sort(app.omniSort);
                         delete selectedProblem.unedited;
-                        // will trigger the call to solver, if a menu that needs that info is shown
-                        app.setSolverPending(true);
                     },
                     style: {'margin': '1em', 'margin-top': '0'},
                     disabled: isLocked
                 }),
-                selectedProblem.metrics.length > 0 && m('label', 'Secondary Performance Metrics'),
-                m(ListTags, {readonly: isLocked, tags: selectedProblem.metrics, ondelete: metric => app.remove(selectedProblem.metrics, metric)}),
+                m(ListTags, {
+                    readonly: isLocked,
+                    tags: selectedProblem.metrics,
+                    ondelete: metric => app.remove(selectedProblem.metrics, metric)
+                }),
+
+                [selectedProblem.metric, ...selectedProblem.metrics].find(metric => ['f1', 'precision', 'recall'].includes(metric)) && [
+                    m('label', 'Positive Class. Used for f1, precision, and recall metrics.'),
+                    m(Dropdown, {
+                        id: 'positiveClass',
+                        items: Object.keys(app.variableSummaries[selectedProblem.targets[0]].plotValues || {}),
+                        activeItem: selectedProblem.positiveLabel,
+                        onclickChild: label => selectedProblem.positiveLabel = label,
+                        style: {'margin': '1em', 'margin-top': '0'},
+                        disabled: isLocked
+                    }),
+                ],
+
+                [selectedProblem.metric, ...selectedProblem.metrics].find(metric => metric === 'precisionAtTopK') && [
+                    m('label', 'K, for Precision at top K'),
+                    m(TextField, {
+                        id: 'precisionAtTopKTextField',
+                        disabled: isLocked,
+                        value: selectedProblem.precisionAtTopK === undefined ? '' : selectedProblem.precisionAtTopK,
+                        oninput: !isLocked && (value => selectedProblem.precisionAtTopK = Math.max(0, parseInt(value.replace(/\D/g,''))) || undefined),
+                        style: {'margin-bottom': '1em'}
+                    })
+                ],
+
                 m(Subpanel, {
                         header: 'Split Options',
                         defaultShown: false,
@@ -734,8 +958,6 @@ export let rightpanel = () => {
                         onclickChild: child => {
                             selectedProblem.scoreOptions.evaluationMethod = child;
                             delete selectedProblem.unedited;
-                            // will trigger the call to solver, if a menu that needs that info is shown
-                            app.setSolverPending(true);
                         },
                         style: {'margin-bottom': '1em'},
                         disabled: isLocked
@@ -911,6 +1133,8 @@ export let buildForceData = problem => {
     let groups = [];
     let groupLinks = [];
 
+    let supervised = !['clustering', 'linkPrediction', 'communityDetection'].includes(problem.task);
+
     if (forceDiagramMode === 'variables') {
         groups = [
             {
@@ -920,7 +1144,7 @@ export let buildForceData = problem => {
                 nodes: new Set(problem.predictors),
                 opacity: 0.3
             },
-            {
+            supervised && {
                 name: "Targets",
                 color: common.gr2Color,
                 colorBackground: app.swandive && 'grey',
@@ -931,7 +1155,10 @@ export let buildForceData = problem => {
                 name: "Loose",
                 color: common.selVarColor,
                 colorBackground: "transparent",
-                nodes: new Set(problem.tags.loose),
+                nodes: new Set([
+                    ...problem.tags.loose,
+                    ...supervised ? [] : problem.targets
+                ]),
                 opacity: 0.0
             },
             // {
@@ -941,7 +1168,7 @@ export let buildForceData = problem => {
             //     nodes: new Set(['INSTM', 'pctfedited^2', 'test', 'PCTFLOAN^3']),
             //     opacity: 0.4
             // }
-        ];
+        ].filter(_=>_);
 
         groupLinks = [
             {
@@ -1034,9 +1261,9 @@ export let setGroup = (problem, group, name) => {
             style: 'margin:1em',
             onclick: () => {
                 let problemCopy = app.getProblemCopy(problem);
-                workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+                workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
                 app.setShowModalAlerts(false);
-                app.setSelectedProblem(problemCopy.problemID);
+                app.setSelectedProblem(problemCopy.problemId);
                 setGroup(problemCopy, group, name);
             }
         }, 'Edit Copy')));
@@ -1050,10 +1277,10 @@ export let setGroup = (problem, group, name) => {
         feature_id: 'blank',
         activity_l1: 'PROBLEM_DEFINITION',
         activity_l2: 'PROBLEM_SPECIFICATION',
-        other: {variable: name, problem: problem.problemID }
+        other: {variable: name, problem: problem.problemId }
       }
 
-  //  console.log('problem: ' + problem.problemID);
+  //  console.log('problem: ' + problem.problemId);
 //    console.log('problem: ' + JSON.stringify(problem))
     if (group === 'Loose') {
         !problem.tags.loose.includes(name) && problem.tags.loose.push(name);
@@ -1109,9 +1336,9 @@ let setContextPebble = pebble => {
             style: 'margin:1em',
             onclick: () => {
                 let problemCopy = app.getProblemCopy(selectedProblem);
-                workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+                workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
                 app.setShowModalAlerts(false);
-                app.setSelectedProblem(problemCopy.problemID);
+                app.setSelectedProblem(problemCopy.problemId);
             }
         }, 'Edit Copy')));
         m.redraw();
@@ -1216,40 +1443,58 @@ export let mutateNodes = problem => (state, context) => {
     // the order of the keys indicates precedence, lower keys are more important
     let params = {
         predictors: new Set(problem.predictors),
+        targets: new Set(problem.targets),
         loose: new Set(problem.tags.loose),
         transformed: new Set(problem.tags.transformed),
-        crossSection: new Set(problem.tags.crossSection),
         nominal: new Set(app.getNominalVariables(problem)),
+        crossSection: new Set(problem.tags.crossSection),
+        boundary: new Set(problem.tags.boundary),
+        location: new Set(problem.tags.location),
         time: new Set(problem.tags.time),
-        weight: new Set(problem.tags.weights),
-        targets: new Set(problem.targets),
+        weights: new Set(problem.tags.weights),
+        privileged: new Set(problem.tags.privileged),
+        indexes: new Set(problem.tags.indexes),
         matched: new Set(matchedVariables),
     };
 
     let strokeWidths = {
-        matched: 4,
-        crossSection: 4,
-        time: 4,
-        nominal: 4,
+        predictors: 4,
         targets: 4,
-        weight: 4
+        nominal: 4,
+        crossSection: 4,
+        boundary: 4,
+        location: 4,
+        time: 4,
+        weights: 4,
+        privileged: 4,
+        indexes: 4,
+        matched: 4
     };
 
     let nodeColors = {
-        crossSection: common.taggedColor,
-        time: common.taggedColor,
-        nominal: common.taggedColor,
         targets: common.taggedColor,
-        weight: common.taggedColor,
-        loose: common.selVarColor,
+        nominal: common.taggedColor,
+        crossSection: common.taggedColor,
+        boundary: common.taggedColor,
+        location: common.taggedColor,
+        time: common.taggedColor,
+        weights: common.taggedColor,
+        privileged: common.taggedColor,
+        indexes: common.taggedColor,
+        matched: common.taggedColor,
+        loose: common.taggedColor,
     };
+
     let strokeColors = {
-        matched: 'black',
-        crossSection: common.csColor,
-        time: common.timeColor,
         nominal: common.nomColor,
-        targets: common.dvColor,
-        weight: common.weightColor
+        crossSection: common.csColor,
+        boundary: common.boundaryColor,
+        location: common.locationColor,
+        time: common.timeColor,
+        weights: common.weightColor,
+        privileged: common.privilegedColor,
+        indexes: common.indexColor,
+        matched: common.matchedColor
     };
 
     // set the base color of each node
@@ -1278,97 +1523,180 @@ export let mutateNodes = problem => (state, context) => {
 };
 
 export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Targets'].includes(pebble) ? [] : [
-    {
-        id: 'Group',
-        name: 'Group',
+    problem.tags.loose.includes(pebble) && {
+        id: 'Loose',
+        name: 'Loose',
+        attrs: {fill: common.selVarColor},
+        onclick: d => {
+            setGroup(problem, undefined, d);
+        }
+    },
+    problem.predictors.includes(pebble) && {
+        id: 'Predictor',
+        name: 'Predictor',
         attrs: {fill: common.gr1Color},
-        children: [
-            {
-                id: 'Predictor',
-                name: 'Predictor',
-                attrs: {fill: common.gr1Color},
-                onclick: d => {
-                    setGroup(problem, problem.predictors.includes(d) ? 'Loose' : 'Predictors', d);
-                    forceDiagramState.setSelectedPebble(d);
-                    app.resetPeek();
-                }
-            },
-            {
-                id: 'Dep',
-                name: 'Dep Var',
-                attrs: {fill: common.dvColor},
-                onclick: d => {
-                    setGroup(problem, problem.targets.includes(d) ? 'Loose' : 'Targets', d);
-                    forceDiagramState.setSelectedPebble(d);
-                    app.resetPeek();
-                }
-            }
-        ]
+        onclick: d => {
+            setGroup(problem, problem.predictors.includes(d) ? 'Loose' : 'Predictors', d);
+            forceDiagramState.setSelectedPebble(d);
+            app.resetPeek();
+        }
     },
-    {
-        id: 'GroupLabel',
-        name: 'Labels',
+    problem.targets.includes(pebble) && {
+        id: 'Target',
+        name: 'Target',
+        attrs: {fill: common.gr2Color},
+        onclick: d => {
+            setGroup(problem, problem.targets.includes(d) ? 'Loose' : 'Targets', d);
+            forceDiagramState.setSelectedPebble(d);
+            app.resetPeek();
+        }
+    },
+    app.getNominalVariables(problem).includes(pebble) && {
+        id: 'Nominal',
+        name: 'Nominal',
         attrs: {fill: common.nomColor},
-        onclick: forceDiagramState.setSelectedPebble,
-        children: [
-            {
-                id: 'Nominal',
-                name: 'Nom',
-                attrs: {fill: common.nomColor},
-                onclick: d => {
-                    if (app.variableSummaries[d].numchar === 'character') {
-                        app.alertLog(`Cannot convert column "${d}" to numeric, because the column is character-based.`);
-                        return;
-                    }
-                    delete problem.unedited;
-                    app.toggle(problem.tags.nominal, d);
-                    forceDiagramState.setSelectedPebble(d);
-                    app.resetPeek()
-                }
-            },
-            {
-                id: 'Time',
-                name: 'Time',
-                attrs: {fill: common.timeColor},
-                onclick: d => {
-                    delete problem.unedited;
-                    app.toggle(problem.tags.time, d);
-                    forceDiagramState.setSelectedPebble(d);
-                    app.resetPeek()
-                }
-            },
-            {
-                id: 'Cross',
-                name: 'Cross',
-                attrs: {fill: common.csColor},
-                onclick: d => {
-                    delete problem.unedited;
-                    app.toggle(problem.tags.crossSection, d);
-                    forceDiagramState.setSelectedPebble(d);
-                    app.resetPeek()
-                }
-            },
-            {
-                id: 'Weight',
-                name: 'Weight',
-                attrs: {fill: common.weightColor},
-                onclick: d => {
-                    delete problem.unedited;
-                    if (problem.tags.weights.includes(d))
-                        problem.tags.weights = [];
-                    else {
-                        problem.tags.weights = [d];
-                        app.remove(problem.tags.time, d);
-                        app.remove(problem.tags.nominal, d);
-                        app.remove(problem.tags.crossSection, d);
-                    }
-                    forceDiagramState.setSelectedPebble(d);
-                    app.resetPeek()
-                }
-            }
-        ]
+        onclick: d => setLabel(problem, 'nominal', d)
     },
-];
+    problem.tags.crossSection.includes(pebble) && {
+        id: 'Cross',
+        name: 'Cross Sectional',
+        attrs: {fill: common.csColor},
+        onclick: d => setLabel(problem, 'crossSection', d)
+    },
+    problem.tags.location.includes(pebble) && {
+        id: 'Location',
+        name: 'Location',
+        attrs: {fill: common.locationColor},
+        onclick: d => setLabel(problem, 'location', d)
+    },
+    problem.tags.boundary.includes(pebble) && {
+        id: 'Boundary',
+        name: 'Boundary',
+        attrs: {fill: common.boundaryColor},
+        onclick: d => setLabel(problem, 'boundary', d)
+    },
+    problem.tags.time.includes(pebble) && {
+        id: 'Time',
+        name: 'Time',
+        attrs: {fill: common.timeColor},
+        onclick: d => setLabel(problem, 'time', d)
+    },
+    problem.tags.weights.includes(pebble) && {
+        id: 'Weight',
+        name: 'Weight',
+        attrs: {fill: common.weightColor},
+        onclick: d => setLabel(problem, 'weights', d)
+    },
+    problem.tags.privileged.includes(pebble) && {
+        id: 'Privileged',
+        name: 'Privileged',
+        attrs: {fill: common.privilegedColor},
+        onclick: d => setLabel(problem, 'privileged', d)
+    },
+    problem.tags.indexes.includes(pebble) && {
+        id: 'Index',
+        name: 'Index',
+        attrs: {fill: common.weightColor},
+        onclick: d => setLabel(problem, 'indexes', d)
+    }
+].filter(_ => _);
+
+let setLabel = (problem, label, name) => {
+    if (label === 'nominal') {
+        if (app.variableSummaries[name].numchar === 'character') {
+            app.alertLog(`Cannot convert column "${name}" to numeric, because the column is character-based.`);
+            return;
+        }
+        if (problem.tags.nominal.includes(name)) {
+            app.remove(problem.tags.crossSection, name);
+            app.remove(problem.tags.boundary, name);
+            app.remove(problem.tags.location, name);
+            app.remove(problem.tags.indexes, name);
+        }
+        delete problem.unedited;
+        app.toggle(problem.tags.nominal, name);
+    }
+
+    delete problem.unedited;
+
+    if (label === 'crossSection') {
+        if (!problem.tags.crossSection.includes(name)) {
+            app.remove(problem.tags.weights, name);
+        }
+        app.toggle(problem.tags.crossSection, name);
+    }
+
+    if (label === 'location') {
+        if (!problem.tags.location.includes(name)) {
+            app.remove(problem.tags.boundary, name);
+            app.remove(problem.tags.time, name);
+            app.remove(problem.tags.weights, name);
+            app.remove(problem.tags.indexes, name);
+            app.add(problem.tags.nominal, name);
+        }
+        app.toggle(problem.tags.location, name);
+    }
+
+    if (label === 'boundary') {
+        if (!problem.tags.boundary.includes(name)) {
+            app.remove(problem.tags.location, name);
+            app.remove(problem.tags.time, name);
+            app.remove(problem.tags.weights, name);
+            app.remove(problem.tags.indexes, name);
+            app.add(problem.tags.nominal, name);
+        }
+        app.toggle(problem.tags.boundary, name);
+    }
+
+    if (label === 'time') {
+        if (!problem.tags.time.includes(name)) {
+            app.remove(problem.tags.location, name);
+            app.remove(problem.tags.boundary, name);
+        }
+        app.toggle(problem.tags.time, name);
+    }
+
+    if (label === 'weights') {
+        if (app.variableSummaries[name].numchar === 'character') {
+            app.alertLog(`Cannot label column "${name}" to weight, because the column is character-based.`);
+            return;
+        }
+        if (!problem.tags.weights.includes(name)) {
+            app.remove(problem.tags.nominal, name);
+            app.remove(problem.tags.crossSection, name);
+            app.remove(problem.tags.boundary, name);
+            app.remove(problem.tags.location, name);
+            app.remove(problem.tags.time, name);
+            app.remove(problem.tags.indexes, name);
+        }
+        if (problem.tags.weights.includes(name))
+            problem.tags.weights = [];
+        else
+            problem.tags.weights = [name];
+    }
+
+    if (label === 'privileged') {
+        if (!problem.tags.privileged.includes(name)) {
+            app.remove(problem.tags.indexes, name);
+        }
+        app.toggle(problem.tags.privileged, name);
+    }
+
+    if (label === 'indexes') {
+        if (!problem.tags.indexes.includes(name)) {
+            app.remove(problem.tags.boundary, name);
+            app.remove(problem.tags.location, name);
+            app.remove(problem.tags.weights, name);
+            app.remove(problem.tags.time, name);
+        }
+        if (problem.tags.indexes.includes(name))
+            problem.tags.indexes = [];
+        else
+            problem.tags.indexes = [name];
+    }
+    forceDiagramState.setSelectedPebble(name);
+    app.resetPeek()
+};
 
 // Used for left panel variable search
 export let variableSearchText = "";
@@ -1378,9 +1706,9 @@ export let setVariableSearchText = text => variableSearchText = text.toLowerCase
 // creates a new problem from the force diagram problem space and adds to disco
 export async function addProblemFromForceDiagram() {
     let problemCopy = app.getProblemCopy(app.getSelectedProblem());
-    app.workspace.raven_config.problems[problemCopy.problemID] = problemCopy;
+    app.workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
 
-    app.setSelectedProblem(problemCopy.problemID);
+    app.setSelectedProblem(problemCopy.problemId);
     app.setLeftTab('Discover');
     m.redraw();
 }
@@ -1407,7 +1735,7 @@ export function connectAllForceDiagram() {
 
 let D3M_problemDoc = problem => ({
     data: {
-        "problemID": problem.problemID,
+        "problemId": problem.problemId,
         "problemName": "NULL",
         "taskType": problem.taskType,
         "taskSubType": problem.taskSubType,
@@ -1458,15 +1786,15 @@ export async function submitDiscProb() {
      //let outputCSV =
    let outputCSV = ['problem_id,system,meaningful'];
 
-    Object.keys(problems).reduce((out, problemID) => {
-        let problem = problems[problemID];
+    Object.keys(problems).reduce((out, problemId) => {
+        let problem = problems[problemId];
 
         if(problem.manipulations.length === 0){
             // construct and write out the api call and problem description for each discovered problem
             let problemApiCall = solverD3M.GRPC_SearchSolutionsRequest(problem, 10);
             let problemProblemSchema = D3M_problemDoc(problem);
-            let filename_api = problem.problemID + '/ss_api.json';
-            let filename_ps = problem.problemID + '/problem_schema.json';
+            let filename_api = problem.problemId + '/ss_api.json';
+            let filename_ps = problem.problemId + '/problem_schema.json';
             m.request(D3M_SVC_URL + '/store-user-problem', {
                 method: 'POST',
                 data: {filename: filename_api, data: problemApiCall}
@@ -1477,7 +1805,7 @@ export async function submitDiscProb() {
             });
 
             let meaningful = problem.meaningful ? 'yes' : 'no';
-            let lineForCSV = `${problem.problemID},${problem.system},${meaningful}`;
+            let lineForCSV = `${problem.problemId},${problem.system},${meaningful}`;
             outputCSV.push(lineForCSV);
         } else {
             console.log('omitting:');

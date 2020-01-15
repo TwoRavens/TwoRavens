@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/1.11/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
+import ast
 import os
 import sys
 from os.path import abspath, dirname, isdir, join
@@ -293,11 +294,29 @@ SESSION_SAVE_EVERY_REQUEST = True
 
 SERVER_SCHEME = 'http'  # or https
 
+# ----------------------------------------------
+# TA2 configurations set by env variables
+# ----------------------------------------------
 
+# Is the D3M TA2 solver enabled?
+#
+TA2_D3M_SOLVER_ENABLED = strtobool(os.environ.get('TA2_D3M_SOLVER_ENABLED', 'True'))
 
-# ---------------------------
+# What is the list of valid Wrapped Solvers?
+#
+# Example of setting by env variable:
+#   export TA2_WRAPPED_SOLVERS='["mlbox", "tpot"]'
+#
+#
+TA2_WRAPPED_SOLVERS_ALL = ["auto_sklearn", "caret", "h2o", "ludwig", "mlbox", "tpot"]
+TA2_WRAPPED_SOLVERS = ast.literal_eval(\
+                    os.environ.get('TA2_WRAPPED_SOLVERS', str(TA2_WRAPPED_SOLVERS_ALL)))
+if not isinstance(TA2_WRAPPED_SOLVERS, list):
+    TA2_WRAPPED_SOLVERS = []
+
+# ----------------------------------------------
 # D3M - Config Settings - started winter 2019
-# ---------------------------
+# ----------------------------------------------
 # This switches between 2019 config (True)
 # and the older "search_config.json" file
 #

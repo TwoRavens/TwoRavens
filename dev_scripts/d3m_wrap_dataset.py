@@ -16,8 +16,8 @@ DTYPES = {
 
 DSV_EXTENSIONS = ['.csv', '.tsv', '.xlsx', '.xls']
 
-DATASET_SCHEMA_VERSION = '3.2.0'
-PROBLEM_SCHEMA_VERSION = '3.2.0'
+DATASET_SCHEMA_VERSION = '4.0.0'
+PROBLEM_SCHEMA_VERSION = '4.0.0'
 
 
 def d3m_wrap_dataset(outputDir, dataPaths, about, problem):
@@ -133,8 +133,7 @@ def d3m_wrap_dataset(outputDir, dataPaths, about, problem):
             'about': {
                 'problemID': problemID,
                 'problemName': problem.get('problemName', about['datasetName'] + ' problem'),
-                'taskType': problem.get('taskType', 'regression'),
-                'taskSubType': problem.get('taskSubType', 'regression'),
+                'taskKeywords': problem.get('taskKeywords', ['classification']),
                 'problemSchemaVersion': PROBLEM_SCHEMA_VERSION,
                 'problemVersion': '1.0'
             },

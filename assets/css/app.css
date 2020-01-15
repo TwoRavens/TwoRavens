@@ -422,24 +422,33 @@ tr.item-lineout{
     text-decoration:line-through;
 }
 
-.item-bordered {
-    border: solid black !important;
-    font-weight: bolder;
-}
-.item-dependent {
-    border: solid rgba(40, 164, 201, 0.8);
-}
 .item-nominal {
     border: solid #ff6600;
 }
 .item-cross-section {
     border: solid #419641;
 }
+.item-boundary {
+    border: solid #3cc394;
+}
+.item-location {
+    border: solid #d23e3e;
+}
 .item-time {
     border: solid #2d6ca2;
 }
 .item-weight {
     border: solid #bf4d66;
+}
+.item-privileged {
+    border: solid #6F29A7;
+}
+.item-index {
+    border: solid #797478;
+}
+.item-matched {
+    border: solid #330b0b;
+    font-weight: bolder;
 }
 .item-lineout{
     text-decoration:line-through;
