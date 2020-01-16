@@ -83,7 +83,7 @@ def make_d3m_configs_from_files_multiuser_test():
 
 @task
 def make_d3m_configs_from_files_multiuser_test_limited():
-    """11/2019 Make configs from /ravens_volume and loads them to db
+    """1/2020 Make configs from /ravens_volume and loads them to db
     Also make the input/output directories 1-level higher than usual
     """
     clear_d3m_configs()
