@@ -32,14 +32,6 @@ xDATABASES = {
 
 SWAGGER_HOST = '2ravens.org'
 
-
-# -----------------------------------
-# staticfiles served via nginx
-# -----------------------------------
-STATIC_ROOT = join('/ravens_volume', 'staticfiles', 'static')
-if not os.path.isdir(STATIC_ROOT):
-    os.makedirs(STATIC_ROOT)
-
 SESSION_COOKIE_NAME = os.environ.get('SESSION_COOKIE_NAME',
                                      '2ravens_org_gce')
 
