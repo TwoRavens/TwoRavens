@@ -45,11 +45,11 @@ after_success:
   # -------------------------------------
   # Temp push, to test new multiuser
   # -------------------------------------
-  - if [ "$TRAVIS_BRANCH" == "784-dm-setup" ]; then
-    docker build -t tworavens/ravens-main:comfrey .;
-    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-    docker push tworavens/ravens-main:comfrey;
-    fi
+  #- if [ "$TRAVIS_BRANCH" == "784-dm-setup" ]; then
+  #  docker build -t tworavens/ravens-main:comfrey .;
+  #  docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+  #  docker push tworavens/ravens-main:comfrey;
+  #  fi
   # -------------------------------------
   # Temp push, to test new k8s deploy
   # -------------------------------------
