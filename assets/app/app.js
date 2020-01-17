@@ -938,7 +938,7 @@ export let applicableSolvers = {
         multivariate: standardWrappedSolvers
     },
     forecasting: {
-        subTypeNone: []
+        subTypeNone: ['two-ravens']
     },
     clustering: {subTypeNone: []},
     linkPrediction: {subTypeNone: []},
@@ -1126,7 +1126,9 @@ let buildDefaultProblem = problemDoc => {
 
     let findSubtask = keywords => {
         let task = findTask(keywords);
-        return keywords.find(keyword => Object.keys(applicableMetrics[task]).includes(keyword)) || 'subTypeNone'
+        let subTask = keywords.find(keyword => Object.keys(applicableMetrics[task]).includes(keyword))
+        if (!subTask) subTask = Object.keys(applicableMetrics[task])[0];
+        return subTask;
     };
 
     let filterResourceType = keywords => Object.keys(d3mResourceType)

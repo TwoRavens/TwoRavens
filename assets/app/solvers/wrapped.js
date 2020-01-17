@@ -14,7 +14,7 @@ export let getSolverSpecification = async (problem, systemId) => {
     let allParams = {
         'search': SPEC_search(problem),
         'produce': SPEC_produce(problem),
-        'score': SPEC_score(problem)
+        'score': [SPEC_score(problem)].filter(_=>_)
     };
 
     console.groupCollapsed(`Initiating Search on ${systemId}`);
@@ -40,9 +40,16 @@ let SPEC_search = problem => ({
     "priority": problem.searchOptions.priority,
 
     // pass the same criteria the models will be scored on to the search phase
-    "performanceMetric": {"metric": app.d3mMetrics[problem.metric]},
+    "performanceMetric": SPEC_metric(problem.positiveLabel, problem.metric),
     "configuration": SPEC_configuration(problem)
 });
+
+let SPEC_metric = (positiveLabel, metric) => {
+    let value = {metric: app.d3mMetrics[metric]};
+    if (metric in ['precision', 'recall', 'f1'] && positiveLabel !== undefined)
+        value.positiveLabel = positiveLabel;
+    return value;
+};
 
 // GRPC_ProblemDescription
 export let SPEC_problem = problem => ({
@@ -73,10 +80,13 @@ let SPEC_configuration = problem => ({
     "randomSeed": problem.scoreOptions.randomSeed,
     "shuffle": problem.scoreOptions.shuffle,
     "stratified": problem.scoreOptions.stratified,
-    "trainTestRatio": problem.scoreOptions.trainTestRatio
+    "trainTestRatio": problem.scoreOptions.trainTestRatio,
+    "forecastingHorizon": problem.forecastingHorizon
 });
 
 let SPEC_produce = problem => {
+    // TODO time-series produces
+
     let train_split = problem.splitOptions.outOfSampleSplit ? 'train' : 'all';
     let predict_types = ['RAW', 'PROBABILITIES'];
     let dataset_types = problem.splitOptions.outOfSampleSplit ? ['test', 'train'] : ['all'];
@@ -144,15 +154,31 @@ let SPEC_produce = problem => {
 };
 
 
-let SPEC_score = problem => [{
-    "input": {
+let SPEC_score = problem => {
+    let spec = {
+        "configuration": SPEC_configuration(problem),
+        "performanceMetrics": [problem.metric, ...problem.metrics]
+            .map(metric => SPEC_metric(problem.positiveLabel, metric))
+    };
+
+    // forecasting needs to know in-sample data
+    if (problem.task === 'forecasting') {
+        if (!problem.splitOptions.outOfSampleSplit) return;
+        spec.train = {
+            'name': 'train',
+            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).train || problem.datasetPaths.train)
+        };
+        spec.input = {
+            'name': 'test',
+            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).test || problem.datasetPaths.test)
+        }
+    } else spec.input = {
         "name": "all",
         "resource_uri": 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
-    },
-    "configuration": SPEC_configuration(problem),
-    "performanceMetrics": [problem.metric, ...problem.metrics]
-        .map(metric => ({metric: app.d3mMetrics[metric]}))
-}];
+    };
+
+    return spec;
+};
 
 let systemParams = {
     'tpot': {"generations": 100, 'population_size': 100},
@@ -314,6 +340,8 @@ export let handleSolveCompleteResponse = response => {
         console.warn('solve complete arrived for unknown problem', data);
         return;
     }
+    if (!solvedProblem.solverState)
+        return;
 
     solvedProblem.solverState[data.system].thinking = false;
     solvedProblem.solverState[data.system].message = response.additional_info.message;
