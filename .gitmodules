@@ -5,3 +5,6 @@
 [submodule "ravens_volume/test_data"]
 	path = ravens_volume/test_data
 	url = https://github.com/TwoRavens/tworavens-test-datasets.git
+[submodule "tworaven_solver"]
+	path = tworaven_solver
+	url = git@github.com:TwoRavens/TwoRavensSolver.git

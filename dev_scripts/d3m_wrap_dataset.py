@@ -174,20 +174,3 @@ def d3m_load_resource(path):
     if 'd3mIndex' not in data:
         data.insert(0, 'd3mIndex', range(len(data)))
     return data
-
-
-if __name__ == '__main__':
-    outputPath = '/home/shoe/TwoRavens/ravens_volume/test_data'
-    resourcePaths = ['/home/shoe/Downloads/gtd_14to17_0718dist.xlsx']
-    about = {
-        'datasetName': 'Global Terrorism Database 2014-2017',
-        'license': 'National Consortium for the Study of Terrorism and Responses to Terrorism (START), University of Maryland. (2018). The Global Terrorism Database (GTD) [Data file]. Retrieved from https://www.start.umd.edu/gtd',
-        'description': 'The Global Terrorism Database (GTD) is an open-source database including information on terrorist events around the world from 1970 through 2017 (with annual updates planned for the future).',
-        'datasetVersion': 'July 2018'
-    }
-
-    problem = {
-        'targets': ['success'],
-        "taskType": "regression",
-    }
-    d3m_wrap_dataset(outputPath, resourcePaths, about, problem)

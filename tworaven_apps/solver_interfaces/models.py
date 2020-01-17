@@ -21,16 +21,21 @@ RECEIVE_SCORE_MSG = 'receive_score_msg'
 RECEIVE_PRODUCE_MSG = 'receive_produce_msg'
 RECEIVE_ERROR_MSG = 'receive_error_msg'
 
+DEBUG_MODE = False
+
 
 def get_metric(specification):
     if specification['metric'] == "ACCURACY":
         return sklearn.metrics.accuracy_score
     if specification['metric'] == "PRECISION":
-        return sklearn.metrics.precision_score
+        return lambda actual, predicted: sklearn.metrics.precision_score(
+            actual, predicted, positive_label=specification.get('positiveLabel', 1))
     if specification['metric'] == "RECALL":
-        return sklearn.metrics.recall_score
+        return lambda actual, predicted: sklearn.metrics.recall_score(
+            actual, predicted, positive_label=specification.get('positiveLabel', 1))
     if specification['metric'] == "F1":
-        return sklearn.metrics.f1_score
+        return lambda actual, predicted: sklearn.metrics.f1_score(
+            actual, predicted, positive_label=specification.get('positiveLabel', 1))
     if specification['metric'] == "F1_MICRO":
         return lambda actual, predicted: sklearn.metrics.f1_score(actual, predicted, average="micro")
     if specification['metric'] == "F1_MACRO":
