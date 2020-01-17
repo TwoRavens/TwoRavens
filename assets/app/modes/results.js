@@ -1997,6 +1997,7 @@ export let prepareResultsDatasets = async (problem, solverId) => {
     problem.datasetPathsManipulated = problem.datasetPathsManipulated || {};
     problem.selectedSolutions[solverId] = problem.selectedSolutions[solverId] || [];
 
+    // DEBUG_MODE TAGGED (set thinking to false)
     problem.solverState[solverId] = {thinking: true};
     problem.solverState[solverId].message = 'preparing partials data';
     m.redraw();
