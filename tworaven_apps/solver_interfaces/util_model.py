@@ -719,7 +719,6 @@ class ModelTwoRavens(Model):
             #     dataframe_rolling=dataframe,
             #     horizon=horizon)[:len(dataframe) - horizon + 1]
 
-
         elif self.task in ['CLASSIFICATION', 'REGRESSION']:
             # TODO: respect configuration on holdout vs cross-validation, do refitting, etc.
             if self.task == 'CLASSIFICATION':
