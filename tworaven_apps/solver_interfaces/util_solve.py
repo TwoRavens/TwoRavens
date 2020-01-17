@@ -5,12 +5,14 @@ from tworaven_apps.solver_interfaces.util_search import (
     SearchTPOT,
     SearchLudwig,
     SearchMLJarSupervised,
-    SearchMLBox
-)
+    SearchMLBox,
+    SearchTwoRavens)
 
 
 class Solve(object):
-    def __init__(self, system, specification, callback_found, system_params=None, search_id=None):
+    def __init__(self, system, specification,
+                 callback_found: str, callback_arguments=None,
+                 system_params=None, search_id=None):
         self.system = system
         self.specification = specification
         self.system_params = system_params or {}
@@ -21,11 +23,13 @@ class Solve(object):
             'caret': SearchCaret,
             'ludwig': SearchLudwig,
             'mljar-supervised': SearchMLJarSupervised,
-            'mlbox': SearchMLBox
+            'mlbox': SearchMLBox,
+            'two-ravens': SearchTwoRavens
         }[system](
-            self.specification['search'],
-            self.system_params,
-            callback_found,
+            specification=self.specification['search'],
+            callback_found=callback_found,
+            callback_arguments=callback_arguments,
+            system_params=self.system_params,
             search_id=search_id)
 
     def run(self):
