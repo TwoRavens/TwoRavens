@@ -2012,7 +2012,8 @@ export let prepareResultsDatasets = async (problem, solverId) => {
     try {
         if (!app.materializeManipulationsPromise[problem.problemId])
             app.materializeManipulationsPromise[problem.problemId] = app.materializeManipulations(problem, [
-                ...(problem.outOfSampleSplit ? ['train', 'test'] : ['all']),
+                ...(problem.splitOptions.outOfSampleSplit ? ['train', 'test'] : []),
+                'all',
                 'partials'
             ]);
         await app.materializeManipulationsPromise[problem.problemId];

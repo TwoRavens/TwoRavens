@@ -1875,7 +1875,8 @@ export let materializeManipulations = async (problem, schemaIds) => {
                 problem.datasetSchemasManipulated[schemaId] = metadata_path;
                 problem.datasetPathsManipulated[schemaId] = data_path;
                 problem.datasetColumnNames = column_names;
-            }))).then(() => problem.useManipulations = true)
+            })))
+        .then(() => problem.useManipulations = true)
 };
 
 // materializing partials may only happen once per problem, all calls wait for same response
@@ -1977,6 +1978,13 @@ export let materializeTrainTest = async problem => {
 
             temporal_variable: temporalVariables[0],
             nominal_variables: getNominalVariables(problem),
+
+            keep_variables: [
+                ...problem.targets,
+                ...getPredictorVariables(problem),
+                ...temporalVariables,
+                ...problem.tags.indexes
+            ],
             dataset_schema: problem.datasetSchemas.all,
             dataset_path: problem.datasetPaths.all
         }
