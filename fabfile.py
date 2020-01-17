@@ -83,7 +83,7 @@ def make_d3m_configs_from_files_multiuser_test():
 
 @task
 def make_d3m_configs_from_files_multiuser_test_limited():
-    """11/2019 Make configs from /ravens_volume and loads them to db
+    """1/2020 Make configs from /ravens_volume and loads them to db
     Also make the input/output directories 1-level higher than usual
     """
     clear_d3m_configs()
@@ -93,18 +93,32 @@ def make_d3m_configs_from_files_multiuser_test_limited():
 
     params = dict(is_multi_dataset_demo=True)
 
+
+    selected_datatsets = [#'05_incarceration',
+                          #'10_state_immigration',
+                          'TR13_Ethiopia_Health',
+                          'TR31_PRIO_GRID',
+                          '185_baseball',
+                          '196_autoMpg',
+                          # 'LL1_PHEM_weeklyData_malnutrition',
+                          'DA_poverty_estimation']
+
+    # -------------------------------
+    # Check if selected datasets are
+    # set by an env variable
+    # -------------------------------
+    env_datasets = os.environ.get(cstatic.TEST_DATASETS, None)
+    if env_datasets:
+        env_datasets = [x.strip()
+                        for x in env_datasets.split()
+                        if len(x.strip()) > 0]
+        if env_datasets:
+            selected_datatsets = env_datasets
+
     # Names of directories of datasets that should be available to users
     #   - This can also be updated in the admin
     #
-    params[cstatic.SELECTED_NAME_LIST] = [#'05_incarceration',
-                                          #'10_state_immigration',
-                                          'TR13_Ethiopia_Health',
-                                          'TR31_PRIO_GRID',
-                                          '185_baseball',
-                                          '196_autoMpg',
-                                          # 'LL1_PHEM_weeklyData_malnutrition',
-                                          'DA_poverty_estimation',
-                                          ]
+    params[cstatic.SELECTED_NAME_LIST] = selected_datatsets
 
     loader = EnvConfigLoader.make_d3m_test_configs_env_based(\
                     '/ravens_volume/test_data',
