@@ -1548,87 +1548,64 @@ export let mutateNodes = problem => (state, context) => {
 };
 
 export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Targets'].includes(pebble) ? [] : [
-    problem.tags.loose.includes(pebble) && {
-        id: 'Loose',
-        name: 'Loose',
-        attrs: {fill: common.selVarColor},
-        onclick: d => {
-            setGroup(problem, undefined, d);
-        }
-    },
-    problem.predictors.includes(pebble) && {
-        id: 'Predictor',
-        name: 'Predictor',
+    {
+        id: 'Group',
+        name: 'Group',
         attrs: {fill: common.gr1Color},
-        onclick: d => {
-            setGroup(problem, problem.predictors.includes(d) ? 'Loose' : 'Predictors', d);
-            forceDiagramState.setSelectedPebble(d);
-            app.resetPeek();
-        }
+        children: [
+            {
+                id: 'Predictor',
+                name: 'Predictor',
+                attrs: {fill: common.gr1Color},
+                onclick: d => {
+                    setGroup(problem, problem.predictors.includes(d) ? 'Loose' : 'Predictors', d);
+                    forceDiagramState.setSelectedPebble(d);
+                    app.resetPeek();
+                }
+            },
+            {
+                id: 'Target',
+                name: 'Target',
+                attrs: {fill: common.gr2Color},
+                onclick: d => {
+                    setGroup(problem, problem.targets.includes(d) ? 'Loose' : 'Targets', d);
+                    forceDiagramState.setSelectedPebble(d);
+                    app.resetPeek();
+                }
+            },
+        ]
     },
-    problem.targets.includes(pebble) && {
-        id: 'Target',
-        name: 'Target',
-        attrs: {fill: common.gr2Color},
-        onclick: d => {
-            setGroup(problem, problem.targets.includes(d) ? 'Loose' : 'Targets', d);
-            forceDiagramState.setSelectedPebble(d);
-            app.resetPeek();
-        }
-    },
-    app.getNominalVariables(problem).includes(pebble) && {
-        id: 'Nominal',
-        name: 'Nominal',
+    {
+        id: 'GroupLabel',
+        name: 'Structural',
         attrs: {fill: common.nomColor},
-        onclick: d => setLabel(problem, 'nominal', d)
-    },
-    problem.tags.crossSection.includes(pebble) && {
-        id: 'Cross',
-        name: 'Cross Sectional',
-        attrs: {fill: common.csColor},
-        onclick: d => setLabel(problem, 'crossSection', d)
-    },
-    problem.tags.location.includes(pebble) && {
-        id: 'Location',
-        name: 'Location',
-        attrs: {fill: common.locationColor},
-        onclick: d => setLabel(problem, 'location', d)
-    },
-    problem.tags.boundary.includes(pebble) && {
-        id: 'Boundary',
-        name: 'Boundary',
-        attrs: {fill: common.boundaryColor},
-        onclick: d => setLabel(problem, 'boundary', d)
-    },
-    problem.tags.time.includes(pebble) && {
-        id: 'Time',
-        name: 'Time',
-        attrs: {fill: common.timeColor},
-        onclick: d => setLabel(problem, 'time', d)
-    },
-    problem.tags.weights.includes(pebble) && {
-        id: 'Weight',
-        name: 'Weight',
-        attrs: {fill: common.weightColor},
-        onclick: d => setLabel(problem, 'weights', d)
-    },
-    problem.tags.privileged.includes(pebble) && {
-        id: 'Privileged',
-        name: 'Privileged',
-        attrs: {fill: common.privilegedColor},
-        onclick: d => setLabel(problem, 'privileged', d)
-    },
-    problem.tags.exogenous.includes(pebble) && {
-        id: 'Exogenous',
-        name: 'Exog',
-        attrs: {fill: common.exogenousColor},
-        onclick: d => setLabel(problem, 'exogenous', d)
-    },
-    problem.tags.indexes.includes(pebble) && {
-        id: 'Index',
-        name: 'Index',
-        attrs: {fill: common.weightColor},
-        onclick: d => setLabel(problem, 'indexes', d)
+        onclick: forceDiagramState.setSelectedPebble,
+        children: [
+            {
+                id: 'Nominal',
+                name: 'Nominal',
+                attrs: {fill: common.nomColor},
+                onclick: d => setLabel(problem, 'nominal', d)
+            },
+            {
+                id: 'Cross',
+                name: 'Cross',
+                attrs: {fill: common.csColor},
+                onclick: d => setLabel(problem, 'crossSection', d)
+            },
+            {
+                id: 'Time',
+                name: 'Time',
+                attrs: {fill: common.timeColor},
+                onclick: d => setLabel(problem, 'time', d)
+            },
+            {
+                id: 'Exogenous',
+                name: 'Exog',
+                attrs: {fill: common.exogenousColor},
+                onclick: d => setLabel(problem, 'exogenous', d)
+            }
+        ]
     }
 ].filter(_ => _);
 
