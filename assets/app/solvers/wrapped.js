@@ -45,13 +45,25 @@ let SPEC_search = problem => ({
 });
 
 // GRPC_ProblemDescription
-let SPEC_problem = problem => ({
+export let SPEC_problem = problem => ({
     "name": problem.problemId,
+    "taskSubtype": app.d3mTaskSubtype[problem.subTask],
+    "taskType": app.d3mTaskType[problem.task],
+
+    // structural variables
+    "indexes": problem.tags.indexes,
+    "crossSection": problem.tags.crossSection,
+    "location": problem.tags.location,
+    "boundary": problem.tags.boundary,
+    "time": problem.tags.time,
+    "weights": problem.tags.weights, // singleton list
+    "privileged": problem.tags.privileged,
+
     "targets": problem.targets,
     "predictors": app.getPredictorVariables(problem),
-    "categorical": app.getNominalVariables(problem),
-    "taskSubtype": app.d3mTaskSubtype[problem.subTask],
-    "taskType": app.d3mTaskType[problem.task]
+
+    // data types
+    "categorical": app.getNominalVariables(problem)
 });
 
 let SPEC_configuration = problem => ({

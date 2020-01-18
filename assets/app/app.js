@@ -29,7 +29,7 @@ import {getClearWorkspacesLink, clearWorkpacesAndReloadPage} from "./utils";
 
 import {search, setDatamartDefaults} from "./datamart/Datamart";
 import {setConstraintMenu} from "./manipulations/manipulate";
-import {keywords} from "d3/build/package";
+import {SPEC_problem} from './solvers/wrapped';
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -1170,6 +1170,7 @@ let buildDefaultProblem = problemDoc => {
             randomSeed: problemDoc.inputs.dataSplits.randomSeed,
             splitsFile: undefined,
             splitsDir: undefined,
+            maxRecordCount: 50000
         }, problemDoc.splitOptions || {}),
 
         searchOptions: Object.assign({
@@ -1491,6 +1492,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                                 randomSeed: undefined,
                                 splitsFile: undefined,
                                 splitsDir: undefined,
+                                maxRecordCount: 50000
                             },
                             searchOptions: {
                                 timeBoundSearch: undefined,
@@ -1835,10 +1837,8 @@ let loadPredictorDomains = async problem => {
     }, {})
 };
 
-
-export let materializeManipulationsPromise = {};
-export let materializeManipulations = async (problem, schemaIds) => {
-
+// returns true if the user actions necessitate writing out a new dataset before solving
+export let needsManipulationRewritePriorToSolve = problem => {
     let newNominalVars = new Set(getNominalVariables(problem));
     Object.keys(variableSummaries)
         .filter(variable => variableSummaries[variable].numchar === 'character')
@@ -1848,24 +1848,23 @@ export let materializeManipulations = async (problem, schemaIds) => {
 
     let hasManipulation = (workspace.raven_config.hardManipulations.length + problem.manipulations.length) > 0;
 
-    let needsDatasetRewrite = hasManipulation || hasNominalCast;
-    if (!needsDatasetRewrite) {
+    return hasManipulation || hasNominalCast;
+};
+
+
+export let materializeManipulationsPromise = {};
+export let materializeManipulations = async (problem, schemaIds) => {
+    if (!needsManipulationRewritePriorToSolve(problem)) {
         problem.datasetColumnNames = workspace.raven_config.variablesInitial;
         return;
     }
 
-    console.log('rewrite', Object.keys(problem.datasetSchemas));
-    console.log(Object.keys(problem.datasetSchemasManipulated));
     // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
     return Promise.all(Object.keys(problem.datasetSchemas)
         // only apply manipulations to a preset list of schema ids
         .filter(schemaId => schemaIds.includes(schemaId))
         // ignore schemas with manipulations
         .filter(schemaId => !(schemaId in problem.datasetSchemasManipulated))
-        .map(schemaId => {
-            console.log(schemaId);
-            return schemaId
-        })
         // build manipulated dataset for schema
         .map(schemaId => buildDatasetUrl(
             problem, undefined, problem.datasetPaths[schemaId],
@@ -1969,24 +1968,13 @@ export let materializeTrainTest = async problem => {
         method: 'POST',
         url: D3M_SVC_URL + '/get-train-test-split',
         data: {
-            do_split: problem.splitOptions.outOfSampleSplit,
-            train_test_ratio: problem.splitOptions.trainTestRatio,
-            stratified: problem.splitOptions.stratified,
-            shuffle: problem.splitOptions.shuffle,
-            random_seed: problem.splitOptions.randomSeed,
-            splits_file_path: problem.splitOptions.splitsDir && problem.splitOptions.splitsFile && (problem.splitOptions.splitsDir + '/' + problem.splitOptions.splitsFile),
-
-            temporal_variable: temporalVariables[0],
-            nominal_variables: getNominalVariables(problem),
-
-            keep_variables: [
-                ...problem.targets,
-                ...getPredictorVariables(problem),
-                ...temporalVariables,
-                ...problem.tags.indexes
-            ],
+            split_options: problem.splitOptions,
             dataset_schema: problem.datasetSchemas.all,
-            dataset_path: problem.datasetPaths.all
+            dataset_path: problem.datasetPaths.all,
+            problem: SPEC_problem(problem),
+            // if not manipulated, then don't rewrite datasetDoc with new metadata
+            // new datasetDoc will come from the translateDatasetDoc function
+            update_roles: !needsManipulationRewritePriorToSolve(problem)
         }
     });
 
@@ -2109,6 +2097,7 @@ export function discovery(problems) {
                 randomSeed: undefined,
                 splitsFile: undefined,
                 splitsDir: undefined,
+                maxRecordCount: 50000
             },
             searchOptions: {
                 timeBoundSearch: undefined,

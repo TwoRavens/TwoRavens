@@ -902,7 +902,16 @@ export let rightpanel = () => {
                             value: selectedProblem.splitOptions.splitsFile,
                             onblur: !isLocked && (value => selectedProblem.splitOptions.splitsFile = value),
                             style: {'margin-bottom': '1em'}
-                        })
+                        }),
+                        m('label', 'Maximum record count per data split'),
+                        m(TextField, {
+                            id: 'maxRecordCountOption',
+                            disabled: isLocked,
+                            value: selectedProblem.splitOptions.maxRecordCount || '',
+                            oninput: !isLocked && (value => selectedProblem.splitOptions.maxRecordCount = value.replace(/[^\d.-]/g, '')),
+                            onblur: !isLocked && (value => selectedProblem.splitOptions.maxRecordCount = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
+                            style: {'margin-bottom': '1em'}
+                        }),
                     ]),
                 m(Subpanel, {
                         header: 'Search Options',

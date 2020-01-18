@@ -192,8 +192,60 @@ def stream_and_store_results(raven_json_str, stored_request_id,
 @celery_app.task()
 def split_dataset(configuration, workspace):
 
+    split_options = configuration.get('split_options', {})
+    problem = configuration.get('problem')
+
     dataset_schema = json.load(open(configuration['dataset_schema'], 'r'))
     resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
+
+    keep_variables = None
+    # rewrite datasetDoc in output datasets if new problem metadata is supplied
+    if problem:
+        keep_variables = list({
+            problem.get('index', 'd3mIndex'),
+            *problem['predictors'],
+            *problem['targets']
+        })
+        all_variables = pd.read_csv(configuration['dataset_path'], nrows=1).columns.tolist()
+        # preserve column order, and only keep variables that already existed
+        keep_variables = sorted(list(i for i in keep_variables if i in all_variables), key=lambda x: all_variables.index(x))
+
+        passthrough_roles = [
+            'multiIndex', 'key', 'interval', 'boundingPolygon',
+            'edgeSource', "directedEdgeSource", "undirectedEdgeSource", "multiEdgeSource", "simpleEdgeSource",
+            "edgeTarget", "directedEdgeTarget", "undirectedEdgeTarget", "multiEdgeTarget", "simpleEdgeTarget"
+        ]
+
+        map_roles = {
+            "indexes": 'index',
+            'predictors': 'attribute',
+            'targets': 'suggestedTarget',
+            'crossSection': 'suggestedGroupingKey',
+            'location': 'locationIndicator',
+            'boundary': 'boundaryIndicator',
+            'time': 'timeIndicator',
+            'weights': 'instanceWeight',
+            'privileged': 'suggestedPriviligedData'
+        }
+
+        def update_roles(prev_roles, col_name):
+            roles = [i for i in prev_roles if i in passthrough_roles]
+
+            for role_name in map_roles:
+                if col_name in problem[role_name]:
+                    roles.append(map_roles[role_name])
+
+            return roles
+
+        def update_col_schema(i, col_name):
+            col_schema = next(col_schema for col_schema in resource_schema['columns'] if col_schema['colName'] == col_name)
+            col_schema['colIndex'] = i
+            if configuration.get('update_roles'):
+                col_schema['roles'] = update_roles(col_schema['roles'], col_name)
+            return col_schema
+
+        # modify in place
+        resource_schema['columns'] = [update_col_schema(i, col_name) for i, col_name in enumerate(keep_variables)]
 
     def get_dataset_paths(role):
         dest_dir_info = create_destination_directory(workspace, name=role)
@@ -208,34 +260,38 @@ def split_dataset(configuration, workspace):
 
         return path.join(dest_directory, 'datasetDoc.json'), csv_path
 
-    train_datasetDoc, train_datasetCsv = get_dataset_paths('train')
-    test_datasetDoc, test_datasetCsv = get_dataset_paths('test')
     all_datasetDoc, all_datasetCsv = get_dataset_paths('all')
+    dataset_schemas = {'all': all_datasetDoc}
+    dataset_paths = {'all': all_datasetCsv}
+    dataset_stratified = {}
 
-    dataset_schemas = {
-        'train': train_datasetDoc,
-        'test': test_datasetDoc,
-        'all': all_datasetDoc
-    }
+    if split_options.get('outOfSampleSplit'):
+        train_datasetDoc, train_datasetCsv = get_dataset_paths('train')
+        test_datasetDoc, test_datasetCsv = get_dataset_paths('test')
 
-    dataset_paths = {
-        'train': train_datasetCsv,
-        'test': test_datasetCsv,
-        'all': all_datasetCsv
-    }
+        dataset_schemas = {
+            **dataset_schemas,
+            'train': train_datasetDoc,
+            'test': test_datasetDoc
+        }
 
-    dataset_stratified = {
-        'train': configuration.get('stratified'),
-        'test': configuration.get('stratified')
-    }
+        dataset_paths = {
+            **dataset_schemas,
+            'train': train_datasetCsv,
+            'test': test_datasetCsv,
+        }
+
+        dataset_stratified = {
+            'train': split_options.get('stratified'),
+            'test': split_options.get('stratified')
+        }
 
     DEFAULT_RATIO = .7
-    train_test_ratio = configuration.get('train_test_ratio', DEFAULT_RATIO)
+    train_test_ratio = split_options.get('trainTestRatio', DEFAULT_RATIO)
     if not (0 >= train_test_ratio > 1):
         train_test_ratio = DEFAULT_RATIO
 
-    random_seed = configuration.get('random_seed', 0)
-    # temporal_variable = configuration.get('temporal_variable')
+    random_seed = split_options.get('randomSeed', 0)
 
     with open(configuration['dataset_path'], 'r') as infile:
         header_line = next(infile)
@@ -249,8 +305,8 @@ def split_dataset(configuration, workspace):
 
     # by default, the split is trivially forever None, which exhausts all zips
     splits_file_generator = iter(lambda: None, 1)
-    splits_file_path = configuration.get('splits_file_path')
-    if splits_file_path:
+    if split_options.get('splitsDir') and split_options.get('splitsFile'):
+        splits_file_path = f"{split_options['splitsDir']}/{split_options['splitsFile']}"
         splits_file_generator = pd.read_csv(splits_file_path, chunksize=10 ** 5)
 
     # TODO: adjust chunksize based on number of columns
@@ -259,73 +315,78 @@ def split_dataset(configuration, workspace):
         # rows with NaN values become object rows, which may contain multiple types. The NaN values become empty strings
         # this converts '' to np.nan in non-nominal columns, so that nan may be dropped
         # perhaps in a future version of d3m, the dataset loader could use pandas extension types instead of objects
-        # nominals = configuration.get('nominals', [])
+        # nominals = problem.get('categorical', [])
         # for column in [col for col in dataframe.columns.values if col not in nominals]:
         #     dataframe[column].replace('', np.nan, inplace=True)
         #
         # dataframe.dropna(inplace=True)
         # dataframe.reset_index(drop=True, inplace=True)
 
-        if dataframe_split:
-            train_indices = set(dataframe_split[dataframe_split['type'] == 'TRAIN']['d3mIndex'].tolist())
-            test_indices = set(dataframe_split[dataframe_split['type'] == 'TEST']['d3mIndex'].tolist())
-
-            splits = {
-                'train': dataframe[dataframe['d3mIndex'].astype(int).isin(train_indices)],
-                'test': dataframe[dataframe['d3mIndex'].astype(int).isin(test_indices)],
-                'stratified': False
-            }
-
-        # TODO: chunked temporal splitting
-        # split dataset along temporal variable
-        # elif temporal_variable:
-        #     num_test_records = math.ceil(train_test_ratio * len(dataframe))
-        #     sorted_index = [
-        #         x for _, x in sorted(
-        #             zip(np.array(dataframe[temporal_variable]), np.arange(0, len(dataframe))),
-        #             # TODO: more robust sorting for temporal data (parse to datetime?)
-        #             key=lambda pair: pair[0])
-        #     ]
-        #     splits = {
-        #         'train': dataframe.iloc[sorted_index[:-num_test_records]],
-        #         'test': dataframe.iloc[sorted_index[-num_test_records:]],
-        #         'stratified': False
-        #     }
-
-        else:
-            shuffle = configuration.get('shuffle', True)
-            stratified = configuration.get('stratified')
-
-            def run_split():
-                try:
-                    dataframe_train, dataframe_test = train_test_split(
-                        dataframe,
-                        train_size=train_test_ratio,
-                        shuffle=shuffle,
-                        stratified=stratified,
-                        random_state=random_seed)
-                    return {'train': dataframe_train, 'test': dataframe_test, 'stratified': stratified}
-                except TypeError:
-                    dataframe_train, dataframe_test = train_test_split(
-                        dataframe,
-                        shuffle=shuffle,
-                        train_size=train_test_ratio,
-                        random_state=random_seed)
-                    return {'train': dataframe_train, 'test': dataframe_test, 'stratified': False}
-
-            splits = run_split()
+        # subset to variables that are relevant to the problem
+        if keep_variables:
+            dataframe = dataframe[keep_variables]
 
         # max count of each split ['all', 'test', 'train']
-        max_count = 5e4
+        max_count = int(split_options.get('maxRecordCount', 5e4))
         chunk_count = len(dataframe)
         sample_count = int(max_count / row_count * chunk_count)
 
-        for split_name in ['train', 'test']:
-            if sample_count < len(splits[split_name]):
-                splits[split_name] = splits[split_name].sample(sample_count)
+        if split_options.get('outOfSampleSplit'):
+            if dataframe_split:
+                train_indices = set(dataframe_split[dataframe_split['type'] == 'TRAIN']['d3mIndex'].tolist())
+                test_indices = set(dataframe_split[dataframe_split['type'] == 'TEST']['d3mIndex'].tolist())
 
-            splits[split_name].to_csv(dataset_paths[split_name], mode='a', header=False, index=False)
-            dataset_stratified[split_name] = dataset_stratified[split_name] and splits['stratified']
+                splits = {
+                    'train': dataframe[dataframe['d3mIndex'].astype(int).isin(train_indices)],
+                    'test': dataframe[dataframe['d3mIndex'].astype(int).isin(test_indices)],
+                    'stratified': False
+                }
+
+            # TODO: chunked temporal splitting
+            # split dataset along temporal variable
+            # elif temporal_variable:
+            #     num_test_records = math.ceil(train_test_ratio * len(dataframe))
+            #     sorted_index = [
+            #         x for _, x in sorted(
+            #             zip(np.array(dataframe[temporal_variable]), np.arange(0, len(dataframe))),
+            #             # TODO: more robust sorting for temporal data (parse to datetime?)
+            #             key=lambda pair: pair[0])
+            #     ]
+            #     splits = {
+            #         'train': dataframe.iloc[sorted_index[:-num_test_records]],
+            #         'test': dataframe.iloc[sorted_index[-num_test_records:]],
+            #         'stratified': False
+            #     }
+
+            else:
+                shuffle = split_options.get('shuffle', True)
+                stratified = split_options.get('stratified')
+
+                def run_split():
+                    try:
+                        dataframe_train, dataframe_test = train_test_split(
+                            dataframe,
+                            train_size=train_test_ratio,
+                            shuffle=shuffle,
+                            stratified=stratified,
+                            random_state=random_seed)
+                        return {'train': dataframe_train, 'test': dataframe_test, 'stratified': stratified}
+                    except TypeError:
+                        dataframe_train, dataframe_test = train_test_split(
+                            dataframe,
+                            shuffle=shuffle,
+                            train_size=train_test_ratio,
+                            random_state=random_seed)
+                        return {'train': dataframe_train, 'test': dataframe_test, 'stratified': False}
+
+                splits = run_split()
+
+            for split_name in ['train', 'test']:
+                if sample_count < len(splits[split_name]):
+                    splits[split_name] = splits[split_name].sample(sample_count)
+
+                splits[split_name].to_csv(dataset_paths[split_name], mode='a', header=False, index=False)
+                dataset_stratified[split_name] = dataset_stratified[split_name] and splits['stratified']
 
         if sample_count < chunk_count:
             dataframe = dataframe.sample(sample_count)
