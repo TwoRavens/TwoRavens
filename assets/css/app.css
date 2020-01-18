@@ -443,6 +443,9 @@ tr.item-lineout{
 .item-privileged {
     border: solid #6F29A7;
 }
+.item-exogenous {
+    border: solid #C03D3E;
+}
 .item-index {
     border: solid #797478;
 }

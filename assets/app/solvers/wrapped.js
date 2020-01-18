@@ -58,6 +58,7 @@ export let SPEC_problem = problem => ({
     "time": problem.tags.time,
     "weights": problem.tags.weights, // singleton list
     "privileged": problem.tags.privileged,
+    "exogenous": problem.tags.exogenous,
 
     "targets": problem.targets,
     "predictors": app.getPredictorVariables(problem),

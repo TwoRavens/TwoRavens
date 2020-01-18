@@ -178,6 +178,14 @@ export class CanvasModel {
                         width: 1
                     },
                     {
+                        id: "exogenousButton",
+                        vars: selectedProblem.tags.exogenous,
+                        name: 'Exogenous',
+                        borderColor: common.exogenousColor,
+                        innerColor: 'white',
+                        width: 1
+                    },
+                    {
                         id: "indexButton",
                         vars: selectedProblem.tags.indexes,
                         name: 'Index',
@@ -296,6 +304,7 @@ export let leftpanel = forceData => {
                             'item-time': selectedProblem.tags.time,
                             'item-weight': selectedProblem.tags.weights,
                             'item-privileged': selectedProblem.tags.privileged,
+                            'item-exogenous': selectedProblem.tags.exogenous,
                             'item-index': selectedProblem.tags.indexes,
                             'item-matched': matchedVariables
                         },
@@ -558,103 +567,106 @@ export let leftpanel = forceData => {
                     shown: summaryPebbles.length === 1 || undefined
                 },
 
-                m(Table, {
-                    attrsAll: {class: 'table-sm'},
-                    data: [
-                        {
-                            name: 'Predictor', active: selectedProblem.predictors.includes(variableName),
-                            onclick: () => setGroup(selectedProblem, selectedProblem.predictors.includes(variableName) ? 'Loose' : 'Predictors', variableName),
-                            title: 'Predictor variables are used to estimate the target variables.'
-                        },
-                        {
-                            name: 'Target', active: selectedProblem.targets.includes(variableName),
-                            onclick: () => setGroup(selectedProblem, selectedProblem.targets.includes(variableName) ? 'Loose' : 'Targets', variableName),
-                            title: 'Target variables are the variables of interest.'
-                        },
-                        {
-                            name: 'Loose', active: selectedProblem.tags.loose.includes(variableName),
-                            onclick: () => setGroup(selectedProblem, selectedProblem.tags.loose.includes(variableName) ? undefined : 'Loose', variableName),
-                            title: 'Loose variables are in the modeling space, but are not used in the model.'
-                        },
-                        {
-                            name: 'Nominal', active: selectedProblem.tags.nominal.includes(variableName),
-                            onclick: () => setLabel(selectedProblem, 'nominal', variableName),
-                            title: 'Nominal variables are text-based, and handled similarly to categorical variables.'
-                        },
-                        {
-                            name: 'Cross Section', active: selectedProblem.tags.crossSection.includes(variableName),
-                            onclick: () => setLabel(selectedProblem, 'crossSection', variableName),
-                            title: 'Cross sectional variables group observations into treatments.'
-                        },
-                        {
-                            name: 'Boundary', active: selectedProblem.tags.boundary.includes(variableName),
-                            onclick: () => setLabel(selectedProblem, 'boundary', variableName),
-                            title: 'Boundary variables are a string vector of numeric data points.'
-                        },
-                        {
-                            name: 'Location', active: selectedProblem.tags.location.includes(variableName),
-                            onclick: () => setLabel(selectedProblem, 'location', variableName),
-                            title: 'Location variables indicate a geospatial location.'
-                        },
-                        {
-                            name: 'Time', active: selectedProblem.tags.time.includes(variableName),
-                            onclick: () => setLabel(selectedProblem, 'time', variableName),
-                            title: m('div', {style: {'text-align': 'left', 'margin-left': '.5em'}},
-                                'Time variables indicate a temporal location.', m('br'), bold('Time Granularity:'),
-                                m('br'),
-                                m(TextField, {
-                                    id: 'timeGranularityValueTextField',
-                                    value: (selectedProblem.timeGranularity[variableName] || {}).value || '',
-                                    oninput: value => {
+                [
+                    {
+                        name: 'Predictor', active: selectedProblem.predictors.includes(variableName),
+                        onclick: () => setGroup(selectedProblem, selectedProblem.predictors.includes(variableName) ? 'Loose' : 'Predictors', variableName),
+                        title: 'Predictor variables are used to estimate the target variables.'
+                    },
+                    {
+                        name: 'Target', active: selectedProblem.targets.includes(variableName),
+                        onclick: () => setGroup(selectedProblem, selectedProblem.targets.includes(variableName) ? 'Loose' : 'Targets', variableName),
+                        title: 'Target variables are the variables of interest.'
+                    },
+                    {
+                        name: 'Loose', active: selectedProblem.tags.loose.includes(variableName),
+                        onclick: () => setGroup(selectedProblem, selectedProblem.tags.loose.includes(variableName) ? undefined : 'Loose', variableName),
+                        title: 'Loose variables are in the modeling space, but are not used in the model.'
+                    },
+                    {
+                        name: 'Nominal', active: selectedProblem.tags.nominal.includes(variableName),
+                        onclick: () => setLabel(selectedProblem, 'nominal', variableName),
+                        title: 'Nominal variables are text-based, and handled similarly to categorical variables.'
+                    },
+                    {
+                        name: 'Cross Section', active: selectedProblem.tags.crossSection.includes(variableName),
+                        onclick: () => setLabel(selectedProblem, 'crossSection', variableName),
+                        title: 'Cross sectional variables group observations into treatments.'
+                    },
+                    {
+                        name: 'Boundary', active: selectedProblem.tags.boundary.includes(variableName),
+                        onclick: () => setLabel(selectedProblem, 'boundary', variableName),
+                        title: 'Boundary variables are a string vector of numeric data points.'
+                    },
+                    {
+                        name: 'Location', active: selectedProblem.tags.location.includes(variableName),
+                        onclick: () => setLabel(selectedProblem, 'location', variableName),
+                        title: 'Location variables indicate a geospatial location.'
+                    },
+                    {
+                        name: 'Time', active: selectedProblem.tags.time.includes(variableName),
+                        onclick: () => setLabel(selectedProblem, 'time', variableName),
+                        title: m('div', {style: {'text-align': 'left', 'margin-left': '.5em'}},
+                            'Time variables indicate a temporal location.', m('br'), bold('Time Granularity:'),
+                            m('br'),
+                            m(TextField, {
+                                id: 'timeGranularityValueTextField',
+                                value: (selectedProblem.timeGranularity[variableName] || {}).value || '',
+                                oninput: value => {
+                                    selectedProblem.timeGranularity[variableName] = selectedProblem.timeGranularity[variableName] || {};
+                                    selectedProblem.timeGranularity[variableName].value = value.replace(/[^\d.-]/g, '')
+                                },
+                                onblur: value => selectedProblem.timeGranularity[variableName].value =
+                                    Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined,
+                                style: {
+                                    'margin-bottom': '1em',
+                                    width: 'calc(100% - 150px)',
+                                    display: 'inline-block'
+                                }
+                            }),
+                            m('div', {style: {display: 'inline-block', width: '92px'}},
+                                m(Dropdown, {
+                                    id: 'timeGranularityUnitsDropdown',
+                                    items: ["seconds", "minutes", "days", "weeks", "years", "unspecified"],
+                                    activeItem: (selectedProblem.timeGranularity[variableName] || {}).units || 'unspecified',
+                                    onclickChild: granularity => {
                                         selectedProblem.timeGranularity[variableName] = selectedProblem.timeGranularity[variableName] || {};
-                                        selectedProblem.timeGranularity[variableName].value = value.replace(/[^\d.-]/g, '')
-                                    },
-                                    onblur: value => selectedProblem.timeGranularity[variableName].value =
-                                        Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined,
-                                    style: {
-                                        'margin-bottom': '1em',
-                                        width: 'calc(100% - 150px)',
-                                        display: 'inline-block'
+                                        selectedProblem.timeGranularity[variableName].units = granularity
                                     }
-                                }),
-                                m('div', {style: {display: 'inline-block', width: '92px'}},
-                                    m(Dropdown, {
-                                        id: 'timeGranularityUnitsDropdown',
-                                        items: ["seconds", "minutes", "days", "weeks", "years", "unspecified"],
-                                        activeItem: (selectedProblem.timeGranularity[variableName] || {}).units || 'unspecified',
-                                        onclickChild: granularity => {
-                                            selectedProblem.timeGranularity[variableName] = selectedProblem.timeGranularity[variableName] || {};
-                                            selectedProblem.timeGranularity[variableName].units = granularity
-                                        }
-                                    }))
-                            ),
-                        },
-                        {
-                            name: 'Weight', active: selectedProblem.tags.weights.includes(variableName),
-                            onclick: () => setLabel(selectedProblem, 'weights', variableName),
-                            title: 'A weight variable indicates the importance of individual observations.'
-                        },
-                        {
-                            name: 'Privileged', active: selectedProblem.tags.privileged.includes(variableName),
-                            onclick: () => setLabel(selectedProblem, 'privileged', variableName),
-                            title: 'A privileged variable may or may not exist in the test set.'
-                        },
-                        {
-                            name: 'Index', active: selectedProblem.tags.indexes.includes(variableName),
-                            onclick: () => setLabel(selectedProblem, 'indexes', variableName),
-                            title: 'An index variable typically has one unique value per observation.'
-                        },
-                    ].map(tag => [
-                        m(Button, {
-                            onclick: tag.onclick,
-                            class: (tag.active ? 'active' : '') + ' btn-sm'
-                        }, tag.name),
-                        m(Popper, {
-                            content: () => tag.title,
-                            popperDuration: 10,
-                        }, m(Icon, {name: 'question'})),
-                    ])
-                }),
+                                }))
+                        ),
+                    },
+                    {
+                        name: 'Weight', active: selectedProblem.tags.weights.includes(variableName),
+                        onclick: () => setLabel(selectedProblem, 'weights', variableName),
+                        title: 'A weight variable indicates the importance of individual observations.'
+                    },
+                    {
+                        name: 'Privileged', active: selectedProblem.tags.privileged.includes(variableName),
+                        onclick: () => setLabel(selectedProblem, 'privileged', variableName),
+                        title: 'A privileged variable may or may not exist in the test set.'
+                    },
+                    {
+                        name: 'Exogenous', active: selectedProblem.tags.exogenous.includes(variableName),
+                        onclick: () => setLabel(selectedProblem, 'exogenous', variableName),
+                        title: 'An exogenous variable is determined outside of the model.'
+                    },
+                    {
+                        name: 'Index', active: selectedProblem.tags.indexes.includes(variableName),
+                        onclick: () => setLabel(selectedProblem, 'indexes', variableName),
+                        title: 'An index variable typically has one unique value per observation.'
+                    },
+                ].map(tag =>
+                    m('div', {
+                        style: {'margin': '0.5em', 'display': 'inline-block', width: 'auto'},
+                    }, m(Popper, {
+                        content: () => tag.title,
+                        popperDuration: 10
+                    }, m(Button, {
+                        style: {width: 'auto'},
+                        onclick: tag.onclick,
+                        class: (tag.active ? 'active' : '') + ' btn-sm'
+                    }, tag.name)))),
 
                 m(VariableSummary, {variable: app.variableSummaries[variableName]})));
     }
@@ -1462,6 +1474,7 @@ export let mutateNodes = problem => (state, context) => {
         time: new Set(problem.tags.time),
         weights: new Set(problem.tags.weights),
         privileged: new Set(problem.tags.privileged),
+        exogenous: new Set(problem.tags.exogenous),
         indexes: new Set(problem.tags.indexes),
         matched: new Set(matchedVariables),
     };
@@ -1476,6 +1489,7 @@ export let mutateNodes = problem => (state, context) => {
         time: 4,
         weights: 4,
         privileged: 4,
+        exogenous: 4,
         indexes: 4,
         matched: 4
     };
@@ -1489,6 +1503,7 @@ export let mutateNodes = problem => (state, context) => {
         time: common.taggedColor,
         weights: common.taggedColor,
         privileged: common.taggedColor,
+        exogenous: common.taggedColor,
         indexes: common.taggedColor,
         matched: common.taggedColor,
         loose: common.taggedColor,
@@ -1502,6 +1517,7 @@ export let mutateNodes = problem => (state, context) => {
         time: common.timeColor,
         weights: common.weightColor,
         privileged: common.privilegedColor,
+        exogenous: common.exogenousColor,
         indexes: common.indexColor,
         matched: common.matchedColor
     };
@@ -1602,6 +1618,12 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
         attrs: {fill: common.privilegedColor},
         onclick: d => setLabel(problem, 'privileged', d)
     },
+    problem.tags.exogenous.includes(pebble) && {
+        id: 'Exogenous',
+        name: 'Exog',
+        attrs: {fill: common.exogenousColor},
+        onclick: d => setLabel(problem, 'exogenous', d)
+    },
     problem.tags.indexes.includes(pebble) && {
         id: 'Index',
         name: 'Index',
@@ -1689,6 +1711,12 @@ let setLabel = (problem, label, name) => {
             app.remove(problem.tags.indexes, name);
         }
         app.toggle(problem.tags.privileged, name);
+    }
+    if (label === 'exogenous') {
+        if (!problem.tags.exogenous.includes(name)) {
+            app.remove(problem.tags.indexes, name);
+        }
+        app.toggle(problem.tags.exogenous, name);
     }
 
     if (label === 'indexes') {

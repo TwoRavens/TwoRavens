@@ -1208,6 +1208,7 @@ let buildDefaultProblem = problemDoc => {
             weights: getTagsByRole('instanceWeight'), // singleton list
             indexes: [...getTagsByRole('index'), ...getTagsByRole('multiIndex')],
             privileged: getTagsByRole('suggestedPrivilegedData'), // singleton list
+            exogenous: [],
             transformed: [],
             loose: [] // variables displayed in the force diagram, but not in any groups
         },
@@ -1524,6 +1525,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                                 weights: [], // singleton list
                                 indexes: ['d3mIndex'],
                                 privileged: [],
+                                exogenous: [],
                                 transformed: [],
                                 loose: [] // variables displayed in the force diagram, but not in any groups
                             },
@@ -2127,6 +2129,7 @@ export function discovery(problems) {
                 location: [],
                 indexes: ['d3mIndex'],
                 privileged: [],
+                exogenoud: [],
                 time: [],
                 nominal: Object.keys(variableSummaries)
                     .filter(variable => variableSummaries[variable].nature === 'nominal'),
