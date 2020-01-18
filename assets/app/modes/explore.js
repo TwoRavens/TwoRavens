@@ -44,7 +44,6 @@ import * as facetheatmap from '../vega-schemas/trivariate/facetheatmap';
 import * as groupedbarnqq from '../vega-schemas/trivariate/groupedbarnqq';
 
 import * as common from "../../common/common";
-import ButtonRadio from "../../common/views/ButtonRadio";
 import Popper from "../../common/views/Popper";
 
 import Button from "../../common/views/Button";
@@ -65,6 +64,28 @@ let wrapCanvas = (...contents) => m('div#canvasExplore', {
     },
     contents
 );
+
+let get_node_label = (x) => {
+    if (app.leftTab === 'Discover') {
+        let exploreProblem = 'problems' in app.workspace.raven_config && app.workspace.raven_config.problems[x];
+        let predictorVariables = app.getPredictorVariables(exploreProblem);
+        let problemText = predictorVariables 
+	    && [exploreProblem.targets.join(','), m(Icon, {style: 'margin:.5em;margin-top:.25em', name: 'arrow-left'}), predictorVariables.join(', ')];
+        return problemText ? [m('b', x), m('p', problemText)] : x;
+    }
+
+    let pos = exploreVariables.indexOf(x);
+    if (pos === -1) {
+	return x;
+    }
+
+    let str = pos === 0 ? 'x' :
+	pos === 1 ? 'y' :
+	pos === 2 ? 'z' :
+	String.fromCharCode(pos + 97);
+    return `${x} (${str})`;
+};
+
 export class CanvasExplore {
     view(vnode) {
         let {variables, variate} = vnode.attrs;
@@ -75,39 +96,19 @@ export class CanvasExplore {
 
 
         if (!variate) return wrapCanvas(
-            m(ButtonRadio, {
-                id: 'exploreButtonBar',
-                attrsAll: {style: {width: '400px'}},
-                attrsButtons: {class: ['btn-sm']},
-                onclick: x => {
-                    setExploreVariate(x);
-                    if (exploreVariate === 'Multivariate') return;
-                    let maxVariables = {
-                        Univariate: 1,
-                        Bivariate: 2,
-                        Trivariate: 3
-                    }[exploreVariate];
-                    exploreVariables = exploreVariables
-                        .slice(Math.max(0, exploreVariables.length - maxVariables));
-                },
-                activeSection: exploreVariate,
-                sections: app.leftTab === 'Discover' ? [{value: 'Problem'}] : [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multivariate'}]
-            }),
+    	    m('span'),
             m(Button, {
                 id: 'exploreGo',
                 class: 'btn-sm btn-success',
                 style: 'margin-left:10px',
                 onclick: () => {
-                    let variate = exploreVariate.toLowerCase();
                     let selected = app.leftTab === 'Discover' ? [app.workspace.raven_config.selectedProblem] : exploreVariables;
-                    let len = selected.length;
-                    if (variate === 'univariate' && len !== 1
-                        || variate === 'problem' && len !== 1
-                        || variate === 'bivariate' && len !== 2
-                        || variate === 'trivariate' && len !== 3
-                        || variate === 'multivariate' && len < 2) {
-                        return;
-                    }
+		    let len = selected.length; 
+		    let variate = app.leftTab === 'Discover' ? 'problem' :
+			len === 1 ? 'univariate' :
+		 	len === 2 ? 'bivariate' :
+			len === 3 ? 'trivariate' :
+			'multivariate';
 
                     // behavioral logging
                     let logParams = {
@@ -136,12 +137,6 @@ export class CanvasExplore {
                         ? app.workspace.raven_config.problems[x].targets[0]
                         : x;
 
-                    let show = exploreVariate === 'Bivariate' || exploreVariate === 'Trivariate';
-                    let [n0, n1, n2] = exploreVariables.map(variable => app.variableSummaries[variable]);
-                    let exploreProblem = 'problems' in app.workspace.raven_config && app.workspace.raven_config.problems[x];
-                    let predictorVariables = app.getPredictorVariables(exploreProblem);
-                    let problemText = predictorVariables && [exploreProblem.targets.join(','), m(Icon, {style: 'margin:.5em;margin-top:.25em', name: 'arrow-left'}), predictorVariables.join(', ')];
-
                     // tile for each variable or problem
                     let tile = m('span#exploreNodeBox', {
                             onclick: _ => {
@@ -151,25 +146,9 @@ export class CanvasExplore {
                                     return;
                                 }
 
-                                if (exploreVariate === 'Multivariate') {
                                     exploreVariables.includes(x)
                                         ? app.remove(exploreVariables, x)
                                         : exploreVariables.push(x);
-                                    return;
-                                }
-
-                                let maxVariables = {
-                                    'Univariate': 1,
-                                    'Bivariate': 2,
-                                    'Trivariate': 3
-                                }[exploreVariate];
-
-                                if (exploreVariables.includes(x)) app.remove(exploreVariables, x);
-                                exploreVariables.push(x);
-                                exploreVariables = exploreVariables
-                                    .slice(Math.max(0, exploreVariables.length - maxVariables));
-                                exploreVariables = [...new Set(exploreVariables)];
-
                             },
                             style: {
                                 // border: '1px solid rgba(0, 0, 0, .2)',
@@ -213,12 +192,7 @@ export class CanvasExplore {
                                     overflow: 'auto'
                                 }
                             },
-                            show && n0 && n0.name === x ? `${x} (x)`
-                                : show && n1 && n1.name === x ? `${x} (y)`
-                                : show && n2 && n2.name === x ? `${x} (z)`
-                                    : app.leftTab === 'Discover' && problemText
-                                        ? [m('b', x), m('p', problemText)]
-                                        : x)
+                            get_node_label(x))
                     );
 
                     if (app.variableSummaries[targetName].labl)
