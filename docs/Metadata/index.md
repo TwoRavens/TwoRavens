@@ -260,7 +260,7 @@ Whether variable appears to represent points in time
 
 When temporal is True, the [format string](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes) if possible
 
-Example: the date value of "2002-03-11" has a format string of "%d/%m/%y"
+Example: the date value of "2002-03-11" has a format string of "%Y-%m-%d"
 
 See [check_time](https://tworavens.github.io/TwoRavens/Metadata/api_docs/type_guess_util.html#check_time) for details
 
