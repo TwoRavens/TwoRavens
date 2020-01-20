@@ -49,7 +49,7 @@ TypeGuessUtil
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Static method, check whether the input column is a time instance, return date format where possible, '?' if the format can not be determined, and None if it is not a time instance.
 
-This does a series of tests for each value in the series to verify the (currently predefined) threshold is met for good/bad matches, then returns the most common match (or None).
+This does a series of tests for each value in the series to verify the (currently predefined) threshold is met for good matches / size sample, then returns the most common match (or None).
 
 1. Sanitize value
 2. If value is an int between 1600 and 2100, is a year
@@ -65,7 +65,7 @@ This does a series of tests for each value in the series to verify the (currentl
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Static method, check whether the input column is a location, return 'US state', 'country', or 'country subdivision' if it is, None otherwise.
 
-This does a series of tests for each value in the series to verify the (currently predefined) threshold is met for good/bad matches, then returns the most common match (or None).
+This does a series of tests for each value in the series to verify the (currently predefined) threshold is met for good matches / size sample, then returns the most common match (or None).
 
 1. Sanitize value
 2. Check if value is a US state using [us](https://github.com/unitedstates/python-us)
