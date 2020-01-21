@@ -400,80 +400,11 @@ def split_dataset(configuration, workspace):
         dataframe.to_csv(dataset_paths['all'], mode='a', header=False, index=False)
         row_count_chunked += len(dataframe)
 
-    if problem['taskType'] == 'FORECASTING' and problem.get('time'):
-        time_variable = problem['time'][0]
-        d3m_granularity_units = {
-            "seconds": "S",
-            "minutes": "T",
-            "days": "D",
-            "weeks": "W",
-            "years": "Y"
-        }
-
-        # attempt to build unit from user metadata
-        if problem.get('timeGranularity') and problem['timeGranularity']['units'] in d3m_granularity_units:
-            value = problem['timeGranularity'].get('value')
-            unit = (str(value) if value else '') + d3m_granularity_units[problem['timeGranularity']['units']]
-        # otherwise take the shortest date offset
-        else:
-            dataframe = pd.read_csv(dataset_paths['all'], usecols=problem['time'])
-            temporal_series = pd.to_datetime(dataframe[time_variable])
-            unit = infer_freq(temporal_series)
-
-        # rewrite the splits with imputed data
-        for split in dataset_paths:
-            dataframe = pd.read_csv(dataset_paths[split])
-
-            temporal_series = pd.to_datetime(dataframe[time_variable])
-
-            # if time series is not regular
-            if not pd.infer_freq(temporal_series):
-                dataframe = dataframe.set_index(time_variable)
-
-                dataframe_temp = dataframe.resample(unit).mean()
-
-                numeric_columns = list(dataframe.select_dtypes(include=[np.number]).columns.values)
-                categorical_columns = [i for i in dataframe.columns.values if i not in numeric_columns]
-
-                for dropped_column in categorical_columns:
-                    dataframe_temp[dropped_column] = dataframe[dropped_column]
-
-                dataframe = pd.DataFrame(ColumnTransformer(transformers=[
-                    ('numeric', SimpleImputer(strategy='median'), numeric_columns),
-                    ('categorical', SimpleImputer(strategy='most_frequent'), categorical_columns)
-                ]).fit_transform(dataframe_temp), index=dataframe_temp.index, columns=dataframe_temp.columns)
-
-                dataframe.reset_index(inplace=True)
-                dataframe.to_csv(dataset_paths[split], index=False)
-
     return {
         'dataset_schemas': dataset_schemas,
         'dataset_paths': dataset_paths,
         'stratified': dataset_stratified
     }
-
-
-def infer_freq(series):
-
-    def approx_seconds(offset):
-        offset = pd.tseries.frequencies.to_offset(offset)
-        try:
-            return offset.nanos / 1E9
-        except ValueError:
-            pass
-
-        date = datetime.now()
-        return ((offset.rollback(date) - offset.rollforward(date)) * offset.n).total_seconds()
-
-    # infer frequency from every three-pair of records
-    candidate_frequencies = set()
-    for i in range(len(series) - 3):
-        candidate_frequency = pd.infer_freq(series[i:i + 3])
-        if candidate_frequency:
-            candidate_frequencies.add(candidate_frequency)
-
-    # sort inferred frequency by approximate time durations
-    return sorted([(i, approx_seconds(i)) for i in candidate_frequencies], key=lambda x: x[1])[0][0]
 
 
 def create_destination_directory(user_workspace, name):

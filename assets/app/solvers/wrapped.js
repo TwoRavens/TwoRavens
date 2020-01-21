@@ -56,6 +56,7 @@ export let SPEC_problem = problem => ({
     "name": problem.problemId,
     "taskSubtype": app.d3mTaskSubtype[problem.subTask],
     "taskType": app.d3mTaskType[problem.task],
+    "timeGranularity": problem.timeGranularity[(problem.forecastingHorizon || {}).column],
 
     // structural variables
     "indexes": problem.tags.indexes,
@@ -88,12 +89,15 @@ let SPEC_produce = problem => {
     // TODO time-series produces
 
     let train_split = problem.splitOptions.outOfSampleSplit ? 'train' : 'all';
-    let predict_types = ['RAW', 'PROBABILITIES'];
+    let predict_types = ['RAW'];
+    if (problem.task === 'classification') predict_types.push('PROBABILITIES');
+
     let dataset_types = problem.splitOptions.outOfSampleSplit ? ['test', 'train'] : ['all'];
-    if (problem.datasetPaths.partials) dataset_types.push('partials');
+    if (['classification', 'regression'].includes(problem.task) && problem.datasetPaths.partials) dataset_types.push('partials');
 
     let produces = [];
 
+    // train/test splits
     if (problem.splitOptions.outOfSampleSplit)
         produces.push(...dataset_types.flatMap(dataset_type => predict_types.flatMap(predict_type => ({
             'train': {
@@ -114,6 +118,7 @@ let SPEC_produce = problem => {
             }
         }))));
 
+    // all split
     predict_types.forEach(predict_type => produces.push({
         'train': {
             'name': 'all',
@@ -132,22 +137,24 @@ let SPEC_produce = problem => {
     }));
 
     // add ice datasets
-    app.getPredictorVariables(problem).forEach(predictor => produces.push({
-        'train': {
-            'name': 'all',
-            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
-        },
-        'input': {
-            'name': 'ICE_synthetic_' + predictor,
-            'resource_uri': 'file://' + problem.datasetPaths['ICE_synthetic_' + predictor]
-        },
-        'configuration': {
-            'predict_type': "RAW"
-        },
-        'output': {
-            'resource_uri': 'file:///ravens_volume/solvers/produce/'
-        }
-    }));
+    if (problem.task !== 'forecasting') {
+        app.getPredictorVariables(problem).forEach(predictor => produces.push({
+            'train': {
+                'name': 'all',
+                'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
+            },
+            'input': {
+                'name': 'ICE_synthetic_' + predictor,
+                'resource_uri': 'file://' + problem.datasetPaths['ICE_synthetic_' + predictor]
+            },
+            'configuration': {
+                'predict_type': "RAW"
+            },
+            'output': {
+                'resource_uri': 'file:///ravens_volume/solvers/produce/'
+            }
+        }));
+    }
 
 
     return produces

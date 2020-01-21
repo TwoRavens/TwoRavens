@@ -691,21 +691,34 @@ class ModelTwoRavens(Model):
         }
 
     def score(self, score_specification):
-        configuration = score_specification['configuration']
+        import tworaven_solver
+        # configuration = score_specification['configuration']
         dataframe = Dataset(score_specification['input']).get_dataframe()
 
         if self.task == "FORECASTING":
-            dataframe_train = Dataset(score_specification['train']).get_dataframe()
-            horizon = configuration.get('forecastingHorizon', {}).get('value', 1)
+            # dataframe_train = Dataset(score_specification['train']).get_dataframe()
+            # horizon = configuration.get('forecastingHorizon', {}).get('value', 1)
+            # if len(dataframe) < horizon:
+            #     raise ValueError(f'No predictions with a horizon of {horizon} are within range of the test data.')
 
-            if len(dataframe) < horizon:
-                raise ValueError(f'No predictions with a horizon of {horizon} are within range of the test data.')
+            time = next(iter(self.model.problem_specification.get('time', [])), None)
+            dataframe = tworaven_solver.format_dataframe_time_index(
+                dataframe,
+                date=time,
+                granularity_specification=self.model.problem_specification.get('timeGranularity'))
+            dataframe.reset_index(inplace=True)
 
-            predicted = self.forecast(
-                dataframe=dataframe_train,
-                dataframe_rolling=dataframe,
-                horizon=horizon)[:len(dataframe) - horizon + 1]
+            predicted = self.model.forecast(
+                start=dataframe[time].iloc[0],
+                end=dataframe[time].iloc[-1])
+
             predicted.reset_index(inplace=True)
+
+            # predicted = self.forecast(
+            #     dataframe=dataframe_train,
+            #     dataframe_rolling=dataframe,
+            #     horizon=horizon)[:len(dataframe) - horizon + 1]
+
 
         elif self.task in ['CLASSIFICATION', 'REGRESSION']:
             # TODO: respect configuration on holdout vs cross-validation, do refitting, etc.
@@ -739,38 +752,43 @@ class ModelTwoRavens(Model):
             data_specification=data_specification)
 
     def produce(self, produce_specification):
+        import tworaven_solver
         configuration = produce_specification.get('configuration', {})
         predict_type = configuration.get('predict_type', 'RAW')
 
-        # REFIT
-        dataframe_train = Dataset(produce_specification['train']).get_dataframe().dropna()
-
         dataframe = Dataset(produce_specification['input']).get_dataframe().dropna()
-        dataframe.reset_index(drop=True, inplace=True)
 
         if self.task == "FORECASTING":
-            horizon = configuration.get('forecastingHorizon', {}).get('value', 1)
-            predictions = self.forecast(
-                dataframe=dataframe_train,
-                dataframe_rolling=dataframe,
-                horizon=horizon)
-            predictions.reset_index(inplace=True)
+            time = next(iter(self.model.problem_specification.get('time', [])), None)
+            dataframe = tworaven_solver.format_dataframe_time_index(
+                dataframe,
+                date=time,
+                granularity_specification=self.model.problem_specification.get('timeGranularity'))
+            dataframe.reset_index(inplace=True)
+
+            # horizon = configuration.get('forecastingHorizon', {}).get('value', 1)
+            predicted = self.model.forecast(
+                start=dataframe[time].iloc[0],
+                end=dataframe[time].iloc[-1])
+
+            predicted.reset_index(inplace=True)
 
         elif self.task in ['REGRESSION', 'CLASSIFICATION']:
+            dataframe_train = Dataset(produce_specification['train']).get_dataframe().dropna()
             self.fit(dataframe=dataframe_train)
 
             stimulus = dataframe[self.predictors]
 
             if predict_type == 'RAW':
-                predictions = self.model.predict(stimulus)
-                if len(predictions.shape) > 1:
-                    predictions = np.argmax(predictions, axis=-1)
-                predictions = pandas.DataFrame(predictions, columns=[self.targets[0]]).astype(int)
+                predicted = self.model.predict(stimulus)
+                if len(predicted.shape) > 1:
+                    predicted = np.argmax(predicted, axis=-1)
+                predicted = pandas.DataFrame(predicted, columns=[self.targets[0]]).astype(int)
             else:
-                predictions = self.model.predict_proba(stimulus)
+                predicted = self.model.predict_proba(stimulus)
                 # TODO: standardize probability column names
-                predictions = pandas.DataFrame(predictions, columns=[f'p_{i}' for i in range(predictions.shape[1])])
-            predictions.reset_index(drop=True, inplace=True)
+                predicted = pandas.DataFrame(predicted, columns=[f'p_{i}' for i in range(predicted.shape[1])])
+            predicted.reset_index(drop=True, inplace=True)
 
         else:
             raise ValueError(str(self.task) + ' is not a valid task type.')
@@ -780,7 +798,7 @@ class ModelTwoRavens(Model):
             *output_directory_path.split('/'),
             str(uuid.uuid4()) + '.csv')
 
-        predictions.insert(0, 'd3mIndex', dataframe['d3mIndex'])
+        predicted.insert(0, 'd3mIndex', dataframe['d3mIndex'])
 
         if not os.path.exists(output_directory_path):
             os.makedirs(output_directory_path)
@@ -788,7 +806,7 @@ class ModelTwoRavens(Model):
         cwd = os.getcwd()
         try:
             os.chdir('/')
-            predictions.to_csv(output_path, index=False)
+            predicted.to_csv(output_path, index=False)
         finally:
             os.chdir(cwd)
 
@@ -821,17 +839,17 @@ class ModelTwoRavens(Model):
 
         self.model.save(model_folder_dir)
 
-    def forecast(self, dataframe, dataframe_rolling, horizon):
-        predictions = []
-        # TODO: check memory overhead - predictions is a collection of views referencing temporary dataframes
-        for idx in range(len(dataframe_rolling)):
-            self.fit(dataframe)
-            predictions.append(self.model.forecast(horizon=horizon).tail(1))
-
-            # TODO: this is also bad- dataframe is reallocated every time
-            dataframe = dataframe.append(dataframe_rolling[idx:idx+1])
-
-        self.fit(dataframe)
-        predictions.append(self.model.forecast(horizon=horizon).tail(1))
-
-        return pandas.concat(predictions)
+    # def forecast(self, dataframe, dataframe_rolling, horizon):
+    #     predictions = []
+    #     # TODO: check memory overhead - predictions is a collection of views referencing temporary dataframes
+    #     for idx in range(len(dataframe_rolling)):
+    #         self.fit(dataframe)
+    #         predictions.append(self.model.forecast(horizon=horizon).tail(1))
+    #
+    #         # TODO: this is also bad- dataframe is reallocated every time
+    #         dataframe = dataframe.append(dataframe_rolling[idx:idx+1])
+    #
+    #     self.fit(dataframe)
+    #     predictions.append(self.model.forecast(horizon=horizon).tail(1))
+    #
+    #     return pandas.concat(predictions)

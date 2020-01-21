@@ -2,6 +2,7 @@
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
+from tworaven_apps.ta2_interfaces.tasks import create_destination_directory
 from tworaven_apps.utils.view_helper import (
     get_authenticated_user, get_request_body_as_json,
     get_json_error)
@@ -20,6 +21,8 @@ from tworaven_apps.solver_interfaces.util_search import Search
 
 from tworaven_apps.solver_interfaces import tasks
 import zipfile
+
+from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 
 NUM_PROCESSES = 4
 
@@ -42,10 +45,23 @@ def view_solve(request):
         return JsonResponse(get_json_error(err_msg))
     data = raven_data_info.result_obj
 
+    # workspace
+    user_workspace_info = get_latest_user_workspace(request)
+    if not user_workspace_info.success:
+        return JsonResponse(get_json_error(user_workspace_info.err_msg))
+    user_workspace = user_workspace_info.result_obj
+
     websocket_id = user_obj.username
     specification = data['specification']
     system_id = data['system']
     system_params = data.get('system_params', {})
+
+    # create a location where the solver may write to disk
+    dest_dir_info = create_destination_directory(user_workspace, name='solver_scratch_space')
+    if not dest_dir_info[KEY_SUCCESS]:
+        return JsonResponse(get_json_error(dest_dir_info.err_msg))
+    dest_directory = dest_dir_info[KEY_DATA]
+    specification['temp_directory'] = dest_directory
 
     # TODO: timeout on celery worker
     # sanity check timeout
