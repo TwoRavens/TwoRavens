@@ -30,12 +30,9 @@ variableImportance.app <- function(everything) {
 		return(change)
 	}
 
-	importanceMetric <- function(y, lambda=1){
-		#print(length(y))
-		#print(bonus(y))
-		#print(penalty(y))
+	importanceMetric <- function(y, lambda=1, categorical=FALSE){
 		im <- bonus(y)
-		if(length(y)>5){
+		if((length(y)>5) & !categorical){  # Not sure why originally put in length restriction
 			im <- im - lambda*penalty(y)
 		}
 		return(im)
@@ -48,16 +45,38 @@ variableImportance.app <- function(everything) {
 
     for(predictor in predictors) {
 	    hope <- as.data.frame(matrix(unlist(efdData[[predictor]]), nrow=length(efdData[[predictor]]), byrow=TRUE))
-	    names(hope) <- names(efdData[[predictor]][[1]])
-	    #print(hope[1:3,])
+	    hopeNames <- names(efdData[[predictor]][[1]])
+	    names(hope) <- hopeNames
+	    isCategorical <- predictor %in% categoricals
+
+	    #print(predictor)
+	    #print(hope[1:5,])
+	    #print(isCategorical)
+	    #print(targets)
 
         for (target in targets) {
-          fittedValues <- as.vector(hope[[paste0('fitted ', target)]])
-          importanceValue <- importanceMetric(fittedValues)
-          if (length(importanceValue) == 0) next
-          scores[[target]][[predictor]] <- jsonlite::unbox(importanceValue)
+          	stubName <- paste0('fitted ', target)
+          	#print("--stubName--")
+          	#print(stubName)
+          	matches <- hopeNames[stubName == substring(hopeNames,1,nchar(stubName))]  # Check which data frame names begin with stubName
+
+          	if(length(matches)>0){
+          		importanceValue <- 0
+	          	for(match in matches){
+	          		fittedValues <- as.vector(hope[[match]])  # was: fittedValues <- as.vector(hope[[paste0('fitted ', target)]])
+          			#print(match)
+          			#print(fittedValues[1:5])
+          			importanceValue <- importanceValue + importanceMetric(as.numeric(fittedValues), categorical=isCategorical)
+          		}
+          	} else {
+	          	importanceValue <- NULL
+          	}
+          	if (length(importanceValue) == 0) next
+          	scores[[target]][[predictor]] <- jsonlite::unbox(importanceValue)
         }
     }
+
+    print(scores)
 
     # alternative identical implementation
     # scores <- sapply(names(efdData), function(variable) {
