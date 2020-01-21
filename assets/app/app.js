@@ -1143,7 +1143,7 @@ let buildDefaultProblem = problemDoc => {
 
     // defaultProblem
     return {
-        problemId: problemDoc.about.problemId,
+        problemId: problemDoc.about.problemID,
         system: 'auto',
         version: problemDoc.about.version,
         predictors: predictors,
@@ -1431,11 +1431,12 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
             method: 'POST',
             data: {path: sampledDatasetPath}
         }))
-        .then(response => {
+        .then(async response => {
             if (!response.success) {
                 console.warn(response.message);
                 return;
             }
+            await promisePreprocess;
             // merge discovery into problem set if constructing a new raven config
             promisePreprocess.then(_ => Object.assign(workspace.raven_config.problems, discovery(response.data)))
         });
@@ -2129,7 +2130,7 @@ export function discovery(problems) {
                 location: [],
                 indexes: ['d3mIndex'],
                 privileged: [],
-                exogenoud: [],
+                exogenous: [],
                 time: [],
                 nominal: Object.keys(variableSummaries)
                     .filter(variable => variableSummaries[variable].nature === 'nominal'),
@@ -2137,7 +2138,9 @@ export function discovery(problems) {
             },
             timeGranularity: {}
         };
-        setTask(inferIsCategorical(variableSummaries[prob.targets[0]]) ? 'classification' : 'regression', out[problemId]);
+        setTask(
+            inferIsCategorical(variableSummaries[prob.targets[0]]) ? 'classification' : 'regression',
+            out[problemId]);
         return out;
     }, {});
 }
@@ -2430,6 +2433,7 @@ export let setSubTask = (subTask, problem) => {
     if (subTask === problem.subTask || !Object.keys(applicableMetrics[problem.task]).includes(subTask))
         return;
     problem.subTask = subTask;
+    setMetric(applicableMetrics[problem.task][getSubtask(problem)][0], problem, true);
 
     delete problem.unedited;
 };
@@ -2464,7 +2468,7 @@ export let setD3MTags = (tags, problem)  => {
 
 export let getSubtask = problem => {
     if (problem.task.toLowerCase() === 'regression')
-        return getPredictorVariables(problem).length > 1 ? 'multivariate' : 'univariate';
+        return problem.targets.length > 1 ? 'multivariate' : 'univariate';
 
     if (!problem.subTask && variableSummaries[problem.targets[0]]) {
         if (problem.task.toLowerCase() === 'classification')
