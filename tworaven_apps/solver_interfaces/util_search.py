@@ -527,11 +527,29 @@ class SearchTwoRavens(Search):
             if time_column and time_column in problem_specification[variable_set]:
                 problem_specification[variable_set].remove(time_column)
 
+        # if self.specification['problem']['taskType'] == 'FORECASTING':
+        #     # make time series regular
+        #     dataframe = tworaven_solver.format_dataframe_time_index(
+        #         dataframe=tworaven_solver.Dataset(self.specification['input']).get_dataframe(),
+        #         date=next(iter(self.specification['problem'].get('time', [])), None),
+        #         granularity_specification=self.specification['problem'].get('timeGranularity'))
+        #
+        #     # save regular time series to disk
+        #     imputed_dataframe_dir = os.path.join(self.specification['temp_directory'], self.search_id)
+        #     imputed_dataframe_path = os.path.join(imputed_dataframe_dir, 'trainData.csv')
+        #     os.makedirs(imputed_dataframe_dir, exist_ok=True)
+        #     dataframe.to_csv(imputed_dataframe_path)
+        #
+        #     # update specification to point to new time series
+        #     self.specification['input'] = {
+        #         'name': self.specification['input'].get('name', 'train'),
+        #         'resource_uri': 'file://' + imputed_dataframe_path
+        #     }
+
         manager = tworaven_solver.SearchManager(
             task=self.specification['problem']['taskType'],
             subtask=self.specification['problem'].get('taskSubtype'),
-            system_params=self.system_params
-        )
+            system_params=self.system_params)
 
         while True:
             pipeline_specification = manager.get_pipeline_specification()
