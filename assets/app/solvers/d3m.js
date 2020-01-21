@@ -33,6 +33,7 @@ export let getD3MAdapter = problem => ({
         // return if current problem is already being solved
         if ('d3m' in problem.solverState) return;
         if (!app.isProblemValid(problem)) return;
+        problem.system = 'solved';
         console.log("solving:", problem);
 
         problem.solverState.d3m = {thinking: true};

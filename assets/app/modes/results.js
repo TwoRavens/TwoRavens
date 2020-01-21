@@ -25,6 +25,7 @@ import VariableImportance from "../views/VariableImportance";
 import ModalVanilla from "../../common/views/ModalVanilla";
 import * as queryMongo from "../manipulations/queryMongo";
 import Paginated from "../../common/views/Paginated";
+import TextField from "../../common/views/TextField";
 
 export let leftpanel = () => {
 
@@ -89,6 +90,30 @@ export let leftpanel = () => {
         m(MenuHeaders, {
             id: 'pipelineMenu',
             sections: [
+                {
+                    idSuffix: 'trainOptions',
+                    value: 'Train Options',
+                    contents: m('div', {style: {width: '80%', margin: '0px 10%'}},
+                        m('label', 'Approximate time bound for overall pipeline search, in minutes. Leave empty for unlimited time.'),
+                        m(TextField, {
+                            id: 'timeBoundOption',
+                            value: selectedProblem.searchOptions.timeBoundSearch || '',
+                            disabled: selectedProblem.system === 'solved',
+                            oninput: selectedProblem.system !== 'solved' && (value => selectedProblem.searchOptions.timeBoundSearch = value.replace(/[^\d.-]/g, '')),
+                            onblur: selectedProblem.system !== 'solved' && (value => selectedProblem.searchOptions.timeBoundSearch = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
+                            style: {'margin-bottom': '1em'}
+                        }),
+                        m('label', 'Maximum record count per data split.'),
+                        m(TextField, {
+                            id: 'maxRecordCountOption',
+                            disabled: selectedProblem.system === 'solved',
+                            value: selectedProblem.splitOptions.maxRecordCount || '',
+                            oninput: selectedProblem.system !== 'solved' && (value => selectedProblem.splitOptions.maxRecordCount = value.replace(/[^\d.-]/g, '')),
+                            onblur: selectedProblem.system !== 'solved' && (value => selectedProblem.splitOptions.maxRecordCount = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
+                            style: {'margin-bottom': '1em'}
+                        }))
+
+                },
                 {
                     idSuffix: 'solvers',
                     value: 'Solvers',

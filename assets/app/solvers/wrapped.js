@@ -172,6 +172,7 @@ let systemParams = {
 export let getSystemAdapterWrapped = systemId => problem => ({
     solve: async () => {
         if (!app.isProblemValid(problem)) return;
+        problem.system = 'solved';
 
         m.request(SOLVER_SVC_URL + 'Solve', {
             method: 'POST',

@@ -289,7 +289,6 @@ export function setSelectedMode(mode) {
             // denote as solved problem
             if (!selectedProblem.solverState)
                 selectedProblem.solverState = {};
-            selectedProblem.system = 'solved';
 
             if (!results.resultsPreferences.dataSplit)
                 results.resultsPreferences.dataSplit = 'test';
