@@ -75,40 +75,36 @@ let get_node_label = (x) => {
     }
 
     let pos = exploreVariables.indexOf(x);
-    if (pos === -1) {
-	return x;
-    }
+    if (pos === -1) return x;
 
     let str = pos === 0 ? 'x' :
-	pos === 1 ? 'y' :
-	pos === 2 ? 'z' :
-	String.fromCharCode(pos + 97);
+        pos === 1 ? 'y' :
+        pos === 2 ? 'z' :
+        String.fromCharCode(pos + 97);
     return `${x} (${str})`;
 };
 
 export class CanvasExplore {
     view(vnode) {
         let {variables, variate} = vnode.attrs;
-
         let nodes = variables.map(variable => app.variableSummaries[variable]);
-
         let selectedProblem = app.getSelectedProblem();
 
-
         if (!variate) return wrapCanvas(
-    	    m('span'),
             m(Button, {
                 id: 'exploreGo',
-                class: 'btn-sm btn-success',
-                style: 'margin-left:10px',
+                class: 'btn-success',
+                style: {margin: '.5em'},
                 onclick: () => {
                     let selected = app.leftTab === 'Discover' ? [app.workspace.raven_config.selectedProblem] : exploreVariables;
-		    let len = selected.length; 
-		    let variate = app.leftTab === 'Discover' ? 'problem' :
-			len === 1 ? 'univariate' :
-		 	len === 2 ? 'bivariate' :
-			len === 3 ? 'trivariate' :
-			'multivariate';
+                    let len = selected.length; 
+                    if (len === 0) return;
+
+                    let variate = app.leftTab === 'Discover' ? 'problem' :
+                        len === 1 ? 'univariate' :
+                        len === 2 ? 'bivariate' :
+                        len === 3 ? 'trivariate' :
+                        'multivariate';
 
                     // behavioral logging
                     let logParams = {
@@ -239,11 +235,12 @@ export class CanvasExplore {
 
         if (['problem', 'univariate', 'bivariate', 'trivariate', 'multivariate'].includes(variate)) return wrapCanvas(
             m(Button, {
+                class: 'btn-secondary',
                 onclick: () => {
                     m.route.set('/explore');
                     m.redraw()
                 },
-                style: {margin: '1em'}},
+                style: {margin: '.5em'}},
                 m(Icon, {name: 'chevron-left', style: 'margin-right:.5em;transform:scale(1.5)'}),
                 'back to variables'),
             m('br'),

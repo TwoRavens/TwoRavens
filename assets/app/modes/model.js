@@ -682,7 +682,7 @@ export let leftpanel = forceData => {
         side: 'left',
         label: 'Data Selection',
         hover: app.is_model_mode && !manipulate.constraintMenu,
-        width: leftPanelWidths[app.leftTab],
+        width: app.is_explore_mode && app.leftTab === 'Discover' ? '900px' : leftPanelWidths[app.leftTab],
         attrsAll: {
             onclick: () => app.setFocusedPanel('left'),
             style: {
