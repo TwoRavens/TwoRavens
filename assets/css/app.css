@@ -545,3 +545,8 @@ div#scatterplot .axis path {fill: none; stroke: #BDBDBD; shape-rendering: crispE
     line-height: .5;
     border-radius: .2rem;
 }
+
+#modalBoxdatamartModal table.table tr td,
+#modalBoxdatamartModal table.table tr th{
+  text-align: left;
+}
