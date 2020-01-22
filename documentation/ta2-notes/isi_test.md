@@ -1,6 +1,6 @@
 ## Run against the ISI docker image
 
-- Updated 7/25/2018.
+- Updated 1/21/2020.
 
 ## Get the ISI docker image:
 
@@ -8,7 +8,7 @@
 
 ```
 docker login registry.datadrivendiscovery.org
-docker pull registry.datadrivendiscovery.org/kyao/ta3ta2/ta3ta2-image:latest
+docker pull registry.datadrivendiscovery.org/kyao/ta3ta2/dsbox-2020-jan:latest
 ```
 
 ## Run it with env variable
