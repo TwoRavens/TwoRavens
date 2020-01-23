@@ -681,8 +681,8 @@ class ModelLudwig(Model):
 class ModelTwoRavens(Model):
     def describe(self):
         return {
-            "name": self.model.__class__.__name__,
-            "description": str(self.model),
+            "model": self.model.model.__class__.__name__,
+            "description": str(self.model.model),
             "pipeline_specification": self.model.pipeline_specification,
             "problem_specification": self.model.problem_specification,
             "model_id": self.model_id,
@@ -694,6 +694,7 @@ class ModelTwoRavens(Model):
         import tworaven_solver
         # configuration = score_specification['configuration']
         dataframe = Dataset(score_specification['input']).get_dataframe()
+        print(score_specification['input'])
 
         if self.task == "FORECASTING":
             # dataframe_train = Dataset(score_specification['train']).get_dataframe()
@@ -719,13 +720,15 @@ class ModelTwoRavens(Model):
             #     dataframe_rolling=dataframe,
             #     horizon=horizon)[:len(dataframe) - horizon + 1]
 
-
         elif self.task in ['CLASSIFICATION', 'REGRESSION']:
             # TODO: respect configuration on holdout vs cross-validation, do refitting, etc.
             if self.task == 'CLASSIFICATION':
                 for target in self.targets:
                     dataframe[target] = dataframe[target].astype(str)
             predicted = self.model.predict(dataframe)
+            if self.task == 'CLASSIFICATION':
+                for target in self.targets:
+                    predicted[target] = predicted[target].astype(str)
 
         else:
             raise NotImplementedError
@@ -766,6 +769,9 @@ class ModelTwoRavens(Model):
                 granularity_specification=self.model.problem_specification.get('timeGranularity'))
             dataframe.reset_index(inplace=True)
 
+            print(produce_specification['input'])
+            print('start', dataframe[time].iloc[0])
+            print(self.model.model.model._index)
             # horizon = configuration.get('forecastingHorizon', {}).get('value', 1)
             predicted = self.model.forecast(
                 start=dataframe[time].iloc[0],

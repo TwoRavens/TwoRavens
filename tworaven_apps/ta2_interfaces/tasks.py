@@ -297,13 +297,10 @@ def split_dataset(configuration, workspace):
 
     with open(configuration['dataset_path'], 'r') as infile:
         header_line = next(infile)
-        for split_name in ['train', 'test']:
-            with open(dataset_paths[split_name], 'w') as stubfile:
-                stubfile.write(header_line)
-        with open(dataset_paths['all'], 'w') as stubfile:
-            stubfile.write(header_line)
-
         row_count = sum(1 for _ in infile)
+
+    for split_name in ['train', 'test', 'all']:
+        pd.DataFrame(data=[], columns=keep_variables).to_csv(dataset_paths[split_name], index=False)
 
     # by default, the split is trivially forever None, which exhausts all zips
     splits_file_generator = iter(lambda: None, 1)

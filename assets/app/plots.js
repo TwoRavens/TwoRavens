@@ -49,6 +49,39 @@ export let vegaLiteScatter = (data, xName, yName, groupName, countName, title=''
     });
 };
 
+export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSectionName, title='') => {
+
+    return ({
+        "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+        "description": "A scatterplot.",
+        "title": title,
+        "autosize": {
+            "type": "fit",
+            "contains": "padding"
+        },
+        "data": {
+            "values": data
+        },
+        "mark": {
+            "type": "line",
+            // "point": true
+        },
+        "encoding": {
+            "tooltip": [
+                {"field": groupName, "type": "nominal"},
+                {"field": yName, "type": "quantitative"},
+                {"field": splitName, "type": "nominal"},
+                {"field": crossSectionName, "type": "nominal"},
+            ],
+            "color": {"field": groupName, "type": "nominal"},
+            "x": {"field": xName, "type": "temporal", "axis": {"title": xName}},
+            "y": {"field": yName, "type": "quantitative", "axis": {"title": yName}},
+            "opacity": {"field": splitName, "type": "nominal"},
+            "detail": {"field": crossSectionName, "type": "nominal"}
+        }
+    });
+};
+
 export let vegaLiteConfusionMatrix = (data, classes, xName, yName, countName, title) => ({
     "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
     'data': {'values': data},
