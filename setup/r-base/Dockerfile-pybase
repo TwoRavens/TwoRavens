@@ -2,8 +2,8 @@ FROM python:3.6.8
 MAINTAINER TwoRavens http://2ra.vn/
 
 LABEL organization="Two Ravens" \
-      2ra.vn.version="0.3-beta" \
-      2ra.vn.release-date="2019-09-19" \
+      2ra.vn.version="0.4-beta" \
+      2ra.vn.release-date="2020-01-23" \
       description="Image for the base of the Two Ravens R service."
 
 # ----------------------------------------------------
@@ -77,24 +77,10 @@ RUN R -e 'install.packages("rmarkdown", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("gridExtra", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("xtable", repos="http://cran.rstudio.org")'
 
-#RUN R -e 'install.packages("Amelia", repos="http://cran.rstudio.org")' && \
-#    R -e 'install.packages("devtools", repos="http://cran.rstudio.org")' && \
-#    R -e 'install.packages("nloptr", repos="http://cran.rstudio.org")'
-
 # -------------------------------------
-# R older packages: don't appear to be used
+#   2020 additions
 # -------------------------------------
-# possible non-use: packageList.none <- c('Amelia', "Rcpp" "dplyr", "devtools", "nloptr")
-
-#
-# R -e 'install.packages("dplyr", repos="http://cran.rstudio.org")' && \
-# R -e 'install.packages("tidyverse", repos="http://cran.rstudio.org")' && \
-# R -e 'install.packages("Rook", repos="http://cran.rstudio.org")' && \
-
-# -------------------------------------
-# Already installed as dependencies for other packages
-# -------------------------------------
-# R -e 'install.packages("Rcpp", repos="http://cran.rstudio.org")' && \
+RUN R -e 'install.packages("parsedate", repos="http://cran.rstudio.org")'
 
 
 
@@ -105,3 +91,11 @@ EXPOSE 8000
 #
 # docker run -ti --rm --name r-base-test tworavens/r-service-base-py:latest /bin/bash
 #
+
+
+
+
+# -------------------------------------
+# R older packages: don't appear to be used
+# -------------------------------------
+# possible non-use: packageList.none <- c('Amelia', "Rcpp" "dplyr", "devtools", "nloptr")
