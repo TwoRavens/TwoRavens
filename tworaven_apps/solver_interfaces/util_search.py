@@ -547,8 +547,7 @@ class SearchTwoRavens(Search):
         #     }
 
         manager = tworaven_solver.SearchManager(
-            task=self.specification['problem']['taskType'],
-            subtask=self.specification['problem'].get('taskSubtype'),
+            problem_specification=problem_specification,
             system_params=self.system_params)
 
         while True:

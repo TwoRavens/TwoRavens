@@ -88,4 +88,4 @@ mljar-supervised
 tpot
 
 # for tworavens solver
-statsmodels==0.10.2
+statsmodels==0.11.0
