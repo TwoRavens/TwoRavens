@@ -104,6 +104,9 @@ let makeDatasetCard = (preferences, result, index, manipulations, endpoint, labe
     };
 
 
+    /*
+     * For each result, dynamically define the "Augment"
+     **/
     let buttonAugment = m(Button, {
         style: {'margin': '0em 0.25em'},
         onclick: async () => {
@@ -114,13 +117,13 @@ let makeDatasetCard = (preferences, result, index, manipulations, endpoint, labe
             let augmentationData = getData(result, 'augmentation');
 
             // NYU
-            if ('left_columns_names' in augmentationData)
+            if ('left_columns_names' in augmentationData){
                 preferences.joinPairs = augmentationData.left_columns_names.map((_, j) => [
                     augmentationData.left_columns_names[j],
                     augmentationData.right_columns_names[j]
                 ]);
-            // ISI
-            if ('left_columns' in augmentationData) {
+              } else if ('left_columns' in augmentationData) {
+                  // --- ISI ---('left_columns' in augmentationData) {
                 let originalLeftColumns = [...queryMongo.buildPipeline(
                     manipulations, app.workspace.raven_config.variablesInitial)['variables']];
 
@@ -670,7 +673,8 @@ export class ModalDatamart {
                             }
                         }, !preferences.isAugmenting && preferences.sourceMode !== 'ISI' && m(Icon, {name: 'x'})),
                         m('div', {style: {'margin-left': '1em', display: 'inline-block'}},
-                            `Joining [${pair[0].join(', ')}] with [${pair[1].join(', ')}]`)
+                        preferences.sourceMode === 'ISI' ? `ISI join with [${pair[1].join(', ')}]` : `Joining [${pair[0].join(', ')}] with [${pair[1].join(', ')}]`)
+
                     ])),
                     // end: list join pairs
 

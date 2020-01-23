@@ -37,7 +37,7 @@ import os
 LOGGER = logging.getLogger(__name__)
 
 PREVIEW_SIZE = 100
-USE_CACHED_SEARCH = False
+USE_CACHED_SEARCH = False   # Only True if testing!
 
 
 class DatamartJobUtilISI(DatamartJobUtilBase):
@@ -189,11 +189,14 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
             import json
             print('loading file')
             response_json = json.load(open('/datamart_endpoints/cached_isi_search_response.json', 'r'))
-        json_results = response_json['search_results']['results']
 
-        if not json_results:
+        #print('response_json', response_json)
+
+        if not 'results' in response_json:
             return err_resp('No datasets found. (%s)' % \
                             (get_timestamp_string_readable(time_only=True),))
+
+        json_results = response_json['results']
 
         print('num results: ', len(json_results))
 
