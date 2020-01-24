@@ -1036,7 +1036,7 @@ export let getSolutionAdapter = (problem, solution) => ({
     getDataSample: (target, split) => {
         let adapter = getSolutionAdapter(problem, solution);
         loadDataSample(problem, adapter, split);
-        if (split in resultsData.dataSample)
+        if (resultsData.dataSample[split])
             return resultsData.dataSample[split].map(obs => obs[target])
     },
     getForecast: (target, split) => {
@@ -1714,7 +1714,10 @@ export let loadDataSample = async (problem, adapter, split) => {
                 app.workspace.raven_config.variablesInitial)['pipeline'])
         })
     } catch (err) {
+        console.warn("retrieve data sample error");
+        console.log(err);
         app.alertWarn('Dependent variables have not been loaded. Some plots will not load.')
+        return;
     }
 
     // don't accept if problemId changed
