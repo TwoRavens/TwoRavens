@@ -4,8 +4,8 @@
   - gh-pages
   - /.*/
 
-compiler:
-- clang
+#compiler:
+#- clang
 
 language: python
 
