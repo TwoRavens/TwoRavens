@@ -680,9 +680,12 @@ class ModelLudwig(Model):
 
 class ModelTwoRavens(Model):
     def describe(self):
+        description = self.model.describe() or {}
+        print(description)
         return {
             "model": self.model.model.__class__.__name__,
             "description": str(self.model.model),
+            **description,
             "pipeline_specification": self.model.pipeline_specification,
             "problem_specification": self.model.problem_specification,
             "model_id": self.model_id,
@@ -694,7 +697,6 @@ class ModelTwoRavens(Model):
         import tworaven_solver
         # configuration = score_specification['configuration']
         dataframe = Dataset(score_specification['input']).get_dataframe()
-        print(score_specification['input'])
 
         if self.task == "FORECASTING":
             # dataframe_train = Dataset(score_specification['train']).get_dataframe()
@@ -759,7 +761,7 @@ class ModelTwoRavens(Model):
         configuration = produce_specification.get('configuration', {})
         predict_type = configuration.get('predict_type', 'RAW')
 
-        dataframe = Dataset(produce_specification['input']).get_dataframe().dropna()
+        dataframe = Dataset(produce_specification['input']).get_dataframe()
 
         if self.task == "FORECASTING":
             time = next(iter(self.model.problem_specification.get('time', [])), None)
@@ -769,9 +771,6 @@ class ModelTwoRavens(Model):
                 granularity_specification=self.model.problem_specification.get('timeGranularity'))
             dataframe.reset_index(inplace=True)
 
-            print(produce_specification['input'])
-            print('start', dataframe[time].iloc[0])
-            print(self.model.model.model._index)
             # horizon = configuration.get('forecastingHorizon', {}).get('value', 1)
             predicted = self.model.forecast(
                 start=dataframe[time].iloc[0],
@@ -781,21 +780,18 @@ class ModelTwoRavens(Model):
 
         elif self.task in ['REGRESSION', 'CLASSIFICATION']:
             dataframe_train = Dataset(produce_specification['train']).get_dataframe().dropna()
-            self.fit(dataframe=dataframe_train)
-
-            stimulus = dataframe[self.predictors]
+            self.fit(dataframe=dataframe_train, data_specification=produce_specification['train'])
 
             if predict_type == 'RAW':
-                predicted = self.model.predict(stimulus)
-                if len(predicted.shape) > 1:
+                predicted = self.model.predict(dataframe)
+                if len(predicted.columns.values) > 1:
                     predicted = np.argmax(predicted, axis=-1)
-                predicted = pandas.DataFrame(predicted, columns=[self.targets[0]]).astype(int)
             else:
-                predicted = self.model.predict_proba(stimulus)
+                predicted = self.model.predict_proba(dataframe)
                 # TODO: standardize probability column names
                 predicted = pandas.DataFrame(predicted, columns=[f'p_{i}' for i in range(predicted.shape[1])])
-            predicted.reset_index(drop=True, inplace=True)
 
+            print(predicted)
         else:
             raise ValueError(str(self.task) + ' is not a valid task type.')
 
