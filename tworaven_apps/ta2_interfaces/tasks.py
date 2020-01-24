@@ -311,7 +311,9 @@ def split_dataset(configuration, workspace):
     row_count_chunked = 0
 
     # TODO: adjust chunksize based on number of columns
-    for dataframe, dataframe_split in zip(pd.read_csv(configuration['dataset_path'], chunksize=10 ** 5), splits_file_generator):
+    for dataframe, dataframe_split in zip(
+            pd.read_csv(configuration['dataset_path'], chunksize=10 ** 5, usecols=keep_variables),
+            splits_file_generator):
 
         # rows with NaN values become object rows, which may contain multiple types. The NaN values become empty strings
         # this converts '' to np.nan in non-nominal columns, so that nan may be dropped
@@ -322,10 +324,6 @@ def split_dataset(configuration, workspace):
         #
         # dataframe.dropna(inplace=True)
         # dataframe.reset_index(drop=True, inplace=True)
-
-        # subset to variables that are relevant to the problem
-        if keep_variables:
-            dataframe = dataframe[keep_variables]
 
         # max count of each split ['all', 'test', 'train']
         max_count = int(split_options.get('maxRecordCount', 5e4))
@@ -347,17 +345,19 @@ def split_dataset(configuration, workspace):
             elif problem['taskType'] == 'FORECASTING':
                 # TODO: order by temporal variable is ignored
                 horizon = problem.get('forecastingHorizon', {}).get('value', 10)
-
-                train_idx_min = row_count * train_test_ratio - horizon
+                train_idx_min = row_count - max_count - horizon
                 test_idx_min = row_count - horizon
+
+                def clamp(idx):
+                    return min(len(dataframe), max(0, int(idx)))
 
                 splits = {
                     'train': dataframe.iloc[
-                             max(0, int(train_idx_min - row_count_chunked))
-                             :min(len(dataframe), int(test_idx_min - row_count_chunked))],
+                             clamp(train_idx_min - row_count_chunked)
+                             :clamp(test_idx_min - row_count_chunked)],
                     'test': dataframe.iloc[
-                            max(0, int(test_idx_min - row_count_chunked))
-                            :min(len(dataframe), int(row_count - row_count_chunked))],
+                            clamp(test_idx_min - row_count_chunked)
+                            :clamp(len(dataframe))],
                     'stratified': False
                 }
 
@@ -391,11 +391,11 @@ def split_dataset(configuration, workspace):
                 splits[split_name].to_csv(dataset_paths[split_name], mode='a', header=False, index=False)
                 dataset_stratified[split_name] = dataset_stratified[split_name] and splits['stratified']
 
+        row_count_chunked += len(dataframe)
         if sample_count < chunk_count:
             dataframe = dataframe.sample(sample_count)
 
         dataframe.to_csv(dataset_paths['all'], mode='a', header=False, index=False)
-        row_count_chunked += len(dataframe)
 
     return {
         'dataset_schemas': dataset_schemas,
