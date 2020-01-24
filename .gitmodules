@@ -7,4 +7,4 @@
 	url = https://github.com/TwoRavens/tworavens-test-datasets.git
 [submodule "tworaven_solver"]
 	path = tworaven_solver
-	url = git@github.com:TwoRavens/TwoRavensSolver.git
+	url = https://github.com/TwoRavens/TwoRavensSolver.git
