@@ -24,10 +24,14 @@ def convert_csv_file_to_json(csv_fname, to_string=True, index_column=None, indic
 
     # Read the CSV file into python dicts
     #
+    print('csv_fname', csv_fname),
+    print('indices', indices)
+    print('index_col', index_column)
     with open(csv_fname) as f:
         reader = csv.DictReader(f)
         # only return records that match indices.
         if indices:
+            indices = [str(i) for i in indices]
             rows = [i for i in reader if i.get(index_column, list(i.values())[0]) in indices]
         else:
             rows = list(reader)

@@ -924,7 +924,7 @@ export let applicableMetrics = {
     }
 };
 
-let standardWrappedSolvers = ['tpot', 'mlbox', 'auto_sklearn', 'ludwig', 'h2o']; // caret, mljar-supervised
+let standardWrappedSolvers = ['tpot', 'mlbox', 'auto_sklearn', 'ludwig', 'h2o', 'two-ravens']; // caret, mljar-supervised
 
 export let applicableSolvers = {
     classification: {
@@ -937,7 +937,7 @@ export let applicableSolvers = {
         multivariate: standardWrappedSolvers
     },
     forecasting: {
-        subTypeNone: []
+        subTypeNone: ['two-ravens']
     },
     clustering: {subTypeNone: []},
     linkPrediction: {subTypeNone: []},
@@ -1125,7 +1125,9 @@ let buildDefaultProblem = problemDoc => {
 
     let findSubtask = keywords => {
         let task = findTask(keywords);
-        return keywords.find(keyword => Object.keys(applicableMetrics[task]).includes(keyword)) || 'subTypeNone'
+        let subTask = keywords.find(keyword => Object.keys(applicableMetrics[task]).includes(keyword))
+        if (!subTask) subTask = Object.keys(applicableMetrics[task])[0];
+        return subTask;
     };
 
     let filterResourceType = keywords => Object.keys(d3mResourceType)
@@ -1870,7 +1872,7 @@ export let materializeManipulations = async (problem, schemaIds) => {
         // build manipulated dataset for schema
         .map(schemaId => buildDatasetUrl(
             problem, undefined, problem.datasetPaths[schemaId],
-            workspace.d3m_config.name + '_' + schemaId,
+            `${workspace.d3m_config.name}_${problem.problemId}_${schemaId}`,
             workspace.datasetDoc) // WARNING: as of 1/13/2020, all dataset docs passed here are the same as the original
             .then(({data_path, metadata_path, column_names}) => {
                 problem.datasetSchemasManipulated[schemaId] = metadata_path;
@@ -2542,7 +2544,6 @@ export function setSelectedProblem(problemId) {
         activity_l1: 'DATA_PREPARATION',
         activity_l2: 'PROBLEM_DEFINITION',
         other: {problem: problem}
-
     };
     saveSystemLogEntry(logParams);
 

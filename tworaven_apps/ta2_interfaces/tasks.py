@@ -5,6 +5,8 @@ capture the results in the db as StoredResponse objects
 from datetime import datetime
 from django.conf import settings
 from django.http import JsonResponse
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
 
 from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
 
@@ -241,7 +243,7 @@ def split_dataset(configuration, workspace):
             col_schema = next(col_schema for col_schema in resource_schema['columns'] if col_schema['colName'] == col_name)
             col_schema['colIndex'] = i
             if configuration.get('update_roles'):
-                col_schema['roles'] = update_roles(col_schema['roles'], col_name)
+                col_schema['role'] = update_roles(col_schema['role'], col_name)
             return col_schema
 
         # modify in place
@@ -276,7 +278,7 @@ def split_dataset(configuration, workspace):
         }
 
         dataset_paths = {
-            **dataset_schemas,
+            **dataset_paths,
             'train': train_datasetCsv,
             'test': test_datasetCsv,
         }
@@ -295,19 +297,18 @@ def split_dataset(configuration, workspace):
 
     with open(configuration['dataset_path'], 'r') as infile:
         header_line = next(infile)
-        for split_name in ['train', 'test']:
-            with open(dataset_paths[split_name], 'w') as stubfile:
-                stubfile.write(header_line)
-        with open(dataset_paths['all'], 'w') as stubfile:
-            stubfile.write(header_line)
-
         row_count = sum(1 for _ in infile)
+
+    for split_name in ['train', 'test', 'all']:
+        pd.DataFrame(data=[], columns=keep_variables).to_csv(dataset_paths[split_name], index=False)
 
     # by default, the split is trivially forever None, which exhausts all zips
     splits_file_generator = iter(lambda: None, 1)
     if split_options.get('splitsDir') and split_options.get('splitsFile'):
         splits_file_path = f"{split_options['splitsDir']}/{split_options['splitsFile']}"
         splits_file_generator = pd.read_csv(splits_file_path, chunksize=10 ** 5)
+
+    row_count_chunked = 0
 
     # TODO: adjust chunksize based on number of columns
     for dataframe, dataframe_split in zip(pd.read_csv(configuration['dataset_path'], chunksize=10 ** 5), splits_file_generator):
@@ -342,21 +343,23 @@ def split_dataset(configuration, workspace):
                     'stratified': False
                 }
 
-            # TODO: chunked temporal splitting
             # split dataset along temporal variable
-            # elif temporal_variable:
-            #     num_test_records = math.ceil(train_test_ratio * len(dataframe))
-            #     sorted_index = [
-            #         x for _, x in sorted(
-            #             zip(np.array(dataframe[temporal_variable]), np.arange(0, len(dataframe))),
-            #             # TODO: more robust sorting for temporal data (parse to datetime?)
-            #             key=lambda pair: pair[0])
-            #     ]
-            #     splits = {
-            #         'train': dataframe.iloc[sorted_index[:-num_test_records]],
-            #         'test': dataframe.iloc[sorted_index[-num_test_records:]],
-            #         'stratified': False
-            #     }
+            elif problem['taskType'] == 'FORECASTING':
+                # TODO: order by temporal variable is ignored
+                horizon = problem.get('forecastingHorizon', {}).get('value', 10)
+
+                train_idx_min = row_count * train_test_ratio - horizon
+                test_idx_min = row_count - horizon
+
+                splits = {
+                    'train': dataframe.iloc[
+                             max(0, int(train_idx_min - row_count_chunked))
+                             :min(len(dataframe), int(test_idx_min - row_count_chunked))],
+                    'test': dataframe.iloc[
+                            max(0, int(test_idx_min - row_count_chunked))
+                            :min(len(dataframe), int(row_count - row_count_chunked))],
+                    'stratified': False
+                }
 
             else:
                 shuffle = split_options.get('shuffle', True)
@@ -392,6 +395,7 @@ def split_dataset(configuration, workspace):
             dataframe = dataframe.sample(sample_count)
 
         dataframe.to_csv(dataset_paths['all'], mode='a', header=False, index=False)
+        row_count_chunked += len(dataframe)
 
     return {
         'dataset_schemas': dataset_schemas,

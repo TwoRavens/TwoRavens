@@ -27,6 +27,8 @@ import * as queryMongo from "../manipulations/queryMongo";
 import Paginated from "../../common/views/Paginated";
 import TextField from "../../common/views/TextField";
 
+import {getNominalVariables} from "../app";
+
 export let leftpanel = () => {
 
     let ravenConfig = app.workspace.raven_config;
@@ -36,8 +38,6 @@ export let leftpanel = () => {
 
     // Available systems
     //  Note: h2o - requires Java
-    //
-    // let solverSystemNames = ['auto_sklearn', 'tpot', 'mlbox', 'ludwig']; // 'h2o', 'caret'
     let solverCandidateNames = app.applicableSolvers[selectedProblem.task][app.getSubtask(selectedProblem)];
 
     // only show solvers that are capable of solving this type of problem
@@ -252,11 +252,97 @@ export class CanvasSolutions {
 
     predictionSummary(problem, adapters) {
 
-        if (adapters.every(adapter => !adapter.getDataPointer(resultsPreferences.dataSplit))) {
+        if (problem.task !== 'forecasting' && adapters.every(adapter => !adapter.getDataPointer(resultsPreferences.dataSplit))) {
             return [
                 'Waiting for solver to produce predictions.',
                 common.loader('PredictionSummary')
             ]
+        }
+
+        if (problem.task.toLowerCase() === 'forecasting' && adapters.length > 0) {
+            console.log(adapters);
+            let plotSplits = resultsPreferences.dataSplit === 'all' ? ['train', 'test'] : [resultsPreferences.dataSplit];
+
+            let actualSummary = plotSplits.reduce((out, split) => Object.assign(out, {
+                [split]: adapters[0].getDataSample(resultsPreferences.target, split)
+            }), {});
+
+            let timeSummary = plotSplits.reduce((out, split) => Object.assign(out, {
+                [split]: adapters[0].getDataSample(problem.tags.time[0] || 'd3mIndex', split)
+            }), {});
+
+            let crossSectionSummary = plotSplits
+                // for each loaded data split
+                .filter(split => actualSummary[split])
+                // construct a treatment label
+                .reduce((out, split) => {
+                    // don't do anything if there are no cross sectional variables
+                    if (problem.tags.crossSection.length === 0)
+                        return Object.assign(out, {[split]: []});
+
+                    // construct an intermediate {[columnName]: values} object
+                    let crossSectionData = problem.tags.crossSection.reduce((out, columnName) => Object.assign(out, {
+                        [columnName]: adapters[0].getDataSample(columnName, split)
+                    }), {});
+
+                    // concat together the values in the columns for each of the cross sections, for each observation
+                    out[split] = crossSectionData[problem.tags.crossSection[0]]
+                        .map((_, i) => problem.tags.crossSection
+                            .reduce((label, columnName) => `${label}-${crossSectionData[columnName][i]}`), {});
+
+                    return out;
+                }, {});
+
+            let forecastSummaries = adapters.map(adapter => plotSplits.reduce((out, split) => Object.assign(out, {
+                [split]: adapter.getForecast(resultsPreferences.target, split)
+            }), {solutionId: adapter.getSolutionId()}));
+
+
+            let xName = 'Time';
+            let yName = resultsPreferences.target;
+            let groupName = 'Solution Name';
+            let dataSplit = 'Data Split';
+            let crossSectionName = 'Cross Section';
+            let title = 'Forecasted vs. Actuals for predicting ' + resultsPreferences.target;
+
+            let plotData = plotSplits
+                // for each split
+                .filter(split => actualSummary[split])
+                .flatMap(split => [
+                    ...actualSummary[split].map((_, i) => ({
+                        [dataSplit]: split,
+                        [groupName]: 'Actual',
+                        [yName]: actualSummary[split][i],
+                        [crossSectionName]: crossSectionSummary[split][i],
+                        [xName]: timeSummary[split][i]
+                    })),
+                    ...forecastSummaries
+                        // for each solutionId
+                        .filter(forecastSummary => forecastSummary[split])
+                        .flatMap(forecastSummary => forecastSummary[split]
+                            // for each data point
+                            .map((_, i) => ({
+                                [dataSplit]: split,
+                                [groupName]: forecastSummary.solutionId,
+                                [yName]: forecastSummary[split][i],
+                                [crossSectionName]: crossSectionSummary[split][i],
+                                [xName]: timeSummary[split][i]
+                            })))
+                ]);
+
+            if (plotData.length === 0) return [
+                'Processing forecasts.',
+                common.loader('ForecastSummary')
+            ];
+
+            return m('div', {
+                style: {'height': '500px'}
+            }, m(PlotVegaLite, {
+                specification: plots.vegaLiteForecast(
+                    plotData, xName, yName, dataSplit,
+                    groupName, crossSectionName, title),
+            }))
+
         }
 
         if (problem.task.toLowerCase().includes('regression') || problem.task.toLowerCase() === 'forecasting') {
@@ -788,7 +874,7 @@ export class CanvasSolutions {
             }
         }, resultsSubpanels['Scores Summary'] && this.scoresSummary(problem, solutionAdapters));
 
-        let variableImportance = m(Subpanel, {
+        let variableImportance = problem.task !== 'forecasting' && m(Subpanel, {
             style: {margin: '0px 1em'},
             header: 'Variable Importance',
             shown: resultsSubpanels['Variable Importance'],
@@ -947,6 +1033,19 @@ export let getSolutionAdapter = (problem, solution) => ({
         if (solution.solutionId in resultsData.confusion)
             return resultsData.confusion[solution.solutionId][target];
     },
+    getDataSample: (target, split) => {
+        let adapter = getSolutionAdapter(problem, solution);
+        loadDataSample(problem, adapter, split);
+        if (split in resultsData.dataSample)
+            return resultsData.dataSample[split].map(obs => obs[target])
+    },
+    getForecast: (target, split) => {
+        let adapter = getSolutionAdapter(problem, solution);
+        loadForecastData(problem, adapter, split);
+        let forecast = app.getRecursive(resultsData.forecast,
+            [adapter.getSolutionId(), split]);
+        if (forecast) return forecast.map(obs => obs[target]);
+    },
     getScore: metric => {
         if (!solution.scores) return;
         let evaluation = solution.scores.find(score => app.d3mMetricsInverted[score.metric.metric] === metric);
@@ -1057,7 +1156,8 @@ export let resultsPreferences = {
     factor: undefined,
     plotScores: 'all',
     selectedMetric: undefined,
-    dataSplit: 'test'
+    dataSplit: 'test',
+    recordLimit: 1000
 };
 
 let setResultsFactor = factor => resultsPreferences.factor = factor === 'undefined' ? undefined : factor;
@@ -1306,6 +1406,12 @@ export let resultsData = {
     confusion: {},
     confusionLoading: {},
 
+    // cached data for forecasting, per data split
+    dataSample: {},
+    dataSampleLoading: {},
+    forecast: {},
+    forecastLoading: {},
+
     // cached data is specific to the solution (tends to be larger)
     importanceEFD: undefined,
     importanceEFDLoading: false,
@@ -1361,6 +1467,12 @@ export let loadProblemData = async (problem, predictor=undefined) => {
     // specific to solution and target, all solutions stored for one target
     resultsData.confusion = {};
     resultsData.confusionLoading = {};
+
+    // cached data for forecasting, per data split
+    resultsData.dataSample = {};
+    resultsData.dataSampleLoading = {};
+    resultsData.forecast = {};
+    resultsData.forecastLoading = {};
 
     // specific to solution and target, one solution stored for one target
     resultsData.importanceEFD = undefined;
@@ -1553,6 +1665,138 @@ export let loadConfusionData = async (problem, adapter) => {
 
     resultsData.confusion[adapter.getSolutionId()] = response.data;
     resultsData.confusionLoading[adapter.getSolutionId()] = false;
+
+    // apply state changes to the page
+    m.redraw();
+};
+
+
+export let loadDataSample = async (problem, adapter, split) => {
+
+    // reset if id is different
+    await loadProblemData(problem);
+
+    // don't load if systems are already in loading state
+    if (resultsData.dataSampleLoading[split])
+        return;
+
+    // don't load if already loaded
+    if (resultsData.dataSample[split])
+        return;
+
+    // begin blocking additional requests to load
+    resultsData.dataSampleLoading[split] = true;
+
+    let tempQuery = JSON.stringify(resultsData.id.query);
+
+    let variables = ['d3mIndex', ...app.getPredictorVariables(problem), problem.targets];
+
+    let response;
+    try {
+        response = await app.getData({
+            method: 'aggregate',
+            datafile: problem.datasetPaths[split],
+            collection_name: `${app.workspace.d3m_config.name}_${problem.problemId}_${split}`,
+            query: JSON.stringify(queryMongo.buildPipeline(
+                [
+                    ...app.workspace.raven_config.hardManipulations,
+                    ...problem.manipulations,
+                    {
+                        type: 'menu',
+                        metadata: {
+                            type: 'data',
+                            nominal: getNominalVariables(problem)
+                                .filter(variable => variables.includes(variable)),
+                            sample: resultsPreferences.recordLimit
+                        }
+                    },
+                ],
+                app.workspace.raven_config.variablesInitial)['pipeline'])
+        })
+    } catch (err) {
+        app.alertWarn('Dependent variables have not been loaded. Some plots will not load.')
+    }
+
+    // don't accept if problemId changed
+    if (resultsData.id.problemId !== problem.problemId)
+        return;
+
+    // don't accept if query changed
+    if (JSON.stringify(resultsData.id.query) !== tempQuery)
+        return;
+
+    resultsData.dataSample[split] = response;
+    resultsData.dataSampleLoading[split] = false;
+
+    m.redraw()
+};
+
+
+export let loadForecastData = async (problem, adapter, split) => {
+    await loadDataSample(problem, adapter, split);
+
+    let dataPointer = adapter.getDataPointer(split);
+
+    // don't load if data is not available
+    if (!dataPointer)
+        return;
+
+    // indices from dataSample must be loaded first
+    if (!(split in resultsData.dataSample))
+        return;
+
+    // forecasts apply only to forecasting problems
+    if (problem.task.toLowerCase() !== 'forecasting')
+        return;
+
+    // don't load if systems are already in loading state
+    if (app.getRecursive(resultsData.forecastLoading, [adapter.getSolutionId(), split]))
+        return;
+
+    // don't load if already loaded
+    if (app.getRecursive(resultsData.forecast, [adapter.getSolutionId(), split]))
+        return;
+
+    // begin blocking additional requests to load
+    app.setRecursive(resultsData.forecastLoading, [
+        [adapter.getSolutionId(), {}],
+        [split, true]
+    ]);
+
+    let tempQuery = JSON.stringify(resultsData.id.query);
+    let response;
+    try {
+        response = await m.request(D3M_SVC_URL + `/retrieve-output-data`, {
+            method: 'POST',
+            data: {
+                data_pointer: dataPointer,
+                indices: resultsData.dataSample[split].map(obs => obs.d3mIndex)
+            }
+        });
+
+        if (!response.success) {
+            console.warn(response);
+            throw response.data;
+        }
+    } catch (err) {
+        console.warn("retrieve-output-data error");
+        console.log(err);
+        app.alertWarn('Forecast data has not been loaded. Some plots will not load.');
+        return;
+    }
+
+    // don't accept response if current problem has changed
+    if (resultsData.id.problemId !== problem.problemId)
+        return;
+
+    // don't accept response if query changed
+    if (JSON.stringify(resultsQuery) !== tempQuery)
+        return;
+
+    app.setRecursive(resultsData.forecast,
+        [[adapter.getSolutionId(), {}], [split, response.data]]);
+    app.setRecursive(resultsData.forecastLoading,
+        [[adapter.getSolutionId(), {}], [split, false]]);
 
     // apply state changes to the page
     m.redraw();
@@ -1997,6 +2241,7 @@ export let prepareResultsDatasets = async (problem, solverId) => {
     problem.datasetPathsManipulated = problem.datasetPathsManipulated || {};
     problem.selectedSolutions[solverId] = problem.selectedSolutions[solverId] || [];
 
+    // DEBUG_MODE TAGGED (set thinking to false)
     problem.solverState[solverId] = {thinking: true};
     problem.solverState[solverId].message = 'preparing partials data';
     m.redraw();
