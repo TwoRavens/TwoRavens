@@ -312,6 +312,9 @@ def split_dataset(configuration, workspace):
         shutil.copytree(workspace.d3m_config.training_data_root, dest_directory)
         os.remove(csv_path)
 
+        with open(path.join(dest_directory, 'datasetDoc.json'), 'w') as dataset_schema_file:
+            json.dump(dataset_schema, dataset_schema_file)
+
         return path.join(dest_directory, 'datasetDoc.json'), csv_path
 
     all_datasetDoc, all_datasetCsv = get_dataset_paths('all')
