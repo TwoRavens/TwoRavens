@@ -266,7 +266,7 @@ def produce_task(websocket_id, model_id, spec):
 
 # fit a pipeline to create a solution
 # DEBUG_MODE TAGGED
-@celery_app.task(ignore_result=True)
+@celery_app.task()
 def pipeline_task(search_id, pipeline_specification, train_specification, callback_name, callback_arguments=None):
     model = tworaven_solver.fit_pipeline(pipeline_specification, train_specification)
 

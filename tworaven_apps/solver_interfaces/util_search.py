@@ -14,6 +14,8 @@ import requests
 import multiprocessing
 import os
 
+from time import sleep
+
 
 class Search(object):
     system = None
@@ -550,6 +552,7 @@ class SearchTwoRavens(Search):
             problem_specification=problem_specification,
             system_params=self.system_params)
 
+        task_ids = []
         while True:
             pipeline_specification = manager.get_pipeline_specification()
             if not pipeline_specification:
@@ -558,12 +561,18 @@ class SearchTwoRavens(Search):
             task_handle = pipeline_task
             if not DEBUG_MODE:
                 task_handle = task_handle.delay
-            task_handle(
+            task_ids.append(task_handle(
                 search_id=self.search_id,
                 train_specification=self.specification,
                 pipeline_specification=pipeline_specification,
                 callback_name=self.callback_found,
-                callback_arguments=self.callback_arguments)
+                callback_arguments=self.callback_arguments))
+
+        while task_ids:
+            if task_ids[0].ready():
+                del task_ids[0]
+            else:
+                sleep(0.5)
 
         return {
             KEY_SUCCESS: True,
