@@ -290,7 +290,8 @@ export class CanvasSolutions {
                     // concat together the values in the columns for each of the cross sections, for each observation
                     out[split] = crossSectionData[problem.tags.crossSection[0]]
                         .map((_, i) => problem.tags.crossSection
-                            .reduce((label, columnName) => `${label}-${crossSectionData[columnName][i]}`), {});
+                            .reduce((label, columnName) => `${label}-${crossSectionData[columnName][i]}`, '')
+                            .slice(1), {});
 
                     return out;
                 }, {});
@@ -339,20 +340,22 @@ export class CanvasSolutions {
             ];
 
             response.push(
-                m('div[style=margin:.5em]', 'Subset to cross section:'),
-                crossSectionSummary[plotSplits[0]].length > 20 ? m(TextFieldSuggestion, {
-                    value: resultsPreferences.crossSection,
-                    suggestions: crossSectionSummary[plotSplits[0]],
-                    enforce: true,
-                    oninput: val => resultsPreferences.crossSection = val,
-                    onblur: val => resultsPreferences.crossSection = val
-                }) : m(Dropdown, {
-                    id: 'crossSectionDropdown',
-                    items: ['unset', ...crossSectionSummary[plotSplits[0]]],
-                    activeItem: resultsPreferences.crossSection,
-                    onclickChild: value => resultsPreferences.crossSection = value,
-                    style: {'margin-left': '1em'}
-                }),
+                plotSplits[0] in crossSectionSummary && crossSectionSummary[plotSplits[0]].length > 1 && [
+                    m('div[style=margin:.5em]', 'Subset to cross section:'),
+                    (crossSectionSummary[plotSplits[0]].length > 20 ? m(TextFieldSuggestion, {
+                        value: resultsPreferences.crossSection,
+                        suggestions: crossSectionSummary[plotSplits[0]],
+                        enforce: true,
+                        oninput: val => resultsPreferences.crossSection = val,
+                        onblur: val => resultsPreferences.crossSection = val
+                    }) : m(Dropdown, {
+                        id: 'crossSectionDropdown',
+                        items: ['unset', ...crossSectionSummary[plotSplits[0]]],
+                        activeItem: resultsPreferences.crossSection,
+                        onclickChild: value => resultsPreferences.crossSection = value,
+                        style: {'margin-left': '1em'}
+                    }))   
+                ],
                 m('div', {
                     style: {'height': '500px'}
                 }, m(PlotVegaLite, {
