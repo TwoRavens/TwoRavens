@@ -42,6 +42,7 @@ import * as stackedbarnnn from '../vega-schemas/trivariate/stackedbarnnn';
 import * as facetbox from '../vega-schemas/trivariate/facetbox';
 import * as facetheatmap from '../vega-schemas/trivariate/facetheatmap';
 import * as groupedbarnqq from '../vega-schemas/trivariate/groupedbarnqq';
+import * as timeseries from '../vega-schemas/trivariate/timeseries';
 
 import * as common from "../../common/common";
 import Popper from "../../common/views/Popper";
@@ -132,6 +133,10 @@ export class CanvasExplore {
                     let targetName = app.leftTab === 'Discover'
                         ? app.workspace.raven_config.problems[x].targets[0]
                         : x;
+		    let node = app.variableSummaries[x];
+		    let kind = node && node.temporal ? 'temporal' :
+			node && node.geographic ? 'geographic' :
+			null;
 
                     // tile for each variable or problem
                     let tile = m('span#exploreNodeBox', {
@@ -142,9 +147,9 @@ export class CanvasExplore {
                                     return;
                                 }
 
-                                    exploreVariables.includes(x)
-                                        ? app.remove(exploreVariables, x)
-                                        : exploreVariables.push(x);
+				exploreVariables.includes(x)
+				    ? app.remove(exploreVariables, x)
+				    : exploreVariables.push(x);
                             },
                             style: {
                                 // border: '1px solid rgba(0, 0, 0, .2)',
@@ -188,7 +193,8 @@ export class CanvasExplore {
                                     overflow: 'auto'
                                 }
                             },
-                            get_node_label(x))
+                            get_node_label(x)),
+			kind && m('div', m('em', kind))
                     );
 
                     if (app.variableSummaries[targetName].labl)
@@ -306,7 +312,8 @@ let plotMap = {
     stackedbarnnn: "Stacked Bar Plot",
     facetbox: "Faceted Box Plot",
     facetheatmap: "Faceted Heatmap",
-    groupedbarnqq: "Grouped Bar with Binned Z"
+    groupedbarnqq: "Grouped Bar with Binned Z",
+    timeseries: "Timeseries"
 };
 
 let schemaMap = {
@@ -347,7 +354,8 @@ let schemaMap = {
     stackedbarnnn: stackedbarnnn,
     facetbox: facetbox,
     facetheatmap: facetheatmap,
-    groupedbarnqq: groupedbarnqq
+    groupedbarnqq: groupedbarnqq,
+    timeseries: timeseries,
 };
 
 let schemas = {
@@ -357,7 +365,7 @@ let schemas = {
         'scattermeansd stackedbar step strip tableheat trellishist',
     trivariate: 'bubbletri groupedbartri horizgroupbar scattertri bubbleqqq ' +
         'scatterqqq trellisscatterqqn heatmapnnq dotdashqqn tablebubblennq ' +
-        'stackedbarnnn facetbox facetheatmap groupedbarnqq',
+        'stackedbarnnn facetbox facetheatmap groupedbarnqq timeseries',
     multivariate: 'binnedcrossfilter scattermatrix'
 };
 
@@ -368,9 +376,9 @@ let approps = {
     qn: ["aggbar", "box", "strip", "trellishist"],
     qqq: ["bubbleqqq", "scatterqqq", "scattermatrix"],
     qnn: ["horizgroupbar", "facetbox"],
-    qqn: ["scattertri", "trellisscatterqqn", "dotdashqqn"],
+    qqn: ["scattertri", "trellisscatterqqn", "dotdashqqn", "timeseries"],
     qnq: ["bubbletri"],
-    nqn: ["groupedbartri", "facetbox"],
+    nqn: ["groupedbartri", "facetbox", "timeseries"],
     nqq: ["groupedbarnqq"],
     nnq: ["heatmapnnq", "tablebubblennq"],
     nnn: ["stackedbarnnn", "facetheatmap"]
@@ -410,6 +418,13 @@ let getPlotType = (pt, pn) => {
                 !myCons[0] && myCons[1] ? ['box', 'nq'] :
                     ['stackedbar', 'nn'];
     }
+
+    if (pn.length == 3 && pn[0].temporal) {
+	let x = myCons[0] ? 'q' : 'n';
+	let y = myCons[1] ? 'q' : 'n';
+	return ['timeseries', x + y + 'n'];
+    }
+
     if (pn.length == 3) {
         return myCons[0] && myCons[1] && myCons[2] ? ['bubbleqqq', 'qqq'] :
             myCons[0] && !myCons[1] && !myCons[2] ? ['horizgroupbar', 'qnn'] :
@@ -453,6 +468,11 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
 
     // function to fill in the contents of the vega schema.
     let fillVega = (data, flip, schema) => {
+	let plottype = data.plottype;
+	if (plottype[0] === 'timeseries') {
+	    if (plottype[1][0] !== 'q') schema.encoding.x.type = 'nominal';
+	}
+
         let stringified = JSON.stringify(schema);
         if (flip) {
             stringified = stringified.replace(/"x"/g, '"t"');
@@ -484,7 +504,7 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
             stringified = stringified.replace(/"tworavensUniqueY"/g, "[" + $uniques + "]");
             stringified = stringified.replace(/"tworavensColors"/g, "[" + $colors + "]");
         }
-        if (data.plottype[0] == "groupedbartri") {
+        if (plottype[0] == "groupedbartri") {
             let $colors = colors.splice(0, data["uniqueZ"].length).map(col => `"${col}"`).join(',');
             //  stringified = stringified.replace(/"tworavensUniqueY"/g, "["+data.uniqueY+"]");
             stringified = stringified.replace(/"tworavensColors"/g, "[" + $colors + "]");
@@ -493,12 +513,12 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
             stringified = stringified.replace(/"tworavensMeanY"/g, data.meanY);
             stringified = stringified.replace(/tworavensMeanY/g, data.meanY); //both needed in this order
         }
-        if (data.plottype[0] == "scattermatrix") {
+        if (plottype[0] == "scattermatrix") {
             let $matvars = data["vars"].map(myvar => `"${myvar}"`).join(',');
             stringified = stringified.replace(/"tworavensRow"/g, $matvars);
             stringified = stringified.replace(/"tworavensCol"/g, $matvars);
         }
-        if (data.plottype[0] == "binnedcrossfilter") {
+        if (plottype[0] == "binnedcrossfilter") {
             let $matvars = data["vars"].map(myvar => `"${myvar}"`).join(',');
             stringified = stringified.replace(/"tworavensVars"/g, $matvars);
         }
@@ -569,6 +589,7 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
         if (!schema) app.alertError("invalid plot type");
         // console.log(schema);
         let flip = plotflip(plottype);
+	json.vars = plotvars;
         jsonarr[i] = fillVega(json, flip, schema);
     }
 
@@ -599,8 +620,8 @@ export function thumbsty(plotNodes, thumb) {
 
 export function getIsRecommended(plotNodes, thumb) {
     let plotType = getPlotType("", plotNodes);
-
     if (!plotType) return;
+
     return (approps[plotType[1]] || []).indexOf(thumb) > -1;
 }
 
