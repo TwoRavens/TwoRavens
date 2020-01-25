@@ -42,9 +42,7 @@ import * as stackedbarnnn from '../vega-schemas/trivariate/stackedbarnnn';
 import * as facetbox from '../vega-schemas/trivariate/facetbox';
 import * as facetheatmap from '../vega-schemas/trivariate/facetheatmap';
 import * as groupedbarnqq from '../vega-schemas/trivariate/groupedbarnqq';
-// TODO: uncomment when this file is committed
-// import * as timeseries from '../vega-schemas/trivariate/timeseries';
-let timeseries = {};
+import * as timeseries from '../vega-schemas/trivariate/timeseries';
 
 import * as common from "../../common/common";
 import Popper from "../../common/views/Popper";
