@@ -339,22 +339,24 @@ export class CanvasSolutions {
                 common.loader('ForecastSummary')
             ];
 
+            let crossSectionsUnique = [...new Set(crossSectionSummary[plotSplits[0]])];
+
             response.push(
-                plotSplits[0] in crossSectionSummary && crossSectionSummary[plotSplits[0]].length > 1 && [
+                plotSplits[0] in crossSectionSummary && crossSectionsUnique.length > 1 && [
                     m('div[style=margin:.5em]', 'Subset to cross section:'),
-                    (crossSectionSummary[plotSplits[0]].length > 20 ? m(TextFieldSuggestion, {
+                    (crossSectionsUnique.length > 20 ? m(TextFieldSuggestion, {
                         value: resultsPreferences.crossSection,
-                        suggestions: crossSectionSummary[plotSplits[0]],
+                        suggestions: crossSectionsUnique,
                         enforce: true,
                         oninput: val => resultsPreferences.crossSection = val,
                         onblur: val => resultsPreferences.crossSection = val
                     }) : m(Dropdown, {
                         id: 'crossSectionDropdown',
-                        items: ['unset', ...crossSectionSummary[plotSplits[0]]],
+                        items: ['unset', ...crossSectionsUnique],
                         activeItem: resultsPreferences.crossSection,
                         onclickChild: value => resultsPreferences.crossSection = value,
                         style: {'margin-left': '1em'}
-                    }))   
+                    }))
                 ],
                 m('div', {
                     style: {'height': '500px'}
