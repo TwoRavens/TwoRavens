@@ -738,8 +738,11 @@ class ModelTwoRavens(Model):
         scores = []
         for target in self.targets:
             for metric in score_specification['performanceMetrics']:
+                results = pandas.DataFrame({'actual': dataframe[target], 'predicted': predicted[target]})
+                results.dropna(inplace=True)
+
                 scores.append({
-                    'value': get_metric(metric)(dataframe[target], predicted[target]),
+                    'value': get_metric(metric)(results['actual'], results['predicted']),
                     'metric': metric,
                     'target': target
                 })

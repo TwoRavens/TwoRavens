@@ -28,6 +28,7 @@ import Paginated from "../../common/views/Paginated";
 import TextField from "../../common/views/TextField";
 
 import {getNominalVariables} from "../app";
+import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
 
 export let leftpanel = () => {
 
@@ -252,6 +253,8 @@ export class CanvasSolutions {
 
     predictionSummary(problem, adapters) {
 
+        let response = [];
+
         if (problem.task !== 'forecasting' && adapters.every(adapter => !adapter.getDataPointer(resultsPreferences.dataSplit))) {
             return [
                 'Waiting for solver to produce predictions.',
@@ -260,7 +263,6 @@ export class CanvasSolutions {
         }
 
         if (problem.task.toLowerCase() === 'forecasting' && adapters.length > 0) {
-            console.log(adapters);
             let plotSplits = resultsPreferences.dataSplit === 'all' ? ['train', 'test'] : [resultsPreferences.dataSplit];
 
             let actualSummary = plotSplits.reduce((out, split) => Object.assign(out, {
@@ -328,20 +330,36 @@ export class CanvasSolutions {
                                 [crossSectionName]: crossSectionSummary[split][i],
                                 [xName]: timeSummary[split][i]
                             })))
-                ]);
+                ])
+                .filter(point => problem.tags.crossSection.length === 0 || resultsPreferences.crossSection === 'unset' || point[crossSectionName] === resultsPreferences.crossSection)
 
             if (plotData.length === 0) return [
                 'Processing forecasts.',
                 common.loader('ForecastSummary')
             ];
 
-            return m('div', {
-                style: {'height': '500px'}
-            }, m(PlotVegaLite, {
-                specification: plots.vegaLiteForecast(
-                    plotData, xName, yName, dataSplit,
-                    groupName, crossSectionName, title),
-            }))
+            response.push(
+                m('div[style=margin:.5em]', 'Subset to cross section:'),
+                crossSectionSummary[plotSplits[0]].length > 20 ? m(TextFieldSuggestion, {
+                    value: resultsPreferences.crossSection,
+                    suggestions: crossSectionSummary[plotSplits[0]],
+                    enforce: true,
+                    oninput: val => resultsPreferences.crossSection = val,
+                    onblur: val => resultsPreferences.crossSection = val
+                }) : m(Dropdown, {
+                    id: 'crossSectionDropdown',
+                    items: ['unset', ...crossSectionSummary[plotSplits[0]]],
+                    activeItem: resultsPreferences.crossSection,
+                    onclickChild: value => resultsPreferences.crossSection = value,
+                    style: {'margin-left': '1em'}
+                }),
+                m('div', {
+                    style: {'height': '500px'}
+                }, m(PlotVegaLite, {
+                    specification: plots.vegaLiteForecast(
+                        plotData, xName, yName, dataSplit,
+                        groupName, crossSectionName, title),
+                })))
 
         }
 
@@ -364,13 +382,13 @@ export class CanvasSolutions {
 
             summaries.forEach(summary => summary.fittedVsActual.map(entry => entry[groupName] = summary.name));
 
-            return m('div', {
+            response.push(m('div', {
                 style: {'height': '500px'}
             }, m(PlotVegaLite, {
                 specification: plots.vegaLiteScatter(
                     summaries.flatMap(summary => summary.fittedVsActual),
                     xName, yName, groupName, countName, title),
-            }))
+            })))
         }
 
         if (problem.task.toLowerCase().includes('classification')) {
@@ -455,6 +473,7 @@ export class CanvasSolutions {
                 })
             ]
         }
+        return response;
     };
 
     scoresSummary(problem, adapters) {
@@ -1157,7 +1176,8 @@ export let resultsPreferences = {
     plotScores: 'all',
     selectedMetric: undefined,
     dataSplit: 'test',
-    recordLimit: 1000
+    recordLimit: 10000,
+    crossSection: 'unset'
 };
 
 let setResultsFactor = factor => resultsPreferences.factor = factor === 'undefined' ? undefined : factor;
