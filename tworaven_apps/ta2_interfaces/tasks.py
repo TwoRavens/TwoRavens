@@ -55,6 +55,11 @@ from tworaven_apps.ta2_interfaces.ta2_fit_solution_helper import FitSolutionHelp
 from tworaven_apps.ta2_interfaces.ta2_score_solution_helper import ScoreSolutionHelper
 from tworaven_apps.user_workspaces.models import UserWorkspace
 
+from tworaven_solver import approx_seconds, get_date
+import csv
+from dateutil import parser
+from collections import deque
+
 
 @celery_app.task(ignore_result=True)
 def stream_and_store_results(raven_json_str, stored_request_id,
@@ -201,6 +206,8 @@ def split_dataset(configuration, workspace):
     resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
 
     keep_variables = None
+    cross_section_date_limits = None
+    inferred_freq = None
     # rewrite datasetDoc in output datasets if new problem metadata is supplied
     if problem:
         keep_variables = list({
@@ -248,6 +255,51 @@ def split_dataset(configuration, workspace):
 
         # modify in place
         resource_schema['columns'] = [update_col_schema(i, col_name) for i, col_name in enumerate(keep_variables)]
+
+        # # WARNING: dates are assumed to be monotonically increasing
+        # if problem.get('time') and problem.get('crossSection'):
+        #     time_column = problem['time'][0]
+        #     time_format = problem.get('time_format')
+        #
+        #     cross_section_date_limits = {}
+        #     time_buffer = []
+        #     candidate_frequencies = set()
+        #     with open(configuration['dataset_path'], 'r') as infile:
+        #         reader = csv.DictReader(infile)
+        #         infer_count = 0
+        #         for row in reader:
+        #             date = get_date(row[time_column], time_format=time_format)
+        #             if not date:
+        #                 continue
+        #
+        #             # infer frequency up to 100 times
+        #             if infer_count < 100:
+        #
+        #                 buffer_is_empty = len(time_buffer) == 0
+        #                 date_is_newer = len(time_buffer) > 0 and time_buffer[-1] < date
+        #
+        #                 if buffer_is_empty or date_is_newer:
+        #                     time_buffer.append(date)
+        #                     if len(time_buffer) > 3:
+        #                         del time_buffer[0]
+        #
+        #                     # at minimum three time points are needed to infer a date offset frequency
+        #                     if len(time_buffer) == 3:
+        #                         infer_count += 1
+        #                         candidate_frequency = pd.infer_freq(time_buffer)
+        #                         if candidate_frequency:
+        #                             candidate_frequencies.add(candidate_frequency)
+        #
+        #             # collect the highest date within each cross section
+        #             section = tuple(row[col] for col in problem['crossSection'])
+        #             cross_section_date_limits.setdefault(section, date)
+        #             cross_section_date_limits[section] = max(cross_section_date_limits[section], date)
+        #
+        #     # if data has no trio of evenly spaced records
+        #     if candidate_frequencies:
+        #         # sort inferred frequency by approximate time durations, select shortest
+        #         inferred_freq = sorted([(i, approx_seconds(i)) for i in candidate_frequencies], key=lambda x: x[1])[0][0]
+        #         inferred_freq = pd.tseries.frequencies.to_offset(inferred_freq)
 
     def get_dataset_paths(role):
         dest_dir_info = create_destination_directory(workspace, name=role)
@@ -343,8 +395,31 @@ def split_dataset(configuration, workspace):
 
             # split dataset along temporal variable
             elif problem['taskType'] == 'FORECASTING':
-                # TODO: order by temporal variable is ignored
                 horizon = problem.get('forecastingHorizon', {}).get('value', 10)
+                # if cross_section_date_limits and inferred_freq:
+                #     time_format = problem.get('time_format')
+                #     time_column = problem['time'][0]
+                #
+                #     cross_section_max_count = int(max_count / len(cross_section_date_limits))
+                #     horizon = min(cross_section_max_count, horizon)
+                #
+                #     def in_test(row):
+                #         section = tuple(row[col] for col in problem['crossSection'])
+                #         date = get_date(row[time_column], time_format)
+                #         max_date = cross_section_date_limits[section]
+                #         return max_date - inferred_freq * horizon < date < max_date
+                #     def in_train(row):
+                #         section = tuple(row[col] for col in problem['crossSection'])
+                #         date = get_date(row[time_column], time_format)
+                #         max_date = cross_section_date_limits[section] - inferred_freq * horizon
+                #         return max_date - inferred_freq * cross_section_max_count < date < max_date
+                #
+                #     splits = {
+                #         'train': dataframe.loc[dataframe.apply(in_train, axis=1)],
+                #         'test': dataframe.loc[dataframe.apply(in_test, axis=1)],
+                #         'stratified': False
+                #     }
+                # else:
                 train_idx_min = row_count - max_count - horizon
                 test_idx_min = row_count - horizon
 
@@ -385,15 +460,17 @@ def split_dataset(configuration, workspace):
                 splits = run_split()
 
             for split_name in ['train', 'test']:
-                if sample_count < len(splits[split_name]):
-                    splits[split_name] = splits[split_name].sample(sample_count)
+                if problem['taskType'] != 'FORECASTING':
+                    if sample_count < len(splits[split_name]):
+                        splits[split_name] = splits[split_name].sample(sample_count)
 
                 splits[split_name].to_csv(dataset_paths[split_name], mode='a', header=False, index=False)
                 dataset_stratified[split_name] = dataset_stratified[split_name] and splits['stratified']
 
         row_count_chunked += len(dataframe)
-        if sample_count < chunk_count:
-            dataframe = dataframe.sample(sample_count)
+        if problem['taskType'] != 'FORECASTING':
+            if sample_count < chunk_count:
+                dataframe = dataframe.sample(sample_count)
 
         dataframe.to_csv(dataset_paths['all'], mode='a', header=False, index=False)
 
@@ -420,7 +497,6 @@ def create_destination_directory(user_workspace, name):
         return {KEY_SUCCESS: False, KEY_DATA: f' {new_dir_info.err_msg} ({dest_dir_path})'}
 
     return {KEY_SUCCESS: True, KEY_DATA: dest_dir_path}
-
 
 
 @celery_app.task
