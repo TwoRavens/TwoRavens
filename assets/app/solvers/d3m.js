@@ -858,9 +858,10 @@ export async function endsession() {
     // console.log(JSON.stringify(selectedPipelines, null, 2));
 
     let selectedSolution = selectedPipelines[0];
+    let adapter = results.getSolutionAdapter(selectedProblem, selectedSolution);
+    let pipelineId = adapter.getSolutionId();
 
-    let plineId = isKeyDefined(selectedSolution, 'pipelineId');
-    if (plineId === undefined){
+    if (pipelineId === undefined){
       setModal(m('div', {}, [
               m('p', 'Sorry!  The pipelineId for the selected solution could not be found.'),
               m('p', 'The solution was not exported.'),
@@ -872,23 +873,11 @@ export async function endsession() {
       return;
     }
 
-    let selectedSolutionId = isKeyDefined(selectedSolution, 'pipeline.id');
-    if (selectedSolutionId === undefined){
-      setModal(m('div', {}, [
-              m('p', 'Sorry!  The solutionId for the selected pipeline could not be found.'),
-              m('p', 'The solution was not exported.'),
-              ]),
-               `Pipeline ${plineId}: Failed to Export Solution`,
-               true,
-               "Close",
-               true);
-      return;
-    }
     m.redraw();
 
     // calling exportSolution
     //
-    let status = await exportSolution(String(selectedSolutionId));
+    let status = await exportSolution(String(pipelineId));
 
     if (status.success) {
         app.taskPreferences.isSubmittingPipelines = false;

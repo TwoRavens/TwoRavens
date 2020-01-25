@@ -2767,6 +2767,8 @@ export async function handleAugmentDataMessage(msg_data) {
                 setSelectedProblem(problemCopy.problemId);
             }
 
+            setSelectedMode('model');
+
             saveUserWorkspace(true)
         });
 

@@ -1092,7 +1092,7 @@ export let rightpanel = () => {
 
     return m(Panel, {
             side: 'right',
-            label: 'Model Selection',
+            label: 'Problem Configuration',
             hover: true,
             width: rightPanelWidths[app.rightTab],
             attrsAll: {
