@@ -32,7 +32,7 @@ Note: The most frequently built image is `tworavens/ravens-main`.  It is built/p
 - Dockerfile location within TwoRavens repository: `/Dockerfile`
 - Manual build:
   ```
-  docker build -t tworavens/ravens-main:[tag name] .;
+  docker build -t tworavens/ravens-main:[tag name] -f Dockerfile .;
   docker push tworavens/ravens-main:[tag name];
   ```
 
