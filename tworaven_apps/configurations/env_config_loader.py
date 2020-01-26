@@ -11,6 +11,8 @@ from types import SimpleNamespace
 from django.conf import settings
 
 from tworaven_apps.utils import random_info
+from tworaven_apps.utils.file_util import read_file_contents
+
 from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.utils.json_helper import json_loads
@@ -40,11 +42,15 @@ class EnvConfigLoader(BasicErrCheck):
         (2) is_user_config=True
         """
         self.env_config = env_config_vals
+        print('self.env_config', self.env_config)
+
         if isinstance(self.env_config, dict):
             self.env_config = SimpleNamespace(**self.env_config)
 
         assert isinstance(self.env_config, SimpleNamespace), \
             '"env_config_vals" must be a dict or a SimpleNamespace'
+
+        self.dataset_doc_path = kwargs.get('dataset_doc_path', None)
 
         self.delete_if_exists = kwargs.get('delete_if_exists', False)
         self.success_keeping_config = False
@@ -210,6 +216,7 @@ class EnvConfigLoader(BasicErrCheck):
             except KeyError:
                 user_msg = ('about.Problem ID not found in problem doc: %s') % \
                         self.env_config.D3MPROBLEMPATH
+                print(user_msg)
                 self.add_err_msg(user_msg)
                 return
         else:
@@ -219,6 +226,7 @@ class EnvConfigLoader(BasicErrCheck):
                         (random_info.get_timestamp_string(),
                          random_info.get_alphanumeric_lowercase(4))
 
+        print('name', name)
         # If a D3MConfiguration with this name exists, either
         #   use it or delete, depending on the flag: self.delete_if_exists
         #
@@ -259,6 +267,7 @@ class EnvConfigLoader(BasicErrCheck):
         if not isdir(self.env_config.D3MINPUTDIR):
             user_msg = (f'D3MINPUTDIR is not accessible:'
                         f' {self.env_config.D3MINPUTDIR}')
+            print(user_msg)
             self.add_err_msg(user_msg)
             return
 
@@ -281,6 +290,22 @@ class EnvConfigLoader(BasicErrCheck):
             config_info['training_data_root'] = \
                 join(dirname(dirname(config_info['problem_schema'])),
                      'dataset_TRAIN')
+        elif self.dataset_doc_path:
+            #
+            #   Just a dataset doc available.  Update variables appropriately
+            #
+            config_info['training_data_root'] = dirname(self.dataset_doc_path)
+
+            doc_info = read_file_contents(self.dataset_doc_path)
+            if doc_info.success:
+                dataset_doc = doc_info.result_obj
+                print('dataset_doc', dataset_doc)
+                if 'about' in dataset_doc:
+                    if 'datasetID' in dataset_doc['about']:
+                        config_info['name'] = dataset_doc['about']['datasetID']
+                        config_info['orig_dataset_id'] = dataset_doc['about']['datasetID']
+
+
         else:
             # This will fail if multi-user testing
             #   with no problem doc
@@ -427,6 +452,19 @@ class EnvConfigLoader(BasicErrCheck):
         else:
             info.D3MPROBLEMPATH = ''
 
+
+        # Problem path is the same...
+        #
+        dataset_doc_path = join(fullpath,
+                            'TRAIN',
+                            'dataset_TRAIN',
+                            'datasetDoc.json')
+
+        if not isfile(dataset_doc_path):
+            dataset_doc_path = None
+
+        info.dataset_doc_path = dataset_doc_path
+
         # Create these output directories
         #
         if is_multi_dataset_demo is True:
@@ -454,6 +492,7 @@ class EnvConfigLoader(BasicErrCheck):
         info.D3MRAM = 1 # 1000 * 1024 * 1024 # '1Gi'
         #info.D3MRAM = '1Gi'
 
+        kwargs['dataset_doc_path'] = dataset_doc_path
         loader = EnvConfigLoader(info, **kwargs)
         if loader.has_error():
             if loader.success_keeping_config:

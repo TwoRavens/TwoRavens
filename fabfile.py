@@ -96,6 +96,7 @@ def make_d3m_configs_from_files_multiuser_test_limited():
 
     selected_datatsets = [#'05_incarceration',
                           #'10_state_immigration',
+                          '20_Ethiopia_Admin_Level_2_sub',
                           'TR60_Ethiopia_Small_2017-2018',
                           'TR50_PRIO_GRID',
                           '185_baseball',
