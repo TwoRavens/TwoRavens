@@ -687,7 +687,7 @@ export let leftpanel = forceData => {
             onclick: () => app.setFocusedPanel('left'),
             style: {
                 'z-index': 100 + (app.focusedPanel === 'left'),
-                background: 'rgb(249, 249, 249, .8)',
+                background: 'rgb(249, 249, 249, .9)',
                 height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
             }
         }
@@ -743,7 +743,9 @@ export let rightpanel = () => {
                 m('label', 'Task Type'),
                 m(Dropdown, {
                     id: 'taskType',
-                    items: Object.keys(app.d3mTaskType),
+                    // TODO: TEMPORARY FOR GATES
+                    items: ['classification', 'regression', 'forecasting'],
+                    // items: Object.keys(app.d3mTaskType),
                     activeItem: selectedProblem.task,
                     onclickChild: task => app.setTask(task, selectedProblem),
                     style: {'margin': '1em', 'margin-top': '0'},

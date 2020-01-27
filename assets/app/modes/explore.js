@@ -42,7 +42,8 @@ import * as stackedbarnnn from '../vega-schemas/trivariate/stackedbarnnn';
 import * as facetbox from '../vega-schemas/trivariate/facetbox';
 import * as facetheatmap from '../vega-schemas/trivariate/facetheatmap';
 import * as groupedbarnqq from '../vega-schemas/trivariate/groupedbarnqq';
-import * as timeseries from '../vega-schemas/trivariate/timeseries';
+import * as timeseriestri from '../vega-schemas/trivariate/timeseriestri';
+import * as timeseries from '../vega-schemas/timeseries';
 
 import * as common from "../../common/common";
 import Popper from "../../common/views/Popper";
@@ -313,7 +314,8 @@ let plotMap = {
     facetbox: "Faceted Box Plot",
     facetheatmap: "Faceted Heatmap",
     groupedbarnqq: "Grouped Bar with Binned Z",
-    timeseries: "Timeseries"
+    timeseries: "Timeseries",
+    timeseriestri: "Timeseries with Groups"
 };
 
 let schemaMap = {
@@ -356,29 +358,30 @@ let schemaMap = {
     facetheatmap: facetheatmap,
     groupedbarnqq: groupedbarnqq,
     timeseries: timeseries,
+    timeseriestri: timeseriestri,
 };
 
 let schemas = {
     univariate: 'areauni dot histogram histogrammean simplebar',
-    bivariate: 'aggbar area averagediff binnedscatter binnedtableheat box ' +
-        'groupedbar horizon interactivebarmean line scatter scattermatrix ' +
-        'scattermeansd stackedbar step strip tableheat trellishist',
-    trivariate: 'bubbletri groupedbartri horizgroupbar scattertri bubbleqqq ' +
+    bivariate: 'timeseries scatter box tableheat binnedtableheat aggbar area averagediff binnedscatter ' +
+        'groupedbar horizon interactivebarmean line scattermatrix ' +
+        'scattermeansd stackedbar step strip trellishist',
+    trivariate: 'timeseriestri bubbletri groupedbartri horizgroupbar scattertri bubbleqqq ' +
         'scatterqqq trellisscatterqqn heatmapnnq dotdashqqn tablebubblennq ' +
-        'stackedbarnnn facetbox facetheatmap groupedbarnqq timeseries',
+        'stackedbarnnn facetbox facetheatmap groupedbarnqq',
     multivariate: 'binnedcrossfilter scattermatrix'
 };
 
 let approps = {
-    qq: ["scatter", "line", "area", "binnedscatter", "binnedtableheat", "horizon", "scattermatrix", "scattermeansd", "step"],
-    nn: ["stackedbar", "tableheat",],
-    nq: ["box", "interactivebarmean"],
-    qn: ["aggbar", "box", "strip", "trellishist"],
+    qq: ["scatter", "line", "area", "binnedscatter", "binnedtableheat", "horizon", "scattermatrix", "scattermeansd", "step", "timeseries"],
+    nn: ["tableheat", "stackedbar"],
+    nq: ["box", "interactivebarmean", "timeseries"],
+    qn: ["box", "aggbar", "strip", "trellishist", "timeseries"],
     qqq: ["bubbleqqq", "scatterqqq", "scattermatrix"],
     qnn: ["horizgroupbar", "facetbox"],
-    qqn: ["scattertri", "trellisscatterqqn", "dotdashqqn", "timeseries"],
+    qqn: ["scattertri", "trellisscatterqqn", "dotdashqqn"],
     qnq: ["bubbletri"],
-    nqn: ["groupedbartri", "facetbox", "timeseries"],
+    nqn: ["timeseriestri", "groupedbartri", "facetbox"],
     nqq: ["groupedbarnqq"],
     nnq: ["heatmapnnq", "tablebubblennq"],
     nnn: ["stackedbarnnn", "facetheatmap"]
@@ -416,13 +419,13 @@ let getPlotType = (pt, pn) => {
         return myCons[0] && myCons[1] ? ['scatter', 'qq'] :
             myCons[0] && !myCons[1] ? ['box', 'qn'] :
                 !myCons[0] && myCons[1] ? ['box', 'nq'] :
-                    ['stackedbar', 'nn'];
+                    ['tableheat', 'nn'];
     }
 
     if (pn.length == 3 && pn[0].temporal) {
-	let x = myCons[0] ? 'q' : 'n';
-	let y = myCons[1] ? 'q' : 'n';
-	return ['timeseries', x + y + 'n'];
+        let x = myCons[0] ? 'q' : 'n';
+        let y = myCons[1] ? 'q' : 'n';
+        return ['timeseries', x + y + 'n'];
     }
 
     if (pn.length == 3) {

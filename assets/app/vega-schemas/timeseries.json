@@ -1,0 +1,14 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+  "data": {"url": "tworavensData"},
+  "mark":  {
+    "type": "line",
+    "point": true
+  },
+  "encoding": {
+    "x": {"field": "tworavensX", "type": "quantitative"},
+    "y": {"field": "tworavensY", "type": "quantitative", "aggregate": "sum"}
+  },
+  "width": 640,
+  "height": 480
+}

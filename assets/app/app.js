@@ -2009,14 +2009,8 @@ export let erase = () => {
     problem.pebbleLinks = [];
     problem.targets = [];
     problem.manipulations = [];
-    problem.tags = {
-        transformed: [],
-        weights: [], // singleton list
-        crossSection: [],
-        time: [],
-        nominal: [],
-        loose: [] // variables displayed in the force diagram, but not in any groups
-    }
+    Object.keys(problem.tags).forEach(tag => problem.tags[tag] = []);
+    problem.tags.indexes = ['d3mIndex'];
 };
 
 /**
