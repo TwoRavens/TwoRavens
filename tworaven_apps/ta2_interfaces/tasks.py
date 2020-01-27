@@ -208,10 +208,11 @@ def split_dataset(configuration, workspace):
     keep_variables = None
     cross_section_date_limits = None
     inferred_freq = None
+    dtypes = {}
     # rewrite datasetDoc in output datasets if new problem metadata is supplied
     if problem:
         keep_variables = list({
-            problem.get('index', 'd3mIndex'),
+            *problem.get('indexes', ['d3mIndex']),
             *problem['predictors'],
             *problem['targets']
         })
@@ -257,8 +258,12 @@ def split_dataset(configuration, workspace):
         resource_schema['columns'] = [update_col_schema(i, col_name) for i, col_name in enumerate(keep_variables)]
 
         # # WARNING: dates are assumed to be monotonically increasing
-        if problem.get('time') and problem.get('crossSection'):
+        if problem.get('taskType') == 'FORECASTING' and  problem.get('time') and problem.get('crossSection'):
             time_column = problem['time'][0]
+            dtypes[time_column] = str
+            for cross_section in problem.get('crossSection'):
+                dtypes[cross_section] = str
+
             time_format = problem.get('time_format')
 
             cross_section_date_limits = {}
@@ -363,11 +368,16 @@ def split_dataset(configuration, workspace):
         splits_file_path = f"{split_options['splitsDir']}/{split_options['splitsFile']}"
         splits_file_generator = pd.read_csv(splits_file_path, chunksize=10 ** 5)
 
+    data_file_generator = pd.read_csv(
+        configuration['dataset_path'],
+        chunksize=10 ** 5,
+        usecols=keep_variables,
+        dtype=dtypes)
     row_count_chunked = 0
 
     # TODO: adjust chunksize based on number of columns
     for dataframe, dataframe_split in zip(
-            pd.read_csv(configuration['dataset_path'], chunksize=10 ** 5, usecols=keep_variables),
+            data_file_generator,
             splits_file_generator):
 
         # rows with NaN values become object rows, which may contain multiple types. The NaN values become empty strings

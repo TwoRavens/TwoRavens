@@ -893,7 +893,7 @@ export let applicableMetrics = {
         multivariate: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared']
     },
     forecasting: {
-        subTypeNone: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared', 'precisionAtTopK']
+        subTypeNone: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared']
     },
     clustering: {
         subTypeNone: ["meanSquaredError", "rootMeanSquaredError", "meanAbsoluteError", "jaccardSimilarityScore"]
@@ -1165,7 +1165,7 @@ let buildDefaultProblem = problemDoc => {
         splitOptions: Object.assign({
             outOfSampleSplit: true,
             // evaluationMethod can only be holdOut
-            trainTestRatio: problemDoc.inputs.dataSplits.testSize || 0.35,
+            trainTestRatio: problemDoc.inputs.dataSplits.testSize || 0.7,
             stratified: problemDoc.inputs.dataSplits.stratified,
             shuffle: problemDoc.inputs.dataSplits.shuffle,
             randomSeed: problemDoc.inputs.dataSplits.randomSeed,
@@ -1184,7 +1184,7 @@ let buildDefaultProblem = problemDoc => {
         scoreOptions: {
             evaluationMethod: problemDoc.inputs.dataSplits.method || 'kFold',
             folds: problemDoc.inputs.dataSplits.folds || 10,
-            trainTestRatio: problemDoc.inputs.dataSplits.testSize || 0.35,
+            trainTestRatio: problemDoc.inputs.dataSplits.testSize || 0.7,
             stratified: problemDoc.inputs.dataSplits.stratified,
             shuffle: problemDoc.inputs.dataSplits.shuffle,
             randomSeed: problemDoc.inputs.dataSplits.randomSeed,
@@ -1489,7 +1489,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                             d3mTags: [],
                             splitOptions: {
                                 outOfSampleSplit: true,
-                                trainTestRatio: 0.35,
+                                trainTestRatio: 0.7,
                                 stratified: false,
                                 shuffle: true,
                                 randomSeed: undefined,
@@ -1506,7 +1506,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                             scoreOptions: {
                                 evaluationMethod: 'kFold',
                                 folds: 10,
-                                trainTestRatio: 0.35,
+                                trainTestRatio: 0.7,
                                 stratified: false,
                                 shuffle: true,
                                 randomSeed: undefined,
@@ -2095,7 +2095,7 @@ export function discovery(problems) {
 
             splitOptions: {
                 outOfSampleSplit: true,
-                trainTestRatio: 0.35,
+                trainTestRatio: 0.7,
                 stratified: false,
                 shuffle: true,
                 randomSeed: undefined,
@@ -2112,7 +2112,7 @@ export function discovery(problems) {
             scoreOptions: {
                 evaluationMethod: 'kFold',
                 folds: 10,
-                trainTestRatio: 0.35,
+                trainTestRatio: 0.7,
                 stratified: false,
                 shuffle: true,
                 randomSeed: undefined,
