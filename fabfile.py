@@ -103,6 +103,7 @@ def make_d3m_configs_from_files_multiuser_test_limited():
       'TR85_Ethiopia_zone_mon_sub',
       'TR86_Ethiopia_zone_mon_sub_con',
       'TR87_Ethiopia_zone_mon_con',
+      'TR61_Ethiopia_Large_2017-2018',
 
       'TR60_Ethiopia_Small_2017-2018',
       'TR50_PRIO_GRID',
