@@ -2,11 +2,9 @@
 send a gRPC command that has streaming results
 capture the results in the db as StoredResponse objects
 """
-from datetime import datetime
+
 from django.conf import settings
 from django.http import JsonResponse
-from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
 
 from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
 
@@ -38,11 +36,10 @@ from os import path
 import os
 import json
 from d3m.container.dataset import Dataset
-import numpy as np
-import math
 
 from sklearn.model_selection import train_test_split
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 
 #
 # Import Tasks to SearchSolutions/GetSearchSolutionsResults,
@@ -210,101 +207,100 @@ def split_dataset(configuration, workspace):
     inferred_freq = None
     dtypes = {}
     # rewrite datasetDoc in output datasets if new problem metadata is supplied
-    if problem:
-        keep_variables = list({
-            *problem.get('indexes', ['d3mIndex']),
-            *problem['predictors'],
-            *problem['targets']
-        })
-        all_variables = pd.read_csv(configuration['dataset_path'], nrows=1).columns.tolist()
-        # preserve column order, and only keep variables that already existed
-        keep_variables = sorted(list(i for i in keep_variables if i in all_variables), key=lambda x: all_variables.index(x))
+    keep_variables = list({
+        *problem.get('indexes', ['d3mIndex']),
+        *problem['predictors'],
+        *problem['targets']
+    })
+    all_variables = pd.read_csv(configuration['dataset_path'], nrows=1).columns.tolist()
+    # preserve column order, and only keep variables that already existed
+    keep_variables = sorted(list(i for i in keep_variables if i in all_variables), key=lambda x: all_variables.index(x))
 
-        passthrough_roles = [
-            'multiIndex', 'key', 'interval', 'boundingPolygon',
-            'edgeSource', "directedEdgeSource", "undirectedEdgeSource", "multiEdgeSource", "simpleEdgeSource",
-            "edgeTarget", "directedEdgeTarget", "undirectedEdgeTarget", "multiEdgeTarget", "simpleEdgeTarget"
-        ]
+    passthrough_roles = [
+        'multiIndex', 'key', 'interval', 'boundingPolygon',
+        'edgeSource', "directedEdgeSource", "undirectedEdgeSource", "multiEdgeSource", "simpleEdgeSource",
+        "edgeTarget", "directedEdgeTarget", "undirectedEdgeTarget", "multiEdgeTarget", "simpleEdgeTarget"
+    ]
 
-        map_roles = {
-            "indexes": 'index',
-            'predictors': 'attribute',
-            'targets': 'suggestedTarget',
-            'crossSection': 'suggestedGroupingKey',
-            'location': 'locationIndicator',
-            'boundary': 'boundaryIndicator',
-            'time': 'timeIndicator',
-            'weights': 'instanceWeight',
-            'privileged': 'suggestedPriviligedData'
-        }
+    map_roles = {
+        "indexes": 'index',
+        'predictors': 'attribute',
+        'targets': 'suggestedTarget',
+        'crossSection': 'suggestedGroupingKey',
+        'location': 'locationIndicator',
+        'boundary': 'boundaryIndicator',
+        'time': 'timeIndicator',
+        'weights': 'instanceWeight',
+        'privileged': 'suggestedPriviligedData'
+    }
 
-        def update_roles(prev_roles, col_name):
-            roles = [i for i in prev_roles if i in passthrough_roles]
+    def update_roles(prev_roles, col_name):
+        roles = [i for i in prev_roles if i in passthrough_roles]
 
-            for role_name in map_roles:
-                if col_name in problem[role_name]:
-                    roles.append(map_roles[role_name])
+        for role_name in map_roles:
+            if col_name in problem[role_name]:
+                roles.append(map_roles[role_name])
 
-            return roles
+        return roles
 
-        def update_col_schema(i, col_name):
-            col_schema = next(col_schema for col_schema in resource_schema['columns'] if col_schema['colName'] == col_name)
-            col_schema['colIndex'] = i
-            if configuration.get('update_roles'):
-                col_schema['role'] = update_roles(col_schema['role'], col_name)
-            return col_schema
+    def update_col_schema(i, col_name):
+        col_schema = next(col_schema for col_schema in resource_schema['columns'] if col_schema['colName'] == col_name)
+        col_schema['colIndex'] = i
+        if configuration.get('update_roles'):
+            col_schema['role'] = update_roles(col_schema['role'], col_name)
+        return col_schema
 
-        # modify in place
-        resource_schema['columns'] = [update_col_schema(i, col_name) for i, col_name in enumerate(keep_variables)]
+    # modify in place
+    resource_schema['columns'] = [update_col_schema(i, col_name) for i, col_name in enumerate(keep_variables)]
 
-        # # WARNING: dates are assumed to be monotonically increasing
-        if problem.get('taskType') == 'FORECASTING' and  problem.get('time') and problem.get('crossSection'):
-            time_column = problem['time'][0]
-            dtypes[time_column] = str
-            for cross_section in problem.get('crossSection'):
-                dtypes[cross_section] = str
+    # WARNING: dates are assumed to be monotonically increasing
+    if problem.get('taskType') == 'FORECASTING' and problem.get('time') and problem.get('crossSection'):
+        time_column = problem['time'][0]
+        dtypes[time_column] = str
+        for cross_section in problem.get('crossSection'):
+            dtypes[cross_section] = str
 
-            time_format = problem.get('time_format')
+        time_format = problem.get('time_format')
 
-            cross_section_date_limits = {}
-            time_buffer = []
-            candidate_frequencies = set()
-            with open(configuration['dataset_path'], 'r') as infile:
-                reader = csv.DictReader(infile)
-                infer_count = 0
-                for row in reader:
-                    date = get_date(row[time_column], time_format=time_format)
-                    if not date:
-                        continue
+        cross_section_date_limits = {}
+        time_buffer = []
+        candidate_frequencies = set()
+        with open(configuration['dataset_path'], 'r') as infile:
+            reader = csv.DictReader(infile)
+            infer_count = 0
+            for row in reader:
+                date = get_date(row[time_column], time_format=time_format)
+                if not date:
+                    continue
 
-                    # infer frequency up to 100 times
-                    if infer_count < 100:
+                # infer frequency up to 100 times
+                if infer_count < 100:
 
-                        buffer_is_empty = len(time_buffer) == 0
-                        date_is_newer = len(time_buffer) > 0 and time_buffer[-1] < date
+                    buffer_is_empty = len(time_buffer) == 0
+                    date_is_newer = len(time_buffer) > 0 and time_buffer[-1] < date
 
-                        if buffer_is_empty or date_is_newer:
-                            time_buffer.append(date)
-                            if len(time_buffer) > 3:
-                                del time_buffer[0]
+                    if buffer_is_empty or date_is_newer:
+                        time_buffer.append(date)
+                        if len(time_buffer) > 3:
+                            del time_buffer[0]
 
-                            # at minimum three time points are needed to infer a date offset frequency
-                            if len(time_buffer) == 3:
-                                infer_count += 1
-                                candidate_frequency = pd.infer_freq(time_buffer)
-                                if candidate_frequency:
-                                    candidate_frequencies.add(candidate_frequency)
+                        # at minimum three time points are needed to infer a date offset frequency
+                        if len(time_buffer) == 3:
+                            infer_count += 1
+                            candidate_frequency = pd.infer_freq(time_buffer)
+                            if candidate_frequency:
+                                candidate_frequencies.add(candidate_frequency)
 
-                    # collect the highest date within each cross section
-                    section = tuple(row[col] for col in problem['crossSection'])
-                    cross_section_date_limits.setdefault(section, date)
-                    cross_section_date_limits[section] = max(cross_section_date_limits[section], date)
+                # collect the highest date within each cross section
+                section = tuple(row[col] for col in problem['crossSection'])
+                cross_section_date_limits.setdefault(section, date)
+                cross_section_date_limits[section] = max(cross_section_date_limits[section], date)
 
-            # if data has no trio of evenly spaced records
-            if candidate_frequencies:
-                # sort inferred frequency by approximate time durations, select shortest
-                inferred_freq = sorted([(i, approx_seconds(i)) for i in candidate_frequencies], key=lambda x: x[1])[0][0]
-                inferred_freq = pd.tseries.frequencies.to_offset(inferred_freq)
+        # if data has no trio of evenly spaced records
+        if candidate_frequencies:
+            # sort inferred frequency by approximate time durations, select shortest
+            inferred_freq = sorted([(i, approx_seconds(i)) for i in candidate_frequencies], key=lambda x: x[1])[0][0]
+            inferred_freq = pd.tseries.frequencies.to_offset(inferred_freq)
 
     def get_dataset_paths(role):
         dest_dir_info = create_destination_directory(workspace, name=role)
@@ -486,6 +482,33 @@ def split_dataset(configuration, workspace):
                 dataframe = dataframe.sample(sample_count)
 
         dataframe.to_csv(dataset_paths['all'], mode='a', header=False, index=False)
+
+    # aggregate so that each cross section contains one observation at each time point
+    if problem.get('taskType') == 'FORECASTING' and problem.get('time'):
+        for split_name in dataset_paths:
+
+            # data no longer needs to be chunked, it should be small enough (unless there are a large number of dupe records)
+            dataframe = pd.read_csv(
+                dataset_paths[split_name],
+                dtype=dtypes)
+
+            key_order = dataframe.columns.values
+
+            group_keys = [problem['time'][0], *problem.get('crossSection', [])]
+            other_keys = [i for i in dataframe.columns.values if i not in group_keys]
+
+            grouped = dataframe.groupby(group_keys)
+            aggregated = grouped.aggregate(
+                {variable: pd.Series.mean if is_numeric_dtype(variable) else lambda x: pd.Series.mode(x)[0]
+                 for variable in other_keys})
+            aggregated.reset_index(inplace=True)
+
+            # reindex if aggregation shortened the dataframe
+            if len(dataframe) != len(aggregated):
+                aggregated[problem['indexes'][0]] = range(len(aggregated))
+
+            aggregated = aggregated.reindex(columns=key_order, copy=False)
+            aggregated.to_csv(dataset_paths[split_name], index=False)
 
     return {
         'dataset_schemas': dataset_schemas,
