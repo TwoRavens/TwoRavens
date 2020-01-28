@@ -449,6 +449,7 @@ DATAMART_SHORT_TIMEOUT = 10 # seconds
 DATAMART_LONG_TIMEOUT = 5 * 60 # 5 minutes
 DATAMART_VERY_LONG_TIMEOUT = 10 * 60 # 8 minutes
 
+SORT_BY_GATES_DATASETS = strtobool(os.environ.get('SORT_BY_GATES_DATASETS', 'True'))
 # -------------------------
 # Debug show branch name on page
 # -------------------------

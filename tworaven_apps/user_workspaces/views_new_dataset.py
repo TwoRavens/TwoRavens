@@ -125,14 +125,44 @@ def view_upload_dataset(request):
 
     return JsonResponse(get_json_success('file upload completed successfully'))
 
+def is_ethiopia_dataset(name):
+    """Names with 'TR' at start or Ethiopia"""
+    return name.upper().startswith('TR') or \
+           name.lower().find('ethiopia') > -1
+
+def get_sorted_configs(**kwargs):
+    """Bit of hack to get list of sorted configs with
+    Ethiopia datasets right after the default dataset"""
+
+    params = dict(is_selectable_dataset=True)
+
+    configs = D3MConfiguration.objects.filter(**params \
+                                              ).order_by('-is_default', 'name')
+
+    lconfigs = list(configs)
+
+    if len(lconfigs) < 2 or not settings.SORT_BY_GATES_DATASETS:
+        return lconfigs
+
+    # Ethiopia datasets
+    eth_datasets = sorted([x for x in lconfigs[1:]
+                           if is_ethiopia_dataset(x.name)],
+                          key=lambda obj: obj.name)
+
+    # Non-Ethiopia datasets
+    non_eth_datasets = sorted([x for x in lconfigs[1:]
+                               if not is_ethiopia_dataset(x.name)],
+                              key=lambda obj: obj.name)
+
+    sorted_configs = lconfigs[:1] + eth_datasets + non_eth_datasets
+
+    return sorted_configs
 
 @login_required
 def view_list_dataset_choices_html(request):
     """List datasets for a user to examine"""
 
-    params = dict(is_selectable_dataset=True)
-    configs = D3MConfiguration.objects.filter(**params \
-                                              ).order_by('-is_default', 'name')
+    configs = get_sorted_configs()
 
     info = dict(title='Available Datasets',
                 configs=configs)
@@ -147,10 +177,12 @@ def view_list_dataset_choices_html(request):
 def view_list_dataset_choices(request):
     """List datasets for a user to examine"""
 
-    params = dict(is_selectable_dataset=True)
-    configs = D3MConfiguration.objects.filter(**params).order_by('-is_default', 'name')
+    configs = get_sorted_configs()
 
-    configs_serializable = [{key: getattr(config, key) for key in ['id', 'name']} for config in configs]
+    configs_serializable = [{key: getattr(config, key)
+                            for key in ['id', 'name']}
+                            for config in configs]
+
     return JsonResponse({KEY_SUCCESS: True, KEY_DATA: configs_serializable})
 
 @login_required

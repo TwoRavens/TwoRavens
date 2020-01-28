@@ -96,22 +96,21 @@ def make_d3m_configs_from_files_multiuser_test_limited():
 
     selected_datatsets = [\
       #'20_Ethiopia_Admin_Level_2_sub',
-      'TR81_Ethiopia_phemyear',
-      'TR82_Ethiopia_phemlarge',
-      'TR83_Ethiopia_gdl_sub',
-      'TR84_Ethiopia_zone_mon',
-      'TR85_Ethiopia_zone_mon_sub',
-      'TR86_Ethiopia_zone_mon_sub_con',
-      'TR87_Ethiopia_zone_mon_con',
-      'TR88_Ethiopia_phemclean',
-      'TR61_Ethiopia_Large_2017-2018',
-
-      'TR60_Ethiopia_Small_2017-2018',
-      'TR50_PRIO_GRID',
-      '185_baseball',
-      '196_autoMpg',
-      # 'LL1_PHEM_weeklyData_malnutrition',
-      'DA_poverty_estimation']
+        'TR50_PRIO_GRID',
+        'TR60_Ethiopia_Small_2017-2018',
+        'TR61_Ethiopia_Large_2017-2018',
+        'TR81_Ethiopia_phemyear',
+        #'TR82_Ethiopia_phemlarge',
+        'TR83_Ethiopia_gdl_sub',
+        #'TR84_Ethiopia_zone_mon',
+        #'TR85_Ethiopia_zone_mon_sub',
+        #'TR86_Ethiopia_zone_mon_sub_con',
+        #'TR87_Ethiopia_zone_mon_con',
+        'TR88_Ethiopia_phemclean',
+        '185_baseball',
+        '196_autoMpg',
+        # 'LL1_PHEM_weeklyData_malnutrition',
+        'DA_poverty_estimation']
 
     # -------------------------------
     # Check if selected datasets are
