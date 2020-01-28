@@ -464,7 +464,7 @@ def util_results_importance_efd(data_pointer, metadata):
         for i in range(len(data)):
             smoothed.append({
                 **{
-                    level: sum(weight * data[clip(i + j_level - offset)][level]
+                    level: sum(weight * (data[clip(i + j_level - offset)][level] or 0)
                                for j_level, weight in enumerate(kernel))
                     for level in data[i].keys() if level != "predictor"
                 },
