@@ -11,6 +11,7 @@ import Table from "../../common/views/Table";
 import {preformatted} from "../index";
 import Paginated from "../../common/views/Paginated";
 import MenuHeaders from "../../common/views/MenuHeaders";
+import Icon from "../../common/views/Icon";
 export class CanvasDataset {
     oninit() {
         if (!datasetPreferences.presets.length) m.request('user-workspaces/list-dataset-choices', {
@@ -86,8 +87,17 @@ export class CanvasDataset {
                 m('div', {style: {display: 'inline-block'}}, uploadStatus)
             ),
             datasetPreferences.datasourceMode === 'Presets' && [
+                m(TextField, {
+                    placeholder: 'search',
+                    id: 'datasetSearchTextfield',
+                    value: datasetPreferences.datasetSearch,
+                    oninput: value => datasetPreferences.datasetSearch = value,
+                    onblur: value => datasetPreferences.datasetSearch = value,
+                    style: {'margin': '1em 0'}
+                }),
                 m(Paginated, {
-                    data: datasetPreferences.presets,
+                    data: datasetPreferences.presets
+                        .filter(preset => datasetPreferences.datasetSearch.length === 0 || preset.name.toLowerCase().includes(datasetPreferences.datasetSearch.toLowerCase())),
                     makePage: data => m(Table, {
                         attrsAll: {
                             style: {width: 'calc(100% + 2em)', 'margin-left': '-1em'}
@@ -201,6 +211,7 @@ export let uploadStatus;
 
 let datasetPreferences = {
     datasourceMode: 'Current',
+    datasetSearch: 'Ethiopia',
     upload: {
         name: '',
         files: []
