@@ -14,6 +14,7 @@ import Subpanel from "../../common/views/Subpanel";
 import MenuHeaders from "../../common/views/MenuHeaders";
 import Button from "../../common/views/Button";
 import Icon from "../../common/views/Icon";
+import Popper from '../../common/views/Popper';
 import MenuTabbed from "../../common/views/MenuTabbed";
 
 import {bold, italicize, preformatted} from "../index";
@@ -76,17 +77,24 @@ export let leftpanel = () => {
             //     onclickChild: app.setSelectedProblem
             // })
         ),
-        m('div#modelComparisonOption', {style: {displayx: 'inline-block'}},
-            m('input#modelComparisonCheck[type=checkbox]', {
-                onclick: m.withAttr("checked", setModelComparison),
-                checked: modelComparison,
-                style: {margin: '.25em'}
-            }),
-            m('label#modelComparisonLabel', {
-                title: 'select multiple models to compare',
-                style: {display: 'inline-block'}
-            }, 'Model Comparison')
-        ),
+        m(Popper,
+            {content: () => m('div[style=max-width:250px]', 'When model comparison is enabled, multiple solutions may be selected and visualized simultaneously.')},
+            m(Button, {
+                style: {margin: '1em'},
+                class: modelComparison ? 'btn-success active' : '',
+                onclick: () => setModelComparison(!modelComparison)
+            }, 'Model Comparison')),
+        // m('div#modelComparisonOption', {style: {displayx: 'inline-block'}},
+        //     m('input#modelComparisonCheck[type=checkbox]', {
+        //         onclick: m.withAttr("checked", setModelComparison),
+        //         checked: modelComparison,
+        //         style: {margin: '.25em'}
+        //     }),
+        //     m('label#modelComparisonLabel', {
+        //         title: 'select multiple models to compare',
+        //         style: {display: 'inline-block'}
+        //     }, 'Model Comparison')
+        // ),
 
         m(MenuHeaders, {
             id: 'pipelineMenu',
