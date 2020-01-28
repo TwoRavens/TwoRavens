@@ -363,7 +363,7 @@ let schemaMap = {
 
 let schemas = {
     univariate: 'areauni dot histogram histogrammean simplebar',
-    bivariate: 'timeseries scatter box tableheat binnedtableheat aggbar area averagediff binnedscatter ' +
+    bivariate: 'scatter box tableheat timeseries binnedtableheat aggbar area averagediff binnedscatter ' +
         'groupedbar horizon interactivebarmean line scattermatrix ' +
         'scattermeansd stackedbar step strip trellishist',
     trivariate: 'timeseriestri bubbletri groupedbartri horizgroupbar scattertri bubbleqqq ' +

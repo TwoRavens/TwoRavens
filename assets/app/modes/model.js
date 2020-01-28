@@ -823,7 +823,15 @@ export let rightpanel = () => {
                     disabled: isLocked
                 }),
 
-                app.applicableMetrics[selectedProblem.task][app.getSubtask(selectedProblem)].length - 1 > selectedProblem.metrics.length && m(Dropdown, {
+                m('label[style=margin-top:0.5em]', 'Advanced Options. If enabled, then more problem types, splitting, search and score options may be configured.'),
+                m(ButtonRadio, {
+                    id: 'advancedModeOption',
+                    onclick: !isLocked && (value => app.workspace.raven_config.advancedMode = value === 'True'),
+                    activeSection: app.workspace.raven_config.advancedMode ? 'True' : 'False',
+                    sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
+                }),
+
+                app.workspace.raven_config.advancedMode && app.applicableMetrics[selectedProblem.task][app.getSubtask(selectedProblem)].length - 1 > selectedProblem.metrics.length && m(Dropdown, {
                     id: 'performanceMetrics',
                     items: app.applicableMetrics[selectedProblem.task][app.getSubtask(selectedProblem)]
                         .filter(metric => metric !== selectedProblem.metric && !selectedProblem.metrics.includes(metric)),
@@ -835,13 +843,13 @@ export let rightpanel = () => {
                     style: {'margin': '1em', 'margin-top': '0'},
                     disabled: isLocked
                 }),
-                m(ListTags, {
+                app.workspace.raven_config.advancedMode && m(ListTags, {
                     readonly: isLocked,
                     tags: selectedProblem.metrics,
                     ondelete: metric => app.remove(selectedProblem.metrics, metric)
                 }),
 
-                [selectedProblem.metric, ...selectedProblem.metrics].find(metric => ['f1', 'precision', 'recall'].includes(metric)) && [
+                app.workspace.raven_config.advancedMode && [selectedProblem.metric, ...selectedProblem.metrics].find(metric => ['f1', 'precision', 'recall'].includes(metric)) && [
                     m('label', 'Positive Class. Used for f1, precision, and recall metrics.'),
                     m(Dropdown, {
                         id: 'positiveClass',
@@ -853,7 +861,7 @@ export let rightpanel = () => {
                     }),
                 ],
 
-                [selectedProblem.metric, ...selectedProblem.metrics].find(metric => metric === 'precisionAtTopK') && [
+                app.workspace.raven_config.advancedMode && [selectedProblem.metric, ...selectedProblem.metrics].find(metric => metric === 'precisionAtTopK') && [
                     m('label', 'K, for Precision at top K'),
                     m(TextField, {
                         id: 'precisionAtTopKTextField',
@@ -863,14 +871,6 @@ export let rightpanel = () => {
                         style: {'margin-bottom': '1em'}
                     })
                 ],
-
-                m('label[style=margin-top:0.5em]', 'Advanced Options. If enabled, then more problem types, splitting, search and score options may be configured.'),
-                m(ButtonRadio, {
-                    id: 'advancedModeOption',
-                    onclick: !isLocked && (value => app.workspace.raven_config.advancedMode = value === 'True'),
-                    activeSection: app.workspace.raven_config.advancedMode ? 'True' : 'False',
-                    sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
-                }),
 
                 app.workspace.raven_config.advancedMode && m(Subpanel, {
                         header: 'Split Options',

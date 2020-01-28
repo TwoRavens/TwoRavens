@@ -77,13 +77,6 @@ export let leftpanel = () => {
             //     onclickChild: app.setSelectedProblem
             // })
         ),
-        m(Popper,
-            {content: () => m('div[style=max-width:250px]', 'When model comparison is enabled, multiple solutions may be selected and visualized simultaneously.')},
-            m(Button, {
-                style: {margin: '1em'},
-                class: modelComparison ? 'btn-success active' : '',
-                onclick: () => setModelComparison(!modelComparison)
-            }, 'Model Comparison')),
         // m('div#modelComparisonOption', {style: {displayx: 'inline-block'}},
         //     m('input#modelComparisonCheck[type=checkbox]', {
         //         onclick: m.withAttr("checked", setModelComparison),
@@ -155,7 +148,16 @@ export let leftpanel = () => {
                 })),
                 solutionsCombined && {
                     idSuffix: 'allSolutions',
-                    value: 'All Solutions',
+                    value: [
+                        'All Solutions',
+                        m('div[style=float:right]', m(Popper,
+                            {content: () => m('div[style=max-width:250px]', 'When model comparison is enabled, multiple solutions may be selected and visualized simultaneously.')},
+                            m(Button, {
+                                style: {'margin-top': '-1em'},
+                                class: 'btn-success ' + (modelComparison ? 'active' : ''),
+                                onclick: () => setModelComparison(!modelComparison)
+                            }, 'Model Comparison')))
+                    ],
                     contents: getSolutionTable(selectedProblem)
                 }
             ]
