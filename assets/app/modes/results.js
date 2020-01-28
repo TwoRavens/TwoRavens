@@ -325,7 +325,7 @@ export class CanvasSolutions {
                         [groupName]: 'Actual',
                         [yName]: actualSummary[split][i],
                         [crossSectionName]: crossSectionSummary[split][i],
-                        [xName]: timeSummary[split][i]
+                        [xName]: new Date(Date.parse(timeSummary[split][i]))
                     })),
                     ...forecastSummaries
                         // for each solutionId
@@ -337,7 +337,7 @@ export class CanvasSolutions {
                                 [groupName]: forecastSummary.solutionId,
                                 [yName]: forecastSummary[split][i],
                                 [crossSectionName]: crossSectionSummary[split][i],
-                                [xName]: timeSummary[split][i]
+                                [xName]: new Date(Date.parse(timeSummary[split][i]))
                             })))
                 ])
                 .filter(point => problem.tags.crossSection.length === 0 || resultsPreferences.crossSection === 'unset' || point[crossSectionName] === resultsPreferences.crossSection)
@@ -1734,6 +1734,7 @@ export let loadDataSample = async (problem, adapter, split) => {
             method: 'aggregate',
             datafile: problem.datasetPaths[split],
             collection_name: `${app.workspace.d3m_config.name}_${problem.problemId}_${split}`,
+            reload: true,
             query: JSON.stringify(queryMongo.buildPipeline(
                 [
                     ...app.workspace.raven_config.hardManipulations,

@@ -12,8 +12,8 @@ export let vegaLiteScatter = (data, xName, yName, groupName, countName, title=''
         },
         "encoding": {
             "color": {"field": groupName, "type": "nominal"},
-            "x": {"field": xName, "type": "quantitative", "axis": {"title": xName}},
-            "y": {"field": yName, "type": "quantitative", "axis": {"title": yName}}
+            "x": {"field": xName, "type": "quantitative", "axis": {"title": xName}, "scale": {"zero": false}},
+            "y": {"field": yName, "type": "quantitative", "axis": {"title": yName}, "scale": {"zero": false}}
         },
 
         "layer": [
@@ -65,6 +65,11 @@ export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSe
             "type": "fit",
             "contains": "padding"
         },
+        "selection": {
+            "grid": {
+                "type": "interval", "bind": "scales"
+            }
+        },
         "data": {
             "values": data
         },
@@ -80,8 +85,8 @@ export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSe
                 {"field": crossSectionName, "type": "nominal"},
             ],
             "color": {"field": groupName, "type": "nominal"},
-            "x": {"field": xName, "type": "temporal", "axis": {"title": xName}},
-            "y": {"field": yName, "type": "quantitative", "axis": {"title": yName}},
+            "x": {"field": xName, "type": "temporal", "axis": {"title": xName}, "scale": {"zero": false}},
+            "y": {"field": yName, "type": "quantitative", "axis": {"title": yName}, "scale": {"zero": false}},
             "opacity": {"field": splitName, "type": "nominal"},
             "detail": {"field": crossSectionName, "type": "nominal"}
         }

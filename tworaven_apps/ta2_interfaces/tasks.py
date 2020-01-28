@@ -254,10 +254,10 @@ def split_dataset(configuration, workspace):
     resource_schema['columns'] = [update_col_schema(i, col_name) for i, col_name in enumerate(keep_variables)]
 
     # WARNING: dates are assumed to be monotonically increasing
-    if problem.get('taskType') == 'FORECASTING' and problem.get('time') and problem.get('crossSection'):
+    if problem.get('taskType') == 'FORECASTING' and problem.get('time'):
         time_column = problem['time'][0]
         dtypes[time_column] = str
-        for cross_section in problem.get('crossSection'):
+        for cross_section in problem.get('crossSection', []):
             dtypes[cross_section] = str
 
         time_format = problem.get('time_format')
@@ -265,16 +265,30 @@ def split_dataset(configuration, workspace):
         cross_section_date_limits = {}
         time_buffer = []
         candidate_frequencies = set()
-        with open(configuration['dataset_path'], 'r') as infile:
-            reader = csv.DictReader(infile)
-            infer_count = 0
-            for row in reader:
-                date = get_date(row[time_column], time_format=time_format)
+
+        data_file_generator = pd.read_csv(
+            configuration['dataset_path'],
+            chunksize=10 ** 5,
+            usecols=keep_variables,
+            dtype=dtypes)
+
+        infer_count = 0
+        for dataframe_chunk in data_file_generator:
+
+            dataframe_chunk[time_column] = dataframe_chunk[time_column].apply(
+                lambda x: get_date(x, time_format=time_format))
+            dataframe_chunk = dataframe_chunk.sort_values(by=[time_column])
+
+            for _, row in dataframe_chunk.iterrows():
+        # with open(configuration['dataset_path'], 'r') as infile:
+        #     reader = csv.DictReader(infile)
+        #     for row in reader:
+                date = row[time_column]
                 if not date:
                     continue
 
                 # infer frequency up to 100 times
-                if infer_count < 100:
+                if infer_count < 1000000:
 
                     buffer_is_empty = len(time_buffer) == 0
                     date_is_newer = len(time_buffer) > 0 and time_buffer[-1] < date
@@ -292,16 +306,19 @@ def split_dataset(configuration, workspace):
                                 candidate_frequencies.add(candidate_frequency)
 
                 # collect the highest date within each cross section
-                section = tuple(row[col] for col in problem['crossSection'])
+                section = tuple(row[col] for col in problem.get('crossSection', []))
                 cross_section_date_limits.setdefault(section, date)
                 cross_section_date_limits[section] = max(cross_section_date_limits[section], date)
 
+        print('caf', candidate_frequencies)
         # if data has no trio of evenly spaced records
         if candidate_frequencies:
             # sort inferred frequency by approximate time durations, select shortest
             inferred_freq = sorted([(i, approx_seconds(i)) for i in candidate_frequencies], key=lambda x: x[1])[0][0]
             inferred_freq = pd.tseries.frequencies.to_offset(inferred_freq)
 
+    print('cross section date limites', cross_section_date_limits)
+    print('inferred freq', inferred_freq)
     def get_dataset_paths(role):
         dest_dir_info = create_destination_directory(workspace, name=role)
         if not dest_dir_info[KEY_SUCCESS]:
@@ -416,14 +433,14 @@ def split_dataset(configuration, workspace):
                     horizon = min(cross_section_max_count, horizon)
 
                     def in_test(row):
-                        section = tuple(row[col] for col in problem['crossSection'])
+                        section = tuple(row[col] for col in problem.get('crossSection', []))
                         date = get_date(row[time_column], time_format)
                         max_date = cross_section_date_limits[section]
                         # print('interval:', max_date - inferred_freq * horizon, max_date)
                         return max_date - inferred_freq * horizon <= date <= max_date
 
                     def in_train(row):
-                        section = tuple(row[col] for col in problem['crossSection'])
+                        section = tuple(row[col] for col in problem.get('crossSection', []))
                         date = get_date(row[time_column], time_format)
                         max_date = cross_section_date_limits[section] - inferred_freq * horizon
                         # TODO: lower bound isn't being set, due to risk of time underflow
