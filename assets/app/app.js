@@ -890,11 +890,11 @@ export let applicableMetrics = {
         multiLabel: ['accuracy', 'f1Micro', 'f1Macro', 'rocAucMacro', 'jaccardSimilarityScore', 'hammingLoss']
     },
     regression: {
-        univariate: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared'],
-        multivariate: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared']
+        univariate: ['meanSquaredError', 'rootMeanSquaredError', 'rSquared', 'meanAbsoluteError'],
+        multivariate: ['meanSquaredError', 'rootMeanSquaredError', 'rSquared', 'meanAbsoluteError']
     },
     forecasting: {
-        subTypeNone: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError']
+        subTypeNone: ['meanSquaredError', 'rootMeanSquaredError', 'meanAbsoluteError']
     },
     clustering: {
         subTypeNone: ["meanSquaredError", "rootMeanSquaredError", "meanAbsoluteError", "jaccardSimilarityScore"]

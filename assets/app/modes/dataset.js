@@ -97,7 +97,7 @@ export class CanvasDataset {
                 }),
                 m(Paginated, {
                     data: datasetPreferences.presets
-                        .filter(preset => datasetPreferences.datasetSearch.length === 0 || preset.name.toLowerCase().includes(datasetPreferences.datasetSearch)),
+                        .filter(preset => datasetPreferences.datasetSearch.length === 0 || preset.name.toLowerCase().includes(datasetPreferences.datasetSearch.toLowerCase())),
                     makePage: data => m(Table, {
                         attrsAll: {
                             style: {width: 'calc(100% + 2em)', 'margin-left': '-1em'}
