@@ -476,7 +476,7 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
             if (plottype[1][0] !== 'q') schema.encoding.x.type = 'nominal';
         }
 
-        if (schema.mark === 'point') {
+        if (schema.mark === 'point' || schema.mark == 'circle') {
             let [x, y] = nodes;
             let [padx, pady] = nodes.map(x => (x.max - x.min) / 4);
             if (x.max) schema.encoding.x.scale = {domain: [x.min - padx, x.max + padx]};
