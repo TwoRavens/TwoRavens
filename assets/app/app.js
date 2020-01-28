@@ -2585,7 +2585,6 @@ export function getProblemCopy(problemSource) {
         unedited: true,
         pending: true,
         system: 'user',
-        results: undefined
     });
 }
 

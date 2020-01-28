@@ -730,6 +730,12 @@ export let rightpanel = () => {
                         style: 'margin:1em',
                         onclick: () => {
                             let problemCopy = app.getProblemCopy(selectedProblem);
+                            resultsKeysToAxe.forEach(key => delete problemCopy[key]);
+                            Object.assign(problemCopy, {
+                                solutions: {},
+                                selectedSource: undefined,
+                                selectedSolutions: {}
+                            });
                             workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
                             app.setShowModalAlerts(false);
                             app.setSelectedProblem(problemCopy.problemId);
@@ -1277,6 +1283,8 @@ export let buildForceData = problem => {
     return {pebbles, groups, groupLinks, summaries};
 };
 
+// TODO: move these keys into a .results sub-key that can just be deleted
+let resultsKeysToAxe = ["solutions", "selectedSolutions", "solverState", "datasetPaths", "datasetSchemas", "datasetPathsManipulated", "datasetSchemasManipulated", "levels", "domains", "datasetColumnNames"];
 
 export let setGroup = (problem, group, name) => {
     if (problem.system === 'solved') {
@@ -1284,6 +1292,12 @@ export let setGroup = (problem, group, name) => {
             style: 'margin:1em',
             onclick: () => {
                 let problemCopy = app.getProblemCopy(problem);
+                resultsKeysToAxe.forEach(key => delete problemCopy[key]);
+                Object.assign(problemCopy, {
+                    solutions: {},
+                    selectedSource: undefined,
+                    selectedSolutions: {}
+                });
                 workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
                 app.setShowModalAlerts(false);
                 app.setSelectedProblem(problemCopy.problemId);
@@ -1359,6 +1373,12 @@ let setContextPebble = pebble => {
             style: 'margin:1em',
             onclick: () => {
                 let problemCopy = app.getProblemCopy(selectedProblem);
+                resultsKeysToAxe.forEach(key => delete problemCopy[key]);
+                Object.assign(problemCopy, {
+                    solutions: {},
+                    selectedSource: undefined,
+                    selectedSolutions: {}
+                });
                 workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
                 app.setShowModalAlerts(false);
                 app.setSelectedProblem(problemCopy.problemId);
