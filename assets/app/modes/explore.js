@@ -470,11 +470,18 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
     };
 
     // function to fill in the contents of the vega schema.
-    let fillVega = (data, flip, schema) => {
-	let plottype = data.plottype;
-	if (plottype[0] === 'timeseries') {
-	    if (plottype[1][0] !== 'q') schema.encoding.x.type = 'nominal';
-	}
+    let fillVega = (data, flip, schema, nodes) => {
+        let plottype = data.plottype;
+        if (plottype[0] === 'timeseries') {
+            if (plottype[1][0] !== 'q') schema.encoding.x.type = 'nominal';
+        }
+
+        if (schema.mark === 'point') {
+            let [x, y] = nodes;
+            let [padx, pady] = nodes.map(x => (x.max - x.min) / 4);
+            if (x.max) schema.encoding.x.scale = {domain: [x.min - padx, x.max + padx]};
+            if (y.max) schema.encoding.y.scale = {domain: [y.min - pady, y.max + pady]};
+        }
 
         let stringified = JSON.stringify(schema);
         if (flip) {
@@ -592,8 +599,8 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
         if (!schema) app.alertError("invalid plot type");
         // console.log(schema);
         let flip = plotflip(plottype);
-	json.vars = plotvars;
-        jsonarr[i] = fillVega(json, flip, schema);
+        json.vars = plotvars;
+        jsonarr[i] = fillVega(json, flip, schema, mypn);
     }
 
     if (jsonarr.length === 1) vegajson = jsonarr[0];
