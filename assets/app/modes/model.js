@@ -1210,7 +1210,7 @@ export let buildForceData = problem => {
     let summaries = Object.assign({}, app.variableSummaries);
 
     // collapse group intersections with more than maxNodes into a single node
-    let maxNodes = 20;
+    let maxNodes = 30;
 
     let removedPebbles = new Set();
     let addedPebbles = new Set();

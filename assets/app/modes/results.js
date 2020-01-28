@@ -339,17 +339,20 @@ export class CanvasSolutions {
                 common.loader('ForecastSummary')
             ];
 
-            let crossSectionsUnique = [...new Set(crossSectionSummary[plotSplits[0]])];
+            let crossSectionsUnique = ['unset', ...new Set(crossSectionSummary[plotSplits[0]])];
 
             response.push(
                 plotSplits[0] in crossSectionSummary && crossSectionsUnique.length > 1 && [
                     m('div[style=margin:.5em]', 'Subset to cross section:'),
                     (crossSectionsUnique.length > 20 ? m(TextFieldSuggestion, {
-                        value: resultsPreferences.crossSection,
+                        value: resultsPreferences.crossSectionTemp,
                         suggestions: crossSectionsUnique,
                         enforce: true,
-                        oninput: val => resultsPreferences.crossSection = val,
-                        onblur: val => resultsPreferences.crossSection = val
+                        oninput: val => resultsPreferences.crossSectionTemp = val,
+                        onblur: val => {
+                            resultsPreferences.crossSectionTemp = val;
+                            resultsPreferences.crossSection = val
+                        }
                     }) : m(Dropdown, {
                         id: 'crossSectionDropdown',
                         items: ['unset', ...crossSectionsUnique],
@@ -1182,7 +1185,8 @@ export let resultsPreferences = {
     selectedMetric: undefined,
     dataSplit: 'test',
     recordLimit: 10000,
-    crossSection: 'unset'
+    crossSection: 'unset',
+    crossSectionTemp: 'unset'
 };
 
 let setResultsFactor = factor => resultsPreferences.factor = factor === 'undefined' ? undefined : factor;

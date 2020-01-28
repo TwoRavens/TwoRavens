@@ -405,6 +405,9 @@ def split_dataset(configuration, workspace):
             # split dataset along temporal variable
             elif problem['taskType'] == 'FORECASTING':
                 horizon = problem.get('forecastingHorizon', {}).get('value', 10)
+                if not horizon:
+                    horizon = 10
+
                 if cross_section_date_limits and inferred_freq:
                     time_format = problem.get('time_format')
                     time_column = problem['time'][0]
@@ -416,12 +419,15 @@ def split_dataset(configuration, workspace):
                         section = tuple(row[col] for col in problem['crossSection'])
                         date = get_date(row[time_column], time_format)
                         max_date = cross_section_date_limits[section]
-                        return max_date - inferred_freq * horizon < date < max_date
+                        # print('interval:', max_date - inferred_freq * horizon, max_date)
+                        return max_date - inferred_freq * horizon <= date <= max_date
+
                     def in_train(row):
                         section = tuple(row[col] for col in problem['crossSection'])
                         date = get_date(row[time_column], time_format)
                         max_date = cross_section_date_limits[section] - inferred_freq * horizon
-                        return max_date - inferred_freq * cross_section_max_count < date < max_date
+                        # TODO: lower bound isn't being set, due to risk of time underflow
+                        return date < max_date - inferred_freq * horizon
 
                     splits = {
                         'train': dataframe.loc[dataframe.apply(in_train, axis=1)],

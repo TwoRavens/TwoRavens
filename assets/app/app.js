@@ -894,7 +894,7 @@ export let applicableMetrics = {
         multivariate: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared']
     },
     forecasting: {
-        subTypeNone: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError', 'rSquared']
+        subTypeNone: ['meanAbsoluteError', 'meanSquaredError', 'rootMeanSquaredError']
     },
     clustering: {
         subTypeNone: ["meanSquaredError", "rootMeanSquaredError", "meanAbsoluteError", "jaccardSimilarityScore"]
@@ -1861,7 +1861,6 @@ export let needsManipulationRewritePriorToSolve = problem => {
         .some(variable => newNominalVars.has(variable));
 
     let hasManipulation = (workspace.raven_config.hardManipulations.length + problem.manipulations.length) > 0;
-
     return hasManipulation || hasNominalCast;
 };
 
@@ -2859,20 +2858,20 @@ export let inferIsCategorical = variableSummary => {
 };
 
 export let isProblemValid = problem => {
-    let valid = true;
+    let validity = true;
     if (problem.task.toLowerCase() === 'forecasting' && problem.tags.time.length === 0) {
         alertError('One variable must be marked as temporal to solve a time series forecasting problem.')
-        valid = false;
+        validity = false;
     }
     if (problem.predictors.length === 0) {
         alertError('At least one predictor is required.');
-        valid = false;
+        validity = false;
     }
     if (problem.targets.length === 0) {
         alertError('At least one target is required.');
-        valid = false;
+        validity = false;
     }
-    return valid;
+    return validity;
 };
 
 // n linearly spaced points between min and max

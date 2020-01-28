@@ -103,7 +103,6 @@ class Model(object):
                 task=metadata['task'])
 
         if metadata['system'] == 'two-ravens':
-            import tworaven_solver
             return ModelTwoRavens(
                 model=BaseModelWrapper.load(model_folder_path, metadata),
                 system='two-ravens',
@@ -681,9 +680,9 @@ class ModelLudwig(Model):
 class ModelTwoRavens(Model):
     def describe(self):
         description = self.model.describe() or {}
-        print(description)
+        # print(description)
         return {
-            "model": self.model.model.__class__.__name__,
+            "model": self.model.pipeline_specification['model']['strategy'],
             "description": str(self.model.model),
             **description,
             "pipeline_specification": self.model.pipeline_specification,
@@ -694,7 +693,6 @@ class ModelTwoRavens(Model):
         }
 
     def score(self, score_specification):
-        import tworaven_solver
         # configuration = score_specification['configuration']
         dataframe = Dataset(score_specification['input']).get_dataframe()
 
@@ -704,18 +702,7 @@ class ModelTwoRavens(Model):
             # if len(dataframe) < horizon:
             #     raise ValueError(f'No predictions with a horizon of {horizon} are within range of the test data.')
 
-            time = next(iter(self.model.problem_specification.get('time', [])), None)
-            dataframe = tworaven_solver.format_dataframe_time_index(
-                dataframe,
-                date=time,
-                granularity_specification=self.model.problem_specification.get('timeGranularity'))
-            dataframe.reset_index(inplace=True)
-
-            predicted = self.model.forecast(
-                start=dataframe[time].iloc[0],
-                end=dataframe[time].iloc[-1])
-
-            predicted.reset_index(inplace=True)
+            predicted = self.model.predict(dataframe)
 
             # predicted = self.forecast(
             #     dataframe=dataframe_train,
@@ -760,50 +747,31 @@ class ModelTwoRavens(Model):
             data_specification=data_specification)
 
     def produce(self, produce_specification):
-        import tworaven_solver
         configuration = produce_specification.get('configuration', {})
         predict_type = configuration.get('predict_type', 'RAW')
 
         dataframe = Dataset(produce_specification['input']).get_dataframe()
 
-        if self.task == "FORECASTING":
-            time = next(iter(self.model.problem_specification.get('time', [])), None)
-            dataframe = tworaven_solver.format_dataframe_time_index(
-                dataframe,
-                date=time,
-                granularity_specification=self.model.problem_specification.get('timeGranularity'))
-            dataframe.reset_index(inplace=True)
-
-            # horizon = configuration.get('forecastingHorizon', {}).get('value', 1)
-            predicted = self.model.forecast(
-                start=dataframe[time].iloc[0],
-                end=dataframe[time].iloc[-1])
-
-            predicted.reset_index(inplace=True)
-
-        elif self.task in ['REGRESSION', 'CLASSIFICATION']:
+        if self.task in ['REGRESSION', 'CLASSIFICATION']:
             dataframe_train = Dataset(produce_specification['train']).get_dataframe().dropna()
             self.fit(dataframe=dataframe_train, data_specification=produce_specification['train'])
 
-            if predict_type == 'RAW':
-                predicted = self.model.predict(dataframe)
-                if len(predicted.columns.values) > 1:
-                    predicted = np.argmax(predicted, axis=-1)
-            else:
-                predicted = self.model.predict_proba(dataframe)
-                # TODO: standardize probability column names
-                predicted = pandas.DataFrame(predicted, columns=[f'p_{i}' for i in range(predicted.shape[1])])
-
-            print(predicted)
+        if predict_type == 'RAW':
+            predicted = self.model.predict(dataframe)
+            # if len(predicted.columns.values) > 1:
+            #     predicted = np.argmax(predicted, axis=-1)
         else:
-            raise ValueError(str(self.task) + ' is not a valid task type.')
+            predicted = self.model.predict_proba(dataframe)
+            # TODO: standardize probability column names
+            predicted = pandas.DataFrame(predicted, columns=[f'p_{i}' for i in range(predicted.shape[1])])
 
         output_directory_path = produce_specification['output']['resource_uri'].replace('file://', '')
         output_path = '/' + os.path.join(
             *output_directory_path.split('/'),
             str(uuid.uuid4()) + '.csv')
 
-        predicted.insert(0, 'd3mIndex', dataframe['d3mIndex'])
+        if 'd3mIndex' not in predicted.columns.values:
+            predicted.insert(0, 'd3mIndex', dataframe['d3mIndex'])
 
         if not os.path.exists(output_directory_path):
             os.makedirs(output_directory_path)

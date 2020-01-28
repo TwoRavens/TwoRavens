@@ -1079,6 +1079,8 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
         [problem.tags.weights, 'instanceWeight'],
         [problem.tags.indexes, 'index']
     ].forEach(pair => pair[0]
+        .filter(variable => doc.dataResources[tableResourceIndex].columns
+            .find(column => column.colName === variable))
         .forEach(variable => add(doc.dataResources[tableResourceIndex].columns
             .find(column => column.colName === variable).role, pair[1])));
 

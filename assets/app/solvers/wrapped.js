@@ -10,6 +10,8 @@ export let SOLVER_SVC_URL = '/solver-service/';
 
 export let getSolverSpecification = async (problem, systemId) => {
     await results.prepareResultsDatasets(problem, systemId);
+    if (!problem.solverState[systemId].thinking)
+        return;
 
     let allParams = {
         'search': SPEC_search(problem),
@@ -52,28 +54,48 @@ let SPEC_metric = (positiveLabel, metric) => {
 };
 
 // GRPC_ProblemDescription
-export let SPEC_problem = problem => ({
-    "name": problem.problemId,
-    "taskSubtype": app.d3mTaskSubtype[problem.subTask],
-    "taskType": app.d3mTaskType[problem.task],
-    "timeGranularity": problem.timeGranularity[(problem.forecastingHorizon || {}).column],
+export let SPEC_problem = problem => {
+    let predictors = app.getPredictorVariables(problem);
 
-    // structural variables
-    "indexes": problem.tags.indexes,
-    "crossSection": problem.tags.crossSection,
-    "location": problem.tags.location,
-    "boundary": problem.tags.boundary,
-    "time": problem.tags.time,
-    "weights": problem.tags.weights, // singleton list
-    "privileged": problem.tags.privileged,
-    "exogenous": problem.tags.exogenous,
+    if (problem.task === 'forecasting') {
+        // ensure problem is valid
+        if (!problem.forecastingHorizon)
+            problem.forecastingHorizon = {};
+        if (!problem.forecastingHorizon.column)
+            problem.forecastingHorizon.column = problem.tags.time[0];
+        if (!problem.forecastingHorizon.value)
+            problem.forecastingHorizon.value = 10;
 
-    "targets": problem.targets,
-    "predictors": app.getPredictorVariables(problem),
+        if (!predictors.includes(problem.forecastingHorizon.column)) {
+            problem.predictors.push(problem.forecastingHorizon.column);
+            predictors = app.getPredictorVariables(problem);
+        }
+    }
 
-    // data types
-    "categorical": app.getNominalVariables(problem)
-});
+    return {
+        "name": problem.problemId,
+        "taskSubtype": app.d3mTaskSubtype[problem.subTask],
+        "taskType": app.d3mTaskType[problem.task],
+        "timeGranularity": problem.timeGranularity[(problem.forecastingHorizon || {}).column],
+        'forecastingHorizon': problem.forecastingHorizon,
+
+        // structural variables
+        "indexes": problem.tags.indexes,
+        "crossSection": problem.tags.crossSection.filter(variable => predictors.includes(variable)),
+        "location": problem.tags.location.filter(variable => predictors.includes(variable)),
+        "boundary": problem.tags.boundary.filter(variable => predictors.includes(variable)),
+        "time": problem.tags.time.filter(variable => predictors.includes(variable)),
+        "weights": problem.tags.weights.filter(variable => predictors.includes(variable)), // singleton list
+        "privileged": problem.tags.privileged.filter(variable => predictors.includes(variable)),
+        "exogenous": problem.tags.exogenous.filter(variable => predictors.includes(variable)),
+
+        "targets": problem.targets,
+        "predictors": predictors,
+
+        // data types
+        "categorical": app.getNominalVariables(problem)
+    };
+}
 
 let SPEC_configuration = problem => ({
     "folds": problem.scoreOptions.folds || 10,
