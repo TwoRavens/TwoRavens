@@ -749,9 +749,9 @@ export let rightpanel = () => {
                 m('label', 'Task Type'),
                 m(Dropdown, {
                     id: 'taskType',
-                    // TODO: TEMPORARY FOR GATES
-                    items: ['classification', 'regression', 'forecasting'],
-                    // items: Object.keys(app.d3mTaskType),
+                    items: app.workspace.raven_config.advancedMode
+                        ? Object.keys(app.d3mTaskType)
+                        : ['classification', 'regression', 'forecasting'],
                     activeItem: selectedProblem.task,
                     onclickChild: task => app.setTask(task, selectedProblem),
                     style: {'margin': '1em', 'margin-top': '0'},
@@ -864,7 +864,15 @@ export let rightpanel = () => {
                     })
                 ],
 
-                m(Subpanel, {
+                m('label[style=margin-top:0.5em]', 'Advanced Options. If enabled, then more problem types, splitting, search and score options may be configured.'),
+                m(ButtonRadio, {
+                    id: 'advancedModeOption',
+                    onclick: !isLocked && (value => app.workspace.raven_config.advancedMode = value === 'True'),
+                    activeSection: app.workspace.raven_config.advancedMode ? 'True' : 'False',
+                    sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
+                }),
+
+                app.workspace.raven_config.advancedMode && m(Subpanel, {
                         header: 'Split Options',
                         defaultShown: false,
                         style: {margin: '1em'}
@@ -933,7 +941,7 @@ export let rightpanel = () => {
                             style: {'margin-bottom': '1em'}
                         }),
                     ]),
-                m(Subpanel, {
+                app.workspace.raven_config.advancedMode && m(Subpanel, {
                         header: 'Search Options',
                         defaultShown: false,
                         style: {margin: '1em'}
@@ -974,7 +982,7 @@ export let rightpanel = () => {
                         style: {'margin-bottom': '1em'}
                     })
                 ),
-                m(Subpanel, {
+                app.workspace.raven_config.advancedMode && m(Subpanel, {
                         header: 'Score Options',
                         defaultShown: false,
                         style: {margin: '1em'}

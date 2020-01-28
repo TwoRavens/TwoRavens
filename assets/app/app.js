@@ -1331,6 +1331,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
 
     let newRavenConfig = workspace.raven_config === null;
     if (newRavenConfig) workspace.raven_config = {
+        advancedMode: false,
         problemCount: 0, // used for generating new problem ID's
         ravenConfigVersion: RAVEN_CONFIG_VERSION,
         hardManipulations: [],
