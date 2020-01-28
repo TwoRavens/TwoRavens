@@ -435,6 +435,8 @@ def split_dataset(configuration, workspace):
                     def in_test(row):
                         section = tuple(row[col] for col in problem.get('crossSection', []))
                         date = get_date(row[time_column], time_format)
+                        if not date:
+                            return False
                         max_date = cross_section_date_limits[section]
                         # print('interval:', max_date - inferred_freq * horizon, max_date)
                         return max_date - inferred_freq * horizon <= date <= max_date
@@ -442,6 +444,8 @@ def split_dataset(configuration, workspace):
                     def in_train(row):
                         section = tuple(row[col] for col in problem.get('crossSection', []))
                         date = get_date(row[time_column], time_format)
+                        if not date:
+                            return False
                         max_date = cross_section_date_limits[section] - inferred_freq * horizon
                         # TODO: lower bound isn't being set, due to risk of time underflow
                         return date < max_date - inferred_freq * horizon
@@ -506,6 +510,10 @@ def split_dataset(configuration, workspace):
 
         dataframe.to_csv(dataset_paths['all'], mode='a', header=False, index=False)
 
+    def get_mode(x):
+        mode = pd.Series.mode(x)
+        if len(mode):
+            return mode[0]
     # aggregate so that each cross section contains one observation at each time point
     if problem.get('taskType') == 'FORECASTING' and problem.get('time'):
         for split_name in dataset_paths:
@@ -522,7 +530,7 @@ def split_dataset(configuration, workspace):
 
             grouped = dataframe.groupby(group_keys)
             aggregated = grouped.aggregate(
-                {variable: pd.Series.mean if is_numeric_dtype(variable) else lambda x: pd.Series.mode(x)[0]
+                {variable: pd.Series.mean if is_numeric_dtype(variable) else get_mode
                  for variable in other_keys})
             aggregated.reset_index(inplace=True)
 

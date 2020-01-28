@@ -51,6 +51,7 @@ def util_results_real_clustered(data_pointer, metadata):
         bounds = {}
         response = list(mongo_util_base.run_query([
             *metadata['query'],
+            {"$match": {target: {"$not": {"$type": 2}} for target in metadata['targets']}},
             {"$group": {
                 "_id": 0,
                 **{f'min_{target}': {"$min": f"${target}"} for target in metadata['targets']},
@@ -69,6 +70,7 @@ def util_results_real_clustered(data_pointer, metadata):
 
         # COMPUTE FITTED BOUNDS
         response = list(mongo_util_fitted.run_query([
+            {"$match": {target: {"$not": {"$type": 2}} for target in metadata['targets']}},
             {"$group": {
                 "_id": 0,
                 **{f'min_{target}': {"$min": f"${target}"} for target in metadata['targets']},
@@ -95,6 +97,10 @@ def util_results_real_clustered(data_pointer, metadata):
                     },
                     **{'d3mIndex': 1}
                 }
+            },
+            # ignore records with strings in the target variable
+            {
+                "$match": {target: {"$not": {"$type": 2}} for target in metadata['targets']}
             },
             {
                 "$lookup": {
