@@ -18,9 +18,15 @@ export let vegaLiteScatter = (data, xName, yName, groupName, countName, title=''
 
         "layer": [
             {
+                "selection": {
+                    "grid": {
+                        "type": "interval", "bind": "scales"
+                    }
+                },
                 "data": {
                     "values": data
                 },
+
                 "mark": "point",
                 "encoding": {
                     "tooltip": [

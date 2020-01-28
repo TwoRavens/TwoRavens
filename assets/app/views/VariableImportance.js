@@ -111,6 +111,11 @@ export default class VariableImportance {
                 'vconcat': [
                     {
                         'data': {'values': data},
+                        "selection": {
+                            "grid": {
+                                "type": "interval", "bind": "scales"
+                            }
+                        },
                         "mark": "line",
                         "encoding": {
                             "x": {
@@ -138,7 +143,8 @@ export default class VariableImportance {
                             'x': {
                                 'field': predictor,
                                 'type': 'quantitative',
-                                'scale': {domain: [predictorMin, predictorMax]},
+                                'scale': {"domain": {"selection": "grid"}},
+                                // 'scale': {domain: [predictorMin, predictorMax]},
                                 'title': predictor
                             },
                             'x2': {'field': 'to', 'type': 'quantitative'},
@@ -161,6 +167,11 @@ export default class VariableImportance {
                 'vconcat': [
                     {
                         'data': {'values': data},
+                        "selection": {
+                            "grid": {
+                                "type": "interval", "bind": "scales"
+                            }
+                        },
                         "mark": "line",
                         "encoding": {
                             "x": {
@@ -186,7 +197,8 @@ export default class VariableImportance {
                             'x': {
                                 'field': predictor,
                                 'type': 'quantitative',
-                                'scale': {domain: [predictorMin, predictorMax]},
+                                // 'scale': {domain: [predictorMin, predictorMax]},
+                                'scale': {"domain": {"selection": "grid"}},
                                 'title': predictor
                             },
                             'x2': {'field': 'to', 'type': 'quantitative'},
@@ -285,6 +297,11 @@ export default class VariableImportance {
                     'vconcat': [
                         {
                             data: {values: data},
+                            "selection": {
+                                "grid": {
+                                    "type": "interval", "bind": "scales"
+                                }
+                            },
                             "mark": {
                                 type: 'line',
                                 point: true
@@ -315,7 +332,8 @@ export default class VariableImportance {
                                 'x': {
                                     'field': predictor,
                                     'type': 'quantitative',
-                                    'scale': {domain: [predictorMin, predictorMax]},
+                                    'scale': {"domain": {"selection": "grid"}},
+                                    // 'scale': {domain: [predictorMin, predictorMax]},
                                     'title': predictor
                                 },
                                 'x2': {'field': 'to', 'type': 'quantitative'},
@@ -340,6 +358,11 @@ export default class VariableImportance {
                 'vconcat': [
                     {
                         data: {values: data},
+                        "selection": {
+                            "grid": {
+                                "type": "interval", "bind": "scales"
+                            }
+                        },
                         "mark": "line",
                         "encoding": {
                             "x": {
@@ -366,7 +389,8 @@ export default class VariableImportance {
                             'x': {
                                 'field': predictor,
                                 'type': 'quantitative',
-                                'scale': {domain: [predictorMin, predictorMax]},
+                                'scale': {"domain": {"selection": "grid"}},
+                                // 'scale': {domain: [predictorMin, predictorMax]},
                                 'title': predictor
                             },
                             'x2': {'field': 'to', 'type': 'quantitative'},
@@ -429,6 +453,11 @@ export default class VariableImportance {
                                     }
                                 ])
                             },
+                            "selection": {
+                                "grid": {
+                                    "type": "interval", "bind": "scales"
+                                }
+                            },
                             "mark": {
                                 'type': "trail",
                                 'color': 'gray'
@@ -462,7 +491,8 @@ export default class VariableImportance {
                                 'x': {
                                     'field': predictor,
                                     'type': 'quantitative',
-                                    'scale': {domain: [predictorMin, predictorMax]},
+                                    'scale': {"domain": {"selection": "grid"}},
+                                    // 'scale': {domain: [predictorMin, predictorMax]},
                                     'title': predictor
                                 },
                                 'x2': {'field': 'to', 'type': 'quantitative'},
@@ -487,6 +517,11 @@ export default class VariableImportance {
                         'data': {'values': data},
                         "layer": [
                             {
+                                "selection": {
+                                    "grid": {
+                                        "type": "interval", "bind": "scales"
+                                    }
+                                },
                                 "mark": {
                                     'type': "line",
                                     'color': 'gray'
@@ -531,7 +566,8 @@ export default class VariableImportance {
                             'x': {
                                 'field': predictor,
                                 'type': 'quantitative',
-                                'scale': {domain: [predictorMin, predictorMax]},
+                                'scale': {"domain": {"selection": "grid"}},
+                                // 'scale': {domain: [predictorMin, predictorMax]},
                                 'title': predictor
                             },
                             'x2': {'field': 'to', 'type': 'quantitative'},
