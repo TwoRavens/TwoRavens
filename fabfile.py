@@ -103,7 +103,7 @@ def make_d3m_configs_from_files_multiuser_test_limited():
         #'TR82_Ethiopia_phemlarge',
         'TR83_Ethiopia_gdl_sub',
         #'TR84_Ethiopia_zone_mon',
-        #'TR85_Ethiopia_zone_mon_sub',
+        'TR85_Ethiopia_zone_mon_sub',
         #'TR86_Ethiopia_zone_mon_sub_con',
         #'TR87_Ethiopia_zone_mon_con',
         'TR88_Ethiopia_phemclean',
