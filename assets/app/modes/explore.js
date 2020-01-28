@@ -96,7 +96,7 @@ export class CanvasExplore {
             m(Button, {
                 id: 'exploreGo',
                 class: 'btn-success',
-                style: {margin: '.5em'},
+                style: {margin: '.5em', position: 'fixed'},
                 onclick: () => {
                     let selected = app.leftTab === 'Discover' ? [app.workspace.raven_config.selectedProblem] : exploreVariables;
                     let len = selected.length; 
@@ -124,7 +124,7 @@ export class CanvasExplore {
 
             m('br'),
 
-            m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
+            m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap; margin-top: 3em'},
                 // x could either be a problemId or a variable name
                 (app.leftTab === 'Discover' ? Object.keys(app.workspace.raven_config.problems) : Object.keys(app.variableSummaries)).map(x => {
                     let selected = app.leftTab === 'Discover'
