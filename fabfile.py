@@ -107,6 +107,7 @@ def make_d3m_configs_from_files_multiuser_test_limited():
         #'TR86_Ethiopia_zone_mon_sub_con',
         #'TR87_Ethiopia_zone_mon_con',
         'TR88_Ethiopia_phemclean',
+        'TR89_Ethiopia_zone_mon_sub_fert',
         '185_baseball',
         '196_autoMpg',
         # 'LL1_PHEM_weeklyData_malnutrition',
