@@ -154,7 +154,9 @@ export let leftpanel = () => {
                             {content: () => m('div[style=max-width:250px]', 'When model comparison is enabled, multiple solutions may be selected and visualized simultaneously.')},
                             m(Button, {
                                 style: {'margin-top': '-1em'},
-                                class: (getSolutions(selectedProblem).length > 1 ? 'btn-success ' : '') + (modelComparison ? 'active ' : ''),
+                                class: ""
+                                    // + (getSolutions(selectedProblem).length > 1 ? 'btn-success ' : '')
+                                    + (modelComparison ? 'active ' : ''),
                                 onclick: () => setModelComparison(!modelComparison)
                             }, 'Model Comparison')))
                     ],

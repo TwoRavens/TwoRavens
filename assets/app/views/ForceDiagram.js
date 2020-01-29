@@ -256,7 +256,8 @@ export default class ForceDiagram {
                 .container(dom)
                 .subject(() => this.force.find(d3.event.x, d3.event.y))
                 .on("start", () => {
-                    if (Math.sqrt(Math.pow(d3.event.sourceEvent.x - d3.event.subject.x, 2) + Math.pow(d3.event.sourceEvent.y - d3.event.subject.y - 100, 2)) > d3.event.subject.radius * 2) {
+                    let {x: offsetX, y: offsetY} = dom.getBoundingClientRect();
+                    if (Math.sqrt(Math.pow(d3.event.sourceEvent.x - d3.event.subject.x - offsetX, 2) + Math.pow(d3.event.sourceEvent.y - d3.event.subject.y - offsetY, 2)) > d3.event.subject.radius * 2) {
                         setSelectedPebble(undefined);
                         return;
                     }

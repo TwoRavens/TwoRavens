@@ -681,7 +681,7 @@ export let leftpanel = forceData => {
     return m(Panel, {
         side: 'left',
         label: 'Data Selection',
-        hover: app.is_model_mode && !manipulate.constraintMenu,
+        hover: false, // app.is_model_mode && !manipulate.constraintMenu,
         width: app.is_explore_mode && app.leftTab === 'Discover' ? '900px' : leftPanelWidths[app.leftTab],
         attrsAll: {
             onclick: () => app.setFocusedPanel('left'),
@@ -1109,7 +1109,7 @@ export let rightpanel = () => {
     return m(Panel, {
             side: 'right',
             label: 'Problem Configuration',
-            hover: true,
+            hover: false,
             width: rightPanelWidths[app.rightTab],
             attrsAll: {
                 onclick: () => app.setFocusedPanel('right'),
