@@ -6,11 +6,11 @@
   "encoding": {
     "x": {
       "field": "tworavensX", "type": "quantitative",
-      "axis": {"title": "tworavensX"}
+      "axis": {"title": "tworavensX"}, "scale": {"zero": false}
     },
     "y": {
       "aggregate": "sum", "field": "tworavensY", "type": "quantitative",
-      "axis": {"title": "tworavensY"}
+      "axis": {"title": "tworavensY"}, "scale": {"zero": false}
     }
   }
 }

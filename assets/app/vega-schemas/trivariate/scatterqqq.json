@@ -10,10 +10,10 @@
   "mark": "circle",
   "encoding": {
     "x": {
-      "field": "tworavensX", "type": "quantitative"
+      "field": "tworavensX", "type": "quantitative", "scale": {"zero": false}
     },
     "y": {
-      "field": "tworavensY", "type": "quantitative"
+      "field": "tworavensY", "type": "quantitative", "scale": {"zero": false}
     },
     "size": {"field": "tworavensZ", "type": "quantitative"}
   }

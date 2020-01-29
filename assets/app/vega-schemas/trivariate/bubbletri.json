@@ -21,7 +21,8 @@
       "field": "tworavensZ",
       "type": "quantitative",
       "legend": {"title": "tworavensZ"},
-      "bin": true
+      "bin": true,
+      "scale": {"zero":  false}
     },
     "color": {"field": "tworavensY", "type": "nominal", "legend": null}
   }

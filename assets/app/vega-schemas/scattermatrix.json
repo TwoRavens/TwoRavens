@@ -15,8 +15,8 @@
       }
     },
     "encoding": {
-      "x": {"field": {"repeat": "column"},"type": "quantitative"},
-      "y": {"field": {"repeat": "row"},"type": "quantitative"},
+      "x": {"field": {"repeat": "column"},"type": "quantitative", "scale": {"zero":  false}},
+      "y": {"field": {"repeat": "row"},"type": "quantitative", "scale": {"zero":  false}},
       "color": {
         "condition": {
           "selection": "brush"

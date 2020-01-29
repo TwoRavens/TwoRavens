@@ -14,7 +14,7 @@
     "x": {
       "field": "tworavensZ", "type": "quantitative",
       "bin":true,
-      "scale": {"rangeStep": null},
+      "scale": {"rangeStep": null, "zero": false},
       "axis": {"title": ""}
     },
     "color": {

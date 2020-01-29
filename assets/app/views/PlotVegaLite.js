@@ -56,7 +56,7 @@ export default class PlotVegaLite {
             ['axisX', 'axisY'].forEach(axis => setRecursive(specification, [
                 ['config', {}],
                 [axis, {}],
-                ['labelLimit', 50]
+                ['labelLimit', 100]
             ]));
 
             // mask repeated warnings about outdated vega-lite specification

@@ -154,7 +154,7 @@ export let leftpanel = () => {
                             {content: () => m('div[style=max-width:250px]', 'When model comparison is enabled, multiple solutions may be selected and visualized simultaneously.')},
                             m(Button, {
                                 style: {'margin-top': '-1em'},
-                                class: 'btn-success ' + (modelComparison ? 'active' : ''),
+                                class: (getSolutions(selectedProblem).length > 1 ? 'btn-success ' : '') + (modelComparison ? 'active ' : ''),
                                 onclick: () => setModelComparison(!modelComparison)
                             }, 'Model Comparison')))
                     ],
@@ -855,7 +855,6 @@ export class CanvasSolutions {
                             'input': m(Button, {onclick: () => app.downloadFile(produce.input.resource_uri)}, 'Download'),
                             'output': m(Button, {onclick: () => app.downloadFile('file://' + produce.data_pointer)}, 'Download'),
                         }))
-
                 })],
                 ['Description', firstAdapter.getDescription()],
                 ['Model', firstAdapter.getName()]
@@ -1728,7 +1727,7 @@ export let loadDataSample = async (problem, adapter, split) => {
 
     let tempQuery = JSON.stringify(resultsData.id.query);
 
-    let variables = ['d3mIndex', ...app.getPredictorVariables(problem), problem.targets];
+    let variables = ['d3mIndex', ...app.getPredictorVariables(problem), ...problem.targets];
 
     let response;
     try {

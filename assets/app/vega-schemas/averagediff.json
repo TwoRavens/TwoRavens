@@ -21,7 +21,8 @@
       "encoding": {
         "x": {
           "field": "tworavensX", "type": "quantitative",
-          "axis": {"title": "tworavensX"}
+          "axis": {"title": "tworavensX"},
+          "scale": {"zero": false}
         },
         "y": {"field": "tworavensY", "type": "nominal"}
       }
@@ -32,7 +33,8 @@
         "x": {
           "aggregate": "average",
           "field": "AverageRating",
-          "type": "quantitative"
+          "type": "quantitative",
+          "scale": {"zero": false}
         }
       }
     }

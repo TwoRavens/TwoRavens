@@ -7,11 +7,13 @@
     "x": {
       "bin": {"maxbins": 10},
       "field": "tworavensX",
-      "type": "quantitative"
+      "type": "quantitative",
+      "scale": {"zero":  false}
     },
     "y": {
       "aggregate": "count",
-      "type": "quantitative"
+      "type": "quantitative",
+      "scale": {"zero":  false}
     },
     "row": {"field": "tworavensY", "type": "nominal"}
   }

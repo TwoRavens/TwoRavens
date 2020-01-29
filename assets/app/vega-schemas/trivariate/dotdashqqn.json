@@ -12,7 +12,8 @@
         "y": {
           "field": "tworavensY",
           "type": "quantitative",
-          "axis": {"labels": false, "domain": false, "ticks": false}
+          "axis": {"labels": false, "domain": false, "ticks": false},
+          "scale": {"zero":  false}
         },
         "x": {
           "field": "tworavensZ",
@@ -36,12 +37,14 @@
             "x": {
               "field": "tworavensX",
               "type": "quantitative",
-              "axis": {"title": ""}
+              "axis": {"title": ""},
+              "scale": {"zero":  false}
             },
             "y": {
               "field": "tworavensY",
               "type": "quantitative",
-              "axis": {"title": ""}
+              "axis": {"title": ""},
+              "scale": {"zero":  false}
             },
             "color": {"field": "tworavensZ", "type": "nominal"}
           }
@@ -53,7 +56,8 @@
             "x": {
               "field": "tworavensX",
               "type": "quantitative",
-              "axis": {"labels": false, "domain": false, "ticks": false}
+              "axis": {"labels": false, "domain": false, "ticks": false},
+              "scale": {"zero":  false}
             },
             "y": {
               "field": "tworavensZ",

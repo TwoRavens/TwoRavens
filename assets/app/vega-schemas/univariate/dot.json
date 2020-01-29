@@ -4,6 +4,6 @@
   "data": {"url": "tworavensData"},
   "mark": "tick",
   "encoding": {
-    "x": {"field": "tworavensX", "type": "quantitative"}
+    "x": {"field": "tworavensX", "type": "quantitative", "scale": {"zero":  false}}
   }
 }

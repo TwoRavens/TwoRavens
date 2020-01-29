@@ -6,7 +6,7 @@
   "encoding": {
     "x": {
       "field": "tworavensX", "type": "quantitative",
-      "axis": {"title": "tworavensX"}
+      "axis": {"title": "tworavensX"}, "scale": {"zero":  false}
     },
     "y": {
       "aggregate": "count", "field": "tworavensX", "type": "quantitative",

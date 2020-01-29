@@ -1198,6 +1198,17 @@ export let buildForceData = problem => {
                 ]),
                 opacity: 0.0
             },
+            {
+                name: 'Structural',
+                color: "transparent",
+                colorBackground: app.swandive && 'grey',
+                nodes: new Set([
+                    ...problem.tags.crossSection,
+                    ...problem.tags.time,
+                    ...problem.tags.weights,
+                ]),
+                opacity: 0.3
+            }
             // {
             //     name: "Priors",
             //     color: common.warnColor,

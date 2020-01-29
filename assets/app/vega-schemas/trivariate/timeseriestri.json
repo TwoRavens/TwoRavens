@@ -6,8 +6,8 @@
     "point": true
   },
   "encoding": {
-    "x": {"field": "tworavensX", "type": "quantitative"},
-    "y": {"field": "tworavensY", "type": "quantitative", "aggregate": "sum"},
+    "x": {"field": "tworavensX", "type": "quantitative", "scale": {"zero": false}},
+    "y": {"field": "tworavensY", "type": "quantitative", "aggregate": "sum", "scale": {"zero": false}},
     "color": {"field": "tworavensZ", "type": "nominal"}
   },
   "width": 640,

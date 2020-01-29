@@ -476,12 +476,15 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
             if (plottype[1][0] !== 'q') schema.encoding.x.type = 'nominal';
         }
 
-        if (schema.mark === 'point' || schema.mark == 'circle') {
-            let [x, y] = nodes;
-            let [padx, pady] = nodes.map(x => (x.max - x.min) / 4);
-            if (x.max) schema.encoding.x.scale = {domain: [x.min - padx, x.max + padx]};
-            if (y.max) schema.encoding.y.scale = {domain: [y.min - pady, y.max + pady]};
-        }
+        // MIKE: this adjustment is causing points to draw far outside the plot
+        // Likely because preprocess and discovery are taking different random samples,
+        //      and min/max tail statistics are sensitive to sampling
+        // if (schema.mark === 'point' || schema.mark == 'circle') {
+        //     let [x, y] = nodes;
+        //     let [padx, pady] = nodes.map(x => (x.max - x.min) / 4);
+        //     if (x.max) schema.encoding.x.scale = {domain: [x.min - padx, x.max + padx]};
+        //     if (y.max) schema.encoding.y.scale = {domain: [y.min - pady, y.max + pady]};
+        // }
 
         let stringified = JSON.stringify(schema);
         if (flip) {

@@ -183,11 +183,14 @@ export let vegaLiteImportancePlot = (data, comparison) => ({
         "x": {
             "field": "solution ID",
             "type": "nominal",
-            "sort": false
+            "sort": false,
+            "title": ''
         },
         [comparison ? "column" : 'x']: {
             "field": "predictor",
             "type": "nominal",
+            "header": {"labelAngle": 20},
+            "axis": {"labelAngle": -20},
             "title": "",
             "sort": comparison ? [...new Set(data.map(datum => datum.predictor))] : false
         },

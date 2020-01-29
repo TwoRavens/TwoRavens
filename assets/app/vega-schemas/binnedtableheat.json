@@ -7,12 +7,14 @@
     "x": {
       "bin": {"maxbins":20},
       "field": "tworavensX",
-      "type": "quantitative"
+      "type": "quantitative",
+      "scale": {"zero": false}
     },
     "y": {
       "bin": {"maxbins": 20},
       "field": "tworavensY",
-      "type": "quantitative"
+      "type": "quantitative",
+      "scale": {"zero": false}
     },
     "color": {
       "aggregate": "count",
