@@ -1439,18 +1439,17 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                 console.warn(response.message);
                 return;
             }
-            await promisePreprocess;
             // merge discovery into problem set if constructing a new raven config
-            promisePreprocess.then(_ => Object.assign(workspace.raven_config.problems, discovery(response.data)))
+            promisePreprocess
+                .then(_ => Object.assign(workspace.raven_config.problems, discovery(response.data)))
 
-            try {
-                await promiseProblemDoc;
-                let problem = getSelectedProblem();
-                problem.predictors = workspace.raven_config.problems['problem 1'].predictors
-                    .filter(variable => !problem.targets.includes(variable))
-            } catch(err) {
-                console.warn('failed to adopt predictors from first discovered problem')
-            }
+            promiseProblemDoc
+                .then(() => {
+                    let problem = getSelectedProblem();
+                    problem.predictors = workspace.raven_config.problems['problem 1'].predictors
+                        .filter(variable => !problem.targets.includes(variable))
+                })
+                .catch(() => console.warn('failed to adopt predictors from first discovered problem'))
         });
 
     // RECORD COUNT
@@ -1582,7 +1581,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                  */
                 setSelectedProblem(problemCopy.problemId);
             }
-            else if (!(workspace.raven_config.selectedProblem in workspace.raven_config.problems)) {
+            else if (!(workspace.raven_config.selectedProblem in workspace.raven_config)) {
                 await promiseDiscovery;
                 setSelectedProblem(Object.keys(workspace.raven_config.problems)[0])
             }
