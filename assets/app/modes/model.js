@@ -32,6 +32,7 @@ import Flowchart from "../views/Flowchart";
 import {bold, boldPlain, italicize, preformatted} from "../index";
 import {setModal} from "../../common/views/Modal";
 import {workspace} from "../app";
+import {is_explore_mode} from "../app";
 
 
 export class CanvasModel {
@@ -1109,7 +1110,7 @@ export let rightpanel = () => {
     return m(Panel, {
             side: 'right',
             label: 'Problem Configuration',
-            hover: false,
+            hover: is_explore_mode,
             width: rightPanelWidths[app.rightTab],
             attrsAll: {
                 onclick: () => app.setFocusedPanel('right'),

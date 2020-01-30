@@ -528,8 +528,8 @@ export let panelWidth = {
 };
 
 export let updateRightPanelWidth = () => {
-    if (is_results_mode) common.panelOcclusion.right = '0px';
-    else if (is_dataset_mode) common.panelOcclusion.right = '0px';
+    if (is_dataset_mode || is_explore_mode || is_results_mode)
+        common.panelOcclusion.right = '0px';
     // else if (is_model_mode && !selectedProblem) common.panelOcclusion.right = common.panelMargin;
     else if (common.panelOpen['right']) {
         let tempWidth = {
@@ -2157,6 +2157,7 @@ export let setVariableSummaries = state => {
     variableSummaries = state;
 
     // quality of life
+    // TODO: replace usages of .name with already existing .variableName
     Object.keys(variableSummaries).forEach(variable => variableSummaries[variable].name = variable);
     window.variableSummaries = variableSummaries;
 

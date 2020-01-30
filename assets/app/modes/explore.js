@@ -270,7 +270,13 @@ export let getRelevantPlots = (nodes, variate) => {
         let isRecommended = getIsRecommended(nodes, schemaName);
         plotGroups[isRecommended === undefined ? 'unknown' : isRecommended ? 'recommended' : 'discouraged'].push(schemaName)
     });
-    return Object.values(plotGroups).flatMap(_=>_);
+
+    // MIKE: the plot returned by getPlotType is always moved to the front
+    let finalOrder = Object.values(plotGroups).flatMap(_=>_);
+    let bestPlot = getPlotType("", nodes)[0];
+    app.remove(finalOrder, bestPlot);
+    finalOrder.unshift(bestPlot);
+    return finalOrder;
 };
 
 export let exploreVariables = [];
@@ -363,12 +369,12 @@ let schemaMap = {
 
 let schemas = {
     univariate: 'areauni dot histogram histogrammean simplebar',
-    bivariate: 'scatter box tableheat timeseries binnedtableheat aggbar area averagediff binnedscatter ' +
+    bivariate: 'scatter box tableheat binnedtableheat aggbar area averagediff binnedscatter ' +
         'groupedbar horizon interactivebarmean line scattermatrix ' +
-        'scattermeansd stackedbar step strip trellishist',
-    trivariate: 'timeseriestri bubbletri groupedbartri horizgroupbar scattertri bubbleqqq ' +
+        'scattermeansd stackedbar step strip trellishist timeseries',
+    trivariate: 'bubbletri groupedbartri horizgroupbar scattertri bubbleqqq ' +
         'scatterqqq trellisscatterqqn heatmapnnq dotdashqqn tablebubblennq ' +
-        'stackedbarnnn facetbox facetheatmap groupedbarnqq',
+        'stackedbarnnn facetbox facetheatmap groupedbarnqq timeseriestri',
     multivariate: 'binnedcrossfilter scattermatrix'
 };
 
@@ -381,7 +387,7 @@ let approps = {
     qnn: ["horizgroupbar", "facetbox"],
     qqn: ["scattertri", "trellisscatterqqn", "dotdashqqn"],
     qnq: ["bubbletri"],
-    nqn: ["timeseriestri", "groupedbartri", "facetbox"],
+    nqn: ["groupedbartri", "facetbox", "timeseriestri"],
     nqq: ["groupedbarnqq"],
     nnq: ["heatmapnnq", "tablebubblennq"],
     nnn: ["stackedbarnnn", "facetheatmap"]
@@ -407,7 +413,10 @@ let getPlotType = (pt, pn) => {
 
     if (pt != "") return [pt, vt];
 
-    if (pn.length == 2) {
+    if (pn.length === 2) {
+        if (pn[0].temporal || app.getSelectedProblem().tags.time.includes(pn[0].name))
+            return ['timeseries', (myCons[0] ? 'q' : 'n') + 'n'];
+
         // check uniqueValids. if so, make difference from mean the default plot
         let uvs = [uniqueValids(pn[0]), uniqueValids(pn[1])];
         // console.log(uvs);
@@ -422,13 +431,13 @@ let getPlotType = (pt, pn) => {
                     ['tableheat', 'nn'];
     }
 
-    if (pn.length == 3 && pn[0].temporal) {
+    if (pn.length === 3 && (pn[0].temporal || app.getSelectedProblem().tags.time.includes(pn[0].name))) {
         let x = myCons[0] ? 'q' : 'n';
         let y = myCons[1] ? 'q' : 'n';
         return ['timeseries', x + y + 'n'];
     }
 
-    if (pn.length == 3) {
+    if (pn.length === 3) {
         return myCons[0] && myCons[1] && myCons[2] ? ['bubbleqqq', 'qqq'] :
             myCons[0] && !myCons[1] && !myCons[2] ? ['horizgroupbar', 'qnn'] :
                 myCons[0] && myCons[1] && !myCons[2] ? ['scattertri', 'qqn'] :
@@ -597,6 +606,19 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
             return;
         }
         let json = response.data;
+
+        console.log('Explore data:');
+        console.log(json);
+        if (plottype[0].includes('timeseries')) {
+            let plotdata = JSON.parse(json.plotdata[0]);
+            let temporalVariables = app.getSelectedProblem().tags.time
+                .filter(variable => variable in plotdata[0]);
+            if (temporalVariables.length > 0) {
+                temporalVariables.forEach(variable => plotdata
+                    .forEach(obs => obs[variable] = new Date(Date.parse(obs[variable])).toString()));
+                json.plotdata = [JSON.stringify(plotdata)];
+            }
+        }
 
         let schema = schemaMap[plottype[0]];
         if (!schema) app.alertError("invalid plot type");
