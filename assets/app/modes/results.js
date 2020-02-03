@@ -2455,7 +2455,6 @@ export let prepareResultsDatasets = async (problem, solverId) => {
     problem.datasetSchemaPathsManipulated = problem.datasetSchemaPathsManipulated || {};
     problem.datasetPathsManipulated = problem.datasetPathsManipulated || {};
     problem.selectedSolutions[solverId] = problem.selectedSolutions[solverId] || [];
-    // DEBUG_MODE TAGGED (set thinking to false)
     problem.solverState[solverId] = {thinking: true};
 
     if (['classification', 'regression'].includes(problem.task)) {

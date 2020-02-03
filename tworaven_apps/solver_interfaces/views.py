@@ -15,7 +15,7 @@ from tworaven_apps.solver_interfaces.models import (
     KEY_DATA,
     KEY_MESSAGE,
     SAVED_MODELS_PATH,
-    EXPORTED_MODELS_PATH, DEBUG_MODE)
+    EXPORTED_MODELS_PATH)
 
 from tworaven_apps.solver_interfaces.util_search import Search
 
@@ -72,10 +72,10 @@ def view_solve(request):
 
     search_id = Search.get_search_id()
 
-    task_handle = tasks.solve_task
-    if not DEBUG_MODE:
-        task_handle = task_handle.delay
-    task_handle(websocket_id, system_id, specification, system_params, search_id)
+    tasks.solve_task.delay(
+        websocket_id, system_id,
+        specification, system_params,
+        search_id)
 
     return JsonResponse({
         KEY_SUCCESS: True,
@@ -178,10 +178,7 @@ def view_produce(request):
     else:
         timeout = TIMEOUT_DEFAULT
 
-    task_handle = tasks.produce_task
-    if not DEBUG_MODE:
-        task_handle = task_handle.delay
-    task_handle(websocket_id, model_id, specification)
+    tasks.produce_task.delay(websocket_id, model_id, specification)
 
     return JsonResponse({
         KEY_SUCCESS: True,
@@ -213,10 +210,7 @@ def view_score(request):
     else:
         timeout = TIMEOUT_DEFAULT
 
-    task_handle = tasks.score_task
-    if not DEBUG_MODE:
-        task_handle = task_handle.delay
-    task_handle(websocket_id, model_id, specification)
+    tasks.score_task.delay(websocket_id, model_id, specification)
 
     return JsonResponse({
         KEY_SUCCESS: True,

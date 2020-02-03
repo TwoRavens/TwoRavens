@@ -198,6 +198,17 @@ def stream_and_store_results(raven_json_str, stored_request_id,
     StoredRequestUtil.set_finished_ok_status(stored_request_id)
 
 
+def materialize_split_indices_collection(configuration, workspace):
+    """
+    Write out the datasets to be used for the solver systems.
+    @param configuration:
+    @param workspace:
+    @return:
+    """
+    query = configuration.get('query')
+    
+
+
 @celery_app.task()
 def split_dataset(configuration, workspace):
 
