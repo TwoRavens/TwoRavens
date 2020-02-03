@@ -40,7 +40,7 @@ let RAVEN_CONFIG_VERSION = 1;
 
 export let TA2DebugMode = false;
 export let debugLog = TA2DebugMode ? console.log : _ => _;
-export let DefaultSampleSize = 5000; // 50000
+export let defaultSampleSize = 5000; // 50000
 
 window.addEventListener('resize', m.redraw);
 
@@ -1172,7 +1172,7 @@ let buildDefaultProblem = problemDoc => {
             randomSeed: problemDoc.inputs.dataSplits.randomSeed,
             splitsFile: undefined,
             splitsDir: undefined,
-            maxRecordCount: DefaultSampleSize
+            maxRecordCount: defaultSampleSize
         }, problemDoc.splitOptions || {}),
 
         searchOptions: Object.assign({
@@ -1441,7 +1441,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
             }
             // merge discovery into problem set if constructing a new raven config
             promisePreprocess
-                .then(_ => Object.assign(workspace.raven_config.problems, discovery(response.data)))
+                .then(_ => Object.assign(workspace.raven_config.problems, discovery(response.data)));
 
             promiseProblemDoc
                 .then(() => {
@@ -1505,7 +1505,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                                 randomSeed: undefined,
                                 splitsFile: undefined,
                                 splitsDir: undefined,
-                                maxRecordCount: DefaultSampleSize
+                                maxRecordCount: defaultSampleSize
                             },
                             searchOptions: {
                                 timeBoundSearch: undefined,
@@ -2104,7 +2104,7 @@ export function discovery(problems) {
                 randomSeed: undefined,
                 splitsFile: undefined,
                 splitsDir: undefined,
-                maxRecordCount: DefaultSampleSize
+                maxRecordCount: defaultSampleSize
             },
             searchOptions: {
                 timeBoundSearch: undefined,
