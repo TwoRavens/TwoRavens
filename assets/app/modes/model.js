@@ -825,9 +825,10 @@ export let rightpanel = () => {
                     disabled: isLocked
                 }),
 
-                m('label[style=margin-top:0.5em]', 'Advanced Options. If enabled, then more problem types, splitting, search and score options may be configured.'),
+                m('label[style=margin:0.5em]', 'Advanced Options. If enabled, then more problem types, splitting, search and score options may be configured.'),
                 m(ButtonRadio, {
                     id: 'advancedModeOption',
+                    attrsAll: {style: {margin: '1em', width: 'calc(100% - 2em)'}},
                     onclick: !isLocked && (value => app.workspace.raven_config.advancedMode = value === 'True'),
                     activeSection: app.workspace.raven_config.advancedMode ? 'True' : 'False',
                     sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))

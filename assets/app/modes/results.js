@@ -2277,53 +2277,55 @@ export let prepareResultsDatasets = async (problem, solverId) => {
     problem.datasetPathsManipulated = problem.datasetPathsManipulated || {};
     problem.selectedSolutions[solverId] = problem.selectedSolutions[solverId] || [];
 
-    // DEBUG_MODE TAGGED (set thinking to false)
-    problem.solverState[solverId] = {thinking: true};
-    problem.solverState[solverId].message = 'preparing partials data';
-    m.redraw();
-    try {
-        if (!app.materializePartialsPromise[problem.problemId])
-            app.materializePartialsPromise[problem.problemId] = app.materializePartials(problem);
-        await app.materializePartialsPromise[problem.problemId];
-    } catch (err) {
-        console.error(err);
-        console.log('Materializing partials failed. Continuing without partials data.')
-    }
+    if (['classification', 'regression', 'forecasting'].includes(problem.task)) {
+        // DEBUG_MODE TAGGED (set thinking to false)
+        problem.solverState[solverId] = {thinking: true};
+        problem.solverState[solverId].message = 'preparing partials data';
+        m.redraw();
+        try {
+            if (!app.materializePartialsPromise[problem.problemId])
+                app.materializePartialsPromise[problem.problemId] = app.materializePartials(problem);
+            await app.materializePartialsPromise[problem.problemId];
+        } catch (err) {
+            console.error(err);
+            console.log('Materializing partials failed. Continuing without partials data.')
+        }
 
-    // add ICE datasets to to datasetSchemas and datasetPaths
-    problem.solverState[solverId].message = 'preparing ICE data';
-    m.redraw();
-    try {
-        if (!app.materializeICEPromise[problem.problemId])
-            app.materializeICEPromise[problem.problemId] = app.materializeICE(problem);
-        await app.materializeICEPromise[problem.problemId];
-    } catch (err) {
-        console.error(err);
-        console.log('Materializing ICE failed. Continuing without ICE data.')
-    }
+        // add ICE datasets to to datasetSchemas and datasetPaths
+        problem.solverState[solverId].message = 'preparing ICE data';
+        m.redraw();
+        try {
+            if (!app.materializeICEPromise[problem.problemId])
+                app.materializeICEPromise[problem.problemId] = app.materializeICE(problem);
+            await app.materializeICEPromise[problem.problemId];
+        } catch (err) {
+            console.error(err);
+            console.log('Materializing ICE failed. Continuing without ICE data.')
+        }
 
-    problem.solverState[solverId].message = 'preparing train/test splits';
-    m.redraw();
-    try {
-        if (!app.materializeTrainTestPromise[problem.problemId])
-            app.materializeTrainTestPromise[problem.problemId] = app.materializeTrainTest(problem);
-        await app.materializeTrainTestPromise[problem.problemId];
-    } catch (err) {
-        console.error(err);
-        console.log('Materializing train/test splits failed. Continuing without splitting.')
+        problem.solverState[solverId].message = 'preparing train/test splits';
+        m.redraw();
+        try {
+            if (!app.materializeTrainTestPromise[problem.problemId])
+                app.materializeTrainTestPromise[problem.problemId] = app.materializeTrainTest(problem);
+            await app.materializeTrainTestPromise[problem.problemId];
+        } catch (err) {
+            console.error(err);
+            console.log('Materializing train/test splits failed. Continuing without splitting.')
+        }
     }
 
     problem.solverState[solverId].message = 'applying manipulations to data';
     m.redraw();
     try {
         if (!app.materializeManipulationsPromise[problem.problemId])
-            app.materializeManipulationsPromise[problem.problemId] = app.materializeManipulations(problem, [
-                ...(problem.splitOptions.outOfSampleSplit ? ['train', 'test'] : []),
-                'all',
-                'partials',
-                ...app.getPredictorVariables(problem).map(predictor => `ICE_synthetic_${predictor}`)
-            ]);
+            app.materializeManipulationsPromise[problem.problemId] = app.materializeManipulations(problem, problem.splitOptions.outOfSampleSplit ? ['train', 'test'] : []);
         await app.materializeManipulationsPromise[problem.problemId];
+
+        // bring in the partials and ice datasets
+        problem.datasetPathsManipulated = Object.assign(
+            {}, problem.datasetPaths, problem.datasetPathsManipulated)
+
     } catch (err) {
         console.error(err);
         let shouldContinue = confirm('Applying data manipulations failed. Would you like to continue without data manipulations?');

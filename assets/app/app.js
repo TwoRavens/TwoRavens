@@ -1176,7 +1176,7 @@ let buildDefaultProblem = problemDoc => {
         }, problemDoc.splitOptions || {}),
 
         searchOptions: Object.assign({
-            timeBoundSearch: undefined,
+            timeBoundSearch: 5,
             timeBoundRun: undefined,
             priority: undefined,
             solutionsLimit: undefined
@@ -1187,7 +1187,7 @@ let buildDefaultProblem = problemDoc => {
             folds: problemDoc.inputs.dataSplits.folds || 10,
             trainTestRatio: problemDoc.inputs.dataSplits.testSize || 0.7,
             stratified: problemDoc.inputs.dataSplits.stratified,
-            shuffle: problemDoc.inputs.dataSplits.shuffle,
+            shuffle: problemDoc.inputs.dataSplits.shuffle === undefined ? true : problemDoc.inputs.dataSplits.shuffle,
             randomSeed: problemDoc.inputs.dataSplits.randomSeed,
             splitsFile: problemDoc.inputs.dataSplits.splitsFile
         },
@@ -1407,6 +1407,8 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
             setVariableSummaries(preprocess.variables);
             setDatasetSummary(preprocess.dataset);
 
+            workspace.raven_config.variablesInitial = Object.keys(preprocess.variables);
+
             if (newRavenConfig) {
                 // go back and add tags to original problems
                 let nominals = Object.keys(variableSummaries)
@@ -1446,8 +1448,9 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
             promiseProblemDoc
                 .then(() => {
                     let problem = getSelectedProblem();
-                    problem.predictors = workspace.raven_config.problems['problem 1'].predictors
-                        .filter(variable => !problem.targets.includes(variable))
+                    let newPredictors = workspace.raven_config.problems['problem 1'].predictors
+                        .filter(variable => !problem.targets.includes(variable));
+                    if (newPredictors.length > 0) problem.predictors = newPredictors;
                 })
                 .catch(() => console.warn('failed to adopt predictors from first discovered problem'))
         });
@@ -1501,7 +1504,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                                 outOfSampleSplit: true,
                                 trainTestRatio: 0.7,
                                 stratified: false,
-                                shuffle: true,
+                                shuffle: false,
                                 randomSeed: undefined,
                                 splitsFile: undefined,
                                 splitsDir: undefined,
@@ -2100,7 +2103,7 @@ export function discovery(problems) {
                 outOfSampleSplit: true,
                 trainTestRatio: 0.7,
                 stratified: false,
-                shuffle: true,
+                shuffle: false,
                 randomSeed: undefined,
                 splitsFile: undefined,
                 splitsDir: undefined,

@@ -6,7 +6,6 @@ import * as results from "../modes/results";
 import {alertError, alertWarn, debugLog, swandive} from "../app";
 
 import {setModal} from "../../common/views/Modal";
-import {isKeyDefined} from "../utils";
 import Table from "../../common/views/Table";
 
 export let getSolverSpecification = async problem => {
@@ -14,6 +13,8 @@ export let getSolverSpecification = async problem => {
     await results.prepareResultsDatasets(problem, 'd3m');
 
     let datasetSchemas = problem.useManipulations ? problem.datasetSchemasManipulated : problem.datasetSchemas;
+    if (!['classification', 'regression', 'forecasting'].includes(problem.task))
+        problem.splitOptions.outOfSampleSplit = false;
 
     let allParams = {
         searchSolutionParams: GRPC_SearchSolutionsRequest(problem, datasetSchemas.all),
