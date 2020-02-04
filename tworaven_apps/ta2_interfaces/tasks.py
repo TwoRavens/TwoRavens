@@ -317,8 +317,7 @@ def split_dataset(configuration, workspace):
             inferred_freq = sorted([(i, approx_seconds(i)) for i in candidate_frequencies], key=lambda x: x[1])[0][0]
             inferred_freq = pd.tseries.frequencies.to_offset(inferred_freq)
 
-    print('cross section date limites', cross_section_date_limits)
-    print('inferred freq', inferred_freq)
+
     def get_dataset_paths(role):
         dest_dir_info = create_destination_directory(workspace, name=role)
         if not dest_dir_info[KEY_SUCCESS]:

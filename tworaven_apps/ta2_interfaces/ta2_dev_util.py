@@ -26,6 +26,7 @@ TA2_STANFORD = 'TA2_STANFORD'
 TA2_BERKELEY = 'TA2_BERKELEY'
 TA2_TAMU = 'TA2_TAMU'
 TA2_CMU = 'TA2_CMU'
+TA2_NYU = 'TA2_NYU'
 
 TA2_NAMES = (TA2_FeatureLabs,
              TA2_Brown,
@@ -33,7 +34,8 @@ TA2_NAMES = (TA2_FeatureLabs,
              TA2_STANFORD,
              TA2_BERKELEY,
              TA2_TAMU,
-             TA2_CMU)
+             TA2_CMU,
+             TA2_NYU)
 
 TA2_IMAGE_INFO = [
     # Feature Labs: may not be using D3MPORT
@@ -77,7 +79,11 @@ TA2_IMAGE_INFO = [
 
     (TA2_CMU,
      'registry.datadrivendiscovery.org/sheath/cmu-ta2:live',
-     '-p 45042:45042 -e D3MPORT=45042',)
+     '-p 45042:45042 -e D3MPORT=45042',),
+
+    (TA2_NYU,
+     'registry.gitlab.com/vida-nyu/d3m/ta2:latest',
+     '-p 45042:45042 -e D3MPORT=45042',),
 ]
 
 class TA2Helper(BasicErrCheck):

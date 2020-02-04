@@ -186,9 +186,11 @@ class MakeDatadocsUtil(BasicErrCheck):
                     "resID": "learningData",
                     "resPath": "tables/learningData.csv",
                     "resType": "table",
-                    "resFormat": [
-                        "text/csv"
-                    ],
+                    "resFormat": {
+                        "text/csv": [
+                            "csv"
+                        ]
+                    },
                     "isCollection": False,
                     "columns": datasetDoc_columns
                 }]

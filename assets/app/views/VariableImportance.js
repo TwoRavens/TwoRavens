@@ -541,8 +541,8 @@ export default class VariableImportance {
                             {
                                 "mark": {
                                     'type': "line",
-                                    'color': common.selVarColor,
-                                    'size': 5
+                                    'color': '#ED7B65',
+                                    'size': 6
                                 },
                                 "encoding": {
                                     "x": {

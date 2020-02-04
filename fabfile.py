@@ -404,6 +404,29 @@ def run_ta2_cmu_choose_config(choice_num=''):
         print(resp.err_msg)
 
 @task
+def run_ta2_nyu_choose_config(choice_num=''):
+    """Pick a config from /ravens_volume and run the Standford TA2"""
+    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
+        (TA2Helper, TA2_NYU)
+
+    resp = TA2Helper.run_ta2_with_dataset( \
+        TA2_NYU,
+        choice_num,
+        run_ta2_stanford_choose_config.__name__)
+
+    if resp.success:
+        stop_ta2_server()
+
+        docker_cmd = resp.result_obj
+        print('-' * 40)
+        print('Run TA2 with command:')
+        print('-' * 40)
+        print(docker_cmd)
+        local(docker_cmd)
+    elif resp.err_msg:
+        print(resp.err_msg)
+
+@task
 def load_docker_ui_config():
     """Load config pk=3, name 'Docker Default configuration'"""
     check_config()

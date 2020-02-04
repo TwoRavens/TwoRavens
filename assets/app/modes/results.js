@@ -1571,9 +1571,7 @@ export let loadFittedVsActuals = async (problem, adapter) => {
         ...resultsQuery
     ], app.workspace.raven_config.variablesInitial)['pipeline'];
 
-    let produceId = dataPointer
-        .substr(dataPointer.lastIndexOf('/') + 1)
-        .replace('.csv', '');
+    let produceId = app.generateID(dataPointer);
     let tempQuery = JSON.stringify(resultsData.id.query);
     let response;
     try {
@@ -1650,9 +1648,7 @@ export let loadConfusionData = async (problem, adapter) => {
         ...resultsQuery
     ], app.workspace.raven_config.variablesInitial)['pipeline'];
 
-    let produceId = dataPointer
-        .substr(dataPointer.lastIndexOf('/') + 1)
-        .replace('.csv', '');
+    let produceId = app.generateID(dataPointer);
     let tempQuery = JSON.stringify(resultsData.id.query);
     let response;
     try {
@@ -1941,9 +1937,7 @@ export let loadImportanceEFDData = async (problem, adapter) => {
     ], app.workspace.raven_config.variablesInitial)['pipeline'];
 
     let tempQuery = JSON.stringify(resultsData.id.query);
-    let produceId = dataPointer
-        .substr(dataPointer.lastIndexOf('/') + 1)
-        .replace('.csv', '');
+    let produceId = app.generateID(dataPointer);
     let response;
 
     try {
@@ -2104,9 +2098,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
             ...resultsQuery
         ], app.workspace.raven_config.variablesInitial)['pipeline'];
 
-        let produceId = dataPointer
-            .substr(dataPointer.lastIndexOf('/') + 1)
-            .replace('.csv', '');
+        let produceId = app.generateID(dataPointer);
 
         try {
             response = await m.request(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
@@ -2328,7 +2320,8 @@ export let prepareResultsDatasets = async (problem, solverId) => {
             app.materializeManipulationsPromise[problem.problemId] = app.materializeManipulations(problem, [
                 ...(problem.splitOptions.outOfSampleSplit ? ['train', 'test'] : []),
                 'all',
-                'partials'
+                'partials',
+                ...app.getPredictorVariables(problem).map(predictor => `ICE_synthetic_${predictor}`)
             ]);
         await app.materializeManipulationsPromise[problem.problemId];
     } catch (err) {

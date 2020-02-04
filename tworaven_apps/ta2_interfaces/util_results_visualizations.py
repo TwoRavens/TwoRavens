@@ -20,7 +20,7 @@ def util_results_real_clustered(data_pointer, metadata):
     if not response.success:
         return {KEY_SUCCESS: False, KEY_DATA: response.err_msg}
 
-    results_collection_name = metadata['collectionName'] + '_produce_' + str(metadata['produceId'])
+    results_collection_name = metadata['collectionName'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
 
     mongo_util_base = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
@@ -166,7 +166,7 @@ def util_results_confusion_matrix(data_pointer, metadata):
     if not response.success:
         return {KEY_SUCCESS: False, KEY_DATA: response.err_msg}
 
-    results_collection_name = metadata['collectionName'] + '_produce_' + str(metadata['produceId'])
+    results_collection_name = metadata['collectionName'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
 
     util = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
@@ -273,7 +273,7 @@ def util_results_importance_efd(data_pointer, metadata):
         metadata['collectionName'],
         data_path=metadata['collectionPath'])
 
-    results_collection_name = metadata['collectionName'] + '_produce_' + str(metadata['produceId'])
+    results_collection_name = metadata['collectionName'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
 
     util = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
@@ -489,3 +489,7 @@ def util_results_importance_ice(data_pointer_X, data_pointer_Y, variable):
         left_on='d3mIndex',
         right_on='d3mIndex',
         how='inner').drop(columns=['d3mIndex']).to_dict('records')
+
+
+def mongofy_collection_name(name):
+    return str(name).replace('.', '').replace('$', '').replace('\u0000', '')

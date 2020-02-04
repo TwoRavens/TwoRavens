@@ -337,7 +337,12 @@ class SearchSolutionsHelper(BasicErrCheck):
 
                 result_json = msg_json_info.result_obj
 
-                if not ta2_static.KEY_SOLUTION_ID in result_json:
+                # TA2s (specifically NYU) responds once when trying a new pipeline, with a message missing a solutionId
+                # the same process responds again once the solution contains a solutionId
+                if not result_json.get('solutionId'):
+                    continue
+
+                if ta2_static.KEY_SOLUTION_ID not in result_json:
                     user_msg = '"%s" not found in response to JSON: %s' % \
                                (ta2_static.KEY_SOLUTION_ID, result_json)
 
