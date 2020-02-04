@@ -750,9 +750,10 @@ export let rightpanel = () => {
                 m('label', 'Task Type'),
                 m(Dropdown, {
                     id: 'taskType',
-                    items: app.workspace.raven_config.advancedMode
-                        ? Object.keys(app.d3mTaskType)
-                        : ['classification', 'regression', 'forecasting'],
+                    items: Object.keys(app.d3mTaskType),
+                    // items: app.workspace.raven_config.advancedMode
+                    //     ? Object.keys(app.d3mTaskType)
+                    //     : ['classification', 'regression', 'forecasting'],
                     activeItem: selectedProblem.task,
                     onclickChild: task => app.setTask(task, selectedProblem),
                     style: {'margin': '1em', 'margin-top': '0'},
