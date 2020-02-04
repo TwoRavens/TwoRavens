@@ -284,6 +284,9 @@ export class CanvasSolutions {
             let timeSummary = plotSplits.reduce((out, split) => Object.assign(out, {
                 [split]: adapters[0].getDataSample(problem.tags.time[0] || 'd3mIndex', split)
             }), {});
+            let predictedVariables = app.getPredictorVariables(problem);
+            let crossSectionals = problem.tags.crossSection
+                .filter(crossSection => predictedVariables.includes(crossSection))
 
             let crossSectionSummary = plotSplits
                 // for each loaded data split
@@ -291,17 +294,17 @@ export class CanvasSolutions {
                 // construct a treatment label
                 .reduce((out, split) => {
                     // don't do anything if there are no cross sectional variables
-                    if (problem.tags.crossSection.length === 0)
+                    if (crossSectionals.length === 0)
                         return Object.assign(out, {[split]: []});
 
                     // construct an intermediate {[columnName]: values} object
-                    let crossSectionData = problem.tags.crossSection.reduce((out, columnName) => Object.assign(out, {
+                    let crossSectionData = crossSectionals.reduce((out, columnName) => Object.assign(out, {
                         [columnName]: adapters[0].getDataSample(columnName, split)
                     }), {});
 
                     // concat together the values in the columns for each of the cross sections, for each observation
-                    out[split] = crossSectionData[problem.tags.crossSection[0]]
-                        .map((_, i) => problem.tags.crossSection
+                    out[split] = crossSectionData[crossSectionals[0]]
+                        .map((_, i) => crossSectionals
                             .reduce((label, columnName) => `${label}-${crossSectionData[columnName][i]}`, '')
                             .slice(1), {});
 
@@ -2276,10 +2279,10 @@ export let prepareResultsDatasets = async (problem, solverId) => {
     problem.datasetSchemasManipulated = problem.datasetSchemasManipulated || {};
     problem.datasetPathsManipulated = problem.datasetPathsManipulated || {};
     problem.selectedSolutions[solverId] = problem.selectedSolutions[solverId] || [];
+    // DEBUG_MODE TAGGED (set thinking to false)
+    problem.solverState[solverId] = {thinking: true};
 
-    if (['classification', 'regression', 'forecasting'].includes(problem.task)) {
-        // DEBUG_MODE TAGGED (set thinking to false)
-        problem.solverState[solverId] = {thinking: true};
+    if (['classification', 'regression'].includes(problem.task)) {
         problem.solverState[solverId].message = 'preparing partials data';
         m.redraw();
         try {
@@ -2302,7 +2305,9 @@ export let prepareResultsDatasets = async (problem, solverId) => {
             console.error(err);
             console.log('Materializing ICE failed. Continuing without ICE data.')
         }
-
+    }
+    
+    if (['classification', 'regression', 'forecasting'].includes(problem.task)) {
         problem.solverState[solverId].message = 'preparing train/test splits';
         m.redraw();
         try {

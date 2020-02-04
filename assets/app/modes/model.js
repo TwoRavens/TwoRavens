@@ -1173,7 +1173,7 @@ export let buildForceData = problem => {
     let groups = [];
     let groupLinks = [];
 
-    let supervised = !['clustering', 'linkPrediction', 'communityDetection'].includes(problem.task);
+    let supervised = !['clustering', 'communityDetection'].includes(problem.task);
 
     if (forceDiagramMode === 'variables') {
         groups = [

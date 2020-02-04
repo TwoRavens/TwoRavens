@@ -310,8 +310,7 @@ def split_dataset(configuration, workspace):
                 cross_section_date_limits.setdefault(section, date)
                 cross_section_date_limits[section] = max(cross_section_date_limits[section], date)
 
-        print('caf', candidate_frequencies)
-        # if data has no trio of evenly spaced records
+        # if data has a trio of evenly spaced records
         if candidate_frequencies:
             # sort inferred frequency by approximate time durations, select shortest
             inferred_freq = sorted([(i, approx_seconds(i)) for i in candidate_frequencies], key=lambda x: x[1])[0][0]
@@ -447,7 +446,7 @@ def split_dataset(configuration, workspace):
                             return False
                         max_date = cross_section_date_limits[section] - inferred_freq * horizon
                         # TODO: lower bound isn't being set, due to risk of time underflow
-                        return date < max_date - inferred_freq * horizon
+                        return date < max_date
 
                     splits = {
                         'train': dataframe.loc[dataframe.apply(in_train, axis=1)],
