@@ -155,11 +155,11 @@ class SearchHistoryUtil(BasicErrCheck):
 
 
     @staticmethod
-    def get_first_search_soutions_call():
+    def get_last_search_solutions_call():
         """For an initial page, look for a StoredRequest kickoff call"""
         return StoredRequest.objects.filter(\
                             request_type=SEARCH_SOLUTIONS\
-                            ).order_by('id').first()
+                            ).order_by('id').last()
 
 
     def retrieve_requests(self):

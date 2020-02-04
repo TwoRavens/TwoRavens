@@ -40,7 +40,7 @@ def view_clear_grpc_stored_history(request):
 def view_grpc_search_history_json_no_id(request):
     """Pick an existing search history, if it exists"""
 
-    resp = SearchHistoryUtil.get_first_search_soutions_call()
+    resp = SearchHistoryUtil.get_last_search_solutions_call()
 
     if not resp:
         err_info = get_json_error('No search_id was found')
@@ -74,7 +74,7 @@ def view_grpc_search_history_json(request, search_id):
 def view_grpc_stored_history_no_id(request):
     """Pick an existing search history, if it exists"""
 
-    resp = SearchHistoryUtil.get_first_search_soutions_call()
+    resp = SearchHistoryUtil.get_last_search_solutions_call()
 
     resp_id = resp.search_id if resp else None
     #if not resp:

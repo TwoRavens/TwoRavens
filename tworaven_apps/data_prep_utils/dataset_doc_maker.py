@@ -140,7 +140,11 @@ class DatasetDocMaker(BasicErrCheck):
                 'resID': resourceID,
                 'resPath': output_data_path,
                 'resType': 'table',
-                'resFormat': ['text/csv'],
+                'resFormat': {
+                    "text/csv": [
+                        "csv"
+                    ]
+                },
                 'isCollection': False,
                 'columns': [
                     {
