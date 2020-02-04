@@ -92,7 +92,11 @@ def d3m_wrap_dataset(outputDir, dataPaths, about, problem):
                 'resID': resourceID,
                 'resPath': outDataPath,
                 'resType': 'table',
-                'resFormat': ['text/csv'],
+                'resFormat': {
+                    "text/csv": [
+                        "csv"
+                    ]
+                },
                 'isCollection': False,
                 'columns': [
                     {
