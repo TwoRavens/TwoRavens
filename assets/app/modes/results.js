@@ -267,6 +267,48 @@ export class CanvasSolutions {
 
         let response = [];
 
+        if (problem.task === 'objectDetection') {
+            return [
+                m(PlotVegaLite, {
+                    specification: {
+                        "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
+                        "data": {
+                            "values": Object.keys(resultsData.boundaryImageColormap).map(solutionName => ({
+                                "color": resultsData.boundaryImageColormap[solutionName],
+                                "solution": solutionName
+                            }))
+                        },
+                        "mark": "rect",
+                        "encoding": {
+                            "x": {"field": "solution", "type": "nominal"},
+                            "color": {"field": "color", "type": "nominal", "scale": null}
+                        }
+                    }
+                }),
+                m(Paginated, {
+                    data: resultsData.dataSample || [],
+                    makePage: dataSample => dataSample
+                        .map(point => ({
+                            point,
+                            'src': getObjectBoundaryImagePath(
+                                problem,
+                                resultsPreferences.target,
+                                resultsPreferences.dataSplit,
+                                problem.tags.indexes.reduce((index, column) => Object.assign(index, {
+                                    [column]: point[column]
+                                }), {}))
+                        }))
+                        .filter(summary => summary.src)
+                        .map(summary => m('div',
+                            m('h5', summary.point.image),
+                            m('img', {src: summary.src}))),
+                    limit: 10,
+                    page: resultsPreferences.imagePage,
+                    setPage: index => resultsPreferences.imagePage = index
+                })
+            ]
+        }
+
         if (problem.task !== 'forecasting' && adapters.every(adapter => !adapter.getDataPointer(resultsPreferences.dataSplit))) {
             return [
                 'Waiting for solver to produce predictions.',
@@ -312,7 +354,7 @@ export class CanvasSolutions {
                 }, {});
 
             let forecastSummaries = adapters.map(adapter => plotSplits.reduce((out, split) => Object.assign(out, {
-                [split]: adapter.getForecast(resultsPreferences.target, split)
+                [split]: adapter.getFitted(resultsPreferences.target, split)
             }), {solutionId: adapter.getSolutionId()}));
 
 
@@ -1085,17 +1127,16 @@ export let getSolutionAdapter = (problem, solution) => ({
             return resultsData.confusion[solution.solutionId][target];
     },
     getDataSample: (target, split) => {
-        let adapter = getSolutionAdapter(problem, solution);
-        loadDataSample(problem, adapter, split);
+        loadDataSample(problem, split);
         if (resultsData.dataSample[split])
             return resultsData.dataSample[split].map(obs => obs[target])
     },
-    getForecast: (target, split) => {
+    getFitted: (target, split) => {
         let adapter = getSolutionAdapter(problem, solution);
-        loadForecastData(problem, adapter, split);
-        let forecast = app.getRecursive(resultsData.forecast,
+        loadFittedData(problem, adapter, split);
+        let fitted = app.getRecursive(resultsData.fitted,
             [adapter.getSolutionId(), split]);
-        if (forecast) return forecast.map(obs => obs[target]);
+        if (fitted) return fitted.map(obs => obs[target]);
     },
     getScore: metric => {
         if (!solution.scores) return;
@@ -1142,6 +1183,118 @@ export let getSolutionAdapter = (problem, solution) => ({
         ]);
     }
 });
+
+// get the bounding box image for the selected problem's target variable, in the desired split, at the given index
+let getObjectBoundaryImagePath = (problem, target, split, index) => {
+    let selectedSolutions = getSelectedSolutions(problem);
+    let adapters = selectedSolutions
+        .map(solution => getSolutionAdapter(problem, solution));
+
+    loadObjectBoundaryImage(problem, adapters, target, split, index);
+    return app.getRecursive(resultsData, ['boundaryImagePaths', target, split, JSON.stringify(index)]);
+};
+
+let loadObjectBoundaryImage = async (problem, adapters, target, split, index) => {
+    adapters.forEach(adapter => loadFittedData(problem, adapter, split));
+
+    // reset image paths if the fitted data for one of the problems is not loaded
+    if (!adapters.every(adapter => adapter.getSolutionId() in resultsData.fitted)) {
+        resultsData.boundaryImagePaths = {};
+        resultsData.boundaryImageColormap = undefined;
+        resultsData.boundaryImagePathsLoading = {};
+        return;
+    }
+
+    // object boundaryies only apply to object detection problems
+    if (problem.task.toLowerCase() !== 'objectdetection')
+        return;
+
+    // don't load if image is already being loaded
+    if (app.getRecursive(resultsData, ['boundaryImagePathsLoading', target, split, JSON.stringify(index)]))
+        return;
+
+    // don't load if already loaded
+    if (app.getRecursive(resultsData, ['boundaryImagePaths', target, split, JSON.stringify(index)]))
+        return;
+
+    // begin blocking additional requests to load
+    app.setRecursive(resultsData, [
+        ['boundaryImagePathsLoading', {}],
+        [target, {}],
+        [split, {}],
+        [JSON.stringify(index), true]
+    ]);
+
+    let actualPoint = resultsData.dataSample[split]
+        .find(point => Object.items(index).every(pair => point[pair[0]] === pair[1]));
+
+    // collect all fitted data points at the given index for each solution
+    // an object of {Actual: [boundary1, ...], solutionId: [boundary1, boundary2], ...}
+    let fittedPoints = adapters.reduce(
+        adapter => resultsData.fitted[adapter.getSolutionId()][split]
+            // all multi-indexes match
+            .filter(point => Object.items(index).every(pair => point[pair[0]] === pair[1]))
+            // turn all matched points into an array of boundaries
+            .flatMap(point => point[target]),
+        {Actual: actualPoint[target]});
+
+    if (!resultsData.boundaryImageColormap) {
+        resultsData.boundaryImageColormap = Object.keys(fittedPoints).reduce((map, solutionName, i) => Object.assign(map, {
+            [solutionName]: common.colorPalette[i % common.colorPalette.length]
+        }));
+    }
+
+    let response;
+    try {
+        response = await m.request(`image-utils/markup-image`, {
+            method: 'POST',
+            data: {
+                file_path: problem.datasetPaths[split].replace('datasetDoc.json', '') + '/media/' + actualPoint.image,
+                borders: Object.keys(fittedPoints).reduce((borders, solutionName) => Object.assign({
+                    [resultsData.boundaryImageColormap[solutionName]]: fittedPoints[solutionName]
+                }), {})
+            }
+        });
+
+        if (!response.success) {
+            console.warn(response);
+            throw response.data;
+        }
+    } catch (err) {
+        console.warn("markup-image error");
+        console.log(err);
+        // app.alertWarn('Marked up image has not been loaded.');
+        return;
+    }
+
+    // don't accept response if current problem has changed
+    if (resultsData.id.problemId !== problem.problemId)
+        return;
+
+    app.setRecursive(resultsData, [
+        ['boundaryImagePaths', {}],
+        [target, {}],
+        [split, {}],
+        [JSON.stringify(index), response.data.image_url]
+    ]);
+
+    app.setRecursive(resultsData, [
+        ['boundaryImagePathsLoading', {}],
+        [target, {}],
+        [split, {}],
+        [JSON.stringify(index), false]
+    ]);
+
+    app.setRecursive(resultsData, [
+        ['boundaryImagePathsLoading', {}],
+        [target, {}],
+        [split, {}],
+        [JSON.stringify(index), false]
+    ]);
+
+    // apply state changes to the page
+    m.redraw();
+};
 
 
 let getSolutionTable = (problem, systemId) => {
@@ -1211,7 +1364,8 @@ export let resultsPreferences = {
     dataSplit: 'test',
     recordLimit: 10000,
     crossSection: 'unset',
-    crossSectionTemp: 'unset'
+    crossSectionTemp: 'unset',
+    imagePage: 0
 };
 
 let setResultsFactor = factor => resultsPreferences.factor = factor === 'undefined' ? undefined : factor;
@@ -1463,8 +1617,12 @@ export let resultsData = {
     // cached data for forecasting, per data split
     dataSample: {},
     dataSampleLoading: {},
-    forecast: {},
-    forecastLoading: {},
+    fitted: {},
+    fittedLoading: {},
+
+    // cached data is specific to the split
+    boundaryImagePathsLoading: {},
+    boundaryImagePaths: {},
 
     // cached data is specific to the solution (tends to be larger)
     importanceEFD: undefined,
@@ -1525,8 +1683,8 @@ export let loadProblemData = async (problem, predictor=undefined) => {
     // cached data for forecasting, per data split
     resultsData.dataSample = {};
     resultsData.dataSampleLoading = {};
-    resultsData.forecast = {};
-    resultsData.forecastLoading = {};
+    resultsData.fitted = {};
+    resultsData.fittedLoading = {};
 
     // specific to solution and target, one solution stored for one target
     resultsData.importanceEFD = undefined;
@@ -1720,8 +1878,7 @@ export let loadConfusionData = async (problem, adapter) => {
     m.redraw();
 };
 
-
-export let loadDataSample = async (problem, adapter, split) => {
+export let loadDataSample = async (problem, split) => {
 
     // reset if id is different
     await loadProblemData(problem);
@@ -1752,6 +1909,16 @@ export let loadDataSample = async (problem, adapter, split) => {
                 [
                     ...app.workspace.raven_config.hardManipulations,
                     ...problem.manipulations,
+                    problem.task === 'objectDetection' && {
+                        type: 'aggregate',
+                        measuresUnit: problem.tags.indexes.map(index => ({"subset": "discrete", "column": index})),
+                        // collect all the values in the target column into an array, and take the first value in the image column
+                        // TODO: "image" should not be hardcoded
+                        measuresAccum: [
+                            ...problem.targets.map(target => ({"subset": "push", "column": target})),
+                            {'subset': 'first', 'column': 'image'}
+                        ]
+                    },
                     {
                         type: 'menu',
                         metadata: {
@@ -1761,7 +1928,7 @@ export let loadDataSample = async (problem, adapter, split) => {
                             sample: resultsPreferences.recordLimit
                         }
                     },
-                ],
+                ].filter(_=>_),
                 app.workspace.raven_config.variablesInitial)['pipeline'])
         })
     } catch (err) {
@@ -1785,9 +1952,8 @@ export let loadDataSample = async (problem, adapter, split) => {
     m.redraw()
 };
 
-
-export let loadForecastData = async (problem, adapter, split) => {
-    await loadDataSample(problem, adapter, split);
+export let loadFittedData = async (problem, adapter, split) => {
+    await loadDataSample(problem, split);
 
     let dataPointer = adapter.getDataPointer(split);
 
@@ -1799,20 +1965,16 @@ export let loadForecastData = async (problem, adapter, split) => {
     if (!(split in resultsData.dataSample))
         return;
 
-    // forecasts apply only to forecasting problems
-    if (problem.task.toLowerCase() !== 'forecasting')
-        return;
-
     // don't load if systems are already in loading state
-    if (app.getRecursive(resultsData.forecastLoading, [adapter.getSolutionId(), split]))
+    if (app.getRecursive(resultsData.fittedLoading, [adapter.getSolutionId(), split]))
         return;
 
     // don't load if already loaded
-    if (app.getRecursive(resultsData.forecast, [adapter.getSolutionId(), split]))
+    if (app.getRecursive(resultsData.fitted, [adapter.getSolutionId(), split]))
         return;
 
     // begin blocking additional requests to load
-    app.setRecursive(resultsData.forecastLoading, [
+    app.setRecursive(resultsData.fittedLoading, [
         [adapter.getSolutionId(), {}],
         [split, true]
     ]);
@@ -1835,7 +1997,7 @@ export let loadForecastData = async (problem, adapter, split) => {
     } catch (err) {
         console.warn("retrieve-output-data error");
         console.log(err);
-        app.alertWarn('Forecast data has not been loaded. Some plots will not load.');
+        app.alertWarn('Fitted data has not been loaded. Some plots will not load.');
         return;
     }
 
@@ -1855,9 +2017,9 @@ export let loadForecastData = async (problem, adapter, split) => {
         if (!isNaN(parsed)) row[target] = parsed
     }));
 
-    app.setRecursive(resultsData.forecast,
+    app.setRecursive(resultsData.fitted,
         [[adapter.getSolutionId(), {}], [split, response.data]]);
-    app.setRecursive(resultsData.forecastLoading,
+    app.setRecursive(resultsData.fittedLoading,
         [[adapter.getSolutionId(), {}], [split, false]]);
 
     // apply state changes to the page
@@ -2180,9 +2342,6 @@ let loadImportanceScore = async (problem, adapter, mode) => {
         }, {});
 
         console.log(partialsData);
-
-
-
     }
 
     if (mode === 'PDP/ICE') {

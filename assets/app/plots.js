@@ -3,7 +3,7 @@
 export let vegaLiteScatter = (data, xName, yName, groupName, countName, title='') => {
 
     return ({
-        "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+        "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
         "description": "A scatterplot.",
         "title": title,
         "autosize": {
@@ -58,7 +58,7 @@ export let vegaLiteScatter = (data, xName, yName, groupName, countName, title=''
 export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSectionName, title='') => {
 
     return ({
-        "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+        "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
         "description": "A scatterplot.",
         "title": title,
         "autosize": {
@@ -197,7 +197,7 @@ export let vegaLiteDensityHeatmap = summary => {
     });
 
     return {
-        "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+        "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
         "description": `Densities for ${summary.name}.`,
         'layer': [
             {
@@ -219,7 +219,7 @@ export let vegaLiteDensityHeatmap = summary => {
 };
 
 export let vegaLiteImportancePlot = (data, comparison) => ({
-    "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+    "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
     "description": `Variable importance scores`,
     "mark": "bar",
     "data": {
