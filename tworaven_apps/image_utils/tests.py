@@ -3,6 +3,7 @@ python manage.py test tworaven_apps.image_utils
 """
 from django.test import TestCase
 from django.test import Client
+from django.conf import settings
 
 from collections import OrderedDict
 from unittest import skip
@@ -23,6 +24,9 @@ from tworaven_apps.solver_interfaces.models import (
 class ImageMarkupHelper(TestCase):
     """Image markup test"""
 
+    def setUp(self):
+        settings.DEBUG = True
+
     def get_test_spec(self):
         """Return the test spec"""
         data_dir = join(dirname(abspath(__file__)), 'test_data')
@@ -30,11 +34,11 @@ class ImageMarkupHelper(TestCase):
         spec = {\
           "file_path": join(data_dir, 'FudanPed00001.png'),
           "borders": {\
-            "RED_HEX": [
+            "FFcc00": [
                 "160,182,160,431,302,431,302,182",
                 "420,171,420,486,535,486,535,171"
             ],
-            "GREEN_HEX": [
+            "00FF00": [
                 "140,192,140,451,302,451,302,192",
                 "400,191,400,486,515,486,515,191",
                 "5,100,5,30,20,30,20,100"
@@ -56,7 +60,7 @@ class ImageMarkupHelper(TestCase):
         return output_dir
 
 
-    @skip
+    #@skip
     def test_010_markup_image(self):
         """(10) Test markup image"""
         msgt(self.test_010_markup_image.__doc__)

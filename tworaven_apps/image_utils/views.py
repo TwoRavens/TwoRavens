@@ -48,6 +48,8 @@ def view_markup_image(request):
 
     # Mark up the image
     #
-    markup_info = markup_image(image_spec_json, dir_info.get(KEY_DATA))
+    markup_info = markup_image(image_spec_json,
+                               dir_info.get(KEY_DATA),
+                               **dict(convert_name_to_url=True))
 
     return JsonResponse(markup_info)

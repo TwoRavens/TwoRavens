@@ -5,11 +5,11 @@ Example spec
 {
   "file_path": "/ravens_volume/test_data/LL1_penn_fudan_pedestrian_MIN_METADATA/TRAIN/dataset_TRAIN/media/FudanPed00001.png",
   "borders": {
-    "RED_HEX": [
+    "FF0000": [
       "160,182,160,431,302,431,302,182",
       "420,171,420,486,535,486,535,171"
     ],
-    "GREEN_HEX": [
+    "00FF00": [
       "140,192,140,451,302,451,302,192",
       "400,191,400,486,515,486,515,191",
       "5,100,5,30,20,30,20,100"
@@ -38,8 +38,18 @@ from tworaven_apps.solver_interfaces.models import (
 from tworaven_apps.user_workspaces.models import UserWorkspace
 
 DEFAULT_COLOR = '#006699'
-COLOR_LOOKUP = dict(RED_HEX='#FF0000',
-                    GREEN_HEX='#00FF00')
+#COLOR_LOOKUP = dict(RED_HEX='#FF0000',
+#                    GREEN_HEX='#00FF00')
+
+
+def get_output_path_base():
+    """Get base output path for image"""
+    print('settings.DEBUG', settings.DEBUG)
+    if settings.DEBUG:
+        return settings.ASSETS_DIR_TEST
+        # return settings.TEST_DIRECT_STATIC   # dev server
+    else:
+        return settings.STATIC_ROOT
 
 
 def create_image_output_dir(user_workspace=None):
@@ -53,15 +63,11 @@ def create_image_output_dir(user_workspace=None):
     else:
         user_workspace_id = user_workspace.id
 
-    if settings.DEBUG:
-        output_path = settings.TEST_DIRECT_STATIC   # dev server
-    else:
-        output_path = settings.STATIC_ROOT
-
-    output_path = join(output_path,
-                       user_workspace_id,
-                       random_info.get_alphanumeric_lowercase(4),
-                       random_info.get_timestamp_string())
+    output_path = join(\
+            get_output_path_base(),
+            'image-markup',
+            f'{user_workspace_id}-{random_info.get_alphanumeric_lowercase(4)}',
+            random_info.get_timestamp_string())
 
     dir_info = create_directory(output_path)
 
@@ -73,7 +79,11 @@ def create_image_output_dir(user_workspace=None):
             KEY_DATA: dir_info.result_obj}
 
 
-def markup_image(image_spec, output_dir):
+def markup_image(image_spec, output_dir, **kwargs):
+    """
+    kwargs:
+    - convert_name_to_url - defaults to False, use True for frontend usable info
+    """
     if not isinstance(image_spec, dict):
         return {KEY_SUCCESS: False,
                 KEY_MESSAGE: f'Error. Image spec is not a dict.'}
@@ -122,9 +132,12 @@ def markup_image(image_spec, output_dir):
 
     # Iterate through the border parameters
     #
-    for color_name, coords in image_spec.get('borders', {}).items():
+    for hex_color, coords in image_spec.get('borders', {}).items():
         # get the color
-        hex_color = COLOR_LOOKUP.get(color_name, DEFAULT_COLOR)
+        #hex_color = COLOR_LOOKUP.get(color_name, DEFAULT_COLOR)
+        if not hex_color.startswith('#'):
+            hex_color = f'#{hex_color}'
+        hex_color = hex_color.upper()
 
         # Iterate through the coordinates
         for coord_str in coords:
@@ -157,9 +170,20 @@ def markup_image(image_spec, output_dir):
         im.thumbnail(new_size, Image.ANTIALIAS)
         print(f'New size: W x H: {im.size[0]} x {im.size[1]}')
 
+    print('new_name', new_name)
     # Save using the new name
     #
     im.save(new_name, im.format)
+
+    if kwargs.get('convert_name_to_url') is True:
+        output_path_base = get_output_path_base()
+        if new_name.find(output_path_base) > -1:
+            url_image_name = new_name[len(output_path_base):]
+            if len(url_image_name) > 1 and url_image_name[0] == '/':
+                url_image_name = url_image_name[1:]
+            url_path = join(settings.STATIC_URL, url_image_name)
+            return {KEY_SUCCESS: True,
+                    KEY_DATA: url_path}
 
     return {KEY_SUCCESS: True,
             KEY_DATA: new_name}

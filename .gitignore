@@ -74,3 +74,4 @@ src/
 results/api_experiment_run*
 ravens_volume/test_data/00_testit
 ravens_volume/TwoRavens_user_datasets
+assets/image-markup/

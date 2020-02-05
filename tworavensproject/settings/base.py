@@ -272,6 +272,7 @@ CSRF_COOKIE_NAME = os.environ.get('CSRF_COOKIE_NAME',
 
 STATIC_URL = '/static/'
 
+ASSETS_DIR_TEST = join(BASE_DIR, 'assets') # only for test! temp!
 STATICFILES_DIRS = [join(BASE_DIR, 'assets')]
 
 
