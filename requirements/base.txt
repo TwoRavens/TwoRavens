@@ -89,3 +89,6 @@ tpot
 
 # for tworavens solver
 statsmodels==0.11.0
+
+# for image problems
+Pillow==7.0.0

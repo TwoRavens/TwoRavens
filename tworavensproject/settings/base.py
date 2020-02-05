@@ -115,6 +115,7 @@ INSTALLED_APPS = [
     'tworaven_apps.call_captures', # capture data sent from UI out to rook/TA2
     'tworaven_apps.eventdata_queries', # eventdata API services
     'tworaven_apps.datamart_endpoints', # Datamart connections
+    'tworaven_apps.image_utils', # record user behavior
 
     'tworaven_apps.behavioral_logs', # record user behavior
 
