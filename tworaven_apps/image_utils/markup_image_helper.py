@@ -26,14 +26,49 @@ import csv
 import os
 from os.path import abspath, basename, dirname, isdir, isfile, join, splitext
 
+from django.conf import settings
+
+from tworaven_apps.utils import random_info
+from tworaven_apps.utils.file_util import create_directory
+
 from tworaven_apps.solver_interfaces.models import (
     KEY_SUCCESS,
     KEY_DATA,
     KEY_MESSAGE)
+from tworaven_apps.user_workspaces.models import UserWorkspace
 
 DEFAULT_COLOR = '#006699'
 COLOR_LOOKUP = dict(RED_HEX='#FF0000',
                     GREEN_HEX='#00FF00')
+
+
+def create_image_output_dir(user_workspace):
+    """Create an image output dir based on a user workspace
+    For DEMO: TEMP write this to staticfiles
+    """
+    if not isinstance(user_workspace, UserWorkspace):
+        return {KEY_SUCCESS: False,
+                KEY_SUCCESS: 'user_workspace is not a "UserWorkspace" object'}
+
+    if settings.DEBUG:
+        output_path = settings.TEST_DIRECT_STATIC   # dev server
+    else:
+        output_path = settings.STATIC_ROOT
+
+    output_path = join(output_path,
+                       str(user_workspace.id),
+                       random_info.get_alphanumeric_lowercase(4),
+                       random_info.get_timestamp_string())
+
+    dir_info = create_directory(output_path)
+
+    if not dir_info.success:
+        return {KEY_SUCCESS: False,
+                KEY_SUCCESS: dir_info.err_msg}
+
+    return {KEY_SUCCESS: True,
+            KEY_SUCCESS: dir_info.result_obj}
+
 
 def markup_image(image_spec, output_dir):
     if not isinstance(image_spec, dict):
