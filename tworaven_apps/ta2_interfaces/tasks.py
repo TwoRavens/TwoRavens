@@ -316,7 +316,6 @@ def split_dataset(configuration, workspace):
             inferred_freq = sorted([(i, approx_seconds(i)) for i in candidate_frequencies], key=lambda x: x[1])[0][0]
             inferred_freq = pd.tseries.frequencies.to_offset(inferred_freq)
 
-
     def get_dataset_paths(role):
         dest_dir_info = create_destination_directory(workspace, name=role)
         if not dest_dir_info[KEY_SUCCESS]:
@@ -327,11 +326,16 @@ def split_dataset(configuration, workspace):
         shutil.rmtree(dest_directory)
         shutil.copytree(workspace.d3m_config.training_data_root, dest_directory)
         os.remove(csv_path)
+        role_dataset_schema_path = path.join(dest_directory, 'datasetDoc.json')
 
-        with open(path.join(dest_directory, 'datasetDoc.json'), 'w') as dataset_schema_file:
-            json.dump(dataset_schema, dataset_schema_file)
+        # FOR ISI, the datasetID should be unique
+        with open(role_dataset_schema_path, 'r') as dataset_schema_file:
+            role_dataset_schema = json.load(dataset_schema_file)
+        role_dataset_schema['about']['datasetID'] = role_dataset_schema['about']['datasetID'] + role
+        with open(role_dataset_schema_path, 'w') as dataset_schema_file:
+            json.dump(role_dataset_schema, dataset_schema_file)
 
-        return path.join(dest_directory, 'datasetDoc.json'), csv_path
+        return role_dataset_schema_path, csv_path
 
     all_datasetDoc, all_datasetCsv = get_dataset_paths('all')
     dataset_schemas = {'all': all_datasetDoc}

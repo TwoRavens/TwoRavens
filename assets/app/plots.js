@@ -85,11 +85,57 @@ export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSe
                 {"field": crossSectionName, "type": "nominal"},
             ],
             "color": {"field": groupName, "type": "nominal"},
-            "x": {"field": xName, "type": "temporal", "axis": {"title": xName}, "scale": {"zero": false}},
+            "x": {"field": xName, "type": "quantitative", "axis": {"title": xName}, "scale": {"zero": false}},
             "y": {"field": yName, "type": "quantitative", "axis": {"title": yName}, "scale": {"zero": false}},
             "opacity": {"field": splitName, "type": "nominal"},
             "detail": {"field": crossSectionName, "type": "nominal"}
         }
+    });
+};
+
+
+export let vegaLiteForecastConfidence = (data, xName, yName, splitName, groupName, crossSectionName, title='') => {
+
+    return ({
+        "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
+        "description": "A scatterplot.",
+        "title": title,
+        "autosize": {
+            "type": "fit",
+            "contains": "padding"
+        },
+        "selection": {
+            "grid": {
+                "type": "interval", "bind": "scales"
+            }
+        },
+        "encoding": {
+            "color": {"field": groupName, "type": "nominal"},
+            "x": {"field": xName, "type": "quantitative", "axis": {"title": xName}, "scale": {"zero": false}}
+        },
+        "data": {
+            "values": data
+        },
+        "layer": [
+            {
+                "mark": {
+                    "type": "errorband",
+                    "extent": "ci"
+                },
+                "encoding": {
+                    "y": {"field": yName, "type": "quantitative", "axis": {"title": yName}, "scale": {"zero": false}}
+                }
+            },
+            {
+                "mark": {
+                    "type": "line",
+                    // "point": true
+                },
+                "encoding": {
+                    "y": {"aggregate": 'mean', "field": yName, "type": "quantitative", "axis": {"title": yName}, "scale": {"zero": false}}
+                }
+            }
+        ]
     });
 };
 

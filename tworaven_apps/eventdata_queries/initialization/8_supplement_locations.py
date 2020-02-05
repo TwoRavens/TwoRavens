@@ -15,10 +15,9 @@ query = [{"$match": {"TwoRavens_country": {"$exists": 0}}}]
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'alignments', 'location.json'))) as locfile:
     alignment = json.load(locfile)
 
-for collection in ['icews']: # db.collection_names():
-    print(collection)
+for collection in ['icews']:  # db.collection_names():
 
-    if 'cline_speed' == collection: 
+    if 'cline_speed' == collection:
         cowcodes = {}
         for equivalency in alignment:
             if 'cowcode' in equivalency:

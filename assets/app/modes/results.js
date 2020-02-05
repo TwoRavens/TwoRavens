@@ -332,7 +332,7 @@ export class CanvasSolutions {
                         [groupName]: 'Actual',
                         [yName]: actualSummary[split][i],
                         [crossSectionName]: crossSectionSummary[split][i],
-                        [xName]: new Date(Date.parse(timeSummary[split][i]))
+                        [xName]: timeSummary[split][i] // new Date(Date.parse(timeSummary[split][i]))
                     })),
                     ...forecastSummaries
                         // for each solutionId
@@ -344,7 +344,7 @@ export class CanvasSolutions {
                                 [groupName]: forecastSummary.solutionId,
                                 [yName]: forecastSummary[split][i],
                                 [crossSectionName]: crossSectionSummary[split][i],
-                                [xName]: new Date(Date.parse(timeSummary[split][i]))
+                                [xName]: timeSummary[split][i] // new Date(Date.parse(timeSummary[split][i]))
                             })))
                 ])
                 .filter(point => problem.tags.crossSection.length === 0 || resultsPreferences.crossSection === 'unset' || point[crossSectionName] === resultsPreferences.crossSection)
@@ -358,6 +358,15 @@ export class CanvasSolutions {
 
             response.push(
                 plotSplits[0] in crossSectionSummary && crossSectionsUnique.length > 1 && [
+                    m(ButtonRadio, {
+                        id: 'timeSeriesPlotConfigButtonRadio',
+                        onclick: state => resultsPreferences.timeSeriesPlotConfig = state,
+                        activeSection: resultsPreferences.timeSeriesPlotConfig,
+                        sections: [
+                            {value: 'Confidence interval'},
+                            {value: 'Cross sections'}
+                        ]
+                    }),
                     m('div[style=margin:.5em]', 'Subset to cross section:'),
                     (crossSectionsUnique.length > 20 ? m(TextFieldSuggestion, {
                         value: resultsPreferences.crossSectionTemp,
@@ -379,7 +388,8 @@ export class CanvasSolutions {
                 m('div', {
                     style: {'height': '500px'}
                 }, m(PlotVegaLite, {
-                    specification: plots.vegaLiteForecast(
+                    specification: (resultsPreferences.timeSeriesPlotConfig === 'Confidence interval'
+                        ? plots.vegaLiteForecastConfidence : plots.vegaLiteForecast)(
                         plotData, xName, yName, dataSplit,
                         groupName, crossSectionName, title),
                 })))
@@ -1197,6 +1207,7 @@ export let resultsPreferences = {
     factor: undefined,
     plotScores: 'all',
     selectedMetric: undefined,
+    timeSeriesPlotConfig: 'Cross sections',
     dataSplit: 'test',
     recordLimit: 10000,
     crossSection: 'unset',
@@ -1836,6 +1847,14 @@ export let loadForecastData = async (problem, adapter, split) => {
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
 
+    // attempt to parse all data into floats
+    response.data.forEach(row => problem.targets.forEach(target => {
+        if (!(target in row)) return;
+
+        let parsed = parseFloat(row[target]);
+        if (!isNaN(parsed)) row[target] = parsed
+    }));
+
     app.setRecursive(resultsData.forecast,
         [[adapter.getSolutionId(), {}], [split, response.data]]);
     app.setRecursive(resultsData.forecastLoading,
@@ -2306,7 +2325,7 @@ export let prepareResultsDatasets = async (problem, solverId) => {
             console.log('Materializing ICE failed. Continuing without ICE data.')
         }
     }
-    
+
     if (['classification', 'regression', 'forecasting'].includes(problem.task)) {
         problem.solverState[solverId].message = 'preparing train/test splits';
         m.redraw();
@@ -2324,7 +2343,9 @@ export let prepareResultsDatasets = async (problem, solverId) => {
     m.redraw();
     try {
         if (!app.materializeManipulationsPromise[problem.problemId])
-            app.materializeManipulationsPromise[problem.problemId] = app.materializeManipulations(problem, problem.splitOptions.outOfSampleSplit ? ['train', 'test'] : []);
+            app.materializeManipulationsPromise[problem.problemId] = app.materializeManipulations(
+                problem,
+                ['all', ...(problem.splitOptions.outOfSampleSplit ? ['train', 'test'] : [])]);
         await app.materializeManipulationsPromise[problem.problemId];
 
         // bring in the partials and ice datasets

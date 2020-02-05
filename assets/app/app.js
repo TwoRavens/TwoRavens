@@ -30,6 +30,7 @@ import {getClearWorkspacesLink, clearWorkpacesAndReloadPage} from "./utils";
 import {search, setDatamartDefaults} from "./datamart/Datamart";
 import {setConstraintMenu} from "./manipulations/manipulate";
 import {SPEC_problem} from './solvers/wrapped';
+import Subpanel from "../common/views/Subpanel";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
