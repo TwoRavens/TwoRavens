@@ -2,10 +2,12 @@
 python manage.py test tworaven_apps.image_utils
 """
 from django.test import TestCase
+from django.test import Client
 
 from collections import OrderedDict
 from unittest import skip
 from django.test import TestCase
+from django.urls import reverse
 
 from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.image_utils.markup_image_helper import \
@@ -21,14 +23,9 @@ from tworaven_apps.solver_interfaces.models import (
 class ImageMarkupHelper(TestCase):
     """Image markup test"""
 
-    def test_010_working_config(self):
-        """(10) Test Working config"""
-        msgt(self.test_010_working_config.__doc__)
-
+    def get_test_spec(self):
+        """Return the test spec"""
         data_dir = join(dirname(abspath(__file__)), 'test_data')
-        output_dir = join(data_dir, 'output_dir')
-        if not isdir(output_dir):
-            os.makedirs(output_dir)
 
         spec = {\
           "file_path": join(data_dir, 'FudanPed00001.png'),
@@ -47,7 +44,26 @@ class ImageMarkupHelper(TestCase):
               500
           ]}
 
-        info = markup_image(spec, output_dir)
+        return spec
+
+    def get_output_dir(self):
+        """Return the output directory"""
+        output_dir = join(dirname(abspath(__file__)),
+                          'test_data',
+                          'output_dir')
+        if not isdir(output_dir):
+            os.makedirs(output_dir)
+        return output_dir
+
+
+    @skip
+    def test_010_markup_image(self):
+        """(10) Test markup image"""
+        msgt(self.test_010_markup_image.__doc__)
+
+        spec = self.get_test_spec()
+
+        info = markup_image(spec, self.get_output_dir())
         print(info)
 
         self.assertEqual(info.get(KEY_SUCCESS), True)
@@ -56,3 +72,23 @@ class ImageMarkupHelper(TestCase):
             if isfile(info[KEY_DATA]):
                 print('Clean up. Remove file: %s' % info[KEY_DATA])
                 os.remove(info[KEY_DATA])
+
+    def test_020_markup_image_via_endpoint(self):
+        """(20) Test markup image via endpoint"""
+        msgt(self.test_020_markup_image_via_endpoint.__doc__)
+
+        spec = self.get_test_spec()
+
+        # create a web client
+        client = Client()
+
+        # create log entry url
+        url = reverse('view_markup_image')
+
+        # make request
+        resp = client.post(url,
+                           spec,
+                           content_type='application/json').json()
+
+        print('resp', resp)
+        #self.assertTrue(not resp['success'])

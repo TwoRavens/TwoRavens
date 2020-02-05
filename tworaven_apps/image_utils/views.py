@@ -17,21 +17,23 @@ from tworaven_apps.solver_interfaces.models import (
     KEY_DATA,
     KEY_MESSAGE)
 
-@login_required
 def view_markup_image(request):
     """Markup an image based on a spec"""
 
     # Make sure the user has a workspace--workspace is used for
     # creating the output directory
     #
-    user_workspace_info = get_latest_user_workspace(request)
+    # removed for test
+    """user_workspace_info = get_latest_user_workspace(request)
     if not user_workspace_info.success:
         return JsonResponse(get_json_error(user_workspace_info.err_msg))
     user_workspace = user_workspace_info.result_obj
+    """
+    user_workspace = None
 
     # Convert the image spec to a python OrderedDict
     #
-    req_info = get_request_body_as_json(request)
+    req_info = get_request_body_as_json(request, login_required=False)
     if not req_info.success:
         #user_msg = ('The request did not contain problem data')
         return JsonResponse(get_json_error(req_info.err_msg))

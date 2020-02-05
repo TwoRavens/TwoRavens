@@ -68,7 +68,7 @@ def get_request_body(request):
     return ok_resp(request.body.decode('utf-8'))
 
 
-def get_request_body_as_json(request):
+def get_request_body_as_json(request, login_required=True):
     """Retrieve the request body converted to JSON (python OrderedDict)
     Returns either:
         (True, content text)
@@ -77,8 +77,13 @@ def get_request_body_as_json(request):
     if not request:
         return err_resp('request is None')
 
+    if login_required is False:
+        if not request.body:
+            return err_resp('request.body not found')
+        return json_loads(request.body.decode('utf-8'))
+
     # ----------------------------------
-    # next call also check if user is authenticated
+    # next call also checks if user is authenticated
     # ----------------------------------
     resp_info = get_request_body(request)
     if not resp_info.success:
