@@ -26,8 +26,8 @@ install:
 script:
   - echo $TRAVIS_BRANCH;
   # Run django tests.  (Note django settings are set by env variable)
-  - python manage.py test tworaven_apps.ta2_interfaces tworaven_apps.configurations tworaven_apps.user_workspaces tworaven_apps.behavioral_logs
-  - coverage run --source=tworaven_apps.ta2_interfaces manage.py test tworaven_apps.ta2_interfaces tworaven_apps.user_workspaces tworaven_apps.behavioral_logs
+  - python manage.py test tworaven_apps.ta2_interfaces tworaven_apps.configurations tworaven_apps.user_workspaces tworaven_apps.behavioral_logs tworaven_apps.image_utils
+  - coverage run --source=tworaven_apps.ta2_interfaces manage.py test tworaven_apps.ta2_interfaces tworaven_apps.user_workspaces tworaven_apps.image_utils tworaven_apps.behavioral_logs
   #- coverage run --source=tworaven_apps.raven_auth manage.py test tworaven_apps.raven_auth
 
 after_success:
