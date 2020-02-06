@@ -132,43 +132,54 @@ def markup_image(image_spec, output_dir, **kwargs):
 
     # Iterate through the border parameters
     #
-    for hex_color, coords in image_spec.get('borders', {}).items():
-        # get the color
-        #hex_color = COLOR_LOOKUP.get(color_name, DEFAULT_COLOR)
-        if not hex_color.startswith('#'):
-            hex_color = f'#{hex_color}'
-        hex_color = hex_color.upper()
+    if ('borders' in image_spec) and (isinstance(image_spec['borders'], dict)):
+        for hex_color, coords in image_spec['borders'].items():
+            # get the color
+            #hex_color = COLOR_LOOKUP.get(color_name, DEFAULT_COLOR)
+            if not hex_color.startswith('#'):
+                hex_color = f'#{hex_color}'
+            hex_color = hex_color.upper()
 
-        # Iterate through the coordinates
-        for coord_str in coords:
-            # Format the coordinates from a string to 4 pairs of coordinates
-            #
-            coord_info = format_bounding_box_coords(coord_str)
-            if not coord_info[KEY_SUCCESS]:
-                continue    # problem with the coordinates
+            # Iterate through the coordinates
+            for coord_str in coords:
+                # Format the coordinates from a string to 4 pairs of coordinates
+                #
+                coord_info = format_bounding_box_coords(coord_str, (width, height))
+                if not coord_info[KEY_SUCCESS]:
+                    return coord_info
 
-            # Draw lines based on the color/coordinates
-            #
-            bb_coords = coord_info[KEY_DATA]
-            for coord_idx in range(0, 4):
-                if coord_idx == 3:
-                    draw.line(bb_coords[coord_idx] + bb_coords[0], fill=hex_color)
-                else:
-                    draw.line(bb_coords[coord_idx] + bb_coords[coord_idx+1], fill=hex_color)
+                # Draw lines based on the color/coordinates
+                #
+                bb_coords = coord_info[KEY_DATA]
+                for coord_idx in range(0, 4):
+                    try:
+                        if coord_idx == 3:
+                            draw.line(bb_coords[coord_idx] + bb_coords[0], fill=hex_color)
+                        else:
+                            draw.line(bb_coords[coord_idx] + bb_coords[coord_idx+1], fill=hex_color)
+                    except ValueError as err_obj:
+                        return {KEY_SUCCESS: False,
+                                KEY_MESSAGE: (f'ValueError when drawing bounding'
+                                              f' box. {err_obj}.')}
+
 
     # Check if the image should be resized (only downsizes, no upsizing)
     #
     new_size = image_spec.get('maximum_size')  # w, h
 
-    # Is it big enough to resize
-    if im.size[0] <= new_size[0] and im.size[1] <= new_size[1]:
-        print('Do not resize')
-    else:
-        # Resize it!
-        #
-        print('resize:', new_size)
-        im.thumbnail(new_size, Image.ANTIALIAS)
-        print(f'New size: W x H: {im.size[0]} x {im.size[1]}')
+    # Are there max. size specs?
+    if new_size and len(new_size) == 2:
+
+        # Is it big enough to resize?
+        if im.size[0] <= new_size[0] and im.size[1] <= new_size[1]:
+            # Nope, leave it
+            print('Do not resize')
+        else:
+            # Resize it!
+            #
+            print('resize:', new_size)
+            im.thumbnail(new_size, Image.ANTIALIAS)
+            print(f'New size: W x H: {im.size[0]} x {im.size[1]}')
 
     print('new_name', new_name)
     # Save using the new name
@@ -188,7 +199,7 @@ def markup_image(image_spec, output_dir, **kwargs):
     return {KEY_SUCCESS: True,
             KEY_DATA: new_name}
 
-def format_bounding_box_coords(bounding_box_str):
+def format_bounding_box_coords(bounding_box_str, img_size=None):
     """
     input: "160,182,160,431,302,431,302,182"
     output: [(160, 182), (160, 431), (302, 431), (302, 182)]
@@ -203,5 +214,13 @@ def format_bounding_box_coords(bounding_box_str):
     coord_pairs = [tuple(coords[i * num_items_per_group:(i + 1) * num_items_per_group])
                    for i in range((len(coords) + num_items_per_group - 1) // num_items_per_group)]
 
+    if img_size: # (w, h)
+        for cpair in coord_pairs:
+            # make sure bounding box width & height are within the image size
+            #
+            if (cpair[0] > img_size[0]) or (cpair[1] > img_size[1]):
+                return {KEY_SUCCESS: False,
+                        KEY_MESSAGE: (f'Bounding box size {cpair} exceeds'
+                                      f' image size {img_size}')}
     return {KEY_SUCCESS: True,
             KEY_DATA: coord_pairs}
