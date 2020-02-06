@@ -39,11 +39,15 @@ setup(
     author='DARPA D3M Program',
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
     install_requires=[
-        'd3m==2019.6.7',
+        'd3m==2019.11.10',
         'grpcio',
         'grpcio-tools',
     ],
     url='https://gitlab.com/datadrivendiscovery/ta3ta2-api',
     long_description=read_readme(),
     long_description_content_type='text/markdown',
+    license='Apache-2.0',
+    classifiers=[
+          'License :: OSI Approved :: Apache Software License',
+    ],
 )
