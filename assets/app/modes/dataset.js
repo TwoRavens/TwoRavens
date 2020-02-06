@@ -211,7 +211,7 @@ export let uploadStatus;
 
 let datasetPreferences = {
     datasourceMode: 'Current',
-    datasetSearch: 'Ethiopia',
+    datasetSearch: '',  // 'Ethiopia',
     upload: {
         name: '',
         files: []

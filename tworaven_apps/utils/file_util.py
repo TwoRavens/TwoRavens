@@ -1,6 +1,6 @@
 """Wrap file/dir functions for error checks"""
 import os
-from os.path import join, isfile
+from os.path import join, isdir, isfile
 import shutil
 from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.utils.random_info import get_timestamp_string
@@ -56,6 +56,21 @@ def move_file(src_file, dest_file):
         return err_resp(user_msg)
 
     return ok_resp('File copied to: %s' % dest_file)
+
+def remove_directory(dir_path):
+    """Delete a directory"""
+    if isdir(dir_path):
+
+        try:
+            shutil.rmtree(dir_path)
+            return ok_resp(f'Directory removed {dir_path}')
+        except TypeError as err_obj:
+            return err_resp(f'Failed to remove directory. {err_obj}')
+        except FileNotFoundError as err_obj:
+            return err_resp(f'Directory not found: {err_obj}')
+
+    return ok_resp(f'Not a directory {dir_path}')
+
 
 def read_file_contents(fpath, as_dict=True):
     """Given a valid filepath, read the file and return it.

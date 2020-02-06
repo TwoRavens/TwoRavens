@@ -645,8 +645,20 @@ export function buildAggregation(unitMeasures, accumulations) {
                     ]
                 }
             },
+            'discrete': data => {
+                columnsNonDyad.push(data['column']);
+                unit[data['column']] = `$${data['column']}`
+            }
         },
         'accumulator': {
+            'push': data => {
+                columnsAccum.push(data['column']);
+                event[data['column']] = {$push: `$${data['column']}`}
+            },
+            'first': data => {
+                columnsAccum.push(data['column']);
+                event[data['column']] = {$first: `$${data['column']}`}
+            },
             'discrete': (data) => {
                 let selections = new Set(data.children.map(child => child.name));
 

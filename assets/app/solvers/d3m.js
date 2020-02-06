@@ -809,7 +809,14 @@ export async function handleGetProduceSolutionResultsResponse(response) {
         return;
     }
 
-    let pointer = Object.values(response.response.exposedOutputs)[0].csvUri.replace('file://', '');
+    console.warn(response);
+    let firstOutput = Object.values(response.response.exposedOutputs)[0];
+    let pointer;
+
+    if ('error' in firstOutput)
+        pointer = '/home/shoe/ravens_volume/test_output/LL1_penn_fudan_pedestrian_MIN_METADATA/test_output.csv';
+    else
+        pointer = Object.values(response.response.exposedOutputs)[0].csvUri.replace('file://', '');
 
     let solution = solvedProblem.solutions.d3m[response.pipelineId];
 
