@@ -233,3 +233,39 @@ class ImageMarkupHelper(TestCase):
         print('resp', resp)
         self.assertTrue('success' in resp)
         self.assertTrue(resp['success'] is False)
+
+        # ----------------------------------
+        msgt('(e) Set too few coordinates for a bounding box, 7 instead of 8')
+        # ----------------------------------
+        spec = self.get_test_spec()
+
+        # set too few coordinates for a bounding box, 7 instead of 8
+        #
+        spec["borders"].update(dict(FFCC00=["182,160,431,302,431,302,182"]))
+        print(spec)
+        # make request
+        resp = client.post(url,
+                           spec,
+                           content_type='application/json').json()
+
+        print('resp', resp)
+        self.assertTrue('success' in resp)
+        self.assertTrue(resp['success'] is False)
+
+        # ----------------------------------
+        msgt('(f) Set non int in bounding box')
+        # ----------------------------------
+        spec = self.get_test_spec()
+
+        #  Set non-int, "cat", as a bounding box number
+        #
+        spec["borders"].update(dict(FFCC00=["cat,182,160,431,302,431,302,182"]))
+        print(spec)
+        # make request
+        resp = client.post(url,
+                           spec,
+                           content_type='application/json').json()
+
+        print('resp', resp)
+        self.assertTrue('success' in resp)
+        self.assertTrue(resp['success'] is False)

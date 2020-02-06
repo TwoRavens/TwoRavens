@@ -205,7 +205,9 @@ def format_bounding_box_coords(bounding_box_str, img_size=None):
     output: [(160, 182), (160, 431), (302, 431), (302, 182)]
     """
     num_items_per_group = 2
-    coords = [int(x) for x in bounding_box_str.split(',')]
+    coords = [int(x)
+              for x in bounding_box_str.split(',')
+              if str(x).isdigit()]
 
     if len(coords) != 8:
         return {KEY_SUCCESS: False,
