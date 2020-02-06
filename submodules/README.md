@@ -11,6 +11,16 @@ These repos are incorporated in two ways:
 
 ## Submodule Log
 
+**2/6/2020**
+- Update repository: [ta3ta2-api](https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/tags)
+  - **version**: v2020.1.28
+  - **method of inclusion**
+    - downloaded tagged version manually as zip--it's in a private gitlab
+    - unzip it and rename folder to ta3ta2-api
+    - adding it to the `sys.path` in `settings/base.py`
+    - ran `fab compile_ta3ta2_api`
+    - checked it in
+
 **1/13/2020**
 - Update repository: [ta3ta2-api](https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/tags)
   - **version**: v2019.12.4

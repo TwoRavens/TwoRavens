@@ -1,3 +1,9 @@
+## v2020.1.28
+
+* Updated to support the latest core package, v2020.1.9. 
+  [#127](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/127)
+  [!162](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/162)
+
 ## v2019.12.4
 
 * Updated to support the latest core package, v2019.11.10.
