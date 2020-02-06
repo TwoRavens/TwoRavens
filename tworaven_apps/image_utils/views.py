@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from django.conf import settings
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
 from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 from django.contrib.auth.decorators import login_required
 
@@ -17,6 +19,7 @@ from tworaven_apps.solver_interfaces.models import (
     KEY_DATA,
     KEY_MESSAGE)
 
+@csrf_exempt
 def view_markup_image(request):
     """Markup an image based on a spec"""
 

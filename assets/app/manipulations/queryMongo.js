@@ -647,7 +647,7 @@ export function buildAggregation(unitMeasures, accumulations) {
             },
             'discrete': data => {
                 columnsNonDyad.push(data['column']);
-                unit[data['column']] = 1
+                unit[data['column']] = `$${data['column']}`
             }
         },
         'accumulator': {

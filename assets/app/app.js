@@ -845,7 +845,7 @@ export let d3mMetrics = {
     normalizedMutualInformation: "NORMALIZED_MUTUAL_INFORMATION",
     jaccardSimilarityScore: "JACCARD_SIMILARITY_SCORE",
     precisionAtTopK: "PRECISION_AT_TOP_K",
-    objectDetectionAveragePrecision: "OBJECT_DETECTION_AVERAGE_PRECISION",
+    objectDetectionAP: "OBJECT_DETECTION_AVERAGE_PRECISION",
     hammingLoss: "HAMMING_LOSS",
     rank: "RANK",
     loss: "LOSS",
