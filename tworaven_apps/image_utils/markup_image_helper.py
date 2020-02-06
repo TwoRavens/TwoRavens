@@ -29,17 +29,16 @@ from os.path import abspath, basename, dirname, isdir, isfile, join, splitext
 from django.conf import settings
 
 from tworaven_apps.utils import random_info
-from tworaven_apps.utils.file_util import create_directory
+from tworaven_apps.utils.file_util import \
+    (create_directory,
+     remove_directory)
 
 from tworaven_apps.solver_interfaces.models import (
     KEY_SUCCESS,
     KEY_DATA,
     KEY_MESSAGE)
 from tworaven_apps.user_workspaces.models import UserWorkspace
-
-DEFAULT_COLOR = '#006699'
-#COLOR_LOOKUP = dict(RED_HEX='#FF0000',
-#                    GREEN_HEX='#00FF00')
+from tworaven_apps.image_utils import static_vals as im_static
 
 
 def get_output_path_base():
@@ -50,6 +49,12 @@ def get_output_path_base():
         # return settings.TEST_DIRECT_STATIC   # dev server
     else:
         return settings.STATIC_ROOT
+
+def clear_image_markup_directory():
+    """Delete the image markup directory"""
+    img_dir = join(get_output_path_base(), im_static.IMAGE_MARKUP_DIR_NAME)
+
+    return remove_directory(img_dir)
 
 
 def create_image_output_dir(user_workspace=None):
@@ -65,7 +70,7 @@ def create_image_output_dir(user_workspace=None):
 
     output_path = join(\
             get_output_path_base(),
-            'image-markup',
+            im_static.IMAGE_MARKUP_DIR_NAME,
             f'{user_workspace_id}-{random_info.get_alphanumeric_lowercase(4)}',
             random_info.get_timestamp_string())
 
@@ -96,7 +101,7 @@ def markup_image(image_spec, output_dir, **kwargs):
 
     # Is the image path valid?
     #
-    img_path = image_spec.get('file_path')
+    img_path = image_spec.get(im_static.SPEC_KEY_FILEPATH)
     if not (img_path and isfile(img_path)):
         return {KEY_SUCCESS: False,
                 KEY_MESSAGE: f'The image was not a valid file: {img_path}.'}
@@ -132,10 +137,9 @@ def markup_image(image_spec, output_dir, **kwargs):
 
     # Iterate through the border parameters
     #
-    if ('borders' in image_spec) and (isinstance(image_spec['borders'], dict)):
-        for hex_color, coords in image_spec['borders'].items():
+    if (im_static.SPEC_KEY_BORDERS in image_spec) and (isinstance(image_spec[im_static.SPEC_KEY_BORDERS], dict)):
+        for hex_color, coords in image_spec[im_static.SPEC_KEY_BORDERS].items():
             # get the color
-            #hex_color = COLOR_LOOKUP.get(color_name, DEFAULT_COLOR)
             if not hex_color.startswith('#'):
                 hex_color = f'#{hex_color}'
             hex_color = hex_color.upper()
@@ -165,7 +169,7 @@ def markup_image(image_spec, output_dir, **kwargs):
 
     # Check if the image should be resized (only downsizes, no upsizing)
     #
-    new_size = image_spec.get('maximum_size')  # w, h
+    new_size = image_spec.get(im_static.SPEC_KEY_MAX_SIZE)  # w, h
 
     # Are there max. size specs?
     if new_size and len(new_size) == 2:

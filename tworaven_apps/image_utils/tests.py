@@ -12,7 +12,8 @@ from django.urls import reverse
 
 from tworaven_apps.utils.msg_helper import msg, msgt
 from tworaven_apps.image_utils.markup_image_helper import \
-    (markup_image,)
+    (markup_image, clear_image_markup_directory)
+
 import os
 from os.path import abspath, dirname, isdir, isfile, join
 
@@ -25,7 +26,13 @@ class ImageMarkupHelper(TestCase):
     """Image markup test"""
 
     def setUp(self):
+        """Set debug to true to the image is accessible via the dev server"""
         settings.DEBUG = True
+
+    def tearDown(self):
+        """Delete the test output directory"""
+        settings.DEBUG = True
+        clear_image_markup_directory()
 
     def get_test_spec(self):
         """Return the test spec"""
@@ -107,7 +114,7 @@ class ImageMarkupHelper(TestCase):
         print('resp', resp)
         self.assertTrue('success' in resp)
         self.assertTrue(resp['success'] is True)
-        self.clean_up_file(resp)
+        # self.clean_up_file(resp)
 
         # ----------------------------------
         msgt('(b) File path only')
@@ -123,7 +130,7 @@ class ImageMarkupHelper(TestCase):
         print('resp', resp)
         self.assertTrue('success' in resp)
         self.assertTrue(resp['success'] is True)
-        self.clean_up_file(resp)
+        # self.clean_up_file(resp)
 
         # ----------------------------------
         msgt('(c) File path and borders only')
@@ -139,7 +146,7 @@ class ImageMarkupHelper(TestCase):
         print('resp', resp)
         self.assertTrue('success' in resp)
         self.assertTrue(resp['success'] is True)
-        self.clean_up_file(resp)
+        # self.clean_up_file(resp)
 
         # ----------------------------------
         msgt('(3) File path and max size only')
@@ -155,7 +162,7 @@ class ImageMarkupHelper(TestCase):
         print('resp', resp)
         self.assertTrue('success' in resp)
         self.assertTrue(resp['success'] is True)
-        self.clean_up_file(resp)
+        # self.clean_up_file(resp)
 
     def test_030_err_markup_image_via_endpoint(self):
         """(30) Check errors for markup image via endpoint"""
