@@ -1,3 +1,7 @@
+/*
+  UI for TwoRavens Dataset Mode including tabs for:
+    Current | Presets (Available Datasets) | Upload
+*/
 import m from 'mithril';
 
 import * as common from "../../common/common";
@@ -12,8 +16,15 @@ import {preformatted} from "../index";
 import Paginated from "../../common/views/Paginated";
 import MenuHeaders from "../../common/views/MenuHeaders";
 import Icon from "../../common/views/Icon";
+
 export class CanvasDataset {
     oninit() {
+
+        // Retrieve the list of available datasets
+        //  Data consists of id, name pairs
+        //  e.g. [{"id": 163, "name": "185_baseball_problem"},
+        //        {"id": 171, "name": "196_autoMpg_problem"} ... ]
+        //
         if (!datasetPreferences.presets.length) m.request('user-workspaces/list-dataset-choices', {
             method: 'POST',
             body: {}
@@ -25,7 +36,7 @@ export class CanvasDataset {
     }
     view(vnode) {
         if (manipulate.constraintMenu) return;
-        if (!app.workspace) return;
+        if (!app.workspace) return;  
 
         let datasource = m('div',
 
