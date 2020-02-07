@@ -1,5 +1,5 @@
 import jsep from 'jsep';
-import {alignmentData, getPredictorVariables} from "../app";
+import {alignmentData, generateID, getPredictorVariables} from "../app";
 
 // functions for generating database queries
 // subset queries are built from manipulations pipelines. An additional menu step may be added too
@@ -1096,5 +1096,6 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
         .forEach(variable => add(doc.dataResources[tableResourceIndex].columns
             .find(column => column.colName === variable).role, pair[1])));
 
+    doc.about.datasetID = doc.about.datasetID + '_' + generateID(String(Math.random()));
     return doc;
 };

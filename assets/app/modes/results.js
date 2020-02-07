@@ -291,11 +291,7 @@ export class CanvasSolutions {
                 }),
                 m(Paginated, {
                     data: resultsData.dataSample[resultsPreferences.dataSplit] || [],
-                    makePage: dataSample => {
-
-                        console.warn('pagination', dataSample);
-
-                        return dataSample
+                    makePage: dataSample => dataSample
                             .map(point => ({
                                 point,
                                 'src': adapters[0].getObjectBoundaryImagePath(
@@ -308,8 +304,7 @@ export class CanvasSolutions {
                             .filter(summary => summary.src)
                             .map(summary => m('div',
                                 m('h5', summary.point.image),
-                                m('img', {src: summary.src})))
-                    },
+                                m('img', {src: summary.src}))),
                     limit: 10,
                     page: resultsPreferences.imagePage,
                     setPage: index => resultsPreferences.imagePage = index
@@ -1824,7 +1819,6 @@ export let loadDataSample = async (problem, split) => {
         ].filter(_=>_),
         app.workspace.raven_config.variablesInitial)['pipeline'];
 
-    console.log(JSON.stringify(compiled));
     let response;
     try {
         response = await app.getData({
@@ -1868,16 +1862,14 @@ export let loadFittedData = async (problem, adapter, split) => {
     if (!(split in resultsData.dataSample))
         return;
 
-    console.log('test')
     // don't load if systems are already in loading state
     if (app.getRecursive(resultsData.fittedLoading, [adapter.getSolutionId(), split]))
         return;
 
-    console.log('test2')
     // don't load if already loaded
     if (app.getRecursive(resultsData.fitted, [adapter.getSolutionId(), split]))
         return;
-    console.log('test3')
+
     // begin blocking additional requests to load
     app.setRecursive(resultsData.fittedLoading, [
         [adapter.getSolutionId(), {}],
@@ -1906,7 +1898,6 @@ export let loadFittedData = async (problem, adapter, split) => {
         return;
     }
 
-    console.log('response fitted', response)
     // don't accept response if current problem has changed
     if (resultsData.id.problemId !== problem.problemId)
         return;
@@ -2358,7 +2349,6 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
     let actualPoint = resultsData.dataSample[split]
         .find(point => Object.entries(index).every(pair => point[pair[0]] === pair[1]));
 
-    console.log(adapters);
     // collect all fitted data points at the given index for each solution
     // an object of {Actual: [boundary1, ...], solutionId: [boundary1, boundary2], ...}
     let fittedPoints = adapters.reduce((fittedPoints, adapter) => Object.assign(fittedPoints, {
@@ -2375,14 +2365,12 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
         }), {});
     }
 
-    console.log(fittedPoints);
-
     let response;
     try {
         response = await m.request(`image-utils/markup-image`, {
             method: 'POST',
             data: {
-                file_path: problem.datasetSchemas[split].replace('datasetDoc.json', '') + '/media/' + actualPoint.image,
+                file_path: problem.datasetSchemaPaths[split].replace('datasetDoc.json', '') + '/media/' + actualPoint.image,
                 borders: Object.keys(fittedPoints).reduce((borders, solutionName) => Object.assign({
                     [resultsData.boundaryImageColormap[solutionName].replace('#', '')]: fittedPoints[solutionName]
                 }), {})
@@ -2400,8 +2388,6 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
         return;
     }
 
-    console.log(response);
-
     // don't accept response if current problem has changed
     if (resultsData.id.problemId !== problem.problemId)
         return;
@@ -2411,13 +2397,6 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
         [target, {}],
         [split, {}],
         [JSON.stringify(index), response.data]
-    ]);
-
-    app.setRecursive(resultsData, [
-        ['boundaryImagePathsLoading', {}],
-        [target, {}],
-        [split, {}],
-        [JSON.stringify(index), false]
     ]);
 
     app.setRecursive(resultsData, [
@@ -2465,12 +2444,15 @@ export let getSummaryData = problem => ({
 
 export let prepareResultsDatasets = async (problem, solverId) => {
     problem.datasetSchemas = problem.datasetSchemas || {
+        all: app.workspace.datasetDoc
+    };
+    problem.datasetSchemaPaths = problem.datasetSchemaPaths || {
         all: app.workspace.d3m_config.dataset_schema
     };
     problem.datasetPaths = problem.datasetPaths || {
         all: app.workspace.datasetPath
     };
-    problem.datasetSchemasManipulated = problem.datasetSchemasManipulated || {};
+    problem.datasetSchemaPathsManipulated = problem.datasetSchemaPathsManipulated || {};
     problem.datasetPathsManipulated = problem.datasetPathsManipulated || {};
     problem.selectedSolutions[solverId] = problem.selectedSolutions[solverId] || [];
     // DEBUG_MODE TAGGED (set thinking to false)
@@ -2488,17 +2470,17 @@ export let prepareResultsDatasets = async (problem, solverId) => {
             console.log('Materializing partials failed. Continuing without partials data.')
         }
 
-        // add ICE datasets to to datasetSchemas and datasetPaths
-        problem.solverState[solverId].message = 'preparing ICE data';
-        m.redraw();
-        try {
-            if (!app.materializeICEPromise[problem.problemId])
-                app.materializeICEPromise[problem.problemId] = app.materializeICE(problem);
-            await app.materializeICEPromise[problem.problemId];
-        } catch (err) {
-            console.error(err);
-            console.log('Materializing ICE failed. Continuing without ICE data.')
-        }
+        // add ICE datasets to to datasetSchemaPaths and datasetPaths
+        // problem.solverState[solverId].message = 'preparing ICE data';
+        // m.redraw();
+        // try {
+        //     if (!app.materializeICEPromise[problem.problemId])
+        //         app.materializeICEPromise[problem.problemId] = app.materializeICE(problem);
+        //     await app.materializeICEPromise[problem.problemId];
+        // } catch (err) {
+        //     console.error(err);
+        //     console.log('Materializing ICE failed. Continuing without ICE data.')
+        // }
     }
 
     if (['classification', 'regression', 'forecasting', 'objectDetection'].includes(problem.task)) {
@@ -2535,7 +2517,6 @@ export let prepareResultsDatasets = async (problem, solverId) => {
             m.redraw();
             return;
         }
-        problem.datasetColumnNames = app.workspace.raven_config.variablesInitial;
         // console.log('Materializing manipulations failed. Continuing without manipulations.')
     }
 

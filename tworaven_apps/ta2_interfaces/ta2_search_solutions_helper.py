@@ -339,6 +339,9 @@ class SearchSolutionsHelper(BasicErrCheck):
 
                 # TA2s (specifically NYU) responds once when trying a new pipeline, with a message missing a solutionId
                 # the same process responds again once the solution contains a solutionId
+                print('results json from TA2')
+                print(result_json)
+                
                 if not result_json.get('solutionId'):
                     continue
 

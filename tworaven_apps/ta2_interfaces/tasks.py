@@ -2,6 +2,11 @@
 send a gRPC command that has streaming results
 capture the results in the db as StoredResponse objects
 """
+import copy
+import uuid
+from random import random
+
+import math
 
 from django.conf import settings
 from django.http import JsonResponse
@@ -328,28 +333,36 @@ def split_dataset(configuration, workspace):
         os.remove(csv_path)
         role_dataset_schema_path = path.join(dest_directory, 'datasetDoc.json')
 
-        # FOR ISI, the datasetID should be unique
-        with open(role_dataset_schema_path, 'r') as dataset_schema_file:
-            role_dataset_schema = json.load(dataset_schema_file)
-        role_dataset_schema['about']['datasetID'] = role_dataset_schema['about']['datasetID'] + role
+        # the datasetID should be unique
+        role_dataset_schema = copy.deepcopy(dataset_schema)
+        # role_dataset_schema['about']['datasetID'] = f"{role_dataset_schema['about']['datasetID']}_{role}_{uuid.uuid4().hex[:5]}"
+        # role_dataset_schema['about']['digest'] = uuid.uuid4().hex
+
         with open(role_dataset_schema_path, 'w') as dataset_schema_file:
             json.dump(role_dataset_schema, dataset_schema_file)
 
-        return role_dataset_schema_path, csv_path
+        return role_dataset_schema_path, role_dataset_schema, csv_path
 
-    all_datasetDoc, all_datasetCsv = get_dataset_paths('all')
+    all_datasetDoc_path, all_datasetDoc, all_datasetCsv = get_dataset_paths('all')
     dataset_schemas = {'all': all_datasetDoc}
+    dataset_schema_paths = {'all': all_datasetDoc_path}
     dataset_paths = {'all': all_datasetCsv}
     dataset_stratified = {}
 
     if split_options.get('outOfSampleSplit'):
-        train_datasetDoc, train_datasetCsv = get_dataset_paths('train')
-        test_datasetDoc, test_datasetCsv = get_dataset_paths('test')
+        train_datasetDoc_path, train_datasetDoc, train_datasetCsv = get_dataset_paths('train')
+        test_datasetDoc_path, test_datasetDoc, test_datasetCsv = get_dataset_paths('test')
 
         dataset_schemas = {
             **dataset_schemas,
             'train': train_datasetDoc,
             'test': test_datasetDoc
+        }
+
+        dataset_schema_paths = {
+            **dataset_schema_paths,
+            'train': train_datasetDoc_path,
+            'test': test_datasetDoc_path
         }
 
         dataset_paths = {
@@ -545,6 +558,7 @@ def split_dataset(configuration, workspace):
 
     return {
         'dataset_schemas': dataset_schemas,
+        'dataset_schema_paths': dataset_schema_paths,
         'dataset_paths': dataset_paths,
         'stratified': dataset_stratified
     }

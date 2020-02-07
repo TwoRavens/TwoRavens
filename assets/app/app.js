@@ -396,7 +396,7 @@ export async function buildDatasetUrl(problem, lastStep, dataPath, collectionNam
 
     let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
     let metadata = queryMongo.translateDatasetDoc(compiled, dataSchema, problem);
-
+    
     let body = {
         method: 'aggregate',
         query: JSON.stringify(compiled),
@@ -1367,15 +1367,12 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
         .then(datasetDoc => {
             workspace.datasetDoc = datasetDoc;
 
-            let resourceTable = datasetDoc.dataResources
-                .find(resource => resource.resType === 'table');
-            if (!resourceTable) return;
+            let learningResource = datasetDoc.dataResources
+                .find(resource => resource.resID === 'learningData');
+            if (!learningResource) return;
 
-            // store the resourceId of the table being used in the raven_config (must persist)
-            workspace.raven_config.resourceId = resourceTable.resID;
-
-            if ('columns' in resourceTable)
-                workspace.raven_config.variablesInitial = resourceTable.columns
+            if ('columns' in learningResource)
+                workspace.raven_config.variablesInitial = learningResource.columns
                     .sort((a, b) => omniSort(a.colIndex, b.colIndex))
                     .map(column => column.colName);
             // TODO: endpoint to retrieve column names if columns not present in datasetDoc
@@ -1872,25 +1869,23 @@ export let needsManipulationRewritePriorToSolve = problem => {
 export let materializeManipulationsPromise = {};
 export let materializeManipulations = async (problem, schemaIds) => {
     if (!needsManipulationRewritePriorToSolve(problem)) {
-        problem.datasetColumnNames = workspace.raven_config.variablesInitial;
         return;
     }
 
     // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
-    return Promise.all(Object.keys(problem.datasetSchemas)
+    return Promise.all(Object.keys(problem.datasetSchemaPaths)
         // only apply manipulations to a preset list of schema ids
         .filter(schemaId => schemaIds.includes(schemaId))
         // ignore schemas with manipulations
-        .filter(schemaId => !(schemaId in problem.datasetSchemasManipulated))
+        .filter(schemaId => !(schemaId in problem.datasetSchemaPathsManipulated))
         // build manipulated dataset for schema
         .map(schemaId => buildDatasetUrl(
             problem, undefined, problem.datasetPaths[schemaId],
             `${workspace.d3m_config.name}_${problem.problemId}_${schemaId}`,
-            workspace.datasetDoc) // WARNING: as of 1/13/2020, all dataset docs passed here are the same as the original
-            .then(({data_path, metadata_path, column_names}) => {
-                problem.datasetSchemasManipulated[schemaId] = metadata_path;
+            problem.datasetSchemas[schemaId])
+            .then(({data_path, metadata_path}) => {
+                problem.datasetSchemaPathsManipulated[schemaId] = metadata_path;
                 problem.datasetPathsManipulated[schemaId] = data_path;
-                problem.datasetColumnNames = column_names;
             })))
         .then(() => problem.useManipulations = true)
 };
@@ -1926,7 +1921,7 @@ export let materializePartials = async problem => {
         alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
         throw partialsLocationInfo.message;
     } else {
-        Object.assign(problem.datasetSchemas, partialsLocationInfo.data.dataset_schemas);
+        Object.assign(problem.datasetSchemaPaths, partialsLocationInfo.data.dataset_schemas);
         Object.assign(problem.datasetPaths, partialsLocationInfo.data.dataset_paths);
     }
 };
@@ -1968,7 +1963,7 @@ export let materializeICE = async problem => {
         alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
         throw partialsLocationInfo.message;
     } else {
-        Object.assign(problem.datasetSchemas, partialsLocationInfo.data.dataset_schemas);
+        Object.assign(problem.datasetSchemaPaths, partialsLocationInfo.data.dataset_schemas);
         Object.assign(problem.datasetPaths, partialsLocationInfo.data.dataset_paths);
     }
 };
@@ -1986,7 +1981,7 @@ export let materializeTrainTest = async problem => {
         url: D3M_SVC_URL + '/get-train-test-split',
         data: {
             split_options: problem.splitOptions,
-            dataset_schema: problem.datasetSchemas.all,
+            dataset_schema: problem.datasetSchemaPaths.all,
             dataset_path: problem.datasetPaths.all,
             problem: SPEC_problem(problem),
             // if not manipulated, then don't rewrite datasetDoc with new metadata
@@ -2006,6 +2001,10 @@ export let materializeTrainTest = async problem => {
     problem.datasetSchemas.all = response.data.dataset_schemas.all;
     problem.datasetSchemas.train = response.data.dataset_schemas.train;
     problem.datasetSchemas.test = response.data.dataset_schemas.test;
+
+    problem.datasetSchemaPaths.all = response.data.dataset_schema_paths.all;
+    problem.datasetSchemaPaths.train = response.data.dataset_schema_paths.train;
+    problem.datasetSchemaPaths.test = response.data.dataset_schema_paths.test;
 
     problem.datasetPaths.all = response.data.dataset_paths.all;
     problem.datasetPaths.train = response.data.dataset_paths.train;
@@ -2520,9 +2519,9 @@ export let getNominalVariables = problem => {
     let selectedProblem = problem || getSelectedProblem();
     return [...new Set([
         ...selectedProblem.tags.nominal,
-        // targets in a classification problem are also nominal
-        ...selectedProblem.task.toLowerCase() === 'classification'
-            ? selectedProblem.targets : []
+        // // targets in a classification problem are also nominal
+        // ...selectedProblem.task.toLowerCase() === 'classification'
+        //     ? selectedProblem.targets : []
     ])];
 };
 

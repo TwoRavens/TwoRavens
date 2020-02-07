@@ -12,17 +12,17 @@ export let getSolverSpecification = async problem => {
 
     await results.prepareResultsDatasets(problem, 'd3m');
 
-    let datasetSchemas = problem.useManipulations ? problem.datasetSchemasManipulated : problem.datasetSchemas;
+    let datasetSchemaPaths = problem.useManipulations ? problem.datasetSchemaPathsManipulated : problem.datasetSchemaPaths;
     if (!['classification', 'regression', 'forecasting'].includes(problem.task))
         problem.splitOptions.outOfSampleSplit = false;
 
     let allParams = {
-        searchSolutionParams: GRPC_SearchSolutionsRequest(problem, datasetSchemas.all),
-        fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(datasetSchemas[problem.splitOptions.outOfSampleSplit ? 'train' : 'all']),
-        scoreSolutionDefaultParams: GRPC_ScoreSolutionRequest(problem, datasetSchemas.all),
-        produceSolutionDefaultParams: Object.keys(datasetSchemas)
+        searchSolutionParams: GRPC_SearchSolutionsRequest(problem, problem.datasetSchemas.all, datasetSchemaPaths.all),
+        fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(datasetSchemaPaths[problem.splitOptions.outOfSampleSplit ? 'train' : 'all']),
+        scoreSolutionDefaultParams: GRPC_ScoreSolutionRequest(problem, datasetSchemaPaths.all),
+        produceSolutionDefaultParams: Object.keys(datasetSchemaPaths)
             .reduce((produces, dataSplit) => Object.assign(produces, {
-                [dataSplit]: GRPC_ProduceSolutionRequest(datasetSchemas[dataSplit])
+                [dataSplit]: GRPC_ProduceSolutionRequest(datasetSchemaPaths[dataSplit])
             }), {})
     };
 
@@ -464,7 +464,11 @@ let stepPlaceholder = (metadata, index) => [{
 // ------------------------------------------
 
 // create problem definition for SearchSolutions call
-export function GRPC_ProblemDescription(problem) {
+export function GRPC_ProblemDescription(problem, datasetDoc) {
+
+    // this is a convention defined in data-supply
+    let learningResource = datasetDoc.dataResources
+        .find(resource => resource.resID === 'learningData');
 
     let performanceMetric = {metric: app.d3mMetrics[problem.metric]};
     if (['f1', 'precision', 'recall'].includes(problem.metric))
@@ -474,6 +478,7 @@ export function GRPC_ProblemDescription(problem) {
 
     let GRPC_Problem = {
         taskKeywords: [
+            // "TABULAR",
             app.d3mTaskType[problem.task],
             app.d3mTaskSubtype[problem.subTask],
             app.d3mSupervision[problem.supervision],
@@ -485,8 +490,8 @@ export function GRPC_ProblemDescription(problem) {
 
     let GRPC_ProblemPrivilegedData = problem.tags.privileged.map((variable, i) => ({
         privilegedDataIndex: i,
-        resourceId: app.workspace.raven_config.resourceId,
-        columnIndex: problem.datasetColumnNames.indexOf(variable),
+        resourceId: learningResource.resID,
+        columnIndex: learningResource.columns.find(column => column.colName === variable).colIndex,
         columnName: variable
     }));
 
@@ -494,19 +499,19 @@ export function GRPC_ProblemDescription(problem) {
     if (problem.task === 'forecasting' && (problem.forecastingHorizon.column || problem.tags.time.length > 0)) {
         let horizonColumn = problem.forecastingHorizon.column || problem.tags.time[0];
         GRPC_ForecastingHorizon = {
-            resourceId: app.workspace.raven_config.resourceId,
-            columnIndex: problem.datasetColumnNames.indexOf(horizonColumn),
+            resourceId: learningResource.resID,
+            columnIndex: learningResource.columns.find(column => column.colName === horizonColumn).colIndex,
             columnName: horizonColumn,
             horizonValue: problem.forecastingHorizon.value || 10
         };
     }
 
     let GRPC_ProblemInput = {
-        datasetId: app.workspace.datasetDoc.about.datasetID,
+        datasetId: datasetDoc.about.datasetID,
         targets: problem.targets.map((target, i) => ({
             // targetIndex: i,
-            resourceId: app.workspace.raven_config.resourceId,
-            columnIndex: problem.datasetColumnNames.indexOf(target),
+            resourceId: learningResource.resID,
+            columnIndex: learningResource.columns.find(column => column.colName === target).colIndex,
             columnName: target,
             clustersNumber: problem.task === 'clustering' ? problem.numClusters : undefined
         })),
@@ -518,11 +523,13 @@ export function GRPC_ProblemDescription(problem) {
         problem: GRPC_Problem,
         inputs: [GRPC_ProblemInput],
         description: app.getDescription(problem),
-        name: problem.problemId
+        version: '1.0.0',
+        name: problem.problemId,
+        id: problem.problemId
     };
 }
 
-export function GRPC_SearchSolutionsRequest(problem, datasetDocUrl) {
+export function GRPC_SearchSolutionsRequest(problem, datasetDoc, datasetDocUrl) {
     return {
         userAgent: TA3_GRPC_USER_AGENT, // set on django
         version: TA3TA2_API_VERSION, // set on django
@@ -531,7 +538,7 @@ export function GRPC_SearchSolutionsRequest(problem, datasetDocUrl) {
         rankSolutionsLimit: problem.searchOptions.solutionsLimit || 0,
         priority: problem.searchOptions.priority || 0,
         allowedValueTypes: ['DATASET_URI', 'CSV_URI'],
-        problem: GRPC_ProblemDescription(problem),
+        problem: GRPC_ProblemDescription(problem, datasetDoc),
         template: GRPC_PipelineDescription(problem),
         inputs: [{dataset_uri: 'file://' + datasetDocUrl}]
     };

@@ -789,6 +789,8 @@ class EventJobUtil(object):
         # find first table
         resource = next(res for res in metadata['dataResources'] if res['resType'] == 'table')
 
+        print('test')
+        print(resource)
         # rewrite colIndex of passed datasetDoc to match actual column order
         column_lookup = {struct['colName']: struct for struct in resource['columns']}
         resource['columns'] = [{**column_lookup[name], 'colIndex': i} for i, name in enumerate(columns)]
@@ -798,8 +800,7 @@ class EventJobUtil(object):
 
         return ok_resp({
             'data_path': temp_data_filepath,
-            'metadata_path': temp_metadata_filepath,
-            'column_names': columns
+            'metadata_path': temp_metadata_filepath
         })
 
 #

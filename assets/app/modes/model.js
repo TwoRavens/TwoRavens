@@ -1306,7 +1306,7 @@ export let buildForceData = problem => {
 };
 
 // TODO: move these keys into a .results sub-key that can just be deleted
-let resultsKeysToAxe = ["solutions", "selectedSolutions", "solverState", "datasetPaths", "datasetSchemas", "datasetPathsManipulated", "datasetSchemasManipulated", "levels", "domains", "datasetColumnNames"];
+let resultsKeysToAxe = ["solutions", "selectedSolutions", "solverState", "datasetPaths", "datasetSchemaPaths", "datasetPathsManipulated", "datasetSchemaPathsManipulated", "levels", "domains"];
 
 export let setGroup = (problem, group, name) => {
     if (problem.system === 'solved') {
@@ -1849,7 +1849,11 @@ export async function submitDiscProb() {
 
         if(problem.manipulations.length === 0){
             // construct and write out the api call and problem description for each discovered problem
-            let problemApiCall = solverD3M.GRPC_SearchSolutionsRequest(problem, 10);
+            let problemApiCall = solverD3M.GRPC_SearchSolutionsRequest(
+                problem,
+                app.workspace.datasetDoc,
+                app.workspace.d3m_config.dataset_schema);
+
             let problemProblemSchema = D3M_problemDoc(problem);
             let filename_api = problem.problemId + '/ss_api.json';
             let filename_ps = problem.problemId + '/problem_schema.json';
