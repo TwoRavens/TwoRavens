@@ -12,6 +12,9 @@ import {preformatted} from "../index";
 import Paginated from "../../common/views/Paginated";
 import MenuHeaders from "../../common/views/MenuHeaders";
 import Icon from "../../common/views/Icon";
+
+let edit = false;
+
 export class CanvasDataset {
     oninit() {
         if (!datasetPreferences.presets.length) m.request('user-workspaces/list-dataset-choices', {
@@ -148,6 +151,11 @@ export class CanvasDataset {
             ]
         });
 
+	let variableKeys = ['variableName', 'plotValues', 'pdfPlotType', 'pdfPlotX', 'pdfPlotY', 'cdfPlotType', 'cdfPlotX', 'cdfPlotY', 'name'];
+	let setDescription = (variable, value) => {
+	    app.variableSummaries[variable].description = value;
+	    app.setVariableSummaries(app.variableSummaries);
+	};
         return m('div', {
                 style: {
                     'max-width': '800px',
@@ -156,7 +164,20 @@ export class CanvasDataset {
             },
             card('Datasource', datasource),
             card('Manipulations', manipulationsMenu),
-        )
+	    m('h4', 'Variables', m('button.btn.btn-primary.btn-sm' + (edit ? '.active' : ''), {onclick: _ => edit = !edit}, 'edit')),
+	    Object.entries(app.variableSummaries).map(([variable, vals]) => m('div',
+		m('h4', variable),
+		m('table.table.table-striped', 
+		    m('tbody',
+			Object.entries(vals)
+			    .filter(row => !variableKeys.includes(row[0]))
+			    .map(row => m('tr', 
+			    m('td', {style: {width: '1em'}}, row[0]), 
+			    m('td', edit && row[0] === 'description' ? m('input', {onchange: e => setDescription(variable, e.currentTarget.value), value: row[1]}) : row[1])))
+		    )
+		)
+	    ))
+	)
     }
 }
 
