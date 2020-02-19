@@ -75,7 +75,7 @@ export let peekMouseUp = () => {
 };
 
 export let peekData;
-export let peekId = 'tworavens';
+export let peekId = 'tworavens';  
 
 let peekLimit = 100;  // how many records to load at a time
 let peekSkip = 0;  // how many records have already been loaded
@@ -396,7 +396,7 @@ export async function buildDatasetUrl(problem, lastStep, dataPath, collectionNam
 
     let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
     let metadata = queryMongo.translateDatasetDoc(compiled, dataSchema, problem);
-    
+
     let body = {
         method: 'aggregate',
         query: JSON.stringify(compiled),
