@@ -1,3 +1,7 @@
+/*
+  UI for TwoRavens Dataset Mode including tabs for:
+    Current | Presets (Available Datasets) | Upload
+*/
 import m from 'mithril';
 
 import * as common from "../../common/common";
@@ -12,8 +16,46 @@ import {preformatted} from "../index";
 import Paginated from "../../common/views/Paginated";
 import MenuHeaders from "../../common/views/MenuHeaders";
 import Icon from "../../common/views/Icon";
+
 export class CanvasDataset {
+
+  oncreate() {
+
+      this.presetLoadInProgress = false;
+      this.presetNameToLoad = null;  // name of preset that is loading
+      this.setPresetLoadInProgress = (presetNameOrFalse) => {
+          if (presetNameOrFalse === false){
+            this.presetLoadInProgress = false;
+            this.presetNameToLoad = null;
+          } else{
+            this.presetLoadInProgress = true;
+            this.presetNameToLoad = presetNameOrFalse;
+          }
+      }
+
+      this.getPresetName = (pName) => {
+
+          this.presetNameToLoad === preset.name ? '** Loading **' : (app.workspace.d3m_config.name === preset.name ? 'Loaded' : 'Load' )
+
+          console.log('getPresetName');
+          if (pname === this.presetNameToLoad){
+            return '** Loading **';
+          } else if (app.workspace.d3m_config.name === pName){
+            return 'Loaded';
+          } else {
+            return 'Load';
+          }
+      }
+    }
+
     oninit() {
+
+        /*
+          Retrieve the list of available datasets
+          Data consists of id, name pairs
+          e.g. [{"id": 163, "name": "185_baseball_problem"},
+                {"id": 171, "name": "196_autoMpg_problem"} ... ]
+        */
         if (!datasetPreferences.presets.length) m.request('user-workspaces/list-dataset-choices', {
             method: 'POST',
             body: {}
@@ -25,10 +67,19 @@ export class CanvasDataset {
     }
     view(vnode) {
         if (manipulate.constraintMenu) return;
+
+        // workspace required for this view
         if (!app.workspace) return;
 
+        // The Overall Dataset Component
+        //
         let datasource = m('div',
 
+            // ------------------------------------------------
+            // Radio Button to Toggle Between the sections:
+            //
+            //    Current | Presets | Upload
+            // ------------------------------------------------
             m(ButtonRadio, {
                 id: 'ingestModeButtonBar',
                 onclick: mode => datasetPreferences.datasourceMode = mode,
@@ -39,6 +90,11 @@ export class CanvasDataset {
                     {value: 'Upload', title: 'upload a new dataset from your computer'}
                 ]
             }),
+
+            // ------------------------------------------------
+            // start: "Current" Section
+            //    - display the datasetDoc.about section
+            // ------------------------------------------------
             datasetPreferences.datasourceMode === 'Current' && app.workspace.datasetDoc && [
                 m(Button, {
                     style: {margin: '1em'},
@@ -52,6 +108,12 @@ export class CanvasDataset {
                         .map(row => [row[0], preformatted(row[1])])
                 })
             ],
+            // ------------------------------------------------
+            // end: "Current" Section
+            // ------------------------------------------------
+            // ------------------------------------------------
+            // start: "Upload" custom data
+            // ------------------------------------------------
             datasetPreferences.datasourceMode === 'Upload' && m('div', {style: {'margin-top': '1em'}},
                 m('div',
                     m('label[style=display:inline-block;width:100px]', 'Dataset Name'),
@@ -86,7 +148,16 @@ export class CanvasDataset {
                 }, 'Upload'),
                 m('div', {style: {display: 'inline-block'}}, uploadStatus)
             ),
+            // ------------------------------------------------
+            // end: "Upload" custom data
+            // ------------------------------------------------
+            // ------------------------------------------------
+            // start: "Presets" section
+            // ------------------------------------------------
             datasetPreferences.datasourceMode === 'Presets' && [
+                // ------------------------------------------------
+                // Search field to narrow list of choices
+                // ------------------------------------------------
                 m(TextField, {
                     placeholder: 'search',
                     id: 'datasetSearchTextfield',
@@ -95,6 +166,10 @@ export class CanvasDataset {
                     onblur: value => datasetPreferences.datasetSearch = value,
                     style: {'margin': '1em 0'}
                 }),
+                // ------------------------------------------------
+                // Paginated list of datasets
+                //   - list datasets retrieved in the init() section
+                // ------------------------------------------------
                 m(Paginated, {
                     data: datasetPreferences.presets
                         .filter(preset => datasetPreferences.datasetSearch.length === 0 || preset.name.toLowerCase().includes(datasetPreferences.datasetSearch.toLowerCase())),
@@ -107,22 +182,33 @@ export class CanvasDataset {
                             // preset.id,
                             preset.name,
                             m(Button, {
-                                disabled: app.workspace.d3m_config.name === preset.name,
-                                onclick: () => m.request(`user-workspaces/select-dataset-json-resp/${preset.id}`).then(response => {
-                                    if (response.success)
+                                // disable the current dataset
+                                disabled: app.workspace.d3m_config.name === preset.name || this.presetLoadInProgress,
+                                // switch datasets
+                                onclick: () => {
+                                  this.setPresetLoadInProgress(preset.name);
+                                  m.request(`user-workspaces/select-dataset-json-resp/${preset.id}`).then(response => {
+                                    if (response.success){
                                         location.reload();  // Restart!  Should load the new dataset
-                                    else
-                                        console.log('Error loading new dataset!')
-                                })
-                            }, app.workspace.d3m_config.name === preset.name ? 'Loaded' : 'Load')
+                                    }else{
+                                        console.log('Error loading new dataset!');
+                                        this.setPresetLoadInProgress(false);
+                                    }
+                                })}
+                            },
+                            // Set button text
+                            this.presetNameToLoad === preset.name ? '** Loading **' : (app.workspace.d3m_config.name === preset.name ? 'Loaded' : 'Load' ))
                         ])
                     }),
                     limit: 10,
                     page: datasetPreferences.presetPage,
                     setPage: index => datasetPreferences.presetPage = index
                 })
-
             ]
+            // ------------------------------------------------
+            // end: "Presets" section
+            // ------------------------------------------------
+
         );
 
         let manipulationsMenu = m(MenuHeaders, {

@@ -14,7 +14,6 @@ import os
 import sys
 from os.path import abspath, dirname, isdir, join
 from distutils.util import strtobool
-from git import Repo, InvalidGitRepositoryError
 
 from django.urls import reverse_lazy
 
@@ -451,19 +450,4 @@ DATAMART_SHORT_TIMEOUT = 10 # seconds
 DATAMART_LONG_TIMEOUT = 5 * 60 # 5 minutes
 DATAMART_VERY_LONG_TIMEOUT = 10 * 60 # 8 minutes
 
-SORT_BY_GATES_DATASETS = strtobool(os.environ.get('SORT_BY_GATES_DATASETS', 'True'))
-# -------------------------
-# Debug show branch name on page
-# -------------------------
-try:
-    repo = Repo(BASE_DIR)
-    GIT_BRANCH_INFO = dict(name=repo.active_branch.name,
-                           commit=repo.head.commit.hexsha)
-except InvalidGitRepositoryError:
-    GIT_BRANCH_INFO = dict(name='(not available)',
-                           commit='(not available)')
-except TypeError:
-    GIT_BRANCH_INFO = dict(name='(not available)',)
-
-
-# print('GIT_BRANCH_INFO', GIT_BRANCH_INFO)
+SORT_BY_GATES_DATASETS = strtobool(os.environ.get('SORT_BY_GATES_DATASETS', 'False'))
