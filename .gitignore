@@ -75,3 +75,5 @@ results/api_experiment_run*
 ravens_volume/test_data/00_testit
 ravens_volume/TwoRavens_user_datasets
 assets/image-markup/
+tworaven_apps/image_utils/test_data/*
+!tworaven_apps/image_utils/test_data/.gitkeep
