@@ -2,9 +2,9 @@
 	path = assets/common
 	url = https://github.com/TwoRavens/common.git
 	branch = master
-[submodule "tworaven_solver"]
-	path = tworaven_solver
-	url = https://github.com/TwoRavens/TwoRavensSolver.git
 [submodule "ravens_volume/test_data"]
 	path = ravens_volume/test_data
 	url = https://github.com/TwoRavens/tworavens-test-datasets.git
+[submodule "tworaven_solver"]
+	path = tworaven_solver
+	url = https://github.com/TwoRavens/TwoRavensSolver.git
