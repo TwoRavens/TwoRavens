@@ -49,6 +49,7 @@ ravens_volume/test_output_auto_sklearn/
 ravens_volume/manipulation_data/*
 ravens_volume/config_*.json
 ravens_volume/32_wikiqa
+ravens_volume/debug/
 assets/pkgs/swagger-ui/dist/*.map
 .Rhistory
 ravens_volume/test_data/*/search_config.json
@@ -69,4 +70,10 @@ ravens_volume/test_data/05_incarceration/TRAIN/dataset_TRAIN/tables/learningData
 # automl solvers
 catboost/
 catboost_info/
+src/
 results/api_experiment_run*
+ravens_volume/test_data/00_testit
+ravens_volume/TwoRavens_user_datasets
+assets/image-markup/
+tworaven_apps/image_utils/test_data/*
+!tworaven_apps/image_utils/test_data/.gitkeep

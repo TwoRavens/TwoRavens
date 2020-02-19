@@ -248,7 +248,10 @@ def clear_output_directory(d3m_config):
         for dname in dirs:
             dir_to_remove = join(root, dname)
             if dir_to_remove not in dirs_to_keep:
-                shutil.rmtree(dir_to_remove)
+                try:
+                    shutil.rmtree(dir_to_remove)
+                except PermissionError:
+                    print('AUGMENT: Failed to remove directory: ' + dir_to_remove)
                 # print('remove dir:', dir_to_remove)
             else:
                 print('** skip dir:', dir_to_remove)

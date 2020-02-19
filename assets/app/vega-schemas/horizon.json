@@ -4,40 +4,76 @@
   "data": {
     "url": "tworavensData"
   },
-  "layer": [{
-    "mark": {"type": "area", "clip": true, "orient": "vertical"},
-    "encoding": {
-      "x": {
-        "field": "tworavensX", "type": "quantitative",
-        "scale": {"zero": false, "nice": false}
+  "layer": [
+    {
+      "mark": {
+        "type": "area",
+        "clip": true,
+        "orient": "vertical"
       },
-      "y": {
-        "field": "tworavensY", "type": "quantitative",
-        "scale": {"domain": [0,"tworavensMeanY"]}
-      },
-      "opacity": {"value": 0.6}
-    }
-  }, {
-    "transform": [
-      {
-        "calculate": "datum.tworavensY - tworavensMeanY",
-        "as": "ny"
+      "encoding": {
+        "x": {
+          "field": "tworavensX",
+          "type": "quantitative",
+          "scale": {
+            "zero": false,
+            "nice": false
+          }
+        },
+        "y": {
+          "field": "tworavensY",
+          "type": "quantitative",
+          "scale": {
+            "domain": [
+              0,
+              "tworavensMeanY"
+            ]
+          }
+        },
+        "opacity": {
+          "value": 0.6
+        }
       }
-    ],
-    "mark": {"type": "area", "clip": true, "orient": "vertical"},
-    "encoding": {
-      "x": {
-        "field": "tworavensX", "type": "quantitative"
+    },
+    {
+      "transform": [
+        {
+          "calculate": "datum.tworavensY - tworavensMeanY",
+          "as": "ny"
+        }
+      ],
+      "mark": {
+        "type": "area",
+        "clip": true,
+        "orient": "vertical"
       },
-      "y": {
-        "field": "ny", "type": "quantitative",
-        "scale": {"domain": [0,"tworavensMeanY"]},
-        "axis": {"title": "tworavensY"}
-      },
-      "opacity": {"value": 0.3}
+      "encoding": {
+        "x": {
+          "field": "tworavensX",
+          "type": "quantitative"
+        },
+        "y": {
+          "field": "ny",
+          "type": "quantitative",
+          "scale": {
+            "domain": [
+              0,
+              "tworavensMeanY"
+            ]
+          },
+          "axis": {
+            "title": "tworavensY"
+          }
+        },
+        "opacity": {
+          "value": 0.3
+        }
+      }
     }
-  }],
+  ],
   "config": {
-    "area": {"interpolate": "monotone"}
+    "area": {
+      "interpolate": "monotone"
+    }
   }
 }

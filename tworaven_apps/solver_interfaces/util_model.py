@@ -11,10 +11,12 @@ import pandas
 from scipy.sparse import csr_matrix
 
 from tworaven_apps.solver_interfaces.models import SAVED_MODELS_PATH, R_SERVICE, get_metric, StatisticalModel
-from tworaven_apps.solver_interfaces.util_dataset import Dataset
+from tworaven_solver import Dataset
 from collections import defaultdict
 
 from sklearn import model_selection
+
+from tworaven_solver.model import BaseModelWrapper
 
 
 class Model(object):
@@ -99,6 +101,17 @@ class Model(object):
                 search_id=metadata['search_id'],
                 train_specification=metadata['train_specification'],
                 task=metadata['task'])
+
+        if metadata['system'] == 'two-ravens':
+            return ModelTwoRavens(
+                model=BaseModelWrapper.load(model_folder_path, metadata),
+                system='two-ravens',
+                predictors=metadata['predictors'],
+                targets=metadata['targets'],
+                model_id=metadata['model_id'],
+                search_id=metadata['search_id'],
+                task=metadata['task']
+            )
 
         raise ValueError(f'System type "{metadata["system"]}" is not recognized.')
 
@@ -662,3 +675,154 @@ class ModelLudwig(Model):
                 'targets': self.targets,
                 'task': self.task
             }, metadata_file)
+
+
+class ModelTwoRavens(Model):
+    def describe(self):
+        description = self.model.describe() or {}
+        # print(description)
+        return {
+            "model": self.model.pipeline_specification['model']['strategy'],
+            "description": str(self.model.model),
+            **description,
+            "pipeline_specification": self.model.pipeline_specification,
+            "problem_specification": self.model.problem_specification,
+            "model_id": self.model_id,
+            "search_id": self.search_id,
+            "system": self.system
+        }
+
+    def score(self, score_specification):
+        # configuration = score_specification['configuration']
+        dataframe = Dataset(score_specification['input']).get_dataframe()
+
+        if self.task == "FORECASTING":
+            # dataframe_train = Dataset(score_specification['train']).get_dataframe()
+            # horizon = configuration.get('forecastingHorizon', {}).get('value', 1)
+            # if len(dataframe) < horizon:
+            #     raise ValueError(f'No predictions with a horizon of {horizon} are within range of the test data.')
+
+            predicted = self.model.predict(dataframe)
+
+            # predicted = self.forecast(
+            #     dataframe=dataframe_train,
+            #     dataframe_rolling=dataframe,
+            #     horizon=horizon)[:len(dataframe) - horizon + 1]
+
+        elif self.task in ['CLASSIFICATION', 'REGRESSION']:
+            # TODO: respect configuration on holdout vs cross-validation, do refitting, etc.
+            if self.task == 'CLASSIFICATION':
+                for target in self.targets:
+                    dataframe[target] = dataframe[target].astype(str)
+            predicted = self.model.predict(dataframe)
+            if self.task == 'CLASSIFICATION':
+                for target in self.targets:
+                    predicted[target] = predicted[target].astype(str)
+
+        else:
+            raise NotImplementedError
+
+        scores = []
+        for target in self.targets:
+            for metric in score_specification['performanceMetrics']:
+                results = pandas.DataFrame({'actual': dataframe[target], 'predicted': predicted[target]})
+                results.dropna(inplace=True)
+
+                scores.append({
+                    'value': get_metric(metric)(results['actual'], results['predicted']),
+                    'metric': metric,
+                    'target': target
+                })
+
+        return {
+            'search_id': self.search_id,
+            'model_id': self.model_id,
+            'scores': scores,
+            'system': self.system
+        }
+
+    def fit(self, dataframe=None, data_specification=None):
+        self.model.refit(
+            dataframe=dataframe,
+            data_specification=data_specification)
+
+    def produce(self, produce_specification):
+        configuration = produce_specification.get('configuration', {})
+        predict_type = configuration.get('predict_type', 'RAW')
+
+        dataframe = Dataset(produce_specification['input']).get_dataframe()
+
+        if self.task in ['REGRESSION', 'CLASSIFICATION']:
+            dataframe_train = Dataset(produce_specification['train']).get_dataframe().dropna()
+            self.fit(dataframe=dataframe_train, data_specification=produce_specification['train'])
+
+        if predict_type == 'RAW':
+            predicted = self.model.predict(dataframe)
+            # if len(predicted.columns.values) > 1:
+            #     predicted = np.argmax(predicted, axis=-1)
+        else:
+            predicted = self.model.predict_proba(dataframe)
+            # TODO: standardize probability column names
+            predicted = pandas.DataFrame(predicted, columns=[f'p_{i}' for i in range(predicted.shape[1])])
+
+        output_directory_path = produce_specification['output']['resource_uri'].replace('file://', '')
+        output_path = '/' + os.path.join(
+            *output_directory_path.split('/'),
+            str(uuid.uuid4()) + '.csv')
+
+        if 'd3mIndex' not in predicted.columns.values:
+            predicted.insert(0, 'd3mIndex', dataframe['d3mIndex'])
+
+        if not os.path.exists(output_directory_path):
+            os.makedirs(output_directory_path)
+
+        cwd = os.getcwd()
+        try:
+            os.chdir('/')
+            predicted.to_csv(output_path, index=False)
+        finally:
+            os.chdir(cwd)
+
+        return {
+            'produce': {
+                'input': produce_specification['input'],
+                'configuration': configuration,
+                'data_pointer': output_path
+            },
+            'search_id': self.search_id,
+            'model_id': self.model_id,
+            'system': self.system
+        }
+
+    def save(self):
+        model_folder_dir = os.path.join(SAVED_MODELS_PATH, self.model_id)
+        metadata_path = os.path.join(model_folder_dir, 'metadata.json')
+
+        os.makedirs(model_folder_dir, exist_ok=True)
+
+        with open(metadata_path, 'w') as metadata_file:
+            json.dump({
+                'system': str(self.system),
+                'model_id': str(self.model_id),
+                'predictors': self.predictors,
+                'targets': self.targets,
+                'search_id': self.search_id,
+                'task': self.task
+            }, metadata_file)
+
+        self.model.save(model_folder_dir)
+
+    # def forecast(self, dataframe, dataframe_rolling, horizon):
+    #     predictions = []
+    #     # TODO: check memory overhead - predictions is a collection of views referencing temporary dataframes
+    #     for idx in range(len(dataframe_rolling)):
+    #         self.fit(dataframe)
+    #         predictions.append(self.model.forecast(horizon=horizon).tail(1))
+    #
+    #         # TODO: this is also bad- dataframe is reallocated every time
+    #         dataframe = dataframe.append(dataframe_rolling[idx:idx+1])
+    #
+    #     self.fit(dataframe)
+    #     predictions.append(self.model.forecast(horizon=horizon).tail(1))
+    #
+    #     return pandas.concat(predictions)

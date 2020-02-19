@@ -117,6 +117,11 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
         if query_dict is None and dataset_path is None:
             return err_resp('Either a query or dataset path must be supplied.')
 
+        if query_dict is not None and not isinstance(query_dict, dict):
+            user_msg = ('There is something wrong with the search parameters.'
+                        ' Please try again. (expected a dictionary)')
+            return err_resp(user_msg)
+
         search_url = get_nyu_url() + '/search'
 
         # --------------------------------
@@ -305,12 +310,12 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
                         f' {preview_info.err_msg}')
             return err_resp(user_msg)
 
-        info_dict = DatamartJobUtilNYU.format_materialize_response(\
-                                        datamart_id,
-                                        dm_static.DATAMART_NYU_NAME,
-                                        dest_filepath,
-                                        preview_info,
-                                        **save_info)
+        info_dict = DatamartJobUtilNYU.format_materialize_response( \
+            datamart_id,
+            dm_static.DATAMART_NYU_NAME,
+            dest_filepath,
+            preview_info,
+            **save_info)
 
         return ok_resp(info_dict)
 
@@ -435,56 +440,6 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
                         **save_info)
 
         return ok_resp(info_dict)
-
-
-
-
-    @staticmethod
-    def save_datamart_file(data_foldername, file_data, **kwargs):
-        """Save materialize response as a file.  This should be a .zip
-        containing both a datafile and a datasetDoc.json"""
-        if not file_data:
-            return err_resp('"file_data" must be specified')
-
-        # create directory if it doesn't exist
-        #       (Ok if the directory already exists)
-        #
-        dir_info = create_directory(data_foldername)
-        if not dir_info.success:
-            return err_resp(dir_info.err_msg)
-
-        try:
-            with zipfile.ZipFile(BytesIO(file_data.content), 'r') as data_zip:
-                data_zip.extractall(data_foldername)
-        except RuntimeError as err_obj:
-            user_msg = (f'Failed to extract zip to "{data_foldername}".'
-                        f' Error: %s') % (err_obj,)
-            return err_resp(user_msg)
-
-        # Make sure that learningData.csv exists
-        #
-        data_filepath = join(data_foldername, 'tables', 'learningData.csv')
-        if not isfile(data_filepath):
-            user_msg = ('File "learningData.csv" not found in expected'
-                        'place: %s') % data_filepath
-            return err_resp(user_msg)
-
-        # Make sure that the datasetDoc.json exists
-        #
-        datasetdoc_path = join(data_foldername, 'datasetDoc.json')
-        if not isfile(datasetdoc_path):
-            user_msg = ('File datasetDoc.json not found in'
-                        ' expected place: %s') % datasetdoc_path
-            return err_resp(user_msg)
-
-        expected_filepath = kwargs.get('expected_filepath', None)
-        if expected_filepath:
-            if expected_filepath != data_filepath:
-                user_msg = 'File not found on expected path: %s' % expected_filepath
-                return err_resp(user_msg)
-
-        return ok_resp({dm_static.KEY_DATA_PATH: data_filepath,
-                        dm_static.KEY_DATASET_DOC_PATH: datasetdoc_path})
 
 
     @staticmethod

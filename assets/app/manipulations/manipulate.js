@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {TreeAggregate, TreeImputation, TreeSubset, TreeTransform} from '../views/QueryTrees';
+import {TreeAggregate, TreeImputation, TreeSubset, TreeTransform, TreeAugment} from '../views/QueryTrees';
 import CanvasContinuous from '../canvases/CanvasContinuous';
 import CanvasDate from '../canvases/CanvasDate';
 import CanvasDiscrete from '../canvases/CanvasDiscrete';
@@ -18,7 +18,6 @@ import Table from "../../common/views/Table";
 
 import * as common from '../../common/common';
 
-import * as model from "../model";
 import * as app from "../app";
 import {alertError, alertLog} from "../app";
 
@@ -28,6 +27,7 @@ import hopscotch from 'hopscotch';
 
 import {formatVariableSummary} from '../views/VariableSummary';
 import Icon from "../../common/views/Icon";
+import * as datamart from '../datamart/Datamart';
 
 
 export function menu(compoundPipeline) {
@@ -42,22 +42,24 @@ export function menu(compoundPipeline) {
                     right: `calc(${common.panelOpen['right'] ? '500' : '16'}px + ${common.panelMargin}*2 + 70px)`,
                     bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px + ${app.peekInlineShown && app.peekData ? app.peekInlineHeight : '0px'})`,
                     position: 'fixed',
-                    'z-index': 100,
+                    'z-index': 101,
                     'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
                 },
                 onclick: () => {
                     setConstraintMenu(undefined);
+                    app.updateRightPanelWidth();
+                    app.updateLeftPanelWidth();
                     common.setPanelOpen('right');
                 }
             }, 'Cancel'),
-            m(Button, {
+            constraintMenu.step.type !== 'augment' && m(Button, {
                 id: 'btnStage',
                 class: 'btn-success',
                 style: {
                     right: `calc(${common.panelOpen['right'] ? '500' : '16'}px + ${common.panelMargin}*2)`,
                     bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px + ${app.peekInlineShown && app.peekData ? app.peekInlineHeight : '0px'})`,
                     position: 'fixed',
-                    'z-index': 100,
+                    'z-index': 101,
                     'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
                 },
                 onclick: async () => {
@@ -76,13 +78,20 @@ export function menu(compoundPipeline) {
                         setConstraintMenu(undefined);
                         setQueryUpdated(true);
                         common.setPanelOpen('right');
+                        app.updateRightPanelWidth();
+                        app.updateLeftPanelWidth();
                     }
                 }
             }, 'Stage')
         ],
 
         m(Canvas, {
-            attrsAll: {style: {height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`}}
+            attrsAll: {
+                style: {
+                    height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`,
+                    'z-index': 99
+                }
+            }
         }, canvas(compoundPipeline))
     ];
 }
@@ -101,6 +110,14 @@ function canvas(compoundPipeline) {
     if (!constraintMenu) return;
 
     let {pipeline, variables} = queryMongo.buildPipeline(compoundPipeline, app.workspace.raven_config.variablesInitial);
+
+    if (constraintMenu.type === 'augment') return m(datamart.CanvasDatamart, {
+        preferences: app.datamartPreferences,
+        dataPath: constraintMenu.step.dataPath,
+        manipulations: app.workspace.raven_config && app.workspace.raven_config.hardManipulations,
+        endpoint: app.datamartURL,
+        labelWidth: '10em',
+    });
 
     if (constraintMenu.type === 'transform') return m(CanvasTransform, {
         preferences: constraintPreferences,
@@ -138,6 +155,9 @@ function canvas(compoundPipeline) {
 
 export function leftpanel() {
     if (!app.workspace.d3m_config.name || !constraintMenu)
+        return;
+
+    if (constraintMenu.step.type === 'augment')
         return;
 
     return m(Panel, {
@@ -249,32 +269,6 @@ export function varList() {
     ]
 }
 
-
-// hardcoded to manipulations mode
-export function rightpanel() {
-
-    if (!app.workspace.d3m_config.name) return;
-
-    return m(Panel, {
-            side: 'right',
-            label: 'Pipeline',
-            hover: true,
-            width: model.rightPanelWidths['Manipulate'],
-            attrsAll: {
-                onclick: () => app.setFocusedPanel('right'),
-                style: {
-                    'z-index': 100 + (app.focusedPanel === 'right'),
-                    // subtract header, spacer, spacer, scrollbar, table, and footer
-                    height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown && app.peekData ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
-                }
-            }
-        }, m(PipelineFlowchart, {
-            compoundPipeline: app.workspace.raven_config.hardManipulations,
-            pipeline: app.workspace.raven_config.hardManipulations,
-            editable: true
-        }));
-}
-
 export class PipelineFlowchart {
     view(vnode) {
         // compoundPipeline is used for queries, pipeline is the array to be edited
@@ -288,6 +282,7 @@ export class PipelineFlowchart {
         let isEnabled = () => {
             if (!pipeline.length) return true;
             let finalStep = pipeline.slice(-1)[0];
+            if (finalStep.type === 'augment') return false;
             if (finalStep.type === 'aggregate' && !finalStep.measuresAccum.length) return false;
             if (finalStep.type === 'subset' && !finalStep.abstractQuery.length) return false;
             if (finalStep.type === 'transform' && !(finalStep.transforms.length + finalStep.expansions.length + finalStep.manual.length)) return false;
@@ -320,6 +315,14 @@ export class PipelineFlowchart {
                             'line-height': '14px'
                         }
                     }, '×');
+
+                    if (step.type === 'augment') {
+                        content = m('div', {style: {'text-align': 'left'}},
+                            // deleteButton, // TODO: undo augmentation by switching to previous workspace
+                            m('h4[style=font-size:16px;margin-left:0.5em]', 'Augmentation'),
+                            m(TreeAugment, {step, editable, redraw, setRedraw})
+                        )
+                    }
 
                     if (step.type === 'transform') {
                         content = m('div', {style: {'text-align': 'left'}},
@@ -451,6 +454,28 @@ export class PipelineFlowchart {
                 })
             }),
             editable && [
+                DISPLAY_DATAMART_UI && m(Button, {
+                    id: 'btnAddAugment',
+                    title: 'join columns with another dataset',
+                    disabled: !isEnabled(),
+                    class: 'btn-success',
+                    style: {margin: '0.5em'},
+                    onclick: async () => {
+
+                        // write out manipulated dataset as input to datamart component, if there are hard manipulations
+                        let dataPath = workspace.datasetPath;
+                        if (workspace.raven_config.hardManipulations.length) dataPath = await app.getData({
+                            method: 'aggregate',
+                            query: JSON.stringify(queryMongo.buildPipeline(
+                                workspace.raven_config.hardManipulations,
+                                workspace.raven_config.variablesInitial)['pipeline']),
+                            export: 'csv'
+                        });
+                        let step = {type: 'augment', id: 'augment ' + pipeline.length, dataPath};
+
+                        setConstraintMenu({type: 'augment', step, pipeline: compoundPipeline});
+                    }
+                }, plus, ' Augment Step'),
                 // D3M primitives don't support transforms
                 m(Button, {
                     id: 'btnAddTransform',
@@ -523,7 +548,7 @@ let datasetChangedTour = {
     steps: [
         {
             target: 'btnModel',
-            placement: 'top',
+            placement: 'bottom',
             title: 'Dataset Changed',
             content: 'The dataset has changed. Upon switching back to model mode, new problems will be inferred and any existing problem pipelines will be erased.'
         }
@@ -531,11 +556,13 @@ let datasetChangedTour = {
 };
 
 export let pendingHardManipulation = false;
+export let setPendingHardManipulation = state => pendingHardManipulation = state;
+
 // called when a query is updated
 export let setQueryUpdated = async state => {
 
     // the first time we have an edit to the hard manipulations:
-    if (app.is_manipulate_mode) {
+    if (app.is_dataset_mode) {
         if (!pendingHardManipulation && state) {
             hopscotch.startTour(datasetChangedTour, 0);
             app.workspace.raven_config.problems = [];
@@ -544,7 +571,7 @@ export let setQueryUpdated = async state => {
     }
 
     // if we have an edit to the problem manipulations
-    if (!app.is_manipulate_mode) {
+    if (!app.is_dataset_mode) {
 
         let selectedProblem = app.getSelectedProblem();
 
@@ -553,8 +580,8 @@ export let setQueryUpdated = async state => {
         selectedProblem.tags.transformed = [...app.getTransformVariables(selectedProblem.manipulations)];
 
         app.buildProblemPreprocess(selectedProblem)
-            .then(preprocess => {
-                if (preprocess) app.setVariableSummaries(preprocess.variables)
+            .then(response => {
+                if (response.preprocess) app.setVariableSummaries(response.preprocess.variables)
             }).then(m.redraw);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
@@ -563,8 +590,6 @@ export let setQueryUpdated = async state => {
             m.redraw();
         });
         app.resetPeek();
-        // will trigger the call to solver, if a menu that needs that info is shown
-        app.setSolverPending(true);
     }
 };
 
@@ -589,6 +614,13 @@ export let setConstraintMenu = async (menu) => {
     if (menu === undefined) {
         constraintMenu = menu;
         app.resetPeek();
+        return;
+    }
+
+    // augment does not need most of the checks that the other manipulations need
+    if (menu.type === 'augment') {
+        constraintMenu = menu;
+        common.setPanelOpen('right', false);
         return;
     }
 
@@ -679,7 +711,8 @@ export let setConstraintType = (type, pipeline) => {
     if (constraintMetadata.type === type) pipeline = undefined;
     constraintMetadata.type = type;
     if (constraintMetadata.type === 'continuous') {
-        let varMeta = variableMetadata[constraintMetadata.columns[0]];
+        let column = constraintMetadata.columns[0];
+        let varMeta = variableMetadata[column];
 
         constraintMetadata.max = varMeta.max;
         constraintMetadata.min = varMeta.min;

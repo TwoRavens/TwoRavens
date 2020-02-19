@@ -2,59 +2,21 @@ import * as jStat from "jstat";
 import m from 'mithril';
 
 import * as app from '../app';
-import * as results from "../results";
+import * as results from "../modes/results";
 import {alertWarn} from "../app";
 
 export let SOLVER_SVC_URL = '/solver-service/';
 
 
 export let getSolverSpecification = async (problem, systemId) => {
-
-    problem.datasetSchemas = problem.datasetSchemas || {
-        all: app.workspace.d3m_config.dataset_schema
-    };
-    problem.datasetPaths = problem.datasetPaths || {
-        all: app.workspace.datasetPath
-    };
-    problem.datasetSchemasManipulated = {};
-    problem.datasetPathsManipulated = {};
-    if (!problem.selectedSolutions[systemId])
-        problem.selectedSolutions[systemId] = [];
-
-    problem.solverState[systemId] = {thinking: true};
-
-    // add partials dataset to to datasetSchemas and datasetPaths
-    problem.solverState[systemId].message = 'preparing partials data';
-    m.redraw();
-    if (!app.materializePartialsPromise[problem.problemID])
-        app.materializePartialsPromise[problem.problemID] = app.materializePartials(problem);
-    await app.materializePartialsPromise[problem.problemID];
-
-    // add ICE datasets to to datasetSchemas and datasetPaths
-    problem.solverState[systemId].message = 'preparing ICE data';
-    m.redraw();
-    if (!app.materializeICEPromise[problem.problemID])
-        app.materializeICEPromise[problem.problemID] = app.materializeICE(problem);
-    await app.materializeICEPromise[problem.problemID];
-
-    // add train/test datasets to datasetSchemas and datasetPaths
-    problem.solverState[systemId].message = 'preparing train/test splits';
-    m.redraw();
-    if (!app.materializeTrainTestPromise[problem.problemID])
-        app.materializeTrainTestPromise[problem.problemID] = app.materializeTrainTest(problem, problem.datasetSchemas.all);
-    await app.materializeTrainTestPromise[problem.problemID];
-
-    problem.solverState[systemId].message = 'applying manipulations to data';
-    m.redraw();
-    await app.materializeManipulations(problem, ['train', 'test', 'partials']);
-
-    problem.solverState[systemId].message = 'initiating the search for solutions';
-    m.redraw();
+    await results.prepareResultsDatasets(problem, systemId);
+    if (!problem.solverState[systemId].thinking)
+        return;
 
     let allParams = {
         'search': SPEC_search(problem),
         'produce': SPEC_produce(problem),
-        'score': SPEC_score(problem)
+        'score': [SPEC_score(problem)].filter(_=>_)
     };
 
     console.groupCollapsed(`Initiating Search on ${systemId}`);
@@ -80,19 +42,60 @@ let SPEC_search = problem => ({
     "priority": problem.searchOptions.priority,
 
     // pass the same criteria the models will be scored on to the search phase
-    "performanceMetric": {"metric": app.d3mMetrics[problem.metric]},
+    "performanceMetric": SPEC_metric(problem.positiveLabel, problem.metric),
     "configuration": SPEC_configuration(problem)
 });
 
+let SPEC_metric = (positiveLabel, metric) => {
+    let value = {metric: app.d3mMetrics[metric]};
+    if (metric in ['precision', 'recall', 'f1'] && positiveLabel !== undefined)
+        value.positiveLabel = positiveLabel;
+    return value;
+};
+
 // GRPC_ProblemDescription
-let SPEC_problem = problem => ({
-    "name": problem.problemID,
-    "targets": problem.targets,
-    "predictors": app.getPredictorVariables(problem),
-    "categorical": app.getNominalVariables(problem),
-    "taskSubtype": app.d3mTaskSubtype[problem.subTask],
-    "taskType": app.d3mTaskType[problem.task]
-});
+export let SPEC_problem = problem => {
+    let predictors = app.getPredictorVariables(problem);
+
+    if (problem.task === 'forecasting') {
+        // ensure problem is valid
+        if (!problem.forecastingHorizon)
+            problem.forecastingHorizon = {};
+        if (!problem.forecastingHorizon.column)
+            problem.forecastingHorizon.column = problem.tags.time[0];
+        if (!problem.forecastingHorizon.value)
+            problem.forecastingHorizon.value = 10;
+
+        if (!predictors.includes(problem.forecastingHorizon.column)) {
+            problem.predictors.push(problem.forecastingHorizon.column);
+            predictors = app.getPredictorVariables(problem);
+        }
+    }
+
+    return {
+        "name": problem.problemId,
+        "taskSubtype": app.d3mTaskSubtype[problem.subTask],
+        "taskType": app.d3mTaskType[problem.task],
+        "timeGranularity": problem.timeGranularity[(problem.forecastingHorizon || {}).column],
+        'forecastingHorizon': problem.forecastingHorizon,
+
+        // structural variables
+        "indexes": problem.tags.indexes,
+        "crossSection": problem.tags.crossSection.filter(variable => predictors.includes(variable)),
+        "location": problem.tags.location.filter(variable => predictors.includes(variable)),
+        "boundary": problem.tags.boundary.filter(variable => predictors.includes(variable)),
+        "time": problem.tags.time.filter(variable => predictors.includes(variable)),
+        "weights": problem.tags.weights.filter(variable => predictors.includes(variable)), // singleton list
+        "privileged": problem.tags.privileged.filter(variable => predictors.includes(variable)),
+        "exogenous": problem.tags.exogenous.filter(variable => predictors.includes(variable)),
+
+        "targets": problem.targets,
+        "predictors": predictors,
+
+        // data types
+        "categorical": app.getNominalVariables(problem)
+    };
+}
 
 let SPEC_configuration = problem => ({
     "folds": problem.scoreOptions.folds || 10,
@@ -100,17 +103,23 @@ let SPEC_configuration = problem => ({
     "randomSeed": problem.scoreOptions.randomSeed,
     "shuffle": problem.scoreOptions.shuffle,
     "stratified": problem.scoreOptions.stratified,
-    "trainTestRatio": problem.scoreOptions.trainTestRatio
+    "trainTestRatio": problem.scoreOptions.trainTestRatio,
+    "forecastingHorizon": problem.forecastingHorizon
 });
 
 let SPEC_produce = problem => {
+    // TODO time-series produces
+
     let train_split = problem.splitOptions.outOfSampleSplit ? 'train' : 'all';
-    let predict_types = ['RAW', 'PROBABILITIES'];
+    let predict_types = ['RAW'];
+    if (problem.task === 'classification') predict_types.push('PROBABILITIES');
+
     let dataset_types = problem.splitOptions.outOfSampleSplit ? ['test', 'train'] : ['all'];
-    if (problem.datasetPaths.partials) dataset_types.push('partials');
+    if (['classification', 'regression'].includes(problem.task) && problem.datasetPaths.partials) dataset_types.push('partials');
 
     let produces = [];
 
+    // train/test splits
     if (problem.splitOptions.outOfSampleSplit)
         produces.push(...dataset_types.flatMap(dataset_type => predict_types.flatMap(predict_type => ({
             'train': {
@@ -131,6 +140,7 @@ let SPEC_produce = problem => {
             }
         }))));
 
+    // all split
     predict_types.forEach(predict_type => produces.push({
         'train': {
             'name': 'all',
@@ -149,37 +159,55 @@ let SPEC_produce = problem => {
     }));
 
     // add ice datasets
-    app.getPredictorVariables(problem).forEach(predictor => produces.push({
-        'train': {
-            'name': 'all',
-            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
-        },
-        'input': {
-            'name': 'ICE_synthetic_' + predictor,
-            'resource_uri': 'file://' + problem.datasetPaths['ICE_synthetic_' + predictor]
-        },
-        'configuration': {
-            'predict_type': "RAW"
-        },
-        'output': {
-            'resource_uri': 'file:///ravens_volume/solvers/produce/'
-        }
-    }));
+    if (problem.task !== 'forecasting') {
+        app.getPredictorVariables(problem).forEach(predictor => produces.push({
+            'train': {
+                'name': 'all',
+                'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
+            },
+            'input': {
+                'name': 'ICE_synthetic_' + predictor,
+                'resource_uri': 'file://' + problem.datasetPaths['ICE_synthetic_' + predictor]
+            },
+            'configuration': {
+                'predict_type': "RAW"
+            },
+            'output': {
+                'resource_uri': 'file:///ravens_volume/solvers/produce/'
+            }
+        }));
+    }
 
 
     return produces
 };
 
 
-let SPEC_score = problem => [{
-    "input": {
+let SPEC_score = problem => {
+    let spec = {
+        "configuration": SPEC_configuration(problem),
+        "performanceMetrics": [problem.metric, ...problem.metrics]
+            .map(metric => SPEC_metric(problem.positiveLabel, metric))
+    };
+
+    // forecasting needs to know in-sample data
+    if (problem.task === 'forecasting') {
+        if (!problem.splitOptions.outOfSampleSplit) return;
+        spec.train = {
+            'name': 'train',
+            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).train || problem.datasetPaths.train)
+        };
+        spec.input = {
+            'name': 'test',
+            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).test || problem.datasetPaths.test)
+        }
+    } else spec.input = {
         "name": "all",
         "resource_uri": 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
-    },
-    "configuration": SPEC_configuration(problem),
-    "performanceMetrics": [problem.metric, ...problem.metrics]
-        .map(metric => ({metric: app.d3mMetrics[metric]}))
-}];
+    };
+
+    return spec;
+};
 
 let systemParams = {
     'tpot': {"generations": 100, 'population_size': 100},
@@ -199,6 +227,7 @@ let systemParams = {
 export let getSystemAdapterWrapped = systemId => problem => ({
     solve: async () => {
         if (!app.isProblemValid(problem)) return;
+        problem.system = 'solved';
 
         m.request(SOLVER_SVC_URL + 'Solve', {
             method: 'POST',
@@ -266,10 +295,6 @@ let findProblem = data => {
     return problems[solvedProblemId];
 };
 
-let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
-let setRecursiveDefault = (obj, map) => map
-    .reduce((obj, pair) => setDefault(obj, pair[0], pair[1]), obj);
-
 // TODO: determine why django sometimes fails to provide a model id
 export let handleDescribeResponse = response => {
     let data = response.data;
@@ -285,7 +310,7 @@ export let handleDescribeResponse = response => {
             return;
         }
 
-        setRecursiveDefault(solvedProblem.solutions, [
+        app.setRecursive(solvedProblem.solutions, [
             [data.system, {}], [data.model_id, {}]]);
         Object.assign(solvedProblem.solutions[data.system][data.model_id], {
             name: data.model,
@@ -311,7 +336,7 @@ export let handleProduceResponse = response => {
     }
 
     if (response.success) {
-        setRecursiveDefault(solvedProblem.solutions, [
+        app.setRecursive(solvedProblem.solutions, [
             [data.system, {}], [data.model_id, {}], ['produce', []]]);
         solvedProblem.solutions[data.system][data.model_id].solutionId = data.model_id;
         solvedProblem.solutions[data.system][data.model_id].systemId = data.system;
@@ -329,7 +354,7 @@ export let handleScoreResponse = response => {
     }
 
     if (response.success) {
-        setRecursiveDefault(solvedProblem.solutions, [
+        app.setRecursive(solvedProblem.solutions, [
             [data.system, {}], [data.model_id, {}], ['scores', []]]);
         solvedProblem.solutions[data.system][data.model_id].solutionId = data.model_id;
         solvedProblem.solutions[data.system][data.model_id].systemId = data.system;
@@ -345,6 +370,8 @@ export let handleSolveCompleteResponse = response => {
         console.warn('solve complete arrived for unknown problem', data);
         return;
     }
+    if (!solvedProblem.solverState)
+        return;
 
     solvedProblem.solverState[data.system].thinking = false;
     solvedProblem.solverState[data.system].message = response.additional_info.message;

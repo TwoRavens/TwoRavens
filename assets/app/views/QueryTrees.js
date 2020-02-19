@@ -31,6 +31,52 @@ export class TreeVariables {
     }
 }
 
+export class TreeAugment {
+    buildTreeData(step) {
+        return [
+            {
+                id: 'augment dataset name',
+                name: 'Join dataset name: ' + step.summary.name,
+                cancellable: false,
+                show_op: false
+            },
+            // {
+            //     id: 'exact match',
+            //     name: 'Exact match: ' + step.exact_match,
+            //     cancellable: false,
+            //     show_op: false
+            // },
+            {
+                id: 'source',
+                name: 'Data source: ' + step.source,
+                cancellable: false,
+                show_op: false
+            },
+            step.source === 'NYU' && {
+                id: 'join pairs',
+                name: 'Join pairs',
+                cancellable: false,
+                show_op: false,
+                children: step.summary.joinPairs.map(pair => ({
+                    id: 'join pair ' + JSON.stringify(pair),
+                    name: JSON.stringify(pair),
+                    cancellable: false,
+                    show_op: false
+                }))
+            }
+        ]
+    }
+
+    view({attrs}) {
+        let {step, editable} = attrs;
+
+        return m(TreeRender, {
+            data: this.buildTreeData(step, editable),
+            state: treeState
+        });
+    }
+}
+
 export class TreeTransform {
     buildTreeData(step, editable) {
         return [

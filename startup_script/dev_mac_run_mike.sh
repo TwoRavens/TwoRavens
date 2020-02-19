@@ -18,6 +18,7 @@
 #    isi
 #    stanford
 #    tamu
+#    nyu
 #
 # and $2 is the dataset id. If 'r', random id is chosen up to configCount
 # -------------------------------------------------
@@ -32,7 +33,7 @@ workon 2ravens
 if [ -z "$1" ]
   then
     echo "Error: First argument must be one of:"
-    echo "  berkeley, brown, cmu, featurelabs, isi, stanford, tamu"
+    echo "  berkeley, brown, cmu, featurelabs, isi, stanford, tamu, nyu"
   	return
 fi
 

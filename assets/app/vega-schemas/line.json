@@ -5,7 +5,7 @@
   "transform": "tworavensFilter",
   "mark": "line",
   "encoding": {
-    "x": {"field": "tworavensX", "type": "quantitative"},
-    "y": {"field": "tworavensY", "type": "quantitative"}
+    "x": {"field": "tworavensX", "type": "quantitative", "scale": {"zero":  false}},
+    "y": {"field": "tworavensY", "type": "quantitative", "scale": {"zero":  false}}
   }
 }

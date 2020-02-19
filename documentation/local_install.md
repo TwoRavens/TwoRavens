@@ -3,7 +3,9 @@
 
 # Local Installation Instructions
 
-The following is tested on a Mac (OS 10.12.6).
+The following is tested on a Mac (OS 10.12.6). The Ubuntu install is based on 18.04, which will also work on [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
+
+Due to a required dependency, this will not install on "regular" Windows.
 
 ## A. Clone the repository
 
@@ -28,7 +30,7 @@ The following is tested on a Mac (OS 10.12.6).
 - Ubuntu:
   - Instructions are from here: https://github.com/nodesource/distributions/blob/master/README.md
     ```
-    curl -sL https://deb.nodesource.com/setup_11.x | sudo -E bash -
+    curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash -
     sudo apt-get install -y nodejs
     ```
 
@@ -91,7 +93,7 @@ Note: The TwoRavens application requires python 3.6+
      export WORKON_HOME=$HOME/.virtualenvs
      export PROJECT_HOME=$HOME/Devel
      VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
-     source ~/.local/bin/virtualenvwrapper.sh
+     source /usr/local/bin/virtualenvwrapper.sh
      ```
   4. You may need to install virtualenv:
      ```
@@ -105,22 +107,25 @@ Note: The TwoRavens application requires python 3.6+
 - Run the following commands (May take a couple of minutes)
 
     ```
-    mkvirtualenv -p python3.6 2ravens  
-    pip install -r requirements/dev.txt  
+    mkvirtualenv -p python3.6 2ravens
+    pip install -r requirements/dev.txt
     # note: within the virtualenv, pip defaults to pip3
     ```
 - Notes:
+  - Ubuntu: You will need to install several dependencies prior to this step:
+    `sudo apt install libcurl4-openssl-dev libssl-dev swig`
+    `pip install Cython`
   - The D3M python package is not yet compatible with Python 3.7. Waiting for:
     `https://gitlab.com/datadrivendiscovery/d3m/merge_requests/199`
   - Mac: Python 3.6 installation can be done like this:
     `https://stackoverflow.com/a/54443920`
-  - Ubuntu: If you get the error `OSError: mysql_config not found`, then run  
+  - Ubuntu: If you get the error `OSError: mysql_config not found`, then run
   `sudo apt-get install libmysqlclient-dev`
-  - Mac: If you run into Xcode (or other errors) when running the install, google it.  
+  - Mac: If you run into Xcode (or other errors) when running the install, google it.
     - Sometimes the [Xcode license agreement hasn't been accepted](http://stackoverflow.com/questions/26197347/agreeing-to-the-xcode-ios-license-requires-admin-privileges-please-re-run-as-r/26197363#26197363)
-  - Mac: If you run into issues installing libcurl, then run 
-  
-        brew install gnutls 
+  - Mac: If you run into issues installing libcurl, then run
+
+        brew install gnutls
         brew install libgcrypt
         export PYCURL_SSL_LIBRARY=gnutls
 
@@ -165,6 +170,9 @@ Note: The TwoRavens application requires python 3.6+
           - shortcut for: ```python manage.py runserver 8080```
       - (4) Start webpack
          - shortcut for ```npm start```
+
+- If you get an error about webpack not being installed:
+`npm install --only=dev`
 
 - Check if the application is running:
     - Go to: http://127.0.0.1:8080/
@@ -245,7 +253,7 @@ Download and install R at https://www.r-project.org. R versions 3.4+ should work
     `export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES`
 Some solvers require additional setup:
     On Mac, you may need to install libomp for some solvers to work (like tpot)
-        `brew install libomp` 
+        `brew install libomp`
     For h2o, you will need to install a java version less than 9. If not already installed:
         ```
         brew cask install homebrew/cask-versions/adoptopenjdk8
@@ -265,7 +273,7 @@ Some solvers require additional setup:
 
 ## 5a. Docker configuration
 
-The TA2 systems require several Docker updates.  
+The TA2 systems require several Docker updates.
 
 1. Open your Docker application and go to the **Advanced** section.  Make the following updates (or as close as possible):
     - **CPUs**: 4
@@ -306,7 +314,7 @@ The example below uses the Brown TA2 (9/29/2019)
 
 ## Running the Local Environment after Setup
 
-This setup involves running several processes.  
+This setup involves running several processes.
     - The manual method is detailed below.
     - Contact team members for Mac an ubuntu scripts to speed up this process.
 
@@ -336,7 +344,7 @@ This setup involves running several processes.
         - redis: ```fab run_redis```
     - **Terminal 5. Celery**:
       ```fab celery_run_with_ta2```
-    - **Terminal 6. TA2**.  
+    - **Terminal 6. TA2**.
       - Example using the Brown TA2:
         - List datasets: ```fab run_ta2_brown_choose_config```
         - Pick a dataset based on its number.
@@ -363,7 +371,7 @@ This setup involves running several processes.
 
 ## Subsequent updates
 
-If you run a ```git pull``` to update your repo, please run the commands below to include possible pip requirements and database changes.  
+If you run a ```git pull``` to update your repo, please run the commands below to include possible pip requirements and database changes.
 
 These commands will:
   1. Update/add packages specified in updated requirements files.
@@ -384,6 +392,13 @@ These commands will:
     ```
     cd assets/common/
     git checkout develop
+    git pull
+    ```
+
+- Submodule update for the [TwoRavens test datasets library](https://github.com/TwoRavens/tworavens-test-datasets )
+    ```
+    cd /ravens_volume/test_data
+    git checkout master
     git pull
     ```
 

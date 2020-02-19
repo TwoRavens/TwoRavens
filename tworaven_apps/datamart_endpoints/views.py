@@ -333,13 +333,8 @@ def api_search_by_dataset(request):
 
     # (4) Location of the current dataset
     #
-    dataset_info = get_path_to_source_data(user_workspace.d3m_config)
-    if not dataset_info.success:
-        user_msg = (f'Sorry!  Failed to locate the dataset.'
-                    f' ({dataset_info.err_msg})')
-        return JsonResponse(get_json_error(user_msg))
-
-    dataset_path = dataset_info.result_obj
+    # augment is embedded within a manipulations pipeline, so the data path may be different
+    dataset_path = json_req_obj['dataset_path']
 
     # (5) Kick off async search
     #

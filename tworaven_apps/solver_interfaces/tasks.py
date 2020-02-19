@@ -1,6 +1,7 @@
 import time
 import traceback
 
+import tworaven_solver
 from tworaven_apps.ta2_interfaces.websocket_message import WebsocketMessage
 from tworavensproject.celery import celery_app
 
@@ -10,74 +11,103 @@ from tworaven_apps.solver_interfaces.models import (
     RECEIVE_SEARCH_MSG,
     RECEIVE_DESCRIBE_MSG,
     RECEIVE_SCORE_MSG,
-    RECEIVE_PRODUCE_MSG)
+    RECEIVE_PRODUCE_MSG, DEBUG_MODE)
 
 from tworaven_apps.solver_interfaces.util_solve import Solve
 from tworaven_apps.solver_interfaces.util_search import Search
-from tworaven_apps.solver_interfaces.util_model import Model
+from tworaven_apps.solver_interfaces.util_model import Model, ModelTwoRavens
 
 from celery.utils.log import get_task_logger
 logger = get_task_logger(__name__)
 
 
+def solve_found_async(model: Model, websocket_id, specification):
+    model.save()
+
+    # h2o cannot handle multiple processes importing the same file at the same time
+    # auto_sklearn seems to be very fragile in a worker context
+    # all tasks are run serially
+    if model.system == 'h2o' or model.system == 'auto_sklearn':
+        describe_task(websocket_id, model.model_id)
+
+        for score_spec in specification['score']:
+            try:
+                score_task(websocket_id, model.model_id, score_spec)
+            except Exception:
+                pass
+
+        for produce_spec in specification['produce']:
+            try:
+                produce_task(websocket_id, model.model_id, produce_spec)
+            except Exception:
+                pass
+
+    else:
+        task_handle = describe_task
+        if not DEBUG_MODE:
+            task_handle = task_handle.delay
+        task_handle(websocket_id, model.model_id)
+
+        for score_spec in specification['score']:
+            task_handle = score_task
+            if not DEBUG_MODE:
+                task_handle = task_handle.delay
+            task_handle(websocket_id, model.model_id, score_spec)
+
+        for produce_spec in specification['produce']:
+            task_handle = produce_task
+            if not DEBUG_MODE:
+                task_handle = task_handle.delay
+            task_handle(websocket_id, model.model_id, produce_spec)
+
+
+def search_found_async(model: Model, websocket_id):
+    model.save()
+    describe_task.delay(websocket_id, model.model_id)
+
+
+FOUND_MODEL_CALLBACKS = {
+    'solve': solve_found_async,
+    'search': search_found_async
+}
+
+
+# DEBUG_MODE TAGGED
 @celery_app.task(ignore_result=True)
 def solve_task(websocket_id, system_id, specification, system_params=None, search_id=None):
 
     system_params = system_params or {}
 
-    # called when a new model is discovered while searching
-    def solve_found_async(model: Model):
-        model.save()
-
-        # h2o cannot handle multiple processes importing the same file at the same time
-        # auto_sklearn seems to be very fragile in a worker context
-        # all tasks are run serially
-        if model.system == 'h2o' or model.system == 'auto_sklearn':
-            describe_task(websocket_id, model.model_id)
-
-            for score_spec in specification['score']:
-                try:
-                    score_task(websocket_id, model.model_id, score_spec)
-                except Exception:
-                    pass
-
-            for produce_spec in specification['produce']:
-                try:
-                    produce_task(websocket_id, model.model_id, produce_spec)
-                except Exception:
-                    pass
-
-        else:
-            describe_task.delay(websocket_id, model.model_id)
-
-            for score_spec in specification['score']:
-                score_task.delay(websocket_id, model.model_id, score_spec)
-
-            for produce_spec in specification['produce']:
-                produce_task.delay(websocket_id, model.model_id, produce_spec)
-
     solver = Solve(
         system=system_id,
         specification=specification,
+        callback_found='solve',
+        callback_arguments={
+            'specification': specification,
+            'websocket_id': websocket_id
+        },
         system_params=system_params,
-        callback_found=solve_found_async,
         search_id=search_id)
 
     start_time = time.time()
-    try:
+
+    if DEBUG_MODE:
         result = solver.run()
-    except Exception:
-        logger.info("caught traceback when running solver:")
-        logger.info(traceback.format_exc())
-        ws_msg = WebsocketMessage.get_fail_message_with_data( \
-            RECEIVE_SOLVE_MSG,
-            'solve failed due to exception',
-            data={
-                'search_id': solver.search.search_id,
-                'system': solver.system
-            })
-        ws_msg.send_message(websocket_id)
-        return
+    else:
+        try:
+            result = solver.run()
+        except Exception:
+            logger.info("caught traceback when running solver:")
+            logger.info(traceback.format_exc())
+            ws_msg = WebsocketMessage.get_fail_message_with_data( \
+                RECEIVE_SOLVE_MSG,
+                'solve failed due to exception',
+                data={
+                    'search_id': solver.search.search_id,
+                    'system': solver.system
+                })
+            ws_msg.send_message(websocket_id)
+            return
 
     stop_time = time.time()
     if KEY_DATA not in result:
@@ -96,15 +126,14 @@ def search_task(websocket_id, system_id, specification, system_params=None, sear
 
     system_params = system_params or {}
 
-    def search_found_async(model: Model):
-        model.save()
-        describe_task.delay(websocket_id, model.model_id)
-
     search = Search.load(
         system=system_id,
         specification=specification,
+        callback_found='search',
+        callback_arguments={
+            'websocket_id': websocket_id
+        },
         system_params=system_params,
-        callback_found=search_found_async,
         search_id=search_id)
 
     start_time = time.time()
@@ -165,7 +194,7 @@ def describe_task(websocket_id, model_id):
         data=result)
     ws_msg.send_message(websocket_id)
 
-
+# DEBUG_MODE TAGGED
 @celery_app.task(ignore_result=True)
 def score_task(websocket_id, model_id, spec):
 
@@ -173,22 +202,25 @@ def score_task(websocket_id, model_id, spec):
     if not model:
         return
 
-    try:
+    if DEBUG_MODE:
         result = model.score(spec)
-    except Exception:
-        logger.info("caught traceback when running score:")
-        logger.info(traceback.format_exc())
+    else:
+        try:
+            result = model.score(spec)
+        except Exception:
+            logger.info("caught traceback when running score:")
+            logger.info(traceback.format_exc())
 
-        ws_msg = WebsocketMessage.get_fail_message_with_data( \
-            RECEIVE_SCORE_MSG,
-            'score failed due to exception',
-            data={
-                'model_id': model.model_id,
-                'search_id': model.search_id,
-                'system': model.system
-            })
-        ws_msg.send_message(websocket_id)
-        return
+            ws_msg = WebsocketMessage.get_fail_message_with_data( \
+                RECEIVE_SCORE_MSG,
+                'score failed due to exception',
+                data={
+                    'model_id': model.model_id,
+                    'search_id': model.search_id,
+                    'system': model.system
+                })
+            ws_msg.send_message(websocket_id)
+            return
 
     ws_msg = WebsocketMessage.get_success_message(
         RECEIVE_SCORE_MSG,
@@ -197,6 +229,7 @@ def score_task(websocket_id, model_id, spec):
     ws_msg.send_message(websocket_id)
 
 
+# DEBUG_MODE TAGGED
 @celery_app.task(ignore_result=True)
 def produce_task(websocket_id, model_id, spec):
 
@@ -204,28 +237,48 @@ def produce_task(websocket_id, model_id, spec):
     if not model:
         return
 
-    try:
+    if DEBUG_MODE:
         produce_data = model.produce(spec)
-    except Exception:
-        logger.info("caught traceback when running produce:")
-        logger.info(traceback.format_exc())
+    else:
+        try:
+            produce_data = model.produce(spec)
+        except Exception:
+            logger.info("caught traceback when running produce:")
+            logger.info(traceback.format_exc())
 
-        ws_msg = WebsocketMessage.get_fail_message_with_data( \
-            RECEIVE_PRODUCE_MSG,
-            'produce failed due to exception',
-            data={
-                'model_id': model.model_id,
-                'search_id': model.search_id,
-                'system': model.system
-            })
-        ws_msg.send_message(websocket_id)
-        return
+            ws_msg = WebsocketMessage.get_fail_message_with_data( \
+                RECEIVE_PRODUCE_MSG,
+                'produce failed due to exception',
+                data={
+                    'model_id': model.model_id,
+                    'search_id': model.search_id,
+                    'system': model.system
+                })
+            ws_msg.send_message(websocket_id)
+            return
 
     ws_msg = WebsocketMessage.get_success_message(
         RECEIVE_PRODUCE_MSG,
         "produce successfully completed",
         data=produce_data)
     ws_msg.send_message(websocket_id)
+
+
+# fit a pipeline to create a solution
+# DEBUG_MODE TAGGED
+@celery_app.task()
+def pipeline_task(search_id, pipeline_specification, train_specification, callback_name, callback_arguments=None):
+    model = tworaven_solver.fit_pipeline(pipeline_specification, train_specification)
+
+    model_wrapped = ModelTwoRavens(
+        model,
+        system='two-ravens',
+        predictors=train_specification['problem']['predictors'],
+        targets=train_specification['problem']['targets'],
+        task=train_specification['problem']['taskType'],
+        search_id=search_id)
+
+    FOUND_MODEL_CALLBACKS[callback_name](model_wrapped, **callback_arguments)
 
 
 def load_model_helper(websocket_id, model_id):

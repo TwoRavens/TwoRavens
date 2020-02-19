@@ -1,0 +1,295 @@
+{
+  "datamart_name": "ISI",
+  "search_results": {
+    "results": [
+      {
+        "augmentation": {
+          "left_columns": [
+            [
+              [
+                19
+              ]
+            ]
+          ],
+          "right_columns": [
+            [
+              [
+                4
+              ]
+            ]
+          ],
+          "type": "join"
+        },
+        "id": "wikidata_search_on___P1476___P2047___P577___with_column_Hits_wikidata",
+        "materialize_info": "{\"id\": \"wikidata_search_on___P1476___P2047___P577___with_column_Hits_wikidata\", \"score\": 1, \"metadata\": {\"connection_url\": \"https://dsbox02.isi.edu:9000\", \"search_result\": {\"p_nodes_needed\": [\"P1476\", \"P2047\", \"P577\"], \"target_q_node_column_name\": \"Hits_wikidata\"}, \"query_json\": null, \"search_type\": \"wikidata\"}, \"augmentation\": {\"properties\": \"join\", \"left_columns\": [[19]], \"right_columns\": [[4]]}, \"datamart_type\": \"isi\"}",
+        "metadata": [
+          {
+            "metadata": {
+              "dimension": {
+                "length": 1073,
+                "name": "rows",
+                "semantic_types": [
+                  "https://metadata.datadrivendiscovery.org/types/TabularRow"
+                ]
+              },
+              "schema": "https://metadata.datadrivendiscovery.org/schemas/v0/container.json",
+              "semantic_types": [
+                "https://metadata.datadrivendiscovery.org/types/Table"
+              ],
+              "structural_type": "d3m.container.pandas.DataFrame"
+            },
+            "selector": []
+          },
+          {
+            "metadata": {
+              "dimension": {
+                "length": 3,
+                "name": "columns",
+                "semantic_types": [
+                  "https://metadata.datadrivendiscovery.org/types/TabularColumn"
+                ]
+              }
+            },
+            "selector": [
+              "__ALL_ELEMENTS__"
+            ]
+          },
+          {
+            "metadata": {
+              "P_node": "P1476",
+              "name": "title_for_Hits_wikidata",
+              "semantic_types": [
+                true,
+                [
+                  "http://schema.org/Text",
+                  "https://metadata.datadrivendiscovery.org/types/Attribute",
+                  "https://metadata.datadrivendiscovery.org/types/Datamart_augmented_column"
+                ]
+              ],
+              "structural_type": "str"
+            },
+            "selector": [
+              "__ALL_ELEMENTS__",
+              0
+            ]
+          },
+          {
+            "metadata": {
+              "P_node": "P2047",
+              "name": "duration_for_Hits_wikidata",
+              "semantic_types": [
+                true,
+                [
+                  "http://schema.org/Float",
+                  "https://metadata.datadrivendiscovery.org/types/Attribute",
+                  "https://metadata.datadrivendiscovery.org/types/Datamart_augmented_column"
+                ]
+              ],
+              "structural_type": "str"
+            },
+            "selector": [
+              "__ALL_ELEMENTS__",
+              1
+            ]
+          },
+          {
+            "metadata": {
+              "P_node": "P577",
+              "name": "publication date_for_Hits_wikidata",
+              "semantic_types": [
+                true,
+                [
+                  "http://schema.org/DateTime",
+                  "https://metadata.datadrivendiscovery.org/types/Attribute",
+                  "https://metadata.datadrivendiscovery.org/types/Datamart_augmented_column"
+                ]
+              ],
+              "structural_type": "str"
+            },
+            "selector": [
+              "__ALL_ELEMENTS__",
+              2
+            ]
+          },
+          {
+            "metadata": {
+              "name": "q_node",
+              "semantic_types": [
+                "https://metadata.datadrivendiscovery.org/types/CategoricalData",
+                "https://metadata.datadrivendiscovery.org/types/Attribute",
+                "http://wikidata.org/qnode",
+                "https://metadata.datadrivendiscovery.org/types/Datamart_augmented_column"
+              ],
+              "structural_type": "str"
+            },
+            "selector": [
+              "__ALL_ELEMENTS__",
+              3
+            ]
+          },
+          {
+            "metadata": {
+              "name": "joining_pairs",
+              "semantic_types": [
+                "http://schema.org/Integer",
+                "https://metadata.datadrivendiscovery.org/types/Attribute",
+                "https://metadata.datadrivendiscovery.org/types/Datamart_augmented_column"
+              ],
+              "structural_type": "list"
+            },
+            "selector": [
+              "__ALL_ELEMENTS__",
+              4
+            ]
+          }
+        ],
+        "sample": "itemLabel,title,duration,publication date\nKørsel med Grønlandske Hunde,Kørsel med grønlandske Hunde,1,1897-01-01T00:00:00Z\nFantasmagorie,Fantasmagorie,1,1908-01-01T00:00:00Z\nA Terrible Night,Une nuit terrible,1,1896-01-01T00:00:00Z\n1984,1984,1,1984-01-01T00:00:00Z\nBluebeard's Castle,A kékszakállú herceg vára,1,2000-01-01T00:00:00Z\nMachuca,Machuca,1,2004-01-01T00:00:00Z\nMachuca,Machuca,1,2005-03-31T00:00:00Z\nA Nymph of the Waves,A Nymph of the Waves,1,1900-01-01T00:00:00Z\nAbove the Limit,Above the Limit,1,1900-01-01T00:00:00Z\nThe Miserly Knight,Скупой рыцарь,1,2000-01-01T00:00:00Z\n",
+        "score": 1,
+        "summary": {
+          "Columns": [
+            "[0] title",
+            "[1] duration",
+            "[2] publication date"
+          ],
+          "Datamart ID": "wikidata_search_on___P1476___P2047___P577___with_column_Hits_wikidata",
+          "Recommend Join Columns": "Hits_wikidata",
+          "Score": "1",
+          "URL": "None",
+          "title": "wikidata search result for Hits_wikidata"
+        }
+      },
+      {
+        "augmentation": {
+          "left_columns": [
+            [
+              [
+                20
+              ]
+            ]
+          ],
+          "right_columns": [
+            [
+              [
+                1
+              ]
+            ]
+          ],
+          "type": "join"
+        },
+        "id": "wikidata_search_on____with_column_Home_runs_wikidata",
+        "materialize_info": "{\"id\": \"wikidata_search_on____with_column_Home_runs_wikidata\", \"score\": 1, \"metadata\": {\"connection_url\": \"https://dsbox02.isi.edu:9000\", \"search_result\": {\"p_nodes_needed\": [], \"target_q_node_column_name\": \"Home_runs_wikidata\"}, \"query_json\": null, \"search_type\": \"wikidata\"}, \"augmentation\": {\"properties\": \"join\", \"left_columns\": [[20]], \"right_columns\": [[1]]}, \"datamart_type\": \"isi\"}",
+        "metadata": [
+          {
+            "metadata": {
+              "dimension": {
+                "length": 1073,
+                "name": "rows",
+                "semantic_types": [
+                  "https://metadata.datadrivendiscovery.org/types/TabularRow"
+                ]
+              },
+              "schema": "https://metadata.datadrivendiscovery.org/schemas/v0/container.json",
+              "semantic_types": [
+                "https://metadata.datadrivendiscovery.org/types/Table"
+              ],
+              "structural_type": "d3m.container.pandas.DataFrame"
+            },
+            "selector": []
+          },
+          {
+            "metadata": {
+              "dimension": {
+                "length": 0,
+                "name": "columns",
+                "semantic_types": [
+                  "https://metadata.datadrivendiscovery.org/types/TabularColumn"
+                ]
+              }
+            },
+            "selector": [
+              "__ALL_ELEMENTS__"
+            ]
+          }
+        ],
+        "sample": "\n",
+        "score": 1,
+        "summary": {
+          "Columns": [
+            "[0] "
+          ],
+          "Datamart ID": "wikidata_search_on____with_column_Home_runs_wikidata",
+          "Recommend Join Columns": "Home_runs_wikidata",
+          "Score": "1",
+          "URL": "None",
+          "title": "wikidata search result for Home_runs_wikidata"
+        }
+      },
+      {
+        "augmentation": {
+          "left_columns": [
+            [
+              [
+                21
+              ]
+            ]
+          ],
+          "right_columns": [
+            [
+              [
+                1
+              ]
+            ]
+          ],
+          "type": "join"
+        },
+        "id": "wikidata_search_on____with_column_Walks_wikidata",
+        "materialize_info": "{\"id\": \"wikidata_search_on____with_column_Walks_wikidata\", \"score\": 1, \"metadata\": {\"connection_url\": \"https://dsbox02.isi.edu:9000\", \"search_result\": {\"p_nodes_needed\": [], \"target_q_node_column_name\": \"Walks_wikidata\"}, \"query_json\": null, \"search_type\": \"wikidata\"}, \"augmentation\": {\"properties\": \"join\", \"left_columns\": [[21]], \"right_columns\": [[1]]}, \"datamart_type\": \"isi\"}",
+        "metadata": [
+          {
+            "metadata": {
+              "dimension": {
+                "length": 1073,
+                "name": "rows",
+                "semantic_types": [
+                  "https://metadata.datadrivendiscovery.org/types/TabularRow"
+                ]
+              },
+              "schema": "https://metadata.datadrivendiscovery.org/schemas/v0/container.json",
+              "semantic_types": [
+                "https://metadata.datadrivendiscovery.org/types/Table"
+              ],
+              "structural_type": "d3m.container.pandas.DataFrame"
+            },
+            "selector": []
+          },
+          {
+            "metadata": {
+              "dimension": {
+                "length": 0,
+                "name": "columns",
+                "semantic_types": [
+                  "https://metadata.datadrivendiscovery.org/types/TabularColumn"
+                ]
+              }
+            },
+            "selector": [
+              "__ALL_ELEMENTS__"
+            ]
+          }
+        ],
+        "sample": "\n",
+        "score": 1,
+        "summary": {
+          "Columns": [
+            "[0] "
+          ],
+          "Datamart ID": "wikidata_search_on____with_column_Walks_wikidata",
+          "Recommend Join Columns": "Walks_wikidata",
+          "Score": "1",
+          "URL": "None",
+          "title": "wikidata search result for Walks_wikidata"
+        }
+      }
+    ]
+  }
+}

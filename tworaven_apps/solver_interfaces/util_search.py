@@ -1,61 +1,33 @@
 
 import pandas
 from scipy.sparse.csr import csr_matrix
-from sklearn.impute import SimpleImputer
-from sklearn.metrics import make_scorer
 
 from tworaven_apps.solver_interfaces.models import \
-    R_SERVICE, KEY_SUCCESS, KEY_MESSAGE, KEY_DATA, \
-    get_metric, should_maximize
-from tworaven_apps.solver_interfaces.util_dataset import Dataset
-from tworaven_apps.solver_interfaces.util_model import ModelSklearn, ModelH2O, ModelLudwig
+    R_SERVICE, KEY_SUCCESS, KEY_MESSAGE, KEY_DATA, DEBUG_MODE
 
+from tworaven_solver import Dataset, preprocess
+from tworaven_apps.solver_interfaces.util_model import ModelSklearn, ModelH2O, ModelLudwig
 import uuid
 import abc
 import requests
 
-# PREPROCESSING
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-
 import multiprocessing
 import os
 
-
-def preprocess(dataframe, specification):
-
-    X = specification['problem']['predictors']
-    y = specification['problem']['targets'][0]
-
-    categorical_features = [i for i in specification['problem']['categorical'] if i != y and i in X]
-
-    categorical_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
-        ('onehot', OneHotEncoder(handle_unknown='ignore'))
-    ])
-
-    numerical_features = [i for i in X if i not in categorical_features]
-    numerical_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='median')),
-        ('scaler', StandardScaler())
-    ])
-
-    preprocessor = ColumnTransformer(transformers=[
-        ('numeric', numerical_transformer, numerical_features),
-        ('categorical', categorical_transformer, categorical_features)
-    ])
-
-    stimulus = dataframe[X]
-    stimulus = preprocessor.fit_transform(stimulus)
-
-    return stimulus, preprocessor
+from time import sleep
 
 
 class Search(object):
     system = None
 
-    def __init__(self, specification, system_params, callback_found=lambda model: None, search_id=None):
+    def __init__(self, specification,
+                 callback_found: str, callback_arguments=None,
+                 system_params=None, search_id=None):
+
+        from tworaven_apps.solver_interfaces.tasks import FOUND_MODEL_CALLBACKS
+        if callback_found not in FOUND_MODEL_CALLBACKS:
+            raise ValueError(f'Callback {callback_found} is not found in the list of available model callbacks.')
+
         if search_id is None:
             search_id = self.get_search_id()
 
@@ -63,6 +35,7 @@ class Search(object):
         self.specification = specification
         self.system_params = system_params
         self.callback_found = callback_found
+        self.callback_arguments = callback_arguments or {}
 
     @staticmethod
     def get_search_id():
@@ -73,17 +46,23 @@ class Search(object):
         pass
 
     @staticmethod
-    def load(system, specification, system_params=None, callback_found=lambda model: None, search_id=None):
+    def load(system, specification,
+             callback_found: str, callback_arguments=None,
+             system_params=None, search_id=None):
         return {
             'auto_sklearn': SearchAutoSklearn,
             'caret': SearchCaret,
             'h2o': SearchH2O,
             'tpot': SearchTPOT,
-            'ludwig': SearchLudwig
+            'mljar-supervised': SearchMLJarSupervised,
+            'ludwig': SearchLudwig,
+            'mlbox': SearchMLBox,
+            'two-ravens': SearchTwoRavens
         }[system](
             specification=specification,
-            system_params=system_params,
             callback_found=callback_found,
+            callback_arguments=callback_arguments,
+            system_params=system_params,
             search_id=search_id)
 
 
@@ -163,7 +142,8 @@ class SearchAutoSklearn(Search):
             task=self.specification['problem']['taskType'])
         model.save()
 
-        self.callback_found(model)
+        from tworaven_apps.solver_interfaces.tasks import FOUND_MODEL_CALLBACKS
+        FOUND_MODEL_CALLBACKS[self.callback_found](model, **(self.callback_arguments or {}))
 
         return {
             KEY_SUCCESS: True,
@@ -280,7 +260,8 @@ class SearchH2O(Search):
                 targets=[y],
                 task=self.specification['problem']['taskType'])
 
-            self.callback_found(model)
+            from tworaven_apps.solver_interfaces.tasks import FOUND_MODEL_CALLBACKS
+            FOUND_MODEL_CALLBACKS[self.callback_found](model, **(self.callback_arguments or {}))
 
         return {
             KEY_SUCCESS: True,
@@ -348,7 +329,8 @@ class SearchTPOT(Search):
                 task=self.specification['problem']['taskType'])
             model.save()
 
-            self.callback_found(model)
+            from tworaven_apps.solver_interfaces.tasks import FOUND_MODEL_CALLBACKS
+            FOUND_MODEL_CALLBACKS[self.callback_found](model, **(self.callback_arguments or {}))
 
         return {
             KEY_SUCCESS: True,
@@ -365,7 +347,6 @@ class SearchMLBox(Search):
     FAST_DEBUG = os.environ.get('AUTOML_FAST_DEBUG', 'no') == 'yes'
 
     def run(self):
-        import mlbox.model.classification
         import mlbox.model.regression
 
         dataset = Dataset(self.specification['input'])
@@ -410,7 +391,8 @@ class SearchMLBox(Search):
                 task=self.specification['problem']['taskType'])
             model.save()
 
-            self.callback_found(model)
+            from tworaven_apps.solver_interfaces.tasks import FOUND_MODEL_CALLBACKS
+            FOUND_MODEL_CALLBACKS[self.callback_found](model, **(self.callback_arguments or {}))
 
         return {
             KEY_SUCCESS: True,
@@ -466,7 +448,9 @@ class SearchLudwig(Search):
             task=self.specification['problem']['taskType'])
 
         model.save()
-        self.callback_found(model)
+
+        from tworaven_apps.solver_interfaces.tasks import FOUND_MODEL_CALLBACKS
+        FOUND_MODEL_CALLBACKS[self.callback_found](model, **(self.callback_arguments or {}))
 
         return {
             KEY_SUCCESS: True,
@@ -517,7 +501,9 @@ class SearchMLJarSupervised(Search):
                 task=self.specification['problem']['taskType'])
 
             model.save()
-            self.callback_found(model)
+
+            from tworaven_apps.solver_interfaces.tasks import FOUND_MODEL_CALLBACKS
+            FOUND_MODEL_CALLBACKS[self.callback_found](model, **(self.callback_arguments or {}))
 
         return {
             KEY_SUCCESS: True,
@@ -525,5 +511,74 @@ class SearchMLJarSupervised(Search):
             KEY_DATA: {
                 'search_id': self.search_id,
                 'system': 'mljar-supervised'
+            }
+        }
+
+
+class SearchTwoRavens(Search):
+    system = 'two-ravens'
+
+    def run(self):
+        from tworaven_apps.solver_interfaces.tasks import pipeline_task
+        import tworaven_solver
+
+        # make sure time isn't in the predictor or target variables
+        problem_specification = self.specification['problem']
+        time_column = problem_specification.get('time')
+        for variable_set in ['targets', 'predictors']:
+            if time_column and time_column in problem_specification[variable_set]:
+                problem_specification[variable_set].remove(time_column)
+
+        # if self.specification['problem']['taskType'] == 'FORECASTING':
+        #     # make time series regular
+        #     dataframe = tworaven_solver.format_dataframe_time_index(
+        #         dataframe=tworaven_solver.Dataset(self.specification['input']).get_dataframe(),
+        #         date=next(iter(self.specification['problem'].get('time', [])), None),
+        #         granularity_specification=self.specification['problem'].get('timeGranularity'))
+        #
+        #     # save regular time series to disk
+        #     imputed_dataframe_dir = os.path.join(self.specification['temp_directory'], self.search_id)
+        #     imputed_dataframe_path = os.path.join(imputed_dataframe_dir, 'trainData.csv')
+        #     os.makedirs(imputed_dataframe_dir, exist_ok=True)
+        #     dataframe.to_csv(imputed_dataframe_path)
+        #
+        #     # update specification to point to new time series
+        #     self.specification['input'] = {
+        #         'name': self.specification['input'].get('name', 'train'),
+        #         'resource_uri': 'file://' + imputed_dataframe_path
+        #     }
+
+        manager = tworaven_solver.SearchManager(
+            problem_specification=problem_specification,
+            system_params=self.system_params)
+
+        task_ids = []
+        while True:
+            pipeline_specification = manager.get_pipeline_specification()
+            if not pipeline_specification:
+                break
+
+            task_handle = pipeline_task
+            if not DEBUG_MODE:
+                task_handle = task_handle.delay
+            task_ids.append(task_handle(
+                search_id=self.search_id,
+                train_specification=self.specification,
+                pipeline_specification=pipeline_specification,
+                callback_name=self.callback_found,
+                callback_arguments=self.callback_arguments))
+
+        while task_ids:
+            if task_ids[0].ready():
+                del task_ids[0]
+            else:
+                sleep(0.5)
+
+        return {
+            KEY_SUCCESS: True,
+            KEY_MESSAGE: 'search complete',
+            KEY_DATA: {
+                'search_id': self.search_id,
+                'system': 'two-ravens'
             }
         }

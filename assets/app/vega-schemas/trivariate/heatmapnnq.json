@@ -1,27 +1,51 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
   "description": "A heatmap.",
-  "data": {"url": "tworavensData"},
-  "encoding": {
-    "y": {"field": "tworavensY", "type": "nominal"},
-    "x": {"field": "tworavensX", "type": "nominal"}
+  "data": {
+    "url": "tworavensData"
   },
-  "layer": [{
-    "mark": "rect",
-    "encoding": {
-      "color":  {"aggregate": "mean", "field": "tworavensZ", "type": "quantitative"}
+  "encoding": {
+    "y": {
+      "field": "tworavensY",
+      "type": "nominal"
+    },
+    "x": {
+      "field": "tworavensX",
+      "type": "nominal"
     }
-  }, {
-    "mark": "text",
-    "encoding": {
-      "text": {"aggregate": "mean", "field": "tworavensZ", "type": "quantitative"},
-      "color": {
-        "value": "white"
+  },
+  "layer": [
+    {
+      "mark": "rect",
+      "encoding": {
+        "color": {
+          "aggregate": "mean",
+          "field": "tworavensZ",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "mark": "text",
+      "encoding": {
+        "text": {
+          "aggregate": "mean",
+          "field": "tworavensZ",
+          "type": "quantitative"
+        },
+        "color": {
+          "value": "white"
+        }
       }
     }
-  }],
+  ],
   "config": {
-    "scale": {"bandPaddingInner": 0, "bandPaddingOuter": 0},
-    "text": {"baseline": "middle"}
+    "scale": {
+      "bandPaddingInner": 0,
+      "bandPaddingOuter": 0
+    },
+    "text": {
+      "baseline": "middle"
+    }
   }
 }

@@ -23,7 +23,7 @@ def make_search_by_dataset_call(datamart_name, user_workspace_id, dataset_path, 
     # Async task to run search by dataset process
     #
     kick_off_search_by_dataset.delay(\
-                dm_static.DATAMART_NYU_NAME,
+                datamart_name,
                 user_workspace_id,
                 dataset_path,
                 query=query,

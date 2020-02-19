@@ -11,3 +11,5 @@ MAX_WORKSPACE_NAME_LENGTH = 50
 
 KEY_ORIG_DATASET_ID = 'orig_dataset_id'
 KEY_USER_WORKSPACE_ID = 'user_workspace_id'
+
+UPLOAD_DATASET_RESPONSE = 'upload_dataset_response'

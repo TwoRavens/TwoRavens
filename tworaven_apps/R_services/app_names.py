@@ -3,10 +3,11 @@ Constants used to track the app names and url between the frontend and rook
 """
 
 DISCOVERY_R_APP_NAME = 'discovery.app'
+EXPLORE_R_APP_NAME = 'explore.app'
 CARET_R_NAME = 'caret.app'
-PLOTDATA_R_NAME = 'plotdata.app'
+PLOTDATA_R_NAME = 'plotData.app'
 REPORT_R_NAME = 'report.app'
-EFD_IMPORTANCE_R_NAME = 'efdimportance.app'
+EFD_IMPORTANCE_R_NAME = 'variableImportance.app'
 
 EXPLORE_APP = 'EXPLORE_APP'
 PLOTDATA_APP = 'PLOTDATA_APP'

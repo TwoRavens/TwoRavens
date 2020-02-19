@@ -250,9 +250,33 @@ Indicate whether the variable is either continuous or discrete, if it's a numeri
  * **type**: String
  * **possible values**: 'continuous', 'discrete' or 'NA'
 
-### time
+### temporal
 
-Currently not available, it should return the format of timestamp if this variable is a timestamp.
+Whether variable appears to represent points in time
+
+ * **type**: Bool
+
+### timeUnit
+
+When temporal is True, the [format string](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes) if possible
+
+Example: the date value of "2002-03-11" has a format string of "%Y-%m-%d"
+
+See [check_time](https://tworavens.github.io/TwoRavens/Metadata/api_docs/type_guess_util.html#check_time) for details
+
+ * **type**: String/None
+
+### geographic
+
+Whether this variable appears to represent locations
+
+ * **type**: Bool
+
+### locationUnit
+
+When geographic is True, one of: 'US state', 'country', 'country subdivision'
+
+See [check_location](https://tworavens.github.io/TwoRavens/Metadata/api_docs/type_guess_util.html#check_location) for details
 
  * **type**: String/None
 

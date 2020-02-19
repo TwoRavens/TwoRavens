@@ -9,7 +9,7 @@ Updated 7/17/2018.
 
 ```
 docker login registry.datadrivendiscovery.org
-docker pull registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable
+docker pull registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:2019.11.10
 ```
 
 ## Run it with env variable

@@ -20,7 +20,7 @@ def util_results_real_clustered(data_pointer, metadata):
     if not response.success:
         return {KEY_SUCCESS: False, KEY_DATA: response.err_msg}
 
-    results_collection_name = metadata['collectionName'] + '_produce_' + str(metadata['produceId'])
+    results_collection_name = metadata['collectionName'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
 
     mongo_util_base = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
@@ -51,6 +51,7 @@ def util_results_real_clustered(data_pointer, metadata):
         bounds = {}
         response = list(mongo_util_base.run_query([
             *metadata['query'],
+            {"$match": {target: {"$not": {"$type": 2}} for target in metadata['targets']}},
             {"$group": {
                 "_id": 0,
                 **{f'min_{target}': {"$min": f"${target}"} for target in metadata['targets']},
@@ -69,6 +70,7 @@ def util_results_real_clustered(data_pointer, metadata):
 
         # COMPUTE FITTED BOUNDS
         response = list(mongo_util_fitted.run_query([
+            {"$match": {target: {"$not": {"$type": 2}} for target in metadata['targets']}},
             {"$group": {
                 "_id": 0,
                 **{f'min_{target}': {"$min": f"${target}"} for target in metadata['targets']},
@@ -95,6 +97,10 @@ def util_results_real_clustered(data_pointer, metadata):
                     },
                     **{'d3mIndex': 1}
                 }
+            },
+            # ignore records with strings in the target variable
+            {
+                "$match": {target: {"$not": {"$type": 2}} for target in metadata['targets']}
             },
             {
                 "$lookup": {
@@ -160,7 +166,7 @@ def util_results_confusion_matrix(data_pointer, metadata):
     if not response.success:
         return {KEY_SUCCESS: False, KEY_DATA: response.err_msg}
 
-    results_collection_name = metadata['collectionName'] + '_produce_' + str(metadata['produceId'])
+    results_collection_name = metadata['collectionName'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
 
     util = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
@@ -267,7 +273,7 @@ def util_results_importance_efd(data_pointer, metadata):
         metadata['collectionName'],
         data_path=metadata['collectionPath'])
 
-    results_collection_name = metadata['collectionName'] + '_produce_' + str(metadata['produceId'])
+    results_collection_name = metadata['collectionName'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
 
     util = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
@@ -364,7 +370,7 @@ def util_results_importance_efd(data_pointer, metadata):
                     'actual ' + name: f"${name}" for name in metadata['targets']
                 },
                 **{
-                    predictor: 1 for predictor in metadata['predictors']
+                    f"predictor {predictor}": f"${predictor}" for predictor in metadata['predictors']
                 },
                 **{"_id": 0}}
         },
@@ -373,7 +379,7 @@ def util_results_importance_efd(data_pointer, metadata):
                 predictor: [
                     {
                         "$group": {
-                            **{"_id": f'${predictor}', 'count': {"$sum": 1}},
+                            **{"_id": f'$predictor {predictor}', 'count': {"$sum": 1}},
                             **target_aggregator
                         }
                     },
@@ -385,7 +391,7 @@ def util_results_importance_efd(data_pointer, metadata):
                     },
                     {
                         "$project": {
-                            **{predictor: "$_id"},
+                            **{"predictor": "$_id"},
                             **{k: 1 for k in target_aggregator.keys()},
                             **{"_id": 0}
                         }
@@ -393,14 +399,14 @@ def util_results_importance_efd(data_pointer, metadata):
                 ] if is_categorical(predictor, levels) else [
                     {
                         "$bucketAuto": {
-                            "groupBy": f'${predictor}',
+                            "groupBy": f'$predictor {predictor}',
                             "buckets": 100,
                             "output": target_aggregator
                         }
                     },
                     {
                         "$project": {
-                            **{predictor: {"$avg": ["$_id\\.min", "$_id\\.max"]}},
+                            **{"predictor": {"$avg": ["$_id\\.min", "$_id\\.max"]}},
                             **{k: 1 for k in target_aggregator.keys()},
                             **{"_id": 0}
                         }
@@ -442,6 +448,7 @@ def util_results_importance_efd(data_pointer, metadata):
     def kernel_uniform(size):
         return [1] * size
 
+    print(data)
     def smooth(kernel, data, predictor):
         if len(kernel) % 2 != 1:
             raise ValueError('Kernel must be odd-length')
@@ -457,11 +464,11 @@ def util_results_importance_efd(data_pointer, metadata):
         for i in range(len(data)):
             smoothed.append({
                 **{
-                    level: sum(weight * data[clip(i + j_level - offset)][level]
+                    level: sum(weight * (data[clip(i + j_level - offset)][level] or 0)
                                for j_level, weight in enumerate(kernel))
-                    for level in data[i].keys() if level != predictor
+                    for level in data[i].keys() if level != "predictor"
                 },
-                **{predictor: data[i][predictor]}
+                **{"predictor": data[i]["predictor"]}
             })
         return smoothed
 
@@ -482,3 +489,7 @@ def util_results_importance_ice(data_pointer_X, data_pointer_Y, variable):
         left_on='d3mIndex',
         right_on='d3mIndex',
         how='inner').drop(columns=['d3mIndex']).to_dict('records')
+
+
+def mongofy_collection_name(name):
+    return str(name).replace('.', '').replace('$', '').replace('\u0000', '')

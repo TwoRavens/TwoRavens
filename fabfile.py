@@ -83,7 +83,7 @@ def make_d3m_configs_from_files_multiuser_test():
 
 @task
 def make_d3m_configs_from_files_multiuser_test_limited():
-    """11/2019 Make configs from /ravens_volume and loads them to db
+    """1/2020 Make configs from /ravens_volume and loads them to db
     Also make the input/output directories 1-level higher than usual
     """
     clear_d3m_configs()
@@ -93,16 +93,45 @@ def make_d3m_configs_from_files_multiuser_test_limited():
 
     params = dict(is_multi_dataset_demo=True)
 
+
+    selected_datatsets = [\
+      #'20_Ethiopia_Admin_Level_2_sub',
+        'TR50_PRIO_GRID',
+        'TR60_Ethiopia_Small_2017-2018',
+        'TR61_Ethiopia_Large_2017-2018',
+        'TR81_Ethiopia_phemyear',
+        #'TR82_Ethiopia_phemlarge',
+        'TR83_Ethiopia_gdl_sub',
+        #'TR84_Ethiopia_zone_mon',
+        'TR85_Ethiopia_zone_mon_sub',
+        #'TR86_Ethiopia_zone_mon_sub_con',
+        #'TR87_Ethiopia_zone_mon_con',
+        'TR88_Ethiopia_phemclean',
+        'TR89_Ethiopia_zone_mon_sub_fert',
+        #
+        'TR90_Ethiopia_Oromia_1997-2018_April30',
+        'TR91_Acled_et_2011_2020',
+        '185_baseball',
+        '196_autoMpg',
+        # 'LL1_PHEM_weeklyData_malnutrition',
+        'DA_poverty_estimation']
+
+    # -------------------------------
+    # Check if selected datasets are
+    # set by an env variable
+    # -------------------------------
+    env_datasets = os.environ.get(cstatic.TEST_DATASETS, None)
+    if env_datasets:
+        env_datasets = [x.strip()
+                        for x in env_datasets.split()
+                        if len(x.strip()) > 0]
+        if env_datasets:
+            selected_datatsets = env_datasets
+
     # Names of directories of datasets that should be available to users
     #   - This can also be updated in the admin
     #
-    params[cstatic.SELECTED_NAME_LIST] = [#'05_incarceration',
-                                          #'10_state_immigration',
-                                          '185_baseball',
-                                          '196_autoMpg',
-                                          'LL1_PHEM_weeklyData_malnutrition',
-                                          'DA_poverty_estimation',
-                                          ]
+    params[cstatic.SELECTED_NAME_LIST] = selected_datatsets
 
     loader = EnvConfigLoader.make_d3m_test_configs_env_based(\
                     '/ravens_volume/test_data',
@@ -370,6 +399,29 @@ def run_ta2_cmu_choose_config(choice_num=''):
 
         docker_cmd = resp.result_obj
         print('Running command: %s' % docker_cmd)
+        local(docker_cmd)
+    elif resp.err_msg:
+        print(resp.err_msg)
+
+@task
+def run_ta2_nyu_choose_config(choice_num=''):
+    """Pick a config from /ravens_volume and run the Standford TA2"""
+    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
+        (TA2Helper, TA2_NYU)
+
+    resp = TA2Helper.run_ta2_with_dataset( \
+        TA2_NYU,
+        choice_num,
+        run_ta2_stanford_choose_config.__name__)
+
+    if resp.success:
+        stop_ta2_server()
+
+        docker_cmd = resp.result_obj
+        print('-' * 40)
+        print('Run TA2 with command:')
+        print('-' * 40)
+        print(docker_cmd)
         local(docker_cmd)
     elif resp.err_msg:
         print(resp.err_msg)

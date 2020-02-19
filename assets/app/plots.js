@@ -1,9 +1,9 @@
 
 // handles plotting multiple groups at the same time
-export let vegaScatter = (data, xName, yName, groupName, countName, title='') => {
+export let vegaLiteScatter = (data, xName, yName, groupName, countName, title='') => {
 
     return ({
-        "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+        "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
         "description": "A scatterplot.",
         "title": title,
         "autosize": {
@@ -12,15 +12,21 @@ export let vegaScatter = (data, xName, yName, groupName, countName, title='') =>
         },
         "encoding": {
             "color": {"field": groupName, "type": "nominal"},
-            "x": {"field": xName, "type": "quantitative", "axis": {"title": xName}},
-            "y": {"field": yName, "type": "quantitative", "axis": {"title": yName}}
+            "x": {"field": xName, "type": "quantitative", "axis": {"title": xName}, "scale": {"zero": false}},
+            "y": {"field": yName, "type": "quantitative", "axis": {"title": yName}, "scale": {"zero": false}}
         },
 
         "layer": [
             {
+                "selection": {
+                    "grid": {
+                        "type": "interval", "bind": "scales"
+                    }
+                },
                 "data": {
                     "values": data
                 },
+
                 "mark": "point",
                 "encoding": {
                     "tooltip": [
@@ -49,7 +55,91 @@ export let vegaScatter = (data, xName, yName, groupName, countName, title='') =>
     });
 };
 
-export let vegaConfusionMatrix = (data, classes, xName, yName, countName, title) => ({
+export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSectionName, title='') => {
+
+    return ({
+        "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
+        "description": "A scatterplot.",
+        "title": title,
+        "autosize": {
+            "type": "fit",
+            "contains": "padding"
+        },
+        "selection": {
+            "grid": {
+                "type": "interval", "bind": "scales"
+            }
+        },
+        "data": {
+            "values": data
+        },
+        "mark": {
+            "type": "line",
+            // "point": true
+        },
+        "encoding": {
+            "tooltip": [
+                {"field": groupName, "type": "nominal"},
+                {"field": yName, "type": "quantitative"},
+                {"field": splitName, "type": "nominal"},
+                {"field": crossSectionName, "type": "nominal"},
+            ],
+            "color": {"field": groupName, "type": "nominal"},
+            "x": {"field": xName, "type": "quantitative", "axis": {"title": xName}, "scale": {"zero": false}},
+            "y": {"field": yName, "type": "quantitative", "axis": {"title": yName}, "scale": {"zero": false}},
+            "opacity": {"field": splitName, "type": "nominal"},
+            "detail": {"field": crossSectionName, "type": "nominal"}
+        }
+    });
+};
+
+
+export let vegaLiteForecastConfidence = (data, xName, yName, splitName, groupName, crossSectionName, title='') => {
+
+    return ({
+        "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
+        "description": "A scatterplot.",
+        "title": title,
+        "autosize": {
+            "type": "fit",
+            "contains": "padding"
+        },
+        "selection": {
+            "grid": {
+                "type": "interval", "bind": "scales"
+            }
+        },
+        "encoding": {
+            "color": {"field": groupName, "type": "nominal"},
+            "x": {"field": xName, "type": "quantitative", "axis": {"title": xName}, "scale": {"zero": false}}
+        },
+        "data": {
+            "values": data
+        },
+        "layer": [
+            {
+                "mark": {
+                    "type": "errorband",
+                    "extent": "ci"
+                },
+                "encoding": {
+                    "y": {"field": yName, "type": "quantitative", "axis": {"title": yName}, "scale": {"zero": false}}
+                }
+            },
+            {
+                "mark": {
+                    "type": "line",
+                    // "point": true
+                },
+                "encoding": {
+                    "y": {"aggregate": 'mean', "field": yName, "type": "quantitative", "axis": {"title": yName}, "scale": {"zero": false}}
+                }
+            }
+        ]
+    });
+};
+
+export let vegaLiteConfusionMatrix = (data, classes, xName, yName, countName, title) => ({
     "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
     'data': {'values': data},
     'title': title,
@@ -90,7 +180,7 @@ export let vegaConfusionMatrix = (data, classes, xName, yName, countName, title)
 });
 
 // alternative to rug plot
-export let vegaDensityHeatmap = summary => {
+export let vegaLiteDensityHeatmap = summary => {
 
     let pdfPlotX = [...summary.pdfPlotX];
     let pdfPlotY = [...summary.pdfPlotY];
@@ -107,7 +197,7 @@ export let vegaDensityHeatmap = summary => {
     });
 
     return {
-        "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+        "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
         "description": `Densities for ${summary.name}.`,
         'layer': [
             {
@@ -127,3 +217,42 @@ export let vegaDensityHeatmap = summary => {
         ]
     }
 };
+
+export let vegaLiteImportancePlot = (data, comparison) => ({
+    "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
+    "description": `Variable importance scores`,
+    "mark": "bar",
+    "data": {
+        "values": data
+    },
+    "encoding": {
+        "x": {
+            "field": "solution ID",
+            "type": "nominal",
+            "sort": false,
+            "title": ''
+        },
+        [comparison ? "column" : 'x']: {
+            "field": "predictor",
+            "type": "nominal",
+            "header": {"labelAngle": 20},
+            "axis": {"labelAngle": -20},
+            "title": "",
+            "sort": comparison ? [...new Set(data.map(datum => datum.predictor))] : false
+        },
+        "y": {
+            "field": "importance",
+            "type": "quantitative"
+        },
+        "color": {
+            "field": "solution ID",
+            "type": "nominal",
+            "legend": null
+        },
+        "tooltip": [
+            {"field": 'importance', "type": "quantitative"},
+            {"field": 'predictor', "type": "nominal"},
+            {"field": 'solution ID', "type": "nominal"}
+        ]
+    }
+});

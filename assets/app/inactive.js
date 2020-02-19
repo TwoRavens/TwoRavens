@@ -2463,8 +2463,8 @@ function CreateFitDefinition(datasetDocUrl, solutionId) {
 function CreateProblemSchema(problem){
     return {
         about: {
-            problemID: problem.problemID,
-            problemName: problem.problemID,
+            problemId: problem.problemId,
+            problemName: problem.problemId,
             problemDescription: problem.description,
             taskType: d3mTaskType[problem.task],
             problemVersion: '1.0',

@@ -786,7 +786,12 @@ class EventJobUtil(object):
             dict_writer.writeheader()
             dict_writer.writerows(data_source)
 
+        # find first table
         resource = next(res for res in metadata['dataResources'] if res['resType'] == 'table')
+
+        print('test')
+        print(resource)
+        # rewrite colIndex of passed datasetDoc to match actual column order
         column_lookup = {struct['colName']: struct for struct in resource['columns']}
         resource['columns'] = [{**column_lookup[name], 'colIndex': i} for i, name in enumerate(columns)]
 

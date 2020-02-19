@@ -128,13 +128,18 @@ class ResetUtil(BasicErrCheck):
         print('- redis flush too...')
         import shlex, subprocess
 
-        process = subprocess.Popen(shlex.split('redis-cli FLUSHALL'), stdout=subprocess.PIPE)
+
         try:
+            process = subprocess.Popen(shlex.split('redis-cli FLUSHALL'), stdout=subprocess.PIPE)
             presult = process.communicate()
             print('redis flush result: ', presult)
         except ValueError as err_obj:
             print('redis flush ValueError: ', err_obj)
             pass
+        except OSError as err_obj:
+            print('redis flush OSError: ', err_obj)
+            pass
+
 
         # return
 

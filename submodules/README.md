@@ -11,8 +11,28 @@ These repos are incorporated in two ways:
 
 ## Submodule Log
 
+**2/6/2020**
+- Update repository: [ta3ta2-api](https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/tags)
+  - **version**: v2020.1.28
+  - **method of inclusion**
+    - downloaded tagged version manually as zip--it's in a private gitlab
+    - unzip it and rename folder to ta3ta2-api
+    - adding it to the `sys.path` in `settings/base.py`
+    - ran `fab compile_ta3ta2_api`
+    - checked it in
+
+**1/13/2020**
+- Update repository: [ta3ta2-api](https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/tags)
+  - **version**: v2019.12.4
+  - **method of inclusion**
+    - downloaded tagged version manually as zip--it's in a private gitlab
+    - rename to ta3ta2-api
+    - adding it to the `sys.path` in `settings/base.py`
+    - ran `fab compile_ta3ta2_api`
+    - checked it in
+
 **7/10/2019**
-- Update repostiory: [ta3ta2-api](https://gitlab.com/datadrivendiscovery/ta3ta2-api)
+- Update repository: [ta3ta2-api](https://gitlab.com/datadrivendiscovery/ta3ta2-api)
   - **version**: v2019.7.9
   - **method of inclusion**
     - downloaded tagged version manually as zip--it's in a private gitlab
@@ -85,7 +105,7 @@ These repos are incorporated in two ways:
     - `git submodule add https://github.com/TwoRavens/raven-metadata-service.git`
     -
 - Add repository: [ta3ta2-api](https://gitlab.com/datadrivendiscovery/ta3ta2-api)
-  - **version**: v2018.6.2  
+  - **version**: v2018.6.2
   - **method of inclusion**
     - downloaded version manually--it's in a private gitlab
     - adding it to the `sys.path` in `settings/base.py`

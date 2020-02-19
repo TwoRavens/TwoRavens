@@ -256,7 +256,8 @@ export default class ForceDiagram {
                 .container(dom)
                 .subject(() => this.force.find(d3.event.x, d3.event.y))
                 .on("start", () => {
-                    if (Math.sqrt(Math.pow(d3.event.sourceEvent.x - d3.event.subject.x, 2) + Math.pow(d3.event.sourceEvent.y - d3.event.subject.y - 100, 2)) > d3.event.subject.radius * 2) {
+                    let {x: offsetX, y: offsetY} = dom.getBoundingClientRect();
+                    if (Math.sqrt(Math.pow(d3.event.sourceEvent.x - d3.event.subject.x - offsetX, 2) + Math.pow(d3.event.sourceEvent.y - d3.event.subject.y - offsetY, 2)) > d3.event.subject.radius * 2) {
                         setSelectedPebble(undefined);
                         return;
                     }
@@ -650,51 +651,60 @@ let pebbleBuilderArcs = (state, context, newPebbles) => {
 
         // add paths for new nodes
         d3.select(this).selectAll('path')
-            .data(partition(root).descendants())
+            .data(partition(root).descendants(), label => label.data.id)
+            .attr("d", arc)
             .enter()
             .append("path")
             .attr('id', label => 'arc' + label.data.id + pebble)
             .attr('opacity', 0.4)
+            .style("fill", d => {
+                if (d.depth === 0) return 'transparent';
+                return d3.rgb(d.data.attrs.fill)
+            })
             .append("title");
 
-        // add texts for new nodes
-        d3.select(this).selectAll('text')
-            .data(partition(root).descendants())
-            .enter()
-            .append('text')
-            .attr("id", label => 'arcText' + label.data.id + pebble)
-            .attr("x", 6)
-            .attr("dy", d => {
-                let center = (d.x0 + d.x1) / 2;
-                return center > .25 && center < .75 ? -4 : 11.5;
-            })
-            .attr('opacity', 0.8)
-            .append("textPath")
-            .attr("xlink:href", label => '#arc' + label.data.id + pebble)
-            .text(label => label.data.name);
-
-        // update arc sizes
+        // remove paths for old nodes
         d3.select(this).selectAll('path')
+            .data(partition(root).descendants(), label => label.data.id)
+            .exit()
+            .remove();
+
+        // update paths for existing nodes
+        d3.select(this).selectAll('path')
+            .data(partition(root).descendants(), label => label.data.id)
             .on("click", label => label.data.onclick(pebble))
             .on('mouseover', () => state.pebbleEvents.mouseover(pebble))
             .on('mouseout', () => state.pebbleEvents.mouseout(pebble))
             .on('contextmenu', () => state.pebbleEvents.contextmenu(pebble))
             .transition()  // Animate transitions between styles
             .duration(state.selectTransitionDuration)
-            .attr("d", d => {
-                let center = (d.x0 + d.x1) / 2;
-                if (center > .25 && center < .75) {
-                    Object.assign(d, {
-                        x0: d.x1,
-                        x1: d.x0
-                    })
-                }
-                return arc(d);
-            })
-            .style("fill", d => {
-                if (d.depth === 0) return 'transparent';
-                return d3.rgb(d.data.attrs.fill)
-            });
+            .attr("d", arc);
+
+        // add texts for new nodes
+        d3.select(this).selectAll('text')
+            .data(partition(root).descendants(), label => label.data.id)
+            .enter()
+            .append('text')
+            .attr("id", label => 'arcText' + label.data.id + pebble)
+            .attr("x", 6)
+            .attr("dy", 11.5)
+            .attr('opacity', 0.8)
+            .append("textPath")
+            .attr("xlink:href", label => '#arc' + label.data.id + pebble)
+            .text(label => label.data.name);
+
+        // remove text for old nodes
+        d3.select(this).selectAll('text')
+            .data(partition(root).descendants(), label => label.data.id)
+            .exit()
+            .remove();
+
+        // update text for changed nodes
+        d3.select(this).selectAll('textPath')
+            .data(partition(root).descendants(), label => label.data.id)
+            .attr("xlink:href", label => '#arc' + label.data.id + pebble)
+            .text(label => label.data.name);
+
         d3.select(this).selectAll('path').selectAll('title')
             .text(d => d.data.name);
     });

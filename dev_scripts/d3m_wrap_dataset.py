@@ -16,8 +16,8 @@ DTYPES = {
 
 DSV_EXTENSIONS = ['.csv', '.tsv', '.xlsx', '.xls']
 
-DATASET_SCHEMA_VERSION = '3.2.0'
-PROBLEM_SCHEMA_VERSION = '3.2.0'
+DATASET_SCHEMA_VERSION = '4.0.0'
+PROBLEM_SCHEMA_VERSION = '4.0.0'
 
 
 def d3m_wrap_dataset(outputDir, dataPaths, about, problem):
@@ -92,7 +92,11 @@ def d3m_wrap_dataset(outputDir, dataPaths, about, problem):
                 'resID': resourceID,
                 'resPath': outDataPath,
                 'resType': 'table',
-                'resFormat': ['text/csv'],
+                'resFormat': {
+                    "text/csv": [
+                        "csv"
+                    ]
+                },
                 'isCollection': False,
                 'columns': [
                     {
@@ -133,8 +137,7 @@ def d3m_wrap_dataset(outputDir, dataPaths, about, problem):
             'about': {
                 'problemID': problemID,
                 'problemName': problem.get('problemName', about['datasetName'] + ' problem'),
-                'taskType': problem.get('taskType', 'regression'),
-                'taskSubType': problem.get('taskSubType', 'regression'),
+                'taskKeywords': problem.get('taskKeywords', ['classification']),
                 'problemSchemaVersion': PROBLEM_SCHEMA_VERSION,
                 'problemVersion': '1.0'
             },
@@ -175,20 +178,3 @@ def d3m_load_resource(path):
     if 'd3mIndex' not in data:
         data.insert(0, 'd3mIndex', range(len(data)))
     return data
-
-
-if __name__ == '__main__':
-    outputPath = '/home/shoe/TwoRavens/ravens_volume/test_data'
-    resourcePaths = ['/home/shoe/Downloads/gtd_14to17_0718dist.xlsx']
-    about = {
-        'datasetName': 'Global Terrorism Database 2014-2017',
-        'license': 'National Consortium for the Study of Terrorism and Responses to Terrorism (START), University of Maryland. (2018). The Global Terrorism Database (GTD) [Data file]. Retrieved from https://www.start.umd.edu/gtd',
-        'description': 'The Global Terrorism Database (GTD) is an open-source database including information on terrorist events around the world from 1970 through 2017 (with annual updates planned for the future).',
-        'datasetVersion': 'July 2018'
-    }
-
-    problem = {
-        'targets': ['success'],
-        "taskType": "regression",
-    }
-    d3m_wrap_dataset(outputPath, resourcePaths, about, problem)

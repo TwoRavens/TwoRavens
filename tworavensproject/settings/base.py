@@ -9,11 +9,11 @@ https://docs.djangoproject.com/en/1.11/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
+import ast
 import os
 import sys
-from os.path import abspath, dirname, join
+from os.path import abspath, dirname, isdir, join
 from distutils.util import strtobool
-from git import Repo, InvalidGitRepositoryError
 
 from django.urls import reverse_lazy
 
@@ -29,6 +29,36 @@ sys.path.append(TA3TA2_API_DIR)
 
 TWORAVENS_COMMON_DIR = join(BASE_DIR, 'assets', 'common')
 sys.path.append(TWORAVENS_COMMON_DIR)
+
+
+
+FILE_UPLOAD_MAX_MEMORY_SIZE = os.environ.get('FILE_UPLOAD_MAX_MEMORY_SIZE',
+                                             24 * 1024000)   # bytes
+DATA_UPLOAD_MAX_MEMORY_SIZE = FILE_UPLOAD_MAX_MEMORY_SIZE
+
+# -----------------------------------------
+# Directory for user contributed datasets
+# -----------------------------------------
+if os.environ.get('D3MOUTPUTDIR'):
+    TWORAVENS_USER_DATASETS_DIR = join(os.environ.get('D3MOUTPUTDIR'),
+                                       'TwoRavens_user_datasets')
+else:
+    TWORAVENS_USER_DATASETS_DIR = os.environ.get('TWORAVENS_USER_DATASETS_DIR',
+                                                 '/ravens_volume/TwoRavens_user_datasets')
+
+if not isdir(TWORAVENS_USER_DATASETS_DIR):
+    print((f'WARNING: the USER_ADDED_DATASETS_DIR is not'
+           f' available: {TWORAVENS_USER_DATASETS_DIR}'))
+    try:
+        os.makedirs(TWORAVENS_USER_DATASETS_DIR, exist_ok=True)
+        print(f'OK: able to create directory: {TWORAVENS_USER_DATASETS_DIR}')
+    except OSError as err_obj:
+        if not TWORAVENS_USER_DATASETS_DIR:
+            print((f'You must set this env variable to an existing directory'
+                   f' {TWORAVENS_USER_DATASETS_DIR}'))
+        else:
+            print(f'This directory MUST be available {TWORAVENS_USER_DATASETS_DIR}')
+        sys.exit(0)
 
 # -----------------------------------------------------
 # Link to copy of the raven-metadata-service
@@ -84,6 +114,7 @@ INSTALLED_APPS = [
     'tworaven_apps.call_captures', # capture data sent from UI out to rook/TA2
     'tworaven_apps.eventdata_queries', # eventdata API services
     'tworaven_apps.datamart_endpoints', # Datamart connections
+    'tworaven_apps.image_utils', # record user behavior
 
     'tworaven_apps.behavioral_logs', # record user behavior
 
@@ -240,6 +271,7 @@ CSRF_COOKIE_NAME = os.environ.get('CSRF_COOKIE_NAME',
 
 STATIC_URL = '/static/'
 
+ASSETS_DIR_TEST = join(BASE_DIR, 'assets') # only for test! temp!
 STATICFILES_DIRS = [join(BASE_DIR, 'assets')]
 
 
@@ -263,11 +295,37 @@ SESSION_SAVE_EVERY_REQUEST = True
 
 SERVER_SCHEME = 'http'  # or https
 
+# ----------------------------------------------
+# TA2 configurations set by env variables
+# ----------------------------------------------
 
+# Is the D3M TA2 solver enabled?
+#
+TA2_D3M_SOLVER_ENABLED = strtobool(os.environ.get('TA2_D3M_SOLVER_ENABLED', 'True'))
 
-# ---------------------------
+# What is the list of valid Wrapped Solvers?
+#
+# Example of setting by env variable:
+#   export TA2_WRAPPED_SOLVERS='["mlbox", "tpot"]'
+#
+#
+TA2_WRAPPED_SOLVERS_ALL = [
+    "auto_sklearn",
+    # "caret",
+    # "h2o",
+    "ludwig",
+    "mlbox",
+    "tpot",
+    "two-ravens"
+]
+TA2_WRAPPED_SOLVERS = ast.literal_eval(\
+                    os.environ.get('TA2_WRAPPED_SOLVERS', str(TA2_WRAPPED_SOLVERS_ALL)))
+if not isinstance(TA2_WRAPPED_SOLVERS, list):
+    TA2_WRAPPED_SOLVERS = []
+
+# ----------------------------------------------
 # D3M - Config Settings - started winter 2019
-# ---------------------------
+# ----------------------------------------------
 # This switches between 2019 config (True)
 # and the older "search_config.json" file
 #
@@ -392,18 +450,4 @@ DATAMART_SHORT_TIMEOUT = 10 # seconds
 DATAMART_LONG_TIMEOUT = 5 * 60 # 5 minutes
 DATAMART_VERY_LONG_TIMEOUT = 10 * 60 # 8 minutes
 
-# -------------------------
-# Debug show branch name on page
-# -------------------------
-try:
-    repo = Repo(BASE_DIR)
-    GIT_BRANCH_INFO = dict(name=repo.active_branch.name,
-                           commit=repo.head.commit.hexsha)
-except InvalidGitRepositoryError:
-    GIT_BRANCH_INFO = dict(name='(not available)',
-                           commit='(not available)')
-except TypeError:
-    GIT_BRANCH_INFO = dict(name='(not available)',)
-
-
-# print('GIT_BRANCH_INFO', GIT_BRANCH_INFO)
+SORT_BY_GATES_DATASETS = strtobool(os.environ.get('SORT_BY_GATES_DATASETS', 'False'))

@@ -29,7 +29,7 @@ export default class VariableImportance {
                             "mark": "rect",
                             "encoding": {
                                 "x": {
-                                    "field": predictor,
+                                    "field": "predictor",
                                     "type": "nominal",
                                     axis: {labels: axisLabels},
                                     title: false
@@ -39,11 +39,11 @@ export default class VariableImportance {
                                 "tooltip": [
                                     {"field": yLabel, "type": "quantitative", title: 'Probability'},
                                     {"field": variableLabel, "type": "nominal"},
-                                    {"field": predictor, "type": "nominal"}
+                                    {"field": "predictor", "type": "nominal"}
                                 ]
                             }
                         },
-                        {
+                        predictor in problem.levels ? {
                             'mark': 'rect',
                             'data': {
                                 'values': problem.levels[predictor]
@@ -54,7 +54,7 @@ export default class VariableImportance {
                                     'field': 'count',
                                     'type': 'quantitative',
                                     'scale': {
-                                        domain: [0, Math.max(...problem.levels[predictor].map(point => point.count))],
+                                        domain: [0, Math.max(0, ...problem.levels[predictor].map(point => point.count))],
                                         range: [0, 1]
                                     },
                                     'legend': false
@@ -63,7 +63,7 @@ export default class VariableImportance {
                                     {"field": 'count', "type": "quantitative"}
                                 ]
                             }
-                        }
+                        } : {}
                     ]
                 }
             });
@@ -85,12 +85,12 @@ export default class VariableImportance {
                                 "type": "nominal", title: ''
                             },
                             "y": {"field": yLabel, "type": "quantitative"},
-                            "column": {"field": predictor, "type": "ordinal"},
+                            "column": {"field": "predictor", "type": "ordinal"},
                             "color": {"field": variableLabel, "type": "nominal"},
                             "tooltip": [
                                 {"field": yLabel, "type": "quantitative"},
                                 {"field": variableLabel, "type": "nominal"},
-                                {"field": predictor, "type": "nominal"}
+                                {"field": "predictor", "type": "nominal"}
                             ]
                         }
                     }
@@ -98,7 +98,7 @@ export default class VariableImportance {
             }
         });
 
-        let predictorSupport = data.map(point => point[predictor]);
+        let predictorSupport = data.map(point => point["predictor"]);
         let predictorMin = Math.min(...predictorSupport);
         let predictorMax = Math.max(...predictorSupport);
 
@@ -111,10 +111,15 @@ export default class VariableImportance {
                 'vconcat': [
                     {
                         'data': {'values': data},
+                        "selection": {
+                            "grid": {
+                                "type": "interval", "bind": "scales"
+                            }
+                        },
                         "mark": "line",
                         "encoding": {
                             "x": {
-                                "field": predictor,
+                                "field": "predictor",
                                 "type": "quantitative",
                                 scale: {domain: [predictorMin, predictorMax]},
                                 axis: {labels: densities === undefined ? true : axisLabels},
@@ -126,7 +131,7 @@ export default class VariableImportance {
                             "tooltip": [
                                 {"field": yLabel, "type": "quantitative", title: 'Probability'},
                                 {"field": variableLabel, "type": "nominal"},
-                                {"field": predictor, "type": "quantitative"}
+                                {"field": "predictor", "type": "quantitative"}
                             ]
                         }
                     }
@@ -138,7 +143,8 @@ export default class VariableImportance {
                             'x': {
                                 'field': predictor,
                                 'type': 'quantitative',
-                                'scale': {domain: [predictorMin, predictorMax]},
+                                'scale': {"domain": {"selection": "grid"}},
+                                // 'scale': {domain: [predictorMin, predictorMax]},
                                 'title': predictor
                             },
                             'x2': {'field': 'to', 'type': 'quantitative'},
@@ -161,10 +167,15 @@ export default class VariableImportance {
                 'vconcat': [
                     {
                         'data': {'values': data},
+                        "selection": {
+                            "grid": {
+                                "type": "interval", "bind": "scales"
+                            }
+                        },
                         "mark": "line",
                         "encoding": {
                             "x": {
-                                "field": predictor, "type": "quantitative",
+                                "field": "predictor", "type": "quantitative",
                                 scale: {domain: [predictorMin, predictorMax]},
                                 axis: {labels: densities === undefined ? true : axisLabels},
                                 title: densities === undefined ? predictor : false
@@ -174,7 +185,7 @@ export default class VariableImportance {
                             "tooltip": [
                                 {"field": yLabel, "type": "quantitative", title: target},
                                 {"field": variableLabel, "type": "nominal"},
-                                {"field": predictor, "type": "quantitative"}
+                                {"field": "predictor", "type": "quantitative"}
                             ]
                         }
                     }
@@ -186,7 +197,8 @@ export default class VariableImportance {
                             'x': {
                                 'field': predictor,
                                 'type': 'quantitative',
-                                'scale': {domain: [predictorMin, predictorMax]},
+                                // 'scale': {domain: [predictorMin, predictorMax]},
+                                'scale': {"domain": {"selection": "grid"}},
                                 'title': predictor
                             },
                             'x2': {'field': 'to', 'type': 'quantitative'},
@@ -236,7 +248,7 @@ export default class VariableImportance {
                             ]
                         }
                     },
-                    {
+                    predictor in problem.levels ? {
                         'mark': 'rect',
                         'data': {
                             'values': problem.levels[predictor]
@@ -256,7 +268,7 @@ export default class VariableImportance {
                                 {"field": 'count', "type": "quantitative"}
                             ]
                         }
-                    }
+                    } : {}
                 ]
             }
         });
@@ -285,6 +297,11 @@ export default class VariableImportance {
                     'vconcat': [
                         {
                             data: {values: data},
+                            "selection": {
+                                "grid": {
+                                    "type": "interval", "bind": "scales"
+                                }
+                            },
                             "mark": {
                                 type: 'line',
                                 point: true
@@ -315,7 +332,8 @@ export default class VariableImportance {
                                 'x': {
                                     'field': predictor,
                                     'type': 'quantitative',
-                                    'scale': {domain: [predictorMin, predictorMax]},
+                                    'scale': {"domain": {"selection": "grid"}},
+                                    // 'scale': {domain: [predictorMin, predictorMax]},
                                     'title': predictor
                                 },
                                 'x2': {'field': 'to', 'type': 'quantitative'},
@@ -340,6 +358,11 @@ export default class VariableImportance {
                 'vconcat': [
                     {
                         data: {values: data},
+                        "selection": {
+                            "grid": {
+                                "type": "interval", "bind": "scales"
+                            }
+                        },
                         "mark": "line",
                         "encoding": {
                             "x": {
@@ -366,7 +389,8 @@ export default class VariableImportance {
                             'x': {
                                 'field': predictor,
                                 'type': 'quantitative',
-                                'scale': {domain: [predictorMin, predictorMax]},
+                                'scale': {"domain": {"selection": "grid"}},
+                                // 'scale': {domain: [predictorMin, predictorMax]},
                                 'title': predictor
                             },
                             'x2': {'field': 'to', 'type': 'quantitative'},
@@ -429,6 +453,11 @@ export default class VariableImportance {
                                     }
                                 ])
                             },
+                            "selection": {
+                                "grid": {
+                                    "type": "interval", "bind": "scales"
+                                }
+                            },
                             "mark": {
                                 'type': "trail",
                                 'color': 'gray'
@@ -462,7 +491,8 @@ export default class VariableImportance {
                                 'x': {
                                     'field': predictor,
                                     'type': 'quantitative',
-                                    'scale': {domain: [predictorMin, predictorMax]},
+                                    'scale': {"domain": {"selection": "grid"}},
+                                    // 'scale': {domain: [predictorMin, predictorMax]},
                                     'title': predictor
                                 },
                                 'x2': {'field': 'to', 'type': 'quantitative'},
@@ -487,6 +517,11 @@ export default class VariableImportance {
                         'data': {'values': data},
                         "layer": [
                             {
+                                "selection": {
+                                    "grid": {
+                                        "type": "interval", "bind": "scales"
+                                    }
+                                },
                                 "mark": {
                                     'type': "line",
                                     'color': 'gray'
@@ -506,8 +541,8 @@ export default class VariableImportance {
                             {
                                 "mark": {
                                     'type': "line",
-                                    'color': common.selVarColor,
-                                    'size': 5
+                                    'color': '#ED7B65',
+                                    'size': 6
                                 },
                                 "encoding": {
                                     "x": {
@@ -531,7 +566,8 @@ export default class VariableImportance {
                             'x': {
                                 'field': predictor,
                                 'type': 'quantitative',
-                                'scale': {domain: [predictorMin, predictorMax]},
+                                'scale': {"domain": {"selection": "grid"}},
+                                // 'scale': {domain: [predictorMin, predictorMax]},
                                 'title': predictor
                             },
                             'x2': {'field': 'to', 'type': 'quantitative'},

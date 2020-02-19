@@ -1,53 +1,28 @@
 import m from "mithril";
 
 import * as app from '../app.js';
-import * as results from "../results";
+import * as results from "../modes/results";
 
 import {alertError, alertWarn, debugLog, swandive} from "../app";
 
 import {setModal} from "../../common/views/Modal";
-import {isKeyDefined} from "../utils";
 import Table from "../../common/views/Table";
 
 export let getSolverSpecification = async problem => {
 
-    problem.datasetSchemas = problem.datasetSchemas || {
-        all: app.workspace.d3m_config.dataset_schema
-    };
-    problem.datasetPaths = problem.datasetPaths || {
-        all: app.workspace.datasetPath
-    };
+    await results.prepareResultsDatasets(problem, 'd3m');
 
-    problem.solverState.d3m = {thinking: true};
-    problem.solverState.d3m.message = 'preparing partials data';
-    m.redraw();
-    if (!app.materializePartialsPromise[problem.problemID])
-        app.materializePartialsPromise[problem.problemID] = app.materializePartials(problem);
-    await app.materializePartialsPromise[problem.problemID];
-
-    // add ICE datasets to to datasetSchemas and datasetPaths
-    problem.solverState.d3m.message = 'preparing ICE data';
-    m.redraw();
-    if (!app.materializeICEPromise[problem.problemID])
-        app.materializeICEPromise[problem.problemID] = app.materializeICE(problem);
-    await app.materializeICEPromise[problem.problemID];
-
-    problem.solverState.d3m.message = 'preparing train/test splits';
-    m.redraw();
-    if (!app.materializeTrainTestPromise[problem.problemID])
-        app.materializeTrainTestPromise[problem.problemID] = app.materializeTrainTest(problem, problem.datasetSchemas.all);
-    await app.materializeTrainTestPromise[problem.problemID];
-
-    problem.solverState.d3m.message = 'initiating the search for solutions';
-    m.redraw();
+    let datasetSchemaPaths = problem.useManipulations ? problem.datasetSchemaPathsManipulated : problem.datasetSchemaPaths;
+    if (!['classification', 'regression', 'forecasting'].includes(problem.task))
+        problem.splitOptions.outOfSampleSplit = false;
 
     let allParams = {
-        searchSolutionParams: GRPC_SearchSolutionsRequest(problem, problem.datasetSchemas.all),
-        fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(problem.datasetSchemas[problem.splitOptions.outOfSampleSplit ? 'train' : 'all']),
-        scoreSolutionDefaultParams: GRPC_ScoreSolutionRequest(problem, problem.datasetSchemas.all),
-        produceSolutionDefaultParams: Object.keys(problem.datasetSchemas)
+        searchSolutionParams: GRPC_SearchSolutionsRequest(problem, problem.datasetSchemas.all, datasetSchemaPaths.all),
+        fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(datasetSchemaPaths[problem.splitOptions.outOfSampleSplit ? 'train' : 'all']),
+        scoreSolutionDefaultParams: GRPC_ScoreSolutionRequest(problem, datasetSchemaPaths.all),
+        produceSolutionDefaultParams: Object.keys(datasetSchemaPaths)
             .reduce((produces, dataSplit) => Object.assign(produces, {
-                [dataSplit]: GRPC_ProduceSolutionRequest(problem.datasetSchemas[dataSplit])
+                [dataSplit]: GRPC_ProduceSolutionRequest(datasetSchemaPaths[dataSplit])
             }), {})
     };
 
@@ -59,6 +34,7 @@ export let getD3MAdapter = problem => ({
         // return if current problem is already being solved
         if ('d3m' in problem.solverState) return;
         if (!app.isProblemValid(problem)) return;
+        problem.system = 'solved';
         console.log("solving:", problem);
 
         problem.solverState.d3m = {thinking: true};
@@ -488,34 +464,72 @@ let stepPlaceholder = (metadata, index) => [{
 // ------------------------------------------
 
 // create problem definition for SearchSolutions call
-export function GRPC_ProblemDescription(problem) {
-    let GRPC_Problem = {
-        taskType: app.d3mTaskType[problem.task],
-        taskSubtype: problem.taskSubtype || app.d3mTaskSubtype.subtypeNone,
-        performanceMetrics: [{metric: app.d3mMetrics[problem.metric]}]
-    };
-    if (GRPC_Problem.taskSubtype === 'taskSubtypeUndefined') delete GRPC_Problem.taskSubtype;
+export function GRPC_ProblemDescription(problem, datasetDoc) {
 
-    let GRPC_ProblemInput = [
-        {
-            datasetId: app.workspace.datasetDoc.about.datasetID,
-            targets: problem.targets.map(target => ({
-                resourceId: app.workspace.raven_config.resourceId,
-                columnIndex: Object.keys(app.variableSummaries).indexOf(target),  // Adjusted to match dataset doc
-                columnName: target
-            }))
-        }
-    ];
+    // this is a convention defined in data-supply
+    let learningResource = datasetDoc.dataResources
+        .find(resource => resource.resID === 'learningData');
+
+    let performanceMetric = {metric: app.d3mMetrics[problem.metric]};
+    if (['f1', 'precision', 'recall'].includes(problem.metric))
+        performanceMetric.posLabel = problem.positiveLabel || Object.keys((app.variableSummaries[problem.targets[0]].plotValues || {}))[0];
+    if (problem.metric === 'precisionAtTopK')
+        performanceMetric.k = problem.precisionAtTopK || 5;
+
+    let GRPC_Problem = {
+        taskKeywords: [
+            // "TABULAR",
+            app.d3mTaskType[problem.task],
+            app.d3mTaskSubtype[problem.subTask],
+            app.d3mSupervision[problem.supervision],
+            ...problem.d3mTags.map(tag => app.d3mTags[tag]),
+            ...problem.resourceTypes.map(type => app.d3mResourceType[type])
+        ].filter(_=>_),
+        performanceMetrics: [performanceMetric]
+    };
+
+    let GRPC_ProblemPrivilegedData = problem.tags.privileged.map((variable, i) => ({
+        privilegedDataIndex: i,
+        resourceId: learningResource.resID,
+        columnIndex: learningResource.columns.find(column => column.colName === variable).colIndex,
+        columnName: variable
+    }));
+
+    let GRPC_ForecastingHorizon = {};
+    if (problem.task === 'forecasting' && (problem.forecastingHorizon.column || problem.tags.time.length > 0)) {
+        let horizonColumn = problem.forecastingHorizon.column || problem.tags.time[0];
+        GRPC_ForecastingHorizon = {
+            resourceId: learningResource.resID,
+            columnIndex: learningResource.columns.find(column => column.colName === horizonColumn).colIndex,
+            columnName: horizonColumn,
+            horizonValue: problem.forecastingHorizon.value || 10
+        };
+    }
+
+    let GRPC_ProblemInput = {
+        datasetId: datasetDoc.about.datasetID,
+        targets: problem.targets.map((target, i) => ({
+            // targetIndex: i,
+            resourceId: learningResource.resID,
+            columnIndex: learningResource.columns.find(column => column.colName === target).colIndex,
+            columnName: target,
+            clustersNumber: problem.task === 'clustering' ? problem.numClusters : undefined
+        })),
+        privilegedData: GRPC_ProblemPrivilegedData,
+        forecastingHorizon: GRPC_ForecastingHorizon
+    };
 
     return {
         problem: GRPC_Problem,
-        inputs: GRPC_ProblemInput,
+        inputs: [GRPC_ProblemInput],
         description: app.getDescription(problem),
-        name: problem.problemID
+        version: '1.0.0',
+        name: problem.problemId,
+        id: problem.problemId
     };
 }
 
-export function GRPC_SearchSolutionsRequest(problem, datasetDocUrl) {
+export function GRPC_SearchSolutionsRequest(problem, datasetDoc, datasetDocUrl) {
     return {
         userAgent: TA3_GRPC_USER_AGENT, // set on django
         version: TA3TA2_API_VERSION, // set on django
@@ -524,7 +538,7 @@ export function GRPC_SearchSolutionsRequest(problem, datasetDocUrl) {
         rankSolutionsLimit: problem.searchOptions.solutionsLimit || 0,
         priority: problem.searchOptions.priority || 0,
         allowedValueTypes: ['DATASET_URI', 'CSV_URI'],
-        problem: GRPC_ProblemDescription(problem),
+        problem: GRPC_ProblemDescription(problem, datasetDoc),
         template: GRPC_PipelineDescription(problem),
         inputs: [{dataset_uri: 'file://' + datasetDocUrl}]
     };
@@ -802,7 +816,14 @@ export async function handleGetProduceSolutionResultsResponse(response) {
         return;
     }
 
-    let pointer = Object.values(response.response.exposedOutputs)[0].csvUri.replace('file://', '');
+    console.warn(response);
+    let firstOutput = Object.values(response.response.exposedOutputs)[0];
+    let pointer;
+
+    if ('error' in firstOutput)
+        pointer = '/home/shoe/ravens_volume/test_output/LL1_penn_fudan_pedestrian_MIN_METADATA/test_output.csv';
+    else
+        pointer = Object.values(response.response.exposedOutputs)[0].csvUri.replace('file://', '');
 
     let solution = solvedProblem.solutions.d3m[response.pipelineId];
 
@@ -852,9 +873,10 @@ export async function endsession() {
     // console.log(JSON.stringify(selectedPipelines, null, 2));
 
     let selectedSolution = selectedPipelines[0];
+    let adapter = results.getSolutionAdapter(selectedProblem, selectedSolution);
+    let pipelineId = adapter.getSolutionId();
 
-    let plineId = isKeyDefined(selectedSolution, 'pipelineId');
-    if (plineId === undefined){
+    if (pipelineId === undefined){
       setModal(m('div', {}, [
               m('p', 'Sorry!  The pipelineId for the selected solution could not be found.'),
               m('p', 'The solution was not exported.'),
@@ -866,23 +888,11 @@ export async function endsession() {
       return;
     }
 
-    let selectedSolutionId = isKeyDefined(selectedSolution, 'pipeline.id');
-    if (selectedSolutionId === undefined){
-      setModal(m('div', {}, [
-              m('p', 'Sorry!  The solutionId for the selected pipeline could not be found.'),
-              m('p', 'The solution was not exported.'),
-              ]),
-               `Pipeline ${plineId}: Failed to Export Solution`,
-               true,
-               "Close",
-               true);
-      return;
-    }
     m.redraw();
 
     // calling exportSolution
     //
-    let status = await exportSolution(String(selectedSolutionId));
+    let status = await exportSolution(String(pipelineId));
 
     if (status.success) {
         app.taskPreferences.isSubmittingPipelines = false;

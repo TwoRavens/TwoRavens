@@ -7,7 +7,8 @@
     "x": {
       "bin": true,
       "field": "tworavensX",
-      "type": "quantitative"
+      "type": "quantitative",
+      "scale": {"zero":  false}
     },
     "y": {
       "aggregate": "count",

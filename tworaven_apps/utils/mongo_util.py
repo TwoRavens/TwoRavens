@@ -32,10 +32,10 @@ def infer_type(value):
     except ValueError:
         pass
 
-    try:
-        return parser.parse(value)
-    except ValueError:
-        pass
+#     try:
+#         return parser.parse(value)
+#     except ValueError:
+#         pass
 
     if not len(value):
         return None

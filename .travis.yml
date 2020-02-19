@@ -4,6 +4,9 @@
   - gh-pages
   - /.*/
 
+#compiler:
+#- clang
+
 language: python
 
 python:
@@ -23,8 +26,8 @@ install:
 script:
   - echo $TRAVIS_BRANCH;
   # Run django tests.  (Note django settings are set by env variable)
-  - python manage.py test tworaven_apps.ta2_interfaces tworaven_apps.configurations tworaven_apps.user_workspaces tworaven_apps.behavioral_logs
-  - coverage run --source=tworaven_apps.ta2_interfaces manage.py test tworaven_apps.ta2_interfaces tworaven_apps.user_workspaces tworaven_apps.behavioral_logs
+  - python manage.py test tworaven_apps.ta2_interfaces tworaven_apps.configurations tworaven_apps.user_workspaces tworaven_apps.behavioral_logs tworaven_apps.image_utils
+  - coverage run --source=tworaven_apps.ta2_interfaces manage.py test tworaven_apps.ta2_interfaces tworaven_apps.user_workspaces tworaven_apps.image_utils tworaven_apps.behavioral_logs
   #- coverage run --source=tworaven_apps.raven_auth manage.py test tworaven_apps.raven_auth
 
 after_success:
@@ -45,11 +48,11 @@ after_success:
   # -------------------------------------
   # Temp push, to test new multiuser
   # -------------------------------------
-  #- if [ "$TRAVIS_BRANCH" == "758-automl-dockerfile" ]; then
-  #  docker build -t tworavens/ravens-main:dec-test .;
-  #  docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-  #  docker push tworavens/ravens-main:dec-test;
-  #  fi
+  - if [ "$TRAVIS_BRANCH" == "x803-pybase" ]; then
+    docker build -t tworavens/ravens-main:comfrey2 .;
+    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+    docker push tworavens/ravens-main:comfrey2;
+    fi
   # -------------------------------------
   # Temp push, to test new k8s deploy
   # -------------------------------------

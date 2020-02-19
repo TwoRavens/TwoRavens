@@ -2,7 +2,7 @@
 An object with some basic methods for capturing errors
 """
 
-class BasicErrCheck(object):
+class BasicErrCheck():
 
     error_found = False
     error_message = None

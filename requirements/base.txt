@@ -3,7 +3,7 @@
 #
 #-r ../submodules/raven-metadata-service/requirements/10_preprocess.txt
 
-Django==2.1.11
+Django==2.2.10
 django-model-utils==3.0.0
 django-webpack-loader==0.6.0
 jsonfield==2.0.2
@@ -55,9 +55,6 @@ social-auth-core==1.7.0
 #
 pylint>=2.3.1
 
-# to show git branch name on page
-GitPython==2.1.11
-
 # for dataset loading
 -e git+https://gitlab.com/datadrivendiscovery/d3m.git@devel#egg=d3m
 
@@ -74,11 +71,11 @@ scipy>=1.3.1
 
 # TwoRavens preprocess
 #
-tworavens-preprocess==0.1.4
+tworavens-preprocess==1.1.2
 
 dill
 
-# for MLBox solver
+# for wrapped solvers
 tensorflow==1.13.1
 mlbox
 ludwig
@@ -86,3 +83,9 @@ h2o
 -e git+https://github.com/automl/auto-sklearn.git@b5b16f398cc218dfdaf991fa3638782756e8222b#egg=auto_sklearn
 mljar-supervised
 tpot
+
+# for tworavens solver
+statsmodels==0.11.0
+
+# for image problems
+Pillow==7.0.0

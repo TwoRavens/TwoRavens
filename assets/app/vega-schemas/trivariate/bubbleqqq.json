@@ -4,8 +4,8 @@
   "data": {"url": "tworavensData"},
   "mark": "point",
   "encoding": {
-    "x": {"field": "tworavensX", "type": "quantitative"},
-    "y": {"field": "tworavensY", "type": "quantitative"},
-    "size": {"field": "tworavensZ", "type": "quantitative"}
+    "x": {"field": "tworavensX", "type": "quantitative", "scale": {"zero":  false}},
+    "y": {"field": "tworavensY", "type": "quantitative", "scale": {"zero":  false}},
+    "size": {"field": "tworavensZ", "type": "quantitative", "scale": {"zero":  false}}
   }
 }

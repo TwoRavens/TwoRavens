@@ -1,36 +1,79 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
-   "description": "Crossfilter binned barplots.",
+  "description": "Crossfilter binned barplots.",
   "data": {
     "url": "tworavensData"
   },
-  "repeat": {"column": ["tworavensVars"]},
+  "repeat": {
+    "column": [
+      "tworavensVars"
+    ]
+  },
   "spec": {
-    "layer": [{
-      "selection": {
-        "brush": {"type": "interval", "encodings": ["x"]}
+    "layer": [
+      {
+        "selection": {
+          "brush": {
+            "type": "interval",
+            "encodings": [
+              "x"
+            ]
+          }
+        },
+        "mark": "bar",
+        "encoding": {
+          "x": {
+            "field": {
+              "repeat": "column"
+            },
+            "bin": {
+              "maxbins": 20
+            },
+            "type": "quantitative",
+            "scale": {
+              "zero": false
+            }
+          },
+          "y": {
+            "aggregate": "count",
+            "type": "quantitative"
+          }
+        }
       },
-      "mark": "bar",
-      "encoding": {
-        "x": {
-          "field": {"repeat": "column"},
-          "bin": {"maxbins": 20},
-          "type": "quantitative"
-        },
-        "y": {"aggregate": "count", "type": "quantitative"}
+      {
+        "transform": [
+          {
+            "filter": {
+              "selection": "brush"
+            }
+          }
+        ],
+        "mark": "bar",
+        "encoding": {
+          "x": {
+            "field": {
+              "repeat": "column"
+            },
+            "bin": {
+              "maxbins": 20
+            },
+            "type": "quantitative",
+            "scale": {
+              "zero": false
+            }
+          },
+          "y": {
+            "aggregate": "count",
+            "type": "quantitative",
+            "scale": {
+              "zero": false
+            }
+          },
+          "color": {
+            "value": "goldenrod"
+          }
+        }
       }
-    }, {
-      "transform": [{"filter": {"selection": "brush"}}],
-      "mark": "bar",
-      "encoding": {
-        "x": {
-          "field": {"repeat": "column"},
-          "bin": {"maxbins": 20},
-          "type": "quantitative"
-        },
-        "y": {"aggregate": "count", "type": "quantitative"},
-        "color": {"value": "goldenrod"}
-      }
-    }]
+    ]
   }
 }

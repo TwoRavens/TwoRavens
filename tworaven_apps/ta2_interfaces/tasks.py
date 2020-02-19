@@ -2,7 +2,12 @@
 send a gRPC command that has streaming results
 capture the results in the db as StoredResponse objects
 """
-from datetime import datetime
+import copy
+import uuid
+from random import random
+
+import math
+
 from django.conf import settings
 from django.http import JsonResponse
 
@@ -36,11 +41,10 @@ from os import path
 import os
 import json
 from d3m.container.dataset import Dataset
-import numpy as np
-import math
 
 from sklearn.model_selection import train_test_split
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 
 #
 # Import Tasks to SearchSolutions/GetSearchSolutionsResults,
@@ -52,6 +56,11 @@ from tworaven_apps.ta2_interfaces.ta2_search_solutions_helper import \
 from tworaven_apps.ta2_interfaces.ta2_fit_solution_helper import FitSolutionHelper
 from tworaven_apps.ta2_interfaces.ta2_score_solution_helper import ScoreSolutionHelper
 from tworaven_apps.user_workspaces.models import UserWorkspace
+
+from tworaven_solver import approx_seconds, get_date
+import csv
+from dateutil import parser
+from collections import deque
 
 
 @celery_app.task(ignore_result=True)
@@ -192,83 +201,127 @@ def stream_and_store_results(raven_json_str, stored_request_id,
 @celery_app.task()
 def split_dataset(configuration, workspace):
 
+    split_options = configuration.get('split_options', {})
+    problem = configuration.get('problem')
+
     dataset_schema = json.load(open(configuration['dataset_schema'], 'r'))
     resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
 
-    dataset = Dataset.load(f'file://{configuration["dataset_schema"]}')
-    dataframe = dataset[resource_schema['resID']]
+    keep_variables = None
+    cross_section_date_limits = None
+    inferred_freq = None
+    dtypes = {}
+    # rewrite datasetDoc in output datasets if new problem metadata is supplied
+    keep_variables = list({
+        *problem.get('indexes', ['d3mIndex']),
+        *problem['predictors'],
+        *problem['targets']
+    })
+    all_variables = pd.read_csv(configuration['dataset_path'], nrows=1).columns.tolist()
+    # preserve column order, and only keep variables that already existed
+    keep_variables = sorted(list(i for i in keep_variables if i in all_variables), key=lambda x: all_variables.index(x))
 
-    # rows with NaN values become object rows, which may contain multiple types. The NaN values become empty strings
-    # this converts '' to np.nan in non-nominal columns, so that nan may be dropped
-    # perhaps in a future version of d3m, the dataset loader could use pandas extension types instead of objects
-    nominals = configuration.get('nominals', [])
-    for column in [col for col in dataframe.columns.values if col not in nominals]:
-        dataframe[column].replace('', np.nan, inplace=True)
+    passthrough_roles = [
+        'multiIndex', 'key', 'interval', 'boundingPolygon',
+        'edgeSource', "directedEdgeSource", "undirectedEdgeSource", "multiEdgeSource", "simpleEdgeSource",
+        "edgeTarget", "directedEdgeTarget", "undirectedEdgeTarget", "multiEdgeTarget", "simpleEdgeTarget"
+    ]
 
-    dataframe.dropna(inplace=True)
-    dataframe.reset_index(drop=True, inplace=True)
+    map_roles = {
+        "indexes": 'index',
+        'predictors': 'attribute',
+        'targets': 'suggestedTarget',
+        'crossSection': 'suggestedGroupingKey',
+        'location': 'locationIndicator',
+        'boundary': 'boundaryIndicator',
+        'time': 'timeIndicator',
+        'weights': 'instanceWeight',
+        'privileged': 'suggestedPriviligedData'
+    }
 
-    DEFAULT_RATIO = .7
-    train_test_ratio = configuration.get('train_test_ratio', DEFAULT_RATIO)
-    if not (0 >= train_test_ratio > 1):
-        train_test_ratio = DEFAULT_RATIO
+    def update_roles(prev_roles, col_name):
+        roles = [i for i in prev_roles if i in passthrough_roles]
 
-    random_seed = configuration.get('random_seed', 0)
-    sample_limit = configuration.get('sample_limit', 1000)
-    temporal_variable = configuration.get('temporal_variable')
+        for role_name in map_roles:
+            if col_name in problem[role_name]:
+                roles.append(map_roles[role_name])
 
-    # TODO: use d3m splitting primitive
-    splits_file_path = configuration.get('splits_file_path')
-    if splits_file_path:
-        splits_dataframe = pd.read_csv(splits_file_path)
-        train_indices = set(splits_dataframe[splits_dataframe['type'] == 'TRAIN']['d3mIndex'].tolist())
-        test_indices = set(splits_dataframe[splits_dataframe['type'] == 'TEST']['d3mIndex'].tolist())
+        return roles
 
-        splits = {
-            'train': dataframe[dataframe['d3mIndex'].astype(int).isin(train_indices)],
-            'test': dataframe[dataframe['d3mIndex'].astype(int).isin(test_indices)],
-            'stratify': False
-        }
+    def update_col_schema(i, col_name):
+        col_schema = next(col_schema for col_schema in resource_schema['columns'] if col_schema['colName'] == col_name)
+        col_schema['colIndex'] = i
+        if configuration.get('update_roles'):
+            col_schema['role'] = update_roles(col_schema['role'], col_name)
+        return col_schema
 
-    # split dataset along temporal variable
-    elif temporal_variable:
-        num_test_records = math.ceil(train_test_ratio * len(dataframe))
-        sorted_index = [
-            x for _, x in sorted(
-                zip(np.array(dataframe[temporal_variable]), np.arange(0, len(dataframe))),
-                # TODO: more robust sorting for temporal data (parse to datetime?)
-                key=lambda pair: pair[0])
-        ]
-        splits = {
-            'train': dataframe.iloc[sorted_index[:-num_test_records]],
-            'test': dataframe.iloc[sorted_index[-num_test_records:]],
-            'stratify': False
-        }
+    # modify in place
+    resource_schema['columns'] = [update_col_schema(i, col_name) for i, col_name in enumerate(keep_variables)]
 
-    else:
-        shuffle = configuration.get('shuffle', True)
-        stratified = configuration.get('stratified')
+    # WARNING: dates are assumed to be monotonically increasing
+    if problem.get('taskType') == 'FORECASTING' and problem.get('time'):
+        time_column = problem['time'][0]
+        dtypes[time_column] = str
+        for cross_section in problem.get('crossSection', []):
+            dtypes[cross_section] = str
 
-        def run_split():
-            try:
-                dataframe_train, dataframe_test = train_test_split(
-                    dataframe,
-                    train_size=train_test_ratio,
-                    shuffle=shuffle,
-                    stratify=stratified,
-                    random_state=random_seed)
-                return {'train': dataframe_train, 'test': dataframe_test, 'stratify': stratified}
-            except TypeError:
-                dataframe_train, dataframe_test = train_test_split(
-                    dataframe,
-                    shuffle=shuffle,
-                    train_size=train_test_ratio,
-                    random_state=random_seed)
-                return {'train': dataframe_train, 'test': dataframe_test, 'stratify': False}
+        time_format = problem.get('time_format')
 
-        splits = run_split()
+        cross_section_date_limits = {}
+        time_buffer = []
+        candidate_frequencies = set()
 
-    def write_dataset(role, writable_dataframe):
+        data_file_generator = pd.read_csv(
+            configuration['dataset_path'],
+            chunksize=10 ** 5,
+            usecols=keep_variables,
+            dtype=dtypes)
+
+        infer_count = 0
+        for dataframe_chunk in data_file_generator:
+
+            dataframe_chunk[time_column] = dataframe_chunk[time_column].apply(
+                lambda x: get_date(x, time_format=time_format))
+            dataframe_chunk = dataframe_chunk.sort_values(by=[time_column])
+
+            for _, row in dataframe_chunk.iterrows():
+        # with open(configuration['dataset_path'], 'r') as infile:
+        #     reader = csv.DictReader(infile)
+        #     for row in reader:
+                date = row[time_column]
+                if not date:
+                    continue
+
+                # infer frequency up to 100 times
+                if infer_count < 1000000:
+
+                    buffer_is_empty = len(time_buffer) == 0
+                    date_is_newer = len(time_buffer) > 0 and time_buffer[-1] < date
+
+                    if buffer_is_empty or date_is_newer:
+                        time_buffer.append(date)
+                        if len(time_buffer) > 3:
+                            del time_buffer[0]
+
+                        # at minimum three time points are needed to infer a date offset frequency
+                        if len(time_buffer) == 3:
+                            infer_count += 1
+                            candidate_frequency = pd.infer_freq(time_buffer)
+                            if candidate_frequency:
+                                candidate_frequencies.add(candidate_frequency)
+
+                # collect the highest date within each cross section
+                section = tuple(row[col] for col in problem.get('crossSection', []))
+                cross_section_date_limits.setdefault(section, date)
+                cross_section_date_limits[section] = max(cross_section_date_limits[section], date)
+
+        # if data has a trio of evenly spaced records
+        if candidate_frequencies:
+            # sort inferred frequency by approximate time durations, select shortest
+            inferred_freq = sorted([(i, approx_seconds(i)) for i in candidate_frequencies], key=lambda x: x[1])[0][0]
+            inferred_freq = pd.tseries.frequencies.to_offset(inferred_freq)
+
+    def get_dataset_paths(role):
         dest_dir_info = create_destination_directory(workspace, name=role)
         if not dest_dir_info[KEY_SUCCESS]:
             return JsonResponse(get_json_error(dest_dir_info.err_msg))
@@ -278,30 +331,236 @@ def split_dataset(configuration, workspace):
         shutil.rmtree(dest_directory)
         shutil.copytree(workspace.d3m_config.training_data_root, dest_directory)
         os.remove(csv_path)
-        writable_dataframe.to_csv(csv_path, index=False)
+        role_dataset_schema_path = path.join(dest_directory, 'datasetDoc.json')
 
-        return path.join(dest_directory, 'datasetDoc.json'), csv_path
+        # the datasetID should be unique
+        role_dataset_schema = copy.deepcopy(dataset_schema)
+        # role_dataset_schema['about']['datasetID'] = f"{role_dataset_schema['about']['datasetID']}_{role}_{uuid.uuid4().hex[:5]}"
+        # role_dataset_schema['about']['digest'] = uuid.uuid4().hex
 
-    all_datasetDoc, all_datasetCsv = write_dataset('all', dataframe)
-    train_datasetDoc, train_datasetCsv = write_dataset('train', splits['train'])
-    test_datasetDoc, test_datasetCsv = write_dataset('test', splits['test'])
+        with open(role_dataset_schema_path, 'w') as dataset_schema_file:
+            json.dump(role_dataset_schema, dataset_schema_file)
 
-    dataset_docs = {
-        'all': all_datasetDoc,
-        'train': train_datasetDoc,
-        'test': test_datasetDoc
-    }
+        return role_dataset_schema_path, role_dataset_schema, csv_path
 
-    dataset_paths = {
-        'all': all_datasetCsv,
-        'train': train_datasetCsv,
-        'test': test_datasetCsv
-    }
+    all_datasetDoc_path, all_datasetDoc, all_datasetCsv = get_dataset_paths('all')
+    dataset_schemas = {'all': all_datasetDoc}
+    dataset_schema_paths = {'all': all_datasetDoc_path}
+    dataset_paths = {'all': all_datasetCsv}
+    dataset_stratified = {}
+
+    if split_options.get('outOfSampleSplit'):
+        train_datasetDoc_path, train_datasetDoc, train_datasetCsv = get_dataset_paths('train')
+        test_datasetDoc_path, test_datasetDoc, test_datasetCsv = get_dataset_paths('test')
+
+        dataset_schemas = {
+            **dataset_schemas,
+            'train': train_datasetDoc,
+            'test': test_datasetDoc
+        }
+
+        dataset_schema_paths = {
+            **dataset_schema_paths,
+            'train': train_datasetDoc_path,
+            'test': test_datasetDoc_path
+        }
+
+        dataset_paths = {
+            **dataset_paths,
+            'train': train_datasetCsv,
+            'test': test_datasetCsv,
+        }
+
+        dataset_stratified = {
+            'train': split_options.get('stratified'),
+            'test': split_options.get('stratified')
+        }
+
+    DEFAULT_RATIO = .7
+    train_test_ratio = split_options.get('trainTestRatio', DEFAULT_RATIO)
+    if not (0 >= train_test_ratio > 1):
+        train_test_ratio = DEFAULT_RATIO
+
+    random_seed = split_options.get('randomSeed', 0)
+
+    with open(configuration['dataset_path'], 'r') as infile:
+        header_line = next(infile)
+        row_count = sum(1 for _ in infile)
+
+    for split_name in ['train', 'test', 'all']:
+        pd.DataFrame(data=[], columns=keep_variables).to_csv(dataset_paths[split_name], index=False)
+
+    # by default, the split is trivially forever None, which exhausts all zips
+    splits_file_generator = iter(lambda: None, 1)
+    if split_options.get('splitsDir') and split_options.get('splitsFile'):
+        splits_file_path = f"{split_options['splitsDir']}/{split_options['splitsFile']}"
+        splits_file_generator = pd.read_csv(splits_file_path, chunksize=10 ** 5)
+
+    data_file_generator = pd.read_csv(
+        configuration['dataset_path'],
+        chunksize=10 ** 5,
+        usecols=keep_variables,
+        dtype=dtypes)
+    row_count_chunked = 0
+
+    # TODO: adjust chunksize based on number of columns
+    for dataframe, dataframe_split in zip(
+            data_file_generator,
+            splits_file_generator):
+
+        # rows with NaN values become object rows, which may contain multiple types. The NaN values become empty strings
+        # this converts '' to np.nan in non-nominal columns, so that nan may be dropped
+        # perhaps in a future version of d3m, the dataset loader could use pandas extension types instead of objects
+        # nominals = problem.get('categorical', [])
+        # for column in [col for col in dataframe.columns.values if col not in nominals]:
+        #     dataframe[column].replace('', np.nan, inplace=True)
+        #
+        # dataframe.dropna(inplace=True)
+        # dataframe.reset_index(drop=True, inplace=True)
+
+        # max count of each split ['all', 'test', 'train']
+        max_count = int(split_options.get('maxRecordCount', 5e4))
+        chunk_count = len(dataframe)
+        sample_count = int(max_count / row_count * chunk_count)
+
+        if split_options.get('outOfSampleSplit'):
+            if dataframe_split:
+                train_indices = set(dataframe_split[dataframe_split['type'] == 'TRAIN']['d3mIndex'].tolist())
+                test_indices = set(dataframe_split[dataframe_split['type'] == 'TEST']['d3mIndex'].tolist())
+
+                splits = {
+                    'train': dataframe[dataframe['d3mIndex'].astype(int).isin(train_indices)],
+                    'test': dataframe[dataframe['d3mIndex'].astype(int).isin(test_indices)],
+                    'stratified': False
+                }
+
+            # split dataset along temporal variable
+            elif problem['taskType'] == 'FORECASTING':
+                horizon = problem.get('forecastingHorizon', {}).get('value', 10)
+                if not horizon:
+                    horizon = 10
+
+                if cross_section_date_limits and inferred_freq:
+                    time_format = problem.get('time_format')
+                    time_column = problem['time'][0]
+
+                    cross_section_max_count = int(max_count / len(cross_section_date_limits))
+                    horizon = min(cross_section_max_count, horizon)
+
+                    def in_test(row):
+                        section = tuple(row[col] for col in problem.get('crossSection', []))
+                        date = get_date(row[time_column], time_format)
+                        if not date:
+                            return False
+                        max_date = cross_section_date_limits[section]
+                        # print('interval:', max_date - inferred_freq * horizon, max_date)
+                        return max_date - inferred_freq * horizon <= date <= max_date
+
+                    def in_train(row):
+                        section = tuple(row[col] for col in problem.get('crossSection', []))
+                        date = get_date(row[time_column], time_format)
+                        if not date:
+                            return False
+                        max_date = cross_section_date_limits[section] - inferred_freq * horizon
+                        # TODO: lower bound isn't being set, due to risk of time underflow
+                        return date < max_date
+
+                    splits = {
+                        'train': dataframe.loc[dataframe.apply(in_train, axis=1)],
+                        'test': dataframe.loc[dataframe.apply(in_test, axis=1)],
+                        'stratified': False
+                    }
+                else:
+                    train_idx_min = row_count - max_count - horizon
+                    test_idx_min = row_count - horizon
+
+                    def clamp(idx):
+                        return min(len(dataframe), max(0, int(idx)))
+
+                    splits = {
+                        'train': dataframe.iloc[
+                                 clamp(train_idx_min - row_count_chunked)
+                                 :clamp(test_idx_min - row_count_chunked)],
+                        'test': dataframe.iloc[
+                                clamp(test_idx_min - row_count_chunked)
+                                :clamp(len(dataframe))],
+                        'stratified': False
+                    }
+
+            else:
+                shuffle = split_options.get('shuffle', True)
+                stratified = split_options.get('stratified')
+
+                def run_split():
+                    try:
+                        dataframe_train, dataframe_test = train_test_split(
+                            dataframe,
+                            train_size=train_test_ratio,
+                            shuffle=shuffle,
+                            stratified=stratified,
+                            random_state=random_seed)
+                        return {'train': dataframe_train, 'test': dataframe_test, 'stratified': stratified}
+                    except TypeError:
+                        dataframe_train, dataframe_test = train_test_split(
+                            dataframe,
+                            shuffle=shuffle,
+                            train_size=train_test_ratio,
+                            random_state=random_seed)
+                        return {'train': dataframe_train, 'test': dataframe_test, 'stratified': False}
+
+                splits = run_split()
+
+            for split_name in ['train', 'test']:
+                if problem['taskType'] != 'FORECASTING':
+                    if sample_count < len(splits[split_name]):
+                        splits[split_name] = splits[split_name].sample(sample_count)
+
+                splits[split_name].to_csv(dataset_paths[split_name], mode='a', header=False, index=False)
+                dataset_stratified[split_name] = dataset_stratified[split_name] and splits['stratified']
+
+        row_count_chunked += len(dataframe)
+        if problem['taskType'] != 'FORECASTING':
+            if sample_count < chunk_count:
+                dataframe = dataframe.sample(sample_count)
+
+        dataframe.to_csv(dataset_paths['all'], mode='a', header=False, index=False)
+
+    def get_mode(x):
+        mode = pd.Series.mode(x)
+        if len(mode):
+            return mode[0]
+    # aggregate so that each cross section contains one observation at each time point
+    if problem.get('taskType') == 'FORECASTING' and problem.get('time'):
+        for split_name in dataset_paths:
+
+            # data no longer needs to be chunked, it should be small enough (unless there are a large number of dupe records)
+            dataframe = pd.read_csv(
+                dataset_paths[split_name],
+                dtype=dtypes)
+
+            key_order = dataframe.columns.values
+
+            group_keys = [problem['time'][0], *problem.get('crossSection', [])]
+            other_keys = [i for i in dataframe.columns.values if i not in group_keys]
+
+            grouped = dataframe.groupby(group_keys)
+            aggregated = grouped.aggregate(
+                {variable: pd.Series.mean if is_numeric_dtype(variable) else get_mode
+                 for variable in other_keys})
+            aggregated.reset_index(inplace=True)
+
+            # reindex if aggregation shortened the dataframe
+            if len(dataframe) != len(aggregated):
+                aggregated[problem['indexes'][0]] = range(len(aggregated))
+
+            aggregated = aggregated.reindex(columns=key_order, copy=False)
+            aggregated.to_csv(dataset_paths[split_name], index=False)
 
     return {
-        'dataset_schemas': dataset_docs,
+        'dataset_schemas': dataset_schemas,
+        'dataset_schema_paths': dataset_schema_paths,
         'dataset_paths': dataset_paths,
-        'stratified': splits['stratify']
+        'stratified': dataset_stratified
     }
 
 
@@ -323,10 +582,19 @@ def create_destination_directory(user_workspace, name):
     return {KEY_SUCCESS: True, KEY_DATA: dest_dir_path}
 
 
-
 @celery_app.task
-def create_partials_datasets(configuration, workspace):
+def create_partials_datasets(configuration, workspace_id):
+    """Create partials datasets"""
     print(configuration)
+
+    try:
+        workspace = UserWorkspace.objects.get(pk=workspace_id)
+    except UserWorkspace.DoesNotExist:
+        return {
+            KEY_SUCCESS: False,
+            KEY_DATA: f' UserWorkspace not found for id {workspace_id}.'
+        }
+
     MAX_DATASET_SIZE = 50
     MAX_DOMAIN_SIZE = 100
     # load dataframe and dataset schema

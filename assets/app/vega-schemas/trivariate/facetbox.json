@@ -57,7 +57,7 @@
           "type": "quantitative",
           "axis": {
             "title": "tworavensY"
-          }
+          }, "scale": {"zero":  false}
         },
         "y2": {
           "field": "lowerBox",
@@ -77,7 +77,8 @@
       "encoding": {
         "y": {
           "field": "upperBox",
-          "type": "quantitative"
+          "type": "quantitative",
+          "scale": {"zero":  false}
         },
         "y2": {
           "field": "upperWhisker",
@@ -97,7 +98,8 @@
       "encoding": {
         "y": {
           "field": "lowerBox",
-          "type": "quantitative"
+          "type": "quantitative",
+          "scale": {"zero":  false}
         },
         "y2": {
           "field": "upperBox",
@@ -120,7 +122,8 @@
       "encoding": {
         "y": {
           "field": "midBox",
-          "type": "quantitative"
+          "type": "quantitative",
+          "scale": {"zero":  false}
         },
         "x": {
           "field": "tworavensX",

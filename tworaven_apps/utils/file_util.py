@@ -1,8 +1,9 @@
 """Wrap file/dir functions for error checks"""
 import os
-from os.path import join, isfile
+from os.path import join, isdir, isfile
 import shutil
 from tworaven_apps.utils.json_helper import json_loads
+from tworaven_apps.utils.random_info import get_timestamp_string
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
 
@@ -19,6 +20,19 @@ def write_file(fpath, doc_content):
 
     return ok_resp('File created: %s' % fpath)
 
+def create_directory_add_timestamp(new_dir, exist_ok=True):
+    """Create a directory structure with the final folder being a timestamp """
+
+    new_dir_with_timestamp = join(new_dir, get_timestamp_string())
+    try:
+        os.makedirs(new_dir_with_timestamp, exist_ok=exist_ok)
+    except OSError as err_obj:
+        user_msg = ('Failed create directory: %s. \n%s' % (new_dir, err_obj))
+        return err_resp(user_msg)
+
+    return ok_resp(new_dir_with_timestamp)
+
+
 def create_directory(new_dir, exist_ok=True):
     """Create a directory"""
     try:
@@ -27,7 +41,7 @@ def create_directory(new_dir, exist_ok=True):
         user_msg = ('Failed create directory: %s. \n%s' % (new_dir, err_obj))
         return err_resp(user_msg)
 
-    return ok_resp('Directory created: %s' % new_dir)
+    return ok_resp(new_dir)
 
 def move_file(src_file, dest_file):
     """Move a file"""
@@ -42,6 +56,21 @@ def move_file(src_file, dest_file):
         return err_resp(user_msg)
 
     return ok_resp('File copied to: %s' % dest_file)
+
+def remove_directory(dir_path):
+    """Delete a directory"""
+    if isdir(dir_path):
+
+        try:
+            shutil.rmtree(dir_path)
+            return ok_resp(f'Directory removed {dir_path}')
+        except TypeError as err_obj:
+            return err_resp(f'Failed to remove directory. {err_obj}')
+        except FileNotFoundError as err_obj:
+            return err_resp(f'Directory not found: {err_obj}')
+
+    return ok_resp(f'Not a directory {dir_path}')
+
 
 def read_file_contents(fpath, as_dict=True):
     """Given a valid filepath, read the file and return it.
@@ -62,7 +91,7 @@ def read_file_contents(fpath, as_dict=True):
 
     return json_loads(contents)
 
-    
+
 def read_file_rows(data_filepath, num_rows=100):
     """Initial use is for dataset preview"""
     if not isfile(data_filepath):

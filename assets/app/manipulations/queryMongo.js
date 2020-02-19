@@ -1,5 +1,5 @@
 import jsep from 'jsep';
-import {alignmentData} from "../app";
+import {alignmentData, generateID, getPredictorVariables} from "../app";
 
 // functions for generating database queries
 // subset queries are built from manipulations pipelines. An additional menu step may be added too
@@ -645,8 +645,20 @@ export function buildAggregation(unitMeasures, accumulations) {
                     ]
                 }
             },
+            'discrete': data => {
+                columnsNonDyad.push(data['column']);
+                unit[data['column']] = `$${data['column']}`
+            }
         },
         'accumulator': {
+            'push': data => {
+                columnsAccum.push(data['column']);
+                event[data['column']] = {$push: `$${data['column']}`}
+            },
+            'first': data => {
+                columnsAccum.push(data['column']);
+                event[data['column']] = {$first: `$${data['column']}`}
+            },
             'discrete': (data) => {
                 let selections = new Set(data.children.map(child => child.name));
 
@@ -886,6 +898,11 @@ export function buildMenu(step) {
 
     if (metadata.type === 'data') {
         let subset = [];
+        if (metadata.dropNA) subset.push({
+            $match: metadata.dropNA.reduce((query, variable) => Object.assign(query, {
+                [variable]: {$ne: null}
+            }), {})
+        });
         if (metadata.skip) subset.push({$skip: metadata.skip});
         if (metadata.limit) subset.push({$limit: metadata.limit});
         if (metadata.sample) subset.push({$sample: {size: metadata.sample}});
@@ -1060,5 +1077,25 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
                     : struct.colName === 'd3mIndex' ? 'index' : 'attribute'
             ]
         }));
+
+    let add = (collection, obj) => !collection.includes(obj) && collection.push(obj);
+
+    [
+        [getPredictorVariables(problem), 'attribute'],
+        [problem.targets, 'suggestedTarget'],
+        [problem.tags.privileged, 'suggestedPrivilegedData'],
+        [problem.tags.crossSection, 'suggestedGroupingKey'],
+        [problem.tags.boundary, 'boundaryIndicator'],
+        [problem.tags.location, 'locationIndicator'],
+        [problem.tags.time, 'timeIndicator'],
+        [problem.tags.weights, 'instanceWeight'],
+        [problem.tags.indexes, 'index']
+    ].forEach(pair => pair[0]
+        .filter(variable => doc.dataResources[tableResourceIndex].columns
+            .find(column => column.colName === variable))
+        .forEach(variable => add(doc.dataResources[tableResourceIndex].columns
+            .find(column => column.colName === variable).role, pair[1])));
+
+    doc.about.datasetID = doc.about.datasetID + '_' + generateID(String(Math.random()));
     return doc;
 };

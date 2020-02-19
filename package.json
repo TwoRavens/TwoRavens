@@ -40,7 +40,6 @@
     "octicons": "^8.5.0",
     "popper.js": "^1.15.0",
     "randomatic": "^3.1.1",
-    "ttab": "^0.6.1",
     "vega": "^4.4.0",
     "vega-embed": "^3.30.0",
     "vega-lite": "^3.4.0"
@@ -52,7 +51,11 @@
     "babel-preset-es2015": "^6.24.1",
     "css-loader": "^2.1.1",
     "extract-text-webpack-plugin": "^2.1.0",
+    "npm-platform-dependencies": "^0.1.0",
     "webpack": "^2.7.0",
     "webpack-bundle-tracker": "^0.4.3"
+  },
+  "darwinDependencies": {
+    "ttab": "^0.6.1"
   }
 }

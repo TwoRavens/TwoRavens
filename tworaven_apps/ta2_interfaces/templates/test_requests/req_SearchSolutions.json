@@ -9,8 +9,9 @@
    ],
    "problem":{
       "problem":{
-         "taskType":"REGRESSION",
-         "taskSubtype":"MULTIVARIATE",
+          "taskKeywords": [
+              "REGRESSION"
+          ],
          "performanceMetrics":[
             {
                "metric":"ROOT_MEAN_SQUARED_ERROR"

@@ -151,10 +151,6 @@ urlpatterns = (
          views_non_streaming_requests.view_solution_export3,
          name='SolutionExport3'),
 
-    path(r'UpdateProblem',
-         views_non_streaming_requests.view_update_problem,
-         name='UpdateProblem'),
-
     path(r'ListPrimitives',
          views_non_streaming_requests.view_list_primitives,
          name='ListPrimitives'),

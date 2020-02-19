@@ -36,6 +36,8 @@ urlpatterns = [
 
     url(r'^api/', include('tworaven_apps.api_docs.urls')),
 
+    url(r'^image-utils/', include('tworaven_apps.image_utils.urls')),
+
     # social auth
     #
     url('oauth/', include('social_django.urls', namespace='social')),

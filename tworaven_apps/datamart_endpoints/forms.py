@@ -26,8 +26,10 @@ class DatamartSourceBaseForm(forms.Form):
 
         return source
 
+
 class DatamartSearchByDatasetForm(DatamartSourceBaseForm):
-    pass
+    dataset_path = forms.CharField(required=True, widget=forms.Textarea)
+
 
 class DatamartUploadForm(forms.Form):
 

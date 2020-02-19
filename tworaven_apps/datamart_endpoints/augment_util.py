@@ -144,9 +144,9 @@ class AugmentUtil(BasicErrCheck):
     def augment_isi_file(self):
         """Augment the file via the ISI API"""
 
-        self.add_err_msg(('ISI Augment is disabled!!!!'
-                          ' (augment_util.augment_isi_file)'))
-        return False
+        # self.add_err_msg(('ISI Augment is disabled!!!!'
+        #                   ' (augment_util.augment_isi_file)'))
+        # return False
 
         if self.has_error():
             return False
@@ -165,20 +165,29 @@ class AugmentUtil(BasicErrCheck):
 
         augment_info = self.datamart_util.datamart_augment(\
                             self.user_workspace,
-                            self.augment_params['data_path'],
+                            self.augment_params[dm_static.KEY_DATA_PATH],
                             search_result_json,
-                            self.augment_params['left_columns'],
-                            self.augment_params['right_columns'],
-                            exact_match=self.augment_params['exact_match'],
+                            exact_match=self.augment_params.get('exact_match'),
                             **extra_params)
 
         if not augment_info.success:
             self.add_err_msg(augment_info.err_msg)
             return False
 
-        # print('augment_info', augment_info.result_obj)
+        augment_dict = augment_info.result_obj
 
-        self.augment_new_filepath = augment_info.result_obj
+        keys_to_check = [dm_static.KEY_DATA_PATH,
+                         dm_static.KEY_DATASET_DOC_PATH]
+        for key in keys_to_check:
+            if key not in augment_dict:
+                user_msg = (f'Key "{key}" not found in the NYU augment_dict.'
+                            f' Keys: {augment_dict.keys()}')
+                self.add_err_msg(user_msg)
+                return False
+
+        self.augment_new_filepath = augment_dict[dm_static.KEY_DATA_PATH]
+        self.augment_new_datasetdoc = augment_dict[dm_static.KEY_DATASET_DOC_PATH]
+
         return True
 
 
@@ -256,7 +265,7 @@ class AugmentUtil(BasicErrCheck):
         keys_to_check = [dm_static.KEY_DATA_PATH,
                          dm_static.KEY_DATASET_DOC_PATH]
         for key in keys_to_check:
-            if not key in augment_dict:
+            if key not in augment_dict:
                 user_msg = (f'Key "{key}" not found in the NYU augment_dict.'
                             f' Keys: {augment_dict.keys()}')
                 self.add_err_msg(user_msg)
@@ -314,6 +323,9 @@ class AugmentUtil(BasicErrCheck):
                     ('The dataset has been augmented '
                      'and a new workspace created'),
                     msg_cnt=99,
-                    data=dict(workspace_json_string=ws_string_info.result_obj))
+                    data={
+                        'workspace_json_string': ws_string_info.result_obj,
+                        'augment_params': self.augment_params
+                    })
         ws_msg.send_message(self.websocket_id)
         LOGGER.info('(5c) sent!')
