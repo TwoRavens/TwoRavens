@@ -547,6 +547,8 @@ export async function download(collection_name, query) {
 export async function reset() {
 
     let scorchTheEarth = () => {
+
+        console.log('---- scorchTheEarth ----');
         manipulations.length = 0;
 
         selectedVariables.clear();

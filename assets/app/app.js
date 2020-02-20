@@ -75,7 +75,7 @@ export let peekMouseUp = () => {
 };
 
 export let peekData;
-export let peekId = 'tworavens';  
+export let peekId = 'tworavens';
 
 let peekLimit = 100;  // how many records to load at a time
 let peekSkip = 0;  // how many records have already been loaded
@@ -594,7 +594,12 @@ function connectWebsocket() {
     setInterval(check, 10000);
 }
 
-document.addEventListener("DOMContentLoaded", connectWebsocket);
+// For EventData, do not connect websockets (at least not yet)
+//
+if (!IS_EVENTDATA_DOMAIN){
+  document.addEventListener("DOMContentLoaded", connectWebsocket);
+}
+
 export let streamMsgCnt = 0;
 //  messages received.
 //
