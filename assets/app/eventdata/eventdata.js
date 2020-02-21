@@ -21,6 +21,7 @@ export let eventdataSubsetCount = 1;
 export let genericMetadata = {};
 
 export let manipulations = [];
+window.manipulations = manipulations;
 
 export let setMetadata = (data) => Object.keys(data).forEach(key =>
     Object.keys(data[key]).forEach(identifier => ({
@@ -506,17 +507,11 @@ export async function submitSubset() {
         preferences: subsetPreferences[selectedSubsetName]
     };
 
-    console.log('looseSteps 1: ' + looseSteps['pendingSubset']);
-
     let success = await loadMenuEventData([...manipulations, looseSteps['pendingSubset']], newMenu, {recount: true, requireMatch: true});
 
-    console.log('--- Did loadMenuEventData work? ' + success + ' ---');
     if (success) {
-        console.log('manipulations 1 ' + JSON.stringify(manipulations));
-        console.log('looseSteps 1: ' + JSON.stringify(looseSteps['pendingSubset']));
 
         manipulations.push(looseSteps['pendingSubset']);
-        console.log('manipulations 2 ' + JSON.stringify(manipulations));
 
         looseSteps['pendingSubset'] = {
             type: 'subset',
@@ -525,10 +520,6 @@ export async function submitSubset() {
             nodeId: 1,
             groupId: 1
         };
-        console.log('looseSteps 2: ' + JSON.stringify(looseSteps['pendingSubset']));
-
-        console.log('manipulations 3 ' + JSON.stringify(manipulations));
-
 
         // clear all other subset data. Note this is intentionally mutating the object, not rebinding it
         Object.keys(subsetData)

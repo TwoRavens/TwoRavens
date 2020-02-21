@@ -51,7 +51,7 @@ export default class Body_EventData {
         }
 
         // all eventdata manipulations stored in one manipulations key
-        eventdata.manipulations = [];
+        // eventdata.manipulations = [];
 
         looseSteps['pendingSubset'] = {
             type: 'subset',
@@ -612,7 +612,6 @@ export default class Body_EventData {
             common.setPanelOcclusion('right', window.innerWidth < 1200 ? `calc(${common.panelMargin}*2)` : '250px');
             return;
         }
-
         return m(Panel, {
                 id: 'rightPanelMenu',
                 side: 'right',
