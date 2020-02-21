@@ -100,13 +100,6 @@ export let setSelectedDataset = (key) => {
 };
 
 
-/*
-*  Variables related to API info window
-*/
-export let isEvtDataInfoWindowOpen = false;
-// Open/close modal window
-export let setEvtDataInfoWindowOpen = (boolVal) => isEvtDataInfoWindowOpen = boolVal;
-
 
 // previous dataset and alignment logs are used for the re-alignment modal
 export let previousSelectedDataset;
