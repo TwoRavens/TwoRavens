@@ -500,7 +500,10 @@ export async function loadMenuEventData(abstractPipeline, menu, {recount, requir
     return Boolean(data);
 }
 
-// locks a subset manipulation step as a 'query', relevant to eventdata only
+/* -------------------------------------------------------
+  Submit a staged subset.
+  -> Triggered by the right panel "Update" button
+ ------------------------------------------------------- */
 export async function submitSubset() {
 
     let newMenu = {
@@ -510,9 +513,18 @@ export async function submitSubset() {
         preferences: subsetPreferences[selectedSubsetName]
     };
 
+    console.log('looseSteps 1: ' + looseSteps['pendingSubset']);
+
     let success = await loadMenuEventData([...manipulations, looseSteps['pendingSubset']], newMenu, {recount: true, requireMatch: true});
+
+    console.log('--- Did loadMenuEventData work? ' + success + ' ---');
     if (success) {
+        console.log('manipulations 1 ' + JSON.stringify(manipulations));
+        console.log('looseSteps 1: ' + JSON.stringify(looseSteps['pendingSubset']));
+
         manipulations.push(looseSteps['pendingSubset']);
+        console.log('manipulations 2 ' + JSON.stringify(manipulations));
+
         looseSteps['pendingSubset'] = {
             type: 'subset',
             id: eventdataSubsetCount++,
@@ -520,12 +532,18 @@ export async function submitSubset() {
             nodeId: 1,
             groupId: 1
         };
+        console.log('looseSteps 2: ' + JSON.stringify(looseSteps['pendingSubset']));
+
+        console.log('manipulations 3 ' + JSON.stringify(manipulations));
+
 
         // clear all other subset data. Note this is intentionally mutating the object, not rebinding it
         Object.keys(subsetData)
             .filter(subset => subset !== newMenu.name)
             .forEach(subset => delete subsetData[subset]);
         m.redraw();
+    } else {
+      console.log('loadMenuEventData Failed!!')
     }
 }
 

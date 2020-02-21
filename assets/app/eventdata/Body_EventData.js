@@ -141,6 +141,13 @@ export default class Body_EventData {
                 ]),
               m('hr'),
               m('div', [
+                  m('b', 'eventdata.subsetPreferences: '),
+                  m('div',
+                    m('pre', `${JSON.stringify(eventdata.subsetPreferences, null, 4)}`)
+                  ),
+                ]),
+              m('hr'),
+              m('div', [
                   m('b', 'eventdata.Manipulations: '),
                   m('div',
                     m('pre', `${JSON.stringify(eventdata.manipulations, null, 4)}`)
@@ -152,7 +159,7 @@ export default class Body_EventData {
                   m('div',
                     m('pre', `${JSON.stringify(looseSteps, null, 4)}`)
                   ),
-                ]),                
+                ]),
               m('hr'),
               m('div', [
                   m('b', 'eventdata.subsetData: '),
@@ -782,12 +789,15 @@ export default class Body_EventData {
                         : !eventdata.aggregationStaged || looseSteps['eventdataAggregate'].measuresAccum.length === 0,
                     onclick: async () => {
                         eventdata.setLaddaSpinner('btnUpdate', true);
-                        await {'subset': eventdata.submitSubset, 'aggregate': eventdata.submitAggregation}[eventdata.selectedMode]();
+                        await {'subset': eventdata.submitSubset,
+                               'aggregate': eventdata.submitAggregation}[eventdata.selectedMode]();
+
                         eventdata.setLaddaSpinner('btnUpdate', false);
 
                         // weird hack, unsetting ladda unsets the disabled attribute. But it should still be disabled
-                        if (eventdata.selectedMode === 'subset')
-                            document.getElementById('btnUpdate').disabled = looseSteps['pendingSubset'].abstractQuery.length === 0;
+                        if (eventdata.selectedMode === 'subset'){
+                          document.getElementById('btnUpdate').disabled =  looseSteps['pendingSubset'].abstractQuery.length === 0;
+                        }
                     }
                 }, 'Update')
                 // -------------------------
