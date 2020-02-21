@@ -14,6 +14,54 @@ export let setEvtDataInfoWindowOpen = (boolVal) => isEvtDataInfoWindowOpen = boo
 
 
 /*
+*  Variables related to API info window
+*/
+export let isGenericMetadataInfoWindowOpen = false;
+// Open/close modal window
+export let setGenericMetadataInfoWindowOpen = (boolVal) => isGenericMetadataInfoWindowOpen = boolVal;
+
+
+/*
+ * Show GenericMetadata Modal Window
+ */
+export let getModalGenericMetadata = () => {
+
+  return isGenericMetadataInfoWindowOpen && m(ModalVanilla, {
+      id: "modalEventDataInfo",
+      setDisplay: () => {
+        setGenericMetadataInfoWindowOpen(false);
+      },
+    },
+    // Row 1 - info
+    m('div', {'class': 'container-fluid'},
+      m('div', {'class': 'row'},
+        m('div', [
+            m('b', 'eventdata.genericMetadata'),
+            m('p', {}, 'All available eventdata datasets and type formats'),
+            m('div',
+              m('pre', `${JSON.stringify(eventdata.genericMetadata, null, 4)}`)
+            ),
+          ]),
+      )
+    ),
+    // Row 2 - info
+    m('div', {'class': 'row'},
+      m('div', {'class': 'col-sm text-left'},
+        // Close
+        m(ButtonPlain, {
+          id: 'btnCloseModalEventDataInfo',
+          class: 'btn-sm btn-primary',
+          onclick: _ => {
+            setGenericMetadataInfoWindowOpen(false);}
+          },
+          'Close'),
+        )
+      )
+  ) // end: ModalVanilla
+} // end: getModalGenericMetadata
+
+
+/*
  * Show EventData Info
  */
 export let getModalEventDataInfo = () => {
@@ -39,7 +87,7 @@ export let getModalEventDataInfo = () => {
           id: 'btnCloseModalEventDataInfo',
           class: 'btn-sm btn-primary',
           onclick: _ => {
-            eventdata.setEvtDataInfoWindowOpen(false);}
+            setEvtDataInfoWindowOpen(false);}
           },
           'Close'),
         )
@@ -126,13 +174,7 @@ let modalCol2 = () => {
             ),
           ]),
         m('hr'),
-        m('div', [
-            m('b', 'eventdata.genericMetadata'),
-            m('p', {}, 'All available eventdata datasets and type formats'),
-            m('div',
-              m('pre', `${JSON.stringify(eventdata.genericMetadata, null, 4)}`)
-            ),
-          ]),
+
       ]
     )
 }

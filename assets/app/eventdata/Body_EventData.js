@@ -5,7 +5,7 @@ import * as tour from "./tour";
 import '../../css/eventdata.css'
 
 import {looseSteps, mongoURL} from "../app";
-import {getModalEventDataInfo, isEvtDataInfoWindowOpen, setEvtDataInfoWindowOpen} from "./modelEventDataInfo";
+import {getModalEventDataInfo, isEvtDataInfoWindowOpen, setEvtDataInfoWindowOpen, getModalGenericMetadata, isGenericMetadataInfoWindowOpen, setGenericMetadataInfoWindowOpen} from "./modelEventDataInfo";
 
 import * as queryAbstract from '../manipulations/queryAbstract';
 import * as queryMongo from '../manipulations/queryMongo';
@@ -221,6 +221,17 @@ export default class Body_EventData {
                         m.redraw();
                 }},
               'Info'),
+            m(Button, {
+                class: `btn-sm ${isGenericMetadataInfoWindowOpen ? 'active' : ''}`,
+
+                style: {'margin-right': '6px',
+                        'margin-top': '4px',
+                        'margin-left': '6px'},
+                onclick: _ => {
+                        setGenericMetadataInfoWindowOpen(true);
+                        m.redraw();
+                }},
+              'Generic Metadata'),
             m("#recordBar", {style: {display: "inline-block", float: 'right'}}, [
 
                 // -------------------------
@@ -826,6 +837,8 @@ export default class Body_EventData {
             this.rightpanel(mode),
 
             isEvtDataInfoWindowOpen && this.modalEventDataInfo(),
+
+            isGenericMetadataInfoWindowOpen && getModalGenericMetadata(),
             // -------------------------
             // Start: Stage
             // -------------------------
