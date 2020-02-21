@@ -7,7 +7,7 @@ from django.db import IntegrityError
 from django.http import \
     (JsonResponse, HttpResponse)
 from django.views.decorators.csrf import csrf_exempt
-
+from tworaven_apps.utils.msg_helper import msg, msgt
 from tworaven_apps.R_services.make_datadocs_util import MakeDatadocsUtil
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
@@ -397,13 +397,16 @@ def api_get_files_list(request, version_id):
 
 
 @csrf_exempt
-def api_get_eventdata(request):
-    """ general api to get event data"""
-
+def create_evtdata_file(request):
+    """Similar to api_get_eventdata, except that the Mongo result is
+    written to a faile"""
+    LOGGER.info('--- create_evtdata_file: write query results to file ---')
     success, json_req_obj = get_request_body_as_json(request)
 
     if not success:
-        return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
+        return JsonResponse(get_json_error(json_req_obj))
+
+    return JsonResponse(get_json_error('TESTING! %s' % json.dumps(json_req_obj)))
 
     # check if data is valid
     form = EventDataGetDataForm(json_req_obj)
@@ -418,9 +421,40 @@ def api_get_eventdata(request):
         json_req_obj.get('distinct', None),
         json_req_obj.get('host', None))
 
-    print('addquery_obj_err', addquery_obj_err)
-    print('addquery_obj_err', type(addquery_obj_err))
-    print('success', success)
+
+    if success:
+        return JsonResponse(get_json_success(\
+                                 'it worked',
+                                 data=json_comply(list(addquery_obj_err))))
+
+    return JsonResponse(get_json_error(addquery_obj_err))
+
+
+@csrf_exempt
+def api_get_eventdata(request):
+    """ general api to get event data"""
+    LOGGER.info('--- api_get_eventdata: Retrieve data from MongoDB ---')
+    msgt('--- api_get_eventdata: Retrieve data from MongoDB ---')
+
+    success, json_req_obj = get_request_body_as_json(request)
+
+    if not success:
+        return JsonResponse(get_json_error(json_req_obj))
+
+    # check if data is valid
+    form = EventDataGetDataForm(json_req_obj)
+    if not form.is_valid():
+        return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
+
+    success, addquery_obj_err = EventJobUtil.get_data(
+        settings.EVENTDATA_DB_NAME,
+        json_req_obj['collection_name'],
+        json_req_obj['method'],
+        json.loads(json_req_obj['query']),
+        json_req_obj.get('distinct', None),
+        json_req_obj.get('host', None))
+
+
     if success:
         return JsonResponse(get_json_success(\
                                  'it worked',

@@ -20,6 +20,7 @@ import PanelList from '../../common/views/PanelList';
 import TextField from '../../common/views/TextField';
 import ButtonRadio from '../../common/views/ButtonRadio';
 import Button from "../../common/views/Button";
+import ButtonPlain from '../../common/views/ButtonPlain';
 import ModalVanilla from "../../common/views/ModalVanilla";
 import Table from "../../common/views/Table";
 
@@ -75,6 +76,116 @@ export default class Body_EventData {
             method: 'POST'
         }).then(eventdata.setMetadata).catch(eventdata.laddaStopAll);
     }
+
+    /*
+     * Show EventData Info
+     */
+    modalEventDataInfo(){
+
+      return eventdata.isEvtDataInfoWindowOpen && m(ModalVanilla, {
+          id: "modalEventDataInfo",
+          setDisplay: () => {
+            eventdata.setEvtDataInfoWindowOpen(false);
+          },
+        },
+        // Row 1 - info
+        m('div', {'class': 'row'},
+          m('div', {'class': 'col-sm'},
+            [
+              m('h3', {}, 'Basic Information'),
+              m('hr'),
+              m('p', [
+                  m('b', 'Workspace Id: '),
+                  m('span', 'some span info')
+                ]),
+                m('p', [
+                    m('b', 'Workspace Name: '),
+                    m('span', 'some workspace name')
+                  ]),
+
+              m('hr'),
+              m('div', [
+                  m('p', [
+                    m('b', 'eventdata.aggregationStaged: '),
+                    m('span', `${eventdata.aggregationStaged}`)
+                  ]),
+                  m('p', [
+                    m('b', 'eventdata.isEvtDataInfoWindowOpen: '),
+                    m('span', `${eventdata.isEvtDataInfoWindowOpen}`)
+                  ]),
+                  m('p', [
+                    m('b', 'eventdata.totalSubsetRecords: '),
+                    m('span', `${eventdata.totalSubsetRecords}`)
+                  ]),
+                ]),
+              m('hr'),
+              m('div', [
+                  m('b', 'eventdata.alignmentLog: '),
+                  m('div',
+                    m('pre', `${JSON.stringify(eventdata.alignmentLog, null, 4)}`)
+                  ),
+                ]),
+              m('hr'),
+              m('div', [
+                  m('b', 'eventdata.preferencesLog: '),
+                  m('div',
+                    m('pre', `${JSON.stringify(eventdata.preferencesLog, null, 4)}`)
+                  ),
+                ]),
+              m('hr'),
+              m('div', [
+                  m('b', 'eventdata.variablesLog: '),
+                  m('div',
+                    m('pre', `${JSON.stringify(eventdata.variablesLog, null, 4)}`)
+                  ),
+                ]),
+              m('hr'),
+              m('div', [
+                  m('b', 'eventdata.Manipulations: '),
+                  m('div',
+                    m('pre', `${JSON.stringify(eventdata.manipulations, null, 4)}`)
+                  ),
+                ]),
+              m('hr'),
+              m('div', [
+                  m('b', 'looseSteps: '),
+                  m('div',
+                    m('pre', `${JSON.stringify(looseSteps, null, 4)}`)
+                  ),
+                ]),                
+              m('hr'),
+              m('div', [
+                  m('b', 'eventdata.subsetData: '),
+                  m('div',
+                    m('pre', `${JSON.stringify(eventdata.subsetData, null, 4)}`)
+                  ),
+                ]),
+              m('hr'),
+              m('div', [
+                  m('b', 'eventdata.genericMetadata'),
+                  m('p', {}, 'All available eventdata datasets and type formats'),
+                  m('div',
+                    m('pre', `${JSON.stringify(eventdata.genericMetadata, null, 4)}`)
+                  ),
+                ]),
+            ]
+          ),
+        ),
+        // Row 2 - info
+        m('div', {'class': 'row'},
+          m('div', {'class': 'col-sm text-left'},
+            // Close
+            m(ButtonPlain, {
+              id: 'btnCloseModalEventDataInfo',
+              class: 'btn-sm btn-primary',
+              onclick: _ => {
+                eventdata.setEvtDataInfoWindowOpen(false);}
+              },
+              'Close'),
+            )
+          )
+        )
+    } // end: modalBasicInfo
 
     header() {
 
@@ -144,7 +255,7 @@ export default class Body_EventData {
                     {value: 'Aggregate', attrsInterface: {style: {'width': 'auto'}}}
                 ] : [])
             }),
-            
+
             m('.dropdown[style=float: right; padding-right: 1em]',
                 m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
                     [isAuthenticated ? username : m('div[style=font-style:oblique]', 'not logged in'), " ", m(Icon, {name: 'triangle-down'})]),
@@ -199,8 +310,22 @@ export default class Body_EventData {
 
         return m(Footer,
             tourBar,
+            m(Button, {
+                class: `btn-sm ${eventdata.isEvtDataInfoWindowOpen ? 'active' : ''}`,
+
+                style: {'margin-right': '6px',
+                        'margin-top': '4px',
+                        'margin-left': '6px'},
+                onclick: _ => {
+                        eventdata.setEvtDataInfoWindowOpen(true);
+                        m.redraw();
+                }},
+              'Info'),
             m("#recordBar", {style: {display: "inline-block", float: 'right'}}, [
 
+                // -------------------------
+                // Start: Save Button
+                // -------------------------
                 eventdata.selectedMode !== 'home' && m(Button, {
                     class: 'btn-sm',
                     title: isAuthenticated
@@ -223,7 +348,13 @@ export default class Body_EventData {
                         }
                     }, style: {'margin-top': '4px'}
                 }, 'Save'),
+                // -------------------------
+                // End: Save Button
+                // -------------------------
 
+                // -------------------------
+                // Start: Download Button
+                // -------------------------
                 eventdata.selectedMode !== 'home' && m(Button, {
                     id: 'btnDownload',
                     title: isAuthenticated
@@ -276,8 +407,77 @@ export default class Body_EventData {
                         }
                     }
                 }, m("span.ladda-label", "Download")),
+                // -------------------------
+                // End: Download Button
+                // -------------------------
 
-                // Record Count
+                // -------------------------
+                // Start: TwoRavens Button
+                // -------------------------
+                eventdata.selectedMode !== 'home' && m(Button, {
+                    id: 'btnRavenView',
+                    title: isAuthenticated
+                        ? 'Vies your constructed ' + eventdata.selectedMode + ' on TwoRavens'
+                        : 'must be logged in to view your constructed ' + eventdata.selectedMode + ' on TwoRavens',
+                    disabled: !isAuthenticated,
+                    'data-style': 'zoom-in',
+                    'data-spinner-color': '#818181',
+                    class: 'btn-sm ladda-button',
+                    style: {
+                        'margin-right': '6px',
+                        'margin-top': '4px',
+                        'margin-left': '6px'
+                    },
+                    onclick: async () => {
+                        //let compiled = queryMongo.buildPipeline([...eventdata.manipulations])['pipeline'];
+
+                        await eventdata.createEvtDataFile({blue: 'ocean'});
+                        /*
+                        if ('subset' === eventdata.selectedMode) {
+                            if (eventdata.manipulations.length === 0) {
+                                tour.tourStartSaveQueryEmpty();
+                                return;
+                            }
+                            let downloadStep = {
+                                type: 'menu',
+                                metadata: {
+                                    type: 'data',
+                                    variables: (eventdata.selectedVariables.size + eventdata.selectedConstructedVariables.size) === 0
+                                        ? [
+                                            ...eventdata.genericMetadata[eventdata.selectedDataset]['columns'],
+                                            ...eventdata.genericMetadata[eventdata.selectedDataset]['columns_constructed']
+                                        ] : [
+                                            ...eventdata.selectedVariables,
+                                            ...eventdata.selectedConstructedVariables
+                                        ]
+                                }
+                            };
+                            let compiled = queryMongo.buildPipeline([...eventdata.manipulations, downloadStep])['pipeline'];
+                            eventdata.setLaddaSpinner('btnDownload', true);
+                            await eventdata.download(eventdata.selectedDataset, JSON.stringify(compiled))
+                                .finally(() => eventdata.setLaddaSpinner('btnDownload', false));
+
+                        }
+                        if ('aggregate' === eventdata.selectedMode) {
+                            if (looseSteps['eventdataAggregate'].measuresAccum.length === 0) {
+                                tour.tourStartEventMeasure();
+                                return;
+                            }
+                            let compiled = queryMongo.buildPipeline([...eventdata.manipulations, looseSteps['eventdataAggregate']])['pipeline'];
+                            eventdata.setLaddaSpinner('btnDownload', true);
+                            await eventdata.download(eventdata.selectedDataset, JSON.stringify(compiled))
+                                .finally(() => eventdata.setLaddaSpinner('btnDownload', false));
+                        }
+                        */
+                    }
+                }, m("span.ladda-label", "TwoRavens View")),
+                // -------------------------
+                // End: TwoRavens Button
+                // -------------------------
+
+                // -------------------------
+                // Start: Record Count
+                // -------------------------
                 eventdata.selectedDataset && recordCount !== undefined && m("span.badge.badge-pill.badge-secondary#recordCount", {
                     style: {
                         "margin-left": "5px",
@@ -285,6 +485,10 @@ export default class Body_EventData {
                         "margin-right": "10px"
                     }
                 }, recordCount + ' Records')
+                // -------------------------
+                // End: Record Count
+                // -------------------------
+
             ]),
         );
     }
@@ -564,6 +768,9 @@ export default class Body_EventData {
                     onclick: () => queryAbstract.addGroup(looseSteps['pendingSubset'])
                 }, 'Group'),
 
+                // -------------------------
+                // End: Update Button
+                // -------------------------
                 m(Button, {
                     id: 'btnUpdate',
                     class: 'ladda-button',
@@ -583,6 +790,9 @@ export default class Body_EventData {
                             document.getElementById('btnUpdate').disabled = looseSteps['pendingSubset'].abstractQuery.length === 0;
                     }
                 }, 'Update')
+                // -------------------------
+                // End: Update Button
+                // -------------------------
             ))
 
     }
@@ -711,6 +921,11 @@ export default class Body_EventData {
             this.header(),
             this.leftpanel(mode),
             this.rightpanel(mode),
+
+            eventdata.isEvtDataInfoWindowOpen && this.modalEventDataInfo(),
+            // -------------------------
+            // Start: Stage
+            // -------------------------
             m(Button, {
                 id: 'btnStage',
                 style: {
@@ -741,6 +956,10 @@ export default class Body_EventData {
                     common.setPanelOpen('right');
                 }
             }, 'Stage'),
+            // -------------------------
+            // End: Stage
+            // -------------------------
+
             m(Canvas, {
                 attrsAll: {
                     style: mode === 'aggregate'

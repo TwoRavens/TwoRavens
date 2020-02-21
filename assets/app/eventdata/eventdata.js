@@ -99,6 +99,15 @@ export let setSelectedDataset = (key) => {
     resetPeek();
 };
 
+
+/*
+*  Variables related to API info window
+*/
+export let isEvtDataInfoWindowOpen = false;
+// Open/close modal window
+export let setEvtDataInfoWindowOpen = (boolVal) => isEvtDataInfoWindowOpen = boolVal;
+
+
 // previous dataset and alignment logs are used for the re-alignment modal
 export let previousSelectedDataset;
 
@@ -316,7 +325,7 @@ async function updatePeek() {
     // cancel the request
     if (!peekIsGetting) return;
 
-    let data = await getData({
+    let data = await getEventData({
         host: genericMetadata[selectedDataset]['host'],
         collection_name: selectedDataset,
         method: 'aggregate',
@@ -365,7 +374,31 @@ export let getSubsetMetadata = (dataset, subset) => {
     return {alignments, formats, columns};
 };
 
-export let getData = async body => m.request({
+/*
+ *  Send Mongo query to create file on the server
+ *
+ */
+export let createEvtDataFile = async body => m.request({
+    url: mongoURL + 'create-evtdata-file',
+    method: 'POST',
+    data: body
+}).then(response => {
+    if (!response.success){
+      console.log('It failed!!');
+
+    } else{
+      console.log('It worked!!');
+    }
+    console.log(response.message);
+    //return response.data;
+});
+
+
+/*
+ *  Retrieve event data from Mongo
+ *
+ */
+export let getEventData = async body => m.request({
     url: mongoURL + 'get-eventdata',
     method: 'POST',
     data: body
@@ -414,7 +447,7 @@ export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={})
         console.log("Count Query:");
         console.log(compiled);
 
-        promises.push(getData({
+        promises.push(getEventData({
             host: genericMetadata[dataset]['host'],
             collection_name: dataset,
             method: 'aggregate',
@@ -428,7 +461,7 @@ export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={})
     }
 
     let data;
-    promises.push(getData({
+    promises.push(getEventData({
         host: genericMetadata[dataset]['host'],
         collection_name: dataset,
         method: 'aggregate',
@@ -520,12 +553,18 @@ export async function submitAggregation() {
     m.redraw()
 }
 
+
+
+
+/**
+ *  Frontend download using npm `file-saver`
+ */
 export async function download(collection_name, query) {
 
     console.log("Download Query:");
     console.log(query);
 
-    let data = await getData({
+    let data = await getEventData({
         host: genericMetadata[collection_name].host,
         method: 'aggregate',
         collection_name,

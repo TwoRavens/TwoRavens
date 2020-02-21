@@ -409,6 +409,12 @@ export async function buildDatasetUrl(problem, lastStep, dataPath, collectionNam
     return getData(body);
 }
 
+
+
+/**
+ *  Send mongo query params to server and retrieve data
+ *
+ */
 let getDataPromise;
 export let getData = async body => {
     if (getDataPromise) await getDataPromise;
