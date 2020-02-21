@@ -217,6 +217,8 @@ export let looseSteps = {};
 
 export let formattingData = {};
 export let alignmentData = {};
+window.alignmentData = alignmentData;
+
 // ~~~~
 
 export let taskPreferences = {

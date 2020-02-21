@@ -21,7 +21,7 @@ export let eventdataSubsetCount = 1;
 export let genericMetadata = {};
 
 export let manipulations = [];
-window.manipulations = manipulations;
+// window.manipulations = manipulations;
 
 export let setMetadata = (data) => Object.keys(data).forEach(key =>
     Object.keys(data[key]).forEach(identifier => ({

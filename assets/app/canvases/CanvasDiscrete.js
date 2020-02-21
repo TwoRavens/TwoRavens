@@ -14,6 +14,7 @@ export default class CanvasDiscrete {
 
         let masterColumn = metadata['columns'][0];
         let format = (formats || {})[masterColumn] || masterColumn;
+        let format_original = format;
         let alignment = (alignments || {})[masterColumn];
 
         let allData = {};
@@ -35,6 +36,8 @@ export default class CanvasDiscrete {
             return out;
         }, {});
 
+        // console.log('----> flattenedData' + JSON.stringify([equivalency[format]]));
+
         if (alignment) {
             metadata['formats'].forEach(format => {
                 allData[format] = {};
@@ -42,18 +45,28 @@ export default class CanvasDiscrete {
             });
             alignmentData[alignment].forEach(equivalency => {
                 metadata['formats'].forEach(format => {
-                    let isSet = preferences['selections'].has(equivalency[format]);
+
+                    let isSet = preferences['selections'].has(equivalency[format_original]);
                     if (equivalency[format] in allSelected[format])
                         allSelected[format][equivalency[format]].push(isSet);
                     else
                         allSelected[format][equivalency[format]] = [isSet];
 
+                    //console.log('----> [equivalency[format]]' + JSON.stringify([equivalency[format]]));
+
                     allData[format][equivalency[format]] =
                         (allData[format][equivalency[format]] || 0) +     // preserve the existing value, or 0 if new
-                        (flattenedData[equivalency[format]] || 0)   // add the equivalent sum from the data, or 0 if no data matched
+                        (flattenedData[equivalency[format_original]] || 0)   // add the equivalent sum from the data, or 0 if no data matched
 
                 })
+
             })
+            // console.log('allSelected - allSelected');
+            // console.log(allSelected);
+            //
+            // console.log('preferences - selections');
+            // console.log(preferences['selections']);
+            // console.log('---- allData' + JSON.stringify(allData));
         } else if (format) {
             allData[format] = {};
             allSelected[format] = {};
@@ -89,6 +102,9 @@ export default class CanvasDiscrete {
             return out;
         }, {});
 
+        console.log('---- typedLookup' + JSON.stringify(typedLookup));
+
+
         let createPlot = (format, dataView, selections) => {
             let maxCharacters = 0;
 
@@ -117,6 +133,11 @@ export default class CanvasDiscrete {
                     }
                 });
 
+
+            // console.log('---- plotData.format: ' + format);
+            console.log('---- plotData: ', plotData);
+
+
             return m(".graph-config", {
                     style: common.mergeAttributes({
                         "display": "inline-block",
@@ -137,15 +158,22 @@ export default class CanvasDiscrete {
                         data: plotData,
                         callbackBar: (bar) => {
                             bar.key = typedLookup[bar.key];
+                            console.log("bar key" , bar.key)
 
                             let target_state = bar.class === 'bar-some' || bar.class === 'bar';
 
                             if (alignment) {
                                 alignmentData[alignment]
-                                    .filter(equivalency => equivalency[format] === bar.key)
-                                    .forEach(equivalency => target_state
+                                // .map(x => {
+                                //   console.log(x);
+                                //   return x;
+                                // })
+                                    .filter(equivalency => equivalency[format] !== undefined && equivalency[format] === bar.key)
+                                    .forEach(equivalency => {
+                                      console.log('equivalency', equivalency);
+                                      target_state
                                         ? preferences['selections'].add(equivalency[preferences['format']])
-                                        : preferences['selections'].delete(equivalency[preferences['format']]))
+                                        : preferences['selections'].delete(equivalency[preferences['format']])})
                             } else target_state
                                 ? preferences['selections'].add(bar.key)
                                 : preferences['selections'].delete(bar.key);
