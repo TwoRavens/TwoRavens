@@ -1,0 +1,3 @@
+
+
+KEY_INCLUDE_EVENTDATA_COLLECTION_NAMES = 'include_eventdata_collection_names'

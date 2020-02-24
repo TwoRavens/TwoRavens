@@ -28,14 +28,17 @@ from tworaven_apps.eventdata_queries.models import \
      SEARCH_PARAMETERS, SEARCH_KEY_NAME, SEARCH_KEY_DESCRIPTION)
 from tworaven_apps.eventdata_queries.mongo_retrieve_util import \
     MongoRetrieveUtil
+from tworaven_apps.eventdata_queries.static_vals import \
+    (KEY_INCLUDE_EVENTDATA_COLLECTION_NAMES,)
 from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 
 LOGGER = logging.getLogger(__name__)
 
 
-def api_mongo_healthcheck(request):
+def api_mongo_healthcheck(request, **kwargs):
     """Mongo healthcheck"""
-    mongo_check = MongoRetrieveUtil.run_tworavens_healthcheck()
+    print('api_mongo_healthcheck kwargs', kwargs)
+    mongo_check = MongoRetrieveUtil.run_tworavens_healthcheck(**kwargs)
 
     if mongo_check.success:
         return JsonResponse(get_json_success(\
@@ -43,6 +46,12 @@ def api_mongo_healthcheck(request):
                             data=mongo_check.result_obj))
 
     return JsonResponse(get_json_error(mongo_check.err_msg))
+
+def api_list_eventdata_collections(request):
+    print('api_list_eventdata_collections')
+    return api_mongo_healthcheck(\
+                    request,
+                    **{KEY_INCLUDE_EVENTDATA_COLLECTION_NAMES: True})
 
 def view_eventdata_api_info(request):
     """List some API info, for developers"""

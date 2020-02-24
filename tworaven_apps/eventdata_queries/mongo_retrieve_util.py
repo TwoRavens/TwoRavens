@@ -18,13 +18,14 @@ from pymongo.errors import \
      ServerSelectionTimeoutError)
 from django.conf import settings
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
-
+from tworaven_apps.utils.random_info import get_timestamp_string_readable
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp,
                                                 err_resp_with_data)
 from tworaven_apps.eventdata_queries.models import METHOD_CHOICES
 from tworaven_apps.utils.mongo_util import encode_variable, decode_variable
-
+from tworaven_apps.eventdata_queries.static_vals import \
+    (KEY_INCLUDE_EVENTDATA_COLLECTION_NAMES,)
 LOGGER = logging.getLogger(__name__)
 
 
@@ -58,18 +59,22 @@ class MongoRetrieveUtil(BasicErrCheck):
         self.basic_check()
 
     @staticmethod
-    def run_tworavens_healthcheck():
+    def run_tworavens_healthcheck(**kwargs):
         """Healthcheck which runs a server_info() check against the Mongo server
         e.g. It simply instantiates a MongoRetrieveUtil, which itself
         does a server_info check.
+
+        include_eventdata_collection_names - default False.
+            if True add event data collection names and record counts.
         """
+        print('kwargs: ', kwargs)
         util = MongoRetrieveUtil(settings.TWORAVENS_MONGO_DB_NAME)
         if util.has_error():
             return err_resp(util.get_error_message())
 
-        cli = util.get_mongo_client().result_obj # assuming ok b/c no error
+        mongo_client = util.get_mongo_client().result_obj # assuming ok b/c no error
 
-        server_info = cli.server_info()
+        server_info = mongo_client.server_info()
 
         mongo_attrs_to_share = ['version', 'gitVersion',
                                 'system', 'ok',
@@ -80,6 +85,14 @@ class MongoRetrieveUtil(BasicErrCheck):
         [server_info.pop(k)
          for k in list(server_info.keys())
          if not k in mongo_attrs_to_share]
+
+        server_info['timestamp'] = get_timestamp_string_readable(time_only=False)
+
+        if kwargs.get(KEY_INCLUDE_EVENTDATA_COLLECTION_NAMES) is True:
+            db_info = {}
+            for cname in sorted(mongo_client[settings.EVENTDATA_DB_NAME].collection_names()):
+                db_info[cname] = mongo_client[settings.EVENTDATA_DB_NAME][cname].count()
+            server_info.update(dict(collections=db_info))
 
         return ok_resp(server_info)
 
@@ -266,6 +279,8 @@ class MongoRetrieveUtil(BasicErrCheck):
                               settings.EVENTDATA_MONGO_DB_ADDRESS)
 
         return mongo_url
+
+
 
     def get_mongo_db(self, db_name, existing_only=False):
         """Return a Mongo db client for a specific database

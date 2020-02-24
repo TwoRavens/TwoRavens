@@ -81,4 +81,7 @@ urlpatterns = [
          views.api_mongo_healthcheck,
          name='api_mongo_healthcheck'),
 
+    path(r'api/mongo-list-eventdata-collections',
+         views.api_list_eventdata_collections,
+         name='api_list_eventdata_collections'),
 ]
