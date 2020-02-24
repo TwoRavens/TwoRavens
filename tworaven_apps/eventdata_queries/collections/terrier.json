@@ -1,0 +1,123 @@
+{
+  "name": "Temporally Extended Regularly Reproducible International Event Records (Terrier)",
+  "key": "terrier",
+  "description": "Event data records the interactions between political actors that are reported in news text. It includes the complete archives of all major US and international newspapers and wire services going back to the 1970s.",
+  "interval": "1979 - 2016",
+  "codebook": "",
+  "download": "https://osf.io/4m2u7/",
+  "host": "TwoRavens",
+  "subsets": {
+    "Actor": {
+		"measureType": "unit",
+		"type": "dyad",
+		"tabs": {
+			"source": {
+				"full": "TwoRavens_source_actor",
+				"filters": ["src_actor", "src_agent", "src_other_agent"]
+			},
+			"target": {
+				"full": "TwoRavens_target_actor",
+				"filters": ["tgt_actor", "tgt_agent", "tgt_other_agent"]
+			}
+		}
+	},
+	"Date": {
+		"type": "date",
+		"measureType": "unit",
+		"structure": "point",
+		"columns": ["TwoRavens_start date"]
+	},
+	"Action": {
+      "measureType": "accumulator",
+      "type": "discrete",
+      "formats": [
+        "CAMEO",
+        "root_code",
+        "penta_class",
+        "PLOVER"
+      ],
+      "columns": [
+        "code"
+      ]
+    },
+	"Location": {
+		"type": "discrete_grouped",
+		"group_by": "region",
+		"columns": ["TwoRavens_country"]
+	},
+	"Coordinates": {
+		"type": "coordinates",
+		"columns": [
+			"latitude",
+			"longitude"
+		]
+	}
+  },
+  "columns": [
+    "code",
+	"src_actor",
+	"month",
+	"tgt_agent",
+	"country_code",
+	"year",
+	"mongo_id",
+	"sorce",
+	"date8",
+	"src_agent",
+	"tgt_actor",
+	"latitude",
+	"src_other_agent",
+	"quad_class",
+	"root_code",
+	"tgt_other_agent",
+	"day",
+	"target",
+	"goldstein",
+	"geoname",
+	"longitude",
+	"url"
+  ],
+  "columns_constructed": [
+    "TwoRavens_start date",
+    "TwoRavens_end date",
+    "TwoRavens_date info",
+    "TwoRavens_country",
+    "TwoRavens_address",
+    "TwoRavens_city",
+    "TwoRavens_postal",
+    "TwoRavens_postal_ext",
+    "TwoRavens_region",
+    "TwoRavens_subregion",
+    "TwoRavens_country_historic",
+    "TwoRavens_source_actor",
+    "TwoRavens_target_actor"
+  ],
+  "alignments": {
+	  "TwoRavens_start date": "date",
+	  "latitude": "latitude",
+	  "longitude": "longitude",
+	  "TwoRavens_country": "country"
+  },
+  "formats": {
+	  "TwoRavens_country": "ISO-3",
+	  "code": "CAMEO",
+	  "quad_class": "penta_class",
+	  "root_code": "root_code",
+	  "TwoRavens_source_actor": "phoenix",
+	  "src_actor": "ISO-3",
+	  "src_agent": "phoenix",
+	  "src_other_agent": "phoenix",
+	  "TwoRavens_target_actor": "phoenix",
+	  "tgt_actor": "ISO-3",
+	  "tgt_agent": "phoenix",
+	  "tgt_other_agent": "phoenix"
+  },
+  "citations": [
+  {
+	  "author": "Irvine, Jill; Grant, Christan; Halterman, Andrew; Jabr, Khaled; Liang, Yan",
+	  "year": "2018",
+	  "title": "Temporally Extended Regularly Reproducible International Event Records (Terrier)",
+	  "url": "http://terrierdata.org/"
+  }
+  ]
+}

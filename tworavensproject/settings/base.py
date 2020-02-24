@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 import ast
+import json
 import os
 import sys
 from os.path import abspath, dirname, isdir, join
@@ -436,6 +437,21 @@ EVENTDATA_DEFAULT_API_KEY = 'api_key=CD75737EF4CAC292EE17B85AAE4B6'
 EVENTDATA_SERVER_API_KEY = os.environ.get('EVENTDATA_SERVER_API_KEY', EVENTDATA_DEFAULT_API_KEY)
 EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
 
+# Allow the specifying of datasets via environment variables
+#   Default: Show all datasets in tworaven_apps.eventdata_queries.static_vals.UT_DALLAS_COLLECTIONS
+#       e.g. If the value is None or [] the default ^ is used
+#
+# Example:
+#    export EVENTDATA_DATASETS='["cline_phoenix_fbis.json", "cline_phoenix_nyt.json", "cline_phoenix_swb.json", "icews.json"]'
+#
+
+from tworaven_apps.eventdata_queries.static_vals import \
+    (KEY_EVENTDATA_DATASETS, UT_DALLAS_COLLECTIONS)
+EVENTDATA_DATASETS = ast.literal_eval(os.environ.get(\
+                        KEY_EVENTDATA_DATASETS,
+                        json.dumps(UT_DALLAS_COLLECTIONS)))
+
+print('EVENTDATA_DATASETS', EVENTDATA_DATASETS)
 
 # -------------------------------
 # Directory for moving data from

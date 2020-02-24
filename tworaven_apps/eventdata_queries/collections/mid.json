@@ -1,0 +1,99 @@
+{
+  "name": "Militarized Interstate Disputes (MID)",
+  "key": "mid",
+  "description": "This data set records all instances of when one state threatened, displayed, or used force against another.",
+  "interval": "1816 - 2010",
+  "codebook": "http://cow.dss.ucdavis.edu/data-sets/MIDs/incident-level/at_download/file",
+  "download": "http://cow.dss.ucdavis.edu/data-sets/MIDs/incident-level/at_download/file",
+  "host": "TwoRavens",
+  "subsets": {
+    "Actor": {
+		"measureType": "unit",
+		"type": "dyad",
+		"tabs": {
+			"source": {
+				"full": "src-actor",
+				"filters": ["src-actor"]
+			},
+			"target": {
+				"full": "tgt-actor",
+				"filters": ["tgt-actor"]
+			}
+		}
+	},
+	"Date": {
+		"type": "date",
+		"measureType": "unit",
+		"structure": "point",
+		"columns": ["TwoRavens_start date"]
+	},
+	"Action": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"formats": [
+			"mid_action",
+			"mid_hostLev"
+		],
+		"columns": [
+			"Action"
+		]
+	},
+	"Fatalities": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["Fatality"]
+	}
+  },
+  "columns": [
+    "DispNum3",
+    "DispNum4",
+    "IncidNum3",
+    "IncidNum4",
+    "StDay",
+    "StMon",
+    "StYear",
+    "EndDay",
+    "EndMon",
+    "EndYear",
+    "Duration",
+    "TBI",
+    "Fatality",
+    "FatalPre",
+    "Action",
+    "HostLev",
+    "NumA",
+    "RevType1",
+    "RevType2",
+    "Version",
+    "src-actor",
+    "tgt-actor"
+  ],
+  "columns_constructed": [
+    "TwoRavens_start date",
+    "TwoRavens_end date",
+    "TwoRavens_date info"
+  ],
+  "alignments": {
+	  "TwoRavens_start date": "date",
+	  "src-actor": "country",
+	  "tgt-actor": "country",
+	  "Action": "mid_action_conv",
+	  "HostLev": "mid_action_conv"
+  },
+  "formats": {
+	  "src-actor": "cowcode",
+	  "tgt-actor": "cowcode",
+	  "Action": "mid_action",
+	  "HostLev": "mid_hostLev",
+	  "Fatality": "mid_fatality"
+  },
+  "citations": [
+  {
+	  "author": "Palmer, Glenn; D'Orazio, Vito; Kenwick, Michael; Lane, Matthew",
+	  "year": "2015",
+	  "title": "The Mid4 Dataset, 2002–2010: Procedures, Coding Rules and Description",
+	  "url": "http://cow.dss.ucdavis.edu/data-sets/MIDs",
+	  "note": "Conflict Management and Peace Science 32: 222-42"
+  }
+  ]
+}

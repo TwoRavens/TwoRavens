@@ -1,0 +1,166 @@
+{
+  "name": "UCDP Georeferenced Event Dataset (GED)",
+  "key": "ged",
+  "description": "This dataset is UCDP's most disaggregated dataset, covering individual events of organized violence (phenomena of lethal violence occurring at a given time and place).",
+  "interval": "1989 - 2017",
+  "codebook": "http://ucdp.uu.se/downloads/ged/ged181.pdf",
+  "download": "http://ucdp.uu.se/downloads/ged/ged181-csv.zip",
+  "host": "TwoRavens",
+  "subsets": {
+    "Actor": {
+		"measureType": "unit",
+		"type": "dyad",
+		"tabs": {
+			"source": {
+				"full": "TwoRavens_country_src",
+				"filters": ["TwoRavens_country_src"]
+			},
+			"target": {
+				"full": "TwoRavens_country_tgt",
+				"filters": ["TwoRavens_country_tgt"]
+			}
+		}
+	},
+	"Date": {
+		"type": "date",
+		"measureType": "unit",
+		"structure": "point",
+		"columns": ["TwoRavens_start date"]
+	},
+	"Location": {
+		"type": "discrete_grouped",
+		"group_by": "region",
+		"columns": ["TwoRavens_country"]
+	},
+	"Coordinates": {
+		"type": "coordinates",
+		"columns": [
+			"latitude",
+			"longitude"
+		]
+	},
+	"Type of Violence": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["type_of_violence"]
+	},
+	"Deaths on side A": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["deaths_a"]
+	},
+	"Deaths on side B": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["deaths_b"]
+	},
+	"Civilian deaths": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["deaths_civilians"]
+	},
+	"Unknown deaths": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["deaths_unknown"]
+	},
+	"Best estimate of deaths": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["best"]
+	},
+	"High estimate of deaths": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["high"]
+	},
+	"Low estimate of deaths": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["low"]
+	}
+  },
+  "columns": [
+    "id",
+    "year",
+    "active_year",
+    "type_of_violence",
+    "confict_new_id",
+    "conflict_name",
+    "dyad_new_id",
+    "dyad_name",
+    "side_a_new_id",
+    "side_a",
+    "side_b_new_id",
+    "side_b",
+    "number_of_sources",
+    "source_article",
+    "source_original",
+    "where_prec",
+    "where_coordinates",
+    "adm_1",
+    "latitude",
+    "longitude",
+    "geom_wkt",
+    "priogrid_gid",
+    "country",
+    "country_id",
+    "region",
+    "event_clarity",
+    "date_prec",
+    "date_start",
+    "date_end",
+    "deaths_a",
+    "deaths_b",
+    "deaths_civilians",
+    "deaths_unknown",
+    "low",
+    "best",
+    "high"
+  ],
+  "columns_constructed": [
+    "TwoRavens_start date",
+    "TwoRavens_end date",
+    "TwoRavens_date info",
+    "TwoRavens_country",
+    "TwoRavens_address",
+    "TwoRavens_city",
+    "TwoRavens_postal",
+    "TwoRavens_postal_ext",
+    "TwoRavens_region",
+    "TwoRavens_subregion",
+    "TwoRavens_country_historic",
+    "TwoRavens_country_src",
+    "TwoRavens_country_historic_src",
+    "TwoRavens_country_tgt",
+    "TwoRavens_country_historic_tgt"
+  ],
+  "alignments": {
+	  "TwoRavens_start date": "date",
+	  "latitude": "latitude",
+	  "longitude": "longitude",
+	  "TwoRavens_country": "country"
+  },
+  "formats": {
+	  "TwoRavens_country": "ISO-3",
+	  "type_of_violence": "ged_violence"
+  },
+  "citations": [
+  {
+	  "author": "Sundberg, Ralph, and Erik Melander",
+	  "year": "2013",
+	  "title": "Introducing the UCDP Georeferenced Event Dataset",
+	  "url": "http://ucdp.uu.se/downloads/",
+	  "version": "18.1",
+	  "note": "Uppsala Conflict Data Program (UCDP)"
+  },
+  {
+	  "author": "Croicu, Mihai and Ralph Sundberg",
+	  "year": "2017",
+	  "title": "UCDP GED Codebook version 18.1",
+	  "version": "18.1",
+	  "url": "http://ucdp.uu.se/downloads/#d1"
+  }
+  ]
+}
+	  

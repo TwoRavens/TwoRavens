@@ -20,6 +20,7 @@ from tworaven_apps.utils.view_helper import get_json_error
 from tworaven_apps.utils.mongo_util import infer_type, encode_variable
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
+from tworaven_apps.eventdata_queries import static_vals as evt_static
 from tworaven_apps.eventdata_queries.models import \
     (EventDataSavedQuery, ArchiveQueryJob, UserNotification,
      SEARCH_PARAMETERS, SEARCH_KEY_NAME,
@@ -468,7 +469,26 @@ class EventJobUtil(object):
 
     @staticmethod
     def get_metadata(folder, names=None):
-        # `folder` is not a user-defined value
+        """
+        Open one of the folders such as 'collections', 'formats',  or 'alignments'
+
+        Read through the files and return a dict with:
+            {key: file contents}
+
+        Example, for "collections/terrier.json":
+            {
+                "terrier": {
+                    "name": "Temporally Extended Regularly Reproducible International Event Records (Terrier)",
+                    "key": "terrier",
+                    "description": "Event data records [etc, etc]",
+                    "interval": "1979 - 2016",
+                    etc...
+                }
+            }
+
+        names - optional list of filenames, without the extension.
+            e.g. ['acled_africa', 'cline_phoenix_nyt', 'terrier']
+        """
         directory = os.path.join(os.getcwd(), 'tworaven_apps', 'eventdata_queries', folder)
 
         if names:
@@ -476,6 +496,14 @@ class EventJobUtil(object):
             names = [name + '.json' for name in names if name + '.json' in os.listdir(directory)]
         else:
             names = sorted(os.listdir(directory))
+
+        #  For the current collections, only allow
+        #   those from UT Dallas
+        #
+        if folder == evt_static.FOLDER_COLLECTIONS:
+            names = [fname
+                     for fname in names
+                     if fname in settings.EVENTDATA_DATASETS]
 
         return {
             filename.replace('.json', ''): json.load(open(directory + os.sep + filename, 'r'), object_pairs_hook=OrderedDict) for filename in names
