@@ -58,9 +58,9 @@ TA2_IMAGE_INFO = [
     # ISI: not using D3MPORT
     (TA2_ISI,
      #'registry.datadrivendiscovery.org/kyao/ta2-isi/ta3ta2-image:latest',
-     'registry.datadrivendiscovery.org/kyao/ta3ta2/ta3ta2-image:latest',
+     'registry.datadrivendiscovery.org/kyao/ta3ta2/dsbox-2020-jan',
      #'registry.datadrivendiscovery.org/ta2-submissions/ta2-isi/ta3ta2/ta3ta2-image:latest',
-     '-p 45042:45042 -e D3MPORT=45042'),
+     '-p 45042:45042 -e D3MPORT=45042 -e DSBOX_LOGGING_LEVEL="dsbox=DEBUG:console_logging_level=INFO:file_logging_level=DEBUG"'),
      #'-p 45042:45042 --memory 10g -e D3MRAM=10 -e D3MCPU=1'),
 
     # STANFORD: not using D3MPORT
@@ -70,7 +70,7 @@ TA2_IMAGE_INFO = [
      '-p 45042:45042'),
 
     (TA2_BERKELEY,
-     'registry.datadrivendiscovery.org/berkeley/aika:2019-march-dry-run',
+     'registry.datadrivendiscovery.org/berkeley/aika:latest',
      '-p 45042:45042 -e D3MPORT=45042',),
 
     (TA2_TAMU,
@@ -212,6 +212,7 @@ class TA2Helper(BasicErrCheck):
         # sudo is not necessary if just trying to run a local image?
         # If trying to download and run into an issue, then use sudo
         docker_cmd = ('docker run --rm'
+                      ' --cpus 3'
                       ' --name ta2_server'
                       ' {4}'
                       ' {2}'
@@ -219,7 +220,7 @@ class TA2Helper(BasicErrCheck):
                       ' -v {1}:/output'
                       ' -v /ravens_volume:/ravens_volume'
                       ' {3}'
-                      '').format(self.data_input_dir,
+                      ' | tee /home/shoe/Desktop/ta2_logs.txt').format(self.data_input_dir,
                                  self.data_output_dir,
                                  additional_options,
                                  image_name,

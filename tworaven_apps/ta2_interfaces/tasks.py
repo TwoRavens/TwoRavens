@@ -218,6 +218,9 @@ def split_dataset(configuration, workspace):
     dataset_schema = json.load(open(configuration['dataset_schema'], 'r'))
     resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
 
+    dataset_schema['about']['datasetID'] = f"{dataset_schema['about']['datasetID']}_{uuid.uuid4().hex[:10]}"
+    dataset_schema['about']['digest'] = uuid.uuid4().hex
+
     keep_variables = None
     cross_section_date_limits = None
     inferred_freq = None

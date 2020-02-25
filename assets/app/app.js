@@ -1968,6 +1968,36 @@ export let materializeICE = async problem => {
     }
 };
 
+export let materializeTrainTestIndicesPromise = {};
+export let materializeTrainTestIndices = async problem => {
+
+    let response = await m.request({
+        method: 'POST',
+        url: D3M_SVC_URL + '/get-train-test-split-indices',
+        data: {
+            split_options: problem.splitOptions,
+            dataset_schema: problem.datasetSchemaPaths.all,
+            dataset_path: problem.datasetPaths.all,
+            problem: SPEC_problem(problem),
+            // if not manipulated, then don't rewrite datasetDoc with new metadata
+            // new datasetDoc will come from the translateDatasetDoc function
+            update_roles: !needsManipulationRewritePriorToSolve(problem)
+        }
+    });
+
+    if (!response.success) {
+        console.warn('Materialize train/test indices error:', response.message);
+        alertWarn('Unable to create out-of-sample split. Using entire dataset for training and for in-sample testing.');
+        results.resultsPreferences.dataSplit = 'all';
+        problem.splitOptions.outOfSampleSplit = false;
+        return false;
+    }
+
+    // splits collection has been materialized in the database
+    problem.results.splitCollection = response.data.split_collection;
+    return true;
+};
+
 // materializing splits may only happen once per problem, all calls wait for same response
 export let materializeTrainTestPromise = {};
 export let materializeTrainTest = async problem => {

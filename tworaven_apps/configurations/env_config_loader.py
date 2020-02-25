@@ -488,7 +488,9 @@ class EnvConfigLoader(BasicErrCheck):
         os.makedirs(info.D3MSTATICDIR, exist_ok=True)
 
         info.D3MTIMEOUT = '%d' % (60*10)
-        info.D3MCPU = '1'
+
+        # must be > 1 for berkeley
+        info.D3MCPU = '3'
         info.D3MRAM = 1 # 1000 * 1024 * 1024 # '1Gi'
         #info.D3MRAM = '1Gi'
 
