@@ -418,7 +418,7 @@ def api_get_eventdata(request):
         json_req_obj.get('distinct', None),
         json_req_obj.get('host', None))
 
-    return JsonResponse({'success': success, 'data': json_comply(addquery_obj_err)} if success else get_json_error(addquery_obj_err))
+    return JsonResponse({'success': success, 'data': json_comply(list(addquery_obj_err))} if success else get_json_error(addquery_obj_err))
 
 
 @csrf_exempt
