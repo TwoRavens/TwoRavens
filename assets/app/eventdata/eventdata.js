@@ -368,24 +368,59 @@ export let getSubsetMetadata = (dataset, subset) => {
     return {alignments, formats, columns};
 };
 
+/**
+ *  Return the metadata used for both downloading
+ *  as well as writing a file to the server
+ *
+ *  If available, retrieve the selected and selected constructed variables
+ *  else default to using all variables
+ */
+export let getManipPipelineVariables = {
+
+  let manipPipelineVariables = {
+      type: 'menu',
+      metadata: {
+          type: 'data',
+          variables: (selectedVariables.size + selectedConstructedVariables.size) === 0
+              ? [
+                  ...genericMetadata[eventdata.selectedDataset]['columns'],
+                  ...genericMetadata[eventdata.selectedDataset]['columns_constructed']
+              ] : [
+                  ...selectedVariables,
+                  ...selectedConstructedVariables
+              ]
+      }
+  };
+  return manipPipelineVariables;
+}
+
 /*
  *  Send Mongo query to create file on the server
+ *  - build the same pipeline as the download step
  *
  */
-export let createEvtDataFile = async body => m.request({
-    url: mongoURL + 'create-evtdata-file',
-    method: 'POST',
-    data: body
-}).then(response => {
-    if (!response.success){
-      console.log('It failed!!');
+export let createEvtDataFile = async () => {
 
-    } else{
-      console.log('It worked!!');
-    }
-    console.log(response.message);
-    //return response.data;
-});
+  let manipVars = getManipPipelineVariables();
+  let compiled = queryMongo.buildPipeline([...manipulations, manipVars])['pipeline'];
+
+  await eventdata.download(selectedDataset, JSON.stringify(compiled))
+
+      m.request({
+        url: mongoURL + 'create-evtdata-file',
+        method: 'POST',
+        data: body
+    }).then(response => {
+        if (!response.success){
+          console.log('It failed!!');
+
+        } else{
+          console.log('It worked!!');
+        }
+        console.log(response.message);
+        //return response.data;
+    })
+}
 
 
 /*

@@ -102,7 +102,7 @@ export default class CanvasDiscrete {
             return out;
         }, {});
 
-        console.log('---- typedLookup' + JSON.stringify(typedLookup));
+        // console.log('---- typedLookup' + JSON.stringify(typedLookup));
 
 
         let createPlot = (format, dataView, selections) => {
@@ -135,7 +135,7 @@ export default class CanvasDiscrete {
 
 
             // console.log('---- plotData.format: ' + format);
-            console.log('---- plotData: ', plotData);
+            // console.log('---- plotData: ', plotData);
 
 
             return m(".graph-config", {
@@ -158,7 +158,7 @@ export default class CanvasDiscrete {
                         data: plotData,
                         callbackBar: (bar) => {
                             bar.key = typedLookup[bar.key];
-                            console.log("bar key" , bar.key)
+                            // console.log("bar key" , bar.key)
 
                             let target_state = bar.class === 'bar-some' || bar.class === 'bar';
 

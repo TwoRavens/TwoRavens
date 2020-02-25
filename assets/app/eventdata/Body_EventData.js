@@ -328,7 +328,7 @@ export default class Body_EventData {
                 eventdata.selectedMode !== 'home' && m(Button, {
                     id: 'btnRavenView',
                     title: isAuthenticated
-                        ? 'Vies your constructed ' + eventdata.selectedMode + ' on TwoRavens'
+                        ? 'View your constructed ' + eventdata.selectedMode + ' on TwoRavens'
                         : 'must be logged in to view your constructed ' + eventdata.selectedMode + ' on TwoRavens',
                     disabled: !isAuthenticated,
                     'data-style': 'zoom-in',
@@ -340,9 +340,16 @@ export default class Body_EventData {
                         'margin-left': '6px'
                     },
                     onclick: async () => {
-                        //let compiled = queryMongo.buildPipeline([...eventdata.manipulations])['pipeline'];
+                        let compiled = queryMongo.buildPipeline([...eventdata.manipulations])['pipeline'];
+                        console.log('compiled', compiled);
 
                         await eventdata.createEvtDataFile({blue: 'ocean'});
+                        if ('subset' === eventdata.selectedMode) {
+                            if (eventdata.manipulations.length === 0) {
+                                tour.tourStartSaveQueryEmpty();
+                                return;
+                            }
+                        }
                         /*
                         if ('subset' === eventdata.selectedMode) {
                             if (eventdata.manipulations.length === 0) {
