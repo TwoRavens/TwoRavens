@@ -48,7 +48,7 @@ export default class Body_EventData {
         }
 
         // all eventdata manipulations stored in one manipulations key
-        eventdata.manipulations = [];
+        // eventdata.manipulations = [];
 
         looseSteps['pendingSubset'] = {
             type: 'subset',
@@ -144,7 +144,7 @@ export default class Body_EventData {
                     {value: 'Aggregate', attrsInterface: {style: {'width': 'auto'}}}
                 ] : [])
             }),
-            
+
             m('.dropdown[style=float: right; padding-right: 1em]',
                 m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
                     [isAuthenticated ? username : m('div[style=font-style:oblique]', 'not logged in'), " ", m(Icon, {name: 'triangle-down'})]),
