@@ -472,6 +472,12 @@ if not isdir(EVTDATA_2_TWORAVENS_DIR):
         sys.exit(0)
 
 
+# -------------------------------
+# EVENTDATA_TWO_RAVENS_TARGET_URL
+# - Url to a TwoRavens installation
+# -------------------------------
+EVENTDATA_TWO_RAVENS_TARGET_URL = os.environ.get('EVENTDATA_TWO_RAVENS_TARGET_URL', 'http://127.0.0.1:8080/')
+
 # -------------------------
 # Datamart related
 # -------------------------
