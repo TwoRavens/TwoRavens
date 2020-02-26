@@ -375,7 +375,7 @@ export let getSubsetMetadata = (dataset, subset) => {
  *  If available, retrieve the selected and selected constructed variables
  *  else default to using all variables
  */
-export let getManipPipelineVariables = {
+export let getManipPipelineVariables = () => {
 
   let manipPipelineVariables = {
       type: 'menu',

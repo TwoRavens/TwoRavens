@@ -24,7 +24,7 @@ ACLED_COLLECTIONS = ['acled_africa.json',
 
 UT_DALLAS_COLLECTIONS = [#'cline_phoenix_fbis.json',
                          #'cline_phoenix_nyt.json',
-                         #'cline_phoenix_swb.json',
+                         'cline_phoenix_swb.json',
                          'cline_speed.json',
                          'icews.json',
                          'phoenix_rt.json',
