@@ -21,8 +21,6 @@ RECEIVE_SCORE_MSG = 'receive_score_msg'
 RECEIVE_PRODUCE_MSG = 'receive_produce_msg'
 RECEIVE_ERROR_MSG = 'receive_error_msg'
 
-DEBUG_MODE = False
-
 
 def get_metric(specification):
     if specification['metric'] == "ACCURACY":

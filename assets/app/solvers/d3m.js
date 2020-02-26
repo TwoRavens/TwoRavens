@@ -20,7 +20,7 @@ export let getSolverSpecification = async problem => {
         searchSolutionParams: GRPC_SearchSolutionsRequest(problem, problem.datasetSchemas.all, datasetSchemaPaths.all),
         fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(datasetSchemaPaths[problem.splitOptions.outOfSampleSplit ? 'train' : 'all']),
         scoreSolutionDefaultParams: GRPC_ScoreSolutionRequest(problem, datasetSchemaPaths.all),
-        produceSolutionDefaultParams: Object.keys(datasetSchemaPaths)
+        produceSolutionDefaultParams: Object.keys(datasetSchemaPaths) // ['train', 'test', 'all']
             .reduce((produces, dataSplit) => Object.assign(produces, {
                 [dataSplit]: GRPC_ProduceSolutionRequest(datasetSchemaPaths[dataSplit])
             }), {})
@@ -537,7 +537,7 @@ export function GRPC_SearchSolutionsRequest(problem, datasetDoc, datasetDocUrl) 
         timeBoundRun: problem.searchOptions.timeBoundRun || 0,
         rankSolutionsLimit: problem.searchOptions.solutionsLimit || 0,
         priority: problem.searchOptions.priority || 0,
-        allowedValueTypes: ['DATASET_URI', 'CSV_URI'],
+        allowedValueTypes: ['DATASET_URI', 'CSV_URI', 'RAW'],
         problem: GRPC_ProblemDescription(problem, datasetDoc),
         template: GRPC_PipelineDescription(problem),
         inputs: [{dataset_uri: 'file://' + datasetDocUrl}]
@@ -556,7 +556,7 @@ export function GRPC_GetFitSolutionRequest(datasetDocUrl) {
         exposeOutputs: ['outputs.0'],
         exposeValueTypes: ['CSV_URI'],
         users: [
-            {id: 'TwoRavens', chosen: false, reason: ''}
+            // {id: 'TwoRavens', chosen: false, reason: ''}
         ]
     };
 }
@@ -612,7 +612,9 @@ export function GRPC_ScoreSolutionRequest(problem, datasetDocUrl) {
     return {
         inputs: [{dataset_uri: 'file://' + datasetDocUrl}],
         performanceMetrics: [problem.metric, ...problem.metrics].map(metric => ({metric: app.d3mMetrics[metric]})),
-        users: [{id: 'TwoRavens', chosen: false, reason: ""}],
+        users: [
+            // {id: 'TwoRavens', chosen: false, reason: ""}
+        ],
         // note: FL only using KFOLD in latest iteration (3/8/2019)
         configuration: {
             method: app.d3mEvaluationMethods[problem.scoreOptions.evaluationMethod] || "K_FOLD",
