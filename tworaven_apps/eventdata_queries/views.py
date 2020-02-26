@@ -1,8 +1,12 @@
+import base64
+import csv
 import json
 import logging
-
+import pandas as pd
+from os.path import join
 from django.conf import settings
 from django.shortcuts import render
+from django.utils.text import slugify
 from django.db import IntegrityError
 from django.http import \
     (JsonResponse, HttpResponse)
@@ -14,6 +18,10 @@ from tworaven_apps.utils.view_helper import \
      get_json_error,
      get_json_success,
      get_common_view_info)
+from tworaven_apps.utils.random_info import \
+    (get_timestamp_string,
+     get_alphanumeric_lowercase)
+from tworaven_apps.utils.file_util import create_directory
 from tworaven_apps.utils.json_helper import format_pretty_from_dict, json_comply
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
@@ -408,20 +416,25 @@ def api_get_files_list(request, version_id):
 @csrf_exempt
 def create_evtdata_file(request):
     """Similar to api_get_eventdata, except that the Mongo result is
-    written to a faile"""
+    written to a file"""
     LOGGER.info('--- create_evtdata_file: write query results to file ---')
     success, json_req_obj = get_request_body_as_json(request)
 
     if not success:
         return JsonResponse(get_json_error(json_req_obj))
 
-    return JsonResponse(get_json_error('TESTING! %s' % json.dumps(json_req_obj)))
+    print('-- create_evtdata_file.json_req_obj', json_req_obj)
+
+    # return JsonResponse(get_json_error('TESTING! %s' % json.dumps(json_req_obj)))
 
     # check if data is valid
     form = EventDataGetDataForm(json_req_obj)
     if not form.is_valid():
         return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
 
+
+    # Run Mongo query
+    #
     success, addquery_obj_err = EventJobUtil.get_data(
         settings.EVENTDATA_DB_NAME,
         json_req_obj['collection_name'],
@@ -431,10 +444,43 @@ def create_evtdata_file(request):
         json_req_obj.get('host', None))
 
 
+    # Data retrieval failed
+    #
+    if not success:
+        return JsonResponse(\
+            get_json_error((f'Failed to write data to a file.'
+                            f'  Mongo query failed.'
+                            f' {addquery_obj_err}')))
+
+    # Build a file output path
+    # (EVTDATA_2_TWORAVENS_DIR)/(timestamp)/(collection name)_(rand chars).csv
+    #
+    output_dir = join(settings.EVTDATA_2_TWORAVENS_DIR, get_timestamp_string())
+    dir_info = create_directory(output_dir)
+    if not dir_info.success:
+        return JsonResponse(\
+            get_json_error((f'Failed to create directory to write file.'
+                            f' {dir_info.err_msg}')))
+
+    output_fname = '%s_%s.csv' % (slugify(json_req_obj['collection_name']),
+                                  get_alphanumeric_lowercase(7))
+
+    fpath = join(output_dir, output_fname)
+
+    # Convert the Mongo results to a dataframe and
+    #  export the dataframe as a csv
+    #
+    df = pd.DataFrame(list(addquery_obj_err))
+    if '_id' in df:
+        del df['_id']
+    df.to_csv(fpath, index=False)
+
+    print('file written: ', fpath)
+
     if success:
         return JsonResponse(get_json_success(\
-                                 'it worked',
-                                 data=json_comply(list(addquery_obj_err))))
+                            'Shared file created',
+                            data=dict(fpath=fpath)))
 
     return JsonResponse(get_json_error(addquery_obj_err))
 
@@ -449,6 +495,8 @@ def api_get_eventdata(request):
 
     if not success:
         return JsonResponse(get_json_error(json_req_obj))
+
+    print('-- api_get_eventdata.json_req_obj', json_req_obj)
 
     # check if data is valid
     form = EventDataGetDataForm(json_req_obj)

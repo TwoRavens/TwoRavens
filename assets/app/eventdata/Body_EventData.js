@@ -343,7 +343,7 @@ export default class Body_EventData {
                         let compiled = queryMongo.buildPipeline([...eventdata.manipulations])['pipeline'];
                         console.log('compiled', compiled);
 
-                        await eventdata.createEvtDataFile({blue: 'ocean'});
+                        await eventdata.createEvtDataFile();
                         if ('subset' === eventdata.selectedMode) {
                             if (eventdata.manipulations.length === 0) {
                                 tour.tourStartSaveQueryEmpty();

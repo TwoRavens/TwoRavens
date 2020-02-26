@@ -77,3 +77,4 @@ ravens_volume/TwoRavens_user_datasets
 assets/image-markup/
 tworaven_apps/image_utils/test_data/*
 !tworaven_apps/image_utils/test_data/.gitkeep
+ravens_volume/evtdata_user_datasets/*

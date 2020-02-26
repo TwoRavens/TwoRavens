@@ -383,8 +383,8 @@ export let getManipPipelineVariables = () => {
           type: 'data',
           variables: (selectedVariables.size + selectedConstructedVariables.size) === 0
               ? [
-                  ...genericMetadata[eventdata.selectedDataset]['columns'],
-                  ...genericMetadata[eventdata.selectedDataset]['columns_constructed']
+                  ...genericMetadata[selectedDataset]['columns'],
+                  ...genericMetadata[selectedDataset]['columns_constructed']
               ] : [
                   ...selectedVariables,
                   ...selectedConstructedVariables
@@ -403,17 +403,40 @@ export let createEvtDataFile = async () => {
 
   let manipVars = getManipPipelineVariables();
   let compiled = queryMongo.buildPipeline([...manipulations, manipVars])['pipeline'];
+  //let compiled = queryMongo.buildPipeline([...manipulations])['pipeline'];
+  let collection_name = selectedDataset
 
-  await eventdata.download(selectedDataset, JSON.stringify(compiled))
+  console.log('compiled', compiled);
+  let evt_data = {
+      host: genericMetadata[collection_name].host,
+      collection_name: collection_name,
+      method: 'aggregate',
+      query: JSON.stringify(compiled)
+  };
 
-      m.request({
+
+
+  console.log('->> evt_data', evt_data)
+
+  /*
+  return m.request({
+      url: mongoURL + 'get-eventdata',
+      method: 'POST',
+      data: evt_data
+  }).then(response => {
+      if (!response.success) throw response;
+      return response.data;
+  })
+  */
+
+  return m.request({
         url: mongoURL + 'create-evtdata-file',
         method: 'POST',
-        data: body
+        data: evt_data
     }).then(response => {
+      console.log('response', response)
         if (!response.success){
           console.log('It failed!!');
-
         } else{
           console.log('It worked!!');
         }
@@ -423,18 +446,31 @@ export let createEvtDataFile = async () => {
 }
 
 
-/*
- *  Retrieve event data from Mongo
- *
- */
-export let getEventData = async body => m.request({
-    url: mongoURL + 'get-eventdata',
-    method: 'POST',
-    data: body
-}).then(response => {
-    if (!response.success) throw response;
-    return response.data;
-});
+ /*
+  *  Retrieve event data from Mongo
+  *
+  *   Example request:
+  *   { host: "TwoRavens",
+  *     collection_name: "cline_speed",
+  *     method: "aggregate",
+  *     query: "[{"$match":{"EV_TYPE":{"$in":["1"]}}},{"$count":"total"}]"
+  *   }
+  *
+  *
+  */
+export let getEventData = async body => {
+  console.log('getEventData body', body);
+  return m.request({
+      url: mongoURL + 'get-eventdata',
+      method: 'POST',
+      data: body
+  }).then(response => {
+      if (!response.success) throw response;
+      return response.data;
+  });
+} // End: getEventData
+
+
 
 // download data to display a menu
 export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={}) => { // the dict is for optional named arguments

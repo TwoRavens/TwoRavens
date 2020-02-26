@@ -2,6 +2,7 @@ import json, jsonfield
 from collections import OrderedDict
 from django import forms
 from django.conf import settings
+from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.eventdata_queries.models import \
     (EventDataSavedQuery, ArchiveQueryJob,
      AGGREGATE, SUBSET,
@@ -107,7 +108,13 @@ class EventDataGetDataForm(forms.Form):
             raise forms.ValidationError("The collection method is not among %s: %s" % (str(METHOD_CHOICES), method))
 
     def clean_query(self):
-        return json.loads(self.cleaned_data.get('query'))
+        """Convert the query form JSON to a python OrderedDict"""
+        qstr = self.cleaned_data.get('query')
+        json_info = json_loads(qstr)
+        if json_info.success:
+            return json_info.result_obj
+
+        raise forms.ValidationError(f'{json_info.err_msg}  query: {qstr}')
 
     def clean_distinct(self):
         return self.cleaned_data.get('distinct')
