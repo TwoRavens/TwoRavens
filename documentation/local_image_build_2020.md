@@ -32,4 +32,16 @@ docker push tworavens/ravens-main:comfrey3
 
 docker build -t tworavens/ravens-r-service:comfrey3 -f Dockerfile-flask-r .
 docker push tworavens/ravens-r-service:comfrey3;
+
+
+# ----------------------------
+# Build event Data images
+# ----------------------------
+cd setup/nginx/;
+docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-nginx:sumac .;
+cd ../../;
+docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-main:sumac .;
+docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+docker push tworavens/eventdata-ravens-main:sumac;
+docker push tworavens/eventdata-ravens-nginx:sumac;
 ```
