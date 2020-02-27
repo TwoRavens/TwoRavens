@@ -79,9 +79,14 @@ if mongo_collection_name in db.collection_names():
 for idx, row in df_melt.iterrows():
     row = dict(row)
     location_id = (row["Province/State"], row['Country/Region'])
-    print(lat_lon_map.get(location_id))
+    # print(lat_lon_map.get(location_id))
     row.update(lat_lon_map.get(location_id, {
         "Lat": None,
         "Long": None
     }))
-    db[mongo_collection_name].insert(row)
+    num_cases = row['Cases']
+    del row['Cases']
+    if num_cases > 0:
+        for i in range(num_cases):
+            row['Case_ID'] = i
+            db[mongo_collection_name].insert(dict(row))

@@ -28,6 +28,13 @@
         "Lat",
         "Long"
       ]
+    },
+    "Disease Status": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "Status"
+      ]
     }
   },
   "columns": [
@@ -35,7 +42,8 @@
     "Country/Region",
     "Last Update",
     "Status",
-    "Cases"
+    "Lat",
+    "Long"
   ],
   "columns_constructed": [
   ],
