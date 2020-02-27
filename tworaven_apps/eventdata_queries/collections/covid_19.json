@@ -1,0 +1,69 @@
+{
+  "name": "Novel Coronavirus",
+  "key": "covid_19",
+  "description": "2019 Novel Coronavirus COVID-19 (2019-nCoV) Data Repository by Johns Hopkins CSSE",
+  "interval": "22 January 2020 - current",
+  "codebook": "https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data",
+  "download": "NA",
+  "host": "TwoRavens",
+  "subsets": {
+    "Date": {
+      "type": "date",
+      "measureType": "unit",
+      "structure": "point",
+      "columns": [
+        "Last Update"
+      ]
+    },
+    "Location": {
+      "type": "discrete_grouped",
+      "group_by": "region",
+      "columns": [
+        "Country/Region"
+      ]
+    },
+    "Coordinates": {
+      "type": "coordinates",
+      "columns": [
+        "Lat",
+        "Long"
+      ]
+    },
+    "Disease Status": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "Status"
+      ]
+    }
+  },
+  "columns": [
+    "Province/State",
+    "Country/Region",
+    "Last Update",
+    "Status",
+    "Lat",
+    "Long"
+  ],
+  "columns_constructed": [
+  ],
+  "alignments": {
+    "Last Update": "date",
+    "Country/Region": "country",
+    "Lat": "latitude",
+    "Long": "longitude"
+  },
+  "formats": {
+    "Country/Region": "ICEWS",
+    "Last Update": "%D-%M-%Y"
+  },
+  "citations": [
+    {
+      "author": "Johns Hopkins University",
+      "year": "2020",
+      "title": "2019 Novel Coronavirus COVID-19 (2019-nCoV) Data Repository by Johns Hopkins CSSE",
+      "date": "February 2020",
+      "url": "https://github.com/CSSEGISandData/COVID-19"
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import * as fileSaver from 'file-saver';
 import m from 'mithril';
+import $ from 'jquery'
 
 import {mongoURL, looseSteps, alignmentData, formattingData, alertError} from "../app";
 import * as common from '../../common/common';
