@@ -405,20 +405,20 @@ function processRule(rule) {
     if (rule.subset === 'date') {
         let rule_query_inner = {};
         if (rule.structure === 'point') {
-            let rule_query_inner = {};
+            let rule_query_inner = [];
             let column;
             for (let child of rule.children) {
                 column = child.column;
                 if ('fromDate' in child) {
                     child.fromDate = new Date(child.fromDate);
-                    rule_query_inner['$gte'] = {'$date': new Date(child.fromDate).toISOString().slice(0, 10)}
+                    rule_query_inner.push({[column]: {$gte: {'$date': new Date(child.fromDate).toISOString().slice(0, 10)}}})
                 }
                 if ('toDate' in child) {
                     child.toDate = new Date(child.toDate);
-                    rule_query_inner['$lte'] = {'$date': new Date(child.toDate).toISOString().slice(0, 10)}
+                    rule_query_inner.push({[column]: {$lte: {'$date': new Date(child.toDate).toISOString().slice(0, 10)}}})
                 }
             }
-            rule_query[column] = {$or: [rule_query_inner, {column: {$exists: 0}}]};
+            rule_query = {$or: [{$and: rule_query_inner}, {[column]: {$exists: 0}}]};
         } else if (rule.structure === 'interval') {
             let or = [];
             for (let column of rule.children.map(child => child.column)) {
