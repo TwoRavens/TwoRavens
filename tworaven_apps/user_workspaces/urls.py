@@ -14,6 +14,11 @@ urlpatterns = (
     re_path(r'^upload-dataset$',
             views_new_dataset.view_upload_dataset,
             name='view_upload_dataset'),
+
+    re_path(r'^load-evtdata$',
+            views_new_dataset.view_load_eventdata_dataset,
+            name='view_load_eventdata_dataset'),
+
     # List datasets
     #
     re_path(r'^list-dataset-choices-html$',

@@ -211,20 +211,16 @@ class TA2Helper(BasicErrCheck):
 
         # sudo is not necessary if just trying to run a local image?
         # If trying to download and run into an issue, then use sudo
-        docker_cmd = ('docker run --rm'
-                      ' --cpus 3'
-                      ' --name ta2_server'
-                      ' {4}'
-                      ' {2}'
-                      ' -v {0}:/input'
-                      ' -v {1}:/output'
-                      ' -v /ravens_volume:/ravens_volume'
-                      ' {3}'
-                      ' | tee /home/shoe/Desktop/ta2_logs.txt').format(self.data_input_dir,
-                                 self.data_output_dir,
-                                 additional_options,
-                                 image_name,
-                                 env_str)
+        docker_cmd = (f'docker run --rm'
+                      f' --cpus 3'
+                      f' --name ta2_server'
+                      f' {env_str}'
+                      f' {additional_options}'
+                      f' -v {self.data_input_dir}:/input'
+                      f' -v {self.data_output_dir}:/output'
+                      f' -v /ravens_volume:/ravens_volume'
+                      f' {image_name}')
+                      #' | tee /home/shoe/Desktop/ta2_logs.txt')
 
         print('docker_cmd', docker_cmd)
 

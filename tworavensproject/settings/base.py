@@ -451,7 +451,7 @@ EVENTDATA_DATASETS = ast.literal_eval(os.environ.get(\
                         KEY_EVENTDATA_DATASETS,
                         json.dumps(UT_DALLAS_COLLECTIONS)))
 
-print('EVENTDATA_DATASETS', EVENTDATA_DATASETS)
+# print('EVENTDATA_DATASETS', EVENTDATA_DATASETS)
 
 # -------------------------------
 # Directory for moving data from
@@ -476,7 +476,9 @@ if not isdir(EVTDATA_2_TWORAVENS_DIR):
 # EVENTDATA_TWO_RAVENS_TARGET_URL
 # - Url to a TwoRavens installation
 # -------------------------------
-EVENTDATA_TWO_RAVENS_TARGET_URL = os.environ.get('EVENTDATA_TWO_RAVENS_TARGET_URL', 'http://127.0.0.1:8080/')
+EVENTDATA_TWO_RAVENS_TARGET_URL = os.environ.get('EVENTDATA_TWO_RAVENS_TARGET_URL', 'http://127.0.0.1:8080')
+if EVENTDATA_TWO_RAVENS_TARGET_URL.endswith('/'):
+    EVENTDATA_TWO_RAVENS_TARGET_URL = EVENTDATA_TWO_RAVENS_TARGET_URL[1:]
 
 # -------------------------
 # Datamart related

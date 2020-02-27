@@ -4,6 +4,7 @@ import json
 import logging
 import pandas as pd
 from os.path import join
+import urllib.parse
 from django.conf import settings
 from django.shortcuts import render
 from django.utils.text import slugify
@@ -39,6 +40,7 @@ from tworaven_apps.eventdata_queries.mongo_retrieve_util import \
 from tworaven_apps.eventdata_queries.static_vals import \
     (KEY_INCLUDE_EVENTDATA_COLLECTION_NAMES,)
 from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
+#from tworaven_apps.data_prep_utils import static_vals as dp_static
 
 LOGGER = logging.getLogger(__name__)
 
@@ -455,15 +457,18 @@ def create_evtdata_file(request):
     # Build a file output path
     # (EVTDATA_2_TWORAVENS_DIR)/(timestamp)/(collection name)_(rand chars).csv
     #
-    output_dir = join(settings.EVTDATA_2_TWORAVENS_DIR, get_timestamp_string())
+    output_dir = join(settings.EVTDATA_2_TWORAVENS_DIR,
+                      get_timestamp_string(),
+                      slugify(json_req_obj['collection_name']),
+                      get_alphanumeric_lowercase(4))
+
     dir_info = create_directory(output_dir)
     if not dir_info.success:
         return JsonResponse(\
             get_json_error((f'Failed to create directory to write file.'
                             f' {dir_info.err_msg}')))
 
-    output_fname = '%s_%s.csv' % (slugify(json_req_obj['collection_name']),
-                                  get_alphanumeric_lowercase(7))
+    output_fname = 'learningData.csv'
 
     fpath = join(output_dir, output_fname)
 
@@ -477,12 +482,17 @@ def create_evtdata_file(request):
 
     print('file written: ', fpath)
 
-    if success:
-        return JsonResponse(get_json_success(\
-                            'Shared file created',
-                            data=dict(fpath=fpath)))
+    params = {'fpath': fpath,
+              'name': f"{json_req_obj['collection_name']} subset"}
 
-    return JsonResponse(get_json_error(addquery_obj_err))
+    tworavens_url = '%s/user-workspaces/load-evtdata?%s' % \
+                    (settings.EVENTDATA_TWO_RAVENS_TARGET_URL,
+                     urllib.parse.urlencode(params))
+
+    return JsonResponse(get_json_success(\
+                        'Shared file created',
+                        data=dict(tworavens_url=tworavens_url)))
+
 
 
 @csrf_exempt
