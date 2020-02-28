@@ -206,31 +206,19 @@ def materialize_split_indices_collection(configuration, workspace):
     @return:
     """
     query = configuration.get('query')
-    
 
 
-@celery_app.task()
-def split_dataset(configuration, workspace):
-
-    split_options = configuration.get('split_options', {})
-    problem = configuration.get('problem')
-    dataset_id = configuration['dataset_id']
-
-    dataset_schema = json.load(open(configuration['dataset_schema'], 'r'))
-    resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
-
+def rewrite_dataset_schema(problem, dataset_schema, all_variables, dataset_id, update_roles=False):
     dataset_schema['about']['datasetID'] = dataset_id
 
-    cross_section_date_limits = None
-    inferred_freq = None
-    dtypes = {}
+    resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
+
     # rewrite datasetDoc in output datasets if new problem metadata is supplied
     keep_variables = list({
         *problem.get('indexes', ['d3mIndex']),
         *problem['predictors'],
         *problem['targets']
     })
-    all_variables = pd.read_csv(configuration['dataset_path'], nrows=1).columns.tolist()
     # preserve column order, and only keep variables that already existed
     keep_variables = sorted(list(i for i in keep_variables if i in all_variables), key=lambda x: all_variables.index(x))
 
@@ -264,12 +252,38 @@ def split_dataset(configuration, workspace):
     def update_col_schema(i, col_name):
         col_schema = next(col_schema for col_schema in resource_schema['columns'] if col_schema['colName'] == col_name)
         col_schema['colIndex'] = i
-        if configuration.get('update_roles'):
+        if update_roles:
             col_schema['role'] = update_roles(col_schema['role'], col_name)
         return col_schema
 
     # modify in place
     resource_schema['columns'] = [update_col_schema(i, col_name) for i, col_name in enumerate(keep_variables)]
+
+    return keep_variables, dataset_schema
+
+
+@celery_app.task()
+def split_dataset(configuration, workspace):
+
+    split_options = configuration.get('split_options', {})
+
+    problem = configuration.get('problem')
+    dataset_schema = json.load(open(configuration['dataset_schema'], 'r'))
+    dataset_id = configuration['dataset_id']
+
+    all_variables = pd.read_csv(configuration['dataset_path'], nrows=1).columns.tolist()
+    keep_variables, dataset_schema = rewrite_dataset_schema(
+        problem=problem,
+        dataset_schema=dataset_schema,
+        all_variables=all_variables,
+        dataset_id=dataset_id,
+        update_roles=configuration.get('update_roles'))
+
+    resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
+
+    cross_section_date_limits = None
+    inferred_freq = None
+    dtypes = {}
 
     # WARNING: dates are assumed to be monotonically increasing
     if problem.get('taskType') == 'FORECASTING' and problem.get('time'):
@@ -598,6 +612,9 @@ def create_partials_datasets(configuration, workspace_id):
     """Create partials datasets"""
     print(configuration)
 
+    problem = configuration['problem']
+    dataset_id = configuration['dataset_id']
+
     try:
         workspace = UserWorkspace.objects.get(pk=workspace_id)
     except UserWorkspace.DoesNotExist:
@@ -618,12 +635,21 @@ def create_partials_datasets(configuration, workspace_id):
     else:
         return {KEY_SUCCESS: False, KEY_DATA: 'no dataset supplied'}
 
+    keep_variables, dataset_schema = rewrite_dataset_schema(
+        problem=problem,
+        dataset_schema=dataset_schema,
+        all_variables=configuration['all_variables'],
+        dataset_id=dataset_id,
+        update_roles=configuration.get('update_roles'))
+
+    print(dataset_schema)
     resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
 
     if 'dataset_schema_path' in configuration:
         dataframe = dataset[resource_schema['resID']]
 
-    domains = configuration['domains']
+    domains = {k: v for k, v in configuration['domains'].items() if k in keep_variables}
+    dataframe = dataframe[keep_variables]
     # METADATA OF SCHEMA:
     # {variable: [domain], ...}
 
@@ -643,9 +669,6 @@ def create_partials_datasets(configuration, workspace_id):
         dataset_schema_path = os.path.join(dest_directory, 'datasetDoc.json')
 
         # D3M: change the dataset ID to be consistent with the search
-        with open(dataset_schema_path, 'r') as dataset_schema_file:
-            dataset_schema = json.load(dataset_schema_file)
-        dataset_schema['about']['datasetID'] = configuration['dataset_id']
         with open(dataset_schema_path, 'w') as dataset_schema_file:
             json.dump(dataset_schema, dataset_schema_file)
 
@@ -694,10 +717,10 @@ def create_partials_datasets(configuration, workspace_id):
             result_write = write_dataset(dataset_name, synthetic_data)
             if not result_write[KEY_SUCCESS]:
                 return result_write
-            dataset_schema, dataset_path = result_write[KEY_DATA]
+            dataset_schema_variable, dataset_path_variable = result_write[KEY_DATA]
 
-            dataset_schemas[dataset_name] = dataset_schema
-            dataset_paths[dataset_name] = dataset_path
+            dataset_schemas[dataset_name] = dataset_schema_variable
+            dataset_paths[dataset_name] = dataset_path_variable
         else:
             union_datasets.append(synthetic_data)
 
@@ -719,10 +742,10 @@ def create_partials_datasets(configuration, workspace_id):
         result_write = write_dataset(dataset_name, synthetic_data)
         if not result_write[KEY_SUCCESS]:
             return result_write
-        dataset_schema, dataset_path = result_write[KEY_DATA]
+        dataset_schema_union, dataset_path_union = result_write[KEY_DATA]
 
-        dataset_schemas[configuration['name']] = dataset_schema
-        dataset_paths[configuration['name']] = dataset_path
+        dataset_schemas[configuration['name']] = dataset_schema_union
+        dataset_paths[configuration['name']] = dataset_path_union
 
     return {
         KEY_SUCCESS: True,

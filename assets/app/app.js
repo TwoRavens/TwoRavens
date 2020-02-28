@@ -1922,8 +1922,10 @@ export let materializePartials = async problem => {
         method: 'POST',
         url: D3M_SVC_URL + '/get-partials-datasets',
         data: {
+            problem: SPEC_problem(problem),
             dataset_id: problem.d3mDatasetId,
             domains: problem.domains,
+            all_variables: Object.keys(variableSummaries),
             dataset_schema: workspace.datasetDoc,
             dataset,
             separate_variables: false,
@@ -1968,9 +1970,13 @@ export let materializeICE = async problem => {
         method: 'POST',
         url: D3M_SVC_URL + '/get-partials-datasets',
         data: {
-            domains: problem.domains,
-            dataset_id: problem.d3mDatasetId,
+            problem: SPEC_problem(problem),
             dataset_schema_path: samplePaths.metadata_path,
+            dataset_path: samplePaths.data_path,
+            all_variables: Object.keys(variableSummaries),
+            dataset_id: problem.d3mDatasetId,
+            update_roles: true,
+            domains: problem.domains,
             separate_variables: true,
             name: 'ICE_synthetic_'
         }
