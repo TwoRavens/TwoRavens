@@ -555,7 +555,7 @@ export function buildAggregation(unitMeasures, accumulations) {
         'unit': {
             'date': (data) => {
                 let dateFormat = {
-                    'Weekly': '%G-%V',
+                    // 'Weekly': '%G-%V',
                     'Monthly': '%Y-%m',
                     'Yearly': '%Y'
                 }[data['measure']];
@@ -573,19 +573,19 @@ export function buildAggregation(unitMeasures, accumulations) {
                         }
                     };
                     // transform back out of string afterwards
-                    if (data['measure'] === 'Weekly') postTransforms[data['column']] = {
-                        $dateFromString: {
-                            format: dateFormat,
-                            dateString: '$_id\\.' + data['column']
-                        }
-                    };
+                    // if (data['measure'] === 'Weekly') postTransforms[data['column']] = {
+                    //     $dateFromString: {
+                    //         format: dateFormat,
+                    //         dateString: '$_id\\.' + data['column']
+                    //     }
+                    // };
                     if (data['measure'] === 'Monthly' || data['measure'] === 'Yearly') postTransforms[data['column']] = {
                         $dateFromString: {
-                            format: '%Y-%m-%d',
+                            // format: '%Y-%m-%d',
                             dateString: {
                                 $concat: ['$_id\\.' + data['column'], {
-                                    'Monthly': '-01',
-                                    'Yearly': '-01-01'
+                                    'Monthly': '-01T00:00:00.000',
+                                    'Yearly': '-01-01T00:00:00.000'
                                 }[data['measure']]]
                             }
                         }
