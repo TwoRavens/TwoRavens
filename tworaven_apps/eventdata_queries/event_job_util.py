@@ -8,7 +8,7 @@ import datetime
 import shlex
 import traceback
 import time
-
+from os.path import join
 from django.conf import settings
 from collections import OrderedDict
 
@@ -489,25 +489,43 @@ class EventJobUtil(object):
         names - optional list of filenames, without the extension.
             e.g. ['acled_africa', 'cline_phoenix_nyt', 'terrier']
         """
-        directory = os.path.join(os.getcwd(), 'tworaven_apps', 'eventdata_queries', folder)
+        directory = join(os.getcwd(), 'tworaven_apps', 'eventdata_queries', folder)
 
         if names:
+            # add .json to name, if needed
+            names = [x if x.endswith('.json') else x + '.json' for x in names]
+
             # make sure name is in directory and has file extension
-            names = [name + '.json' for name in names if name + '.json' in os.listdir(directory)]
+            names = [x for x in names if x in os.listdir(directory)]
+
         else:
+            # Use all names in the directory
+            #
             names = sorted(os.listdir(directory))
 
         #  For the current collections, only allow
-        #   those from UT Dallas
+        #   those from settings.EVENTDATA_DATASETS
         #
         if folder == evt_static.FOLDER_COLLECTIONS:
             names = [fname
                      for fname in names
                      if fname in settings.EVENTDATA_DATASETS]
 
-        return {
-            filename.replace('.json', ''): json.load(open(directory + os.sep + filename, 'r'), object_pairs_hook=OrderedDict) for filename in names
-        }
+        # Construct dict of collection names and file contents
+        #
+        #
+        collection_info = {}
+        for fname in names:
+            collection_info[fname.replace('.json', '')] = \
+                json.load(open(join(directory, fname), 'r'),
+                          object_pairs_hook=OrderedDict)
+        return collection_info
+        """return {
+            filename.replace('.json', ''): \
+                json.load(open(join(directory, fname), 'r'),
+                          object_pairs_hook=OrderedDict)
+                for filename in names
+        }"""
 
 
     @staticmethod
@@ -529,7 +547,7 @@ class EventJobUtil(object):
             reload=False, header=True, columns=None,
             indexes=None, delimiter=None):
         """Key method to load a Datafile into Mongo as a new collection"""
-        print('--> import_dataset --')
+        # print('--> import_dataset --')
 
         retrieve_util = MongoRetrieveUtil(database, collection)
         db_info = retrieve_util.get_mongo_db(database)
@@ -547,7 +565,7 @@ class EventJobUtil(object):
                 db[collection_name].drop()
                 MongoDataset.objects.select_for_update().filter(name=collection_name).delete()
             else:
-                print('--> import_dataset: data in database, no data in django, not reloading')
+                #print('--> import_dataset: data in database, no data in django, not reloading')
                 # make sure database entry exists
                 dataset_records = MongoDataset.objects.select_for_update().filter(name=collection_name)
                 if dataset_records:
@@ -630,7 +648,7 @@ class EventJobUtil(object):
             return encode_variable(column).replace('"', '\\"')
 
         field_names = ','.join(f"{sanitize(col)}.{columns.get(col, 'auto')}()" for col in columns)
-        print('field_names', field_names)
+        # print('field_names', field_names)
         delimiter_type = 'csv'
         if os.path.splitext(data_path)[1] == 'tsv':
             delimiter_type = 'tsv'
@@ -666,14 +684,14 @@ class EventJobUtil(object):
             # the first command takes the data path, which is piped through the other commands
             import_commands[0] = import_commands[0] + ' ' + data_path
 
-            print('--> import_dataset: mongoimport command:')
-            print('-->' + ' | '.join(import_commands))
+            # print('--> import_dataset: mongoimport command:')
+            # print('-->' + ' | '.join(import_commands))
 
             # pipe each command to the next
-            print('--> start subprocess')
+            # print('--> start subprocess')
             process = subprocess.Popen(shlex.split(import_commands[0]), stdout=subprocess.PIPE)
             for command in import_commands[1:]:
-                print('--> command (bracketed): [%s]' % command)
+                # print('--> command (bracketed): [%s]' % command)
                 process = subprocess.Popen(shlex.split(command), stdin=process.stdout, stdout=subprocess.PIPE)
             process.communicate()
 

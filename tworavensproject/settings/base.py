@@ -444,14 +444,11 @@ EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
 # Example:
 #    export EVENTDATA_DATASETS='["cline_phoenix_fbis.json", "cline_phoenix_nyt.json", "cline_phoenix_swb.json", "icews.json"]'
 #
-
 from tworaven_apps.eventdata_queries.static_vals import \
     (KEY_EVENTDATA_DATASETS, UT_DALLAS_COLLECTIONS)
 EVENTDATA_DATASETS = ast.literal_eval(os.environ.get(\
                         KEY_EVENTDATA_DATASETS,
                         json.dumps(UT_DALLAS_COLLECTIONS)))
-
-# print('EVENTDATA_DATASETS', EVENTDATA_DATASETS)
 
 # -------------------------------
 # Directory for moving data from

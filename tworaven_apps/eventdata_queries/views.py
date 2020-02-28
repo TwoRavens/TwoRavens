@@ -425,7 +425,7 @@ def create_evtdata_file(request):
     if not success:
         return JsonResponse(get_json_error(json_req_obj))
 
-    print('-- create_evtdata_file.json_req_obj', json_req_obj)
+    # print('-- create_evtdata_file.json_req_obj', json_req_obj)
 
     # return JsonResponse(get_json_error('TESTING! %s' % json.dumps(json_req_obj)))
 
@@ -485,10 +485,12 @@ def create_evtdata_file(request):
     params = {'fpath': fpath,
               'name': f"{json_req_obj['collection_name']} subset"}
 
+    print('subset->TwoRavens params', params)
     tworavens_url = '%s/user-workspaces/load-evtdata?%s' % \
                     (settings.EVENTDATA_TWO_RAVENS_TARGET_URL,
                      urllib.parse.urlencode(params))
 
+    print('tworavens_url', tworavens_url)
     return JsonResponse(get_json_success(\
                         'Shared file created',
                         data=dict(tworavens_url=tworavens_url)))
@@ -506,7 +508,7 @@ def api_get_eventdata(request):
     if not success:
         return JsonResponse(get_json_error(json_req_obj))
 
-    print('-- api_get_eventdata.json_req_obj', json_req_obj)
+    # print('-- api_get_eventdata.json_req_obj', json_req_obj)
 
     # check if data is valid
     form = EventDataGetDataForm(json_req_obj)

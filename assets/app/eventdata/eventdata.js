@@ -415,20 +415,7 @@ export let createEvtDataFile = async () => {
       query: JSON.stringify(compiled)
   };
 
-
-
   console.log('->> evt_data', evt_data)
-
-  /*
-  return m.request({
-      url: mongoURL + 'get-eventdata',
-      method: 'POST',
-      data: evt_data
-  }).then(response => {
-      if (!response.success) throw response;
-      return response.data;
-  })
-  */
 
   return m.request({
         url: mongoURL + 'create-evtdata-file',
@@ -440,6 +427,9 @@ export let createEvtDataFile = async () => {
           console.log('It failed!!');
         } else{
           console.log('It worked!!');
+          if (('data' in response)&&('tworavens_url' in response.data)){
+            window.location.href = response.data.tworavens_url;
+          }
         }
         console.log(response.message);
         //return response.data;

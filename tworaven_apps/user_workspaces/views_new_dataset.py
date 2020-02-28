@@ -60,12 +60,19 @@ def view_load_eventdata_dataset(request, **kwargs):
     url query str:
         "http://127.0.0.1:8080/user-workspaces/load-evtdata?fpath=%2Fravens_volume%2Fevtdata_user_datasets%2F2020-02-27_00-07-06%2Fcline_speed%2F9rh9%2FlearningData.csv&name=cline_speed+subset"
     """
+    # --------------------------------------
+    # Get the user workspace
+    # --------------------------------------
     user_workspace_info = get_latest_user_workspace(request)
     if not user_workspace_info.success:
         return JsonResponse(get_json_error(user_workspace_info.err_msg))
 
     user_workspace = user_workspace_info.result_obj
 
+    # --------------------------------------
+    # Retrieve, format, and verify the filepath
+    #   the "fpath" key
+    # --------------------------------------
     if not ws_static.EVENT_DATA_FILEPATH_KEY in request.GET:
         user_msg = (f'Expected key {ws_static.EVENT_DATA_FILEPATH_KEY}'
                     f' in GET query string')
@@ -77,7 +84,6 @@ def view_load_eventdata_dataset(request, **kwargs):
     else:
         dataset_name = f'EvtData {get_timestamp_string()}'
     print(request.GET)
-
 
     try:
         fpath = abspath(fpath) # resolve any sym links, .., etc..
@@ -95,18 +101,11 @@ def view_load_eventdata_dataset(request, **kwargs):
         user_msg = (f'This is not a file: {fpath}')
         return JsonResponse(get_json_error(user_msg))
 
+    # --------------------------------------
+    # Create/format a dataset based on the
+    #   the uploaded file
+    # --------------------------------------
     dest_directory = dirname(fpath)
-
-    # Save the about.json
-    #
-    #json_info = json_loads(request.POST.get('metadata'))
-    #if not json_info.success:
-    #    return JsonResponse(get_json_error(json_info.err_msg))
-
-    # save json data
-    #dataset_name = None
-    #if dp_static.DATASET_NAME_FROM_UI in json_info.result_obj:
-    #    dataset_name = json_info.result_obj[dp_static.DATASET_NAME_FROM_UI]
 
     # Create new dataset folders/etc
     #
