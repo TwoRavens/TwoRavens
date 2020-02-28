@@ -403,10 +403,6 @@ export class TreeAggregate {
             callbacks: {
                 cancel: (datum, parentData) => {
                     if (!editable) return;
-                    console.log("parentData");
-                    console.log(parentData);
-                    console.log("datum");
-                    console.log(datum);
 
                     parentData.splice(parentData.findIndex(entry => entry.id === datum.id), 1);
 

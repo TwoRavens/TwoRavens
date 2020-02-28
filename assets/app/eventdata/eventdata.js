@@ -588,6 +588,7 @@ export async function submitSubset() {
         Object.keys(subsetData)
             .filter(subset => subset !== newMenu.name)
             .forEach(subset => delete subsetData[subset]);
+        canvasTypes.forEach(canvas => canvasRedraw[canvas] = true);
         m.redraw();
     } else {
       console.log('loadMenuEventData Failed!!')
@@ -615,6 +616,7 @@ export async function submitAggregation() {
     }
     setLaddaSpinner('btnUpdate', false);
 
+    canvasTypes.forEach(canvas => canvasRedraw[canvas] = true);
     m.redraw()
 }
 

@@ -765,6 +765,7 @@ export default class Body_EventData {
             })
         }
 
+        console.log(eventdata);
         eventdata.canvasPreferences[eventdata.selectedCanvas] = eventdata.canvasPreferences[eventdata.selectedCanvas] || {};
         return m({
             'About': CanvasAbout,
