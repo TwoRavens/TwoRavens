@@ -56,7 +56,7 @@ after_success:
   # -------------------------------------
   # Temp push, to test new k8s deploy
   # -------------------------------------
-  - if [ "$TRAVIS_BRANCH" == "EventData_generalization" ]; then
+  - if [ "$TRAVIS_BRANCH" == "xEventData_generalization" ]; then
     cd setup/nginx/;
     docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-nginx:latest .;
     cd ../../;
