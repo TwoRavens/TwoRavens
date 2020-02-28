@@ -3,6 +3,7 @@ import json
 import os
 from os.path import abspath, dirname, isfile, join, splitext
 from django.shortcuts import render
+from django.contrib.auth import authenticate, login
 
 from django.http import HttpResponse, Http404, JsonResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
@@ -60,6 +61,19 @@ def view_load_eventdata_dataset(request, **kwargs):
     url query str:
         "http://127.0.0.1:8080/user-workspaces/load-evtdata?fpath=%2Fravens_volume%2Fevtdata_user_datasets%2F2020-02-27_00-07-06%2Fcline_speed%2F9rh9%2FlearningData.csv&name=cline_speed+subset"
     """
+    # --------------------------------------
+    # For testing with a non-logged in user
+    # --------------------------------------
+    if not request.user.is_authenticated:
+        user = authenticate(username=settings.TEST_USERNAME,
+                            password=settings.TEST_PASSWORD)
+        print('user', user)
+        if user is None:
+            user_msg = 'Please login and try to connect again.'
+            return JsonResponse(get_json_error(user_msg))
+        else:
+            login(request, user)
+
     # --------------------------------------
     # Get the user workspace
     # --------------------------------------

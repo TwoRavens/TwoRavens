@@ -491,3 +491,8 @@ DATAMART_LONG_TIMEOUT = 5 * 60 # 5 minutes
 DATAMART_VERY_LONG_TIMEOUT = 10 * 60 # 8 minutes
 
 SORT_BY_GATES_DATASETS = strtobool(os.environ.get('SORT_BY_GATES_DATASETS', 'False'))
+
+# TEST ONLY: Set for TwoRavens when loading EventData urls
+#
+TEST_USERNAME = os.environ.get('TEST_USERNAME', 'test_user')
+TEST_PASSWORD = os.environ.get('TEST_PASSWORD', 'test_user')
