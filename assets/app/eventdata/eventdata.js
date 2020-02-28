@@ -1,6 +1,6 @@
 import * as fileSaver from 'file-saver';
 import m from 'mithril';
-import $ from 'jquery'
+// import $ from 'jquery'
 
 import {mongoURL, looseSteps, alignmentData, formattingData, alertError} from "../app";
 import * as common from '../../common/common';
@@ -68,10 +68,12 @@ export let setSelectedDataset = (key) => {
 
             alignmentLog.push(...realignQuery(step, previousSelectedDataset, selectedDataset));
 
+            /*
             let subsetTree = $('#subsetTree' + step.id);
             let state = subsetTree.tree('getState');
             subsetTree.tree('loadData', step.abstractQuery);
             subsetTree.tree('setState', state);
+            */
         });
 
         showAlignmentLog = true;
