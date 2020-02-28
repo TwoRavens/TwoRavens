@@ -1,0 +1,6 @@
+{
+	"1": "Catastrophic (likely ≥ $1 billion)",
+	"2": "Major (likely ≥ $1 million but < $1 billion)",
+	"3": "Minor (likely < $1 million)",
+	"4": "Unknown"
+}

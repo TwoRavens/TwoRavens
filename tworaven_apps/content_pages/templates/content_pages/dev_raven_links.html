@@ -74,8 +74,11 @@
             {#<li><b>partialsapp:</b> <a href="{% url 'view_rook_route' 'partials.app' %}">rook server partials.app</a></li>#}
 
             <li><b>TA2:</b> <a href="{% url 'view_hello_heartbeat' %}">TA2 hello heartbeat</a></li>
+            <hr />
 
+            <li><b>Mongo:</b> {{ MONGO_URL }}</li>
             <li><b>Mongo:</b> <a href="{% url 'api_mongo_healthcheck' %}">Mongo healthcheck</a></li>
+            <li><b>Mongo:</b> <a href="{% url 'api_list_eventdata_collections' %}">Mongo event data collections</a></li>
           </ul>
         </div>
       </div>

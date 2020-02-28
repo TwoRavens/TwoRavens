@@ -8,7 +8,7 @@ import datetime
 import shlex
 import traceback
 import time
-
+from os.path import join
 from django.conf import settings
 from collections import OrderedDict
 
@@ -20,6 +20,7 @@ from tworaven_apps.utils.view_helper import get_json_error
 from tworaven_apps.utils.mongo_util import infer_type, encode_variable
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp)
+from tworaven_apps.eventdata_queries import static_vals as evt_static
 from tworaven_apps.eventdata_queries.models import \
     (EventDataSavedQuery, ArchiveQueryJob, UserNotification,
      SEARCH_PARAMETERS, SEARCH_KEY_NAME,
@@ -468,18 +469,63 @@ class EventJobUtil(object):
 
     @staticmethod
     def get_metadata(folder, names=None):
-        # `folder` is not a user-defined value
-        directory = os.path.join(os.getcwd(), 'tworaven_apps', 'eventdata_queries', folder)
+        """
+        Open one of the folders such as 'collections', 'formats',  or 'alignments'
+
+        Read through the files and return a dict with:
+            {key: file contents}
+
+        Example, for "collections/terrier.json":
+            {
+                "terrier": {
+                    "name": "Temporally Extended Regularly Reproducible International Event Records (Terrier)",
+                    "key": "terrier",
+                    "description": "Event data records [etc, etc]",
+                    "interval": "1979 - 2016",
+                    etc...
+                }
+            }
+
+        names - optional list of filenames, without the extension.
+            e.g. ['acled_africa', 'cline_phoenix_nyt', 'terrier']
+        """
+        directory = join(os.getcwd(), 'tworaven_apps', 'eventdata_queries', folder)
 
         if names:
+            # add .json to name, if needed
+            names = [x if x.endswith('.json') else x + '.json' for x in names]
+
             # make sure name is in directory and has file extension
-            names = [name + '.json' for name in names if name + '.json' in os.listdir(directory)]
+            names = [x for x in names if x in os.listdir(directory)]
+
         else:
+            # Use all names in the directory
+            #
             names = sorted(os.listdir(directory))
 
-        return {
-            filename.replace('.json', ''): json.load(open(directory + os.sep + filename, 'r'), object_pairs_hook=OrderedDict) for filename in names
-        }
+        #  For the current collections, only allow
+        #   those from settings.EVENTDATA_DATASETS
+        #
+        if folder == evt_static.FOLDER_COLLECTIONS:
+            names = [fname
+                     for fname in names
+                     if fname in settings.EVENTDATA_DATASETS]
+
+        # Construct dict of collection names and file contents
+        #
+        #
+        collection_info = {}
+        for fname in names:
+            collection_info[fname.replace('.json', '')] = \
+                json.load(open(join(directory, fname), 'r'),
+                          object_pairs_hook=OrderedDict)
+        return collection_info
+        """return {
+            filename.replace('.json', ''): \
+                json.load(open(join(directory, fname), 'r'),
+                          object_pairs_hook=OrderedDict)
+                for filename in names
+        }"""
 
 
     @staticmethod
@@ -501,7 +547,7 @@ class EventJobUtil(object):
             reload=False, header=True, columns=None,
             indexes=None, delimiter=None):
         """Key method to load a Datafile into Mongo as a new collection"""
-        print('--> import_dataset --')
+        # print('--> import_dataset --')
 
         retrieve_util = MongoRetrieveUtil(database, collection)
         db_info = retrieve_util.get_mongo_db(database)
@@ -519,7 +565,7 @@ class EventJobUtil(object):
                 db[collection_name].drop()
                 MongoDataset.objects.select_for_update().filter(name=collection_name).delete()
             else:
-                print('--> import_dataset: data in database, no data in django, not reloading')
+                #print('--> import_dataset: data in database, no data in django, not reloading')
                 # make sure database entry exists
                 dataset_records = MongoDataset.objects.select_for_update().filter(name=collection_name)
                 if dataset_records:
@@ -602,7 +648,7 @@ class EventJobUtil(object):
             return encode_variable(column).replace('"', '\\"')
 
         field_names = ','.join(f"{sanitize(col)}.{columns.get(col, 'auto')}()" for col in columns)
-        print('field_names', field_names)
+        # print('field_names', field_names)
         delimiter_type = 'csv'
         if os.path.splitext(data_path)[1] == 'tsv':
             delimiter_type = 'tsv'
@@ -638,14 +684,14 @@ class EventJobUtil(object):
             # the first command takes the data path, which is piped through the other commands
             import_commands[0] = import_commands[0] + ' ' + data_path
 
-            print('--> import_dataset: mongoimport command:')
-            print('-->' + ' | '.join(import_commands))
+            # print('--> import_dataset: mongoimport command:')
+            # print('-->' + ' | '.join(import_commands))
 
             # pipe each command to the next
-            print('--> start subprocess')
+            # print('--> start subprocess')
             process = subprocess.Popen(shlex.split(import_commands[0]), stdout=subprocess.PIPE)
             for command in import_commands[1:]:
-                print('--> command (bracketed): [%s]' % command)
+                # print('--> command (bracketed): [%s]' % command)
                 process = subprocess.Popen(shlex.split(command), stdin=process.stdout, stdout=subprocess.PIPE)
             process.communicate()
 

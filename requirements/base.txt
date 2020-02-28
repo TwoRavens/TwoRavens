@@ -80,7 +80,7 @@ tensorflow==1.13.1
 mlbox
 ludwig
 h2o
--e git+https://github.com/automl/auto-sklearn.git@b5b16f398cc218dfdaf991fa3638782756e8222b#egg=auto_sklearn
+# -e git+https://github.com/automl/auto-sklearn.git@b5b16f398cc218dfdaf991fa3638782756e8222b#egg=auto_sklearn
 mljar-supervised
 tpot
 

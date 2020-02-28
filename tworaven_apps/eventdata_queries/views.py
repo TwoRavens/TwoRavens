@@ -1,19 +1,28 @@
+import base64
+import csv
 import json
 import logging
-
+import pandas as pd
+from os.path import join
+import urllib.parse
 from django.conf import settings
 from django.shortcuts import render
+from django.utils.text import slugify
 from django.db import IntegrityError
 from django.http import \
     (JsonResponse, HttpResponse)
 from django.views.decorators.csrf import csrf_exempt
-
+from tworaven_apps.utils.msg_helper import msg, msgt
 from tworaven_apps.R_services.make_datadocs_util import MakeDatadocsUtil
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
      get_json_error,
      get_json_success,
      get_common_view_info)
+from tworaven_apps.utils.random_info import \
+    (get_timestamp_string,
+     get_alphanumeric_lowercase)
+from tworaven_apps.utils.file_util import create_directory
 from tworaven_apps.utils.json_helper import format_pretty_from_dict, json_comply
 from tworaven_apps.utils.view_helper import \
     (get_authenticated_user,)
@@ -28,14 +37,18 @@ from tworaven_apps.eventdata_queries.models import \
      SEARCH_PARAMETERS, SEARCH_KEY_NAME, SEARCH_KEY_DESCRIPTION)
 from tworaven_apps.eventdata_queries.mongo_retrieve_util import \
     MongoRetrieveUtil
+from tworaven_apps.eventdata_queries.static_vals import \
+    (KEY_INCLUDE_EVENTDATA_COLLECTION_NAMES,)
 from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
+#from tworaven_apps.data_prep_utils import static_vals as dp_static
 
 LOGGER = logging.getLogger(__name__)
 
 
-def api_mongo_healthcheck(request):
+def api_mongo_healthcheck(request, **kwargs):
     """Mongo healthcheck"""
-    mongo_check = MongoRetrieveUtil.run_tworavens_healthcheck()
+    print('api_mongo_healthcheck kwargs', kwargs)
+    mongo_check = MongoRetrieveUtil.run_tworavens_healthcheck(**kwargs)
 
     if mongo_check.success:
         return JsonResponse(get_json_success(\
@@ -43,6 +56,12 @@ def api_mongo_healthcheck(request):
                             data=mongo_check.result_obj))
 
     return JsonResponse(get_json_error(mongo_check.err_msg))
+
+def api_list_eventdata_collections(request):
+    print('api_list_eventdata_collections')
+    return api_mongo_healthcheck(\
+                    request,
+                    **{KEY_INCLUDE_EVENTDATA_COLLECTION_NAMES: True})
 
 def view_eventdata_api_info(request):
     """List some API info, for developers"""
@@ -397,13 +416,99 @@ def api_get_files_list(request, version_id):
 
 
 @csrf_exempt
+def create_evtdata_file(request):
+    """Similar to api_get_eventdata, except that the Mongo result is
+    written to a file"""
+    LOGGER.info('--- create_evtdata_file: write query results to file ---')
+    success, json_req_obj = get_request_body_as_json(request)
+
+    if not success:
+        return JsonResponse(get_json_error(json_req_obj))
+
+    # print('-- create_evtdata_file.json_req_obj', json_req_obj)
+
+    # return JsonResponse(get_json_error('TESTING! %s' % json.dumps(json_req_obj)))
+
+    # check if data is valid
+    form = EventDataGetDataForm(json_req_obj)
+    if not form.is_valid():
+        return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
+
+
+    # Run Mongo query
+    #
+    success, addquery_obj_err = EventJobUtil.get_data(
+        settings.EVENTDATA_DB_NAME,
+        json_req_obj['collection_name'],
+        json_req_obj['method'],
+        json.loads(json_req_obj['query']),
+        json_req_obj.get('distinct', None),
+        json_req_obj.get('host', None))
+
+
+    # Data retrieval failed
+    #
+    if not success:
+        return JsonResponse(\
+            get_json_error((f'Failed to write data to a file.'
+                            f'  Mongo query failed.'
+                            f' {addquery_obj_err}')))
+
+    # Build a file output path
+    # (EVTDATA_2_TWORAVENS_DIR)/(timestamp)/(collection name)_(rand chars).csv
+    #
+    output_dir = join(settings.EVTDATA_2_TWORAVENS_DIR,
+                      get_timestamp_string(),
+                      slugify(json_req_obj['collection_name']),
+                      get_alphanumeric_lowercase(4))
+
+    dir_info = create_directory(output_dir)
+    if not dir_info.success:
+        return JsonResponse(\
+            get_json_error((f'Failed to create directory to write file.'
+                            f' {dir_info.err_msg}')))
+
+    output_fname = 'learningData.csv'
+
+    fpath = join(output_dir, output_fname)
+
+    # Convert the Mongo results to a dataframe and
+    #  export the dataframe as a csv
+    #
+    df = pd.DataFrame(list(addquery_obj_err))
+    if '_id' in df:
+        del df['_id']
+    df.to_csv(fpath, index=False)
+
+    print('file written: ', fpath)
+
+    params = {'fpath': fpath,
+              'name': f"{json_req_obj['collection_name']} subset"}
+
+    print('subset->TwoRavens params', params)
+    tworavens_url = '%s/user-workspaces/load-evtdata?%s' % \
+                    (settings.EVENTDATA_TWO_RAVENS_TARGET_URL,
+                     urllib.parse.urlencode(params))
+
+    print('tworavens_url', tworavens_url)
+    return JsonResponse(get_json_success(\
+                        'Shared file created',
+                        data=dict(tworavens_url=tworavens_url)))
+
+
+
+@csrf_exempt
 def api_get_eventdata(request):
     """ general api to get event data"""
+    LOGGER.info('--- api_get_eventdata: Retrieve data from MongoDB ---')
+    msgt('--- api_get_eventdata: Retrieve data from MongoDB ---')
 
     success, json_req_obj = get_request_body_as_json(request)
 
     if not success:
-        return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
+        return JsonResponse(get_json_error(json_req_obj))
+
+    # print('-- api_get_eventdata.json_req_obj', json_req_obj)
 
     # check if data is valid
     form = EventDataGetDataForm(json_req_obj)
@@ -418,7 +523,13 @@ def api_get_eventdata(request):
         json_req_obj.get('distinct', None),
         json_req_obj.get('host', None))
 
-    return JsonResponse({'success': success, 'data': json_comply(addquery_obj_err)} if success else get_json_error(addquery_obj_err))
+
+    if success:
+        return JsonResponse(get_json_success(\
+                                 'it worked',
+                                 data=json_comply(list(addquery_obj_err))))
+
+    return JsonResponse(get_json_error(addquery_obj_err))
 
 
 @csrf_exempt

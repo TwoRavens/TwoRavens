@@ -75,7 +75,7 @@ export let peekMouseUp = () => {
 };
 
 export let peekData;
-export let peekId = 'tworavens';  
+export let peekId = 'tworavens';
 
 let peekLimit = 100;  // how many records to load at a time
 let peekSkip = 0;  // how many records have already been loaded
@@ -217,6 +217,8 @@ export let looseSteps = {};
 
 export let formattingData = {};
 export let alignmentData = {};
+window.alignmentData = alignmentData;
+
 // ~~~~
 
 export let taskPreferences = {
@@ -409,6 +411,12 @@ export async function buildDatasetUrl(problem, lastStep, dataPath, collectionNam
     return getData(body);
 }
 
+
+
+/**
+ *  Send mongo query params to server and retrieve data
+ *
+ */
 let getDataPromise;
 export let getData = async body => {
     if (getDataPromise) await getDataPromise;
@@ -594,7 +602,12 @@ function connectWebsocket() {
     setInterval(check, 10000);
 }
 
-document.addEventListener("DOMContentLoaded", connectWebsocket);
+// For EventData, do not connect websockets (at least not yet)
+//
+if (!IS_EVENTDATA_DOMAIN){
+  document.addEventListener("DOMContentLoaded", connectWebsocket);
+}
+
 export let streamMsgCnt = 0;
 //  messages received.
 //

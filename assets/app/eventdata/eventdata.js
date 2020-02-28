@@ -1,5 +1,6 @@
 import * as fileSaver from 'file-saver';
 import m from 'mithril';
+// import $ from 'jquery'
 
 import {mongoURL, looseSteps, alignmentData, formattingData, alertError} from "../app";
 import * as common from '../../common/common';
@@ -21,6 +22,7 @@ export let eventdataSubsetCount = 1;
 export let genericMetadata = {};
 
 export let manipulations = [];
+// window.manipulations = manipulations;
 
 export let setMetadata = (data) => Object.keys(data).forEach(key =>
     Object.keys(data[key]).forEach(identifier => ({
@@ -66,10 +68,12 @@ export let setSelectedDataset = (key) => {
 
             alignmentLog.push(...realignQuery(step, previousSelectedDataset, selectedDataset));
 
+            /*
             let subsetTree = $('#subsetTree' + step.id);
             let state = subsetTree.tree('getState');
             subsetTree.tree('loadData', step.abstractQuery);
             subsetTree.tree('setState', state);
+            */
         });
 
         showAlignmentLog = true;
@@ -98,6 +102,8 @@ export let setSelectedDataset = (key) => {
 
     resetPeek();
 };
+
+
 
 // previous dataset and alignment logs are used for the re-alignment modal
 export let previousSelectedDataset;
@@ -316,7 +322,7 @@ async function updatePeek() {
     // cancel the request
     if (!peekIsGetting) return;
 
-    let data = await getData({
+    let data = await getEventData({
         host: genericMetadata[selectedDataset]['host'],
         collection_name: selectedDataset,
         method: 'aggregate',
@@ -365,14 +371,100 @@ export let getSubsetMetadata = (dataset, subset) => {
     return {alignments, formats, columns};
 };
 
-export let getData = async body => m.request({
-    url: mongoURL + 'get-eventdata',
-    method: 'POST',
-    data: body
-}).then(response => {
-    if (!response.success) throw response;
-    return response.data;
-});
+/**
+ *  Return the metadata used for both downloading
+ *  as well as writing a file to the server
+ *
+ *  If available, retrieve the selected and selected constructed variables
+ *  else default to using all variables
+ */
+export let getManipPipelineVariables = () => {
+
+  let manipPipelineVariables = {
+      type: 'menu',
+      metadata: {
+          type: 'data',
+          variables: (selectedVariables.size + selectedConstructedVariables.size) === 0
+              ? [
+                  ...genericMetadata[selectedDataset]['columns'],
+                  ...genericMetadata[selectedDataset]['columns_constructed']
+              ] : [
+                  ...selectedVariables,
+                  ...selectedConstructedVariables
+              ]
+      }
+  };
+  return manipPipelineVariables;
+}
+
+/*
+ *  Send Mongo query to create file on the server
+ *  - build the same pipeline as the download step
+ *
+ */
+export let createEvtDataFile = async () => {
+
+  let manipVars = getManipPipelineVariables();
+  let compiled = queryMongo.buildPipeline([...manipulations, manipVars])['pipeline'];
+  //let compiled = queryMongo.buildPipeline([...manipulations])['pipeline'];
+  let collection_name = selectedDataset
+
+  console.log('compiled', compiled);
+  let evt_data = {
+      host: genericMetadata[collection_name].host,
+      collection_name: collection_name,
+      method: 'aggregate',
+      query: JSON.stringify(compiled)
+  };
+
+  console.log('->> evt_data', evt_data)
+
+  return m.request({
+        url: mongoURL + 'create-evtdata-file',
+        method: 'POST',
+        data: evt_data
+    }).then(response => {
+      console.log('response', response)
+        if (!response.success){
+          console.log('It failed!!');
+        } else{
+          console.log('It worked!!');
+          if (('data' in response)&&('tworavens_url' in response.data)){
+            //window.location.href = response.data.tworavens_url;
+            window.open(response.data.tworavens_url, "_blank");
+          }
+        }
+        console.log(response.message);
+        //return response.data;
+    })
+}
+
+
+ /*
+  *  Retrieve event data from Mongo
+  *
+  *   Example request:
+  *   { host: "TwoRavens",
+  *     collection_name: "cline_speed",
+  *     method: "aggregate",
+  *     query: "[{"$match":{"EV_TYPE":{"$in":["1"]}}},{"$count":"total"}]"
+  *   }
+  *
+  *
+  */
+export let getEventData = async body => {
+  console.log('getEventData body', body);
+  return m.request({
+      url: mongoURL + 'get-eventdata',
+      method: 'POST',
+      data: body
+  }).then(response => {
+      if (!response.success) throw response;
+      return response.data;
+  });
+} // End: getEventData
+
+
 
 // download data to display a menu
 export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={}) => { // the dict is for optional named arguments
@@ -414,7 +506,7 @@ export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={})
         console.log("Count Query:");
         console.log(compiled);
 
-        promises.push(getData({
+        promises.push(getEventData({
             host: genericMetadata[dataset]['host'],
             collection_name: dataset,
             method: 'aggregate',
@@ -428,7 +520,7 @@ export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={})
     }
 
     let data;
-    promises.push(getData({
+    promises.push(getEventData({
         host: genericMetadata[dataset]['host'],
         collection_name: dataset,
         method: 'aggregate',
@@ -467,7 +559,10 @@ export async function loadMenuEventData(abstractPipeline, menu, {recount, requir
     return Boolean(data);
 }
 
-// locks a subset manipulation step as a 'query', relevant to eventdata only
+/* -------------------------------------------------------
+  Submit a staged subset.
+  -> Triggered by the right panel "Update" button
+ ------------------------------------------------------- */
 export async function submitSubset() {
 
     let newMenu = {
@@ -478,8 +573,11 @@ export async function submitSubset() {
     };
 
     let success = await loadMenuEventData([...manipulations, looseSteps['pendingSubset']], newMenu, {recount: true, requireMatch: true});
+
     if (success) {
+
         manipulations.push(looseSteps['pendingSubset']);
+
         looseSteps['pendingSubset'] = {
             type: 'subset',
             id: eventdataSubsetCount++,
@@ -492,7 +590,10 @@ export async function submitSubset() {
         Object.keys(subsetData)
             .filter(subset => subset !== newMenu.name)
             .forEach(subset => delete subsetData[subset]);
+        canvasTypes.forEach(canvas => canvasRedraw[canvas] = true);
         m.redraw();
+    } else {
+      console.log('loadMenuEventData Failed!!')
     }
 }
 
@@ -517,15 +618,22 @@ export async function submitAggregation() {
     }
     setLaddaSpinner('btnUpdate', false);
 
+    canvasTypes.forEach(canvas => canvasRedraw[canvas] = true);
     m.redraw()
 }
 
+
+
+
+/**
+ *  Frontend download using npm `file-saver`
+ */
 export async function download(collection_name, query) {
 
     console.log("Download Query:");
     console.log(query);
 
-    let data = await getData({
+    let data = await getEventData({
         host: genericMetadata[collection_name].host,
         method: 'aggregate',
         collection_name,
@@ -547,6 +655,8 @@ export async function download(collection_name, query) {
 export async function reset() {
 
     let scorchTheEarth = () => {
+
+        console.log('---- scorchTheEarth ----');
         manipulations.length = 0;
 
         selectedVariables.clear();
