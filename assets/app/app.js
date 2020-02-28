@@ -1881,9 +1881,8 @@ export let needsManipulationRewritePriorToSolve = problem => {
 
 export let materializeManipulationsPromise = {};
 export let materializeManipulations = async (problem, schemaIds) => {
-    if (!needsManipulationRewritePriorToSolve(problem)) {
+    if (!needsManipulationRewritePriorToSolve(problem))
         return;
-    }
 
     // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
     return Promise.all(Object.keys(problem.datasetSchemaPaths)
@@ -1923,6 +1922,7 @@ export let materializePartials = async problem => {
         method: 'POST',
         url: D3M_SVC_URL + '/get-partials-datasets',
         data: {
+            dataset_id: problem.d3mDatasetId,
             domains: problem.domains,
             dataset_schema: workspace.datasetDoc,
             dataset,
@@ -1934,8 +1934,10 @@ export let materializePartials = async problem => {
         alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
         throw partialsLocationInfo.message;
     } else {
+        problem.datasetIndexPartialsPaths = problem.datasetIndexPartialsPaths || {};
         Object.assign(problem.datasetSchemaPaths, partialsLocationInfo.data.dataset_schemas);
         Object.assign(problem.datasetPaths, partialsLocationInfo.data.dataset_paths);
+        Object.assign(problem.datasetIndexPartialsPaths, partialsLocationInfo.data.dataset_index_paths);
     }
 };
 
@@ -1950,7 +1952,7 @@ export let materializeICE = async problem => {
 
     await loadPredictorDomains(problem);
 
-    let abstractPipeline = [...workspace.raven_config.hardManipulations, problem.manipulations];
+    let abstractPipeline = [...workspace.raven_config.hardManipulations, ...problem.manipulations];
     let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
 
     // BUILD SAMPLE DATASET
@@ -1967,6 +1969,7 @@ export let materializeICE = async problem => {
         url: D3M_SVC_URL + '/get-partials-datasets',
         data: {
             domains: problem.domains,
+            dataset_id: problem.d3mDatasetId,
             dataset_schema_path: samplePaths.metadata_path,
             separate_variables: true,
             name: 'ICE_synthetic_'
@@ -1976,8 +1979,10 @@ export let materializeICE = async problem => {
         alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
         throw partialsLocationInfo.message;
     } else {
+        problem.datasetIndexPartialsPaths = problem.datasetIndexPartialsPaths || {};
         Object.assign(problem.datasetSchemaPaths, partialsLocationInfo.data.dataset_schemas);
         Object.assign(problem.datasetPaths, partialsLocationInfo.data.dataset_paths);
+        Object.assign(problem.datasetIndexPartialsPaths, partialsLocationInfo.data.dataset_index_paths);
     }
 };
 
@@ -2023,6 +2028,7 @@ export let materializeTrainTest = async problem => {
         method: 'POST',
         url: D3M_SVC_URL + '/get-train-test-split',
         data: {
+            dataset_id: problem.d3mDatasetId,
             split_options: problem.splitOptions,
             dataset_schema: problem.datasetSchemaPaths.all,
             dataset_path: problem.datasetPaths.all,

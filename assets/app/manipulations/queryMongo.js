@@ -1,6 +1,7 @@
 import jsep from 'jsep';
 
 import {alignmentData, generateID, getPredictorVariables} from "../app";
+import * as common from "../../common/common";
 
 // functions for generating database queries
 // subset queries are built from manipulations pipelines. An additional menu step may be added too
@@ -1252,6 +1253,8 @@ export function comparableSort(a, b) {
 // written to follow schema version 3.1:
 // https://gitlab.datadrivendiscovery.org/MIT-LL/d3m_data_supply/blob/shared/schemas/datasetSchema.json
 export let translateDatasetDoc = (pipeline, doc, problem) => {
+    doc = common.deepCopy(doc);
+
     let typeInferences = {
         'integer': new Set(['toInt', 'ceil', 'floor', 'trunc']),
         'boolean': new Set(['toBool', 'and', 'not', 'or', 'eq', 'gt', 'gte', 'lt', 'lte', 'ne']),
@@ -1260,7 +1263,7 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
             'subtract', 'add', 'multiply', 'max', 'min', 'avg', 'stdDevPop', 'stdDevSamp'])
     };
 
-    doc = Object.assign({}, doc, {dataResources: [...doc.dataResources]});
+    Object.assign(doc, {dataResources: [...doc.dataResources]});
 
     // assuming that there is only one tabular dataResource
     let tableResourceIndex = doc.dataResources.findIndex(resource => resource.resType === 'table');
@@ -1338,6 +1341,5 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
         .forEach(variable => add(doc.dataResources[tableResourceIndex].columns
             .find(column => column.colName === variable).role, pair[1])));
 
-    doc.about.datasetID = doc.about.datasetID + '_' + generateID(String(Math.random()));
     return doc;
 };
