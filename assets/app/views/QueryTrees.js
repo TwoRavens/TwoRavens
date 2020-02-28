@@ -403,7 +403,12 @@ export class TreeAggregate {
             callbacks: {
                 cancel: (datum, parentData) => {
                     if (!editable) return;
-                    parentData.splice(parentData.findIndex(datum), 1);
+                    console.log("parentData");
+                    console.log(parentData);
+                    console.log("datum");
+                    console.log(datum);
+
+                    parentData.splice(parentData.findIndex(entry => entry.id === datum.id), 1);
 
                     let purgeTree = tree => {
                         tree.forEach((child, i) => {
