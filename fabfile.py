@@ -530,11 +530,13 @@ def load_eventdata_dev():
 @task
 def run_eventdata_dev():
     """Set the UI mode to EventData with .js using a local flask url"""
+    os.environ.setdefault(KEY_DJANGO_SETTINGS_MODULE,
+                          'tworavensproject.settings.local_event_data_settings')
     init_db()
 
     load_eventdata_dev()
 
-    run()
+    run_event_data()
 
 @task
 def load_eventdata_prod():
@@ -558,6 +560,42 @@ def run_eventdata_prod():
     load_eventdata_prod()
 
     run()
+
+@task
+def run_event_data_2020(**kwargs):
+    """Run the django dev server and webpack--webpack watches the assets directory
+    and rebuilds when app TwoRavens changes
+    """
+    evtdata_settings_str = 'tworavensproject.settings.local_event_data_settings'
+
+    os.environ.setdefault(KEY_DJANGO_SETTINGS_MODULE, evtdata_settings_str)
+
+    django.setup()
+
+    settings_str = f'--settings={evtdata_settings_str}'
+    clear_js()  # clear any dev css/js files
+
+    local(f"python manage.py check {settings_str}")
+    local(f"python manage.py migrate {settings_str}")
+
+    # local(f"python manage.py createsuperuser --noinput {settings_str}")
+    #create_django_superuser()
+
+    local((f'python manage.py loaddata'
+           f' tworaven_apps/configurations/fixtures/initial_configs_evtdata.json'
+           f' {settings_str}'))
+
+    commands = [
+        # start webpack
+        'npm start',
+    ]
+
+    proc_list = [subprocess.Popen(command, shell=True, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr) for command in commands]
+    try:
+        local(f'python manage.py runserver 0.0.0.0:8070 {settings_str}')
+    finally:
+        for proc in proc_list:
+            os.kill(proc.pid, signal.SIGKILL)
 
 @task
 def run(**kwargs):

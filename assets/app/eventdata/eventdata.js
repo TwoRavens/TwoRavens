@@ -428,7 +428,8 @@ export let createEvtDataFile = async () => {
         } else{
           console.log('It worked!!');
           if (('data' in response)&&('tworavens_url' in response.data)){
-            window.location.href = response.data.tworavens_url;
+            //window.location.href = response.data.tworavens_url;
+            window.open(response.data.tworavens_url, "_blank");
           }
         }
         console.log(response.message);
