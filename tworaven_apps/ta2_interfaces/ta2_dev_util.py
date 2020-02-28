@@ -224,21 +224,6 @@ class TA2Helper(BasicErrCheck):
 
         print('docker_cmd', docker_cmd)
 
-        xdocker_cmd = ('docker run --rm'
-                      ' --name ta2_server'
-                      ' -e D3MTIMEOUT=60'
-                      ' -e D3MINPUTDIR=/input'
-                      ' -e D3MOUTPUTDIR=/output'
-                      ' -e D3MRUN=ta2ta3'
-                      ' {2}'
-                      ' -v {0}:/input'
-                      ' -v {1}:/output'
-                      ' -v /ravens_volume:/ravens_volume'
-                      ' {3}'
-                      '').format(self.data_input_dir,
-                                 self.data_output_dir,
-                                 additional_options,
-                                 image_name)
 
         return docker_cmd
 
