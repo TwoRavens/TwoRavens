@@ -26,10 +26,11 @@ cd ../..;
 fab webpack_prod
 fab run_with_ta2
 
-# Build main + rook-service
+# Build main TA3
 docker build -t tworavens/ravens-main:comfrey3 .
 docker push tworavens/ravens-main:comfrey3
 
+# Build rook service
 docker build -t tworavens/ravens-r-service:comfrey3 -f Dockerfile-flask-r .
 docker push tworavens/ravens-r-service:comfrey3;
 
