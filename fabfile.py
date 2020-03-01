@@ -96,6 +96,7 @@ def make_d3m_configs_from_files_multiuser_test_limited():
 
     selected_datatsets = [\
       #'20_Ethiopia_Admin_Level_2_sub',
+        'TR20_State_Conflict',
         'TR50_PRIO_GRID',
         'TR60_Ethiopia_Small_2017-2018',
         'TR61_Ethiopia_Large_2017-2018',
