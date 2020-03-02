@@ -470,6 +470,11 @@ export function GRPC_ProblemDescription(problem, datasetDoc) {
     let learningResource = datasetDoc.dataResources
         .find(resource => resource.resID === 'learningData');
 
+    // fallback for if no resource is labeled "learningData"
+    if (!learningResource)
+        learningResource = datasetDoc.dataResources
+            .find(resource => resource.resType === "table");
+
     let performanceMetric = {metric: app.d3mMetrics[problem.metric]};
     if (['f1', 'precision', 'recall'].includes(problem.metric))
         performanceMetric.posLabel = problem.positiveLabel || Object.keys((app.variableSummaries[problem.targets[0]].plotValues || {}))[0];
