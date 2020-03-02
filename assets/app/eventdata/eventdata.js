@@ -22,7 +22,7 @@ export let eventdataSubsetCount = 1;
 export let genericMetadata = {};
 
 export let manipulations = [];
-// window.manipulations = manipulations;
+window.manipulations = manipulations;
 
 export let setMetadata = (data) => Object.keys(data).forEach(key =>
     Object.keys(data[key]).forEach(identifier => ({
@@ -403,41 +403,56 @@ export let getManipPipelineVariables = () => {
  *
  */
 export let createEvtDataFile = async () => {
+    // Local copy of the manipulations array.
+    // TODO: An undefined is making its way into the manipulations pipeline
+    let exportManipulations = manipulations.filter(_=>_);
 
-  let manipVars = getManipPipelineVariables();
-  let compiled = queryMongo.buildPipeline([...manipulations, manipVars])['pipeline'];
-  //let compiled = queryMongo.buildPipeline([...manipulations])['pipeline'];
-  let collection_name = selectedDataset
+    if ('subset' === selectedMode)
+        exportManipulations.push(getManipPipelineVariables());
 
-  console.log('compiled', compiled);
-  let evt_data = {
-      host: genericMetadata[collection_name].host,
-      collection_name: collection_name,
-      method: 'aggregate',
-      query: JSON.stringify(compiled)
-  };
+    if ('aggregate' === selectedMode) {
+        if (looseSteps['eventdataAggregate'].measuresAccum.length === 0) {
+            tour.tourStartEventMeasure();
+            return;
+        }
+        exportManipulations.push(looseSteps['eventdataAggregate']);
+    }
 
-  console.log('->> evt_data', evt_data)
+    let compiled = queryMongo.buildPipeline(exportManipulations)['pipeline'];
+    //let compiled = queryMongo.buildPipeline([...manipulations])['pipeline'];
+    let collection_name = selectedDataset;
 
-  return m.request({
+    console.log('compiled', compiled);
+    let evt_data = {
+        host: genericMetadata[collection_name].host,
+        collection_name: collection_name,
+        method: 'aggregate',
+        query: JSON.stringify(compiled)
+    };
+
+    setLaddaSpinner('btnRavenView', true);
+
+    console.log('->> evt_data', evt_data)
+
+    return m.request({
         url: mongoURL + 'create-evtdata-file',
         method: 'POST',
         data: evt_data
     }).then(response => {
-      console.log('response', response)
-        if (!response.success){
-          console.log('It failed!!');
-        } else{
-          console.log('It worked!!');
-          if (('data' in response)&&('tworavens_url' in response.data)){
-            //window.location.href = response.data.tworavens_url;
-            window.open(response.data.tworavens_url, "_blank");
-          }
+        console.log('response', response)
+        if (!response.success) {
+            console.log('It failed!!');
+        } else {
+            console.log('It worked!!');
+            if (('data' in response) && ('tworavens_url' in response.data)) {
+                //window.location.href = response.data.tworavens_url;
+                window.open(response.data.tworavens_url, "_blank");
+            }
         }
         console.log(response.message);
         //return response.data;
-    })
-}
+    }).finally(() => setLaddaSpinner('btnRavenView', false))
+};
 
 
  /*
