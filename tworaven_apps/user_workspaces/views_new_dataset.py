@@ -52,6 +52,41 @@ from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 from tworaven_apps.data_prep_utils.user_dataset_util import UserDatasetUtil
 
 
+def get_user_workspace_when_no_config(request):
+    """Used for EventData, if no default dataset is selected.
+    Quick workaround..."""
+    print('step -1')
+
+    # Try for the workspace
+    user_workspace_info = get_latest_user_workspace(request)
+    if user_workspace_info.success:
+        # Got it!
+        return user_workspace_info
+    print('step 0')
+
+    # A D3M config is set, send back the error from original attempt
+    #
+    if D3MConfiguration.objects.filter(is_default=True).count() > 0:
+        return user_workspace_info
+
+    print('step 1')
+    # Assume there's no D3M config, set one and try again
+    first_config = D3MConfiguration.objects.filter(is_selectable_dataset=True).first()
+    if not first_config:
+        return get_err_msg(('Sorry! A workspace could not be created.  There'
+                            ' are no default datasets.'))
+
+    print('step 2')
+    # Set a D3MConfiguration
+    first_config.is_default = True
+    first_config.save()
+    user_workspace_info2 = get_latest_user_workspace(request)
+
+    print('step 3')
+
+    return user_workspace_info2
+
+
 
 @csrf_exempt
 def view_load_eventdata_dataset(request, **kwargs):
@@ -77,7 +112,8 @@ def view_load_eventdata_dataset(request, **kwargs):
     # --------------------------------------
     # Get the user workspace
     # --------------------------------------
-    user_workspace_info = get_latest_user_workspace(request)
+    # user_workspace_info = get_latest_user_workspace(request)
+    user_workspace_info = get_user_workspace_when_no_config(request)
     if not user_workspace_info.success:
         return JsonResponse(get_json_error(user_workspace_info.err_msg))
 
