@@ -4,6 +4,7 @@ import * as eventdata from './eventdata';
 import * as tour from "./tour";
 import '../../css/eventdata.css'
 
+import * as app from '../app';
 import {looseSteps, mongoURL} from "../app";
 import {getModalEventDataInfo, isEvtDataInfoWindowOpen, setEvtDataInfoWindowOpen, getModalGenericMetadata, isGenericMetadataInfoWindowOpen, setGenericMetadataInfoWindowOpen} from "./modelEventDataInfo";
 
@@ -41,6 +42,7 @@ import CanvasResults from "./canvases/CanvasResults";
 import SaveQuery from "./SaveQuery";
 import {TreeAggregate, TreeSubset, TreeVariables} from "../views/QueryTrees";
 import Icon from "../../common/views/Icon";
+import {italicize} from "../index";
 
 export default class Body_EventData {
 
@@ -232,6 +234,13 @@ export default class Body_EventData {
                         m.redraw();
                 }},
               'Generic Metadata'),
+            m(Button, {
+                style: {'margin': '8px'},
+                title: 'alerts',
+                class: 'btn-sm',
+                onclick: () => app.setShowModalAlerts(true)
+            }, m(Icon, {name: 'bell', style: `color: ${app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}`})),
+
             m("#recordBar", {style: {display: "inline-block", float: 'right'}}, [
 
                 // -------------------------
@@ -818,6 +827,39 @@ export default class Body_EventData {
                 setDisplay: eventdata.setShowSaveQuery,
                 contents: m(SaveQuery, {pipeline: eventdata.manipulations, preferences: eventdata.saveQuery[eventdata.selectedMode]})
             }),
+
+            app.showModalAlerts && m(ModalVanilla, {
+                id: 'alertsModal',
+                setDisplay: () => {
+                    app.alertsLastViewed.setTime(new Date().getTime());
+                    app.setShowModalAlerts(false)
+                }
+            }, [
+                m('h4[style=width:3em;display:inline-block]', 'Alerts'),
+                m(Button, {
+                    title: 'Clear Alerts',
+                    style: {display: 'inline-block', 'margin-right': '0.75em'},
+                    onclick: () => app.alerts.length = 0,
+                    disabled: app.alerts.length === 0
+                }, m(Icon, {name: 'check'})),
+                app.alerts.length === 0 && italicize('No alerts recorded.'),
+                app.alerts.length > 0 && m(Table, {
+                    data: [...app.alerts].reverse().map(alert => [
+                        alert.time > app.alertsLastViewed && m(Icon, {name: 'primitive-dot'}),
+                        m(`div[style=background:${app.hexToRgba({
+                            'log': common.menuColor,
+                            'warn': common.warnColor,
+                            'error': common.errorColor
+                        }[alert.type], .5)}]`, alert.time.toLocaleTimeString().replace(/([\d]+:[\d]{2})(:[\d]{2})(.*)/, "$1$3")),
+                        alert.description
+                    ]),
+                    attrsAll: {style: {'margin-top': '1em'}},
+                    tableTags: m('colgroup',
+                        m('col', {span: 1, width: '10px'}),
+                        m('col', {span: 1, width: '75px'}),
+                        m('col', {span: 1}))
+                })
+            ]),
 
             eventdata.showAlignmentLog && logLength !== 0 && m(ModalVanilla, {
                 id: 'AlignmentLog',

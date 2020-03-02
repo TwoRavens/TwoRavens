@@ -453,7 +453,7 @@ export let createEvtDataFile = async () => {
   *
   */
 export let getEventData = async body => {
-  console.log('getEventData body', body);
+  // console.log('getEventData body', body);
   return m.request({
       url: mongoURL + 'get-eventdata',
       method: 'POST',
@@ -462,7 +462,7 @@ export let getEventData = async body => {
       if (!response.success) throw response;
       return response.data;
   });
-} // End: getEventData
+}  // End: getEventData
 
 
 
