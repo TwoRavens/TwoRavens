@@ -7,7 +7,7 @@ rm(list=ls())
 library(jsonlite)
 library(foreign)
 
-seed_skeleton <- function(data, name, samplesize=NULL, fraction=0.2, ID=NULL, citation="", description="", depvarname=NULL, taskType=NULL, taskSubType="", metric=NULL, seed=123){
+seed_skeleton <- function(data, name, samplesize=NULL, fraction=0.2, ID=NULL, citation="", description="", depvarname=NULL, predvarname=NULL, taskType=NULL, taskSubType="", metric=NULL, seed=123){
 
   set.seed=seed
 
@@ -119,7 +119,7 @@ seed_skeleton <- function(data, name, samplesize=NULL, fraction=0.2, ID=NULL, ci
     print("No variable name in dataset matched supplied `depvarname` argument.")
   }
 
-  dataResourcesList <- list(resID="0", resPath="tables/learningData.csv", resType="table", resFormat=I("text/csv"), isCollection=FALSE, columns=columnlist)
+  dataResourcesList <- list(resID=myresID, resPath="tables/learningData.csv", resType="table", resFormat=I("text/csv"), isCollection=FALSE, columns=columnlist)
 
   datasetID <- paste(ID,"_dataset",sep="")
 
