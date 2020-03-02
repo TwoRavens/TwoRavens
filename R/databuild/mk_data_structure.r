@@ -7,7 +7,7 @@ rm(list=ls())
 library(jsonlite)
 library(foreign)
 
-seed_skeleton <- function(data, name, samplesize=NULL, fraction=0.2, ID=NULL, citation="", description="", depvarname=NULL, predvarname=NULL, taskType=NULL, taskSubType="", metric=NULL, seed=123){
+seed_skeleton <- function(data, name, samplesize=NULL, fraction=0.2, ID=NULL, citation="", description="", depvarname=NULL, taskType=NULL, taskSubType="", metric=NULL, seed=123){
 
   set.seed=seed
 
