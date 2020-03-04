@@ -1,5 +1,7 @@
 import jsep from 'jsep';
+
 import {alignmentData, generateID, getPredictorVariables} from "../app";
+import * as common from "../../common/common";
 
 // functions for generating database queries
 // subset queries are built from manipulations pipelines. An additional menu step may be added too
@@ -404,20 +406,20 @@ function processRule(rule) {
     if (rule.subset === 'date') {
         let rule_query_inner = {};
         if (rule.structure === 'point') {
-            let rule_query_inner = {};
+            let rule_query_inner = [];
             let column;
             for (let child of rule.children) {
                 column = child.column;
                 if ('fromDate' in child) {
                     child.fromDate = new Date(child.fromDate);
-                    rule_query_inner['$gte'] = {'$date': new Date(child.fromDate).toISOString().slice(0, 10)}
+                    rule_query_inner.push({[column]: {$gte: {'$date': new Date(child.fromDate).toISOString().slice(0, 10)}}})
                 }
                 if ('toDate' in child) {
                     child.toDate = new Date(child.toDate);
-                    rule_query_inner['$lte'] = {'$date': new Date(child.toDate).toISOString().slice(0, 10)}
+                    rule_query_inner.push({[column]: {$lte: {'$date': new Date(child.toDate).toISOString().slice(0, 10)}}})
                 }
             }
-            rule_query[column] = {$or: [rule_query_inner, {column: {$exists: 0}}]};
+            rule_query = {$or: [{$and: rule_query_inner}, {[column]: {$exists: 0}}]};
         } else if (rule.structure === 'interval') {
             let or = [];
             for (let column of rule.children.map(child => child.column)) {
@@ -554,7 +556,7 @@ export function buildAggregation(unitMeasures, accumulations) {
         'unit': {
             'date': (data) => {
                 let dateFormat = {
-                    'Weekly': '%G-%V',
+                    // 'Weekly': '%G-%V',
                     'Monthly': '%Y-%m',
                     'Yearly': '%Y'
                 }[data['measure']];
@@ -572,19 +574,19 @@ export function buildAggregation(unitMeasures, accumulations) {
                         }
                     };
                     // transform back out of string afterwards
-                    if (data['measure'] === 'Weekly') postTransforms[data['column']] = {
-                        $dateFromString: {
-                            format: dateFormat,
-                            dateString: '$_id\\.' + data['column']
-                        }
-                    };
+                    // if (data['measure'] === 'Weekly') postTransforms[data['column']] = {
+                    //     $dateFromString: {
+                    //         format: dateFormat,
+                    //         dateString: '$_id\\.' + data['column']
+                    //     }
+                    // };
                     if (data['measure'] === 'Monthly' || data['measure'] === 'Yearly') postTransforms[data['column']] = {
                         $dateFromString: {
-                            format: '%Y-%m-%d',
+                            // format: '%Y-%m-%d',
                             dateString: {
                                 $concat: ['$_id\\.' + data['column'], {
-                                    'Monthly': '-01',
-                                    'Yearly': '-01-01'
+                                    'Monthly': '-01T00:00:00.000',
+                                    'Yearly': '-01-01T00:00:00.000'
                                 }[data['measure']]]
                             }
                         }
@@ -964,6 +966,247 @@ export function buildMenu(step) {
             }, {_id: 0})
         }
     ];
+
+
+    // build steps for subsetting data down for out-of-database splitting
+    if (metadata.type === 'indexes') {
+        let problem = metadata.problem;
+        let pipeline = [];
+
+        // ensures temporal column is sorted
+        if (problem.task === 'forecasting')
+            pipeline.push({$sort: {[`$${problem.forecastingHorizon.column}`]: 1}});
+
+        let projectionColumns = [...problem.tags.indexes];
+        if (problem.task === 'forecasting')
+            projectionColumns.push(problem.forecastingHorizon.column, ...problem.tags.crossSection);
+
+        if (problem.splitOptions.stratified)
+            projectionColumns.push(problem.targets[0]);
+
+        pipeline.push({
+            $project: [...new Set(projectionColumns)].reduce((projection, column) => Object.assign({
+                [column]: 1
+            }), {})
+        });
+
+        return pipeline;
+    }
+
+    if (metadata.type === 'split') {
+        let split = metadata.split;
+        let problem = metadata.problem;
+        let collectionName = metadata.collectionName;
+
+        let splitOptions = problem.splitOptions;
+        let predictors = getPredictorVariables(problem);
+        let targets = problem.targets;
+        let temporalName = problem.forecastingHorizon.column;
+        let crossSections = problem.tags.crossSection;
+        let nominals = getNominalVariables(problem);
+
+        let pipeline = [];
+
+        // don't filter rows to a split
+        if (splitOptions.outOfSampleSplit || split === 'all') return [];
+
+        // some splitting conditions may be handled without a join
+        // when forecasting without cross sections
+        if (problem.task === 'forecasting' && crossSections.length === 0) {
+            if (temporalName)
+                pipeline.push({$sort: {[`$${temporalName}`]: -1}});
+
+            if (split === 'train') pipeline.push(
+                {$skip: Math.min(problem.forecastingHorizon.value, splitOptions.maxRecordCount)},
+                {$limit: splitOptions.maxRecordCount});
+
+            if (split === 'test') pipeline.push(
+                {$limit: Math.min(problem.forecastingHorizon.value, splitOptions.maxRecordCount)});
+
+            pipeline.push(
+                {[{'train': '$skip','test': '$limit'}[split]]: problem.forecastingHorizon.value});
+
+            if (temporalName)
+                pipeline.push({$sort: {[`$${temporalName}`]: 1}});
+        }
+
+        // when not forecasting, without shuffling or stratifications
+        if (problem.task !== 'forecasting'
+            && !splitOptions.splitsFile
+            && splitOptions.shuffle === false
+            && splitOptions.stratified === false
+            && crossSections.length === 0) {
+
+            pipeline.push({
+                [{
+                    'train': '$limit',
+                    'test': '$skip'
+                }[split]]: Math.floor(splitOptions.maxRecordCount / splitOptions.trainTestRatio)
+            })
+        }
+
+        // heavy universal implementation using a separate collection
+        else pipeline.push(
+            // create a new key in every document
+            //  "results_collection": [{"split": "train" || "test"}]
+            {
+                $lookup: {
+                    "from": 'tr_' + collectionName,
+                    "localField": "d3mIndex",
+                    "foreignField": "d3mIndex",
+                    "as": "results_collection"
+                }
+            },
+            // expand "results_collection" singleton array into one record per array element
+            {
+                $unwind: '$results_collection'
+            },
+            // subset to only rows in the data split
+            {
+                $match: {
+                    // the "\\" differentiates periods in a column name from nested objects
+                    '$results_collection\\.split': {
+                        $eq: splitOptions.split
+                    }
+                }
+            },
+            // split column is no longer needed
+            {
+                $project: {'$results_collection': 0}
+            });
+
+        // aggregation for time series forecasting
+        if (problem.task === 'forecasting'
+            && temporalName
+            && crossSections.length > 0) {
+
+            let structuralVariables = [temporalName, ...crossSections];
+            let allVariables = [...targets, ...predictors]
+                .filter(variable => !structuralVariables.includes(variable));
+            let continuousVariables = allVariables
+                .filter(variable => !nominals.includes(variable));
+
+            // initial group into treatments x nominal levels
+            pipeline.push({
+                $group: continuousVariables.reduce((group, variableName) => Object.assign(group, {
+                    [variableName]: {$sum: `$${variableName}`}
+                }), {
+                    // internal row count for computing mean through multiple groupings
+                    _tr_row_count: {$sum: 1},
+                    _id: [...structuralVariables, ...nominals].reduce((group, variableName) => Object.assign(group, {
+                        [variableName]: 1
+                    }), {})
+                })
+            });
+            let remainingNominals = [...nominals];
+            let collapsedNominals = [];
+            while (remainingNominals.length > 0) {
+                let nominalName = remainingNominals.shift();
+                collapsedNominals.push(nominalName);
+
+                pipeline.push({
+                    // WARN: nominalName must be set last. Temporal is sorted, then cross sections, then nominals
+                    $sort: Object.assign(
+                        {
+                            [`_id\\.${temporalName}`]: 1
+                        },
+                        crossSections.reduce((sorter, variableName) => Object.assign(sorter, {
+                            [`_id\\.${variableName}`]: 1
+                        }), {}),
+                        {
+                            [`_id\\.${nominalName}`]: 1
+                        })
+                }, {
+                    $group: Object.assign(
+                        continuousVariables.reduce((reducer, accumName) => Object.assign(reducer, {
+                            [accumName]: {$sum: `$${accumName}`}
+                        })),
+                        // all other unaggregated nominals in the _id are identical constants
+                        collapsedNominals.reduce((reducer, accumName) => Object.assign(reducer, {
+                            [accumName]: {$first: 1}
+                        })),
+                        {_tr_row_count: {$sum: '$_tr_row_count'}},
+                        {
+                            [nominalName]: {$push: `$_id\\.${nominalName}`},
+                            _id: [...structuralVariables, ...remainingNominals]
+                                .reduce((group, variableName) => Object.assign(group, {
+                                    [variableName]: `_id\\.${variableName}`
+                                }), {})
+                        })
+                }, {
+                    $addFields: {
+                        [nominalName]: {
+                            $reduce: {
+                                input: `$${nominalName}`,
+                                initialValue: {
+                                    mode: undefined,
+                                    previous: undefined,
+                                    maxCount: -1,
+                                    curCount: 0
+                                },
+                                in: {
+                                    mode: {
+                                        $cond: [
+                                            {
+                                                $and: [
+                                                    {$gte: ['$$this\\.maxObservations', '$$this\\.curObservations']},
+                                                    {$eq: ['$$value', '$$this\\.previous']}
+                                                ]
+                                            },
+                                            '$$this\\.mode',
+                                            '$$value'
+                                        ]
+                                    },
+                                    curCount: {
+                                        $cond: [
+                                            {$eq: ['$$this', '$$value\\.previous']},
+                                            {$add: ['$$value\\.curObservations', 1]},
+                                            0
+                                        ]
+                                    },
+                                    maxCount: {
+                                        $max: ['$$value\\.curObservations', '$$value\\.maxObservations']
+                                    },
+                                    previous: '$$this'
+                                }
+                            }
+                        }
+                    }
+                }, {
+                    $addFields: continuousVariables.reduce((fields, variableName) => Object.assign(fields, {
+                        [variableName]: {$divide: [`$${variableName}`, '$_tr_row_count}']}
+                    }), {
+                        [nominalName]: `$${nominalName}\\.mode`
+                    })
+                })
+            }
+        }
+
+        // global record limit
+        if (splitOptions.maxRecordCount !== undefined) pipeline.push({
+            $limit: splitOptions.maxRecordCount
+        });
+
+        return pipeline;
+
+        // alternate implementation that just takes first categorical observation
+        // {
+        //     $group: [temporalName, ...crossSections, ...nominals].reduce((group, variable) => Object.assign(group,
+        //         {
+        //             [variable]: {[nominals.includes(variable) ? '$first' : '$avg']: `$${variable}`}
+        //         }),
+        //         {
+        //             _id: crossSections.reduce((id, crossSection) => Object.assign(id,
+        //                 {
+        //                     [crossSection]: 1
+        //                 }),
+        //                 {
+        //                     [temporalName]: 1
+        //                 })
+        //         })
+        // }
+    }
+
 }
 
 // If there is a postProcessing step at the given key, it will return modified data. Otherwise return the data unmodified
@@ -1010,6 +1253,8 @@ export function comparableSort(a, b) {
 // written to follow schema version 3.1:
 // https://gitlab.datadrivendiscovery.org/MIT-LL/d3m_data_supply/blob/shared/schemas/datasetSchema.json
 export let translateDatasetDoc = (pipeline, doc, problem) => {
+    doc = common.deepCopy(doc);
+
     let typeInferences = {
         'integer': new Set(['toInt', 'ceil', 'floor', 'trunc']),
         'boolean': new Set(['toBool', 'and', 'not', 'or', 'eq', 'gt', 'gte', 'lt', 'lte', 'ne']),
@@ -1018,7 +1263,7 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
             'subtract', 'add', 'multiply', 'max', 'min', 'avg', 'stdDevPop', 'stdDevSamp'])
     };
 
-    doc = Object.assign({}, doc, {dataResources: [...doc.dataResources]});
+    Object.assign(doc, {dataResources: [...doc.dataResources]});
 
     // assuming that there is only one tabular dataResource
     let tableResourceIndex = doc.dataResources.findIndex(resource => resource.resType === 'table');
@@ -1096,6 +1341,5 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
         .forEach(variable => add(doc.dataResources[tableResourceIndex].columns
             .find(column => column.colName === variable).role, pair[1])));
 
-    doc.about.datasetID = doc.about.datasetID + '_' + generateID(String(Math.random()));
     return doc;
 };

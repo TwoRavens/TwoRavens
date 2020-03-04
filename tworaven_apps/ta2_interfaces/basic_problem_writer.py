@@ -41,7 +41,7 @@ class BasicProblemWriter(BasicErrCheck):
         # alternate write directory, if not, uses dirs in the d3m config
         #
         self.write_directory = self.get_write_directory(kwargs.get('write_directory'))
-        print('--- GET WRITE DIRECTORY ---', self.write_directory)
+        # print('--- GET WRITE DIRECTORY ---', self.write_directory)
 
         self.new_filepath = None
 

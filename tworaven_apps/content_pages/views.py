@@ -66,8 +66,7 @@ def view_pebbles_home(request):
                  #
                  TA3_GRPC_USER_AGENT=settings.TA3_GRPC_USER_AGENT, TA3TA2_API_VERSION=TA3TA2Util.get_api_version(),
                  DISPLAY_DATAMART_UI=settings.DISPLAY_DATAMART_UI,
-                 WEBSOCKET_PREFIX=settings.WEBSOCKET_PREFIX,
-                 GIT_BRANCH_INFO=settings.GIT_BRANCH_INFO)
+                 WEBSOCKET_PREFIX=settings.WEBSOCKET_PREFIX)
 
 
 
@@ -113,7 +112,8 @@ def view_env_variables(request):
 def view_dev_raven_links(request):
     """Dev homepage (other than pebble page)"""
 
-    dinfo = dict(title="dev links")
+    dinfo = dict(title="dev links",
+                 MONGO_URL=MONGO_CONNECTION_STRING if settings.MONGO_CONNECTION_STRING else settings.EVENTDATA_MONGO_DB_ADDRESS)
 
     return render(request,
                   'content_pages/dev_raven_links.html',

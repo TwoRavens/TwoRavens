@@ -61,11 +61,26 @@ export default class CanvasDatasets {
                     style: {margin: '0 0.25em', float: 'right'},
                     onclick: () => {
                         eventdata.setSelectedDataset(dataset['key']);
-                        eventdata.setSelectedMode('subset')
+                        eventdata.setSelectedMode('subset');
+                        m.redraw();
                     },
                     disabled: eventdata.selectedDataset === dataset['key']
                 }, 'Load' + (eventdata.selectedDataset === dataset['key'] ? 'ed' : '')),
-                'download' in dataset && m(Button, {
+
+                /*
+                m(Button, {
+                    id: 'btnReturnToSubset' + dataset['name'],
+                    style: {margin: '0 0.25em', float: 'right',
+                            display: eventdata.selectedDataset === dataset['key'] ? 'inline' : 'none'},
+                    onclick: () => {
+                        eventdata.setSelectedDataset(dataset['key']);
+                        eventdata.setSelectedMode('subset');
+                    }
+                  }, 'Return to Subset'),
+                  */
+
+                // 2/20/2020 - remove download button by adding 'false'
+                false && 'download' in dataset && m(Button, {
                     id: 'btnDownload' + dataset['key'],
                     style: {margin: '0 0.25em', float: 'right'},
                     onclick: () => window.open(dataset['download'], '_blank')

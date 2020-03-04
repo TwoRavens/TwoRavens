@@ -34,6 +34,13 @@
         "INTERACTION"
       ]
     },
+    "Event Type": {
+      "type": "discrete",
+      "measureType": "accumulator",
+      "columns": [
+        "EVENT_TYPE"
+      ]
+    },
     "Date": {
       "type": "date",
       "measureType": "unit",

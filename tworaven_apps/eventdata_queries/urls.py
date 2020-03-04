@@ -73,8 +73,15 @@ urlpatterns = [
          views.api_get_data,
          name='api_get_data'),
 
+    path(r'api/create-evtdata-file',
+         views.create_evtdata_file,
+         name='create_evtdata_file'),
+
     path(r'api/mongo-healthcheck',
          views.api_mongo_healthcheck,
          name='api_mongo_healthcheck'),
 
+    path(r'api/mongo-list-eventdata-collections',
+         views.api_list_eventdata_collections,
+         name='api_list_eventdata_collections'),
 ]

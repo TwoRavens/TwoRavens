@@ -4,7 +4,10 @@ import * as eventdata from './eventdata';
 import * as tour from "./tour";
 import '../../css/eventdata.css'
 
+import * as app from '../app';
 import {looseSteps, mongoURL} from "../app";
+import {getModalEventDataInfo, isEvtDataInfoWindowOpen, setEvtDataInfoWindowOpen, getModalGenericMetadata, isGenericMetadataInfoWindowOpen, setGenericMetadataInfoWindowOpen} from "./modelEventDataInfo";
+
 import * as queryAbstract from '../manipulations/queryAbstract';
 import * as queryMongo from '../manipulations/queryMongo';
 
@@ -20,6 +23,7 @@ import PanelList from '../../common/views/PanelList';
 import TextField from '../../common/views/TextField';
 import ButtonRadio from '../../common/views/ButtonRadio';
 import Button from "../../common/views/Button";
+import ButtonPlain from '../../common/views/ButtonPlain';
 import ModalVanilla from "../../common/views/ModalVanilla";
 import Table from "../../common/views/Table";
 
@@ -38,6 +42,7 @@ import CanvasResults from "./canvases/CanvasResults";
 import SaveQuery from "./SaveQuery";
 import {TreeAggregate, TreeSubset, TreeVariables} from "../views/QueryTrees";
 import Icon from "../../common/views/Icon";
+import {italicize} from "../index";
 
 export default class Body_EventData {
 
@@ -48,7 +53,7 @@ export default class Body_EventData {
         }
 
         // all eventdata manipulations stored in one manipulations key
-        eventdata.manipulations = [];
+        // eventdata.manipulations = [];
 
         looseSteps['pendingSubset'] = {
             type: 'subset',
@@ -75,6 +80,14 @@ export default class Body_EventData {
             method: 'POST'
         }).then(eventdata.setMetadata).catch(eventdata.laddaStopAll);
     }
+
+    /*
+     * Show EventData Info
+     */
+    modalEventDataInfo(){
+      return getModalEventDataInfo();
+    } // end: modalBasicInfo
+
 
     header() {
 
@@ -144,7 +157,7 @@ export default class Body_EventData {
                     {value: 'Aggregate', attrsInterface: {style: {'width': 'auto'}}}
                 ] : [])
             }),
-            
+
             m('.dropdown[style=float: right; padding-right: 1em]',
                 m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
                     [isAuthenticated ? username : m('div[style=font-style:oblique]', 'not logged in'), " ", m(Icon, {name: 'triangle-down'})]),
@@ -199,8 +212,40 @@ export default class Body_EventData {
 
         return m(Footer,
             tourBar,
+            m(Button, {
+                class: `btn-sm ${isEvtDataInfoWindowOpen ? 'active' : ''}`,
+
+                style: {'margin-right': '6px',
+                        'margin-top': '4px',
+                        'margin-left': '6px'},
+                onclick: _ => {
+                        setEvtDataInfoWindowOpen(true);
+                        m.redraw();
+                }},
+              'Info'),
+            m(Button, {
+                class: `btn-sm ${isGenericMetadataInfoWindowOpen ? 'active' : ''}`,
+
+                style: {'margin-right': '6px',
+                        'margin-top': '4px',
+                        'margin-left': '6px'},
+                onclick: _ => {
+                        setGenericMetadataInfoWindowOpen(true);
+                        m.redraw();
+                }},
+              'Generic Metadata'),
+            m(Button, {
+                style: {'margin': '8px'},
+                title: 'alerts',
+                class: 'btn-sm',
+                onclick: () => app.setShowModalAlerts(true)
+            }, m(Icon, {name: 'bell', style: `color: ${app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}`})),
+
             m("#recordBar", {style: {display: "inline-block", float: 'right'}}, [
 
+                // -------------------------
+                // Start: Save Button
+                // -------------------------
                 eventdata.selectedMode !== 'home' && m(Button, {
                     class: 'btn-sm',
                     title: isAuthenticated
@@ -223,7 +268,13 @@ export default class Body_EventData {
                         }
                     }, style: {'margin-top': '4px'}
                 }, 'Save'),
+                // -------------------------
+                // End: Save Button
+                // -------------------------
 
+                // -------------------------
+                // Start: Download Button
+                // -------------------------
                 eventdata.selectedMode !== 'home' && m(Button, {
                     id: 'btnDownload',
                     title: isAuthenticated
@@ -276,8 +327,84 @@ export default class Body_EventData {
                         }
                     }
                 }, m("span.ladda-label", "Download")),
+                // -------------------------
+                // End: Download Button
+                // -------------------------
 
-                // Record Count
+                // -------------------------
+                // Start: TwoRavens Button
+                // -------------------------
+                eventdata.selectedMode !== 'home' && m(Button, {
+                    id: 'btnRavenView',
+                    title: isAuthenticated
+                        ? 'View your constructed ' + eventdata.selectedMode + ' on TwoRavens'
+                        : 'must be logged in to view your constructed ' + eventdata.selectedMode + ' on TwoRavens',
+                    disabled: !isAuthenticated,
+                    'data-style': 'zoom-in',
+                    'data-spinner-color': '#818181',
+                    class: 'btn-sm ladda-button',
+                    style: {
+                        'margin-right': '6px',
+                        'margin-top': '4px',
+                        'margin-left': '6px'
+                    },
+                    onclick: async () => {
+                        let compiled = queryMongo.buildPipeline([...eventdata.manipulations])['pipeline'];
+                        console.log('compiled', compiled);
+
+                        await eventdata.createEvtDataFile();
+                        if ('subset' === eventdata.selectedMode) {
+                            if (eventdata.manipulations.length === 0) {
+                                tour.tourStartSaveQueryEmpty();
+                                return;
+                            }
+                        }
+                        /*
+                        if ('subset' === eventdata.selectedMode) {
+                            if (eventdata.manipulations.length === 0) {
+                                tour.tourStartSaveQueryEmpty();
+                                return;
+                            }
+                            let downloadStep = {
+                                type: 'menu',
+                                metadata: {
+                                    type: 'data',
+                                    variables: (eventdata.selectedVariables.size + eventdata.selectedConstructedVariables.size) === 0
+                                        ? [
+                                            ...eventdata.genericMetadata[eventdata.selectedDataset]['columns'],
+                                            ...eventdata.genericMetadata[eventdata.selectedDataset]['columns_constructed']
+                                        ] : [
+                                            ...eventdata.selectedVariables,
+                                            ...eventdata.selectedConstructedVariables
+                                        ]
+                                }
+                            };
+                            let compiled = queryMongo.buildPipeline([...eventdata.manipulations, downloadStep])['pipeline'];
+                            eventdata.setLaddaSpinner('btnDownload', true);
+                            await eventdata.download(eventdata.selectedDataset, JSON.stringify(compiled))
+                                .finally(() => eventdata.setLaddaSpinner('btnDownload', false));
+
+                        }
+                        if ('aggregate' === eventdata.selectedMode) {
+                            if (looseSteps['eventdataAggregate'].measuresAccum.length === 0) {
+                                tour.tourStartEventMeasure();
+                                return;
+                            }
+                            let compiled = queryMongo.buildPipeline([...eventdata.manipulations, looseSteps['eventdataAggregate']])['pipeline'];
+                            eventdata.setLaddaSpinner('btnDownload', true);
+                            await eventdata.download(eventdata.selectedDataset, JSON.stringify(compiled))
+                                .finally(() => eventdata.setLaddaSpinner('btnDownload', false));
+                        }
+                        */
+                    }
+                }, m("span.ladda-label", "TwoRavens View")),
+                // -------------------------
+                // End: TwoRavens Button
+                // -------------------------
+
+                // -------------------------
+                // Start: Record Count
+                // -------------------------
                 eventdata.selectedDataset && recordCount !== undefined && m("span.badge.badge-pill.badge-secondary#recordCount", {
                     style: {
                         "margin-left": "5px",
@@ -285,6 +412,10 @@ export default class Body_EventData {
                         "margin-right": "10px"
                     }
                 }, recordCount + ' Records')
+                // -------------------------
+                // End: Record Count
+                // -------------------------
+
             ]),
         );
     }
@@ -497,7 +628,6 @@ export default class Body_EventData {
             common.setPanelOcclusion('right', window.innerWidth < 1200 ? `calc(${common.panelMargin}*2)` : '250px');
             return;
         }
-
         return m(Panel, {
                 id: 'rightPanelMenu',
                 side: 'right',
@@ -564,6 +694,9 @@ export default class Body_EventData {
                     onclick: () => queryAbstract.addGroup(looseSteps['pendingSubset'])
                 }, 'Group'),
 
+                // -------------------------
+                // End: Update Button
+                // -------------------------
                 m(Button, {
                     id: 'btnUpdate',
                     class: 'ladda-button',
@@ -575,14 +708,20 @@ export default class Body_EventData {
                         : !eventdata.aggregationStaged || looseSteps['eventdataAggregate'].measuresAccum.length === 0,
                     onclick: async () => {
                         eventdata.setLaddaSpinner('btnUpdate', true);
-                        await {'subset': eventdata.submitSubset, 'aggregate': eventdata.submitAggregation}[eventdata.selectedMode]();
+                        await {'subset': eventdata.submitSubset,
+                               'aggregate': eventdata.submitAggregation}[eventdata.selectedMode]();
+
                         eventdata.setLaddaSpinner('btnUpdate', false);
 
                         // weird hack, unsetting ladda unsets the disabled attribute. But it should still be disabled
-                        if (eventdata.selectedMode === 'subset')
-                            document.getElementById('btnUpdate').disabled = looseSteps['pendingSubset'].abstractQuery.length === 0;
+                        if (eventdata.selectedMode === 'subset'){
+                          document.getElementById('btnUpdate').disabled =  looseSteps['pendingSubset'].abstractQuery.length === 0;
+                        }
                     }
                 }, 'Update')
+                // -------------------------
+                // End: Update Button
+                // -------------------------
             ))
 
     }
@@ -635,6 +774,7 @@ export default class Body_EventData {
             })
         }
 
+        console.log(eventdata);
         eventdata.canvasPreferences[eventdata.selectedCanvas] = eventdata.canvasPreferences[eventdata.selectedCanvas] || {};
         return m({
             'About': CanvasAbout,
@@ -688,6 +828,39 @@ export default class Body_EventData {
                 contents: m(SaveQuery, {pipeline: eventdata.manipulations, preferences: eventdata.saveQuery[eventdata.selectedMode]})
             }),
 
+            app.showModalAlerts && m(ModalVanilla, {
+                id: 'alertsModal',
+                setDisplay: () => {
+                    app.alertsLastViewed.setTime(new Date().getTime());
+                    app.setShowModalAlerts(false)
+                }
+            }, [
+                m('h4[style=width:3em;display:inline-block]', 'Alerts'),
+                m(Button, {
+                    title: 'Clear Alerts',
+                    style: {display: 'inline-block', 'margin-right': '0.75em'},
+                    onclick: () => app.alerts.length = 0,
+                    disabled: app.alerts.length === 0
+                }, m(Icon, {name: 'check'})),
+                app.alerts.length === 0 && italicize('No alerts recorded.'),
+                app.alerts.length > 0 && m(Table, {
+                    data: [...app.alerts].reverse().map(alert => [
+                        alert.time > app.alertsLastViewed && m(Icon, {name: 'primitive-dot'}),
+                        m(`div[style=background:${app.hexToRgba({
+                            'log': common.menuColor,
+                            'warn': common.warnColor,
+                            'error': common.errorColor
+                        }[alert.type], .5)}]`, alert.time.toLocaleTimeString().replace(/([\d]+:[\d]{2})(:[\d]{2})(.*)/, "$1$3")),
+                        alert.description
+                    ]),
+                    attrsAll: {style: {'margin-top': '1em'}},
+                    tableTags: m('colgroup',
+                        m('col', {span: 1, width: '10px'}),
+                        m('col', {span: 1, width: '75px'}),
+                        m('col', {span: 1}))
+                })
+            ]),
+
             eventdata.showAlignmentLog && logLength !== 0 && m(ModalVanilla, {
                 id: 'AlignmentLog',
                 setDisplay: eventdata.setShowAlignmentLog,
@@ -711,6 +884,13 @@ export default class Body_EventData {
             this.header(),
             this.leftpanel(mode),
             this.rightpanel(mode),
+
+            isEvtDataInfoWindowOpen && this.modalEventDataInfo(),
+
+            isGenericMetadataInfoWindowOpen && getModalGenericMetadata(),
+            // -------------------------
+            // Start: Stage
+            // -------------------------
             m(Button, {
                 id: 'btnStage',
                 style: {
@@ -741,6 +921,10 @@ export default class Body_EventData {
                     common.setPanelOpen('right');
                 }
             }, 'Stage'),
+            // -------------------------
+            // End: Stage
+            // -------------------------
+
             m(Canvas, {
                 attrsAll: {
                     style: mode === 'aggregate'

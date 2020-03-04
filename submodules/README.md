@@ -11,6 +11,10 @@ These repos are incorporated in two ways:
 
 ## Submodule Log
 
+**2/20/2020**
+- Revert back to the v2019.12.4 version for now
+  - This is for GCE deployments until TA2s are fully updated
+
 **2/6/2020**
 - Update repository: [ta3ta2-api](https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/tags)
   - **version**: v2020.1.28

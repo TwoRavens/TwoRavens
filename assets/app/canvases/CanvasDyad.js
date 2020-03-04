@@ -23,6 +23,8 @@ export let entryContains = (entry, search, token) => {
             .match(new RegExp(token, 'g')) || [];
         return new RegExp(tags.map(tag => `(?=^(...)*${tag})`).join('') + ".*", 'i').test(entry);
     }
+    if (!entry) return;
+
     return entry.match(new RegExp('.*' + search.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&") + '.*', 'i'));
 };
 

@@ -240,6 +240,7 @@ def view_retrieve_d3m_ice_data(request):
         KEY_DATA: util_results_importance_ice(
             req_info['data_pointer_predictors'],
             req_info['data_pointer_fitted'],
+            req_info['data_pointer_index'],
             req_info['variable'])})
 
 

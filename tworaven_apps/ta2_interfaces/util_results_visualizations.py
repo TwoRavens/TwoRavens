@@ -483,9 +483,15 @@ def util_results_importance_efd(data_pointer, metadata):
     }
 
 
-def util_results_importance_ice(data_pointer_X, data_pointer_Y, variable):
-    return pd.read_csv(data_pointer_X)[['d3mIndex', variable, 'd3mIndexOriginal']].merge(
-        pd.read_csv(data_pointer_Y),
+def util_results_importance_ice(data_pointer_stim, data_pointer_pred, data_pointer_index, variable):
+    df_predicted_actual = pd.read_csv(data_pointer_stim)[['d3mIndex', variable]].merge(
+        pd.read_csv(data_pointer_pred),
+        left_on='d3mIndex',
+        right_on='d3mIndex',
+        how='inner')
+
+    return pd.read_csv(data_pointer_index)[['d3mIndex', 'd3mIndexOriginal']].merge(
+        df_predicted_actual,
         left_on='d3mIndex',
         right_on='d3mIndex',
         how='inner').drop(columns=['d3mIndex']).to_dict('records')

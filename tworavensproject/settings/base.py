@@ -10,11 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 import ast
+import json
 import os
 import sys
 from os.path import abspath, dirname, isdir, join
 from distutils.util import strtobool
-from git import Repo, InvalidGitRepositoryError
 
 from django.urls import reverse_lazy
 
@@ -437,6 +437,45 @@ EVENTDATA_DEFAULT_API_KEY = 'api_key=CD75737EF4CAC292EE17B85AAE4B6'
 EVENTDATA_SERVER_API_KEY = os.environ.get('EVENTDATA_SERVER_API_KEY', EVENTDATA_DEFAULT_API_KEY)
 EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
 
+# Allow the specifying of datasets via environment variables
+#   Default: Show all datasets in tworaven_apps.eventdata_queries.static_vals.UT_DALLAS_COLLECTIONS
+#       e.g. If the value is None or [] the default ^ is used
+#
+# Example:
+#    export EVENTDATA_DATASETS='["cline_phoenix_fbis.json", "cline_phoenix_nyt.json", "cline_phoenix_swb.json", "icews.json"]'
+#
+from tworaven_apps.eventdata_queries.static_vals import \
+    (KEY_EVENTDATA_DATASETS, UT_DALLAS_COLLECTIONS)
+EVENTDATA_DATASETS = ast.literal_eval(os.environ.get(\
+                        KEY_EVENTDATA_DATASETS,
+                        json.dumps(UT_DALLAS_COLLECTIONS)))
+
+# -------------------------------
+# Directory for moving data from
+# EventData to TwoRavens
+# -------------------------------
+EVTDATA_2_TWORAVENS_DIR = os.environ.get('EVTDATA_2_TWORAVENS_DIR', '/ravens_volume/evtdata_user_datasets')
+
+if not isdir(EVTDATA_2_TWORAVENS_DIR):
+    try:
+        os.makedirs(EVTDATA_2_TWORAVENS_DIR, exist_ok=True)
+        print(f'OK: able to create directory: {EVTDATA_2_TWORAVENS_DIR}')
+    except OSError as err_obj:
+        if not EVTDATA_2_TWORAVENS_DIR:
+            print((f'You must set this env variable to an existing directory'
+                   f' {EVTDATA_2_TWORAVENS_DIR}'))
+        else:
+            print(f'This directory MUST be available {EVTDATA_2_TWORAVENS_DIR}')
+        sys.exit(0)
+
+
+# -------------------------------
+# EVENTDATA_TWO_RAVENS_TARGET_URL
+# - Url to a TwoRavens installation
+# -------------------------------
+EVENTDATA_TWO_RAVENS_TARGET_URL = os.environ.get('EVENTDATA_TWO_RAVENS_TARGET_URL', 'http://127.0.0.1:8080')
+if EVENTDATA_TWO_RAVENS_TARGET_URL.endswith('/'):
+    EVENTDATA_TWO_RAVENS_TARGET_URL = EVENTDATA_TWO_RAVENS_TARGET_URL[1:]
 
 # -------------------------
 # Datamart related
@@ -451,19 +490,9 @@ DATAMART_SHORT_TIMEOUT = 10 # seconds
 DATAMART_LONG_TIMEOUT = 5 * 60 # 5 minutes
 DATAMART_VERY_LONG_TIMEOUT = 10 * 60 # 8 minutes
 
-SORT_BY_GATES_DATASETS = strtobool(os.environ.get('SORT_BY_GATES_DATASETS', 'True'))
-# -------------------------
-# Debug show branch name on page
-# -------------------------
-try:
-    repo = Repo(BASE_DIR)
-    GIT_BRANCH_INFO = dict(name=repo.active_branch.name,
-                           commit=repo.head.commit.hexsha)
-except InvalidGitRepositoryError:
-    GIT_BRANCH_INFO = dict(name='(not available)',
-                           commit='(not available)')
-except TypeError:
-    GIT_BRANCH_INFO = dict(name='(not available)',)
+SORT_BY_GATES_DATASETS = strtobool(os.environ.get('SORT_BY_GATES_DATASETS', 'False'))
 
-
-# print('GIT_BRANCH_INFO', GIT_BRANCH_INFO)
+# TEST ONLY: Set for TwoRavens when loading EventData urls
+#
+TEST_USERNAME = os.environ.get('TEST_USERNAME', 'test_user')
+TEST_PASSWORD = os.environ.get('TEST_PASSWORD', 'test_user')

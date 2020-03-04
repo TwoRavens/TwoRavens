@@ -30,6 +30,7 @@ import TextField from "../../common/views/TextField";
 
 import {getNominalVariables} from "../app";
 import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
+import {generateID} from "../app";
 
 export let leftpanel = () => {
 
@@ -2089,10 +2090,11 @@ export let loadImportanceICEFittedData = async (problem, adapter, predictor) => 
     await loadSolutionData(problem, adapter, predictor);
 
     let dataPointerPredictors = problem.datasetPaths['ICE_synthetic_' + predictor];
+    let dataPointerIndex = problem.datasetIndexPartialsPaths['ICE_synthetic_' + predictor];
     let dataPointerFitted = adapter.getDataPointer('ICE_synthetic_' + predictor);
 
     // don't load if data is not available
-    if (!dataPointerFitted || !dataPointerPredictors)
+    if (!dataPointerFitted || !dataPointerPredictors || !dataPointerIndex)
         return;
 
     // don't load if systems are already in loading state
@@ -2115,6 +2117,7 @@ export let loadImportanceICEFittedData = async (problem, adapter, predictor) => 
             data: {
                 data_pointer_predictors: dataPointerPredictors,
                 data_pointer_fitted: dataPointerFitted,
+                data_pointer_index: dataPointerIndex,
                 variable: predictor
             }
         });
@@ -2248,6 +2251,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
         let responses = {};
         await Promise.all(Object.keys(dataPointers).map(async predictor => {
             let dataPointerPredictors = problem.datasetPaths['ICE_synthetic_' + predictor];
+            let dataPointerIndex = problem.datasetIndexPartialsPaths['ICE_synthetic_' + predictor];
             if (!dataPointerPredictors) return;
             try {
                 responses[predictor] = await m.request(D3M_SVC_URL + `/retrieve-output-ICE-data`, {
@@ -2255,6 +2259,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
                     data: {
                         data_pointer_predictors: dataPointerPredictors,
                         data_pointer_fitted: dataPointers[predictor],
+                        data_pointer_index: dataPointerIndex,
                         variable: predictor
                     }
                 });
@@ -2269,9 +2274,11 @@ let loadImportanceScore = async (problem, adapter, mode) => {
                 success: out.success && resp.success,
                 data: {scores: Object.assign(out.data.scores, resp.success ? resp.data.scores : {})}
             }
-        }, {success: true, data: {}})
+        }, {success: true, data: {scores: {}}});
 
         console.log(response);
+        // TODO: variable importance for PDP/ICE
+        return;
     }
 
     // don't accept response if current problem has changed
@@ -2443,6 +2450,9 @@ export let getSummaryData = problem => ({
 });
 
 export let prepareResultsDatasets = async (problem, solverId) => {
+    // set d3m dataset id to unique value if not defined
+    problem.d3mDatasetId = problem.d3mDatasetId || workspace.datasetDoc.about.datasetID + '_' + app.generateID(String(Math.random()));
+
     problem.datasetSchemas = problem.datasetSchemas || {
         all: app.workspace.datasetDoc
     };
@@ -2455,7 +2465,6 @@ export let prepareResultsDatasets = async (problem, solverId) => {
     problem.datasetSchemaPathsManipulated = problem.datasetSchemaPathsManipulated || {};
     problem.datasetPathsManipulated = problem.datasetPathsManipulated || {};
     problem.selectedSolutions[solverId] = problem.selectedSolutions[solverId] || [];
-    // DEBUG_MODE TAGGED (set thinking to false)
     problem.solverState[solverId] = {thinking: true};
 
     if (['classification', 'regression'].includes(problem.task)) {
@@ -2471,29 +2480,27 @@ export let prepareResultsDatasets = async (problem, solverId) => {
         }
 
         // add ICE datasets to to datasetSchemaPaths and datasetPaths
-        // problem.solverState[solverId].message = 'preparing ICE data';
-        // m.redraw();
-        // try {
-        //     if (!app.materializeICEPromise[problem.problemId])
-        //         app.materializeICEPromise[problem.problemId] = app.materializeICE(problem);
-        //     await app.materializeICEPromise[problem.problemId];
-        // } catch (err) {
-        //     console.error(err);
-        //     console.log('Materializing ICE failed. Continuing without ICE data.')
-        // }
-    }
-
-    if (['classification', 'regression', 'forecasting', 'objectDetection'].includes(problem.task)) {
-        problem.solverState[solverId].message = 'preparing train/test splits';
+        problem.solverState[solverId].message = 'preparing ICE data';
         m.redraw();
         try {
-            if (!app.materializeTrainTestPromise[problem.problemId])
-                app.materializeTrainTestPromise[problem.problemId] = app.materializeTrainTest(problem);
-            await app.materializeTrainTestPromise[problem.problemId];
+            if (!app.materializeICEPromise[problem.problemId])
+                app.materializeICEPromise[problem.problemId] = app.materializeICE(problem);
+            await app.materializeICEPromise[problem.problemId];
         } catch (err) {
             console.error(err);
-            console.log('Materializing train/test splits failed. Continuing without splitting.')
+            console.log('Materializing ICE failed. Continuing without ICE data.')
         }
+    }
+
+    problem.solverState[solverId].message = 'preparing train/test splits';
+    m.redraw();
+    try {
+        if (!app.materializeTrainTestPromise[problem.problemId])
+            app.materializeTrainTestPromise[problem.problemId] = app.materializeTrainTest(problem);
+        await app.materializeTrainTestPromise[problem.problemId];
+    } catch (err) {
+        console.error(err);
+        console.log('Materializing train/test splits failed. Continuing without splitting.')
     }
 
     problem.solverState[solverId].message = 'applying manipulations to data';

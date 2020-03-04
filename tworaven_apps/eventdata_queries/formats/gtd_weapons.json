@@ -1,0 +1,15 @@
+{
+	"1": "Biological",
+	"2": "Chemical",
+	"3": "Radiological",
+	"4": "Nuclear",
+	"5": "Firearms",
+	"6": "Explosives",
+	"7": "Fake Weapons",
+	"8": "Incendiary",
+	"9": "Melee",
+	"10": "Vehicle",
+	"11": "Sabotage Equipment",
+	"12": "Other",
+	"13": "Unknown"
+}

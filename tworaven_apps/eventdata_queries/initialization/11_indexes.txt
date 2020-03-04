@@ -8,5 +8,17 @@ db.icews.createIndex({"Target Country": 1, "Target Name": 1})
 db.icews.createIndex({"Source Sectors Grouped": 1})
 db.icews.createIndex({"Target Sectors Grouped": 1})
 
+# Cline - BBC Summary
+#
 db.cline_phoenix_swb.createIndex({"source": 1, "target": 1})
 db.cline_phoenix_swb.createIndex({"target": 1})
+
+# Cline - New York Times
+#
+db.cline_phoenix_nyt.createIndex({"source": 1, "target": 1})
+db.cline_phoenix_nyt.createIndex({"target": 1})
+
+# Cline - CIA Broadcast
+#
+db.cline_phoenix_fbis.createIndex({"source": 1, "target": 1})
+db.cline_phoenix_fbis.createIndex({"target": 1})

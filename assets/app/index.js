@@ -688,15 +688,6 @@ class Body {
                 ]),
               m('hr'),
               m('p', [
-                  m('b', 'Git Branch Name: '),
-                  m('span', `${GIT_BRANCH_INFO.name}`)
-                ]),
-              m('p', [
-                  m('b', 'Git Branch Commit: '),
-                  m('span', `${GIT_BRANCH_INFO.commit}`)
-                ]),
-              m('hr'),
-              m('p', [
                   m('b', 'app.workspace.datasetUrl: '),
                   m('span', `${app.workspace.datasetPath}`)
                 ]),

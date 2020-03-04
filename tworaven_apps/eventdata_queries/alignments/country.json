@@ -92,6 +92,7 @@
   {"region": "Central Asia", "cowcode": "702", "ISO-3": "TJK", "UN M.49": "762", "ICEWS": "Tajikistan"},
   {"region": "Central Asia", "cowcode": "701", "ISO-3": "TKM", "UN M.49": "795", "ICEWS": "Turkmenistan"},
   {"region": "Central Asia", "cowcode": "704", "ISO-3": "UZB", "UN M.49": "860", "ICEWS": "Uzbekistan"},
+  {"region": "Eastern Asia", "cowcode": "710", "ISO-3": "CHN", "UN M.49": "156", "ICEWS": "Mainland China"},
   {"region": "Eastern Asia", "cowcode": "710", "ISO-3": "CHN", "UN M.49": "156", "ICEWS": "China"},
   {"region": "Eastern Asia", "ISO-3": "HKG", "UN M.49": "344", "ICEWS": "Hong Kong"},
   {"region": "Eastern Asia", "cowcode": "740", "ISO-3": "JPN", "UN M.49": "392", "ICEWS": "Japan"},

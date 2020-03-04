@@ -11,8 +11,8 @@ R/log_*
 data/preprocessSubset*.txt
 .DS_Store
 test_setup_local/*
-assets/build/tworavens_app-*.js
-assets/build/tworavens_styles-*.css
+assets/build/*.js
+assets/build/*.css
 assets/build/*.png
 #assets/dist/
 assets/result.json
@@ -75,3 +75,7 @@ results/api_experiment_run*
 ravens_volume/test_data/00_testit
 ravens_volume/TwoRavens_user_datasets
 assets/image-markup/
+tworaven_apps/image_utils/test_data/*
+!tworaven_apps/image_utils/test_data/.gitkeep
+ravens_volume/evtdata_user_datasets/*
+test_setup_event_data_local/*

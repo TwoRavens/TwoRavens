@@ -3,7 +3,7 @@ import pandas
 from scipy.sparse.csr import csr_matrix
 
 from tworaven_apps.solver_interfaces.models import \
-    R_SERVICE, KEY_SUCCESS, KEY_MESSAGE, KEY_DATA, DEBUG_MODE
+    R_SERVICE, KEY_SUCCESS, KEY_MESSAGE, KEY_DATA
 
 from tworaven_solver import Dataset, preprocess
 from tworaven_apps.solver_interfaces.util_model import ModelSklearn, ModelH2O, ModelLudwig
@@ -558,10 +558,7 @@ class SearchTwoRavens(Search):
             if not pipeline_specification:
                 break
 
-            task_handle = pipeline_task
-            if not DEBUG_MODE:
-                task_handle = task_handle.delay
-            task_ids.append(task_handle(
+            task_ids.append(pipeline_task.delay(
                 search_id=self.search_id,
                 train_specification=self.specification,
                 pipeline_specification=pipeline_specification,
