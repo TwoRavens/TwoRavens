@@ -300,8 +300,9 @@ def run_ta2_featurelabs_choose_config(choice_num=''):
         print(resp.err_msg)
     #run_ta2_choose_config(choice_num, ta2_name=TA2_FeatureLabs)
 
-@task
-def run_ta2_brown_choose_config(choice_num=''):
+# Brown TA2 is no longer being developed. 2/2020
+# @task
+def xrun_ta2_brown_choose_config(choice_num=''):
     """Pick a config from /ravens_volume and run Brown's TA2"""
     from tworaven_apps.ta2_interfaces.ta2_dev_util import \
             (TA2Helper, TA2_Brown)

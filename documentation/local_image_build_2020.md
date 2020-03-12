@@ -52,3 +52,9 @@ docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-main:sumac 
 docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
 docker push tworavens/eventdata-ravens-main:sumac;
 ```
+
+
+db.getCollectionNames().forEach(function(collname) {
+   print(collname);
+   db[collname].drop();
+})

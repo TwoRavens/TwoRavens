@@ -64,9 +64,9 @@ enum PerformanceMetric {
     R_SQUARED = 13;
     NORMALIZED_MUTUAL_INFORMATION = 14;
     JACCARD_SIMILARITY_SCORE = 15;
-    PRECISION_AT_TOP_K = 17;
-    OBJECT_DETECTION_AVERAGE_PRECISION = 18;
-    HAMMING_LOSS = 19;
+    PRECISION_AT_TOP_K = 16;
+    OBJECT_DETECTION_AVERAGE_PRECISION = 17;
+    HAMMING_LOSS = 18;
 
     // This metric can be used to ask TA2 to rank a solution as part of
     // all found solutions of a given "SearchSolutions" call. Rank is a
