@@ -10,7 +10,7 @@ from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from django.views.decorators.csrf import csrf_exempt
 from tworaven_apps.utils import random_info
-from tworaven_apps.utils.file_util import create_directory
+from tworaven_apps.utils.file_util import create_directory, remove_directory
 from tworaven_apps.configurations import static_vals as d3m_static
 from tworaven_apps.configurations.models_d3m import D3MConfiguration,\
     D3M_FILE_ATTRIBUTES
@@ -248,11 +248,17 @@ def clear_output_directory(d3m_config):
         for dname in dirs:
             dir_to_remove = join(root, dname)
             if dir_to_remove not in dirs_to_keep:
-                try:
-                    shutil.rmtree(dir_to_remove)
-                except PermissionError:
-                    print('AUGMENT: Failed to remove directory: ' + dir_to_remove)
-                # print('remove dir:', dir_to_remove)
+                if dir_to_remove.find('plasma') > -1:
+                    continue    # leave plasma directory for TAMU
+
+                rm_info = remove_directory(dir_to_remove)
+                if not rm_info.success:
+                    user_msg = ('clear_output_directory: Failed to remove'
+                                ' directory:{rm_info.err_msg}')
+                    print(user_msg)
+                    print('continuing...')
+                    print('clear_output_directory: Failed to remove directory: ' + dir_to_remove)
+                    print(f'Directory delete failed (continuing on): {rm_info.err_msg}')
             else:
                 print('** skip dir:', dir_to_remove)
 
@@ -266,13 +272,20 @@ def check_build_output_directories(d3m_config):
 
     temp_path = None
     output_path = d3m_config.env_values.get(d3m_static.KEY_D3MOUTPUTDIR)
+    print('output_path', output_path)
     if output_path:
         temp_path = join(output_path, 'temp')
 
     paths_to_check = [output_path,
                       temp_path,
                       d3m_config.env_values.get(d3m_static.KEY_D3MLOCALDIR),
-                      d3m_config.env_values.get(d3m_static.KEY_D3MSTATICDIR)]
+                      d3m_config.env_values.get(d3m_static.KEY_D3MSTATICDIR),
+                      join(output_path, 'pipeline _runs'),
+                      join(output_path, 'pipelines_ranked'),
+                      join(output_path, 'pipelines_scored'),
+                      join(output_path, 'pipelines_searched'),
+                      join(output_path, 'subpipelines')
+                      ]
 
     paths_to_build = [x for x in paths_to_check
                       if x and not isdir(x)]

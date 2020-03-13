@@ -12,9 +12,9 @@ from google.oauth2 import service_account
 USE_X_FORWARDED_HOST = True
 ALLOWED_HOSTS = ('*',) #('2ravens.org', )
 
-#DEBUG = strtobool(os.environ.get('DEBUG', 'False'))
+DEBUG = strtobool(os.environ.get('DEBUG', 'False'))
 
-DEBUG = False
+# DEBUG = False
 
 # -----------------------------------
 # use Google Cloud MySQL

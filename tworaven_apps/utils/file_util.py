@@ -1,4 +1,3 @@
-"""Wrap file/dir functions for error checks"""
 import os
 from os.path import join, isdir, isfile
 import shutil
@@ -68,6 +67,10 @@ def remove_directory(dir_path):
             return err_resp(f'Failed to remove directory. {err_obj}')
         except FileNotFoundError as err_obj:
             return err_resp(f'Directory not found: {err_obj}')
+        except OSError as err_obj:
+            return err_resp(f'Failed to delete directory: {err_obj}')
+        except PermissionError as err_obj:
+            return err_resp(f'Failed to delete directory: {err_obj}')
 
     return ok_resp(f'Not a directory {dir_path}')
 

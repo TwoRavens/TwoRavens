@@ -6,7 +6,8 @@
 cd /ravens_volume/test_data/;
 git pull
 
-
+# Next line changes based on your setp:
+#
 cd ~/Documents/github-rp/TwoRavens;
 workon 2ravens;
 
