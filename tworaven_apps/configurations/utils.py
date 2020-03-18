@@ -280,7 +280,7 @@ def check_build_output_directories(d3m_config):
                       temp_path,
                       d3m_config.env_values.get(d3m_static.KEY_D3MLOCALDIR),
                       d3m_config.env_values.get(d3m_static.KEY_D3MSTATICDIR),
-                      join(output_path, 'pipeline _runs'),
+                      join(output_path, 'pipeline_runs'),
                       join(output_path, 'pipelines_ranked'),
                       join(output_path, 'pipelines_scored'),
                       join(output_path, 'pipelines_searched'),
