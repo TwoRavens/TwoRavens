@@ -1,6 +1,6 @@
 # TwoRavens
 
-TwoRavens is a Web-based platform for statistical analysis. For more information, please visit the project site at [2ra.vn](https://2ra.vn).
+TwoRavens is a Web-based platform for statistical analysis. For more information, please visit the project site at [2ra.vn](http://2ra.vn).
 
 # Application Documentation
 
