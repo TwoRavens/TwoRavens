@@ -7,7 +7,7 @@ Our TwoRavens Machine Learning interface is built upon Django and we assume the 
 
 # Table of Contents
 * Tutorial and User Guide
-    * [External Link](http://2ra.vn/papers/tworavens-d3mguide.pdf)
+    * [External Link](http://2ra.vn/assets/files/tworavens-d3mguide.pdf)
 * API Documentation (Web Application)
     * [Overview](api_docs/overview.md)
     * [Content_pages](api_docs/content_pages/index.md)
