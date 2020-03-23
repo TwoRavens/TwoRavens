@@ -5,6 +5,6 @@ TwoRavens is a Web-based platform for statistical analysis. For more information
 # Application Documentation
 
 The project has 3 core applications:
-* [Machine Learning](/D3M/index.md) is used to complete quality, predictive, and interpretable models.
+* [Machine Learning](/MachineLearning/index.md) is used to complete quality, predictive, and interpretable models.
 * [Event Data](/EventData/index.md) is used to transform raw event data into usable time series.
 * [Metadata Service](/Metadata/index.md) is used to profile tabular data.
