@@ -41,7 +41,7 @@ let RAVEN_CONFIG_VERSION = 1;
 
 export let TA2DebugMode = false;
 export let debugLog = TA2DebugMode ? console.log : _ => _;
-export let defaultSampleSize = 5000; // 50000
+export let DefaultSampleSize = 5000; // 50000
 
 window.addEventListener('resize', m.redraw);
 
@@ -217,8 +217,6 @@ export let looseSteps = {};
 
 export let formattingData = {};
 export let alignmentData = {};
-window.alignmentData = alignmentData;
-
 // ~~~~
 
 export let taskPreferences = {
@@ -398,7 +396,7 @@ export async function buildDatasetUrl(problem, lastStep, dataPath, collectionNam
 
     let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
     let metadata = queryMongo.translateDatasetDoc(compiled, dataSchema, problem);
-
+    
     let body = {
         method: 'aggregate',
         query: JSON.stringify(compiled),
@@ -411,12 +409,6 @@ export async function buildDatasetUrl(problem, lastStep, dataPath, collectionNam
     return getData(body);
 }
 
-
-
-/**
- *  Send mongo query params to server and retrieve data
- *
- */
 let getDataPromise;
 export let getData = async body => {
     if (getDataPromise) await getDataPromise;
@@ -602,12 +594,7 @@ function connectWebsocket() {
     setInterval(check, 10000);
 }
 
-// For EventData, do not connect websockets (at least not yet)
-//
-if (!IS_EVENTDATA_DOMAIN){
-  document.addEventListener("DOMContentLoaded", connectWebsocket);
-}
-
+document.addEventListener("DOMContentLoaded", connectWebsocket);
 export let streamMsgCnt = 0;
 //  messages received.
 //
@@ -1186,7 +1173,7 @@ let buildDefaultProblem = problemDoc => {
             randomSeed: problemDoc.inputs.dataSplits.randomSeed,
             splitsFile: undefined,
             splitsDir: undefined,
-            maxRecordCount: defaultSampleSize
+            maxRecordCount: DefaultSampleSize
         }, problemDoc.splitOptions || {}),
 
         searchOptions: Object.assign({
@@ -1407,7 +1394,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
     let promisePreprocess = promiseSampledDatasetPath
         .then(sampledDatasetPath => m.request(ROOK_SVC_URL + 'preprocess.app', {
             method: 'POST',
-            data: {data: sampledDatasetPath, datastub: workspace.d3m_config.name}
+            data: {data: sampledDatasetPath, datastub: workspace.d3m_config.name, variables: workspace.raven_config.variableSummaries}
         }))
         .then(response => {
             if (!response.success) alertError(response.message);
@@ -1415,21 +1402,23 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
         })
         .then(preprocess => {
             if (!preprocess) return;
-            setVariableSummaries(preprocess.variables);
-            setDatasetSummary(preprocess.dataset);
+            
+	    setVariableSummaries(workspace.raven_config.variableSummaries || preprocess.variables);
+            setDatasetSummary(workspace.raven_config.datasetSummary || preprocess.dataset);
 
             workspace.raven_config.variablesInitial = Object.keys(preprocess.variables);
 
-            if (newRavenConfig) {
+            if (newRavenConfig || workspace.raven_config.variableSummaries) {
                 // go back and add tags to original problems
                 let nominals = Object.keys(variableSummaries)
                     .filter(variable => variableSummaries[variable].nature === 'nominal');
                 Object.values(workspace.raven_config.problems)
                     .forEach(problem => problem.tags.nominal = nominals);
             }
+	    return preprocess['$schema']; 
         })
         .then(m.redraw)
-        .catch(err => {
+	.catch(err => {
             console.error(err);
             setModal(m('div', m('p', "Preprocess failed."),
                 m('p', '(p: 2)')),
@@ -1454,7 +1443,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
             }
             // merge discovery into problem set if constructing a new raven config
             promisePreprocess
-                .then(_ => Object.assign(workspace.raven_config.problems, discovery(response.data)));
+                .then(_ => Object.assign(workspace.raven_config.problems, discovery(response.data)))
 
             promiseProblemDoc
                 .then(() => {
@@ -1519,7 +1508,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                                 randomSeed: undefined,
                                 splitsFile: undefined,
                                 splitsDir: undefined,
-                                maxRecordCount: defaultSampleSize
+                                maxRecordCount: DefaultSampleSize
                             },
                             searchOptions: {
                                 timeBoundSearch: undefined,
@@ -1571,6 +1560,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
             }
 
             console.log('Task 1: Complete, problemDoc loaded');
+	    console.log(workspace.raven_config.tags);
 
             taskPreferences.task1_finished = true;
             let problemDoc = response.data;
@@ -1881,8 +1871,9 @@ export let needsManipulationRewritePriorToSolve = problem => {
 
 export let materializeManipulationsPromise = {};
 export let materializeManipulations = async (problem, schemaIds) => {
-    if (!needsManipulationRewritePriorToSolve(problem))
+    if (!needsManipulationRewritePriorToSolve(problem)) {
         return;
+    }
 
     // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
     return Promise.all(Object.keys(problem.datasetSchemaPaths)
@@ -1922,10 +1913,7 @@ export let materializePartials = async problem => {
         method: 'POST',
         url: D3M_SVC_URL + '/get-partials-datasets',
         data: {
-            problem: SPEC_problem(problem),
-            dataset_id: problem.d3mDatasetId,
             domains: problem.domains,
-            all_variables: Object.keys(variableSummaries),
             dataset_schema: workspace.datasetDoc,
             dataset,
             separate_variables: false,
@@ -1936,10 +1924,8 @@ export let materializePartials = async problem => {
         alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
         throw partialsLocationInfo.message;
     } else {
-        problem.datasetIndexPartialsPaths = problem.datasetIndexPartialsPaths || {};
         Object.assign(problem.datasetSchemaPaths, partialsLocationInfo.data.dataset_schemas);
         Object.assign(problem.datasetPaths, partialsLocationInfo.data.dataset_paths);
-        Object.assign(problem.datasetIndexPartialsPaths, partialsLocationInfo.data.dataset_index_paths);
     }
 };
 
@@ -1954,7 +1940,7 @@ export let materializeICE = async problem => {
 
     await loadPredictorDomains(problem);
 
-    let abstractPipeline = [...workspace.raven_config.hardManipulations, ...problem.manipulations];
+    let abstractPipeline = [...workspace.raven_config.hardManipulations, problem.manipulations];
     let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
 
     // BUILD SAMPLE DATASET
@@ -1970,13 +1956,8 @@ export let materializeICE = async problem => {
         method: 'POST',
         url: D3M_SVC_URL + '/get-partials-datasets',
         data: {
-            problem: SPEC_problem(problem),
-            dataset_schema_path: samplePaths.metadata_path,
-            dataset_path: samplePaths.data_path,
-            all_variables: Object.keys(variableSummaries),
-            dataset_id: problem.d3mDatasetId,
-            update_roles: true,
             domains: problem.domains,
+            dataset_schema_path: samplePaths.metadata_path,
             separate_variables: true,
             name: 'ICE_synthetic_'
         }
@@ -1985,41 +1966,9 @@ export let materializeICE = async problem => {
         alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
         throw partialsLocationInfo.message;
     } else {
-        problem.datasetIndexPartialsPaths = problem.datasetIndexPartialsPaths || {};
         Object.assign(problem.datasetSchemaPaths, partialsLocationInfo.data.dataset_schemas);
         Object.assign(problem.datasetPaths, partialsLocationInfo.data.dataset_paths);
-        Object.assign(problem.datasetIndexPartialsPaths, partialsLocationInfo.data.dataset_index_paths);
     }
-};
-
-export let materializeTrainTestIndicesPromise = {};
-export let materializeTrainTestIndices = async problem => {
-
-    let response = await m.request({
-        method: 'POST',
-        url: D3M_SVC_URL + '/get-train-test-split-indices',
-        data: {
-            split_options: problem.splitOptions,
-            dataset_schema: problem.datasetSchemaPaths.all,
-            dataset_path: problem.datasetPaths.all,
-            problem: SPEC_problem(problem),
-            // if not manipulated, then don't rewrite datasetDoc with new metadata
-            // new datasetDoc will come from the translateDatasetDoc function
-            update_roles: !needsManipulationRewritePriorToSolve(problem)
-        }
-    });
-
-    if (!response.success) {
-        console.warn('Materialize train/test indices error:', response.message);
-        alertWarn('Unable to create out-of-sample split. Using entire dataset for training and for in-sample testing.');
-        results.resultsPreferences.dataSplit = 'all';
-        problem.splitOptions.outOfSampleSplit = false;
-        return false;
-    }
-
-    // splits collection has been materialized in the database
-    problem.results.splitCollection = response.data.split_collection;
-    return true;
 };
 
 // materializing splits may only happen once per problem, all calls wait for same response
@@ -2034,7 +1983,6 @@ export let materializeTrainTest = async problem => {
         method: 'POST',
         url: D3M_SVC_URL + '/get-train-test-split',
         data: {
-            dataset_id: problem.d3mDatasetId,
             split_options: problem.splitOptions,
             dataset_schema: problem.datasetSchemaPaths.all,
             dataset_path: problem.datasetPaths.all,
@@ -2162,7 +2110,7 @@ export function discovery(problems) {
                 randomSeed: undefined,
                 splitsFile: undefined,
                 splitsDir: undefined,
-                maxRecordCount: defaultSampleSize
+                maxRecordCount: DefaultSampleSize
             },
             searchOptions: {
                 timeBoundSearch: undefined,
@@ -2207,7 +2155,7 @@ export function discovery(problems) {
     }, {});
 }
 
-export let setVariableSummaries = state => {
+export let setVariableSummaries = (state, edit=false) => {
     if (!state) return;
     // delete state.d3mIndex;
 
@@ -2219,12 +2167,35 @@ export let setVariableSummaries = state => {
     window.variableSummaries = variableSummaries;
 
     variableSummariesLoaded = true;
+    variableSummariesEdited = edit;
 };
+export let setVariableSummary = (variable, attr, value) => {
+    variableSummaries[variable][attr] = value;
+    let tags = getSelectedProblem().tags;
+    if (attr === 'nature') {
+       if (value === 'nominal') tags.nominal.push(variable);
+       else tags.nominal = tags.nominal.filter(x => x != variable);
+    } else if (attr === 'geographic') {
+	if (!tags['location']) tags['location'] = []
+	if (value) tags.location.push(variable)
+	else tags.location = tags.location.filter(x => x != variable);
+    } else if (attr === 'temporal') { 
+	if (value) tags.time.push(variable)
+	else tags.time = tags.time.filter(x => x != variable);
+    }
+    setVariableSummaries(variableSummaries, true);
+};
+
 export let variableSummaries = {};
 export let variableSummariesLoaded = false;
+export let variableSummariesEdited = false;
 
-export let setDatasetSummary = state => datasetSummary = state;
+export let setDatasetSummary = (state, edit=false) => {
+    datasetSummary = state;
+    datasetSummaryEdited = edit;
+};
 export let datasetSummary = {};
+export let datasetSummaryEdited = false;
 
 
 /*
@@ -2260,7 +2231,7 @@ export let getCurrentWorkspaceMessage = () => { return currentWorkspaceSaveMsg; 
  *  ravens_config data to the user workspace.
  *    e.g. updates the workspace saved in the database
  */
-export let saveUserWorkspace = (silent = false) => {
+export let saveUserWorkspace = (silent = false, reload = false)=> {
     console.log('-- saveUserWorkspace --');
 
     // clear modal message
@@ -2274,6 +2245,15 @@ export let saveUserWorkspace = (silent = false) => {
         return;
     }
 
+    if (datasetSummaryEdited) {
+	workspace.raven_config.datasetSummary = datasetSummary;
+	datasetSummaryEdited = false;  
+    } 
+    if (variableSummariesEdited) {
+	workspace.raven_config.variableSummaries = variableSummaries;
+	variableSummariesEdited = false;  
+    } 
+
     let raven_config_save_url = '/user-workspaces/raven-configs/json/save/' + workspace.user_workspace_id;
 
     console.log('data to save: ' + JSON.stringify(workspace.raven_config))
@@ -2283,15 +2263,16 @@ export let saveUserWorkspace = (silent = false) => {
         url: raven_config_save_url,
         data: {raven_config: workspace.raven_config}
     })
-        .then(function (save_result) {
-            console.log(save_result);
-            if (save_result.success) {
-                setCurrentWorkspaceMessageSuccess('The workspace was saved!')
-            } else {
-                setCurrentWorkspaceMessageError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
-            }
-            !silent && setSaveCurrentWorkspaceWindowOpen(true);
-        })
+    .then(function (save_result) {
+	console.log(save_result);
+	if (save_result.success) {
+	    setCurrentWorkspaceMessageSuccess('The workspace was saved!')
+	} else {
+	    setCurrentWorkspaceMessageError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
+	}
+	!silent && setSaveCurrentWorkspaceWindowOpen(true);
+	if (reload) reset()
+    })
 };
 /*
  * END: saveUserWorkspace
