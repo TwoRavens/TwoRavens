@@ -18,7 +18,7 @@ import Paginated from "../../common/views/Paginated";
 import MenuHeaders from "../../common/views/MenuHeaders";
 import Icon from "../../common/views/Icon";
 
-import * as schema from '../preprocess-schemas/1-1-0';
+import * as schema from '../preprocess-schemas/1-2-0';
      
 let report = false;
 let edit = false;
