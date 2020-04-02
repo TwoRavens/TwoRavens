@@ -1,6 +1,6 @@
 {
    "$schema": "http://json-schema.org/schema#",
-   "$id": "https://github.com/TwoRavens/raven-metadata-service/schema/jsonschema/1-1-0.json#",
+   "$id": "https://github.com/TwoRavens/raven-metadata-service/schema/jsonschema/1-2-0.json#",
    "type": "object",
    "properties":{
       "$schema": {"type": "string"},
