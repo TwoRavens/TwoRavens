@@ -8,9 +8,9 @@ django-model-utils==3.0.0
 django-webpack-loader==0.6.0
 jsonfield==2.0.2
 
-# requests==2.20.0
+requests==2.20.0
 # downgrade for d3m package
-requests==2.19.1
+#requests==2.19.1
 
 
 # fabric for dev: to run npm and test server with one command
@@ -55,8 +55,18 @@ social-auth-core==1.7.0
 #
 pylint>=2.3.1
 
-# for dataset loading
--e git+https://gitlab.com/datadrivendiscovery/d3m.git@devel#egg=d3m
+# D3M library, for dataset loading
+
+# - Commit for tag for v2020.1.9
+-e git+https://gitlab.com/datadrivendiscovery/d3m.git@be853095932d4a94bea45da61192a926bfcb1dbd#egg=d3m
+
+# tag v2019.11.10
+#
+#-e git+https://gitlab.com/datadrivendiscovery/d3m.git@277a9f8704eb11f9702d636620c08ad20bef4361#egg=d3m
+
+# devel branch
+#
+#-e git+https://gitlab.com/datadrivendiscovery/d3m.git@devel#egg=d3m
 
 # for eventdata and d3m results joins and tpot
 #
@@ -79,9 +89,9 @@ dill
 tensorflow==1.13.1
 mlbox
 ludwig
-h2o
+#h2o
 # -e git+https://github.com/automl/auto-sklearn.git@b5b16f398cc218dfdaf991fa3638782756e8222b#egg=auto_sklearn
-mljar-supervised
+#mljar-supervised
 tpot
 
 # for tworavens solver
@@ -89,3 +99,7 @@ statsmodels==0.11.0
 
 # for image problems
 Pillow==7.0.0
+
+# https://github.com/gitpython-developers/GitPython/issues/983
+#   - to overwrite the d3m version
+pip install GitPython==3.1
