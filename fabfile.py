@@ -741,6 +741,25 @@ def init_db():
     #local("python manage.py loaddata fixtures/users.json")
     #Series(name_abbreviation="Mass.").save()
 
+
+# -----------------------------------
+#   Run a local postgres db via container
+# -----------------------------------
+@task
+def postgres_run():
+    """Run the Postgres DB"""
+    postgres_cmd = ('docker run --rm --name raven-postgres'
+                    ' -e POSTGRES_DB=raven_1'
+                    ' -e POSTGRES_USER=raven_user'
+                    ' -e POSTGRES_PASSWORD=ephemeral_data'
+                    ' -p 5432:5432 postgres')
+
+    with settings(warn_only=True):
+        result = local(postgres_cmd, capture=True)
+
+        if result.failed:
+            print('Failed. Postgres may already be running...')
+
 @task
 def run_grpc_tests():
     """Run the gRPC tests, equivalent of 'python manage.py test tworaven_apps.ta2_interfaces'"""

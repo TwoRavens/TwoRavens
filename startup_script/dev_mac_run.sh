@@ -26,7 +26,7 @@ init_virtualenv='source /usr/local/bin/virtualenvwrapper.sh'
 # -----------------------------
 # (4) - Adjust to run a specific TA2
 #
-run_ta2='fab run_ta2_featurelabs_with_config:2'
+run_ta2='fab run_ta2_tamu_choose_config:2'
 
 # -----------------------------
 # Assemble init command: cd to TwoRavens and
@@ -38,7 +38,8 @@ echo $init_cmd
 # -----------------------------
 # Commands to run
 # -----------------------------
-declare -a cmd_list=("fab run_with_ta2"
+declare -a cmd_list=("fab run_postgres"
+                     "fab run_with_ta2"
                      "fab redis_run"
                      "fab celery_run_with_ta2"
                      "fab run_rook"

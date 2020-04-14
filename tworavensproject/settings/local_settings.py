@@ -17,7 +17,16 @@ if not isdir(LOCAL_SETUP_DIR):
     makedirs(LOCAL_SETUP_DIR)
 
 DATABASES = {
+    # See fabfile.py -> postgres_run to start postgres via Docker
     'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'raven_1',
+        'USER': 'raven_user',
+        'PASSWORD': 'ephemeral_data',
+        'HOST': '0.0.0.0',
+        'PORT': '5432',
+    },
+    'xdefault': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': join(LOCAL_SETUP_DIR, 'two_ravens1.db3'),
     }

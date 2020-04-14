@@ -103,3 +103,7 @@ Pillow==7.0.0
 # https://github.com/gitpython-developers/GitPython/issues/983
 #   - GitPython==3.1. to overwrite the d3m version
 GitPython==3.1
+
+# Using Postgres, even in dev
+#
+psycopg2-binary==2.8.5

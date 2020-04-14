@@ -563,11 +563,11 @@ class EventJobUtil(object):
         if collection_name in db.list_collection_names():
             if reload:
                 db[collection_name].drop()
-                MongoDataset.objects.select_for_update().filter(name=collection_name).delete()
+                MongoDataset.objects.filter(name=collection_name).delete()
             else:
                 #print('--> import_dataset: data in database, no data in django, not reloading')
                 # make sure database entry exists
-                dataset_records = MongoDataset.objects.select_for_update().filter(name=collection_name)
+                dataset_records = MongoDataset.objects.filter(name=collection_name)
                 if dataset_records:
                     dataset_record = dataset_records[0]
                     dataset_record.loading = False
@@ -579,17 +579,17 @@ class EventJobUtil(object):
         else:
             # if data is not loaded, make sure record is not in database
             try:
-                MongoDataset.objects.select_for_update().filter(name=collection_name).delete()
+                MongoDataset.objects.filter(name=collection_name).delete()
             except MongoDataset.DoesNotExist:
                 pass
                 # print('data not loaded, and no data in django')
 
         # create lockable record
-        if not MongoDataset.objects.select_for_update().filter(name=collection_name):
+        if not MongoDataset.objects.filter(name=collection_name):
             MongoDataset.objects.create(name=collection_name, loading=True)
 
         # lock on record
-        dataset_record = MongoDataset.objects.select_for_update().get(name=collection_name)
+        dataset_record = MongoDataset.objects.get(name=collection_name)
         if not dataset_record.loading:
             return ok_resp({'collection': collection_name})
 

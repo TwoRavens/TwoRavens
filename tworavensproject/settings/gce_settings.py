@@ -17,10 +17,21 @@ DEBUG = strtobool(os.environ.get('DEBUG', 'False'))
 # DEBUG = False
 
 # -----------------------------------
-# use Google Cloud MySQL
+# Use the default local database which
+#   is Postgres in a docker container
+#
+# X use Google Cloud MySQL
 # -----------------------------------
-xDATABASES = {
+DATABASES = {
     'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'raven_1',
+        'USER': 'raven_user',
+        'PASSWORD': 'ephemeral_data',
+        'HOST': 'localhost',    # For k8s container
+        'PORT': '5432',
+    },
+    'old_default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': os.environ.get('DB_NAME', 'd3m_gce_ravendb'),
         'USER': os.environ.get('DB_USER'),
