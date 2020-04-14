@@ -26,11 +26,16 @@ DATABASES = {
         'HOST': '0.0.0.0',
         'PORT': '5432',
     },
-    'xdefault': {
+    'unit_test_db': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': join(LOCAL_SETUP_DIR, 'two_ravens1.db3'),
     }
 }
+
+# For unit tests, use sqlite
+if 'test' in sys.argv:
+    DATABASES['default'] = DATABASES['unit_test_db']
+
 
 RAVENS_SERVER_NAME = os.environ.get('RAVENS_SERVER_NAME',
                                     '2ravens.org')
