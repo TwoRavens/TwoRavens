@@ -101,5 +101,5 @@ statsmodels==0.11.0
 Pillow==7.0.0
 
 # https://github.com/gitpython-developers/GitPython/issues/983
-#   - to overwrite the d3m version
-pip install GitPython==3.1
+#   - GitPython==3.1. to overwrite the d3m version
+GitPython==3.1

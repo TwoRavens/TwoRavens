@@ -28,13 +28,18 @@ fab webpack_prod
 fab run_with_ta2
 
 # Build main TA3
-docker build -t tworavens/ravens-main:comfrey3 .
-docker push tworavens/ravens-main:comfrey3
+docker build -t tworavens/ravens-main:comfrey4 .
+docker push tworavens/ravens-main:comfrey4
 
 # Build rook service
-docker build -t tworavens/ravens-r-service:comfrey3 -f Dockerfile-flask-r .
-docker push tworavens/ravens-r-service:comfrey3;
+docker build -t tworavens/ravens-r-service:comfrey4 -f Dockerfile-flask-r .
+docker push tworavens/ravens-r-service:comfrey4;
 
+# Build nginx service
+cd setup/nginx/;
+docker build -f ./Dockerfile -t tworavens/ravens-nginx:comfrey4 .;
+docker push tworavens/ravens-nginx:comfrey4;
+cd ../../;
 
 # ----------------------------
 # Build event Data images
