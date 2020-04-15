@@ -64,6 +64,7 @@ export FLASK_USE_PRODUCTION_MODE=yes
 export AUTOML_FAST_DEBUG=yes
 export DISPLAY_DATAMART_UI=yes
 
+gnome-terminal --tab -- /bin/bash -c 'echo -ne "\033]0;celery\007"; fab postgres_run'
 gnome-terminal --tab -- /bin/bash -c 'echo -ne "\033]0;django\007"; fuser -k 8080/tcp; fab run_with_ta2'
 gnome-terminal --tab -- /bin/bash -c "echo -ne '\033]0;ta2 $1\007'; docker kill ta2_server; fab run_ta2_$1_choose_config:$DATA_ID"
 gnome-terminal --tab -- /bin/bash -c 'echo -ne "\033]0;celery\007"; fab celery_run_with_ta2'

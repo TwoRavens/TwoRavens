@@ -96,6 +96,7 @@ def make_d3m_configs_from_files_multiuser_test_limited():
 
     selected_datatsets = [\
       #'20_Ethiopia_Admin_Level_2_sub',
+        'TR102_Northern_Ireland',
         'TR20_State_Conflict',
         'TR50_PRIO_GRID',
         'TR60_Ethiopia_Small_2017-2018',
@@ -300,6 +301,7 @@ def run_ta2_featurelabs_choose_config(choice_num=''):
         print(resp.err_msg)
     #run_ta2_choose_config(choice_num, ta2_name=TA2_FeatureLabs)
 
+# Brown TA2 is no longer being developed. 2/2020
 @task
 def run_ta2_brown_choose_config(choice_num=''):
     """Pick a config from /ravens_volume and run Brown's TA2"""
@@ -732,12 +734,33 @@ def collect_static():
 @task
 def init_db():
     """Run django check and migrate"""
+    from django.conf import settings
+    print('settings.DATABASES', settings.DATABASES)
     local("python manage.py check")
     local("python manage.py migrate")
     create_django_superuser()
     create_test_user()
     #local("python manage.py loaddata fixtures/users.json")
     #Series(name_abbreviation="Mass.").save()
+
+
+# -----------------------------------
+#   Run a local postgres db via container
+# -----------------------------------
+@task
+def postgres_run():
+    """Run the Postgres DB"""
+    postgres_cmd = ('docker run --rm --name raven-postgres'
+                    ' -e POSTGRES_DB=raven_1'
+                    ' -e POSTGRES_USER=raven_user'
+                    ' -e POSTGRES_PASSWORD=ephemeral_data'
+                    ' -p 5432:5432 postgres')
+
+    with settings(warn_only=True):
+        result = local(postgres_cmd, capture=True)
+
+        if result.failed:
+            print('Failed. Postgres may already be running...')
 
 @task
 def run_grpc_tests():

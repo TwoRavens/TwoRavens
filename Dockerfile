@@ -51,17 +51,17 @@ RUN pip3 install tensorflow==1.13.1
 
 # Install XGBoost library
 #
-RUN git clone --recursive https://github.com/dmlc/xgboost && \
-    cd xgboost && \
-    make -j4 && \
-    cd python-package; python setup.py install
+#RUN git clone --recursive https://github.com/dmlc/xgboost && \
+#    cd xgboost && \
+#    make -j4 && \
+#    cd python-package; python setup.py install
 
 
 RUN pip3 install mlbox
 RUN pip3 install ludwig
-RUN pip3 install h2o
-RUN pip3 install -e git+https://github.com/automl/auto-sklearn.git@b5b16f398cc218dfdaf991fa3638782756e8222b#egg=auto_sklearn
-RUN pip3 install mljar-supervised
+#RUN pip3 install h2o
+#RUN pip3 install -e git+https://github.com/automl/auto-sklearn.git@b5b16f398cc218dfdaf991fa3638782756e8222b#egg=auto_sklearn
+#RUN pip3 install mljar-supervised
 RUN pip3 install scipy>=1.3.1
 RUN pip3 install tpot
 
@@ -119,11 +119,11 @@ VOLUME /ravens_volume
 #   - make_d3m_config - WARNING: for testing. Loads D3M info based on the test data
 #
 # -------------------------------------
-RUN fab init_db && \
-    fab create_django_superuser && \
-    fab create_test_user  && \
-    fab load_docker_ui_config && \
-    fab collect_static
+#RUN fab init_db && \
+#    fab create_django_superuser && \
+#    fab create_test_user  && \
+#    fab load_docker_ui_config && \
+#    fab collect_static
 
 #    fab make_d3m_configs_from_files && \
 
