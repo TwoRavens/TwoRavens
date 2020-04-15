@@ -119,11 +119,11 @@ VOLUME /ravens_volume
 #   - make_d3m_config - WARNING: for testing. Loads D3M info based on the test data
 #
 # -------------------------------------
-RUN fab init_db && \
-    fab create_django_superuser && \
-    fab create_test_user  && \
-    fab load_docker_ui_config && \
-    fab collect_static
+#RUN fab init_db && \
+#    fab create_django_superuser && \
+#    fab create_test_user  && \
+#    fab load_docker_ui_config && \
+#    fab collect_static
 
 #    fab make_d3m_configs_from_files && \
 

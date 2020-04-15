@@ -734,6 +734,8 @@ def collect_static():
 @task
 def init_db():
     """Run django check and migrate"""
+    from django.conf import settings
+    print('settings.DATABASES', settings.DATABASES)
     local("python manage.py check")
     local("python manage.py migrate")
     create_django_superuser()

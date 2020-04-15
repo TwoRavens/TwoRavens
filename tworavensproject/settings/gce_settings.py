@@ -24,21 +24,21 @@ DEBUG = strtobool(os.environ.get('DEBUG', 'False'))
 # -----------------------------------
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'raven_1',
-        'USER': 'raven_user',
-        'PASSWORD': 'ephemeral_data',
-        'HOST': 'localhost',    # For k8s container
-        'PORT': '5432',
+        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.postgresql'),
+        'NAME': os.environ.get('DB_NAME', 'raven_1'),
+        'USER': os.environ.get('DB_USER', 'raven_user'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'ephemeral_data'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),    # For k8s container
+        'PORT': os.environ.get('DB_PORT', '5432'),
     },
-    'old_default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME', 'd3m_gce_ravendb'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
-        'PORT': os.environ.get('DB_PORT', 3306),
-    }
+    #'old_default': {
+    #    'ENGINE': 'django.db.backends.mysql',
+    #    'NAME': os.environ.get('DB_NAME', 'd3m_gce_ravendb'),
+    #    'USER': os.environ.get('DB_USER'),
+    #    'PASSWORD': os.environ.get('DB_PASSWORD'),
+    #    'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
+    #    'PORT': os.environ.get('DB_PORT', 3306),
+    #}
 }
 
 SWAGGER_HOST = '2ravens.org'
