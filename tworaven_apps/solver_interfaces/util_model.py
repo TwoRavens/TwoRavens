@@ -11,7 +11,7 @@ import pandas
 from scipy.sparse import csr_matrix
 
 from tworaven_apps.solver_interfaces.models import SAVED_MODELS_PATH, R_SERVICE, get_metric, StatisticalModel
-from tworaven_solver import Dataset, fit_forecast_preprocess
+from tworaven_solver import Dataset
 from collections import defaultdict
 
 from sklearn import model_selection
