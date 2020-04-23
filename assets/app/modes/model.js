@@ -1659,6 +1659,7 @@ let setLabel = (problem, label, name) => {
             app.alertLog(`Cannot convert column "${name}" to numeric, because the column is character-based.`);
             return;
         }
+	app.variableSummaries[name].nature = label;
         if (problem.tags.nominal.includes(name)) {
             app.remove(problem.tags.crossSection, name);
             app.remove(problem.tags.boundary, name);
@@ -1680,12 +1681,13 @@ let setLabel = (problem, label, name) => {
 
     if (label === 'location') {
         if (!problem.tags.location.includes(name)) {
+	    app.variableSummaries[name].geographic = true;
             app.remove(problem.tags.boundary, name);
             app.remove(problem.tags.time, name);
             app.remove(problem.tags.weights, name);
             app.remove(problem.tags.indexes, name);
             app.add(problem.tags.nominal, name);
-        }
+        } else app.variableSummaries[name].geographic = false; 
         app.toggle(problem.tags.location, name);
     }
 
@@ -1702,9 +1704,10 @@ let setLabel = (problem, label, name) => {
 
     if (label === 'time') {
         if (!problem.tags.time.includes(name)) {
+	    app.variableSummaries[name].temporal = true;
             app.remove(problem.tags.location, name);
             app.remove(problem.tags.boundary, name);
-        }
+        } else app.variableSummaries[name].temporal = false; 
         app.toggle(problem.tags.time, name);
     }
 

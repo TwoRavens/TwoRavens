@@ -10,12 +10,19 @@ import TextField from "../../common/views/TextField";
 import Button from "../../common/views/Button";
 
 import * as app from "../app";
+import * as explore from "./explore";
 import * as manipulate from "../manipulations/manipulate";
 import Table from "../../common/views/Table";
 import {preformatted} from "../index";
 import Paginated from "../../common/views/Paginated";
 import MenuHeaders from "../../common/views/MenuHeaders";
 import Icon from "../../common/views/Icon";
+
+import * as schema from '../../preprocess-schemas/1-2-0';
+     
+let report = false;
+let edit = false;
+let more = {};
 
 export class CanvasDataset {
 
@@ -234,15 +241,117 @@ export class CanvasDataset {
             ]
         });
 
-        return m('div', {
-                style: {
+	let variableKeys = ['variableName', 'plotValues', 'pdfPlotType', 'pdfPlotX', 'pdfPlotY', 'cdfPlotType', 'cdfPlotX', 'cdfPlotY', 'name'];
+	let setDatasetSum = (_variable, attr, value) => {
+	    if (app.datasetSummary[attr] === value) return;
+	    
+	    app.datasetSummary[attr] = value;
+	    app.setDatasetSummary(app.datasetSummary, true);
+	};
+	let setVarSum = (variable, attr, value) => {
+	    if (app.variableSummaries[variable][attr] === value) return;
+	    
+	    app.setVariableSummary(variable, attr, value);
+	};
+
+	if (report) {
+	    let props = schema.properties.variables.patternProperties['.'];
+	    let editables = props.editable;
+	    let widget = (set, variable, k, v) => { 
+		let prop = props.properties[k];
+		if (prop.type === 'boolean') {
+		    return m('select.form-control', {onchange: e => set(variable, k, e.currentTarget.value === 'true'), value: v}, ['true', 'false'].map(x => m('option', x)));
+		} else if (prop.enum) {	
+		    return m('select.form-control', {onchange: e => set(variable, k, e.currentTarget.value), value: v}, prop.enum.map(x => m('option', x)));
+		}
+		return m('input', {oninput: e => set(variable, k, e.currentTarget.value), value: v});
+	    };
+	    return m('div', {
+		    style: {
+			'max-width': '800px',
+			'margin': 'auto'
+		    }
+		},
+		m('button.btn.btn-secondary.btn-sm' + (report ? '.active' : ''), {style: 'margin: 1em', onclick: _ => report = !report}, 'report'),
+		m('h3', 'Overview', 
+		    m('button.btn.btn-primary.btn-sm' + (edit ? '.active' : ''), {style: 'margin: 0 1em', onclick: _ => edit = !edit}, 'edit'),
+		    m('button.btn.btn-success.btn-sm', {disabled: !(app.datasetSummaryEdited || app.variableSummariesEdited), onclick: _ => app.saveUserWorkspace(true, true)}, 'save')),
+		m('table.table.table-sm.table-striped', 
+		    m('tbody',
+			Object.entries(app.datasetSummary)
+			    .map(row => m('tr', 
+				m('td', {style: {width: '1em'}}, row[0]), 
+				m('td', edit && 
+				    schema.properties.dataset.editable.includes(row[0]) ? widget(setDatasetSum, null, row[0], row[1]) : row[1])))
+		    )
+		),
+		m('h3', 'Variables'),
+		Object.entries(app.variableSummaries).map(([variable, vals]) => m('div.border', {style: 'margin-bottom: 1em; padding: 1em'},
+		    m('h4', variable),
+		    m('.row', 
+		    m('.col',
+			m('table.table.table-sm.table-striped',
+			    m('tbody',
+				Object.entries(vals).filter(x => editables.includes(x[0]))
+				    .map(row => m('tr', 
+					m('td', {style: {width: '1em'}}, row[0]), 
+					m('td', edit ? widget(setVarSum, variable, row[0], row[1]) : row[1])))
+			    )
+			)
+		    ),
+		    m('.col', 
+			m('table.table.table-sm.table-striped',
+			    m('tbody',
+				Object.entries(vals).slice(1, 17).filter(x => !editables.includes(x[0]))
+				    .map(row => m('tr', 
+					m('td', {style: {width: '1em'}}, row[0]), 
+					m('td', row[1])))
+			    )
+			)
+		    ),
+		    m('.col', 
+			m('div', {
+			    oninit() {
+				this.node = vals;
+			    },
+			    oncreate(vnode) {
+				let plot = (this.node || {}).pdfPlotType === 'continuous' ? explore.densityNode : explore.barsNode;
+				this.node && plot(this.node, vnode.dom, 110, true);
+			    },
+			    onupdate(vnode) {
+				let node = vals;
+				if (node && node !== this.node) {
+				    let plot = node.pdfPlotType === 'continuous' ? explore.densityNode : explore.barsNode;
+				    plot(node, vnode.dom, 110, true);
+				    this.node = node;
+				}
+			    },
+			}),
+		    )
+		    ),
+		    m('button.btn.btn-primary.btn-sm', {onclick: _ => more[variable] = !more[variable]}, more[variable] ? 'less' : 'more'),
+		    more[variable] && m('table.table.table-sm.table-striped', {style: 'margin-top: 1em'},
+			m('tbody',
+			    Object.entries(vals).slice(17)
+				.filter(row => !variableKeys.includes(row[0]))
+				.map(row => m('tr', 
+				    m('td', {style: {width: '1em'}}, row[0]), 
+				    m('td', row[1])))
+			)
+		    ),
+	    )));
+	}
+
+	return m('div', {
+	    style: {
                     'max-width': '800px',
                     'margin': 'auto'
                 }
             },
+	    m('button.btn.btn-secondary.btn-sm' + (report ? '.active' : ''), {style: 'margin: 1em', onclick: _ => report = !report}, 'report'),
             card('Datasource', datasource),
             card('Manipulations', manipulationsMenu),
-        )
+	);
     }
 }
 
