@@ -307,7 +307,7 @@ TA2_D3M_SOLVER_ENABLED = strtobool(os.environ.get('TA2_D3M_SOLVER_ENABLED', 'Tru
 # What is the list of valid Wrapped Solvers?
 #
 # Example of setting by env variable:
-#   export TA2_WRAPPED_SOLVERS='["mlbox", "tpot"]'
+#   export TA2_WRAPPED_SOLVERS='["mlbox", "tpot", "two-ravens"]'
 #
 #
 TA2_WRAPPED_SOLVERS_ALL = [
@@ -321,6 +321,8 @@ TA2_WRAPPED_SOLVERS_ALL = [
 ]
 TA2_WRAPPED_SOLVERS = ast.literal_eval(\
                     os.environ.get('TA2_WRAPPED_SOLVERS', str(TA2_WRAPPED_SOLVERS_ALL)))
+
+
 if not isinstance(TA2_WRAPPED_SOLVERS, list):
     TA2_WRAPPED_SOLVERS = []
 

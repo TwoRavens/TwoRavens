@@ -1,3 +1,17 @@
+## v2020.2.11
+
+* Updated PerformanceMetric enumerations to match those in d3m core.  Also
+  added script to keep all enumerations in sync in the future.
+  [#130](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/130)
+  [!163](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/163)
+  [!164](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/164)
+
+## v2020.1.28
+
+* Updated to support the latest core package, v2020.1.9. 
+  [#127](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/127)
+  [!162](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/162)
+
 ## v2019.12.4
 
 * Updated to support the latest core package, v2019.11.10.

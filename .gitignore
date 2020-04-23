@@ -79,3 +79,5 @@ tworaven_apps/image_utils/test_data/*
 !tworaven_apps/image_utils/test_data/.gitkeep
 ravens_volume/evtdata_user_datasets/*
 test_setup_event_data_local/*
+submodules/ta3ta2-api-v*.zip
+tworavensproject/settings/mysql_test_settings.cnf

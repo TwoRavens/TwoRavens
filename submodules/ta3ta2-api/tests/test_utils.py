@@ -6,9 +6,9 @@ import tempfile
 import unittest
 
 from d3m import container, index, utils as d3m_utils
-from d3m.metadata import pipeline as pipeline_module, problem as problem_module
+from d3m.metadata import pipeline as pipeline_module, problem as problem_module, base as metadata_base
 
-from ta3ta2_api import utils, problem_pb2
+from ta3ta2_api import utils, pipeline_pb2, problem_pb2
 
 TEST_PRIMITIVES_DIR = os.path.join(os.path.dirname(__file__), 'data', 'primitives')
 TEST_PROBLEMS_DIR = os.path.join(os.path.dirname(__file__), 'data', 'problems')
@@ -225,6 +225,47 @@ class TestUtils(unittest.TestCase):
 
         self.assertIsInstance(metric['metric'], problem_module.PerformanceMetric)
         self.assertIs(metric['metric'], problem_module.PerformanceMetric.F1_MICRO)
+
+
+class TestProto(unittest.TestCase):
+    def assert_enums_match(self, d3m_enum, grpc_enum):
+        # Convert D3M enum to dict
+        d3m_values = {
+            e.name: e.value
+            for e in d3m_enum
+        }
+
+        # Convert gRPC enum to dict
+        grpc_values = dict(grpc_enum.items())
+
+        # Check the '_UNDEFINED' element, discard it
+        undefined, = [k for k, v in grpc_values.items() if v == 0]
+        self.assertTrue(undefined.endswith(('_UNDEFINED', '_UNKNOWN')))
+        grpc_values.pop(undefined)
+
+        # Also ignore values above 99, which are private to gRPC
+        grpc_values = {k: v for k, v in grpc_values.items() if v < 99}
+
+        # Check they match
+        self.assertEqual(d3m_values, grpc_values)
+
+    def test_performance_metric(self):
+        self.assert_enums_match(
+            problem_module.PerformanceMetric,
+            problem_pb2.PerformanceMetric,
+        )
+
+    def test_task_keywords(self):
+        self.assert_enums_match(
+            problem_module.TaskKeyword,
+            problem_pb2.TaskKeyword,
+        )
+
+    def test_pipeline_context(self):
+        self.assert_enums_match(
+            metadata_base.Context,
+            pipeline_pb2.PipelineContext,
+        )
 
 
 if __name__ == '__main__':

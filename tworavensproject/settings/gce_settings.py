@@ -12,22 +12,33 @@ from google.oauth2 import service_account
 USE_X_FORWARDED_HOST = True
 ALLOWED_HOSTS = ('*',) #('2ravens.org', )
 
-#DEBUG = strtobool(os.environ.get('DEBUG', 'False'))
+DEBUG = strtobool(os.environ.get('DEBUG', 'False'))
 
-DEBUG = False
+# DEBUG = False
 
 # -----------------------------------
-# use Google Cloud MySQL
+# Use the default local database which
+#   is Postgres in a docker container
+#
+# X use Google Cloud MySQL
 # -----------------------------------
-xDATABASES = {
+DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME', 'd3m_gce_ravendb'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
-        'PORT': os.environ.get('DB_PORT', 3306),
-    }
+        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.postgresql'),
+        'NAME': os.environ.get('DB_NAME', 'raven_1'),
+        'USER': os.environ.get('DB_USER', 'raven_user'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'ephemeral_data'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),    # For k8s container
+        'PORT': os.environ.get('DB_PORT', '5432'),
+    },
+    #'old_default': {
+    #    'ENGINE': 'django.db.backends.mysql',
+    #    'NAME': os.environ.get('DB_NAME', 'd3m_gce_ravendb'),
+    #    'USER': os.environ.get('DB_USER'),
+    #    'PASSWORD': os.environ.get('DB_PASSWORD'),
+    #    'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
+    #    'PORT': os.environ.get('DB_PORT', 3306),
+    #}
 }
 
 SWAGGER_HOST = '2ravens.org'

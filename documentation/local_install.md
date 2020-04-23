@@ -151,10 +151,18 @@ Note: The TwoRavens application requires python 3.6+
 
 - You should see ```tworavensproject.settings.local_settings```
 
+### D4. Run the Postgres database via Docker container
 
-### D4. Check Django configuration. Initialize and run the web server
+- Open a _new_ Terminal and `cd` into the ```TwoRavens``` directory
+- Use the following commands to start Postgres
+    ```
+    workon 2ravens  # activate the virtualenv
+    fab postgres_run  # Run Postgres via Docker
+    ```
 
-- Run this command within the ```TwoRavens``` directory with the virtualenv activated:
+### D5. Check Django configuration. Initialize and run the web server
+
+- In the Terminal from Step D3, run this command within the ```TwoRavens``` directory with the virtualenv activated:
     ```
     python manage.py check
     ```
