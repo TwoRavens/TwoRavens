@@ -83,7 +83,8 @@ def view_R_preprocess(request):
 
 
     putil = PreprocessUtil(json_data[rook_static.KEY_DATA],
-                           datastub=json_data[rook_static.KEY_DATASTUB])
+                           datastub=json_data[rook_static.KEY_DATASTUB],
+			   variables=json_data.get(rook_static.KEY_VARS))
     if putil.has_error():
         return JsonResponse(get_json_error(putil.get_error_message()))
 

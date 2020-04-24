@@ -52,6 +52,7 @@ class PreprocessUtil(BasicErrCheck):
 
         # R preprocess specific value
         self.datastub = kwargs.get('datastub', None)
+        self.vars = kwargs.get('variables')
 
         # Flag - should python preprocess be used
         self.use_python_preprocess = kwargs.get('use_python_preprocess', True)
@@ -136,7 +137,7 @@ class PreprocessUtil(BasicErrCheck):
 
         # https://pypi.org/project/tworavens-preprocess/
         #
-        run_info = PreprocessRunner.load_from_file(self.source_path)
+        run_info = PreprocessRunner.load_from_file(self.source_path, user_vars=self.vars)
 
         if not run_info.success:
             self.add_err_msg(run_info.err_msg)
