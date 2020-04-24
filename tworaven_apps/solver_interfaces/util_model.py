@@ -697,8 +697,17 @@ class ModelTwoRavens(Model):
         dataframe = Dataset(score_specification['input']).get_dataframe()
 
         if self.task == "FORECASTING":
-            # ONLY consider default crossSection now
-            predicted = self.model.forecast(dataframe)
+            # dataframe_train = Dataset(score_specification['train']).get_dataframe()
+            # horizon = configuration.get('forecastingHorizon', {}).get('value', 1)
+            # if len(dataframe) < horizon:
+            #     raise ValueError(f'No predictions with a horizon of {horizon} are within range of the test data.')
+
+            predicted = self.model.predict(dataframe)
+
+            # predicted = self.forecast(
+            #     dataframe=dataframe_train,
+            #     dataframe_rolling=dataframe,
+            #     horizon=horizon)[:len(dataframe) - horizon + 1]
 
         elif self.task in ['CLASSIFICATION', 'REGRESSION']:
             # TODO: respect configuration on holdout vs cross-validation, do refitting, etc.
@@ -748,10 +757,9 @@ class ModelTwoRavens(Model):
             self.fit(dataframe=dataframe_train, data_specification=produce_specification['train'])
 
         if predict_type == 'RAW':
-            if "FORECASTING" == self.task:
-                predicted = self.model.forecast(dataframe)
-            else:
-                predicted = self.model.predict(dataframe)
+            predicted = self.model.predict(dataframe)
+            # if len(predicted.columns.values) > 1:
+            #     predicted = np.argmax(predicted, axis=-1)
         else:
             predicted = self.model.predict_proba(dataframe)
             # TODO: standardize probability column names
