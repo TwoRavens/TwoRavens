@@ -96,6 +96,7 @@ def make_d3m_configs_from_files_multiuser_test_limited():
 
     selected_datatsets = [\
       #'20_Ethiopia_Admin_Level_2_sub',
+      '56_sunspots_monthly',
         'TR102_Northern_Ireland',
         'TR20_State_Conflict',
         'TR50_PRIO_GRID',
