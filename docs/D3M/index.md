@@ -14,6 +14,8 @@ Our TwoRavens D3M interface is built upon Django and we assume the user know the
     * [D3M Configuration](api_docs/configuration/index.md)
     * [TA2 Interface](api_docs/ta2/index.md)
     * [Datamart](api_docs/datamart/index.md)
+* TwoRavens Solver
+    * [Document](solver/index.md)
 
 # Additional Resource
 
@@ -33,6 +35,7 @@ Above is the architecture of our D3M Interface. The function of each component i
     * **D3M Configuration** : (*Core Component*) Contains all the information of a D3M task;
     * **R Service** : Handle the dataset pre-process using R. (We are using *flask* as wrapper now). Notably, this component is only used by D3M Configuration, thus it can be considered as part of it.
     * **TA2 Interface** : (*Core Component*) Handle the communication with remote TA2 Server;
+    * **2Ravens Solver**: Efficient AutoML solver that offers simple and quick solutions.
     * **Datamart** : (*Core Component*) Handle the communication with remote data repo and provide dataset filtering;
     * **Auth** : Handles the user login/logout procedure;
     * **Admin**: Default application provided by Django framework, provides an user-friendly control panel for the webpage;
