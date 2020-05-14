@@ -1407,7 +1407,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
     let promisePreprocess = promiseSampledDatasetPath
         .then(sampledDatasetPath => m.request(ROOK_SVC_URL + 'preprocess.app', {
             method: 'POST',
-            data: {data: sampledDatasetPath, datastub: workspace.d3m_config.name}
+            data: {data: sampledDatasetPath, datastub: workspace.d3m_config.name, variables: workspace.raven_config.variableSummaries}
         }))
         .then(response => {
             if (!response.success) alertError(response.message);
@@ -1415,21 +1415,23 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
         })
         .then(preprocess => {
             if (!preprocess) return;
-            setVariableSummaries(preprocess.variables);
-            setDatasetSummary(preprocess.dataset);
+            
+	    setVariableSummaries(workspace.raven_config.variableSummaries || preprocess.variables);
+            setDatasetSummary(workspace.raven_config.datasetSummary || preprocess.dataset);
 
             workspace.raven_config.variablesInitial = Object.keys(preprocess.variables);
 
-            if (newRavenConfig) {
+            if (newRavenConfig || workspace.raven_config.variableSummaries) {
                 // go back and add tags to original problems
                 let nominals = Object.keys(variableSummaries)
                     .filter(variable => variableSummaries[variable].nature === 'nominal');
                 Object.values(workspace.raven_config.problems)
                     .forEach(problem => problem.tags.nominal = nominals);
             }
+	    return preprocess['$schema']; 
         })
         .then(m.redraw)
-        .catch(err => {
+	.catch(err => {
             console.error(err);
             setModal(m('div', m('p', "Preprocess failed."),
                 m('p', '(p: 2)')),
@@ -2207,7 +2209,7 @@ export function discovery(problems) {
     }, {});
 }
 
-export let setVariableSummaries = state => {
+export let setVariableSummaries = (state, edit=false) => {
     if (!state) return;
     // delete state.d3mIndex;
 
@@ -2219,12 +2221,35 @@ export let setVariableSummaries = state => {
     window.variableSummaries = variableSummaries;
 
     variableSummariesLoaded = true;
+    variableSummariesEdited = edit;
 };
+export let setVariableSummary = (variable, attr, value) => {
+    variableSummaries[variable][attr] = value;
+    let tags = getSelectedProblem().tags;
+    if (attr === 'nature') {
+       if (value === 'nominal') tags.nominal.push(variable);
+       else tags.nominal = tags.nominal.filter(x => x != variable);
+    } else if (attr === 'geographic') {
+	if (!tags['location']) tags['location'] = []
+	if (value) tags.location.push(variable)
+	else tags.location = tags.location.filter(x => x != variable);
+    } else if (attr === 'temporal') { 
+	if (value) tags.time.push(variable)
+	else tags.time = tags.time.filter(x => x != variable);
+    }
+    setVariableSummaries(variableSummaries, true);
+};
+
 export let variableSummaries = {};
 export let variableSummariesLoaded = false;
+export let variableSummariesEdited = false;
 
-export let setDatasetSummary = state => datasetSummary = state;
+export let setDatasetSummary = (state, edit=false) => {
+    datasetSummary = state;
+    datasetSummaryEdited = edit;
+};
 export let datasetSummary = {};
+export let datasetSummaryEdited = false;
 
 
 /*
@@ -2260,7 +2285,7 @@ export let getCurrentWorkspaceMessage = () => { return currentWorkspaceSaveMsg; 
  *  ravens_config data to the user workspace.
  *    e.g. updates the workspace saved in the database
  */
-export let saveUserWorkspace = (silent = false) => {
+export let saveUserWorkspace = (silent = false, reload = false)=> {
     console.log('-- saveUserWorkspace --');
 
     // clear modal message
@@ -2274,6 +2299,15 @@ export let saveUserWorkspace = (silent = false) => {
         return;
     }
 
+    if (datasetSummaryEdited) {
+	workspace.raven_config.datasetSummary = datasetSummary;
+	datasetSummaryEdited = false;  
+    } 
+    if (variableSummariesEdited) {
+	workspace.raven_config.variableSummaries = variableSummaries;
+	variableSummariesEdited = false;  
+    } 
+
     let raven_config_save_url = '/user-workspaces/raven-configs/json/save/' + workspace.user_workspace_id;
 
     console.log('data to save: ' + JSON.stringify(workspace.raven_config))
@@ -2283,15 +2317,16 @@ export let saveUserWorkspace = (silent = false) => {
         url: raven_config_save_url,
         data: {raven_config: workspace.raven_config}
     })
-        .then(function (save_result) {
-            console.log(save_result);
-            if (save_result.success) {
-                setCurrentWorkspaceMessageSuccess('The workspace was saved!')
-            } else {
-                setCurrentWorkspaceMessageError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
-            }
-            !silent && setSaveCurrentWorkspaceWindowOpen(true);
-        })
+    .then(function (save_result) {
+	console.log(save_result);
+	if (save_result.success) {
+	    setCurrentWorkspaceMessageSuccess('The workspace was saved!')
+	} else {
+	    setCurrentWorkspaceMessageError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
+	}
+	!silent && setSaveCurrentWorkspaceWindowOpen(true);
+	if (reload) reset()
+    })
 };
 /*
  * END: saveUserWorkspace
