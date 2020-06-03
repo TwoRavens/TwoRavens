@@ -693,11 +693,17 @@ class ModelTwoRavens(Model):
         }
 
     def score(self, score_specification):
-        # configuration = score_specification['configuration']
+        # Looks like this function will only be called when encounter a test split
         dataframe = Dataset(score_specification['input']).get_dataframe()
 
         if self.task == "FORECASTING":
-            # ONLY consider default crossSection now
+            # For score computation, we only take the given "forecastingHorizon" into account
+            forecast_length = self.model.problem_specification.get('forecastingHorizon', {"value": 10})
+            forecast_length = forecast_length.get('value', 10)
+
+            if len(dataframe.index) > forecast_length:
+                dataframe = dataframe.head(forecast_length)
+
             predicted = self.model.forecast(dataframe)
 
         elif self.task in ['CLASSIFICATION', 'REGRESSION']:
@@ -738,10 +744,12 @@ class ModelTwoRavens(Model):
             data_specification=data_specification)
 
     def produce(self, produce_specification):
+        # Looks like produce_specification contains input.name -- [train|test|all]
         configuration = produce_specification.get('configuration', {})
         predict_type = configuration.get('predict_type', 'RAW')
 
         dataframe = Dataset(produce_specification['input']).get_dataframe()
+        data_type = produce_specification['input'].get('name', 'test')
 
         if self.task in ['REGRESSION', 'CLASSIFICATION']:
             dataframe_train = Dataset(produce_specification['train']).get_dataframe().dropna()
@@ -751,6 +759,7 @@ class ModelTwoRavens(Model):
             if "FORECASTING" == self.task:
                 predicted = self.model.forecast(dataframe)
             else:
+                # This branch seems will never be reached
                 predicted = self.model.predict(dataframe)
         else:
             predicted = self.model.predict_proba(dataframe)
