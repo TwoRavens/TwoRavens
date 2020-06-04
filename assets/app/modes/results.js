@@ -442,7 +442,7 @@ export class CanvasSolutions {
 
         }
 
-        if (problem.task.toLowerCase().includes('regression') || problem.task.toLowerCase() === 'forecasting') {
+        if (problem.task.toLowerCase().includes('regression')) {
             let summaries = adapters.map(adapter => ({
                 name: adapter.getSolutionId(),
                 fittedVsActual: adapter.getFittedVsActuals(resultsPreferences.target),
