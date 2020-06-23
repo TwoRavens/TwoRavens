@@ -198,16 +198,6 @@ def stream_and_store_results(raven_json_str, stored_request_id,
     StoredRequestUtil.set_finished_ok_status(stored_request_id)
 
 
-def materialize_split_indices_collection(configuration, workspace):
-    """
-    Write out the datasets to be used for the solver systems.
-    @param configuration:
-    @param workspace:
-    @return:
-    """
-    query = configuration.get('query')
-
-
 def rewrite_dataset_schema(problem, dataset_schema, all_variables, dataset_id, update_roles=False):
     dataset_schema['about']['datasetID'] = dataset_id
 
@@ -250,14 +240,23 @@ def rewrite_dataset_schema(problem, dataset_schema, all_variables, dataset_id, u
         return roles
 
     def update_col_schema(i, col_name):
-        col_schema = next(col_schema for col_schema in resource_schema['columns'] if col_schema['colName'] == col_name)
+        col_schema = next((col_schema for col_schema in resource_schema['columns'] if col_schema['colName'] == col_name), None)
+        if col_schema is None:
+            return
         col_schema['colIndex'] = i
         if update_roles:
             col_schema['role'] = update_roles(col_schema['role'], col_name)
         return col_schema
 
     # modify in place
-    resource_schema['columns'] = [update_col_schema(i, col_name) for i, col_name in enumerate(keep_variables)]
+    updated_schemas = []
+    for i, col_name in enumerate(keep_variables):
+        updated_schema = update_col_schema(i, col_name)
+        if updated_schema is None:
+            continue
+        updated_schemas.append(updated_schema)
+
+    resource_schema['columns'] = updated_schemas
 
     return keep_variables, dataset_schema
 

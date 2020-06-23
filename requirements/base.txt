@@ -3,7 +3,7 @@
 #
 #-r ../submodules/raven-metadata-service/requirements/10_preprocess.txt
 
-Django==2.2.10
+Django==2.2.13
 django-model-utils==3.0.0
 django-webpack-loader==0.6.0
 jsonfield==2.0.2
@@ -80,8 +80,9 @@ scikit-learn==0.21.3
 scipy>=1.3.1
 
 # TwoRavens preprocess
+# https://pypi.org/project/tworavens-preprocess/
 #
-tworavens-preprocess==1.1.2
+tworavens-preprocess==1.1.3
 
 dill
 

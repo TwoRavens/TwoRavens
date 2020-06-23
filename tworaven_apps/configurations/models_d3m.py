@@ -177,6 +177,7 @@ class D3MConfiguration(TimeStampedModel):
                 load_kwargs=dict(object_pairs_hook=OrderedDict))
 
     slug = models.SlugField(blank=True,
+                            max_length=255,
                             help_text='auto-filled on save')
 
     def __str__(self):

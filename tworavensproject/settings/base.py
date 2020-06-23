@@ -315,7 +315,7 @@ TA2_WRAPPED_SOLVERS_ALL = [
     # "caret",
     # "h2o",
     "ludwig",
-    "mlbox",
+    #"mlbox",
     "tpot",
     "two-ravens"
 ]
