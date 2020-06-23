@@ -28,17 +28,17 @@ fab webpack_prod
 fab run_with_ta2
 
 # Build main TA3
-docker build -t tworavens/ravens-main:comfrey-2020-0424 .
-docker push tworavens/ravens-main:comfrey-2020-0424
+docker build -t tworavens/ravens-main:comfrey-2020-0623 .
+docker push tworavens/ravens-main:comfrey-2020-0623
 
 # Build rook service
-docker build -t tworavens/ravens-r-service:comfrey-2020-0424 -f Dockerfile-flask-r .
-docker push tworavens/ravens-r-service:comfrey-2020-0424;
+docker build -t tworavens/ravens-r-service:comfrey-2020-0623 -f Dockerfile-flask-r .
+docker push tworavens/ravens-r-service:comfrey-2020-0623;
 
 # Build nginx service
 cd setup/nginx/;
-docker build -f ./Dockerfile -t tworavens/ravens-nginx:comfrey-2020-0424 .;
-docker push tworavens/ravens-nginx:comfrey-2020-0424;
+docker build -f ./Dockerfile -t tworavens/ravens-nginx:comfrey-2020-0623 .;
+docker push tworavens/ravens-nginx:comfrey-2020-0623;
 cd ../../;
 
 # ----------------------------

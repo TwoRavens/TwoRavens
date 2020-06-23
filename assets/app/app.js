@@ -939,7 +939,7 @@ export let applicableMetrics = {
     }
 };
 
-let standardWrappedSolvers = ['tpot', 'mlbox', 'auto_sklearn', 'ludwig', 'h2o', 'two-ravens']; // caret, mljar-supervised
+let standardWrappedSolvers = ['tpot',  'auto_sklearn', 'ludwig', 'h2o', 'two-ravens']; // 'mlbox', 'caret', 'mljar-supervised'
 
 export let applicableSolvers = {
     classification: {
@@ -1415,7 +1415,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
         })
         .then(preprocess => {
             if (!preprocess) return;
-            
+
 	    setVariableSummaries(workspace.raven_config.variableSummaries || preprocess.variables);
             setDatasetSummary(workspace.raven_config.datasetSummary || preprocess.dataset);
 
@@ -1428,7 +1428,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                 Object.values(workspace.raven_config.problems)
                     .forEach(problem => problem.tags.nominal = nominals);
             }
-	    return preprocess['$schema']; 
+	    return preprocess['$schema'];
         })
         .then(m.redraw)
 	.catch(err => {
@@ -2233,7 +2233,7 @@ export let setVariableSummary = (variable, attr, value) => {
 	if (!tags['location']) tags['location'] = []
 	if (value) tags.location.push(variable)
 	else tags.location = tags.location.filter(x => x != variable);
-    } else if (attr === 'temporal') { 
+    } else if (attr === 'temporal') {
 	if (value) tags.time.push(variable)
 	else tags.time = tags.time.filter(x => x != variable);
     }
@@ -2301,12 +2301,12 @@ export let saveUserWorkspace = (silent = false, reload = false)=> {
 
     if (datasetSummaryEdited) {
 	workspace.raven_config.datasetSummary = datasetSummary;
-	datasetSummaryEdited = false;  
-    } 
+	datasetSummaryEdited = false;
+    }
     if (variableSummariesEdited) {
 	workspace.raven_config.variableSummaries = variableSummaries;
-	variableSummariesEdited = false;  
-    } 
+	variableSummariesEdited = false;
+    }
 
     let raven_config_save_url = '/user-workspaces/raven-configs/json/save/' + workspace.user_workspace_id;
 
