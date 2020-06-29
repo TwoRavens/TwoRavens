@@ -106,8 +106,7 @@ class UserDatasetUtil(BasicErrCheck):
 
     @staticmethod
     def make_new_dataset(user_id, source_dir, writable_output_dir, **kwargs):
-        """Return the result of a SearchSolutions call.
-        If successful, an async process is kicked off"""
+        """Make a new dataset"""
         if not user_id:
             return err_resp('user_workspace_id must be set')
 
@@ -115,7 +114,9 @@ class UserDatasetUtil(BasicErrCheck):
             return err_resp('source_dir not found: %s' % source_dir)
 
         if not isdir(writable_output_dir):
-            return err_resp('writable_output_dir not found: %s' % writable_output_dir)
+            dir_info = create_directory(writable_output_dir)
+            if not dir_info.success:
+                return err_resp('writable_output_dir not found: %s' % writable_output_dir)
 
         source_files = [join(source_dir, x)
                         for x in os.listdir(source_dir)
@@ -355,3 +356,15 @@ class UserDatasetUtil(BasicErrCheck):
         print(ddm.final_data_file_path)
 
         return True
+
+
+"""
+from tworaven_apps.data_prep_utils.user_dataset_util import UserDatasetUtil
+
+user_id = 1
+source_dir = '/ravens_volume/test_data/185_baseball'
+writable_output_dir = '/ravens_volume/ce-levi'
+UserDatasetUtil.make_new_dataset(user_id, source_dir, writable_output_dir)
+#make_new_dataset(user_id, source_dir, writable_output_dir, **kwargs):
+
+"""
