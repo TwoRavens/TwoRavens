@@ -59,7 +59,7 @@ def restart():
     run()
 
 
-@task
+#@task
 def make_d3m_configs_from_files():
     """Make configs from /ravens_volume and loads them to db"""
     clear_d3m_configs()
@@ -67,7 +67,7 @@ def make_d3m_configs_from_files():
     from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
     loader = EnvConfigLoader.make_d3m_test_configs_env_based('/ravens_volume/test_data')
 
-@task
+#@task
 def make_d3m_configs_from_files_multiuser_test():
     """11/2019 Make configs from /ravens_volume and loads them to db
     Also make the input/output directories 1-level higher than usual
@@ -256,97 +256,7 @@ def stop_ta2_server():
         if result.failed:
             print('No docker container named "ta2_server"\n')
 
-@task
-def run_ta2_stanford_choose_config(choice_num=''):
-    """Pick a config from /ravens_volume and run the Standford TA2"""
-    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
-            (TA2Helper, TA2_STANFORD)
-
-    resp = TA2Helper.run_ta2_with_dataset(\
-                TA2_STANFORD,
-                choice_num,
-                run_ta2_stanford_choose_config.__name__)
-
-    if resp.success:
-        stop_ta2_server()
-
-        docker_cmd = resp.result_obj
-        print('-' * 40)
-        print('Run TA2 with command:')
-        print('-' * 40)
-        print(docker_cmd)
-        local(docker_cmd)
-    elif resp.err_msg:
-        print(resp.err_msg)
-
-@task
-def run_ta2_featurelabs_choose_config(choice_num=''):
-    """Pick a config from /ravens_volume and run the FeatureLabs TA2"""
-    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
-            (TA2Helper, TA2_FeatureLabs)
-
-    resp = TA2Helper.run_ta2_with_dataset(\
-                TA2_FeatureLabs,
-                choice_num,
-                run_ta2_featurelabs_choose_config.__name__)
-
-    if resp.success:
-        stop_ta2_server()
-
-        docker_cmd = resp.result_obj
-        print('-' * 40)
-        print('Run TA2 with command:')
-        print('-' * 40)
-        print(docker_cmd)
-        local(docker_cmd)
-    elif resp.err_msg:
-        print(resp.err_msg)
-    #run_ta2_choose_config(choice_num, ta2_name=TA2_FeatureLabs)
-
-# Brown TA2 is no longer being developed. 2/2020
-@task
-def run_ta2_brown_choose_config(choice_num=''):
-    """Pick a config from /ravens_volume and run Brown's TA2"""
-    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
-            (TA2Helper, TA2_Brown)
-
-    resp = TA2Helper.run_ta2_with_dataset(\
-                TA2_Brown,
-                choice_num,
-                run_ta2_brown_choose_config.__name__)
-
-    if resp.success:
-        stop_ta2_server()
-
-        docker_cmd = resp.result_obj
-        print('Running command: %s' % docker_cmd)
-        local(docker_cmd)
-    elif resp.err_msg:
-        print(resp.err_msg)
-
-
-@task
-def run_ta2_berkeley_choose_config(choice_num=''):
-    """Pick a config from /ravens_volume and run Berkeley's TA2"""
-    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
-            (TA2Helper, TA2_BERKELEY)
-
-    resp = TA2Helper.run_ta2_with_dataset(\
-                TA2_BERKELEY,
-                choice_num,
-                run_ta2_berkeley_choose_config.__name__)
-
-    if resp.success:
-        stop_ta2_server()
-
-        docker_cmd = resp.result_obj
-        print('Running command: %s' % docker_cmd)
-        local(docker_cmd)
-    elif resp.err_msg:
-        print(resp.err_msg)
-
-
-@task
+#@task
 def run_ta2_isi_choose_config(choice_num=''):
     """Pick a config from /ravens_volume and run ISI's TA2"""
     from tworaven_apps.ta2_interfaces.ta2_dev_util import \
@@ -408,7 +318,7 @@ def run_ta2_cmu_choose_config(choice_num=''):
     elif resp.err_msg:
         print(resp.err_msg)
 
-@task
+#@task
 def run_ta2_nyu_choose_config(choice_num=''):
     """Pick a config from /ravens_volume and run the Standford TA2"""
     from tworaven_apps.ta2_interfaces.ta2_dev_util import \

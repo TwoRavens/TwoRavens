@@ -21,60 +21,9 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='',
   syntax='proto3',
   serialized_options=_b('Z\010pipeline'),
-  serialized_pb=_b('\n\x0bvalue.proto\"\x1d\n\nValueError\x12\x0f\n\x07message\x18\x01 \x01(\t\"%\n\tValueList\x12\x18\n\x05items\x18\x01 \x03(\x0b\x32\t.ValueRaw\"j\n\tValueDict\x12$\n\x05items\x18\x01 \x03(\x0b\x32\x15.ValueDict.ItemsEntry\x1a\x37\n\nItemsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x18\n\x05value\x18\x02 \x01(\x0b\x32\t.ValueRaw:\x02\x38\x01\"\xbb\x01\n\x08ValueRaw\x12\x1a\n\x04null\x18\x01 \x01(\x0e\x32\n.NullValueH\x00\x12\x10\n\x06\x64ouble\x18\x02 \x01(\x01H\x00\x12\x0f\n\x05int64\x18\x03 \x01(\x03H\x00\x12\x0e\n\x04\x62ool\x18\x04 \x01(\x08H\x00\x12\x10\n\x06string\x18\x05 \x01(\tH\x00\x12\x0f\n\x05\x62ytes\x18\x06 \x01(\x0cH\x00\x12\x1a\n\x04list\x18\x07 \x01(\x0b\x32\n.ValueListH\x00\x12\x1a\n\x04\x64ict\x18\x08 \x01(\x0b\x32\n.ValueDictH\x00\x42\x05\n\x03raw\"\xb4\x01\n\x05Value\x12\x1c\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0b.ValueErrorH\x00\x12\x18\n\x03raw\x18\x02 \x01(\x0b\x32\t.ValueRawH\x00\x12\x15\n\x0b\x64\x61taset_uri\x18\x03 \x01(\tH\x00\x12\x11\n\x07\x63sv_uri\x18\x04 \x01(\tH\x00\x12\x14\n\npickle_uri\x18\x05 \x01(\tH\x00\x12\x15\n\x0bpickle_blob\x18\x06 \x01(\x0cH\x00\x12\x13\n\tplasma_id\x18\x07 \x01(\x0cH\x00\x42\x07\n\x05value*\xa2\x01\n\tValueType\x12\x18\n\x14VALUE_TYPE_UNDEFINED\x10\x00\x12\x07\n\x03RAW\x10\x01\x12\x0f\n\x0b\x44\x41TASET_URI\x10\x02\x12\x0b\n\x07\x43SV_URI\x10\x03\x12\x0e\n\nPICKLE_URI\x10\x04\x12\x0f\n\x0bPICKLE_BLOB\x10\x05\x12\r\n\tPLASMA_ID\x10\x06\x12\r\n\tLARGE_RAW\x10\x07\x12\x15\n\x11LARGE_PICKLE_BLOB\x10\x08*\x1b\n\tNullValue\x12\x0e\n\nNULL_VALUE\x10\x00\x42\nZ\x08pipelineb\x06proto3')
+  serialized_pb=_b('\n\x0bvalue.proto\"\x1d\n\nValueError\x12\x0f\n\x07message\x18\x01 \x01(\t\"%\n\tValueList\x12\x18\n\x05items\x18\x01 \x03(\x0b\x32\t.ValueRaw\"j\n\tValueDict\x12$\n\x05items\x18\x01 \x03(\x0b\x32\x15.ValueDict.ItemsEntry\x1a\x37\n\nItemsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x18\n\x05value\x18\x02 \x01(\x0b\x32\t.ValueRaw:\x02\x38\x01\"\xbb\x01\n\x08ValueRaw\x12\x1a\n\x04null\x18\x01 \x01(\x0e\x32\n.NullValueH\x00\x12\x10\n\x06\x64ouble\x18\x02 \x01(\x01H\x00\x12\x0f\n\x05int64\x18\x03 \x01(\x03H\x00\x12\x0e\n\x04\x62ool\x18\x04 \x01(\x08H\x00\x12\x10\n\x06string\x18\x05 \x01(\tH\x00\x12\x0f\n\x05\x62ytes\x18\x06 \x01(\x0cH\x00\x12\x1a\n\x04list\x18\x07 \x01(\x0b\x32\n.ValueListH\x00\x12\x1a\n\x04\x64ict\x18\x08 \x01(\x0b\x32\n.ValueDictH\x00\x42\x05\n\x03raw\"\xb4\x01\n\x05Value\x12\x1c\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0b.ValueErrorH\x00\x12\x18\n\x03raw\x18\x02 \x01(\x0b\x32\t.ValueRawH\x00\x12\x15\n\x0b\x64\x61taset_uri\x18\x03 \x01(\tH\x00\x12\x11\n\x07\x63sv_uri\x18\x04 \x01(\tH\x00\x12\x14\n\npickle_uri\x18\x05 \x01(\tH\x00\x12\x15\n\x0bpickle_blob\x18\x06 \x01(\x0cH\x00\x12\x13\n\tplasma_id\x18\x07 \x01(\x0cH\x00\x42\x07\n\x05value*\x1b\n\tNullValue\x12\x0e\n\nNULL_VALUE\x10\x00\x42\nZ\x08pipelineb\x06proto3')
 )
 
-_VALUETYPE = _descriptor.EnumDescriptor(
-  name='ValueType',
-  full_name='ValueType',
-  filename=None,
-  file=DESCRIPTOR,
-  values=[
-    _descriptor.EnumValueDescriptor(
-      name='VALUE_TYPE_UNDEFINED', index=0, number=0,
-      serialized_options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='RAW', index=1, number=1,
-      serialized_options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='DATASET_URI', index=2, number=2,
-      serialized_options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='CSV_URI', index=3, number=3,
-      serialized_options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='PICKLE_URI', index=4, number=4,
-      serialized_options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='PICKLE_BLOB', index=5, number=5,
-      serialized_options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='PLASMA_ID', index=6, number=6,
-      serialized_options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='LARGE_RAW', index=7, number=7,
-      serialized_options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='LARGE_PICKLE_BLOB', index=8, number=8,
-      serialized_options=None,
-      type=None),
-  ],
-  containing_type=None,
-  serialized_options=None,
-  serialized_start=567,
-  serialized_end=729,
-)
-_sym_db.RegisterEnumDescriptor(_VALUETYPE)
-
-ValueType = enum_type_wrapper.EnumTypeWrapper(_VALUETYPE)
 _NULLVALUE = _descriptor.EnumDescriptor(
   name='NullValue',
   full_name='NullValue',
@@ -88,21 +37,12 @@ _NULLVALUE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=731,
-  serialized_end=758,
+  serialized_start=566,
+  serialized_end=593,
 )
 _sym_db.RegisterEnumDescriptor(_NULLVALUE)
 
 NullValue = enum_type_wrapper.EnumTypeWrapper(_NULLVALUE)
-VALUE_TYPE_UNDEFINED = 0
-RAW = 1
-DATASET_URI = 2
-CSV_URI = 3
-PICKLE_URI = 4
-PICKLE_BLOB = 5
-PLASMA_ID = 6
-LARGE_RAW = 7
-LARGE_PICKLE_BLOB = 8
 NULL_VALUE = 0
 
 
@@ -454,7 +394,6 @@ DESCRIPTOR.message_types_by_name['ValueList'] = _VALUELIST
 DESCRIPTOR.message_types_by_name['ValueDict'] = _VALUEDICT
 DESCRIPTOR.message_types_by_name['ValueRaw'] = _VALUERAW
 DESCRIPTOR.message_types_by_name['Value'] = _VALUE
-DESCRIPTOR.enum_types_by_name['ValueType'] = _VALUETYPE
 DESCRIPTOR.enum_types_by_name['NullValue'] = _NULLVALUE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 

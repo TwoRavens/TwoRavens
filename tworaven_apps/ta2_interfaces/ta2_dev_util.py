@@ -38,52 +38,28 @@ TA2_NAMES = (TA2_FeatureLabs,
              TA2_NYU)
 
 TA2_IMAGE_INFO = [
-    # Feature Labs: may not be using D3MPORT
-    (TA2_FeatureLabs,
-     #'registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable',
-     #'registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:ta3ta2-api-2018.7.7-eval-2018',
-     #'registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:ta3ta2-api-2019.1.22-eval-2018',
-     # 'registry.datadrivendiscovery.org/ta2-submissions/ta2-mit/winter-2019:latest',
-     'registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:2019.11.10',
-     '-p 45042:45042 -e D3MPORT=45042'),
-
-    # Brown: may not be using D3MPORT
-    (TA2_Brown,
-     'registry.datadrivendiscovery.org/zshang/docker_images:ta2',
-     #'registry.datadrivendiscovery.org/ta2-submissions/ta2-brown/summer2019:latest',
-     #'registry.datadrivendiscovery.org/zshang/docker_images:ta2-new',
-     ('-p 45042:45042  -e D3MPORT=45042 '
-      '-e D3MCONTEXT=TESTING -e AM_ENV=DEBUG')),
-
-    # ISI: not using D3MPORT
-    (TA2_ISI,
-     #'registry.datadrivendiscovery.org/kyao/ta2-isi/ta3ta2-image:latest',
-     'registry.datadrivendiscovery.org/kyao/ta3ta2/dsbox-2020-jan',
-     #'registry.datadrivendiscovery.org/ta2-submissions/ta2-isi/ta3ta2/ta3ta2-image:latest',
-     '-p 45042:45042 -e D3MPORT=45042 -e DSBOX_LOGGING_LEVEL="dsbox=DEBUG:console_logging_level=INFO:file_logging_level=DEBUG"'),
-     #'-p 45042:45042 --memory 10g -e D3MRAM=10 -e D3MCPU=1'),
-
-    # STANFORD: not using D3MPORT
-    (TA2_STANFORD,
-     'registry.datadrivendiscovery.org/mlam/stanford-d3m-full:evaluation_workflow_compliant_stable',
-     #'registry.datadrivendiscovery.org/jdunnmon/d3m-ta2-stanford:latest',
-     '-p 45042:45042'),
-
-    (TA2_BERKELEY,
-     'registry.datadrivendiscovery.org/berkeley/aika:latest',
-     '-p 45042:45042 -e D3MPORT=45042',),
-
     (TA2_TAMU,
      'dmartinez05/tamuta2:latest',
      '-p 45042:45042 -e D3MPORT=45042',),
 
     (TA2_CMU,
-     'registry.datadrivendiscovery.org/sheath/cmu-ta2:live',
+     #'registry.datadrivendiscovery.org/sheath/cmu-ta2:live',
+     'registry.datadrivendiscovery.org/sheath/cmu-ta2:latest',
      '-p 45042:45042 -e D3MPORT=45042',),
 
-    (TA2_NYU,
-     'registry.gitlab.com/vida-nyu/d3m/ta2:latest',
-     '-p 45042:45042 -e D3MPORT=45042',),
+    # ISI: not using D3MPORT
+    #(TA2_ISI,
+    # 'registry.datadrivendiscovery.org/kyao/ta3ta2/dsbox-2020-jan',
+    # '-p 45042:45042 -e D3MPORT=45042 -e DSBOX_LOGGING_LEVEL="dsbox=DEBUG:console_logging_level=INFO:file_logging_level=DEBUG"'),
+
+    # STANFORD: not using D3MPORT
+    #(TA2_STANFORD,
+    # 'registry.datadrivendiscovery.org/mlam/stanford-d3m-full:evaluation_workflow_compliant_stable',
+    # '-p 45042:45042'),
+    
+    #(TA2_NYU,
+    # 'registry.gitlab.com/vida-nyu/d3m/ta2:latest',
+    # '-p 45042:45042 -e D3MPORT=45042',),
 ]
 
 class TA2Helper(BasicErrCheck):

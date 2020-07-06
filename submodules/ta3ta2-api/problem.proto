@@ -1,98 +1,42 @@
 syntax = "proto3";
 option go_package = "pipeline";
 
-// Task keyword of the problem.
-enum TaskKeyword {
-    // Default value. Not to be used.
-    TASK_KEYWORD_UNDEFINED = 0;
-
-    CLASSIFICATION = 1;
-    REGRESSION = 2;
-    CLUSTERING = 3;
-    LINK_PREDICTION = 4;
-    VERTEX_NOMINATION = 5;
-    VERTEX_CLASSIFICATION = 6;
-    COMMUNITY_DETECTION = 7;
-    GRAPH_MATCHING = 8;
-    FORECASTING = 9;
-    COLLABORATIVE_FILTERING = 10;
-    OBJECT_DETECTION = 11;
-    SEMISUPERVISED = 12;
-    BINARY = 13;
-    MULTICLASS = 14;
-    MULTILABEL = 15;
-    UNIVARIATE = 16;
-    MULTIVARIATE = 17;
-    OVERLAPPING = 18;
-    NONOVERLAPPING = 19;
-    TABULAR = 20;
-    RELATIONAL = 21;
-    IMAGE = 22;
-    AUDIO = 23;
-    VIDEO = 24;
-    SPEECH = 25;
-    TEXT = 26;
-    GRAPH = 27;
-    MULTIGRAPH = 28;
-    TIME_SERIES = 29;
-    GROUPED = 30;
-    GEOSPATIAL = 31;
-    REMOTE_SENSING = 32;
-    LUPI = 33;
-    MISSING_METADATA = 34;
-}
-
-// The evaluation metric for any potential solution.
-enum PerformanceMetric {
-    // Default value. Not to be used.
-    METRIC_UNDEFINED = 0;
-
-    // The following are the only evaluation methods required
-    // to be supported for the ScoreSolution call.
-    ACCURACY = 1;
-    PRECISION = 2;
-    RECALL = 3;
-    F1 = 4;
-    F1_MICRO = 5;
-    F1_MACRO = 6;
-    ROC_AUC = 7;
-    ROC_AUC_MICRO = 8;
-    ROC_AUC_MACRO = 9;
-    MEAN_SQUARED_ERROR = 10;
-    ROOT_MEAN_SQUARED_ERROR = 11;
-    MEAN_ABSOLUTE_ERROR = 12;
-    R_SQUARED = 13;
-    NORMALIZED_MUTUAL_INFORMATION = 14;
-    JACCARD_SIMILARITY_SCORE = 15;
-    PRECISION_AT_TOP_K = 16;
-    OBJECT_DETECTION_AVERAGE_PRECISION = 17;
-    HAMMING_LOSS = 18;
-
-    // This metric can be used to ask TA2 to rank a solution as part of
-    // all found solutions of a given "SearchSolutions" call. Rank is a
-    // floating-point number. Lower numbers represent better solutions.
-    // Presently evaluation requirements are that ranks should be non-negative
-    // and that each ranked pipeline have a different rank (for all
-    // solutions of a given SearchSolutions call). Only possible with
-    // "RANKING" evaluation method.
-    RANK = 99;
-
-    // The rest are defined to allow expressing internal evaluation
-    // scores used by TA2 during pipeline search. If any you are using
-    // is missing, feel free to request it to be added.
-    // Average loss of an unspecified loss function.
-    LOSS = 100;
-}
-
 message ProblemPerformanceMetric {
-    PerformanceMetric metric = 1;
+    // The evaluation metric. Standard values are required to be supported
+    // and are available here:
+    // https://metadata.datadrivendiscovery.org/devel/?definitions#definitions.performance_metric
+    //
+    // In addition, "RANK" metric should be also supported. "RANK" metric
+    // can be used for a rank of a solution among all found solutions of
+    // a given "SearchSolutions" call. Rank is a non-negative floating-point number.
+    // Lower numbers represent better solutions. Each ranked solution should have
+    // a different rank (for all solutions of a given "SearchSolutions" call).
+    // Only possible with "RANKING" evaluation method.
+    //
+    // The following additional metrics are defined to allow expressing
+    // internal evaluation scores used by TA2 during solution search.
+    // If any you are using is missing, feel free to request it to be added.
+    // * "LOSS"
+    //   Average loss of an unspecified loss function.
+    //
+    // No standard value will ever start with "_", so if you worry about
+    // potential conflicts with future standard values, consider starting
+    // your non-standard values with "_'.
+    string metric = 1;
     // Additional params used by some metrics.
     int32 k = 2;
     string pos_label = 3;
 }
 
 message Problem {
-    repeated TaskKeyword task_keywords = 8;
+    // Task keywords of the problem. Standard values are required
+    // to be supported and are available here:
+    // https://metadata.datadrivendiscovery.org/devel/?definitions#definitions.problem.task_keywords
+    //
+    // No standard value will ever start with "_", so if you worry about
+    // potential conflicts with future standard values, consider starting
+    // your non-standard values with "_'.
+    repeated string task_keywords = 8;
     repeated ProblemPerformanceMetric performance_metrics = 7;
 }
 

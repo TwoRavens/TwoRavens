@@ -39,7 +39,7 @@ setup(
     author='DARPA D3M Program',
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
     install_requires=[
-        'd3m==2020.1.9',
+        'd3m==2020.5.18',
         'grpcio',
         'grpcio-tools',
     ],

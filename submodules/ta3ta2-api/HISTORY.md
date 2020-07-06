@@ -1,6 +1,34 @@
+## v2020.6.2
+
+* Made all features previously outside of the baseline required to be supported
+  by all systems.
+  [#111](https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/issues/111)
+  [#124](https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/issues/124)
+  [#136](https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/issues/136)
+  [!171](https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/merge_requests/171)
+* Added `search_features` to `SearchSolutionsRequest` to be able to suggest
+  search features for TA2 to use.
+  [#135](https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/issues/135)
+  [!169](https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/merge_requests/169)
+* Converted all enumerations to strings. Added fields to `HelloResponse`
+  for TA2 to be able to communicate supported enumeration values.
+  [#132](https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/issues/132)
+  [#133](https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/issues/133)
+  [!167](https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/merge_requests/167)
+* Added `use_default_values_for_free_hyperparams` flag to `SearchSolutionsRequest`
+  to precisely control the behavior when a search template contains no placeholders
+  but free hyper-parameters.
+  [!168](https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/merge_requests/168)
+* Fixed URL validation in Python utils when an allowed directory path
+  contains a trailing `/`.
+  [!165](https://gitlab.com/datadrivendiscovery/ta3ta2-api/-/merge_requests/165)
+* Added `ProblemDescription` to the `SplitDataRequest`, which is necessary for some splitting methods (like stratified splits).
+  [#129](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/129)
+  [!166](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/166)
+
 ## v2020.2.11
 
-* Updated PerformanceMetric enumerations to match those in d3m core.  Also
+* Updated `PerformanceMetric` enumerations to match those in d3m core.  Also
   added script to keep all enumerations in sync in the future.
   [#130](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/130)
   [!163](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/163)

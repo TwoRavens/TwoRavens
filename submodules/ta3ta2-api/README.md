@@ -14,8 +14,8 @@ about GRPC.
 ## API Structure
 
 TA3-TA2 API calls are defined in the *core* GRPC service which can be found in [`core.proto`](./core.proto) file
-and all TA3 and TA2 sytems are expected to implement it and support it. Optional services can be
-defined as well in other `.proto` files.
+and all TA3 and TA2 systems are expected to implement it and support it. Other `.proto` files provide definitions
+of additional standard messages.
 
 Useful utilities for working with the TA3-TA2 API in Python are available in the included [ta3ta2_api](https://gitlab.com/datadrivendiscovery/ta3ta2-api/tree/dist-python) package.
 
@@ -136,11 +136,6 @@ for partially specified pipelines; the problem description for a partially
 specified pipeline should describe the data at the beginning of the pipeline, 
 not the end of the specified portion.
 
-Examples of "relaxations" of the common requirements are included. We expect
-that some TA2 systems will be able to work with those relaxed requirements,
-and TA3s can use those if available, but it is not expected that every TA2
-will. TA3s should be able to function within the restrictions as stated below.
-
 ### Pipeline templates
 
 Pipeline templates are based on pipeline description with few differences:
@@ -163,7 +158,8 @@ the purpose of TA3-TA2 API we are currently placing the following restrictions:
 * The placeholder step has to have only one input, a Dataset container value, and one output,
   predictions as a Pandas dataframe. In this way it resembles a standard pipeline.
 * The placeholder can be only the last step in the pipeline.
-* All primitive steps should have all their hyper-parameters fixed.
+* All primitive steps should have all their hyper-parameters fixed (see also `use_default_values_for_free_hyperparams`
+  flag to control this requirement).
 
 These restrictions effectively mean that a pipeline template can only specify a directed acyclic graph of preprocessing 
 primitives that transforms one or more input Dataset container values into a *single* transformed
@@ -172,11 +168,13 @@ There are no additional restrictions on the types of individual primitives that 
 pipeline template, although impact on downstream TA2 processing should be assessed before a given 
 primitive is used.
 
-Relaxation: Individual systems can relax those restrictions. For example, they might allow
-a placeholder step to have postprocessing primitive steps after it. In this case postprocessing
+Individual systems can relax those restrictions. For example, they might allow a placeholder step to
+have postprocessing primitive steps after it. In this case postprocessing
 primitives can only transform predictions from a placeholder step into transformed predictions.
-Or individual systems might allow primitve steps to have free hyper-parameters a TA2 system
-should tune.
+Or individual systems might allow primitive steps to have free hyper-parameters a TA2 system
+should tune (see `use_default_values_for_free_hyperparams` flag to potentially control this behavior).
+We expect that some TA2 systems will be able to work with those relaxed requirements, and
+TA3s can use those if available, but it is not expected that every TA2 will.
 
 ### Fully specified pipelines
 
@@ -194,10 +192,11 @@ to convert input value to closest container type value, e.g., GRPC `RAW` list va
 be converted to `d3m.container.List` with generated metadata, CSV file read as Pandas
 DataFrame should be converted to `d3m.container.DataFrame` with generated metadata.
 
-Relaxation: Individual systems can support also pipelines with all primitives specified,
+Individual systems can also support pipelines with all primitives specified,
 but with free (available for tuning) hyper-parameters. In this case, TA2 will only tune
 hyper-parameters and resulting pipelines will have the same structure as given pipeline,
-but hyper-parameter configuration will differ.
+but hyper-parameter configuration will differ. If such potential behavior of a system is
+not desired, a `use_default_values_for_free_hyperparams` flag can be set to true.
 
 ## Values
 
@@ -370,10 +369,11 @@ In Go, accessing version is slightly more involved and it is described
 ## Extensions of messages
 
 GRPC and Protocol Buffers support a simple method of extending messages: just define extra fields with custom tags
-in your local version of the protocol. Performers can do that to experiment with variations of the protocol (and if
-changes work out, they can submit a merge request to the common API). To make sure such unofficial fields in messages
-do not conflict between performers, use values from the [allocated tag ranges](./private_tag_ranges.txt) for your
-organization.
+in your local version of the protocol. Users for this protocol can do that to experiment with variations of the protocol (and if
+changes work out, they can submit a merge request for those changes to be included into this specification).
+To make sure such unofficial fields in messages do not conflict between performers, use values from the
+[allocated tag ranges](./private_tag_ranges.txt) for your organization, or add your organization via a
+merge request.
 
 ## Changelog
 

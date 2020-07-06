@@ -231,8 +231,8 @@ class CoreServicer(object):
     raise NotImplementedError('Method not implemented!')
 
   def SaveSolution(self, request, context):
-    """Optional.
-    """
+    # missing associated documentation comment in .proto file
+    pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
