@@ -31,6 +31,8 @@ export let getSolverSpecification = async problem => {
 
 export let getD3MAdapter = problem => ({
     solve: async () => {
+        if (!IS_D3M_DOMAIN) return;
+
         // return if current problem is already being solved
         if ('d3m' in problem.solverState) return;
         if (!app.isProblemValid(problem)) return;
@@ -39,7 +41,22 @@ export let getD3MAdapter = problem => ({
 
         problem.solverState.d3m = {thinking: true};
 
-        if (!IS_D3M_DOMAIN) return;
+        // --------------------------------------
+        // check that TA2 is accessible
+        // --------------------------------------
+        let responseTA2 = await m.request(D3M_SVC_URL + '/Hello', {});
+        if (responseTA2) {
+            if (responseTA2.success !== true) {
+              console.log('fyi: TA2 not ready when trying to solve.')
+              app.showTA2ConnectError(responseTA2.message);
+              problem.solverState.d3m = {thinking: false};
+              delete problem.solverState['d3m'];
+              return;
+            } else{
+              app.showTA2Name(responseTA2);
+            }
+        }
+
 
         if (swandive) {
             alertError('estimate() function. Check app.js error with swandive (err: 003)');

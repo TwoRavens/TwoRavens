@@ -295,6 +295,7 @@ R_DEV_SERVER_BASE = os.environ.get('R_DEV_SERVER_BASE',
 # D3M - TA2 settings
 # ---------------------------
 TA2_STATIC_TEST_MODE = strtobool(os.environ.get('TA2_STATIC_TEST_MODE', 'True'))   # True: canned responses
+
 TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:45042')
 TA3_GRPC_USER_AGENT = os.environ.get('TA3_GRPC_USER_AGENT', 'TwoRavens')
 
