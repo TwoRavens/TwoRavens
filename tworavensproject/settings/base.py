@@ -52,7 +52,6 @@ TWORAVENS_COMMON_DIR = join(BASE_DIR, 'assets', 'common')
 sys.path.append(TWORAVENS_COMMON_DIR)
 
 
-
 FILE_UPLOAD_MAX_MEMORY_SIZE = os.environ.get('FILE_UPLOAD_MAX_MEMORY_SIZE',
                                              24 * 1024000)   # bytes
 DATA_UPLOAD_MAX_MEMORY_SIZE = FILE_UPLOAD_MAX_MEMORY_SIZE
@@ -377,23 +376,7 @@ EVENTDATA_DATASETS = ast.literal_eval(os.environ.get(\
                         KEY_EVENTDATA_DATASETS,
                         json.dumps(UT_DALLAS_COLLECTIONS)))
 
-# -------------------------------
-# Directory for moving data from
-# EventData to TwoRavens
-# -------------------------------
-EVTDATA_2_TWORAVENS_DIR = os.environ.get('EVTDATA_2_TWORAVENS_DIR', '/ravens_volume/evtdata_user_datasets')
 
-if not isdir(EVTDATA_2_TWORAVENS_DIR):
-    try:
-        os.makedirs(EVTDATA_2_TWORAVENS_DIR, exist_ok=True)
-        print(f'OK: able to create directory: {EVTDATA_2_TWORAVENS_DIR}')
-    except OSError as err_obj:
-        if not EVTDATA_2_TWORAVENS_DIR:
-            print((f'You must set this env variable to an existing directory'
-                   f' {EVTDATA_2_TWORAVENS_DIR}'))
-        else:
-            print(f'This directory MUST be available {EVTDATA_2_TWORAVENS_DIR}')
-        sys.exit(0)
 
 
 # -------------------------------

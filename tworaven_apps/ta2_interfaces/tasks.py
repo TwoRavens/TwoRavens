@@ -594,9 +594,9 @@ def create_destination_directory(user_workspace, name):
         return err_resp('Error "user_workspace" must be a UserWorkspace object.')
 
     # build destination path for partials app
-    dest_dir_path = os.path.join(user_workspace.d3m_config.additional_inputs,
-                         name,
+    dest_dir_path = os.path.join(user_workspace.d3m_config.get_temp_directory(),
                          f'ws_{user_workspace.id}',
+                         name,
                          get_timestamp_string())
 
     new_dir_info = create_directory(dest_dir_path)
@@ -609,7 +609,7 @@ def create_destination_directory(user_workspace, name):
 @celery_app.task
 def create_partials_datasets(configuration, workspace_id):
     """Create partials datasets"""
-    print(configuration)
+    print('configuration', configuration)
 
     problem = configuration['problem']
     dataset_id = configuration['dataset_id']

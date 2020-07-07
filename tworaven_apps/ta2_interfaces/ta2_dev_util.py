@@ -7,6 +7,7 @@ from datetime import datetime
 from os.path import isdir, isfile, join
 
 from django.core import management
+from django.conf import settings
 
 from tworaven_apps.utils.basic_response import ok_resp, err_resp
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
@@ -16,8 +17,8 @@ from tworaven_apps.configurations.utils import get_latest_d3m_config
 from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
 
 
-RAVENS_DIR = '/ravens_volume/test_data'
-RAVENS_OUTPUT_DIR = '/ravens_volume/test_output'
+RAVENS_DIR = settings.RAVENS_TEST_DATA_READONLY_DIR  # '/ravens_volume/test_data'
+RAVENS_OUTPUT_DIR = settings.RAVENS_TEST_OUTPUT_DIR
 
 TA2_FeatureLabs = 'TA2_FeatureLabs'
 TA2_Brown = 'TA2_Brown'
@@ -56,7 +57,7 @@ TA2_IMAGE_INFO = [
     #(TA2_STANFORD,
     # 'registry.datadrivendiscovery.org/mlam/stanford-d3m-full:evaluation_workflow_compliant_stable',
     # '-p 45042:45042'),
-    
+
     #(TA2_NYU,
     # 'registry.gitlab.com/vida-nyu/d3m/ta2:latest',
     # '-p 45042:45042 -e D3MPORT=45042',),

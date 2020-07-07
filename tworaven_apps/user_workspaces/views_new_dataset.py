@@ -159,7 +159,7 @@ def view_load_eventdata_dataset(request, **kwargs):
 
     # Create new dataset folders/etc
     #
-    additional_inputs_dir = user_workspace.d3m_config.additional_inputs
+    additional_inputs_dir = user_workspace.d3m_config.get_temp_directory()
     created = create_directory(additional_inputs_dir)
     if not created.success:
         return JsonResponse(get_json_error(created.err_msg))
@@ -241,7 +241,7 @@ def view_upload_dataset(request):
 
     # Create new dataset folders/etc
     #
-    additional_inputs_dir = user_workspace.d3m_config.additional_inputs
+    additional_inputs_dir = user_workspace.d3m_config.get_temp_directory()
     created = create_directory(additional_inputs_dir)
     if not created.success:
         return JsonResponse(get_json_error(created.err_msg))

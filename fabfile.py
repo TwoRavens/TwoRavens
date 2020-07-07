@@ -90,11 +90,11 @@ def make_d3m_configs_from_files_multiuser_test_limited():
 
     from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
     from tworaven_apps.configurations import static_vals as cstatic
-
+    from django.conf import settings
     params = dict(is_multi_dataset_demo=True)
 
 
-    selected_datatsets = [\
+    xselected_datatsets = [\
       #'20_Ethiopia_Admin_Level_2_sub',
         'LL1_h1b_visa_apps_7480',
         '56_sunspots_monthly',
@@ -119,7 +119,7 @@ def make_d3m_configs_from_files_multiuser_test_limited():
         '196_autoMpg',
         # 'LL1_PHEM_weeklyData_malnutrition',
         'DA_poverty_estimation']
-
+    selected_datatsets = ['185_baseball',]
     # -------------------------------
     # Check if selected datasets are
     # set by an env variable
@@ -138,7 +138,7 @@ def make_d3m_configs_from_files_multiuser_test_limited():
     params[cstatic.SELECTED_NAME_LIST] = selected_datatsets
 
     loader = EnvConfigLoader.make_d3m_test_configs_env_based(\
-                    '/ravens_volume/test_data',
+                    settings.RAVENS_TEST_DATA_READONLY_DIR,
                     **params)
 
 @task
@@ -160,12 +160,13 @@ def clear_d3m_configs():
 @task
 def clear_test_data():
     """Clear d3m configs, d3m output, and preprocess files"""
+    from django.conf import settings
 
     # (1) D3M config data in Django
     clear_d3m_configs()
 
     # (2) Delete ravens_volume test_output
-    d3m_output_dir = os.path.join(FAB_BASE_DIR, 'ravens_volume', 'test_output')
+    d3m_output_dir = settings.RAVENS_TEST_OUTPUT_DIR
     print('-' * 40)
     print('Delete D3M test output directory: %s' % d3m_output_dir)
     print('-' * 40)

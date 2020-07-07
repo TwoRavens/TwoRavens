@@ -1,5 +1,15 @@
 from os.path import join
 
+# Startup directories from settings
+#
+KEY_RAVENS_VOLUME_DIR = 'RAVENS_VOLUME_DIR'
+KEY_RAVENS_TEST_DATA_READONLY_DIR = 'RAVENS_TEST_DATA_READONLY_DIR'
+KEY_RAVENS_TEST_OUTPUT_DIR = 'RAVENS_TEST_OUTPUT_DIR'
+
+KEY_TWORAVENS_USER_DATASETS_DIR = 'TWORAVENS_USER_DATASETS_DIR'
+KEY_EVTDATA_2_TWORAVENS_DIR = 'EVTDATA_2_TWORAVENS_DIR'
+TEMP_DIR_NAME = 'temp'
+
 # For the winter 2019 config
 #   Based on 1/2019 version of https://datadrivendiscovery.org/wiki/display/work/Evaluation+Workflow
 #

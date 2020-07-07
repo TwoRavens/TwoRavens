@@ -274,18 +274,20 @@ def check_build_output_directories(d3m_config):
     output_path = d3m_config.env_values.get(d3m_static.KEY_D3MOUTPUTDIR)
     print('output_path', output_path)
     if output_path:
-        temp_path = join(output_path, 'temp')
+        temp_path = join(output_path, d3m_static.TEMP_DIR_NAME)
 
     paths_to_check = [output_path,
                       temp_path,
                       d3m_config.env_values.get(d3m_static.KEY_D3MLOCALDIR),
                       d3m_config.env_values.get(d3m_static.KEY_D3MSTATICDIR),
-                      join(output_path, 'pipeline_runs'),
-                      join(output_path, 'pipelines_ranked'),
-                      join(output_path, 'pipelines_scored'),
-                      join(output_path, 'pipelines_searched'),
-                      join(output_path, 'subpipelines')
                       ]
+    # Next directories commented as per July 2020 config changes:
+                      #join(output_path, 'pipeline_runs'),
+                      #join(output_path, 'pipelines_ranked'),
+                      #join(output_path, 'pipelines_scored'),
+                      #join(output_path, 'pipelines_searched'),
+                      #join(output_path, 'subpipelines')
+
 
     paths_to_build = [x for x in paths_to_check
                       if x and not isdir(x)]
