@@ -49,7 +49,6 @@ def create_directory_on_startup(dir_path, env_key):
             if not dir_path:
                 print((f'You must set this env variable to an existing directory'
                        f' {env_key}'))
-            sys.exit(0)
 
 
 

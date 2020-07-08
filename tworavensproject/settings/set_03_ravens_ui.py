@@ -23,8 +23,8 @@ TA2_WRAPPED_SOLVERS_ALL = [
     #"auto_sklearn",
     # "caret",
     # "h2o",
-    "ludwig",
-    #"mlbox",
+    #"ludwig",
+    "mlbox",
     "tpot",
     "two-ravens"
 ]
