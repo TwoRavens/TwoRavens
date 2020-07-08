@@ -788,7 +788,7 @@ class EventJobUtil(object):
 
         d3m_config = user_workspace.d3m_config
 
-        manipulations_folderpath = os.path.join(d3m_config.additional_inputs, 'manipulations')
+        manipulations_folderpath = os.path.join(d3m_config.get_temp_directory(), 'manipulations')
 
         extension = 0
         while os.path.exists(os.path.join(manipulations_folderpath, str(extension))):

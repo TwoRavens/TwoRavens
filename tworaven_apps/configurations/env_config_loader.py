@@ -333,19 +333,29 @@ class EnvConfigLoader(BasicErrCheck):
 
         print('new_config default', new_config.is_default)
 
-        for new_dirname in cstatic.D3M_OUTPUT_SUBDIRECTORIES:
-            new_dir_fullpath = join(self.env_config.D3MOUTPUTDIR, new_dirname)
+        # ----------------------------------------------------------
+        # July 2020 - these subdirectories are now created by the
+        #   TA2 under a D3MOUTPUTDIR/{search ID}
+        # ----------------------------------------------------------
+        temp_dir = join(self.env_config.D3MOUTPUTDIR, cstatic.TEMP_DIR_NAME)
+        if not isdir(temp_dir):
+            os.makedirs(temp_dir, exist_ok=True)
 
-            if not isdir(new_dir_fullpath):
-                os.makedirs(new_dir_fullpath, exist_ok=True)
+        if False:
+            for new_dirname in cstatic.D3M_OUTPUT_SUBDIRECTORIES:
+                new_dir_fullpath = join(self.env_config.D3MOUTPUTDIR, new_dirname)
 
-            if new_dirname == cstatic.USER_PROBLEMS_ROOT_DIR_NAME:
-                print('!!! Create: new_dirname', new_dirname)
-                # updated, retrieved with key cstatic.KEY_D3M_USER_PROBLEMS_ROOT:
-                new_config.user_problems_root = new_dir_fullpath
+                if not isdir(new_dir_fullpath):
+                    os.makedirs(new_dir_fullpath, exist_ok=True)
 
-            elif new_dirname == cstatic.KEY_D3M_DIR_ADDITIONAL_INPUTS:
-                new_config.additional_inputs = new_dir_fullpath
+                if new_dirname == cstatic.USER_PROBLEMS_ROOT_DIR_NAME:
+                    print('!!! Create: new_dirname', new_dirname)
+                    # updated, retrieved with key cstatic.KEY_D3M_USER_PROBLEMS_ROOT:
+                    new_config.user_problems_root = new_dir_fullpath
+
+                elif new_dirname == cstatic.KEY_D3M_DIR_ADDITIONAL_INPUTS:
+                    new_config.additional_inputs = new_dir_fullpath
+        #
 
         # save updated config
         new_config.save()
@@ -403,7 +413,8 @@ class EnvConfigLoader(BasicErrCheck):
 
     @staticmethod
     def make_config_from_directory(fullpath, **kwargs):
-        """Make a directory from an existing path.
+        """
+        Make a directory from an existing path.
 
         fullpath - The dataset top directory.
                 e.g. /ravens_volume/test_data/185_baseball
@@ -426,6 +437,11 @@ class EnvConfigLoader(BasicErrCheck):
         """
         if not isdir(fullpath):
             return err_resp('Directory not found: %s' % fullpath)
+
+        # make a dataset name based on the path
+        # e.g. 196_autoMpg, 185_baseball, etc
+        #
+        dataset_base_dir = basename(fullpath)
 
         is_multi_dataset_demo = kwargs.get('is_multi_dataset_demo', False)
 
@@ -470,14 +486,16 @@ class EnvConfigLoader(BasicErrCheck):
         if is_multi_dataset_demo is True:
             # For single-user multi-dataset, output written to top level
             #
-            info.D3MOUTPUTDIR = join(dirname(dirname(fullpath)),
-                                     'test_output')
+            info.D3MOUTPUTDIR = join(settings.RAVENS_TEST_OUTPUT_DIR,
+                                     dataset_base_dir)
         else:
-            # The usual not for the 11/2019 demo
-            #
-            info.D3MOUTPUTDIR = join(dirname(dirname(fullpath)),
-                                     'test_output',
-                                     basename(fullpath))
+            info.D3MOUTPUTDIR = join(settings.RAVENS_TEST_OUTPUT_DIR,
+                                     dataset_base_dir)
+        #    # The usual ....
+        #    #
+        #    info.D3MOUTPUTDIR = join(dirname(dirname(fullpath)),
+        #                             'test_output',
+        #                             basename(fullpath))
 
         os.makedirs(info.D3MOUTPUTDIR, exist_ok=True)
 

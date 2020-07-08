@@ -6,6 +6,10 @@ import "google/protobuf/timestamp.proto";
 import "primitive.proto";
 import "value.proto";
 
+// Pipeline description corresponds to the JSON schema of a D3M pipeline
+// description as available here:
+// https://metadata.datadrivendiscovery.org/devel/?pipeline
+//
 // Pipeline description contains many "data references". Data reference is just a string
 // which identifies an output of a step or a pipeline input and forms a data-flow connection
 // between data available and an input to a step. It is recommended to be a string of the
@@ -96,15 +100,6 @@ message PipelineSource {
     string contact = 2;
     // A list of pipelines used to derive the pipeline.
     repeated PipelineDescription pipelines = 3;
-}
-
-// TODO: Deprecated. Remove.
-enum PipelineContext {
-    PIPELINE_CONTEXT_UNKNOWN = 0;
-    PRETRAINING = 1;
-    TESTING = 2;
-    EVALUATION = 3;
-    PRODUCTION = 4;
 }
 
 // User associated with the creation of the template/pipeline, or selection of a primitive.
@@ -204,8 +199,6 @@ message PipelineDescription {
     // TA2: Timestamp when created. Templates do not have this timestamp. TA3 might provide it for
     // a fully specified pipeline.
     google.protobuf.Timestamp created = 3;
-    // TODO: Deprecated. Remove.
-    PipelineContext context = 4 [deprecated=true];
     // Human friendly name of the pipeline. For templates it can be a hint to
     // TA2 how to name found pipelines. Optional.
     string name = 5;

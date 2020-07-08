@@ -32,6 +32,26 @@ def create_directory_add_timestamp(new_dir, exist_ok=True):
     return ok_resp(new_dir_with_timestamp)
 
 
+def create_directory_on_startup(dir_path, env_key):
+    """Create a directory on startup"""
+    if not dir_path:
+        print((f'Directory not found. Please set this environment'
+               f' variable to an existing directory: {env_key}'))
+
+    if not isdir(dir_path):
+        print((f'WARNING: the directory {dir_path} is not available.'
+               f' Attempting to create it ...'))
+        try:
+            os.makedirs(dir_path, exist_ok=True)
+            print(f'OK: able to create directory: {dir_path}')
+        except OSError as err_obj:
+            print(f'ERROR: Failed to create directory {dir_path}')
+            if not dir_path:
+                print((f'You must set this env variable to an existing directory'
+                       f' {env_key}'))
+
+
+
 def create_directory(new_dir, exist_ok=True):
     """Create a directory"""
     try:

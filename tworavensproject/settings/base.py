@@ -18,6 +18,23 @@ from distutils.util import strtobool
 
 from django.urls import reverse_lazy
 
+# -----------------------------------------------------
+# Include D3M environment variables
+# https://gitlab.com/datadrivendiscovery/ta3ta2-api
+# -----------------------------------------------------
+from .set_01_d3m_env_variables import *
+
+# -----------------------------------------------------
+# Set directories for user uploaded data
+# -----------------------------------------------------
+from .set_02_ravens_directories import *
+
+# -----------------------------------------------------
+# Set availability of the TA2 solver and wrapped solvers
+# -----------------------------------------------------
+from .set_03_ravens_ui import *
+
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = dirname(dirname(dirname(abspath(__file__))))
 
@@ -28,48 +45,16 @@ BASE_DIR = dirname(dirname(dirname(abspath(__file__))))
 TA3TA2_API_DIR = join(BASE_DIR, 'submodules', 'ta3ta2-api')
 sys.path.append(TA3TA2_API_DIR)
 
+# -----------------------------------------------------
+# Add common to the sys.path, includes mithril UI components
+# -----------------------------------------------------
 TWORAVENS_COMMON_DIR = join(BASE_DIR, 'assets', 'common')
 sys.path.append(TWORAVENS_COMMON_DIR)
-
 
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = os.environ.get('FILE_UPLOAD_MAX_MEMORY_SIZE',
                                              24 * 1024000)   # bytes
 DATA_UPLOAD_MAX_MEMORY_SIZE = FILE_UPLOAD_MAX_MEMORY_SIZE
-
-# -----------------------------------------
-# Directory for user contributed datasets
-# -----------------------------------------
-if os.environ.get('D3MOUTPUTDIR'):
-    TWORAVENS_USER_DATASETS_DIR = join(os.environ.get('D3MOUTPUTDIR'),
-                                       'TwoRavens_user_datasets')
-else:
-    TWORAVENS_USER_DATASETS_DIR = os.environ.get('TWORAVENS_USER_DATASETS_DIR',
-                                                 '/ravens_volume/TwoRavens_user_datasets')
-
-if not isdir(TWORAVENS_USER_DATASETS_DIR):
-    print((f'WARNING: the USER_ADDED_DATASETS_DIR is not'
-           f' available: {TWORAVENS_USER_DATASETS_DIR}'))
-    try:
-        os.makedirs(TWORAVENS_USER_DATASETS_DIR, exist_ok=True)
-        print(f'OK: able to create directory: {TWORAVENS_USER_DATASETS_DIR}')
-    except OSError as err_obj:
-        if not TWORAVENS_USER_DATASETS_DIR:
-            print((f'You must set this env variable to an existing directory'
-                   f' {TWORAVENS_USER_DATASETS_DIR}'))
-        else:
-            print(f'This directory MUST be available {TWORAVENS_USER_DATASETS_DIR}')
-        sys.exit(0)
-
-# -----------------------------------------------------
-# Link to copy of the raven-metadata-service
-# for the preprocess script
-#
-# https://github.com/TwoRavens/raven-metadata-service
-# -----------------------------------------------------
-#RAVEN_METADATA_SVC = join(BASE_DIR, 'submodules', 'raven-metadata-service')
-#RAVEN_PREPROCESS = join(RAVEN_METADATA_SVC, 'preprocess', 'code')
-#sys.path.append(RAVEN_PREPROCESS)
 
 
 # Quick-start development settings - unsuitable for production
@@ -296,70 +281,8 @@ SESSION_SAVE_EVERY_REQUEST = True
 
 SERVER_SCHEME = 'http'  # or https
 
-# ----------------------------------------------
-# TA2 configurations set by env variables
-# ----------------------------------------------
-
-# Is the D3M TA2 solver enabled?
-#
-TA2_D3M_SOLVER_ENABLED = strtobool(os.environ.get('TA2_D3M_SOLVER_ENABLED', 'True'))
-
-# What is the list of valid Wrapped Solvers?
-#
-# Example of setting by env variable:
-#   export TA2_WRAPPED_SOLVERS='["mlbox", "tpot", "two-ravens"]'
-#
-#
-TA2_WRAPPED_SOLVERS_ALL = [
-    "auto_sklearn",
-    # "caret",
-    # "h2o",
-    "ludwig",
-    #"mlbox",
-    "tpot",
-    "two-ravens"
-]
-TA2_WRAPPED_SOLVERS = ast.literal_eval(\
-                    os.environ.get('TA2_WRAPPED_SOLVERS', str(TA2_WRAPPED_SOLVERS_ALL)))
 
 
-if not isinstance(TA2_WRAPPED_SOLVERS, list):
-    TA2_WRAPPED_SOLVERS = []
-
-# ----------------------------------------------
-# D3M - Config Settings - started winter 2019
-# ----------------------------------------------
-# This switches between 2019 config (True)
-# and the older "search_config.json" file
-#
-D3M_USE_2019_CONFIG = strtobool(os.environ.get('D3M_USE_2019_CONFIG', 'True'))
-
-# D3MRUN - A label what is the setting under which the pod is being run; possible values: ta2, ta2ta3; this variable is available only for informative purposes but it is not used anymore to change an overall mode of operation of TA2 system because now TA2 evaluation will happen through TA2-TA3 API as well
-D3MRUN = os.environ.get('D3MRUN', 'ta2ta3')
-
-# D3MINPUTDIR - a location of dataset(s), can contain multiple datasets in arbitrary directory structure, read-only
-D3MINPUTDIR = os.environ.get('D3MINPUTDIR', None)
-
-# D3MPROBLEMPATH - a location to problem description to use (should be under D3MINPUTDIR), datasets are linked from the problem description using IDs, those datasets should exist inside D3MINPUTDIR
-D3MPROBLEMPATH = os.environ.get('D3MPROBLEMPATH', None)
-
-# D3MOUTPUTDIR - a location of output files, shared by TA2 and TA3 pods (and probably data mart)
-D3MOUTPUTDIR = os.environ.get('D3MOUTPUTDIR', None)
-
-# D3MLOCALDIR - a local-to-host directory provided; used by memory sharing mechanisms
-D3MLOCALDIR = os.environ.get('D3MLOCALDIR', None)
-
-# D3MSTATICDIR - a path to the volume with primitives' static files
-D3MSTATICDIR = os.environ.get('D3MSTATICDIR', None)
-
-# D3MCPU - available CPU units in Kubernetes specification
-D3MCPU = os.environ.get('D3MCPU', None)
-
-# D3MRAM - available memory units in Kubernetes specification
-D3MRAM = os.environ.get('D3MRAM', None)
-
-# D3MTIMEOUT - time limit for the search phase (available to the pod), in seconds
-D3MTIMEOUT = os.environ.get('D3MTIMEOUT', None)
 
 # ---------------------------
 # R Server base
@@ -371,6 +294,7 @@ R_DEV_SERVER_BASE = os.environ.get('R_DEV_SERVER_BASE',
 # D3M - TA2 settings
 # ---------------------------
 TA2_STATIC_TEST_MODE = strtobool(os.environ.get('TA2_STATIC_TEST_MODE', 'True'))   # True: canned responses
+
 TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:45042')
 TA3_GRPC_USER_AGENT = os.environ.get('TA3_GRPC_USER_AGENT', 'TwoRavens')
 
@@ -452,23 +376,7 @@ EVENTDATA_DATASETS = ast.literal_eval(os.environ.get(\
                         KEY_EVENTDATA_DATASETS,
                         json.dumps(UT_DALLAS_COLLECTIONS)))
 
-# -------------------------------
-# Directory for moving data from
-# EventData to TwoRavens
-# -------------------------------
-EVTDATA_2_TWORAVENS_DIR = os.environ.get('EVTDATA_2_TWORAVENS_DIR', '/ravens_volume/evtdata_user_datasets')
 
-if not isdir(EVTDATA_2_TWORAVENS_DIR):
-    try:
-        os.makedirs(EVTDATA_2_TWORAVENS_DIR, exist_ok=True)
-        print(f'OK: able to create directory: {EVTDATA_2_TWORAVENS_DIR}')
-    except OSError as err_obj:
-        if not EVTDATA_2_TWORAVENS_DIR:
-            print((f'You must set this env variable to an existing directory'
-                   f' {EVTDATA_2_TWORAVENS_DIR}'))
-        else:
-            print(f'This directory MUST be available {EVTDATA_2_TWORAVENS_DIR}')
-        sys.exit(0)
 
 
 # -------------------------------
@@ -479,20 +387,7 @@ EVENTDATA_TWO_RAVENS_TARGET_URL = os.environ.get('EVENTDATA_TWO_RAVENS_TARGET_UR
 if EVENTDATA_TWO_RAVENS_TARGET_URL.endswith('/'):
     EVENTDATA_TWO_RAVENS_TARGET_URL = EVENTDATA_TWO_RAVENS_TARGET_URL[1:]
 
-# -------------------------
-# Datamart related
-# -------------------------
 
-# 11/6/2019 - switch for multi-user testing
-#   passed as a boolean to .js
-DISPLAY_DATAMART_UI = strtobool(os.environ.get('DISPLAY_DATAMART_UI', 'True'))
-
-
-DATAMART_SHORT_TIMEOUT = 10 # seconds
-DATAMART_LONG_TIMEOUT = 5 * 60 # 5 minutes
-DATAMART_VERY_LONG_TIMEOUT = 10 * 60 # 8 minutes
-
-SORT_BY_GATES_DATASETS = strtobool(os.environ.get('SORT_BY_GATES_DATASETS', 'False'))
 
 # TEST ONLY: Set for TwoRavens when loading EventData urls
 #

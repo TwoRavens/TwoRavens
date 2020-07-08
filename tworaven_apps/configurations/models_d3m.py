@@ -5,6 +5,7 @@ https://datadrivendiscovery.org/wiki/pages/viewpage.action?spaceKey=gov&title=Da
 """
 from collections import OrderedDict
 from datetime import datetime as dt
+from os.path import join
 import json
 import jsonfield
 from django.db import models
@@ -12,10 +13,11 @@ from django.urls import reverse
 from django.utils.text import slugify
 
 from model_utils.models import TimeStampedModel
+
 from django.db import transaction
-from tworaven_apps.utils.js_helper import get_js_boolean
-from tworaven_apps.utils.url_helper import add_trailing_slash,\
-    remove_trailing_slash
+from django.conf import settings
+
+from tworaven_apps.utils.file_util import create_directory
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.configurations.util_path_check import are_d3m_paths_valid,\
     get_bad_paths, get_bad_paths_for_admin
@@ -226,29 +228,23 @@ class D3MConfiguration(TimeStampedModel):
 
         return err_resp('Default NOT set. Save failed.')
 
+    def get_temp_directory(self):
+        """This is a July 2020 addition b/c of the change in directory structure"""
+        if self.root_output_directory:
+            temp_dir = join(self.root_output_directory, cstatic.TEMP_DIR_NAME)
+        else:
+            temp_dir = join(settings.RAVENS_TEST_OUTPUT_DIR, cstatic.TEMP_DIR_NAME)
+
+        path_info = create_directory(temp_dir)
+        # Should check for an error here...
+        #if path_info.er
+
+        return temp_dir
+
 
     def get_json_string(self, indent=2):
         """Return json string"""
         return json.dumps(self.to_dict(), indent=indent)
-
-    def xto_ta2_config_test(self, mnt_volume='/ravens_volume', save_shortened_names=False):
-        """Return a dict in TA2 format to use with mounted volume"""
-        od = OrderedDict()
-        d3m_attributes = D3M_FILE_ATTRIBUTES + \
-                         D3M_DIR_ATTRIBUTES + \
-                         [OPTIONAL_DIR_OUTPUT_ROOT,]
-        for name in d3m_attributes:
-            val = self.__dict__.get(name, '(not set)')
-            if val and isinstance(val, str):
-                idx = val.find(mnt_volume)
-                if idx > -1:
-                    val = val[idx:]
-            od[name] = val
-            if save_shortened_names:
-                self.__dict__[name] = val
-        if save_shortened_names:
-            self.save()
-        return od
 
     def to_dict(self, as_eval_dict=False):
         """Return in an OrderedDict"""

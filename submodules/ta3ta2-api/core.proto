@@ -17,38 +17,35 @@ extend google.protobuf.FileOptions {
 
 // Date-based version string. Use this to populate version field in "SearchSolutionsRequest"
 // and "SearchSolutionsResponse" messages.
-option (protocol_version) = "2020.2.11";
-
-enum EvaluationMethod {
-    // Default value. Not to be used.
-    EVALUATION_METHOD_UNDEFINED = 0;
-
-    // The following are the only evaluation methods required
-    // to be supported for the "ScoreSolution" call.
-    HOLDOUT = 1;
-    K_FOLD = 2;
-
-    // This evaluation method can be used to ask TA2 to rank a
-    // solution as part of all found solutions of a given
-    // "SearchSolutions" call. Invalid to use before the
-    // "SearchSolutions" call, of which the solution is part of,
-    // has successfully completed or has been stopped.
-    // Only possible with "RANK" performance metric.
-    RANKING = 99;
-
-    // The rest are defined to allow expressing internal evaluation
-    // methods used by TA2 during solution search. If any method being used
-    // is missing, feel free to request it to be added.
-    LEAVE_ONE_OUT = 100;
-    // Instead of really scoring, a TA2 might predict the score only.
-    PREDICTION = 101;
-    // Training data is reused to test as well.
-    TRAINING_DATA = 102;
-}
+option (protocol_version) = "2020.6.2";
 
 message ScoringConfiguration {
-    // The evaluation method to use.
-    EvaluationMethod method = 1;
+    // The evaluation method to use. Standard values are required to
+    // be supported and are:
+    // * "HOLDOUT"
+    // * "K_FOLD"
+    //
+    // In addition, "RANKING" evaluation method should be also supported.
+    // "RANKING" evaluation method can be used for a rank of a solution
+    // among all found solutions of a given "SearchSolutions" call.
+    // Invalid to use before the "SearchSolutions" call, of which the
+    // solution is part of, has successfully completed or has been stopped.
+    // Only possible with "RANK" performance metric.
+    //
+    // The following additional evaluation methods are defined to allow
+    // expressing internal evaluation methods used by TA2 during solution
+    // search. If any method being used is missing, feel free to request
+    // it to be added.
+    // * "LEAVE_ONE_OUT"
+    // * "PREDICTION"
+    //   Instead of really scoring, a TA2 might predict the score only.
+    // * "TRAINING_DATA"
+    //   Training data is reused to test as well.
+    //
+    // No standard value will ever start with "_", so if you worry about
+    // potential conflicts with future standard values, consider starting
+    // your non-standard values with "_'.
+    string method = 1;
     // Number of folds made, if applicable.
     int32 folds = 2;
     // If applicable, the ratio between the train and test data and represents the proportion of
@@ -73,7 +70,7 @@ message Score {
     // as the first and only fold, in which case the value of this field should be 0.
     int32 fold = 2;
     Value value = 4;
-    // Random seed used to run a pipeline for this score to be obtained.  
+    // Random seed used to run a pipeline for this score to be obtained.
     // Note, not setting this value means always using seed of 0.
     int32 random_seed = 5;
     // The normalized value of the scoring metric. Value is from the [0, 1] interval, where higher is better. Optional.
@@ -123,7 +120,6 @@ message SearchSolutionsRequest {
     string version = 2;
     // Desired upper limit of time for solution search, expressed in minutes.
     // Default value of 0 (and any negative number) signifies no time bound.
-    // All TA2's should support and respect this request as part of minimum (baseline) performance.
     // See also time_bound_run.
     double time_bound_search = 3;
     // Value stating the priority of the search. If multiple searches are queued then highest
@@ -135,7 +131,7 @@ message SearchSolutionsRequest {
     // Which value types can a TA2 system use to communicate values to a TA3 system?
     // The order is important as a TA2 system will try value types in order until one works out,
     // or an error will be returned instead of the value.
-    repeated ValueType allowed_value_types = 5;
+    repeated string allowed_value_types = 5;
     // Problem description to use for the solution search. Problem description is optional
     // with fully specified pipelines which TA3 provides. If still provided, TA2 should use
     // it to set semantic types on target columns and any other use of a problem description
@@ -145,22 +141,23 @@ message SearchSolutionsRequest {
     // regular solution search is done. If template consists only of one placeholder step,
     // then a regular solution search is done to replace that step. If there is no placeholder
     // step, but template describes a full pipeline with free hyper-parameters, then this
-    // call becomes a hyper-paramater tuning call over free hyper-parameters and found solutions
-    // share the same pipeline, but different hyper-parameter configurations. If there is no
+    // call becomes a hyper-parameter tuning call over free hyper-parameters and found solutions
+    // share the same pipeline, but different hyper-parameter configurations (unless
+    // "use_default_values_for_free_hyperparams" is set to true). If there is no
     // placeholder step and all hyper-parameters are fixed as part of the pipeline, then this
     // call only checks the given template and returns the solution with same pipeline back, to
     // be executed. This allows fixed computations to be done on data, for example, pipeline can
     // consist of only one primitive with fixed hyper-parameters to execute that one primitive.
     // Moreover, such fully specified pipelines with fixed hyper-parametres can have any
     // inputs and any outputs. Otherwise pipelines have to be from a Dataset container value
-    // to predictions Pandas dataframe. 
-    // While there are all these options possible, only a subset has to be supported by all 
-    // systems.  Minimum (baseline) requirements are that all TA2's support:
+    // to predictions Pandas dataframe.
+    // While there are all these options possible, only a subset has to be supported by all
+    // systems:
     //  - Omitted templates,
     //  - Partial pipelines with one placeholder step, at the last step in the pipeline template,
-    //  - Fully specified pipelines without free hyper-parameters.
-    // See the Pipeline section of the README for more details, in particular the discussion of
-    // common requirements and possible relaxations.
+    //  - Fully specified pipelines without free hyper-parameters, or with free hyper-parameters
+    //    and "use_default_values_for_free_hyperparams" set to true.
+    // See the Pipeline section of the README for more details.
     PipelineDescription template = 7;
     // Pipeline inputs used during solution search. They have to point to Dataset container
     // values. Order matters as each input is mapped to a template's input in order. Optional
@@ -170,7 +167,6 @@ message SearchSolutionsRequest {
     // Expressed at time of search, TA2's should limit the search to solutions
     // that would not take longer than this for one pass of the pipeline run.
     // Default value of 0 (and any negative number) signifies no time bound.
-    // All TA2's should support and respect this request as part of minimum (baseline) performance.
     // This can also functionally be used as the time bound for scoring also.
     double time_bound_run = 9;
     // Suggested maximum number of solutions to rank. Default is 0. If it is 0, it means
@@ -193,9 +189,26 @@ message SearchSolutionsRequest {
     //    that TA2 does not have to rank and return more solutions than the limit,
     //    which is useful when ranking is an expensive operation.
     int32 rank_solutions_limit = 10;
-    // Random seed used to initiate search.  Note, not setting this value means 
+    // Random seed used to initiate search.  Note, not setting this value means
     // always using seed of 0.
     int32 random_seed = 11;
+    // If set to true, during search TA2 is suggested to not do hyper-parameter tuning
+    // of free hyper-parameters but use their default values. It might be that TA2
+    // operates searches for both the pipeline and hyper-parameter values at the same
+    // time and flag cannot be easily respected, in that case this flag can be ignored by TA2.
+    // When template is provided and contains free hyper-parameters but no placeholders,
+    // then setting this flag to true means that for all free hyper-parameters in the
+    // template default values should be used. This allows TA3 to not have to fix
+    // values for all free hyper-parameters in the template itself, to obtain a
+    // fully specified pipelines without free hyper-parameters.
+    // Generally applies only to tuning hyper-parameters.
+    bool use_default_values_for_free_hyperparams = 12;
+    // Suggested TA2 search features to use, from ones supported by TA2 as
+    // provided in "supported_search_features" of the "HelloResponse".
+    // TA2 can ignore any suggestion. When not provided or when ignored, TA2
+    // can use any search features, or even search features not
+    // listed in "supported_search_feature".
+    repeated string search_features = 13;
 }
 
 // Call returns immediately with the ID. Use "GetFoundSolutions" call to get results.
@@ -210,8 +223,7 @@ message SearchSolutionsResponse {
 // the search is stopped and the "GetSearchSolutionsResults" stream is closed by TA2
 // (as happens when the search is concluded on its own, or when a search is stopped
 // by "StopSearchSolutions"). Found solution IDs during the search are no longer valid
-// after this call.  
-// All TA2's should support and respect this request as part of minimum (baseline) performance.
+// after this call.
 message EndSearchSolutionsRequest {
     string search_id = 1;
 }
@@ -230,7 +242,7 @@ message StopSearchSolutionsResponse {}
 
 // Description of a TA2 score done during solution search. Because there is a wide range of
 // potential approaches a TA2 can use to score candidate solutions this might not capture what
-//  your TA2 is doing. Feel free to request additions to be able to describe your approach.
+// your TA2 is doing. Feel free to request additions to be able to describe your approach.
 message SolutionSearchScore {
     ScoringConfiguration scoring_configuration = 1;
     repeated Score scores = 2;
@@ -369,15 +381,15 @@ message FitSolutionRequest {
     // If you want to expose outputs of the whole pipeline (e.g., predictions themselves),
     // list them here as well. These can be recursive data references like
     // "steps.1.steps.4.produce" to point to an output inside a sub-pipeline.
-    // Systems only have to support exposing final outputs and can return "ValueError" for
-    // intermediate values.
+    // Data references for step outputs which otherwise would not be computed during
+    // pipeline execution can also be provided to force them to be computed and exposed.
     repeated string expose_outputs = 3;
     // Which value types should be used for exposing outputs. If not provided, the allowed
     // value types list from the search solutions call is used instead.
     // The order is important as TA2 system will try value types in order until one works out,
     // or an error will be returned instead of the value. An error exposing a value does not
     // stop the overall process.
-    repeated ValueType expose_value_types = 4;
+    repeated string expose_value_types = 4;
     // Any users associated with this call itself. Optional.
     repeated SolutionRunUser users = 5;
     // Seed for pseudorandom number generator. Note, not setting this value
@@ -417,15 +429,15 @@ message ProduceSolutionRequest {
     // If you want to expose outputs of the whole pipeline (e.g., predictions themselves),
     // list them here as well. These can be recursive data references like
     // "steps.1.steps.4.produce" to point to an output inside a sub-pipeline.
-    // Systems only have to support exposing final outputs and can return "ValueError" for
-    // intermediate values.
+    // Data references for step outputs which otherwise would not be computed during
+    // pipeline execution can also be provided to force them to be computed and exposed.
     repeated string expose_outputs = 3;
     // Which value types should be used for exposing outputs. If not provided, the allowed
     // value types list from the search solutions call is used instead.
     // The order is important as the TA2 system will try value types in order until one works
     // out, or an error will be returned instead of the value. An error exposing a value does
     // not stop the overall process.
-    repeated ValueType expose_value_types = 4;
+    repeated string expose_value_types = 4;
     // Any users associated with this call itself. Optional.
     repeated SolutionRunUser users = 5;
 }
@@ -455,10 +467,11 @@ message GetProduceSolutionResultsResponse {
 message SolutionExportRequest {
     // Found solution to export.
     string solution_id = 3;
-    // Solution rank to be used for the exported solution. Lower numbers represent
-    // better solutions. Presently evaluation requirements are that ranks should be non-negative
-    // and that each exported pipeline have a different rank. TA3 should make sure not to repeat ranks.
-    // Filenames of exported files are left to be chosen by the TA2 system.
+    // Solution rank to be used for the exported solution. Rank is a non-negative floating-point number.
+    // Lower numbers represent better solutions. Each exported solution should have
+    // a different rank. TA3 should make sure not to repeat ranks. Filenames of exported files are
+    // left to be chosen by the TA2 system, but all exported files should be inside a directory
+    // with a name equal to the search ID of the search the exported solution belongs to.
     double rank = 2;
 }
 
@@ -472,7 +485,6 @@ message DataAvailableRequest {
     string version = 2;
     // Desired upper limit of time spend processing this data, expressed in minutes.
     // Default value of 0 (and any negative number) signifies no time bound.
-    // All TA2's should support and respect this request as part of minimum (baseline) performance.
     double time_bound = 3;
     // Value stating the priority for processing of this data. Larger number is higher
     // priority. If unspecified, by default priority is 0. Negative numbers have
@@ -486,13 +498,15 @@ message DataAvailableResponse {}
 message SplitDataRequest {
     // The input dataset to be split.
     Value input = 1;
-    // How to perform the split. Note that only HOLDOUT and K_FOLD make sense for the
+    // How to perform the split. Note that only "HOLDOUT" and "K_FOLD" make sense for the
     // EvaluationMethod.
     ScoringConfiguration scoring_configuration = 2;
     // Which value types should be used for outputs.
     // The order is important as the TA2 system will try value types in order until one works
     // out, or an error will be returned instead of the value.
-    repeated ValueType allowed_value_types = 3;
+    repeated string allowed_value_types = 3;
+    // The problem, which is necessary for some splitting methods like stratified splits.
+    ProblemDescription problem = 4;
 }
 
 message SplitDataResponse {
@@ -518,47 +532,47 @@ message ScorePredictionsResponse {
     repeated Score scores = 1;
 }
 
-// Save a solution that can be loaded later. (Pipeline description/ Pipeline run) Optional.
+// Save a solution that can be loaded later.
 message SaveSolutionRequest {
-    // Id of solution to saved
+    // ID of a solution to save.
     string solution_id = 1;
 }
 
 message SaveSolutionResponse {
-    // An URI pointing to a directory containing a solution saved.
+    // An URI pointing to a directory containing a saved solution.
     string solution_uri = 1;
 }
 
 // Load a solution that was saved before.
 message LoadSolutionRequest {
-    // An URI pointing to a directory containing a solution saved.
+    // An URI pointing to a directory containing a saved solution.
     string solution_uri = 1;
 }
 
 message LoadSolutionResponse {
-    // Id of solution which was loaded.
+    // ID of a solution which was loaded.
     string solution_id = 1;
 }
 
-// Save a fitted solution that can be loaded later. Optional.
+// Save a fitted solution that can be loaded later.
 message SaveFittedSolutionRequest {
-    // Fitted solution id to saved.
+    // ID of a fitted solution to save.
     string fitted_solution_id = 1;
 }
 
 message SaveFittedSolutionResponse {
-    // An URI pointing to a directory containing a fitted solution.
+    // An URI pointing to a directory containing a saved fitted solution.
     string fitted_solution_uri = 1;
 }
 
 // Load a fitted solution that was saved before.
 message LoadFittedSolutionRequest {
-    // An URI pointing to a directory containing a fitted solution.
+    // An URI pointing to a directory containing a saved fitted solution.
     string fitted_solution_uri = 1;
 }
 
 message LoadFittedSolutionResponse {
-    // Fitted solution id loaded.
+    // ID of a fitted solution which was loaded.
     string fitted_solution_id = 1;
 }
 
@@ -580,8 +594,8 @@ message ListPrimitivesResponse {
 message HelloRequest {}
 
 // This response signifies that the TA2 is ready to begin a search.
-// For evaluation purposes, it is advisable that TA2's not respond positively until 
-// they have the primitives library loaded and are ready for to begin a search, otherwise 
+// For evaluation purposes, it is advisable that TA2's not respond positively until
+// they have the primitives library loaded and are ready for to begin a search, otherwise
 // the time required to load the library will count against them by the dummy TA3.
 // Starting to listen on gRPC port signals that system is running.
 message HelloResponse {
@@ -592,9 +606,17 @@ message HelloResponse {
     // List of value types that a TA3 system can use to communicate values to a TA2 system.
     // The order is important as a TA3 system should try value types in order until one works
     // out, or an error will be returned instead of the value.
-    repeated ValueType allowed_value_types = 3;
+    repeated string allowed_value_types = 3;
     // List of API extensions that a TA2 supports.
     repeated string supported_extensions = 4;
+    repeated string supported_task_keywords = 5;
+    repeated string supported_performance_metrics = 6;
+    repeated string supported_evaluation_methods = 7;
+    // Supported search features by TA2. Can be an empty list if TA2 does not respect suggested
+    // search features for any search request, or does not support any search features.
+    // (TA2 can always ignore a suggested search feature for a particular search request,
+    // even if a search feature is listed here.)
+    repeated string supported_search_features = 8;
 }
 
 // See each message's comments for information about each particular call.
@@ -623,7 +645,6 @@ service Core {
 
     rpc Hello (HelloRequest) returns (HelloResponse) {}
 
-    // Optional.
     rpc SaveSolution (SaveSolutionRequest) returns (SaveSolutionResponse) {}
     rpc LoadSolution (LoadSolutionRequest) returns (LoadSolutionResponse) {}
 

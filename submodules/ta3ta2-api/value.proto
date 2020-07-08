@@ -9,6 +9,8 @@ option go_package = "pipeline";
 // mounted at same locations (in previous example, "/datasets" directory).
 // When one system creates a dataset and sends over the URI, the other can
 // directly access it without doing any extra work (like downloading or copying).
+// Care should be made to assure files have ownership and permissions
+// configured so that both systems can access those files.
 //
 // Configuration of shared directories and shared instance of Plasma are not
 // specified by this API.
@@ -19,43 +21,40 @@ option go_package = "pipeline";
 // provided to the other system, the list is traversed in order and the first
 // value type which can be used without an error is used. If the list is
 // exhausted, then an error is provided instead.
-
-enum ValueType {
-    // Default value. Not to be used.
-    VALUE_TYPE_UNDEFINED = 0;
-
-    // The following value types are those everyone should support.
-
-    // Raw value. Not all values can be represented as a raw value.
-    // The value before encoding should be at most 64 KB.
-    RAW = 1;
-    // Represent the value as a D3M dataset. Only "file://" schema is supported using a
-    // shared file system. Dataset URI should point to the "datasetDoc.json" file of the dataset.
-    // Only Dataset container values can be represented this way.
-    DATASET_URI = 2;
-    // Represent the value as a CSV file. Only "file://" schema is supported using a
-    // shared file system. CSV URI should point to the file with ".csv" file extension.
-    // Only tabular container values with numeric and string cell values can be represented
-    // this way.
-    CSV_URI = 3;
-
-    // The following are additional value types which can be supported by systems,
-    // but it is not required. If the value cannot be represented with value types your system
-    // supports and your system is still asked to do so, it should return "ValueError" error instead.
-
-    // Represent values by Python-pickling them. Only "file://" schema is supported using a
-    // shared file system. Pickle URI should point to the file with ".pickle" file extension.
-    PICKLE_URI = 4;
-    // Represent values by Python-pickling them but sending them through the API.
-    // The value before encoding should be at most 64 KB.
-    PICKLE_BLOB = 5;
-    // Represent values with arrow and storing them into shared instance of Plasma.
-    PLASMA_ID = 6;
-    // Same as "RAW", but without any size limit.
-    LARGE_RAW = 7;
-    // Same as "PICKLE_BLOB", but without any size limit.
-    LARGE_PICKLE_BLOB = 8;
-}
+//
+// The following value types are those all systems should support.
+// * "RAW"
+//   Raw value. Not all values can be represented as a raw value.
+//   The value before encoding should be at most 64 KB.
+// * "DATASET_URI"
+//   Represent the value as a D3M dataset. Only "file://" schema is supported using a
+//   shared file system. Dataset URI should point to the "datasetDoc.json" file of the dataset.
+//   Only Dataset container values can be represented this way.
+// * "CSV_URI"
+//   Represent the value as a CSV file. Only "file://" schema is supported using a
+//   shared file system. CSV URI should point to the file with ".csv" file extension.
+//   Only tabular container values with numeric and string cell values can be represented
+//   this way.
+//
+// The following are additional value types which can be supported by systems,
+// but it is not required. If the value cannot be represented with value types your system
+// supports and your system is still asked to do so, it should return "ValueError" error instead.
+// * "PICKLE_URI"
+//   Represent values by Python-pickling them. Only "file://" schema is supported using a
+//   shared file system. Pickle URI should point to the file with ".pickle" file extension.
+// * "PICKLE_BLOB"
+//   Represent values by Python-pickling them but sending them through the API.
+//   The value before encoding should be at most 64 KB.
+// * "PLASMA_ID"
+//   Represent values with arrow and storing them into shared instance of Plasma.
+// * "LARGE_RAW"
+//   Same as "RAW", but without any size limit.
+// * "LARGE_PICKLE_BLOB"
+//   Same as "PICKLE_BLOB", but without any size limit.
+//
+// No standard value will ever start with "_", so if you worry about
+// potential conflicts with future standard values, consider starting
+// your non-standard values with "_'.
 
 message ValueError {
     // A error message useful for debugging or logging. Not meant to be very end-user friendly.

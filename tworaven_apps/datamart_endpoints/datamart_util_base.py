@@ -33,7 +33,7 @@ class DatamartJobUtilBase(ABC):
         if not datamart_id:
             return err_resp('"datamart_id" must be set')
 
-        output_path = join(user_workspace.d3m_config.additional_inputs,
+        output_path = join(user_workspace.d3m_config.get_temp_directory(),
                            dir_type,
                            str(datamart_id),
                            'learningData.csv')

@@ -1707,38 +1707,13 @@ export async function load({awaitPreprocess}={}) {
     console.log(JSON.stringify(responseTA2));
     console.groupEnd();
     if (responseTA2) {
+
         if (responseTA2.success !== true) {
-          //  const user_err_msg = "We were unable to connect to the TA2 system.  It may not be ready.  Please try again.  (status code: " + problemDoc.message + ")";
-            setModal(
-                m('div', [
-                    m('p', {class: 'h5'}, "We were unable to connect to the TA2 system."),
-                    m('p', {class: 'h5'}, "It may not be ready."),
-                    m('p', {class: 'h5'}, "Please try again using the button below."),
-                    m('hr'),
-                    m('p', "Technical details: " + responseTA2.message),
-                  ]),
-                  "Error Connecting to the TA2",
-                  true,
-                  "Retry TA2 Connection",
-                  false,
-                  locationReload);
+            console.log('fyi: TA2 not ready at startup.')
+            //showTA2ConnectError(responseTA2.message);
             return;
         } else {
-
-            // ----------------------------------------------
-            // Format and show the TA2 name in the footer
-            // ----------------------------------------------
-            let ta2Version;
-            if (typeof responseTA2.data.version !== 'undefined') {
-                ta2Version = responseTA2.data.version;
-            }
-            let ta2Name = responseTA2.data.userAgent;
-            if (ta2Version) {
-                ta2Name += ' (API: ' + ta2Version + ')';
-            }
-            setTA2ServerInfo(ta2Name);
-            // $('#ta2-server-name').html('TA2: ' + ta2Name);
-
+            showTA2Name(responseTA2);
         }
     }
     // hopscotch tutorial
@@ -1759,6 +1734,42 @@ export async function load({awaitPreprocess}={}) {
 export function del(arr, idx, obj) {
     idx = obj ? arr.indexOf(obj) : idx;
     idx > -1 && arr.splice(idx, 1);
+}
+
+
+/* ----------------------------------------------
+   Format and show the TA2 name info panel
+---------------------------------------------- */
+export let showTA2Name = (responseTA2) => {
+
+  let ta2Version;
+  if (typeof responseTA2.data.version !== 'undefined') {
+      ta2Version = responseTA2.data.version;
+  }
+  let ta2Name = responseTA2.data.userAgent;
+  if (ta2Version) {
+      ta2Name += ' (API: ' + ta2Version + ')';
+  }
+  setTA2ServerInfo(ta2Name);
+}
+
+/* ----------------------------------------------
+  Show the TA2 connection error modal
+---------------------------------------------- */
+export let showTA2ConnectError = (errorMessage) => {
+  setModal(
+      m('div', [
+          m('p', {class: 'h5'}, "We were unable to connect to the TA2 system."),
+          m('p', {class: 'h5'}, "It may not be available."),
+        //  m('p', {class: 'h5'}, "Please try again using the button below."),
+          m('hr'),
+          m('p', "Technical details: " + errorMessage),
+        ]),
+        "Error Connecting to the TA2",
+        true,
+        "Close",
+        true);
+        // false, locationReload); // force system restart
 }
 
 /**

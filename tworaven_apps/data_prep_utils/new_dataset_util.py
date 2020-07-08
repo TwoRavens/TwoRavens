@@ -298,17 +298,17 @@ class NewDatasetUtil(BasicErrCheck):
             self.send_websocket_err_msg(user_msg)
             return False
 
-        if (not d3m_config.additional_inputs) or \
-            (not isdir(d3m_config.additional_inputs)):
-            user_msg = ('Additional inputs folder does not exist! %s') % \
-                        (d3m_config.additional_inputs,)
+        if (not d3m_config.get_temp_directory()) or \
+            (not isdir(d3m_config.get_temp_directory())):
+            user_msg = ('Temp directory folder does not exist! %s') % \
+                        (d3m_config.get_temp_directory(),)
             self.send_websocket_err_msg(user_msg)
             return False
 
         # ---------------------------------------
         # Create the problem_TRAIN
         # ---------------------------------------
-        self.dataset_root_dir = join(d3m_config.additional_inputs,
+        self.dataset_root_dir = join(d3m_config.get_temp_directory(),
                                      self.dataset_id)
         self.problem_dir = join(self.dataset_root_dir,
                                 'TRAIN',

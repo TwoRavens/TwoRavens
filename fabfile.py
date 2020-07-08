@@ -59,7 +59,7 @@ def restart():
     run()
 
 
-@task
+#@task
 def make_d3m_configs_from_files():
     """Make configs from /ravens_volume and loads them to db"""
     clear_d3m_configs()
@@ -67,7 +67,7 @@ def make_d3m_configs_from_files():
     from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
     loader = EnvConfigLoader.make_d3m_test_configs_env_based('/ravens_volume/test_data')
 
-@task
+#@task
 def make_d3m_configs_from_files_multiuser_test():
     """11/2019 Make configs from /ravens_volume and loads them to db
     Also make the input/output directories 1-level higher than usual
@@ -90,7 +90,7 @@ def make_d3m_configs_from_files_multiuser_test_limited():
 
     from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
     from tworaven_apps.configurations import static_vals as cstatic
-
+    from django.conf import settings
     params = dict(is_multi_dataset_demo=True)
 
 
@@ -119,7 +119,7 @@ def make_d3m_configs_from_files_multiuser_test_limited():
         '196_autoMpg',
         # 'LL1_PHEM_weeklyData_malnutrition',
         'DA_poverty_estimation']
-
+    #selected_datatsets = ['185_baseball',]
     # -------------------------------
     # Check if selected datasets are
     # set by an env variable
@@ -138,7 +138,7 @@ def make_d3m_configs_from_files_multiuser_test_limited():
     params[cstatic.SELECTED_NAME_LIST] = selected_datatsets
 
     loader = EnvConfigLoader.make_d3m_test_configs_env_based(\
-                    '/ravens_volume/test_data',
+                    settings.RAVENS_TEST_DATA_READONLY_DIR,
                     **params)
 
 @task
@@ -160,12 +160,13 @@ def clear_d3m_configs():
 @task
 def clear_test_data():
     """Clear d3m configs, d3m output, and preprocess files"""
+    from django.conf import settings
 
     # (1) D3M config data in Django
     clear_d3m_configs()
 
     # (2) Delete ravens_volume test_output
-    d3m_output_dir = os.path.join(FAB_BASE_DIR, 'ravens_volume', 'test_output')
+    d3m_output_dir = settings.RAVENS_TEST_OUTPUT_DIR
     print('-' * 40)
     print('Delete D3M test output directory: %s' % d3m_output_dir)
     print('-' * 40)
@@ -256,97 +257,7 @@ def stop_ta2_server():
         if result.failed:
             print('No docker container named "ta2_server"\n')
 
-@task
-def run_ta2_stanford_choose_config(choice_num=''):
-    """Pick a config from /ravens_volume and run the Standford TA2"""
-    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
-            (TA2Helper, TA2_STANFORD)
-
-    resp = TA2Helper.run_ta2_with_dataset(\
-                TA2_STANFORD,
-                choice_num,
-                run_ta2_stanford_choose_config.__name__)
-
-    if resp.success:
-        stop_ta2_server()
-
-        docker_cmd = resp.result_obj
-        print('-' * 40)
-        print('Run TA2 with command:')
-        print('-' * 40)
-        print(docker_cmd)
-        local(docker_cmd)
-    elif resp.err_msg:
-        print(resp.err_msg)
-
-@task
-def run_ta2_featurelabs_choose_config(choice_num=''):
-    """Pick a config from /ravens_volume and run the FeatureLabs TA2"""
-    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
-            (TA2Helper, TA2_FeatureLabs)
-
-    resp = TA2Helper.run_ta2_with_dataset(\
-                TA2_FeatureLabs,
-                choice_num,
-                run_ta2_featurelabs_choose_config.__name__)
-
-    if resp.success:
-        stop_ta2_server()
-
-        docker_cmd = resp.result_obj
-        print('-' * 40)
-        print('Run TA2 with command:')
-        print('-' * 40)
-        print(docker_cmd)
-        local(docker_cmd)
-    elif resp.err_msg:
-        print(resp.err_msg)
-    #run_ta2_choose_config(choice_num, ta2_name=TA2_FeatureLabs)
-
-# Brown TA2 is no longer being developed. 2/2020
-@task
-def run_ta2_brown_choose_config(choice_num=''):
-    """Pick a config from /ravens_volume and run Brown's TA2"""
-    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
-            (TA2Helper, TA2_Brown)
-
-    resp = TA2Helper.run_ta2_with_dataset(\
-                TA2_Brown,
-                choice_num,
-                run_ta2_brown_choose_config.__name__)
-
-    if resp.success:
-        stop_ta2_server()
-
-        docker_cmd = resp.result_obj
-        print('Running command: %s' % docker_cmd)
-        local(docker_cmd)
-    elif resp.err_msg:
-        print(resp.err_msg)
-
-
-@task
-def run_ta2_berkeley_choose_config(choice_num=''):
-    """Pick a config from /ravens_volume and run Berkeley's TA2"""
-    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
-            (TA2Helper, TA2_BERKELEY)
-
-    resp = TA2Helper.run_ta2_with_dataset(\
-                TA2_BERKELEY,
-                choice_num,
-                run_ta2_berkeley_choose_config.__name__)
-
-    if resp.success:
-        stop_ta2_server()
-
-        docker_cmd = resp.result_obj
-        print('Running command: %s' % docker_cmd)
-        local(docker_cmd)
-    elif resp.err_msg:
-        print(resp.err_msg)
-
-
-@task
+#@task
 def run_ta2_isi_choose_config(choice_num=''):
     """Pick a config from /ravens_volume and run ISI's TA2"""
     from tworaven_apps.ta2_interfaces.ta2_dev_util import \
@@ -408,7 +319,7 @@ def run_ta2_cmu_choose_config(choice_num=''):
     elif resp.err_msg:
         print(resp.err_msg)
 
-@task
+#@task
 def run_ta2_nyu_choose_config(choice_num=''):
     """Pick a config from /ravens_volume and run the Standford TA2"""
     from tworaven_apps.ta2_interfaces.ta2_dev_util import \
