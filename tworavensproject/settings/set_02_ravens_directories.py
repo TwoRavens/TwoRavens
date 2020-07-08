@@ -11,15 +11,19 @@ from tworaven_apps.utils.file_util import create_directory_on_startup
 
 BASE_DIR = dirname(dirname(dirname(abspath(__file__))))
 
-# -----------------------------------------------------
+# ---------------------------------------------------------------
 # RAVENS_VOLUME: Used to share data between docker containers
-# -----------------------------------------------------
+#   Note: This has to be on a shared volume available to a TA2
+#   Default: /ravens_volume
+# ---------------------------------------------------------------
 _RAVENS_VOLUME_DEFAULT_DIR = join(BASE_DIR, '/ravens_volume') # 'RAVENS_VOLUME_TEST'
 RAVENS_VOLUME_DIR = os.environ.get(cstatic.KEY_RAVENS_VOLUME_DIR, _RAVENS_VOLUME_DEFAULT_DIR)
 create_directory_on_startup(RAVENS_VOLUME_DIR, cstatic.KEY_RAVENS_VOLUME_DIR)
 
 # -----------------------------------------------------
 # Directory used for output of test datasets
+#   Note: This has to be on a shared volume available to a TA2
+#   Default: {RAVENS_VOLUME}/test_output
 # -----------------------------------------------------
 RAVENS_TEST_OUTPUT_DIR = os.environ.get(\
                             cstatic.KEY_RAVENS_TEST_OUTPUT_DIR,
@@ -29,6 +33,9 @@ create_directory_on_startup(RAVENS_TEST_OUTPUT_DIR, cstatic.KEY_RAVENS_TEST_OUTP
 # -----------------------------------------------------
 # RAVENS_TEST_DATA_READONLY_DIR: Test datasets
 #  This points to the location of the https://github.com/TwoRavens/tworavens-test-datasets
+#
+#   Note: Also needs to be on a shared volume available to a TA2
+#   Default: {RAVENS_VOLUME}/test_data
 # -----------------------------------------------------
 RAVENS_TEST_DATA_READONLY_DIR = os.environ.get(\
                             cstatic.KEY_RAVENS_TEST_DATA_READONLY_DIR,

@@ -94,7 +94,7 @@ def make_d3m_configs_from_files_multiuser_test_limited():
     params = dict(is_multi_dataset_demo=True)
 
 
-    xselected_datatsets = [\
+    selected_datatsets = [\
       #'20_Ethiopia_Admin_Level_2_sub',
         'LL1_h1b_visa_apps_7480',
         '56_sunspots_monthly',
@@ -119,7 +119,7 @@ def make_d3m_configs_from_files_multiuser_test_limited():
         '196_autoMpg',
         # 'LL1_PHEM_weeklyData_malnutrition',
         'DA_poverty_estimation']
-    selected_datatsets = ['185_baseball',]
+    #selected_datatsets = ['185_baseball',]
     # -------------------------------
     # Check if selected datasets are
     # set by an env variable
