@@ -1,9 +1,10 @@
 events { worker_connections 1024; }
 
-# MAX_UPLOAD_SIZE: ${NGINX_MAX_UPLOAD_SIZE}
-# SERVER_NAME: ${NGINX_SERVER_NAME}
 
 http {
+    # Note: this upload size is also dependent on
+    # Django's DATA_UPLOAD_MAX_MEMORY_SIZE and FILE_UPLOAD_MAX_MEMORY_SIZE
+    #
     client_max_body_size ${NGINX_MAX_UPLOAD_SIZE};
 
     include       mime.types;
