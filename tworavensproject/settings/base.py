@@ -25,7 +25,7 @@ from django.urls import reverse_lazy
 from .set_01_d3m_env_variables import *
 
 # -----------------------------------------------------
-# Set directories for user uploaded data
+# Set directories for user ed data
 # -----------------------------------------------------
 from .set_02_ravens_directories import *
 
@@ -52,9 +52,8 @@ TWORAVENS_COMMON_DIR = join(BASE_DIR, 'assets', 'common')
 sys.path.append(TWORAVENS_COMMON_DIR)
 
 
-FILE_UPLOAD_MAX_MEMORY_SIZE = os.environ.get('FILE_UPLOAD_MAX_MEMORY_SIZE',
-                                             24 * 1024000)   # bytes
-DATA_UPLOAD_MAX_MEMORY_SIZE = FILE_UPLOAD_MAX_MEMORY_SIZE
+NGINX_MAX_UPLOAD_SIZE = os.environ.get('NGINX_MAX_UPLOAD_SIZE',
+                                       'not set')   # bytes
 
 
 # Quick-start development settings - unsuitable for production

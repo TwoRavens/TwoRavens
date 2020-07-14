@@ -183,7 +183,7 @@ def view_load_eventdata_dataset(request, **kwargs):
 @csrf_exempt
 def view_upload_dataset(request):
     """Upload dataset and metadata"""
-    print('FILE_UPLOAD_MAX_MEMORY_SIZE:', settings.FILE_UPLOAD_MAX_MEMORY_SIZE)
+    #print('FILE_UPLOAD_MAX_MEMORY_SIZE:', settings.FILE_UPLOAD_MAX_MEMORY_SIZE)
 
     user_workspace_info = get_latest_user_workspace(request)
     if not user_workspace_info.success:

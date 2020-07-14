@@ -19,7 +19,7 @@ import MenuHeaders from "../../common/views/MenuHeaders";
 import Icon from "../../common/views/Icon";
 
 import * as schema from '../../preprocess-schemas/1-2-0';
-     
+
 let report = false;
 let edit = false;
 let more = {};
@@ -123,12 +123,14 @@ export class CanvasDataset {
             // ------------------------------------------------
             datasetPreferences.datasourceMode === 'Upload' && m('div', {style: {'margin-top': '1em'}},
                 m('div',
-                    m('label[style=display:inline-block;width:100px]', 'Dataset Name'),
+                    m('label[style=display:inline-block;width:120px]', 'Dataset Name'),
                     m('div[style=display:inline-block;max-width:300px]', m(TextField, {
                         id: 'datasetNameTextField',
                         value: datasetPreferences.upload.name,
                         oninput: value => datasetPreferences.upload.name = value
-                    }))),
+                    })),
+                    m('div[style=display:inline-block;margin-left:1em]', '(Maximum upload size: ' + NGINX_MAX_UPLOAD_SIZE + ')')
+                  ),
                 m(Table, {
                     attrsAll: {
                         style: {width: 'calc(100% + 2em)', 'margin-left': '-1em'}
@@ -140,6 +142,9 @@ export class CanvasDataset {
                         type: file.type
                     }))
                 }),
+                // ------------------------------------------------
+                // Browse button
+                // ------------------------------------------------
                 m('label.btn.btn-secondary', {style: {display: 'inline-block', margin: '1em'}}, [
                     m('input', {
                         hidden: true,
@@ -148,6 +153,9 @@ export class CanvasDataset {
                         onchange: e => datasetPreferences.upload.files.push(...Array.from(e.target.files))
                     })
                 ], 'Browse'),
+                // ------------------------------------------------
+                // Upload button
+                // ------------------------------------------------
                 m(Button, {
                     style: {margin: '1em'},
                     onclick: uploadDataset,
@@ -244,24 +252,24 @@ export class CanvasDataset {
 	let variableKeys = ['variableName', 'plotValues', 'pdfPlotType', 'pdfPlotX', 'pdfPlotY', 'cdfPlotType', 'cdfPlotX', 'cdfPlotY', 'name'];
 	let setDatasetSum = (_variable, attr, value) => {
 	    if (app.datasetSummary[attr] === value) return;
-	    
+
 	    app.datasetSummary[attr] = value;
 	    app.setDatasetSummary(app.datasetSummary, true);
 	};
 	let setVarSum = (variable, attr, value) => {
 	    if (app.variableSummaries[variable][attr] === value) return;
-	    
+
 	    app.setVariableSummary(variable, attr, value);
 	};
 
 	if (report) {
 	    let props = schema.properties.variables.patternProperties['.'];
 	    let editables = props.editable;
-	    let widget = (set, variable, k, v) => { 
+	    let widget = (set, variable, k, v) => {
 		let prop = props.properties[k];
 		if (prop.type === 'boolean') {
 		    return m('select.form-control', {onchange: e => set(variable, k, e.currentTarget.value === 'true'), value: v}, ['true', 'false'].map(x => m('option', x)));
-		} else if (prop.enum) {	
+		} else if (prop.enum) {
 		    return m('select.form-control', {onchange: e => set(variable, k, e.currentTarget.value), value: v}, prop.enum.map(x => m('option', x)));
 		}
 		return m('input', {oninput: e => set(variable, k, e.currentTarget.value), value: v});
@@ -273,43 +281,43 @@ export class CanvasDataset {
 		    }
 		},
 		m('button.btn.btn-secondary.btn-sm' + (report ? '.active' : ''), {style: 'margin: 1em', onclick: _ => report = !report}, 'report'),
-		m('h3', 'Overview', 
+		m('h3', 'Overview',
 		    m('button.btn.btn-primary.btn-sm' + (edit ? '.active' : ''), {style: 'margin: 0 1em', onclick: _ => edit = !edit}, 'edit'),
 		    m('button.btn.btn-success.btn-sm', {disabled: !(app.datasetSummaryEdited || app.variableSummariesEdited), onclick: _ => app.saveUserWorkspace(true, true)}, 'save')),
-		m('table.table.table-sm.table-striped', 
+		m('table.table.table-sm.table-striped',
 		    m('tbody',
 			Object.entries(app.datasetSummary)
-			    .map(row => m('tr', 
-				m('td', {style: {width: '1em'}}, row[0]), 
-				m('td', edit && 
+			    .map(row => m('tr',
+				m('td', {style: {width: '1em'}}, row[0]),
+				m('td', edit &&
 				    schema.properties.dataset.editable.includes(row[0]) ? widget(setDatasetSum, null, row[0], row[1]) : row[1])))
 		    )
 		),
 		m('h3', 'Variables'),
 		Object.entries(app.variableSummaries).map(([variable, vals]) => m('div.border', {style: 'margin-bottom: 1em; padding: 1em'},
 		    m('h4', variable),
-		    m('.row', 
+		    m('.row',
 		    m('.col',
 			m('table.table.table-sm.table-striped',
 			    m('tbody',
 				Object.entries(vals).filter(x => editables.includes(x[0]))
-				    .map(row => m('tr', 
-					m('td', {style: {width: '1em'}}, row[0]), 
+				    .map(row => m('tr',
+					m('td', {style: {width: '1em'}}, row[0]),
 					m('td', edit ? widget(setVarSum, variable, row[0], row[1]) : row[1])))
 			    )
 			)
 		    ),
-		    m('.col', 
+		    m('.col',
 			m('table.table.table-sm.table-striped',
 			    m('tbody',
 				Object.entries(vals).slice(1, 17).filter(x => !editables.includes(x[0]))
-				    .map(row => m('tr', 
-					m('td', {style: {width: '1em'}}, row[0]), 
+				    .map(row => m('tr',
+					m('td', {style: {width: '1em'}}, row[0]),
 					m('td', row[1])))
 			    )
 			)
 		    ),
-		    m('.col', 
+		    m('.col',
 			m('div', {
 			    oninit() {
 				this.node = vals;
@@ -334,8 +342,8 @@ export class CanvasDataset {
 			m('tbody',
 			    Object.entries(vals).slice(17)
 				.filter(row => !variableKeys.includes(row[0]))
-				.map(row => m('tr', 
-				    m('td', {style: {width: '1em'}}, row[0]), 
+				.map(row => m('tr',
+				    m('td', {style: {width: '1em'}}, row[0]),
 				    m('td', row[1])))
 			)
 		    ),
