@@ -19,6 +19,7 @@ COPY ./nginx.conf.template /etc/nginx/templates/
 # NGINX_SERVER_NAME - Set the server name.  Note ".2ravens.org" may be used for
 #                     2ravens.org, cyan.2ravens.org, blue.2ravens.org, etc.
 #
+# -----------------------------------
 ENV NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx/ \
     NGINX_MAX_UPLOAD_SIZE=24M \
     NGINX_SERVER_NAME=.2ravens.org
