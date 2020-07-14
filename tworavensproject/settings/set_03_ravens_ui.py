@@ -40,7 +40,7 @@ if not isinstance(TA2_WRAPPED_SOLVERS, list):
 # Datamart related
 # -------------------------
 # passed as a boolean to .js
-DISPLAY_DATAMART_UI = strtobool(os.environ.get('DISPLAY_DATAMART_UI', 'False'))
+DISPLAY_DATAMART_UI = bool(strtobool(os.environ.get('DISPLAY_DATAMART_UI', 'False')))
 
 
 DATAMART_SHORT_TIMEOUT = 10 # seconds

@@ -164,14 +164,17 @@ class Body {
 
             if (selectedProblem) path.push(m(Icon, {name: 'chevron-right'}), m(Popper, {
                 content: () => m(Table, {
-                    data: {'targets': selectedProblem.targets, 'predictors': selectedProblem.predictors,'description': preformatted(app.getDescription(selectedProblem).description)}
+                    data: {'targets': selectedProblem.targets, 'description': preformatted(app.getDescription(selectedProblem).description)}
                 })
             }, m('h4[style=display: inline-block; margin: .25em 1em]', selectedProblem.problemId)));
 
             let selectedSolutions = results.getSelectedSolutions(selectedProblem);
             if (app.is_results_mode && selectedSolutions.length === 1 && selectedSolutions[0]) {
-                path.push(m(Icon, {name: 'chevron-right'}), m('h4[style=display: inline-block; margin: .25em 1em]',
-                    results.getSolutionAdapter(selectedProblem, selectedSolutions[0]).getSolutionId()))
+                path.push(
+                    m(Icon, {name: 'chevron-right'}),
+                    m(Popper, {content: () => 'Pipeline ID. Corresponds to the ID in the "All Solutions" table.'},
+                        m('h4[style=display: inline-block; margin: .25em 1em]',
+                            results.getSolutionAdapter(selectedProblem, selectedSolutions[0]).getSolutionId())))
             }
 
             return path;

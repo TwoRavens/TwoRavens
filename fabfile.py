@@ -6,6 +6,8 @@ import string
 import signal
 
 import sys
+from datetime import datetime
+
 from fabric.api import local, task, settings
 import django
 import subprocess
@@ -328,7 +330,7 @@ def run_ta2_nyu_choose_config(choice_num=''):
     resp = TA2Helper.run_ta2_with_dataset( \
         TA2_NYU,
         choice_num,
-        run_ta2_stanford_choose_config.__name__)
+        run_ta2_nyu_choose_config.__name__)
 
     if resp.success:
         stop_ta2_server()
@@ -341,6 +343,34 @@ def run_ta2_nyu_choose_config(choice_num=''):
         local(docker_cmd)
     elif resp.err_msg:
         print(resp.err_msg)
+
+
+@task
+def choose_config(choice_num=''):
+    """Pick a config from /ravens_volume"""
+    from tworaven_apps.ta2_interfaces.ta2_dev_util import TA2Helper
+    from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
+
+    resp = TA2Helper.load_choice_paths(
+        choice_num,
+        cmd_name=choose_config.__name__)
+
+    if not resp.success:
+        print(resp.err_msg)
+        return
+
+    loader_info = EnvConfigLoader.make_config_from_directory(
+        resp.result_obj['data_dir_path'],
+        delete_if_exists=True,
+        is_default_config=True)
+
+    if not loader_info.success:
+        print(loader_info.err_msg)
+        return
+
+    print(f'({datetime.now()}) Successfully loaded new'
+          f' D3M configuration: "{loader_info.result_obj}"')
+
 
 @task
 def load_docker_ui_config():

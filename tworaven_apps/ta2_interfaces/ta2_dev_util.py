@@ -119,7 +119,7 @@ class TA2Helper(BasicErrCheck):
         print('\nExample: fab %s:1' % cmd_name)
 
     @staticmethod
-    def run_ta2_with_dataset(ta2_name, choice_num, cmd_name):
+    def load_choice_paths(choice_num, cmd_name=None):
         """Run a TA2 with a selected dataset"""
         if not choice_num:
             TA2Helper.show_choices(cmd_name)
@@ -138,21 +138,31 @@ class TA2Helper(BasicErrCheck):
 
         choice_num = int(choice_num)
         if choice_num in [x[0] for x in choice_pairs]:
-            data_dir_path = join(RAVENS_DIR, choice_pairs[choice_num-1][1])
-            output_dir_path = join(RAVENS_OUTPUT_DIR, choice_pairs[choice_num-1][1])
+            return ok_resp({
+                "data_dir_path": join(RAVENS_DIR, choice_pairs[choice_num-1][1]),
+                "output_dir_path": join(RAVENS_OUTPUT_DIR, choice_pairs[choice_num-1][1])
+            })
         else:
             print('\n--> Error: "%d" is not a valid choice\n' % choice_num)
             TA2Helper.show_choices(cmd_name)
             return err_resp('')
 
+    @staticmethod
+    def run_ta2_with_dataset(ta2_name, choice_num, cmd_name):
         # ------------------------------
         # Run the TA2
         # ------------------------------
-        params = dict(delete_if_exists=False)
-        ta2_helper = TA2Helper(ta2_name,
-                               data_dir_path,
-                               output_dir_path,
-                               **params)
+        paths_resp = TA2Helper.load_choice_paths(choice_num, cmd_name)
+        if paths_resp.success:
+            paths = paths_resp.result_obj
+        else:
+            return paths_resp
+
+        ta2_helper = TA2Helper(
+            ta2_name,
+            delete_if_exists=False,
+            **paths)
+
         if ta2_helper.has_error():
             return err_resp(ta2_helper.error_message)
 
