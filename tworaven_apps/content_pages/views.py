@@ -66,7 +66,9 @@ def view_pebbles_home(request):
                  #
                  TA3_GRPC_USER_AGENT=settings.TA3_GRPC_USER_AGENT, TA3TA2_API_VERSION=TA3TA2Util.get_api_version(),
                  DISPLAY_DATAMART_UI=settings.DISPLAY_DATAMART_UI,
-                 WEBSOCKET_PREFIX=settings.WEBSOCKET_PREFIX)
+                 WEBSOCKET_PREFIX=settings.WEBSOCKET_PREFIX,
+                 #
+                 NGINX_MAX_UPLOAD_SIZE=settings.NGINX_MAX_UPLOAD_SIZE)
 
 
 

@@ -1,0 +1,86 @@
+events { worker_connections 1024; }
+
+
+http {
+    # Note: this upload size is also dependent on
+    # Django's DATA_UPLOAD_MAX_MEMORY_SIZE and FILE_UPLOAD_MAX_MEMORY_SIZE
+    #
+    client_max_body_size ${NGINX_MAX_UPLOAD_SIZE};
+
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    upstream rook-service {
+        server localhost:8000;
+    }
+
+    upstream tworavens {
+        server localhost:8080;
+    }
+
+    server {
+
+        listen 80;
+        listen [::]:80;
+
+        # nginx doc note: A special wildcard name in the form ".example.org"
+        # can be used to match both the exact name "example.org"
+        # and the wildcard name "*.example.org".
+        #
+        server_name ${NGINX_SERVER_NAME};
+
+        # serve static files
+        #
+        location /static/ {
+            #
+            # This path needs to follow the STATIC_ROOT in Django settings
+            #
+            #  - tworavensproject/settings/dev_container2.py
+            #
+            root /ravens_volume/staticfiles;
+            #autoindex on;
+        }
+
+        # run against rook apps
+        # /custom/rook-files
+        #
+        location /custom/rook-files {
+            proxy_pass http://rook-service;
+         }
+
+        # not used yet; mounted volume shared by all apps
+        #
+        #location /ravens_volume {
+        #   root /;
+        #   autoindex on;
+        #}
+
+        # handle websocket requests
+        #
+        location /ws {
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+
+            proxy_set_header  Host $host;
+            proxy_redirect off;
+
+
+            proxy_pass http://tworavens;
+        }
+
+        # django app with main UI
+        #
+        location / {
+
+            proxy_set_header  Host $host;
+            # proxy_set_header  X-Real-IP $remote_addr;
+            # proxy_set_header  Client-IP $remote_addr;
+            proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header  X-Forwarded-Host $server_name;
+
+            proxy_pass http://tworavens;
+        }
+
+    }
+}

@@ -17,6 +17,7 @@ from os.path import abspath, dirname, isdir, join
 from distutils.util import strtobool
 
 from django.urls import reverse_lazy
+from django.contrib.humanize.templatetags.humanize import intcomma
 
 # -----------------------------------------------------
 # Include D3M environment variables
@@ -25,7 +26,7 @@ from django.urls import reverse_lazy
 from .set_01_d3m_env_variables import *
 
 # -----------------------------------------------------
-# Set directories for user uploaded data
+# Set directories for user ed data
 # -----------------------------------------------------
 from .set_02_ravens_directories import *
 
@@ -52,10 +53,13 @@ TWORAVENS_COMMON_DIR = join(BASE_DIR, 'assets', 'common')
 sys.path.append(TWORAVENS_COMMON_DIR)
 
 
-FILE_UPLOAD_MAX_MEMORY_SIZE = os.environ.get('FILE_UPLOAD_MAX_MEMORY_SIZE',
-                                             24 * 1024000)   # bytes
-DATA_UPLOAD_MAX_MEMORY_SIZE = FILE_UPLOAD_MAX_MEMORY_SIZE
+# Note: On K8s deploymnts these values are limited by
+#   the nginx client_max_body_size
+#
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * 30  # 30 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = DATA_UPLOAD_MAX_MEMORY_SIZE
 
+NGINX_MAX_UPLOAD_SIZE = os.environ.get('NGINX_MAX_UPLOAD_SIZE', 'not set')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
