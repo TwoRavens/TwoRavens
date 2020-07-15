@@ -701,10 +701,7 @@ class ModelTwoRavens(Model):
             forecast_length = self.model.problem_specification.get('forecastingHorizon', {"value": 10})
             forecast_length = forecast_length.get('value', 10)
 
-            if len(dataframe.index) > forecast_length:
-                dataframe = dataframe.head(forecast_length)
-
-            predicted = self.model.forecast(dataframe)
+            predicted = self.model.forecast(dataframe, forecast_length, forecast_mode='test')
 
         elif self.task in ['CLASSIFICATION', 'REGRESSION']:
             # TODO: respect configuration on holdout vs cross-validation, do refitting, etc.
@@ -757,7 +754,7 @@ class ModelTwoRavens(Model):
 
         if predict_type == 'RAW':
             if "FORECASTING" == self.task:
-                predicted = self.model.forecast(dataframe)
+                predicted = self.model.forecast(dataframe, len(dataframe.index), data_type)
             else:
                 # This branch seems will never be reached
                 predicted = self.model.predict(dataframe)
