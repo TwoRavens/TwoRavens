@@ -6,6 +6,7 @@ Create/set directories on startup:
 import os
 import sys
 from os.path import abspath, dirname, join, isdir
+from distutils.util import strtobool
 from tworaven_apps.configurations import static_vals as cstatic
 from tworaven_apps.utils.file_util import create_directory_on_startup
 
@@ -16,7 +17,8 @@ BASE_DIR = dirname(dirname(dirname(abspath(__file__))))
 #   Note: This has to be on a shared volume available to a TA2
 #   Default: /ravens_volume
 # ---------------------------------------------------------------
-_RAVENS_VOLUME_DEFAULT_DIR = join(BASE_DIR, '/ravens_volume') # 'RAVENS_VOLUME_TEST'
+_RAVENS_VOLUME_HARDCODED_DIR = '/ravens_volume'
+_RAVENS_VOLUME_DEFAULT_DIR = join(BASE_DIR, _RAVENS_VOLUME_HARDCODED_DIR) # 'RAVENS_VOLUME_TEST'
 RAVENS_VOLUME_DIR = os.environ.get(cstatic.KEY_RAVENS_VOLUME_DIR, _RAVENS_VOLUME_DEFAULT_DIR)
 create_directory_on_startup(RAVENS_VOLUME_DIR, cstatic.KEY_RAVENS_VOLUME_DIR)
 
@@ -65,16 +67,25 @@ create_directory_on_startup(TWORAVENS_USER_DATASETS_DIR,
 # Directory for moving data from
 # EventData to TwoRavens
 # -------------------------------
-if os.environ.get(cstatic.KEY_D3MOUTPUTDIR):
-    # As of July 2020, put this under the KEY_D3MOUTPUTDIR "temp" directory
-    EVTDATA_2_TWORAVENS_DIR = join(os.environ.get(cstatic.KEY_D3MOUTPUTDIR),
-                                   cstatic.TEMP_DIR_NAME,
+#if os.environ.get(cstatic.KEY_D3MOUTPUTDIR):
+#    # For D3M environment -- which is actually not used
+#    # As of July 2020, put this under the KEY_D3MOUTPUTDIR "temp" directory
+#    EVTDATA_2_TWORAVENS_DIR = join(os.environ.get(cstatic.KEY_D3MOUTPUTDIR),
+#                                   cstatic.TEMP_DIR_NAME,
+#                                   'evtdata_user_datasets')
+#else:
+#    # For non-D3M, put it under ravens_volume
+
+# Only used on GCE right now!!
+if strtobool(os.environ.get('IS_TRAVIS_BUILD', 'False')):
+    EVTDATA_2_TWORAVENS_DIR = join(RAVENS_VOLUME_DIR,
                                    'evtdata_user_datasets')
 else:
-    # For non-D3M, put it under ravens_volume
+    # Only used on GCE right now!!
     EVTDATA_2_TWORAVENS_DIR = os.environ.get(\
-                        cstatic.KEY_EVTDATA_2_TWORAVENS_DIR,
-                        join(RAVENS_VOLUME_DIR, 'evtdata_user_datasets')
-                        )
+                    cstatic.KEY_EVTDATA_2_TWORAVENS_DIR,
+                    join(_RAVENS_VOLUME_HARDCODED_DIR,
+                         'evtdata_user_datasets'))
+
 create_directory_on_startup(EVTDATA_2_TWORAVENS_DIR,
                             cstatic.KEY_EVTDATA_2_TWORAVENS_DIR)
