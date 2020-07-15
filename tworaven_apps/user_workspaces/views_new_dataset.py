@@ -1,6 +1,7 @@
 """Views for User Workspaces"""
 import json
 import os
+from datetime import datetime
 from os.path import abspath, dirname, isfile, join, splitext
 from django.shortcuts import render
 from django.contrib.auth import authenticate, login
@@ -144,7 +145,8 @@ def view_load_eventdata_dataset(request, **kwargs):
 
     if not fpath.startswith(settings.EVTDATA_2_TWORAVENS_DIR):
         user_msg = (f'Invalid path in GET query string: {fpath}'
-                    f' (Does not match EVTDATA_2_TWORAVENS_DIR)')
+                    f' (Does not match {settings.EVTDATA_2_TWORAVENS_DIR})'
+                    f' ({datetime.now()})')
         return JsonResponse(get_json_error(user_msg))
 
     if not isfile(fpath):

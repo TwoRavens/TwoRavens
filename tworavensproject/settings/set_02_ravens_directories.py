@@ -66,18 +66,19 @@ create_directory_on_startup(TWORAVENS_USER_DATASETS_DIR,
 # Directory for moving data from
 # EventData to TwoRavens
 # -------------------------------
-if os.environ.get(cstatic.KEY_D3MOUTPUTDIR):
-    # For D3M environment -- which is actually not used
-    # As of July 2020, put this under the KEY_D3MOUTPUTDIR "temp" directory
-    EVTDATA_2_TWORAVENS_DIR = join(os.environ.get(cstatic.KEY_D3MOUTPUTDIR),
-                                   cstatic.TEMP_DIR_NAME,
-                                   'evtdata_user_datasets')
-else:
-    # For non-D3M, put it under ravens_volume
-    EVTDATA_2_TWORAVENS_DIR = os.environ.get(\
-                        cstatic.KEY_EVTDATA_2_TWORAVENS_DIR,
-                        join(_RAVENS_VOLUME_HARDCODED_DIR,
-                             'evtdata_user_datasets')
-                        )
+#if os.environ.get(cstatic.KEY_D3MOUTPUTDIR):
+#    # For D3M environment -- which is actually not used
+#    # As of July 2020, put this under the KEY_D3MOUTPUTDIR "temp" directory
+#    EVTDATA_2_TWORAVENS_DIR = join(os.environ.get(cstatic.KEY_D3MOUTPUTDIR),
+#                                   cstatic.TEMP_DIR_NAME,
+#                                   'evtdata_user_datasets')
+#else:
+#    # For non-D3M, put it under ravens_volume
+
+# Only used on GCE right now!!
+EVTDATA_2_TWORAVENS_DIR = os.environ.get(\
+                    cstatic.KEY_EVTDATA_2_TWORAVENS_DIR,
+                    join(_RAVENS_VOLUME_HARDCODED_DIR,
+                         'evtdata_user_datasets'))
 create_directory_on_startup(EVTDATA_2_TWORAVENS_DIR,
                             cstatic.KEY_EVTDATA_2_TWORAVENS_DIR)
