@@ -6,6 +6,7 @@ Create/set directories on startup:
 import os
 import sys
 from os.path import abspath, dirname, join, isdir
+from distutils.util import strtobool
 from tworaven_apps.configurations import static_vals as cstatic
 from tworaven_apps.utils.file_util import create_directory_on_startup
 
@@ -76,9 +77,15 @@ create_directory_on_startup(TWORAVENS_USER_DATASETS_DIR,
 #    # For non-D3M, put it under ravens_volume
 
 # Only used on GCE right now!!
-EVTDATA_2_TWORAVENS_DIR = os.environ.get(\
+if strtobool(os.environ.get('IS_TRAVIS_BUILD', 'False')) is True:
+    EVTDATA_2_TWORAVENS_DIR = join(RAVENS_VOLUME_DIR,
+                                   'evtdata_user_datasets')
+else:
+    # Only used on GCE right now!!
+    EVTDATA_2_TWORAVENS_DIR = os.environ.get(\
                     cstatic.KEY_EVTDATA_2_TWORAVENS_DIR,
                     join(_RAVENS_VOLUME_HARDCODED_DIR,
                          'evtdata_user_datasets'))
+                         
 create_directory_on_startup(EVTDATA_2_TWORAVENS_DIR,
                             cstatic.KEY_EVTDATA_2_TWORAVENS_DIR)
