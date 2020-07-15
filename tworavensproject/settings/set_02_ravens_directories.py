@@ -77,7 +77,7 @@ create_directory_on_startup(TWORAVENS_USER_DATASETS_DIR,
 #    # For non-D3M, put it under ravens_volume
 
 # Only used on GCE right now!!
-if strtobool(os.environ.get('IS_TRAVIS_BUILD', 'False')) is True:
+if strtobool(os.environ.get('IS_TRAVIS_BUILD', 'False')):
     EVTDATA_2_TWORAVENS_DIR = join(RAVENS_VOLUME_DIR,
                                    'evtdata_user_datasets')
 else:
@@ -86,6 +86,6 @@ else:
                     cstatic.KEY_EVTDATA_2_TWORAVENS_DIR,
                     join(_RAVENS_VOLUME_HARDCODED_DIR,
                          'evtdata_user_datasets'))
-                         
+
 create_directory_on_startup(EVTDATA_2_TWORAVENS_DIR,
                             cstatic.KEY_EVTDATA_2_TWORAVENS_DIR)
