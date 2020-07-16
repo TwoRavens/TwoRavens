@@ -53,6 +53,7 @@ table.config-list tr td {
                       <td>{{ config.name }}</td>
                       <td>
                         {% if config.is_default %}
+                        <a href="{% url 'home' %}" class="btn btn-success" style="text-decoration:none;">Return to Dataset</a>
                           (Currently selected)
                         {% else %}
                         <button type="button" class="btn btn-primary" data-config-id="{{ config.id }}" data-config-name="{{ config.name }}"  data-toggle="modal" data-target="#analyzeDatasetModal">Analyze</button>
