@@ -17,7 +17,7 @@ session = requests.post(
     nyu_datamart_api_url + '/session/new',
     json={
         "data_token": token,
-        "format": "csv",
+        "format": "d3m",
         "system_name": "TwoRavens"
     }).json()
 

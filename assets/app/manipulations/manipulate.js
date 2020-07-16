@@ -605,7 +605,7 @@ export let constraintMenu;
 //     },
 // };
 
-export let setConstraintMenu = async (menu) => {
+export let setConstraintMenu = async menu => {
 
     // reset the constraintPreferences without breaking any object references
     Object.keys(constraintPreferences).forEach(key => delete constraintPreferences[key]);

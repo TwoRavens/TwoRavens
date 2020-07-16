@@ -23,7 +23,7 @@ VALID_EXTENSIONS = (EXT_CSV,
                     EXT_XLS, EXT_XLSX)
 
 # ----------------------------------------------
-# For createing a datasetDoc
+# For creating a datasetDoc
 # ----------------------------------------------
 DATASET_SCHEMA_VERSION = '4.0.0'    # create a datasetDoc
 PROBLEM_SCHEMA_VERSION = '4.0.0'

@@ -78,15 +78,15 @@ wait_for_port() {
 
 #fab clear_d3m_configs
 
-# ensure the mongo db directory exists
+# ensure the mongo db directory exists (and is not in root, because of sip)
 MONGOD_DIR=$HOME/data/db
-mkdir -p $MONGOD_DIR
+mkdir -p "$MONGOD_DIR"
 
 # prevent package installation in R. This must be set within the 2ravens virtualenv
 export FLASK_USE_PRODUCTION_MODE=yes
 export DISPLAY_DATAMART_UI=True
 
-ttab -G "echo -ne '\033]0;postgres\007'; cd $install_directory; workon 2ravens; docker kill raven-postgres; fab postgres_run; exit"
+#ttab -G "echo -ne '\033]0;postgres\007'; cd $install_directory; workon 2ravens; docker kill raven-postgres; fab postgres_run; exit"
 
 # postgres must be ready before django is started
 wait_for_port 5432
@@ -107,7 +107,7 @@ mongo tworavens --eval "printjson(db.dropDatabase())"
 wait_for_port 8080
 
 if [[ $1 == "none" ]]; then
-  fab choose_config:$DATA_ID
+  fab choose_config:"$DATA_ID"
 else
   ttab -G "echo -ne '\033]0;ta2 $1\007'; cd $install_directory; workon 2ravens; docker kill ta2_server; fab run_ta2_$1_choose_config:$DATA_ID; exit"
 fi
