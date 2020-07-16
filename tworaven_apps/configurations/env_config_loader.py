@@ -210,6 +210,7 @@ class EnvConfigLoader(BasicErrCheck):
 
         # Set the name of the config
         #
+        name = None
         if self.problem_doc:
             try:
                 name = self.problem_doc['about']['problemID']
@@ -219,8 +220,9 @@ class EnvConfigLoader(BasicErrCheck):
                 print(user_msg)
                 self.add_err_msg(user_msg)
                 return
-        else:
-            # No problem doc, so timestamp it
+
+        if not name:
+            # No problem id, so timestamp it
             #
             name = 'config_%s_%s' % \
                         (random_info.get_timestamp_string(),
@@ -302,10 +304,9 @@ class EnvConfigLoader(BasicErrCheck):
                 print('dataset_doc', dataset_doc)
                 if 'about' in dataset_doc:
                     if 'datasetID' in dataset_doc['about']:
-                        config_info['name'] = dataset_doc['about']['datasetID']
+                        config_info['name'] = f"{dataset_doc['about']['datasetID']}-{random_info.get_alphanumeric_lowercase(6)}"
                         config_info['orig_dataset_id'] = dataset_doc['about']['datasetID']
-
-
+    
         else:
             # This will fail if multi-user testing
             #   with no problem doc

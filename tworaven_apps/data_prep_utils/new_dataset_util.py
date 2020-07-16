@@ -130,7 +130,6 @@ class NewDatasetUtil(BasicErrCheck):
         return 'aug-%s' % (get_alpha_string(6),)
                                  #get_timestamp_string(no_breaks=True))
 
-
     def retrieve_workspace(self):
         """Retrieve UserWorkspace and D3M config"""
         ws_info = get_user_workspace_by_id(self.user_workspace_id)
@@ -265,8 +264,7 @@ class NewDatasetUtil(BasicErrCheck):
                                     self.new_d3m_config,
                                     **params)
         if not ws_info.success:
-            self.send_websocket_err_msg('Error creating workspace: %s' % \
-                             ws_info.err_msg)
+            self.send_websocket_err_msg(f'Error creating workspace: {ws_info.err_msg}')
             return
 
         print('create_new_config 5')

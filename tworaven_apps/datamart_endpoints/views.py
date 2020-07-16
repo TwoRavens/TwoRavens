@@ -340,7 +340,7 @@ def api_search_by_dataset(request):
         form.cleaned_data["source"],
         user_workspace.id,
         dataset_path,
-        query=json_req_obj.get("query", None),
+        query=json_req_obj.get("query"),
         websocket_id=user_workspace.user.username,
     )
 

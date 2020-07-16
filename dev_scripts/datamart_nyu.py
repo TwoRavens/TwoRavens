@@ -23,7 +23,7 @@ session = requests.post(
 
 print("Follow this link to conduct an augmentation/merge:")
 query = {"relatedFile": {"kind": "localFile", "token": token}}
-print(f"{nyu_datamart_url}{session['link_url']}&q={quote(json.dumps(query))}")
+print(f"{nyu_datamart_url}{session['link_url']}")
 
 input("Press Enter after merging.")
 

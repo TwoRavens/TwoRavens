@@ -2839,7 +2839,7 @@ export async function handleAugmentDataMessage(msg_data) {
             // (3) store prior manipulations
             //
             console.log(msg_data);
-            let augmentStep = Object.assign({type: 'augment'}, msg_data.data.augment_params);
+            let augmentStep = Object.assign({type: 'augment'}, msg_data.data.augment_params || {});
 
             // - Copy manipulations from the orig selected problem to the
             // workspace's priorManipulations.

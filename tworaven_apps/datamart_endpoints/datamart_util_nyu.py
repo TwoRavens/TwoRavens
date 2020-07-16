@@ -2,7 +2,7 @@ import json
 import tempfile
 import zipfile
 from io import BytesIO
-from os.path import dirname, join, isfile
+from os.path import join, isfile
 from urllib.parse import quote
 
 from django.conf import settings
@@ -11,6 +11,7 @@ from tworaven_apps.data_prep_utils.new_dataset_util import NewDatasetUtil
 from tworaven_apps.ta2_interfaces.websocket_message import WebsocketMessage
 from tworaven_apps.user_workspaces.models import UserWorkspace
 from tworaven_apps.utils.basic_response import ok_resp, err_resp
+from tworaven_apps.utils.json_helper import json_loads, json_dumps
 from tworaven_apps.utils.random_info import get_timestamp_string_readable
 from tworaven_apps.datamart_endpoints import static_vals as dm_static
 
@@ -140,8 +141,15 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
         url_query = {"relatedFile": {"kind": "localFile", "token": data_token}}
 
-        if query and query.get("keywords"):
-            url_query["query"] = " ".join(query["keywords"])
+        if query:
+            print("query", query)
+            query_result = json_loads(query)
+            if not query_result.success:
+                return query_result
+            query = query_result.result_obj
+
+            if "keywords" in query:
+                url_query["query"] = " ".join(query["keywords"])
 
         # begin searching for results asynchronously
         DatamartJobUtilNYU.poll_for_results.delay(
@@ -155,8 +163,12 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
         if query:
             terms = " ".join(query.get("keywords", []))
             if terms:
-                auctus_query['query'] = terms
-        return ok_resp({"datamart_url": f"{get_nyu_url()}{session['link_url']}&q={quote(json.dumps(auctus_query))}"})
+                auctus_query["query"] = terms
+        return ok_resp(
+            {
+                "datamart_url": f"{get_nyu_url()}{session['link_url']}&q={quote(json.dumps(auctus_query))}"
+            }
+        )
 
     @staticmethod
     @celery_app.task(ignore_result=True)
@@ -201,7 +213,7 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
                 (
                     i
                     for i in response.json()["results"]
-                    if i["type"] == "augmentation" and "url" in i
+                    if i["type"] == "join" and "url" in i
                 ),
                 None,
             )
@@ -210,7 +222,7 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
                 time.sleep(1)
                 continue
 
-            print("matched", )
+            print("matched",)
             # extract and switch workspace
             with tempfile.TemporaryDirectory() as temp_dir:
                 augment_zip_path = os.path.join(temp_dir, "temp.zip")
@@ -226,7 +238,7 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
                 os.remove(augment_zip_path)
 
-                NewDatasetUtil(
+                new_dataset_util = NewDatasetUtil(
                     user_workspace.id,
                     os.path.join(temp_dir, "tables", "learningData.csv"),
                     **{
@@ -235,6 +247,25 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
                         )
                     },
                 )
+
+                new_workspace = new_dataset_util.new_workspace
+
+                ws_string_info = json_dumps(new_workspace.to_dict())
+                if not ws_string_info.success:
+                    WebsocketMessage.get_fail_message(
+                        dm_static.DATAMART_AUGMENT_PROCESS,
+                        f"Sorry! An error occurred.  (Created workspace but failed JSON conversion.)",
+                        msg_cnt=1,
+                    ).send_message(websocket_id)
+                    return
+
+                ws_msg = WebsocketMessage.get_success_message(
+                    dm_static.DATAMART_AUGMENT_PROCESS,
+                    "The dataset has been augmented and a new workspace created",
+                    msg_cnt=99,
+                    data={"workspace_json_string": ws_string_info.result_obj,},
+                )
+                ws_msg.send_message(websocket_id)
                 return
 
     # @staticmethod

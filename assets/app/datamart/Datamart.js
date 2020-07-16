@@ -392,7 +392,7 @@ export class Datamart {
                         }),
 
                         m('div', {style: {float: 'right'}},
-                            m('div', {
+                            preferences.sourceMode === "ISI" && m('div', {
                                     style: {margin: '1.5em', display: 'inline-block'},
                                     onclick: () => preferences.includeQuery = !preferences.includeQuery
                                 },
@@ -400,7 +400,7 @@ export class Datamart {
                                 m(Checkbox, {
                                     checked: preferences.includeQuery
                                 })),
-                            m('div', {
+                            preferences.sourceMode === "ISI" && m('div', {
                                     style: {margin: '1.5em', display: 'inline-block'},
                                     onclick: () => preferences.includeDataset = !preferences.includeDataset
                                 },
@@ -907,6 +907,9 @@ export let search = async (preferences, endpoint, dataPath, includeDataset = tru
 
     if ((preferences.query.keywords || []).length === 0 && (preferences.query.variables || []).length === 0)
         includeQuery = false;
+
+    if (sourceMode === "NYU")
+        includeDataset = true;
 
     if (!includeDataset && !includeQuery) {
         preferences.showDatamartErrorMsg(sourceMode, "Either a dataset or query must be included to search.");

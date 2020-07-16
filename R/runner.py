@@ -1,11 +1,11 @@
 import rpy2.robjects as robjects
 import json
 import os
-import sys
 from distutils.util import strtobool
 from datetime import datetime
 import flask
 from multiprocessing import Pool
+from flask import request
 
 NUM_PROCESSES = 4
 
@@ -20,7 +20,6 @@ flask_app = flask.Flask(__name__)
 production = strtobool(os.getenv('FLASK_USE_PRODUCTION_MODE', 'False'))
 
 flask_app.debug = not production
-
 
 
 # multiprocessing.Process is buffered, stdout must be flushed manually
@@ -87,6 +86,20 @@ def default():
     """Basic note at root url"""
     return 'TwoRavens R service. Looks good.<br />(%s)' % (datetime.now())
 
+
+@flask_app.route('/shutdown', methods=['GET'])
+def shutdown():
+    """server shut down for ensuring threads are cleaned up when debugging"""
+    if not production:
+        func = request.environ.get('werkzeug.server.shutdown')
+        if func is None:
+            raise RuntimeError('Not running with the Werkzeug Server')
+        func()
+        pool.close()
+        pool.join()
+        return "shut down flask R server"
+
+    return "this endpoint is disabled in production"
 
 # convert nested python objects to nested R objects
 def r_cast(content):

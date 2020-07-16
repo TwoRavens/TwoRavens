@@ -13,7 +13,6 @@ from tworaven_apps.user_workspaces.utils import get_user_workspace_by_id
 from tworaven_apps.datamart_endpoints import static_vals as dm_static
 from tworaven_apps.datamart_endpoints.datamart_util import get_datamart_job_util
 
-
 LOGGER = logging.getLogger(__name__)
 
 

@@ -33,7 +33,7 @@ export class TreeVariables {
 
 export class TreeAugment {
     buildTreeData(step) {
-        return [
+        return "summary" in step ? [
             {
                 id: 'augment dataset name',
                 name: 'Join dataset name: ' + step.summary.name,
@@ -64,7 +64,7 @@ export class TreeAugment {
                     show_op: false
                 }))
             }
-        ]
+        ] : []
     }
 
     view({attrs}) {

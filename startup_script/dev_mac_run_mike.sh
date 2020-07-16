@@ -82,21 +82,61 @@ wait_for_port() {
 MONGOD_DIR=$HOME/data/db
 mkdir -p "$MONGOD_DIR"
 
-# prevent package installation in R. This must be set within the 2ravens virtualenv
-export FLASK_USE_PRODUCTION_MODE=yes
+#export FLASK_USE_PRODUCTION_MODE=yes
 export DISPLAY_DATAMART_UI=True
 
-#ttab -G "echo -ne '\033]0;postgres\007'; cd $install_directory; workon 2ravens; docker kill raven-postgres; fab postgres_run; exit"
+if ! docker ps -a | grep -q raven-postgres; then
+  ttab -G "echo -ne '\033]0;postgres\007'; cd $install_directory; workon 2ravens; docker kill raven-postgres; fab postgres_run; exit"
+fi
 
 # postgres must be ready before django is started
 wait_for_port 5432
 
 # rename tab; move into repo; set working env; kill django; kill webpack; run django; close tab;
-ttab -G 'echo -ne "\033]0;django\007"; cd '$install_directory'; workon 2ravens; lsof -ti:8080 | xargs kill; ps -ef | grep " webpack" | awk '"'"'{print $2}'"'"' | xargs kill; export DISPLAY_DATAMART_UI='$DISPLAY_DATAMART_UI'; fab run_with_ta2; exit'
-ttab -G 'echo -ne "\033]0;celery\007"; cd '$install_directory'; workon 2ravens; pkill -f celery; export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES; export AUTOML_FAST_DEBUG=yes; fab celery_run_with_ta2; exit'
-ttab -G 'echo -ne "\033]0;flask R\007"; cd '$install_directory'; workon 2ravens; lsof -ti:8000 | xargs kill -9; fab run_R; exit'
-ttab -G "echo -ne '\033]0;mongod\007'; workon 2ravens; mongo 127.0.0.1/admin --eval 'db.shutdownServer()'; mongod --dbpath=$MONGOD_DIR; exit"
-ttab -G 'echo -ne "\033]0;redis\007"; cd '$install_directory'; workon 2ravens; redis-cli stop; redis-server; exit'
+ttab -G '
+  echo -ne "\033]0;django\007";
+  cd '$install_directory';
+  workon 2ravens;
+  lsof -ti:8080 | xargs kill;
+  ps -ef | grep "webpack" | grep -v grep | awk '"'"'{print $2}'"'"' | xargs kill;
+  export DISPLAY_DATAMART_UI='"$DISPLAY_DATAMART_UI"';
+  fab run_with_ta2;
+  exit'
+
+ttab -G '
+  echo -ne "\033]0;celery\007";
+  cd '$install_directory';
+  workon 2ravens;
+  pkill -f celery;
+  export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES;
+  export AUTOML_FAST_DEBUG=yes;
+  fab celery_run_with_ta2;
+  exit'
+
+#lsof -ti:8000 | xargs kill -9
+# attempt graceful shutdown of flask to avoid leaking processes from the pool
+ttab -G '
+  echo -ne "\033]0;flask R\007";
+  cd '$install_directory';
+  workon 2ravens;
+  [[ $(nc -z localhost 8000; echo $?) -eq 0 ]] && curl localhost:8000/shutdown;
+  fab run_R;
+  exit'
+
+ttab -G "
+  echo -ne '\033]0;mongod\007';
+  workon 2ravens;
+  mongo 127.0.0.1/admin --eval 'db.shutdownServer()';
+  mongod --dbpath=$MONGOD_DIR;
+  exit"
+
+ttab -G '
+  echo -ne "\033]0;redis\007";
+  cd '$install_directory';
+  workon 2ravens;
+  redis-cli shutdown;
+  redis-server;
+  exit'
 
 # wait for mongod to start
 wait_for_port 27017

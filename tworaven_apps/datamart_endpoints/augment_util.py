@@ -322,7 +322,7 @@ class AugmentUtil(BasicErrCheck):
 
         ws_msg = WebsocketMessage.get_success_message(
             dm_static.DATAMART_AUGMENT_PROCESS,
-            ("The dataset has been augmented " "and a new workspace created"),
+            "The dataset has been augmented and a new workspace created",
             msg_cnt=99,
             data={
                 "workspace_json_string": ws_string_info.result_obj,
