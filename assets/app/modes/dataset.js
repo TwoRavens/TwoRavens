@@ -103,10 +103,13 @@ export class CanvasDataset {
             //    - display the datasetDoc.about section
             // ------------------------------------------------
             datasetPreferences.datasourceMode === 'Current' && app.workspace.datasetDoc && [
+                /*
+                // temp remove Generate Dataset Report button
                 m(Button, {
                     style: {margin: '1em'},
                     onclick: () => window.open('/#!/dataset')
                 }, 'Generate Dataset Report'),
+                */
                 m(Table, {
                     attrsAll: {
                         style: {width: 'calc(100% + 2em)', 'margin-left': '-1em'}
