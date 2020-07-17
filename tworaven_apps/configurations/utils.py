@@ -253,8 +253,8 @@ def clear_output_directory(d3m_config):
 
                 rm_info = remove_directory(dir_to_remove)
                 if not rm_info.success:
-                    user_msg = ('clear_output_directory: Failed to remove'
-                                ' directory:{rm_info.err_msg}')
+                    user_msg = (f'clear_output_directory: Failed to remove'
+                                f' directory:{rm_info.err_msg}')
                     print(user_msg)
                     print('continuing...')
                     print('clear_output_directory: Failed to remove directory: ' + dir_to_remove)
