@@ -600,7 +600,7 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
             export: 'csv'
         });
         let jsonout = {plottype, zd3mdata: dataPathSampled};
-        let response = await m.request(ROOK_SVC_URL + 'plotData.app', {method: 'POST', data: jsonout});
+        let response = await m.request(ROOK_SVC_URL + 'plotData.app', {method: 'POST', body: jsonout});
         if (!response.success) {
             console.warn(response.message);
             return;

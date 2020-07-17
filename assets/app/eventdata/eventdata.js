@@ -437,7 +437,7 @@ export let createEvtDataFile = async () => {
     return m.request({
         url: mongoURL + 'create-evtdata-file',
         method: 'POST',
-        data: evt_data
+        body: evt_data
     }).then(response => {
         console.log('response', response)
         if (!response.success) {
@@ -472,7 +472,7 @@ export let getEventData = async body => {
   return m.request({
       url: mongoURL + 'get-eventdata',
       method: 'POST',
-      data: body
+      body
   }).then(response => {
       if (!response.success) throw response;
       return response.data;
@@ -509,7 +509,7 @@ export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={})
         if (Object.keys(metadata).length) promises.push(m.request({
             url: mongoURL + 'get-metadata',
             method: 'POST',
-            data: metadata
+            body: metadata
         }).then(setMetadata));
     }
 

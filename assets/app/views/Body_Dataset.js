@@ -14,7 +14,7 @@ export default class Body_Dataset {
         let response = await m.request({
             method: 'POST',
             url: ROOK_SVC_URL + 'report.app',
-            data: {
+            body: {
                 metadata: JSON.stringify({
                     dataset: app.datasetSummary,
                     variables: app.variableSummaries

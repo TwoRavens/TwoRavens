@@ -9,9 +9,6 @@ window.m = m;
 import $ from 'jquery';
 import * as d3 from 'd3';
 
-// polyfill for flatmap (could potentially be included as a webpack entrypoint)
-import "core-js/fn/array/flat-map";
-
 import * as common from "../common/common";
 
 import {locationReload, setModal} from '../common/views/Modal';
@@ -423,7 +420,7 @@ export let getData = async body => {
     getDataPromise = m.request({
         url: mongoURL + 'get-data',
         method: 'POST',
-        data: Object.assign({
+        body: Object.assign({
             datafile: workspace.datasetPath, // location of the dataset csv
             collection_name: workspace.d3m_config.name // collection/dataset name
         }, body)
@@ -470,7 +467,7 @@ export let saveLogEntry = async logData => {
     m.request({
         method: "POST",
         url: save_log_entry_url,
-        data: logData
+        body: logData
     })
     .then(function(save_result) {
         if (save_result.success){
@@ -1114,25 +1111,11 @@ let buildDefaultProblem = problemDoc => {
 
     console.log('problemDoc', problemDoc);
     // create the default problem provided by d3m
-    let targets = problemDoc.inputs.data
-        .flatMap(source => source.targets.map(targ => targ.colName));
-
-    let clusteredTargets = problemDoc.inputs.data
-        .flatMap(source => source.targets.filter(targ => 'numClusters' in targ));
-    let numClusters = clusteredTargets.length > 0 ? clusteredTargets[0].numClusters : undefined;
-
-    let predictors = swandive
-        ? Object.keys(variableSummaries)
-            .filter(column => column !== 'd3mIndex' && !targets.includes(column))
-        : workspace.datasetDoc.dataResources // if swandive false, then datadoc has column labeling
-            .filter(resource => resource.resType === 'table')
-            .flatMap(resource => resource.columns
-                .filter(column => !column.role.includes('index') && !targets.includes(column.colName))
-                .map(column => column.colName));
 
     if (!problemDoc.inputs.dataSplits)
         problemDoc.inputs.dataSplits = {};
 
+    // UTILITY FUNCTIONS
     let findTask = keywords => Object.keys(d3mTaskType)
         .find(key => keywords.includes(key)) || 'regression';
     let findSupervision = keywords => Object.keys(d3mSupervision)
@@ -1156,6 +1139,29 @@ let buildDefaultProblem = problemDoc => {
         .flatMap(resource => resource.columns
             .filter(column => column.role.includes(role))
             .map(column => column.colName));
+
+    // PREPROCESSING
+    let targets = problemDoc.inputs.data
+        .flatMap(source => source.targets.map(targ => targ.colName));
+
+    let clusteredTargets = problemDoc.inputs.data
+        .flatMap(source => source.targets.filter(targ => 'numClusters' in targ));
+    let numClusters = clusteredTargets.length > 0 ? clusteredTargets[0].numClusters : undefined;
+
+    let indexes = [...getTagsByRole('index'), ...getTagsByRole('multiIndex')];
+
+    let predictors = swandive
+        ? Object.keys(variableSummaries)
+            .filter(column => column !== 'd3mIndex' && !targets.includes(column))
+        : workspace.datasetDoc.dataResources // if swandive false, then datadoc has column labeling
+            .filter(resource => resource.resType === 'table')
+            .flatMap(resource => resource.columns
+                .filter(column => !column.role.includes('index') && !targets.includes(column.colName))
+                .map(column => column.colName));
+
+    if (predictors.length === 0) {
+        predictors = Object.keys(variableSummaries).filter(v => !targets.includes(v) && !indexes.includes(v));
+    }
 
     // defaultProblem
     return {
@@ -1222,7 +1228,7 @@ let buildDefaultProblem = problemDoc => {
             location: getTagsByRole('locationIndicator'),
             time: getTagsByRole('timeIndicator'),
             weights: getTagsByRole('instanceWeight'), // singleton list
-            indexes: [...getTagsByRole('index'), ...getTagsByRole('multiIndex')],
+            indexes,
             privileged: getTagsByRole('suggestedPrivilegedData'), // singleton list
             exogenous: [],
             transformed: [],
@@ -1311,7 +1317,7 @@ export let getPreprocess = async query => {
     let promisePreprocess = m.request({
         method: 'POST',
         url: ROOK_SVC_URL + 'preprocess.app',
-        data: {
+        body: {
             data: datasetPath,
             datastub: workspace.d3m_config.name,
             l1_activity: 'PROBLEM_DEFINITION',
@@ -1324,7 +1330,7 @@ export let getPreprocess = async query => {
 
     let promiseDiscovery = m.request(ROOK_SVC_URL + 'discovery.app', {
         method: 'POST',
-        data: {path: datasetPath}
+        body: {path: datasetPath}
     }).then(response => {
         if (!response.success) console.warn(response.message);
         else results.discovery = response.data;
@@ -1407,7 +1413,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
     let promisePreprocess = promiseSampledDatasetPath
         .then(sampledDatasetPath => m.request(ROOK_SVC_URL + 'preprocess.app', {
             method: 'POST',
-            data: {data: sampledDatasetPath, datastub: workspace.d3m_config.name, variables: workspace.raven_config.variableSummaries}
+            body: {data: sampledDatasetPath, datastub: workspace.d3m_config.name, variables: workspace.raven_config.variableSummaries}
         }))
         .then(response => {
             if (!response.success) alertError(response.message);
@@ -1447,7 +1453,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
     let promiseDiscovery = promiseSampledDatasetPath
         .then(sampledDatasetPath => m.request(ROOK_SVC_URL + 'discovery.app', {
             method: 'POST',
-            data: {path: sampledDatasetPath}
+            body: {path: sampledDatasetPath}
         }))
         .then(async response => {
             if (!response.success) {
@@ -1579,8 +1585,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
             datamartPreferences.hints = problemDoc.dataAugmentation;
 
             if (newRavenConfig) {
-                // if swandive, columns cannot be extracted from datasetDoc
-                if (swandive) await promisePreprocess;
+                await promisePreprocess;
 
                 let defaultProblem = buildDefaultProblem(problemDoc);
 
@@ -1934,7 +1939,7 @@ export let materializePartials = async problem => {
     let partialsLocationInfo = await m.request({
         method: 'POST',
         url: D3M_SVC_URL + '/get-partials-datasets',
-        data: {
+        body: {
             problem: SPEC_problem(problem),
             dataset_id: problem.d3mDatasetId,
             domains: problem.domains,
@@ -1982,7 +1987,7 @@ export let materializeICE = async problem => {
     let partialsLocationInfo = await m.request({
         method: 'POST',
         url: D3M_SVC_URL + '/get-partials-datasets',
-        data: {
+        body: {
             problem: SPEC_problem(problem),
             dataset_schema_path: samplePaths.metadata_path,
             dataset_path: samplePaths.data_path,
@@ -2011,7 +2016,7 @@ export let materializeTrainTestIndices = async problem => {
     let response = await m.request({
         method: 'POST',
         url: D3M_SVC_URL + '/get-train-test-split-indices',
-        data: {
+        body: {
             split_options: problem.splitOptions,
             dataset_schema: problem.datasetSchemaPaths.all,
             dataset_path: problem.datasetPaths.all,
@@ -2046,7 +2051,7 @@ export let materializeTrainTest = async problem => {
     let response = await m.request({
         method: 'POST',
         url: D3M_SVC_URL + '/get-train-test-split',
-        data: {
+        body: {
             dataset_id: problem.d3mDatasetId,
             split_options: problem.splitOptions,
             dataset_schema: problem.datasetSchemaPaths.all,
@@ -2326,7 +2331,7 @@ export let saveUserWorkspace = (silent = false, reload = false)=> {
     m.request({
         method: "POST",
         url: raven_config_save_url,
-        data: {raven_config: workspace.raven_config}
+        body: {raven_config: workspace.raven_config}
     })
     .then(function (save_result) {
 	console.log(save_result);
@@ -2459,7 +2464,7 @@ export async function saveAsNewWorkspace() {
     let save_result = await m.request({
         method: "POST",
         url: raven_config_save_url,
-        data: {
+        body: {
             new_workspace_name: new_workspace_name,
             raven_config: workspace.raven_config
         }

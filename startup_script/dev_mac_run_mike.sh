@@ -20,7 +20,7 @@
 #    tamu
 #    nyu
 #
-# and $2 is the dataset id. If 'r', random id is chosen up to configCount
+# and $2 is the dataset id. If alphanumeric, attempts to select the matching dataset
 # -------------------------------------------------
 
 install_directory=~/TwoRavens/
@@ -41,21 +41,26 @@ fi
 if [ -z "$2" ]
   then
     echo "Error: Second argument must be one of:"
-  	fab run_ta2_cmu_choose_config
+  	fab choose_config
   	return
 fi
 
-# if r, then pick random
-if [ $2 = 'r' ]
-  then
-    DATA_ID=$((RANDOM % config_count))
-  else
-    DATA_ID=$2
+# if alphanumeric, but not completely numeric
+if [[ "$2" =~ ^[[:alnum:]_-]*$ ]] && [[ ! "$2" =~ ^[[:digit:]]+$ ]]; then
+  MATCHES=$(fab choose_config | grep "^\([0-9]*\).*" | grep "$2")
+  if [[ $MATCHES  == *$'\n'* ]]; then
+    echo "Found multiple matches:"
+    echo $MATCHES
+    return
+  fi
 
-    echo "Running with dataset:"
-    echo $(fab run_ta2_cmu_choose_config | grep "($DATA_ID)")
+  DATA_ID=$(echo "$MATCHES" | awk '{print $1}' | tr -d '()')
+else
+  DATA_ID=$2
 fi
 
+echo "Running with dataset:"
+echo $(fab choose_config | grep "($DATA_ID)")
 
 # ensure the docker app is running
 open -g -a Docker.app || exit
@@ -149,7 +154,13 @@ wait_for_port 8080
 if [[ $1 == "none" ]]; then
   fab choose_config:"$DATA_ID"
 else
-  ttab -G "echo -ne '\033]0;ta2 $1\007'; cd $install_directory; workon 2ravens; docker kill ta2_server; fab run_ta2_$1_choose_config:$DATA_ID; exit"
+  ttab -G "
+    echo -ne '\033]0;ta2 $1\007';
+    cd $install_directory;
+    workon 2ravens;
+    docker kill ta2_server;
+    fab run_ta2_$1_choose_config:$DATA_ID;
+    exit"
 fi
 
 # deactivate 2ravens

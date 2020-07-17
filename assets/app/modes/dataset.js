@@ -395,7 +395,7 @@ async function uploadDataset() {
     let response = await m.request({
         method: "POST",
         url: "user-workspaces/upload-dataset",
-        data: body,
+        body,
     });
 
 

@@ -82,7 +82,7 @@ let makeDatasetCard = (preferences, result, index, manipulations, endpoint, labe
             //
             let response = await m.request(endpoint + 'materialize-async', {
                 method: 'POST',
-                data: {
+                body: {
                     search_result: JSON.stringify(preferences.selectedResult),
                     source: preferences.sourceMode
                     //  workspace_id: app.workspace.user_workspace_id
@@ -257,7 +257,7 @@ export class Datamart {
 
             let response = await m.request(endpoint + 'get_metadata', {
                 method: 'POST',
-                data: {
+                body: {
                     custom: JSON.stringify(index),
                     source: sourceMode
                 }
@@ -456,7 +456,7 @@ export class Datamart {
                                         let response = await m.request({
                                             method: "POST",
                                             url: endpoint + "upload",
-                                            data: data
+                                            body: data
                                         });
 
                                         if (!response.success) {
@@ -539,7 +539,7 @@ export class Datamart {
                                 let responses = [];
                                 let promises = indices.map((index, i) => m.request(endpoint + 'index', {
                                     method: 'POST',
-                                    data: {
+                                    body: {
                                         index: JSON.stringify(index),
                                         source: sourceMode
                                     }
@@ -761,7 +761,7 @@ export class ModalDatamart {
 
                             let response = await m.request(endpoint + 'augment', {
                                 method: 'POST',
-                                data: augment_api_data
+                                body: augment_api_data
                             });
 
                             if (response.success) {
@@ -929,7 +929,7 @@ export let search = async (preferences, endpoint, dataPath, includeDataset = tru
     if (includeDataset) {
         let response = await m.request(endpoint + 'search-by-dataset', {
             method: 'POST',
-            data: searchParams
+            body: searchParams
         });
         if (response.success) {
             preferences.showDatamartSuccessMsg(sourceMode, response.message);
@@ -941,7 +941,7 @@ export let search = async (preferences, endpoint, dataPath, includeDataset = tru
     } else {
         let response = await m.request(endpoint + 'search', {
             method: 'POST',
-            data: searchParams
+            body: searchParams
         });
         preferences.handleSearchResults(sourceMode, response);
     }

@@ -59,28 +59,20 @@ export default class PlotVegaLite {
                 ['labelLimit', 100]
             ]));
 
-            // mask repeated warnings about outdated vega-lite specification
-            let tempWarn = console.warn;
-            console.warn = _ => _;
+            vegaEmbed(vnode.dom, specification, options).then(result => {
+                // vegalite only gets close to the width/height set in the config
+                let {width, height} = vnode.dom.getBoundingClientRect();
+                this.width = width;
+                this.height = height;
 
-            try {
-                vegaEmbed(vnode.dom, specification, options).then(result => {
-                    // vegalite only gets close to the width/height set in the config
-                    let {width, height} = vnode.dom.getBoundingClientRect();
-                    this.width = width;
-                    this.height = height;
-
-                    this.instance = result.view;
-                    if (data) {
-                        this.dataKeys = new Set();
-                        this.diff(vnode);
-                    }
-                    this.isPlotting = false;
-                    m.redraw()
-                })
-            } finally {
-                console.warn = tempWarn;
-            }
+                this.instance = result.view;
+                if (data) {
+                    this.dataKeys = new Set();
+                    this.diff(vnode);
+                }
+                this.isPlotting = false;
+                m.redraw()
+            })
         }
 
         // this is the optimized path for the optional data attr

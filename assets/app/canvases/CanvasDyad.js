@@ -8,6 +8,7 @@ import Popper from '../../common/views/Popper';
 import PlotDyad from './views/PlotDyad';
 import * as eventdata from "../eventdata/eventdata";
 import {alertError, formattingData} from "../app";
+import Checkbox from "../../common/views/Checkbox";
 
 // Width of the dyad selection panel
 let selectionWidth = '400px';
@@ -251,7 +252,7 @@ export default class CanvasDyad {
                         },
                         m("input#monad-show-selected.monad-chk.monad-show-selected[name='actorShowSelected'][type='checkbox']", {
                             checked: preferencesMonad['show_selected'],
-                            onchange: m.withAttr('checked', (state) => preferencesMonad['show_selected'] = state)
+                            onchange: function() {preferencesMonad['show_selected'] = this.checked} // withAttr
                         }),
                         "Only Show Selected"
                     ),

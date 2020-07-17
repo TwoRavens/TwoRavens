@@ -360,7 +360,7 @@ def choose_config(choice_num=''):
         return
 
     loader_info = EnvConfigLoader.make_config_from_directory(
-        resp.result_obj['data_dir_path'],
+        resp.result_obj['data_input_dir'],
         delete_if_exists=True,
         is_default_config=True)
 

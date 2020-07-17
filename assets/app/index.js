@@ -7,6 +7,9 @@ import hopscotch from 'hopscotch';
 
 import m from 'mithril';
 
+import 'core-js';
+import 'regenerator-runtime/runtime';
+
 import * as app from './app';
 import * as dataset from "./modes/dataset";
 import * as model from './modes/model';
@@ -599,7 +602,7 @@ class Body {
                         let problem = app.getSelectedProblem();
                         m.request(D3M_SVC_URL + '/ExportSolutions', {
                             method: 'POST',
-                            data: results.getSummaryData(problem)
+                            body: results.getSummaryData(problem)
                         }).then(response => {
                             if (response.success) {
                                 console.warn(response.data);
@@ -623,7 +626,7 @@ class Body {
                     onclick: () => {
                         m.request(this.TA2URL, {
                             method: "POST",
-                            data: JSON.parse(this.TA2Post)
+                            body: JSON.parse(this.TA2Post)
                         }).then(console.log).then(m.redraw)
                     }
                 }, 'Send'),

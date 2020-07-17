@@ -80,7 +80,7 @@ export let leftpanel = () => {
         ),
         // m('div#modelComparisonOption', {style: {displayx: 'inline-block'}},
         //     m('input#modelComparisonCheck[type=checkbox]', {
-        //         onclick: m.withAttr("checked", setModelComparison),
+        //         onclick: function() {setModelComparison(this.checked)}, // withAttr
         //         checked: modelComparison,
         //         style: {margin: '.25em'}
         //     }),
@@ -1649,7 +1649,7 @@ export let loadFittedVsActuals = async (problem, adapter) => {
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-fitted-vs-actuals-data`, {
             method: 'POST',
-            data: {
+            body: {
                 data_pointer: dataPointer,
                 metadata: {
                     targets: problem.targets,
@@ -1726,7 +1726,7 @@ export let loadConfusionData = async (problem, adapter) => {
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-confusion-data`, {
             method: 'POST',
-            data: {
+            body: {
                 data_pointer: dataPointer,
                 metadata: {
                     targets: problem.targets,
@@ -1882,7 +1882,7 @@ export let loadFittedData = async (problem, adapter, split) => {
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-data`, {
             method: 'POST',
-            data: {
+            body: {
                 data_pointer: dataPointer,
                 indices: resultsData.dataSample[split].map(obs => obs.d3mIndex)
             }
@@ -1953,7 +1953,7 @@ export let loadImportancePartialsFittedData = async (problem, adapter) => {
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-data`, {
             method: 'POST',
-            data: {data_pointer: dataPointer}
+            body: {data_pointer: dataPointer}
         });
 
         if (!response.success) {
@@ -2028,7 +2028,7 @@ export let loadImportanceEFDData = async (problem, adapter) => {
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
             method: 'POST',
-            data: {
+            body: {
                 data_pointer: dataPointer,
                 metadata: {
                     produceId,
@@ -2114,7 +2114,7 @@ export let loadImportanceICEFittedData = async (problem, adapter, predictor) => 
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-ICE-data`, {
             method: 'POST',
-            data: {
+            body: {
                 data_pointer_predictors: dataPointerPredictors,
                 data_pointer_fitted: dataPointerFitted,
                 data_pointer_index: dataPointerIndex,
@@ -2190,7 +2190,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
         try {
             response = await m.request(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
                 method: 'POST',
-                data: {
+                body: {
                     data_pointer: dataPointer,
                     metadata: {
                         produceId,
@@ -2218,7 +2218,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
         try {
             response = await m.request(D3M_SVC_URL + `/retrieve-output-data`, {
                 method: 'POST',
-                data: {data_pointer: dataPointers['Partials']}
+                body: {data_pointer: dataPointers['Partials']}
             });
 
             console.log(response);
@@ -2256,7 +2256,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
             try {
                 responses[predictor] = await m.request(D3M_SVC_URL + `/retrieve-output-ICE-data`, {
                     method: 'POST',
-                    data: {
+                    body: {
                         data_pointer_predictors: dataPointerPredictors,
                         data_pointer_fitted: dataPointers[predictor],
                         data_pointer_index: dataPointerIndex,
@@ -2291,7 +2291,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
 
     let responseImportance = await m.request(ROOK_SVC_URL + 'variableImportance.app', {
         method: 'POST',
-        data: {
+        body: {
             efdData: response.data,
             targets: problem.targets,
             categoricals: app.getNominalVariables(problem),
@@ -2376,7 +2376,7 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
     try {
         response = await m.request(`image-utils/markup-image`, {
             method: 'POST',
-            data: {
+            body: {
                 file_path: problem.datasetSchemaPaths[split].replace('datasetDoc.json', '') + '/media/' + actualPoint.image,
                 borders: Object.keys(fittedPoints).reduce((borders, solutionName) => Object.assign({
                     [resultsData.boundaryImageColormap[solutionName].replace('#', '')]: fittedPoints[solutionName]

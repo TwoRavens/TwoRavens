@@ -139,8 +139,8 @@ class TA2Helper(BasicErrCheck):
         choice_num = int(choice_num)
         if choice_num in [x[0] for x in choice_pairs]:
             return ok_resp({
-                "data_dir_path": join(RAVENS_DIR, choice_pairs[choice_num-1][1]),
-                "output_dir_path": join(RAVENS_OUTPUT_DIR, choice_pairs[choice_num-1][1])
+                "data_input_dir": join(RAVENS_DIR, choice_pairs[choice_num-1][1]),
+                "data_output_dir": join(RAVENS_OUTPUT_DIR, choice_pairs[choice_num-1][1])
             })
         else:
             print('\n--> Error: "%d" is not a valid choice\n' % choice_num)
@@ -157,6 +157,8 @@ class TA2Helper(BasicErrCheck):
             paths = paths_resp.result_obj
         else:
             return paths_resp
+
+        print(paths)
 
         ta2_helper = TA2Helper(
             ta2_name,
