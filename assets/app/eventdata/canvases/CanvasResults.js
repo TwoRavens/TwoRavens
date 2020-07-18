@@ -108,7 +108,7 @@ export default class CanvasResults {
         let vegaSchema;
         if (eventdata.tableHeaders.length === 1 && 'date' in eventdata.aggregationHeadersLabels) {
             vegaSchema = {
-                "$schema": "https://vega.github.io/schema/vega-lite/v2.0.json",
+                "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                 "data": {"values": melt(eventdata.tableData, eventdata.tableHeaders)},
                 "mark": "line",
                 "encoding": {
@@ -130,7 +130,7 @@ export default class CanvasResults {
                     .forEach(header => processed = processed.filter(point => point[header] === preferences['filters'][header]));
 
                 vegaSchema = {
-                    "$schema": "https://vega.github.io/schema/vega-lite/v2.0.json",
+                    "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                     "data": {"values": processed},
                     "mark": "line",
                     "encoding": {
@@ -145,7 +145,7 @@ export default class CanvasResults {
                 processed = processed.filter(point => point['variable'] === eventdata.aggregationHeadersLabels['dyad'][0]);
 
                 vegaSchema = {
-                    "$schema": "https://vega.github.io/schema/vega-lite/v2.0.json",
+                    "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                     "data": {"values": processed},
                     "mark": "line",
                     "encoding": {

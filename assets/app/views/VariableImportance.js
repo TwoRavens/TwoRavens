@@ -21,7 +21,7 @@ export default class VariableImportance {
             return m(PlotVegaLite, {
                 // data,
                 specification: {
-                    "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+                    "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                     "description": `Empirical First Differences for ${predictor}.`,
                     'vconcat': [
                         {
@@ -73,7 +73,7 @@ export default class VariableImportance {
         if (nominals.includes(predictor)) return m(PlotVegaLite, {
             // data,
             specification: {
-                "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+                "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                 "description": `Empirical First Differences for ${predictor}.`,
                 'vconcat': [
                     {
@@ -106,7 +106,7 @@ export default class VariableImportance {
 
         if (nominals.includes(target)) return m(PlotVegaLite, {
             specification: {
-                "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+                "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                 "description": `Empirical First Differences for ${predictor}.`,
                 'vconcat': [
                     {
@@ -161,7 +161,7 @@ export default class VariableImportance {
         // LINE PLOT
         return m(PlotVegaLite, {
             specification: {
-                "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+                "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                 "description": `Empirical First Differences for ${predictor}.`,
                 // data: {values: melted},
                 'vconcat': [
@@ -227,7 +227,7 @@ export default class VariableImportance {
         // if both predictor and target are nominal, or if just predictor is nominal
         if (nominals.includes(predictor)) return m(PlotVegaLite, {
             specification: {
-                "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+                "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                 "description": `Partials for ${predictor}.`,
                 'vconcat': [
                     {
@@ -292,7 +292,7 @@ export default class VariableImportance {
             });
             return m(PlotVegaLite, {
                 specification: {
-                    "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+                    "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                     "description": `Partials for ${predictor}.`,
                     'vconcat': [
                         {
@@ -353,7 +353,7 @@ export default class VariableImportance {
         return m(PlotVegaLite, {
             // data,
             specification: {
-                "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+                "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                 "description": `Partials for ${predictor}.`,
                 'vconcat': [
                     {
@@ -424,7 +424,7 @@ export default class VariableImportance {
 
             return m(PlotVegaLite, {
                 specification: {
-                    "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+                    "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                     "description": `Independent conditional expectations for ${predictor}.`,
                     'vconcat': [
                         {
@@ -510,7 +510,7 @@ export default class VariableImportance {
         // continuous predictor and target
         return m(PlotVegaLite, {
             specification: {
-                "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+                "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                 "description": `Independent conditional expectations for ${predictor}.`,
                 'vconcat': [
                     {

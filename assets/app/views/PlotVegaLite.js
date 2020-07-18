@@ -25,6 +25,10 @@ export default class PlotVegaLite {
     plot(vnode) {
         let {data, specification} = vnode.attrs;
 
+        // change-sets are not currently supported. Data is manually inserted here.
+        // long term, if change-sets are not returned, it would be better to remove the data argument from this component
+        if (data) specification.data = {values: data};
+
         let newSpecification = JSON.stringify(specification);
         let {width, height} = vnode.dom.getBoundingClientRect();
 
@@ -32,8 +36,8 @@ export default class PlotVegaLite {
         if (this.specification !== newSpecification || this.width !== width || this.height !== height) {
             this.isPlotting = true;
             this.specification = newSpecification;
-            this.width = width;
-            this.height = height;
+            if (width) this.width = width;
+            if (height) this.height = height;
             this.dataKeys = undefined;
 
             // include padding in width/height calculations
@@ -42,14 +46,17 @@ export default class PlotVegaLite {
                 "contains": "padding"
             };
             // if ('vconcat' in specification) specification.vconcat.forEach(spec => spec.width = this.width);
-            if (data) specification.data = {name: 'embedded'};
+            // change-sets are not currently supported
+            // if (data) specification.data = {name: 'embedded'};
 
             let options = {actions: true};
-            if ('vconcat' in specification) width && specification.vconcat.forEach(spec => spec.width = spec.width || width);
-            else if ('hconcat' in specification) height && specification.hconcat.forEach(spec => spec.height = spec.height || height);
+            if ('vconcat' in specification)
+                width && specification.vconcat.forEach(spec => spec.width = spec.width || width);
+            else if ('hconcat' in specification)
+                height && specification.hconcat.forEach(spec => spec.height = spec.height || height);
             else {
-                if (width) options.width = options.width || width;
-                if (height) options.height = options.height || height;
+                if (width) specification.width = specification.width || width;
+                if (height) specification.height = specification.height || height;
             }
 
             // by default, make sure labels on all plots are limited to 50 pixels
@@ -65,11 +72,12 @@ export default class PlotVegaLite {
                 this.width = width;
                 this.height = height;
 
-                this.instance = result.view;
-                if (data) {
-                    this.dataKeys = new Set();
-                    this.diff(vnode);
-                }
+                // change-sets are not currently supported
+                // this.instance = result.view;
+                // if (data) {
+                //     this.dataKeys = new Set();
+                //     this.diff(vnode);
+                // }
                 this.isPlotting = false;
                 m.redraw()
             })
@@ -77,7 +85,7 @@ export default class PlotVegaLite {
 
         // this is the optimized path for the optional data attr
         // check for existence of dataKeys because the initial plotting is asynchronous
-        else if (data && this.dataKeys) this.diff(vnode);
+        // else if (data && this.dataKeys) this.diff(vnode);
     }
 
     diff(vnode) {

@@ -235,6 +235,10 @@ export let is_results_mode = false;
 export let is_dataset_mode = false;
 
 export function setSelectedMode(mode) {
+
+    if (!getSelectedProblem())
+        return
+
     mode = mode ? mode.toLowerCase() : 'model';
 
     // remove empty steps when leaving manipulate mode

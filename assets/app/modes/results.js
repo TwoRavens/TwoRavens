@@ -571,7 +571,7 @@ export class CanvasSolutions {
             }), m('[style=display:inline-block]', 'solutions.')),
             [problem.metric, ...problem.metrics].map(metric => m(PlotVegaLite, {
                 specification: {
-                    "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+                    "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                     "description": `${metric} scores for ${problem.problemId}.`,
                     data: {
                         values: adapters.map(adapter => ({
