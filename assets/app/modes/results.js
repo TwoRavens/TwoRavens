@@ -28,9 +28,7 @@ import * as queryMongo from "../manipulations/queryMongo";
 import Paginated from "../../common/views/Paginated";
 import TextField from "../../common/views/TextField";
 
-import {getNominalVariables} from "../app";
 import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
-import {generateID} from "../app";
 
 export let leftpanel = () => {
 
@@ -539,12 +537,23 @@ export class CanvasSolutions {
                                     data: generatePerformanceData(summary.confusionMatrix.data, resultsPreferences.factor),
                                     attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
                                 })),
-                            summary.confusionMatrix.classes.length < 100 ? summary.confusionMatrix.classes.length > 0 ? m(PlotVegaLite, {
+                            summary.confusionMatrix.classes.length < 100 ? summary.confusionMatrix.classes.length > 0
+                                ? m('div', {style: {
+                                    display: "inline-block",
+                                        position: "relative",
+                                        width: "100%"
+                                }}, m('div', {style: 'margin-top: 80%'}), m('div', {
+                                    style: {
+                                        position: 'absolute',
+                                        top: 0, bottom: 0, left: 0, right: 0
+                                    }
+                                }, m(PlotVegaLite, {
                                     specification: plots.vegaLiteConfusionMatrix(
                                         summary.confusionMatrix.data,
                                         summary.confusionMatrix.classes,
                                         'Predicted', 'Actual', 'count',
-                                        `Confusion Matrix for ${problem.targets[0]}${resultsPreferences.factor ? (' factor ' + resultsPreferences.factor) : ''}`)})
+                                        `Confusion Matrix for ${problem.targets[0]}${resultsPreferences.factor ? (' factor ' + resultsPreferences.factor) : ''}`)
+                                })))
                                 : 'Too few classes for confusion matrix! There is a data mismatch.'
                                 : 'Too many classes for confusion matrix!'
                         ]
@@ -639,9 +648,8 @@ export class CanvasSolutions {
                 }), {});
 
                 // reassign content if some data is not undefined
-                let sortedPredictors = Object.keys(app.getRecursive(resultsData, [
-                    'importanceScores', adapter.getSolutionId(),'EFD', resultsPreferences.target
-                ]) || {});
+                let sortedPredictors = Object.keys(resultsData?.importanceScores
+                    ?.[adapter.getSolutionId()]?.EFD?.[resultsPreferences.target] || {});
 
                 let plotVariables = (sortedPredictors.length > 0 ? sortedPredictors.reverse() : Object.keys(importanceData))
                     .filter(predictor => importanceData[predictor]);
@@ -1138,8 +1146,7 @@ export let getSolutionAdapter = (problem, solution) => ({
     getFitted: (target, split) => {
         let adapter = getSolutionAdapter(problem, solution);
         loadFittedData(problem, adapter, split);
-        let fitted = app.getRecursive(resultsData.fitted,
-            [adapter.getSolutionId(), split]);
+        let fitted = resultsData.fitted?.[adapter.getSolutionId()]?.[split];
         if (fitted) return fitted.map(obs => obs[target]);
     },
     getScore: metric => {
@@ -1179,12 +1186,7 @@ export let getSolutionAdapter = (problem, solution) => ({
         let adapter = getSolutionAdapter(problem, solution);
         loadImportanceScore(problem, adapter, mode);
 
-        return app.getRecursive(resultsData, [
-            'importanceScores',
-            adapter.getSolutionId(),
-            mode,
-            target
-        ]);
+        return resultsData?.importanceScores?.[adapter.getSolutionId()]?.[mode]?.target;
     },
     // get the bounding box image for the selected problem's target variable, in the desired split, at the given index
     getObjectBoundaryImagePath: (target, split, index) => {
@@ -1193,7 +1195,7 @@ export let getSolutionAdapter = (problem, solution) => ({
             .map(solution => getSolutionAdapter(problem, solution));
 
         loadObjectBoundaryImagePath(problem, adapters, target, split, index);
-        return app.getRecursive(resultsData, ['boundaryImagePaths', target, split, JSON.stringify(index)]);
+        return resultsData?.boundaryImagePaths?.[target]?.[split]?.[JSON.stringify(index)];
     }
 });
 
@@ -1864,11 +1866,11 @@ export let loadFittedData = async (problem, adapter, split) => {
         return;
 
     // don't load if systems are already in loading state
-    if (app.getRecursive(resultsData.fittedLoading, [adapter.getSolutionId(), split]))
+    if (resultsData.fittedLoading?.[adapter.getSolutionId()]?.[split])
         return;
 
     // don't load if already loaded
-    if (app.getRecursive(resultsData.fitted, [adapter.getSolutionId(), split]))
+    if (resultsData.fitted?.[adapter.getSolutionId()]?.[split])
         return;
 
     // begin blocking additional requests to load
@@ -2164,11 +2166,11 @@ let loadImportanceScore = async (problem, adapter, mode) => {
         return;
 
     // don't load if systems are already in loading state
-    if (app.getRecursive(resultsData, ['importanceScoresLoading', adapter.getSolutionId(), mode]))
+    if (resultsData?.importanceScoresLoading?.[adapter.getSolutionId()]?.[mode])
         return;
 
     // don't load if already loaded
-    if (app.getRecursive(resultsData, ['importanceScores', adapter.getSolutionId(), mode]))
+    if (resultsData?.importanceScores?.[adapter.getSolutionId()]?.[mode])
         return;
 
     // begin blocking additional requests to load
@@ -2338,11 +2340,11 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
         return;
 
     // don't load if image is already being loaded
-    if (app.getRecursive(resultsData, ['boundaryImagePathsLoading', target, split, JSON.stringify(index)]))
+    if (resultsData?.boundaryImagePathsLoading?.[target]?.[split]?.[JSON.stringify(index)])
         return;
 
     // don't load if already loaded
-    if (app.getRecursive(resultsData, ['boundaryImagePaths', target, split, JSON.stringify(index)]))
+    if (resultsData?.boundaryImagePaths?.[target]?.[split]?.[JSON.stringify(index)])
         return;
 
     // begin blocking additional requests to load

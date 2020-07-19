@@ -236,9 +236,6 @@ export let is_dataset_mode = false;
 
 export function setSelectedMode(mode) {
 
-    if (!getSelectedProblem())
-        return
-
     mode = mode ? mode.toLowerCase() : 'model';
 
     // remove empty steps when leaving manipulate mode
@@ -2995,5 +2992,3 @@ let linspace = (min, max, n) => Array.from({length: n})
 export let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
 export let setRecursive = (obj, map) => map
     .reduce((obj, pair) => setDefault(obj, pair[0], pair[1]), obj);
-export let getRecursive = (obj, map) => map
-    .reduce((obj, key) => obj ? obj[key] : undefined, obj);
