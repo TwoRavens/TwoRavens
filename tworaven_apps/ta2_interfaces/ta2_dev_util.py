@@ -58,9 +58,9 @@ TA2_IMAGE_INFO = [
     # 'registry.datadrivendiscovery.org/mlam/stanford-d3m-full:evaluation_workflow_compliant_stable',
     # '-p 45042:45042'),
 
-    #(TA2_NYU,
-    # 'registry.gitlab.com/vida-nyu/d3m/ta2:latest',
-    # '-p 45042:45042 -e D3MPORT=45042',),
+    (TA2_NYU,
+    'registry.gitlab.com/vida-nyu/d3m/ta2:latest',
+    '-p 45042:45042 -e D3MPORT=45042',),
 ]
 
 class TA2Helper(BasicErrCheck):

@@ -321,7 +321,7 @@ def run_ta2_cmu_choose_config(choice_num=''):
     elif resp.err_msg:
         print(resp.err_msg)
 
-#@task
+@task
 def run_ta2_nyu_choose_config(choice_num=''):
     """Pick a config from /ravens_volume and run the Standford TA2"""
     from tworaven_apps.ta2_interfaces.ta2_dev_util import \
