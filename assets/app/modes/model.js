@@ -320,7 +320,7 @@ export let leftpanel = forceData => {
                                 app.resetPeek();
                             },
                             onmouseover: varName => leftpanelHoveredVariableName = varName,
-                            onmouseout: () => leftpanelHoveredVariableName = undefined
+                            onmouseout: () => leftpanelHoveredVariableName = undefined,
                         },
                         popup: variableName => m('div', {
                                 onmouseover: () => leftpanelHoveredVariableName = variableName,
@@ -605,6 +605,36 @@ export let leftpanel = forceData => {
                         onclick: tag.onclick,
                         class: (tag.active ? 'active' : '') + ' btn-sm'
                     }, tag.name)))),
+
+                selectedProblem.tags.time.includes(variableName) && m('div', {style: {'text-align': 'left', 'margin-left': '.5em'}},
+                    'Time variables indicate a temporal location.', m('br'), bold('Time Granularity:'),
+                    m('br'),
+                    m(TextField, {
+                        id: 'timeGranularityValueTextField',
+                        value: (selectedProblem.timeGranularity[variableName] || {}).value || '',
+                        oninput: value => {
+                            selectedProblem.timeGranularity[variableName] = selectedProblem.timeGranularity[variableName] || {};
+                            selectedProblem.timeGranularity[variableName].value = value.replace(/[^\d.-]/g, '')
+                        },
+                        onblur: value => selectedProblem.timeGranularity[variableName].value =
+                            Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined,
+                        style: {
+                            'margin-bottom': '1em',
+                            width: 'calc(100% - 150px)',
+                            display: 'inline-block'
+                        }
+                    }),
+                    m('div', {style: {display: 'inline-block', width: '92px'}},
+                        m(Dropdown, {
+                            id: 'timeGranularityUnitsDropdown',
+                            items: ["seconds", "minutes", "days", "weeks", "years", "unspecified"],
+                            activeItem: (selectedProblem.timeGranularity[variableName] || {}).units || 'unspecified',
+                            onclickChild: granularity => {
+                                selectedProblem.timeGranularity[variableName] = selectedProblem.timeGranularity[variableName] || {};
+                                selectedProblem.timeGranularity[variableName].units = granularity
+                            }
+                        }))
+                ),
 
                 m(VariableSummary, {variable: app.variableSummaries[variableName]})));
     }
@@ -1144,9 +1174,15 @@ export let buildForceData = problem => {
                 colorBackground: app.swandive && 'grey',
                 nodes: new Set([
                     ...problem.tags.crossSection,
-                    ...problem.tags.time,
                     ...problem.tags.weights,
                 ]),
+                opacity: 0.3
+            },
+            {
+                name: "Temporal",
+                color: common.timeColor,
+                colorBackground: app.swandive && 'grey',
+                nodes: new Set(problem.tags.time),
                 opacity: 0.3
             }
             // {
@@ -1451,35 +1487,7 @@ let variableTagMetadata = (selectedProblem, variableName) => [
     {
         name: 'Time', active: selectedProblem.tags.time.includes(variableName),
         onclick: () => setLabel(selectedProblem, 'time', variableName),
-        title: m('div', {style: {'text-align': 'left', 'margin-left': '.5em'}},
-            'Time variables indicate a temporal location.', m('br'), bold('Time Granularity:'),
-            m('br'),
-            m(TextField, {
-                id: 'timeGranularityValueTextField',
-                value: (selectedProblem.timeGranularity[variableName] || {}).value || '',
-                oninput: value => {
-                    selectedProblem.timeGranularity[variableName] = selectedProblem.timeGranularity[variableName] || {};
-                    selectedProblem.timeGranularity[variableName].value = value.replace(/[^\d.-]/g, '')
-                },
-                onblur: value => selectedProblem.timeGranularity[variableName].value =
-                    Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined,
-                style: {
-                    'margin-bottom': '1em',
-                    width: 'calc(100% - 150px)',
-                    display: 'inline-block'
-                }
-            }),
-            m('div', {style: {display: 'inline-block', width: '92px'}},
-                m(Dropdown, {
-                    id: 'timeGranularityUnitsDropdown',
-                    items: ["seconds", "minutes", "days", "weeks", "years", "unspecified"],
-                    activeItem: (selectedProblem.timeGranularity[variableName] || {}).units || 'unspecified',
-                    onclickChild: granularity => {
-                        selectedProblem.timeGranularity[variableName] = selectedProblem.timeGranularity[variableName] || {};
-                        selectedProblem.timeGranularity[variableName].units = granularity
-                    }
-                }))
-        ),
+        title: 'Temporal variables indicate a point in time.',
     },
     {
         name: 'Weight', active: selectedProblem.tags.weights.includes(variableName),
@@ -1660,25 +1668,37 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                 id: 'Nominal',
                 name: 'Nominal',
                 attrs: {fill: common.nomColor},
-                onclick: d => setLabel(problem, 'nominal', d)
+                onclick: d => {
+                    setLabel(problem, 'nominal', d);
+                    forceDiagramState.setSelectedPebble(d);
+                }
             },
             {
                 id: 'Cross',
                 name: 'Cross',
                 attrs: {fill: common.csColor},
-                onclick: d => setLabel(problem, 'crossSection', d)
+                onclick: d => {
+                    setLabel(problem, 'crossSection', d);
+                    forceDiagramState.setSelectedPebble(d);
+                }
             },
             {
                 id: 'Time',
                 name: 'Time',
                 attrs: {fill: common.timeColor},
-                onclick: d => setLabel(problem, 'time', d)
+                onclick: d => {
+                    setLabel(problem, 'time', d);
+                    forceDiagramState.setSelectedPebble(d);
+                }
             },
             {
                 id: 'Exogenous',
                 name: 'Exog',
                 attrs: {fill: common.exogenousColor},
-                onclick: d => setLabel(problem, 'exogenous', d)
+                onclick: d => {
+                    setLabel(problem, 'exogenous', d);
+                    forceDiagramState.setSelectedPebble(d);
+                }
             }
         ]
     }
@@ -1686,12 +1706,12 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
 
 let setLabel = (problem, label, name) => {
     if (label === 'nominal') {
-        if (app.variableSummaries[name].numchar === 'character') {
-            app.alertLog(`Cannot convert column "${name}" to numeric, because the column is character-based.`);
-            return;
-        }
-	app.variableSummaries[name].nature = label;
+	    app.variableSummaries[name].nature = label;
         if (problem.tags.nominal.includes(name)) {
+            if (app.variableSummaries[name].numchar === 'character') {
+                app.alertLog(`Cannot interpret "${name}" as non-nominal, because the column is character-based.`);
+                return;
+            }
             app.remove(problem.tags.crossSection, name);
             app.remove(problem.tags.boundary, name);
             app.remove(problem.tags.location, name);
@@ -1786,8 +1806,6 @@ let setLabel = (problem, label, name) => {
         else
             problem.tags.indexes = [name];
     }
-    if (forceDiagramState.labels.includes(name))
-        forceDiagramState.setSelectedPebble(name);
     app.resetPeek()
 };
 
