@@ -91,7 +91,12 @@ mkdir -p "$MONGOD_DIR"
 export DISPLAY_DATAMART_UI=True
 
 if ! docker ps -a | grep -q raven-postgres; then
-  ttab -G "echo -ne '\033]0;postgres\007'; cd $install_directory; workon 2ravens; docker kill raven-postgres; fab postgres_run; exit"
+  ttab -G "
+    echo -ne '\033]0;postgres\007';
+    cd $install_directory;
+    workon 2ravens;
+    docker kill raven-postgres;
+    fab postgres_run; exit"
 fi
 
 # postgres must be ready before django is started

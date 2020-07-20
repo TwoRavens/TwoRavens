@@ -44,7 +44,7 @@ discovery.app <- function(everything) {
     # DATA CLEANING
     cleanResult <- tryCatch({
         # if only two unique (non-missing) values, coerce to numeric
-        for (i in 1:ncol(data)) {
+        for (i in seq_len(ncol(data))) {
             if(!is.numeric(data[, i]) && length(unique(na.omit(data[, i]))) == 2)
                 data[, i] <- as.numeric(as.factor(data[, i]))
         }
@@ -110,7 +110,7 @@ disco.correlation <- function(names, cor, n=3){
 
     newfound <- list()
     neworder <- order(rating, decreasing=TRUE)
-    for(i in 1:length(rating)){
+    for(i in seq_along(rating)){
         newfound[[i]] <- found[[ neworder[i] ]]
     }
 
@@ -141,12 +141,12 @@ disco.CART <- function(data, n=3, samplesize=2000, top=NULL){
 
     # The CART implementation rpart() can be slow on large datasets
     if(nrow(data)>samplesize){
-        myindex <- sample(1:nrow(data),samplesize)
+        myindex <- sample(seq_len(nrow(data)), samplesize)
         data <- data[myindex, ]
     }
 
     allnames <- names(data)
-    for(i in 1:length(allnames)){
+    for(i in seq_along(allnames)){
         myformula <- as.formula(paste(allnames[i], "~", paste(allnames[-i], collapse="+") ))
         tempCART <- rpart(myformula, data, control=rpart.control(maxdepth=1))
 
@@ -158,7 +158,7 @@ disco.CART <- function(data, n=3, samplesize=2000, top=NULL){
             split1 <- labels(tempCART)[2]
             split2 <- labels(tempCART)[3]
 
-            flag1 <- eval(parse(text=paste("data$", split1, sep="")))
+            flag1 <- eval(parse(text = paste0("data$", split1)))
             #flag2 <- eval(parse(text=paste("data$", split2, sep="")))
 
             subdata1 <- data[ flag1, -splitvar.pos]     # split variables should not be used any more
@@ -187,7 +187,7 @@ disco.CART <- function(data, n=3, samplesize=2000, top=NULL){
 
     newfound <- list()
     neworder <- order(rating, decreasing=TRUE)
-    for(i in 1:length(rating)){
+    for(i in seq_along(rating)){
         newfound[[i]] <- found[[ neworder[i] ]]
     }
 
@@ -217,7 +217,7 @@ disco.ICA <- function(data, n=3, top=3){
     cor[cor==1] <- 0        # don't use variables that are perfect
     diag(cor) <- 0
 
-    for(i in 1:length(allnames)){
+    for(i in seq_along(allnames)){
         temporder <- order(abs(cor[i,]), decreasing=TRUE)[1:(n+1)]
         tempdata <- data[,temporder[2:length(temporder)]]
         tempdata$newvar <- data[,i] + data[, temporder[1]]
@@ -227,7 +227,7 @@ disco.ICA <- function(data, n=3, top=3){
 
         #if(sum(abs(newcor[(n+1),])) > sum(abs(cor[i,temporder[2:length(temporder)] ]))){
             count <- count + 1
-            newtarget <- paste(allnames[i], "_", allnames[temporder[1]], sep="")
+            newtarget <- paste0(allnames[i], "_", allnames[temporder[1]])
             transform <- paste(newtarget, "=", allnames[i], "+", allnames[temporder[1]] )
             found[[count]] <- list(targets=allnames[i], predictors=allnames[temporder[2:length(temporder)]], transform=list(transform), subsetObs=list(), subsetFeats=list())
             rating[count] <- sum(abs(newcor[(n+1),])) - sum(abs(cor[i,temporder[2:length(temporder)] ]))
@@ -237,7 +237,7 @@ disco.ICA <- function(data, n=3, top=3){
 
     newfound <- list()
     neworder <- order(rating, decreasing=TRUE)
-    for(i in 1:length(rating)){
+    for(i in seq_along(rating)){
         newfound[[i]] <- found[[ neworder[i] ]]
     }
 
