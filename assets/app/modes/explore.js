@@ -398,14 +398,16 @@ let appropriateSchemas = {
     nnn: ["stackedbarnnn", "facetheatmap"]
 };
 
+// nodeSummaries: Vec<VariableSummary>, summaries for each data channel
+// schemaName: string, optional
 let inferPlotType = (nodeSummaries, schemaName) => {
 
     if (nodeSummaries.length > 3) return ['scattermatrix', 'aaa'];
 
-    // 'q' for quantitative, 'n' for nominal
+    // 'q' for quantitative, 'n' for nominal, 'a' for any
     let natures = nodeSummaries
         .map(summary => (summary.pdfPlotType === 'continuous') ? 'q' : 'n')
-        .join();
+        .join("");
 
     if (schemaName) return [schemaName, natures];
 
@@ -416,8 +418,10 @@ let inferPlotType = (nodeSummaries, schemaName) => {
         }[natures], natures]
     }
 
+    let isTemporal = nodeSummaries[0].temporal || app.getSelectedProblem().tags.time.includes(nodeSummaries[0].name);
+
     if (nodeSummaries.length === 2) {
-        if (nodeSummaries[0].temporal || app.getSelectedProblem().tags.time.includes(nodeSummaries[0].name))
+        if (isTemporal)
             return ['timeseries', natures[0] + 'n'];
 
         // returns true if uniques is equal to, one less than, or two less than the number of valid observations
@@ -442,10 +446,8 @@ let inferPlotType = (nodeSummaries, schemaName) => {
     }
 
     if (nodeSummaries.length === 3) {
-        let isTemporal = nodeSummaries[0].temporal
-            || app.getSelectedProblem().tags.time.includes(nodeSummaries[0].name);
         if (isTemporal)
-            return ['timeseries', natures.substring(0, 2) + 'n'];
+            return ['timeseriestri', natures.substring(0, 2) + 'n'];
 
         return [{
             qqq: 'bubbleqqq',
@@ -559,7 +561,7 @@ export async function plotVega(nodeSummaries, schemaName, problem, variate) {
     };
 
     // collect node summaries for every facet of the plot
-    // every facet has needs an array of summaries
+    // every facet needs an array of summaries
     let facetSummaries = variate === "problem"
         ? app.getPredictorVariables(problem).map(predictor => [
             nodeSummaries[predictor],

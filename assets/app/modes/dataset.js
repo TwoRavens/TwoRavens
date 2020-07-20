@@ -42,10 +42,8 @@ export class CanvasDataset {
 
       this.getPresetName = (pName) => {
 
-          this.presetNameToLoad === preset.name ? '** Loading **' : (app.workspace.d3m_config.name === preset.name ? 'Loaded' : 'Load' )
-
           console.log('getPresetName');
-          if (pname === this.presetNameToLoad){
+          if (pName === this.presetNameToLoad){
             return '** Loading **';
           } else if (app.workspace.d3m_config.name === pName){
             return 'Loaded';
