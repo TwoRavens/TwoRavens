@@ -807,8 +807,6 @@ export async function handleGetScoreSolutionResultsResponse(response) {
  */
 export async function handleGetProduceSolutionResultsResponse(response) {
 
-    console.log("response produce");
-    console.warn(response);
     if (response === undefined) {
         debugLog('handleGetProduceSolutionResultsResponse: Error.  "response" undefined');
         return;
@@ -846,7 +844,6 @@ export async function handleGetProduceSolutionResultsResponse(response) {
         return;
     }
 
-    console.warn(response);
     let firstOutput = Object.values(response.response.exposedOutputs)[0];
 
     if (!firstOutput) return;
@@ -900,8 +897,7 @@ export async function endsession() {
     // console.log(JSON.stringify(selectedPipelines, null, 2));
 
     let selectedSolution = selectedPipelines[0];
-    let adapter = results.getSolutionAdapter(selectedProblem, selectedSolution);
-    let pipelineId = adapter.getSolutionId();
+    let pipelineId = selectedSolution?.pipeline?.id;
 
     if (pipelineId === undefined){
       setModal(m('div', {}, [
