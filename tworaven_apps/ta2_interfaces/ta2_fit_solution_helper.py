@@ -96,7 +96,6 @@ class FitSolutionHelper(BasicErrCheck):
     @staticmethod
     @celery_app.task(ignore_result=True)
     def make_fit_solutions_call(pipeline_id, websocket_id, user_id, fit_params, **kwargs):
-        print('make_fit_solutions_call 1')
         assert pipeline_id, "pipeline_id must be set"
         assert websocket_id, "websocket_id must be set"
         assert user_id, "user_id must be set"
@@ -381,7 +380,7 @@ class FitSolutionHelper(BasicErrCheck):
                 if fitted_solution_id:
 
                     for produce_dataset_name in self.produce_params:
-                        print('Make Produce Solution with:', produce_dataset_name)
+                        # print('Make Produce Solution with:', produce_dataset_name)
                         self.check_fit_progress(self.produce_params[produce_dataset_name],
                                                 fitted_solution_id,
                                                 result_json,
@@ -433,13 +432,9 @@ class FitSolutionHelper(BasicErrCheck):
             LOGGER.error(user_msg)
             return
 
-        print('produce 0')
-        print(params_for_produce)
-
         prod_params = dict(params_for_produce)
         prod_params[ta2_static.KEY_FITTED_SOLUTION_ID] = fitted_solution_id
 
-        print('produce 0.5')
         ProduceSolutionHelper.make_produce_solution_call.delay(\
                                     self.pipeline_id,
                                     self.websocket_id,

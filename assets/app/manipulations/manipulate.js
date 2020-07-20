@@ -207,7 +207,7 @@ export function varList() {
             }
             if (constraintPreferences.type === 'Binning') {
                 selectedVariables = [constraintPreferences.menus.Binning.variableIndicator];
-                variables = variables.filter(variable => variableMetadata[variable].types.indexOf('string') === -1)
+                variables = variables.filter(variable => !variableMetadata[variable].types.includes('string'))
             }
             if (constraintPreferences.type === 'Manual')
                 selectedVariables = [constraintPreferences.menus.Manual.variableIndicator];
@@ -605,7 +605,7 @@ export let constraintMenu;
 //     },
 // };
 
-export let setConstraintMenu = async (menu) => {
+export let setConstraintMenu = async menu => {
 
     // reset the constraintPreferences without breaking any object references
     Object.keys(constraintPreferences).forEach(key => delete constraintPreferences[key]);
@@ -665,7 +665,7 @@ export let setConstraintMenu = async (menu) => {
     if (constraintMenu.type === 'unit') variables = variables.filter(column => inferType(column) !== 'discrete');
 
     // select a random variable if none selected yet, or previously selected variable no longer available
-    let variable = !constraintMetadata.columns || variables.indexOf(constraintMetadata.columns[0]) === -1
+    let variable = !constraintMetadata.columns || !variables.includes(constraintMetadata.columns[0])
         ? variables[Math.floor(Math.random() * variables.length)]
         : constraintMetadata.columns[0];
 
@@ -696,10 +696,10 @@ export let setConstraintColumn = (column, pipeline) => {
 
 export let inferType = variable => {
     // initial inference based on data type
-    let type = variableMetadata[variable].types.indexOf('string') !== -1 ? 'discrete' : 'continuous';
+    let type = variableMetadata[variable].types.includes('string') ? 'discrete' : 'continuous';
 
     // force date type if possible
-    if (variableMetadata[variable].types.indexOf('date') !== -1) type = 'date';
+    if (variableMetadata[variable].types.includes('date')) type = 'date';
 
     // switch to discrete if there is a small number of unique values
     if (type === 'continuous' && variableMetadata[variable].uniqueCount <= 10) type = 'discrete';

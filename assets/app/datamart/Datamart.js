@@ -22,11 +22,10 @@ import Popper from "../../common/views/Popper";
 
 import * as queryMongo from '../manipulations/queryMongo';
 
-import ButtonLadda from "../views/LaddaButton";
+import ButtonLadda from "../views/ButtonLadda";
 import {numberWithCommas} from '../utils';
 import {bold} from "../index";
 
-import {datamartQueryInputSchema} from "./query_input_schema_2019_06";
 import {datamartDatasetIndexSchema} from "./dataset_schema_2019_01";
 
 
@@ -83,7 +82,7 @@ let makeDatasetCard = (preferences, result, index, manipulations, endpoint, labe
             //
             let response = await m.request(endpoint + 'materialize-async', {
                 method: 'POST',
-                data: {
+                body: {
                     search_result: JSON.stringify(preferences.selectedResult),
                     source: preferences.sourceMode
                     //  workspace_id: app.workspace.user_workspace_id
@@ -117,13 +116,13 @@ let makeDatasetCard = (preferences, result, index, manipulations, endpoint, labe
             let augmentationData = getData(result, 'augmentation');
 
             // NYU
-            if ('left_columns_names' in augmentationData){
+            if ('left_columns_names' in augmentationData) {
                 preferences.joinPairs = augmentationData.left_columns_names.map((_, j) => [
                     augmentationData.left_columns_names[j],
                     augmentationData.right_columns_names[j]
                 ]);
-              } else if ('left_columns' in augmentationData) {
-                  // --- ISI ---('left_columns' in augmentationData) {
+            } else if ('left_columns' in augmentationData) {
+                // --- ISI ---('left_columns' in augmentationData) {
                 let originalLeftColumns = [...queryMongo.buildPipeline(
                     manipulations, app.workspace.raven_config.variablesInitial)['variables']];
 
@@ -258,7 +257,7 @@ export class Datamart {
 
             let response = await m.request(endpoint + 'get_metadata', {
                 method: 'POST',
-                data: {
+                body: {
                     custom: JSON.stringify(index),
                     source: sourceMode
                 }
@@ -277,12 +276,16 @@ export class Datamart {
             }
         };
 
-        return m('div', {style: {width: '100%',
-                height: '100%',
-                position: 'relative'
-        }},
+        return m('div', {
+                style: {
+                    width: '100%',
+                    height: '100%',
+                    position: 'relative'
+                }
+            },
             m(TwoPanel, {
                 left: [
+                    // error messages
                     preferences.error[preferences.sourceMode] && m('div#errorMessage', {
                         style: {
                             background: 'rgba(0,0,0,.05)',
@@ -300,6 +303,7 @@ export class Datamart {
                             warn('Error:'), preferences.error[preferences.sourceMode])
                     ]),
 
+                    // success message
                     preferences.success[preferences.sourceMode] && m('div#successMessage', {
                         style: {
                             background: 'rgba(0,0,0,.05)',
@@ -317,6 +321,7 @@ export class Datamart {
                             preferences.success[preferences.sourceMode])
                     ]),
 
+                    // turn on/off the search and index menus
                     preferences.datamartMode === 'Search' && [
 
                         (hints || []).length > 0 && [
@@ -337,7 +342,7 @@ export class Datamart {
 
                                                     // auto-searching
                                                     clearTimeout(preferences.searchTimeout);
-                                                    if (!preferences.includeDataset)
+                                                    if (!preferences.includeDataset && preferences.sourceMode === "ISI")
                                                         preferences.searchTimeout = setTimeout(() => search(preferences, endpoint, dataPath, preferences.includeDataset, preferences.includeQuery), 500)
                                                 }
                                             }, key))
@@ -346,22 +351,33 @@ export class Datamart {
                             })
                         ],
 
-                        m('h4', 'Query'),
+                        // KEYWORDS
+                        m('h4', 'Keywords'),
                         m('div[style=margin:.5em]', 'Show datasets that match keywords, or contain variables with temporal or geospatial attributes.'),
                         m(`div[style=background:${common.menuColor}]`, {
-                            onkeyup: e => {
-                                // auto-searching
-                                clearTimeout(preferences.searchTimeout);
-                                if (e.code === 'Enter')
-                                    search(preferences, endpoint, dataPath, preferences.includeDataset, preferences.includeQuery);
-                                else if (!preferences.includeDataset && e.code !== 'Tab'){
-                                    preferences.searchTimeout = setTimeout(() => search(preferences, endpoint, dataPath, preferences.includeDataset, preferences.includeQuery), 500);
+                                onkeyup: e => {
+                                    // auto-searching
+                                    clearTimeout(preferences.searchTimeout);
+                                    if (e.code === 'Enter')
+                                        search(preferences, endpoint, dataPath, preferences.includeDataset, preferences.includeQuery);
+                                    else if (!preferences.includeDataset && e.code !== 'Tab' && preferences.sourceMode === "ISI") {
+                                        preferences.searchTimeout = setTimeout(() => search(preferences, endpoint, dataPath, preferences.includeDataset, preferences.includeQuery), 500);
+                                    }
                                 }
-                            }
-                        }, m(JSONSchema, {
-                            data: query,
-                            schema: datamartQueryInputSchema
-                        })),
+                            },
+                            m(Table, {
+                                attrsCells: {valign: "top"},
+                                data: [
+                                    ...query.keywords.map((keyword, i) => [
+                                        m(TextField, {value: keyword, oninput: val => query.keywords[i] = val}),
+                                        m('div', {
+                                            onclick: () => query.keywords.splice(i, 1)
+                                        }, m(Icon, {name: 'x', style: {margin: '1em 1em 1em 0em'}}))
+                                    ]),
+                                    [m(TextField, {value: '', oninput: val => query.keywords.push(val)}), undefined]
+                                ]
+                            })
+                        ),
 
                         m(ButtonRadio, {
                             id: 'dataSourceButtonBar',
@@ -376,7 +392,7 @@ export class Datamart {
                         }),
 
                         m('div', {style: {float: 'right'}},
-                            m('div', {
+                            preferences.sourceMode === "ISI" && m('div', {
                                     style: {margin: '1.5em', display: 'inline-block'},
                                     onclick: () => preferences.includeQuery = !preferences.includeQuery
                                 },
@@ -384,7 +400,7 @@ export class Datamart {
                                 m(Checkbox, {
                                     checked: preferences.includeQuery
                                 })),
-                            m('div', {
+                            preferences.sourceMode === "ISI" && m('div', {
                                     style: {margin: '1.5em', display: 'inline-block'},
                                     onclick: () => preferences.includeDataset = !preferences.includeDataset
                                 },
@@ -393,13 +409,13 @@ export class Datamart {
                                         content: () => m('div[style=max-width:22em]',
                                             'Check to show datasets that are considered joinable with the current dataset, ',
                                             m('pre[style=display:inline]', app.workspace.d3m_config.name), '.')
-                                        }, 'Use dataset in search ')),
+                                    }, 'Use dataset in search ')),
                                 m(Checkbox, {
                                     checked: preferences.includeDataset
                                 })),
-                        /*
-                         * Start: Datamart Search Call
-                         */
+                            /*
+                             * Start: Datamart Search Call
+                             */
                             m(Button, {
                                     style: {float: 'right', margin: '1em'},
                                     disabled: preferences.isSearching[preferences.sourceMode],
@@ -440,7 +456,7 @@ export class Datamart {
                                         let response = await m.request({
                                             method: "POST",
                                             url: endpoint + "upload",
-                                            data: data
+                                            body: data
                                         });
 
                                         if (!response.success) {
@@ -461,7 +477,13 @@ export class Datamart {
                                 oninput: value => preferences.indexLink = value,
                                 onblur: value => preferences.indexLink = value
                             }),
-                            m('div', {style: {margin: '1em', 'margin-left': '0px', display: 'inline-block'}}, m(Dropdown, {
+                            m('div', {
+                                style: {
+                                    margin: '1em',
+                                    'margin-left': '0px',
+                                    display: 'inline-block'
+                                }
+                            }, m(Dropdown, {
                                 id: 'fileTypeDropdown',
                                 items: ['csv', 'excel'],
                                 activeItem: preferences.indexFileType,
@@ -517,7 +539,7 @@ export class Datamart {
                                 let responses = [];
                                 let promises = indices.map((index, i) => m.request(endpoint + 'index', {
                                     method: 'POST',
-                                    data: {
+                                    body: {
                                         index: JSON.stringify(index),
                                         source: sourceMode
                                     }
@@ -604,15 +626,15 @@ export class ModalDatamart {
             ],
 
             preferences.modalShown === 'metadata' && [
-              m('h4', (getData(selectedResult, 'name') || '') + ' Metadata'),
-              m('label[style=width:100%]', 'Score: ' + getData(selectedResult, 'score') || 0),
-              m('div[style=width:100%;overflow:auto]',
-                m(Table, {
-                    data: getData(selectedResult, 'data'),
-                    // attrsCells: {'class': 'text-left'}, // {class: "text-left"},
-                  }
+                m('h4', (getData(selectedResult, 'name') || '') + ' Metadata'),
+                m('label[style=width:100%]', 'Score: ' + getData(selectedResult, 'score') || 0),
+                m('div[style=width:100%;overflow:auto]',
+                    m(Table, {
+                            data: getData(selectedResult, 'data'),
+                            // attrsCells: {'class': 'text-left'}, // {class: "text-left"},
+                        }
+                    ),
                 ),
-              ),
             ],
 
 
@@ -646,12 +668,12 @@ export class ModalDatamart {
 
                 m('div',
                     !preferences.joinPairs.length && m('div',
-                      m('p', 'Clicking "Augment" will join your dataset with the found dataset.'),
-                      m('p', bold('First'), ' please choose variables from each dataset to connect them. See ', bold("Variable Pairs"), ' below.'),
+                    m('p', 'Clicking "Augment" will join your dataset with the found dataset.'),
+                    m('p', bold('First'), ' please choose variables from each dataset to connect them. See ', bold("Variable Pairs"), ' below.'),
                     ),
 
                     preferences.joinPairs.length > 0 && m('div',
-                      m('p', 'Click "Augment" to join your dataset with the found dataset.'),
+                    m('p', 'Click "Augment" to join your dataset with the found dataset.'),
                     ),
 
                     // List of join pairs
@@ -673,7 +695,7 @@ export class ModalDatamart {
                             }
                         }, !preferences.isAugmenting && preferences.sourceMode !== 'ISI' && m(Icon, {name: 'x'})),
                         m('div', {style: {'margin-left': '1em', display: 'inline-block'}},
-                        preferences.sourceMode === 'ISI' ? `ISI join with [${pair[1].join(', ')}]` : `Joining [${pair[0].join(', ')}] with [${pair[1].join(', ')}]`)
+                            preferences.sourceMode === 'ISI' ? `ISI join with [${pair[1].join(', ')}]` : `Joining [${pair[0].join(', ')}] with [${pair[1].join(', ')}]`)
 
                     ])),
                     // end: list join pairs
@@ -739,7 +761,7 @@ export class ModalDatamart {
 
                             let response = await m.request(endpoint + 'augment', {
                                 method: 'POST',
-                                data: augment_api_data
+                                body: augment_api_data
                             });
 
                             if (response.success) {
@@ -748,12 +770,12 @@ export class ModalDatamart {
                                 preferences.success[sourceMode] = '';
                                 preferences.modalShown = false;
                             } else {
-                              /*setModal(m('div', m('p', 'An error occurred:'),
-                                  m('p', response.data)),
-                                  "Sorry Augment Failed",
-                                  true,
-                                  "Close",
-                                  true);*/
+                                /*setModal(m('div', m('p', 'An error occurred:'),
+                                    m('p', response.data)),
+                                    "Sorry Augment Failed",
+                                    true,
+                                    "Close",
+                                    true);*/
                                 preferences.error[sourceMode] = m.trust(response.message);
                                 // turn off spinner
                                 preferences.isAugmenting = false;
@@ -766,9 +788,9 @@ export class ModalDatamart {
                             console.log(response);
                         }
                     }, 'Augment'),
-                  ),
-                    //m('p', "Please choose the variables to connect your dataset" +
-                    //       " from the found dataset.")),
+                ),
+                //m('p', "Please choose the variables to connect your dataset" +
+                //       " from the found dataset.")),
 
 
                 preferences.sourceMode !== 'ISI' && [
@@ -876,16 +898,20 @@ export class ModalDatamart {
     }
 }
 
-export let search = async (preferences, endpoint, dataPath, includeDataset=true, includeQuery=true) => {
+export let search = async (preferences, endpoint, dataPath, includeDataset = true, includeQuery = true) => {
 
     // preserve state after async is awaited
     let sourceMode = preferences.sourceMode;
+
     preferences.results[sourceMode].length = 0;
 
     if ((preferences.query.keywords || []).length === 0 && (preferences.query.variables || []).length === 0)
         includeQuery = false;
 
-    if (!includeDataset && !includeQuery){
+    if (sourceMode === "NYU")
+        includeDataset = true;
+
+    if (!includeDataset && !includeQuery) {
         preferences.showDatamartErrorMsg(sourceMode, "Either a dataset or query must be included to search.");
         return;
     }
@@ -903,7 +929,7 @@ export let search = async (preferences, endpoint, dataPath, includeDataset=true,
     if (includeDataset) {
         let response = await m.request(endpoint + 'search-by-dataset', {
             method: 'POST',
-            data: searchParams
+            body: searchParams
         });
         if (response.success) {
             preferences.showDatamartSuccessMsg(sourceMode, response.message);
@@ -912,12 +938,10 @@ export let search = async (preferences, endpoint, dataPath, includeDataset=true,
 
             preferences.showDatamartErrorMsg(sourceMode, response.message);
         }
-    }
-
-    else {
+    } else {
         let response = await m.request(endpoint + 'search', {
             method: 'POST',
-            data: searchParams
+            body: searchParams
         });
         preferences.handleSearchResults(sourceMode, response);
     }
@@ -966,7 +990,7 @@ export let setDatamartDefaults = preferences => {
         delete preferences.success[datamartSource]; // remove "success"
 
         // show the error message
-        preferences.error[datamartSource] =  m('b', {class: "h5"}, message);
+        preferences.error[datamartSource] = m('b', {class: "h5"}, message);
 
         m.redraw();
 
@@ -980,7 +1004,7 @@ export let setDatamartDefaults = preferences => {
         delete preferences.error[datamartSource]; // remove "success"
 
         // show the error message
-        preferences.success[datamartSource] =  m('b', {class: "h5"}, message);
+        preferences.success[datamartSource] = m('b', {class: "h5"}, message);
 
         m.redraw();
     });
@@ -1014,6 +1038,12 @@ export let setDatamartDefaults = preferences => {
         let numResults = preferences.results[datamartSource].length
         console.log('Num results: ' + numResults);
 
+        if (preferences.sourceMode === "NYU") {
+            console.log(response);
+            window.open(response.data.datamart_url, 'NYU_Datamart').focus();
+            return
+        }
+
         if (numResults === 0) {
             // No datasets found
             delete preferences.success[datamartSource]; // remove "success"
@@ -1024,9 +1054,9 @@ export let setDatamartDefaults = preferences => {
             delete preferences.error[datamartSource]; // remove error
 
             let numDatasetMsg = '';
-            if (numResults === 0){
+            if (numResults === 0) {
                 numDatasetMsg = 'Sorry! No datasets found.';
-            } else if (numResults === 1){
+            } else if (numResults === 1) {
                 numDatasetMsg = '1 dataset found.';
             } else {
                 numDatasetMsg += `${numResults} datasets found.`;

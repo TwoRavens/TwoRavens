@@ -28,9 +28,7 @@ import * as queryMongo from "../manipulations/queryMongo";
 import Paginated from "../../common/views/Paginated";
 import TextField from "../../common/views/TextField";
 
-import {getNominalVariables} from "../app";
 import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
-import {generateID} from "../app";
 
 export let leftpanel = () => {
 
@@ -80,7 +78,7 @@ export let leftpanel = () => {
         ),
         // m('div#modelComparisonOption', {style: {displayx: 'inline-block'}},
         //     m('input#modelComparisonCheck[type=checkbox]', {
-        //         onclick: m.withAttr("checked", setModelComparison),
+        //         onclick: function() {setModelComparison(this.checked)}, // withAttr
         //         checked: modelComparison,
         //         style: {margin: '.25em'}
         //     }),
@@ -393,7 +391,9 @@ export class CanvasSolutions {
                                 [xName]: timeSummary[split][i] // new Date(Date.parse(timeSummary[split][i]))
                             })))
                 ])
-                .filter(point => problem.tags.crossSection.length === 0 || resultsPreferences.crossSection === 'unset' || point[crossSectionName] === resultsPreferences.crossSection)
+                .filter(point => problem.tags.crossSection.length === 0
+                    || resultsPreferences.crossSection === 'unset'
+                    || point[crossSectionName] === resultsPreferences.crossSection)
 
             if (plotData.length === 0) return [
                 'Processing forecasts.',
@@ -539,12 +539,23 @@ export class CanvasSolutions {
                                     data: generatePerformanceData(summary.confusionMatrix.data, resultsPreferences.factor),
                                     attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
                                 })),
-                            summary.confusionMatrix.classes.length < 100 ? summary.confusionMatrix.classes.length > 0 ? m(PlotVegaLite, {
+                            summary.confusionMatrix.classes.length < 100 ? summary.confusionMatrix.classes.length > 0
+                                ? m('div', {style: {
+                                    display: "inline-block",
+                                        position: "relative",
+                                        width: "100%"
+                                }}, m('div', {style: 'margin-top: 80%'}), m('div', {
+                                    style: {
+                                        position: 'absolute',
+                                        top: 0, bottom: 0, left: 0, right: 0
+                                    }
+                                }, m(PlotVegaLite, {
                                     specification: plots.vegaLiteConfusionMatrix(
                                         summary.confusionMatrix.data,
                                         summary.confusionMatrix.classes,
                                         'Predicted', 'Actual', 'count',
-                                        `Confusion Matrix for ${problem.targets[0]}${resultsPreferences.factor ? (' factor ' + resultsPreferences.factor) : ''}`)})
+                                        `Confusion Matrix for ${problem.targets[0]}${resultsPreferences.factor ? (' factor ' + resultsPreferences.factor) : ''}`)
+                                })))
                                 : 'Too few classes for confusion matrix! There is a data mismatch.'
                                 : 'Too many classes for confusion matrix!'
                         ]
@@ -571,7 +582,7 @@ export class CanvasSolutions {
             }), m('[style=display:inline-block]', 'solutions.')),
             [problem.metric, ...problem.metrics].map(metric => m(PlotVegaLite, {
                 specification: {
-                    "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+                    "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                     "description": `${metric} scores for ${problem.problemId}.`,
                     data: {
                         values: adapters.map(adapter => ({
@@ -639,9 +650,8 @@ export class CanvasSolutions {
                 }), {});
 
                 // reassign content if some data is not undefined
-                let sortedPredictors = Object.keys(app.getRecursive(resultsData, [
-                    'importanceScores', adapter.getSolutionId(),'EFD', resultsPreferences.target
-                ]) || {});
+                let sortedPredictors = Object.keys(resultsData?.importanceScores
+                    ?.[adapter.getSolutionId()]?.EFD?.[resultsPreferences.target] || {});
 
                 let plotVariables = (sortedPredictors.length > 0 ? sortedPredictors.reverse() : Object.keys(importanceData))
                     .filter(predictor => importanceData[predictor]);
@@ -1138,8 +1148,7 @@ export let getSolutionAdapter = (problem, solution) => ({
     getFitted: (target, split) => {
         let adapter = getSolutionAdapter(problem, solution);
         loadFittedData(problem, adapter, split);
-        let fitted = app.getRecursive(resultsData.fitted,
-            [adapter.getSolutionId(), split]);
+        let fitted = resultsData.fitted?.[adapter.getSolutionId()]?.[split];
         if (fitted) return fitted.map(obs => obs[target]);
     },
     getScore: metric => {
@@ -1179,12 +1188,7 @@ export let getSolutionAdapter = (problem, solution) => ({
         let adapter = getSolutionAdapter(problem, solution);
         loadImportanceScore(problem, adapter, mode);
 
-        return app.getRecursive(resultsData, [
-            'importanceScores',
-            adapter.getSolutionId(),
-            mode,
-            target
-        ]);
+        return resultsData?.importanceScores?.[adapter.getSolutionId()]?.[mode]?.target;
     },
     // get the bounding box image for the selected problem's target variable, in the desired split, at the given index
     getObjectBoundaryImagePath: (target, split, index) => {
@@ -1193,7 +1197,7 @@ export let getSolutionAdapter = (problem, solution) => ({
             .map(solution => getSolutionAdapter(problem, solution));
 
         loadObjectBoundaryImagePath(problem, adapters, target, split, index);
-        return app.getRecursive(resultsData, ['boundaryImagePaths', target, split, JSON.stringify(index)]);
+        return resultsData?.boundaryImagePaths?.[target]?.[split]?.[JSON.stringify(index)];
     }
 });
 
@@ -1649,7 +1653,7 @@ export let loadFittedVsActuals = async (problem, adapter) => {
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-fitted-vs-actuals-data`, {
             method: 'POST',
-            data: {
+            body: {
                 data_pointer: dataPointer,
                 metadata: {
                     targets: problem.targets,
@@ -1726,7 +1730,7 @@ export let loadConfusionData = async (problem, adapter) => {
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-confusion-data`, {
             method: 'POST',
-            data: {
+            body: {
                 data_pointer: dataPointer,
                 metadata: {
                     targets: problem.targets,
@@ -1864,11 +1868,11 @@ export let loadFittedData = async (problem, adapter, split) => {
         return;
 
     // don't load if systems are already in loading state
-    if (app.getRecursive(resultsData.fittedLoading, [adapter.getSolutionId(), split]))
+    if (resultsData.fittedLoading?.[adapter.getSolutionId()]?.[split])
         return;
 
     // don't load if already loaded
-    if (app.getRecursive(resultsData.fitted, [adapter.getSolutionId(), split]))
+    if (resultsData.fitted?.[adapter.getSolutionId()]?.[split])
         return;
 
     // begin blocking additional requests to load
@@ -1882,7 +1886,7 @@ export let loadFittedData = async (problem, adapter, split) => {
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-data`, {
             method: 'POST',
-            data: {
+            body: {
                 data_pointer: dataPointer,
                 indices: resultsData.dataSample[split].map(obs => obs.d3mIndex)
             }
@@ -1953,7 +1957,7 @@ export let loadImportancePartialsFittedData = async (problem, adapter) => {
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-data`, {
             method: 'POST',
-            data: {data_pointer: dataPointer}
+            body: {data_pointer: dataPointer}
         });
 
         if (!response.success) {
@@ -2028,7 +2032,7 @@ export let loadImportanceEFDData = async (problem, adapter) => {
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
             method: 'POST',
-            data: {
+            body: {
                 data_pointer: dataPointer,
                 metadata: {
                     produceId,
@@ -2114,7 +2118,7 @@ export let loadImportanceICEFittedData = async (problem, adapter, predictor) => 
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-ICE-data`, {
             method: 'POST',
-            data: {
+            body: {
                 data_pointer_predictors: dataPointerPredictors,
                 data_pointer_fitted: dataPointerFitted,
                 data_pointer_index: dataPointerIndex,
@@ -2164,11 +2168,11 @@ let loadImportanceScore = async (problem, adapter, mode) => {
         return;
 
     // don't load if systems are already in loading state
-    if (app.getRecursive(resultsData, ['importanceScoresLoading', adapter.getSolutionId(), mode]))
+    if (resultsData?.importanceScoresLoading?.[adapter.getSolutionId()]?.[mode])
         return;
 
     // don't load if already loaded
-    if (app.getRecursive(resultsData, ['importanceScores', adapter.getSolutionId(), mode]))
+    if (resultsData?.importanceScores?.[adapter.getSolutionId()]?.[mode])
         return;
 
     // begin blocking additional requests to load
@@ -2190,7 +2194,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
         try {
             response = await m.request(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
                 method: 'POST',
-                data: {
+                body: {
                     data_pointer: dataPointer,
                     metadata: {
                         produceId,
@@ -2218,7 +2222,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
         try {
             response = await m.request(D3M_SVC_URL + `/retrieve-output-data`, {
                 method: 'POST',
-                data: {data_pointer: dataPointers['Partials']}
+                body: {data_pointer: dataPointers['Partials']}
             });
 
             console.log(response);
@@ -2256,7 +2260,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
             try {
                 responses[predictor] = await m.request(D3M_SVC_URL + `/retrieve-output-ICE-data`, {
                     method: 'POST',
-                    data: {
+                    body: {
                         data_pointer_predictors: dataPointerPredictors,
                         data_pointer_fitted: dataPointers[predictor],
                         data_pointer_index: dataPointerIndex,
@@ -2291,7 +2295,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
 
     let responseImportance = await m.request(ROOK_SVC_URL + 'variableImportance.app', {
         method: 'POST',
-        data: {
+        body: {
             efdData: response.data,
             targets: problem.targets,
             categoricals: app.getNominalVariables(problem),
@@ -2338,11 +2342,11 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
         return;
 
     // don't load if image is already being loaded
-    if (app.getRecursive(resultsData, ['boundaryImagePathsLoading', target, split, JSON.stringify(index)]))
+    if (resultsData?.boundaryImagePathsLoading?.[target]?.[split]?.[JSON.stringify(index)])
         return;
 
     // don't load if already loaded
-    if (app.getRecursive(resultsData, ['boundaryImagePaths', target, split, JSON.stringify(index)]))
+    if (resultsData?.boundaryImagePaths?.[target]?.[split]?.[JSON.stringify(index)])
         return;
 
     // begin blocking additional requests to load
@@ -2376,7 +2380,7 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
     try {
         response = await m.request(`image-utils/markup-image`, {
             method: 'POST',
-            data: {
+            body: {
                 file_path: problem.datasetSchemaPaths[split].replace('datasetDoc.json', '') + '/media/' + actualPoint.image,
                 borders: Object.keys(fittedPoints).reduce((borders, solutionName) => Object.assign({
                     [resultsData.boundaryImageColormap[solutionName].replace('#', '')]: fittedPoints[solutionName]

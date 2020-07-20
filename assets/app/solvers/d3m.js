@@ -72,7 +72,7 @@ export let getD3MAdapter = problem => ({
         console.log(JSON.stringify(allParams));
         console.groupEnd();
 
-        let res = await m.request(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', {method: 'POST', data: allParams});
+        let res = await m.request(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', {method: 'POST', body: allParams});
 
         if (!res || !res.success) {
             handleENDGetSearchSolutionsResults();
@@ -108,11 +108,11 @@ export let getD3MAdapter = problem => ({
 
 // no new pipelines will be found under searchId
 // pipelines under searchId are also wiped/no longer accessible
-export let endSearch = async searchId => searchId !== undefined && m.request(D3M_SVC_URL + '/EndSearchSolutions', {method: 'POST', data: {searchId}})
+export let endSearch = async searchId => searchId !== undefined && m.request(D3M_SVC_URL + '/EndSearchSolutions', {method: 'POST', body: {searchId}})
     .then(handleCompletedSearch(parseInt(searchId)));
 // no new pipelines will be found under searchId
 // discovered pipelines will remain accessible for produce calls
-export let stopSearch = async searchId => searchId !== undefined && m.request(D3M_SVC_URL + '/StopSearchSolutions', {method: 'POST', data: {searchId}})
+export let stopSearch = async searchId => searchId !== undefined && m.request(D3M_SVC_URL + '/StopSearchSolutions', {method: 'POST', body: {searchId}})
     .then(handleCompletedSearch(parseInt(searchId)));
 
 let handleCompletedSearch = searchId => response => {
@@ -498,6 +498,10 @@ export function GRPC_ProblemDescription(problem, datasetDoc) {
     if (problem.metric === 'precisionAtTopK')
         performanceMetric.k = problem.precisionAtTopK || 5;
 
+    let getColIndex = colName => learningResource.columns
+        .find(column => column.colName === colName)?.colIndex ?? Object.keys(variableSummaries)
+        .findIndex(column => column === colName);
+
     let GRPC_Problem = {
         taskKeywords: [
             // "TABULAR",
@@ -513,7 +517,7 @@ export function GRPC_ProblemDescription(problem, datasetDoc) {
     let GRPC_ProblemPrivilegedData = problem.tags.privileged.map((variable, i) => ({
         privilegedDataIndex: i,
         resourceId: learningResource.resID,
-        columnIndex: learningResource.columns.find(column => column.colName === variable).colIndex,
+        columnIndex: getColIndex(variable),
         columnName: variable
     }));
 
@@ -522,7 +526,7 @@ export function GRPC_ProblemDescription(problem, datasetDoc) {
         let horizonColumn = problem.forecastingHorizon.column || problem.tags.time[0];
         GRPC_ForecastingHorizon = {
             resourceId: learningResource.resID,
-            columnIndex: learningResource.columns.find(column => column.colName === horizonColumn).colIndex,
+            columnIndex: getColIndex(horizonColumn),
             columnName: horizonColumn,
             horizonValue: problem.forecastingHorizon.value || 10
         };
@@ -533,7 +537,7 @@ export function GRPC_ProblemDescription(problem, datasetDoc) {
         targets: problem.targets.map((target, i) => ({
             // targetIndex: i,
             resourceId: learningResource.resID,
-            columnIndex: learningResource.columns.find(column => column.colName === target).colIndex,
+            columnIndex: getColIndex(target),
             columnName: target,
             clustersNumber: problem.task === 'clustering' ? problem.numClusters : undefined
         })),
@@ -803,8 +807,6 @@ export async function handleGetScoreSolutionResultsResponse(response) {
  */
 export async function handleGetProduceSolutionResultsResponse(response) {
 
-    console.log("response produce");
-    console.warn(response);
     if (response === undefined) {
         debugLog('handleGetProduceSolutionResultsResponse: Error.  "response" undefined');
         return;
@@ -842,7 +844,6 @@ export async function handleGetProduceSolutionResultsResponse(response) {
         return;
     }
 
-    console.warn(response);
     let firstOutput = Object.values(response.response.exposedOutputs)[0];
 
     if (!firstOutput) return;
@@ -896,8 +897,7 @@ export async function endsession() {
     // console.log(JSON.stringify(selectedPipelines, null, 2));
 
     let selectedSolution = selectedPipelines[0];
-    let adapter = results.getSolutionAdapter(selectedProblem, selectedSolution);
-    let pipelineId = adapter.getSolutionId();
+    let pipelineId = selectedSolution?.pipeline?.id;
 
     if (pipelineId === undefined){
       setModal(m('div', {}, [
@@ -963,11 +963,11 @@ let exportCount = 0;
 export async function exportSolution(solutionId) {
     exportCount++;
 
-    let response = await m.request(D3M_SVC_URL + '/SolutionExport3', {
+    let response = await m.request(D3M_SVC_URL + '/SolutionExport3', {method: 'POST', body: {
         solutionId,
         rank: 1.01 - 0.01 * exportCount,
         searchId: app.getSelectedProblem().solverState.d3m.searchId
-    });
+    }});
 
     console.log('--------------------------')
     console.log(' -- SolutionExport3 --')

@@ -121,8 +121,7 @@ class DatamartJobUtilISI(DatamartJobUtilBase):
     def search_with_dataset(dataset_path, query=None, **kwargs):
         """Search the datamart using a dataset"""
         if not isfile(dataset_path):
-            user_msg = ('The dataset file could not be found.')
-            return err_resp(user_msg)
+            return err_resp('The dataset file could not be found.')
 
         search_url = get_isi_url() + '/search'
 

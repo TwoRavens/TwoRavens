@@ -1,6 +1,5 @@
-
 // handles plotting multiple groups at the same time
-export let vegaLiteScatter = (data, xName, yName, groupName, countName, title='') => {
+export let vegaLiteScatter = (data, xName, yName, groupName, countName, title = '') => {
 
     return ({
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
@@ -55,7 +54,7 @@ export let vegaLiteScatter = (data, xName, yName, groupName, countName, title=''
     });
 };
 
-export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSectionName, title='') => {
+export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSectionName, title = '') => {
 
     return ({
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
@@ -85,7 +84,7 @@ export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSe
                 {"field": crossSectionName, "type": "nominal"},
             ],
             "color": {"field": groupName, "type": "nominal"},
-            "x": {"field": xName, "type": "quantitative", "axis": {"title": xName}, "scale": {"zero": false}},
+            "x": {"field": xName, "type": "temporal", "axis": {"title": xName}, "scale": {"zero": false}},
             "y": {"field": yName, "type": "quantitative", "axis": {"title": yName}, "scale": {"zero": false}},
             "opacity": {"field": splitName, "type": "nominal"},
             "detail": {"field": crossSectionName, "type": "nominal"}
@@ -94,7 +93,7 @@ export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSe
 };
 
 
-export let vegaLiteForecastConfidence = (data, xName, yName, splitName, groupName, crossSectionName, title='') => {
+export let vegaLiteForecastConfidence = (data, xName, yName, splitName, groupName, crossSectionName, title = '') => {
 
     return ({
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
@@ -111,7 +110,7 @@ export let vegaLiteForecastConfidence = (data, xName, yName, splitName, groupNam
         },
         "encoding": {
             "color": {"field": groupName, "type": "nominal"},
-            "x": {"field": xName, "type": "quantitative", "axis": {"title": xName}, "scale": {"zero": false}}
+            "x": {"field": xName, "type": "temporal", "axis": {"title": xName}, "scale": {"zero": false}}
         },
         "data": {
             "values": data
@@ -132,7 +131,13 @@ export let vegaLiteForecastConfidence = (data, xName, yName, splitName, groupNam
                     // "point": true
                 },
                 "encoding": {
-                    "y": {"aggregate": 'mean', "field": yName, "type": "quantitative", "axis": {"title": yName}, "scale": {"zero": false}}
+                    "y": {
+                        "aggregate": 'mean',
+                        "field": yName,
+                        "type": "quantitative",
+                        "axis": {"title": yName},
+                        "scale": {"zero": false}
+                    }
                 }
             }
         ]
@@ -147,15 +152,24 @@ export let vegaLiteConfusionMatrix = (data, classes, xName, yName, countName, ti
         {"calculate": 'datum.Predicted === datum.Actual', 'as': 'diagonal'}
     ],
     'encoding': {
-        "x": {"field": xName, "type": "nominal", "scale": {"domain": classes}, spacing: 0},
-        "y": {"field": yName, "type": "nominal", "scale": {"domain": classes}, spacing: 0},
+        "x": {"field": xName, "type": "nominal", "scale": {"domain": classes}},
+        "y": {"field": yName, "type": "nominal", "scale": {"domain": classes}},
     },
     'layer': [
         {
             "mark": "rect",
             "encoding": {
-                "fill": {"field": 'microCount', "type": "quantitative", "scale": {"range": ['#ffffff', '#e67e22']}, legend: {title: 'Significance'}},
-                "stroke": {"field": 'diagonal', "type": "nominal", "scale": {"range": ['#ffffff', '#7e3d20']}},
+                "fill": {
+                    "field": 'microCount', "type": "quantitative", "scale": {
+                        "range": ['transparent', '#e67e22']
+                    }, legend: {title: 'Significance'}
+                },
+                "stroke": {
+                    "field": 'diagonal',
+                    "type": "nominal",
+                    "scale": {"range": ['transparent', '#7e3d20']},
+                    legend: false
+                },
                 "tooltip": [
                     {"field": 'explanation', "type": "nominal"},
                     {"field": 'significance', "type": "nominal"}
@@ -211,7 +225,12 @@ export let vegaLiteDensityHeatmap = summary => {
                         'title': summary.name
                     },
                     'x2': {'field': 'to', 'type': 'quantitative'},
-                    'color': {'field': 'density', 'type': 'quantitative', scale: {range: ['white', 'black']}, legend: false}
+                    'color': {
+                        'field': 'density',
+                        'type': 'quantitative',
+                        scale: {range: ['white', 'black']},
+                        legend: false
+                    }
                 }
             }
         ]

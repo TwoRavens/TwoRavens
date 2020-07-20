@@ -453,6 +453,9 @@ tr.item-lineout{
     border: solid #330b0b;
     font-weight: bolder;
 }
+.item-hovered {
+    font-weight: bolder;
+}
 .item-lineout{
     text-decoration:line-through;
 }

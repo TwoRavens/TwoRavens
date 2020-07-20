@@ -4,46 +4,47 @@ import * as d3 from 'd3';
 
 import * as app from '../app';
 
-import * as box2d from '../vega-schemas/box2d';
-import * as scatter from '../vega-schemas/scatter';
-import * as stackedbar from '../vega-schemas/stackedbar';
-import * as line from '../vega-schemas/line';
-import * as tableheat from '../vega-schemas/tableheat';
-import * as groupedbar from '../vega-schemas/groupedbar';
-import * as strip from '../vega-schemas/strip';
-import * as aggbar from '../vega-schemas/aggbar';
-import * as binnedscatter from '../vega-schemas/binnedscatter';
-import * as step from '../vega-schemas/step';
-import * as area from '../vega-schemas/area';
-import * as binnedtableheat from '../vega-schemas/binnedtableheat';
-import * as averagediff from '../vega-schemas/averagediff';
-import * as scattermeansd from '../vega-schemas/scattermeansd';
-import * as scattermatrix from '../vega-schemas/multi/scattermatrix';
-import * as simplebar from '../vega-schemas/univariate/simplebar';
-import * as histogram from '../vega-schemas/univariate/histogram';
-import * as areauni from '../vega-schemas/univariate/areauni';
-import * as histogrammean from '../vega-schemas/univariate/histogrammean';
-import * as dot from '../vega-schemas/univariate/dot';
-import * as trellishist from '../vega-schemas/trellishist';
-import * as horizon from '../vega-schemas/horizon';
-import * as interactivebarmean from '../vega-schemas/interactivebarmean';
-import * as binnedcrossfilter from '../vega-schemas/multi/binnedcrossfilter';
-import * as scattertri from '../vega-schemas/trivariate/scattertri';
-import * as groupedbartri from '../vega-schemas/trivariate/groupedbartri';
-import * as horizgroupbar from '../vega-schemas/trivariate/horizgroupbar';
-import * as bubbletri from '../vega-schemas/trivariate/bubbletri';
-import * as bubbleqqq from '../vega-schemas/trivariate/bubbleqqq';
-import * as scatterqqq from '../vega-schemas/trivariate/scatterqqq';
-import * as trellisscatterqqn from '../vega-schemas/trivariate/trellisscatterqqn';
-import * as heatmapnnq from '../vega-schemas/trivariate/heatmapnnq';
-import * as dotdashqqn from '../vega-schemas/trivariate/dotdashqqn';
-import * as tablebubblennq from '../vega-schemas/trivariate/tablebubblennq';
-import * as stackedbarnnn from '../vega-schemas/trivariate/stackedbarnnn';
-import * as facetbox from '../vega-schemas/trivariate/facetbox';
-import * as facetheatmap from '../vega-schemas/trivariate/facetheatmap';
-import * as groupedbarnqq from '../vega-schemas/trivariate/groupedbarnqq';
-import * as timeseriestri from '../vega-schemas/trivariate/timeseriestri';
-import * as timeseries from '../vega-schemas/timeseries';
+import aggbar from '../vega-schemas/aggbar.json';
+import area from '../vega-schemas/area.json';
+import areauni from '../vega-schemas/univariate/areauni.json';
+import averagediff from '../vega-schemas/averagediff.json';
+import binnedcrossfilter from '../vega-schemas/multi/binnedcrossfilter.json';
+import binnedscatter from '../vega-schemas/binnedscatter.json';
+import binnedtableheat from '../vega-schemas/binnedtableheat.json';
+import box2d from '../vega-schemas/box2d.json';
+import bubbleqqq from '../vega-schemas/trivariate/bubbleqqq.json';
+import bubbletri from '../vega-schemas/trivariate/bubbletri.json';
+import densityschema from '../vega-schemas/univariate/density'
+import dot from '../vega-schemas/univariate/dot.json';
+import dotdashqqn from '../vega-schemas/trivariate/dotdashqqn.json';
+import facetbox from '../vega-schemas/trivariate/facetbox.json';
+import facetheatmap from '../vega-schemas/trivariate/facetheatmap.json';
+import groupedbar from '../vega-schemas/groupedbar.json';
+import groupedbarnqq from '../vega-schemas/trivariate/groupedbarnqq.json';
+import groupedbartri from '../vega-schemas/trivariate/groupedbartri.json';
+import heatmapnnq from '../vega-schemas/trivariate/heatmapnnq.json';
+import histogram from '../vega-schemas/univariate/histogram.json';
+import histogrammean from '../vega-schemas/univariate/histogrammean.json';
+import horizgroupbar from '../vega-schemas/trivariate/horizgroupbar.json';
+import horizon from '../vega-schemas/horizon.json';
+import interactivebarmean from '../vega-schemas/interactivebarmean.json';
+import line from '../vega-schemas/line.json';
+import scatter from '../vega-schemas/scatter.json';
+import scattermatrix from '../vega-schemas/multi/scattermatrix.json';
+import scattermeansd from '../vega-schemas/scattermeansd.json';
+import scatterqqq from '../vega-schemas/trivariate/scatterqqq.json';
+import scattertri from '../vega-schemas/trivariate/scattertri.json';
+import simplebar from '../vega-schemas/univariate/simplebar.json';
+import stackedbar from '../vega-schemas/stackedbar.json';
+import stackedbarnnn from '../vega-schemas/trivariate/stackedbarnnn.json';
+import step from '../vega-schemas/step.json';
+import strip from '../vega-schemas/strip.json';
+import tablebubblennq from '../vega-schemas/trivariate/tablebubblennq.json';
+import tableheat from '../vega-schemas/tableheat.json';
+import timeseries from '../vega-schemas/timeseries.json';
+import timeseriestri from '../vega-schemas/trivariate/timeseriestri.json';
+import trellishist from '../vega-schemas/trellishist.json';
+import trellisscatterqqn from '../vega-schemas/trivariate/trellisscatterqqn.json';
 
 import * as common from "../../common/common";
 import Popper from "../../common/views/Popper";
@@ -53,6 +54,7 @@ import Icon from "../../common/views/Icon";
 
 import {alertError} from "../app";
 import * as queryMongo from "../manipulations/queryMongo";
+
 let recordLimit = 5000;
 
 
@@ -71,8 +73,11 @@ let get_node_label = (x) => {
     if (app.leftTab === 'Discover') {
         let exploreProblem = 'problems' in app.workspace.raven_config && app.workspace.raven_config.problems[x];
         let predictorVariables = app.getPredictorVariables(exploreProblem);
-        let problemText = predictorVariables 
-	    && [exploreProblem.targets.join(','), m(Icon, {style: 'margin:.5em;margin-top:.25em', name: 'arrow-left'}), predictorVariables.join(', ')];
+        let problemText = predictorVariables
+            && [exploreProblem.targets.join(','), m(Icon, {
+                style: 'margin:.5em;margin-top:.25em',
+                name: 'arrow-left'
+            }), predictorVariables.join(', ')];
         return problemText ? [m('b', x), m('p', problemText)] : x;
     }
 
@@ -81,15 +86,15 @@ let get_node_label = (x) => {
 
     let str = pos === 0 ? 'x' :
         pos === 1 ? 'y' :
-        pos === 2 ? 'z' :
-        String.fromCharCode(pos + 97);
+            pos === 2 ? 'z' :
+                String.fromCharCode(pos + 97);
     return `${x} (${str})`;
 };
 
 export class CanvasExplore {
     view(vnode) {
         let {variables, variate} = vnode.attrs;
-        let nodes = variables.map(variable => app.variableSummaries[variable]);
+        let nodeSummaries = variables.map(variable => app.variableSummaries[variable]);
         let selectedProblem = app.getSelectedProblem();
 
         if (!variate) return wrapCanvas(
@@ -99,23 +104,18 @@ export class CanvasExplore {
                 style: {margin: '.5em', position: 'fixed'},
                 onclick: () => {
                     let selected = app.leftTab === 'Discover' ? [app.workspace.raven_config.selectedProblem] : exploreVariables;
-                    let len = selected.length; 
-                    if (len === 0) return;
-
-                    let variate = app.leftTab === 'Discover' ? 'problem' :
-                        len === 1 ? 'univariate' :
-                        len === 2 ? 'bivariate' :
-                        len === 3 ? 'trivariate' :
-                        'multivariate';
+                    if (selected.length === 0) return;
+                    let variate = app.leftTab === 'Discover' ? 'problem' : ({
+                        1: 'univariate', 2: 'bivariate', 3: 'trivariate'
+                    })[selected.length] || 'multivariate';
 
                     // behavioral logging
                     let logParams = {
-                                  feature_id: 'EXPLORE_MAKE_PLOTS',
-                                  activity_l1: 'MODEL_SELECTION',
-                                  activity_l2: 'MODEL_SEARCH',
-                                  other: {variate: variate}
-
-                                };
+                        feature_id: 'EXPLORE_MAKE_PLOTS',
+                        activity_l1: 'MODEL_SELECTION',
+                        activity_l2: 'MODEL_SEARCH',
+                        other: {variate: variate}
+                    };
                     app.saveSystemLogEntry(logParams);
 
                     m.route.set(`/explore/${variate}/${selected.join('/')}`);
@@ -134,10 +134,10 @@ export class CanvasExplore {
                     let targetName = app.leftTab === 'Discover'
                         ? app.workspace.raven_config.problems[x].targets[0]
                         : x;
-		    let node = app.variableSummaries[x];
-		    let kind = node && node.temporal ? 'temporal' :
-			node && node.geographic ? 'geographic' :
-			null;
+                    let node = app.variableSummaries[x];
+                    let kind = node && node.temporal ? 'temporal' :
+                        node && node.geographic ? 'geographic' :
+                            null;
 
                     // tile for each variable or problem
                     let tile = m('span#exploreNodeBox', {
@@ -148,9 +148,9 @@ export class CanvasExplore {
                                     return;
                                 }
 
-				exploreVariables.includes(x)
-				    ? app.remove(exploreVariables, x)
-				    : exploreVariables.push(x);
+                                exploreVariables.includes(x)
+                                    ? app.remove(exploreVariables, x)
+                                    : exploreVariables.push(x);
                             },
                             style: {
                                 // border: '1px solid rgba(0, 0, 0, .2)',
@@ -195,7 +195,7 @@ export class CanvasExplore {
                                 }
                             },
                             get_node_label(x)),
-			kind && m('div', m('em', kind))
+                        kind && m('div', m('em', kind))
                     );
 
                     if (app.variableSummaries[targetName].labl)
@@ -208,11 +208,10 @@ export class CanvasExplore {
 
             if (variate === "problem") return m('#plot', {
                 style: 'display: block',
-                oncreate: () => plotVega([], "", selectedProblem)
+                oncreate: () => plotVega(app.variableSummaries, undefined, selectedProblem, variate)
             });
 
-            if (nodes.length === 0) return;
-            let plotNode = nodes[0] && nodes[0].pdfPlotType === 'continuous' ? density : bars;
+            if (nodeSummaries.length === 0) return;
 
             return m('div',
                 m('div#explorePlotBar', {
@@ -223,31 +222,33 @@ export class CanvasExplore {
                             width: '100%'
                         }
                     },
-                    getRelevantPlots(nodes, variate).map(x => m("figure", {style: 'display: inline-block'}, [
+                    getRelevantPlots(nodeSummaries, variate).map(x => m("figure", {style: 'display: inline-block'}, [
                             m(`img#${x}_img[alt=${x}][height=140px][width=260px][src=/static/images/${x}.png]`, {
-                                onclick: _ => plotVega(nodes, x, selectedProblem),
-                                style: thumbsty(nodes, x)
+                                onclick: _ => plotVega(nodeSummaries, x, selectedProblem, variate),
+                                style: getThumbnailStyle(nodeSummaries, x)
                             }),
                             m("figcaption", {style: {"text-align": "center"}}, plotMap[x])
                         ])
                     )),
                 m('#plot', {
                     style: 'display: block;height:500px',
-                    oncreate: innerVnode => nodes.length > 1
-                        ? plotVega(nodes, getRelevantPlots(nodes, variate)[0])
-                        : plotNode(nodes[0], innerVnode.dom, true)
+                    oncreate: () => plotVega(
+                        nodeSummaries,
+                        getRelevantPlots(nodeSummaries, variate)[0],
+                        selectedProblem, variate)
                 })
             );
         };
 
         if (['problem', 'univariate', 'bivariate', 'trivariate', 'multivariate'].includes(variate)) return wrapCanvas(
             m(Button, {
-                class: 'btn-secondary',
-                onclick: () => {
-                    m.route.set('/explore');
-                    m.redraw()
+                    class: 'btn-secondary',
+                    onclick: () => {
+                        m.route.set('/explore');
+                        m.redraw()
+                    },
+                    style: {margin: '.5em'}
                 },
-                style: {margin: '.5em'}},
                 m(Icon, {name: 'chevron-left', style: 'margin-right:.5em;transform:scale(1.5)'}),
                 'back to variables'),
             m('br'),
@@ -256,10 +257,10 @@ export class CanvasExplore {
     }
 }
 
-export let getRelevantPlots = (nodes, variate) => {
-    let filtered = schemas[variate];
-    if (variate === 'bivariate' || variate === 'trivariate')
-        filtered = `${filtered} ${schemas.multivariate}`;
+export let getRelevantPlots = (nodeSummaries, variates) => {
+    let filtered = variateSchemas[variates];
+    if (variates === 'bivariate' || variates === 'trivariate')
+        filtered = `${filtered} ${variateSchemas.multivariate}`;
 
     let plotGroups = {
         'recommended': [],
@@ -267,13 +268,13 @@ export let getRelevantPlots = (nodes, variate) => {
         'discouraged': []
     };
     filtered.split(' ').forEach(schemaName => {
-        let isRecommended = getIsRecommended(nodes, schemaName);
+        let isRecommended = getIsRecommended(nodeSummaries, schemaName);
         plotGroups[isRecommended === undefined ? 'unknown' : isRecommended ? 'recommended' : 'discouraged'].push(schemaName)
     });
 
-    // MIKE: the plot returned by getPlotType is always moved to the front
-    let finalOrder = Object.values(plotGroups).flatMap(_=>_);
-    let bestPlot = getPlotType("", nodes)[0];
+    // MIKE: the plot returned by inferPlotType is always moved to the front
+    let finalOrder = Object.values(plotGroups).flatMap(_ => _);
+    let bestPlot = inferPlotType(nodeSummaries)[0];
     app.remove(finalOrder, bestPlot);
     finalOrder.unshift(bestPlot);
     return finalOrder;
@@ -282,93 +283,95 @@ export let getRelevantPlots = (nodes, variate) => {
 export let exploreVariables = [];
 
 let plotMap = {
-    scatter: "Scatter Plot",
-    tableheat: "Heatmap",
-    line: "Line Chart",
-    stackedbar: "Stacked Bar",
-    box: "Box Plot",
-    groupedbar: "Grouped Bar",
-    strip: "Strip Plot",
     aggbar: "Aggregate Bar",
-    binnedscatter: "Binned Scatter",
-    step: "Step Chart",
     area: "Area Chart",
-    binnedtableheat: "Binned Heatmap",
-    averagediff: "Diff. from Avg.",
-    scattermeansd: "Scatter with Overlays",
-    scattermatrix: "Scatter Matrix",
-    simplebar: "Simple Bar Uni",
-    histogram: "Histogram Uni",
     areauni: "Area Chart Uni",
-    histogrammean: "Histogram with Mean Uni",
-    trellishist: "Histogram Trellis",
-    interactivebarmean: "Interactive Bar with Mean",
-    dot: "Simple Dot Plot",
-    horizon: "Horizon Plot",
+    averagediff: "Diff. from Avg.",
     binnedcrossfilter: "Binned Cross Filter",
-    scattertri: "Scatterplot with Groups",
-    groupedbartri: "Grouped Bar",
-    horizgroupbar: "Horizontal Grouped Bar",
-    bubbletri: "Bubble Plot with Groups",
+    binnedscatter: "Binned Scatter",
+    binnedtableheat: "Binned Heatmap",
+    box: "Box Plot",
     bubbleqqq: "Bubble Plot with Binned Groups",
-    scatterqqq: "Interactive Scatterplot with Binned Groups",
-    trellisscatterqqn: "Scatterplot Trellis",
-    heatmapnnq: "Heatmap with Mean Z",
+    bubbletri: "Bubble Plot with Groups",
+    density: "Density Plot",
+    dot: "Simple Dot Plot",
     dotdashqqn: "Dot-dash Plot",
-    tablebubblennq: "Table Bubble Plot",
-    stackedbarnnn: "Stacked Bar Plot",
     facetbox: "Faceted Box Plot",
     facetheatmap: "Faceted Heatmap",
+    groupedbar: "Grouped Bar",
     groupedbarnqq: "Grouped Bar with Binned Z",
+    groupedbartri: "Grouped Bar",
+    heatmapnnq: "Heatmap with Mean Z",
+    histogram: "Histogram Uni",
+    histogrammean: "Histogram with Mean Uni",
+    horizgroupbar: "Horizontal Grouped Bar",
+    horizon: "Horizon Plot",
+    interactivebarmean: "Interactive Bar with Mean",
+    line: "Line Chart",
+    scatter: "Scatter Plot",
+    scattermatrix: "Scatter Matrix",
+    scattermeansd: "Scatter with Overlays",
+    scatterqqq: "Interactive Scatterplot with Binned Groups",
+    scattertri: "Scatterplot with Groups",
+    simplebar: "Simple Bar Uni",
+    stackedbar: "Stacked Bar",
+    stackedbarnnn: "Stacked Bar Plot",
+    step: "Step Chart",
+    strip: "Strip Plot",
+    tablebubblennq: "Table Bubble Plot",
+    tableheat: "Heatmap",
     timeseries: "Timeseries",
-    timeseriestri: "Timeseries with Groups"
+    timeseriestri: "Timeseries with Groups",
+    trellishist: "Histogram Trellis",
+    trellisscatterqqn: "Scatterplot Trellis",
 };
 
 let schemaMap = {
-    box: box2d,
-    scatter: scatter,
-    stackedbar: stackedbar,
-    line: line,
-    tableheat: tableheat,
-    groupedbar: groupedbar,
-    strip: strip,
     aggbar: aggbar,
-    binnedscatter: binnedscatter,
-    step: step,
     area: area,
-    binnedtableheat: binnedtableheat,
-    averagediff: averagediff,
-    scattermeansd: scattermeansd,
-    scattermatrix: scattermatrix,
-    simplebar: simplebar,
-    histogram: histogram,
     areauni: areauni,
-    histogrammean: histogrammean,
-    trellishist: trellishist,
-    interactivebarmean: interactivebarmean,
-    dot: dot,
-    horizon: horizon,
+    averagediff: averagediff,
     binnedcrossfilter: binnedcrossfilter,
-    scattertri: scattertri,
-    groupedbartri: groupedbartri,
-    bubbletri: bubbletri,
-    horizgroupbar: horizgroupbar,
+    binnedscatter: binnedscatter,
+    binnedtableheat: binnedtableheat,
+    box: box2d,
     bubbleqqq: bubbleqqq,
-    scatterqqq: scatterqqq,
-    trellisscatterqqn: trellisscatterqqn,
-    heatmapnnq: heatmapnnq,
+    bubbletri: bubbletri,
+    density: densityschema,
+    dot: dot,
     dotdashqqn: dotdashqqn,
-    tablebubblennq: tablebubblennq,
-    stackedbarnnn: stackedbarnnn,
     facetbox: facetbox,
     facetheatmap: facetheatmap,
+    groupedbar: groupedbar,
     groupedbarnqq: groupedbarnqq,
+    groupedbartri: groupedbartri,
+    heatmapnnq: heatmapnnq,
+    histogram: histogram,
+    histogrammean: histogrammean,
+    horizgroupbar: horizgroupbar,
+    horizon: horizon,
+    interactivebarmean: interactivebarmean,
+    line: line,
+    scatter: scatter,
+    scattermatrix: scattermatrix,
+    scattermeansd: scattermeansd,
+    scatterqqq: scatterqqq,
+    scattertri: scattertri,
+    simplebar: simplebar,
+    stackedbar: stackedbar,
+    stackedbarnnn: stackedbarnnn,
+    step: step,
+    strip: strip,
+    tablebubblennq: tablebubblennq,
+    tableheat: tableheat,
     timeseries: timeseries,
     timeseriestri: timeseriestri,
+    trellishist: trellishist,
+    trellisscatterqqn: trellisscatterqqn,
 };
 
-let schemas = {
-    univariate: 'areauni dot histogram histogrammean simplebar',
+let variateSchemas = {
+    univariate: 'areauni dot histogram histogrammean simplebar density',
     bivariate: 'scatter box tableheat binnedtableheat aggbar area averagediff binnedscatter ' +
         'groupedbar horizon interactivebarmean line scattermatrix ' +
         'scattermeansd stackedbar step strip trellishist timeseries',
@@ -378,7 +381,9 @@ let schemas = {
     multivariate: 'binnedcrossfilter scattermatrix'
 };
 
-let approps = {
+let appropriateSchemas = {
+    q: ["density", "areauni", "dot", "histogram", "histogrammean", "simplebar"],
+    n: ["simplebar"],
     qq: ["scatter", "line", "area", "binnedscatter", "binnedtableheat", "horizon", "scattermatrix", "scattermeansd", "step", "timeseries"],
     nn: ["tableheat", "stackedbar"],
     nq: ["box", "interactivebarmean", "timeseries"],
@@ -393,202 +398,193 @@ let approps = {
     nnn: ["stackedbarnnn", "facetheatmap"]
 };
 
-let getPlotType = (pt, pn) => {
+// nodeSummaries: Vec<VariableSummary>, summaries for each data channel
+// schemaName: string, optional
+let inferPlotType = (nodeSummaries, schemaName) => {
 
-    // returns true if uniques is equal to, one less than, or two less than the number of valid observations
-    function uniqueValids(pn) {
-        return pn.uniqueCount === pn.validCount ? true :
-            pn.uniqueCount === pn.validCount - 1 ? true :
-                pn.uniqueCount === pn.validCount - 2 ? true : false;
+    if (nodeSummaries.length > 3) return ['scattermatrix', 'aaa'];
+
+    // 'q' for quantitative, 'n' for nominal, 'a' for any
+    let natures = nodeSummaries
+        .map(summary => (summary.pdfPlotType === 'continuous') ? 'q' : 'n')
+        .join("");
+
+    if (schemaName) return [schemaName, natures];
+
+    if (nodeSummaries.length === 1) {
+        return [{
+            q: 'density',
+            n: 'simplebar'
+        }[natures], natures]
     }
 
-    if (pn.length > 3) return ['scattermatrix', 'aaa'];
-    let myCons = [];
-    let vt = "";
+    let isTemporal = nodeSummaries[0].temporal || app.getSelectedProblem().tags.time.includes(nodeSummaries[0].name);
 
-    for (let i = 0; i < pn.length; i++) {
-        myCons[i] = pn[i].pdfPlotType === 'continuous' ? true : false;
-        pn[i].pdfPlotType === 'continuous' ? vt = vt + 'q' : vt = vt + 'n';
-    }
+    if (nodeSummaries.length === 2) {
+        if (isTemporal)
+            return ['timeseries', natures[0] + 'n'];
 
-    if (pt != "") return [pt, vt];
+        // returns true if uniques is equal to, one less than, or two less than the number of valid observations
+        let getIsIndex = summary => {
+            let duplicates = summary.validCount - summary.uniqueCount;
+            return 0 < duplicates && duplicates <= 2;
+        }
 
-    if (pn.length === 2) {
-        if (pn[0].temporal || app.getSelectedProblem().tags.time.includes(pn[0].name))
-            return ['timeseries', (myCons[0] ? 'q' : 'n') + 'n'];
-
-        // check uniqueValids. if so, make difference from mean the default plot
-        let uvs = [uniqueValids(pn[0]), uniqueValids(pn[1])];
-        // console.log(uvs);
-        if (uvs[0] === true && uvs[1] === false)
+        // check if each variable is an index column. if so, make difference from mean the default plot
+        let isIndex = nodeSummaries.map(getIsIndex);
+        if (isIndex[0] && !isIndex[1])
             return ['averagediff', 'nq'];
-        else if (uvs[0] === false && uvs[1] === true)
+        else if (!isIndex[0] && isIndex[1])
             return ['averagediff', 'qn'];
 
-        return myCons[0] && myCons[1] ? ['scatter', 'qq'] :
-            myCons[0] && !myCons[1] ? ['box', 'qn'] :
-                !myCons[0] && myCons[1] ? ['box', 'nq'] :
-                    ['tableheat', 'nn'];
+        return [{
+            qq: 'scatter',
+            nq: 'box',
+            qn: 'box',
+            nn: 'tableheat'
+        }[natures] || 'tableheat', natures]
     }
 
-    if (pn.length === 3 && (pn[0].temporal || app.getSelectedProblem().tags.time.includes(pn[0].name))) {
-        let x = myCons[0] ? 'q' : 'n';
-        let y = myCons[1] ? 'q' : 'n';
-        return ['timeseries', x + y + 'n'];
-    }
+    if (nodeSummaries.length === 3) {
+        if (isTemporal)
+            return ['timeseriestri', natures.substring(0, 2) + 'n'];
 
-    if (pn.length === 3) {
-        return myCons[0] && myCons[1] && myCons[2] ? ['bubbleqqq', 'qqq'] :
-            myCons[0] && !myCons[1] && !myCons[2] ? ['horizgroupbar', 'qnn'] :
-                myCons[0] && myCons[1] && !myCons[2] ? ['scattertri', 'qqn'] :
-                    myCons[0] && !myCons[1] && myCons[2] ? ['bubbletri', 'qnq'] :
-                        !myCons[0] && myCons[1] && !myCons[2] ? ['groupedbartri', 'nqn'] :
-                            !myCons[0] && myCons[1] && myCons[2] ? ['groupedbarnqq', 'nqq'] :
-                                !myCons[0] && !myCons[1] && myCons[2] ? ['heatmapnnq', 'nnq'] :
-                                    !myCons[0] && !myCons[1] && !myCons[2] ? ['stackedbarnnn', 'nnn'] :
-                                        ['scattermatrix', 'aaa'];
+        return [{
+            qqq: 'bubbleqqq',
+            qqn: 'scattertri',
+            qnq: 'bubbletri',
+            qnn: 'horizgroupbar',
+            nqq: 'groupedbarnqq',
+            nqn: 'groupedbartri',
+            nnq: 'heatmapnnq',
+            nnn: 'stackedbarnnn'
+        }[natures] || 'scattermatrix', natures]
     }
 };
 
-export async function plotVega(plotNodes, plottype = "", problem = {}) {
 
-    const colors = [
-        "#e6194b", "#3cb44b", "#ffe119", "#0082c8", "#f58231", "#911eb4", "#46f0f0",
-        "#f032e6", "#d2f53c", "#fabebe", "#008080", "#e6beff", "#aa6e28", "#fffac8",
-        "#800000", "#aaffc3", "#808000", "#ffd8b1", "#000080", "#808080"
-    ];
-    if (app.downloadIncomplete()) {
-        return;
+const colors = [
+    "#e6194b", "#3cb44b", "#ffe119", "#0082c8", "#f58231", "#911eb4", "#46f0f0",
+    "#f032e6", "#d2f53c", "#fabebe", "#008080", "#e6beff", "#aa6e28", "#fffac8",
+    "#800000", "#aaffc3", "#808000", "#ffd8b1", "#000080", "#808080"
+];
+
+// function to fill in the contents of the vega schema.
+let fillVegaSchema = (schema, data, flip) => {
+    let [schemaName, natures] = data.plottype;
+    if (schemaName === 'timeseries') {
+        if (natures[0] !== 'q') schema.encoding.x.type = 'nominal';
     }
 
-    function getNames(arr) {
-        let myarr = [];
-        for (var i = 0; i < arr.length; i++) {
-            if (typeof arr[i] != 'undefined') {
-                myarr[i] = arr[i].name;
-            }
-        }
-        return myarr;
+    let stringified = JSON.stringify(schema);
+    if (flip) {
+        stringified = stringified.replace(/"x"/g, '"t"');
+        stringified = stringified.replace(/"x2"/g, '"t2"');
+        stringified = stringified.replace(/"y"/g, '"x"');
+        stringified = stringified.replace(/"y2"/g, '"x2"');
+        stringified = stringified.replace(/"t"/g, '"y"');
+        stringified = stringified.replace(/"t2"/g, '"y2"');
+
+        let temp = data.vars[0];
+        data.vars[0] = data.vars[1];
+        data.vars[1] = temp;
+    }
+
+    if (data["vars"].length > 1) {
+        stringified = stringified.replace(/tworavensY/g, data.vars[1]);
+    }
+    if (data["vars"].length > 2) {
+        stringified = stringified.replace(/tworavensZ/g, data.vars[2]);
+    }
+    if (data["vars"].length > 1) {
+        stringified = stringified.replace(/tworavensY/g, data.vars[1]);
+    }
+    if (data["vars"].length > 2) {
+        stringified = stringified.replace(/tworavensZ/g, data.vars[2]);
+    }
+    stringified = stringified.replace(/tworavensX/g, data.vars[0]);
+    stringified = stringified.replace(/"tworavensFilter"/g, null);
+    stringified = stringified.replace("url", "values");
+    stringified = stringified.replace('"tworavensData"', data.plotdata[0]);
+
+    if (data.uniqueY) {
+        let $colors = colors.splice(0, data["uniqueY"].length).map(col => `"${col}"`).join(',');
+        let $uniques = data["uniqueY"].map(uni => `"${uni}"`).join(',');
+        stringified = stringified.replace(/"tworavensUniqueY"/g, "[" + $uniques + "]");
+        stringified = stringified.replace(/"tworavensColors"/g, "[" + $colors + "]");
+    }
+    if (schemaName === "groupedbartri") {
+        let $colors = colors.splice(0, data["uniqueZ"].length).map(col => `"${col}"`).join(',');
+        //  stringified = stringified.replace(/"tworavensUniqueY"/g, "["+data.uniqueY+"]");
+        stringified = stringified.replace(/"tworavensColors"/g, "[" + $colors + "]");
+    }
+    if (data.meanY) {
+        stringified = stringified.replace(/"tworavensMeanY"/g, data.meanY);
+        stringified = stringified.replace(/tworavensMeanY/g, data.meanY); //both needed in this order
+    }
+    if (schemaName === "scattermatrix") {
+        let $matvars = data["vars"].map(myvar => `"${myvar}"`).join(',');
+        stringified = stringified.replace(/"tworavensRow"/g, $matvars);
+        stringified = stringified.replace(/"tworavensCol"/g, $matvars);
+    }
+    if (schemaName === "binnedcrossfilter") {
+        let $matvars = data["vars"].map(myvar => `"${myvar}"`).join(',');
+        stringified = stringified.replace(/"tworavensVars"/g, $matvars);
+    }
+
+    // behavioral logging
+    let logParams = {
+        feature_id: 'EXPLORE_VIEW_PLOT',
+        activity_l1: 'DATA_PREPARATION',
+        activity_l2: 'DATA_EXPLORE',
+        other: {plottype: [schemaName, natures]}
+    };
+    app.saveSystemLogEntry(logParams);
+
+    // VJD: if you enter this console.log into the vega editor https://vega.github.io/editor/#/edited the plot will render
+    // console.log(stringified);
+
+    return JSON.parse(stringified);
+};
+
+export async function plotVega(nodeSummaries, schemaName, problem, variate) {
+
+    if (app.downloadIncomplete()) {
+        return;
     }
 
     // function returns whether to flip a plot. for example, if plot expects 'nq' and users gives 'qn', flip should return true. this may have to be generalized for 3+ dimension plots
     let plotflip = (pt) => {
         return pt[0] === "box" && pt[1] === "qn" ? true :
             pt[0] === "facetbox" && pt[1] === "qnn" ? true :
-                pt[0] === "averagediff" && pt[1] === "nq" ? true : false;
+                pt[0] === "averagediff" && pt[1] === "nq";
     };
 
-    // function to fill in the contents of the vega schema.
-    let fillVega = (data, flip, schema, nodes) => {
-        let plottype = data.plottype;
-        if (plottype[0] === 'timeseries') {
-            if (plottype[1][0] !== 'q') schema.encoding.x.type = 'nominal';
-        }
+    // collect node summaries for every facet of the plot
+    // every facet needs an array of summaries
+    let facetSummaries = variate === "problem"
+        ? app.getPredictorVariables(problem).map(predictor => [
+            nodeSummaries[predictor],
+            nodeSummaries[problem.targets[0]]
+        ])
+        : [nodeSummaries];
 
-        // MIKE: this adjustment is causing points to draw far outside the plot
-        // Likely because preprocess and discovery are taking different random samples,
-        //      and min/max tail statistics are sensitive to sampling
-        // if (schema.mark === 'point' || schema.mark == 'circle') {
-        //     let [x, y] = nodes;
-        //     let [padx, pady] = nodes.map(x => (x.max - x.min) / 4);
-        //     if (x.max) schema.encoding.x.scale = {domain: [x.min - padx, x.max + padx]};
-        //     if (y.max) schema.encoding.y.scale = {domain: [y.min - pady, y.max + pady]};
-        // }
+    // build vega-lite specifications for every facet
+    let facetSpecifications = [];
+    await Promise.all(facetSummaries.map(async (nodeSummaries, i) => {
 
-        let stringified = JSON.stringify(schema);
-        if (flip) {
-            stringified = stringified.replace(/"x"/g, '"t"');
-            stringified = stringified.replace(/"x2"/g, '"t2"');
-            stringified = stringified.replace(/"y"/g, '"x"');
-            stringified = stringified.replace(/"y2"/g, '"x2"');
-            stringified = stringified.replace(/"t"/g, '"y"');
-            stringified = stringified.replace(/"t2"/g, '"y2"');
+        // VJD: second element in array tags the variables for the plot e.g., qq means quantitative,quantitative; qn means quantitative,nominal
+        let plotType = inferPlotType(nodeSummaries, schemaName);
 
-            let temp = data.vars[0];
-            data.vars[0] = data.vars[1];
-            data.vars[1] = temp;
-        }
-
-
-        if (data["vars"].length > 1) {
-            stringified = stringified.replace(/tworavensY/g, data.vars[1]);
-        }
-        if (data["vars"].length > 2) {
-            stringified = stringified.replace(/tworavensZ/g, data.vars[2]);
-        }
-        stringified = stringified.replace(/tworavensX/g, data.vars[0]);
-        stringified = stringified.replace(/"tworavensFilter"/g, null);
-        stringified = stringified.replace("url", "values");
-        stringified = stringified.replace('"tworavensData"', data.plotdata[0]);
-        if (data.uniqueY) {
-            let $colors = colors.splice(0, data["uniqueY"].length).map(col => `"${col}"`).join(',');
-            let $uniques = data["uniqueY"].map(uni => `"${uni}"`).join(',');
-            stringified = stringified.replace(/"tworavensUniqueY"/g, "[" + $uniques + "]");
-            stringified = stringified.replace(/"tworavensColors"/g, "[" + $colors + "]");
-        }
-        if (plottype[0] == "groupedbartri") {
-            let $colors = colors.splice(0, data["uniqueZ"].length).map(col => `"${col}"`).join(',');
-            //  stringified = stringified.replace(/"tworavensUniqueY"/g, "["+data.uniqueY+"]");
-            stringified = stringified.replace(/"tworavensColors"/g, "[" + $colors + "]");
-        }
-        if (data.meanY) {
-            stringified = stringified.replace(/"tworavensMeanY"/g, data.meanY);
-            stringified = stringified.replace(/tworavensMeanY/g, data.meanY); //both needed in this order
-        }
-        if (plottype[0] == "scattermatrix") {
-            let $matvars = data["vars"].map(myvar => `"${myvar}"`).join(',');
-            stringified = stringified.replace(/"tworavensRow"/g, $matvars);
-            stringified = stringified.replace(/"tworavensCol"/g, $matvars);
-        }
-        if (plottype[0] == "binnedcrossfilter") {
-            let $matvars = data["vars"].map(myvar => `"${myvar}"`).join(',');
-            stringified = stringified.replace(/"tworavensVars"/g, $matvars);
-        }
-
-        // behavioral logging
-        let logParams = {
-                      feature_id: 'EXPLORE_VIEW_PLOT',
-                      activity_l1: 'DATA_PREPARATION',
-                      activity_l2: 'DATA_EXPLORE',
-                      other: {plottype: plottype}
-                    };
-        app.saveSystemLogEntry(logParams);
-
-        // VJD: if you enter this console.log into the vega editor https://vega.github.io/editor/#/edited the plot will render
-        //console.log(stringified);
-        return JSON.parse(stringified);
-    };
-
-    let myx = [];
-    let myy = {};
-    let mypn = [];
-    let vegajson = {};
-    let jsonarr = [];
-
-    if (plotNodes.length === 0) {
-        myy = app.variableSummaries[problem.targets[0]];
-        myx = app.getPredictorVariables(problem).map(predictor => app.variableSummaries[predictor]);
-    } else {
-        myx[0] = "oneshot"; // necessary to work out the looping
-        mypn = plotNodes;
-    }
-
-    for (var i = 0; i < myx.length; i++) {
-        if (plotNodes.length === 0) { // note only drawing bivariate plots
-            mypn = [myx[i], myy];
-        }
-        plottype = i > 0 ? "" : plottype;
-        plottype = getPlotType(plottype, mypn); // VJD: second element in array tags the variables for the plot e.g., qq means quantitative,quantitative; qn means quantitative,nominal
-        console.log(mypn);
-        let plotvars = getNames(mypn);
+        let nodeNames = nodeSummaries.map(i => i?.name);
 
         let compiled = queryMongo.buildPipeline(
             [...app.workspace.raven_config.hardManipulations || [], ...problem.manipulations || [], {
                 type: 'menu',
                 metadata: {
                     type: 'data',
-                    variables: plotvars,
-                    dropNA: plotvars,
+                    variables: nodeNames,
+                    dropNA: nodeNames,
                     sample: recordLimit
                 }
             }],
@@ -599,17 +595,18 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
             query: JSON.stringify(compiled),
             export: 'csv'
         });
-        let jsonout = {plottype, zd3mdata: dataPathSampled};
-        let response = await m.request(ROOK_SVC_URL + 'plotData.app', {method: 'POST', data: jsonout});
+
+        let jsonout = {plottype: plotType, zd3mdata: dataPathSampled};
+        let response = await m.request(ROOK_SVC_URL + 'plotData.app', {method: 'POST', body: jsonout});
         if (!response.success) {
-            console.warn(response.message);
+            console.warn(response);
             return;
         }
         let json = response.data;
 
         console.log('Explore data:');
         console.log(json);
-        if (plottype[0].includes('timeseries')) {
+        if (plotType[0].includes('timeseries')) {
             let plotdata = JSON.parse(json.plotdata[0]);
             let temporalVariables = app.getSelectedProblem().tags.time
                 .filter(variable => variable in plotdata[0]);
@@ -620,24 +617,24 @@ export async function plotVega(plotNodes, plottype = "", problem = {}) {
             }
         }
 
-        let schema = schemaMap[plottype[0]];
+        let schema = schemaMap[plotType[0]];
         if (!schema) app.alertError("invalid plot type");
         // console.log(schema);
-        let flip = plotflip(plottype);
-        json.vars = plotvars;
-        jsonarr[i] = fillVega(json, flip, schema, mypn);
-    }
+        let flip = plotflip(plotType);
+        json.vars = nodeNames;
+        facetSpecifications[i] = fillVegaSchema(schema, json, flip);
+    }));
 
-    if (jsonarr.length === 1) vegajson = jsonarr[0];
-    else vegajson = {vconcat: jsonarr, config: {axisY: {minExtent: 30}}};
+    let specification = facetSpecifications.length === 1
+        ? facetSpecifications[0]
+        : {vconcat: facetSpecifications, config: {axisY: {minExtent: 30}}}
 
-    vegaEmbed('#plot', vegajson, {width: 800, height: 600});
+    vegaEmbed('#plot', specification, {width: 800, height: 600});
 }
 
-export function thumbsty(plotNodes, thumb) {
-    if (!approps) return {};
+function getThumbnailStyle(nodeSummaries, schemaName) {
 
-    let isRecommended = getIsRecommended(plotNodes, thumb);
+    let isRecommended = getIsRecommended(nodeSummaries, schemaName);
     if (isRecommended === undefined) return {};
 
     let styling = {
@@ -653,207 +650,17 @@ export function thumbsty(plotNodes, thumb) {
     return styling;
 }
 
-export function getIsRecommended(plotNodes, thumb) {
-    let plotType = getPlotType("", plotNodes);
+function getIsRecommended(nodeSummaries, schemaName) {
+    let plotType = inferPlotType(nodeSummaries);
     if (!plotType) return;
 
-    return (approps[plotType[1]] || []).indexOf(thumb) > -1;
+    return (appropriateSchemas[plotType[1]] || []).indexOf(schemaName) > -1;
 }
 
 export let exploreVariate = 'Univariate';
 export let setExploreVariate = variate => exploreVariate = variate;
 
 // prefer using vegaLite going forward
-
-// function to use d3 to graph density plots with preprocessed data
-export function density(node, div, priv) {
-    if (!div) return alertError("Error: incorrect div selected for plots: " + div);
-
-    let [xVals, yVals] = [node.pdfPlotX, node.pdfPlotY];
-    if (priv && node.plotCI) {
-        let [upperError, lowerError] = ['upperBound', 'lowerBound'].map(
-            bound => xVals.map((x, i) => ({x: +x, y: +node.plotCI[bound][i]})));
-        console.log('upperError\n', upperError);
-    }
-
-    let {width, height} = div.getBoundingClientRect();
-    var margin = {
-        top: 20,
-        right: 20,
-        bottom: 53,
-        left: 10
-    };
-
-    width = (width - margin.left - margin.right);
-    height = (height - margin.top - margin.bottom);
-
-    var x = d3.scaleLinear()
-        .domain([d3.min(xVals), d3.max(xVals)])
-        .range([0, width]);
-    var y = d3.scaleLinear()
-        .domain([d3.min(yVals), d3.max(yVals)])
-        .range([height, 0]);
-    var xAxis = d3.axisBottom()
-        .scale(x)
-        .ticks(5);
-
-    var area = d3.area()
-        .curve(d3.curveMonotoneX)
-        .x(d => x(d.x))
-        .y0(height)
-        .y1(d => y(d.y));
-
-    var plotsvg = d3.select(div)
-        .append("svg")
-        .attr("id", () => node.name.toString()
-            .replace(/\(|\)/g, "")
-            .concat("_", div.id))
-        .style("width", width + margin.left + margin.right) //setting height to the height of #main.left
-        .style("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    plotsvg.append("path")
-        .datum(xVals.map((x, i) => ({x: +x, y: +node.pdfPlotY[i]})))
-        .attr("class", "area")
-        .style('fill', 'steelblue')
-        .attr("d", area);
-
-    plotsvg.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0," + height + ")")
-        .call(xAxis);
-
-    plotsvg.append("text")
-        .attr("x", (width / 2))
-        .attr("y", 0 - (margin.top / 2))
-        .attr("text-anchor", "middle")
-        .style("font-size", "12px")
-        .text(node.name);
-}
-
-export function bars(node, div, priv) {
-    // Histogram spacing
-    var barPadding = .015; // Space between bars
-    var plotXaxis = true;
-
-    // Data
-    var keys = Object.keys(node.plotValues);
-    var yVals = new Array;
-    var ciUpperVals = new Array;
-    var ciLowerVals = new Array;
-    var ciSize;
-
-    var xVals = new Array;
-    var yValKey = new Array;
-
-    if (node.nature == "nominal") {
-        var xi = 0;
-        for (var i = 0; i < keys.length; i++) {
-            if (node.plotValues[keys[i]] == 0)
-                continue;
-            yVals[xi] = node.plotValues[keys[i]];
-            xVals[xi] = xi;
-            if (priv) {
-                if (node.plotValuesCI) {
-                    ciLowerVals[xi] = node.plotValuesCI.lowerBound[keys[i]];
-                    ciUpperVals[xi] = node.plotValuesCI.upperBound[keys[i]];
-                }
-                ciSize = ciUpperVals[xi] - ciLowerVals[xi];
-            };
-
-            yValKey.push({
-                y: yVals[xi],
-                x: keys[i]
-            });
-            xi = xi + 1;
-        }
-        yValKey.sort((a, b) => b.y - a.y); // array of objects, each object has y, the same as yVals, and x, the category
-        yVals.sort((a, b) => b - a); // array of y values, the height of the bars
-        ciUpperVals.sort((a, b) => b.y - a.y); // ?
-        ciLowerVals.sort((a, b) => b.y - a.y); // ?
-    } else {
-        for (var i = 0; i < keys.length; i++) {
-            // console.log("plotValues in bars");
-            yVals[i] = node.plotValues[keys[i]];
-            xVals[i] = Number(keys[i]);
-            if (priv) {
-                if (node.plotValuesCI) {
-                    ciLowerVals[i] = node.plotValuesCI.lowerBound[keys[i]];
-                    ciUpperVals[i] = node.plotValuesCI.upperBound[keys[i]];
-                }
-                ciSize = ciUpperVals[i] - ciLowerVals[i];
-            }
-        }
-    }
-
-    if ((yVals.length > 15 & node.numchar == "numeric") || (yVals.length > 5 & node.numchar == "character"))
-        plotXaxis = false;
-    var maxY = d3.max(yVals); // in the future, set maxY to the value of the maximum confidence limit
-    if (priv && node.plotValuesCI) maxY = d3.max(ciUpperVals);
-    var minX = d3.min(xVals);
-    var maxX = d3.max(xVals);
-
-    let {width, height} = div.getBoundingClientRect();
-    var margin = {
-        top: 20,
-        right: 20,
-        bottom: 53,
-        left: 10
-    };
-
-    if (priv && node.stabilityBin) {
-        var x = d3.scaleLinear()
-            .domain([minX - 0.5, maxX + 1.5])
-            .range([0, width]);
-    } else {
-        var x = d3.scaleLinear()
-            .domain([minX - 0.5, maxX + 0.5])
-            .range([0, width]);
-    }
-
-    var y = d3.scaleLinear()
-        .domain([0, maxY])
-        .range([0, height]);
-
-    var xAxis = d3.axisBottom()
-        .scale(x)
-        .ticks(yVals.length);
-
-    // Create SVG element
-    var plotsvg = d3.select(div)
-        .append("svg")
-        .style("width", width + margin.left + margin.right) //setting height to the height of #main.left
-        .style("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-    var rectWidth = x(minX + 0.5 - 2 * barPadding); //the "width" is the coordinate of the end of the first bar
-
-    plotsvg.selectAll("rect")
-        .data(yVals)
-        .enter()
-        .append("rect")
-        .attr("x", (d, i) => x(xVals[i] - 0.5 + barPadding))
-        .attr("y", d => y(maxY - d))
-        .attr("width", rectWidth)
-        .attr("height", y)
-        .attr("fill", "#1f77b4");
-
-    if (plotXaxis) {
-        plotsvg.append("g")
-            .attr("class", "x axis")
-            .attr("transform", "translate(0," + height + ")")
-            .call(xAxis);
-    }
-
-    plotsvg.append("text")
-        .attr("x", (width / 2))
-        .attr("y", 0 - (margin.top / 2))
-        .attr("text-anchor", "middle")
-        .style("font-size", "12px")
-        .text(node.name);
-}
 
 export function densityNode(node, obj, radius, explore) {
 
@@ -991,8 +798,8 @@ export function barsNode(node, obj, radius, explore) {
         .data(yVals)
         .enter()
         .append("rect")
-        .attr("x", (d, i) =>  x(xVals[i] - 0.5 + barPadding))
-        .attr("y", d =>  y(maxY - d))
+        .attr("x", (d, i) => x(xVals[i] - 0.5 + barPadding))
+        .attr("y", d => y(maxY - d))
         .attr("width", x(minX + 0.5 - 2 * barPadding)) // the "width" is the coordinate of the end of the first bar
         .attr("height", y)
         .attr("fill", "#1f77b4");

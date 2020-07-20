@@ -7,6 +7,9 @@ import hopscotch from 'hopscotch';
 
 import m from 'mithril';
 
+import 'core-js';
+import 'regenerator-runtime/runtime';
+
 import * as app from './app';
 import * as dataset from "./modes/dataset";
 import * as model from './modes/model';
@@ -43,7 +46,7 @@ import Body_Dataset from "./views/Body_Dataset";
 import {getSelectedProblem} from "./app";
 import {buildCsvUrl} from "./app";
 import {alertWarn} from "./app";
-import ButtonLadda from "./views/LaddaButton";
+import ButtonLadda from "./views/ButtonLadda";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let boldPlain = value => m('b', value);
@@ -164,14 +167,17 @@ class Body {
 
             if (selectedProblem) path.push(m(Icon, {name: 'chevron-right'}), m(Popper, {
                 content: () => m(Table, {
-                    data: {'targets': selectedProblem.targets, 'predictors': selectedProblem.predictors,'description': preformatted(app.getDescription(selectedProblem).description)}
+                    data: {'targets': selectedProblem.targets, 'description': preformatted(app.getDescription(selectedProblem).description)}
                 })
             }, m('h4[style=display: inline-block; margin: .25em 1em]', selectedProblem.problemId)));
 
             let selectedSolutions = results.getSelectedSolutions(selectedProblem);
             if (app.is_results_mode && selectedSolutions.length === 1 && selectedSolutions[0]) {
-                path.push(m(Icon, {name: 'chevron-right'}), m('h4[style=display: inline-block; margin: .25em 1em]',
-                    results.getSolutionAdapter(selectedProblem, selectedSolutions[0]).getSolutionId()))
+                path.push(
+                    m(Icon, {name: 'chevron-right'}),
+                    m(Popper, {content: () => 'Pipeline ID. Corresponds to the ID in the "All Solutions" table.'},
+                        m('h4[style=display: inline-block; margin: .25em 1em]',
+                            results.getSolutionAdapter(selectedProblem, selectedSolutions[0]).getSolutionId())))
             }
 
             return path;
@@ -596,7 +602,7 @@ class Body {
                         let problem = app.getSelectedProblem();
                         m.request(D3M_SVC_URL + '/ExportSolutions', {
                             method: 'POST',
-                            data: results.getSummaryData(problem)
+                            body: results.getSummaryData(problem)
                         }).then(response => {
                             if (response.success) {
                                 console.warn(response.data);
@@ -620,7 +626,7 @@ class Body {
                     onclick: () => {
                         m.request(this.TA2URL, {
                             method: "POST",
-                            data: JSON.parse(this.TA2Post)
+                            body: JSON.parse(this.TA2Post)
                         }).then(console.log).then(m.redraw)
                     }
                 }, 'Send'),

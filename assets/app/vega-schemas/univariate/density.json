@@ -1,0 +1,27 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
+  "data": {
+    "url": "tworavensData"
+  },
+  "description": "A density plot.",
+  "transform": [
+    {
+      "density": "tworavensX"
+    }
+  ],
+  "mark": {
+    "type": "area",
+    "interpolate": "monotone"
+  },
+  "encoding": {
+    "x": {
+      "field": "value",
+      "title": "tworavensX",
+      "type": "quantitative"
+    },
+    "y": {
+      "field": "density",
+      "type": "quantitative"
+    }
+  }
+}

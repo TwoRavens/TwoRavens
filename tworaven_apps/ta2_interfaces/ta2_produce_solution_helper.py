@@ -38,7 +38,6 @@ class ProduceSolutionHelper(BasicErrCheck):
 
     def __init__(self, pipeline_id, websocket_id, user_id, produce_params, **kwargs):
         """initial params"""
-        print('initializing', pipeline_id)
         self.pipeline_id = pipeline_id
         self.websocket_id = websocket_id
         self.user_id = user_id
@@ -76,14 +75,11 @@ class ProduceSolutionHelper(BasicErrCheck):
             self.add_err_msg('produce_params must be a python dict')
             return False
 
-        print(self.produce_params, flush=True)
-        print('test')
         # Iterate through the expectd keys
         #
         expected_keys = [ta2_static.KEY_FITTED_SOLUTION_ID, 'inputs',
                          'exposeOutputs', 'exposeValueTypes']
 
-        print('check:', self.produce_params)
         for key in expected_keys:
             if key not in self.produce_params:
                 user_msg = ('produce_params for pipeline "%s" dataset "%s" is missing key: %s') % \
@@ -107,7 +103,6 @@ class ProduceSolutionHelper(BasicErrCheck):
                                 pipeline_id, websocket_id,
                                 user_id, produce_params, **kwargs)
 
-        print('produce 1')
         if produce_helper.has_error():
             user_msg = ('ProduceSolution failure for pipeline (%s): %s') % \
                         (pipeline_id, produce_helper.get_error_message())
@@ -121,7 +116,6 @@ class ProduceSolutionHelper(BasicErrCheck):
 
         LOGGER.info('ProduceSolutionHelper: OK!')
 
-        print('produce 2')
         produce_helper.run_process()
 
 
@@ -206,8 +200,6 @@ class ProduceSolutionHelper(BasicErrCheck):
         # Store success response
         #
         StoredResponse.add_success_response(stored_request, result_json)
-
-        print('produce 3')
 
         self.run_get_produce_solution_responses(result_json[ta2_static.KEY_REQUEST_ID])
 
@@ -373,7 +365,6 @@ class ProduceSolutionHelper(BasicErrCheck):
 
                 ws_msg_type = ta2_static.GET_PRODUCE_SOLUTION_RESULTS
 
-                print('produce', self.produce_dataset_name, stored_response.as_dict())
                 ws_msg = WebsocketMessage.get_success_message(\
                             ws_msg_type,
                             'it worked.',

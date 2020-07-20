@@ -92,7 +92,7 @@ class ScoreSolutionHelper(BasicErrCheck):
     @staticmethod
     @celery_app.task(ignore_result=True)
     def make_score_solutions_call(pipeline_id, websocket_id, user_id, score_params, **kwargs):
-        print('make_score_solutions_call 1')
+        # print('make_score_solutions_call 1')
         assert pipeline_id, "pipeline_id must be set"
         assert websocket_id, "websocket_id must be set"
         assert user_id, "user_id must be set"

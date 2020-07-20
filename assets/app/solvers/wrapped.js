@@ -231,7 +231,7 @@ export let getSystemAdapterWrapped = systemId => problem => ({
 
         m.request(SOLVER_SVC_URL + 'Solve', {
             method: 'POST',
-            data: {
+            body: {
                 system: systemId,
                 specification: await getSolverSpecification(problem, systemId),
                 system_params: systemParams[systemId],
@@ -252,7 +252,7 @@ export let getSystemAdapterWrapped = systemId => problem => ({
     },
     search: async () => m.request(SOLVER_SVC_URL + 'Search', {
         method: 'POST',
-        data: {
+        body: {
             system: systemId,
             specification: await getSolverSpecification(problem, systemId),
             system_params: systemParams[systemId],
@@ -261,14 +261,14 @@ export let getSystemAdapterWrapped = systemId => problem => ({
     }),
     describe: solutionId => m.request(SOLVER_SVC_URL + 'Describe', {
         method: 'POST',
-        data: {
+        body: {
             system: systemId,
             model_id: solutionId
         }
     }),
     produce: (solutionId, specification) => m.request(SOLVER_SVC_URL + 'Produce', {
         method: 'POST',
-        data: {
+        body: {
             system: systemId,
             model_id: solutionId,
             specification: specification
@@ -276,7 +276,7 @@ export let getSystemAdapterWrapped = systemId => problem => ({
     }),
     score: (solutionId, specification) => m.request(SOLVER_SVC_URL + 'Score', {
         method: 'POST',
-        data: {
+        body: {
             system: systemId,
             model_id: solutionId,
             specification: specification
@@ -381,7 +381,7 @@ export let handleSolveCompleteResponse = response => {
 
 export let downloadModel = async solution => m.request(SOLVER_SVC_URL + 'Download', {
     method: 'POST',
-    data: {model_id: solution.solutionId}
+    body: {model_id: solution.solutionId}
 }).then(response => {
     if (!response.success) {
         alertWarn("Unable to prepare model for downloading.");

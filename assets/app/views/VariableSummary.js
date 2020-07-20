@@ -22,7 +22,7 @@ export default class VariableSummary {
         let filteredMessage;
 
         let continuousSpecification = {
-            "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+            "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
             "mark": "area",
             "encoding": {
                 "x": {
@@ -36,11 +36,11 @@ export default class VariableSummary {
         };
 
         let barSpecification = {
-            "$schema": "https://vega.github.io/schema/vega-lite/v3.json",
+            "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
             "mark": "bar",
             "encoding": {
                 "y": {
-                    "field": "x", "type": "ordinal"
+                    "field": "x", "type": "ordinal", "sort": "none"
                 },
                 "x": {
                     "field": "y", "type": "quantitative",

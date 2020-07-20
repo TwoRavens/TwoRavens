@@ -38,9 +38,6 @@ SWAGGER_HOST = '127.0.0.1:80'
 # -----------------------------------
 # staticfiles served via nginx
 # -----------------------------------
-# -----------------------------------
-# staticfiles served via nginx
-# -----------------------------------
 DEFAULT_STATIC_ROOT = join('/ravens_volume', 'staticfiles', 'static')
 STATIC_ROOT = os.environ.get('STATIC_ROOT',
                              DEFAULT_STATIC_ROOT)
