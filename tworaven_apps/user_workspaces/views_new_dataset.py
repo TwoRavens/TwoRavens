@@ -260,6 +260,73 @@ def view_upload_dataset(request):
 
     return JsonResponse(get_json_success('file upload completed successfully'))
 
+@csrf_exempt
+def view_upload_openml_id(request):
+    """Upload dataset and metadata by openml_id"""
+    from d3m.container.dataset import OpenMLDatasetLoader
+
+    user_workspace_info = get_latest_user_workspace(request)
+    if not user_workspace_info.success:
+        return JsonResponse(get_json_error(user_workspace_info.err_msg))
+    user_workspace = user_workspace_info.result_obj
+
+    # Destination directory for learningData.csv, learningData#.csv, etc.
+    #   and about.json
+    #
+    dest_dir_info = create_directory_add_timestamp( \
+        join(settings.TWORAVENS_USER_DATASETS_DIR,
+             f'uploads_{user_workspace.user.id}',
+             get_alpha_string(6)))
+
+    if not dest_dir_info.success:
+        return JsonResponse(get_json_error(dest_dir_info.err_msg))
+    dest_directory = dest_dir_info.result_obj
+
+    os.rmdir(dest_directory)
+
+    print('view_upload_dataset. dest_directory', dest_directory)
+
+    json_info = json_loads(request.body)
+    if not json_info.success:
+        return JsonResponse(get_json_error(json_info.err_msg))
+    openml_id = json_info.result_obj.get("openml_id")
+
+    if type(openml_id) != int:
+        return JsonResponse(get_json_error(f"invalid openml_id {openml_id}: must be integral"))
+    if openml_id < 0:
+        return JsonResponse(get_json_error(f"invalid openml_id {openml_id}: must be non-negative"))
+
+    # Save the about.json
+    #
+    loader = OpenMLDatasetLoader()
+
+    print(openml_id)
+    # TODO: harden
+    dataset = loader.load(dataset_uri=f"https://www.openml.org/d/{openml_id}")
+    dataset.save(f"file:{dest_directory}/datasetDoc.json")
+
+    orig_dataset_doc_path = os.path.join(dest_directory, "datasetDoc.json")
+    input_data_dir = os.path.join(dest_directory, "tables")
+
+    # Create new dataset folders/etc
+    #
+    additional_inputs_dir = user_workspace.d3m_config.get_temp_directory()
+    created = create_directory(additional_inputs_dir)
+    if not created.success:
+        return JsonResponse(get_json_error(created.err_msg))
+
+    new_dataset_info = UserDatasetUtil.make_new_dataset( \
+        user_workspace.user.id,
+        input_data_dir,
+        settings.TWORAVENS_USER_DATASETS_DIR,
+        **{"orig_dataset_doc_path": orig_dataset_doc_path})
+
+    if not new_dataset_info.success:
+        return JsonResponse(get_json_error(new_dataset_info.err_msg))
+    #udu = UserDatasetUtil(1, input_files, output_dir)
+
+    return JsonResponse(get_json_success('file upload completed successfully'))
+
 def is_ethiopia_dataset(name):
     """Names with 'TR' at start or Ethiopia"""
     return name.upper().startswith('TR') or \

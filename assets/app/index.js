@@ -46,7 +46,7 @@ import Body_Dataset from "./views/Body_Dataset";
 import {getSelectedProblem} from "./app";
 import {buildCsvUrl} from "./app";
 import {alertWarn} from "./app";
-import ButtonLadda from "./views/LaddaButton";
+import ButtonLadda from "./views/ButtonLadda";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let boldPlain = value => m('b', value);

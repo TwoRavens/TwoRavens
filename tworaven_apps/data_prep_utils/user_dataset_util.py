@@ -10,7 +10,9 @@ Complete the following steps:
 - build and save a new D3m config database entry based on the new folders
 
 """
+import json
 import os
+import shutil
 from os.path import dirname, isdir, isfile, join, splitext
 from collections import OrderedDict
 
@@ -75,6 +77,12 @@ class UserDatasetUtil(BasicErrCheck):
 
         # optional new dataset name
         #
+        self.orig_dataset_doc_path = kwargs.get("orig_dataset_doc_path")
+        if os.path.exists(self.orig_dataset_doc_path):
+            with open(self.orig_dataset_doc_path, 'r') as dataset_doc_file:
+                dataset_name = json.load(dataset_doc_file).get("about", {}).get("datasetName")
+            if dataset_name is not None:
+                self.dataset_name = dataset_name
         self.dataset_name = kwargs.get(dp_static.DATASET_NAME)
         if not self.dataset_name:
             self.dataset_name = f'dataset_{get_alpha_string(7)}'
@@ -93,9 +101,6 @@ class UserDatasetUtil(BasicErrCheck):
         self.dataset_tables_dir = None  # where source file is copied: learningData.csv
         self.dataset_dir = None
         self.problem_dir = None # where problem dir will be written
-
-        # destination for the self.orig_dataset_doc
-        self.new_dataset_doc_file = None
 
         self.rook_params = None
         self.new_d3m_config = None
@@ -125,7 +130,7 @@ class UserDatasetUtil(BasicErrCheck):
         if not source_files:
             return err_resp(f'No source files found in directory: {source_dir}')
 
-        udu = UserDatasetUtil(1, source_files, writable_output_dir, **kwargs)
+        udu = UserDatasetUtil(user_id, source_files, writable_output_dir, **kwargs)
         if udu.has_error():
             return err_resp(udu.error_message)
 
@@ -345,15 +350,20 @@ class UserDatasetUtil(BasicErrCheck):
         if self.has_error():
             return False
 
-        ddm = DatasetDocMaker(self.orig_source_files, self.dataset_dir)
+        if self.orig_dataset_doc_path:
+            shutil.move(self.orig_dataset_doc_path, self.dataset_dir)
+            for orig_path in self.orig_source_files:
+                shutil.move(orig_path, self.dataset_tables_dir)
+        else:
+            ddm = DatasetDocMaker(self.orig_source_files, self.dataset_dir)
 
-        if ddm.has_error():
-            self.send_websocket_err_msg(ddm.error_message)
-            return False
+            if ddm.has_error():
+                self.send_websocket_err_msg(ddm.error_message)
+                return False
 
-        print('it worked!')
-        print(ddm.dataset_doc_path)
-        print(ddm.final_data_file_path)
+            print('it worked!')
+            print(ddm.dataset_doc_path)
+            print(ddm.final_data_file_path)
 
         return True
 

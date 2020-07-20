@@ -22,7 +22,7 @@ import Popper from "../../common/views/Popper";
 
 import * as queryMongo from '../manipulations/queryMongo';
 
-import ButtonLadda from "../views/LaddaButton";
+import ButtonLadda from "../views/ButtonLadda";
 import {numberWithCommas} from '../utils';
 import {bold} from "../index";
 

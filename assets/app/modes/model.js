@@ -26,7 +26,7 @@ import Popper from '../../common/views/Popper';
 
 import ForceDiagram, {groupBuilder, groupLinkBuilder, linkBuilder, pebbleBuilderLabeled} from "../views/ForceDiagram";
 import VariableSummary, {formatVariableSummary} from "../views/VariableSummary";
-import ButtonLadda from "../views/LaddaButton";
+import ButtonLadda from "../views/ButtonLadda";
 import Flowchart from "../views/Flowchart";
 
 import {bold, boldPlain, italicize, preformatted} from "../index";

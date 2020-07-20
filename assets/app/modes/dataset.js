@@ -13,12 +13,13 @@ import * as app from "../app";
 import * as explore from "./explore";
 import * as manipulate from "../manipulations/manipulate";
 import Table from "../../common/views/Table";
-import {preformatted} from "../index";
+import {bold, preformatted} from "../index";
 import Paginated from "../../common/views/Paginated";
 import MenuHeaders from "../../common/views/MenuHeaders";
 import Icon from "../../common/views/Icon";
 
 import * as schema from '../../preprocess-schemas/1-2-0';
+import ButtonLadda from "../views/ButtonLadda";
 
 let report = false;
 let edit = false;
@@ -70,11 +71,18 @@ export class CanvasDataset {
             m.redraw()
         })
     }
-    view(vnode) {
+    view() {
         if (manipulate.constraintMenu) return;
 
         // workspace required for this view
         if (!app.workspace) return;
+
+        let parseOpenMLId = text => {
+            let parsed = parseInt((text || "")
+                .replace("https://www.openml.org/d/", ""))
+            if (parsed < 0) return
+            return isNaN(parsed) ? undefined : parsed
+        }
 
         // The Overall Dataset Component
         //
@@ -92,7 +100,8 @@ export class CanvasDataset {
                 sections: [
                     {value: 'Current', title: 'information about currently loaded dataset'},
                     {value: 'Presets', title: 'pick from previously uploaded datasets'},
-                    {value: 'Upload', title: 'upload a new dataset from your computer'}
+                    {value: 'Upload', title: 'upload a new dataset from your computer'},
+                    {value: 'Online', title: 'retrieve dataset from an online resource'},
                 ]
             }),
 
@@ -138,7 +147,7 @@ export class CanvasDataset {
                     },
                     data: datasetPreferences.upload.files.map(file => ({
                         name: file.name,
-                        modified: file.lastModifiedDate && file.lastModifiedDate.toLocaleString(),
+                        modified: file?.lastModifiedDate?.toLocaleString?.(),
                         size: file.size,
                         type: file.type
                     }))
@@ -220,10 +229,87 @@ export class CanvasDataset {
                     page: datasetPreferences.presetPage,
                     setPage: index => datasetPreferences.presetPage = index
                 })
-            ]
+            ],
             // ------------------------------------------------
             // end: "Presets" section
             // ------------------------------------------------
+
+            datasetPreferences.datasourceMode === "Online" && [
+                m(Table, {
+                    attrsCells: {style: {"vertical-align": 'middle'}},
+                    data: [
+                        [
+                            bold("URL"),
+                            m(TextField, {
+                                placeholder: 'https://...',
+                                id: 'datasetSearchTextfield',
+                                value: datasetPreferences.datasetUrl,
+                                oninput: value => datasetPreferences.datasetUrl = value,
+                                onblur: value => datasetPreferences.datasetUrl = value,
+                                style: {'margin': '1em 0'}
+                            }),
+                            m(ButtonLadda, {
+                                onclick: async () => {
+                                    let response = await m.request("/user-workspaces/upload-dataset-url", {
+                                        method: "POST", body: {file: datasetPreferences.datasetUrl}
+                                    });
+
+                                    if (response.success) {
+                                        location.reload();  // Restart!  Should load the new dataset
+                                        return;
+                                    }
+                                    console.log('Upload dataset response: ' + response.message);
+                                    app.alertWarn(response.message);
+                                    m.redraw();
+                                },
+                                disabled: (() => {
+                                    try {
+                                        new URL(datasetPreferences.datasetUrl);
+                                        return false;
+                                    } catch (_) {
+                                        return true;
+                                    }
+                                })()
+                            }, "Upload URL")
+                        ],
+                        [
+                            bold("OpenML ID"),
+                            m(TextField, {
+                                placeholder: 'https://www.openml.org/d/[ID]',
+                                id: 'datasetSearchTextfield',
+                                value: datasetPreferences.openmlId,
+                                oninput: value => datasetPreferences.openmlId = value,
+                                onblur: value => datasetPreferences.openmlId = value,
+                                style: {'margin': '1em 0'},
+                                class: datasetPreferences.openmlId && parseOpenMLId(datasetPreferences.openmlId) === undefined ? 'is-invalid' : '',
+                            }),
+                            m(ButtonLadda, {
+                                onclick: async () => {
+                                    let openMLId = parseOpenMLId(datasetPreferences.openmlId);
+                                    if (openMLId === undefined) {
+                                        app.alertLog("OpenML dataset must be a non-negative integer.")
+                                        return;
+                                    }
+                                    let response = await m.request("/user-workspaces/upload-openml-id", {
+                                        method: "POST",
+                                        body: {openml_id: openMLId}
+                                    });
+
+                                    if (response.success) {
+                                        location.reload();  // Restart!  Should load the new dataset
+                                        return;
+                                    }
+                                    console.log('Upload dataset response: ' + response.message);
+                                    app.alertWarn(response.message);
+                                    m.redraw();
+                                },
+                                disabled: parseOpenMLId(datasetPreferences.openmlId) === undefined
+                            }, "Upload OpenML ID")
+                        ],
+                    ]
+                })
+
+            ]
 
         );
 
@@ -398,11 +484,12 @@ async function uploadDataset() {
 
 
     if (response.success) {
-      location.reload();  // Restart!  Should load the new dataset
-      return;
-    }else{
-      // clear files list
-      datasetPreferences.upload.files = [];
+        location.reload();  // Restart!  Should load the new dataset
+        return;
+    } else {
+        // clear files list
+        // MS: commented this out... if it fails, shouldn't we keep the state so the user can fix it?
+        // datasetPreferences.upload.files = [];
     }
 
     console.log('Upload dataset response: ' + response.message);
