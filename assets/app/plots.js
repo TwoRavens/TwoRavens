@@ -84,7 +84,7 @@ export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSe
                 {"field": crossSectionName, "type": "nominal"},
             ],
             "color": {"field": groupName, "type": "nominal"},
-            "x": {"field": xName, "type": "quantitative", "axis": {"title": xName}, "scale": {"zero": false}},
+            "x": {"field": xName, "type": "temporal", "axis": {"title": xName}, "scale": {"zero": false}},
             "y": {"field": yName, "type": "quantitative", "axis": {"title": yName}, "scale": {"zero": false}},
             "opacity": {"field": splitName, "type": "nominal"},
             "detail": {"field": crossSectionName, "type": "nominal"}
@@ -110,7 +110,7 @@ export let vegaLiteForecastConfidence = (data, xName, yName, splitName, groupNam
         },
         "encoding": {
             "color": {"field": groupName, "type": "nominal"},
-            "x": {"field": xName, "type": "quantitative", "axis": {"title": xName}, "scale": {"zero": false}}
+            "x": {"field": xName, "type": "temporal", "axis": {"title": xName}, "scale": {"zero": false}}
         },
         "data": {
             "values": data

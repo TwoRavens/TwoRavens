@@ -391,7 +391,9 @@ export class CanvasSolutions {
                                 [xName]: timeSummary[split][i] // new Date(Date.parse(timeSummary[split][i]))
                             })))
                 ])
-                .filter(point => problem.tags.crossSection.length === 0 || resultsPreferences.crossSection === 'unset' || point[crossSectionName] === resultsPreferences.crossSection)
+                .filter(point => problem.tags.crossSection.length === 0
+                    || resultsPreferences.crossSection === 'unset'
+                    || point[crossSectionName] === resultsPreferences.crossSection)
 
             if (plotData.length === 0) return [
                 'Processing forecasts.',
