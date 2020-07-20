@@ -78,7 +78,7 @@ class UserDatasetUtil(BasicErrCheck):
         # optional new dataset name
         #
         self.orig_dataset_doc_path = kwargs.get("orig_dataset_doc_path")
-        if os.path.exists(self.orig_dataset_doc_path):
+        if self.orig_dataset_doc_path is not None and os.path.exists(self.orig_dataset_doc_path):
             with open(self.orig_dataset_doc_path, 'r') as dataset_doc_file:
                 dataset_name = json.load(dataset_doc_file).get("about", {}).get("datasetName")
             if dataset_name is not None:

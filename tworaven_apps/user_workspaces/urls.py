@@ -15,9 +15,9 @@ urlpatterns = (
             views_new_dataset.view_upload_dataset,
             name='view_upload_dataset'),
 
-    re_path(r'^upload-openml-id$',
-            views_new_dataset.view_upload_openml_id,
-            name='view_upload_openml_id'),
+    re_path(r'^upload-dataset-url$',
+            views_new_dataset.view_upload_dataset_by_url,
+            name='view_upload_dataset_by_url'),
 
     re_path(r'^load-evtdata$',
             views_new_dataset.view_load_eventdata_dataset,
