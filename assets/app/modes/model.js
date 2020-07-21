@@ -41,6 +41,11 @@ export class CanvasModel {
         let {drawForceDiagram, forceData} = vnode.attrs;
         let selectedProblem = app.getSelectedProblem();
 
+        if (Object.keys(app.variableSummaries).length === 0)
+            return m('div[style=height:100%;position:relative]',
+                m('div[style=top:calc(50% - 60px);left:calc(50% - 60px);position:fixed]',
+                    common.loader('forceDiagramLoader')))
+
         return [
             drawForceDiagram && m(ForceDiagram, Object.assign(forceDiagramState,{
                 nodes: forceDiagramNodesReadOnly,

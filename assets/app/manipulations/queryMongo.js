@@ -868,7 +868,8 @@ export function buildMenu(step) {
 
     if (['discrete', 'discrete_grouped'].includes(metadata.type)) return [
         {$group: {_id: {[metadata.columns[0]]: '$' + metadata.columns[0]}, total: {$sum: 1}}},
-        {$project: {[metadata.columns[0]]: '$_id\\.' + metadata.columns[0], _id: 0, total: 1}}
+        {$project: {[metadata.columns[0]]: '$_id\\.' + metadata.columns[0], _id: 0, total: 1}},
+        {$limit: 1000}
     ];
 
     if (metadata.type === 'continuous') {

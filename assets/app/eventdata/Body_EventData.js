@@ -43,6 +43,7 @@ import SaveQuery from "./SaveQuery";
 import {TreeAggregate, TreeSubset, TreeVariables} from "../views/QueryTrees";
 import Icon from "../../common/views/Icon";
 import {italicize} from "../index";
+import CanvasContinuous from "../canvases/CanvasContinuous";
 
 export default class Body_EventData {
 
@@ -812,7 +813,8 @@ export default class Body_EventData {
                 'dyad': CanvasDyad,
                 'discrete': CanvasDiscrete,
                 'discrete_grouped': CanvasDiscreteGrouped,
-                'coordinates': CanvasCoordinates
+                'coordinates': CanvasCoordinates,
+                'continuous': CanvasContinuous,
             }[subsetType], {
                 mode: eventdata.selectedMode,
                 subsetName: eventdata.selectedSubsetName,
