@@ -1,12 +1,14 @@
 import * as fileSaver from 'file-saver';
 import m from 'mithril';
-// import $ from 'jquery'
 
-import {mongoURL, looseSteps, alignmentData, formattingData, alertError} from "../app";
+import {mongoURL, looseSteps, alignmentData, formattingData, alertError, alertLog} from "../app";
 import * as common from '../../common/common';
 
 import * as queryMongo from '../manipulations/queryMongo';
 import * as tour from "./tour";
+import {datamartURL} from "../app";
+
+export let link = url => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
 
 // ~~~~ EVENTDATA STATE / MUTATORS ~~~
 
@@ -665,6 +667,42 @@ export async function download(collection_name, query) {
     let header = [...variables].join('\t') + '\n';
     let file = new File([header, ...text], `EventData_${collection_name}.tsv`, {type: "text/plain;charset=utf-8"});
     fileSaver.saveAs(file);
+}
+
+export async function exportDatamart(collection_name, query) {
+
+    console.log("Export Query:");
+    console.log(query);
+
+    let csvPath = await getEventData({
+        host: genericMetadata[collection_name].host,
+        method: 'aggregate',
+        export: 'csv',
+        collection_name,
+        query
+    });
+
+    let response = await m.request(datamartURL + "index", {
+        method: 'POST',
+        body: {
+            source: 'NYU',
+            indices: {
+                name: 'TwoRavens_EventData_' + collection_name,
+                description: JSON.stringify(query),
+                data_path: csvPath
+            }
+        }
+    })
+
+    console.warn(response)
+
+    if (!response.success)
+        alertError("NYU datamart upload failed: " + response.error)
+
+    alertLog(m('div',
+        "Data successfully uploaded (",
+        link(response.data),
+        "). It may take a few minutes for the link to activate."))
 }
 
 export async function reset() {

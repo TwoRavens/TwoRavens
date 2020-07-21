@@ -1,0 +1,438 @@
+{
+  "name": "Global Terrorism Database (GTD)",
+  "key": "gtd",
+  "description": "The Global Terrorism Database (GTD) is an open-source database including information on terrorist events around the world from 1970 through 2017 (with annual updates planned for the future).",
+  "interval": "1970 - 2017",
+  "codebook": "https://www.start.umd.edu/gtd/downloads/Codebook.pdf",
+  "download": "https://www.start.umd.edu/gtd/contact/",
+  "host": "TwoRavens",
+  "subsets": {
+	  "Date": {
+		"type": "date",
+		"measureType": "unit",
+		"structure": "point",
+		"columns": ["TwoRavens_start date"]
+	},
+	"Location": {
+		"type": "discrete_grouped",
+		"group_by": "region",
+		"columns": ["TwoRavens_country"]
+	},
+	"Coordinates": {
+		"type": "coordinates",
+		"columns": [
+			"latitude",
+			"longitude"
+		]
+	},
+	"Attack Type 1": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["attacktype1"]
+	},
+	"Attack Type 2": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["attacktype2"]
+	},
+	"Attack Type 3": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["attacktype3"]
+	},
+	"Successful Attack": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["success"]
+	},
+	"Suicide Attack": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["suicide"]
+	},
+	"Weapon Type 1": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["weaptype1"]
+	},
+	"Weapon Subtype 1": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"formats": ["gtd_subweapons", "gtd_weapons"],
+		"columns": ["weapsubtype1"]
+	},
+	"Weapon Type 2": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["weaptype2"]
+	},
+	"Weapon Subtype 2": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"formats": ["gtd_subweapons", "gtd_weapons"],
+		"columns": ["weapsubtype2"]
+	},
+	"Weapon Type 3": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["weaptype3"]
+	},
+	"Weapon Subtype 3": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"formats": ["gtd_subweapons", "gtd_weapons"],
+		"columns": ["weapsubtype3"]
+	},
+	"Weapon Type 4": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["weaptype4"]
+	},
+	"Weapon Subtype 4": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"formats": ["gtd_subweapons", "gtd_weapons"],
+		"columns": ["weapsubtype4"]
+	},
+	"Primary Target/Victim Type": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["targtype1"]
+	},
+	"Primary Target/Victim Subtype": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"formats": ["gtd_targets", "gtd_subtargets"],
+		"columns": ["targsubtype1"]
+	},
+	"Nationality of Primary Target": {
+		"type": "discrete_grouped",
+		"group_by": "region",
+		"columns": ["TwoRavens_natlty1"]
+	},
+	"Secondary Target/Victim Type": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["targtype2"]
+	},
+	"Secondary Target/Victim Subtype": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"formats": ["gtd_targets", "gtd_subtargets"],
+		"columns": ["targsubtype2"]
+	},
+	"Nationality of Secondary Target": {
+		"type": "discrete_grouped",
+		"group_by": "region",
+		"columns": ["TwoRavens_natlty2"]
+	},
+	"Tertiary Target/Victim Type": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["targtype3"]
+	},
+	"Tertiary Target/Victim Subtype": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"formats": ["gtd_targets", "gtd_subtargets"],
+		"columns": ["targsubtype3"]
+	},
+	"Nationality of Tertiary Target": {
+		"type": "discrete_grouped",
+		"group_by": "region",
+		"columns": ["TwoRavens_natlty3"]
+	},
+	"Number of Perpetrators": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["nperps"]
+	},
+	"Number of Perpetrators Captured": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["nperpcap"]
+	},
+	"Claim of Responsibility": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["claimed"]
+	},
+	"Mode for Claim of Responsibility": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["claimmode"]
+	},
+	"Competing Claim of Responsibility": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["compclaim"]
+	},
+	"Second Group Claim of Responsibility": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["claim2"]
+	},
+	"Mode for Second Group Claim of Responsibility": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["claimmode2"]
+	},
+	"Third Group Claim of Responsibility": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["claim3"]
+	},
+	"Mode for Third Group Claim of Responsibility": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["claimmode3"]
+	},
+	"Total Number of Fatalities": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["nkill"]
+	},
+	"Number of US Fatalities": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["nkillus"]
+	},
+	"Number of Perpetrator Fatalities": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["nkillter"]
+	},
+	"Total Number of Injured": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["nwound"]
+	},
+	"Number of US Injured": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["nwound"]
+	},
+	"Number of Perpetrators Injured": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["nwound"]
+	},
+	"Property Damage": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["property"]
+	},
+	"Value of Property Damage (in USD)": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["propvalue"]
+	},
+	"Hostages or Kidnapping Victims": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["ishostkid"]
+	},
+	"Total Number of Hostages/Kidnapping Victims": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["nhostkid"]
+	},
+	"Number of US Hostages/Kidnapping Victims": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["nhostkidus"]
+	},
+	"Hours of Kidnapping/Hostage Incident": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["nhours"]
+	},
+	"Days of Kidnapping/Hostage Incident": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["ndays"]
+	},
+	"Ransom Demanded": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["ransom"]
+	},
+	"Total Ransom Amount Demanded": {
+		"type": "continuous",
+		"buckets": 2,
+		"min": 0,
+		"max": 1000000000,
+		"columns": ["ransomamt"]
+	},
+	"Ransom Amount Demanded from US Sources": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["ransomamtus"]
+	},
+	"Total Ransom Amount Paid": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["ransompaid"]
+	},
+	"Ransom Amount Demanded Paid by US Sources": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["ransompaidus"]
+	},
+	"Kidnapping/Hostage Outcome": {
+		"type": "discrete",
+		"measureType": "accumulator",
+		"columns": ["hostkidoutcome"]
+	},
+	"Number of Hostages Released/Escaped/Rescued": {
+		"type": "continuous",
+		"buckets": 5,
+		"columns": ["nreleased"]
+	}
+  },
+  "columns": [
+    "eventid",
+	"iyear",
+	"imonth",
+	"iday",
+	"extended",
+	"country",
+	"country_txt",
+	"region",
+	"region_txt",
+	"provstate",
+	"city",
+	"latitude",
+	"longitude",
+	"specificity",
+	"vicinity",
+	"location",
+	"summary",
+	"crit1",
+	"crit2",
+	"crit3",
+	"doubtterr",
+	"alternative",
+	"alternative_txt",
+	"multiple",
+	"success",
+	"suicide",
+	"attacktype1",
+	"attacktype1_txt",
+	"targtype1",
+	"targtype1_txt",
+	"targsubtype1",
+	"targsubtype1_txt",
+	"corp1",
+	"target1",
+	"natlty1",
+	"natlty1_txt",
+	"gname",
+	"guncertain1",
+	"individual",
+	"nperps",
+	"nperpcap",
+	"claimed",
+	"weaptype1",
+	"weaptype1_txt",
+	"weapsubtype1",
+	"weapsubtype1_txt",
+	"nkill",
+	"nkillus",
+	"nkillter",
+	"nwound",
+	"nwoundus",
+	"nwoundte",
+	"property",
+	"propextent",
+	"propextent_txt",
+	"propvalue",
+	"propcomment",
+	"ishostkid",
+	"ransom",
+	"addnotes",
+	"scite1",
+	"scite2",
+	"dbsource",
+	"INT_LOG",
+	"INT_IDEO",
+	"INT_MISC",
+	"INT_ANY"
+  ],
+  "columns_constructed": [
+    "TwoRavens_start date",
+    "TwoRavens_end date",
+    "TwoRavens_date info",
+    "TwoRavens_country",
+    "TwoRavens_address",
+    "TwoRavens_city",
+    "TwoRavens_postal",
+    "TwoRavens_postal_ext",
+    "TwoRavens_region",
+    "TwoRavens_subregion",
+    "TwoRavens_country_historic",
+    "TwoRavens_natlty1",
+    "TwoRavens_natlty2",
+    "TwoRavens_natlty3"
+  ],
+  "alignments": {
+	  "TwoRavens_start date": "date",
+	  "latitude": "latitude",
+	  "longitude": "longitude",
+	  "TwoRavens_country": "country",
+	  "weapsubtype1": "gtd_weapon_align",
+	  "weapsubtype2": "gtd_weapon_align",
+	  "weapsubtype3": "gtd_weapon_align",
+	  "weapsubtype4": "gtd_weapon_align",
+	  "targsubtype1": "gtd_target_align",
+	  "TwoRavens_natlty1": "country",
+	  "TwoRavens_natlty2": "country",
+	  "TwoRavens_natlty3": "country"
+  },
+  "formats": {
+	  "TwoRavens_country": "ISO-3",
+	  "attacktype1": "gtd_attack_types",
+	  "attacktype2": "gtd_attack_types",
+	  "attacktype3": "gtd_attack_types",
+	  "success": "gtd_bool",
+	  "suicide": "gtd_bool",
+	  "weaptype1": "gtd_weapons",
+	  "weapsubtype1": "gtd_subweapons",
+	  "weaptype2": "gtd_weapons",
+	  "weapsubtype2": "gtd_subweapons",
+	  "weaptype3": "gtd_weapons",
+	  "weapsubtype3": "gtd_subweapons",
+	  "weaptype4": "gtd_weapons",
+	  "weapsubtype4": "gtd_subweapons",
+	  "targtype1": "gtd_targets",
+	  "targsubtype1": "gtd_subtargets",
+	  "TwoRavens_natlty1": "ISO-3",
+	  "TwoRavens_natlty2": "ISO-3",
+	  "TwoRavens_natlty3": "ISO-3",
+	  "claimed": "gtd_bool",
+	  "claimmode": "gtd_claim_mode",
+	  "compclaim": "gtd_bool_unknown",
+	  "claim2": "gtd_bool",
+	  "claimmode2": "gtd_claim_mode",
+	  "claim3": "gtd_bool",
+	  "claimmode3": "gtd_claim_mode",
+	  "property": "gtd_bool_unknown",
+	  "ishostkid": "gtd_bool_unknown",
+	  "ransom": "gtd_bool_unknown",
+	  "hostkidoutcome": "gtd_hostkid_outcome"
+  },
+  "citations": [
+  {
+	  "year": "2018",
+	  "title": "Global Terrorism Database Dataset",
+	  "url": "https://www.start.umd.edu/gtd",
+	  "note": "National Consortium for the Study of Terrorism and Responses to Terrorism (START)"
+  },
+  {
+	  "year": "2018",
+	  "title": "Global Terrorism Database Codebook",
+	  "url": "https://www.start.umd.edu/gtd",
+	  "note": "National Consortium for the Study of Terrorism and Responses to Terrorism (START)"
+  }
+  ]
+}

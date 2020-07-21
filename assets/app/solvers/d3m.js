@@ -925,21 +925,21 @@ export async function endsession() {
         // results.setShowFinalPipelineModal(true);
 
         // we don't need to wait for the backend to spin down before telling the user, no await used
-        endAllSearches();
+        // endAllSearches();
 
-        let resetTheApp = () => {
-            window.location.pathname = clear_user_workspaces_url;
-        };
-
-        setModal(m('div', {}, [
-                m('p', 'Finished! The problem is marked as complete.'),
-                // m('p', ''),
-            ]),
-            "Task complete",
-            true,
-            "Restart",
-            false,
-            resetTheApp);
+        app.alertLog('Finished! The problem is marked as complete.')
+        // let resetTheApp = () => {
+        //     window.location.pathname = clear_user_workspaces_url;
+        // };
+        // setModal(m('div', {}, [
+        //         m('p', 'Finished! The problem is marked as complete.'),
+        //         // m('p', ''),
+        //     ]),
+        //     "Task complete",
+        //     true,
+        //     "Restart",
+        //     true,
+        //     resetTheApp);
         m.redraw()
     } else {
         status.name = 'Error from pipeline submission.';

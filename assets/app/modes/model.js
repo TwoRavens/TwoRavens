@@ -41,6 +41,11 @@ export class CanvasModel {
         let {drawForceDiagram, forceData} = vnode.attrs;
         let selectedProblem = app.getSelectedProblem();
 
+        if (Object.keys(app.variableSummaries).length === 0)
+            return m('div[style=height:100%;position:relative]',
+                m('div[style=top:calc(50% - 60px);left:calc(50% - 60px);position:fixed]',
+                    common.loader('forceDiagramLoader')))
+
         return [
             drawForceDiagram && m(ForceDiagram, Object.assign(forceDiagramState,{
                 nodes: forceDiagramNodesReadOnly,
@@ -478,7 +483,13 @@ export let leftpanel = forceData => {
                             m('p', {
                                 id: 'problemDescription',
                                 style: {'padding-left': '2%', 'max-width': '800px'},
-                            }, preformatted(app.getDescription(selectedProblem))),
+                            }, m('pre', {
+                                contenteditable: true,
+                                oninput: v => {
+                                    selectedProblem.description = v.target.innerHTML
+                                    selectedProblem.unedited = false
+                                }
+                            }, m.trust(app.getDescription(selectedProblem)))),
                         ], // END: Current Problem description
 
                     m(Table, {
@@ -544,7 +555,7 @@ export let leftpanel = forceData => {
                             if (selectedProblem.pending) {
                                 if (selectedProblem.unedited)
                                     delete problems[selectedProblem.problemId];
-                                else if (confirm(`You have unsaved changes in the previous problem, ${selectedProblem.problemId}. Would you like to discard ${selectedProblem.problemId}?`))
+                                else if (confirm(`You have unsaved changes in the previous problem, ${selectedProblem.problemId}. Would you like to save ${selectedProblem.problemId}?`))
                                     selectedProblem.pending = false;
                                 else delete problems[selectedProblem.problemId];
                             }

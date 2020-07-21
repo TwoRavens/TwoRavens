@@ -1,7 +1,6 @@
 """Views for User Workspaces"""
 import json
 import os
-from datetime import datetime
 from os.path import abspath, dirname, isfile, join, splitext
 from django.shortcuts import render
 from django.contrib.auth import authenticate, login
@@ -51,6 +50,8 @@ from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
 from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.user_workspaces.utils import get_latest_user_workspace
 from tworaven_apps.data_prep_utils.user_dataset_util import UserDatasetUtil
+
+from urllib.parse import urlparse
 
 
 def get_user_workspace_when_no_config(request):
@@ -145,8 +146,7 @@ def view_load_eventdata_dataset(request, **kwargs):
 
     if not fpath.startswith(settings.EVTDATA_2_TWORAVENS_DIR):
         user_msg = (f'Invalid path in GET query string: {fpath}'
-                    f' (Does not match {settings.EVTDATA_2_TWORAVENS_DIR})'
-                    f' ({datetime.now()})')
+                    f' (Does not match {settings.EVTDATA_2_TWORAVENS_DIR})')
         return JsonResponse(get_json_error(user_msg))
 
     if not isfile(fpath):
@@ -185,7 +185,7 @@ def view_load_eventdata_dataset(request, **kwargs):
 @csrf_exempt
 def view_upload_dataset(request):
     """Upload dataset and metadata"""
-    #print('FILE_UPLOAD_MAX_MEMORY_SIZE:', settings.FILE_UPLOAD_MAX_MEMORY_SIZE)
+    print('FILE_UPLOAD_MAX_MEMORY_SIZE:', settings.FILE_UPLOAD_MAX_MEMORY_SIZE)
 
     user_workspace_info = get_latest_user_workspace(request)
     if not user_workspace_info.success:
@@ -260,10 +260,11 @@ def view_upload_dataset(request):
 
     return JsonResponse(get_json_success('file upload completed successfully'))
 
+
 @csrf_exempt
-def view_upload_openml_id(request):
-    """Upload dataset and metadata by openml_id"""
-    from d3m.container.dataset import OpenMLDatasetLoader
+def view_upload_dataset_by_url(request):
+    """Upload dataset and metadata by url"""
+    print('FILE_UPLOAD_MAX_MEMORY_SIZE:', settings.FILE_UPLOAD_MAX_MEMORY_SIZE)
 
     user_workspace_info = get_latest_user_workspace(request)
     if not user_workspace_info.success:
@@ -272,7 +273,6 @@ def view_upload_openml_id(request):
 
     # Destination directory for learningData.csv, learningData#.csv, etc.
     #   and about.json
-    #
     dest_dir_info = create_directory_add_timestamp( \
         join(settings.TWORAVENS_USER_DATASETS_DIR,
              f'uploads_{user_workspace.user.id}',
@@ -282,11 +282,108 @@ def view_upload_openml_id(request):
         return JsonResponse(get_json_error(dest_dir_info.err_msg))
     dest_directory = dest_dir_info.result_obj
 
-    os.rmdir(dest_directory)
+    json_info = get_request_body_as_json(request)
+    if not json_info.success:
+        return JsonResponse(get_json_error(json_info.err_msg))
+
+    # save json data
+    dataset_name = None
+    if dp_static.DATASET_NAME_FROM_UI in json_info.result_obj:
+        dataset_name = json_info.result_obj[dp_static.DATASET_NAME_FROM_UI]
+
+    # with open(os.path.join(dest_directory, 'about.json'), 'w') as metadata_file:
+    #    json.dump(json_info.result_obj, metadata_file)
+
+    # Save data files.  They don't have to be .csv, that's handled latter,
+    #     e.g. convert from .tab, .tsv, xls, etc.
+    #
+    url_set = json_info.result_obj.get('file')
+    if not isinstance(url_set, list):
+        url_set = [url_set]
+
+    import requests
+    for idx, url in enumerate(url_set):
+        print('Trying to download from {}'.format(url))
+        components = urlparse(url)
+        if not components.path:
+            fname = url.split('/')[-1]
+        else:
+            fname = components.path.split('/')[-1]
+
+        _fname, fext = splitext(fname)
+
+        if not fext.lower() in dp_static.VALID_EXTENSIONS:
+            # no extension found, won't be able to open it
+            user_msg = (f'The extension for this file was not recognized: "{fname}".'
+                        f' Valid extensions: {", ".join(dp_static.VALID_EXTENSIONS)}.')
+
+            return JsonResponse(get_json_error(user_msg))
+
+        response = requests.get(url)
+        if response.status_code != 200:
+            user_msg = f'Failed Connection with error code: {response.status_code}'
+            return JsonResponse(get_json_error(user_msg))
+        elif int(response.headers['Content-Length']) > settings.FILE_UPLOAD_MAX_MEMORY_SIZE:
+            tmp_size = response.headers['Content-Length']
+            user_msg = f'File size ({tmp_size}) exceed the limit ({settings.FILE_UPLOAD_MAX_MEMORY_SIZE})'
+            return JsonResponse(get_json_error(user_msg))
+
+        new_filename = join(dest_directory,
+                            f'learningData{idx + 1 if idx else ""}{fext.lower()}')
+        with open(new_filename, 'wb+') as outfile:
+            outfile.write(response.content)
+
+    # Create Dummy dataset name
+    if not dataset_name:
+        dataset_name = 'Unnamed_Dataset_{}'.format(get_alpha_string(6))
+
+    # Create new dataset folders/etc
+    #
+    additional_inputs_dir = user_workspace.d3m_config.get_temp_directory()
+    created = create_directory(additional_inputs_dir)
+    if not created.success:
+        return JsonResponse(get_json_error(created.err_msg))
+
+    new_dataset_info = UserDatasetUtil.make_new_dataset( \
+        user_workspace.user.id,
+        dest_directory,
+        settings.TWORAVENS_USER_DATASETS_DIR,
+        **{dp_static.DATASET_NAME: dataset_name})
+
+    if not new_dataset_info.success:
+        return JsonResponse(get_json_error(new_dataset_info.err_msg))
+    # udu = UserDatasetUtil(1, input_files, output_dir)
+
+    return JsonResponse(get_json_success('file upload completed successfully'))
+
+
+@csrf_exempt
+def view_upload_openml_id(request):
+    """Upload dataset and metadata by url"""
+    from d3m.container.dataset import OpenMLDatasetLoader
+    print('FILE_UPLOAD_MAX_MEMORY_SIZE:', settings.FILE_UPLOAD_MAX_MEMORY_SIZE)
+
+    user_workspace_info = get_latest_user_workspace(request)
+    if not user_workspace_info.success:
+        return JsonResponse(get_json_error(user_workspace_info.err_msg))
+    user_workspace = user_workspace_info.result_obj
+
+    # Destination directory for learningData.csv, learningData#.csv, etc.
+    #   and about.json
+    dest_dir_info = create_directory_add_timestamp( \
+        join(settings.TWORAVENS_USER_DATASETS_DIR,
+             f'uploads_{user_workspace.user.id}',
+             get_alpha_string(6)))
+
+    if not dest_dir_info.success:
+        return JsonResponse(get_json_error(dest_dir_info.err_msg))
+    dest_directory = dest_dir_info.result_obj
 
     print('view_upload_dataset. dest_directory', dest_directory)
 
-    json_info = json_loads(request.body)
+    os.rmdir(dest_directory)
+
+    json_info = get_request_body_as_json(request)
     if not json_info.success:
         return JsonResponse(get_json_error(json_info.err_msg))
     openml_id = json_info.result_obj.get("openml_id")
@@ -296,14 +393,19 @@ def view_upload_openml_id(request):
     if openml_id < 0:
         return JsonResponse(get_json_error(f"invalid openml_id {openml_id}: must be non-negative"))
 
-    # Save the about.json
-    #
     loader = OpenMLDatasetLoader()
 
-    print(openml_id)
-    # TODO: harden
-    dataset = loader.load(dataset_uri=f"https://www.openml.org/d/{openml_id}")
-    dataset.save(f"file:{dest_directory}/datasetDoc.json")
+    try:
+        dataset = loader.load(dataset_uri=f"https://www.openml.org/d/{openml_id}")
+    except Exception as err:
+        print(err)
+        return JsonResponse(get_json_error(f"failure to download openml dataset {openml_id}"))
+
+    try:
+        dataset.save(f"file:{dest_directory}/datasetDoc.json")
+    except Exception as err:
+        print(err)
+        return JsonResponse(get_json_error(f"failure to save openml dataset {openml_id}"))
 
     orig_dataset_doc_path = os.path.join(dest_directory, "datasetDoc.json")
     input_data_dir = os.path.join(dest_directory, "tables")
@@ -323,9 +425,10 @@ def view_upload_openml_id(request):
 
     if not new_dataset_info.success:
         return JsonResponse(get_json_error(new_dataset_info.err_msg))
-    #udu = UserDatasetUtil(1, input_files, output_dir)
+    # udu = UserDatasetUtil(1, input_files, output_dir)
 
     return JsonResponse(get_json_success('file upload completed successfully'))
+
 
 def is_ethiopia_dataset(name):
     """Names with 'TR' at start or Ethiopia"""

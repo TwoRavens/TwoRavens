@@ -515,7 +515,7 @@ def api_get_eventdata(request):
     if not form.is_valid():
         return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
 
-    success, addquery_obj_err = EventJobUtil.get_data(
+    success, results_obj_err = EventJobUtil.get_data(
         settings.EVENTDATA_DB_NAME,
         json_req_obj['collection_name'],
         json_req_obj['method'],
@@ -523,13 +523,45 @@ def api_get_eventdata(request):
         json_req_obj.get('distinct', None),
         json_req_obj.get('host', None))
 
+    if not success:
+        return JsonResponse(get_json_error(results_obj_err))
 
-    if success:
-        return JsonResponse(get_json_success(\
-                                 'it worked',
-                                 data=json_comply(list(addquery_obj_err))))
+    # export single data file
+    if json_req_obj.get('export') == 'csv':
+        user_workspace_info = get_latest_user_workspace(request)
+        if not user_workspace_info.success:
+            return JsonResponse(get_json_error(user_workspace_info.err_msg))
+        user_workspace = user_workspace_info.result_obj
 
-    return JsonResponse(get_json_error(addquery_obj_err))
+        success, results_obj_err = EventJobUtil.export_csv( \
+            user_workspace,
+            settings.MONGO_COLLECTION_PREFIX + json_req_obj['collection_name'],
+            results_obj_err)
+
+    # export single data file in problem format
+    elif json_req_obj.get('export') == 'dataset':
+        user_workspace_info = get_latest_user_workspace(request)
+        if not user_workspace_info.success:
+            return JsonResponse(get_json_error(user_workspace_info.err_msg))
+        user_workspace = user_workspace_info.result_obj
+
+        success, results_obj_err = EventJobUtil.export_dataset( \
+            user_workspace,
+            results_obj_err,
+            json.loads(json_req_obj['metadata']))
+
+    # since we aren't exporting to files, exhaust the mongo cursor
+    else:
+        results_obj_err = list(results_obj_err)
+
+    if not success:
+        return JsonResponse(get_json_error(results_obj_err))
+
+
+    LOGGER.info('--- api_get_data: returning data... ---')
+    return JsonResponse( \
+        get_json_success('it worked',
+                         data=json_comply(results_obj_err)))
 
 
 @csrf_exempt

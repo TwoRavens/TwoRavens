@@ -135,6 +135,9 @@ class UserWorkspace(TimeStampedModel):
         # Is there a raven's config?
         # Yes, then use the name there
         #
+        if self.name:
+            return
+
         if self.raven_config:
             try:
                 self.name = self.raven_config['name']
