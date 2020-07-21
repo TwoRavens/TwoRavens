@@ -75,8 +75,10 @@ export const numberWithCommas = some_number => {
 }
 
 export const getClearWorkspacesLink = _ => {
-  return window.location.origin + '/user-workspaces/clear-user-workspaces';
+  return window.location.origin + clear_user_workspaces_url;
+  // '/user-workspaces/clear-user-workspaces';
 }
+
 
 /*
  * Clear workspace and return to the pebbles page
