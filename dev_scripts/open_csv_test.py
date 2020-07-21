@@ -27,6 +27,16 @@ dataset = loader.load(\
 
 dataset.save(f"file:/Users/ramanprasad/Documents/github-rp/tworavens-test-datasets/Western_Sahel_Grid-Quarter-2010_2020/TRAIN/dataset_TRAIN/datasetDoc.json")
 
+# Dummy Event Data
+#
+dataset2 = loader.load(\
+    dataset_uri="file:///Users/ramanprasad/Desktop/evt_data.csv",
+    dataset_id='evt_data_placeholder',
+    dataset_name='Event Data Placeholder (temp to have a D3M config)')
+
+dataset2.save(f"file:/Users/ramanprasad/Documents/github-rp/tworavens-test-datasets/EVENTDATA_PLACEHOLDER/TRAIN/dataset_TRAIN/datasetDoc.json")
+
+
 #shutil.rmtree("/Users/michael/temp_dataset/", ignore_errors=True)
 #
 #uri = "file:/Users/michael/temp_dataset/datasetDoc.json"

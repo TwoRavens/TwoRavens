@@ -48,15 +48,15 @@ cd ../../;
 # nginx
 #
 cd setup/nginx/;
-docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-nginx:yarrow-2020-0720 .;
-docker push tworavens/eventdata-ravens-nginx:yarrow-2020-0720;
+docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-nginx:yarrow-2020-0720a .;
+docker push tworavens/eventdata-ravens-nginx:yarrow-2020-0720a;
 cd ../../;
 
 # ta3-main
 #
-docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-main:yarrow-2020-0720 .;
+docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-main:yarrow-2020-0720a .;
 docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-docker push tworavens/eventdata-ravens-main:yarrow-2020-0720;
+docker push tworavens/eventdata-ravens-main:yarrow-2020-0720a;
 ```
 
 

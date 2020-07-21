@@ -682,6 +682,7 @@ export async function exportDatamart(collection_name, query) {
         query
     });
 
+
     let response = await m.request(datamartURL + "index", {
         method: 'POST',
         body: {
