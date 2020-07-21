@@ -181,11 +181,10 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
         poll_url = f"{get_nyu_url()}/api/v1/session/{session_id}"
 
+        print("polling start")
         while attempts > 0:
             if attempts:
                 attempts -= 1
-
-            print("polling")
 
             try:
                 response = requests.get(poll_url)
@@ -222,7 +221,7 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
                 time.sleep(1)
                 continue
 
-            print("matched",)
+            print("polling matched")
             # extract and switch workspace
             with tempfile.TemporaryDirectory() as temp_dir:
                 augment_zip_path = os.path.join(temp_dir, "temp.zip")
@@ -248,7 +247,15 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
                     },
                 )
 
+                postfix = NewDatasetUtil.create_dataset_id()
+                new_d3m_config = new_dataset_util.new_d3m_config
+                new_d3m_config.name = f"{user_workspace.d3m_config.name}-{postfix}"
+                new_d3m_config.save()
+
                 new_workspace = new_dataset_util.new_workspace
+                new_workspace.name = f"{user_workspace.name}-{postfix}"
+
+                new_workspace.save()
 
                 ws_string_info = json_dumps(new_workspace.to_dict())
                 if not ws_string_info.success:
@@ -267,6 +274,8 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
                 )
                 ws_msg.send_message(websocket_id)
                 return
+
+        print("polling terminated")
 
     # @staticmethod
     # def search_with_dataset(dataset_path, query=None, **kwargs):

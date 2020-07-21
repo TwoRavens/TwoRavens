@@ -326,7 +326,7 @@ export default class Body_EventData {
                                 .finally(() => eventdata.setLaddaSpinner('btnDownload', false));
                         }
                     }
-                }, m("span.ladda-label", "Download")),
+                }, m("span.ladda-label", "Export")),
                 // -------------------------
                 // End: Download Button
                 // -------------------------
@@ -398,6 +398,59 @@ export default class Body_EventData {
                         */
                     }
                 }, m("span.ladda-label", "TwoRavens View")),
+
+                m(Button, {
+                    id: 'btnExportDatamart',
+                    title: isAuthenticated
+                        ? 'export your constructed ' + eventdata.selectedMode
+                        : 'must be logged in to export ' + eventdata.selectedMode,
+                    disabled: !isAuthenticated,
+                    'data-style': 'zoom-in',
+                    'data-spinner-color': '#818181',
+                    class: 'btn-sm ladda-button',
+                    style: {
+                        'margin-right': '6px',
+                        'margin-top': '4px',
+                        'margin-left': '6px'
+                    },
+                    onclick: async () => {
+                        if ('subset' === eventdata.selectedMode) {
+                            if (eventdata.manipulations.length === 0) {
+                                tour.tourStartSaveQueryEmpty();
+                                return;
+                            }
+                            let downloadStep = {
+                                type: 'menu',
+                                metadata: {
+                                    type: 'data',
+                                    variables: (eventdata.selectedVariables.size + eventdata.selectedConstructedVariables.size) === 0
+                                        ? [
+                                            ...eventdata.genericMetadata[eventdata.selectedDataset]['columns'],
+                                            ...eventdata.genericMetadata[eventdata.selectedDataset]['columns_constructed']
+                                        ] : [
+                                            ...eventdata.selectedVariables,
+                                            ...eventdata.selectedConstructedVariables
+                                        ]
+                                }
+                            };
+                            let compiled = queryMongo.buildPipeline([...eventdata.manipulations, downloadStep])['pipeline'];
+                            eventdata.setLaddaSpinner('btnExportDatamart', true);
+                            await eventdata.exportDatamart(eventdata.selectedDataset, JSON.stringify(compiled))
+                                .finally(() => eventdata.setLaddaSpinner('btnExportDatamart', false));
+
+                        }
+                        if ('aggregate' === eventdata.selectedMode) {
+                            if (looseSteps['eventdataAggregate'].measuresAccum.length === 0) {
+                                tour.tourStartEventMeasure();
+                                return;
+                            }
+                            let compiled = queryMongo.buildPipeline([...eventdata.manipulations, looseSteps['eventdataAggregate']])['pipeline'];
+                            eventdata.setLaddaSpinner('btnExportDatamart', true);
+                            await eventdata.download(eventdata.selectedDataset, JSON.stringify(compiled))
+                                .finally(() => eventdata.exportDatamart('btnExportDatamart', false));
+                        }
+                    }
+                }, "Datamart"),
                 // -------------------------
                 // End: TwoRavens Button
                 // -------------------------

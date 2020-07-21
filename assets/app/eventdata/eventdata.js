@@ -667,6 +667,30 @@ export async function download(collection_name, query) {
     fileSaver.saveAs(file);
 }
 
+export async function exportDatamart(collection_name, query) {
+
+    console.log("Download Query:");
+    console.log(query);
+
+    let data = await getEventData({
+        host: genericMetadata[collection_name].host,
+        method: 'aggregate',
+        collection_name,
+        query
+    });
+
+    let variables = [...data.reduce((out, record) => {
+        Object.keys(record).forEach(variable => out.add(variable));
+        return out;
+    }, new Set())];
+
+    let text = data.map(record => variables.map(variable => record[variable] || '').join('\t') + '\n');
+
+    let header = [...variables].join('\t') + '\n';
+    let file = new File([header, ...text], `EventData_${collection_name}.tsv`, {type: "text/plain;charset=utf-8"});
+    fileSaver.saveAs(file);
+}
+
 export async function reset() {
 
     let scorchTheEarth = () => {

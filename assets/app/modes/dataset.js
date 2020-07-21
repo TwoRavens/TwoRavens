@@ -500,7 +500,7 @@ async function uploadDataset() {
 // menu text
 export let uploadStatus;
 
-let datasetPreferences = {
+export let datasetPreferences = {
     datasourceMode: 'Current',
     datasetSearch: '',  // 'Ethiopia',
     upload: {

@@ -3,8 +3,6 @@
 */
 import hopscotch from 'hopscotch';
 import m from 'mithril';
-// no use except for making it possible to play with m from the console
-window.m = m;
 
 import $ from 'jquery';
 import * as d3 from 'd3';
@@ -27,7 +25,6 @@ import {getClearWorkspacesLink, clearWorkpacesAndReloadPage} from "./utils";
 import {search, setDatamartDefaults} from "./datamart/Datamart";
 import {setConstraintMenu} from "./manipulations/manipulate";
 import {SPEC_problem} from './solvers/wrapped';
-import Subpanel from "../common/views/Subpanel";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -90,10 +87,10 @@ export let setPeekInlineIsResizing = state => peekInlineIsResizing = state;
 // true if within-page data preview is enabled
 export let peekInlineShown = false;
 export let setPeekInlineShown = state => {
-  peekInlineShown = state;
-  if (peekInlineShown){
-    logEntryPeekUsed();
-  }
+    peekInlineShown = state;
+    if (peekInlineShown) {
+        logEntryPeekUsed();
+    }
 };
 
 /**
@@ -102,13 +99,15 @@ export let setPeekInlineShown = state => {
  */
 export let logEntryPeekUsed = is_external => {
 
-  let logParams = {feature_id: 'PEEK',
-                   activity_l1: 'DATA_PREPARATION',
-                   activity_l2: 'DATA_EXPLORATION'};
-  if (is_external){
-    logParams.feature_id = 'PEEK_NEW_WINDOW';
-  }
-  saveSystemLogEntry(logParams);
+    let logParams = {
+        feature_id: 'PEEK',
+        activity_l1: 'DATA_PREPARATION',
+        activity_l2: 'DATA_EXPLORATION'
+    };
+    if (is_external) {
+        logParams.feature_id = 'PEEK_NEW_WINDOW';
+    }
+    saveSystemLogEntry(logParams);
 };
 
 export async function resetPeek(pipeline) {
@@ -173,7 +172,7 @@ export async function updatePeek(pipeline) {
         else if (typeof record[entry] === 'string')
             out[entry] = `"${record[entry]}"`;
         else if (typeof record[entry] === 'boolean')
-            out[entry] =  m('div', {style: {'font-style': 'italic', display: 'inline'}}, String(record[entry]));
+            out[entry] = m('div', {style: {'font-style': 'italic', display: 'inline'}}, String(record[entry]));
         else
             out[entry] = record[entry];
         return out;
@@ -410,7 +409,6 @@ export async function buildDatasetUrl(problem, lastStep, dataPath, collectionNam
 }
 
 
-
 /**
  *  Send mongo query params to server and retrieve data
  *
@@ -470,13 +468,13 @@ export let saveLogEntry = async logData => {
         url: save_log_entry_url,
         body: logData
     })
-    .then(function(save_result) {
-        if (save_result.success){
-          // console.log('log entry saved');
-        } else {
-          console.log('log entry FAILED: ' + save_result.message);
-        }
-    })
+        .then(function (save_result) {
+            if (save_result.success) {
+                // console.log('log entry saved');
+            } else {
+                console.log('log entry FAILED: ' + save_result.message);
+            }
+        })
 };
 
 // for debugging - if not in PRODUCTION, prints args
@@ -544,11 +542,12 @@ export let updateRightPanelWidth = () => {
         }[currentMode];
 
         panelWidth['right'] = `calc(${common.panelMargin}*2 + ${tempWidth})`;
-    }
-    else panelWidth['right'] = `calc(${common.panelMargin}*2 + 16px)`;
+    } else panelWidth['right'] = `calc(${common.panelMargin}*2 + 16px)`;
 };
 export let updateLeftPanelWidth = () => {
-    if (is_dataset_mode && !manipulate.constraintMenu) common.panelOcclusion.left = '0px';
+    if (is_explore_mode)
+        common.panelOcclusion.left = '0px';
+    else if (is_dataset_mode && !manipulate.constraintMenu) common.panelOcclusion.left = '0px';
     else if (common.panelOpen['left'])
         panelWidth['left'] = `calc(${common.panelMargin}*2 + ${model.leftPanelWidths[leftTab]})`;
     else panelWidth['left'] = `calc(${common.panelMargin}*2 + 16px)`;
@@ -569,8 +568,8 @@ if (!IS_EVENTDATA_DOMAIN) {
 //-------------------------------------------------
 // Initialize a websocket for this page
 //-------------------------------------------------
-export let wsLink = WEBSOCKET_PREFIX + window.location.host +
-    '/ws/connect/' + username + '/';
+export let wsLink = `${WEBSOCKET_PREFIX}${window.location.host}/ws/connect/${username}/`;
+
 function connectWebsocket() {
     let ws = null;
 
@@ -602,8 +601,8 @@ function connectWebsocket() {
 
 // For EventData, do not connect websockets (at least not yet)
 //
-if (!IS_EVENTDATA_DOMAIN){
-  document.addEventListener("DOMContentLoaded", connectWebsocket);
+if (!IS_EVENTDATA_DOMAIN) {
+    document.addEventListener("DOMContentLoaded", connectWebsocket);
 }
 
 export let streamMsgCnt = 0;
@@ -639,9 +638,7 @@ function websocketMessage(e) {
             debugLog('streamSocket.onmessage: Error, "msg_data.data" type not specified!');
             debugLog('full data: ' + JSON.stringify(msg_data));
             debugLog('---------------------------------------------');
-        }
-
-        else if (msg_data.msg_type === 'GetSearchSolutionsResults') {
+        } else if (msg_data.msg_type === 'GetSearchSolutionsResults') {
             debugLog(msg_data.msg_type + ' recognized!');
             solverD3M.handleGetSearchSolutionResultsResponse(msg_data.data);
         } else if (msg_data.msg_type === 'DescribeSolution') {
@@ -675,6 +672,7 @@ function websocketMessage(e) {
         console.groupEnd();
     }
 }
+
 //-------------------------------------------------
 
 // when set, a problem's Task, Subtask and Metric may not be edited
@@ -743,8 +741,8 @@ export let datamartPreferences = {
     cached: {},
     // track preview button state
     previewButtonState: {
-      ISI: [],
-      NYU: []
+        ISI: [],
+        NYU: []
     }
 };
 
@@ -937,7 +935,7 @@ export let applicableMetrics = {
     }
 };
 
-let standardWrappedSolvers = ['tpot',  'auto_sklearn', 'ludwig', 'h2o', 'two-ravens']; // 'mlbox', 'caret', 'mljar-supervised'
+let standardWrappedSolvers = ['tpot', 'auto_sklearn', 'ludwig', 'h2o', 'two-ravens']; // 'mlbox', 'caret', 'mljar-supervised'
 
 export let applicableSolvers = {
     classification: {
@@ -970,7 +968,7 @@ export const reset = async function reloadPage() {
     location.reload();
 };
 
-export let step = (target, placement, title, content, options={}) => Object.assign({
+export let step = (target, placement, title, content, options = {}) => Object.assign({
     target,
     placement,
     title,
@@ -985,17 +983,17 @@ export let step = (target, placement, title, content, options={}) => Object.assi
 
 export let initialTour = () => ({
     id: "dataset_launch",
-    i18n: {doneBtn:'Ok'},
+    i18n: {doneBtn: 'Ok'},
     showCloseButton: true,
     scrollDuration: 300,
     steps: [
         step("dataName", "bottom", "Welcome to the TwoRavens Solver",
-             `<p>This tool can guide you to solve an empirical problem in the dataset above.</p>
+            `<p>This tool can guide you to solve an empirical problem in the dataset above.</p>
                       <p>These messages will teach you the steps to take to find and submit a solution.</p>`),
         step("btnReset", "bottom", "Restart Any Problem Here",
-             '<p>You can always start a problem over by using this reset button.</p>'),
+            '<p>You can always start a problem over by using this reset button.</p>'),
         step("btnDiscover", "right", "Start Task 1",
-             `<p>This Problem Discovery button allows you to start Task 1 - Problem Discovery.</p>
+            `<p>This Problem Discovery button allows you to start Task 1 - Problem Discovery.</p>
                      <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>
                      <p>Click this button to see a list of problems that have been discovered in the dataset.</p>
                      <p>You can mark which ones you agree may be interesting, and then submit the table as an answer.</p>`),
@@ -1004,15 +1002,15 @@ export let initialTour = () => ({
         //     <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>
         //     <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
         step("btnResults", "left", "Solve Task 2",
-             `<p>This generally is the important step to follow for Task 2 - Build a Model.</p>
+            `<p>This generally is the important step to follow for Task 2 - Build a Model.</p>
                       <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward, and this button will be Green when Task 1 is completed and Task 2 started.</p>
                       <p>Click this Solve button to tell the tool to find a solution to the problem, using the variables presented in the center panel.</p>`),
         step('TargetsHull', "left", "Target Variable",
-             `We are trying to predict ${getSelectedProblem().targets.join(', ')}.
+            `We are trying to predict ${getSelectedProblem().targets.join(', ')}.
                       This center panel graphically represents the problem currently being attempted.`),
         step("PredictorsHull", "right", "Explanation Set", "This set of variables can potentially predict the target."),
         step("tabVariables", "right", "Variable List",
-             `<p>Click on any variable name here if you wish to remove it from the problem solution.</p>
+            `<p>Click on any variable name here if you wish to remove it from the problem solution.</p>
                       <p>You likely do not need to adjust the problem representation in the center panel.</p>`),
         // step("btnEndSession", "bottom", "Finish Problem",
         //      "If the solution reported back seems acceptable, then finish this problem by clicking this End Session button."),
@@ -1022,7 +1020,7 @@ export let initialTour = () => ({
 
 export let task1Tour = {
     id: "dataset_launch",
-    i18n: {doneBtn:'Ok'},
+    i18n: {doneBtn: 'Ok'},
     showCloseButton: true,
     scrollDuration: 300,
     steps: [
@@ -1030,7 +1028,7 @@ export let task1Tour = {
             `<p>Check problems that you consider meaningful.</p>
                      <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
         step("btnSubmitDisc", "right", "Complete Task 1",
-             `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
+            `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
                      <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>`,
             {onShow: () => document.getElementById('btnSubmitDisc').scrollIntoView()}),
     ]
@@ -1039,7 +1037,7 @@ export let task1Tour = {
 // appears when a user attempts to edit when the toggle is set
 export let lockTour = () => ({
     id: "lock_toggle",
-    i18n: {doneBtn:'Ok'},
+    i18n: {doneBtn: 'Ok'},
     showCloseButton: true,
     scrollDuration: 300,
     steps: [
@@ -1052,19 +1050,14 @@ export let lockTour = () => ({
  2. Load datasetUrl
  3. Read preprocess data or (if necessary) run preprocess
  4. Create raven_config if undefined
-    a. Assign discovered problems into raven_config
-    b. Read the d3m problem schema and add to problems
+ a. Assign discovered problems into raven_config
+ b. Read the d3m problem schema and add to problems
  */
 
 export let workspace;
 
-export let getCurrentWorkspaceName = () => {
-    return (workspace || {}).name || '(no workspace name)';
-};
-export let getCurrentWorkspaceId = () => {
-  return (workspace || {}).user_workspace_id || '(no id)';
-  //return (workspace === undefined || workspace.user_workspace_id === undefined) ? '(no id)' : workspace.user_workspace_id;
-};
+export let getCurrentWorkspaceName = () => workspace?.name ?? '(no workspace name)'
+export let getCurrentWorkspaceId = () => workspace?.user_workspace_id ?? '(no id)'
 
 export let setShowModalWorkspace = state => showModalWorkspace = state;
 export let showModalWorkspace = false;
@@ -1084,10 +1077,10 @@ let getDatasetDoc = async dataset_schema_url => {
         setModal(m('div', {}, [
                 m('p', datasetDocFailMsg),
                 m('p', 'Please try to ', linkURLwithText(getClearWorkspacesLink(), 'Reset Workspaces')),
-                  //' or ', linkURLwithText(window.location.origin, 'Reload the Page')),
+                //' or ', linkURLwithText(window.location.origin, 'Reload the Page')),
                 m('hr'),
                 m('p', bold('Technical info. Error: '), datasetDocInfo.message),
-                m('p', 'Url: ', link(datasetDocLink))            ]),
+                m('p', 'Url: ', link(datasetDocLink))]),
             "Failed to load datasetDoc.json!",
             true,
             "Reset Workspaces",
@@ -1201,7 +1194,7 @@ let buildDefaultProblem = problemDoc => {
             timeBoundRun: undefined,
             priority: undefined,
             solutionsLimit: undefined
-        },problemDoc.searchOptions || {}),
+        }, problemDoc.searchOptions || {}),
 
         scoreOptions: {
             evaluationMethod: problemDoc.inputs.dataSplits.method || 'kFold',
@@ -1243,7 +1236,8 @@ let buildDefaultProblem = problemDoc => {
                 resource.columns
                     .filter(column => 'timeGranularity' in column)
                     .reduce((inner, column) => Object.assign(inner, {
-                        [column.colName]: column.timeGranularity}), {})),
+                        [column.colName]: column.timeGranularity
+                    }), {})),
                 {}),
         forecastingHorizon: problemDoc.inputs.forecastingHorizon ? {
             column: problemDoc.inputs.forecastingHorizon.colName,
@@ -1342,7 +1336,7 @@ export let getPreprocess = async query => {
     return results
 };
 
-export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
+export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
 
     workspace = newWorkspace;
     // useful for debugging
@@ -1414,7 +1408,11 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
     let promisePreprocess = promiseSampledDatasetPath
         .then(sampledDatasetPath => m.request(ROOK_SVC_URL + 'preprocess.app', {
             method: 'POST',
-            body: {data: sampledDatasetPath, datastub: workspace.d3m_config.name, variables: workspace.raven_config.variableSummaries}
+            body: {
+                data: sampledDatasetPath,
+                datastub: workspace.d3m_config.name,
+                variables: workspace.raven_config.variableSummaries
+            }
         }))
         .then(response => {
             if (!response.success) alertError(response.message);
@@ -1423,7 +1421,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
         .then(preprocess => {
             if (!preprocess) return;
 
-	    setVariableSummaries(workspace.raven_config.variableSummaries || preprocess.variables);
+            setVariableSummaries(workspace.raven_config.variableSummaries || preprocess.variables);
             setDatasetSummary(workspace.raven_config.datasetSummary || preprocess.dataset);
 
             workspace.raven_config.variablesInitial = Object.keys(preprocess.variables);
@@ -1435,10 +1433,10 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                 Object.values(workspace.raven_config.problems)
                     .forEach(problem => problem.tags.nominal = nominals);
             }
-	    return preprocess['$schema'];
+            return preprocess['$schema'];
         })
         .then(m.redraw)
-	.catch(err => {
+        .catch(err => {
             console.error(err);
             setModal(m('div', m('p', "Preprocess failed."),
                 m('p', '(p: 2)')),
@@ -1462,17 +1460,10 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                 return;
             }
             // merge discovery into problem set if constructing a new raven config
-            promisePreprocess
+            // wait until after preprocess completes,
+            //  so that discovered problems can have additional preprocess metadata attached
+            await promisePreprocess
                 .then(_ => Object.assign(workspace.raven_config.problems, discovery(response.data)));
-
-            promiseProblemDoc
-                .then(() => {
-                    let problem = getSelectedProblem();
-                    let newPredictors = workspace.raven_config.problems['problem 1'].predictors
-                        .filter(variable => !problem.targets.includes(variable));
-                    if (newPredictors.length > 0) problem.predictors = newPredictors;
-                })
-                .catch(() => console.warn('failed to adopt predictors from first discovered problem'))
         });
 
     // RECORD COUNT
@@ -1499,13 +1490,12 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
     let promiseProblemDoc = promiseDatasetDoc
         .then(() => m.request(workspace.d3m_config.problem_schema_url))
         .then(async response => {
-            // problem doc not supplied, so set the first discovered problem as selected, once preprocess loaded
             if (!response.success) {
                 if (!newRavenConfig) return;
-                await promiseDiscovery;
+                // fallback for when preprocess and/or discovery is slow/broken
 
                 if (Object.keys(workspace.raven_config.problems).length === 0) {
-                    let problemId = generateProblemID();
+                    let problemId = 'base ' + generateProblemID();
                     workspace.raven_config.problems = {
                         [problemId]: {
                             problemId,
@@ -1571,6 +1561,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
 
                 let problemFirst = Object.values(workspace.raven_config.problems)[0];
                 let problemCopy = getProblemCopy(problemFirst);
+                problemCopy.provenanceID = undefined;
                 workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
                 setSelectedProblem(problemCopy.problemId);
 
@@ -1602,24 +1593,42 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
                  *   setSelectedProblem -> loadMenu (manipulate.js) -> getData (manipulate.js)
                  */
                 setSelectedProblem(problemCopy.problemId);
-            }
-            else if (!(workspace.raven_config.selectedProblem in workspace.raven_config)) {
+            } else if (!(workspace.raven_config.selectedProblem in workspace.raven_config)) {
                 await promiseDiscovery;
                 setSelectedProblem(Object.keys(workspace.raven_config.problems)[0])
             }
         })
         .then(m.redraw);
 
-    // DATAMART
-    if (DISPLAY_DATAMART_UI) promiseDatasetPath.then(() => workspace.raven_config.hardManipulations.length ? getData({
-        method: 'aggregate',
-        query: JSON.stringify(queryMongo.buildPipeline(
-            workspace.raven_config.hardManipulations,
-            workspace.raven_config.variablesInitial)['pipeline']),
-        export: 'csv',
-    }) : workspace.datasetPath)
-        .then(dataPath => search(datamartPreferences, datamartURL, dataPath))
-        .then(m.redraw);
+    // final cleanup on the selected problem
+    Promise.all([promiseProblemDoc, promiseDiscovery])
+        .then(() => {
+            let problem = getSelectedProblem();
+
+            if (!problem.edited && problem.predictors.length === 0 && problem.targets.length === 0) {
+                setSelectedProblem(Object.values(workspace.raven_config.problems)
+                    .find(problem => problem.predictors.length !== 0)?.problemId)
+            }
+            else if (!problem.edited) {
+                let newPredictors = workspace.raven_config.problems['problem 1']
+                    ?.predictors
+                    ?.filter?.(variable => !problem.targets.includes(variable));
+                if (newPredictors?.length > 0) problem.predictors = newPredictors;
+            }
+        })
+        .catch(e => console.warn(e, 'failed to adopt predictors from first discovered problem'))
+
+
+    // DATAMART (disabled while NYU is default)
+    // if (DISPLAY_DATAMART_UI) promiseDatasetPath.then(() => workspace.raven_config.hardManipulations.length ? getData({
+    //     method: 'aggregate',
+    //     query: JSON.stringify(queryMongo.buildPipeline(
+    //         workspace.raven_config.hardManipulations,
+    //         workspace.raven_config.variablesInitial)['pipeline']),
+    //     export: 'csv',
+    // }) : workspace.datasetPath)
+    //     .then(dataPath => search(datamartPreferences, datamartURL, dataPath))
+    //     .then(m.redraw);
 
     try {
         await Promise.all([
@@ -1651,7 +1660,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess=false) => {
  5. Start the user session /Hello
  */
 
-export async function load({awaitPreprocess}={}) {
+export async function load({awaitPreprocess} = {}) {
     console.log('---------------------------------------');
     console.log('-- initial load, app.js - load() --');
     if (!IS_D3M_DOMAIN) {
@@ -1675,12 +1684,12 @@ export async function load({awaitPreprocess}={}) {
 
     // console.log(JSON.stringify(config_result));
 
-    if (!config_result.success){
-      setModal(config_result.message, "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
+    if (!config_result.success) {
+        setModal(config_result.message, "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
     }
 
-    if (!config_result.data){
-      setModal('No configurations in list!', "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
+    if (!config_result.data) {
+        setModal('No configurations in list!', "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
     }
 
     // ------------------------------------
@@ -1688,7 +1697,7 @@ export async function load({awaitPreprocess}={}) {
     // ------------------------------------
     let workspace = config_result.data.find(config => config.is_current_workspace);
 
-    if (!workspace){
+    if (!workspace) {
         setModal('No current workspace config in list!', "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
     }
 
@@ -1699,9 +1708,9 @@ export async function load({awaitPreprocess}={}) {
 
     let success = await loadWorkspace(workspace, {awaitPreprocess});
     console.groupEnd();
-    if (!success){
-      // alertError('Failed to load workspace');
-      return;
+    if (!success) {
+        // alertError('Failed to load workspace');
+        return;
     }
 
     /**
@@ -1731,12 +1740,12 @@ export async function load({awaitPreprocess}={}) {
 }
 
 /**
-   deletes the item at index from array.
-   if object is provided, deletes first instance of object from array.
-   @param {Object[]} arr - array
-   @param {number} idx - index
-   @param {Object} [obj] - object
-*/
+ deletes the item at index from array.
+ if object is provided, deletes first instance of object from array.
+ @param {Object[]} arr - array
+ @param {number} idx - index
+ @param {Object} [obj] - object
+ */
 export function del(arr, idx, obj) {
     idx = obj ? arr.indexOf(obj) : idx;
     idx > -1 && arr.splice(idx, 1);
@@ -1747,35 +1756,33 @@ export function del(arr, idx, obj) {
    Format and show the TA2 name info panel
 ---------------------------------------------- */
 export let showTA2Name = (responseTA2) => {
+    let ta2Name = responseTA2.data.userAgent;
 
-  let ta2Version;
-  if (typeof responseTA2.data.version !== 'undefined') {
-      ta2Version = responseTA2.data.version;
-  }
-  let ta2Name = responseTA2.data.userAgent;
-  if (ta2Version) {
-      ta2Name += ' (API: ' + ta2Version + ')';
-  }
-  setTA2ServerInfo(ta2Name);
+    let ta2Version = responseTA2.data.version;
+    if (ta2Version) {
+        ta2Name += ' (API: ' + ta2Version + ')';
+    }
+
+    setTA2ServerInfo(ta2Name);
 }
 
 /* ----------------------------------------------
   Show the TA2 connection error modal
 ---------------------------------------------- */
 export let showTA2ConnectError = (errorMessage) => {
-  setModal(
-      m('div', [
-          m('p', {class: 'h5'}, "We were unable to connect to the TA2 system."),
-          m('p', {class: 'h5'}, "It may not be available."),
-        //  m('p', {class: 'h5'}, "Please try again using the button below."),
-          m('hr'),
-          m('p', "Technical details: " + errorMessage),
+    setModal(
+        m('div', [
+            m('p', {class: 'h5'}, "We were unable to connect to the TA2 system."),
+            m('p', {class: 'h5'}, "It may not be available."),
+            //  m('p', {class: 'h5'}, "Please try again using the button below."),
+            m('hr'),
+            m('p', "Technical details: " + errorMessage),
         ]),
         "Error Connecting to the TA2",
         true,
         "Close",
         true);
-        // false, locationReload); // force system restart
+    // false, locationReload); // force system restart
 }
 
 /**
@@ -1797,16 +1804,14 @@ export let toggle = (collection, obj) => {
     if (Array.isArray(collection)) {
         let idx = collection.indexOf(obj);
         idx === -1 ? collection.push(obj) : collection.splice(idx, 1)
-    }
-    else if (collection instanceof Set)
+    } else if (collection instanceof Set)
         collection.has(obj) ? collection.delete(obj) : collection.add(obj)
 };
 
 export let add = (collection, obj) => {
     if (Array.isArray(collection)) {
         !collection.includes(obj) && collection.push(obj);
-    }
-    else if (collection instanceof Set)
+    } else if (collection instanceof Set)
         collection.add(obj)
 };
 
@@ -2099,8 +2104,8 @@ export let erase = () => {
 };
 
 /**
-   converts color codes
-*/
+ converts color codes
+ */
 export let hexToRgba = (hex, alpha) => {
     let int = parseInt(hex.replace('#', ''), 16);
     return `rgba(${[(int >> 16) & 255, (int >> 8) & 255, int & 255, alpha || '0.5'].join(',')})`;
@@ -2226,7 +2231,7 @@ export function discovery(problems) {
     }, {});
 }
 
-export let setVariableSummaries = (state, edit=false) => {
+export let setVariableSummaries = (state, edit = false) => {
     if (!state) return;
     // delete state.d3mIndex;
 
@@ -2244,15 +2249,15 @@ export let setVariableSummary = (variable, attr, value) => {
     variableSummaries[variable][attr] = value;
     let tags = getSelectedProblem().tags;
     if (attr === 'nature') {
-       if (value === 'nominal') tags.nominal.push(variable);
-       else tags.nominal = tags.nominal.filter(x => x != variable);
+        if (value === 'nominal') tags.nominal.push(variable);
+        else tags.nominal = tags.nominal.filter(x => x !== variable);
     } else if (attr === 'geographic') {
-	if (!tags['location']) tags['location'] = []
-	if (value) tags.location.push(variable)
-	else tags.location = tags.location.filter(x => x != variable);
+        if (!tags['location']) tags['location'] = []
+        if (value) tags.location.push(variable)
+        else tags.location = tags.location.filter(x => x !== variable);
     } else if (attr === 'temporal') {
-	if (value) tags.time.push(variable)
-	else tags.time = tags.time.filter(x => x != variable);
+        if (value) tags.time.push(variable)
+        else tags.time = tags.time.filter(x => x !== variable);
     }
     setVariableSummaries(variableSummaries, true);
 };
@@ -2261,7 +2266,7 @@ export let variableSummaries = {};
 export let variableSummariesLoaded = false;
 export let variableSummariesEdited = false;
 
-export let setDatasetSummary = (state, edit=false) => {
+export let setDatasetSummary = (state, edit = false) => {
     datasetSummary = state;
     datasetSummaryEdited = edit;
 };
@@ -2275,7 +2280,7 @@ export let datasetSummaryEdited = false;
 export let saveCurrentWorkspaceWindowOpen = false;
 // Open/close modal window
 export let setSaveCurrentWorkspaceWindowOpen = (boolVal) => {
-  saveCurrentWorkspaceWindowOpen = boolVal;
+    saveCurrentWorkspaceWindowOpen = boolVal;
 };
 
 /*
@@ -2287,14 +2292,16 @@ export let currentWorkspaceSaveMsg = '';
 
 // success message
 export let setCurrentWorkspaceMessageSuccess = (errMsg) => {
-  currentWorkspaceSaveMsg = m('p', {class: 'text-success'}, errMsg);
+    currentWorkspaceSaveMsg = m('p', {class: 'text-success'}, errMsg);
 };
 
 // error message
 export let setCurrentWorkspaceMessageError = (errMsg) => {
-  currentWorkspaceSaveMsg = m('p', {class: 'text-danger'}, errMsg);
+    currentWorkspaceSaveMsg = m('p', {class: 'text-danger'}, errMsg);
 };
-export let getCurrentWorkspaceMessage = () => { return currentWorkspaceSaveMsg; };
+export let getCurrentWorkspaceMessage = () => {
+    return currentWorkspaceSaveMsg;
+};
 
 
 /*
@@ -2302,7 +2309,7 @@ export let getCurrentWorkspaceMessage = () => { return currentWorkspaceSaveMsg; 
  *  ravens_config data to the user workspace.
  *    e.g. updates the workspace saved in the database
  */
-export let saveUserWorkspace = (silent = false, reload = false)=> {
+export let saveUserWorkspace = (silent = false, reload = false) => {
     console.log('-- saveUserWorkspace --');
 
     // clear modal message
@@ -2317,12 +2324,12 @@ export let saveUserWorkspace = (silent = false, reload = false)=> {
     }
 
     if (datasetSummaryEdited) {
-	workspace.raven_config.datasetSummary = datasetSummary;
-	datasetSummaryEdited = false;
+        workspace.raven_config.datasetSummary = datasetSummary;
+        datasetSummaryEdited = false;
     }
     if (variableSummariesEdited) {
-	workspace.raven_config.variableSummaries = variableSummaries;
-	variableSummariesEdited = false;
+        workspace.raven_config.variableSummaries = variableSummaries;
+        variableSummariesEdited = false;
     }
 
     let raven_config_save_url = '/user-workspaces/raven-configs/json/save/' + workspace.user_workspace_id;
@@ -2334,33 +2341,32 @@ export let saveUserWorkspace = (silent = false, reload = false)=> {
         url: raven_config_save_url,
         body: {raven_config: workspace.raven_config}
     })
-    .then(function (save_result) {
-	console.log(save_result);
-	if (save_result.success) {
-	    setCurrentWorkspaceMessageSuccess('The workspace was saved!')
-	} else {
-	    setCurrentWorkspaceMessageError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
-	}
-	!silent && setSaveCurrentWorkspaceWindowOpen(true);
-	if (reload) reset()
-    })
+        .then(function (save_result) {
+            console.log(save_result);
+            if (save_result.success) {
+                setCurrentWorkspaceMessageSuccess('The workspace was saved!')
+            } else {
+                setCurrentWorkspaceMessageError('Failed to save the workspace. ' + save_result.message + ' (saveUserWorkspace)');
+            }
+            !silent && setSaveCurrentWorkspaceWindowOpen(true);
+            if (reload) reset()
+        })
 };
 /*
  * END: saveUserWorkspace
  */
 
 
- /*
- *  Variables related to API info window
- */
+/*
+*  Variables related to API info window
+*/
 export let isAPIInfoWindowOpen = false;
 // Open/close modal window
 export let setAPIInfoWindowOpen = (boolVal) => isAPIInfoWindowOpen = boolVal;
 
 
-
 // TA2 server information for display in modal
-export let TA2ServerInfo = (TA2_SERVER !== undefined ) ? TA2_SERVER : '(TA2 unknown)';
+export let TA2ServerInfo = (TA2_SERVER !== undefined) ? TA2_SERVER : '(TA2 unknown)';
 export let setTA2ServerInfo = (infoStr) => TA2ServerInfo = infoStr;
 
 /*
@@ -2374,57 +2380,55 @@ export let showModalSaveName = false;
  * open/close the modal window
  */
 export let setShowModalSaveName = (boolVal) => {
-  showModalSaveName = boolVal;
+    showModalSaveName = boolVal;
 
-  // Reset the modal window
-  if (boolVal){
-    // clear any workspace names in the input box
-    setNewWorkspaceName('');
+    // Reset the modal window
+    if (boolVal) {
+        // clear any workspace names in the input box
+        setNewWorkspaceName('');
 
-    // clear any user messages
-    setNewWorkspaceMessageSuccess('');
+        // clear any user messages
+        setNewWorkspaceMessageSuccess('');
 
-    // show save/cancel buttons
-    setDisplaySaveNameButtonRow(true);
+        // show save/cancel buttons
+        setDisplaySaveNameButtonRow(true);
 
-    // hide close button
-    setDisplayCloseButtonRow(false);
-  }
+        // hide close button
+        setDisplayCloseButtonRow(false);
+    }
 }
 
 // Display for the Cancel/Save button row
 export let displaySaveNameButtonRow = true;
 export let setDisplaySaveNameButtonRow = (boolVal) => {
-  displaySaveNameButtonRow = boolVal;
+    displaySaveNameButtonRow = boolVal;
 };
 // Display for the Close Modal success
 export let displayCloseButtonRow = true;
 export let setDisplayCloseButtonRow = (boolVal) => {
-  displayCloseButtonRow = boolVal;
+    displayCloseButtonRow = boolVal;
 };
 
 // set/get new workspace name
 export let newWorkspaceName = '';
-export let setNewWorkspaceName = (newName) => newWorkspaceName = newName;
-export let getNewWorkspaceName = () => { return newWorkspaceName; };
+export let setNewWorkspaceName = newName => newWorkspaceName = newName;
 
 // set/get user messages for new workspace
 export let newWorkspaceMessage = '';
 // success message
 export let setNewWorkspaceMessageSuccess = (errMsg) => {
-  newWorkspaceMessage = m('p', {class: 'text-success'}, errMsg);
+    newWorkspaceMessage = m('p', {class: 'text-success'}, errMsg);
 };
 // error message
 export let setNewWorkspaceMessageError = (errMsg) => {
-  newWorkspaceMessage = m('p', {class: 'text-danger'}, errMsg);
+    newWorkspaceMessage = m('p', {class: 'text-danger'}, errMsg);
 };
-export let getnewWorkspaceMessage = () => { return newWorkspaceMessage; };
 
- /*
-  *  saveAsNewWorkspace() save the current
-  *  workspace as new one, with a new name.
-  *    - placeholder with random name
-  */
+/*
+ *  saveAsNewWorkspace() save the current
+ *  workspace as new one, with a new name.
+ *    - placeholder with random name
+ */
 export async function saveAsNewWorkspace() {
     console.log('-- saveAsNewWorkspace --');
 
@@ -2446,9 +2450,8 @@ export async function saveAsNewWorkspace() {
 
     // new workspace name
     // let new_workspace_name = 'new_ws_' + Math.random().toString(36).substring(7);
-    let new_workspace_name = getNewWorkspaceName();
 
-    if (!new_workspace_name) {
+    if (!newWorkspaceName) {
 
         // show save/cancel buttons
         setDisplaySaveNameButtonRow(true);
@@ -2457,7 +2460,7 @@ export async function saveAsNewWorkspace() {
         return;
     }
 
-    console.log('new_workspace_name: ' + new_workspace_name);
+    console.log('new_workspace_name: ' + newWorkspaceName);
 
     // save url
     let raven_config_save_url = '/user-workspaces/raven-configs/json/save-as-new/' + workspace.user_workspace_id;
@@ -2466,7 +2469,7 @@ export async function saveAsNewWorkspace() {
         method: "POST",
         url: raven_config_save_url,
         body: {
-            new_workspace_name: new_workspace_name,
+            new_workspace_name: newWorkspaceName,
             raven_config: workspace.raven_config
         }
     });
@@ -2510,6 +2513,7 @@ export async function saveAsNewWorkspace() {
     }
     m.redraw();
 }
+
 /*
  * END: saveAsNewWorkspace
  */
@@ -2561,7 +2565,7 @@ export let setSupervision = (supervision, problem) => {
     delete problem.unedited;
 };
 
-export let setResourceTypes = (types, problem) =>  {
+export let setResourceTypes = (types, problem) => {
     types = types.filter(type => Object.keys(d3mResourceType).includes(type));
     if (types.every(type => problem.resourceTypes.includes(type)) && types.length === problem.resourceTypes.length)
         return;
@@ -2571,7 +2575,7 @@ export let setResourceTypes = (types, problem) =>  {
     delete problem.unedited;
 };
 
-export let setD3MTags = (tags, problem)  => {
+export let setD3MTags = (tags, problem) => {
     tags = tags.filter(type => Object.keys(d3mTags).includes(type));
     if (tags.every(tag => problem.d3mTags.includes(tag)) && tags.length === problem.d3mTags.length)
         return;
@@ -2598,7 +2602,7 @@ export let getSubtask = problem => {
     return problem.subTask
 };
 
-export let setMetric = (metric, problem, all=false) => {
+export let setMetric = (metric, problem, all = false) => {
     if (metric === problem.metric || !applicableMetrics[problem.task][getSubtask(problem)].includes(metric))
         return;
     if (problem.metrics.includes(metric)) problem.metrics.push(problem.metric);
@@ -2730,42 +2734,42 @@ export let setCheckedDiscoveryProblem = (status, problemId) => {
        }
     }
  */
-export function handleMaterializeDataMessage(msg_data){
+export function handleMaterializeDataMessage(msg_data) {
 
-  if (!msg_data) {
-      console.log('handleMaterializeDataMessage: Error.  "msg_data" undefined');
-      return;
-  }
-  if (msg_data.success === false) {
-    setModal("Data preview error: " + msg_data.user_message,
-             "Data materialization Failed", true, "Close", true);
-    return;
-  }
+    if (!msg_data) {
+        console.log('handleMaterializeDataMessage: Error.  "msg_data" undefined');
+        return;
+    }
+    if (msg_data.success === false) {
+        setModal("Data preview error: " + msg_data.user_message,
+            "Data materialization Failed", true, "Close", true);
+        return;
+    }
 
-  console.log('datamart_id: ' + msg_data.data.datamart_id);
-  console.log('filesize: ' + msg_data.data.filesize);
+    console.log('datamart_id: ' + msg_data.data.datamart_id);
+    console.log('filesize: ' + msg_data.data.filesize);
 
-  // Save the data in the datamartPreferences object
-  //
-  const previewDatamartId = msg_data.data.id;
-  datamartPreferences.cached[previewDatamartId] = msg_data.data;
-  let previewDatamartIndex = datamartPreferences.results[datamartPreferences.sourceMode]
-      .findIndex(entry => previewDatamartId === datamartPreferences.getData(entry, 'id'));
-  datamartPreferences.setPreviewButtonState(previewDatamartIndex, false);
+    // Save the data in the datamartPreferences object
+    //
+    const previewDatamartId = msg_data.data.id;
+    datamartPreferences.cached[previewDatamartId] = msg_data.data;
+    let previewDatamartIndex = datamartPreferences.results[datamartPreferences.sourceMode]
+        .findIndex(entry => previewDatamartId === datamartPreferences.getData(entry, 'id'));
+    datamartPreferences.setPreviewButtonState(previewDatamartIndex, false);
 
-  // Format the data_preview
-  //
-  datamartPreferences.cached[previewDatamartId].data_preview =   datamartPreferences.cached[previewDatamartId].data_preview.split('\n').map(line => line.split(','));
+    // Format the data_preview
+    //
+    datamartPreferences.cached[previewDatamartId].data_preview = datamartPreferences.cached[previewDatamartId].data_preview.split('\n').map(line => line.split(','));
 
-  // Set the modal type
-  datamartPreferences.modalShown = 'preview';
+    // Set the modal type
+    datamartPreferences.modalShown = 'preview';
 
-  // Set user message
-  const userMsg = 'File preview complete.'
-  datamartPreferences.success[msg_data.data.source_mode] = userMsg;
+    // Set user message
+    const userMsg = 'File preview complete.'
+    datamartPreferences.success[msg_data.data.source_mode] = userMsg;
 
-  // Refresh the display
-  m.redraw();
+    // Refresh the display
+    m.redraw();
 
 
 } // end handleMaterializeDataMessage
@@ -2775,7 +2779,7 @@ export function handleMaterializeDataMessage(msg_data){
  *  After a search by dataset:
  *  - Display the results on the Datamart
  */
- export async function handleSearchbyDataset(msg_data) {
+export async function handleSearchbyDataset(msg_data) {
 
 
     if (!msg_data) {
@@ -2894,7 +2898,7 @@ export async function handleAugmentDataMessage(msg_data) {
 
 // pretty precision formatting- null and undefined are NaN, attempt to parse strings to float
 // if valid number, returns a Number at less than or equal to precision (trailing decimal zeros are ignored)
-export function formatPrecision(value, precision=4) {
+export function formatPrecision(value, precision = 4) {
     if (value === null) return NaN;
     let numeric = value * 1;
     if (isNaN(numeric)) return value;
@@ -2916,12 +2920,12 @@ export let omniSort = (a, b) => {
     if (b === undefined && a !== undefined) return 1;
     if (a === b) return 0;
     if (typeof a === 'number') return a - b;
-    if (typeof a === 'string') return  a.localeCompare(b);
+    if (typeof a === 'string') return a.localeCompare(b);
     return (a < b) ? -1 : 1;
 };
 
 
-export function melt(data, factors, value="value", variable="variable") {
+export function melt(data, factors, value = "value", variable = "variable") {
     factors = new Set(factors);
     let outData = [];
     data.forEach(record => {
@@ -2941,7 +2945,7 @@ export function melt(data, factors, value="value", variable="variable") {
 
 // replacement: allow duplicates in samples
 // ordered: preserve the order in the original array
-export let sample = (arr, n=1, replacement=false, ordered=false) => {
+export let sample = (arr, n = 1, replacement = false, ordered = false) => {
     let indices = [];
     if (replacement)
         indices = Array.from({length: n})

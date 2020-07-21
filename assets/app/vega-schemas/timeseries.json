@@ -4,10 +4,13 @@
     "url": "tworavensData"
   },
   "mark":  {
-    "type": "line",
-    "point": true
+    "type": "line"
   },
   "encoding": {
+    "tooltip": [
+      {"field": "tworavensX", "type": "temporal"},
+      {"field": "tworavensY", "type": "quantitative"}
+    ],
     "x": {"field": "tworavensX", "type": "temporal", "scale": {"zero":  false}},
     "y": {"field": "tworavensY", "type": "quantitative", "aggregate": "sum", "scale": {"zero":  false}}
   },

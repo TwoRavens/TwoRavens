@@ -43,10 +43,11 @@ import ModalWorkspace from "./views/ModalWorkspace";
 import Body_EventData from './eventdata/Body_EventData';
 import Body_Dataset from "./views/Body_Dataset";
 
-import {getSelectedProblem} from "./app";
+import {getSelectedProblem, newWorkspaceMessage} from "./app";
 import {buildCsvUrl} from "./app";
 import {alertWarn} from "./app";
 import ButtonLadda from "./views/ButtonLadda";
+import {datasetPreferences} from "./modes/dataset";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let boldPlain = value => m('b', value);
@@ -147,14 +148,12 @@ class Body {
 
         let createBreadcrumb = () => {
             let path = [
-                m(Popper, {
-                        content: () => m(Table, {
-                            data: Object.entries(app.workspace.datasetDoc.about)
-                                .map(row => [row[0], preformatted(row[1])])
-                        })
-                    },
                     m('h4#dataName', {
                             style: {display: 'inline-block', margin: '.25em 1em'},
+                            onclick: () => {
+                                app.setSelectedMode('dataset')
+                                datasetPreferences.datasourceMode = "Current"
+                            }
                         },
                         app.workspace.d3m_config.name || 'Dataset Name', m('br'),
                         app.workspace.name !== app.workspace.d3m_config.name && m('div', {
@@ -162,22 +161,23 @@ class Body {
                                 'font-style': 'italic', float: 'right', 'font-size': '14px',
                             }
                         }, `workspace: ${app.workspace.name}`)
-                    ))
+                    )
             ];
 
-            if (selectedProblem) path.push(m(Icon, {name: 'chevron-right'}), m(Popper, {
-                content: () => m(Table, {
-                    data: {'targets': selectedProblem.targets, 'description': preformatted(app.getDescription(selectedProblem).description)}
-                })
-            }, m('h4[style=display: inline-block; margin: .25em 1em]', selectedProblem.problemId)));
+            if (selectedProblem) path.push(
+                m(Icon, {name: 'chevron-right'}),
+                m('h4[style=display: inline-block; margin: .25em 1em]', {
+                    onclick: () => {
+                        app.setSelectedMode('model');
+                    }
+                }, selectedProblem.problemId));
 
             let selectedSolutions = results.getSelectedSolutions(selectedProblem);
             if (app.is_results_mode && selectedSolutions.length === 1 && selectedSolutions[0]) {
                 path.push(
                     m(Icon, {name: 'chevron-right'}),
-                    m(Popper, {content: () => 'Pipeline ID. Corresponds to the ID in the "All Solutions" table.'},
-                        m('h4[style=display: inline-block; margin: .25em 1em]',
-                            results.getSolutionAdapter(selectedProblem, selectedSolutions[0]).getSolutionId())))
+                    m('h4[style=display: inline-block; margin: .25em 1em]',
+                        'solution ' + results.getSolutionAdapter(selectedProblem, selectedSolutions[0]).getSolutionId()))
             }
 
             return path;
@@ -534,7 +534,7 @@ class Body {
                                 id: 'newNameMessage',
                                 style: 'padding:20px 0;'
                             },
-                            m('p', {class: "lead"}, app.getnewWorkspaceMessage())
+                            m('p', {class: "lead"}, app.newWorkspaceMessage)
                         ),
                         // Close Button Row - used if save is successful
                         app.displayCloseButtonRow && m('div', {
@@ -794,7 +794,7 @@ class Body {
     static leftpanel(mode, forceData) {
         if (mode === 'dataset') return manipulate.leftpanel();
         if (mode === 'results') return results.leftpanel();
-        return model.leftpanel(forceData);
+        if (mode === 'model') return model.leftpanel(forceData);
     }
 
     static rightpanel(mode) {
