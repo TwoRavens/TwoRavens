@@ -22,6 +22,7 @@ fab create_test_user
 # Load the event data config
 #
 fab load_eventdata_prod
+fab make_d3m_event_data_placeholder_config
 
 # collect static files
 #

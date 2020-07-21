@@ -84,7 +84,17 @@ def make_d3m_configs_from_files_multiuser_test():
                     **params)
 
 @task
-def make_d3m_configs_from_files_multiuser_test_limited():
+def make_d3m_event_data_placeholder_config():
+    """7/21/2020 workaround. Need a D3M Configuration to be in the database"""
+    # This is for the NYU Datamart functionality
+    extra_params = dict(is_default_config=True)
+
+    make_d3m_configs_from_files_multiuser_test_limited(\
+                                        'EVENTDATA_PLACEHOLDER',
+                                        **extra_params)
+
+@task
+def make_d3m_configs_from_files_multiuser_test_limited(single_dataset=None, **extra_params):
     """1/2020 Make configs from /ravens_volume and loads them to db
     Also make the input/output directories 1-level higher than usual
     """
@@ -94,9 +104,10 @@ def make_d3m_configs_from_files_multiuser_test_limited():
     from tworaven_apps.configurations import static_vals as cstatic
     from django.conf import settings
     params = dict(is_multi_dataset_demo=True)
+    if extra_params:
+        params = dict(params, **extra_params)
 
-
-    selected_datatsets = [\
+    default_datatsets = [\
         'Western_Sahel_Grid-2010_2020',
         'Western_Sahel_Grid-Quarter-2010_2020',
         'LL1_h1b_visa_apps_7480',
@@ -123,9 +134,10 @@ def make_d3m_configs_from_files_multiuser_test_limited():
         # 'LL1_PHEM_weeklyData_malnutrition',
         'DA_poverty_estimation']
 
-    #selected_datatsets = ['Western_Sahel_Grid-2010_2020',
-    #                      '185_baseball',
-    #                      'Western_Sahel_Grid-Quarter-2010_2020',]
+    if single_dataset:
+        selected_datasets = [single_dataset]
+    else:
+        selected_datasets = default_datatsets
 
     # -------------------------------
     # Check if selected datasets are
@@ -137,12 +149,12 @@ def make_d3m_configs_from_files_multiuser_test_limited():
                         for x in env_datasets.split()
                         if len(x.strip()) > 0]
         if env_datasets:
-            selected_datatsets = env_datasets
+            selected_datasets = env_datasets
 
     # Names of directories of datasets that should be available to users
     #   - This can also be updated in the admin
     #
-    params[cstatic.SELECTED_NAME_LIST] = selected_datatsets
+    params[cstatic.SELECTED_NAME_LIST] = selected_datasets
 
     loader = EnvConfigLoader.make_d3m_test_configs_env_based(\
                     settings.RAVENS_TEST_DATA_READONLY_DIR,

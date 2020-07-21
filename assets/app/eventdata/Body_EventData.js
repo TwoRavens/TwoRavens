@@ -400,7 +400,10 @@ export default class Body_EventData {
                     }
                 }, m("span.ladda-label", "TwoRavens View")),
 
-                m(Button, {
+                // -------------------------
+                // Start: DataMart Button
+                // -------------------------
+                eventdata.selectedMode !== 'home' && m(Button, {
                     id: 'btnExportDatamart',
                     title: isAuthenticated
                         ? 'export your constructed ' + eventdata.selectedMode
