@@ -352,7 +352,9 @@ This setup involves running several processes.
         - redis: ```fab redis_run```
     - **Terminal 5. Celery**:
       ```fab celery_run_with_ta2```
-    - **Terminal 6. TA2**.
+    - **Terminal 6. Postgres**:
+      ```fab run_postgres_run```
+    - **Terminal 7. TA2**.
       - Example using the Brown TA2:
         - List datasets: ```fab run_ta2_brown_choose_config```
         - Pick a dataset based on its number.
