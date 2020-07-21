@@ -349,7 +349,7 @@ This setup involves running several processes.
       ```
       - If you don't have docker:
         - install redis (see above)
-        - redis: ```fab run_redis```
+        - redis: ```fab redis_run```
     - **Terminal 5. Celery**:
       ```fab celery_run_with_ta2```
     - **Terminal 6. TA2**.
