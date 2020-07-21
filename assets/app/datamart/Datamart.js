@@ -1030,6 +1030,13 @@ export let setDatamartDefaults = preferences => {
          * Search success, show results
          * ------------------------------------------- */
         console.log('results are back! ' + JSON.stringify(response));
+
+        if (preferences.sourceMode === "NYU") {
+            console.log(response);
+            window.open(response.data.datamart_url, 'NYU_Datamart').focus();
+            return
+        }
+
         // (moved sort to server side)
         // clear array and add results
         preferences.results[datamartSource].length = 0;
@@ -1037,12 +1044,6 @@ export let setDatamartDefaults = preferences => {
 
         let numResults = preferences.results[datamartSource].length
         console.log('Num results: ' + numResults);
-
-        if (preferences.sourceMode === "NYU") {
-            console.log(response);
-            window.open(response.data.datamart_url, 'NYU_Datamart').focus();
-            return
-        }
 
         if (numResults === 0) {
             // No datasets found
@@ -1086,7 +1087,7 @@ export let setDatamartDefaults = preferences => {
     setDefault(preferences, 'success', {ISI: undefined, NYU: undefined});
 
     // Set ISI or NYU
-    setDefault(preferences, 'sourceMode', 'ISI');
+    setDefault(preferences, 'sourceMode', 'NYU');
 
     setDefault(preferences, 'leftJoinVariables', new Set());
     setDefault(preferences, 'rightJoinVariables', new Set());

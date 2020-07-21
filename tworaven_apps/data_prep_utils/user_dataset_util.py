@@ -83,7 +83,8 @@ class UserDatasetUtil(BasicErrCheck):
                 dataset_name = json.load(dataset_doc_file).get("about", {}).get("datasetName")
             if dataset_name is not None:
                 self.dataset_name = dataset_name
-        self.dataset_name = kwargs.get(dp_static.DATASET_NAME)
+        else:
+            self.dataset_name = kwargs.get(dp_static.DATASET_NAME)
         if not self.dataset_name:
             self.dataset_name = f'dataset_{get_alpha_string(7)}'
 
@@ -267,6 +268,7 @@ class UserDatasetUtil(BasicErrCheck):
             offset += 1
             new_config_name = f'{self.dataset_name}-{str(offset).zfill(3)}'
 
+        print(f"new config name {new_config_name }")
         self.new_d3m_config.name = new_config_name
         self.new_d3m_config.save()
 

@@ -47,13 +47,12 @@ import trellishist from '../vega-schemas/trellishist.json';
 import trellisscatterqqn from '../vega-schemas/trivariate/trellisscatterqqn.json';
 
 import * as common from "../../common/common";
-import Popper from "../../common/views/Popper";
 
 import Button from "../../common/views/Button";
 import Icon from "../../common/views/Icon";
 
-import {alertError} from "../app";
 import * as queryMongo from "../manipulations/queryMongo";
+import ButtonRadio from "../../common/views/ButtonRadio";
 
 let recordLimit = 5000;
 
@@ -63,7 +62,8 @@ let wrapCanvas = (...contents) => m('div#canvasExplore', {
         style: {
             height: '100%',
             'padding-top': common.panelMargin,
-            width: `calc(100% + ${common.panelMargin})`
+            'max-width': `1058px`,
+            margin: 'auto'
         }
     },
     contents
@@ -98,10 +98,20 @@ export class CanvasExplore {
         let selectedProblem = app.getSelectedProblem();
 
         if (!variate) return wrapCanvas(
+            m(ButtonRadio, {
+                id: 'problemVariateButtonRadio',
+                attrsAll: {style: {width: '200px', margin: '.5em', position: 'fixed'}},
+                activeSection: app.leftTab,
+                onclick: app.setLeftTab,
+                sections: [
+                    {value: 'Variables'},
+                    {value: 'Discover'},
+                ]
+            }),
             m(Button, {
                 id: 'exploreGo',
                 class: 'btn-success',
-                style: {margin: '.5em', position: 'fixed'},
+                style: {margin: '.5em', 'margin-left': 'calc(200px + 1.5em)', position: 'fixed'},
                 onclick: () => {
                     let selected = app.leftTab === 'Discover' ? [app.workspace.raven_config.selectedProblem] : exploreVariables;
                     if (selected.length === 0) return;
@@ -131,9 +141,6 @@ export class CanvasExplore {
                         ? x === selectedProblem.problemId
                         : exploreVariables.includes(x);
 
-                    let targetName = app.leftTab === 'Discover'
-                        ? app.workspace.raven_config.problems[x].targets[0]
-                        : x;
                     let node = app.variableSummaries[x];
                     let kind = node && node.temporal ? 'temporal' :
                         node && node.geographic ? 'geographic' :
@@ -197,15 +204,13 @@ export class CanvasExplore {
                             get_node_label(x)),
                         kind && m('div', m('em', kind))
                     );
-
-                    if (app.variableSummaries[targetName].labl)
-                        return m(Popper, {content: () => app.variableSummaries[targetName].labl}, tile);
                     return tile;
                 }))
         );
 
         let getPlot = () => {
 
+            console.log(variate);
             if (variate === "problem") return m('#plot', {
                 style: 'display: block',
                 oncreate: () => plotVega(app.variableSummaries, undefined, selectedProblem, variate)
@@ -245,7 +250,7 @@ export class CanvasExplore {
                     class: 'btn-secondary',
                     onclick: () => {
                         m.route.set('/explore');
-                        m.redraw()
+                        setTimeout(m.redraw, 20)
                     },
                     style: {margin: '.5em'}
                 },
@@ -472,9 +477,6 @@ const colors = [
 // function to fill in the contents of the vega schema.
 let fillVegaSchema = (schema, data, flip) => {
     let [schemaName, natures] = data.plottype;
-    if (schemaName === 'timeseries') {
-        if (natures[0] !== 'q') schema.encoding.x.type = 'nominal';
-    }
 
     let stringified = JSON.stringify(schema);
     if (flip) {
@@ -568,6 +570,8 @@ export async function plotVega(nodeSummaries, schemaName, problem, variate) {
             nodeSummaries[problem.targets[0]]
         ])
         : [nodeSummaries];
+
+    console.log(facetSummaries)
 
     // build vega-lite specifications for every facet
     let facetSpecifications = [];

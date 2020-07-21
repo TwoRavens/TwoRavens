@@ -97,10 +97,10 @@ if ! docker ps -a | grep -q raven-postgres; then
     workon 2ravens;
     docker kill raven-postgres;
     fab postgres_run; exit"
-fi
 
-# postgres must be ready before django is started
-wait_for_port 5432
+  # postgres must be ready before django is started
+  wait_for_port 5432
+fi
 
 # rename tab; move into repo; set working env; kill django; kill webpack; run django; close tab;
 ttab -G '
@@ -157,6 +157,7 @@ mongo tworavens --eval "printjson(db.dropDatabase())"
 wait_for_port 8080
 
 if [[ $1 == "none" ]]; then
+  docker kill ta2_server || true
   fab choose_config:"$DATA_ID"
 else
   ttab -G "

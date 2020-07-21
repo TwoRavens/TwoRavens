@@ -50,6 +50,7 @@ class EnvConfigLoader(BasicErrCheck):
         assert isinstance(self.env_config, SimpleNamespace), \
             '"env_config_vals" must be a dict or a SimpleNamespace'
 
+        self.orig_directory_name = kwargs.get('orig_directory_name', None)
         self.dataset_doc_path = kwargs.get('dataset_doc_path', None)
 
         self.delete_if_exists = kwargs.get('delete_if_exists', False)
@@ -209,11 +210,12 @@ class EnvConfigLoader(BasicErrCheck):
         config_info = dict(is_default=self.is_default_config)
 
         # Set the name of the config
-        #
+        # (a) Is it in the problem doc?
         name = None
         if self.problem_doc:
             try:
                 name = self.problem_doc['about']['problemID']
+                # Yes, got it
             except KeyError:
                 user_msg = ('about.Problem ID not found in problem doc: %s') % \
                         self.env_config.D3MPROBLEMPATH
@@ -221,14 +223,22 @@ class EnvConfigLoader(BasicErrCheck):
                 self.add_err_msg(user_msg)
                 return
 
+        # Name not found in the problem doc
+        #
         if not name:
-            # No problem id, so timestamp it
+            # Try using the directory name
             #
-            name = 'config_%s_%s' % \
-                        (random_info.get_timestamp_string(),
-                         random_info.get_alphanumeric_lowercase(4))
+            if self.orig_directory_name and \
+                D3MConfiguration.objects.filter(name=self.orig_directory_name).count() == 0:
+                name = self.orig_directory_name
 
-        print('name', name)
+            else:
+                # Directory name already use, make generic/timestamped config name
+                #
+                name = 'config_%s_%s' % \
+                            (random_info.get_timestamp_string(),
+                             random_info.get_alphanumeric_lowercase(4))
+
         # If a D3MConfiguration with this name exists, either
         #   use it or delete, depending on the flag: self.delete_if_exists
         #
@@ -300,13 +310,27 @@ class EnvConfigLoader(BasicErrCheck):
 
             doc_info = read_file_contents(self.dataset_doc_path)
             if doc_info.success:
+                updated_name = None
                 dataset_doc = doc_info.result_obj
-                print('dataset_doc', dataset_doc)
+                # print('dataset_doc', dataset_doc)
                 if 'about' in dataset_doc:
+                    if 'datasetName' in dataset_doc['about']:
+                        updated_name = dataset_doc['about']['datasetName']
+
                     if 'datasetID' in dataset_doc['about']:
-                        config_info['name'] = f"{dataset_doc['about']['datasetID']}-{random_info.get_alphanumeric_lowercase(6)}"
                         config_info['orig_dataset_id'] = dataset_doc['about']['datasetID']
-    
+                        if not updated_name:
+                            updated_name = dataset_doc['about']['datasetID']
+
+                # Is there a new name?
+                #
+                if updated_name:
+                    print('cnt', D3MConfiguration.objects.filter(name=updated_name).count())
+                    if D3MConfiguration.objects.filter(name=updated_name).count() > 0:
+                        updated_name = (f'{updated_name}-'
+                                        f'{random_info.get_alphanumeric_lowercase(6)}')
+                    config_info['name'] = updated_name
+
         else:
             # This will fail if multi-user testing
             #   with no problem doc
@@ -329,6 +353,7 @@ class EnvConfigLoader(BasicErrCheck):
         config_info['timeout'] = self.env_config.D3MTIMEOUT
         config_info['env_values'] = self.env_config.__dict__
         #print('config_info', config_info)
+
         new_config = D3MConfiguration(**config_info)
         new_config.save()
 
@@ -405,7 +430,7 @@ class EnvConfigLoader(BasicErrCheck):
 
             cnt += 1
             msgt('(%d) Make config: %s' % (cnt, fullpath))
-
+            kwargs['orig_directory_name'] = dname
             attempt_info = EnvConfigLoader.make_config_from_directory(fullpath, **kwargs)
             if attempt_info.success:
                 print('It worked!  Created: %s' % attempt_info.result_obj)
@@ -470,7 +495,7 @@ class EnvConfigLoader(BasicErrCheck):
             info.D3MPROBLEMPATH = ''
 
 
-        # Problem path is the same...
+        # Dataset doc path
         #
         dataset_doc_path = join(fullpath,
                             'TRAIN',
