@@ -341,7 +341,7 @@ This setup involves running several processes.
       ```
     - **Terminal 3. R services**:
       ```
-      fab run_flask
+      fab run_R
       ```
     - **Terminal 4. Redis**:
       ```
