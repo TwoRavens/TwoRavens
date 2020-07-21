@@ -526,9 +526,13 @@ def api_get_eventdata(request):
     if not success:
         return JsonResponse(get_json_error(results_obj_err))
 
-
     # export single data file
     if json_req_obj.get('export') == 'csv':
+        user_workspace_info = get_latest_user_workspace(request)
+        if not user_workspace_info.success:
+            return JsonResponse(get_json_error(user_workspace_info.err_msg))
+        user_workspace = user_workspace_info.result_obj
+
         success, results_obj_err = EventJobUtil.export_csv( \
             user_workspace,
             settings.MONGO_COLLECTION_PREFIX + json_req_obj['collection_name'],
@@ -536,6 +540,11 @@ def api_get_eventdata(request):
 
     # export single data file in problem format
     elif json_req_obj.get('export') == 'dataset':
+        user_workspace_info = get_latest_user_workspace(request)
+        if not user_workspace_info.success:
+            return JsonResponse(get_json_error(user_workspace_info.err_msg))
+        user_workspace = user_workspace_info.result_obj
+
         success, results_obj_err = EventJobUtil.export_dataset( \
             user_workspace,
             results_obj_err,

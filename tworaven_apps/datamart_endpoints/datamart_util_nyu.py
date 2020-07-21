@@ -44,15 +44,35 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
 
     @staticmethod
     def datamart_upload(data):
-        response = requests.post(
-            get_nyu_url() + "/new/upload_data", files={"file": ("config.json", data)}
-        ).json()
 
-        print(response)
-        if response["code"] != "0000":
-            return err_resp(response["message"])
+        if 'data_path' not in data:
+            return err_resp("data_path is a mandatory argument")
+        data_path = data['data_path']
+        if not issubclass(type(data_path), str):
+            return err_resp("data_path must be a string")
+        if not os.path.exists(data_path):
+            return err_resp("data_path does not exist")
 
-        return ok_resp(response["data"])
+        with open(data_path, 'r') as data_file:
+            try:
+                response = requests.post(
+                    f"{get_nyu_url()}/api/v1/upload",
+                    json={
+                        'name': data.get('name'),
+                        'description': data.get('description')
+                    },
+                    files={"file": data_file}
+                )
+            except requests.exceptions.Timeout as err_obj:
+                return err_resp('Request timed out. responded with: %s' % err_obj)
+
+        if response.status_code != 200:
+            return err_resp('Datamart responded with: ' + response.reason)
+
+        dataset_id = response.json()['id']
+        download_url = f"{get_nyu_url()}/api/v1/download/{dataset_id}"
+
+        return ok_resp(download_url)
 
     @staticmethod
     def search_with_dataset(dataset_path, query=None, **kwargs):

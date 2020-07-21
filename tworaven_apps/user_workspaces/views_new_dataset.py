@@ -282,8 +282,6 @@ def view_upload_dataset_by_url(request):
         return JsonResponse(get_json_error(dest_dir_info.err_msg))
     dest_directory = dest_dir_info.result_obj
 
-    os.rmdir(dest_directory)
-
     json_info = get_request_body_as_json(request)
     if not json_info.success:
         return JsonResponse(get_json_error(json_info.err_msg))
