@@ -125,12 +125,12 @@ export let leftpanel = () => {
                             action: m(Button, {
                                 class: 'btn-sm',
                                 onclick: () => solverSystems[systemId](selectedProblem).solve(),
-                                disabled: !!(selectedProblem.solverState[systemId] || {}).thinking
-                            }, !!(selectedProblem.solverState[systemId] || {}).thinking ? 'Solving' : 'Solve'),
-                            state: selectedProblem.solverState[systemId] && m('',
+                                disabled: !!selectedProblem.solverState?.[systemId]?.thinking
+                            }, !!selectedProblem.solverState?.[systemId]?.thinking ? 'Solving' : 'Solve'),
+                            state: selectedProblem.solverState?.[systemId] && m('',
                                 selectedProblem.solverState[systemId].thinking && common.loaderSmall(systemId),
                                 m('div[style=font-size:medium;margin-left:1em;display:inline-block]',
-                                    selectedProblem.solverState[systemId].message)
+                                    selectedProblem.solverState?.[systemId]?.message)
                             ),
                         })),
                         headers: ['solver', 'action', 'state'],
@@ -182,7 +182,7 @@ export let leftpanel = () => {
                     'You may select searches for other problems in the workspace to view their solutions.',
                     m(Table, {
                         data: Object.keys(app.workspace.raven_config.problems)
-                            .filter(problemId => 'd3m' in ((app.workspace.raven_config.problems[problemId] || {}).solverState || {}))
+                            .filter(problemId => 'd3m' in (app.workspace.raven_config.problems[problemId]?.solverState || {}))
                             .map(problemId => app.workspace.raven_config.problems[problemId])
                             .map(problem => [
                                 problem.problemId,
@@ -291,19 +291,19 @@ export class CanvasSolutions {
                 m(Paginated, {
                     data: resultsData.dataSample[resultsPreferences.dataSplit] || [],
                     makePage: dataSample => dataSample
-                            .map(point => ({
-                                point,
-                                'src': adapters[0].getObjectBoundaryImagePath(
-                                    resultsPreferences.target,
-                                    resultsPreferences.dataSplit,
-                                    problem.tags.indexes.reduce((index, column) => Object.assign(index, {
-                                        [column]: point[column]
-                                    }), {}))
-                            }))
-                            .filter(summary => summary.src)
-                            .map(summary => m('div',
-                                m('h5', summary.point.image),
-                                m('img', {src: summary.src}))),
+                        .map(point => ({
+                            point,
+                            'src': adapters[0].getObjectBoundaryImagePath(
+                                resultsPreferences.target,
+                                resultsPreferences.dataSplit,
+                                problem.tags.indexes.reduce((index, column) => Object.assign(index, {
+                                    [column]: point[column]
+                                }), {}))
+                        }))
+                        .filter(summary => summary.src)
+                        .map(summary => m('div',
+                            m('h5', summary.point.image),
+                            m('img', {src: summary.src}))),
                     limit: 10,
                     page: resultsPreferences.imagePage,
                     setPage: index => resultsPreferences.imagePage = index
@@ -537,25 +537,31 @@ export class CanvasSolutions {
                                     id: 'resultsPerformanceTable',
                                     headers: ['metric', 'score'],
                                     data: generatePerformanceData(summary.confusionMatrix.data, resultsPreferences.factor),
-                                    attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
+                                    style: {width: 'calc(100% - 2em)', margin: '1em'}
                                 })),
                             summary.confusionMatrix.classes.length < 100 ? summary.confusionMatrix.classes.length > 0
-                                ? m('div', {style: {
-                                    display: "inline-block",
-                                        position: "relative",
-                                        width: "100%"
-                                }}, m('div', {style: 'margin-top: 80%'}), m('div', {
-                                    style: {
-                                        position: 'absolute',
-                                        top: 0, bottom: 0, left: 0, right: 0
-                                    }
-                                }, m(PlotVegaLite, {
-                                    specification: plots.vegaLiteConfusionMatrix(
-                                        summary.confusionMatrix.data,
-                                        summary.confusionMatrix.classes,
-                                        'Predicted', 'Actual', 'count',
-                                        `Confusion Matrix for ${problem.targets[0]}${resultsPreferences.factor ? (' factor ' + resultsPreferences.factor) : ''}`)
-                                })))
+                                ? m('div', {
+                                        style: {'text-align': 'center'}
+                                    },
+                                    m('div', {
+                                        style: {
+                                            display: "inline-block",
+                                            position: "relative",
+                                            'max-width': '600px',
+                                            width: "100%"
+                                        }
+                                    }, m('div', {style: 'margin-top: 80%'}), m('div', {
+                                        style: {
+                                            position: 'absolute',
+                                            top: 0, bottom: 0, left: 0, right: 0
+                                        }
+                                    }, m(PlotVegaLite, {
+                                        specification: plots.vegaLiteConfusionMatrix(
+                                            summary.confusionMatrix.data,
+                                            summary.confusionMatrix.classes,
+                                            'Predicted', 'Actual', 'count',
+                                            `Confusion Matrix for ${problem.targets[0]}${resultsPreferences.factor ? (' factor ' + resultsPreferences.factor) : ''}`)
+                                    }))))
                                 : 'Too few classes for confusion matrix! There is a data mismatch.'
                                 : 'Too many classes for confusion matrix!'
                         ]
@@ -651,7 +657,7 @@ export class CanvasSolutions {
 
                 // reassign content if some data is not undefined
                 let sortedPredictors = Object.keys(resultsData?.importanceScores
-                    ?.[adapter.getSolutionId()]?.EFD?.[resultsPreferences.target] || {});
+                    ?.[adapter.getSolutionId()]?.EFD?.[resultsPreferences.target] ?? {});
 
                 let plotVariables = (sortedPredictors.length > 0 ? sortedPredictors.reverse() : Object.keys(importanceData))
                     .filter(predictor => importanceData[predictor]);
@@ -697,32 +703,32 @@ export class CanvasSolutions {
         }
 
         if (adapters.length === 1 && resultsPreferences.importanceMode === 'Partials') {
-            let importancePlots = [
-                m('div[style=margin: 1em]', italicize("Partials"), ` shows the prediction of the model as one predictor is varied, and the other predictors are held at their mean.`),
-            ];
             let importancePartialsData = app.getPredictorVariables(problem).map(predictor => ({
                 predictor,
                 data: adapter.getImportancePartials(predictor)
             })).filter(predictorEntry => predictorEntry.data);
 
-            if (importancePartialsData.length > 0) importanceContent = m('div', {style: 'overflow:auto'}, m(Paginated, {
-                data: importancePartialsData,
-                makePage: data => data.map(predictorEntry => m('div',
-                    bold(predictorEntry.predictor),
-                    m(VariableImportance, {
-                        mode: 'Partials',
-                        data: predictorEntry.data,
-                        problem: problem,
-                        predictor: predictorEntry.predictor,
-                        target: resultsPreferences.target,
-                        yLabel: valueLabel,
-                        variableLabel: variableLabel,
-                        summary: app.variableSummaries[predictorEntry.predictor]
-                    }))),
-                limit: 10,
-                page: resultsPreferences.importancePage,
-                setPage: index => resultsPreferences.importancePage = index
-            }));
+            if (importancePartialsData.length > 0) importanceContent = [
+                m('div[style=margin: 1em]', italicize("Partials"), ` shows the prediction of the model as one predictor is varied, and the other predictors are held at their mean.`),
+                m('div', {style: 'overflow:auto'}, m(Paginated, {
+                    data: importancePartialsData,
+                    makePage: data => data.map(predictorEntry => m('div',
+                        bold(predictorEntry.predictor),
+                        m(VariableImportance, {
+                            mode: 'Partials',
+                            data: predictorEntry.data,
+                            problem: problem,
+                            predictor: predictorEntry.predictor,
+                            target: resultsPreferences.target,
+                            yLabel: valueLabel,
+                            variableLabel: variableLabel,
+                            summary: app.variableSummaries[predictorEntry.predictor]
+                        }))),
+                    limit: 10,
+                    page: resultsPreferences.importancePage,
+                    setPage: index => resultsPreferences.importancePage = index
+                }))
+            ];
         }
         if (adapters.length === 1 && resultsPreferences.importanceMode === 'PDP/ICE') {
             let isCategorical = app.getNominalVariables(problem).includes(resultsPreferences.target);
@@ -766,7 +772,10 @@ export class CanvasSolutions {
                 activeSection: resultsPreferences.importanceMode,
                 sections: [
                     {value: 'EFD', title: 'empirical first differences'},
-                    problem.datasetPaths.partials && {value: 'Partials', title: 'model prediction as predictor varies over its domain'},
+                    problem.datasetPaths.partials && {
+                        value: 'Partials',
+                        title: 'model prediction as predictor varies over its domain'
+                    },
                     {value: 'PDP/ICE', title: 'partial dependence plot/individual conditional expectation'}
                 ]
             }),
@@ -794,7 +803,7 @@ export class CanvasSolutions {
                         'Name': pipeStep['primitive']['primitive'].name,
                         'Method': pipeStep['primitive']['primitive']['pythonPath'].replace('d3m.primitives.', '')
                     },
-                    attrsAll: {style: {'margin-bottom': 0, padding: '1em'}}
+                    style: {'margin-bottom': 0, padding: '1em'}
                 }),
                 content: m(Table, {
                     id: 'pipelineTableStep' + i,
@@ -807,12 +816,12 @@ export class CanvasSolutions {
             let inputs = 'inputs' in pipeline && m(Table, {
                 id: 'pipelineInputsTable',
                 data: pipeline.inputs,
-                attrsAll: {style: {'margin-bottom': 0, 'padding': '1em'}}
+                style: {'margin-bottom': 0, 'padding': '1em'}
             });
             let outputs = 'outputs' in pipeline && m(Table, {
                 id: 'pipelineOutputsTable',
                 data: pipeline.outputs,
-                attrsAll: {style: {'margin-bottom': 0, 'padding': '1em'}}
+                style: {'margin-bottom': 0, 'padding': '1em'}
             });
 
             return [
@@ -836,15 +845,12 @@ export class CanvasSolutions {
                         out[entry] = solution.pipeline[entry];
                     return out;
                 }, {}),
-                attrsAll: {
-                    style: {
-                        margin: '1em',
-                        width: 'calc(100% - 2em)',
-                        border: common.borderColor,
-                        'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
-                    }
-                },
-                nest: true
+                style: {
+                    margin: '1em',
+                    width: 'calc(100% - 2em)',
+                    border: common.borderColor,
+                    'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
+                }
             }),
             m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Steps: '),
             m(Flowchart, {
@@ -915,10 +921,11 @@ export class CanvasSolutions {
                 }
             }
         }, m(Table, {
-            headers: ['Variable', 'Data'],
             data: [
                 ['System', firstAdapter.getSystemId()],
                 ['Downloads', m(Table, {
+                    sortable: true,
+                    sortHeader: 'name',
                     data: (firstSolution.produce || []).map(produce =>
                         ({
                             'name': produce.input.name,
@@ -942,7 +949,8 @@ export class CanvasSolutions {
                 //         solverWrapped.downloadModel(firstSolution.model_pointer)
                 //     }
                 // }, 'Download')]
-            ])
+            ]),
+            style: {background: 'white'}
         }));
 
         let predictionSummary = m(Subpanel, {
@@ -1021,9 +1029,7 @@ export class CanvasSolutions {
             .filter(target => firstSolution.models[target].statistics)
             .map(target => m('div',
                 m('h5', target),
-                m(Table, {
-                    data: firstSolution.models[target].statistics[0]
-                })));
+                m(Table, {data: firstSolution.models[target].statistics[0]})));
         let performanceStats = performanceStatsContents.length > 0 && m(Subpanel, {
             style: {margin: '0px 1em'},
             header: 'Performance Statistics',
@@ -1121,7 +1127,7 @@ export let getSolutionAdapter = (problem, solution) => ({
     getDescription: () => solution.description,
     getSystemId: () => solution.systemId,
     getSolutionId: () => solution.solutionId || 'unknown',
-    getDataPointer: (dataSplit, predict_type='RAW') => {
+    getDataPointer: (dataSplit, predict_type = 'RAW') => {
         let produce = (solution.produce || [])
             .find(produce =>
                 produce.input.name === dataSplit &&
@@ -1188,7 +1194,7 @@ export let getSolutionAdapter = (problem, solution) => ({
         let adapter = getSolutionAdapter(problem, solution);
         loadImportanceScore(problem, adapter, mode);
 
-        return resultsData?.importanceScores?.[adapter.getSolutionId()]?.[mode]?.target;
+        return resultsData?.importanceScores?.[adapter.getSolutionId()]?.[mode]?.[target];
     },
     // get the bounding box image for the selected problem's target variable, in the desired split, at the given index
     getObjectBoundaryImagePath: (target, split, index) => {
@@ -1210,7 +1216,7 @@ let getSolutionTable = (problem, systemId) => {
     let adapters = solutions.map(solution => getSolutionAdapter(problem, solution));
 
     let data = adapters
-    // extract data for each row (identification and scores)
+        // extract data for each row (identification and scores)
         .map(adapter => Object.assign({
                 adapter, ID: String(adapter.getSolutionId()), Solver: adapter.getSystemId(), Solution: adapter.getName()
             },
@@ -1271,6 +1277,7 @@ export let resultsPreferences = {
     crossSectionTemp: 'unset',
     imagePage: 0
 };
+window.resultsPreferences = resultsPreferences;
 
 let setResultsFactor = factor => resultsPreferences.factor = factor === 'undefined' ? undefined : factor;
 
@@ -1340,19 +1347,19 @@ export let setSelectedSolution = (problem, systemId, solutionId) => {
         // Logging, include score, rank, and solutionId
         // ------------------------------------------------
         let chosenSolution = problem.solutions[systemId][solutionId];
-        if (chosenSolution){
+        if (chosenSolution) {
             let adapter = getSolutionAdapter(problem, chosenSolution);
             let score = adapter.getScore(problem.metric);
-            if (score !== undefined){
-              logParams.other = {
-                          solutionId: chosenSolution.solutionId,
-                          rank: getProblemRank(problem.solutions[systemId], solutionId),
-                          performance: score,
-                          metric: resultsPreferences.selectedMetric,
-                          };
-            //  console.log(JSON.str)
+            if (score !== undefined) {
+                logParams.other = {
+                    solutionId: chosenSolution.solutionId,
+                    rank: getProblemRank(problem.solutions[systemId], solutionId),
+                    performance: score,
+                    metric: resultsPreferences.selectedMetric,
+                };
+                //  console.log(JSON.str)
             }
-        } else{
+        } else {
             console.log('>>>> NOPE! no chosenSolution');
         }
 
@@ -1368,14 +1375,13 @@ export let setSelectedSolution = (problem, systemId, solutionId) => {
 };
 
 
-
 export let getProblemRank = (solutions, solutionId) => {
     let cnt = 0;
     for (let solutionKey of Object.keys(solutions).reverse()) {
         cnt += 1;
         if (solutionKey === solutionId) return String(cnt);
     }
-   return String(-1);
+    return String(-1);
 };
 
 
@@ -1555,7 +1561,7 @@ window.resultsData = resultsData;
 // manipulations to apply to data after joining predictions
 export let resultsQuery = [];
 
-export let loadProblemData = async (problem, predictor=undefined) => {
+export let loadProblemData = async (problem, predictor = undefined) => {
     // unload ICE data if predictor changed
     if (predictor && predictor !== resultsData.id.predictor) {
         resultsData.id.predictor = predictor;
@@ -1603,7 +1609,7 @@ export let loadProblemData = async (problem, predictor=undefined) => {
     resultsData.importanceICEFittedLoading = false;
 };
 
-export let loadSolutionData = async (problem, adapter, predictor=undefined) => {
+export let loadSolutionData = async (problem, adapter, predictor = undefined) => {
     await loadProblemData(problem, predictor);
 
     if (resultsData.id.solutionID === adapter.getSolutionId())
@@ -1821,7 +1827,7 @@ export let loadDataSample = async (problem, split) => {
                     sample: resultsPreferences.recordLimit
                 }
             },
-        ].filter(_=>_),
+        ].filter(_ => _),
         app.workspace.raven_config.variablesInitial)['pipeline'];
 
     let response;
@@ -1984,7 +1990,7 @@ export let loadImportancePartialsFittedData = async (problem, adapter) => {
         let nextOffset = offset + problem.domains[predictor].length;
         // for each point along the domain of the predictor
         out[predictor] = response.data.slice(offset, nextOffset)
-        // for each target specified in the problem
+            // for each target specified in the problem
             .map(point => problem.targets.reduce((out_point, target) => Object.assign(out_point, {
                 [target]: app.inferIsCategorical(target) ? point[target] : parseNumeric(point[target])
             }), {}));
@@ -2225,7 +2231,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
                 body: {data_pointer: dataPointers['Partials']}
             });
 
-            console.log(response);
+            // console.log(response);
 
             if (!response.success) {
                 console.warn(response.data);
@@ -2363,11 +2369,12 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
     // collect all fitted data points at the given index for each solution
     // an object of {Actual: [boundary1, ...], solutionId: [boundary1, boundary2], ...}
     let fittedPoints = adapters.reduce((fittedPoints, adapter) => Object.assign(fittedPoints, {
-        [adapter.getSolutionId()]: resultsData.fitted[adapter.getSolutionId()][split]
-            // all multi-indexes match
-            .filter(point => Object.entries(index).every(pair => point[pair[0]] === pair[1]))
-            // turn all matched points into an array of boundaries
-            .flatMap(point => point[target])}),
+            [adapter.getSolutionId()]: resultsData.fitted[adapter.getSolutionId()][split]
+                // all multi-indexes match
+                .filter(point => Object.entries(index).every(pair => point[pair[0]] === pair[1]))
+                // turn all matched points into an array of boundaries
+                .flatMap(point => point[target])
+        }),
         {Actual: actualPoint[target]});
 
     if (!resultsData.boundaryImageColormap) {

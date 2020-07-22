@@ -23,7 +23,6 @@ import PanelList from '../../common/views/PanelList';
 import TextField from '../../common/views/TextField';
 import ButtonRadio from '../../common/views/ButtonRadio';
 import Button from "../../common/views/Button";
-import ButtonPlain from '../../common/views/ButtonPlain';
 import ModalVanilla from "../../common/views/ModalVanilla";
 import Table from "../../common/views/Table";
 
@@ -519,7 +518,7 @@ export default class Body_EventData {
                 if ('structure' in metadata) data.Structure = metadata.structure;
                 if ('tabs' in metadata) data.Tabs = Object.keys(metadata.tabs);
                 if ('group_by' in metadata) data['Group By'] = metadata.group_by;
-                return m(Table, {attrsAll: {class: 'table-sm'}, data})
+                return m(Table, {class: 'table-sm', data})
             };
 
             let popoverContentVariable = variable => {
@@ -531,7 +530,7 @@ export default class Body_EventData {
                     data.Alignment = metadata.alignments[variable];
                 if ('deconstruct' in metadata && metadata.deconstruct[variable])
                     data.Delimiter = metadata.deconstruct[variable];
-                return m(Table, {attrsAll: {class: 'table-sm'}, data})
+                return m(Table, {class: 'table-sm', data})
             };
 
             let matchedVariables = eventdata.genericMetadata[eventdata.selectedDataset]['columns']
@@ -669,7 +668,7 @@ export default class Body_EventData {
                                 }
                                 eventdata.setSelectedResult(result);
                             },
-                            attrsAll: {style: {height: 'calc(100% - 78px)', overflow: 'auto'}}
+                            style: {height: 'calc(100% - 78px)', overflow: 'auto'}
                         })
                     }
                 ]
@@ -832,7 +831,6 @@ export default class Body_EventData {
             })
         }
 
-        console.log(eventdata);
         eventdata.canvasPreferences[eventdata.selectedCanvas] = eventdata.canvasPreferences[eventdata.selectedCanvas] || {};
         return m({
             'About': CanvasAbout,
@@ -882,9 +880,11 @@ export default class Body_EventData {
 
             eventdata.showSaveQuery && eventdata.selectedMode !== 'Home' && m(ModalVanilla, {
                 id: 'SaveQuery',
-                setDisplay: eventdata.setShowSaveQuery,
-                contents: m(SaveQuery, {pipeline: eventdata.manipulations, preferences: eventdata.saveQuery[eventdata.selectedMode]})
-            }),
+                setDisplay: eventdata.setShowSaveQuery
+            }, m(SaveQuery, {
+                pipeline: eventdata.manipulations,
+                preferences: eventdata.saveQuery[eventdata.selectedMode]
+            })),
 
             app.showModalAlerts && m(ModalVanilla, {
                 id: 'alertsModal',
@@ -911,7 +911,7 @@ export default class Body_EventData {
                         }[alert.type], .5)}]`, alert.time.toLocaleTimeString().replace(/([\d]+:[\d]{2})(:[\d]{2})(.*)/, "$1$3")),
                         alert.description
                     ]),
-                    attrsAll: {style: {'margin-top': '1em'}},
+                    style: {'margin-top': '1em'},
                     tableTags: m('colgroup',
                         m('col', {span: 1, width: '10px'}),
                         m('col', {span: 1, width: '75px'}),
@@ -922,22 +922,21 @@ export default class Body_EventData {
             eventdata.showAlignmentLog && logLength !== 0 && m(ModalVanilla, {
                 id: 'AlignmentLog',
                 setDisplay: eventdata.setShowAlignmentLog,
-                contents: [
-                    m('div[style=font-weight:bold]', 'Re-alignment from ' + eventdata.previousSelectedDataset + ' to ' + eventdata.selectedDataset),
-                    eventdata.alignmentLog.length !== 0 && [
-                        m('div', 'Query re-alignments:'),
-                        m('ul', eventdata.alignmentLog.map(log => m('li', log)))
-                    ],
-                    eventdata.preferencesLog.length !== 0 && [
-                        m('div', 'Subset menu re-alignments:'),
-                        m('ul', eventdata.preferencesLog.map(log => m('li', log)))
-                    ],
-                    eventdata.variablesLog.length !== 0 && [
-                        m('div', 'Variable re-alignments:'),
-                        m('ul', eventdata.variablesLog.map(log => m('li', log)))
-                    ]
+            }, [
+                m('div[style=font-weight:bold]', 'Re-alignment from ' + eventdata.previousSelectedDataset + ' to ' + eventdata.selectedDataset),
+                eventdata.alignmentLog.length !== 0 && [
+                    m('div', 'Query re-alignments:'),
+                    m('ul', eventdata.alignmentLog.map(log => m('li', log)))
+                ],
+                eventdata.preferencesLog.length !== 0 && [
+                    m('div', 'Subset menu re-alignments:'),
+                    m('ul', eventdata.preferencesLog.map(log => m('li', log)))
+                ],
+                eventdata.variablesLog.length !== 0 && [
+                    m('div', 'Variable re-alignments:'),
+                    m('ul', eventdata.variablesLog.map(log => m('li', log)))
                 ]
-            }),
+            ]),
 
             this.header(),
             this.leftpanel(mode),

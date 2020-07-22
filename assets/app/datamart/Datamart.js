@@ -127,7 +127,7 @@ let makeDatasetCard = (preferences, result, index, manipulations, endpoint, labe
                     manipulations, app.workspace.raven_config.variablesInitial)['variables']];
 
                 preferences.joinPairs = augmentationData.left_columns.map((_, j) => [
-                    augmentationData.left_columns[j][0].map(colIndex => originalLeftColumns[colIndex]),
+                    augmentationData.left_columns[j].map(colIndex => originalLeftColumns[colIndex]),
                     [result.summary["Recommend Join Columns"]]
                 ]);
             }
@@ -179,7 +179,7 @@ let makeDatasetCard = (preferences, result, index, manipulations, endpoint, labe
             buttonAugment,
             buttonMetadata,
             m(Table, {
-                attrsAll: {style: {'margin-top': '.5em'}},
+                style: {'margin-top': '.5em'},
                 data: [
                     (getData(result, 'description') || '').length > 0 && [
                         'Description', getData(result, 'description')
@@ -369,7 +369,16 @@ export class Datamart {
                                 attrsCells: {valign: "top"},
                                 data: [
                                     ...query.keywords.map((keyword, i) => [
-                                        m(TextField, {value: keyword, oninput: val => query.keywords[i] = val}),
+                                        m(TextField, {
+                                            value: keyword,
+                                            oninput: val => query.keywords[i] = val,
+                                            onblur: val => {
+                                                query.keywords[i] = val;
+                                                if (val.length === 0) {
+                                                    query.keywords.splice(i, 1)
+                                                }
+                                            }
+                                        }),
                                         m('div', {
                                             onclick: () => query.keywords.splice(i, 1)
                                         }, m(Icon, {name: 'x', style: {margin: '1em 1em 1em 0em'}}))
@@ -857,14 +866,12 @@ export class ModalDatamart {
                                     : preferences.leftJoinVariables.add(variable);
                                 setTimeout(m.redraw, 1000);
                             },
-                            attrsAll: {
-                                style: {
-                                    background: 'rgba(0,0,0,.025)',
-                                    'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
-                                    'max-width': '30em',
-                                    padding: '1em',
-                                    margin: 'auto'
-                                }
+                            style: {
+                                background: 'rgba(0,0,0,.025)',
+                                'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
+                                'max-width': '30em',
+                                padding: '1em',
+                                margin: 'auto'
                             }
                         })),
                     m('div', {style: {width: 'calc(50% - 1em)', display: 'inline-block', 'vertical-align': 'top'}},
@@ -881,14 +888,12 @@ export class ModalDatamart {
                                     : preferences.rightJoinVariables.add(variable);
                                 setTimeout(m.redraw, 1000);
                             },
-                            attrsAll: {
-                                style: {
-                                    background: 'rgba(0,0,0,.025)',
-                                    'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
-                                    'max-width': '30em',
-                                    padding: '1em',
-                                    margin: 'auto'
-                                }
+                            style: {
+                                background: 'rgba(0,0,0,.025)',
+                                'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
+                                'max-width': '30em',
+                                padding: '1em',
+                                margin: 'auto'
                             }
                         }))
                 ]

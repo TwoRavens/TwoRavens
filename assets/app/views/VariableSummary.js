@@ -107,6 +107,7 @@ export default class VariableSummary {
             filteredMessage && italicize(`Only a subset of the ${variable.uniqueCount} unique values are plotted.`),
             m(Table, {
                 id: 'varSummaryTable',
+                style: {background: 'white'},
                 data: formatVariableSummary(variable)
             })
         ]

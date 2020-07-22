@@ -614,10 +614,22 @@ export async function plotVega(nodeSummaries, schemaName, problem, variate) {
             let plotdata = JSON.parse(json.plotdata[0]);
             let temporalVariables = app.getSelectedProblem().tags.time
                 .filter(variable => variable in plotdata[0]);
+
+            let parsers = temporalVariables.reduce((out, variable) => {
+                let format = variableSummaries[variable].timeUnit
+                return Object.assign(out, {
+                    [variable]: format
+                        ? d3.timeParse(format)
+                        : text => new Date(Date.parse(text))
+                })
+            }, {})
+
             if (temporalVariables.length > 0) {
-                temporalVariables.forEach(variable => plotdata
-                    .forEach(obs => obs[variable] = new Date(Date.parse(obs[variable])).toString()));
-                json.plotdata = [JSON.stringify(plotdata)];
+                try {
+                    temporalVariables.forEach(variable => plotdata
+                        .forEach(obs => obs[variable] = parsers[variable](obs[variable]).toString()));
+                    json.plotdata = [JSON.stringify(plotdata)];
+                } catch (_) {}
             }
         }
 

@@ -236,16 +236,14 @@ export function varList() {
             popup: x => m('div',
                           m('h4', 'Summary Statistics for ' + x),
                           m(Table, {
-                            attrsAll: {class: 'table-sm'},
-                            data: formatVariableSummary(app.variableSummaries[x])
+                              class: 'table-sm',
+                              data: formatVariableSummary(app.variableSummaries[x])
                           })),
             popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
             attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
-            attrsAll: {
-                style: {
-                    height: 'calc(100% - 80px)',
-                    overflow: 'auto'
-                }
+            style: {
+                height: 'calc(100% - 110px)',
+                overflow: 'auto'
             }
         }),
         constraintMenu.type === 'subset' && constraintMetadata.type !== 'date'
@@ -562,7 +560,7 @@ export let setPendingHardManipulation = state => pendingHardManipulation = state
 export let setQueryUpdated = async state => {
 
     // the first time we have an edit to the hard manipulations:
-    if (app.is_dataset_mode) {
+    if (app.isDatasetMode) {
         if (!pendingHardManipulation && state) {
             hopscotch.startTour(datasetChangedTour, 0);
             app.workspace.raven_config.problems = [];
@@ -571,7 +569,7 @@ export let setQueryUpdated = async state => {
     }
 
     // if we have an edit to the problem manipulations
-    if (!app.is_dataset_mode) {
+    if (!app.isDatasetMode) {
 
         let selectedProblem = app.getSelectedProblem();
 

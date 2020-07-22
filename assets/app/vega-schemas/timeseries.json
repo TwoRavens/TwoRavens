@@ -6,13 +6,23 @@
   "mark":  {
     "type": "line"
   },
+  "transform": [
+    {
+      "aggregate": [{
+        "op": "sum",
+        "field": "tworavensY",
+        "as": "tworavensY"
+      }],
+      "groupby": ["tworavensX"]
+    }
+  ],
   "encoding": {
     "tooltip": [
       {"field": "tworavensX", "type": "temporal"},
       {"field": "tworavensY", "type": "quantitative"}
     ],
     "x": {"field": "tworavensX", "type": "temporal", "scale": {"zero":  false}},
-    "y": {"field": "tworavensY", "type": "quantitative", "aggregate": "sum", "scale": {"zero":  false}}
+    "y": {"field": "tworavensY", "type": "quantitative", "scale": {"zero":  false}}
   },
   "width": 640,
   "height": 480

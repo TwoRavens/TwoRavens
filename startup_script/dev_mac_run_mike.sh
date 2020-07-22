@@ -169,4 +169,6 @@ else
     exit"
 fi
 
+open -a 'google chrome' http://localhost:8080
+
 # deactivate 2ravens
