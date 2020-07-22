@@ -770,7 +770,7 @@ class ModelTwoRavens(Model):
 
         if self.task in ['REGRESSION', 'CLASSIFICATION']:
             dataframe_train = Dataset(produce_specification['train']).get_dataframe().dropna()
-            self.fit(dataframe=dataframe_train, data_specification=produce_specification['train'])
+            # self.fit(dataframe=dataframe_train, data_specification=produce_specification['train'])
 
         if predict_type == 'RAW':
             if "FORECASTING" == self.task:
