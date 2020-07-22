@@ -915,6 +915,10 @@ export function realignPreferences(source, target) {
             return;
         }
 
+        if (!sourceSubsets[subset]) {
+            return
+        }
+
         let subsetType = targetSubsets[subset]['type'];
 
         if (subsetType === 'dyad') {
