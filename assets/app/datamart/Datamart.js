@@ -179,7 +179,7 @@ let makeDatasetCard = (preferences, result, index, manipulations, endpoint, labe
             buttonAugment,
             buttonMetadata,
             m(Table, {
-                attrsAll: {style: {'margin-top': '.5em'}},
+                style: {'margin-top': '.5em'},
                 data: [
                     (getData(result, 'description') || '').length > 0 && [
                         'Description', getData(result, 'description')
@@ -857,14 +857,12 @@ export class ModalDatamart {
                                     : preferences.leftJoinVariables.add(variable);
                                 setTimeout(m.redraw, 1000);
                             },
-                            attrsAll: {
-                                style: {
-                                    background: 'rgba(0,0,0,.025)',
-                                    'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
-                                    'max-width': '30em',
-                                    padding: '1em',
-                                    margin: 'auto'
-                                }
+                            style: {
+                                background: 'rgba(0,0,0,.025)',
+                                'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
+                                'max-width': '30em',
+                                padding: '1em',
+                                margin: 'auto'
                             }
                         })),
                     m('div', {style: {width: 'calc(50% - 1em)', display: 'inline-block', 'vertical-align': 'top'}},
@@ -881,14 +879,12 @@ export class ModalDatamart {
                                     : preferences.rightJoinVariables.add(variable);
                                 setTimeout(m.redraw, 1000);
                             },
-                            attrsAll: {
-                                style: {
-                                    background: 'rgba(0,0,0,.025)',
-                                    'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
-                                    'max-width': '30em',
-                                    padding: '1em',
-                                    margin: 'auto'
-                                }
+                            style: {
+                                background: 'rgba(0,0,0,.025)',
+                                'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
+                                'max-width': '30em',
+                                padding: '1em',
+                                margin: 'auto'
                             }
                         }))
                 ]

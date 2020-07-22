@@ -55,7 +55,7 @@ window.addEventListener('mouseup', (e) => peekMouseUp(e));
 export let peekMouseMove = (e) => {
     if (!peekInlineIsResizing) return;
 
-    let menuId = is_dataset_mode || (rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'canvas' : 'main';
+    let menuId = isDatasetMode || (rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'canvas' : 'main';
     let percent = (1 - e.clientY / byId(menuId).clientHeight) * 100;
 
     setPeekInlineHeight(`calc(${Math.max(percent, 0)}% + ${common.heightFooter})`);
@@ -130,7 +130,7 @@ export async function updatePeek(pipeline) {
     let variables = [];
 
     let problem = getSelectedProblem();
-    if (is_model_mode)
+    if (isModelMode)
         variables = [...getPredictorVariables(problem), ...problem.targets];
 
 
@@ -141,7 +141,7 @@ export async function updatePeek(pipeline) {
             skip: peekSkip,
             limit: peekLimit,
             variables,
-            nominal: !is_dataset_mode && getNominalVariables(problem)
+            nominal: !isDatasetMode && getNominalVariables(problem)
                 .filter(variable => variables.includes(variable))
         }
     };
@@ -227,18 +227,31 @@ export let taskPreferences = {
     task2_finished: false
 };
 
-export let currentMode;
-export let is_model_mode = true;
-export let is_explore_mode = false;
-export let is_results_mode = false;
-export let is_dataset_mode = false;
+export let selectedMode = 'model';
+export let isModelMode = true;
+export let isExploreMode = false;
+export let isResultsMode = false;
+export let isDatasetMode = false;
 
 export function setSelectedMode(mode) {
 
     mode = mode ? mode.toLowerCase() : 'model';
 
+    let selectedProblem = getSelectedProblem();
+    if (!selectedProblem && mode === 'results') {
+        mode = selectedMode;
+    }
+
+    let isTransitionFromDatasetMode = isDatasetMode && mode !== 'dataset'
+
+    isDatasetMode = mode === 'dataset';
+    isModelMode = mode === 'model';
+    isExploreMode = mode === 'explore';
+    isResultsMode = mode === 'results';
+
+
     // remove empty steps when leaving manipulate mode
-    if (workspace && is_dataset_mode && mode !== 'dataset') {
+    if (workspace && isTransitionFromDatasetMode) {
         let ravenConfig = workspace.raven_config;
         ravenConfig.hardManipulations = ravenConfig.hardManipulations.filter(step => {
             if (step.type === 'subset' && step.abstractQuery.length === 0) return false;
@@ -249,11 +262,6 @@ export function setSelectedMode(mode) {
         });
     }
 
-    is_dataset_mode = mode === 'dataset';
-    is_model_mode = mode === 'model';
-    is_explore_mode = mode === 'explore';
-    is_results_mode = mode === 'results';
-
     /*
      * Make an entry in the behavioral logs
      */
@@ -261,10 +269,10 @@ export function setSelectedMode(mode) {
         feature_id: mode.toUpperCase() + '_MODE_SWITCH',
         activity_l2: 'SWITCH_MODE'
     };
-    if (is_model_mode) logParams.activity_l1 = 'PROBLEM_DEFINITION';
-    if (is_explore_mode) logParams.activity_l1 = 'DATA_PREPARATION';
-    if (is_results_mode) logParams.activity_l1 = 'MODEL_SELECTION';
-    if (is_dataset_mode) logParams.activity_l1 = 'DATA_PREPARATION';
+    if (isModelMode) logParams.activity_l1 = 'PROBLEM_DEFINITION';
+    if (isExploreMode) logParams.activity_l1 = 'DATA_PREPARATION';
+    if (isResultsMode) logParams.activity_l1 = 'MODEL_SELECTION';
+    if (isDatasetMode) logParams.activity_l1 = 'DATA_PREPARATION';
 
     saveSystemLogEntry(logParams);
 
@@ -276,11 +284,12 @@ export function setSelectedMode(mode) {
         common.setPanelOpen('right');
     }
 
-    if (currentMode !== mode) {
-        if (is_results_mode) {
+    if (selectedMode !== mode) {
+        if (isResultsMode && selectedProblem) {
             taskPreferences.isResultsClicked = true;
 
             // a solved problem, and its copy, are not pending
+
             selectedProblem.pending = false;
 
             let copiedProblem = getProblemCopy(selectedProblem);
@@ -298,7 +307,7 @@ export function setSelectedMode(mode) {
                 results.resultsPreferences.dataSplit = 'all';
         }
 
-        if (!is_dataset_mode && manipulate.pendingHardManipulation) {
+        if (!isDatasetMode && manipulate.pendingHardManipulation) {
             hopscotch.endTour(true);
             let ravenConfig = workspace.raven_config;
             buildDatasetPreprocess().then(response => {
@@ -314,7 +323,7 @@ export function setSelectedMode(mode) {
             manipulate.setPendingHardManipulation(false);
         }
 
-        currentMode = mode;
+        selectedMode = mode;
         m.route.set('/' + mode);
         updateRightPanelWidth();
         updateLeftPanelWidth();
@@ -352,7 +361,7 @@ export async function buildCsvUrl(problem, lastStep, dataPath, collectionName) {
         metadata: {
             type: 'data',
             variables,
-            nominal: !is_dataset_mode && getNominalVariables(problem)
+            nominal: !isDatasetMode && getNominalVariables(problem)
                 .filter(variable => variables.includes(variable))
         }
     };
@@ -387,7 +396,7 @@ export async function buildDatasetUrl(problem, lastStep, dataPath, collectionNam
             metadata: {
                 type: 'data',
                 variables,
-                nominal: !is_dataset_mode && getNominalVariables(problem)
+                nominal: !isDatasetMode && getNominalVariables(problem)
                     .filter(variable => variables.includes(variable))
             }
         }
@@ -533,21 +542,21 @@ export let panelWidth = {
 };
 
 export let updateRightPanelWidth = () => {
-    if (is_dataset_mode || is_explore_mode || is_results_mode)
+    if (isDatasetMode || isExploreMode || isResultsMode)
         common.panelOcclusion.right = '0px';
-    // else if (is_model_mode && !selectedProblem) common.panelOcclusion.right = common.panelMargin;
+    // else if (isModelMode && !selectedProblem) common.panelOcclusion.right = common.panelMargin;
     else if (common.panelOpen['right']) {
         let tempWidth = {
             'model': model.rightPanelWidths[rightTab],
-        }[currentMode];
+        }[selectedMode];
 
         panelWidth['right'] = `calc(${common.panelMargin}*2 + ${tempWidth})`;
     } else panelWidth['right'] = `calc(${common.panelMargin}*2 + 16px)`;
 };
 export let updateLeftPanelWidth = () => {
-    if (is_explore_mode)
+    if (isExploreMode)
         common.panelOcclusion.left = '0px';
-    else if (is_dataset_mode && !manipulate.constraintMenu) common.panelOcclusion.left = '0px';
+    else if (isDatasetMode && !manipulate.constraintMenu) common.panelOcclusion.left = '0px';
     else if (common.panelOpen['left'])
         panelWidth['left'] = `calc(${common.panelMargin}*2 + ${model.leftPanelWidths[leftTab]})`;
     else panelWidth['left'] = `calc(${common.panelMargin}*2 + 16px)`;
@@ -1104,6 +1113,7 @@ let getDatasetDoc = async dataset_schema_url => {
 let buildDefaultProblem = problemDoc => {
 
     console.log('problemDoc', problemDoc);
+    console.log('variable summaries in buildDefaultProblem', variableSummaries)
     // create the default problem provided by d3m
 
     if (!problemDoc.inputs.dataSplits)
@@ -1205,7 +1215,6 @@ let buildDefaultProblem = problemDoc => {
             randomSeed: problemDoc.inputs.dataSplits.randomSeed,
             splitsFile: problemDoc.inputs.dataSplits.splitsFile
         },
-
         meaningful: false,
         manipulations: [],
         solutions: {},
@@ -1219,8 +1228,16 @@ let buildDefaultProblem = problemDoc => {
                     .map(column => column.colName)),
             crossSection: getTagsByRole('suggestedGroupingKey'),
             boundary: getTagsByRole('boundaryIndicator'),
-            location: getTagsByRole('locationIndicator'),
-            time: getTagsByRole('timeIndicator'),
+            location: [...new Set([
+                ...getTagsByRole('locationIndicator'),
+                ...Object.keys(variableSummaries)
+                    .filter(variable => variableSummaries[variable].geographic)
+            ])],
+            time: [...new Set([
+                ...getTagsByRole('timeIndicator'),
+                ...Object.keys(variableSummaries)
+                    .filter(variable => variableSummaries[variable].temporal)
+            ])],
             weights: getTagsByRole('instanceWeight'), // singleton list
             indexes,
             privileged: getTagsByRole('suggestedPrivilegedData'), // singleton list
@@ -2213,11 +2230,13 @@ export function discovery(problems) {
                 weights: [], // singleton list
                 crossSection: [],
                 boundary: [],
-                location: [],
+                location: Object.keys(variableSummaries)
+                    .filter(variable => variableSummaries[variable].geographic),
                 indexes: ['d3mIndex'],
                 privileged: [],
                 exogenous: [],
-                time: [],
+                time: Object.keys(variableSummaries)
+                    .filter(variable => variableSummaries[variable].temporal),
                 nominal: Object.keys(variableSummaries)
                     .filter(variable => variableSummaries[variable].nature === 'nominal'),
                 loose: [] // variables displayed in the force diagram, but not in any groups

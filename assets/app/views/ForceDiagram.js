@@ -993,7 +993,7 @@ export let groupBuilder = (attrs, context) => {
 export let linkBuilder = (attrs, context) => {
     let marker = side => x => {
         let kind = side === 'left' ? 'start' : 'end';
-        return attrs.is_explore_mode ? 'url(#circle)' :
+        return attrs.isExploreMode ? 'url(#circle)' :
             x[side] ? `url(#${kind}-arrow)` : '';
     };
 
