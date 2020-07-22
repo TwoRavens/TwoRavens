@@ -695,6 +695,10 @@ class ModelTwoRavens(Model):
     def score(self, score_specification):
         # Looks like this function will only be called when encounter a test split
         dataframe = Dataset(score_specification['input']).get_dataframe()
+        prob_flag = False
+        for eachMetric in score_specification['performanceMetrics']:
+            if eachMetric.get('metric', '').startswith('ROC'):
+                prob_flag = True
 
         if self.task == "FORECASTING":
             # For score computation, we only take the given "forecastingHorizon" into account
@@ -709,6 +713,14 @@ class ModelTwoRavens(Model):
                 for target in self.targets:
                     dataframe[target] = dataframe[target].astype(str)
             predicted = self.model.predict(dataframe)
+
+            if prob_flag:
+                #  Compute score if it's a classification problem
+                predicted_prob = self.model.predict_proba(dataframe)
+                if len(predicted_prob.shape) > 1 and predicted_prob.shape[1] == 2:
+                    # Binary Classification, keep the probability of greater class only
+                    predicted_prob = predicted_prob[:, [1]].ravel()
+
             if self.task == 'CLASSIFICATION':
                 for target in self.targets:
                     predicted[target] = predicted[target].astype(str)
@@ -718,15 +730,23 @@ class ModelTwoRavens(Model):
 
         scores = []
         for target in self.targets:
-            for metric in score_specification['performanceMetrics']:
-                results = pandas.DataFrame({'actual': dataframe[target], 'predicted': predicted[target]})
-                results.dropna(inplace=True)
+            results = pandas.DataFrame({'actual': dataframe[target], 'predicted': predicted[target]})
+            results.dropna(inplace=True)
 
-                scores.append({
-                    'value': get_metric(metric)(results['actual'], results['predicted']),
-                    'metric': metric,
-                    'target': target
-                })
+            for eachMetric in score_specification['performanceMetrics']:
+                try:
+                    if eachMetric.get('metric', '').startswith('ROC'):
+                        tmp_value = get_metric(eachMetric, self.model.problem_specification)(results['actual'], predicted_prob)
+                    else:
+                        tmp_value = get_metric(eachMetric, self.model.problem_specification)(results['actual'], results['predicted'])
+
+                    scores.append({
+                        'value': tmp_value,
+                        'metric': eachMetric,
+                        'target': target
+                    })
+                except ValueError:
+                    pass
 
         return {
             'search_id': self.search_id,
@@ -750,7 +770,7 @@ class ModelTwoRavens(Model):
 
         if self.task in ['REGRESSION', 'CLASSIFICATION']:
             dataframe_train = Dataset(produce_specification['train']).get_dataframe().dropna()
-            self.fit(dataframe=dataframe_train, data_specification=produce_specification['train'])
+            # self.fit(dataframe=dataframe_train, data_specification=produce_specification['train'])
 
         if predict_type == 'RAW':
             if "FORECASTING" == self.task:
@@ -809,18 +829,3 @@ class ModelTwoRavens(Model):
             }, metadata_file)
 
         self.model.save(model_folder_dir)
-
-    # def forecast(self, dataframe, dataframe_rolling, horizon):
-    #     predictions = []
-    #     # TODO: check memory overhead - predictions is a collection of views referencing temporary dataframes
-    #     for idx in range(len(dataframe_rolling)):
-    #         self.fit(dataframe)
-    #         predictions.append(self.model.forecast(horizon=horizon).tail(1))
-    #
-    #         # TODO: this is also bad- dataframe is reallocated every time
-    #         dataframe = dataframe.append(dataframe_rolling[idx:idx+1])
-    #
-    #     self.fit(dataframe)
-    #     predictions.append(self.model.forecast(horizon=horizon).tail(1))
-    #
-    #     return pandas.concat(predictions)

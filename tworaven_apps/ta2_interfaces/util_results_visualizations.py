@@ -474,7 +474,7 @@ def util_results_importance_efd(data_pointer, metadata):
     def kernel_uniform(size):
         return [1] * size
 
-    print(data)
+    #print(data)
     def smooth(kernel, data, predictor):
         if len(kernel) % 2 != 1:
             raise ValueError('Kernel must be odd-length')
