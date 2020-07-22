@@ -23,7 +23,6 @@ import PanelList from '../../common/views/PanelList';
 import TextField from '../../common/views/TextField';
 import ButtonRadio from '../../common/views/ButtonRadio';
 import Button from "../../common/views/Button";
-import ButtonPlain from '../../common/views/ButtonPlain';
 import ModalVanilla from "../../common/views/ModalVanilla";
 import Table from "../../common/views/Table";
 
@@ -832,7 +831,6 @@ export default class Body_EventData {
             })
         }
 
-        console.log(eventdata);
         eventdata.canvasPreferences[eventdata.selectedCanvas] = eventdata.canvasPreferences[eventdata.selectedCanvas] || {};
         return m({
             'About': CanvasAbout,
@@ -882,9 +880,11 @@ export default class Body_EventData {
 
             eventdata.showSaveQuery && eventdata.selectedMode !== 'Home' && m(ModalVanilla, {
                 id: 'SaveQuery',
-                setDisplay: eventdata.setShowSaveQuery,
-                contents: m(SaveQuery, {pipeline: eventdata.manipulations, preferences: eventdata.saveQuery[eventdata.selectedMode]})
-            }),
+                setDisplay: eventdata.setShowSaveQuery
+            }, m(SaveQuery, {
+                pipeline: eventdata.manipulations,
+                preferences: eventdata.saveQuery[eventdata.selectedMode]
+            })),
 
             app.showModalAlerts && m(ModalVanilla, {
                 id: 'alertsModal',
@@ -922,22 +922,21 @@ export default class Body_EventData {
             eventdata.showAlignmentLog && logLength !== 0 && m(ModalVanilla, {
                 id: 'AlignmentLog',
                 setDisplay: eventdata.setShowAlignmentLog,
-                contents: [
-                    m('div[style=font-weight:bold]', 'Re-alignment from ' + eventdata.previousSelectedDataset + ' to ' + eventdata.selectedDataset),
-                    eventdata.alignmentLog.length !== 0 && [
-                        m('div', 'Query re-alignments:'),
-                        m('ul', eventdata.alignmentLog.map(log => m('li', log)))
-                    ],
-                    eventdata.preferencesLog.length !== 0 && [
-                        m('div', 'Subset menu re-alignments:'),
-                        m('ul', eventdata.preferencesLog.map(log => m('li', log)))
-                    ],
-                    eventdata.variablesLog.length !== 0 && [
-                        m('div', 'Variable re-alignments:'),
-                        m('ul', eventdata.variablesLog.map(log => m('li', log)))
-                    ]
+            }, [
+                m('div[style=font-weight:bold]', 'Re-alignment from ' + eventdata.previousSelectedDataset + ' to ' + eventdata.selectedDataset),
+                eventdata.alignmentLog.length !== 0 && [
+                    m('div', 'Query re-alignments:'),
+                    m('ul', eventdata.alignmentLog.map(log => m('li', log)))
+                ],
+                eventdata.preferencesLog.length !== 0 && [
+                    m('div', 'Subset menu re-alignments:'),
+                    m('ul', eventdata.preferencesLog.map(log => m('li', log)))
+                ],
+                eventdata.variablesLog.length !== 0 && [
+                    m('div', 'Variable re-alignments:'),
+                    m('ul', eventdata.variablesLog.map(log => m('li', log)))
                 ]
-            }),
+            ]),
 
             this.header(),
             this.leftpanel(mode),
