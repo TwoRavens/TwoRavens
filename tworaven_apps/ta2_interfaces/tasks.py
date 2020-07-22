@@ -609,7 +609,7 @@ def create_destination_directory(user_workspace, name):
 @celery_app.task
 def create_partials_datasets(configuration, workspace_id):
     """Create partials datasets"""
-    print('configuration', configuration)
+    # print('configuration', configuration)
 
     problem = configuration['problem']
     dataset_id = configuration['dataset_id']
@@ -627,6 +627,7 @@ def create_partials_datasets(configuration, workspace_id):
     # load dataframe and dataset schema
     if 'dataset_schema_path' in configuration:
         dataset_schema = json.load(open(configuration['dataset_schema_path'], 'r'))
+        print(f'dataset_schema_path: file://{configuration["dataset_schema_path"]}')
         dataset = Dataset.load(f'file://{configuration["dataset_schema_path"]}')
     elif 'dataset' in configuration:
         dataset_schema = configuration['dataset_schema']
@@ -641,7 +642,7 @@ def create_partials_datasets(configuration, workspace_id):
         dataset_id=dataset_id,
         update_roles=configuration.get('update_roles'))
 
-    print(dataset_schema)
+    #print(dataset_schema)
     resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
 
     if 'dataset_schema_path' in configuration:
