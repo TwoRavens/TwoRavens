@@ -32,7 +32,7 @@ import Flowchart from "../views/Flowchart";
 import {bold, boldPlain, italicize, preformatted} from "../index";
 import {setModal} from "../../common/views/Modal";
 import {workspace} from "../app";
-import {is_explore_mode} from "../app";
+import {isExploreMode} from "../app";
 
 
 export class CanvasModel {
@@ -47,7 +47,7 @@ export class CanvasModel {
                     common.loader('forceDiagramLoader')))
 
         return [
-            drawForceDiagram && m(ForceDiagram, Object.assign(forceDiagramState,{
+            drawForceDiagram && m(ForceDiagram, Object.assign(forceDiagramState, {
                 nodes: forceDiagramNodesReadOnly,
                 // these attributes may change dynamically, (the problem could change)
                 onDragOut: pebble => {
@@ -79,7 +79,7 @@ export class CanvasModel {
                 mutateNodes: mutateNodes(selectedProblem),
                 pebbleLinks: selectedProblem.pebbleLinks,
                 onclickLink: d => {
-                    let originalLink = selectedProblem.pebbleLinks.find(link =>  d.source === link.source && d.target === link.target);
+                    let originalLink = selectedProblem.pebbleLinks.find(link => d.source === link.source && d.target === link.target);
                     if (!originalLink) return;
                     app.remove(selectedProblem.pebbleLinks, originalLink);
                     app.resetPeek();
@@ -87,8 +87,8 @@ export class CanvasModel {
             }, forceData)),
 
 
-            app.is_model_mode && !app.swandive && m("#spacetools.spaceTool", {
-                    style: {right: app.panelWidth.right,'z-index': 16}
+            app.isModelMode && !app.swandive && m("#spacetools.spaceTool", {
+                    style: {right: app.panelWidth.right, 'z-index': 16}
                 },
                 m(Button, {
                     id: 'btnAdd', style: {margin: '0px .5em'},
@@ -118,7 +118,7 @@ export class CanvasModel {
                 }, m(Icon, {name: 'trashcan'}))),
 
 
-            app.is_model_mode && selectedProblem && m(Subpanel, {
+            app.isModelMode && selectedProblem && m(Subpanel, {
                     id: 'legend', header: 'Legend', class: 'legend',
                     style: {
                         right: app.panelWidth['right'],
@@ -127,6 +127,38 @@ export class CanvasModel {
                         width: '150px'
                     }
                 }, [
+                    {
+                        id: "indexButton",
+                        vars: selectedProblem.tags.indexes,
+                        name: 'Index',
+                        borderColor: common.indexColor,
+                        innerColor: 'white',
+                        width: 1
+                    },
+                    {
+                        id: "weightButton",
+                        vars: selectedProblem.tags.weights,
+                        name: 'Weight',
+                        borderColor: common.weightColor,
+                        innerColor: 'white',
+                        width: 1
+                    },
+                    {
+                        id: "privilegedButton",
+                        vars: selectedProblem.tags.privileged,
+                        name: 'Privileged',
+                        borderColor: common.privilegedColor,
+                        innerColor: 'white',
+                        width: 1
+                    },
+                    {
+                        id: "exogenousButton",
+                        vars: selectedProblem.tags.exogenous,
+                        name: 'Exogenous',
+                        borderColor: common.exogenousColor,
+                        innerColor: 'white',
+                        width: 1
+                    },
                     {
                         id: "nomButton",
                         vars: selectedProblem.tags.nominal,
@@ -164,39 +196,7 @@ export class CanvasModel {
                         vars: selectedProblem.tags.time,
                         name: 'Time',
                         borderColor: common.timeColor,
-                        innerColor: 'white',
-                        width: 1
-                    },
-                    {
-                        id: "weightButton",
-                        vars: selectedProblem.tags.weights,
-                        name: 'Weight',
-                        borderColor: common.weightColor,
-                        innerColor: 'white',
-                        width: 1
-                    },
-                    {
-                        id: "privilegedButton",
-                        vars: selectedProblem.tags.privileged,
-                        name: 'Privileged',
-                        borderColor: common.privilegedColor,
-                        innerColor: 'white',
-                        width: 1
-                    },
-                    {
-                        id: "exogenousButton",
-                        vars: selectedProblem.tags.exogenous,
-                        name: 'Exogenous',
-                        borderColor: common.exogenousColor,
-                        innerColor: 'white',
-                        width: 1
-                    },
-                    {
-                        id: "indexButton",
-                        vars: selectedProblem.tags.indexes,
-                        name: 'Index',
-                        borderColor: common.indexColor,
-                        innerColor: 'white',
+                        innerColor: common.timeColor,
                         width: 1
                     },
                     {
@@ -258,7 +258,7 @@ export let leftpanel = forceData => {
 
     let ravenConfig = app.workspace.raven_config;
     let selectedProblem = app.getSelectedProblem();
-    
+
     if (!ravenConfig) return;
 
     let sections = [];
@@ -284,7 +284,7 @@ export let leftpanel = forceData => {
         sections.push({
             value: 'Variables',
             title: 'Click variable name to add or remove the variable pebble from the modeling space.',
-            contents: app.is_model_mode && app.rightTab === 'Manipulate' && manipulate.constraintMenu
+            contents: app.isModelMode && app.rightTab === 'Manipulate' && manipulate.constraintMenu
                 ? manipulate.varList()
                 : [
                     m(TextField, {
@@ -298,9 +298,9 @@ export let leftpanel = forceData => {
                         id: 'varList',
                         items: leftpanelVariables,
                         colors: {
-                            [app.hexToRgba(common.selVarColor, .5)]: app.is_explore_mode ? selectedProblem.tags.loose : explore.exploreVariables,
+                            [app.hexToRgba(common.selVarColor, .5)]: app.isExploreMode ? selectedProblem.tags.loose : explore.exploreVariables,
                             [app.hexToRgba(common.gr1Color, .25)]: selectedProblem.predictors,
-                            [app.hexToRgba(common.gr2Color, .25)]: app.is_explore_mode ? [] : selectedProblem.targets
+                            [app.hexToRgba(common.gr2Color, .25)]: app.isExploreMode ? [] : selectedProblem.targets
                         },
                         classes: {
                             'item-nominal': nominalVariables,
@@ -346,10 +346,14 @@ export let leftpanel = forceData => {
                         // popup: x => m('div',
                         //     m('h4', 'Summary Statistics for ' + x),
                         //     m(Table, {
-                        //         attrsAll: {class: 'table-sm'},
+                        //         class: 'table-sm',
                         //         data: formatVariableSummary(app.variableSummaries[x])
                         //     })),
                         popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
+                        style: {
+                            height: 'calc(100% - 120px)',
+                            overflow: 'auto'
+                        }
                     }),
                     m(Button, {
                         id: 'btnCreateVariable',
@@ -411,7 +415,7 @@ export let leftpanel = forceData => {
 
     let formatProblem = problem => [
         problem.problemId, // this is masked as the UID
-        !app.taskPreferences.task1_finished && m('[style=text-align:center]', {onclick: e=> e.stopPropagation()}, m(Checkbox, {
+        !app.taskPreferences.task1_finished && m('[style=text-align:center]', {onclick: e => e.stopPropagation()}, m(Checkbox, {
             onclick: state => app.setCheckedDiscoveryProblem(state, problem.problemId),
             checked: problem.meaningful
         })),
@@ -473,24 +477,24 @@ export let leftpanel = forceData => {
                             }
                         }, 'Manipulations')),
 
-                        /*
-                         * Current Problem description
-                         */
-                        [
-                            m('h5.card-header.clearfix',
-                                m('div[style=height:50px;display:inline]', 'Description')),
+                    /*
+                     * Current Problem description
+                     */
+                    [
+                        m('h5.card-header.clearfix',
+                            m('div[style=height:50px;display:inline]', 'Description')),
 
-                            m('p', {
-                                id: 'problemDescription',
-                                style: {'padding-left': '2%', 'max-width': '800px'},
-                            }, m('pre', {
-                                contenteditable: true,
-                                oninput: v => {
-                                    selectedProblem.description = v.target.innerHTML
-                                    selectedProblem.unedited = false
-                                }
-                            }, m.trust(app.getDescription(selectedProblem)))),
-                        ], // END: Current Problem description
+                        m('p', {
+                            id: 'problemDescription',
+                            style: {'padding-left': '2%', 'max-width': '800px'},
+                        }, m('pre', {
+                            contenteditable: true,
+                            oninput: v => {
+                                selectedProblem.description = v.target.innerHTML
+                                selectedProblem.unedited = false
+                            }
+                        }, m.trust(app.getDescription(selectedProblem)))),
+                    ], // END: Current Problem description
 
                     m(Table, {
                         id: 'discoveryTableSelectedProblem',
@@ -517,14 +521,14 @@ export let leftpanel = forceData => {
                     /*
                      * User note for selecting "Discovered" problems
                      */
-                     (partition === 'auto') && m('div', {},
+                    (partition === 'auto') && m('div', {},
                         [
-                          m('p', {
-                            style: {'padding-left': '3%'}
-                          },
-                            'Click on a Discovered problem below to make it the "Current Problem."', m('br'), boldPlain('Note: '), 'the new "Current Problem" will have the same "Target" and "Predictors" but the "Name" will be different.')
+                            m('p', {
+                                    style: {'padding-left': '3%'}
+                                },
+                                'Click on a Discovered problem below to make it the "Current Problem."', m('br'), boldPlain('Note: '), 'the new "Current Problem" will have the same "Target" and "Predictors" but the "Name" will be different.')
                         ]
-                      ),
+                    ),
                     /*
                      * Problems table
                      */
@@ -576,7 +580,7 @@ export let leftpanel = forceData => {
                  *  If this is an unfinished Task1, show the submit discovered
                  *    problem button!
                  */
-                !app.taskPreferences.task1_finished && !app.is_explore_mode && m(ButtonLadda, {
+                !app.taskPreferences.task1_finished && !app.isExploreMode && m(ButtonLadda, {
                     id: 'btnSubmitDisc',
                     style: {margin: '1em'},
                     class: 'btn-success',
@@ -617,34 +621,39 @@ export let leftpanel = forceData => {
                         class: (tag.active ? 'active' : '') + ' btn-sm'
                     }, tag.name)))),
 
-                selectedProblem.tags.time.includes(variableName) && m('div', {style: {'text-align': 'left', 'margin-left': '.5em'}},
-                    'Time variables indicate a temporal location.', m('br'), bold('Time Granularity:'),
-                    m('br'),
-                    m(TextField, {
-                        id: 'timeGranularityValueTextField',
-                        value: (selectedProblem.timeGranularity[variableName] || {}).value || '',
-                        oninput: value => {
+                selectedProblem.tags.time.includes(variableName) && m('div', {
+                    style: {
+                        'text-align': 'left',
+                        'margin-left': '.5em'
+                    }
+                },
+                'Time variables indicate a temporal location.', m('br'), bold('Time Granularity:'),
+                m('br'),
+                m(TextField, {
+                    id: 'timeGranularityValueTextField',
+                    value: (selectedProblem.timeGranularity[variableName] || {}).value || '',
+                    oninput: value => {
+                        selectedProblem.timeGranularity[variableName] = selectedProblem.timeGranularity[variableName] || {};
+                        selectedProblem.timeGranularity[variableName].value = value.replace(/[^\d.-]/g, '')
+                    },
+                    onblur: value => selectedProblem.timeGranularity[variableName].value =
+                        Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined,
+                    style: {
+                        'margin-bottom': '1em',
+                        width: 'calc(100% - 150px)',
+                        display: 'inline-block'
+                    }
+                }),
+                m('div', {style: {display: 'inline-block', width: '92px'}},
+                    m(Dropdown, {
+                        id: 'timeGranularityUnitsDropdown',
+                        items: ["seconds", "minutes", "days", "weeks", "years", "unspecified"],
+                        activeItem: (selectedProblem.timeGranularity[variableName] || {}).units || 'unspecified',
+                        onclickChild: granularity => {
                             selectedProblem.timeGranularity[variableName] = selectedProblem.timeGranularity[variableName] || {};
-                            selectedProblem.timeGranularity[variableName].value = value.replace(/[^\d.-]/g, '')
-                        },
-                        onblur: value => selectedProblem.timeGranularity[variableName].value =
-                            Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined,
-                        style: {
-                            'margin-bottom': '1em',
-                            width: 'calc(100% - 150px)',
-                            display: 'inline-block'
+                            selectedProblem.timeGranularity[variableName].units = granularity
                         }
-                    }),
-                    m('div', {style: {display: 'inline-block', width: '92px'}},
-                        m(Dropdown, {
-                            id: 'timeGranularityUnitsDropdown',
-                            items: ["seconds", "minutes", "days", "weeks", "years", "unspecified"],
-                            activeItem: (selectedProblem.timeGranularity[variableName] || {}).units || 'unspecified',
-                            onclickChild: granularity => {
-                                selectedProblem.timeGranularity[variableName] = selectedProblem.timeGranularity[variableName] || {};
-                                selectedProblem.timeGranularity[variableName].units = granularity
-                            }
-                        }))
+                    }))
                 ),
 
                 m(VariableSummary, {variable: app.variableSummaries[variableName]})));
@@ -660,8 +669,8 @@ export let leftpanel = forceData => {
     return m(Panel, {
         side: 'left',
         label: 'Data Selection',
-        hover: false, // app.is_model_mode && !manipulate.constraintMenu,
-        width: app.is_explore_mode && app.leftTab === 'Discover' ? '900px' : leftPanelWidths[app.leftTab],
+        hover: false, // app.isModelMode && !manipulate.constraintMenu,
+        width: app.isExploreMode && app.leftTab === 'Discover' ? '900px' : leftPanelWidths[app.leftTab],
         attrsAll: {
             onclick: () => app.setFocusedPanel('left'),
             style: {
@@ -703,28 +712,30 @@ export let rightpanel = () => {
                 style: 'right:2em;position:fixed;z-index:1000;margin:0.5em',
                 disabled: selectedProblem.system === 'solved'
             }, m(Icon, {name: isLocked ? 'lock' : 'pencil'})),
-            m('div#problemConfiguration', {onclick: () => {
-                if (selectedProblem.system === 'solved') {
-                    app.alertError(m('div', 'This problem already has solutions. Would you like to edit a copy of this problem instead?', m(Button, {
-                        style: 'margin:1em',
-                        onclick: () => {
-                            let problemCopy = app.getProblemCopy(selectedProblem);
-                            resultsKeysToAxe.forEach(key => delete problemCopy[key]);
-                            Object.assign(problemCopy, {
-                                solutions: {},
-                                selectedSource: undefined,
-                                selectedSolutions: {}
-                            });
-                            workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
-                            app.setShowModalAlerts(false);
-                            app.setSelectedProblem(problemCopy.problemId);
+            m('div#problemConfiguration', {
+                    onclick: () => {
+                        if (selectedProblem.system === 'solved') {
+                            app.alertError(m('div', 'This problem already has solutions. Would you like to edit a copy of this problem instead?', m(Button, {
+                                style: 'margin:1em',
+                                onclick: () => {
+                                    let problemCopy = app.getProblemCopy(selectedProblem);
+                                    resultsKeysToAxe.forEach(key => delete problemCopy[key]);
+                                    Object.assign(problemCopy, {
+                                        solutions: {},
+                                        selectedSource: undefined,
+                                        selectedSolutions: {}
+                                    });
+                                    workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
+                                    app.setShowModalAlerts(false);
+                                    app.setSelectedProblem(problemCopy.problemId);
+                                }
+                            }, 'Edit Copy')));
+                            m.redraw();
+                            return;
                         }
-                    }, 'Edit Copy')));
-                    m.redraw();
-                    return;
-                }
-                isLocked && hopscotch.startTour(app.lockTour())
-                    }, style: 'float: left'},
+                        isLocked && hopscotch.startTour(app.lockTour())
+                    }, style: 'float: left'
+                },
                 m('label', 'Task Type'),
                 m(Dropdown, {
                     id: 'taskType',
@@ -765,7 +776,7 @@ export let rightpanel = () => {
                     }) : [
                         m('br'),
                         italicize('No variables have been tagged as temporal. Click a node in the graph, and then tag it as "time" from the left panel.'),
-                        m('br'),  m('br')
+                        m('br'), m('br')
                     ],
                     m('label', 'Horizon value. Choose how many time steps to forecast.'),
                     m(TextField, {
@@ -775,7 +786,7 @@ export let rightpanel = () => {
                         value: (selectedProblem.forecastingHorizon || {}).value || '',
                         oninput: !isLocked && (value => {
                             selectedProblem.forecastingHorizon = selectedProblem.forecastingHorizon || {};
-                            selectedProblem.forecastingHorizon.value = Math.max(0, parseInt(value.replace(/\D/g,''))) || undefined
+                            selectedProblem.forecastingHorizon.value = Math.max(0, parseInt(value.replace(/\D/g, ''))) || undefined
                         }),
                         style: {'margin-bottom': '1em'}
                     })
@@ -787,7 +798,7 @@ export let rightpanel = () => {
                         id: 'numClustersTextField',
                         disabled: isLocked,
                         value: selectedProblem.numClusters,
-                        oninput: !isLocked && (value => selectedProblem.numClusters = Math.max(0, parseInt(value.replace(/\D/g,''))) || undefined),
+                        oninput: !isLocked && (value => selectedProblem.numClusters = Math.max(0, parseInt(value.replace(/\D/g, ''))) || undefined),
                         style: {'margin-bottom': '1em'}
                     })
                 ],
@@ -848,185 +859,185 @@ export let rightpanel = () => {
                         id: 'precisionAtTopKTextField',
                         disabled: isLocked,
                         value: selectedProblem.precisionAtTopK === undefined ? '' : selectedProblem.precisionAtTopK,
-                        oninput: !isLocked && (value => selectedProblem.precisionAtTopK = Math.max(0, parseInt(value.replace(/\D/g,''))) || undefined),
+                        oninput: !isLocked && (value => selectedProblem.precisionAtTopK = Math.max(0, parseInt(value.replace(/\D/g, ''))) || undefined),
                         style: {'margin-bottom': '1em'}
                     })
                 ],
 
                 app.workspace.raven_config.advancedMode && m(Subpanel, {
-                        header: 'Split Options',
-                        defaultShown: false,
-                        style: {margin: '1em'}
+                    header: 'Split Options',
+                    defaultShown: false,
+                    style: {margin: '1em'}
+                },
+                m('label', 'Prepare in/out-of-sample splits.'),
+                m(ButtonRadio, {
+                    id: 'outOfSampleSplit',
+                    onclick: value => {
+                        if (isLocked) return;
+                        selectedProblem.splitOptions.outOfSampleSplit = value === 'True';
                     },
-                    m('label', 'Prepare in/out-of-sample splits.'),
+                    activeSection: selectedProblem.splitOptions.outOfSampleSplit ? 'True' : 'False',
+                    sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
+                }),
+                selectedProblem.splitOptions.outOfSampleSplit && [
+                    m('label[style=margin-top:0.5em]', 'In-sample-ratio. This ratio is used for model training, the rest is used for out-of-sample scoring and diagnostics.'),
+                    m(TextField, {
+                        id: 'ratioSplitsOption',
+                        disabled: isLocked,
+                        value: selectedProblem.splitOptions.trainTestRatio || 0,
+                        onblur: !isLocked && (value => selectedProblem.splitOptions.trainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
+                        style: {'margin-bottom': '1em'}
+                    }),
+                    m('label[style=margin-top:0.5em]', 'Stratify'),
                     m(ButtonRadio, {
-                        id: 'outOfSampleSplit',
+                        id: 'stratifiedSplitOption',
                         onclick: value => {
                             if (isLocked) return;
-                            selectedProblem.splitOptions.outOfSampleSplit = value === 'True';
+                            selectedProblem.splitOptions.stratified = value === 'True';
                         },
-                        activeSection: selectedProblem.splitOptions.outOfSampleSplit ? 'True' : 'False',
-                        sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
-                    }),
-                    selectedProblem.splitOptions.outOfSampleSplit && [
-                        m('label[style=margin-top:0.5em]', 'In-sample-ratio. This ratio is used for model training, the rest is used for out-of-sample scoring and diagnostics.'),
-                        m(TextField, {
-                            id: 'ratioSplitsOption',
-                            disabled: isLocked,
-                            value: selectedProblem.splitOptions.trainTestRatio || 0,
-                            onblur: !isLocked && (value => selectedProblem.splitOptions.trainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
-                            style: {'margin-bottom': '1em'}
-                        }),
-                        m('label[style=margin-top:0.5em]', 'Stratify'),
-                        m(ButtonRadio, {
-                            id: 'stratifiedSplitOption',
-                            onclick: value => {
-                                if (isLocked) return;
-                                selectedProblem.splitOptions.stratified = value === 'True';
-                            },
-                            activeSection: selectedProblem.splitOptions.stratified ? 'True' : 'False',
-                            sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
-                        }),
-                        m('label[style=margin-top:0.5em]', 'Shuffle'),
-                        m(ButtonRadio, {
-                            id: 'shuffleSplitsOption',
-                            onclick: !isLocked && (value => selectedProblem.splitOptions.shuffle = value === 'True'),
-                            activeSection: selectedProblem.splitOptions.shuffle ? 'True' : 'False',
-                            sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
-                        }),
-                        selectedProblem.splitOptions.shuffle && [
-                            m('label[style=margin-top:0.5em]', 'Random seed'),
-                            m(TextField, {
-                                id: 'randomSeedSplitsOption',
-                                disabled: isLocked,
-                                value: selectedProblem.splitOptions.randomSeed || 0,
-                                oninput: !isLocked && (value => selectedProblem.splitOptions.randomSeed = parseFloat(value.replace(/\D/g,'')) || undefined),
-                                style: {'margin-bottom': '1em'}
-                            })
-                        ],
-                        m('label[style=margin-top:0.5em]', 'Splits file (optional)'),
-                        m(TextField, {
-                            id: 'textFieldSampleSplitsFile',
-                            disabled: isLocked,
-                            value: selectedProblem.splitOptions.splitsFile,
-                            onblur: !isLocked && (value => selectedProblem.splitOptions.splitsFile = value),
-                            style: {'margin-bottom': '1em'}
-                        }),
-                        m('label', 'Maximum record count per data split'),
-                        m(TextField, {
-                            id: 'maxRecordCountOption',
-                            disabled: isLocked,
-                            value: selectedProblem.splitOptions.maxRecordCount || '',
-                            oninput: !isLocked && (value => selectedProblem.splitOptions.maxRecordCount = value.replace(/[^\d.-]/g, '')),
-                            onblur: !isLocked && (value => selectedProblem.splitOptions.maxRecordCount = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
-                            style: {'margin-bottom': '1em'}
-                        }),
-                    ]),
-                app.workspace.raven_config.advancedMode && m(Subpanel, {
-                        header: 'Search Options',
-                        defaultShown: false,
-                        style: {margin: '1em'}
-                    },
-                    m('label', 'Approximate time bound for overall pipeline search, in minutes. Leave empty for unlimited time.'),
-                    m(TextField, {
-                        id: 'timeBoundOption',
-                        value: selectedProblem.searchOptions.timeBoundSearch || '',
-                        disabled: isLocked,
-                        oninput: !isLocked && (value => selectedProblem.searchOptions.timeBoundSearch = value.replace(/[^\d.-]/g, '')),
-                        onblur: !isLocked && (value => selectedProblem.searchOptions.timeBoundSearch = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
-                        style: {'margin-bottom': '1em'}
-                    }),
-                    m('label', 'Approximate time bound for predicting with a single pipeline, in minutes. Leave empty for unlimited time.'),
-                    m(TextField, {
-                        id: 'timeBoundRunOption',
-                        disabled: isLocked,
-                        value: selectedProblem.searchOptions.timeBoundRun || '',
-                        oninput: !isLocked && (value => selectedProblem.searchOptions.timeBoundRun = value.replace(/[^\d.-]/g, '')),
-                        onblur: !isLocked && (value => selectedProblem.searchOptions.timeBoundRun = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
-                        style: {'margin-bottom': '1em'}
-                    }),
-                    m('label', 'Priority'),
-                    m(TextField, {
-                        id: 'priorityOption',
-                        disabled: isLocked,
-                        value: selectedProblem.searchOptions.priority || '',
-                        oninput: !isLocked && (value => selectedProblem.searchOptions.priority = value.replace(/[^\d.-]/g, '')),
-                        onblur: !isLocked && (value => selectedProblem.searchOptions.priority = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
-                        style: {'margin-bottom': '1em'}
-                    }),
-                    m('label', 'Limit on number of solutions'),
-                    m(TextField, {
-                        id: 'solutionsLimitOption',
-                        disabled: isLocked,
-                        value: selectedProblem.searchOptions.solutionsLimit || '',
-                        oninput: !isLocked && (value => selectedProblem.searchOptions.solutionsLimit = Math.max(0, parseInt(value.replace(/\D/g,''))) || undefined),
-                        style: {'margin-bottom': '1em'}
-                    })
-                ),
-                app.workspace.raven_config.advancedMode && m(Subpanel, {
-                        header: 'Score Options',
-                        defaultShown: false,
-                        style: {margin: '1em'}
-                    },
-                    m('label', 'Evaluation Method'),
-                    m(Dropdown, {
-                        id: 'evaluationMethodScoreOption',
-                        items: Object.keys(app.d3mEvaluationMethods),
-                        activeItem: selectedProblem.scoreOptions.evaluationMethod,
-                        onclickChild: child => {
-                            selectedProblem.scoreOptions.evaluationMethod = child;
-                            delete selectedProblem.unedited;
-                        },
-                        style: {'margin-bottom': '1em'},
-                        disabled: isLocked
-                    }),
-                    selectedProblem.scoreOptions.evaluationMethod === 'kFold' && [
-                        m('label[style=margin-top:0.5em]', 'Number of Folds'),
-                        m(TextField, {
-                            id: 'foldsScoreOption',
-                            disabled: isLocked,
-                            value: selectedProblem.scoreOptions.folds || '',
-                            oninput: !isLocked && (value => selectedProblem.scoreOptions.folds = parseFloat(value.replace(/\D/g,'')) || undefined),
-                            style: {'margin-bottom': '1em'}
-                        }),
-                    ],
-                    selectedProblem.scoreOptions.evaluationMethod === 'holdOut' && [
-                        m('label[style=margin-top:0.5em]', 'Train/Test Ratio'),
-                        m(TextField, {
-                            id: 'ratioScoreOption',
-                            disabled: isLocked,
-                            value: selectedProblem.scoreOptions.trainTestRatio || 0,
-                            onblur: !isLocked && (value => selectedProblem.scoreOptions.trainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
-                            style: {'margin-bottom': '1em'}
-                        })
-                    ],
-                    m('label', 'Stratify'),
-                    m(ButtonRadio, {
-                        id: 'stratifiedScoreOption',
-                        onclick: value => {
-                            if (isLocked) return;
-                            selectedProblem.scoreOptions.stratified = value === 'True';
-                        },
-                        activeSection: selectedProblem.scoreOptions.stratified ? 'True' : 'False',
+                        activeSection: selectedProblem.splitOptions.stratified ? 'True' : 'False',
                         sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
                     }),
                     m('label[style=margin-top:0.5em]', 'Shuffle'),
                     m(ButtonRadio, {
-                        id: 'shuffleScoreOption',
-                        onclick: !isLocked && (value => selectedProblem.scoreOptions.shuffle = value === 'True'),
-                        activeSection: selectedProblem.scoreOptions.shuffle ? 'True' : 'False',
+                        id: 'shuffleSplitsOption',
+                        onclick: !isLocked && (value => selectedProblem.splitOptions.shuffle = value === 'True'),
+                        activeSection: selectedProblem.splitOptions.shuffle ? 'True' : 'False',
                         sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
                     }),
-                    selectedProblem.scoreOptions.shuffle && [
+                    selectedProblem.splitOptions.shuffle && [
                         m('label[style=margin-top:0.5em]', 'Random seed'),
                         m(TextField, {
-                            id: 'randomSeedScoreOption',
+                            id: 'randomSeedSplitsOption',
                             disabled: isLocked,
-                            value: selectedProblem.scoreOptions.randomSeed || 0,
-                            oninput: !isLocked && (value => selectedProblem.scoreOptions.randomSeed = parseFloat(value.replace(/\D/g,'')) || undefined),
+                            value: selectedProblem.splitOptions.randomSeed || 0,
+                            oninput: !isLocked && (value => selectedProblem.splitOptions.randomSeed = parseFloat(value.replace(/\D/g, '')) || undefined),
                             style: {'margin-bottom': '1em'}
                         })
                     ],
+                    m('label[style=margin-top:0.5em]', 'Splits file (optional)'),
+                    m(TextField, {
+                        id: 'textFieldSampleSplitsFile',
+                        disabled: isLocked,
+                        value: selectedProblem.splitOptions.splitsFile,
+                        onblur: !isLocked && (value => selectedProblem.splitOptions.splitsFile = value),
+                        style: {'margin-bottom': '1em'}
+                    }),
+                    m('label', 'Maximum record count per data split'),
+                    m(TextField, {
+                        id: 'maxRecordCountOption',
+                        disabled: isLocked,
+                        value: selectedProblem.splitOptions.maxRecordCount || '',
+                        oninput: !isLocked && (value => selectedProblem.splitOptions.maxRecordCount = value.replace(/[^\d.-]/g, '')),
+                        onblur: !isLocked && (value => selectedProblem.splitOptions.maxRecordCount = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
+                        style: {'margin-bottom': '1em'}
+                    }),
+                ]),
+                app.workspace.raven_config.advancedMode && m(Subpanel, {
+                    header: 'Search Options',
+                    defaultShown: false,
+                    style: {margin: '1em'}
+                },
+                m('label', 'Approximate time bound for overall pipeline search, in minutes. Leave empty for unlimited time.'),
+                m(TextField, {
+                    id: 'timeBoundOption',
+                    value: selectedProblem.searchOptions.timeBoundSearch || '',
+                    disabled: isLocked,
+                    oninput: !isLocked && (value => selectedProblem.searchOptions.timeBoundSearch = value.replace(/[^\d.-]/g, '')),
+                    onblur: !isLocked && (value => selectedProblem.searchOptions.timeBoundSearch = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
+                    style: {'margin-bottom': '1em'}
+                }),
+                m('label', 'Approximate time bound for predicting with a single pipeline, in minutes. Leave empty for unlimited time.'),
+                m(TextField, {
+                    id: 'timeBoundRunOption',
+                    disabled: isLocked,
+                    value: selectedProblem.searchOptions.timeBoundRun || '',
+                    oninput: !isLocked && (value => selectedProblem.searchOptions.timeBoundRun = value.replace(/[^\d.-]/g, '')),
+                    onblur: !isLocked && (value => selectedProblem.searchOptions.timeBoundRun = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
+                    style: {'margin-bottom': '1em'}
+                }),
+                m('label', 'Priority'),
+                m(TextField, {
+                    id: 'priorityOption',
+                    disabled: isLocked,
+                    value: selectedProblem.searchOptions.priority || '',
+                    oninput: !isLocked && (value => selectedProblem.searchOptions.priority = value.replace(/[^\d.-]/g, '')),
+                    onblur: !isLocked && (value => selectedProblem.searchOptions.priority = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
+                    style: {'margin-bottom': '1em'}
+                }),
+                m('label', 'Limit on number of solutions'),
+                m(TextField, {
+                    id: 'solutionsLimitOption',
+                    disabled: isLocked,
+                    value: selectedProblem.searchOptions.solutionsLimit || '',
+                    oninput: !isLocked && (value => selectedProblem.searchOptions.solutionsLimit = Math.max(0, parseInt(value.replace(/\D/g, ''))) || undefined),
+                    style: {'margin-bottom': '1em'}
+                })
+                ),
+                app.workspace.raven_config.advancedMode && m(Subpanel, {
+                    header: 'Score Options',
+                    defaultShown: false,
+                    style: {margin: '1em'}
+                },
+                m('label', 'Evaluation Method'),
+                m(Dropdown, {
+                    id: 'evaluationMethodScoreOption',
+                    items: Object.keys(app.d3mEvaluationMethods),
+                    activeItem: selectedProblem.scoreOptions.evaluationMethod,
+                    onclickChild: child => {
+                        selectedProblem.scoreOptions.evaluationMethod = child;
+                        delete selectedProblem.unedited;
+                    },
+                    style: {'margin-bottom': '1em'},
+                    disabled: isLocked
+                }),
+                selectedProblem.scoreOptions.evaluationMethod === 'kFold' && [
+                    m('label[style=margin-top:0.5em]', 'Number of Folds'),
+                    m(TextField, {
+                        id: 'foldsScoreOption',
+                        disabled: isLocked,
+                        value: selectedProblem.scoreOptions.folds || '',
+                        oninput: !isLocked && (value => selectedProblem.scoreOptions.folds = parseFloat(value.replace(/\D/g, '')) || undefined),
+                        style: {'margin-bottom': '1em'}
+                    }),
+                ],
+                selectedProblem.scoreOptions.evaluationMethod === 'holdOut' && [
+                    m('label[style=margin-top:0.5em]', 'Train/Test Ratio'),
+                    m(TextField, {
+                        id: 'ratioScoreOption',
+                        disabled: isLocked,
+                        value: selectedProblem.scoreOptions.trainTestRatio || 0,
+                        onblur: !isLocked && (value => selectedProblem.scoreOptions.trainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
+                        style: {'margin-bottom': '1em'}
+                    })
+                ],
+                m('label', 'Stratify'),
+                m(ButtonRadio, {
+                    id: 'stratifiedScoreOption',
+                    onclick: value => {
+                        if (isLocked) return;
+                        selectedProblem.scoreOptions.stratified = value === 'True';
+                    },
+                    activeSection: selectedProblem.scoreOptions.stratified ? 'True' : 'False',
+                    sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
+                }),
+                m('label[style=margin-top:0.5em]', 'Shuffle'),
+                m(ButtonRadio, {
+                    id: 'shuffleScoreOption',
+                    onclick: !isLocked && (value => selectedProblem.scoreOptions.shuffle = value === 'True'),
+                    activeSection: selectedProblem.scoreOptions.shuffle ? 'True' : 'False',
+                    sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
+                }),
+                selectedProblem.scoreOptions.shuffle && [
+                    m('label[style=margin-top:0.5em]', 'Random seed'),
+                    m(TextField, {
+                        id: 'randomSeedScoreOption',
+                        disabled: isLocked,
+                        value: selectedProblem.scoreOptions.randomSeed || 0,
+                        oninput: !isLocked && (value => selectedProblem.scoreOptions.randomSeed = parseFloat(value.replace(/\D/g, '')) || undefined),
+                        style: {'margin-bottom': '1em'}
+                    })
+                ],
                 ),
             )
         ]
@@ -1090,7 +1101,7 @@ export let rightpanel = () => {
     return m(Panel, {
             side: 'right',
             label: 'Problem Configuration',
-            hover: is_explore_mode,
+            hover: isExploreMode,
             width: rightPanelWidths[app.rightTab],
             attrsAll: {
                 onclick: () => app.setFocusedPanel('right'),
@@ -1203,7 +1214,7 @@ export let buildForceData = problem => {
             //     nodes: new Set(['INSTM', 'pctfedited^2', 'test', 'PCTFLOAN^3']),
             //     opacity: 0.4
             // }
-        ].filter(_=>_);
+        ].filter(_ => _);
 
         groupLinks = [
             {
@@ -1274,7 +1285,7 @@ export let buildForceData = problem => {
                 if (!(mergedName in forceDiagramNodesReadOnly)) {
                     let preexistingPebbles = partitionArray.filter(pebble => pebble in forceDiagramNodesReadOnly)
                     if (preexistingPebbles.length > 0) forceDiagramNodesReadOnly[mergedName] = {
-                        id: mergedName.replace(/\W/g,'_'),
+                        id: mergedName.replace(/\W/g, '_'),
                         name: mergedName,
                         x: preexistingPebbles.reduce((sum, pebble) => sum + forceDiagramNodesReadOnly[pebble].x, 0) / preexistingPebbles.length,
                         y: preexistingPebbles.reduce((sum, pebble) => sum + forceDiagramNodesReadOnly[pebble].y, 0) / preexistingPebbles.length
@@ -1320,30 +1331,27 @@ export let setGroup = (problem, group, name) => {
         feature_id: 'blank',
         activity_l1: 'PROBLEM_DEFINITION',
         activity_l2: 'PROBLEM_SPECIFICATION',
-        other: {variable: name, problem: problem.problemId }
-      }
+        other: {variable: name, problem: problem.problemId}
+    }
 
-  //  console.log('problem: ' + problem.problemId);
+    //  console.log('problem: ' + problem.problemId);
 //    console.log('problem: ' + JSON.stringify(problem))
     if (group === 'Loose') {
         !problem.tags.loose.includes(name) && problem.tags.loose.push(name);
         app.remove(problem.targets, name);
         app.remove(problem.predictors, name);
         logParams.feature_id = 'MODEL_ADD_VARIABLE';
-    }
-    else if (group === 'Predictors') {
+    } else if (group === 'Predictors') {
         !problem.predictors.includes(name) && problem.predictors.push(name);
         app.remove(problem.targets, name);
         app.remove(problem.tags.loose, name);
         logParams.feature_id = 'MODEL_ADD_VARIABLE_AS_PREDICTOR';
-    }
-    else if (group === 'Targets') {
+    } else if (group === 'Targets') {
         !problem.targets.includes(name) && problem.targets.push(name);
         app.remove(problem.predictors, name);
         app.remove(problem.tags.loose, name);
         logParams.feature_id = 'MODEL_ADD_VARIABLE_AS_TARGET';
-    }
-    else if (group === 'None' || group === undefined) {
+    } else if (group === 'None' || group === undefined) {
         app.remove(problem.predictors, name);
         app.remove(problem.tags.loose, name);
         app.remove(problem.targets, name);
@@ -1622,8 +1630,7 @@ export let mutateNodes = problem => (state, context) => {
             context.nodes[pebble].strokeWidth = 0;
             context.nodes[pebble].nodeCol = 'transparent';
             context.nodes[pebble].strokeColor = 'transparent';
-        }
-        else {
+        } else {
             context.nodes[pebble].strokeWidth = 1;
             context.nodes[pebble].nodeCol = colors(app.generateID(pebble));
             context.nodes[pebble].strokeColor = 'transparent';
@@ -1632,7 +1639,7 @@ export let mutateNodes = problem => (state, context) => {
 
     // set additional styling for each node
     pebbles.forEach(pebble => Object.keys(params)
-    // only apply styles on classes the variable is a member of
+        // only apply styles on classes the variable is a member of
         .filter(label => params[label].has(pebble))
         .forEach(label => {
             if (label in strokeWidths) context.nodes[pebble].strokeWidth = strokeWidths[label];
@@ -1717,7 +1724,7 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
 
 let setLabel = (problem, label, name) => {
     if (label === 'nominal') {
-	    app.variableSummaries[name].nature = label;
+        app.variableSummaries[name].nature = label;
         if (problem.tags.nominal.includes(name)) {
             if (app.variableSummaries[name].numchar === 'character') {
                 app.alertLog(`Cannot interpret "${name}" as non-nominal, because the column is character-based.`);
@@ -1743,13 +1750,13 @@ let setLabel = (problem, label, name) => {
 
     if (label === 'location') {
         if (!problem.tags.location.includes(name)) {
-	    app.variableSummaries[name].geographic = true;
+            app.variableSummaries[name].geographic = true;
             app.remove(problem.tags.boundary, name);
             app.remove(problem.tags.time, name);
             app.remove(problem.tags.weights, name);
             app.remove(problem.tags.indexes, name);
             app.add(problem.tags.nominal, name);
-        } else app.variableSummaries[name].geographic = false; 
+        } else app.variableSummaries[name].geographic = false;
         app.toggle(problem.tags.location, name);
     }
 
@@ -1766,10 +1773,10 @@ let setLabel = (problem, label, name) => {
 
     if (label === 'time') {
         if (!problem.tags.time.includes(name)) {
-	    app.variableSummaries[name].temporal = true;
+            app.variableSummaries[name].temporal = true;
             app.remove(problem.tags.location, name);
             app.remove(problem.tags.boundary, name);
-        } else app.variableSummaries[name].temporal = false; 
+        } else app.variableSummaries[name].temporal = false;
         app.toggle(problem.tags.time, name);
     }
 
@@ -1839,15 +1846,14 @@ export function connectAllForceDiagram() {
     let problem = app.getSelectedProblem();
 
     problem.pebbleLinks = problem.pebbleLinks || [];
-    if (app.is_explore_mode) {
+    if (app.isExploreMode) {
         let pebbles = [...problem.predictors, ...problem.targets];
         problem.pebbleLinks = pebbles
             .flatMap((pebble1, i) => pebbles.slice(i + 1, pebbles.length)
                 .map(pebble2 => ({
                     source: pebble1, target: pebble2
                 })))
-    }
-    else problem.pebbleLinks = problem.predictors
+    } else problem.pebbleLinks = problem.predictors
         .flatMap(source => problem.targets
             .map(target => ({
                 source, target, right: true
@@ -1905,13 +1911,13 @@ export async function submitDiscProb() {
      *  rows for a .csv file
      */
 
-     //let outputCSV =
-   let outputCSV = ['problem_id,system,meaningful'];
+    //let outputCSV =
+    let outputCSV = ['problem_id,system,meaningful'];
 
     Object.keys(problems).reduce((out, problemId) => {
         let problem = problems[problemId];
 
-        if(problem.manipulations.length === 0){
+        if (problem.manipulations.length === 0) {
             // construct and write out the api call and problem description for each discovered problem
             let problemApiCall = solverD3M.GRPC_SearchSolutionsRequest(
                 problem,
@@ -1955,8 +1961,8 @@ export async function submitDiscProb() {
     //       "Data materialization Failed", true, "Close", true);
 
     setModal("Your discovered problems have been submitted.",
-             "Task 1 Complete",
-             true,
-             "Close",
-             true);
+        "Task 1 Complete",
+        true,
+        "Close",
+        true);
 }

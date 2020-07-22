@@ -221,12 +221,10 @@ export default class CanvasImputation {
                     'Replace': replaceMissing,
                     'Delete': deleteMissing
                 }[preferences.imputationMode](this.data, nullValues, replacementValues),
-                attrsAll: {
-                    style: {
-                        margin: '1em auto', width: 'auto',
-                        border: common.borderColor,
-                        'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
-                    }
+                style: {
+                    margin: '1em auto', width: 'auto',
+                    border: common.borderColor,
+                    'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
                 }
             }))
         )

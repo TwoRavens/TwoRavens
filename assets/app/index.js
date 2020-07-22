@@ -81,26 +81,26 @@ class Body {
 
         // after calling m.route.set, the params for mode, variate, vars don't update in the first redraw.
         // checking window.location.href is a workaround, permits changing mode from url bar
-        if (window.location.href.includes(mode) && mode !== app.currentMode)
+        if (window.location.href.includes(mode) && mode !== app.selectedMode)
             app.setSelectedMode(mode);
 
         let exploreVariables = (vars ? vars.split('/') : [])
             .filter(variable => variable in app.variableSummaries);
 
-        let overflow = app.is_explore_mode ? 'auto' : 'hidden';
+        let overflow = app.isExploreMode ? 'auto' : 'hidden';
 
         let selectedProblem = app.getSelectedProblem();
 
-        let drawForceDiagram = (app.is_model_mode || app.is_explore_mode) && selectedProblem && Object.keys(app.variableSummaries).length > 0;
+        let drawForceDiagram = (app.isModelMode || app.isExploreMode) && selectedProblem && Object.keys(app.variableSummaries).length > 0;
         let forceData = drawForceDiagram && model.buildForceData(selectedProblem);
 
         return m('main',
 
             this.constructModals(),
-            this.header(app.currentMode),
-            this.footer(app.currentMode),
-            app.workspace && Body.leftpanel(app.currentMode, forceData),
-            app.workspace && Body.rightpanel(app.currentMode),
+            this.header(app.selectedMode),
+            this.footer(app.selectedMode),
+            app.workspace && Body.leftpanel(app.selectedMode, forceData),
+            app.workspace && Body.rightpanel(app.selectedMode),
             app.workspace && manipulate.constraintMenu && Body.manipulations(),
             app.peekInlineShown && this.peekTable(),
 
@@ -118,10 +118,10 @@ class Body {
                 m('div', {
                         style: {width: '100%', height: '100%', position: 'relative'},
                     },
-                    app.is_dataset_mode && m(MainCarousel, {previousMode: this.previousMode}, m(dataset.CanvasDataset, {})),
-                    app.is_results_mode && m(MainCarousel, {previousMode: this.previousMode}, m(results.CanvasSolutions, {problem: selectedProblem})),
-                    app.is_explore_mode && m(MainCarousel, {previousMode: this.previousMode}, m(explore.CanvasExplore, {variables: exploreVariables, variate})),
-                    app.is_model_mode && m(MainCarousel, {previousMode: this.previousMode}, m(model.CanvasModel, {drawForceDiagram, forceData}))
+                    app.isDatasetMode && m(MainCarousel, {previousMode: this.previousMode}, m(dataset.CanvasDataset, {})),
+                    app.isResultsMode && m(MainCarousel, {previousMode: this.previousMode}, m(results.CanvasSolutions, {problem: selectedProblem})),
+                    app.isExploreMode && m(MainCarousel, {previousMode: this.previousMode}, m(explore.CanvasExplore, {variables: exploreVariables, variate})),
+                    app.isModelMode && m(MainCarousel, {previousMode: this.previousMode}, m(model.CanvasModel, {drawForceDiagram, forceData}))
                 )
             )
         );
@@ -173,7 +173,7 @@ class Body {
                 }, selectedProblem.problemId));
 
             let selectedSolutions = results.getSelectedSolutions(selectedProblem);
-            if (app.is_results_mode && selectedSolutions.length === 1 && selectedSolutions[0]) {
+            if (app.isResultsMode && selectedSolutions.length === 1 && selectedSolutions[0]) {
                 path.push(
                     m(Icon, {name: 'chevron-right'}),
                     m('h4[style=display: inline-block; margin: .25em 1em]',
@@ -190,7 +190,7 @@ class Body {
                     'In the Norse, their names were "Thought" and "Memory". ' +
                     'In our coming release, our thought-raven automatically advises on statistical model selection, ' +
                     'while our memory-raven accumulates previous statistical models from Dataverse, to provide cumulative guidance and meta-analysis.',
-                attrsInterface: {style: app.is_explore_mode ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}}
+                attrsInterface: {style: app.isExploreMode ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}}
             },
             m('div', {style: {'flex-grow': 1}}),
 
@@ -199,7 +199,7 @@ class Body {
             m('div', {style: {'flex-grow': 1}}),
 
 
-            app.currentMode === 'results' && selectedProblem && Object.keys(selectedProblem.solutions.d3m || {}).length > 0 && m(ButtonLadda, {
+            app.isResultsMode && selectedProblem && Object.keys(selectedProblem.solutions.d3m || {}).length > 0 && m(ButtonLadda, {
                 id: 'btnEndSession',
                 class: 'ladda-label ladda-button ' + (app.taskPreferences.task2_finished ? 'btn-secondary' : 'btn-success'),
                 onclick: solverD3M.endsession,
@@ -214,7 +214,7 @@ class Body {
                     // class: 'btn-sm',
                     style: {width: "auto"}},
                 onclick: app.setSelectedMode,
-                activeSection: app.currentMode || 'model',
+                activeSection: app.selectedMode || 'model',
                 sections: [
                     {value: 'Dataset'},
                     {value: 'Model'},
@@ -240,7 +240,7 @@ class Body {
 
         let pipeline = [
             ...app.workspace.raven_config.hardManipulations,
-            ...(app.is_model_mode ? app.getSelectedProblem().manipulations : [])
+            ...(app.isModelMode ? app.getSelectedProblem().manipulations : [])
         ];
         if (app.peekInlineShown && !app.peekData && !app.peekIsExhausted) app.resetPeek(pipeline);
 
@@ -291,7 +291,7 @@ class Body {
     footer() {
 
         return m(Footer, [
-            m('div.btn.btn-group[style=margin:5px;padding:0px]',
+            m('div.btn-group[style=margin:5px;padding:0px]',
                 m(Button, {id: 'btnTA2',class: 'btn-sm', onclick: _ => hopscotch.startTour(app.initialTour(), 0)}, 'Help Tour ', m(Icon, {name: 'milestone'})),
                 m(Button, {id: 'btnTA2', class: 'btn-sm', onclick: _ => app.helpmaterials('video')}, 'Video ', m(Icon, {name: 'file-media'})),
                 m(Button, {id: 'btnTA2', class: 'btn-sm', onclick: _ => app.helpmaterials('manual')}, 'Manual ', m(Icon, {name: 'file-pdf'})),
@@ -306,7 +306,7 @@ class Body {
                     `Basic Info (id: ${app.getCurrentWorkspaceId()})`
                 )
             ),
-            app.workspace && m('div.btn.btn-group[style=margin:5px;padding:0px]',
+            app.workspace && m('div.btn-group[style=margin:5px;padding:0px]',
                 !app.workspace.is_original_workspace && m(ButtonPlain, {
                     id: 'btnSaveWorkspace',
                     class: `btn-sm btn-secondary ${app.saveCurrentWorkspaceWindowOpen ? 'active' : ''}`,
@@ -339,14 +339,14 @@ class Body {
             }, m(Icon, {name: 'bell', style: `color: ${app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}`})),
 
             [
-                m(Button, {
-                    style: {'margin': '8px'},
-                    title: 'ta2 debugger',
-                    class: 'btn-sm',
-                    onclick: () => app.setShowModalTA2Debug(true)
-                }, m(Icon, {name: 'bug'})),
+                // m(Button, {
+                //     style: {'margin': '8px'},
+                //     title: 'ta2 debugger',
+                //     class: 'btn-sm',
+                //     onclick: () => app.setShowModalTA2Debug(true)
+                // }, m(Icon, {name: 'bug'})),
 
-                m(Button, {
+                app.isResultsMode && m(Button, {
                     style: {'margin': '8px'},
                     title: 'ta2 stop searches',
                     class: 'btn-sm',
@@ -362,7 +362,7 @@ class Body {
             // m("span", {"class": "footer-info-break"}, "|"),
             // m("a", {"href" : "/dev-raven-links", "target": "=_blank"}, "raven-links"),
 
-            m('div.btn.btn-group', {style: 'float: right; padding: 0px;margin:5px'},
+            m('div.btn-group', {style: 'float: right; padding: 0px;margin:5px'},
 
 
                 m(Button, {
@@ -476,7 +476,7 @@ class Body {
                         }[alert.type], .5)}]`, alert.time.toLocaleTimeString().replace(/([\d]+:[\d]{2})(:[\d]{2})(.*)/, "$1$3")),
                         alert.description
                     ]),
-                    attrsAll: {style: {'margin-top': '1em'}},
+                    style: {'margin-top': '1em'},
                     tableTags: m('colgroup',
                         m('col', {span: 1, width: '10px'}),
                         m('col', {span: 1, width: '75px'}),
@@ -804,9 +804,9 @@ class Body {
 
     static manipulations() {
         let selectedProblem = app.getSelectedProblem();
-        return (app.is_dataset_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu([
+        return (app.isDatasetMode || (app.isModelMode && app.rightTab === 'Manipulate')) && manipulate.menu([
             ...app.workspace.raven_config.hardManipulations,
-            ...(app.is_model_mode ? selectedProblem.manipulations : [])
+            ...(app.isModelMode ? selectedProblem.manipulations : [])
         ])  // the identifier for which pipeline to edit
     }
 }
@@ -819,7 +819,7 @@ class MainCarousel {
     // NOTE: onbeforeremove must be leaky, because the state is not updated before passing
     onbeforeremove(vnode) {
         vnode.dom.classList.add(
-            this.modeOrder.indexOf(vnode.attrs.previousMode) < this.modeOrder.indexOf(app.currentMode)
+            this.modeOrder.indexOf(vnode.attrs.previousMode) < this.modeOrder.indexOf(app.selectedMode)
                 ? 'exit-left' : 'exit-right');
         return new Promise(function (resolve) {
             vnode.dom.addEventListener("animationend", resolve)
@@ -827,7 +827,7 @@ class MainCarousel {
     }
     oncreate(vnode) {
         vnode.dom.classList.add(
-            this.modeOrder.indexOf(vnode.attrs.previousMode) < this.modeOrder.indexOf(app.currentMode)
+            this.modeOrder.indexOf(vnode.attrs.previousMode) < this.modeOrder.indexOf(app.selectedMode)
                 ? 'enter-right' : 'enter-left');
     }
     view(vnode) {

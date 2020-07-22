@@ -537,25 +537,31 @@ export class CanvasSolutions {
                                     id: 'resultsPerformanceTable',
                                     headers: ['metric', 'score'],
                                     data: generatePerformanceData(summary.confusionMatrix.data, resultsPreferences.factor),
-                                    attrsAll: {style: {width: 'calc(100% - 2em)', margin: '1em'}}
+                                    style: {width: 'calc(100% - 2em)', margin: '1em'}
                                 })),
                             summary.confusionMatrix.classes.length < 100 ? summary.confusionMatrix.classes.length > 0
-                                ? m('div', {style: {
-                                    display: "inline-block",
-                                        position: "relative",
-                                        width: "100%"
-                                }}, m('div', {style: 'margin-top: 80%'}), m('div', {
-                                    style: {
-                                        position: 'absolute',
-                                        top: 0, bottom: 0, left: 0, right: 0
-                                    }
-                                }, m(PlotVegaLite, {
-                                    specification: plots.vegaLiteConfusionMatrix(
-                                        summary.confusionMatrix.data,
-                                        summary.confusionMatrix.classes,
-                                        'Predicted', 'Actual', 'count',
-                                        `Confusion Matrix for ${problem.targets[0]}${resultsPreferences.factor ? (' factor ' + resultsPreferences.factor) : ''}`)
-                                })))
+                                ? m('div', {
+                                        style: {'text-align': 'center'}
+                                    },
+                                    m('div', {
+                                        style: {
+                                            display: "inline-block",
+                                            position: "relative",
+                                            'max-width': '600px',
+                                            width: "100%"
+                                        }
+                                    }, m('div', {style: 'margin-top: 80%'}), m('div', {
+                                        style: {
+                                            position: 'absolute',
+                                            top: 0, bottom: 0, left: 0, right: 0
+                                        }
+                                    }, m(PlotVegaLite, {
+                                        specification: plots.vegaLiteConfusionMatrix(
+                                            summary.confusionMatrix.data,
+                                            summary.confusionMatrix.classes,
+                                            'Predicted', 'Actual', 'count',
+                                            `Confusion Matrix for ${problem.targets[0]}${resultsPreferences.factor ? (' factor ' + resultsPreferences.factor) : ''}`)
+                                    }))))
                                 : 'Too few classes for confusion matrix! There is a data mismatch.'
                                 : 'Too many classes for confusion matrix!'
                         ]
@@ -651,7 +657,7 @@ export class CanvasSolutions {
 
                 // reassign content if some data is not undefined
                 let sortedPredictors = Object.keys(resultsData?.importanceScores
-                    ?.[adapter.getSolutionId()]?.EFD?.[resultsPreferences.target] || {});
+                    ?.[adapter.getSolutionId()]?.EFD?.[resultsPreferences.target] ?? {});
 
                 let plotVariables = (sortedPredictors.length > 0 ? sortedPredictors.reverse() : Object.keys(importanceData))
                     .filter(predictor => importanceData[predictor]);
@@ -697,32 +703,32 @@ export class CanvasSolutions {
         }
 
         if (adapters.length === 1 && resultsPreferences.importanceMode === 'Partials') {
-            let importancePlots = [
-                m('div[style=margin: 1em]', italicize("Partials"), ` shows the prediction of the model as one predictor is varied, and the other predictors are held at their mean.`),
-            ];
             let importancePartialsData = app.getPredictorVariables(problem).map(predictor => ({
                 predictor,
                 data: adapter.getImportancePartials(predictor)
             })).filter(predictorEntry => predictorEntry.data);
 
-            if (importancePartialsData.length > 0) importanceContent = m('div', {style: 'overflow:auto'}, m(Paginated, {
-                data: importancePartialsData,
-                makePage: data => data.map(predictorEntry => m('div',
-                    bold(predictorEntry.predictor),
-                    m(VariableImportance, {
-                        mode: 'Partials',
-                        data: predictorEntry.data,
-                        problem: problem,
-                        predictor: predictorEntry.predictor,
-                        target: resultsPreferences.target,
-                        yLabel: valueLabel,
-                        variableLabel: variableLabel,
-                        summary: app.variableSummaries[predictorEntry.predictor]
-                    }))),
-                limit: 10,
-                page: resultsPreferences.importancePage,
-                setPage: index => resultsPreferences.importancePage = index
-            }));
+            if (importancePartialsData.length > 0) importanceContent = [
+                m('div[style=margin: 1em]', italicize("Partials"), ` shows the prediction of the model as one predictor is varied, and the other predictors are held at their mean.`),
+                m('div', {style: 'overflow:auto'}, m(Paginated, {
+                    data: importancePartialsData,
+                    makePage: data => data.map(predictorEntry => m('div',
+                        bold(predictorEntry.predictor),
+                        m(VariableImportance, {
+                            mode: 'Partials',
+                            data: predictorEntry.data,
+                            problem: problem,
+                            predictor: predictorEntry.predictor,
+                            target: resultsPreferences.target,
+                            yLabel: valueLabel,
+                            variableLabel: variableLabel,
+                            summary: app.variableSummaries[predictorEntry.predictor]
+                        }))),
+                    limit: 10,
+                    page: resultsPreferences.importancePage,
+                    setPage: index => resultsPreferences.importancePage = index
+                }))
+            ];
         }
         if (adapters.length === 1 && resultsPreferences.importanceMode === 'PDP/ICE') {
             let isCategorical = app.getNominalVariables(problem).includes(resultsPreferences.target);
@@ -794,7 +800,7 @@ export class CanvasSolutions {
                         'Name': pipeStep['primitive']['primitive'].name,
                         'Method': pipeStep['primitive']['primitive']['pythonPath'].replace('d3m.primitives.', '')
                     },
-                    attrsAll: {style: {'margin-bottom': 0, padding: '1em'}}
+                    style: {'margin-bottom': 0, padding: '1em'}
                 }),
                 content: m(Table, {
                     id: 'pipelineTableStep' + i,
@@ -807,12 +813,12 @@ export class CanvasSolutions {
             let inputs = 'inputs' in pipeline && m(Table, {
                 id: 'pipelineInputsTable',
                 data: pipeline.inputs,
-                attrsAll: {style: {'margin-bottom': 0, 'padding': '1em'}}
+                style: {'margin-bottom': 0, 'padding': '1em'}
             });
             let outputs = 'outputs' in pipeline && m(Table, {
                 id: 'pipelineOutputsTable',
                 data: pipeline.outputs,
-                attrsAll: {style: {'margin-bottom': 0, 'padding': '1em'}}
+                style: {'margin-bottom': 0, 'padding': '1em'}
             });
 
             return [
@@ -836,15 +842,12 @@ export class CanvasSolutions {
                         out[entry] = solution.pipeline[entry];
                     return out;
                 }, {}),
-                attrsAll: {
-                    style: {
-                        margin: '1em',
-                        width: 'calc(100% - 2em)',
-                        border: common.borderColor,
-                        'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
-                    }
-                },
-                nest: true
+                style: {
+                    margin: '1em',
+                    width: 'calc(100% - 2em)',
+                    border: common.borderColor,
+                    'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
+                }
             }),
             m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Steps: '),
             m(Flowchart, {
@@ -1021,9 +1024,7 @@ export class CanvasSolutions {
             .filter(target => firstSolution.models[target].statistics)
             .map(target => m('div',
                 m('h5', target),
-                m(Table, {
-                    data: firstSolution.models[target].statistics[0]
-                })));
+                m(Table, {data: firstSolution.models[target].statistics[0]})));
         let performanceStats = performanceStatsContents.length > 0 && m(Subpanel, {
             style: {margin: '0px 1em'},
             header: 'Performance Statistics',
@@ -1188,7 +1189,7 @@ export let getSolutionAdapter = (problem, solution) => ({
         let adapter = getSolutionAdapter(problem, solution);
         loadImportanceScore(problem, adapter, mode);
 
-        return resultsData?.importanceScores?.[adapter.getSolutionId()]?.[mode]?.target;
+        return resultsData?.importanceScores?.[adapter.getSolutionId()]?.[mode]?.[target];
     },
     // get the bounding box image for the selected problem's target variable, in the desired split, at the given index
     getObjectBoundaryImagePath: (target, split, index) => {
@@ -1271,6 +1272,7 @@ export let resultsPreferences = {
     crossSectionTemp: 'unset',
     imagePage: 0
 };
+window.resultsPreferences = resultsPreferences;
 
 let setResultsFactor = factor => resultsPreferences.factor = factor === 'undefined' ? undefined : factor;
 
@@ -2225,7 +2227,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
                 body: {data_pointer: dataPointers['Partials']}
             });
 
-            console.log(response);
+            // console.log(response);
 
             if (!response.success) {
                 console.warn(response.data);
