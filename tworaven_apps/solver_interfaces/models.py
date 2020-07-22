@@ -117,7 +117,7 @@ def get_metric(specification, aux_info=None):
     if specification['metric'] == "R_SQUARED":
         return smetrics.r2_score
     if specification['metric'] == "JACCARD_SIMILARITY_SCORE":
-        return smetrics.jaccard_similarity_score
+        return smetrics.jaccard_score
     if specification['metric'] == "PRECISION_AT_TOP_K":
         raise NotImplementedError
     if specification['metric'] == "OBJECT_DETECTION_AVERAGE_PRECISION":
