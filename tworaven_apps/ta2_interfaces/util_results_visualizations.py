@@ -231,34 +231,60 @@ def util_results_confusion_matrix(data_pointer, metadata):
         }
     ]
 
+    status = EventJobUtil.import_dataset(
+        settings.TWORAVENS_MONGO_DB_NAME,
+        results_collection_name,
+        data_pointer,
+        indexes=['d3mIndex'])
+
+    if not status.success:
+        return {KEY_SUCCESS: False, KEY_DATA: status.err_msg}
+
+    response = list(util.run_query(query, method='aggregate'))
+    if not response[0]:
+        return {KEY_SUCCESS: response[0], KEY_DATA: response[1]}
+    data = next(response[1])
+
+    query = [
+        *metadata['query'],
+        {
+            "$facet": {
+                target: [
+                    {
+                        "$group": {
+                            "_id": {
+                                target: f"${target}"
+                            }
+                        }
+                    },
+                    {
+                        "$project": {
+                            "_id": 0,
+                            target: f"$_id\\.{target}"
+                        }
+                    }
+                ] for target in metadata['targets']
+            }
+        }
+    ]
+
     try:
-        status = EventJobUtil.import_dataset(
-            settings.TWORAVENS_MONGO_DB_NAME,
-            results_collection_name,
-            data_pointer,
-            indexes=['d3mIndex'])
-
-        if not status.success:
-            return {KEY_SUCCESS: False, KEY_DATA: status.err_msg}
-
         response = list(util.run_query(query, method='aggregate'))
+        if not response[0]:
+            return {KEY_SUCCESS: response[0], KEY_DATA: response[1]}
+        classes = next(response[1])
 
     finally:
         EventJobUtil.delete_dataset(
             settings.TWORAVENS_MONGO_DB_NAME,
             results_collection_name)
 
-    if not response[0]:
-        return {KEY_SUCCESS: response[0], KEY_DATA: response[1]}
-
-    data = next(response[1])
-
     return {
         KEY_SUCCESS: response[0],
         KEY_DATA: {
             target: {
                 'data': data[target],
-                'classes': list(set(map(lambda x: x['Actual'], data[target])))
+                'classes': [i[target] for i in classes[target]]
             } for target in data.keys()
         }
     }

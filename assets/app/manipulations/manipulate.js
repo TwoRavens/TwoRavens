@@ -242,7 +242,7 @@ export function varList() {
             popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
             attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
             style: {
-                height: 'calc(100% - 80px)',
+                height: 'calc(100% - 110px)',
                 overflow: 'auto'
             }
         }),
