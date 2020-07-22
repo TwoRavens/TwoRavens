@@ -219,7 +219,7 @@ class ModelSklearn(Model):
                 try:
                     split_scores[json.dumps(metric)].append(get_metric(metric)(actual, predicted))
                     split_weights[json.dumps(metric)].append(test_split.size)
-                except ValueError:
+                except Exception:
                     pass
 
         scores = []
