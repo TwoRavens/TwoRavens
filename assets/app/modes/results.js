@@ -125,12 +125,12 @@ export let leftpanel = () => {
                             action: m(Button, {
                                 class: 'btn-sm',
                                 onclick: () => solverSystems[systemId](selectedProblem).solve(),
-                                disabled: !!(selectedProblem.solverState[systemId] || {}).thinking
-                            }, !!(selectedProblem.solverState[systemId] || {}).thinking ? 'Solving' : 'Solve'),
-                            state: selectedProblem.solverState[systemId] && m('',
+                                disabled: !!selectedProblem.solverState?.[systemId]?.thinking
+                            }, !!selectedProblem.solverState?.[systemId]?.thinking ? 'Solving' : 'Solve'),
+                            state: selectedProblem.solverState?.[systemId] && m('',
                                 selectedProblem.solverState[systemId].thinking && common.loaderSmall(systemId),
                                 m('div[style=font-size:medium;margin-left:1em;display:inline-block]',
-                                    selectedProblem.solverState[systemId].message)
+                                    selectedProblem.solverState?.[systemId]?.message)
                             ),
                         })),
                         headers: ['solver', 'action', 'state'],
@@ -182,7 +182,7 @@ export let leftpanel = () => {
                     'You may select searches for other problems in the workspace to view their solutions.',
                     m(Table, {
                         data: Object.keys(app.workspace.raven_config.problems)
-                            .filter(problemId => 'd3m' in ((app.workspace.raven_config.problems[problemId] || {}).solverState || {}))
+                            .filter(problemId => 'd3m' in (app.workspace.raven_config.problems[problemId]?.solverState || {}))
                             .map(problemId => app.workspace.raven_config.problems[problemId])
                             .map(problem => [
                                 problem.problemId,
@@ -291,19 +291,19 @@ export class CanvasSolutions {
                 m(Paginated, {
                     data: resultsData.dataSample[resultsPreferences.dataSplit] || [],
                     makePage: dataSample => dataSample
-                            .map(point => ({
-                                point,
-                                'src': adapters[0].getObjectBoundaryImagePath(
-                                    resultsPreferences.target,
-                                    resultsPreferences.dataSplit,
-                                    problem.tags.indexes.reduce((index, column) => Object.assign(index, {
-                                        [column]: point[column]
-                                    }), {}))
-                            }))
-                            .filter(summary => summary.src)
-                            .map(summary => m('div',
-                                m('h5', summary.point.image),
-                                m('img', {src: summary.src}))),
+                        .map(point => ({
+                            point,
+                            'src': adapters[0].getObjectBoundaryImagePath(
+                                resultsPreferences.target,
+                                resultsPreferences.dataSplit,
+                                problem.tags.indexes.reduce((index, column) => Object.assign(index, {
+                                    [column]: point[column]
+                                }), {}))
+                        }))
+                        .filter(summary => summary.src)
+                        .map(summary => m('div',
+                            m('h5', summary.point.image),
+                            m('img', {src: summary.src}))),
                     limit: 10,
                     page: resultsPreferences.imagePage,
                     setPage: index => resultsPreferences.imagePage = index
@@ -772,7 +772,10 @@ export class CanvasSolutions {
                 activeSection: resultsPreferences.importanceMode,
                 sections: [
                     {value: 'EFD', title: 'empirical first differences'},
-                    problem.datasetPaths.partials && {value: 'Partials', title: 'model prediction as predictor varies over its domain'},
+                    problem.datasetPaths.partials && {
+                        value: 'Partials',
+                        title: 'model prediction as predictor varies over its domain'
+                    },
                     {value: 'PDP/ICE', title: 'partial dependence plot/individual conditional expectation'}
                 ]
             }),
@@ -918,10 +921,11 @@ export class CanvasSolutions {
                 }
             }
         }, m(Table, {
-            headers: ['Variable', 'Data'],
             data: [
                 ['System', firstAdapter.getSystemId()],
                 ['Downloads', m(Table, {
+                    sortable: true,
+                    sortHeader: 'name',
                     data: (firstSolution.produce || []).map(produce =>
                         ({
                             'name': produce.input.name,
@@ -945,7 +949,8 @@ export class CanvasSolutions {
                 //         solverWrapped.downloadModel(firstSolution.model_pointer)
                 //     }
                 // }, 'Download')]
-            ])
+            ]),
+            style: {background: 'white'}
         }));
 
         let predictionSummary = m(Subpanel, {
@@ -1122,7 +1127,7 @@ export let getSolutionAdapter = (problem, solution) => ({
     getDescription: () => solution.description,
     getSystemId: () => solution.systemId,
     getSolutionId: () => solution.solutionId || 'unknown',
-    getDataPointer: (dataSplit, predict_type='RAW') => {
+    getDataPointer: (dataSplit, predict_type = 'RAW') => {
         let produce = (solution.produce || [])
             .find(produce =>
                 produce.input.name === dataSplit &&
@@ -1211,7 +1216,7 @@ let getSolutionTable = (problem, systemId) => {
     let adapters = solutions.map(solution => getSolutionAdapter(problem, solution));
 
     let data = adapters
-    // extract data for each row (identification and scores)
+        // extract data for each row (identification and scores)
         .map(adapter => Object.assign({
                 adapter, ID: String(adapter.getSolutionId()), Solver: adapter.getSystemId(), Solution: adapter.getName()
             },
@@ -1342,19 +1347,19 @@ export let setSelectedSolution = (problem, systemId, solutionId) => {
         // Logging, include score, rank, and solutionId
         // ------------------------------------------------
         let chosenSolution = problem.solutions[systemId][solutionId];
-        if (chosenSolution){
+        if (chosenSolution) {
             let adapter = getSolutionAdapter(problem, chosenSolution);
             let score = adapter.getScore(problem.metric);
-            if (score !== undefined){
-              logParams.other = {
-                          solutionId: chosenSolution.solutionId,
-                          rank: getProblemRank(problem.solutions[systemId], solutionId),
-                          performance: score,
-                          metric: resultsPreferences.selectedMetric,
-                          };
-            //  console.log(JSON.str)
+            if (score !== undefined) {
+                logParams.other = {
+                    solutionId: chosenSolution.solutionId,
+                    rank: getProblemRank(problem.solutions[systemId], solutionId),
+                    performance: score,
+                    metric: resultsPreferences.selectedMetric,
+                };
+                //  console.log(JSON.str)
             }
-        } else{
+        } else {
             console.log('>>>> NOPE! no chosenSolution');
         }
 
@@ -1370,14 +1375,13 @@ export let setSelectedSolution = (problem, systemId, solutionId) => {
 };
 
 
-
 export let getProblemRank = (solutions, solutionId) => {
     let cnt = 0;
     for (let solutionKey of Object.keys(solutions).reverse()) {
         cnt += 1;
         if (solutionKey === solutionId) return String(cnt);
     }
-   return String(-1);
+    return String(-1);
 };
 
 
@@ -1557,7 +1561,7 @@ window.resultsData = resultsData;
 // manipulations to apply to data after joining predictions
 export let resultsQuery = [];
 
-export let loadProblemData = async (problem, predictor=undefined) => {
+export let loadProblemData = async (problem, predictor = undefined) => {
     // unload ICE data if predictor changed
     if (predictor && predictor !== resultsData.id.predictor) {
         resultsData.id.predictor = predictor;
@@ -1605,7 +1609,7 @@ export let loadProblemData = async (problem, predictor=undefined) => {
     resultsData.importanceICEFittedLoading = false;
 };
 
-export let loadSolutionData = async (problem, adapter, predictor=undefined) => {
+export let loadSolutionData = async (problem, adapter, predictor = undefined) => {
     await loadProblemData(problem, predictor);
 
     if (resultsData.id.solutionID === adapter.getSolutionId())
@@ -1823,7 +1827,7 @@ export let loadDataSample = async (problem, split) => {
                     sample: resultsPreferences.recordLimit
                 }
             },
-        ].filter(_=>_),
+        ].filter(_ => _),
         app.workspace.raven_config.variablesInitial)['pipeline'];
 
     let response;
@@ -1986,7 +1990,7 @@ export let loadImportancePartialsFittedData = async (problem, adapter) => {
         let nextOffset = offset + problem.domains[predictor].length;
         // for each point along the domain of the predictor
         out[predictor] = response.data.slice(offset, nextOffset)
-        // for each target specified in the problem
+            // for each target specified in the problem
             .map(point => problem.targets.reduce((out_point, target) => Object.assign(out_point, {
                 [target]: app.inferIsCategorical(target) ? point[target] : parseNumeric(point[target])
             }), {}));
@@ -2365,11 +2369,12 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
     // collect all fitted data points at the given index for each solution
     // an object of {Actual: [boundary1, ...], solutionId: [boundary1, boundary2], ...}
     let fittedPoints = adapters.reduce((fittedPoints, adapter) => Object.assign(fittedPoints, {
-        [adapter.getSolutionId()]: resultsData.fitted[adapter.getSolutionId()][split]
-            // all multi-indexes match
-            .filter(point => Object.entries(index).every(pair => point[pair[0]] === pair[1]))
-            // turn all matched points into an array of boundaries
-            .flatMap(point => point[target])}),
+            [adapter.getSolutionId()]: resultsData.fitted[adapter.getSolutionId()][split]
+                // all multi-indexes match
+                .filter(point => Object.entries(index).every(pair => point[pair[0]] === pair[1]))
+                // turn all matched points into an array of boundaries
+                .flatMap(point => point[target])
+        }),
         {Actual: actualPoint[target]});
 
     if (!resultsData.boundaryImageColormap) {

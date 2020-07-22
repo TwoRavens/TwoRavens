@@ -127,7 +127,7 @@ let makeDatasetCard = (preferences, result, index, manipulations, endpoint, labe
                     manipulations, app.workspace.raven_config.variablesInitial)['variables']];
 
                 preferences.joinPairs = augmentationData.left_columns.map((_, j) => [
-                    augmentationData.left_columns[j][0].map(colIndex => originalLeftColumns[colIndex]),
+                    augmentationData.left_columns[j].map(colIndex => originalLeftColumns[colIndex]),
                     [result.summary["Recommend Join Columns"]]
                 ]);
             }
@@ -369,7 +369,16 @@ export class Datamart {
                                 attrsCells: {valign: "top"},
                                 data: [
                                     ...query.keywords.map((keyword, i) => [
-                                        m(TextField, {value: keyword, oninput: val => query.keywords[i] = val}),
+                                        m(TextField, {
+                                            value: keyword,
+                                            oninput: val => query.keywords[i] = val,
+                                            onblur: val => {
+                                                query.keywords[i] = val;
+                                                if (val.length === 0) {
+                                                    query.keywords.splice(i, 1)
+                                                }
+                                            }
+                                        }),
                                         m('div', {
                                             onclick: () => query.keywords.splice(i, 1)
                                         }, m(Icon, {name: 'x', style: {margin: '1em 1em 1em 0em'}}))

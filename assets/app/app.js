@@ -1113,7 +1113,6 @@ let getDatasetDoc = async dataset_schema_url => {
 let buildDefaultProblem = problemDoc => {
 
     console.log('problemDoc', problemDoc);
-    console.log('variable summaries in buildDefaultProblem', variableSummaries)
     // create the default problem provided by d3m
 
     if (!problemDoc.inputs.dataSplits)
@@ -2991,20 +2990,22 @@ export let inferIsCategorical = variableSummary => {
 };
 
 export let isProblemValid = problem => {
-    let validity = true;
+    let valid = true;
     if (problem.task.toLowerCase() === 'forecasting' && problem.tags.time.length === 0) {
         alertError('One variable must be marked as temporal to solve a time series forecasting problem.')
-        validity = false;
+        valid = false;
     }
     if (problem.predictors.length === 0) {
         alertError('At least one predictor is required.');
-        validity = false;
+        valid = false;
     }
     if (problem.targets.length === 0) {
         alertError('At least one target is required.');
-        validity = false;
+        valid = false;
     }
-    return validity;
+    if (!valid)
+        m.redraw();
+    return valid;
 };
 
 // n linearly spaced points between min and max
