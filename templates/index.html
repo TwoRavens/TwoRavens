@@ -121,46 +121,8 @@
 
           const NGINX_MAX_UPLOAD_SIZE = "{{ NGINX_MAX_UPLOAD_SIZE }}";
 
-          // 7/21/2020 check
-          {#% if DEBUG %#}
-          {% comment %}
-          // --------------------------
-          // start: example/test function (only appears in DEBUG mode)
-          // --------------------------
-          function getCookie(key) {
-              var keyValue = document.cookie.match('(^|;) ?' + key + '=([^;]*)(;|$)');
-              return keyValue ? keyValue[2] : null;
-          }
-
-          // Request with custom header
-          const someTestData = {type: "cookie",
-                                flavor: "chocolate chip"};
-
-          function makeTestCall(){
-              $.ajax({
-                  type: "POST",
-                  contentType: "application/json",
-                  url: test_csrf_url,
-                  data: JSON.stringify(someTestData),
-                  dataType: 'json',
-                  headers: { 'X-CSRFToken': getCookie(csrf_cookie_name)},
-                  success: function(respData) {
-                      console.log("SUCCESS: ", respData);
-                  },
-                  error: function(e) {
-                      console.log("ERROR: ", e);
-                      alert(e);
-                  },
-                  done: function(e) {
-                      console.log('done...');
-                      }
-                });
-            }
-          // --------------------------
-          // end: example/test function
-          // --------------------------
-          {% endcomment %}
-          {#% endif %#}
+          // 7/22/2020 check
+        
     </script>
   {% endblock %}
 

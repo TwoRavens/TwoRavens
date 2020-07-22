@@ -28,17 +28,17 @@ fab webpack_prod
 fab run_with_ta2
 
 # Build main TA3
-docker build -t tworavens/ravens-main:comfrey-2020-0721 .
-docker push tworavens/ravens-main:comfrey-2020-0721
+docker build -t tworavens/ravens-main:comfrey-2020-0722 .
+docker push tworavens/ravens-main:comfrey-2020-0722
 
 # Build rook service
-docker build -t tworavens/ravens-r-service:comfrey-2020-0721 -f Dockerfile-flask-r .
-docker push tworavens/ravens-r-service:comfrey-2020-0721;
+docker build -t tworavens/ravens-r-service:comfrey-2020-0722 -f Dockerfile-flask-r .
+docker push tworavens/ravens-r-service:comfrey-2020-0722;
 
 # Build nginx service
 cd setup/nginx/;
-docker build -f ./Dockerfile -t tworavens/ravens-nginx:comfrey-2020-0721 .;
-docker push tworavens/ravens-nginx:comfrey-2020-0721;
+docker build -f ./Dockerfile -t tworavens/ravens-nginx:comfrey-2020-0722 .
+docker push tworavens/ravens-nginx:comfrey-2020-0722
 cd ../../;
 
 # ----------------------------
@@ -47,15 +47,15 @@ cd ../../;
 
 # nginx
 #
-cd setup/nginx/;
-docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-nginx:yarrow-2020-0721 .;
-docker push tworavens/eventdata-ravens-nginx:yarrow-2020-0721;
+cd setup/nginx/
+docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-nginx:yarrow-2020-0722 .
+docker push tworavens/eventdata-ravens-nginx:yarrow-2020-0722;
 cd ../../;
 
 # ta3-main
 #
-docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-main:yarrow-2020-0721 .;
-docker push tworavens/eventdata-ravens-main:yarrow-2020-0721
+docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-main:yarrow-2020-0722 .;
+docker push tworavens/eventdata-ravens-main:yarrow-2020-0722
 
 #docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
 
