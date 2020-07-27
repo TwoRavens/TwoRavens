@@ -115,7 +115,7 @@ def view_dev_raven_links(request):
     """Dev homepage (other than pebble page)"""
 
     dinfo = dict(title="dev links",
-                 MONGO_URL=MONGO_CONNECTION_STRING if settings.MONGO_CONNECTION_STRING else settings.EVENTDATA_MONGO_DB_ADDRESS)
+                 MONGO_URL=settings.MONGO_CONNECTION_STRING if settings.MONGO_CONNECTION_STRING else settings.EVENTDATA_MONGO_DB_ADDRESS)
 
     return render(request,
                   'content_pages/dev_raven_links.html',
