@@ -39,6 +39,8 @@ webpack-stats.json
 data/d3m/o_196seed/data/.Rapp.history
 setup/r-setup/RINSTALL.*.LOG
 
+.idea/
+
 # ---------------------------------
 # specific TwoRavens directories
 # ---------------------------------
@@ -49,3 +51,24 @@ documentation
 ravens-test
 xgboost
 assets/build
+
+
+# ---------------------------------
+# specific Test Datasets
+# ---------------------------------
+ravens_volume/test_data/*
+!ravens_volume/test_data/185_baseball
+!ravens_volume/test_data/196_autoMpg
+#
+!ravens_volume/test_data/185_baseball_MIN_METADATA
+!ravens_volume/test_data/196_autoMpg_MIN_METADATA
+#
+!ravens_volume/test_data/Western_Sahel_Grid-2010_2020
+!ravens_volume/test_data/Western_Sahel_Grid-Quarter-2010_2020
+#
+!ravens_volume/test_data/LL1_h1b_visa_apps_7480
+!ravens_volume/test_data/LL1_terra_canopy_height_long_form_s4_80_MIN_METADATA
+#
+!ravens_volume/test_data/56_sunspots_monthly
+!ravens_volume/test_data/TR102_Northern_Ireland
+!ravens_volume/test_data/TR91_Acled_et_2011_2020

@@ -45,28 +45,7 @@ WORKDIR /var/webapps/TwoRavens
 # Copy over the requirements and run them
 # -------------------------------------
 COPY ./requirements/ ./requirements
-#RUN pip3 install cpython
-#RUN pip3 install pyrfr
-#RUN pip3 install tensorflow==1.13.1
 
-# Install XGBoost library
-#
-#RUN git clone --recursive https://github.com/dmlc/xgboost && \
-#    cd xgboost && \
-#    make -j4 && \
-#    cd python-package; python setup.py install
-
-
-#RUN pip3 install mlbox
-#RUN pip3 install ludwig
-#RUN pip3 install h2o
-#RUN pip3 install -e git+https://github.com/automl/auto-sklearn.git@b5b16f398cc218dfdaf991fa3638782756e8222b#egg=auto_sklearn
-#RUN pip3 install mljar-supervised
-#RUN pip3 install scipy>=1.3.1
-#RUN pip3 install tpot
-
-# RUN pip3 install auto_sklearn
-# RUN pip3 install mlbox ludwig h2o mljar-supervised tpot
 RUN pip3 install --no-cache-dir -r requirements/prod.txt
 
 # -------------------------------------
