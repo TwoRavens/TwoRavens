@@ -82,3 +82,4 @@ test_setup_event_data_local/*
 submodules/ta3ta2-api-v*.zip
 tworavensproject/settings/mysql_test_settings.cnf
 RAVENS_VOLUME_TEST/*
+dev_scripts/gitlab_token.py
