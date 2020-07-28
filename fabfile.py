@@ -108,31 +108,39 @@ def make_d3m_configs_from_files_multiuser_test_limited(single_dataset=None, **ex
         params = dict(params, **extra_params)
 
     default_datatsets = [\
-        'Western_Sahel_Grid-2010_2020',
-        'Western_Sahel_Grid-Quarter-2010_2020',
-        'LL1_h1b_visa_apps_7480',
-        '56_sunspots_monthly',
-        'TR102_Northern_Ireland',
-        'TR20_State_Conflict',
-        'TR50_PRIO_GRID',
-        'TR60_Ethiopia_Small_2017-2018',
-        'TR61_Ethiopia_Large_2017-2018',
-        'TR81_Ethiopia_phemyear',
-        #'TR82_Ethiopia_phemlarge',
-        'TR83_Ethiopia_gdl_sub',
-        #'TR84_Ethiopia_zone_mon',
-        'TR85_Ethiopia_zone_mon_sub',
-        #'TR86_Ethiopia_zone_mon_sub_con',
-        #'TR87_Ethiopia_zone_mon_con',
-        'TR88_Ethiopia_phemclean',
-        'TR89_Ethiopia_zone_mon_sub_fert',
-        #
-        'TR90_Ethiopia_Oromia_1997-2018_April30',
-        'TR91_Acled_et_2011_2020',
         '185_baseball',
         '196_autoMpg',
+        '185_baseball_MIN_METADATA',
+        '196_autoMpg_MIN_METADATA',
+        'Western_Sahel_Grid-2010_2020',
+        'Western_Sahel_Grid-Quarter-2010_2020',
+        'LL1_h1b_visa_apps_7480',   # H1B
+        'LL1_terra_canopy_height_long_form_s4_80_MIN_METADATA', # Terra
+
+        #'JIDO_SOHR_Tab_Articles_8569',  # JIDO
+        #'LL1_MITLL_synthetic_vora_E_2538',  # JIDO
+        #
+        '56_sunspots_monthly',
+        'TR102_Northern_Ireland',
+        'TR91_Acled_et_2011_2020',
+        #'TR20_State_Conflict',
+        #'TR50_PRIO_GRID',
+        #'TR60_Ethiopia_Small_2017-2018',
+        #'TR61_Ethiopia_Large_2017-2018',
+        #'TR81_Ethiopia_phemyear',
+        #'TR82_Ethiopia_phemlarge',
+        #'TR83_Ethiopia_gdl_sub',
+        #'TR84_Ethiopia_zone_mon',
+        #'TR85_Ethiopia_zone_mon_sub',
+        #'TR86_Ethiopia_zone_mon_sub_con',
+        #'TR87_Ethiopia_zone_mon_con',
+        #'TR88_Ethiopia_phemclean',
+        #'TR89_Ethiopia_zone_mon_sub_fert',
+        #
+        #'TR90_Ethiopia_Oromia_1997-2018_April30',
         # 'LL1_PHEM_weeklyData_malnutrition',
-        'DA_poverty_estimation']
+        #'DA_poverty_estimation'
+        ]
 
     if single_dataset:
         selected_datasets = [single_dataset]

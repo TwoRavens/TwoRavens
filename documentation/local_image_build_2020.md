@@ -28,18 +28,38 @@ fab webpack_prod
 fab run_with_ta2
 
 # Build main TA3
-docker build -t tworavens/ravens-main:comfrey-2020-0722 .
-docker push tworavens/ravens-main:comfrey-2020-0722
+docker build -t tworavens/ravens-main:comfrey-2020-0727 .
+docker push tworavens/ravens-main:comfrey-2020-0727
 
 # Build rook service
-docker build -t tworavens/ravens-r-service:comfrey-2020-0722 -f Dockerfile-flask-r .
-docker push tworavens/ravens-r-service:comfrey-2020-0722;
+docker build -t tworavens/ravens-r-service:comfrey-2020-0727 -f Dockerfile-flask-r .
+docker push tworavens/ravens-r-service:comfrey-2020-0727;
 
 # Build nginx service
 cd setup/nginx/;
-docker build -f ./Dockerfile -t tworavens/ravens-nginx:comfrey-2020-0722 .
-docker push tworavens/ravens-nginx:comfrey-2020-0722
+docker build -f ./Dockerfile -t tworavens/ravens-nginx:comfrey-2020-0727 .
+docker push tworavens/ravens-nginx:comfrey-2020-0727
 cd ../../;
+
+
+# ----------------------------
+# Summer: Tag & Push
+# ----------------------------
+# ravens-main
+docker rmi registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-main:yarrow
+docker tag tworavens/ravens-main:comfrey-2020-0727 registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-main:yarrow
+docker push registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-main:yarrow
+
+# ravens-r-service
+docker rmi registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-r-service:yarrow
+docker tag tworavens/ravens-r-service:comfrey-2020-0727 registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-r-service:yarrow
+docker push registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-r-service:yarrow
+
+# ravens-nginx
+docker rmi registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-nginx:yarrow
+docker tag tworavens/ravens-nginx:comfrey-2020-0727 registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-nginx:yarrow
+docker push registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-nginx:yarrow
+
 
 # ----------------------------
 # Build event Data images
@@ -48,14 +68,14 @@ cd ../../;
 # nginx
 #
 cd setup/nginx/
-docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-nginx:yarrow-2020-0722 .
-docker push tworavens/eventdata-ravens-nginx:yarrow-2020-0722;
+docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-nginx:yarrow-2020-0727 .
+docker push tworavens/eventdata-ravens-nginx:yarrow-2020-0727;
 cd ../../;
 
 # ta3-main
 #
-docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-main:yarrow-2020-0722 .;
-docker push tworavens/eventdata-ravens-main:yarrow-2020-0722
+docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-main:yarrow-2020-0727 .;
+docker push tworavens/eventdata-ravens-main:yarrow-2020-0727
 
 #docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
 
