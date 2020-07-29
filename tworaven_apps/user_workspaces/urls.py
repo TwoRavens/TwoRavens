@@ -6,11 +6,17 @@ from tworaven_apps.user_workspaces import views_new_dataset
 
 urlpatterns = (
 
+    # ----------------------------
+    # 7/29/2020 - Upload a new dataset to test a saved model
+    # Does not create a new workspace
+    # ----------------------------
+    re_path(r'^upload-dataset-for-model-run$',
+            views_new_dataset.view_upload_dataset_for_model_run,
+            name='view_upload_dataset_for_model_run'),
 
     # ----------------------------
     # Choose a new dataset
     # ----------------------------
-
     re_path(r'^upload-dataset$',
             views_new_dataset.view_upload_dataset,
             name='view_upload_dataset'),

@@ -182,11 +182,21 @@ def view_load_eventdata_dataset(request, **kwargs):
     return HttpResponseRedirect(reverse('home'))
 
 
+
+
 @csrf_exempt
-def view_upload_dataset(request):
+def view_upload_dataset_for_model_run(request):
+    """7/29/2020 Upload a dataset to run a saved model on--this does not create
+    a new workspace"""
+    return view_upload_dataset(request,
+                               **{dp_static.SKIP_CREATE_NEW_CONFIG: True})
+
+
+@csrf_exempt
+def view_upload_dataset(request, **kwargs):
     """Upload dataset and metadata"""
     print('FILE_UPLOAD_MAX_MEMORY_SIZE:', settings.FILE_UPLOAD_MAX_MEMORY_SIZE)
-
+    print('view_upload_dataset kwargs', kwargs)
     user_workspace_info = get_latest_user_workspace(request)
     if not user_workspace_info.success:
         return JsonResponse(get_json_error(user_workspace_info.err_msg))
@@ -248,17 +258,26 @@ def view_upload_dataset(request):
     if not created.success:
         return JsonResponse(get_json_error(created.err_msg))
 
+    params = {dp_static.DATASET_NAME: dataset_name,
+              dp_static.SKIP_CREATE_NEW_CONFIG: \
+                kwargs.get(dp_static.SKIP_CREATE_NEW_CONFIG, False)}
+
+    print('params', params)
+
     new_dataset_info = UserDatasetUtil.make_new_dataset(\
                             user_workspace.user.id,
                             dest_directory,
                             settings.TWORAVENS_USER_DATASETS_DIR,
-                            **{dp_static.DATASET_NAME: dataset_name})
+                            **params)
 
     if not new_dataset_info.success:
         return JsonResponse(get_json_error(new_dataset_info.err_msg))
-    #udu = UserDatasetUtil(1, input_files, output_dir)
 
-    return JsonResponse(get_json_success('file upload completed successfully'))
+    user_dataset_util = new_dataset_info.result_obj
+
+    return JsonResponse(get_json_success('file upload completed successfully',
+                        data={dp_static.NEW_DATASET_DOC_PATH:
+                              user_dataset_util.new_dataset_doc_path}))
 
 
 @csrf_exempt
