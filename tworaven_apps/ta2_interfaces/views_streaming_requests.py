@@ -177,6 +177,53 @@ def view_fit_solution_results(request):
 
 
 @csrf_exempt
+def view_produce_solution_endpoint2(request):
+    """Used for producing solutions using new data"""
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+    user_obj = user_info.result_obj
+
+    # Request should include the produce params
+    #
+    req_body_info = get_request_body(request)
+    if not req_body_info.success:
+        return JsonResponse(get_json_error(req_body_info.err_msg))
+
+    # Begin to log D3M call
+    #
+    call_entry = None
+    if ServiceCallEntry.record_d3m_call():
+        call_entry = ServiceCallEntry.get_dm3_entry(\
+                        request_obj=request,
+                        call_type='ProduceSolutionEndpoint2',
+                        request_msg=req_body_info.result_obj)
+
+    # Let's call the TA2!
+    #
+
+    # pipeline id: check
+    # websocket id: username for now, may change this in the future
+    #
+    pipeline_id = f'produce2_{get_alphanumeric_string(7)}'
+    websocket_id = user_obj.username
+    prod_params = req_body_info.result_obj
+
+
+    ProduceSolutionHelper.make_produce_solution_call.delay(\
+                                pipeline_id,
+                                websocket_id,
+                                user_obj.id,
+                                prod_params,
+                                search_id=prod_params['search_id'])
+                                #session_key=self.session_key,
+                                #produce_dataset_name=produce_dataset_name
+
+    json_info = get_json_success('produce solution call started')
+    return JsonResponse(json_info, safe=False)
+
+
+@csrf_exempt
 def view_get_produce_solution_results(request):
     """gRPC: Call from UI with a GetProduceSolutionResultsRequest"""
     user_info = get_authenticated_user(request)
