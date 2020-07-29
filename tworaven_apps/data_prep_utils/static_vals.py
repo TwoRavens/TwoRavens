@@ -5,9 +5,13 @@ DATAMART_AUGMENT_PROCESS = 'DATAMART_AUGMENT_PROCESS'
 # Related to the "Add User Dataset" process
 # ----------------------------------------------
 ADD_USER_DATASET_PROCESS = 'ADD_USER_DATASET_PROCESS'
+ADD_USER_DATASET_PROCESS_NO_WORKSPACE = 'ADD_USER_DATASET_PROCESS_NO_WORKSPACE'
+NEW_DATASET_DOC_PATH = 'new_dataset_doc_path'
+
 DATASET_NAME_FROM_UI = 'name'   # from dataset.js
 DATASET_NAME = 'dataset_name'   # from dataset.js
 
+SKIP_CREATE_NEW_CONFIG = 'SKIP_CREATE_NEW_CONFIG'
 
 # ----------------------------------------------
 # Extensions

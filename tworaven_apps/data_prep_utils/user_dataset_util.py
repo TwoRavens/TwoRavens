@@ -29,9 +29,8 @@ from tworaven_apps.raven_auth.models import User
 from tworaven_apps.configurations.env_config_loader import EnvConfigLoader
 from tworaven_apps.configurations.models_d3m import D3MConfiguration
 from tworaven_apps.ta2_interfaces.websocket_message import WebsocketMessage
-from tworaven_apps.data_prep_utils.static_vals import ADD_USER_DATASET_PROCESS
-from tworaven_apps.data_prep_utils.dataset_doc_maker import DatasetDocMaker
 
+from tworaven_apps.data_prep_utils.dataset_doc_maker import DatasetDocMaker
 from tworaven_apps.data_prep_utils import static_vals as dp_static
 
 from tworaven_apps.configurations.utils import \
@@ -61,7 +60,12 @@ class UserDatasetUtil(BasicErrCheck):
     - Create any needed subdirectories"""
 
     def __init__(self, user_id, orig_source_files, writable_output_dir, **kwargs):
-        """Only need a dataset id to start"""
+        """Only need a dataset id to start
+        websocket_id - Send messages back via websocket
+        skip_create_new_config - Do no create D3MConfiguration object for the dataset
+                - Used when uploading a file to test a model and a new workspace is not neeeded
+
+        """
         self.user_id = user_id
         self.user = None
 
@@ -70,6 +74,11 @@ class UserDatasetUtil(BasicErrCheck):
         self.orig_source_files = orig_source_files
 
         self.new_dataset_dir = None
+
+        # optional, don't create a D3M config
+        #
+        self.skip_create_new_config = kwargs.get(dp_static.SKIP_CREATE_NEW_CONFIG, False)
+        self.new_dataset_doc_path = None
 
         # optional for websocket messages
         #
@@ -85,6 +94,7 @@ class UserDatasetUtil(BasicErrCheck):
                 self.dataset_name = dataset_name
         else:
             self.dataset_name = kwargs.get(dp_static.DATASET_NAME)
+
         if not self.dataset_name:
             self.dataset_name = f'dataset_{get_alpha_string(7)}'
 
@@ -135,7 +145,7 @@ class UserDatasetUtil(BasicErrCheck):
         if udu.has_error():
             return err_resp(udu.error_message)
 
-        return ok_resp('it worked')
+        return ok_resp(udu)
 
         # check for about.json
 
@@ -181,7 +191,7 @@ class UserDatasetUtil(BasicErrCheck):
         # ----------------------------------
         # Send Websocket message
         # ----------------------------------
-        ws_msg = WebsocketMessage.get_fail_message(ADD_USER_DATASET_PROCESS,
+        ws_msg = WebsocketMessage.get_fail_message(dp_static.ADD_USER_DATASET_PROCESS,
                                                    user_msg)
         ws_msg.send_message(self.websocket_id)
 
@@ -223,16 +233,29 @@ class UserDatasetUtil(BasicErrCheck):
             return
 
         LOGGER.info('(3) create_new_config')
-        self.create_new_config()
+        if self.skip_create_new_config is True:
+            # No config created if testing new data on a saved model
+            # e.g. no new workspace needed
+            if not self.has_error() and self.websocket_id:
+                ws_data = {dp_static.NEW_DATASET_DOC_PATH: self.new_dataset_doc_path}
+                print('websocket message!', ws_data)
+                ws_msg = WebsocketMessage.get_success_message(\
+                            dp_static.ADD_USER_DATASET_PROCESS_NO_WORKSPACE,
+                            'New user dataset created (but not workspace)',
+                            msg_cnt=1,
+                            data=ws_data)
+                ws_msg.send_message(self.websocket_id)
 
-        # self.send_websocket_err_msg(':( - the augment did not work')
+        else:
+            self.create_new_config()
 
-        if not self.has_error() and self.websocket_id:
-            ws_msg = WebsocketMessage.get_success_message(\
-                        ADD_USER_DATASET_PROCESS,
-                        'New user workspace created: %s' % self.new_workspace,
-                        msg_cnt=1)
-            ws_msg.send_message(self.websocket_id)
+            # self.send_websocket_err_msg(':( - the augment did not work')
+            if not self.has_error() and self.websocket_id:
+                ws_msg = WebsocketMessage.get_success_message(\
+                            dp_static.ADD_USER_DATASET_PROCESS,
+                            'New user workspace created: %s' % self.new_workspace,
+                            msg_cnt=1)
+                ws_msg.send_message(self.websocket_id)
 
 
     def create_new_config(self):
@@ -348,25 +371,34 @@ class UserDatasetUtil(BasicErrCheck):
 
 
     def create_files(self):
-        """Create a dataset doc and conver/move the source file"""
+        """Create a dataset doc and convert/move the source file"""
         if self.has_error():
             return False
 
         if self.orig_dataset_doc_path:
             shutil.move(self.orig_dataset_doc_path, self.dataset_dir)
+            self.new_dataset_doc_path = join(self.dataset_dir, 'datasetDoc.json')
+
             for orig_path in self.orig_source_files:
                 shutil.move(orig_path, self.dataset_tables_dir)
         else:
-            ddm = DatasetDocMaker(self.orig_source_files, self.dataset_dir)
+            params = dict(about=dict(datasetName=self.dataset_name))
+
+            ddm = DatasetDocMaker(self.orig_source_files,
+                                  self.dataset_dir,
+                                  **params)
 
             if ddm.has_error():
                 self.send_websocket_err_msg(ddm.error_message)
                 return False
 
             print('it worked!')
+            self.new_dataset_doc_path = ddm.dataset_doc_path
+
             print(ddm.dataset_doc_path)
             print(ddm.final_data_file_path)
 
+        print('self.new_dataset_doc_path', self.new_dataset_doc_path)
         return True
 
 

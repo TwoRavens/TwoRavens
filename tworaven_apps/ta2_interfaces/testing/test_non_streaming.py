@@ -246,8 +246,11 @@ class NonStreamingTests(TestCase):
         self.assertTrue('requestId' in json_resp['data'])
 
 
+    @skip
     def test_080_ProduceSolution(self):
-        """(80) Test ProduceSolution"""
+        """(80) Test ProduceSolution
+        Removed as of 7/31/2020
+        """
         msgt(self.test_080_ProduceSolution.__doc__)
         # url and info for call
         #
