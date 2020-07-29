@@ -139,9 +139,13 @@ urlpatterns = (
          views_streaming_requests.view_fit_solution_results,
          name='GetFitSolutionResults'),
 
-    path(r'ProduceSolution',
-         views_non_streaming_requests.view_produce_solution,
-         name='ProduceSolution'),
+    path(r'ProduceSolutionEndpoint2',
+         views_streaming_requests.view_produce_solution_endpoint2,
+         name='ProduceSolutionEndpoint2'),
+
+    #path(r'ProduceSolution',
+    #     views_non_streaming_requests.view_produce_solution,
+    #     name='ProduceSolution'),
 
     path(r'GetProduceSolutionResults',
          views_streaming_requests.view_get_produce_solution_results,
