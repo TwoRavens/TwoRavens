@@ -102,36 +102,36 @@ export class TreeTransform {
                 }
             }),
             ...step.binnings.map((binning, i) => {
-               let {name, variableIndicator, binningType, partitions} = binning;
-               return {
-                   id: 'Binning ' + i,
-                   name: `Binning ${i}: ${name}`,
-                   cancellable: editable,
-                   show_op: false,
-                   children: [
-                       {
-                           id: 'Binning ' + i + ' indicator',
-                           name: 'Indicator: ' + variableIndicator,
-                           cancellable: false, show_op: false
-                       },
-                       {
-                           id: 'Binning ' + i + ' type',
-                           name: 'Binning type: ' + binningType,
-                           cancellable: false, show_op: false
-                       },
-                       {
-                           id: 'Binning ' + i + ' partitions',
-                           name: 'Partitions: ' + partitions.length,
-                           cancellable: false, show_op: false,
-                           children: partitions.map((partition, j) => ({
-                               id: 'Binnning ' + i + ' partition ' + j,
-                               name: partition,
-                               cancellable: false, show_op: false
-                           }))
-                       }
+                let {name, variableIndicator, binningType, partitions} = binning;
+                return {
+                    id: 'Binning ' + i,
+                    name: `Binning ${i}: ${name}`,
+                    cancellable: editable,
+                    show_op: false,
+                    children: [
+                        {
+                            id: 'Binning ' + i + ' indicator',
+                            name: 'Indicator: ' + variableIndicator,
+                            cancellable: false, show_op: false
+                        },
+                        {
+                            id: 'Binning ' + i + ' type',
+                            name: 'Binning type: ' + binningType,
+                            cancellable: false, show_op: false
+                        },
+                        {
+                            id: 'Binning ' + i + ' partitions',
+                            name: 'Partitions: ' + partitions.length,
+                            cancellable: false, show_op: false,
+                            children: partitions.map((partition, j) => ({
+                                id: 'Binnning ' + i + ' partition ' + j,
+                                name: partition,
+                                cancellable: false, show_op: false
+                            }))
+                        }
 
-                   ]
-               }
+                    ]
+                }
             }),
             ...step.manual.map((manual, i) => {
                 let {name, variableIndicator, variableDefault, indicators, values} = manual;
@@ -204,12 +204,11 @@ export class TreeSubset {
 
         let {step, isQuery, editable} = attrs;
         let data = isQuery ? [{
-                name: 'Query ' + step.id,
-                id: step.id + '-root',
-                children: step.abstractQuery,
-                type: 'query'
-            }] : step.abstractQuery;
-
+            name: 'Query ' + step.id,
+            id: step.id + '-root',
+            children: step.abstractQuery,
+            type: 'query'
+        }] : step.abstractQuery;
 
 
         return m(TreeRender, {

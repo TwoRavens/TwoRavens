@@ -19,7 +19,7 @@ import Table from "../../common/views/Table";
 import * as common from '../../common/common';
 
 import * as app from "../app";
-import {alertError, alertLog} from "../app";
+import {alertError, alertLog, setPreprocess} from "../app";
 
 import * as queryAbstract from './queryAbstract';
 import * as queryMongo from "./queryMongo";
@@ -577,10 +577,9 @@ export let setQueryUpdated = async state => {
 
         selectedProblem.tags.transformed = [...app.getTransformVariables(selectedProblem.manipulations)];
 
-        app.buildProblemPreprocess(selectedProblem)
-            .then(response => {
-                if (response.preprocess) app.setVariableSummaries(response.preprocess.variables)
-            }).then(m.redraw);
+        app.loadProblemPreprocess(selectedProblem)
+            .then(setPreprocess)
+            .then(m.redraw);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
         loadMenu([...ravenConfig.hardManipulations, ...selectedProblem.manipulations], countMenu).then(count => {

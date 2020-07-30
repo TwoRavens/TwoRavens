@@ -522,8 +522,8 @@ export function GRPC_ProblemDescription(problem, datasetDoc) {
     }));
 
     let GRPC_ForecastingHorizon = {};
-    if (problem.task === 'forecasting' && (problem.forecastingHorizon.column || problem.tags.time.length > 0)) {
-        let horizonColumn = problem.forecastingHorizon.column || problem.tags.time[0];
+    if (problem.task === 'forecasting' && (problem.forecastingHorizon.column || app.getTemporalVariables(problem).length > 0)) {
+        let horizonColumn = problem.forecastingHorizon.column || app.getTemporalVariables(problem)[0];
         GRPC_ForecastingHorizon = {
             resourceId: learningResource.resID,
             columnIndex: getColIndex(horizonColumn),
@@ -724,10 +724,9 @@ export async function handleDescribeSolutionResponse(response) {
         return;
     }
 
-    let problems = ((app.workspace || {}).raven_config || {}).problems || {};
+    let problems = app.workspace?.raven_config?.problems ?? {};
     let solvedProblemId = Object.keys(problems)
-        .filter(problemId => ((problems[problemId].solverState || {}).d3m || {}).searchId)
-        .find(problemId => problems[problemId].solverState.d3m.searchId === response.searchId);
+        .find(problemId => problems[problemId]?.solverState?.d3m?.searchId === response.stored_request.search_id);
     let solvedProblem = problems[solvedProblemId];
 
     // end the search if it doesn't match any problem
@@ -759,6 +758,50 @@ export async function handleDescribeSolutionResponse(response) {
     m.redraw();
 }
 
+
+/**
+ Handle a getScoreFitSolutionResultsResponse send via websocket
+ wrapped in a StoredResponse object
+ */
+export async function handleGetFitSolutionResultsResponse(response) {
+
+    console.log(response)
+
+    if (response === undefined) {
+        console.log('handleGetScoreSolutionResultsResponse: Error.  "response" undefined');
+        return;
+    }
+
+    let problems = app.workspace?.raven_config?.problems ?? {};
+    let solvedProblemId = Object.keys(problems)
+        .find(problemId => problems[problemId]?.solverState?.d3m?.searchId === response.stored_request.search_id);
+    let solvedProblem = problems[solvedProblemId];
+
+    if (!solvedProblem) {
+        results.otherSearches[response.stored_request.search_id] = results.otherSearches[response.stored_request.search_id] || {};
+        if (results.otherSearches[response.stored_request.search_id].running === undefined)
+            results.otherSearches[response.stored_request.search_id].running = true;
+        m.redraw();
+        return;
+    }
+
+    if (response.is_finished === undefined) {
+        debugLog('handleGetScoreSolutionResultsResponse: Error.  "response.is_finished" undefined');
+        return;
+    }
+    if (!response.is_finished) return;
+    if (response.is_error) return;
+
+    // // standardize format
+    // response.response.scores.forEach(scoreSchema => scoreSchema.value = scoreSchema.value.raw.double);
+    //
+    // // save scores
+    // let solution = solvedProblem.solutions.d3m[response.pipelineId];
+    // solution.scores = solution.scores || [];
+    // solution.scores.push(...response.response.scores);
+    m.redraw();
+}
+
 /**
  Handle a getScoreSolutionResultsResponse send via websocket
  wrapped in a StoredResponse object
@@ -770,10 +813,9 @@ export async function handleGetScoreSolutionResultsResponse(response) {
         return;
     }
 
-    let problems = ((app.workspace || {}).raven_config || {}).problems || {};
+    let problems = app.workspace?.raven_config?.problems ?? {};
     let solvedProblemId = Object.keys(problems)
-        .filter(problemId => ((problems[problemId].solverState || {}).d3m || {}).searchId)
-        .find(problemId => problems[problemId].solverState.d3m.searchId === response.stored_request.search_id);
+        .find(problemId => problems[problemId]?.solverState?.d3m?.searchId === response.stored_request.search_id);
     let solvedProblem = problems[solvedProblemId];
 
     if (!solvedProblem) {
@@ -812,10 +854,9 @@ export async function handleGetProduceSolutionResultsResponse(response) {
         return;
     }
 
-    let problems = ((app.workspace || {}).raven_config || {}).problems || {};
+    let problems = app.workspace?.raven_config?.problems ?? {};
     let solvedProblemId = Object.keys(problems)
-        .filter(problemId => ((problems[problemId].solverState || {}).d3m || {}).searchId)
-        .find(problemId => problems[problemId].solverState.d3m.searchId === response.stored_request.search_id);
+        .find(problemId => problems[problemId]?.solverState?.d3m?.searchId === response.stored_request.search_id);
     let solvedProblem = problems[solvedProblemId];
 
     if (!solvedProblem) {

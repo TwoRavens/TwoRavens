@@ -32,7 +32,7 @@ discovery.app <- function(everything) {
         header <- if (!is.null(readControl[['header']])) readControl[['header']] else TRUE
 
         # mandatory arguments for read.table
-        readControlMandatory <- list(header=header, sep=sep, nrows=5000)
+        readControlMandatory <- list(header=header, sep=sep, nrows=5000, check.names=FALSE)
 
         tryCatch(okResult(do.call(read.table, c(path, modifyList(readControl, readControlMandatory)))), error=function(e)
                  errResult(paste0("Failed to load path '", path, "', with error: '", toString(e), "'")))

@@ -237,12 +237,13 @@ export function setSelectedMode(mode) {
 
     mode = mode ? mode.toLowerCase() : 'model';
 
+    let previousMode = selectedMode;
+
     let selectedProblem = getSelectedProblem();
     if (!selectedProblem && mode === 'results') {
-        mode = selectedMode;
+        mode = previousMode;
+        return;
     }
-
-    let isTransitionFromDatasetMode = isDatasetMode && mode !== 'dataset'
 
     isDatasetMode = mode === 'dataset';
     isModelMode = mode === 'model';
@@ -251,7 +252,7 @@ export function setSelectedMode(mode) {
 
 
     // remove empty steps when leaving manipulate mode
-    if (workspace && isTransitionFromDatasetMode) {
+    if (workspace && !isDatasetMode && previousMode === 'dataset') {
         let ravenConfig = workspace.raven_config;
         ravenConfig.hardManipulations = ravenConfig.hardManipulations.filter(step => {
             if (step.type === 'subset' && step.abstractQuery.length === 0) return false;
@@ -285,7 +286,14 @@ export function setSelectedMode(mode) {
     }
 
     if (selectedMode !== mode) {
-        if (isResultsMode && selectedProblem) {
+        // ensures that non-editable problems are not selected
+        if (!isExploreMode && previousMode === 'explore' && selectedProblem?.system === 'auto') {
+            let copiedProblem = getProblemCopy(selectedProblem);
+            workspace.raven_config.problems[copiedProblem.problemId] = copiedProblem;
+            setSelectedProblem(copiedProblem.problemId);
+        }
+
+        if (isResultsMode) {
             taskPreferences.isResultsClicked = true;
 
             // a solved problem, and its copy, are not pending
@@ -310,16 +318,20 @@ export function setSelectedMode(mode) {
         if (!isDatasetMode && manipulate.pendingHardManipulation) {
             hopscotch.endTour(true);
             let ravenConfig = workspace.raven_config;
-            buildDatasetPreprocess().then(response => {
-                if (response.preprocess)
-                    setVariableSummaries(response.preprocess.variables);
-                if (response.discovery) {
-                    ravenConfig.problems = discovery(response.discovery);
-                    let problemCopy = getProblemCopy(Object.values(ravenConfig.problems)[0]);
-                    ravenConfig.problems[problemCopy.problemId] = problemCopy;
-                    setSelectedProblem(problemCopy.problemId);
-                }
-            });
+            let datasetQuery = JSON.stringify(queryMongo.buildPipeline(
+                workspace.raven_config.hardManipulations,
+                workspace.raven_config.variablesInitial)['pipeline']);
+
+            loadPreprocess(datasetQuery).then(setPreprocess).then(m.redraw)
+            loadDiscovery(datasetQuery).then(discovery => {
+                ravenConfig.problems = standardizeDiscovery(discovery);
+
+                let emptyProblemId = generateProblemID();
+                ravenConfig.problems[emptyProblemId] = buildEmptyProblem(emptyProblemId);
+                let problemCopy = getProblemCopy(Object.values(ravenConfig.problems)[0]);
+                ravenConfig.problems[problemCopy.problemId] = problemCopy;
+                setSelectedProblem(problemCopy.problemId);
+            })
             manipulate.setPendingHardManipulation(false);
         }
 
@@ -333,18 +345,6 @@ export function setSelectedMode(mode) {
     // cause the peek table to redraw
     resetPeek();
 }
-
-export let buildDatasetPreprocess = () => getPreprocess(
-    JSON.stringify(queryMongo.buildPipeline(
-        workspace.raven_config.hardManipulations,
-        workspace.raven_config.variablesInitial)['pipeline']));
-
-export let buildProblemPreprocess = problem => getPreprocess(JSON.stringify(queryMongo.buildPipeline(
-    [...workspace.raven_config.hardManipulations, ...problem.manipulations, {
-        type: 'menu',
-        metadata: {type: 'data', nominal: getNominalVariables(problem), sample: 5000}
-    }],
-    workspace.raven_config.variablesInitial)['pipeline']));
 
 
 export async function buildCsvUrl(problem, lastStep, dataPath, collectionName) {
@@ -661,7 +661,7 @@ function websocketMessage(e) {
             solverD3M.handleGetProduceSolutionResultsResponse(msg_data.data);
         } else if (msg_data.msg_type === 'GetFitSolutionResults') {
             debugLog(msg_data.msg_type + ' recognized!');
-            debugLog('No handler: Currently not using GetFitSolutionResultsResponse...');
+            solverD3M.handleGetFitSolutionResultsResponse(msg_data.data);
         } else if (msg_data.msg_type === 'ENDGetSearchSolutionsResults') {
             debugLog(msg_data.msg_type + ' recognized!');
             solverD3M.handleENDGetSearchSolutionsResults(msg_data.data);
@@ -1110,6 +1110,66 @@ let getDatasetDoc = async dataset_schema_url => {
     return datasetDocInfo.data;
 };
 
+let buildEmptyProblem = problemId => ({
+    problemId,
+    system: 'auto',
+    predictors: [],
+    targets: [],
+    description: '',
+    metric: undefined,
+    metrics: [],
+    task: 'classification',
+    subTask: undefined,
+    supervision: undefined,
+    resourceTypes: ['tabular'],
+    d3mTags: [],
+    splitOptions: {
+        outOfSampleSplit: true,
+        trainTestRatio: 0.7,
+        stratified: false,
+        shuffle: false,
+        randomSeed: undefined,
+        splitsFile: undefined,
+        splitsDir: undefined,
+        maxRecordCount: defaultSampleSize
+    },
+    searchOptions: {
+        timeBoundSearch: undefined,
+        timeBoundRun: undefined,
+        priority: undefined,
+        solutionsLimit: undefined
+    },
+    scoreOptions: {
+        evaluationMethod: 'kFold',
+        folds: 10,
+        trainTestRatio: 0.7,
+        stratified: false,
+        shuffle: true,
+        randomSeed: undefined,
+        splitsFile: undefined,
+    },
+
+    meaningful: false,
+    manipulations: [],
+    solutions: {},
+    selectedSource: undefined,
+    selectedSolutions: {},
+    tags: {
+        nominal: [],
+        crossSection: [],
+        geographic: [],
+        boundary: [],
+        temporal: [],
+        weights: [], // singleton list
+        indexes: ['d3mIndex'],
+        privileged: [],
+        exogenous: [],
+        transformed: [],
+        loose: [] // variables displayed in the force diagram, but not in any groups
+    },
+    timeGranularity: {}
+});
+
 let buildDefaultProblem = problemDoc => {
 
     console.log('problemDoc', problemDoc);
@@ -1227,15 +1287,11 @@ let buildDefaultProblem = problemDoc => {
                     .map(column => column.colName)),
             crossSection: getTagsByRole('suggestedGroupingKey'),
             boundary: getTagsByRole('boundaryIndicator'),
-            location: [...new Set([
-                ...getTagsByRole('locationIndicator'),
-                ...Object.keys(variableSummaries)
-                    .filter(variable => variableSummaries[variable].geographic)
+            geographic: [...new Set([
+                ...getTagsByRole('locationIndicator')
             ])],
-            time: [...new Set([
-                ...getTagsByRole('timeIndicator'),
-                ...Object.keys(variableSummaries)
-                    .filter(variable => variableSummaries[variable].temporal)
+            temporal: [...new Set([
+                ...getTagsByRole('timeIndicator')
             ])],
             weights: getTagsByRole('instanceWeight'), // singleton list
             indexes,
@@ -1317,40 +1373,86 @@ let getDatasetPath = async problem_data_info => {
     return problem_info_result.data.source_data_path;
 };
 
-export let getPreprocess = async query => {
-    let datasetPath = query ? await getData({
-        method: 'aggregate', query,
-        export: 'csv'
-    }) : workspace.raven_config.datasetPath;
+let samplingCache = {id: {query: []}};
 
-    let results = {};
+let setSamplingCacheId = query => {
+    if (samplingCache?.id?.query === query)
+        return
 
-    let promisePreprocess = m.request({
-        method: 'POST',
-        url: ROOK_SVC_URL + 'preprocess.app',
-        body: {
-            data: datasetPath,
-            datastub: workspace.d3m_config.name,
-            l1_activity: 'PROBLEM_DEFINITION',
-            l2_activity: 'PROBLEM_SPECIFICATION'
+    samplingCache = {
+        sampledDatasetPathPromise: undefined,
+        preprocessPromise: undefined,
+        variableSummariesPromise: undefined,
+        datasetSummaryPromise: undefined,
+        discoveryPromise: undefined,
+
+        id: {
+            query
         }
-    }).then(response => {
-        if (!response.success) alertError(response.message);
-        else results.preprocess = response.data;
-    });
+    };
+}
 
-    let promiseDiscovery = m.request(ROOK_SVC_URL + 'discovery.app', {
-        method: 'POST',
-        body: {path: datasetPath}
-    }).then(response => {
-        if (!response.success) console.warn(response.message);
-        else results.discovery = response.data;
-    });
+let loadSampledDatasetPath = async query => {
+    setSamplingCacheId(query);
 
-    await Promise.all([promisePreprocess, promiseDiscovery]);
+    if (!samplingCache.sampledDatasetPathPromise) {
+        samplingCache.sampledDatasetPathPromise = query.length > 0
+            ? getData({
+                method: 'aggregate', query,
+                export: 'csv'
+            })
+            : Promise.resolve(workspace.raven_config.datasetPath)
+    }
+    return samplingCache.sampledDatasetPathPromise
+}
 
-    return results
-};
+let loadDiscovery = async query => {
+    setSamplingCacheId(query);
+
+    if (!samplingCache.discoveryPromise)
+        samplingCache.discoveryPromise = loadSampledDatasetPath(query)
+            .then(datasetPath => m.request(ROOK_SVC_URL + 'discovery.app', {
+                method: 'POST',
+                body: {path: datasetPath}
+            }))
+            .then(response => {
+                if (!response.success) console.warn(response.message);
+                else return response.data
+            })
+    return samplingCache.discoveryPromise
+}
+
+let loadPreprocess = async query => {
+    setSamplingCacheId(query);
+    if (!samplingCache.preprocessPromise)
+        samplingCache.preprocessPromise = loadSampledDatasetPath(query)
+            .then(datasetPath => m.request(ROOK_SVC_URL + 'preprocess.app', {
+                method: 'POST',
+                body: {
+                    data: datasetPath,
+                    datastub: workspace.d3m_config.name,
+                    l1_activity: 'PROBLEM_DEFINITION',
+                    l2_activity: 'PROBLEM_SPECIFICATION'
+                }
+            }))
+            .then(response => {
+                if (!response.success) alertError(response.message);
+                return response.data
+            })
+
+    return samplingCache.preprocessPromise
+}
+
+export let loadProblemPreprocess = async problem => loadPreprocess(JSON.stringify(queryMongo.buildPipeline(
+    [
+        ...workspace.raven_config.hardManipulations,
+        ...problem.manipulations,
+        {
+            type: 'menu',
+            metadata: {type: 'data', nominal: getNominalVariables(problem), sample: 5000}
+        }
+    ],
+    workspace.raven_config.variablesInitial)['pipeline']));
 
 export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
 
@@ -1362,19 +1464,13 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
 
     let newRavenConfig = workspace.raven_config === null;
     if (newRavenConfig) workspace.raven_config = {
+        variableSummariesDiffs: {},
+        datasetSummariesDiffs: {},
         advancedMode: false,
         problemCount: 0, // used for generating new problem ID's
         ravenConfigVersion: RAVEN_CONFIG_VERSION,
         hardManipulations: [],
-        problems: {},
-        tags: {
-            transformed: [],
-            weights: [], // only one variable can be a weight
-            crossSection: [],
-            time: [],
-            nominal: [],
-            loose: [] // variables displayed in the force diagram, but not in any groups
-        }
+        problems: {}
     };
 
     let manipulations = newRavenConfig ? [] : [
@@ -1410,47 +1506,18 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
         })
         .then(m.redraw);
 
+    let datasetQuery = JSON.stringify(queryMongo.buildPipeline([
+        ...manipulations, {type: 'menu', metadata: {type: 'data', sample: 5000}}
+    ], workspace.raven_config.variablesInitial)['pipeline']);
+
     // MONGO LOAD / SAMPLE DATASET PATH
     let promiseSampledDatasetPath = Promise.all([promiseDatasetDoc, promiseDatasetPath])
-        .then(() => getData({
-            method: 'aggregate',
-            query: JSON.stringify(queryMongo.buildPipeline([
-                ...manipulations, {type: 'menu', metadata: {type: 'data', sample: 5000}}
-            ], workspace.raven_config.variablesInitial)['pipeline']),
-            export: 'csv'
-        }));
+        .then(() => loadSampledDatasetPath(datasetQuery));
 
     // PREPROCESS
     let promisePreprocess = promiseSampledDatasetPath
-        .then(sampledDatasetPath => m.request(ROOK_SVC_URL + 'preprocess.app', {
-            method: 'POST',
-            body: {
-                data: sampledDatasetPath,
-                datastub: workspace.d3m_config.name,
-                variables: workspace.raven_config.variableSummaries
-            }
-        }))
-        .then(response => {
-            if (!response.success) alertError(response.message);
-            else return response.data;
-        })
-        .then(preprocess => {
-            if (!preprocess) return;
-
-            setVariableSummaries(workspace.raven_config.variableSummaries || preprocess.variables);
-            setDatasetSummary(workspace.raven_config.datasetSummary || preprocess.dataset);
-
-            workspace.raven_config.variablesInitial = Object.keys(preprocess.variables);
-
-            if (newRavenConfig || workspace.raven_config.variableSummaries) {
-                // go back and add tags to original problems
-                let nominals = Object.keys(variableSummaries)
-                    .filter(variable => variableSummaries[variable].nature === 'nominal');
-                Object.values(workspace.raven_config.problems)
-                    .forEach(problem => problem.tags.nominal = nominals);
-            }
-            return preprocess['$schema'];
-        })
+        .then(() => loadPreprocess(datasetQuery))
+        .then(setPreprocess)
         .then(m.redraw)
         .catch(err => {
             console.error(err);
@@ -1466,20 +1533,13 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
 
     // DISCOVERY
     let promiseDiscovery = promiseSampledDatasetPath
-        .then(sampledDatasetPath => m.request(ROOK_SVC_URL + 'discovery.app', {
-            method: 'POST',
-            body: {path: sampledDatasetPath}
-        }))
-        .then(async response => {
-            if (!response.success) {
-                console.warn(response.message);
-                return;
-            }
+        .then(() => loadDiscovery(datasetQuery))
+        .then(async discovery => {
             // merge discovery into problem set if constructing a new raven config
             // wait until after preprocess completes,
             //  so that discovered problems can have additional preprocess metadata attached
             await promisePreprocess
-                .then(_ => Object.assign(workspace.raven_config.problems, discovery(response.data)));
+                .then(_ => Object.assign(workspace.raven_config.problems, standardizeDiscovery(discovery)));
         });
 
     // RECORD COUNT
@@ -1513,65 +1573,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
                 if (Object.keys(workspace.raven_config.problems).length === 0) {
                     let problemId = 'base ' + generateProblemID();
                     workspace.raven_config.problems = {
-                        [problemId]: {
-                            problemId,
-                            system: 'auto',
-                            predictors: [],
-                            targets: [],
-                            description: '',
-                            metric: undefined,
-                            metrics: [],
-                            task: 'classification',
-                            subTask: undefined,
-                            supervision: undefined,
-                            resourceTypes: ['tabular'],
-                            d3mTags: [],
-                            splitOptions: {
-                                outOfSampleSplit: true,
-                                trainTestRatio: 0.7,
-                                stratified: false,
-                                shuffle: false,
-                                randomSeed: undefined,
-                                splitsFile: undefined,
-                                splitsDir: undefined,
-                                maxRecordCount: defaultSampleSize
-                            },
-                            searchOptions: {
-                                timeBoundSearch: undefined,
-                                timeBoundRun: undefined,
-                                priority: undefined,
-                                solutionsLimit: undefined
-                            },
-                            scoreOptions: {
-                                evaluationMethod: 'kFold',
-                                folds: 10,
-                                trainTestRatio: 0.7,
-                                stratified: false,
-                                shuffle: true,
-                                randomSeed: undefined,
-                                splitsFile: undefined,
-                            },
-
-                            meaningful: false,
-                            manipulations: [],
-                            solutions: {},
-                            selectedSource: undefined,
-                            selectedSolutions: {},
-                            tags: {
-                                nominal: [],
-                                crossSection: [],
-                                location: [],
-                                boundary: [],
-                                time: [],
-                                weights: [], // singleton list
-                                indexes: ['d3mIndex'],
-                                privileged: [],
-                                exogenous: [],
-                                transformed: [],
-                                loose: [] // variables displayed in the force diagram, but not in any groups
-                            },
-                            timeGranularity: {}
-                        }
+                        [problemId]: buildEmptyProblem(problemId)
                     };
                 }
 
@@ -1858,7 +1860,6 @@ export function downloadIncomplete() {
 let loadPredictorDomains = async problem => {
     if (problem.levels || problem.domain) return;
 
-    if (!variableSummariesLoaded) throw "variable summaries are not loaded";
     let predictors = getPredictorVariables(problem);
     let categoricals = getNominalVariables(problem).filter(variable => predictors.includes(variable));
 
@@ -2066,7 +2067,7 @@ export let materializeTrainTestIndices = async problem => {
 export let materializeTrainTestPromise = {};
 export let materializeTrainTest = async problem => {
 
-    let temporalVariables = problem.task.toLowerCase() === 'forecasting' ? problem.tags.time : [];
+    let temporalVariables = problem.task.toLowerCase() === 'forecasting' ? getTemporalVariables(problem) : [];
     if (temporalVariables.length > 1)
         alertWarn(`Multiple temporal variables found. Using the first temporal variable to split: ${temporalVariables[0]}`);
 
@@ -2130,7 +2131,7 @@ export let hexToRgba = (hex, alpha) => {
 /**
  *  Process problems
  */
-export function discovery(problems) {
+export function standardizeDiscovery(problems) {
     console.log('-------------  Discover!!!  -------------')
     // filter out problems with target of null
     // e.g. [{"target":null, "predictors":null,"transform":0, ...},]
@@ -2229,15 +2230,12 @@ export function discovery(problems) {
                 weights: [], // singleton list
                 crossSection: [],
                 boundary: [],
-                location: Object.keys(variableSummaries)
-                    .filter(variable => variableSummaries[variable].geographic),
+                geographic: [],
                 indexes: ['d3mIndex'],
                 privileged: [],
                 exogenous: [],
-                time: Object.keys(variableSummaries)
-                    .filter(variable => variableSummaries[variable].temporal),
-                nominal: Object.keys(variableSummaries)
-                    .filter(variable => variableSummaries[variable].nature === 'nominal'),
+                temporal: [],
+                nominal: [],
                 loose: [] // variables displayed in the force diagram, but not in any groups
             },
             timeGranularity: {}
@@ -2249,47 +2247,53 @@ export function discovery(problems) {
     }, {});
 }
 
-export let setVariableSummaries = (state, edit = false) => {
+export let setPreprocess = state => {
+    setVariableSummaries(state?.variables)
+    setDatasetSummary(state?.dataset)
+}
+
+export let setVariableSummaries = state => {
     if (!state) return;
     // delete state.d3mIndex;
 
     variableSummaries = state;
 
-    // quality of life
     // TODO: replace usages of .name with already existing .variableName
     Object.keys(variableSummaries).forEach(variable => variableSummaries[variable].name = variable);
+
+    common.deepMerge(variableSummaries, workspace.raven_config.variableSummariesDiffs);
     window.variableSummaries = variableSummaries;
-
-    variableSummariesLoaded = true;
-    variableSummariesEdited = edit;
-};
-export let setVariableSummary = (variable, attr, value) => {
-    variableSummaries[variable][attr] = value;
-    let tags = getSelectedProblem().tags;
-    if (attr === 'nature') {
-        if (value === 'nominal') tags.nominal.push(variable);
-        else tags.nominal = tags.nominal.filter(x => x !== variable);
-    } else if (attr === 'geographic') {
-        if (!tags['location']) tags['location'] = []
-        if (value) tags.location.push(variable)
-        else tags.location = tags.location.filter(x => x !== variable);
-    } else if (attr === 'temporal') {
-        if (value) tags.time.push(variable)
-        else tags.time = tags.time.filter(x => x !== variable);
-    }
-    setVariableSummaries(variableSummaries, true);
 };
 
+export let setVariableSummaryAttr = (variable, attr, value) => {
+    setRecursive(workspace, [
+        ['raven_config', {}],
+        ['variableSummariesDiffs', {}],
+        [variable, {}],
+        [attr, value]
+    ]);
+    setRecursive(variableSummaries, [
+        [variable, {}],
+        [attr, value]
+    ]);
+};
+
+export let setDatasetSummaryAttr = (attr, value) => {
+    setRecursive(workspace, [
+        ['raven_config', {}],
+        ['datasetSummaryDiffs', {}],
+        [attr, value]
+    ]);
+    datasetSummary[attr] = value;
+}
 export let variableSummaries = {};
-export let variableSummariesLoaded = false;
-export let variableSummariesEdited = false;
 
-export let setDatasetSummary = (state, edit = false) => {
+export let setDatasetSummary = state => {
+    if (!state) return;
     datasetSummary = state;
-    datasetSummaryEdited = edit;
+    common.deepMerge(datasetSummary, workspace.raven_config.datasetSummariesDiffs);
 };
 export let datasetSummary = {};
-export let datasetSummaryEdited = false;
 
 
 /*
@@ -2339,15 +2343,6 @@ export let saveUserWorkspace = (silent = false, reload = false) => {
         setCurrentWorkspaceMessageError('Cannot save the workspace. The workspace id was not found. (saveUserWorkspace)');
         setSaveCurrentWorkspaceWindowOpen(true);
         return;
-    }
-
-    if (datasetSummaryEdited) {
-        workspace.raven_config.datasetSummary = datasetSummary;
-        datasetSummaryEdited = false;
-    }
-    if (variableSummariesEdited) {
-        workspace.raven_config.variableSummaries = variableSummaries;
-        variableSummariesEdited = false;
     }
 
     let raven_config_save_url = '/user-workspaces/raven-configs/json/save/' + workspace.user_workspace_id;
@@ -2537,10 +2532,8 @@ export async function saveAsNewWorkspace() {
  */
 
 export let getSelectedProblem = () => {
-    if (!workspace) return;
-    let ravenConfig = workspace.raven_config;
-    if (!ravenConfig) return;
-    return ravenConfig.problems[ravenConfig.selectedProblem];
+    let ravenConfig = workspace?.raven_config;
+    return ravenConfig?.problems?.[ravenConfig?.selectedProblem]
 };
 
 /*
@@ -2549,7 +2542,7 @@ export let getSelectedProblem = () => {
 export function getDescription(problem) {
     if (problem.description) return problem.description;
     let predictors = getPredictorVariables(problem);
-    if (problem.targets.length === 0 || predictors.length === 0) return "";
+    if (problem.targets.length === 0 || predictors.length === 0) return "Empty problem. Please add some variables to the model via the variables tab.";
     return `${problem.targets} is predicted by ${predictors.slice(0, -1).join(", ")} ${predictors.length > 1 ? 'and ' : ''}${predictors[predictors.length - 1]}`;
 }
 
@@ -2647,12 +2640,29 @@ export let getPredictorVariables = problem => {
 export let getNominalVariables = problem => {
     let selectedProblem = problem || getSelectedProblem();
     return [...new Set([
+        ...Object.keys(variableSummaries).filter(variable => variableSummaries[variable].nature === "nominal"),
         ...selectedProblem.tags.nominal,
         // // targets in a classification problem are also nominal
         // ...selectedProblem.task.toLowerCase() === 'classification'
         //     ? selectedProblem.targets : []
     ])];
 };
+
+export let getTemporalVariables = problem => {
+    let selectedProblem = problem || getSelectedProblem();
+    return [...new Set([
+        ...Object.keys(variableSummaries).filter(variable => variableSummaries[variable].temporal),
+        ...selectedProblem.tags.temporal
+    ])];
+}
+
+export let getGeographicVariables = problem => {
+    let selectedProblem = problem || getSelectedProblem();
+    return [...new Set([
+        ...Object.keys(variableSummaries).filter(variable => variableSummaries[variable].geographic),
+        ...selectedProblem.tags.geographic
+    ])];
+}
 
 export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
     if (step.type !== 'transform') return out;
@@ -2698,8 +2708,8 @@ export function setSelectedProblem(problemId) {
         .then(m.redraw);
 
     // update preprocess
-    buildProblemPreprocess(problem)
-        .then(response => setVariableSummaries(response.preprocess.variables))
+    loadProblemPreprocess(problem)
+        .then(setPreprocess)
         .then(m.redraw);
 
     resetPeek();
@@ -2991,7 +3001,7 @@ export let inferIsCategorical = variableSummary => {
 
 export let isProblemValid = problem => {
     let valid = true;
-    if (problem.task.toLowerCase() === 'forecasting' && problem.tags.time.length === 0) {
+    if (problem.task.toLowerCase() === 'forecasting' && getTemporalVariables(problem).length === 0) {
         alertError('One variable must be marked as temporal to solve a time series forecasting problem.')
         valid = false;
     }
@@ -3009,10 +3019,15 @@ export let isProblemValid = problem => {
 };
 
 // n linearly spaced points between min and max
-let linspace = (min, max, n) => Array.from({length: n})
+export let linspace = (min, max, n) => Array.from({length: n})
     .map((_, i) => min + (max - min) / (n - 1) * i);
 
 
 export let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
-export let setRecursive = (obj, map) => map
+export let setDefaultRecursive = (obj, map) => map
     .reduce((obj, pair) => setDefault(obj, pair[0], pair[1]), obj);
+
+export let setRecursive = (obj, map) => {
+    let [attr, value] = map[map.length - 1];
+    setDefaultRecursive(obj, map.slice(0, -1))[attr] = value;
+}

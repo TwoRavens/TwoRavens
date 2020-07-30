@@ -62,7 +62,7 @@ export let SPEC_problem = problem => {
         if (!problem.forecastingHorizon)
             problem.forecastingHorizon = {};
         if (!problem.forecastingHorizon.column)
-            problem.forecastingHorizon.column = problem.tags.time[0];
+            problem.forecastingHorizon.column = app.getTemporalVariables(problem)[0];
         if (!problem.forecastingHorizon.value)
             problem.forecastingHorizon.value = 10;
 
@@ -76,15 +76,15 @@ export let SPEC_problem = problem => {
         "name": problem.problemId,
         "taskSubtype": app.d3mTaskSubtype[problem.subTask],
         "taskType": app.d3mTaskType[problem.task],
-        "timeGranularity": problem.timeGranularity[(problem.forecastingHorizon || {}).column],
+        "timeGranularity": problem.timeGranularity[problem.forecastingHorizon?.column],
         'forecastingHorizon': problem.forecastingHorizon,
 
         // structural variables
         "indexes": problem.tags.indexes,
         "crossSection": problem.tags.crossSection.filter(variable => predictors.includes(variable)),
-        "location": problem.tags.location.filter(variable => predictors.includes(variable)),
+        "location": app.getGeographicVariables(problem).filter(variable => predictors.includes(variable)),
         "boundary": problem.tags.boundary.filter(variable => predictors.includes(variable)),
-        "time": problem.tags.time.filter(variable => predictors.includes(variable)),
+        "time": app.getTemporalVariables(problem).filter(variable => predictors.includes(variable)),
         "weights": problem.tags.weights.filter(variable => predictors.includes(variable)), // singleton list
         "privileged": problem.tags.privileged.filter(variable => predictors.includes(variable)),
         "exogenous": problem.tags.exogenous.filter(variable => predictors.includes(variable)),
@@ -310,7 +310,7 @@ export let handleDescribeResponse = response => {
             return;
         }
 
-        app.setRecursive(solvedProblem.solutions, [
+        app.setDefaultRecursive(solvedProblem.solutions, [
             [data.system, {}], [data.model_id, {}]]);
         Object.assign(solvedProblem.solutions[data.system][data.model_id], {
             name: data.model,
@@ -336,7 +336,7 @@ export let handleProduceResponse = response => {
     }
 
     if (response.success) {
-        app.setRecursive(solvedProblem.solutions, [
+        app.setDefaultRecursive(solvedProblem.solutions, [
             [data.system, {}], [data.model_id, {}], ['produce', []]]);
         solvedProblem.solutions[data.system][data.model_id].solutionId = data.model_id;
         solvedProblem.solutions[data.system][data.model_id].systemId = data.system;
@@ -354,7 +354,7 @@ export let handleScoreResponse = response => {
     }
 
     if (response.success) {
-        app.setRecursive(solvedProblem.solutions, [
+        app.setDefaultRecursive(solvedProblem.solutions, [
             [data.system, {}], [data.model_id, {}], ['scores', []]]);
         solvedProblem.solutions[data.system][data.model_id].solutionId = data.model_id;
         solvedProblem.solutions[data.system][data.model_id].systemId = data.system;

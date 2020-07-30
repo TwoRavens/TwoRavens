@@ -229,6 +229,13 @@ export class CanvasDataset {
             // ------------------------------------------------
 
             datasetPreferences.datasourceMode === "Online" && [
+                m('div',
+                    m('label[style=display:inline-block;width:120px]', 'Dataset Name'),
+                    m('div[style=display:inline-block;max-width:300px]', m(TextField, {
+                        id: 'datasetNameTextField',
+                        value: datasetPreferences.upload.name,
+                        oninput: value => datasetPreferences.upload.name = value
+                    }))),
                 m(Table, {
                     attrsCells: {style: {"vertical-align": 'middle'}},
                     data: [
@@ -332,14 +339,11 @@ export class CanvasDataset {
         let variableKeys = ['variableName', 'plotValues', 'pdfPlotType', 'pdfPlotX', 'pdfPlotY', 'cdfPlotType', 'cdfPlotX', 'cdfPlotY', 'name'];
         let setDatasetSum = (_variable, attr, value) => {
             if (app.datasetSummary[attr] === value) return;
-
-            app.datasetSummary[attr] = value;
-            app.setDatasetSummary(app.datasetSummary, true);
+            app.setDatasetSummaryAttr(attr, value)
         };
         let setVarSum = (variable, attr, value) => {
-            if (app.variableSummaries[variable][attr] === value) return;
-
-            app.setVariableSummary(variable, attr, value);
+            if (app.variableSummaries?.[variable]?.[attr] === value) return;
+            app.setVariableSummaryAttr(variable, attr, value);
         };
 
         let reportContent;
@@ -372,11 +376,7 @@ export class CanvasDataset {
                     m('button.btn.btn-primary.btn-sm' + (datasetPreferences.reportEdit ? '.active' : ''), {
                         style: 'margin: 0 1em',
                         onclick: _ => datasetPreferences.reportEdit = !datasetPreferences.reportEdit
-                    }, 'Edit'),
-                    m('button.btn.btn-success.btn-sm', {
-                        disabled: !(app.datasetSummaryEdited || app.variableSummariesEdited),
-                        onclick: _ => app.saveUserWorkspace(true, true)
-                    }, 'Save')),
+                    }, 'Edit')),
                 m('table.table.table-sm.table-striped',
                     m('tbody',
                         Object.entries(app.datasetSummary)
