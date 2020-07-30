@@ -65,7 +65,7 @@ class StoredRequest(TimeStampedModel):
                                max_length=255,
                                blank=True)
 
-    user_message = models.CharField(help_text='Mainly for error messages',
+    user_message = models.TextField(help_text='Mainly for error messages',
                                     max_length=255,
                                     blank=True)
 
@@ -95,6 +95,8 @@ class StoredRequest(TimeStampedModel):
             self.is_finished = True
         else:
             self.is_finished = False
+
+        # truncate fields ()
 
         super(StoredRequest, self).save(*args, **kwargs)
 
