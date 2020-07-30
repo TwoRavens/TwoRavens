@@ -258,6 +258,10 @@ def rewrite_dataset_schema(problem, dataset_schema, all_variables, dataset_id, u
 
     resource_schema['columns'] = updated_schemas
 
+    # these are no longer necessarily valid after rewriting
+    resource_schema.pop("columnsCount", None)
+    dataset_schema.pop('metadata', None)
+
     return keep_variables, dataset_schema
 
 

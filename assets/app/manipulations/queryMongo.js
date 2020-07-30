@@ -1,7 +1,8 @@
 import jsep from 'jsep';
 
-import {alignmentData, generateID, getPredictorVariables} from "../app";
+import {alignmentData, generateID, getGeographicVariables, getPredictorVariables, getTemporalVariables} from "../app";
 import * as common from "../../common/common";
+import * as app from "../app";
 
 // functions for generating database queries
 // subset queries are built from manipulations pipelines. An additional menu step may be added too
@@ -1332,8 +1333,8 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
         [problem.tags.privileged, 'suggestedPrivilegedData'],
         [problem.tags.crossSection, 'suggestedGroupingKey'],
         [problem.tags.boundary, 'boundaryIndicator'],
-        [problem.tags.location, 'locationIndicator'],
-        [problem.tags.time, 'timeIndicator'],
+        [app.getGeographicVariables(problem), 'locationIndicator'],
+        [app.getTemporalVariables(problem), 'timeIndicator'],
         [problem.tags.weights, 'instanceWeight'],
         [problem.tags.indexes, 'index']
     ].forEach(pair => pair[0]

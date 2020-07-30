@@ -53,6 +53,9 @@ import Icon from "../../common/views/Icon";
 
 import * as queryMongo from "../manipulations/queryMongo";
 import ButtonRadio from "../../common/views/ButtonRadio";
+import Paginated from "../../common/views/Paginated";
+import {bold} from "../index";
+import {getTemporalVariables} from "../app";
 
 let recordLimit = 5000;
 
@@ -69,26 +72,30 @@ let wrapCanvas = (...contents) => m('div#canvasExplore', {
     contents
 );
 
-let get_node_label = (x) => {
+let get_node_label = problemOrVariableName => {
     if (app.leftTab === 'Discover') {
-        let exploreProblem = 'problems' in app.workspace.raven_config && app.workspace.raven_config.problems[x];
+        let exploreProblem = 'problems' in app.workspace.raven_config && app.workspace.raven_config.problems[problemOrVariableName];
         let predictorVariables = app.getPredictorVariables(exploreProblem);
+
+        if (exploreProblem.targets.length === 0)
+            return
+
         let problemText = predictorVariables
             && [exploreProblem.targets.join(','), m(Icon, {
                 style: 'margin:.5em;margin-top:.25em',
                 name: 'arrow-left'
             }), predictorVariables.join(', ')];
-        return problemText ? [m('b', x), m('p', problemText)] : x;
+        return problemText ? [m('b', problemOrVariableName), m('p', problemText)] : problemOrVariableName;
     }
 
-    let pos = exploreVariables.indexOf(x);
-    if (pos === -1) return x;
+    let pos = exploreVariables.indexOf(problemOrVariableName);
+    if (pos === -1) return problemOrVariableName;
 
     let str = pos === 0 ? 'x' :
         pos === 1 ? 'y' :
             pos === 2 ? 'z' :
                 String.fromCharCode(pos + 97);
-    return `${x} (${str})`;
+    return `${problemOrVariableName} (${str})`;
 };
 
 export class CanvasExplore {
@@ -146,6 +153,10 @@ export class CanvasExplore {
                         node && node.geographic ? 'geographic' :
                             null;
 
+                    let nodeLabel = get_node_label(x);
+                    if (!nodeLabel)
+                        return
+
                     // tile for each variable or problem
                     let tile = m('span#exploreNodeBox', {
                             onclick: _ => {
@@ -201,7 +212,7 @@ export class CanvasExplore {
                                     overflow: 'auto'
                                 }
                             },
-                            get_node_label(x)),
+                            nodeLabel),
                         kind && m('div', m('em', kind))
                     );
                     return tile;
@@ -210,11 +221,42 @@ export class CanvasExplore {
 
         let getPlot = () => {
 
-            console.log(variate);
-            if (variate === "problem") return m('#plot', {
-                style: 'display: block',
-                oncreate: () => plotVega(app.variableSummaries, undefined, selectedProblem, variate)
-            });
+            if (variate === "problem") {
+                let exploreContent = [];
+                if (!selectedProblem.targets.includes(exploreTarget))
+                    exploreTarget = selectedProblem.targets[0]
+
+                if (selectedProblem.targets.length > 1) exploreContent.push(
+                    m('div', {style: {display: 'inline-block'}}, bold("Target:")),
+                    m(ButtonRadio, {
+                        id: 'exploreTargetButtonRadio',
+                        title: 'select target variable',
+                        sections: selectedProblem.targets.map(target => ({value: target})),
+                        activeSection: exploreTarget,
+                        onclick: target => {
+                            exploreTarget = target;
+                            plotVega(app.variableSummaries, undefined, selectedProblem, variate)
+                        },
+                        attrsAll: {style: {width: 'auto', margin: '1em'}},
+                        attrsButtons: {style: {width: 'auto'}}
+                    }))
+
+                exploreContent.push(m(Paginated, {
+                    data: app.getPredictorVariables(selectedProblem),
+                    makePage: _ => m('#plot', {
+                        style: 'display: block',
+                        oncreate: () => plotVega(app.variableSummaries, undefined, selectedProblem, variate)
+                    }),
+                    limit: explorePageLength,
+                    page: explorePage,
+                    setPage: index => {
+                        explorePage = index;
+                        plotVega(app.variableSummaries, undefined, selectedProblem, variate)
+                    }
+                }));
+
+                return exploreContent
+            }
 
             if (nodeSummaries.length === 0) return;
 
@@ -286,6 +328,9 @@ export let getRelevantPlots = (nodeSummaries, variates) => {
 };
 
 export let exploreVariables = [];
+let explorePage = 0;
+let explorePageLength = 5;
+let exploreTarget;
 
 let plotMap = {
     aggbar: "Aggregate Bar",
@@ -423,7 +468,7 @@ let inferPlotType = (nodeSummaries, schemaName) => {
         }[natures], natures]
     }
 
-    let isTemporal = nodeSummaries[0].temporal || app.getSelectedProblem().tags.time.includes(nodeSummaries[0].name);
+    let isTemporal = nodeSummaries[0].temporal || app.getTemporalVariables(app.getSelectedProblem()).includes(nodeSummaries[0].name);
 
     if (nodeSummaries.length === 2) {
         if (isTemporal)
@@ -562,16 +607,18 @@ export async function plotVega(nodeSummaries, schemaName, problem, variate) {
                 pt[0] === "averagediff" && pt[1] === "nq";
     };
 
-    // collect node summaries for every facet of the plot
-    // every facet needs an array of summaries
-    let facetSummaries = variate === "problem"
-        ? app.getPredictorVariables(problem).map(predictor => [
-            nodeSummaries[predictor],
-            nodeSummaries[problem.targets[0]]
-        ])
-        : [nodeSummaries];
+    let facetSummaries = [nodeSummaries];
 
-    console.log(facetSummaries)
+    if (variate === 'problem') {
+        if (explorePageLength * (explorePage - 1) > app.getPredictorVariables(problem).length)
+            explorePage = 0
+
+        facetSummaries = app.getPredictorVariables(problem).map(predictor => [
+            nodeSummaries[predictor],
+            nodeSummaries[exploreTarget]
+        ]).splice(explorePage * explorePageLength, explorePageLength).filter(_ => _)
+    }
+
 
     // build vega-lite specifications for every facet
     let facetSpecifications = [];
@@ -609,10 +656,10 @@ export async function plotVega(nodeSummaries, schemaName, problem, variate) {
         let json = response.data;
 
         console.log('Explore data:');
-        console.log(json);
+        console.log(compiled, json);
         if (plotType[0].includes('timeseries')) {
             let plotdata = JSON.parse(json.plotdata[0]);
-            let temporalVariables = app.getSelectedProblem().tags.time
+            let temporalVariables = app.getTemporalVariables(app.getSelectedProblem())
                 .filter(variable => variable in plotdata[0]);
 
             let parsers = temporalVariables.reduce((out, variable) => {

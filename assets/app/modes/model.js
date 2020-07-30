@@ -184,17 +184,17 @@ export class CanvasModel {
                         width: 1
                     },
                     {
-                        id: "locationButton",
-                        vars: selectedProblem.tags.location,
-                        name: 'Location',
+                        id: "geographicButton",
+                        vars: app.getGeographicVariables(selectedProblem),
+                        name: 'Geographic',
                         borderColor: common.locationColor,
                         innerColor: 'white',
                         width: 1
                     },
                     {
                         id: "timeButton",
-                        vars: selectedProblem.tags.time,
-                        name: 'Time',
+                        vars: app.getTemporalVariables(selectedProblem),
+                        name: 'Temporal',
                         borderColor: common.timeColor,
                         innerColor: common.timeColor,
                         width: 1
@@ -266,7 +266,8 @@ export let leftpanel = forceData => {
     // VARIABLES TAB
     if (selectedProblem) {
         // base dataset variables, then transformed variables from the problem
-        let leftpanelVariables = Object.keys(app.variableSummaries);
+        let leftpanelVariables = Object.keys(app.variableSummaries)
+            .filter(variable => app.variableSummaries[variable].validCount > 0);
 
         // if no search string, match nothing
         let matchedVariables = variableSearchText.length === 0 ? []
@@ -306,8 +307,8 @@ export let leftpanel = forceData => {
                             'item-nominal': nominalVariables,
                             'item-cross-section': selectedProblem.tags.crossSection,
                             'item-boundary': selectedProblem.tags.boundary,
-                            'item-location': selectedProblem.tags.location,
-                            'item-time': selectedProblem.tags.time,
+                            'item-geographic': app.getGeographicVariables(selectedProblem),
+                            'item-time': app.getTemporalVariables(selectedProblem),
                             'item-weight': selectedProblem.tags.weights,
                             'item-privileged': selectedProblem.tags.privileged,
                             'item-exogenous': selectedProblem.tags.exogenous,
@@ -331,24 +332,42 @@ export let leftpanel = forceData => {
                                 onmouseover: () => leftpanelHoveredVariableName = variableName,
                                 onmouseout: () => leftpanelHoveredVariableName = undefined
                             },
-                            m('div', {
-                                style: {'margin': '0.5em', 'display': 'inline-block', width: 'auto'},
-                                onclick: () => setSelectedPebble(variableName)
-                            }, m(Icon, {name: "info"})),
-                            ...variableTagMetadata(selectedProblem, variableName).map(tag =>
-                                m('div', {
-                                    style: {'margin': '0.5em', 'display': 'inline-block', width: 'auto'}
-                                }, m(Button, {
-                                    style: {width: 'auto'},
-                                    onclick: tag.onclick,
-                                    class: (tag.active ? 'active' : '') + ' btn-sm'
-                                }, tag.name)))),
-                        // popup: x => m('div',
-                        //     m('h4', 'Summary Statistics for ' + x),
-                        //     m(Table, {
-                        //         class: 'table-sm',
-                        //         data: formatVariableSummary(app.variableSummaries[x])
-                        //     })),
+                            m('div',
+                                // m('div', {
+                                //     style: {'margin': '0.5em', 'display': 'inline-block', width: 'auto'},
+                                //     onclick: () => setSelectedPebble(variableName)
+                                // }, m(Icon, {name: "info"})),
+                                m(ButtonRadio, {
+                                    id: 'summaryPopupButtonRadio',
+                                    style: {width: 'auto', display: 'inline'},
+                                    activeSection: leftpanelHoveredVariablePopper,
+                                    onclick: state => leftpanelHoveredVariablePopper = state,
+                                    sections: [
+                                        {value: 'Tags'},
+                                        {value: 'Summary'},
+                                    ]
+                                })
+                            ),
+                            leftpanelHoveredVariablePopper === 'Tags' && [
+                                ...variableTagMetadata(selectedProblem, variableName).map(tag =>
+                                    m('div', {
+                                        style: {'margin': '0.5em', 'display': 'inline-block', width: 'auto'}
+                                    }, m(Button, {
+                                        style: {width: 'auto'},
+                                        onclick: tag.onclick,
+                                        class: (tag.active ? 'active' : '') + ' btn-sm'
+                                    }, tag.name)))
+                            ],
+                            leftpanelHoveredVariablePopper === 'Summary' && [
+                                m('div',
+                                    // m('h4', 'Summary Statistics'),
+                                    m(Table, {
+                                        class: 'table-sm',
+                                        style: {height: "250px", overflow: 'auto', display: 'inline-block', margin: 0},
+                                        data: formatVariableSummary(app.variableSummaries[variableName])
+                                    }))
+                            ]
+                        ),
                         popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
                         style: {
                             height: 'calc(100% - 120px)',
@@ -595,7 +614,7 @@ export let leftpanel = forceData => {
     let summaryPebble = forceDiagramState.hoverPebble || forceDiagramState.selectedPebble;
     let summaryContent;
 
-    if (summaryPebble) {
+    if (summaryPebble && forceData) {
         // if hovered over a collapsed pebble, then expand summaryPebble into all children pebbles
         let summaryPebbles = forceData.summaries?.[summaryPebble]?.pdfPlotType === 'collapsed'
             ? [...forceData.summaries[summaryPebble].childNodes]
@@ -621,7 +640,7 @@ export let leftpanel = forceData => {
                         class: (tag.active ? 'active' : '') + ' btn-sm'
                     }, tag.name)))),
 
-                selectedProblem.tags.time.includes(variableName) && m('div', {
+                app.getTemporalVariables(selectedProblem).includes(variableName) && m('div', {
                     style: {
                         'text-align': 'left',
                         'margin-left': '.5em'
@@ -762,9 +781,9 @@ export let rightpanel = () => {
 
                 selectedProblem.task === 'forecasting' && [
                     m('label', 'Forecast along a temporal variable.'),
-                    selectedProblem.tags.time.length > 0 ? m(Dropdown, {
+                    app.getTemporalVariables(selectedProblem).length > 0 ? m(Dropdown, {
                         id: 'forecastingColumnDropdown',
-                        items: selectedProblem.tags.time,
+                        items: app.getTemporalVariables(selectedProblem),
                         activeItem: (selectedProblem.forecastingHorizon || {}).column,
                         onclickChild: column => {
                             if (isLocked) return;
@@ -1204,7 +1223,7 @@ export let buildForceData = problem => {
                 name: "Temporal",
                 color: common.timeColor,
                 colorBackground: app.swandive && 'grey',
-                nodes: new Set(problem.tags.time),
+                nodes: new Set(app.getTemporalVariables(problem)),
                 opacity: 0.3
             }
             // {
@@ -1366,6 +1385,7 @@ export let setGroup = (problem, group, name) => {
 export let forceDiagramNodesReadOnly = {};
 
 export let leftpanelHoveredVariableName;
+let leftpanelHoveredVariablePopper = 'Tags';
 
 export let forceDiagramState = {
     builders: [pebbleBuilderLabeled, groupBuilder, linkBuilder, groupLinkBuilder],
@@ -1499,13 +1519,13 @@ let variableTagMetadata = (selectedProblem, variableName) => [
         title: 'Boundary variables are a string vector of numeric data points.'
     },
     {
-        name: 'Location', active: selectedProblem.tags.location.includes(variableName),
-        onclick: () => setLabel(selectedProblem, 'location', variableName),
-        title: 'Location variables indicate a geospatial location.'
+        name: 'Geographic', active: app.getGeographicVariables(selectedProblem).includes(variableName),
+        onclick: () => setLabel(selectedProblem, 'geographic', variableName),
+        title: 'Geographic variables indicate a geospatial location.'
     },
     {
-        name: 'Time', active: selectedProblem.tags.time.includes(variableName),
-        onclick: () => setLabel(selectedProblem, 'time', variableName),
+        name: 'Temporal', active: app.getTemporalVariables(selectedProblem).includes(variableName),
+        onclick: () => setLabel(selectedProblem, 'temporal', variableName),
         title: 'Temporal variables indicate a point in time.',
     },
     {
@@ -1572,8 +1592,8 @@ export let mutateNodes = problem => (state, context) => {
         nominal: new Set(app.getNominalVariables(problem)),
         crossSection: new Set(problem.tags.crossSection),
         boundary: new Set(problem.tags.boundary),
-        location: new Set(problem.tags.location),
-        time: new Set(problem.tags.time),
+        geographic: new Set(app.getGeographicVariables(problem)),
+        temporal: new Set(app.getTemporalVariables(problem)),
         weights: new Set(problem.tags.weights),
         privileged: new Set(problem.tags.privileged),
         exogenous: new Set(problem.tags.exogenous),
@@ -1587,8 +1607,8 @@ export let mutateNodes = problem => (state, context) => {
         nominal: 4,
         crossSection: 4,
         boundary: 4,
-        location: 4,
-        time: 4,
+        geographic: 4,
+        temporal: 4,
         weights: 4,
         privileged: 4,
         exogenous: 4,
@@ -1601,8 +1621,8 @@ export let mutateNodes = problem => (state, context) => {
         nominal: common.taggedColor,
         crossSection: common.taggedColor,
         boundary: common.taggedColor,
-        location: common.taggedColor,
-        time: common.taggedColor,
+        geographic: common.taggedColor,
+        temporal: common.taggedColor,
         weights: common.taggedColor,
         privileged: common.taggedColor,
         exogenous: common.taggedColor,
@@ -1615,8 +1635,8 @@ export let mutateNodes = problem => (state, context) => {
         nominal: common.nomColor,
         crossSection: common.csColor,
         boundary: common.boundaryColor,
-        location: common.locationColor,
-        time: common.timeColor,
+        geographic: common.locationColor,
+        temporal: common.timeColor,
         weights: common.weightColor,
         privileged: common.privilegedColor,
         exogenous: common.exogenousColor,
@@ -1701,11 +1721,11 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                 }
             },
             {
-                id: 'Time',
-                name: 'Time',
+                id: 'Temporal',
+                name: 'Temporal',
                 attrs: {fill: common.timeColor},
                 onclick: d => {
-                    setLabel(problem, 'time', d);
+                    setLabel(problem, 'temporal', d);
                     forceDiagramState.setSelectedPebble(d);
                 }
             },
@@ -1732,7 +1752,7 @@ let setLabel = (problem, label, name) => {
             }
             app.remove(problem.tags.crossSection, name);
             app.remove(problem.tags.boundary, name);
-            app.remove(problem.tags.location, name);
+            app.remove(problem.tags.geographic, name);
             app.remove(problem.tags.indexes, name);
         }
         delete problem.unedited;
@@ -1748,22 +1768,22 @@ let setLabel = (problem, label, name) => {
         app.toggle(problem.tags.crossSection, name);
     }
 
-    if (label === 'location') {
-        if (!problem.tags.location.includes(name)) {
+    if (label === 'geographic') {
+        if (!app.getGeographicVariables(problem).includes(name)) {
             app.variableSummaries[name].geographic = true;
             app.remove(problem.tags.boundary, name);
-            app.remove(problem.tags.time, name);
+            app.remove(problem.tags.temporal, name);
             app.remove(problem.tags.weights, name);
             app.remove(problem.tags.indexes, name);
             app.add(problem.tags.nominal, name);
         } else app.variableSummaries[name].geographic = false;
-        app.toggle(problem.tags.location, name);
+        app.toggle(problem.tags.geographic, name);
     }
 
     if (label === 'boundary') {
         if (!problem.tags.boundary.includes(name)) {
-            app.remove(problem.tags.location, name);
-            app.remove(problem.tags.time, name);
+            app.remove(problem.tags.geographic, name);
+            app.remove(problem.tags.temporal, name);
             app.remove(problem.tags.weights, name);
             app.remove(problem.tags.indexes, name);
             app.add(problem.tags.nominal, name);
@@ -1771,10 +1791,10 @@ let setLabel = (problem, label, name) => {
         app.toggle(problem.tags.boundary, name);
     }
 
-    if (label === 'time') {
-        if (!problem.tags.time.includes(name)) {
+    if (label === 'temporal') {
+        if (!app.getTemporalVariables(problem).includes(name)) {
             app.variableSummaries[name].temporal = true;
-            app.remove(problem.tags.location, name);
+            app.remove(problem.tags.geographic, name);
             app.remove(problem.tags.boundary, name);
         } else app.variableSummaries[name].temporal = false;
         app.toggle(problem.tags.time, name);
@@ -1789,8 +1809,8 @@ let setLabel = (problem, label, name) => {
             app.remove(problem.tags.nominal, name);
             app.remove(problem.tags.crossSection, name);
             app.remove(problem.tags.boundary, name);
-            app.remove(problem.tags.location, name);
-            app.remove(problem.tags.time, name);
+            app.remove(problem.tags.geographic, name);
+            app.remove(problem.tags.temporal, name);
             app.remove(problem.tags.indexes, name);
         }
         if (problem.tags.weights.includes(name))
@@ -1815,7 +1835,7 @@ let setLabel = (problem, label, name) => {
     if (label === 'indexes') {
         if (!problem.tags.indexes.includes(name)) {
             app.remove(problem.tags.boundary, name);
-            app.remove(problem.tags.location, name);
+            app.remove(problem.tags.geographic, name);
             app.remove(problem.tags.weights, name);
             app.remove(problem.tags.time, name);
         }

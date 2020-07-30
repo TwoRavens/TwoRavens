@@ -5,7 +5,7 @@ import * as common from '../../common/common';
 
 let axisLabels = false;
 
-export default class VariableImportance {
+export default class ModelInterpretation {
     plotEFD(vnode) {
         // target doesn't matter, all are plotted together
         let {problem, data, predictor, target, summary} = vnode.attrs;
@@ -585,12 +585,12 @@ export default class VariableImportance {
     view(vnode) {
         let {mode} = vnode.attrs;
 
-        let importanceTypes = {EFD: this.plotEFD, Partials: this.plotPartials, ICE: this.plotICE};
-        return mode in importanceTypes && m('div', {
+        let interpretationTypes = {EFD: this.plotEFD, Partials: this.plotPartials, ICE: this.plotICE};
+        return mode in interpretationTypes && m('div', {
             // HACK: vconcat width is unsupported in vega-lite- the legends are not included in the fit calculation
             //       the maximum legend size is 223px
             style: {width: 'calc(100% - 223px)'}
-        }, importanceTypes[mode](vnode))
+        }, interpretationTypes[mode](vnode))
     }
 }
 

@@ -65,6 +65,7 @@ class Body {
     oninit() {
         app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
         app.setSelectedMode('model');
+        m.route.set('/model');
         this.TA2URL = D3M_SVC_URL + '/SearchDescribeFitScoreSolutions';
     }
 
@@ -798,7 +799,6 @@ class Body {
     }
 
     static rightpanel(mode) {
-        if (mode === 'manipulate') return manipulate.rightpanel();
         if (mode === 'model') return model.rightpanel();
     }
 

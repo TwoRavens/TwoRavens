@@ -2,7 +2,7 @@ import m from 'mithril';
 import vegaEmbed from "vega-embed";
 
 import * as vega from 'vega';
-import {setRecursive} from "../app";
+import {setDefaultRecursive} from "../app";
 
 // m(PlotVegaLite, {
 //     specification: {...}, // an instance of this spec: https://vega.github.io/vega-lite/docs/spec.html,
@@ -60,7 +60,7 @@ export default class PlotVegaLite {
             }
 
             // by default, make sure labels on all plots are limited to 50 pixels
-            ['axisX', 'axisY'].forEach(axis => setRecursive(specification, [
+            ['axisX', 'axisY'].forEach(axis => setDefaultRecursive(specification, [
                 ['config', {}],
                 [axis, {}],
                 ['labelLimit', 100]
