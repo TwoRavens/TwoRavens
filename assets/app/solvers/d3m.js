@@ -908,7 +908,7 @@ export function handleENDGetSearchSolutionsResults(response) {
 /**
  EndSession(SessionContext) returns (Response) {}
  */
-export async function endsession() {
+export async function endSession() {
     app.taskPreferences.isSubmittingPipelines = true;
     let selectedProblem = app.getSelectedProblem();
 
@@ -956,13 +956,13 @@ export async function endsession() {
         app.taskPreferences.isSubmittingPipelines = false;
         app.taskPreferences.task2_finished = true;
         // more descriptive solution modal that doesn't lock the page
-        // selectedSolution.chosen = true;
-        // results.setShowFinalPipelineModal(true);
+        selectedSolution.chosen = true;
+        results.setShowFinalPipelineModal(true);
 
         // we don't need to wait for the backend to spin down before telling the user, no await used
         // endAllSearches();
 
-        app.alertLog('Finished! The problem is marked as complete.')
+        // app.alertLog('Finished! The problem is marked as complete.')
         // let resetTheApp = () => {
         //     window.location.pathname = clear_user_workspaces_url;
         // };

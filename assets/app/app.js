@@ -1841,7 +1841,7 @@ export let add = (collection, obj) => {
 /** needs doc */
 export function helpmaterials(type) {
     if (type === "video") {
-        let win = window.open("http://2ra.vn/demos/index.html", '_blank');
+        let win = window.open("http://2ra.vn/demos/demos.html", '_blank');
         win.focus();
     } else {
         let win = window.open("http://2ra.vn/papers/tworavens-d3mguide.pdf", '_blank');
@@ -2943,7 +2943,7 @@ export function formatPrecision(value, precision = 4) {
     return (digits <= precision || precision === 0) ? numeric : numeric.toPrecision(precision) * 1
 }
 
-let generateProblemID = () => 'problem ' + workspace.raven_config.problemCount++;
+export let generateProblemID = () => 'problem ' + workspace.raven_config.problemCount++;
 
 // generate a number from text (cheap hash)
 export let generateID = text => Array.from({length: text.length})

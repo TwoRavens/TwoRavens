@@ -48,6 +48,7 @@ import {buildCsvUrl} from "./app";
 import {alertWarn} from "./app";
 import ButtonLadda from "./views/ButtonLadda";
 import {datasetPreferences} from "./modes/dataset";
+import Body_Deploy from "./views/Body_Deploy";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let boldPlain = value => m('b', value);
@@ -203,7 +204,7 @@ class Body {
             app.isResultsMode && selectedProblem && Object.keys(selectedProblem.solutions.d3m || {}).length > 0 && m(ButtonLadda, {
                 id: 'btnEndSession',
                 class: 'ladda-label ladda-button ' + (app.taskPreferences.task2_finished ? 'btn-secondary' : 'btn-success'),
-                onclick: solverD3M.endsession,
+                onclick: solverD3M.endSession,
                 activeLadda: app.taskPreferences.isSubmittingPipelines,
                 style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
             }, 'Mark Problem Finished'),
@@ -894,6 +895,7 @@ if (IS_EVENTDATA_DOMAIN) {
 else {
     m.route(document.body, '/model', {
         '/dataset_pdf': {render: () => m(Body_Dataset, {image: '/static/images/TwoRavens.png'})},
+        '/deploy': {render: vnode => m(Body_Deploy, {...vnode.attrs, id: 'deploy', image: '/static/images/TwoRavens.png'})},
         '/datamart': {render: standaloneDatamart},
         // '/testPlot': {
         //     render: () => [
