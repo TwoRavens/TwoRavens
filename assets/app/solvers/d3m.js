@@ -76,7 +76,9 @@ export let getD3MAdapter = problem => ({
 
         if (!res || !res.success) {
             handleENDGetSearchSolutionsResults();
-            alertError('SearchDescribeFitScoreSolutions request Failed! ' + res.message);
+            problem.solverState.d3m.thinking = false;
+            problem.solverState.d3m.message = 'Search failed.';
+            console.error(res.message);
             m.redraw();
             return;
         }
@@ -97,14 +99,25 @@ export let getD3MAdapter = problem => ({
     describe: solutionId => {
         throw 'Describe not implemented for D3M.';
     },
-    produce: (solutionId, specification) => {
-        throw 'Produce not implemented for D3M.';
-    },
+    produce: async (solutionId, specification) => m.request("d3m-service/ProduceSolutionEndpoint2", {
+        method: 'POST',
+        body: {
+            produce_solution_request: {
+                ...GRPC_ProduceSolutionRequest(specification.input.metadata_uri),
+                fittedSolutionId: problem.solutions.d3m[solutionId].fittedSolutionId,
+            },
+            pipeline_id: parseInt(solutionId) || 0,
+            search_id: problem.solverState.d3m.searchId,
+            produce_dataset_name: specification.input.name
+        }
+    }),
     score: (solutionId, specification) => {
         throw 'Score not implemented for D3M.';
     },
     stop: stopSearch
 });
+
+let toFileUri = path => path.startsWith("file://") ? path : "file://" + path;
 
 // no new pipelines will be found under searchId
 // pipelines under searchId are also wiped/no longer accessible
@@ -127,8 +140,7 @@ let handleCompletedSearch = searchId => response => {
         return;
     }
     let solvedProblem = Object.values(app.workspace.raven_config.problems)
-        .filter(problem => 'searchId' in ((problem.solverState || {}).d3m || {}))
-        .find(problem => problem.solverState.d3m.searchId === String(searchId));
+        .find(problem => problem?.solverState?.d3m?.searchId === String(searchId));
 
     if (solvedProblem) {
         solvedProblem.solverState.d3m.thinking = false;
@@ -624,7 +636,7 @@ export function GRPC_GetFitSolutionRequest(datasetDocUrl) {
 */
 export function GRPC_ProduceSolutionRequest(datasetDocUrl){
     return {
-        inputs: [{dataset_uri: 'file://' + datasetDocUrl}],
+        inputs: [{dataset_uri: toFileUri(datasetDocUrl)}],
         exposeOutputs: ['outputs.0'],
         exposeValueTypes: ['CSV_URI']
     };
@@ -700,14 +712,6 @@ export async function handleGetSearchSolutionResultsResponse(response) {
         }
     });
 
-    // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
-    // if(solutions[key].responseInfo.status.details == "Pipeline Failed")  {
-    //     continue;
-    // }
-    // if(solutions[key].progressInfo == "RUNNING")  {
-    //     continue;
-    // }
-
     let selectedSolutions = results.getSelectedSolutions(solvedProblem);
     if (selectedSolutions.length === 0) results.setSelectedSolution(solvedProblem, 'd3m', String(response.pipelineId));
 
@@ -726,7 +730,7 @@ export async function handleDescribeSolutionResponse(response) {
 
     let problems = app.workspace?.raven_config?.problems ?? {};
     let solvedProblemId = Object.keys(problems)
-        .find(problemId => problems[problemId]?.solverState?.d3m?.searchId === response.stored_request.search_id);
+        .find(problemId => problems[problemId]?.solverState?.d3m?.searchId === response.searchId);
     let solvedProblem = problems[solvedProblemId];
 
     // end the search if it doesn't match any problem
@@ -765,8 +769,6 @@ export async function handleDescribeSolutionResponse(response) {
  */
 export async function handleGetFitSolutionResultsResponse(response) {
 
-    console.log(response)
-
     if (response === undefined) {
         console.log('handleGetScoreSolutionResultsResponse: Error.  "response" undefined');
         return;
@@ -792,13 +794,7 @@ export async function handleGetFitSolutionResultsResponse(response) {
     if (!response.is_finished) return;
     if (response.is_error) return;
 
-    // // standardize format
-    // response.response.scores.forEach(scoreSchema => scoreSchema.value = scoreSchema.value.raw.double);
-    //
-    // // save scores
-    // let solution = solvedProblem.solutions.d3m[response.pipelineId];
-    // solution.scores = solution.scores || [];
-    // solution.scores.push(...response.response.scores);
+    solvedProblem.solutions.d3m[response.pipelineId].fittedSolutionId = response.response.fittedSolutionId;
     m.redraw();
 }
 
@@ -903,12 +899,9 @@ export async function handleGetProduceSolutionResultsResponse(response) {
     m.redraw();
 }
 
-export async function handleENDGetSearchSolutionsResults(response) {
-
-    console.warn("#debug response end get search solutions results");
-    console.log(response);
-
-    m.redraw();
+export function handleENDGetSearchSolutionsResults(response) {
+    // TODO: this is sloppy
+    handleCompletedSearch(response?.user_message?.searchId)(response);
 }
 
 /**

@@ -82,7 +82,7 @@ class ProduceSolutionHelper(BasicErrCheck):
 
         for key in expected_keys:
             if key not in self.produce_params:
-                user_msg = ('produce_params for pipeline "%s" dataset "%s" is missing key: %s') % \
+                user_msg = ('produce_params for pipeline "%s" is missing key: %s') % \
                             (self.pipeline_id, key)
                 self.send_websocket_err_msg(ta2_static.PRODUCE_SOLUTION, user_msg)
                 return False

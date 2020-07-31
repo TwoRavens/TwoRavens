@@ -258,9 +258,11 @@ def view_upload_dataset(request, **kwargs):
     if not created.success:
         return JsonResponse(get_json_error(created.err_msg))
 
-    params = {dp_static.DATASET_NAME: dataset_name,
-              dp_static.SKIP_CREATE_NEW_CONFIG: \
-                kwargs.get(dp_static.SKIP_CREATE_NEW_CONFIG, False)}
+    params = {
+        dp_static.DATASET_NAME: dataset_name,
+        dp_static.SKIP_CREATE_NEW_CONFIG: kwargs.get(dp_static.SKIP_CREATE_NEW_CONFIG, False),
+        'dataset_doc_id': json_info.result_obj.get('dataset_doc_id')
+    }
 
     print('params', params)
 
@@ -275,9 +277,12 @@ def view_upload_dataset(request, **kwargs):
 
     user_dataset_util = new_dataset_info.result_obj
 
-    return JsonResponse(get_json_success('file upload completed successfully',
-                        data={dp_static.NEW_DATASET_DOC_PATH:
-                              user_dataset_util.new_dataset_doc_path}))
+    return JsonResponse(get_json_success(
+        'file upload completed successfully',
+        data={
+            dp_static.NEW_DATASET_DOC_PATH: user_dataset_util.new_dataset_doc_path,
+            'new_dataset_doc': json.load(open(user_dataset_util.new_dataset_doc_path, 'r'))
+        }))
 
 
 @csrf_exempt
