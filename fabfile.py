@@ -110,10 +110,10 @@ def make_d3m_configs_from_files_multiuser_test_limited(single_dataset=None, **ex
     default_datatsets = [\
         '185_baseball',
         '196_autoMpg',
-        '185_baseball_MIN_METADATA',
-        '196_autoMpg_MIN_METADATA',
-        'Western_Sahel_Grid-2010_2020',
-        'Western_Sahel_Grid-Quarter-2010_2020',
+        #'185_baseball_MIN_METADATA',
+        #'196_autoMpg_MIN_METADATA',
+        #'Western_Sahel_Grid-2010_2020',
+        #'Western_Sahel_Grid-Quarter-2010_2020',
         'LL1_h1b_visa_apps_7480',   # H1B
         'LL1_terra_canopy_height_long_form_s4_80_MIN_METADATA', # Terra
 
@@ -121,8 +121,8 @@ def make_d3m_configs_from_files_multiuser_test_limited(single_dataset=None, **ex
         #'LL1_MITLL_synthetic_vora_E_2538',  # JIDO
         #
         '56_sunspots_monthly',
-        'TR102_Northern_Ireland',
-        'TR91_Acled_et_2011_2020',
+        #'TR102_Northern_Ireland',
+        #'TR91_Acled_et_2011_2020',
         #'TR20_State_Conflict',
         #'TR50_PRIO_GRID',
         #'TR60_Ethiopia_Small_2017-2018',

@@ -60,8 +60,8 @@ ravens_volume/test_data/*
 !ravens_volume/test_data/185_baseball
 !ravens_volume/test_data/196_autoMpg
 #
-!ravens_volume/test_data/185_baseball_MIN_METADATA
-!ravens_volume/test_data/196_autoMpg_MIN_METADATA
+#!ravens_volume/test_data/185_baseball_MIN_METADATA
+#!ravens_volume/test_data/196_autoMpg_MIN_METADATA
 #
 !ravens_volume/test_data/Western_Sahel_Grid-2010_2020
 !ravens_volume/test_data/Western_Sahel_Grid-Quarter-2010_2020
