@@ -102,9 +102,7 @@ class UserDatasetUtil(BasicErrCheck):
         #self.user_workspace = None
 
         self.d3m_config = None
-
-        self.dataset_id = None
-
+        self.dataset_doc_id = kwargs.get('dataset_doc_id')
 
         # to be created
         self.dataset_id = None
@@ -382,7 +380,10 @@ class UserDatasetUtil(BasicErrCheck):
             for orig_path in self.orig_source_files:
                 shutil.move(orig_path, self.dataset_tables_dir)
         else:
-            params = dict(about=dict(datasetName=self.dataset_name))
+            about = dict(datasetName=self.dataset_name)
+            if self.dataset_doc_id is not None:
+                about['datasetID'] = self.dataset_doc_id
+            params = dict(about=about)
 
             ddm = DatasetDocMaker(self.orig_source_files,
                                   self.dataset_dir,

@@ -2,10 +2,13 @@ import json
 from collections import OrderedDict
 from django.http import JsonResponse    #, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
+
+from tworaven_apps.ta2_interfaces.ta2_produce_solution_helper import ProduceSolutionHelper
+from tworaven_apps.utils.random_info import get_alphanumeric_string
 from tworaven_apps.utils.view_helper import \
     (get_request_body,
      get_json_error,
-     get_json_success)
+     get_json_success, get_request_body_as_json)
 from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.utils.view_helper import \
     (get_session_key, get_authenticated_user)
@@ -186,7 +189,7 @@ def view_produce_solution_endpoint2(request):
 
     # Request should include the produce params
     #
-    req_body_info = get_request_body(request)
+    req_body_info = get_request_body_as_json(request)
     if not req_body_info.success:
         return JsonResponse(get_json_error(req_body_info.err_msg))
 
@@ -205,19 +208,20 @@ def view_produce_solution_endpoint2(request):
     # pipeline id: check
     # websocket id: username for now, may change this in the future
     #
-    pipeline_id = f'produce2_{get_alphanumeric_string(7)}'
     websocket_id = user_obj.username
     prod_params = req_body_info.result_obj
 
+    print(prod_params)
 
-    ProduceSolutionHelper.make_produce_solution_call.delay(\
-                                pipeline_id,
-                                websocket_id,
-                                user_obj.id,
-                                prod_params,
-                                search_id=prod_params['search_id'])
-                                #session_key=self.session_key,
-                                #produce_dataset_name=produce_dataset_name
+    ProduceSolutionHelper.make_produce_solution_call.delay(
+        prod_params['pipeline_id'],
+        websocket_id,
+        user_obj.id,
+        prod_params['produce_solution_request'],
+        search_id=prod_params['search_id'],
+        produce_dataset_name=prod_params.get('produce_dataset_name'))
+    # session_key=self.session_key,
+    # produce_dataset_name=produce_dataset_name
 
     json_info = get_json_success('produce solution call started')
     return JsonResponse(json_info, safe=False)

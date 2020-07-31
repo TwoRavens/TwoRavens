@@ -29,7 +29,25 @@ import Paginated from "../../common/views/Paginated";
 import TextField from "../../common/views/TextField";
 
 import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
-import {datasetPreferences} from "./dataset";
+import {buildDatasetUrl, workspace} from "../app";
+
+let getSystemAdapters = problem => {
+
+    // Available systems
+    //  Note: h2o - requires Java
+    let solverCandidateNames = app.applicableSolvers[problem.task][app.getSubtask(problem)];
+
+    // only show solvers that are capable of solving this type of problem
+    let solverSystemNames = TA2_WRAPPED_SOLVERS // set in templates/index.html
+        .filter(name => solverCandidateNames.includes(name));
+
+    let d3m_solver_info = TA2_D3M_SOLVER_ENABLED ? {d3m: solverD3M.getD3MAdapter} : {};
+
+    return solverSystemNames
+        .reduce((out, systemId) => Object.assign(out, {
+            [systemId]: solverWrapped.getSystemAdapterWrapped(systemId)
+        }), d3m_solver_info);
+}
 
 export let leftpanel = () => {
 
@@ -38,20 +56,7 @@ export let leftpanel = () => {
     let selectedProblem = app.getSelectedProblem();
     if (!selectedProblem) return;
 
-    // Available systems
-    //  Note: h2o - requires Java
-    let solverCandidateNames = app.applicableSolvers[selectedProblem.task][app.getSubtask(selectedProblem)];
-
-    // only show solvers that are capable of solving this type of problem
-    let solverSystemNames = TA2_WRAPPED_SOLVERS // set in templates/index.html
-        .filter(name => solverCandidateNames.includes(name));
-
-    let d3m_solver_info = TA2_D3M_SOLVER_ENABLED ? {d3m: solverD3M.getD3MAdapter} : {};
-
-    let solverSystems = solverSystemNames
-        .reduce((out, systemId) => Object.assign(out, {
-            [systemId]: solverWrapped.getSystemAdapterWrapped(systemId)
-        }), d3m_solver_info);
+    let solverSystems = getSystemAdapters(selectedProblem);
 
     let resultsContent = [
         m('div', {style: {display: 'inline-block', margin: '1em'}},
@@ -63,7 +68,9 @@ export let leftpanel = () => {
                 style: {'margin-left': '1em'}
             })), ' on data split ', m('div[style=display:inline-block]', m(Dropdown, {
                 id: 'dataSplitDropdown',
-                items: ['all'].concat(selectedProblem.splitOptions.outOfSampleSplit ? ['test', 'train'] : []),
+                items: ['all']
+                    .concat(selectedProblem.splitOptions.outOfSampleSplit ? ['test', 'train'] : [])
+                    .concat(Object.values(customDatasets).map(dataset => dataset.name)),
                 activeItem: resultsPreferences.dataSplit,
                 onclickChild: value => resultsPreferences.dataSplit = value,
                 style: {'margin-left': '1em'}
@@ -191,7 +198,7 @@ export let leftpanel = () => {
                                 problem.solverState.d3m.searchId,
                                 problem.solverState.d3m.thinking ? 'running' : 'stopped',
                                 problem.solverState.d3m.thinking && m(Button, {
-                                    title: 'stop the search',
+                                    title: 'end the search',
                                     class: 'btn-sm',
                                     onclick: () => {
                                         // User clicks the 'Stop' button next to
@@ -205,7 +212,7 @@ export let leftpanel = () => {
                                         };
                                         app.saveSystemLogEntry(logParams);
 
-                                        solverD3M.stopSearch(problem.solverState.d3m.searchId);
+                                        solverD3M.endSearch(problem.solverState.d3m.searchId);
                                     }
                                 }, m(Icon, {name: 'stop'}))
                             ]),
@@ -228,7 +235,7 @@ export let leftpanel = () => {
                                     otherSearches[searchID].running && m(Button, {
                                         title: 'stop the search',
                                         class: 'btn-sm',
-                                        onclick: () => solverD3M.stopSearch(searchID)
+                                        onclick: () => solverD3M.endSearch(searchID)
                                     }, m(Icon, {name: 'stop'}))
                                 ]),
                             headers: ['Name', 'Targets', 'Search ID', 'State', 'Stop']
@@ -879,6 +886,147 @@ export class CanvasSolutions {
             }))
     };
 
+    uploadDataset(problem, adapters) {
+
+        return [
+            m('div',
+            m('h5', 'Data Split Name:'),
+            m(TextField, {
+                style: {width: 'auto', display: 'inline-block'},
+                id: 'datasetNameTextField',
+                value: resultsPreferences.upload.name,
+                oninput: value => resultsPreferences.upload.name = value,
+                onblur: value => resultsPreferences.upload.name = value
+            }),
+            m('label.btn.btn-secondary', {style: {display: 'inline-block', margin: '1em'}}, [
+                m('input', {
+                    hidden: true,
+                    type: 'file',
+                    onchange: e => {
+                        resultsPreferences.upload.file = e.target.files[0];
+                        // resets the event, so that the second upload works
+                        e.target.value = ''
+                    }
+                })
+            ], 'Browse'),
+            resultsPreferences.upload?.file?.name),
+
+            m(Button, {
+                onclick: async () => {
+                    if (!resultsPreferences.upload.file) {
+                        app.alertError("No dataset is supplied.");
+                        return;
+                    }
+                    if ((resultsPreferences.upload?.name?.length ?? 0) === 0) {
+                        app.alertError("No dataset name is supplied.");
+                        return;
+                    }
+
+                    if (resultsPreferences.upload.name in problem.datasetPaths) {
+                        app.alertError(`Data split ${resultsPreferences.upload.name} already exists. Please choose another name.`);
+                        return;
+                    }
+
+                    let body = new FormData();
+                    body.append('metadata', JSON.stringify(Object.assign({dataset_doc_id: problem.d3mDatasetId}, resultsPreferences.upload, {files: undefined})));
+                    body.append('files', resultsPreferences.upload.file);
+
+                    // initial upload
+                    let response = await m.request("user-workspaces/upload-dataset-for-model-run", {
+                        method: "POST", body
+                    });
+
+                    if (!response.success) {
+                        app.alertError(response.message);
+                        return
+                    }
+
+                    let customDataset = {
+                        name: resultsPreferences.upload.name,
+                        datasetDocPath: response.data.new_dataset_doc_path,
+                        datasetDoc: response.data.new_dataset_doc,
+                        // TODO: this is sloppy
+                        datasetPath: response.data.new_dataset_doc_path.replace('datasetDoc.json', 'tables/learningData.csv')
+                    };
+
+                    // clear form, upload was successful
+                    resultsPreferences.upload = {};
+
+                    customDatasets[getCustomDatasetId()] = customDataset;
+
+                    let manipulatedInfo = await buildDatasetUrl(
+                        problem, undefined, customDataset.datasetPath,
+                        `${workspace.d3m_config.name}_${customDataset.name}`,
+                        customDataset.datasetDoc);
+
+                    problem.datasetPaths[customDataset.name] = manipulatedInfo.data_path;
+                    problem.datasetSchemaPaths[customDataset.name] = manipulatedInfo.metadata_path;
+
+                    let solverSystems = getSystemAdapters(problem);
+
+                    // kick off produces for all solutions
+                    getSolutions(problem)
+                        .map(solution => getSolutionAdapter(problem, solution))
+                        .map(adapter => solverSystems[adapter.getSystemId()](selectedProblem).produce(
+                            adapter.getSolutionId(),
+                            {
+                                'train': {
+                                    'name': 'train',
+                                    "resource_uri": 'file://' +
+                                        (selectedProblem.datasetPathsManipulated?.train ?? selectedProblem.datasetPaths.train)
+                                },
+                                'input': {
+                                    'name': customDataset.name,
+                                    'metadata_uri': 'file://' + manipulatedInfo.metadata_path,
+                                    'resource_uri': 'file://' + manipulatedInfo.data_path,
+                                },
+                                'configuration': {
+                                    'predict_type': 'RAW'
+                                },
+                                'output': {
+                                    'resource_uri': 'file:///ravens_volume/solvers/produce/'
+                                }
+                            })
+                            .then(response => !response.success && console.error(response.message))
+                        );
+                },
+                disabled: !resultsPreferences.upload.file || resultsPreferences.upload.name.length === 0
+            }, "Upload"),
+
+            Object.keys(customDatasets).length > 0 && [
+                m('h4[style=margin:1em]', 'Custom Datasets'),
+                "Set the current data split from the top of the left panel, or via the 'Select' button below. If your dataset contains actual values for the target variable, the Prediction Summary, Variable Importance, and Empirical First Differences will update to reflect the new dataset. Predictions are produced for all known solutions when your dataset is uploaded.",
+                m(Table, {
+                    data: Object.keys(customDatasets).map(evaluationId => {
+                        let dataPointer = adapters.length === 1 && adapters[0].getDataPointer(customDatasets[evaluationId].name);
+                        return [
+                            customDatasets[evaluationId].name,
+                            m(Button, {
+                                onclick: () => resultsPreferences.dataSplit = customDatasets[evaluationId].name
+                            }, "Select"),
+                            adapters.length === 1 && m(Button, {
+                                disabled: !dataPointer,
+                                onclick: () => app.downloadFile(dataPointer)
+                            }, "Download Predictions")
+                        ]
+                    })
+                })
+            ]
+        ]
+
+        return m(Table, {
+            data: Object.keys(customDatasets).map(evaluationId => [
+                customDatasets[evaluationId].name,
+                m(Button, {
+                    onclick: () => resultsPreferences.dataSplit = customDatasets[evaluationId].name
+                }, "Select"),
+                m(Button, {
+                    onclick: () => app.downloadFile(selectedProblem.produce.find(produce => produce.input === customDatasets[evaluationId].name).data_pointer)
+                }, "Download"),
+            ])
+        })
+    }
+
     view(vnode) {
         let {problem} = vnode.attrs;
         if (!problem) return;
@@ -940,38 +1088,42 @@ export class CanvasSolutions {
                     app.saveSystemLogEntry(logParams);
                 }
             }
-        }, m(Table, {
-            data: [
-                ['System', firstAdapter.getSystemId()],
-                ['Downloads', m(Table, {
-                    sortable: true,
-                    sortHeader: 'name',
-                    data: (firstSolution.produce || []).map(produce =>
-                        ({
-                            'name': produce.input.name,
-                            'predict type': produce.configuration.predict_type,
-                            'input': m(Button, {onclick: () => app.downloadFile(produce.input.resource_uri)}, 'Download'),
-                            'output': m(Button, {onclick: () => app.downloadFile('file://' + produce.data_pointer)}, 'Download'),
-                        }))
-                })],
-                ['Description', firstAdapter.getDescription()],
-                ['Model', firstAdapter.getName()]
-            ].concat(firstSolution.systemId === 'caret' ? [
-                ['Label', firstSolution.meta.label],
-                ['Caret/R Method', firstSolution.meta.method],
-                ['Tags', firstSolution.meta.tags],
-            ] : firstSolution.systemId === 'd3m' ? [
-                // ['Status', firstSolution.status],
-                // ['Created', new Date(firstSolution.created).toUTCString()]
-            ] : [
-                // ['Model Zip', m(Button, {
-                //     onclick: () => {
-                //         solverWrapped.downloadModel(firstSolution.model_pointer)
-                //     }
-                // }, 'Download')]
-            ]),
-            style: {background: 'white'}
-        }));
+        },
+            m(Table, {
+                data: [
+                    ['System', firstAdapter.getSystemId()],
+                    ['Description', firstAdapter.getDescription()],
+                    ['Model', firstAdapter.getName()]
+                ].concat(firstSolution.systemId === 'caret' ? [
+                    ['Label', firstSolution.meta.label],
+                    ['Caret/R Method', firstSolution.meta.method],
+                    ['Tags', firstSolution.meta.tags],
+                ] : firstSolution.systemId === 'd3m' ? [
+                    // ['Status', firstSolution.status],
+                    // ['Created', new Date(firstSolution.created).toUTCString()]
+                ] : [
+                    // ['Model Zip', m(Button, {
+                    //     onclick: () => {
+                    //         solverWrapped.downloadModel(firstSolution.model_pointer)
+                    //     }
+                    // }, 'Download')]
+                ]),
+                style: {background: 'white'}
+            }),
+
+            bold("Downloads"),
+            m(Table, {
+                sortable: true,
+                sortHeader: 'name',
+                data: (firstSolution.produce ?? []).map(produce =>
+                    ({
+                        'name': produce.input.name,
+                        'predict type': produce.configuration.predict_type,
+                        'input': m(Button, {onclick: () => app.downloadFile(produce.input.resource_uri)}, 'Download'),
+                        'output': m(Button, {onclick: () => app.downloadFile('file://' + produce.data_pointer)}, 'Download'),
+                    }))
+            })
+        );
 
         let predictionSummary = m(Subpanel, {
             style: {margin: '0px 1em'},
@@ -1062,6 +1214,26 @@ export class CanvasSolutions {
                 }
             }
         }, resultsSubpanels['Visualize Pipeline'] && this.visualizePipeline(firstSolution));
+
+
+        let uploadDataset = m(Subpanel, {
+            style: {margin: '0px 1em'},
+            header: 'Upload Dataset',
+            shown: resultsSubpanels['Upload Dataset'],
+            setShown: state => {
+                resultsSubpanels['Upload Dataset'] = state;
+                if (state) {
+                    // behavioral logging
+                    let logParams = {
+                        feature_id: 'VIEW_CUSTOM_PRODUCE',
+                        activity_l1: 'MODEL_SELECTION',
+                        activity_l2: 'MODEL_EXPLANATION'
+                    };
+                    app.saveSystemLogEntry(logParams);
+                }
+            }
+        }, resultsSubpanels['Upload Dataset'] && this.uploadDataset(problem, solutionAdapters));
+
 
         let performanceStatsContents = firstSolution.systemId === 'caret' && Object.keys(firstSolution.models)
             .filter(target => firstSolution.models[target].statistics)
@@ -1155,7 +1327,8 @@ export class CanvasSolutions {
             performanceStats,
             coefficientMatrix,
             anovaTables,
-            VIF
+            VIF,
+            uploadDataset
         );
     }
 }
@@ -1314,7 +1487,8 @@ export let resultsPreferences = {
     recordLimit: 10000,
     crossSection: 'unset',
     crossSectionTemp: 'unset',
-    imagePage: 0
+    imagePage: 0,
+    upload: {},
 };
 window.resultsPreferences = resultsPreferences;
 
@@ -1347,7 +1521,8 @@ let resultsSubpanels = {
     'Solution Description': false,
     'Problem Description': false,
     'Variable Importance': false,
-    'Model Interpretation': false
+    'Model Interpretation': false,
+    'Upload Dataset': false
 };
 
 let solutionsCombined = true;
@@ -1558,6 +1733,10 @@ export let finalPipelineModal = () => {
     )
 };
 
+// {[name]: [path]}
+let customDatasetCount = 0;
+let getCustomDatasetId = () => 'dataset ' + customDatasetCount++;
+export let customDatasets = {};
 
 // these variables hold indices, predictors, predicted and actual data
 export let resultsData = {

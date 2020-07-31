@@ -125,12 +125,12 @@ let SPEC_produce = problem => {
             'train': {
                 'name': 'train',
                 "resource_uri": 'file://' +
-                    ((problem.datasetPathsManipulated || {})[train_split] || problem.datasetPaths[train_split])
+                    (problem.datasetPathsManipulated?.[train_split] ?? problem.datasetPaths[train_split])
             },
             'input': {
                 'name': dataset_type,
-                "resource_uri": 'file://' + (
-                    (problem.datasetPathsManipulated || {})[dataset_type] || problem.datasetPaths[dataset_type])
+                "resource_uri": 'file://' +
+                    (problem.datasetPathsManipulated?.[dataset_type] ?? problem.datasetPaths[dataset_type])
             },
             'configuration': {
                 'predict_type': predict_type
@@ -144,11 +144,13 @@ let SPEC_produce = problem => {
     predict_types.forEach(predict_type => produces.push({
         'train': {
             'name': 'all',
-            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
+            'resource_uri': 'file://' +
+                (problem.datasetPathsManipulated?.all ?? problem.datasetPaths.all)
         },
         'input': {
             'name': 'all',
-            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
+            'resource_uri': 'file://' +
+                (problem.datasetPathsManipulated?.all ?? problem.datasetPaths.all)
         },
         'configuration': {
             'predict_type': predict_type
@@ -163,7 +165,8 @@ let SPEC_produce = problem => {
         app.getPredictorVariables(problem).forEach(predictor => produces.push({
             'train': {
                 'name': 'all',
-                'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
+                'resource_uri': 'file://' +
+                    (problem.datasetPathsManipulated?.all ?? problem.datasetPaths.all)
             },
             'input': {
                 'name': 'ICE_synthetic_' + predictor,
@@ -195,15 +198,18 @@ let SPEC_score = problem => {
         if (!problem.splitOptions.outOfSampleSplit) return;
         spec.train = {
             'name': 'train',
-            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).train || problem.datasetPaths.train)
+            'resource_uri': 'file://' +
+                (problem.datasetPathsManipulated?.train ?? problem.datasetPaths.train)
         };
         spec.input = {
             'name': 'test',
-            'resource_uri': 'file://' + ((problem.datasetPathsManipulated || {}).test || problem.datasetPaths.test)
+            'resource_uri': 'file://' +
+                (problem.datasetPathsManipulated?.test ?? problem.datasetPaths.test)
         }
     } else spec.input = {
         "name": "all",
-        "resource_uri": 'file://' + ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all)
+        "resource_uri": 'file://' +
+            (problem.datasetPathsManipulated?.all ?? problem.datasetPaths.all)
     };
 
     return spec;

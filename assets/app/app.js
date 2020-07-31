@@ -35,7 +35,7 @@ let RAVEN_CONFIG_VERSION = 1;
 
 export let TA2DebugMode = false;
 export let debugLog = TA2DebugMode ? console.log : _ => _;
-export let defaultSampleSize = 5000; // 50000
+export let defaultSampleSize = 50000;
 
 window.addEventListener('resize', m.redraw);
 
@@ -424,7 +424,10 @@ export async function buildDatasetUrl(problem, lastStep, dataPath, collectionNam
  */
 let getDataPromise;
 export let getData = async body => {
+    // TODO: temporary fix to prevent multiple ingests from starting at the same time
+    // disable when we switch to mongoimport and transactional ingest
     if (getDataPromise) await getDataPromise;
+
     getDataPromise = m.request({
         url: mongoURL + 'get-data',
         method: 'POST',
@@ -448,7 +451,7 @@ export let getData = async body => {
 
             if (typeof obj === 'string') {
                 if (obj === '***TWORAVENS_INFINITY***') return Infinity;
-                if (obj === '***TWORAVENS_NEGATIVE_INFINITY') return -Infinity;
+                if (obj === '***TWORAVENS_NEGATIVE_INFINITY***') return -Infinity;
                 if (obj === '***TWORAVENS_NAN***') return NaN;
             }
 
@@ -643,7 +646,13 @@ function websocketMessage(e) {
         else if (msg_data.msg_type === 'receive_solve_msg')
             solverWrapped.handleSolveCompleteResponse(msg_data);
 
-        else if (msg_data.data === undefined && msg_data.msg_type !== 'DATAMART_AUGMENT_PROCESS') {
+        else if (msg_data.data === undefined && ![
+            "ENDGetSearchSolutionsResults",
+            'DATAMART_MATERIALIZE_PROCESS',
+            'DATAMART_AUGMENT_PROCESS',
+            'DATAMART_SEARCH_BY_DATASET'
+        ].includes(msg_data.msg_type)) {
+
             debugLog('streamSocket.onmessage: Error, "msg_data.data" type not specified!');
             debugLog('full data: ' + JSON.stringify(msg_data));
             debugLog('---------------------------------------------');
@@ -664,7 +673,7 @@ function websocketMessage(e) {
             solverD3M.handleGetFitSolutionResultsResponse(msg_data.data);
         } else if (msg_data.msg_type === 'ENDGetSearchSolutionsResults') {
             debugLog(msg_data.msg_type + ' recognized!');
-            solverD3M.handleENDGetSearchSolutionsResults(msg_data.data);
+            solverD3M.handleENDGetSearchSolutionsResults(msg_data);
         } else if (msg_data.msg_type === 'DATAMART_MATERIALIZE_PROCESS') {
             debugLog(msg_data.msg_type + ' recognized!');
             handleMaterializeDataMessage(msg_data);
@@ -1287,12 +1296,8 @@ let buildDefaultProblem = problemDoc => {
                     .map(column => column.colName)),
             crossSection: getTagsByRole('suggestedGroupingKey'),
             boundary: getTagsByRole('boundaryIndicator'),
-            geographic: [...new Set([
-                ...getTagsByRole('locationIndicator')
-            ])],
-            temporal: [...new Set([
-                ...getTagsByRole('timeIndicator')
-            ])],
+            geographic: getTagsByRole('locationIndicator'),
+            temporal: getTagsByRole('timeIndicator'),
             weights: getTagsByRole('instanceWeight'), // singleton list
             indexes,
             privileged: getTagsByRole('suggestedPrivilegedData'), // singleton list
