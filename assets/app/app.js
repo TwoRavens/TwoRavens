@@ -35,7 +35,7 @@ let RAVEN_CONFIG_VERSION = 1;
 
 export let TA2DebugMode = false;
 export let debugLog = TA2DebugMode ? console.log : _ => _;
-export let defaultSampleSize = 50000;
+export let defaultSampleSize = 10000;
 
 window.addEventListener('resize', m.redraw);
 

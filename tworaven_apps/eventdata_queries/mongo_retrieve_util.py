@@ -215,7 +215,7 @@ class MongoRetrieveUtil(BasicErrCheck):
             if method == 'find':
                 cursor = mongo_db[self.collection_name].find(query)
             if method == 'aggregate':
-                cursor = mongo_db[self.collection_name].aggregate(query)
+                cursor = mongo_db[self.collection_name].aggregate(query, allowDiskUse=True)
             if method == 'count':
                 # Return value immediately
                 return ok_resp(mongo_db[self.collection_name].count(query))
