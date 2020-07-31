@@ -1841,7 +1841,7 @@ export let add = (collection, obj) => {
 /** needs doc */
 export function helpmaterials(type) {
     if (type === "video") {
-        let win = window.open("http://2ra.vn/demos/index.html", '_blank');
+        let win = window.open("http://2ra.vn/demos/demos.html", '_blank');
         win.focus();
     } else {
         let win = window.open("http://2ra.vn/papers/tworavens-d3mguide.pdf", '_blank');
@@ -1941,8 +1941,9 @@ export let materializeManipulations = async (problem, schemaIds) => {
             problem, undefined, problem.datasetPaths[schemaId],
             `${workspace.d3m_config.name}_${problem.problemId}_${schemaId}`,
             problem.datasetSchemas[schemaId])
-            .then(({data_path, metadata_path}) => {
+            .then(({data_path, metadata_path, metadata}) => {
                 problem.datasetSchemaPathsManipulated[schemaId] = metadata_path;
+                problem.datasetSchemasManipulated[schemaId] = metadata;
                 problem.datasetPathsManipulated[schemaId] = data_path;
             })))
         .then(() => problem.useManipulations = true)
@@ -2296,10 +2297,10 @@ export let variableSummaries = {};
 export let setDatasetSummary = state => {
     if (!state) return;
     datasetSummary = state;
+    window.datasetSummary = datasetSummary;
     common.deepMerge(datasetSummary, workspace.raven_config.datasetSummariesDiffs);
 };
 export let datasetSummary = {};
-
 
 /*
  *  'Save' button - Variables related to displaying a modal message
@@ -2942,7 +2943,7 @@ export function formatPrecision(value, precision = 4) {
     return (digits <= precision || precision === 0) ? numeric : numeric.toPrecision(precision) * 1
 }
 
-let generateProblemID = () => 'problem ' + workspace.raven_config.problemCount++;
+export let generateProblemID = () => 'problem ' + workspace.raven_config.problemCount++;
 
 // generate a number from text (cheap hash)
 export let generateID = text => Array.from({length: text.length})

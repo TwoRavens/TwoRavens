@@ -431,7 +431,7 @@ tr.item-lineout{
 .item-boundary {
     border: solid #3cc394;
 }
-.item-location {
+.item-geographic {
     border: solid #d23e3e;
 }
 .item-time {

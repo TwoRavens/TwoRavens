@@ -166,8 +166,7 @@ export class CanvasDataset {
                 onclick: uploadDataset,
                 disabled: datasetPreferences.upload.files.length === 0 || datasetPreferences.upload.name.length === 0
             }, 'Upload'),
-            m('div', {style: {display: 'inline-block'}}, uploadStatus)
-            ),
+            m('div', {style: {display: 'inline-block'}}, uploadStatus)),
             // ------------------------------------------------
             // end: "Upload" custom data
             // ------------------------------------------------
@@ -330,7 +329,8 @@ export class CanvasDataset {
                     contents: m(manipulate.PipelineFlowchart, {
                         compoundPipeline: app.workspace.raven_config.hardManipulations,
                         pipeline: app.workspace.raven_config.hardManipulations,
-                        editable: true
+                        editable: true,
+                        hard: true
                     })
                 }
             ]
@@ -377,15 +377,14 @@ export class CanvasDataset {
                         style: 'margin: 0 1em',
                         onclick: _ => datasetPreferences.reportEdit = !datasetPreferences.reportEdit
                     }, 'Edit')),
-                m('table.table.table-sm.table-striped',
-                    m('tbody',
-                        Object.entries(app.datasetSummary)
-                            .map(row => m('tr',
-                                m('td', {style: {width: '1em'}}, row[0]),
-                                m('td', datasetPreferences.reportEdit &&
-                                schema.properties.dataset.editable.includes(row[0]) ? widget(setDatasetSum, null, row[0], row[1]) : row[1])))
-                    )
-                ),
+                m(Table, {
+                    data: Object.keys(app.datasetSummary).map(key => [
+                        key,
+                        datasetPreferences.reportEdit && schema.properties.dataset.editable.includes(key)
+                            ? widget(setDatasetSum, null, key, app.datasetSummary[key])
+                            : app.datasetSummary[key]
+                    ])
+                }),
                 m('h3', 'Variables'),
                 m(TextField, {
                     placeholder: "search",
@@ -406,27 +405,31 @@ export class CanvasDataset {
                     makePage: entries => entries.map(([variable, vals]) => m('div.border', {style: 'margin-bottom: 1em; padding: 1em'},
                         m('h4', variable),
                         m('.row',
-                            m('.col',
-                                m('table.table.table-sm.table-striped',
-                                    m('tbody',
-                                        Object.entries(vals).filter(x => editables.includes(x[0]))
-                                            .map(row => m('tr',
-                                                m('td', {style: {width: '1em'}}, row[0]),
-                                                m('td', datasetPreferences.reportEdit ? widget(setVarSum, variable, row[0], row[1]) : row[1])))
-                                    )
-                                )
+                            m('.col[style=min-width:auto !important]',
+                                m(Table, {
+                                    style: {
+                                        'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
+                                    },
+                                    class: 'table-sm',
+                                    data: Object.keys(vals)
+                                        .filter(key => editables.includes(key))
+                                        .map(key => [key, datasetPreferences.reportEdit
+                                            ? widget(setVarSum, variable, key, vals[key])
+                                            : String(vals[key])])
+                                })
                             ),
-                            m('.col',
-                                m('table.table.table-sm.table-striped',
-                                    m('tbody',
-                                        Object.entries(vals).slice(1, 17).filter(x => !editables.includes(x[0]))
-                                            .map(row => m('tr',
-                                                m('td', {style: {width: '1em'}}, row[0]),
-                                                m('td', row[1])))
-                                    )
-                                )
+                            m('.col[style=min-width:auto !important]',
+                                m(Table, {
+                                    style: {
+                                        'border-radius': '.5em',
+                                        'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
+                                    },
+                                    class: 'table-sm',
+                                    data: Object.entries(vals)
+                                        .slice(1, 17).filter(pair => !editables.includes(pair[0]))
+                                })
                             ),
-                            m('.col',
+                            m('.col[style=min-width:auto !important]',
                                 m('div', {
                                     oninit() {
                                         this.node = vals;
@@ -449,15 +452,10 @@ export class CanvasDataset {
                         m('button.btn.btn-primary.btn-sm', {
                             onclick: _ => datasetPreferences.reportMore[variable] = !datasetPreferences.reportMore[variable]
                         }, datasetPreferences.reportMore[variable] ? 'less' : 'more'),
-                        datasetPreferences.reportMore[variable] && m('table.table.table-sm.table-striped', {style: 'margin-top: 1em'},
-                        m('tbody',
-                            Object.entries(vals).slice(17)
-                                .filter(row => !variableKeys.includes(row[0]))
-                                .map(row => m('tr',
-                                    m('td', {style: {width: '1em'}}, row[0]),
-                                    m('td', row[1])))
-                        )
-                        ),
+
+                        datasetPreferences.reportMore[variable] && m(Table, {
+                            data: Object.entries(vals).slice(17).filter(row => !variableKeys.includes[row[0]])
+                        })
                     )),
                     limit: 10,
                     page: datasetPreferences.reportPage,

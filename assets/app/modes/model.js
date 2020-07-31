@@ -1096,7 +1096,7 @@ export let rightpanel = () => {
                             ],
                             pipeline: selectedProblem.manipulations,
                             editable: true,
-                            aggregate: false
+                            hard: false
                         }),
                         selectedProblem.tags.nominal.length > 0 && m(Flowchart, {
                             attrsAll: {style: {height: 'calc(100% - 87px)', overflow: 'auto'}},
@@ -1793,10 +1793,9 @@ let setLabel = (problem, label, name) => {
 
     if (label === 'temporal') {
         if (!app.getTemporalVariables(problem).includes(name)) {
-            app.variableSummaries[name].temporal = true;
             app.remove(problem.tags.geographic, name);
             app.remove(problem.tags.boundary, name);
-        } else app.variableSummaries[name].temporal = false;
+        }
         app.toggle(problem.tags.time, name);
     }
 

@@ -13,11 +13,12 @@ export let getSolverSpecification = async problem => {
     await results.prepareResultsDatasets(problem, 'd3m');
 
     let datasetSchemaPaths = problem.useManipulations ? problem.datasetSchemaPathsManipulated : problem.datasetSchemaPaths;
+    let datasetSchemas = problem.useManipulations ? problem.datasetSchemasManipulated : problem.datasetSchemas;
     if (!['classification', 'regression', 'forecasting'].includes(problem.task))
         problem.splitOptions.outOfSampleSplit = false;
 
     let allParams = {
-        searchSolutionParams: GRPC_SearchSolutionsRequest(problem, problem.datasetSchemas.all, datasetSchemaPaths.all),
+        searchSolutionParams: GRPC_SearchSolutionsRequest(problem, datasetSchemas.all, datasetSchemaPaths.all),
         fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(datasetSchemaPaths[problem.splitOptions.outOfSampleSplit ? 'train' : 'all']),
         scoreSolutionDefaultParams: GRPC_ScoreSolutionRequest(problem, datasetSchemaPaths.all),
         produceSolutionDefaultParams: Object.keys(datasetSchemaPaths) // ['train', 'test', 'all']
@@ -907,7 +908,7 @@ export function handleENDGetSearchSolutionsResults(response) {
 /**
  EndSession(SessionContext) returns (Response) {}
  */
-export async function endsession() {
+export async function endSession() {
     app.taskPreferences.isSubmittingPipelines = true;
     let selectedProblem = app.getSelectedProblem();
 
@@ -955,13 +956,13 @@ export async function endsession() {
         app.taskPreferences.isSubmittingPipelines = false;
         app.taskPreferences.task2_finished = true;
         // more descriptive solution modal that doesn't lock the page
-        // selectedSolution.chosen = true;
-        // results.setShowFinalPipelineModal(true);
+        selectedSolution.chosen = true;
+        results.setShowFinalPipelineModal(true);
 
         // we don't need to wait for the backend to spin down before telling the user, no await used
         // endAllSearches();
 
-        app.alertLog('Finished! The problem is marked as complete.')
+        // app.alertLog('Finished! The problem is marked as complete.')
         // let resetTheApp = () => {
         //     window.location.pathname = clear_user_workspaces_url;
         // };

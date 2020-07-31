@@ -17,7 +17,7 @@ import Icon from "../../common/views/Icon";
 import Popper from '../../common/views/Popper';
 import MenuTabbed from "../../common/views/MenuTabbed";
 
-import {bold, italicize, preformatted} from "../index";
+import {bold, italicize, linkURL, linkURLwithText, preformatted} from "../index";
 import PlotVegaLite from "../views/PlotVegaLite";
 import ConfusionMatrix from "../views/ConfusionMatrix";
 import Flowchart from "../views/Flowchart";
@@ -912,7 +912,7 @@ export class CanvasSolutions {
             resultsPreferences.upload?.file?.name),
 
             m(Button, {
-                onclick: async () => {
+                onclick: () => {
                     if (!resultsPreferences.upload.file) {
                         app.alertError("No dataset is supplied.");
                         return;
@@ -927,71 +927,20 @@ export class CanvasSolutions {
                         return;
                     }
 
-                    let body = new FormData();
-                    body.append('metadata', JSON.stringify(Object.assign({dataset_doc_id: problem.d3mDatasetId}, resultsPreferences.upload, {files: undefined})));
-                    body.append('files', resultsPreferences.upload.file);
-
-                    // initial upload
-                    let response = await m.request("user-workspaces/upload-dataset-for-model-run", {
-                        method: "POST", body
-                    });
-
-                    if (!response.success) {
-                        app.alertError(response.message);
-                        return
-                    }
-
-                    let customDataset = {
-                        name: resultsPreferences.upload.name,
-                        datasetDocPath: response.data.new_dataset_doc_path,
-                        datasetDoc: response.data.new_dataset_doc,
-                        // TODO: this is sloppy
-                        datasetPath: response.data.new_dataset_doc_path.replace('datasetDoc.json', 'tables/learningData.csv')
-                    };
-
-                    // clear form, upload was successful
-                    resultsPreferences.upload = {};
-
-                    customDatasets[getCustomDatasetId()] = customDataset;
-
-                    let manipulatedInfo = await buildDatasetUrl(
-                        problem, undefined, customDataset.datasetPath,
-                        `${workspace.d3m_config.name}_${customDataset.name}`,
-                        customDataset.datasetDoc);
-
-                    problem.datasetPaths[customDataset.name] = manipulatedInfo.data_path;
-                    problem.datasetSchemaPaths[customDataset.name] = manipulatedInfo.metadata_path;
-
-                    let solverSystems = getSystemAdapters(problem);
-
-                    // kick off produces for all solutions
-                    getSolutions(problem)
-                        .map(solution => getSolutionAdapter(problem, solution))
-                        .map(adapter => solverSystems[adapter.getSystemId()](selectedProblem).produce(
-                            adapter.getSolutionId(),
-                            {
-                                'train': {
-                                    'name': 'train',
-                                    "resource_uri": 'file://' +
-                                        (selectedProblem.datasetPathsManipulated?.train ?? selectedProblem.datasetPaths.train)
-                                },
-                                'input': {
-                                    'name': customDataset.name,
-                                    'metadata_uri': 'file://' + manipulatedInfo.metadata_path,
-                                    'resource_uri': 'file://' + manipulatedInfo.data_path,
-                                },
-                                'configuration': {
-                                    'predict_type': 'RAW'
-                                },
-                                'output': {
-                                    'resource_uri': 'file:///ravens_volume/solvers/produce/'
-                                }
-                            })
-                            .then(response => !response.success && console.error(response.message))
-                        );
+                    uploadForModelRun(
+                        resultsPreferences.upload.file,
+                        resultsPreferences.upload.name,
+                        problem
+                    ).then(({customDataset, manipulatedInfo}) => {
+                        customDatasets[getCustomDatasetId()] = customDataset;
+                        // clear form, upload was successful
+                        resultsPreferences.upload = {};
+                        getSolutions(problem)
+                            .forEach(solution => produceOnSolution(customDataset, manipulatedInfo, problem, solution))
+                    })
                 },
                 disabled: !resultsPreferences.upload.file || resultsPreferences.upload.name.length === 0
-            }, "Upload"),
+            }, "Produce"),
 
             Object.keys(customDatasets).length > 0 && [
                 m('h4[style=margin:1em]', 'Custom Datasets'),
@@ -1013,18 +962,6 @@ export class CanvasSolutions {
                 })
             ]
         ]
-
-        return m(Table, {
-            data: Object.keys(customDatasets).map(evaluationId => [
-                customDatasets[evaluationId].name,
-                m(Button, {
-                    onclick: () => resultsPreferences.dataSplit = customDatasets[evaluationId].name
-                }, "Select"),
-                m(Button, {
-                    onclick: () => app.downloadFile(selectedProblem.produce.find(produce => produce.input === customDatasets[evaluationId].name).data_pointer)
-                }, "Download"),
-            ])
-        })
     }
 
     view(vnode) {
@@ -1722,14 +1659,19 @@ export let finalPipelineModal = () => {
             setDisplay: setShowFinalPipelineModal
         },
         m('h4', 'Pipeline ', adapter.getSolutionId()),
-        'Task Two Complete. Your selected pipeline has been submitted.'
+        'Task Two Complete. Your selected pipeline has been submitted.',
 
-        // * lots of room for cool activities *
-
-        // m(Table, {
-        //     id: 'finalPipelineTable',
-        //     data: []
-        // })
+        // m('br'),
+        // m(Button, {
+        //     onclick: () => {
+        //         // TODO: this is not feasible, because urls have length limits
+        //         // TODO: use link sharing and open a saved workspace instead
+        //         let deployUrl = new URL(`http://${window.location.host}/#!/deploy`);
+        //         deployUrl.searchParams.append('problem', JSON.stringify(selectedProblem))
+        //         console.log(deployUrl.href);
+        //         m.route.set(deployUrl.href)
+        //     }
+        // }, 'Load a deploy interface.'),
     )
 };
 
@@ -2696,8 +2638,11 @@ export let prepareResultsDatasets = async (problem, solverId) => {
     problem.datasetPaths = problem.datasetPaths || {
         all: app.workspace.datasetPath
     };
+
     problem.datasetSchemaPathsManipulated = problem.datasetSchemaPathsManipulated || {};
+    problem.datasetSchemasManipulated = problem.datasetSchemasManipulated || {};
     problem.datasetPathsManipulated = problem.datasetPathsManipulated || {};
+
     problem.selectedSolutions[solverId] = problem.selectedSolutions[solverId] || [];
     app.setRecursive(problem, [['solverState', {}], [solverId, {}], ['thinking', true]]);
 
@@ -2765,3 +2710,66 @@ export let prepareResultsDatasets = async (problem, solverId) => {
     m.redraw();
 
 };
+
+export let uploadForModelRun = async (file, name, problem) => {
+
+    let body = new FormData();
+    body.append('metadata', JSON.stringify({dataset_doc_id: problem.d3mDatasetId, name}));
+    body.append('files', file);
+
+    // initial upload
+    let response = await m.request("user-workspaces/upload-dataset-for-model-run", {
+        method: "POST", body
+    });
+
+    if (!response.success) {
+        app.alertError(response.message);
+        return
+    }
+
+    let customDataset = {
+        name,
+        datasetDocPath: response.data.new_dataset_doc_path,
+        datasetDoc: response.data.new_dataset_doc,
+        // TODO: this is sloppy
+        datasetPath: response.data.new_dataset_doc_path.replace('datasetDoc.json', 'tables/learningData.csv')
+    };
+
+    let manipulatedInfo = await buildDatasetUrl(
+        problem, undefined, customDataset.datasetPath,
+        `${workspace.d3m_config.name}_${customDataset.name}`,
+        customDataset.datasetDoc);
+
+    problem.datasetPaths[customDataset.name] = manipulatedInfo.data_path;
+    problem.datasetSchemaPaths[customDataset.name] = manipulatedInfo.metadata_path;
+
+    return {customDataset, manipulatedInfo};
+}
+
+export let produceOnSolution = async (customDataset, manipulatedInfo, problem, solution) => {
+
+    let adapter = getSolutionAdapter(problem, solution);
+    let solverSystems = getSystemAdapters(problem);
+
+    solverSystems[adapter.getSystemId()](selectedProblem).produce(
+        adapter.getSolutionId(),
+        {
+            'train': {
+                'name': 'train',
+                "resource_uri": 'file://' +
+                    (problem.datasetPathsManipulated?.train ?? problem.datasetPaths.train)
+            },
+            'input': {
+                'name': customDataset.name,
+                'metadata_uri': 'file://' + manipulatedInfo.metadata_path,
+                'resource_uri': 'file://' + manipulatedInfo.data_path,
+            },
+            'configuration': {
+                'predict_type': 'RAW'
+            },
+            'output': {
+                'resource_uri': 'file:///ravens_volume/solvers/produce/'
+            }
+        })
+        .then(response => !response.success && console.error(response.message))
+}
