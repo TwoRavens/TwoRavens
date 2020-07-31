@@ -2296,10 +2296,10 @@ export let variableSummaries = {};
 export let setDatasetSummary = state => {
     if (!state) return;
     datasetSummary = state;
+    window.datasetSummary = datasetSummary;
     common.deepMerge(datasetSummary, workspace.raven_config.datasetSummariesDiffs);
 };
 export let datasetSummary = {};
-
 
 /*
  *  'Save' button - Variables related to displaying a modal message
