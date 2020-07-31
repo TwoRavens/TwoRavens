@@ -1941,8 +1941,9 @@ export let materializeManipulations = async (problem, schemaIds) => {
             problem, undefined, problem.datasetPaths[schemaId],
             `${workspace.d3m_config.name}_${problem.problemId}_${schemaId}`,
             problem.datasetSchemas[schemaId])
-            .then(({data_path, metadata_path}) => {
+            .then(({data_path, metadata_path, metadata}) => {
                 problem.datasetSchemaPathsManipulated[schemaId] = metadata_path;
+                problem.datasetSchemasManipulated[schemaId] = metadata;
                 problem.datasetPathsManipulated[schemaId] = data_path;
             })))
         .then(() => problem.useManipulations = true)

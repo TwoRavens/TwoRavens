@@ -329,7 +329,8 @@ export class CanvasDataset {
                     contents: m(manipulate.PipelineFlowchart, {
                         compoundPipeline: app.workspace.raven_config.hardManipulations,
                         pipeline: app.workspace.raven_config.hardManipulations,
-                        editable: true
+                        editable: true,
+                        hard: true
                     })
                 }
             ]

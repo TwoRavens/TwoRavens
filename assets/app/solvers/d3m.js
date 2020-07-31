@@ -13,11 +13,12 @@ export let getSolverSpecification = async problem => {
     await results.prepareResultsDatasets(problem, 'd3m');
 
     let datasetSchemaPaths = problem.useManipulations ? problem.datasetSchemaPathsManipulated : problem.datasetSchemaPaths;
+    let datasetSchemas = problem.useManipulations ? problem.datasetSchemasManipulated : problem.datasetSchemas;
     if (!['classification', 'regression', 'forecasting'].includes(problem.task))
         problem.splitOptions.outOfSampleSplit = false;
 
     let allParams = {
-        searchSolutionParams: GRPC_SearchSolutionsRequest(problem, problem.datasetSchemas.all, datasetSchemaPaths.all),
+        searchSolutionParams: GRPC_SearchSolutionsRequest(problem, datasetSchemas.all, datasetSchemaPaths.all),
         fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(datasetSchemaPaths[problem.splitOptions.outOfSampleSplit ? 'train' : 'all']),
         scoreSolutionDefaultParams: GRPC_ScoreSolutionRequest(problem, datasetSchemaPaths.all),
         produceSolutionDefaultParams: Object.keys(datasetSchemaPaths) // ['train', 'test', 'all']

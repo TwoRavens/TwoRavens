@@ -886,7 +886,7 @@ class EventJobUtil(object):
             json.dump(metadata, metadata_file)
 
         return ok_resp(
-            {"data_path": temp_data_filepath, "metadata_path": temp_metadata_filepath}
+            {"data_path": temp_data_filepath, "metadata_path": temp_metadata_filepath, "metadata": metadata}
         )
 
 

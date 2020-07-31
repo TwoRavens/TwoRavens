@@ -15,6 +15,7 @@ import ButtonRadio from "../../common/views/ButtonRadio";
 import Panel from "../../common/views/Panel";
 import Canvas from "../../common/views/Canvas";
 import Table from "../../common/views/Table";
+import Popper from '../../common/views/Popper';
 
 import * as common from '../../common/common';
 
@@ -270,7 +271,7 @@ export function varList() {
 export class PipelineFlowchart {
     view(vnode) {
         // compoundPipeline is used for queries, pipeline is the array to be edited
-        let {compoundPipeline, pipeline, editable, aggregate} = vnode.attrs;
+        let {compoundPipeline, pipeline, editable, hard} = vnode.attrs;
 
         let plus = m(Icon, {name: 'plus'});
         let warn = (text) => m('[style=color:#dc3545;display:inline-block;]', text);
@@ -454,11 +455,15 @@ export class PipelineFlowchart {
             editable && [
                 DISPLAY_DATAMART_UI && m(Button, {
                     id: 'btnAddAugment',
-                    title: 'join columns with another dataset',
+                    title: hard ? 'join columns with another dataset' : 'augment is only available in dataset mode',
                     disabled: !isEnabled(),
-                    class: 'btn-success',
+                    class: hard ? 'btn-success' : 'disabled',
                     style: {margin: '0.5em'},
                     onclick: async () => {
+                        if (!hard) {
+                            app.alertLog("Augment is only available in dataset mode.");
+                            return;
+                        }
 
                         // write out manipulated dataset as input to datamart component, if there are hard manipulations
                         let dataPath = workspace.datasetPath;
@@ -505,23 +510,30 @@ export class PipelineFlowchart {
                     })
                 }, plus, ' Subset Step'),
                 // D3M primitives don't support aggregations
-                aggregate !== false && m(Button, {
+                m(Button, {
                     id: 'btnAddAggregate',
-                    title: 'group rows that match criteria',
+                    title: hard ? 'group rows that match criteria' : 'aggregate is only available in dataset mode',
                     disabled: !isEnabled(),
                     style: {margin: '0.5em'},
-                    onclick: () => pipeline.push({
-                        type: 'aggregate',
-                        id: 'aggregate ' + pipeline.length,
-                        measuresUnit: [],
-                        measuresAccum: [],
-                        nodeId: 1 // both trees share the same nodeId counter
-                    })
+                    class: !hard && "disabled",
+                    onclick: () => {
+                        if (!hard) {
+                            app.alertLog("Aggregate is only available in dataset mode.")
+                            return;
+                        }
+                        pipeline.push({
+                            type: 'aggregate',
+                            id: 'aggregate ' + pipeline.length,
+                            measuresUnit: [],
+                            measuresAccum: [],
+                            nodeId: 1 // both trees share the same nodeId counter
+                        })
+                    }
                 }, plus, ' Aggregate Step'),
-                m(Button, {
+               m(Button, {
                     id: 'btnAddImputation',
                     title: 'manage missing data',
-                    disabled: !isEnabled(),
+                    disabled: !hard && !isEnabled(),
                     style: {margin: '0.5em'},
                     onclick: () => pipeline.push({
                         type: 'imputation',

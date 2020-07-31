@@ -2696,8 +2696,11 @@ export let prepareResultsDatasets = async (problem, solverId) => {
     problem.datasetPaths = problem.datasetPaths || {
         all: app.workspace.datasetPath
     };
+
     problem.datasetSchemaPathsManipulated = problem.datasetSchemaPathsManipulated || {};
+    problem.datasetSchemasManipulated = problem.datasetSchemasManipulated || {};
     problem.datasetPathsManipulated = problem.datasetPathsManipulated || {};
+
     problem.selectedSolutions[solverId] = problem.selectedSolutions[solverId] || [];
     app.setRecursive(problem, [['solverState', {}], [solverId, {}], ['thinking', true]]);
 

@@ -1096,7 +1096,7 @@ export let rightpanel = () => {
                             ],
                             pipeline: selectedProblem.manipulations,
                             editable: true,
-                            aggregate: false
+                            hard: false
                         }),
                         selectedProblem.tags.nominal.length > 0 && m(Flowchart, {
                             attrsAll: {style: {height: 'calc(100% - 87px)', overflow: 'auto'}},
