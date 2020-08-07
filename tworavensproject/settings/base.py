@@ -53,13 +53,29 @@ TWORAVENS_COMMON_DIR = join(BASE_DIR, 'assets', 'common')
 sys.path.append(TWORAVENS_COMMON_DIR)
 
 
+# -----------------------------------------------
+# Set File Upload maximums
+#
 # Note: On K8s deploymnts these values are limited by
 #   the nginx client_max_body_size
+# -----------------------------------------------
+DATA_UPLOAD_MAX_MEMORY_SIZE = os.environ.get('DATA_UPLOAD_MAX_MEMORY_SIZE',
+                                             1024 * 1024 * 30)  # 30 MB
+# - Make sure this is an integer
 #
-DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * 30  # 30 MB
+assert(str(DATA_UPLOAD_MAX_MEMORY_SIZE).isdigit())
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(DATA_UPLOAD_MAX_MEMORY_SIZE)
+
+# Set the FILE_UPLOAD_MAX_MEMORY_SIZE
 FILE_UPLOAD_MAX_MEMORY_SIZE = DATA_UPLOAD_MAX_MEMORY_SIZE
 
-NGINX_MAX_UPLOAD_SIZE = os.environ.get('NGINX_MAX_UPLOAD_SIZE', 'not set')
+# - For the nginx image, this variable sets the client_max_body_size
+#
+NGINX_MAX_UPLOAD_SIZE = os.environ.get('NGINX_MAX_UPLOAD_SIZE', '30M')
+# -----------------------------------------------
+# end: # Set File Upload maximums
+# -----------------------------------------------
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
