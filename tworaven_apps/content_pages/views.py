@@ -68,6 +68,8 @@ def view_pebbles_home(request):
                  DISPLAY_DATAMART_UI=settings.DISPLAY_DATAMART_UI,
                  WEBSOCKET_PREFIX=settings.WEBSOCKET_PREFIX,
                  #
+                 DOCKER_BUILD_TIMESTAMP=settings.DOCKER_BUILD_TIMESTAMP,
+                 DATA_UPLOAD_MAX_MEMORY_SIZE=settings.DATA_UPLOAD_MAX_MEMORY_SIZE,
                  NGINX_MAX_UPLOAD_SIZE=settings.NGINX_MAX_UPLOAD_SIZE)
 
 

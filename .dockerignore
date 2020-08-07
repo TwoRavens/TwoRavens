@@ -56,6 +56,9 @@ assets/build
 # ---------------------------------
 # specific Test Datasets
 # ---------------------------------
+ravens_volume/evtdata_user_dataset/*
+ravens_volume/test_output/*
+ravens_volume/TWORAVENS_USER_DATASETS/*
 ravens_volume/test_data/*
 !ravens_volume/test_data/185_baseball
 !ravens_volume/test_data/196_autoMpg

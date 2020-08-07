@@ -685,6 +685,10 @@ class Body {
                     m('b', 'Workspace Name: '),
                     m('span', app.getCurrentWorkspaceName())
                   ]),
+                  m('p', [
+                      m('b', 'DOCKER_BUILD_TIMESTAMP: '),
+                      m('span', `${DOCKER_BUILD_TIMESTAMP}`),
+                    ]),
               m('hr'),
               m('p', [
                   m('b', 'TA2: '),
@@ -692,19 +696,29 @@ class Body {
                 ]),
               m('p', [
                   m('b', 'TA3: '),
-                  m('span', `TwoRavens (API: ${TA3TA2_API_VERSION})`)
+                  m('span', `TwoRavens (API: ${TA3TA2_API_VERSION})`),
+                ]),
+              m('p', [
+                  m('b', 'TA2_D3M_SOLVER_ENABLED: '),
+                  m('span', `${TA2_D3M_SOLVER_ENABLED}`),
+                ]),
+              m('p', [
+                  m('b', 'TA2_WRAPPED_SOLVERS: '),
+                  m('span', `${TA2_WRAPPED_SOLVERS}`),
+                ]),
+              m('hr'),
+              m('p', [
+                  m('b', 'DATA_UPLOAD_MAX_MEMORY_SIZE: '),
+                  m('span', `${DATA_UPLOAD_MAX_MEMORY_SIZE}`),
+                ]),
+              m('p', [
+                  m('b', 'NGINX_MAX_UPLOAD_SIZE: '),
+                  m('span', `${NGINX_MAX_UPLOAD_SIZE}`),
                 ]),
               m('hr'),
               m('p', [
                   m('b', 'app.workspace.datasetUrl: '),
                   m('span', `${app.workspace.datasetPath}`)
-                ]),
-              m('hr'),
-                m('div', [
-                  m('b', 'datamartPreferences: '),
-                  m('div',
-                    m('pre', `${JSON.stringify(app.datamartPreferences, null, 4)}`)
-                  ),
                 ]),
               m('hr'),
               m('div', [
@@ -714,6 +728,13 @@ class Body {
                   ),
                 ]),
               m('hr'),
+              m('div', [
+                m('b', 'datamartPreferences: '),
+                m('div',
+                  m('pre', `${JSON.stringify(app.datamartPreferences, null, 4)}`)
+                ),
+              ]),
+            m('hr'),
             ]
           ),
         ),
