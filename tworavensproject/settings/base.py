@@ -418,4 +418,4 @@ TEST_PASSWORD = os.environ.get('TEST_PASSWORD', 'test_user')
 # DOCKER_BUILD_TIMESTAMP
 #  - set in the Dockerfile
 #
-DOCKER_BUILD_TIMESTAMP = os.environ.get('DOCKER_BUILD_TIMESTAMP', '(Not set)')
+DOCKER_BUILD_TIMESTAMP = os.environ.get('DOCKER_BUILD_TIMESTAMP', '(Not available)')

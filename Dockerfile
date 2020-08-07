@@ -123,9 +123,6 @@ COPY startup_script/d3m_start_gates_01.sh /usr/bin/d3m_start_gates_01.sh
 
 RUN chmod u+x /usr/bin/d3m_start.sh /usr/bin/d3m_start_multiuser.sh /usr/bin/d3m_start_gates_01.sh
 
-RUN date > /root/tmp_build_timestamp
-RUN export DOCKER_BUILD_TIMESTAMP=$(cat /root/tmp_build_timestamp);
-
 # -------------------------------------
 # Idle the container on startup so it
 # can receive subsequent commands
