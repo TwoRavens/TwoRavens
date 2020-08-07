@@ -685,6 +685,10 @@ class Body {
                     m('b', 'Workspace Name: '),
                     m('span', app.getCurrentWorkspaceName())
                   ]),
+                  m('p', [
+                      m('b', 'DOCKER_BUILD_TIMESTAMP: '),
+                      m('span', `${DOCKER_BUILD_TIMESTAMP}`),
+                    ]),
               m('hr'),
               m('p', [
                   m('b', 'TA2: '),

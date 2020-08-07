@@ -413,3 +413,9 @@ if EVENTDATA_TWO_RAVENS_TARGET_URL.endswith('/'):
 #
 TEST_USERNAME = os.environ.get('TEST_USERNAME', 'test_user')
 TEST_PASSWORD = os.environ.get('TEST_PASSWORD', 'test_user')
+
+
+# DOCKER_BUILD_TIMESTAMP
+#  - set in the Dockerfile
+#
+DOCKER_BUILD_TIMESTAMP = os.environ.get('DOCKER_BUILD_TIMESTAMP', '(Not set)')
