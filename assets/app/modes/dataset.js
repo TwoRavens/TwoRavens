@@ -22,6 +22,32 @@ import * as schema from '../../preprocess-schemas/1-2-0';
 import ButtonLadda from "../views/ButtonLadda";
 import Subpanel from "../../common/views/Subpanel";
 
+
+// ------------------------------------------
+//  Define the Dataset Mode Tabbed Sections
+//   - Current | Presets | Upload | Online
+// ------------------------------------------
+export let datasetModeTabbedSections =  [
+      {value: 'Current', title: 'information about currently loaded dataset'},
+];
+// The Presets tab may be turned on/off by server settings
+if (DATASET_SHOW_TAB_PRESETS)
+  datasetModeTabbedSections.push(
+    {value: 'Presets', title: 'pick from previously uploaded datasets'})
+
+// The Upload tab may be turned on/off by server settings
+if (DATASET_SHOW_TAB_UPLOAD)
+  datasetModeTabbedSections.push(
+      {value: 'Upload', title: 'upload a new dataset from your computer'})
+
+// The Online tab may be turned on/off by server settings
+if (DATASET_SHOW_TAB_ONLINE)
+  datasetModeTabbedSections.push(
+    {value: 'Online', title: 'retrieve dataset from an online resource'})
+
+// ------------------------------------------
+
+
 export class CanvasDataset {
 
     oncreate() {
@@ -95,12 +121,13 @@ export class CanvasDataset {
                 id: 'ingestModeButtonBar',
                 onclick: mode => datasetPreferences.datasourceMode = mode,
                 activeSection: datasetPreferences.datasourceMode,
-                sections: [
+                sections: datasetModeTabbedSections,
+                /*[
                     {value: 'Current', title: 'information about currently loaded dataset'},
                     {value: 'Presets', title: 'pick from previously uploaded datasets'},
                     {value: 'Upload', title: 'upload a new dataset from your computer'},
                     {value: 'Online', title: 'retrieve dataset from an online resource'},
-                ],
+                ],*/
                 attrsAll: {style: {'margin-bottom': '1em'}}
             }),
 
@@ -128,7 +155,11 @@ export class CanvasDataset {
             // ------------------------------------------------
             // start: "Upload" custom data
             // ------------------------------------------------
-            datasetPreferences.datasourceMode === 'Upload' && m('div', {style: {'margin-top': '1em'}},
+            !DATASET_SHOW_TAB_UPLOAD && datasetPreferences.datasourceMode === "Upload" && [
+                m('div',
+                  m('p', '(Note: Uploading custom datasets is not available in this demo.)')),
+              ],
+            DATASET_SHOW_TAB_UPLOAD && datasetPreferences.datasourceMode === 'Upload' && m('div', {style: {'margin-top': '1em'}},
             m('div',
                 m('label[style=display:inline-block;width:120px]', 'Dataset Name'),
                 m('div[style=display:inline-block;max-width:300px]', m(TextField, {
@@ -226,8 +257,14 @@ export class CanvasDataset {
             // ------------------------------------------------
             // end: "Presets" section
             // ------------------------------------------------
-
-            datasetPreferences.datasourceMode === "Online" && [
+            // ------------------------------------------------
+            // start: "Online" section
+            // ------------------------------------------------
+            !DATASET_SHOW_TAB_ONLINE && datasetPreferences.datasourceMode === "Online" && [
+                m('div',
+                  m('p', '(Note: Uploading datasets by url, including OpenML datasets, is not available in this demo.)')),
+              ],
+            DATASET_SHOW_TAB_ONLINE && datasetPreferences.datasourceMode === "Online" && [
                 m('div',
                     m('label[style=display:inline-block;width:120px]', 'Dataset Name'),
                     m('div[style=display:inline-block;max-width:300px]', m(TextField, {
@@ -310,6 +347,9 @@ export class CanvasDataset {
                 })
 
             ]
+            // ------------------------------------------------
+            // end: "Online" section
+            // ------------------------------------------------
         );
 
         let manipulationsMenu = m(MenuHeaders, {

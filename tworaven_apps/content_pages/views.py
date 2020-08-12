@@ -65,7 +65,13 @@ def view_pebbles_home(request):
                  TA2_WRAPPED_SOLVERS=settings.TA2_WRAPPED_SOLVERS,
                  #
                  TA3_GRPC_USER_AGENT=settings.TA3_GRPC_USER_AGENT, TA3TA2_API_VERSION=TA3TA2Util.get_api_version(),
+                 # UI Display
                  DISPLAY_DATAMART_UI=settings.DISPLAY_DATAMART_UI,
+                 #
+                 DATASET_SHOW_TAB_PRESETS=settings.DATASET_SHOW_TAB_PRESETS,
+                 DATASET_SHOW_TAB_UPLOAD=settings.DATASET_SHOW_TAB_UPLOAD,
+                 DATASET_SHOW_TAB_ONLINE=settings.DATASET_SHOW_TAB_ONLINE,
+                 # Websocket
                  WEBSOCKET_PREFIX=settings.WEBSOCKET_PREFIX,
                  #
                  DOCKER_BUILD_TIMESTAMP=settings.DOCKER_BUILD_TIMESTAMP,

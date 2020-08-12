@@ -411,7 +411,7 @@ if EVENTDATA_TWO_RAVENS_TARGET_URL.endswith('/'):
 
 # TEST ONLY: Set for TwoRavens when loading EventData urls
 #
-TEST_USERNAME = os.environ.get('TEST_USERNAME', 'test_user')
+TEST_USERNAME = os.environ.get('TEST_USERNAME', 'test_user2')
 TEST_PASSWORD = os.environ.get('TEST_PASSWORD', 'test_user')
 
 

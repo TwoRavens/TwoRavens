@@ -643,14 +643,13 @@ def clear_js():
 def create_test_user():
     """Create regular user with creds: test_user/test_user.  No admin access"""
     from tworaven_apps.raven_auth.models import User
+    from django.conf import settings
 
-    test_username = 'test_user'
+    test_username = settings.TEST_USERNAME  #'test_user'
 
     if User.objects.filter(username=test_username).count() > 0:
         print('A "%s" test user already exists' % test_username)
         return
-
-    test_pw = test_username
 
     new_user = User(username=test_username,
                     first_name='Test',
@@ -659,11 +658,10 @@ def create_test_user():
                     is_active=True,
                     is_superuser=False)
 
-    new_user.set_password(test_pw)
+    new_user.set_password(settings.TEST_PASSWORD)
     new_user.save()
 
     print('test user created: "%s"' % test_username)
-    print('password: "%s"' % test_pw)
 
 @task
 def create_django_superuser():

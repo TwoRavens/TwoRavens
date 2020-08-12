@@ -35,6 +35,12 @@ TA2_WRAPPED_SOLVERS = ast.literal_eval(\
 if not isinstance(TA2_WRAPPED_SOLVERS, list):
     TA2_WRAPPED_SOLVERS = []
 
+# -------------------------
+# Dataset Mode
+# -------------------------
+DATASET_SHOW_TAB_PRESETS = bool(strtobool(os.environ.get('DATASET_SHOW_TAB_PRESETS', 'True')))
+DATASET_SHOW_TAB_UPLOAD = bool(strtobool(os.environ.get('DATASET_SHOW_TAB_UPLOAD', 'True')))
+DATASET_SHOW_TAB_ONLINE = bool(strtobool(os.environ.get('DATASET_SHOW_TAB_ONLINE', 'True')))
 
 # -------------------------
 # Datamart related
