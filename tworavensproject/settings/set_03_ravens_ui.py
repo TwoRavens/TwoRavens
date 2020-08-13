@@ -6,6 +6,13 @@ import ast
 import os
 from distutils.util import strtobool
 
+# -------------------------
+# DEMO AUTO LOGIN-IN
+# - Bypass the login page.
+# - ** Only for demos **
+# -------------------------
+DEMO_AUTO_LOGIN = bool(strtobool(os.environ.get('DEMO_AUTO_LOGIN', 'False')))
+print('DEMO_AUTO_LOGIN', DEMO_AUTO_LOGIN)
 # -------------------------------------
 # Is the D3M TA2 solver enabled?
 # -------------------------------------
