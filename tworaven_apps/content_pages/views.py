@@ -4,6 +4,7 @@ from django.urls import reverse
 
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 
@@ -20,10 +21,34 @@ from tworaven_apps.behavioral_logs import static_vals as bl_static
 from tworaven_apps.behavioral_logs.log_entry_maker import LogEntryMaker
 from tworaven_apps.utils.view_helper import get_authenticated_user
 
+
+def auto_login_test_user(request):
+    """DEMO ONLY, auto login"""
+    if not settings.DEMO_AUTO_LOGIN is True:
+        return HttpResponseRedirect(reverse('login'))
+
+    user = authenticate(request,
+                        username=settings.TEST_USERNAME,
+                        password=settings.TEST_PASSWORD)
+
+    if user is not None:
+        login(request, user)
+        return HttpResponseRedirect(reverse('home'))
+    else:
+        user_msg = ('Auto-login of test user failed:'
+                    ' {settings.TEST_USERNAME}.'
+                    ' Unexpected error in "auto_login_test_user"')
+        print(user_msg)
+        return HttpResponseRedirect(reverse('login'))
+        #return HttpResponse(user_msg)
+
+
 def view_pebbles_home(request):
     """Serve up the workspace, the current home page.
     Include global js settings"""
     if not request.user.is_authenticated:
+        if settings.DEMO_AUTO_LOGIN is True:
+            return auto_login_test_user(request)
         return HttpResponseRedirect(reverse('login'))
 
     app_config = AppConfiguration.get_config()
@@ -65,7 +90,13 @@ def view_pebbles_home(request):
                  TA2_WRAPPED_SOLVERS=settings.TA2_WRAPPED_SOLVERS,
                  #
                  TA3_GRPC_USER_AGENT=settings.TA3_GRPC_USER_AGENT, TA3TA2_API_VERSION=TA3TA2Util.get_api_version(),
+                 # UI Display
                  DISPLAY_DATAMART_UI=settings.DISPLAY_DATAMART_UI,
+                 #
+                 DATASET_SHOW_TAB_PRESETS=settings.DATASET_SHOW_TAB_PRESETS,
+                 DATASET_SHOW_TAB_UPLOAD=settings.DATASET_SHOW_TAB_UPLOAD,
+                 DATASET_SHOW_TAB_ONLINE=settings.DATASET_SHOW_TAB_ONLINE,
+                 # Websocket
                  WEBSOCKET_PREFIX=settings.WEBSOCKET_PREFIX,
                  #
                  DOCKER_BUILD_TIMESTAMP=settings.DOCKER_BUILD_TIMESTAMP,

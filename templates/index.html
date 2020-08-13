@@ -119,6 +119,11 @@
 
           const DISPLAY_DATAMART_UI = {% if DISPLAY_DATAMART_UI %}true{% else %}false{% endif %};
 
+          // Dataset mode tabs: Presets | Upload | Online
+          const DATASET_SHOW_TAB_PRESETS = {% if DATASET_SHOW_TAB_PRESETS %}true{% else %}false{% endif %};
+          const DATASET_SHOW_TAB_UPLOAD = {% if DATASET_SHOW_TAB_UPLOAD %}true{% else %}false{% endif %};
+          const DATASET_SHOW_TAB_ONLINE = {% if DATASET_SHOW_TAB_ONLINE %}true{% else %}false{% endif %};
+
           const NGINX_MAX_UPLOAD_SIZE = "{{ NGINX_MAX_UPLOAD_SIZE }}";
           const DATA_UPLOAD_MAX_MEMORY_SIZE = {{ DATA_UPLOAD_MAX_MEMORY_SIZE }};
           const DOCKER_BUILD_TIMESTAMP = "{{ DOCKER_BUILD_TIMESTAMP }}";

@@ -20,6 +20,8 @@ class LoginViewExtraContext(LoginView):
         context['is_d3m_domain'] = app_config and app_config.is_d3m_domain()
         context['just_logged_out'] = 'just_logged_out' in self.request.GET
         context['ALLOW_SOCIAL_AUTH'] = settings.ALLOW_SOCIAL_AUTH
+        context['TEST_USERNAME'] = settings.TEST_USERNAME
+        context['TEST_PASSWORD'] = settings.TEST_PASSWORD
 
         # for redirects
         if 'next_page' in self.request.GET:
