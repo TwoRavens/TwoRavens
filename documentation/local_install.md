@@ -353,7 +353,7 @@ This setup involves running several processes.
     - **Terminal 5. Celery**:
       ```fab celery_run_with_ta2```
     - **Terminal 6. Postgres**:
-      ```fab run_postgres_run```
+      ```fab postgres_run```
     - **Terminal 7. TA2**.
       - Example using the Brown TA2:
         - List datasets: ```fab run_ta2_brown_choose_config```
