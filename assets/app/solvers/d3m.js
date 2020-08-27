@@ -13,7 +13,8 @@ export let getSolverSpecification = async problem => {
     await results.prepareResultsDatasets(problem, 'd3m');
 
     let datasetSchemaPaths = problem.useManipulations ? problem.datasetSchemaPathsManipulated : problem.datasetSchemaPaths;
-    let datasetSchemas = problem.useManipulations ? problem.datasetSchemasManipulated : problem.datasetSchemas;
+    let datasetSchemas = Object.assign({}, problem.datasetSchemas, problem.useManipulations ? problem.datasetSchemasManipulated : {});
+
     if (!['classification', 'regression', 'forecasting'].includes(problem.task))
         problem.splitOptions.outOfSampleSplit = false;
 
