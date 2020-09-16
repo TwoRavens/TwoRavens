@@ -107,13 +107,15 @@ def make_d3m_configs_from_files_multiuser_test_limited(single_dataset=None, **ex
     if extra_params:
         params = dict(params, **extra_params)
 
+    # !Make sure these datasets are available in the .dockerignore file
+    #
     default_datatsets = [\
         '185_baseball',
         '196_autoMpg',
         #'185_baseball_MIN_METADATA',
         #'196_autoMpg_MIN_METADATA',
-        #'Western_Sahel_Grid-2010_2020',
-        #'Western_Sahel_Grid-Quarter-2010_2020',
+        'Western_Sahel_Grid-2010_2020',
+        'Western_Sahel_Grid-Quarter-2010_2020',
         'LL1_h1b_visa_apps_7480',   # H1B
         'LL1_terra_canopy_height_long_form_s4_80_MIN_METADATA', # Terra
 

@@ -12,7 +12,7 @@ from distutils.util import strtobool
 # - ** Only for demos **
 # -------------------------
 DEMO_AUTO_LOGIN = bool(strtobool(os.environ.get('DEMO_AUTO_LOGIN', 'False')))
-print('DEMO_AUTO_LOGIN', DEMO_AUTO_LOGIN)
+#print('DEMO_AUTO_LOGIN', DEMO_AUTO_LOGIN)
 # -------------------------------------
 # Is the D3M TA2 solver enabled?
 # -------------------------------------
