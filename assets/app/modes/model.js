@@ -1796,7 +1796,7 @@ let setLabel = (problem, label, name) => {
             app.remove(problem.tags.geographic, name);
             app.remove(problem.tags.boundary, name);
         }
-        app.toggle(problem.tags.time, name);
+        app.toggle(problem.tags.temporal, name);
     }
 
     if (label === 'weights') {
@@ -1836,7 +1836,7 @@ let setLabel = (problem, label, name) => {
             app.remove(problem.tags.boundary, name);
             app.remove(problem.tags.geographic, name);
             app.remove(problem.tags.weights, name);
-            app.remove(problem.tags.time, name);
+            app.remove(problem.tags.temporal, name);
         }
         if (problem.tags.indexes.includes(name))
             problem.tags.indexes = [];
