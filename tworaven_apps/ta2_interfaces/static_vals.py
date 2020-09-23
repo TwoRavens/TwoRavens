@@ -95,10 +95,13 @@ KEY_FIT_SOLUTION_DEFAULT_PARAMS = 'fitSolutionDefaultParams'
 KEY_SCORE_SOLUTION_DEFAULT_PARAMS = 'scoreSolutionDefaultParams'
 KEY_PRODUCE_SOLUTION_DEFAULT_PARAMS = 'produceSolutionDefaultParams'
 
-REQUIRED_INPUT_KEYS = [(KEY_SEARCH_SOLUTION_PARAMS, SEARCH_SOLUTIONS),
-                       (KEY_FIT_SOLUTION_DEFAULT_PARAMS, 'FitSolution'),
-                       (KEY_PRODUCE_SOLUTION_DEFAULT_PARAMS, 'ProduceSolution'),
-                       (KEY_SCORE_SOLUTION_DEFAULT_PARAMS, 'ScoreSolution')]
+REQUIRED_INPUT_KEYS = [
+    (KEY_SEARCH_SOLUTION_PARAMS, SEARCH_SOLUTIONS),
+    (KEY_FIT_SOLUTION_DEFAULT_PARAMS, 'FitSolution'),
+    (KEY_PRODUCE_SOLUTION_DEFAULT_PARAMS, 'ProduceSolution'),
+    # optional, depending on existence of user scoring config
+    # (KEY_SCORE_SOLUTION_DEFAULT_PARAMS, 'ScoreSolution')
+]
 
 # ---------------------------------
 # Used in tests

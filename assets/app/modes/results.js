@@ -41,11 +41,11 @@ let getSystemAdapters = problem => {
     let solverSystemNames = TA2_WRAPPED_SOLVERS // set in templates/index.html
         .filter(name => solverCandidateNames.includes(name));
 
-    let d3m_solver_info = TA2_D3M_SOLVER_ENABLED ? {d3m: solverD3M.getD3MAdapter} : {};
+    let d3m_solver_info = TA2_D3M_SOLVER_ENABLED ? {d3m: solverD3M.getD3MAdapter(problem)} : {};
 
     return solverSystemNames
         .reduce((out, systemId) => Object.assign(out, {
-            [systemId]: solverWrapped.getSystemAdapterWrapped(systemId)
+            [systemId]: solverWrapped.getSystemAdapterWrapped(systemId, problem)
         }), d3m_solver_info);
 }
 
@@ -125,13 +125,16 @@ export let leftpanel = () => {
                             solver: systemId,
                             action: m(Button, {
                                 class: 'btn-sm',
-                                onclick: () => solverSystems[systemId](selectedProblem).solve(),
+                                onclick: () => solverSystems[systemId].solve(),
                                 disabled: !!selectedProblem.solverState?.[systemId]?.thinking
                             }, !!selectedProblem.solverState?.[systemId]?.thinking ? 'Solving' : 'Solve'),
                             state: selectedProblem.solverState?.[systemId] && m('',
+                                m('div[style=font-size:medium;margin-right:1em;display:inline-block]',
+                                    selectedProblem.solverState?.[systemId]?.message),
                                 selectedProblem.solverState[systemId].thinking && [
                                     common.loaderSmall(systemId),
                                     m(Button, {
+                                        style: 'margin-left: 1em',
                                         title: 'end the search',
                                         class: 'btn-sm',
                                         onclick: () => {
@@ -149,10 +152,8 @@ export let leftpanel = () => {
                                             getSystemAdapters(selectedProblem)[systemId]
                                                 .end(selectedProblem.solverState[systemId].searchId)
                                         }
-                                    })
-                                ],
-                                m('div[style=font-size:medium;margin-left:1em;display:inline-block]',
-                                    selectedProblem.solverState?.[systemId]?.message)
+                                    }, m(Icon, {name: 'stop'}))
+                                ]
                             ),
                         })),
                         headers: ['solver', 'action', 'state'],
@@ -204,10 +205,11 @@ export let leftpanel = () => {
                     'You may select searches for other problems in the workspace to view their solutions.',
                     m(Table, {
                         data: Object.keys(app.workspace.raven_config.problems)
+
                             .map(problemId => app.workspace.raven_config.problems[problemId])
                             // flatten problems to one entry per active search
                             .flatMap(problem =>
-                                Object.keys(problem.solverState).map(systemId => [problem, systemId]))
+                                Object.keys(problem.solverState || {}).map(systemId => [problem, systemId]))
                             .map(([problem, systemId]) => [
                                 problem.problemId,
                                 problem.targets.join(', '),
@@ -1945,18 +1947,21 @@ export let loadConfusionData = async (problem, adapter) => {
         return;
 
 
-    Object.keys(response.data)
-        .forEach(variable => {
-            if (response.data[variable].classes.length < 10) {
-                let extraPoints = [];
-                response.data[variable].classes.forEach(levelActual => response.data[variable].classes.forEach(levelPredicted => {
+    Object.keys(response.data).forEach(variable => {
+        if (response.data[variable].classes.length <= 15) {
+            response.data[variable].classes = response.data[variable].classes
+                .sort(app.omniSort);
+
+            let extraPoints = [];
+            response.data[variable].classes.forEach(levelActual =>
+                response.data[variable].classes.forEach(levelPredicted => {
                     if (!response.data[variable].data.find(point => point.Actual === levelActual && point.Predicted === levelPredicted))
                         extraPoints.push({Actual: levelActual, Predicted: levelPredicted, count: 0})
                 }));
-                response.data[variable].data.push(...extraPoints);
-            }
-            interpretConfusionMatrix(response.data[variable].data)
-        });
+            response.data[variable].data.push(...extraPoints);
+        }
+        interpretConfusionMatrix(response.data[variable].data)
+    });
 
     resultsData.confusion[adapter.getSolutionId()] = response.data;
     resultsData.confusionLoading[adapter.getSolutionId()] = false;
@@ -2769,7 +2774,7 @@ export let produceOnSolution = async (customDataset, manipulatedInfo, problem, s
     let adapter = getSolutionAdapter(problem, solution);
     let solverSystems = getSystemAdapters(problem);
 
-    solverSystems[adapter.getSystemId()](selectedProblem).produce(
+    solverSystems[adapter.getSystemId()].produce(
         adapter.getSolutionId(),
         {
             'train': {

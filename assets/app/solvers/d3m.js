@@ -509,11 +509,14 @@ export function GRPC_ProblemDescription(problem, datasetDoc) {
         learningResource = datasetDoc.dataResources
             .find(resource => resource.resType === "table");
 
-    let performanceMetric = {metric: app.d3mMetrics[problem.metric]};
-    if (['f1', 'precision', 'recall'].includes(problem.metric))
-        performanceMetric.posLabel = problem.positiveLabel || Object.keys((app.variableSummaries[problem.targets[0]].plotValues || {}))[0];
-    if (problem.metric === 'precisionAtTopK')
-        performanceMetric.k = problem.precisionAtTopK || 5;
+    let GRPC_ProblemPerformanceMetric = metric => {
+        let performanceMetric = {metric: app.d3mMetrics[metric]};
+        if (['f1', 'precision', 'recall'].includes(metric))
+            performanceMetric.posLabel = problem.positiveLabel || Object.keys((app.variableSummaries[problem.targets[0]].plotValues || {}))[0];
+        if (problem.metric === 'precisionAtTopK')
+            performanceMetric.k = problem.precisionAtTopK || 5;
+        return performanceMetric;
+    }
 
     let getColIndex = colName => learningResource.columns
         .find(column => column.colName === colName)?.colIndex ?? Object.keys(variableSummaries)
@@ -528,7 +531,7 @@ export function GRPC_ProblemDescription(problem, datasetDoc) {
             ...problem.d3mTags.map(tag => app.d3mTags[tag]),
             ...problem.resourceTypes.map(type => app.d3mResourceType[type])
         ].filter(_=>_),
-        performanceMetrics: [performanceMetric]
+        performanceMetrics: [problem.metric, ...problem.metrics].map(GRPC_ProblemPerformanceMetric)
     };
 
     let GRPC_ProblemPrivilegedData = problem.tags.privileged.map((variable, i) => ({
@@ -652,6 +655,7 @@ export function GRPC_ProduceSolutionRequest(datasetDocUrl){
   This DOES NOT include the solutionId
 */
 export function GRPC_ScoreSolutionRequest(problem, datasetDocUrl) {
+    if (!problem.scoreOptions.userSpecified) {return}
     return {
         inputs: [{dataset_uri: 'file://' + datasetDocUrl}],
         performanceMetrics: [problem.metric, ...problem.metrics].map(metric => ({metric: app.d3mMetrics[metric]})),
@@ -717,8 +721,22 @@ export async function handleGetSearchSolutionResultsResponse(response) {
         }
     });
 
+    // set the selected solution if none have been selected yet
     let selectedSolutions = results.getSelectedSolutions(solvedProblem);
     if (selectedSolutions.length === 0) results.setSelectedSolution(solvedProblem, 'd3m', String(response.pipelineId));
+
+    // if the user has not specified a scoring configuration, then use scores from the TA2
+    if (!solvedProblem.scoreOptions.userSpecified && response.response.scores?.length > 0) {
+        // standardize scores format (ignore types)
+        response.response.scores.forEach(scoreConfigurationData => {
+            scoreConfigurationData.scores.forEach(scoreSchema => scoreSchema.value = scoreSchema.value.raw.double)
+        });
+
+        // save scores
+        let solution = solvedProblem.solutions.d3m[response.pipelineId];
+        solution.scores = solution.scores || [];
+        solution.scores.push(...response.response.scores[0].scores);
+    }
 
     m.redraw();
 }
@@ -775,7 +793,7 @@ export async function handleDescribeSolutionResponse(response) {
 export async function handleGetFitSolutionResultsResponse(response) {
 
     if (response === undefined) {
-        console.log('handleGetScoreSolutionResultsResponse: Error.  "response" undefined');
+        console.log('handleGetFitSolutionResultsResponse: Error.  "response" undefined');
         return;
     }
 
@@ -793,7 +811,7 @@ export async function handleGetFitSolutionResultsResponse(response) {
     }
 
     if (response.is_finished === undefined) {
-        debugLog('handleGetScoreSolutionResultsResponse: Error.  "response.is_finished" undefined');
+        debugLog('handleGetFitSolutionResultsResponse: Error.  "response.is_finished" undefined');
         return;
     }
     if (!response.is_finished) return;

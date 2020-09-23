@@ -230,7 +230,7 @@ let systemParams = {
     'ludwig': {}
 };
 
-export let getSystemAdapterWrapped = systemId => problem => ({
+export let getSystemAdapterWrapped = (systemId, problem) => ({
     solve: async () => {
         if (!app.isProblemValid(problem)) return;
         problem.system = 'solved';
